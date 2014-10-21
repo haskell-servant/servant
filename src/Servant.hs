@@ -47,6 +47,8 @@ instance (KnownSymbol capture, Captured a, HasServer sublayout)
                        }
     _ -> return Nothing
 
+-- * Example
+
 type TestApi = "hello" :> Capture "name" Text :> Get Greet
 
 testApi :: Proxy TestApi
@@ -59,8 +61,8 @@ instance ToJSON Greet
 
 server :: Server TestApi
 server =
-     (Proxy :: Proxy "hello")
-  :> (Proxy :: Proxy (Capture "name" Text))
+     Proxy -- :: Proxy "hello"
+  :> Proxy -- :: Proxy (Capture "name" Text)
   :> (return . func)
 
   where func name = Greet ("Hello, " <> name)
