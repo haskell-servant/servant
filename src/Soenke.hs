@@ -64,13 +64,15 @@ class HasServer layout where
 
 instance ToJSON result => HasServer (Get result) where
   type Server (Get result) = (EitherT (Int, String) IO result)
-  route Proxy action _request = do
-    e <- runEitherT action
-    return $ Just $ case e of
-      Right output ->
-        responseLBS ok200 [("Content-Type", "application/json")] (encode output)
-      Left (status, message) ->
-        responseLBS (mkStatus status (cs message)) [] (cs message)
+  route Proxy action request
+    | null (pathInfo request) && requestMethod request == methodGet = do
+        e <- runEitherT action
+        return $ Just $ case e of
+          Right output ->
+            responseLBS ok200 [("Content-Type", "application/json")] (encode output)
+          Left (status, message) ->
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | otherwise = return Nothing
 
 instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout) where
   type Server (path :> sublayout) = path :> (Server sublayout)
