@@ -32,6 +32,9 @@ captured _ = capture
 instance (KnownSymbol capture, Captured a, HasServer sublayout)
 	    => HasServer (Capture capture a :> sublayout) where
 
+  -- this means that what follows the capture
+  -- must necessarily be a function that expects
+  -- the captured value. :-(
   type Server (Capture capture a :> sublayout) =
     Capture capture a :> (a -> Server sublayout)
 
