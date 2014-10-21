@@ -76,4 +76,8 @@ runTest port = run port test
 -- however...
 -- visit http://localhost:8000/hello/world/foo 
 -- -> this will just match "world" but won't complain about the additional "/foo"
+--
 -- do we want that?
+--
+-- maybe we want to check that the pathInfo list is empty when we reach Get
+-- (and Post etc when the time comes :-) )
