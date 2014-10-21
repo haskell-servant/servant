@@ -69,7 +69,11 @@ runTest :: Port -> IO ()
 runTest port = run port test
 
 -- load in ghci, call 'runTest 8000'
--- visit http://localhost/hello/world
--- visit http://localhost/hello/soenke
--- visit http://localhost/hello/alp
+-- visit http://localhost:8000/hello/world
+-- visit http://localhost:8000/hello/soenke
+-- visit http://localhost:8000/hello/alp
 
+-- however...
+-- visit http://localhost:8000/hello/world/foo 
+-- -> this will just match "world" but won't complain about the additional "/foo"
+-- do we want that?
