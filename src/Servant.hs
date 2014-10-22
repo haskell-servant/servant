@@ -20,17 +20,17 @@ import Soenke
 
 data Capture sym a
 
-class Captured a where
+class FromText a where
   capture :: Text -> Maybe a
 
-instance Captured Text where
+instance FromText Text where
   capture = Just
 
-captured :: Captured a => proxy (Capture sym a) -> Text -> Maybe a
+captured :: FromText a => proxy (Capture sym a) -> Text -> Maybe a
 captured _ = capture
 
-instance (KnownSymbol capture, Captured a, HasServer sublayout)
-	    => HasServer (Capture capture a :> sublayout) where
+instance (KnownSymbol capture, FromText a, HasServer sublayout)
+      => HasServer (Capture capture a :> sublayout) where
 
   -- this means that what follows the capture
   -- must necessarily be a function that expects
