@@ -8,6 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant where
 
+import Control.Applicative
 import Data.Aeson
 import Data.Monoid
 import Data.Proxy
@@ -18,6 +19,7 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Soenke
 
+-- * Captures
 data Capture sym a
 
 class FromText a where
@@ -46,6 +48,22 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
                          pathInfo = rest
                        }
     _ -> return Nothing
+
+-- * Request Body support
+data RQBody a
+
+instance (FromJSON a, HasServer sublayout)
+      => HasServer (RQBody a :> sublayout) where
+
+  -- same caveat as for the Captures...
+  type Server (RQBody a :> sublayout) =
+    RQBody a :> (a -> Server sublayout)
+
+  route Proxy (rqbody :> subserver) request = do
+    mrqbody <- decode' <$> lazyRequestBody request
+    case mrqbody of
+      Nothing -> return Nothing
+      Just v  -> route (Proxy :: Proxy sublayout) (subserver v) request
 
 -- * Example
 
