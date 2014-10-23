@@ -63,7 +63,7 @@ class HasServer layout where
   route :: Proxy layout -> Server layout -> RoutingApplication
 
 instance ToJSON result => HasServer (Get result) where
-  type Server (Get result) = (EitherT (Int, String) IO result)
+  type Server (Get result) = EitherT (Int, String) IO result
   route Proxy action request
     | null (pathInfo request) && requestMethod request == methodGet = do
         e <- runEitherT action
@@ -120,8 +120,8 @@ instance FromJSON result => HasClient (Get result) where
     innerResponse <- liftIO $ __withGlobalManager $ \ manager ->
       Http.Client.httpLbs innerRequest manager
     when (Http.Client.responseStatus innerResponse /= ok200) $
-      left ("kraken daemon returned: " ++ show (Http.Client.responseStatus innerResponse))
-    maybe (left "kraken daemon returned invalid json") return $
+      left ("HTTP GET request failed with status: " ++ show (Http.Client.responseStatus innerResponse))
+    maybe (left "HTTP GET request returned invalid json") return $
       decode' (Http.Client.responseBody innerResponse)
 
 instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where
