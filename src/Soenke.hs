@@ -4,12 +4,14 @@ module Soenke where
 
 import           Control.Concurrent
 import           Control.Monad
+import           Control.Monad.Catch
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Data.Aeson
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Proxy
 import           Data.String.Conversions
+import           Data.Text (Text)
 import           GHC.TypeLits
 import           Network.HTTP.Client        (Manager, defaultManagerSettings,
                                              newManager)
@@ -116,11 +118,45 @@ instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
 
 -- | 'client' allows you to produce operations to query an API from a client.
 client :: forall layout . HasClient layout => Proxy layout -> Client layout
-client Proxy = clientWithRoute (Proxy :: Proxy layout) ""
+client Proxy = clientWithRoute (Proxy :: Proxy layout) defReq
 
 class HasClient layout where
   type Client layout :: *
-  clientWithRoute :: Proxy layout -> String -> Client layout
+  clientWithRoute :: Proxy layout -> Req -> Client layout
+
+data Req = Req
+  { reqPath  :: String
+  , qs       :: QueryText
+  , reqBody  :: ByteString
+  }
+
+defReq :: Req
+defReq = Req "" [] ""
+
+appendToPath :: String -> Req -> Req
+appendToPath p req =
+  req { reqPath = reqPath req ++ "/" ++ p }
+
+appendToQueryString :: Text       -- ^ param name
+                    -> Maybe Text -- ^ param value
+                    -> Req
+                    -> Req
+appendToQueryString pname pvalue req
+  | pvalue == Nothing = req
+  | otherwise         = req { qs = qs req ++ [(pname, pvalue)]
+                            }
+
+setRQBody :: ByteString -> Req -> Req
+setRQBody b req = req { reqBody = b }
+
+reqToRequest :: (Functor m, MonadThrow m) => Req -> URI -> m Http.Client.Request
+reqToRequest req uri = fmap (setrqb . setQS ) $ Http.Client.parseUrl url
+
+  where url = show $ nullURI { uriPath = reqPath req }
+                       `relativeTo` uri
+
+        setrqb r = r { Http.Client.requestBody = Http.Client.RequestBodyLBS (reqBody req) }
+        setQS = Http.Client.setQueryString $ queryTextToQuery (qs req)
 
 {-# NOINLINE __manager #-}
 __manager :: MVar Manager
@@ -133,9 +169,9 @@ __withGlobalManager action = modifyMVar __manager $ \ manager -> do
 
 instance FromJSON result => HasClient (Get result) where
   type Client (Get result) = URI -> EitherT String IO result
-  clientWithRoute Proxy path uri = do
-    innerRequest <- liftIO $
-      Http.Client.parseUrl (show (nullURI{uriPath = path} `relativeTo` uri))
+  clientWithRoute Proxy req uri = do
+    innerRequest <- liftIO $ reqToRequest req uri
+
     innerResponse <- liftIO $ __withGlobalManager $ \ manager ->
       Http.Client.httpLbs innerRequest manager
     when (Http.Client.responseStatus innerResponse /= ok200) $
@@ -144,18 +180,13 @@ instance FromJSON result => HasClient (Get result) where
       decode' (Http.Client.responseBody innerResponse)
 
 instance FromJSON a => HasClient (Post a) where
-  type Client (Post a) = ByteString -> URI -> EitherT String IO a
+  type Client (Post a) = URI -> EitherT String IO a
 
-  clientWithRoute Proxy path rqbody uri = do
-    partialRequest <- liftIO . Http.Client.parseUrl $
-      show ( nullURI { uriPath = path }
-             `relativeTo` uri
-           )
+  clientWithRoute Proxy req uri = do
+    partialRequest <- liftIO $ reqToRequest req uri
 
-    let request = partialRequest 
-          { Http.Client.method = methodPost
-          , Http.Client.requestBody = Http.Client.RequestBodyLBS rqbody
-          }
+    let request = partialRequest { Http.Client.method = methodPost
+                                 }
 
     innerResponse <- liftIO . __withGlobalManager $ \ manager ->
       Http.Client.httpLbs request manager
@@ -168,12 +199,15 @@ instance FromJSON a => HasClient (Post a) where
 
 instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where
   type Client (path :> sublayout) = Client sublayout
-  clientWithRoute Proxy path =
-     clientWithRoute (Proxy :: Proxy sublayout)
-       (path ++ "/" ++ (symbolVal (Proxy :: Proxy path)))
+
+  clientWithRoute Proxy req =
+     clientWithRoute (Proxy :: Proxy sublayout) $
+       appendToPath p req
+
+    where p = symbolVal (Proxy :: Proxy path)
 
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
   type Client (a :<|> b) = Client a :<|> Client b
-  clientWithRoute Proxy path =
-    clientWithRoute (Proxy :: Proxy a) path :<|>
-    clientWithRoute (Proxy :: Proxy b) path
+  clientWithRoute Proxy req =
+    clientWithRoute (Proxy :: Proxy a) req :<|>
+    clientWithRoute (Proxy :: Proxy b) req

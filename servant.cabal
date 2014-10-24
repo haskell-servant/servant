@@ -21,6 +21,7 @@ library
     , either
     , aeson
     , bytestring
+    , exceptions
     , string-conversions
     , http-client
     , http-types

@@ -18,6 +18,7 @@ import Data.Aeson
 import Data.ByteString.Lazy (ByteString)
 import Data.Monoid
 import Data.Proxy
+import Data.String.Conversions
 import Data.Text
 import GHC.Generics
 import GHC.TypeLits
@@ -29,23 +30,32 @@ import Soenke
 
 import qualified Network.HTTP.Client as Http.Client
 
--- * Captures
-data Capture sym a
-
 class FromText a where
-  capture :: Text -> Maybe a
+  fromText :: Text -> Maybe a
 
 class ToText a where
   toText :: a -> Text
 
 instance FromText Text where
-  capture = Just
+  fromText = Just
 
 instance ToText Text where
   toText = id
 
+instance FromText Bool where
+  fromText "true"  = Just True
+  fromText "false" = Just False
+  fromText _       = Nothing
+
+instance ToText Bool where
+  toText True  = "true"
+  toText False = "false"
+
+-- * Captures
+data Capture sym a
+
 captured :: FromText a => proxy (Capture sym a) -> Text -> Maybe a
-captured _ = capture
+captured _ = fromText
 
 instance (KnownSymbol capture, FromText a, HasServer sublayout)
       => HasServer (Capture capture a :> sublayout) where
@@ -70,9 +80,11 @@ instance (KnownSymbol capture, ToText a, HasClient sublayout)
   type Client (Capture capture a :> sublayout) =
     a -> Client sublayout
 
-  clientWithRoute Proxy path val =
-      clientWithRoute (Proxy :: Proxy sublayout)
-                      (path ++ "/" ++ unpack (toText val))
+  clientWithRoute Proxy req val =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      appendToPath p req
+
+    where p = unpack (toText val)
 
 -- * Request Body support
 data RQBody a
@@ -89,39 +101,54 @@ instance (FromJSON a, HasServer sublayout)
       Nothing -> return Nothing
       Just v  -> route (Proxy :: Proxy sublayout) (subserver v) request
 
-instance (ToJSON a, FromJSON b)
-      => HasClient (RQBody a :> Post b) where
+instance (ToJSON a, HasClient sublayout)
+      => HasClient (RQBody a :> sublayout) where
 
-  type Client (RQBody a :> Post b) =
-    a -> URI -> EitherT String IO b
+  type Client (RQBody a :> sublayout) =
+    a -> Client sublayout
 
-  clientWithRoute Proxy path body uri = do
-    partialRequest <- liftIO . Http.Client.parseUrl $
-      show ( nullURI { uriPath = path }
-             `relativeTo` uri
-           )
+  clientWithRoute Proxy req body =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      setRQBody (encode body) req
 
-    let request = partialRequest
-          { Http.Client.method = methodPost
-          , Http.Client.requestBody = Http.Client.RequestBodyLBS (encode body)
-          }
+-- * GET params support (i.e query string arguments)
+data GetParam sym a
 
-    innerResponse <- liftIO . __withGlobalManager $ \ manager ->
-      Http.Client.httpLbs request manager
+instance (KnownSymbol sym, FromText a, HasServer sublayout)
+      => HasServer (GetParam sym a :> sublayout) where
 
-    when (Http.Client.responseStatus innerResponse /= status201) $
-      left ("HTTP POST request failed with status: " ++ show (Http.Client.responseStatus innerResponse))
+  type Server (GetParam sym a :> sublayout) =
+    Maybe a -> Server sublayout
 
-    maybe (left "HTTP POST request returned invalid json") return $
-      decode' (Http.Client.responseBody innerResponse)
+  route Proxy subserver request = do
+    let querytext = parseQueryText $ rawQueryString request
+        param =
+          case lookup paramName querytext of
+            Nothing       -> Nothing -- param absent from the query string
+            Just Nothing  -> Nothing -- param present with no value -> Nothing
+            Just (Just v) -> fromText v -- if present, we try to convert to
+                                        -- the right type
+
+    route (Proxy :: Proxy sublayout) (subserver param) request
+
+    where paramName = cs $ symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, ToText a, HasClient sublayout)
+      => HasClient (GetParam sym a :> sublayout) where
+
+  type Client (GetParam sym a :> sublayout) =
+    Maybe a -> Client sublayout
+
+  -- if mparam = Nothing, we don't add it to the query string
+  clientWithRoute Proxy req mparam =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      appendToQueryString pname mparamText req
+
+    where pname  = pack pname'
+          pname' = symbolVal (Proxy :: Proxy sym)
+          mparamText = fmap toText mparam
 
 -- * Example
-
-type TestApi = "hello" :> Capture "name" Text :> Get Greet
-          :<|> "greet" :> RQBody Greet :> Post Greet
-
-testApi :: Proxy TestApi
-testApi = Proxy
 
 data Greet = Greet { msg :: Text }
   deriving (Generic, Show)
@@ -129,29 +156,47 @@ data Greet = Greet { msg :: Text }
 instance FromJSON Greet
 instance ToJSON Greet
 
+-- API specification
+type TestApi = 
+       "hello" :> Capture "name" Text :> GetParam "capital" Bool :> Get Greet
+  :<|> "greet" :> RQBody Greet :> Post Greet
+
+testApi :: Proxy TestApi
+testApi = Proxy
+
+-- Server-side handlers
 server :: Server TestApi
 server = hello :<|> greet
 
-  where hello = return . Greet . ("Hello, " <>)
+  where hello name Nothing = hello name (Just False)
+        hello name (Just False) = return . Greet $ "Hello, " <> name
+        hello name (Just True) = return . Greet . toUpper $ "Hello, " <> name
+
         greet = return
 
-getGreet :: Text -> URI -> EitherT String IO Greet
+-- Client-side query functions
+clientApi :: Client TestApi
+clientApi = client testApi
+
+getGreet :: Text -> Maybe Bool -> URI -> EitherT String IO Greet
 postGreet :: Greet -> URI -> EitherT String IO Greet
+getGreet :<|> postGreet = clientApi
 
-getGreet :<|> postGreet
-  = client testApi
-
+-- Turn the server into a WAI app
 test :: Application
 test = serve testApi server
 
+-- Run the server
 runTestServer :: Port -> IO ()
 runTestServer port = run port test
 
+-- Run some queries against the server
 runTest :: IO ()
 runTest = do
   tid <- forkIO $ runTestServer 8001
-  let Just uri = parseURI "http://localhost:8001/"
-  print =<< runEitherT (getGreet "alp" uri)
+  let Just uri = parseURI "http://localhost:8001"
+  print =<< runEitherT (getGreet "alp" (Just True) uri)
+  print =<< runEitherT (getGreet "alp" (Just False) uri)
   let g = Greet "yo"
   print =<< runEitherT (postGreet g uri)
   killThread tid
