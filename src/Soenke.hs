@@ -7,6 +7,7 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Data.Aeson
+import           Data.ByteString.Lazy (ByteString)
 import           Data.Proxy
 import           Data.String.Conversions
 import           GHC.TypeLits
@@ -31,6 +32,9 @@ import           System.IO.Unsafe           (unsafePerformIO)
 -- | Endpoint for simple GET requests. The server doesn't receive any arguments
 -- and serves the contained type as JSON.
 data Get a
+
+-- | Endpoint for POST requests.
+data Post a
 
 -- | The contained API (second argument) can be found under @("/" ++ path)@
 -- (path being the first argument).
@@ -74,18 +78,33 @@ instance ToJSON result => HasServer (Get result) where
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | otherwise = return Nothing
 
+instance ToJSON a => HasServer (Post a) where
+  type Server (Post a) = EitherT (Int, String) IO a
+
+  route Proxy action request
+    | null (pathInfo request) && requestMethod request == methodPost = do
+        e <- runEitherT action
+        return $ Just $ case e of
+          Right out ->
+            responseLBS status201 [("Content-Type", "application/json")] (encode out)
+          Left (status, message) ->
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | otherwise = return Nothing
+
 instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout) where
-  type Server (path :> sublayout) = path :> (Server sublayout)
-  route Proxy (path :> subserver) request = case pathInfo request of
+  type Server (path :> sublayout) = Server sublayout
+  route Proxy subserver request = case pathInfo request of
     (first : rest)
-      | first == cs (symbolVal path)
+      | first == cs (symbolVal proxyPath)
       -> route (Proxy :: Proxy sublayout) subserver request{
            pathInfo = rest
          }
     _ -> return Nothing
 
+    where proxyPath = Proxy :: Proxy path
+
 instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
-  type Server (a :<|> b) = (Server a :<|> Server b)
+  type Server (a :<|> b) = Server a :<|> Server b
   route Proxy (a :<|> b) request = do
     m <- route (Proxy :: Proxy a) a request
     case m of
@@ -124,15 +143,37 @@ instance FromJSON result => HasClient (Get result) where
     maybe (left "HTTP GET request returned invalid json") return $
       decode' (Http.Client.responseBody innerResponse)
 
+instance FromJSON a => HasClient (Post a) where
+  type Client (Post a) = ByteString -> URI -> EitherT String IO a
+
+  clientWithRoute Proxy path rqbody uri = do
+    partialRequest <- liftIO . Http.Client.parseUrl $
+      show ( nullURI { uriPath = path }
+             `relativeTo` uri
+           )
+
+    let request = partialRequest 
+          { Http.Client.method = methodPost
+          , Http.Client.requestBody = Http.Client.RequestBodyLBS rqbody
+          }
+
+    innerResponse <- liftIO . __withGlobalManager $ \ manager ->
+      Http.Client.httpLbs request manager
+
+    when (Http.Client.responseStatus innerResponse /= status201) $
+      left ("HTTP POST request failed with status: " ++ show (Http.Client.responseStatus innerResponse))
+
+    maybe (left "HTTP POST request returned invalid json") return $
+      decode' (Http.Client.responseBody innerResponse)
+
 instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where
-  type Client (path :> sublayout) = path :> (Client sublayout)
+  type Client (path :> sublayout) = Client sublayout
   clientWithRoute Proxy path =
-    (Proxy :: Proxy path) :>
      clientWithRoute (Proxy :: Proxy sublayout)
        (path ++ "/" ++ (symbolVal (Proxy :: Proxy path)))
 
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
-  type Client (a :<|> b) = (Client a :<|> Client b)
+  type Client (a :<|> b) = Client a :<|> Client b
   clientWithRoute Proxy path =
     clientWithRoute (Proxy :: Proxy a) path :<|>
     clientWithRoute (Proxy :: Proxy b) path
