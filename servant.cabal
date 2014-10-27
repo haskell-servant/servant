@@ -20,6 +20,7 @@ library
     Servant.API
     Servant.API.Capture
     Servant.API.Delete
+    Servant.API.Elem
     Servant.API.Get
     Servant.API.Post
     Servant.API.Put

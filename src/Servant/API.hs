@@ -27,10 +27,13 @@ module Servant.API (
   -- * Utilities
   -- | QuasiQuotes for endpoints
   module Servant.API.QQ,
+  -- | Type-safe internal URLs
+  module Servant.API.Elem,
   ) where
 
 import Servant.API.Capture
 import Servant.API.Delete
+import Servant.API.Elem (mkLink)
 import Servant.API.Get
 import Servant.API.Post
 import Servant.API.Put

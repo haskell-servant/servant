@@ -12,7 +12,6 @@ module Servant.API.QQSpec where
 import Test.Hspec
 
 import Servant.API
-{-import Servant.API.QQ-}
 
 --------------------------------------------------------------------------
 -- Types for testing
