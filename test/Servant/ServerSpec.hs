@@ -10,6 +10,7 @@ module Servant.ServerSpec where
 
 import Data.Aeson
 import Data.Proxy
+import Data.String.Conversions
 import GHC.Generics
 import Network.HTTP.Types
 import Network.Wai
@@ -20,6 +21,7 @@ import Test.Hspec.Wai
 import Servant.API.Get
 import Servant.API.GetParam
 import Servant.API.Post
+import Servant.API.Raw
 import Servant.API.RQBody
 import Servant.API.Sub
 import Servant.API.Union
@@ -60,6 +62,7 @@ spec = do
   getSpec
   getParamSpec
   postSpec
+  rawSpec
   unionSpec
 
 
@@ -67,7 +70,8 @@ type GetApi = Get Person
 getApi :: Proxy GetApi
 getApi = Proxy
 
-getSpec :: Spec = do
+getSpec :: Spec
+getSpec = do
   describe "Servant.API.Get" $ do
     with (return (serve getApi (return alice))) $ do
       it "allows to GET a Person" $ do
@@ -116,6 +120,32 @@ postSpec = do
         post "/" (encode alice) `shouldRespondWith` "42"{
           matchStatus = 201
          }
+
+
+type RawApi = "foo" :> Raw
+rawApi :: Proxy RawApi
+rawApi = Proxy
+rawApplication :: Show a => (Request -> a) -> Application
+rawApplication f request respond = respond $ responseLBS ok200 [] (cs $ show $ f request)
+
+rawSpec :: Spec
+rawSpec = do
+  describe "Servant.API.Raw" $ do
+    it "runs applications" $ do
+      (flip runSession) (serve rawApi (rawApplication (const (42 :: Integer)))) $ do
+        response <- Network.Wai.Test.request defaultRequest{
+          pathInfo = ["foo"]
+         }
+        liftIO $ do
+          simpleBody response `shouldBe` "42"
+
+    it "gets the pathInfo unmodified" $ do
+      (flip runSession) (serve rawApi (rawApplication pathInfo)) $ do
+        response <- Network.Wai.Test.request defaultRequest{
+          pathInfo = ["foo"]
+         }
+        liftIO $ do
+          simpleBody response `shouldBe` cs (show ["foo" :: String])
 
 
 type UnionApi =

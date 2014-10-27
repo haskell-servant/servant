@@ -26,14 +26,14 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
   type Server (Capture capture a :> sublayout) =
      a -> Server sublayout
 
-  route Proxy subserver request = case pathInfo request of
+  route Proxy subserver globalPathInfo request respond = case pathInfo request of
     (first : rest)
       -> case captured captureProxy first of
-           Nothing  -> return Nothing
-           Just v   -> route (Proxy :: Proxy sublayout) (subserver v) request{
+           Nothing  -> respond Nothing
+           Just v   -> route (Proxy :: Proxy sublayout) (subserver v) globalPathInfo request{
                          pathInfo = rest
-                       }
-    _ -> return Nothing
+                       } respond
+    _ -> respond Nothing
 
     where captureProxy = Proxy :: Proxy (Capture capture a)
 

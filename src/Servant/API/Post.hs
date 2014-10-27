@@ -22,15 +22,15 @@ data Post a
 instance ToJSON a => HasServer (Post a) where
   type Server (Post a) = EitherT (Int, String) IO a
 
-  route Proxy action request
+  route Proxy action _globalPathInfo request respond
     | null (pathInfo request) && requestMethod request == methodPost = do
         e <- runEitherT action
-        return $ Just $ case e of
+        respond $ Just $ case e of
           Right out ->
             responseLBS status201 [("Content-Type", "application/json")] (encode out)
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | otherwise = return Nothing
+    | otherwise = respond Nothing
 
 instance FromJSON a => HasClient (Post a) where
   type Client (Post a) = URI -> EitherT String IO a

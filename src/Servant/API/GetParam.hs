@@ -25,7 +25,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
   type Server (GetParam sym a :> sublayout) =
     Maybe a -> Server sublayout
 
-  route Proxy subserver request = do
+  route Proxy subserver globalPathInfo request respond = do
     let querytext = parseQueryText $ rawQueryString request
         param =
           case lookup paramName querytext of
@@ -34,7 +34,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
             Just (Just v) -> fromText v -- if present, we try to convert to
                                         -- the right type
 
-    route (Proxy :: Proxy sublayout) (subserver param) request
+    route (Proxy :: Proxy sublayout) (subserver param) globalPathInfo request respond
 
     where paramName = cs $ symbolVal (Proxy :: Proxy sym)
 
