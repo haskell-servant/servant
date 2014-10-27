@@ -1,6 +1,9 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Servant.Text where
 
+import Data.String.Conversions
 import Data.Text
 
 class FromText a where
@@ -14,6 +17,12 @@ instance FromText Text where
 
 instance ToText Text where
   toText = id
+
+instance FromText String where
+  fromText = Just . cs
+
+instance ToText String where
+  toText = cs
 
 instance FromText Bool where
   fromText "true"  = Just True

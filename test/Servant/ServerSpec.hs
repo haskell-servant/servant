@@ -11,11 +11,14 @@ module Servant.ServerSpec where
 import Data.Aeson
 import Data.Proxy
 import GHC.Generics
+import Network.HTTP.Types
+import Network.Wai
 import Network.Wai.Test
 import Test.Hspec
-import Test.Hspec.Wai as Wai
+import Test.Hspec.Wai
 
 import Servant.API.Get
+import Servant.API.GetParam
 import Servant.API.Post
 import Servant.API.RQBody
 import Servant.API.Sub
@@ -55,6 +58,7 @@ jerry = Animal "Mouse" 4
 spec :: Spec
 spec = do
   getSpec
+  getParamSpec
   postSpec
   unionSpec
 
@@ -74,6 +78,30 @@ getSpec :: Spec = do
 
       it "throws 404 on POSTs" $ do
         post "/" "" `shouldRespondWith` 404
+
+
+type GetParamApi = GetParam "name" String :> Get Person
+getParamApi :: Proxy GetParamApi
+getParamApi = Proxy
+
+getParamServer :: Server GetParamApi
+getParamServer (Just name) = return alice{name = name}
+getParamServer Nothing = return alice
+
+getParamSpec :: Spec
+getParamSpec = do
+  describe "Servant.API.GetParam" $ do
+    it "allows to retrieve GET parameters" $ do
+      (flip runSession) (serve getParamApi getParamServer) $ do
+        let params = "?name=bob"
+        response <- Network.Wai.Test.request defaultRequest{
+          rawQueryString = params,
+          queryString = parseQuery params
+         }
+        liftIO $ do
+          decode' (simpleBody response) `shouldBe` Just alice{
+            name = "bob"
+           }
 
 
 type PostApi = RQBody Person :> (Post Integer)
