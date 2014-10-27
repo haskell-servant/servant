@@ -8,7 +8,6 @@ module Servant.API.RQBody where
 import Control.Applicative
 import Data.Aeson
 import Data.Proxy
-import Data.Text
 import Network.Wai
 import Servant.API.Sub
 import Servant.Client
