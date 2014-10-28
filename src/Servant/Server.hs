@@ -1,5 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
+
+-- | This module lets you implement 'Server's for defined APIs.  You will
+-- probably need 'serve' (and look at the 'HasServer' type family), but
+-- 'toApplication' and 'route' are rather internals.
+
 module Servant.Server where
 
 import Data.Proxy
