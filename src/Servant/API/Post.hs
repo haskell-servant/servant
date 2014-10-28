@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Servant.API.Post where
 
 import Control.Monad
@@ -12,6 +13,7 @@ import Network.HTTP.Types
 import Network.URI
 import Network.Wai
 import Servant.Client
+import Servant.Docs
 import Servant.Server
 
 import qualified Network.HTTP.Client as Client
@@ -49,3 +51,14 @@ instance FromJSON a => HasClient (Post a) where
 
     maybe (left "HTTP POST request returned invalid json") return $
       decode' (Client.responseBody innerResponse)
+
+instance ToSample a => HasDocs (Post a) where
+  docsFor Proxy (endpoint, action) =
+    single endpoint' action'
+
+    where endpoint' = endpoint & method .~ DocPOST
+
+          action' = action & response.respBody .~ toSample p
+                           & response.respStatus .~ 201
+
+          p = Proxy :: Proxy a

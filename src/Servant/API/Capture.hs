@@ -1,6 +1,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.API.Capture where
@@ -11,6 +12,7 @@ import GHC.TypeLits
 import Network.Wai
 import Servant.API.Sub
 import Servant.Client
+import Servant.Docs
 import Servant.Server
 import Servant.Text
 
@@ -48,3 +50,16 @@ instance (KnownSymbol capture, ToText a, HasClient sublayout)
       appendToPath p req
 
     where p = unpack (toText val)
+
+instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
+      => HasDocs (Capture sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          captureP = Proxy :: Proxy (Capture sym a)
+
+          action' = over captures (|> toCapture captureP) action
+          endpoint' = over path (\p -> p++"/:"++symbolVal symP) endpoint
+          symP = Proxy :: Proxy sym

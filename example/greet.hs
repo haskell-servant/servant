@@ -3,7 +3,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 import Control.Concurrent (forkIO, killThread)
 import Control.Monad.Trans.Either
@@ -18,15 +20,30 @@ import Network.Wai.Handler.Warp
 
 import Servant.API
 import Servant.Client
+import Servant.Docs
 import Servant.Server
 
 -- * Example
 
-data Greet = Greet { msg :: Text }
+data Greet = Greet { _msg :: Text }
   deriving (Generic, Show)
 
 instance FromJSON Greet
 instance ToJSON Greet
+
+instance ToCapture (Capture "name" Text) where
+  toCapture _ = DocCapture "name" "name of the person to greet"
+
+instance ToParam (GetParam "capital" Bool) where
+  toParam _ =
+    DocGetParam "capital"
+                ["true", "false"]
+                "Get the greeting message in uppercase (true) or not (false). Default is false."
+
+instance ToSample Greet where
+  toSample Proxy = Just (encode g)
+
+    where g = Greet "Hello, haskeller!"
 
 -- API specification
 type TestApi = 
@@ -58,6 +75,9 @@ getGreet :<|> postGreet = clientApi
 test :: Application
 test = serve testApi server
 
+docsGreet :: API
+docsGreet = docs testApi
+
 -- Run the server
 runTestServer :: Port -> IO ()
 runTestServer port = run port test
@@ -72,3 +92,5 @@ main = do
   let g = Greet "yo"
   print =<< runEitherT (postGreet g uri)
   killThread tid
+  putStrLn "\n---------\n"
+  printMarkdown docsGreet
