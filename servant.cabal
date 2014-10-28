@@ -25,6 +25,7 @@ library
     Servant.API.Get
     Servant.API.GetParam
     Servant.API.Post
+    Servant.API.Put
     Servant.API.Raw
     Servant.API.RQBody
     Servant.API.Sub
