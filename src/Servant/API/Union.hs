@@ -16,11 +16,9 @@ instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
   type Server (a :<|> b) = Server a :<|> Server b
   route Proxy (a :<|> b) request respond =
     route pa a request $ \ mResponse ->
-      case isMismatch mResponse of
-        True  -> route pb b request $ \mResponse' ->
-                   respond (mResponse <> mResponse')
-        False -> respond mResponse
-
+      if isMismatch mResponse
+        then route pb b request $ \mResponse' -> respond (mResponse <> mResponse')
+        else respond mResponse
 
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b

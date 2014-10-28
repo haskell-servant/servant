@@ -27,6 +27,8 @@ toApplication ra request respond = do
     respond $ responseLBS notFound404 [] "not found"
   routingRespond (Left WrongMethod) =
     respond $ responseLBS methodNotAllowed405 [] "method not allowed"
+  routingRespond (Left InvalidBody) =
+    respond $ responseLBS badRequest400 [] "Invalid JSON in request body"
   routingRespond (Right response) =
     respond response
 
@@ -34,18 +36,25 @@ toApplication ra request respond = do
 data RouteMismatch =
     NotFound    -- ^ the usual "not found" error
   | WrongMethod -- ^ a more informative "you just got the HTTP method wrong" error
+  | InvalidBody -- ^ an even more informative "you json request body wasn't valid" error
   deriving (Eq, Show)
 
 -- | 
 -- @
--- 'NotFound'    <> x = x
--- 'WrongMethod' <> _ = 'WrongMethod'
+-- > mempty = NotFound
+-- >
+-- > NotFound    `mappend`           x = x
+-- > WrongMethod `mappend` InvalidBody = InvalidBody
+-- > WrongMethod `mappend`           _ = WrongMethod
+-- > InvalidBody `mappend`           _ = InvalidBody
 -- @
 instance Monoid RouteMismatch where
   mempty = NotFound
 
-  NotFound `mappend` x = x
-  WrongMethod `mappend` _ = WrongMethod
+  NotFound    `mappend`           x = x
+  WrongMethod `mappend` InvalidBody = InvalidBody
+  WrongMethod `mappend`           _ = WrongMethod
+  InvalidBody `mappend`           _ = InvalidBody
 
 -- | A wrapper around @'Either' 'RouteMismatch' a@.
 newtype RouteResult a =
