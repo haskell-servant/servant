@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Servant.Text where
+module Servant.Utils.Text where
 
 import Data.String.Conversions
 import Data.Text

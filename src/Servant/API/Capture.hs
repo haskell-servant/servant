@@ -14,7 +14,7 @@ import Servant.API.Sub
 import Servant.Client
 import Servant.Docs
 import Servant.Server
-import Servant.Text
+import Servant.Utils.Text
 
 -- * Captures
 data Capture sym a

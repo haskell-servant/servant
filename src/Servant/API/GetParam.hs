@@ -16,7 +16,7 @@ import Servant.API.Sub
 import Servant.Client
 import Servant.Docs
 import Servant.Server
-import Servant.Text
+import Servant.Utils.Text
 
 -- * GET params support (i.e query string arguments)
 data GetParam sym a

@@ -18,7 +18,6 @@ library
     Servant.Client
     Servant.Docs
     Servant.Server
-    Servant.Text
     Servant.API
     Servant.API.Capture
     Servant.API.Delete
@@ -30,6 +29,7 @@ library
     Servant.API.RQBody
     Servant.API.Sub
     Servant.API.Union
+    Servant.Utils.Text
   -- other-modules:       
   -- other-extensions:    
   build-depends:

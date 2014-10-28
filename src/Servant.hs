@@ -10,11 +10,11 @@ module Servant (
   -- | For generating documentation for servant APIs.
   module Servant.Docs,
   -- | Helper module
-  module Servant.Text,
+  module Servant.Utils.Text,
   ) where
 
 import Servant.API
 import Servant.Client
 import Servant.Docs
 import Servant.Server
-import Servant.Text
+import Servant.Utils.Text
