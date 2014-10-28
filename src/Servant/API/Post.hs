@@ -16,7 +16,9 @@ import Servant.Server
 
 import qualified Network.HTTP.Client as Client
 
--- | Endpoint for POST requests.
+-- | Endpoint for POST requests. The type variable represents the type of the
+-- response body (not the request body, use 'Servant.API.RQBody.RQBody' for
+-- that).
 data Post a
 
 instance ToJSON a => HasServer (Post a) where
