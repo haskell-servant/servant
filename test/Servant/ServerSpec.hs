@@ -22,10 +22,10 @@ import Test.Hspec.Wai
 
 import Servant.API.Capture
 import Servant.API.Get
+import Servant.API.JsonBody
 import Servant.API.Post
 import Servant.API.QueryParam
 import Servant.API.Raw
-import Servant.API.RQBody
 import Servant.API.Sub
 import Servant.API.Union
 import Servant.Server
@@ -141,13 +141,13 @@ queryParamSpec = do
            }
 
 
-type PostApi = RQBody Person :> (Post Integer)
+type PostApi = JsonBody Person :> Post Integer
 postApi :: Proxy PostApi
 postApi = Proxy
 
 postSpec :: Spec
 postSpec = do
-  describe "Servant.API.Post and .RQBody" $ do
+  describe "Servant.API.Post and .JsonBody" $ do
     with (return (serve postApi (return . age))) $ do
       it "allows to POST a Person" $ do
         post "/" (encode alice) `shouldRespondWith` "42"{

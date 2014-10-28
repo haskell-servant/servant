@@ -22,11 +22,11 @@ library
     Servant.API.Capture
     Servant.API.Delete
     Servant.API.Get
+    Servant.API.JsonBody
     Servant.API.Post
     Servant.API.Put
     Servant.API.QueryParam
     Servant.API.Raw
-    Servant.API.RQBody
     Servant.API.Sub
     Servant.API.Union
     Servant.Utils.Text

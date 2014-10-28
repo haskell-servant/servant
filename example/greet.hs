@@ -51,7 +51,7 @@ instance ToSample Greet where
 -- API specification
 type TestApi = 
        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
-  :<|> "greet" :> RQBody Greet :> Post Greet
+  :<|> "greet" :> JsonBody Greet :> Post Greet
   :<|> "delete" :> Capture "greetid" Text :> Delete
 
 testApi :: Proxy TestApi
