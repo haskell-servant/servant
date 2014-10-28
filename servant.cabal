@@ -21,6 +21,7 @@ library
     Servant.Text
     Servant.API
     Servant.API.Capture
+    Servant.API.Delete
     Servant.API.Get
     Servant.API.GetParam
     Servant.API.Post

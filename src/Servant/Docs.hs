@@ -398,6 +398,6 @@ printMarkdown = imapM_ printEndpoint
           putStrLn $ ""
           putStrLn $ " - Status code " ++ show (resp ^. respStatus)
           resp ^. respBody &
-            maybe (putStrLn " - No response body")
+            maybe (putStrLn " - No response body\n")
                   (\b -> putStrLn " - Response body as below." >> jsonStr b)
           

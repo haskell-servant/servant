@@ -34,6 +34,9 @@ instance ToJSON Greet
 instance ToCapture (Capture "name" Text) where
   toCapture _ = DocCapture "name" "name of the person to greet"
 
+instance ToCapture (Capture "greetid" Text) where
+  toCapture _ = DocCapture "greetid" "identifier of the greet msg to remove"
+
 instance ToParam (GetParam "capital" Bool) where
   toParam _ =
     DocGetParam "capital"
@@ -49,13 +52,14 @@ instance ToSample Greet where
 type TestApi = 
        "hello" :> Capture "name" Text :> GetParam "capital" Bool :> Get Greet
   :<|> "greet" :> RQBody Greet :> Post Greet
+  :<|> "delete" :> Capture "greetid" Text :> Delete
 
 testApi :: Proxy TestApi
 testApi = Proxy
 
 -- Server-side handlers
 server :: Server TestApi
-server = hello :<|> greet
+server = hello :<|> greet :<|> delete
 
   where hello name Nothing = hello name (Just False)
         hello name (Just False) = return . Greet $ "Hello, " <> name
@@ -63,18 +67,22 @@ server = hello :<|> greet
 
         greet = return
 
+        delete _ = return ()
+
 -- Client-side query functions
 clientApi :: Client TestApi
 clientApi = client testApi
 
 getGreet :: Text -> Maybe Bool -> URI -> EitherT String IO Greet
 postGreet :: Greet -> URI -> EitherT String IO Greet
-getGreet :<|> postGreet = clientApi
+deleteGreet :: Text -> URI -> EitherT String IO ()
+getGreet :<|> postGreet :<|> deleteGreet = clientApi
 
 -- Turn the server into a WAI app
 test :: Application
 test = serve testApi server
 
+-- Documentation
 docsGreet :: API
 docsGreet = docs testApi
 
@@ -91,6 +99,7 @@ main = do
   print =<< runEitherT (getGreet "alp" (Just False) uri)
   let g = Greet "yo"
   print =<< runEitherT (postGreet g uri)
+  print =<< runEitherT (deleteGreet "blah" uri)
   killThread tid
   putStrLn "\n---------\n"
   printMarkdown docsGreet
