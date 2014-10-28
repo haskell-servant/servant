@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Servant.API.JsonBody where
+module Servant.API.ReqBody where
 
 import Control.Applicative
 import Data.Aeson
@@ -15,12 +15,12 @@ import Servant.Docs
 import Servant.Server
 
 -- * Request Body support
-data JsonBody a
+data ReqBody a
 
 instance (FromJSON a, HasServer sublayout)
-      => HasServer (JsonBody a :> sublayout) where
+      => HasServer (ReqBody a :> sublayout) where
 
-  type Server (JsonBody a :> sublayout) =
+  type Server (ReqBody a :> sublayout) =
     a -> Server sublayout
 
   route Proxy subserver request respond = do
@@ -30,9 +30,9 @@ instance (FromJSON a, HasServer sublayout)
       Just v  -> route (Proxy :: Proxy sublayout) (subserver v) request respond
 
 instance (ToJSON a, HasClient sublayout)
-      => HasClient (JsonBody a :> sublayout) where
+      => HasClient (ReqBody a :> sublayout) where
 
-  type Client (JsonBody a :> sublayout) =
+  type Client (ReqBody a :> sublayout) =
     a -> Client sublayout
 
   clientWithRoute Proxy req body =
@@ -40,7 +40,7 @@ instance (ToJSON a, HasClient sublayout)
       setRQBody (encode body) req
 
 instance (ToSample a, HasDocs sublayout)
-      => HasDocs (JsonBody a :> sublayout) where
+      => HasDocs (ReqBody a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =
     docsFor sublayoutP (endpoint, action')
