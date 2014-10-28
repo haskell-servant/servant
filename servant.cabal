@@ -26,6 +26,7 @@ library
     Servant.API.Put
     Servant.API.QueryParam
     Servant.API.ReqBody
+    Servant.API.QQ
     Servant.API.Raw
     Servant.API.Sub
     Servant.API.Union
@@ -39,12 +40,14 @@ library
     , bytestring
     , exceptions
     , string-conversions
+    , split
     , http-client
     , http-types
     , network-uri
     , wai
     , warp
     , transformers
+    , template-haskell
     , text
     , lens
     , unordered-containers
