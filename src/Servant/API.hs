@@ -1,17 +1,17 @@
 module Servant.API (
 
   -- * Combinators
-  -- | Type-level combinator for expressing routing, captures, get parameters, etc.
+  -- | Type-level combinator for expressing subrouting: @':>'@
   module Servant.API.Sub,
-  -- | Type-level combinator for alternative endpoints
+  -- | Type-level combinator for alternative endpoints: @':<|>'@
   module Servant.API.Union,
 
   -- * Accessing information from the request
-  -- | Capturing parts of the url path as parsed values
+  -- | Capturing parts of the url path as parsed values: @'Capture'@
   module Servant.API.Capture,
-  -- | Retrieving parameters from the query part of the 'URI'
+  -- | Retrieving parameters from the query part of the 'URI': @'GetParam'@
   module Servant.API.GetParam,
-  -- | Accessing the request's body
+  -- | Accessing the request's body: @'RQBody'@
   module Servant.API.RQBody,
 
   -- * Actual endpoints, distinguished by HTTP method
