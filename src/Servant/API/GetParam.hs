@@ -1,6 +1,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.API.GetParam where
@@ -13,6 +14,7 @@ import Network.HTTP.Types
 import Network.Wai
 import Servant.API.Sub
 import Servant.Client
+import Servant.Docs
 import Servant.Server
 import Servant.Text
 
@@ -28,7 +30,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
   route Proxy subserver globalPathInfo request respond = do
     let querytext = parseQueryText $ rawQueryString request
         param =
-          case lookup paramName querytext of
+          case lookup paramname querytext of
             Nothing       -> Nothing -- param absent from the query string
             Just Nothing  -> Nothing -- param present with no value -> Nothing
             Just (Just v) -> fromText v -- if present, we try to convert to
@@ -36,7 +38,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 
     route (Proxy :: Proxy sublayout) (subserver param) globalPathInfo request respond
 
-    where paramName = cs $ symbolVal (Proxy :: Proxy sym)
+    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, ToText a, HasClient sublayout)
       => HasClient (GetParam sym a :> sublayout) where
@@ -52,3 +54,13 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
     where pname  = pack pname'
           pname' = symbolVal (Proxy :: Proxy sym)
           mparamText = fmap toText mparam
+
+instance (KnownSymbol sym, ToParam (GetParam sym a), HasDocs sublayout)
+      => HasDocs (GetParam sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint, action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          paramP = Proxy :: Proxy (GetParam sym a)
+          action' = over params (|> toParam paramP) action

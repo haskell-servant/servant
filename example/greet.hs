@@ -3,7 +3,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 import Control.Concurrent (forkIO, killThread)
 import Control.Monad.Trans.Either
@@ -18,27 +20,46 @@ import Network.Wai.Handler.Warp
 
 import Servant.API
 import Servant.Client
+import Servant.Docs
 import Servant.Server
 
 -- * Example
 
-data Greet = Greet { msg :: Text }
+data Greet = Greet { _msg :: Text }
   deriving (Generic, Show)
 
 instance FromJSON Greet
 instance ToJSON Greet
 
+instance ToCapture (Capture "name" Text) where
+  toCapture _ = DocCapture "name" "name of the person to greet"
+
+instance ToCapture (Capture "greetid" Text) where
+  toCapture _ = DocCapture "greetid" "identifier of the greet msg to remove"
+
+instance ToParam (GetParam "capital" Bool) where
+  toParam _ =
+    DocGetParam "capital"
+                ["true", "false"]
+                "Get the greeting message in uppercase (true) or not (false). Default is false."
+
+instance ToSample Greet where
+  toSample Proxy = Just (encode g)
+
+    where g = Greet "Hello, haskeller!"
+
 -- API specification
 type TestApi = 
        "hello" :> Capture "name" Text :> GetParam "capital" Bool :> Get Greet
   :<|> "greet" :> RQBody Greet :> Post Greet
+  :<|> "delete" :> Capture "greetid" Text :> Delete
 
 testApi :: Proxy TestApi
 testApi = Proxy
 
 -- Server-side handlers
 server :: Server TestApi
-server = hello :<|> greet
+server = hello :<|> greet :<|> delete
 
   where hello name Nothing = hello name (Just False)
         hello name (Just False) = return . Greet $ "Hello, " <> name
@@ -46,17 +67,24 @@ server = hello :<|> greet
 
         greet = return
 
+        delete _ = return ()
+
 -- Client-side query functions
 clientApi :: Client TestApi
 clientApi = client testApi
 
 getGreet :: Text -> Maybe Bool -> URI -> EitherT String IO Greet
 postGreet :: Greet -> URI -> EitherT String IO Greet
-getGreet :<|> postGreet = clientApi
+deleteGreet :: Text -> URI -> EitherT String IO ()
+getGreet :<|> postGreet :<|> deleteGreet = clientApi
 
 -- Turn the server into a WAI app
 test :: Application
 test = serve testApi server
+
+-- Documentation
+docsGreet :: API
+docsGreet = docs testApi
 
 -- Run the server
 runTestServer :: Port -> IO ()
@@ -71,4 +99,7 @@ main = do
   print =<< runEitherT (getGreet "alp" (Just False) uri)
   let g = Greet "yo"
   print =<< runEitherT (postGreet g uri)
+  print =<< runEitherT (deleteGreet "blah" uri)
   killThread tid
+  putStrLn "\n---------\n"
+  printMarkdown docsGreet

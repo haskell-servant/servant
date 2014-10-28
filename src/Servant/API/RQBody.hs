@@ -11,6 +11,7 @@ import Data.Proxy
 import Network.Wai
 import Servant.API.Sub
 import Servant.Client
+import Servant.Docs
 import Servant.Server
 
 -- * Request Body support
@@ -37,3 +38,14 @@ instance (ToJSON a, HasClient sublayout)
   clientWithRoute Proxy req body =
     clientWithRoute (Proxy :: Proxy sublayout) $
       setRQBody (encode body) req
+
+instance (ToSample a, HasDocs sublayout)
+      => HasDocs (RQBody a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint, action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+
+          action' = action & rqbody .~ toSample p
+          p = Proxy :: Proxy a

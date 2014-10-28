@@ -9,6 +9,7 @@ import Data.String.Conversions
 import GHC.TypeLits
 import Network.Wai
 import Servant.Client
+import Servant.Docs
 import Servant.Server
 
 -- | The contained API (second argument) can be found under @("/" ++ path)@
@@ -37,3 +38,11 @@ instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout
 
     where p = symbolVal (Proxy :: Proxy path)
 
+instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action)
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          endpoint' = endpoint & path <>~ symbolVal pa
+          pa = Proxy :: Proxy path

@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Servant.API.Post where
+module Servant.API.Put where
 
 import Control.Monad
 import Control.Monad.IO.Class
@@ -18,49 +18,47 @@ import Servant.Server
 
 import qualified Network.HTTP.Client as Client
 
--- | Endpoint for POST requests. The type variable represents the type of the
--- response body (not the request body, use 'Servant.API.RQBody.RQBody' for
--- that).
-data Post a
+-- | Endpoint for PUT requests.
+data Put a
 
-instance ToJSON a => HasServer (Post a) where
-  type Server (Post a) = EitherT (Int, String) IO a
+instance ToJSON a => HasServer (Put a) where
+  type Server (Put a) = EitherT (Int, String) IO a
 
   route Proxy action _globalPathInfo request respond
-    | null (pathInfo request) && requestMethod request == methodPost = do
+    | null (pathInfo request) && requestMethod request == methodPut = do
         e <- runEitherT action
         respond $ Just $ case e of
           Right out ->
-            responseLBS status201 [("Content-Type", "application/json")] (encode out)
+            responseLBS ok200 [("Content-Type", "application/json")] (encode out)
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | otherwise = respond Nothing
 
-instance FromJSON a => HasClient (Post a) where
-  type Client (Post a) = URI -> EitherT String IO a
+instance FromJSON a => HasClient (Put a) where
+  type Client (Put a) = URI -> EitherT String IO a
 
   clientWithRoute Proxy req uri = do
     partialRequest <- liftIO $ reqToRequest req uri
 
-    let request = partialRequest { Client.method = methodPost
+    let request = partialRequest { Client.method = methodPut
                                  }
 
     innerResponse <- liftIO . __withGlobalManager $ \ manager ->
       Client.httpLbs request manager
 
-    when (Client.responseStatus innerResponse /= status201) $
-      left ("HTTP POST request failed with status: " ++ show (Client.responseStatus innerResponse))
+    when (Client.responseStatus innerResponse /= ok200) $
+      left ("HTTP PUT request failed with status: " ++ show (Client.responseStatus innerResponse))
 
-    maybe (left "HTTP POST request returned invalid json") return $
+    maybe (left "HTTP PUT request returned invalid json") return $
       decode' (Client.responseBody innerResponse)
 
-instance ToSample a => HasDocs (Post a) where
+instance ToSample a => HasDocs (Put a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
-    where endpoint' = endpoint & method .~ DocPOST
+    where endpoint' = endpoint & method .~ DocPUT
 
           action' = action & response.respBody .~ toSample p
-                           & response.respStatus .~ 201
+                           & response.respStatus .~ 200
 
           p = Proxy :: Proxy a

@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Servant.API.Get where
 
 import Control.Monad
@@ -12,6 +13,7 @@ import Network.HTTP.Types
 import Network.URI
 import Network.Wai
 import Servant.Client
+import Servant.Docs
 import Servant.Server
 
 import qualified Network.HTTP.Client as Client
@@ -43,3 +45,11 @@ instance FromJSON result => HasClient (Get result) where
       left ("HTTP GET request failed with status: " ++ show (Client.responseStatus innerResponse))
     maybe (left "HTTP GET request returned invalid json") return $
       decode' (Client.responseBody innerResponse)
+
+instance ToSample a => HasDocs (Get a) where
+  docsFor Proxy (endpoint, action) =
+    single endpoint' action'
+
+    where endpoint' = endpoint & method .~ DocGET
+          action' = action & response.respBody .~ toSample p
+          p = Proxy :: Proxy a

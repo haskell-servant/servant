@@ -19,12 +19,18 @@ module Servant.API (
   module Servant.API.Get,
   -- | POST requests
   module Servant.API.Post,
+  -- | DELETE requests
+  module Servant.API.Delete,
+  -- | PUT requests
+  module Servant.API.Put,
   ) where
 
 import Servant.API.Capture
+import Servant.API.Delete
 import Servant.API.Get
 import Servant.API.GetParam
 import Servant.API.Post
+import Servant.API.Put
 import Servant.API.RQBody
 import Servant.API.Sub
 import Servant.API.Union
