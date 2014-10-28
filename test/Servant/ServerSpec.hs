@@ -154,6 +154,9 @@ postSpec = do
           matchStatus = 201
          }
 
+      it "correctly rejects invalid request bodies with status 400" $ do
+        post "/" "some invalid body" `shouldRespondWith` 400
+
 
 type RawApi = "foo" :> Raw
 rawApi :: Proxy RawApi

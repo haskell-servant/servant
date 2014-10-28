@@ -36,7 +36,7 @@ toApplication ra request respond = do
 data RouteMismatch =
     NotFound    -- ^ the usual "not found" error
   | WrongMethod -- ^ a more informative "you just got the HTTP method wrong" error
-  | InvalidBody -- ^ an even more informative "you json request body wasn't valid" error
+  | InvalidBody -- ^ an even more informative "your json request body wasn't valid" error
   deriving (Eq, Show)
 
 -- | 
