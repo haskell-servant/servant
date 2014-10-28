@@ -164,13 +164,13 @@ rawSpec = do
         liftIO $ do
           simpleBody response `shouldBe` "42"
 
-    it "gets the pathInfo unmodified" $ do
+    it "gets the pathInfo modified" $ do
       (flip runSession) (serve rawApi (rawApplication pathInfo)) $ do
         response <- Network.Wai.Test.request defaultRequest{
-          pathInfo = ["foo"]
+          pathInfo = ["foo", "bar"]
          }
         liftIO $ do
-          simpleBody response `shouldBe` cs (show ["foo" :: String])
+          simpleBody response `shouldBe` cs (show ["bar" :: String])
 
 
 type UnionApi =

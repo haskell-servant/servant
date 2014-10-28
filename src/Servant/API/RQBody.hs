@@ -23,11 +23,11 @@ instance (FromJSON a, HasServer sublayout)
   type Server (RQBody a :> sublayout) =
     a -> Server sublayout
 
-  route Proxy subserver globalPathInfo request respond = do
+  route Proxy subserver request respond = do
     mrqbody <- decode' <$> lazyRequestBody request
     case mrqbody of
       Nothing -> respond Nothing
-      Just v  -> route (Proxy :: Proxy sublayout) (subserver v) globalPathInfo request respond
+      Just v  -> route (Proxy :: Proxy sublayout) (subserver v) request respond
 
 instance (ToJSON a, HasClient sublayout)
       => HasClient (RQBody a :> sublayout) where

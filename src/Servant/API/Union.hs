@@ -14,10 +14,10 @@ infixr 8 :<|>
 
 instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
   type Server (a :<|> b) = Server a :<|> Server b
-  route Proxy (a :<|> b) globalPathInfo request respond = do
-    route (Proxy :: Proxy a) a globalPathInfo request $ \ mResponse ->
+  route Proxy (a :<|> b) request respond = do
+    route (Proxy :: Proxy a) a request $ \ mResponse ->
       case mResponse of
-        Nothing -> route (Proxy :: Proxy b) b globalPathInfo request respond
+        Nothing -> route (Proxy :: Proxy b) b request respond
         Just resp -> respond $ Just resp
 
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where

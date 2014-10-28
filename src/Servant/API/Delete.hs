@@ -23,7 +23,7 @@ data Delete
 instance HasServer Delete where
   type Server Delete = EitherT (Int, String) IO ()
 
-  route Proxy action _globalPathInfo request respond
+  route Proxy action request respond
     | null (pathInfo request) && requestMethod request == methodDelete = do
         e <- runEitherT action
         respond $ Just $ case e of

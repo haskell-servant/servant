@@ -26,7 +26,7 @@ data Post a
 instance ToJSON a => HasServer (Post a) where
   type Server (Post a) = EitherT (Int, String) IO a
 
-  route Proxy action _globalPathInfo request respond
+  route Proxy action request respond
     | null (pathInfo request) && requestMethod request == methodPost = do
         e <- runEitherT action
         respond $ Just $ case e of

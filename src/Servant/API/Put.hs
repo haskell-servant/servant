@@ -24,7 +24,7 @@ data Put a
 instance ToJSON a => HasServer (Put a) where
   type Server (Put a) = EitherT (Int, String) IO a
 
-  route Proxy action _globalPathInfo request respond
+  route Proxy action request respond
     | null (pathInfo request) && requestMethod request == methodPut = do
         e <- runEitherT action
         respond $ Just $ case e of

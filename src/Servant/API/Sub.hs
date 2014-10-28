@@ -19,10 +19,10 @@ infixr 9 :>
 
 instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout) where
   type Server (path :> sublayout) = Server sublayout
-  route Proxy subserver globalPathInfo request respond = case pathInfo request of
+  route Proxy subserver request respond = case pathInfo request of
     (first : rest)
       | first == cs (symbolVal proxyPath)
-      -> route (Proxy :: Proxy sublayout) subserver globalPathInfo request{
+      -> route (Proxy :: Proxy sublayout) subserver request{
            pathInfo = rest
          } respond
     _ -> respond Nothing
