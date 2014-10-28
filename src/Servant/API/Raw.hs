@@ -15,4 +15,4 @@ data Raw
 instance HasServer Raw where
   type Server Raw = Application
   route Proxy rawApplication request respond =
-    rawApplication request (respond . Just)
+    rawApplication request (respond . succeedWith)

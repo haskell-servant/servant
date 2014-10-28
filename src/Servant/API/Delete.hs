@@ -26,12 +26,14 @@ instance HasServer Delete where
   route Proxy action request respond
     | null (pathInfo request) && requestMethod request == methodDelete = do
         e <- runEitherT action
-        respond $ Just $ case e of
+        respond $ succeedWith $ case e of
           Right () ->
             responseLBS status204 [] ""
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | otherwise = respond Nothing
+    | null (pathInfo request) && requestMethod request /= methodDelete =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
 
 instance HasClient Delete where
   type Client Delete = URI -> EitherT String IO ()

@@ -26,7 +26,7 @@ instance (FromJSON a, HasServer sublayout)
   route Proxy subserver request respond = do
     mrqbody <- decode' <$> lazyRequestBody request
     case mrqbody of
-      Nothing -> respond Nothing
+      Nothing -> respond $ failWith NotFound
       Just v  -> route (Proxy :: Proxy sublayout) (subserver v) request respond
 
 instance (ToJSON a, HasClient sublayout)

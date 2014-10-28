@@ -14,11 +14,16 @@ infixr 8 :<|>
 
 instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
   type Server (a :<|> b) = Server a :<|> Server b
-  route Proxy (a :<|> b) request respond = do
-    route (Proxy :: Proxy a) a request $ \ mResponse ->
-      case mResponse of
-        Nothing -> route (Proxy :: Proxy b) b request respond
-        Just resp -> respond $ Just resp
+  route Proxy (a :<|> b) request respond =
+    route pa a request $ \ mResponse ->
+      case isMismatch mResponse of
+        True  -> route pb b request $ \mResponse' ->
+                   respond (mResponse <> mResponse')
+        False -> respond mResponse
+
+
+    where pa = Proxy :: Proxy a
+          pb = Proxy :: Proxy b
 
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
   type Client (a :<|> b) = Client a :<|> Client b

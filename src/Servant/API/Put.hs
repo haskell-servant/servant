@@ -27,12 +27,15 @@ instance ToJSON a => HasServer (Put a) where
   route Proxy action request respond
     | null (pathInfo request) && requestMethod request == methodPut = do
         e <- runEitherT action
-        respond $ Just $ case e of
+        respond . succeedWith $ case e of
           Right out ->
             responseLBS ok200 [("Content-Type", "application/json")] (encode out)
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | otherwise = respond Nothing
+    | null (pathInfo request) && requestMethod request /= methodPut =
+        respond $ failWith WrongMethod
+
+    | otherwise = respond $ failWith NotFound
 
 instance FromJSON a => HasClient (Put a) where
   type Client (Put a) = URI -> EitherT String IO a

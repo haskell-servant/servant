@@ -31,11 +31,11 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
   route Proxy subserver request respond = case pathInfo request of
     (first : rest)
       -> case captured captureProxy first of
-           Nothing  -> respond Nothing
+           Nothing  -> respond $ failWith NotFound
            Just v   -> route (Proxy :: Proxy sublayout) (subserver v) request{
                          pathInfo = rest
                        } respond
-    _ -> respond Nothing
+    _ -> respond $ failWith NotFound
 
     where captureProxy = Proxy :: Proxy (Capture capture a)
 

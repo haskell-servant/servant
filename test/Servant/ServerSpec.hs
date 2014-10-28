@@ -113,8 +113,8 @@ getSpec = do
         liftIO $ do
           decode' (simpleBody response) `shouldBe` Just alice
 
-      it "throws 404 on POSTs" $ do
-        post "/" "" `shouldRespondWith` 404
+      it "throws 405 (wrong method) on POSTs" $ do
+        post "/" "" `shouldRespondWith` 405
 
 
 type GetParamApi = GetParam "name" String :> Get Person

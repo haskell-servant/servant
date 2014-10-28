@@ -25,7 +25,7 @@ instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout
       -> route (Proxy :: Proxy sublayout) subserver request{
            pathInfo = rest
          } respond
-    _ -> respond Nothing
+    _ -> respond $ failWith NotFound
 
     where proxyPath = Proxy :: Proxy path
 
