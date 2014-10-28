@@ -5,6 +5,7 @@ module Servant.Text where
 
 import Data.String.Conversions
 import Data.Text
+import Text.Read
 
 class FromText a where
   fromText :: Text -> Maybe a
@@ -12,17 +13,20 @@ class FromText a where
 class ToText a where
   toText :: a -> Text
 
+
 instance FromText Text where
   fromText = Just
 
 instance ToText Text where
   toText = id
 
+
 instance FromText String where
   fromText = Just . cs
 
 instance ToText String where
   toText = cs
+
 
 instance FromText Bool where
   fromText "true"  = Just True
@@ -32,3 +36,10 @@ instance FromText Bool where
 instance ToText Bool where
   toText True  = "true"
   toText False = "false"
+
+
+instance FromText Integer where
+  fromText = readMaybe . cs
+
+instance ToText Integer where
+  toText = cs . show

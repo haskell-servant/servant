@@ -8,6 +8,7 @@
 module Servant.ServerSpec where
 
 
+import Control.Monad.Trans.Either
 import Data.Aeson
 import Data.Proxy
 import Data.String.Conversions
@@ -18,6 +19,7 @@ import Network.Wai.Test
 import Test.Hspec
 import Test.Hspec.Wai
 
+import Servant.API.Capture
 import Servant.API.Get
 import Servant.API.GetParam
 import Servant.API.Post
@@ -54,16 +56,39 @@ instance FromJSON Animal
 jerry :: Animal
 jerry = Animal "Mouse" 4
 
+tweety :: Animal
+tweety = Animal "Bird" 2
+
 
 -- * specs
 
 spec :: Spec
 spec = do
+  captureSpec
   getSpec
   getParamSpec
   postSpec
   rawSpec
   unionSpec
+
+
+type CaptureApi = Capture "legs" Integer :> Get Animal
+captureApi :: Proxy CaptureApi
+captureApi = Proxy
+captureServer :: Integer -> EitherT (Int, String) IO Animal
+captureServer legs = case legs of
+  4 -> return jerry
+  2 -> return tweety
+  _ -> left (404, "not found")
+
+captureSpec :: Spec
+captureSpec = do
+  describe "Servant.API.Capture" $ do
+    with (return (serve captureApi captureServer)) $ do
+      it "can capture parts of the 'pathInfo'" $ do
+        response <- get "/2"
+        liftIO $ do
+          decode' (simpleBody response) `shouldBe` Just tweety
 
 
 type GetApi = Get Person
