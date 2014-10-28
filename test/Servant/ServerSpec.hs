@@ -22,8 +22,8 @@ import Test.Hspec.Wai
 
 import Servant.API.Capture
 import Servant.API.Get
-import Servant.API.GetParam
 import Servant.API.Post
+import Servant.API.QueryParam
 import Servant.API.Raw
 import Servant.API.RQBody
 import Servant.API.Sub
@@ -67,7 +67,7 @@ spec :: Spec
 spec = do
   captureSpec
   getSpec
-  getParamSpec
+  queryParamSpec
   postSpec
   rawSpec
   unionSpec
@@ -117,19 +117,19 @@ getSpec = do
         post "/" "" `shouldRespondWith` 405
 
 
-type GetParamApi = GetParam "name" String :> Get Person
-getParamApi :: Proxy GetParamApi
-getParamApi = Proxy
+type QueryParamApi = QueryParam "name" String :> Get Person
+queryParamApi :: Proxy QueryParamApi
+queryParamApi = Proxy
 
-getParamServer :: Server GetParamApi
-getParamServer (Just name) = return alice{name = name}
-getParamServer Nothing = return alice
+queryParamServer :: Server QueryParamApi
+queryParamServer (Just name) = return alice{name = name}
+queryParamServer Nothing = return alice
 
-getParamSpec :: Spec
-getParamSpec = do
-  describe "Servant.API.GetParam" $ do
+queryParamSpec :: Spec
+queryParamSpec = do
+  describe "Servant.API.QueryParam" $ do
     it "allows to retrieve GET parameters" $ do
-      (flip runSession) (serve getParamApi getParamServer) $ do
+      (flip runSession) (serve queryParamApi queryParamServer) $ do
         let params = "?name=bob"
         response <- Network.Wai.Test.request defaultRequest{
           rawQueryString = params,

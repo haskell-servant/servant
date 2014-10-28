@@ -22,9 +22,9 @@ library
     Servant.API.Capture
     Servant.API.Delete
     Servant.API.Get
-    Servant.API.GetParam
     Servant.API.Post
     Servant.API.Put
+    Servant.API.QueryParam
     Servant.API.Raw
     Servant.API.RQBody
     Servant.API.Sub

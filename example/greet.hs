@@ -37,11 +37,11 @@ instance ToCapture (Capture "name" Text) where
 instance ToCapture (Capture "greetid" Text) where
   toCapture _ = DocCapture "greetid" "identifier of the greet msg to remove"
 
-instance ToParam (GetParam "capital" Bool) where
+instance ToParam (QueryParam "capital" Bool) where
   toParam _ =
-    DocGetParam "capital"
-                ["true", "false"]
-                "Get the greeting message in uppercase (true) or not (false). Default is false."
+    DocQueryParam "capital"
+                  ["true", "false"]
+                  "Get the greeting message in uppercase (true) or not (false). Default is false."
 
 instance ToSample Greet where
   toSample Proxy = Just (encode g)
@@ -50,7 +50,7 @@ instance ToSample Greet where
 
 -- API specification
 type TestApi = 
-       "hello" :> Capture "name" Text :> GetParam "capital" Bool :> Get Greet
+       "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
   :<|> "greet" :> RQBody Greet :> Post Greet
   :<|> "delete" :> Capture "greetid" Text :> Delete
 

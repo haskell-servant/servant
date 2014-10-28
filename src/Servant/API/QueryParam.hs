@@ -4,7 +4,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Servant.API.GetParam where
+module Servant.API.QueryParam where
 
 import Data.Proxy
 import Data.String.Conversions
@@ -18,13 +18,19 @@ import Servant.Docs
 import Servant.Server
 import Servant.Utils.Text
 
--- * GET params support (i.e query string arguments)
-data GetParam sym a
+-- * Query String parameter lookup
+
+-- | Your must implement:
+--
+-- - a @'FromText' a@ instance for serving
+-- - a @'ToText' a@ instance for (client-side) querying
+-- - a @'ToParam' ('QueryParam' sym a)@ instance for automatic documentation generation
+data QueryParam sym a
 
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
-      => HasServer (GetParam sym a :> sublayout) where
+      => HasServer (QueryParam sym a :> sublayout) where
 
-  type Server (GetParam sym a :> sublayout) =
+  type Server (QueryParam sym a :> sublayout) =
     Maybe a -> Server sublayout
 
   route Proxy subserver request respond = do
@@ -41,9 +47,9 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, ToText a, HasClient sublayout)
-      => HasClient (GetParam sym a :> sublayout) where
+      => HasClient (QueryParam sym a :> sublayout) where
 
-  type Client (GetParam sym a :> sublayout) =
+  type Client (QueryParam sym a :> sublayout) =
     Maybe a -> Client sublayout
 
   -- if mparam = Nothing, we don't add it to the query string
@@ -55,12 +61,12 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
           pname' = symbolVal (Proxy :: Proxy sym)
           mparamText = fmap toText mparam
 
-instance (KnownSymbol sym, ToParam (GetParam sym a), HasDocs sublayout)
-      => HasDocs (GetParam sym a :> sublayout) where
+instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sublayout)
+      => HasDocs (QueryParam sym a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =
     docsFor sublayoutP (endpoint, action')
 
     where sublayoutP = Proxy :: Proxy sublayout
-          paramP = Proxy :: Proxy (GetParam sym a)
+          paramP = Proxy :: Proxy (QueryParam sym a)
           action' = over params (|> toParam paramP) action

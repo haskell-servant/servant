@@ -9,8 +9,8 @@ module Servant.API (
   -- * Accessing information from the request
   -- | Capturing parts of the url path as parsed values: @'Capture'@
   module Servant.API.Capture,
-  -- | Retrieving parameters from the query part of the 'URI': @'GetParam'@
-  module Servant.API.GetParam,
+  -- | Retrieving parameters from the query part of the 'URI': @'QueryParam'@
+  module Servant.API.QueryParam,
   -- | Accessing the request's body: @'RQBody'@
   module Servant.API.RQBody,
 
@@ -28,9 +28,9 @@ module Servant.API (
 import Servant.API.Capture
 import Servant.API.Delete
 import Servant.API.Get
-import Servant.API.GetParam
 import Servant.API.Post
 import Servant.API.Put
+import Servant.API.QueryParam
 import Servant.API.RQBody
 import Servant.API.Sub
 import Servant.API.Union

@@ -56,11 +56,11 @@
 -- >
 -- >     where g = Greet "Hello, haskeller!"
 -- >
--- > instance ToParam (GetParam "capital" Bool) where
+-- > instance ToParam (QueryParam "capital" Bool) where
 -- >   toParam _ =
--- >     DocGetParam "capital"
--- >                 ["true", "false"]
--- >                 "Get the greeting message in uppercase (true) or not (false). Default is false."
+-- >     DocQueryParam "capital"
+-- >                   ["true", "false"]
+-- >                   "Get the greeting message in uppercase (true) or not (false). Default is false."
 -- >
 -- > instance ToCapture (Capture "name" Text) where
 -- >   toCapture _ = DocCapture "name" "name of the person to greet"
@@ -70,7 +70,7 @@
 -- >
 -- > -- API specification
 -- > type TestApi = 
--- >        "hello" :> Capture "name" Text :> GetParam "capital" Bool :> Get Greet
+-- >        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
 -- >   :<|> "greet" :> RQBody Greet :> Post Greet
 -- >   :<|> "delete" :> Capture "greetid" Text :> Delete
 -- >
@@ -95,7 +95,7 @@ module Servant.Docs
   , Endpoint, path, method, defEndpoint
   , API, emptyAPI
   , DocCapture(..), capSymbol, capDesc
-  , DocGetParam(..), paramName, paramValues, paramDesc
+  , DocQueryParam(..), paramName, paramValues, paramDesc
   , Response, respStatus, respBody, defResponse
   , Action, captures, params, rqbody, response, defAction
   , single
@@ -190,12 +190,12 @@ data DocCapture = DocCapture
   , _capDesc   :: String -- user supplied
   } deriving (Eq, Show)
 
--- | A type to represent /GET/ parameters. Holds its name,
+-- | A type to represent a /GET/ parameter from the Query String. Holds its name,
 --   the possible values (leave empty if there isn't a finite number of them),
 --   and a description of how it influences the output or behavior.
 --
 -- Write a 'ToParam' instance for your GET parameter types
-data DocGetParam = DocGetParam
+data DocQueryParam = DocQueryParam
   { _paramName   :: String   -- type supplied
   , _paramValues :: [String] -- user supplied
   , _paramDesc   :: String   -- user supplied
@@ -243,7 +243,7 @@ defResponse = Response 200 Nothing
 -- to transform an action and add some information to it.
 data Action = Action
   { _captures :: [DocCapture]        -- type collected + user supplied info
-  , _params   :: [DocGetParam]       -- type collected + user supplied info
+  , _params   :: [DocQueryParam]     -- type collected + user supplied info
   , _rqbody   :: Maybe ByteString    -- user supplied
   , _response :: Response            -- user supplied
   } deriving (Eq, Show)
@@ -273,7 +273,7 @@ single = HM.singleton
 -- gimme some lenses
 makeLenses ''Endpoint
 makeLenses ''DocCapture
-makeLenses ''DocGetParam
+makeLenses ''DocQueryParam
 makeLenses ''Response
 makeLenses ''Action
 
@@ -319,13 +319,13 @@ class ToJSON a => ToSample a where
 --
 -- Example of an instance:
 --
--- > instance ToParam (GetParam "capital" Bool) where
+-- > instance ToParam (QueryParam "capital" Bool) where
 -- >   toParam _ =
--- >     DocGetParam "capital"
--- >                 ["true", "false"]
--- >                 "Get the greeting message in uppercase (true) or not (false). Default is false."
+-- >     DocQueryParam "capital"
+-- >                   ["true", "false"]
+-- >                   "Get the greeting message in uppercase (true) or not (false). Default is false."
 class ToParam t where
-  toParam :: Proxy t -> DocGetParam
+  toParam :: Proxy t -> DocQueryParam
 
 -- | The class that helps us automatically get documentation
 --   for URL captures.
@@ -364,7 +364,7 @@ printMarkdown = imapM_ printEndpoint
         captureStr cap =
           putStrLn $ "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
 
-        paramsStr :: [DocGetParam] -> IO ()
+        paramsStr :: [DocQueryParam] -> IO ()
         paramsStr [] = return ()
         paramsStr l = do
           putStrLn "**GET Parameters**: "
