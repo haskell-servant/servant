@@ -41,13 +41,13 @@ infixr 6 >:
 
 
 instance ExpSYM Type Type where
-    lit name r         = (LitT (StrTyLit name)) >: r
-    capture name typ r = (AppT (AppT (ConT ''Capture) (LitT (StrTyLit name)))
-                               (ConT $ mkName typ)) >: r
-    reqBody typ r      = (AppT (ConT ''ReqBody) (ConT $ mkName typ)) >: r
-    queryParam name typ r = (AppT (AppT (ConT ''QueryParam) (LitT (StrTyLit name)))
-                               (ConT $ mkName typ)) >: r
-    conj x y           = AppT (AppT (ConT ''(:>)) x) y
+    lit name r         = LitT (StrTyLit name) >: r
+    capture name typ r = AppT (AppT (ConT ''Capture) (LitT (StrTyLit name)))
+                               (ConT $ mkName typ) >: r
+    reqBody typ r      = AppT (ConT ''ReqBody) (ConT $ mkName typ) >: r
+    queryParam name typ r = AppT (AppT (ConT ''QueryParam) (LitT (StrTyLit name)))
+                               (ConT $ mkName typ) >: r
+    conj x             = AppT (AppT (ConT ''(:>)) x)
     get  typ           = AppT (ConT ''Get) (ConT $ mkName typ)
     post typ           = AppT (ConT ''Post) (ConT $ mkName typ)
     put typ            = AppT (ConT ''Put) (ConT $ mkName typ)
@@ -84,7 +84,7 @@ readEntry' xs r = Just $ foldr1 (.) (tRepr <$> splitOn "/" xs) r
 readAll :: String -> Type
 readAll s = foldr1 union $ mapMaybe readEntry $ words <$> lines s
    where union :: Type -> Type -> Type
-         union a b = AppT (AppT (ConT ''(:<|>)) a) b
+         union a = AppT (AppT (ConT ''(:<|>)) a)
 
 sitemap :: QuasiQuoter
 sitemap = QuasiQuoter { quoteExp = undefined

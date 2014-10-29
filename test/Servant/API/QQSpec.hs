@@ -18,7 +18,7 @@ import Servant.API
 -- Types for testing
 --------------------------------------------------------------------------
 
-
+-- Methods ---------------------------------------------------------------
 type SimpleGet = [sitemap|
 GET  hello  ()
 |]
@@ -43,12 +43,47 @@ POST  hello  Bool
 type SimplePost2' = "hello" :> Post Bool
 type SimplePost2'' = "hello" :> Post ()
 
+type SimplePut = [sitemap|
+PUT  hello  ()
+|]
+type SimplePut' = "hello" :> Put ()
+type SimplePut'' = "hello" :> Put Bool
+
+type SimplePut2 = [sitemap|
+PUT  hello  Bool
+|]
+type SimplePut2' = "hello" :> Put Bool
+type SimplePut2'' = "hello" :> Put ()
+
+-- Parameters ------------------------------------------------------------
+
 type SimpleReqBody = [sitemap|
 POST  hello  () -> Bool
 |]
 type SimpleReqBody' = "hello" :> ReqBody () :> Post Bool
 type SimpleReqBody'' = "hello" :> ReqBody Bool :> Post ()
 
+type SimpleCapture = [sitemap|
+POST  hello/p:Int   Bool
+|]
+type SimpleCapture' = "hello" :> Capture "p" Int :> Post Bool
+type SimpleCapture'' = "hello" :> Capture "r" Int :> Post Bool
+type SimpleCapture''' = "hello" :> Capture "p" Bool :> Post Bool
+
+type SimpleQueryParam = [sitemap|
+POST  hello/?p:Int   Bool
+|]
+type SimpleQueryParam' = "hello" :> QueryParam "p" Int :> Post Bool
+type SimpleQueryParam'' = "hello" :> QueryParam "r" Int :> Post Bool
+type SimpleQueryParam''' = "hello" :> QueryParam "p" Bool :> Post Bool
+
+-- Combinations ----------------------------------------------------------
+
+type TwoPaths = [sitemap|
+POST hello  Bool
+GET  hello  Bool
+|]
+type TwoPaths' = ("hello" :> Post Bool) :<|> ("hello" :> Get Bool)
 --------------------------------------------------------------------------
 -- Spec
 --------------------------------------------------------------------------
@@ -66,9 +101,24 @@ spec = do
             (u::SimplePost)  ~= (u::SimplePost'' ) ~> False
             (u::SimplePost2) ~= (u::SimplePost2' ) ~> True
             (u::SimplePost2) ~= (u::SimplePost2'') ~> False
+        it "Handles simple PUT types" $ do
+            (u::SimplePut)  ~= (u::SimplePut'  ) ~> True
+            (u::SimplePut)  ~= (u::SimplePut'' ) ~> False
+            (u::SimplePut2) ~= (u::SimplePut2' ) ~> True
+            (u::SimplePut2) ~= (u::SimplePut2'') ~> False
         it "Handles simple request body types" $ do
             (u::SimpleReqBody) ~= (u::SimpleReqBody' ) ~> True
             (u::SimpleReqBody) ~= (u::SimpleReqBody'') ~> False
+        it "Handles simple captures" $ do
+            (u::SimpleCapture) ~= (u::SimpleCapture' ) ~> True
+            (u::SimpleCapture) ~= (u::SimpleCapture'') ~> False
+            (u::SimpleCapture) ~= (u::SimpleCapture''') ~> False
+        it "Handles simple querystring parameters" $ do
+            (u::SimpleQueryParam) ~= (u::SimpleQueryParam' ) ~> True
+            (u::SimpleQueryParam) ~= (u::SimpleQueryParam'') ~> False
+            (u::SimpleQueryParam) ~= (u::SimpleQueryParam''') ~> False
+        it "Handles multiples paths" $ do
+            (u::TwoPaths) ~= (u::TwoPaths') ~> True
 
 
 --------------------------------------------------------------------------
