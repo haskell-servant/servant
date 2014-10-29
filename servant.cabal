@@ -46,6 +46,7 @@ library
     , network-uri
     , wai
     , warp
+    , safe
     , transformers
     , template-haskell
     , text

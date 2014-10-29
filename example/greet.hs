@@ -56,9 +56,9 @@ type TestApi =
   :<|> "delete" :> Capture "greetid" Text :> Delete
 
 type TestApi2 = [sitemap|
-GET     hello/name:Text/capital:Bool    () -> Greet
-POST    greet                           Greet -> Greet
-DELETE  delete/greetid:Text             ()
+GET      hello/name:Text/?capital:Bool   () -> Greet
+POST     greet                           Greet -> Greet
+DELETE   delete/greetid:Text             ()
 |]
 
 testApi :: Proxy TestApi

@@ -35,7 +35,7 @@ import Servant.API.Get
 import Servant.API.Post
 import Servant.API.Put
 import Servant.API.QueryParam
-import Servant.API.QQ
+import Servant.API.QQ (sitemap)
 import Servant.API.ReqBody
 import Servant.API.Sub
 import Servant.API.Union
