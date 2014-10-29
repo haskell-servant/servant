@@ -3,12 +3,13 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.API.QueryParam where
 
+import Data.Maybe
 import Data.Proxy
 import Data.String.Conversions
-import Data.Text
 import GHC.TypeLits
 import Network.HTTP.Types
 import Network.Wai
@@ -18,9 +19,9 @@ import Servant.Docs
 import Servant.Server
 import Servant.Utils.Text
 
--- * Query String parameter lookup
+-- * Single query string parameter lookup
 
--- | Your must implement:
+-- | You must implement:
 --
 -- - a @'FromText' a@ instance for serving
 -- - a @'ToText' a@ instance for (client-side) querying
@@ -57,7 +58,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
     clientWithRoute (Proxy :: Proxy sublayout) $
       appendToQueryString pname mparamText req
 
-    where pname  = pack pname'
+    where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)
           mparamText = fmap toText mparam
 
@@ -70,3 +71,74 @@ instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sublayout)
     where sublayoutP = Proxy :: Proxy sublayout
           paramP = Proxy :: Proxy (QueryParam sym a)
           action' = over params (|> toParam paramP) action
+
+-- | Retrieve a list from the query string.
+data QueryParams sym a
+
+instance (KnownSymbol sym, FromText a, HasServer sublayout)
+      => HasServer (QueryParams sym a :> sublayout) where
+
+  type Server (QueryParams sym a :> sublayout) =
+    [a] -> Server sublayout
+
+  route Proxy subserver request respond = do
+    let querytext = parseQueryText $ rawQueryString request
+        -- if sym is "foo", we look for query string parameters
+        -- named "foo" or "foo[]" and call fromText on the
+        -- corresponding values
+        parameters = filter looksLikeParam querytext
+        values = catMaybes $ map (convert . snd) parameters
+
+    route (Proxy :: Proxy sublayout) (subserver values) request respond
+
+    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+          looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
+          convert Nothing = Nothing
+          convert (Just v) = fromText v
+
+instance (KnownSymbol sym, ToText a, HasClient sublayout)
+      => HasClient (QueryParams sym a :> sublayout) where
+
+  type Client (QueryParams sym a :> sublayout) =
+    [a] -> Client sublayout
+
+  clientWithRoute Proxy req paramlist =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      foldr (appendToQueryString pname) req paramlist'
+
+    where pname  = cs pname'
+          pname' = symbolVal (Proxy :: Proxy sym)
+          paramlist' = map (Just . toText) paramlist
+
+-- | Retrieve a value-less boolean from the query string.
+data QueryFlag a
+
+instance (KnownSymbol sym, HasServer sublayout)
+      => HasServer (QueryFlag sym :> sublayout) where
+
+  type Server (QueryFlag sym :> sublayout) =
+    Bool -> Server sublayout
+
+  route Proxy subserver request respond = do
+    let querytext = parseQueryText $ rawQueryString request
+        param = case lookup paramname querytext of
+          Just Nothing -> True  -- param is there, with no value
+          _            -> False -- param not in the query string or with a value
+
+    route (Proxy :: Proxy sublayout) (subserver param) request respond
+
+    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, HasClient sublayout)
+      => HasClient (QueryFlag sym :> sublayout) where
+
+  type Client (QueryFlag sym :> sublayout) =
+    Bool -> Client sublayout
+
+  clientWithRoute Proxy req flag =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      if flag
+        then appendToQueryString paramname Nothing req
+        else req
+
+    where paramname = cs $ symbolVal (Proxy :: Proxy sym)

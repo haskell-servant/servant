@@ -39,10 +39,9 @@ appendToQueryString :: Text       -- ^ param name
                     -> Maybe Text -- ^ param value
                     -> Req
                     -> Req
-appendToQueryString pname pvalue req
-  | pvalue == Nothing = req
-  | otherwise         = req { qs = qs req ++ [(pname, pvalue)]
-                            }
+appendToQueryString pname pvalue req =
+  req { qs = qs req ++ [(pname, pvalue)]
+      }
 
 setRQBody :: ByteString -> Req -> Req
 setRQBody b req = req { reqBody = b }
