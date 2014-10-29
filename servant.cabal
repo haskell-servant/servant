@@ -4,12 +4,11 @@ version:             0.2
 -- description:         
 license:             BSD3
 license-file:        LICENSE
-author:              Alp Mestanogullari, Soenke Hahn
+author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
 maintainer:          alpmestan@gmail.com
--- copyright:           
+copyright:           2014 Zalora SEA
 category:            Web
 build-type:          Simple
--- extra-source-files:  
 cabal-version:       >=1.10
 
 library
