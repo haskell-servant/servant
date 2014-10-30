@@ -21,7 +21,7 @@ import Servant.API.Delete
 import Servant.API.QueryParam
 import Servant.API.ReqBody
 import Servant.API.Sub
-import Servant.API.Union
+import Servant.API.Alternative
 
 class ExpSYM repr' repr | repr -> repr', repr' -> repr where
     lit        :: String -> repr' -> repr

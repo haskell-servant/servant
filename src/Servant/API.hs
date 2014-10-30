@@ -4,7 +4,7 @@ module Servant.API (
   -- | Type-level combinator for expressing subrouting: @':>'@
   module Servant.API.Sub,
   -- | Type-level combinator for alternative endpoints: @':<|>'@
-  module Servant.API.Union,
+  module Servant.API.Alternative,
 
   -- * Accessing information from the request
   -- | Capturing parts of the url path as parsed values: @'Capture'@
@@ -38,4 +38,4 @@ import Servant.API.QueryParam
 import Servant.API.QQ (sitemap)
 import Servant.API.ReqBody
 import Servant.API.Sub
-import Servant.API.Union
+import Servant.API.Alternative

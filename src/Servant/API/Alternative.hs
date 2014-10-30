@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Servant.API.Union where
+module Servant.API.Alternative where
 
 import Data.Proxy
 import Servant.Client

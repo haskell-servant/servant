@@ -28,7 +28,7 @@ library
     Servant.API.QQ
     Servant.API.Raw
     Servant.API.Sub
-    Servant.API.Union
+    Servant.API.Alternative
     Servant.Utils.Text
   build-depends:
       base >=4.7 && <5

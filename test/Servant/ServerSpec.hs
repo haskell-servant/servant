@@ -27,7 +27,7 @@ import Servant.API.Post
 import Servant.API.QueryParam
 import Servant.API.Raw
 import Servant.API.Sub
-import Servant.API.Union
+import Servant.API.Alternative
 import Servant.Server
 
 
@@ -184,20 +184,20 @@ rawSpec = do
           simpleBody response `shouldBe` cs (show ["bar" :: String])
 
 
-type UnionApi =
+type AlternativeApi =
        "foo" :> Get Person
   :<|> "bar" :> Get Animal
-unionApi :: Proxy UnionApi
+unionApi :: Proxy AlternativeApi
 unionApi = Proxy
 
-unionServer :: Server UnionApi
+unionServer :: Server AlternativeApi
 unionServer =
        return alice
   :<|> return jerry
 
 unionSpec :: Spec
 unionSpec = do
-  describe "Servant.API.Union" $ do
+  describe "Servant.API.Alternative" $ do
     with (return $ serve unionApi unionServer) $ do
       it "unions endpoints" $ do
         response <- get "/foo"
