@@ -14,29 +14,37 @@ import Network.Wai.Handler.Warp
 import Test.Hspec
 
 import Servant.Client
-import Servant.API.Sub
-import Servant.API.Get
+import Servant.API
 import Servant.Server
 
 import Servant.ServerSpec
 
 type Api =
-       "a" :> Get Person
+       ("a" :> Get Person)
+  :<|> ("b" :> Capture "name" String :> Get Person)
 api :: Proxy Api
 api = Proxy
 
 server :: Application
 server = serve api (
-  return alice
+       return alice
+  :<|> (\ name -> return $ Person name 0)
  )
 
+withServer :: (URIAuth -> IO a) -> IO a
+withServer action = withWaiDaemon (return server) (action . mkHost "localhost")
+
 getA :: URIAuth -> EitherT String IO Person
-getA = client api
+getB :: String -> URIAuth -> EitherT String IO Person
+(getA :<|> getB) = client api
 
 spec :: Spec
 spec = do
-  it "Servant.API.Get" $ withWaiDaemon (return server) $ \ port -> do
-    runEitherT (getA (mkHost "localhost" port)) `shouldReturn` Right alice
+  it "Servant.API.Get" $ withServer $ \ host -> do
+    runEitherT (getA host) `shouldReturn` Right alice
+
+  it "Servant.API.Capture" $ withServer $ \ host -> do
+    runEitherT (getB "Paula" host) `shouldReturn` Right (Person "Paula" 0)
 
 
 -- * utils
