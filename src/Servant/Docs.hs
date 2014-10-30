@@ -95,7 +95,7 @@ module Servant.Docs
   , Endpoint, path, method, defEndpoint
   , API, emptyAPI
   , DocCapture(..), capSymbol, capDesc
-  , DocQueryParam(..), paramName, paramValues, paramDesc
+  , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
   , Response, respStatus, respBody, defResponse
   , Action, captures, params, rqbody, response, defAction
   , single
@@ -199,7 +199,16 @@ data DocQueryParam = DocQueryParam
   { _paramName   :: String   -- type supplied
   , _paramValues :: [String] -- user supplied
   , _paramDesc   :: String   -- user supplied
+  , _paramKind   :: ParamKind
   } deriving (Eq, Show)
+
+-- | Type of GET parameter:
+--
+-- - Normal corresponds to @QueryParam@, i.e your usual GET parameter
+-- - List corresponds to @QueryParams@, i.e GET parameters with multiple values
+-- - Flag corresponds to @QueryFlag@, i.e a value-less GET parameter
+data ParamKind = Normal | List | Flag
+  deriving (Eq, Show)
 
 -- | A type to represent an HTTP response. Has an 'Int' status and
 -- a 'Maybe ByteString' response body. Tweak 'defResponse' using
@@ -373,9 +382,14 @@ printMarkdown = imapM_ printEndpoint
           putStrLn ""
         paramStr param = do
           putStrLn $ " - " ++ param ^. paramName
-          when (not $ null values) $
+          when (not (null values) || param ^. paramKind /= Flag) $
             putStrLn $ "     - **Values**: *" ++ intercalate ", " values ++ "*"
           putStrLn $   "     - **Description**: " ++ param ^. paramDesc
+          when (param ^. paramKind == List) $
+            putStrLn $ "     - This parameter is a **list**. All GET parameters with the name "
+                    ++ param ^. paramName ++ "[] will forward their values in a list to the handler."
+          when (param ^. paramKind == Flag) $
+            putStrLn $ "     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."
 
           where values = param ^. paramValues
 

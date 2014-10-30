@@ -110,6 +110,16 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
           pname' = symbolVal (Proxy :: Proxy sym)
           paramlist' = map (Just . toText) paramlist
 
+instance (KnownSymbol sym, ToParam (QueryParams sym a), HasDocs sublayout)
+      => HasDocs (QueryParams sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint, action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          paramP = Proxy :: Proxy (QueryParams sym a)
+          action' = over params (|> toParam paramP) action
+
 -- | Retrieve a value-less boolean from the query string.
 data QueryFlag a
 
@@ -142,3 +152,13 @@ instance (KnownSymbol sym, HasClient sublayout)
         else req
 
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs sublayout)
+      => HasDocs (QueryFlag sym :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint, action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          paramP = Proxy :: Proxy (QueryFlag sym)
+          action' = over params (|> toParam paramP) action

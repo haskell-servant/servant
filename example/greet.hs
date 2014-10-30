@@ -43,6 +43,7 @@ instance ToParam (QueryParam "capital" Bool) where
     DocQueryParam "capital"
                   ["true", "false"]
                   "Get the greeting message in uppercase (true) or not (false). Default is false."
+                  Normal
 
 instance ToSample Greet where
   toSample Proxy = Just (encode g)
