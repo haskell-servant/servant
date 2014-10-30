@@ -20,8 +20,8 @@ import Servant.Server
 import Servant.ServerSpec
 
 type Api =
-       ("a" :> Get Person)
-  :<|> ("b" :> Capture "name" String :> Get Person)
+       "get" :> Get Person
+  :<|> "capture" :> Capture "name" String :> Get Person
 api :: Proxy Api
 api = Proxy
 
