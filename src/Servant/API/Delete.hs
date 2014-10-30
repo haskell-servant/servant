@@ -1,24 +1,24 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Servant.API.Delete where
 
-import Control.Monad
-import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
 import Data.Proxy
 import Data.String.Conversions
+import Data.Typeable
 import Network.HTTP.Types
 import Network.URI
 import Network.Wai
 import Servant.Client
 import Servant.Docs
 import Servant.Server
-
-import qualified Network.HTTP.Client as Client
+import Servant.Utils.Client
 
 -- | Endpoint for DELETE requests.
 data Delete
+  deriving Typeable
 
 instance HasServer Delete where
   type Server Delete = EitherT (Int, String) IO ()
@@ -38,17 +38,8 @@ instance HasServer Delete where
 instance HasClient Delete where
   type Client Delete = URIAuth -> EitherT String IO ()
 
-  clientWithRoute Proxy req host = do
-    partialRequest <- liftIO $ reqToRequest req host
-
-    let request = partialRequest { Client.method = methodDelete
-                                 }
-
-    innerResponse <- liftIO . __withGlobalManager $ \ manager ->
-      Client.httpLbs request manager
-
-    when (Client.responseStatus innerResponse /= status204) $
-      left ("HTTP DELETE request failed with status: " ++ show (Client.responseStatus innerResponse))
+  clientWithRoute Proxy req host =
+    performRequest methodDelete req 204 host
 
 instance HasDocs Delete where
   docsFor Proxy (endpoint, action) =

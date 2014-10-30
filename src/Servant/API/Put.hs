@@ -1,25 +1,25 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Servant.API.Put where
 
-import Control.Monad
-import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
 import Data.Aeson
 import Data.Proxy
 import Data.String.Conversions
+import Data.Typeable
 import Network.HTTP.Types
 import Network.URI
 import Network.Wai
 import Servant.Client
 import Servant.Docs
 import Servant.Server
-
-import qualified Network.HTTP.Client as Client
+import Servant.Utils.Client
 
 -- | Endpoint for PUT requests.
 data Put a
+  deriving Typeable
 
 instance ToJSON a => HasServer (Put a) where
   type Server (Put a) = EitherT (Int, String) IO a
@@ -40,20 +40,8 @@ instance ToJSON a => HasServer (Put a) where
 instance FromJSON a => HasClient (Put a) where
   type Client (Put a) = URIAuth -> EitherT String IO a
 
-  clientWithRoute Proxy req uri = do
-    partialRequest <- liftIO $ reqToRequest req uri
-
-    let request = partialRequest { Client.method = methodPut
-                                 }
-
-    innerResponse <- liftIO . __withGlobalManager $ \ manager ->
-      Client.httpLbs request manager
-
-    when (Client.responseStatus innerResponse /= ok200) $
-      left ("HTTP PUT request failed with status: " ++ show (Client.responseStatus innerResponse))
-
-    maybe (left "HTTP PUT request returned invalid json") return $
-      decode' (Client.responseBody innerResponse)
+  clientWithRoute Proxy req host =
+    performRequest methodPut req 200 host
 
 instance ToSample a => HasDocs (Put a) where
   docsFor Proxy (endpoint, action) =

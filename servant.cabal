@@ -29,6 +29,7 @@ library
     Servant.API.Raw
     Servant.API.Sub
     Servant.API.Alternative
+    Servant.Utils.Client
     Servant.Utils.Text
   build-depends:
       base >=4.7 && <5
