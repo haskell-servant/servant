@@ -10,6 +10,7 @@ module Servant.ServerSpec where
 
 import Control.Monad.Trans.Either
 import Data.Aeson
+import Data.Char
 import Data.Proxy
 import Data.String
 import Data.String.Conversions
@@ -118,28 +119,64 @@ getSpec = do
 
 
 type QueryParamApi = QueryParam "name" String :> Get Person
+                :<|> "a" :> QueryParams "names" String :> Get Person
+                :<|> "b" :> QueryFlag "capitalize" :> Get Person
+
 queryParamApi :: Proxy QueryParamApi
 queryParamApi = Proxy
 
-queryParamServer :: Server QueryParamApi
-queryParamServer (Just name) = return alice{name = name}
-queryParamServer Nothing = return alice
+qpServer :: Server QueryParamApi
+qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize
+
+  where qpNames (_:name2:_) = return alice { name = name2 }
+        qpNames _           = return alice
+
+        qpCapitalize False = return alice
+        qpCapitalize True  = return alice { name = map toUpper (name alice) }
+
+        queryParamServer (Just name) = return alice{name = name}
+        queryParamServer Nothing = return alice
 
 queryParamSpec :: Spec
 queryParamSpec = do
   describe "Servant.API.QueryParam" $ do
-    it "allows to retrieve GET parameters" $ do
-      (flip runSession) (serve queryParamApi queryParamServer) $ do
-        let params = "?name=bob"
-        response <- Network.Wai.Test.request defaultRequest{
-          rawQueryString = params,
-          queryString = parseQuery params
-         }
-        liftIO $ do
-          decode' (simpleBody response) `shouldBe` Just alice{
-            name = "bob"
+      it "allows to retrieve simple GET parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+          let params1 = "?name=bob"
+          response1 <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params1,
+            queryString = parseQuery params1
            }
+          liftIO $ do
+            decode' (simpleBody response1) `shouldBe` Just alice{
+              name = "bob"
+             }
 
+      it "allows to retrieve lists in GET parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+          let params2 = "?names[]=bob&names[]=john"
+          response2 <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params2,
+            queryString = parseQuery params2,
+            pathInfo = ["a"]
+           }
+          liftIO $
+            decode' (simpleBody response2) `shouldBe` Just alice{
+              name = "john"
+             }
+
+      it "allows to retrieve value-less GET parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+          let params3 = "?capitalize"
+          response3 <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params3,
+            queryString = parseQuery params3,
+            pathInfo = ["b"]
+           }
+          liftIO $
+            decode' (simpleBody response3) `shouldBe` Just alice{
+              name = "ALICE"
+             }
 
 type PostApi = ReqBody Person :> Post Integer
 postApi :: Proxy PostApi
