@@ -140,4 +140,5 @@ u :: a
 u = undefined
 
 infix 3 ~>
+(~>) :: (Show a, Eq a) => a -> a -> Expectation
 (~>) = shouldBe
