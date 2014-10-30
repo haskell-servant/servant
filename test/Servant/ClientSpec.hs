@@ -13,8 +13,8 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Test.Hspec
 
-import Servant.Client
 import Servant.API
+import Servant.Client
 import Servant.Server
 
 import Servant.ServerSpec
@@ -22,6 +22,7 @@ import Servant.ServerSpec
 type Api =
        "get" :> Get Person
   :<|> "capture" :> Capture "name" String :> Get Person
+  :<|> "body" :> ReqBody Person :> Post Person
 api :: Proxy Api
 api = Proxy
 
@@ -29,22 +30,28 @@ server :: Application
 server = serve api (
        return alice
   :<|> (\ name -> return $ Person name 0)
+  :<|> return
  )
 
 withServer :: (URIAuth -> IO a) -> IO a
 withServer action = withWaiDaemon (return server) (action . mkHost "localhost")
 
-getA :: URIAuth -> EitherT String IO Person
-getB :: String -> URIAuth -> EitherT String IO Person
-(getA :<|> getB) = client api
+getGet :: URIAuth -> EitherT String IO Person
+getCapture :: String -> URIAuth -> EitherT String IO Person
+getBody :: Person -> URIAuth -> EitherT String IO Person
+(getGet :<|> getCapture :<|> getBody) = client api
 
 spec :: Spec
 spec = do
   it "Servant.API.Get" $ withServer $ \ host -> do
-    runEitherT (getA host) `shouldReturn` Right alice
+    runEitherT (getGet host) `shouldReturn` Right alice
 
   it "Servant.API.Capture" $ withServer $ \ host -> do
-    runEitherT (getB "Paula" host) `shouldReturn` Right (Person "Paula" 0)
+    runEitherT (getCapture "Paula" host) `shouldReturn` Right (Person "Paula" 0)
+
+  it "Servant.API.ReqBody" $ withServer $ \ host -> do
+    let p = Person "Clara" 42
+    runEitherT (getBody p host) `shouldReturn` Right p
 
 
 -- * utils
