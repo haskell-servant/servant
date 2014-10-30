@@ -1,7 +1,7 @@
 name:                servant
 version:             0.2
--- synopsis:            
--- description:         
+-- synopsis:
+-- description:
 license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
@@ -30,8 +30,6 @@ library
     Servant.API.Sub
     Servant.API.Union
     Servant.Utils.Text
-  -- other-modules:       
-  -- other-extensions:    
   build-depends:
       base >=4.7 && <5
     , either
