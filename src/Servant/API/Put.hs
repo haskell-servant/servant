@@ -38,7 +38,7 @@ instance ToJSON a => HasServer (Put a) where
     | otherwise = respond $ failWith NotFound
 
 instance FromJSON a => HasClient (Put a) where
-  type Client (Put a) = URI -> EitherT String IO a
+  type Client (Put a) = URIAuth -> EitherT String IO a
 
   clientWithRoute Proxy req uri = do
     partialRequest <- liftIO $ reqToRequest req uri

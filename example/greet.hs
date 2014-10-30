@@ -75,9 +75,9 @@ server = hello :<|> greet :<|> delete
 clientApi :: Client TestApi
 clientApi = client testApi
 
-getGreet :: Text -> Maybe Bool -> URI -> EitherT String IO Greet
-postGreet :: Greet -> URI -> EitherT String IO Greet
-deleteGreet :: Text -> URI -> EitherT String IO ()
+getGreet :: Text -> Maybe Bool -> URIAuth -> EitherT String IO Greet
+postGreet :: Greet -> URIAuth -> EitherT String IO Greet
+deleteGreet :: Text -> URIAuth -> EitherT String IO ()
 getGreet :<|> postGreet :<|> deleteGreet = clientApi
 
 -- Turn the server into a WAI app
@@ -96,7 +96,7 @@ runTestServer port = run port test
 main :: IO ()
 main = do
   tid <- forkIO $ runTestServer 8001
-  let Just uri = parseURI "http://localhost:8001"
+  let uri = mkHost "localhost" 8001
   print =<< runEitherT (getGreet "alp" (Just True) uri)
   print =<< runEitherT (getGreet "alp" (Just False) uri)
   let g = Greet "yo"

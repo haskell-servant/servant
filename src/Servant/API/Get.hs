@@ -37,9 +37,9 @@ instance ToJSON result => HasServer (Get result) where
     | otherwise = respond $ failWith NotFound
 
 instance FromJSON result => HasClient (Get result) where
-  type Client (Get result) = URI -> EitherT String IO result
-  clientWithRoute Proxy req uri = do
-    innerRequest <- liftIO $ reqToRequest req uri
+  type Client (Get result) = URIAuth -> EitherT String IO result
+  clientWithRoute Proxy req host = do
+    innerRequest <- liftIO $ reqToRequest req host
 
     innerResponse <- liftIO $ __withGlobalManager $ \ manager ->
       Client.httpLbs innerRequest manager

@@ -36,10 +36,10 @@ instance HasServer Delete where
     | otherwise = respond $ failWith NotFound
 
 instance HasClient Delete where
-  type Client Delete = URI -> EitherT String IO ()
+  type Client Delete = URIAuth -> EitherT String IO ()
 
-  clientWithRoute Proxy req uri = do
-    partialRequest <- liftIO $ reqToRequest req uri
+  clientWithRoute Proxy req host = do
+    partialRequest <- liftIO $ reqToRequest req host
 
     let request = partialRequest { Client.method = methodDelete
                                  }
