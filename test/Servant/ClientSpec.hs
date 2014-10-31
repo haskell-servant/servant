@@ -8,12 +8,14 @@ module Servant.ClientSpec where
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Trans.Either
+import Data.Foldable
 import Data.Proxy
 import Data.Typeable
 import Network.Socket
 import Network.URI
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Prelude hiding (mapM_)
 import Test.Hspec
 
 import Servant.API
@@ -28,6 +30,7 @@ type Api =
   :<|> "body" :> ReqBody Person :> Post Person
   :<|> "param" :> QueryParam "name" String :> Get Person
   :<|> "params" :> QueryParams "names" String :> Get [Person]
+  :<|> "flag" :> QueryFlag "flag" :> Get Bool
 api :: Proxy Api
 api = Proxy
 
@@ -41,6 +44,7 @@ server = serve api (
                    Just name -> left (400, name ++ " not found")
                    Nothing -> left (400, "missing parameter"))
   :<|> (\ names -> return (zipWith Person names [0..]))
+  :<|> return
  )
 
 withServer :: (URIAuth -> IO a) -> IO a
@@ -51,11 +55,13 @@ getCapture :: String -> URIAuth -> EitherT String IO Person
 getBody :: Person -> URIAuth -> EitherT String IO Person
 getQueryParam :: Maybe String -> URIAuth -> EitherT String IO Person
 getQueryParams :: [String] -> URIAuth -> EitherT String IO [Person]
+getQueryFlag :: Bool -> URIAuth -> EitherT String IO Bool
 (     getGet
  :<|> getCapture
  :<|> getBody
  :<|> getQueryParam
- :<|> getQueryParams)
+ :<|> getQueryParams
+ :<|> getQueryFlag)
     = client api
 
 spec :: Spec
@@ -79,6 +85,12 @@ spec = do
     runEitherT (getQueryParams [] host) `shouldReturn` Right []
     runEitherT (getQueryParams ["alice", "bob"] host)
       `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
+
+  context "Servant.API.QueryParam.QueryFlag" $
+    forM_ [False, True] $ \ flag ->
+    it (show flag) $ withServer $ \ host -> do
+      runEitherT (getQueryFlag flag host) `shouldReturn` Right flag
+
 
   context "client correctly handles error status codes" $ do
     let test :: WrappedApi -> Spec

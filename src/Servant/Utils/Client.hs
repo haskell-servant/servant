@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Servant.Utils.Client where
 
 import Control.Applicative
@@ -6,6 +7,10 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
 import Data.Aeson
+import Data.Aeson.Parser
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString.Lazy
 import Data.String.Conversions
 import Network.HTTP.Types
 import Network.URI
@@ -32,8 +37,10 @@ performRequest method req wantedStatus host = do
       let status = Client.responseStatus response
       when (statusCode status /= wantedStatus) $
         left (requestString ++ " failed with status: " ++ showStatus status)
-      result <- maybe (left (requestString ++ " returned invalid json")) return $
-        decode' (Client.responseBody response)
+      result <- either
+        (\ message -> left (requestString ++ " returned invalid json: " ++ message))
+        return
+        (decodeLenient (Client.responseBody response))
       return result
   where
     requestString = "HTTP " ++ cs method ++ " request"
@@ -46,3 +53,10 @@ catchStatusCodeException action = catch (Right <$> action) $
     Client.StatusCodeException status _ _ ->
       return $ Left status
     e -> throwIO e
+
+-- | Like 'Data.Aeson.decode' but allows all JSON values instead of just
+-- objects and arrays.
+decodeLenient :: FromJSON a => ByteString -> Either String a
+decodeLenient input = do
+  v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
+  parseEither parseJSON v

@@ -35,6 +35,7 @@ library
       base >=4.7 && <5
     , either
     , aeson
+    , attoparsec
     , bytestring
     , exceptions
     , string-conversions
