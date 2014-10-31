@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.API.QueryParam where
 
+import Data.List
 import Data.Maybe
 import Data.Proxy
 import Data.String.Conversions
@@ -104,7 +105,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 
   clientWithRoute Proxy req paramlist =
     clientWithRoute (Proxy :: Proxy sublayout) $
-      foldr (appendToQueryString pname) req paramlist'
+      foldl' (\ value req -> appendToQueryString pname req value) req paramlist'
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)

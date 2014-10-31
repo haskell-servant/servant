@@ -27,6 +27,7 @@ type Api =
   :<|> "capture" :> Capture "name" String :> Get Person
   :<|> "body" :> ReqBody Person :> Post Person
   :<|> "param" :> QueryParam "name" String :> Get Person
+  :<|> "params" :> QueryParams "names" String :> Get [Person]
 api :: Proxy Api
 api = Proxy
 
@@ -39,6 +40,7 @@ server = serve api (
                    Just "alice" -> return alice
                    Just name -> left (400, name ++ " not found")
                    Nothing -> left (400, "missing parameter"))
+  :<|> (\ names -> return (zipWith Person names [0..]))
  )
 
 withServer :: (URIAuth -> IO a) -> IO a
@@ -48,7 +50,13 @@ getGet :: URIAuth -> EitherT String IO Person
 getCapture :: String -> URIAuth -> EitherT String IO Person
 getBody :: Person -> URIAuth -> EitherT String IO Person
 getQueryParam :: Maybe String -> URIAuth -> EitherT String IO Person
-(getGet :<|> getCapture :<|> getBody :<|> getQueryParam) = client api
+getQueryParams :: [String] -> URIAuth -> EitherT String IO [Person]
+(     getGet
+ :<|> getCapture
+ :<|> getBody
+ :<|> getQueryParam
+ :<|> getQueryParams)
+    = client api
 
 spec :: Spec
 spec = do
@@ -66,6 +74,11 @@ spec = do
     runEitherT (getQueryParam (Just "alice") host) `shouldReturn` Right alice
     Left result <- runEitherT (getQueryParam (Just "bob") host)
     result `shouldContain` "bob not found"
+
+  it "Servant.API.QueryParam.QueryParams" $ withServer $ \ host -> do
+    runEitherT (getQueryParams [] host) `shouldReturn` Right []
+    runEitherT (getQueryParams ["alice", "bob"] host)
+      `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
   context "client correctly handles error status codes" $ do
     let test :: WrappedApi -> Spec
