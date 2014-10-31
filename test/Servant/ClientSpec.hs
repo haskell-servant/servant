@@ -8,15 +8,17 @@ module Servant.ClientSpec where
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Trans.Either
-import Data.Foldable
+import Data.Char
+import Data.Foldable (forM_)
 import Data.Proxy
 import Data.Typeable
 import Network.Socket
 import Network.URI
 import Network.Wai
 import Network.Wai.Handler.Warp
-import Prelude hiding (mapM_)
 import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
 
 import Servant.API
 import Servant.Client
@@ -31,6 +33,12 @@ type Api =
   :<|> "param" :> QueryParam "name" String :> Get Person
   :<|> "params" :> QueryParams "names" String :> Get [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get Bool
+  :<|> "multiple" :>
+            Capture "first" String :>
+            QueryParam "second" Int :>
+            QueryFlag "third" :>
+            ReqBody [(String, [Rational])] :>
+            Get (String, Maybe Int, Bool, [(String, [Rational])])
 api :: Proxy Api
 api = Proxy
 
@@ -45,6 +53,7 @@ server = serve api (
                    Nothing -> left (400, "missing parameter"))
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
+  :<|> \ a b c d -> return (a, b, c, d)
  )
 
 withServer :: (URIAuth -> IO a) -> IO a
@@ -56,12 +65,16 @@ getBody :: Person -> URIAuth -> EitherT String IO Person
 getQueryParam :: Maybe String -> URIAuth -> EitherT String IO Person
 getQueryParams :: [String] -> URIAuth -> EitherT String IO [Person]
 getQueryFlag :: Bool -> URIAuth -> EitherT String IO Bool
+getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
+  -> URIAuth
+  -> EitherT String IO (String, Maybe Int, Bool, [(String, [Rational])])
 (     getGet
  :<|> getCapture
  :<|> getBody
  :<|> getQueryParam
  :<|> getQueryParams
- :<|> getQueryFlag)
+ :<|> getQueryFlag
+ :<|> getMultiple)
     = client api
 
 spec :: Spec
@@ -90,6 +103,15 @@ spec = do
     forM_ [False, True] $ \ flag ->
     it (show flag) $ withServer $ \ host -> do
       runEitherT (getQueryFlag flag host) `shouldReturn` Right flag
+
+  modifyMaxSuccess (const 20) $ do
+    it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $
+      property $ forAllShrink pathGen shrink $ \ a -> \ b c d ->
+        ioProperty $ do
+          withServer $ \ host -> do
+            result <- runEitherT (getMultiple a b c d host)
+            return $
+              result === Right (a, b, c, d)
 
 
   context "client correctly handles error status codes" $ do
@@ -156,3 +178,9 @@ openTestSocket = do
   listen s 1
   port <- socketPort s
   return (fromIntegral port, s)
+
+pathGen :: Gen String
+pathGen = listOf $ elements $
+  filter (not . (`elem` "?%[]/#")) $
+  filter isPrint $
+  map chr [0..127]

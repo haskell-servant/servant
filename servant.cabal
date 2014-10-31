@@ -90,6 +90,7 @@ test-suite spec
     , http-types
     , network >= 2.6
     , network-uri >= 2.6
+    , QuickCheck
     , servant
     , string-conversions
     , text
