@@ -132,12 +132,15 @@ instance (KnownSymbol sym, HasServer sublayout)
   route Proxy subserver request respond = do
     let querytext = parseQueryText $ rawQueryString request
         param = case lookup paramname querytext of
-          Just Nothing -> True  -- param is there, with no value
-          _            -> False -- param not in the query string or with a value
+          Just Nothing  -> True  -- param is there, with no value
+          Just (Just v) -> examine v -- param with a value
+          Nothing       -> False -- param not in the query string
 
     route (Proxy :: Proxy sublayout) (subserver param) request respond
 
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+          examine v | v == "true" || v == "1" || v == "" = True
+                    | otherwise = False
 
 instance (KnownSymbol sym, HasClient sublayout)
       => HasClient (QueryFlag sym :> sublayout) where

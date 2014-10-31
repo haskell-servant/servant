@@ -178,6 +178,17 @@ queryParamSpec = do
               name = "ALICE"
              }
 
+          let params3' = "?capitalize="
+          response3' <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params3',
+            queryString = parseQuery params3',
+            pathInfo = ["b"]
+           }
+          liftIO $
+            decode' (simpleBody response3') `shouldBe` Just alice{
+              name = "ALICE"
+             }
+
 type PostApi = ReqBody Person :> Post Integer
 postApi :: Proxy PostApi
 postApi = Proxy
