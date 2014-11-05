@@ -15,12 +15,14 @@ import System.IO.Unsafe
 -- * Accessing APIs as a Client
 
 data Scheme = Http | Https
+  deriving (Show, Eq, Ord)
 
 data BaseUrl = BaseUrl {
   baseUrlScheme :: Scheme,
   baseUrlHost :: String,
   baseUrlPort :: Int
  }
+  deriving (Show, Eq, Ord)
 
 httpBaseUrl :: String -> BaseUrl
 httpBaseUrl host = BaseUrl Http host 80
