@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Servant.Client where
 
 import Control.Concurrent
@@ -7,6 +8,7 @@ import Control.Monad.Catch
 import Data.ByteString.Lazy
 import Data.Proxy
 import Data.Text
+import GHC.Generics
 import Network.HTTP.Client hiding (Proxy)
 import Network.HTTP.Types
 import Network.URI
@@ -15,14 +17,14 @@ import System.IO.Unsafe
 -- * Accessing APIs as a Client
 
 data Scheme = Http | Https
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Generic)
 
 data BaseUrl = BaseUrl {
   baseUrlScheme :: Scheme,
   baseUrlHost :: String,
   baseUrlPort :: Int
  }
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Generic)
 
 httpBaseUrl :: String -> BaseUrl
 httpBaseUrl host = BaseUrl Http host 80
