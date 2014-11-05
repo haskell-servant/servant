@@ -13,7 +13,6 @@ import Data.Foldable (forM_)
 import Data.Proxy
 import Data.Typeable
 import Network.Socket
-import Network.URI
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Test.Hspec
@@ -56,17 +55,17 @@ server = serve api (
   :<|> \ a b c d -> return (a, b, c, d)
  )
 
-withServer :: (URIAuth -> IO a) -> IO a
-withServer action = withWaiDaemon (return server) (action . mkHost "localhost")
+withServer :: (BaseUrl -> IO a) -> IO a
+withServer action = withWaiDaemon (return server) action
 
-getGet :: URIAuth -> EitherT String IO Person
-getCapture :: String -> URIAuth -> EitherT String IO Person
-getBody :: Person -> URIAuth -> EitherT String IO Person
-getQueryParam :: Maybe String -> URIAuth -> EitherT String IO Person
-getQueryParams :: [String] -> URIAuth -> EitherT String IO [Person]
-getQueryFlag :: Bool -> URIAuth -> EitherT String IO Bool
+getGet :: BaseUrl -> EitherT String IO Person
+getCapture :: String -> BaseUrl -> EitherT String IO Person
+getBody :: Person -> BaseUrl -> EitherT String IO Person
+getQueryParam :: Maybe String -> BaseUrl -> EitherT String IO Person
+getQueryParams :: [String] -> BaseUrl -> EitherT String IO [Person]
+getQueryFlag :: Bool -> BaseUrl -> EitherT String IO Bool
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
-  -> URIAuth
+  -> BaseUrl
   -> EitherT String IO (String, Maybe Int, Bool, [(String, [Rational])])
 (     getGet
  :<|> getCapture
@@ -119,8 +118,8 @@ spec = do
         test (WrappedApi api) =
           it (show (typeOf api)) $
           withWaiDaemon (return (serve api (left (500, "error message")))) $
-          \ (mkHost "localhost" -> host) -> do
-            let getResponse :: URIAuth -> EitherT String IO ()
+          \ host -> do
+            let getResponse :: BaseUrl -> EitherT String IO ()
                 getResponse = client api
             Left result <- runEitherT (getResponse host)
             result `shouldContain` "error message"
@@ -133,17 +132,17 @@ spec = do
 
 data WrappedApi where
   WrappedApi :: (HasServer api, Server api ~ EitherT (Int, String) IO a,
-                 HasClient api, Client api ~ (URIAuth -> EitherT String IO ()),
+                 HasClient api, Client api ~ (BaseUrl -> EitherT String IO ()),
                  Typeable api) =>
     Proxy api -> WrappedApi
 
 
 -- * utils
 
-withWaiDaemon :: IO Application -> (Port -> IO a) -> IO a
+withWaiDaemon :: IO Application -> (BaseUrl -> IO a) -> IO a
 withWaiDaemon mkApplication action = do
   application <- mkApplication
-  bracket (acquire application) free (\ (_, _, port) -> action port)
+  bracket (acquire application) free (\ (_, _, baseUrl) -> action baseUrl)
  where
   acquire application = do
     (notifyStart, waitForStart) <- lvar
@@ -158,7 +157,8 @@ withWaiDaemon mkApplication action = do
       runSettingsSocket settings socket application)
             `finally` notifyKilled ()
     krakenPort <- waitForStart
-    return (thread, waitForKilled, krakenPort)
+    let baseUrl = (httpBaseUrl "localhost"){baseUrlPort = krakenPort}
+    return (thread, waitForKilled, baseUrl)
   free (thread, waitForKilled, _) = do
     killThread thread
     waitForKilled

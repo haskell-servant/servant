@@ -14,9 +14,16 @@ import System.IO.Unsafe
 
 -- * Accessing APIs as a Client
 
--- | Convenience function for creating 'URIAuth's.
-mkHost :: String -> Int -> URIAuth
-mkHost hostName port = URIAuth "" hostName (":" ++ show port)
+data Scheme = Http | Https
+
+data BaseUrl = BaseUrl {
+  baseUrlScheme :: Scheme,
+  baseUrlHost :: String,
+  baseUrlPort :: Int
+ }
+
+httpBaseUrl :: String -> BaseUrl
+httpBaseUrl host = BaseUrl Http host 80
 
 -- | 'client' allows you to produce operations to query an API from a client.
 client :: HasClient layout => Proxy layout -> Client layout
@@ -50,11 +57,17 @@ appendToQueryString pname pvalue req =
 setRQBody :: ByteString -> Req -> Req
 setRQBody b req = req { reqBody = b }
 
-reqToRequest :: (Functor m, MonadThrow m) => Req -> URIAuth -> m Request
-reqToRequest req host = fmap (setrqb . setQS ) $ parseUrl url
+reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
+reqToRequest req (BaseUrl scheme host port) = fmap (setrqb . setQS ) $ parseUrl url
 
-  where url = show $ nullURI { uriScheme = "http:"
-                             , uriAuthority = Just host
+  where url = show $ nullURI { uriScheme = case scheme of
+                                  Http  -> "http:"
+                                  Https -> "https:"
+                             , uriAuthority = Just $
+                                 URIAuth { uriUserInfo = ""
+                                         , uriRegName = host
+                                         , uriPort = ":" ++ show port
+                                         }
                              , uriPath = reqPath req
                              }
 

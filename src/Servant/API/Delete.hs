@@ -9,7 +9,6 @@ import Data.Proxy
 import Data.String.Conversions
 import Data.Typeable
 import Network.HTTP.Types
-import Network.URI
 import Network.Wai
 import Servant.Client
 import Servant.Docs
@@ -36,7 +35,7 @@ instance HasServer Delete where
     | otherwise = respond $ failWith NotFound
 
 instance HasClient Delete where
-  type Client Delete = URIAuth -> EitherT String IO ()
+  type Client Delete = BaseUrl -> EitherT String IO ()
 
   clientWithRoute Proxy req host =
     performRequest methodDelete req 204 host

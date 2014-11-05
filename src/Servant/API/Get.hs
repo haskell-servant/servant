@@ -10,7 +10,6 @@ import Data.Proxy
 import Data.String.Conversions
 import Data.Typeable
 import Network.HTTP.Types
-import Network.URI
 import Network.Wai
 import Servant.Client
 import Servant.Docs
@@ -37,7 +36,7 @@ instance ToJSON result => HasServer (Get result) where
     | otherwise = respond $ failWith NotFound
 
 instance FromJSON result => HasClient (Get result) where
-  type Client (Get result) = URIAuth -> EitherT String IO result
+  type Client (Get result) = BaseUrl -> EitherT String IO result
   clientWithRoute Proxy req host =
     performRequest methodGet req 200 host
 

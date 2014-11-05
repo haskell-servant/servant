@@ -13,13 +13,12 @@ import Data.Attoparsec.ByteString
 import Data.ByteString.Lazy
 import Data.String.Conversions
 import Network.HTTP.Types
-import Network.URI
 import Servant.Client
 
 import qualified Network.HTTP.Client as Client
 
 performRequest :: FromJSON result =>
-  Method -> Req -> Int -> URIAuth -> EitherT String IO result
+  Method -> Req -> Int -> BaseUrl -> EitherT String IO result
 performRequest method req wantedStatus host = do
   partialRequest <- liftIO $ reqToRequest req host
 

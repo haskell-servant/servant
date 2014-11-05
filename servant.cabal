@@ -43,7 +43,7 @@ library
     , split
     , http-client
     , http-types
-    , network-uri
+    , network-uri >= 2.6
     , wai
     , warp
     , safe
@@ -70,7 +70,6 @@ executable greet
     , wai
     , either
     , text
-    , network-uri
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -90,7 +89,6 @@ test-suite spec
     , http-client
     , http-types
     , network >= 2.6
-    , network-uri >= 2.6
     , QuickCheck
     , servant
     , string-conversions

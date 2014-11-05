@@ -15,7 +15,6 @@ import Data.Monoid
 import Data.Proxy
 import Data.Text
 import GHC.Generics
-import Network.URI
 import Network.Wai
 import Network.Wai.Handler.Warp
 
@@ -75,9 +74,9 @@ server = hello :<|> greet :<|> delete
 clientApi :: Client TestApi
 clientApi = client testApi
 
-getGreet :: Text -> Maybe Bool -> URIAuth -> EitherT String IO Greet
-postGreet :: Greet -> URIAuth -> EitherT String IO Greet
-deleteGreet :: Text -> URIAuth -> EitherT String IO ()
+getGreet :: Text -> Maybe Bool -> BaseUrl -> EitherT String IO Greet
+postGreet :: Greet -> BaseUrl -> EitherT String IO Greet
+deleteGreet :: Text -> BaseUrl -> EitherT String IO ()
 getGreet :<|> postGreet :<|> deleteGreet = clientApi
 
 -- Turn the server into a WAI app
@@ -96,7 +95,7 @@ runTestServer port = run port test
 main :: IO ()
 main = do
   tid <- forkIO $ runTestServer 8001
-  let uri = mkHost "localhost" 8001
+  let uri = BaseUrl Http "localhost" 8001
   print =<< runEitherT (getGreet "alp" (Just True) uri)
   print =<< runEitherT (getGreet "alp" (Just False) uri)
   let g = Greet "yo"
