@@ -31,7 +31,6 @@ library
     Servant.Docs
     Servant.Server
     Servant.Utils.BaseUrl
-    Servant.Utils.Client
     Servant.Utils.Req
     Servant.Utils.Text
   build-depends:

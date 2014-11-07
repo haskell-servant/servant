@@ -15,7 +15,7 @@ import Servant.Client
 import Servant.Docs
 import Servant.Server
 import Servant.Utils.BaseUrl
-import Servant.Utils.Client
+import Servant.Utils.Req
 
 -- | Endpoint for POST requests. The type variable represents the type of the
 -- response body (not the request body, use 'Servant.API.RQBody.RQBody' for

@@ -15,7 +15,7 @@ import Servant.Client
 import Servant.Docs
 import Servant.Server
 import Servant.Utils.BaseUrl
-import Servant.Utils.Client
+import Servant.Utils.Req
 
 -- | Endpoint for simple GET requests. The server doesn't receive any arguments
 -- and serves the contained type as JSON.

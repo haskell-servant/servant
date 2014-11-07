@@ -14,7 +14,7 @@ import Servant.Client
 import Servant.Docs
 import Servant.Server
 import Servant.Utils.BaseUrl
-import Servant.Utils.Client
+import Servant.Utils.Req
 
 -- | Endpoint for DELETE requests.
 data Delete
