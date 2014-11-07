@@ -6,7 +6,7 @@ import Control.DeepSeq
 import Test.Hspec
 import Test.QuickCheck
 
-import Servant.Client.BaseUrl
+import Servant.Utils.BaseUrl
 
 spec :: Spec
 spec = do

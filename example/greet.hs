@@ -20,9 +20,9 @@ import Network.Wai.Handler.Warp
 
 import Servant.API
 import Servant.Client
-import Servant.Client.BaseUrl
 import Servant.Docs
 import Servant.Server
+import Servant.Utils.BaseUrl
 
 -- * Example
 

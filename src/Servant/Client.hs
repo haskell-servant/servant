@@ -12,7 +12,7 @@ import Network.HTTP.Types
 import Network.URI
 import System.IO.Unsafe
 
-import Servant.Client.BaseUrl
+import Servant.Utils.BaseUrl
 
 -- * Accessing APIs as a Client
 

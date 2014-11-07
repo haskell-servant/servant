@@ -12,9 +12,9 @@ import Data.Typeable
 import Network.HTTP.Types
 import Network.Wai
 import Servant.Client
-import Servant.Client.BaseUrl
 import Servant.Docs
 import Servant.Server
+import Servant.Utils.BaseUrl
 import Servant.Utils.Client
 
 -- | Endpoint for simple GET requests. The server doesn't receive any arguments

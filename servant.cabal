@@ -14,23 +14,23 @@ cabal-version:       >=1.10
 library
   exposed-modules:
     Servant
-    Servant.Client
-    Servant.Client.BaseUrl
-    Servant.Docs
-    Servant.Server
     Servant.API
+    Servant.API.Alternative
     Servant.API.Capture
     Servant.API.Delete
     Servant.API.Elem
     Servant.API.Get
     Servant.API.Post
     Servant.API.Put
-    Servant.API.QueryParam
-    Servant.API.ReqBody
     Servant.API.QQ
+    Servant.API.QueryParam
     Servant.API.Raw
+    Servant.API.ReqBody
     Servant.API.Sub
-    Servant.API.Alternative
+    Servant.Client
+    Servant.Docs
+    Servant.Server
+    Servant.Utils.BaseUrl
     Servant.Utils.Client
     Servant.Utils.Text
   build-depends:

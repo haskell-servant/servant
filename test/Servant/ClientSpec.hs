@@ -21,8 +21,8 @@ import Test.QuickCheck
 
 import Servant.API
 import Servant.Client
-import Servant.Client.BaseUrl
 import Servant.Server
+import Servant.Utils.BaseUrl
 
 import Servant.ServerSpec
 
