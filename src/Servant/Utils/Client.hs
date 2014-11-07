@@ -2,6 +2,7 @@
 module Servant.Utils.Client where
 
 import Control.Applicative
+import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
@@ -12,11 +13,22 @@ import Data.Aeson.Types
 import Data.Attoparsec.ByteString
 import Data.ByteString.Lazy
 import Data.String.Conversions
+import Network.HTTP.Client
 import Network.HTTP.Types
-import Servant.Client
 import Servant.Utils.BaseUrl
+import Servant.Utils.Req
+import System.IO.Unsafe
 
 import qualified Network.HTTP.Client as Client
+
+{-# NOINLINE __manager #-}
+__manager :: MVar Manager
+__manager = unsafePerformIO (newManager defaultManagerSettings >>= newMVar)
+
+__withGlobalManager :: (Manager -> IO a) -> IO a
+__withGlobalManager action = modifyMVar __manager $ \ manager -> do
+  result <- action manager
+  return (manager, result)
 
 performRequest :: FromJSON result =>
   Method -> Req -> Int -> BaseUrl -> EitherT String IO result
