@@ -14,6 +14,7 @@ import Data.ByteString.Lazy
 import Data.String.Conversions
 import Network.HTTP.Types
 import Servant.Client
+import Servant.Client.BaseUrl
 
 import qualified Network.HTTP.Client as Client
 

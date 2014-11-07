@@ -21,6 +21,7 @@ import Test.QuickCheck
 
 import Servant.API
 import Servant.Client
+import Servant.Client.BaseUrl
 import Servant.Server
 
 import Servant.ServerSpec
@@ -157,7 +158,7 @@ withWaiDaemon mkApplication action = do
       runSettingsSocket settings socket application)
             `finally` notifyKilled ()
     krakenPort <- waitForStart
-    let baseUrl = (httpBaseUrl "localhost"){baseUrlPort = krakenPort}
+    let baseUrl = (BaseUrl Http "localhost" 80){baseUrlPort = krakenPort}
     return (thread, waitForKilled, baseUrl)
   free (thread, waitForKilled, _) = do
     killThread thread
