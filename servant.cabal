@@ -26,13 +26,13 @@ library
     Servant.API.ReqBody
     Servant.API.Sub
     Servant.Client
+    Servant.Common.BaseUrl
+    Servant.Common.Req
+    Servant.Common.Text
     Servant.Docs
     Servant.Server
     Servant.Utils.ApiQuasiQuoting
-    Servant.Utils.BaseUrl
     Servant.Utils.Links
-    Servant.Utils.Req
-    Servant.Utils.Text
   build-depends:
       base >=4.7 && <5
     , either

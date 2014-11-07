@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Servant.Client.BaseUrlSpec where
+module Servant.Common.BaseUrlSpec where
 
 import Control.Applicative
 import Control.DeepSeq
 import Test.Hspec
 import Test.QuickCheck
 
-import Servant.Utils.BaseUrl
+import Servant.Common.BaseUrl
 
 spec :: Spec
 spec = do

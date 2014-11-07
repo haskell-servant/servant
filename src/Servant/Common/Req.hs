@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Servant.Utils.Req where
+module Servant.Common.Req where
 
 import Control.Applicative
 import Control.Concurrent
@@ -19,7 +19,7 @@ import Data.Text
 import Network.HTTP.Client
 import Network.HTTP.Types
 import Network.URI
-import Servant.Utils.BaseUrl
+import Servant.Common.BaseUrl
 import System.IO.Unsafe
 
 import qualified Network.HTTP.Client as Client

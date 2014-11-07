@@ -4,7 +4,7 @@ module Servant.Client where
 
 import Data.Proxy
 
-import Servant.Utils.Req
+import Servant.Common.Req
 
 -- * Accessing APIs as a Client
 

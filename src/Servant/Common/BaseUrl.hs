@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ViewPatterns #-}
-module Servant.Utils.BaseUrl where
+module Servant.Common.BaseUrl where
 
 import Data.List
 import GHC.Generics

@@ -16,10 +16,10 @@ import Network.HTTP.Types
 import Network.Wai
 import Servant.API.Sub
 import Servant.Client
+import Servant.Common.Req
+import Servant.Common.Text
 import Servant.Docs
 import Servant.Server
-import Servant.Utils.Req
-import Servant.Utils.Text
 
 -- * Single query string parameter lookup
 

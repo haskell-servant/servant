@@ -9,9 +9,9 @@ import Data.String.Conversions
 import GHC.TypeLits
 import Network.Wai
 import Servant.Client
+import Servant.Common.Req
 import Servant.Docs
 import Servant.Server
-import Servant.Utils.Req
 
 -- | The contained API (second argument) can be found under @("/" ++ path)@
 -- (path being the first argument).

@@ -12,10 +12,10 @@ import Data.Typeable
 import Network.HTTP.Types
 import Network.Wai
 import Servant.Client
+import Servant.Common.BaseUrl
+import Servant.Common.Req
 import Servant.Docs
 import Servant.Server
-import Servant.Utils.BaseUrl
-import Servant.Utils.Req
 
 -- | Endpoint for simple GET requests. The server doesn't receive any arguments
 -- and serves the contained type as JSON.

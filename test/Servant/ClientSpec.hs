@@ -22,7 +22,7 @@ import Test.QuickCheck
 import Servant.API
 import Servant.Client
 import Servant.Server
-import Servant.Utils.BaseUrl
+import Servant.Common.BaseUrl
 
 import Servant.ServerSpec
 

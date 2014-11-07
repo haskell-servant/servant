@@ -11,9 +11,9 @@ import Data.Proxy
 import Network.Wai
 import Servant.API.Sub
 import Servant.Client
+import Servant.Common.Req
 import Servant.Docs
 import Servant.Server
-import Servant.Utils.Req
 
 -- * Request Body support
 data ReqBody a
