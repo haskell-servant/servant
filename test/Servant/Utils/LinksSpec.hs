@@ -1,13 +1,13 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeOperators #-}
-module Servant.API.ElemSpec where
+module Servant.Utils.LinksSpec where
 
 import Test.Hspec
 
 import Servant.API
-import Servant.API.Elem (IsElem, IsLink)
 import Servant.Utils.ApiQuasiQuotingSpec ( (~>) )
+import Servant.Utils.Links (IsElem, IsLink)
 
 type TestApi =
        "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Get Bool

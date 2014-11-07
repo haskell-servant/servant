@@ -28,17 +28,17 @@ module Servant.API (
   -- | QuasiQuotes for endpoints
   module Servant.Utils.ApiQuasiQuoting,
   -- | Type-safe internal URLs
-  module Servant.API.Elem,
+  module Servant.Utils.Links,
   ) where
 
+import Servant.API.Alternative
 import Servant.API.Capture
 import Servant.API.Delete
-import Servant.API.Elem (mkLink)
 import Servant.API.Get
 import Servant.API.Post
 import Servant.API.Put
 import Servant.API.QueryParam
-import Servant.Utils.ApiQuasiQuoting (sitemap)
 import Servant.API.ReqBody
 import Servant.API.Sub
-import Servant.API.Alternative
+import Servant.Utils.ApiQuasiQuoting (sitemap)
+import Servant.Utils.Links (mkLink)

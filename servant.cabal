@@ -18,7 +18,6 @@ library
     Servant.API.Alternative
     Servant.API.Capture
     Servant.API.Delete
-    Servant.API.Elem
     Servant.API.Get
     Servant.API.Post
     Servant.API.Put
@@ -31,6 +30,7 @@ library
     Servant.Server
     Servant.Utils.ApiQuasiQuoting
     Servant.Utils.BaseUrl
+    Servant.Utils.Links
     Servant.Utils.Req
     Servant.Utils.Text
   build-depends:

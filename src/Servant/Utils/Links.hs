@@ -6,7 +6,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Servant.API.Elem where
+module Servant.Utils.Links where
 
 import Data.Proxy
 import GHC.TypeLits
