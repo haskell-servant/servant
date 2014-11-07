@@ -4,7 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Servant.API.QQ where
+module Servant.Utils.ApiQuasiQuoting where
 
 import Control.Applicative
 import Data.List.Split (splitOn)

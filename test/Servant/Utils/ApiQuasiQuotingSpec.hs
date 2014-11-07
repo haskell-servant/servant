@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeFamilies  #-}
 {-# LANGUAGE TypeOperators  #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Servant.API.QQSpec where
+module Servant.Utils.ApiQuasiQuotingSpec where
 
 import Test.Hspec
 

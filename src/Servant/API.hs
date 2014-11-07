@@ -26,7 +26,7 @@ module Servant.API (
 
   -- * Utilities
   -- | QuasiQuotes for endpoints
-  module Servant.API.QQ,
+  module Servant.Utils.ApiQuasiQuoting,
   -- | Type-safe internal URLs
   module Servant.API.Elem,
   ) where
@@ -38,7 +38,7 @@ import Servant.API.Get
 import Servant.API.Post
 import Servant.API.Put
 import Servant.API.QueryParam
-import Servant.API.QQ (sitemap)
+import Servant.Utils.ApiQuasiQuoting (sitemap)
 import Servant.API.ReqBody
 import Servant.API.Sub
 import Servant.API.Alternative

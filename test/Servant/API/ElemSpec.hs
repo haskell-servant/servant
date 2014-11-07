@@ -7,7 +7,7 @@ import Test.Hspec
 
 import Servant.API
 import Servant.API.Elem (IsElem, IsLink)
-import Servant.API.QQSpec ( (~>) )
+import Servant.Utils.ApiQuasiQuotingSpec ( (~>) )
 
 type TestApi =
        "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Get Bool

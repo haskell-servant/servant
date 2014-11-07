@@ -22,7 +22,6 @@ library
     Servant.API.Get
     Servant.API.Post
     Servant.API.Put
-    Servant.API.QQ
     Servant.API.QueryParam
     Servant.API.Raw
     Servant.API.ReqBody
@@ -30,6 +29,7 @@ library
     Servant.Client
     Servant.Docs
     Servant.Server
+    Servant.Utils.ApiQuasiQuoting
     Servant.Utils.BaseUrl
     Servant.Utils.Req
     Servant.Utils.Text
