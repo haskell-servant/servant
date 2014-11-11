@@ -12,8 +12,11 @@ module Servant (
   module Servant.Docs,
   -- | Helper module
   module Servant.Common.Text,
+  -- | Useful re-exports
+  Proxy(..),
   ) where
 
+import Data.Proxy
 import Servant.API
 import Servant.Client
 import Servant.Common.BaseUrl
