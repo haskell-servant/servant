@@ -4,6 +4,7 @@ module Servant.API.Raw where
 
 import Data.Proxy
 import Network.Wai
+import Servant.Docs
 import Servant.Server
 
 -- | Endpoint for plugging in your own Wai 'Application's.
@@ -16,3 +17,7 @@ instance HasServer Raw where
   type Server Raw = Application
   route Proxy rawApplication request respond =
     rawApplication request (respond . succeedWith)
+
+instance HasDocs Raw where
+  docsFor _proxy (endpoint, action) =
+    single endpoint action
