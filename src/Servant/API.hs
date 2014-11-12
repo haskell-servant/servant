@@ -24,6 +24,10 @@ module Servant.API (
   -- | PUT requests
   module Servant.API.Put,
 
+  -- * Untyped endpoints
+  -- | Plugging in a wai 'Network.Wai.Application'
+  module Servant.API.Raw,
+
   -- * Utilities
   -- | QuasiQuotes for endpoints
   module Servant.Utils.ApiQuasiQuoting,
@@ -38,6 +42,7 @@ import Servant.API.Get
 import Servant.API.Post
 import Servant.API.Put
 import Servant.API.QueryParam
+import Servant.API.Raw
 import Servant.API.ReqBody
 import Servant.API.Sub
 import Servant.Utils.ApiQuasiQuoting (sitemap)
