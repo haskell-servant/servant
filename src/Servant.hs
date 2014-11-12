@@ -12,6 +12,10 @@ module Servant (
   module Servant.Docs,
   -- | Helper module
   module Servant.Common.Text,
+  -- | Utilities on top of the servant core
+  module Servant.Utils.ApiQuasiQuoting,
+  module Servant.Utils.Links,
+  module Servant.Utils.StaticFiles,
   -- | Useful re-exports
   Proxy(..),
   ) where
@@ -23,3 +27,6 @@ import Servant.Common.BaseUrl
 import Servant.Common.Text
 import Servant.Docs
 import Servant.Server
+import Servant.Utils.ApiQuasiQuoting
+import Servant.Utils.Links
+import Servant.Utils.StaticFiles

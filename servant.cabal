@@ -46,6 +46,7 @@ library
     , http-types
     , network-uri >= 2.6
     , wai
+    , wai-app-static
     , warp
     , safe
     , transformers
@@ -94,6 +95,7 @@ test-suite spec
     , QuickCheck
     , servant
     , string-conversions
+    , temporary
     , text
     , transformers
     , wai
