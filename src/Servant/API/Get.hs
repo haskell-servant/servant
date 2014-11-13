@@ -46,5 +46,5 @@ instance ToSample a => HasDocs (Get a) where
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ toSample p
+          action' = action & response.respBody .~ sampleByteString p
           p = Proxy :: Proxy a

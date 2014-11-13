@@ -49,7 +49,7 @@ instance ToSample a => HasDocs (Put a) where
 
     where endpoint' = endpoint & method .~ DocPUT
 
-          action' = action & response.respBody .~ toSample p
+          action' = action & response.respBody .~ sampleByteString p
                            & response.respStatus .~ 200
 
           p = Proxy :: Proxy a

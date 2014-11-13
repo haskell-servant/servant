@@ -46,9 +46,7 @@ instance ToParam (QueryParam "capital" Bool) where
                   Normal
 
 instance ToSample Greet where
-  toSample Proxy = Just (encode g)
-
-    where g = Greet "Hello, haskeller!"
+  toSample = Just $ Greet "Hello, haskeller!"
 
 -- API specification
 type TestApi =

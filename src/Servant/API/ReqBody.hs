@@ -48,5 +48,5 @@ instance (ToSample a, HasDocs sublayout)
 
     where sublayoutP = Proxy :: Proxy sublayout
 
-          action' = action & rqbody .~ toSample p
+          action' = action & rqbody .~ sampleByteString p
           p = Proxy :: Proxy a

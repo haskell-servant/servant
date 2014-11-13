@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -------------------------------------------------------------------------------
@@ -88,7 +89,10 @@ module Servant.Docs
     HasDocs(..), docs, markdown, printMarkdown
 
   , -- * Classes you need to implement for your types
-    ToSample(..), ToParam(..), ToCapture(..)
+    ToSample(..)
+  , sampleByteString
+  , ToParam(..)
+  , ToCapture(..)
 
   , -- * ADTs to represent an 'API'
     Method(..)
@@ -320,10 +324,13 @@ class HasDocs layout where
 -- >
 -- >     where g = Greet "Hello, haskeller!"
 class ToJSON a => ToSample a where
-  toSample :: Proxy a -> Maybe ByteString
+  toSample :: Maybe a
 
 instance ToSample () where
-  toSample Proxy = Just $ encode ()
+  toSample = Just ()
+
+sampleByteString :: forall a . ToSample a => Proxy a -> Maybe ByteString
+sampleByteString Proxy = fmap encode (toSample :: Maybe a)
 
 -- | The class that helps us automatically get documentation
 --   for GET parameters.

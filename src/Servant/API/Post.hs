@@ -50,7 +50,7 @@ instance ToSample a => HasDocs (Post a) where
 
     where endpoint' = endpoint & method .~ DocPOST
 
-          action' = action & response.respBody .~ toSample p
+          action' = action & response.respBody .~ sampleByteString p
                            & response.respStatus .~ 201
 
           p = Proxy :: Proxy a
