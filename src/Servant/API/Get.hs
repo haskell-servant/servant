@@ -39,7 +39,7 @@ instance ToJSON result => HasServer (Get result) where
 instance FromJSON result => HasClient (Get result) where
   type Client (Get result) = BaseUrl -> EitherT String IO result
   clientWithRoute Proxy req host =
-    performRequest methodGet req 200 host
+    performRequestJSON methodGet req 200 host
 
 instance ToSample a => HasDocs (Get a) where
   docsFor Proxy (endpoint, action) =

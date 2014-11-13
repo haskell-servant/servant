@@ -77,9 +77,13 @@ __withGlobalManager action = modifyMVar __manager $ \ manager -> do
   result <- action manager
   return (manager, result)
 
-performRequest :: FromJSON result =>
-  Method -> Req -> Int -> BaseUrl -> EitherT String IO result
-performRequest method req wantedStatus host = do
+
+displayHttpRequest :: Method -> String
+displayHttpRequest method = "HTTP " ++ cs method ++ " request"
+
+
+performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO ByteString
+performRequest method req isWantedStatus host = do
   partialRequest <- liftIO $ reqToRequest req host
 
   let request = partialRequest { Client.method = method
@@ -90,21 +94,27 @@ performRequest method req wantedStatus host = do
     Client.httpLbs request manager
   case eResponse of
     Left status ->
-      left (requestString ++ " failed with status: " ++ showStatus status)
+      left (displayHttpRequest method ++ " failed with status: " ++ showStatus status)
 
     Right response -> do
       let status = Client.responseStatus response
-      when (statusCode status /= wantedStatus) $
-        left (requestString ++ " failed with status: " ++ showStatus status)
-      result <- either
-        (\ message -> left (requestString ++ " returned invalid json: " ++ message))
-        return
-        (decodeLenient (Client.responseBody response))
-      return result
+      unless (isWantedStatus (statusCode status)) $
+        left (displayHttpRequest method ++ " failed with status: " ++ showStatus status)
+      return $ Client.responseBody response
   where
-    requestString = "HTTP " ++ cs method ++ " request"
     showStatus (Status code message) =
       show code ++ " - " ++ cs message
+
+
+performRequestJSON :: FromJSON result =>
+  Method -> Req -> Int -> BaseUrl -> EitherT String IO result
+performRequestJSON method req wantedStatus host = do
+  responseBody <- performRequest method req (== wantedStatus) host
+  either
+    (\ message -> left (displayHttpRequest method ++ " returned invalid json: " ++ message))
+    return
+    (decodeLenient responseBody)
+
 
 catchStatusCodeException :: IO a -> IO (Either Status a)
 catchStatusCodeException action = catch (Right <$> action) $

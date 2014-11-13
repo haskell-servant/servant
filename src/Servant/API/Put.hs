@@ -41,7 +41,7 @@ instance FromJSON a => HasClient (Put a) where
   type Client (Put a) = BaseUrl -> EitherT String IO a
 
   clientWithRoute Proxy req host =
-    performRequest methodPut req 200 host
+    performRequestJSON methodPut req 200 host
 
 instance ToSample a => HasDocs (Put a) where
   docsFor Proxy (endpoint, action) =

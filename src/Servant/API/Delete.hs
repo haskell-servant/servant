@@ -39,7 +39,7 @@ instance HasClient Delete where
   type Client Delete = BaseUrl -> EitherT String IO ()
 
   clientWithRoute Proxy req host =
-    performRequest methodDelete req 204 host
+    performRequestJSON methodDelete req 204 host
 
 instance HasDocs Delete where
   docsFor Proxy (endpoint, action) =

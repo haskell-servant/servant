@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Servant.ClientSpec where
@@ -8,10 +9,12 @@ module Servant.ClientSpec where
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Trans.Either
+import Data.ByteString.Lazy (ByteString)
 import Data.Char
 import Data.Foldable (forM_)
 import Data.Proxy
 import Data.Typeable
+import Network.HTTP.Types
 import Network.Socket
 import Network.Wai
 import Network.Wai.Handler.Warp
@@ -33,6 +36,8 @@ type Api =
   :<|> "param" :> QueryParam "name" String :> Get Person
   :<|> "params" :> QueryParams "names" String :> Get [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get Bool
+  :<|> "rawSuccess" :> Raw
+  :<|> "rawFailure" :> Raw
   :<|> "multiple" :>
             Capture "first" String :>
             QueryParam "second" Int :>
@@ -53,6 +58,8 @@ server = serve api (
                    Nothing -> left (400, "missing parameter"))
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
+  :<|> (\ _request respond -> respond $ responseLBS ok200 [] "rawSuccess")
+  :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
   :<|> \ a b c d -> return (a, b, c, d)
  )
 
@@ -65,6 +72,8 @@ getBody :: Person -> BaseUrl -> EitherT String IO Person
 getQueryParam :: Maybe String -> BaseUrl -> EitherT String IO Person
 getQueryParams :: [String] -> BaseUrl -> EitherT String IO [Person]
 getQueryFlag :: Bool -> BaseUrl -> EitherT String IO Bool
+getRawSuccess :: Method -> BaseUrl -> EitherT String IO ByteString
+getRawFailure :: Method -> BaseUrl -> EitherT String IO ByteString
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> BaseUrl
   -> EitherT String IO (String, Maybe Int, Bool, [(String, [Rational])])
@@ -74,6 +83,8 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
  :<|> getQueryParam
  :<|> getQueryParams
  :<|> getQueryFlag
+ :<|> getRawSuccess
+ :<|> getRawFailure
  :<|> getMultiple)
     = client api
 
