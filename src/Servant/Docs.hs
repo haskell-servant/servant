@@ -322,6 +322,9 @@ class HasDocs layout where
 class ToJSON a => ToSample a where
   toSample :: Proxy a -> Maybe ByteString
 
+instance ToSample () where
+  toSample Proxy = Just $ encode ()
+
 -- | The class that helps us automatically get documentation
 --   for GET parameters.
 --
