@@ -90,9 +90,11 @@ data Typ = Val String
 
 parseTyp :: Parser Typ
 parseTyp = do
-    f <- many (noneOf "-#\n\r")
+    f <- many (noneOf "-{\n\r")
     spaces
-    s <- optionMaybe parseRet
+    s <- optionMaybe (try parseRet)
+    try $ optional inlineComment
+    try $ optional blockComment
     case s of
         Nothing -> return $ Val (stripTr f)
         Just s' -> return $ ReqArgVal (stripTr f) (stripTr s')
@@ -101,7 +103,7 @@ parseTyp = do
     parseRet = do
         string "->"
         spaces
-        many (noneOf "#\n\r")
+        many (noneOf "-{\n\r")
     stripTr = reverse . dropWhile (== ' ') . reverse
 
 
@@ -116,6 +118,18 @@ parseEntry = do
         Val s -> return $ url (met s)
         ReqArgVal i o -> return $ url $ reqBody i (met o)
 
+blockComment :: Parser ()
+blockComment = do
+    string "{-"
+    manyTill anyChar (try $ string "-}")
+    return ()
+
+inlineComment :: Parser ()
+inlineComment = do
+    string "--"
+    manyTill anyChar (try $ lookAhead eol)
+    return ()
+
 eol :: Parser String
 eol =   try (string "\n\r")
     <|> try (string "\r\n")
@@ -124,7 +138,7 @@ eol =   try (string "\n\r")
     <?> "end of line"
 
 eols :: Parser ()
-eols = skipMany $ void eol
+eols = skipMany $ void eol <|> blockComment <|> inlineComment
 
 parseAll :: Parser Type
 parseAll = do

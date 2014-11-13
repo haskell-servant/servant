@@ -83,6 +83,34 @@ POST hello  Bool
 GET  hello  Bool
 |]
 type TwoPaths' = ("hello" :> Post Bool) :<|> ("hello" :> Get Bool)
+
+type WithInlineComments = [sitemap|
+GET  hello  Bool   -- This is a comment
+|]
+type WithInlineComments' = "hello" :> Get Bool
+
+type WithInlineComments2 = [sitemap|
+GET  hello  Bool
+-- This is a comment
+|]
+type WithInlineComments2' = "hello" :> Get Bool
+
+
+type WithBlockComments = [sitemap|
+GET  hello  Bool   {-
+POST hello  Bool
+-}
+|]
+type WithBlockComments' = "hello" :> Get Bool
+
+type WithBlockComments2 = [sitemap|
+GET  hello  Bool   {-
+POST hello  Bool
+-}
+POST hello Bool
+|]
+type WithBlockComments2' = ("hello" :> Get Bool) :<|> ("hello" :> Post Bool)
+
 --------------------------------------------------------------------------
 -- Spec
 --------------------------------------------------------------------------
@@ -118,6 +146,12 @@ spec = do
             (u::SimpleQueryParam) ~= (u::SimpleQueryParam''') ~> False
         it "Handles multiples paths" $ do
             (u::TwoPaths) ~= (u::TwoPaths') ~> True
+        it "Ignores inline comments" $ do
+            (u::WithInlineComments) ~= (u::WithInlineComments') ~> True
+            (u::WithInlineComments2) ~= (u::WithInlineComments2') ~> True
+        it "Ignores inline comments" $ do
+            (u::WithBlockComments) ~= (u::WithBlockComments') ~> True
+            (u::WithBlockComments2) ~= (u::WithBlockComments2') ~> True
 
 
 --------------------------------------------------------------------------
