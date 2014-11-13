@@ -26,8 +26,8 @@ toHtml :: String -> String
 toHtml markdown =
   "<html>" ++
   "<body>" ++
-  "<verbatim>" ++
+  "<pre>" ++
   markdown ++
-  "</verbatim>" ++
+  "</pre>" ++
   "</body>" ++
   "</html>"
