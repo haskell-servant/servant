@@ -82,11 +82,12 @@ displayHttpRequest :: Method -> String
 displayHttpRequest method = "HTTP " ++ cs method ++ " request"
 
 
-performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO ByteString
+performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO (Int, ByteString)
 performRequest method req isWantedStatus host = do
   partialRequest <- liftIO $ reqToRequest req host
 
   let request = partialRequest { Client.method = method
+                               , checkStatus = \ _status _headers _cookies -> Nothing
                                }
 
   eResponse <- liftIO $ __withGlobalManager $ \ manager ->
@@ -100,7 +101,7 @@ performRequest method req isWantedStatus host = do
       let status = Client.responseStatus response
       unless (isWantedStatus (statusCode status)) $
         left (displayHttpRequest method ++ " failed with status: " ++ showStatus status)
-      return $ Client.responseBody response
+      return $ (statusCode status, Client.responseBody response)
   where
     showStatus (Status code message) =
       show code ++ " - " ++ cs message
@@ -109,7 +110,7 @@ performRequest method req isWantedStatus host = do
 performRequestJSON :: FromJSON result =>
   Method -> Req -> Int -> BaseUrl -> EitherT String IO result
 performRequestJSON method req wantedStatus host = do
-  responseBody <- performRequest method req (== wantedStatus) host
+  (_status, responseBody) <- performRequest method req (== wantedStatus) host
   either
     (\ message -> left (displayHttpRequest method ++ " returned invalid json: " ++ message))
     return

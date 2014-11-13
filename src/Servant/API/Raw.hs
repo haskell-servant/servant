@@ -26,7 +26,7 @@ instance HasServer Raw where
     rawApplication request (respond . succeedWith)
 
 instance HasClient Raw where
-  type Client Raw = Method -> BaseUrl -> EitherT String IO ByteString
+  type Client Raw = Method -> BaseUrl -> EitherT String IO (Int, ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> Client Raw
   clientWithRoute Proxy req method host =

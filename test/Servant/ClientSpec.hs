@@ -72,8 +72,8 @@ getBody :: Person -> BaseUrl -> EitherT String IO Person
 getQueryParam :: Maybe String -> BaseUrl -> EitherT String IO Person
 getQueryParams :: [String] -> BaseUrl -> EitherT String IO [Person]
 getQueryFlag :: Bool -> BaseUrl -> EitherT String IO Bool
-getRawSuccess :: Method -> BaseUrl -> EitherT String IO ByteString
-getRawFailure :: Method -> BaseUrl -> EitherT String IO ByteString
+getRawSuccess :: Method -> BaseUrl -> EitherT String IO (Int, ByteString)
+getRawFailure :: Method -> BaseUrl -> EitherT String IO (Int, ByteString)
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> BaseUrl
   -> EitherT String IO (String, Maybe Int, Bool, [(String, [Rational])])
@@ -114,6 +114,12 @@ spec = do
     forM_ [False, True] $ \ flag ->
     it (show flag) $ withServer $ \ host -> do
       runEitherT (getQueryFlag flag host) `shouldReturn` Right flag
+
+  it "Servant.API.Raw on success" $ withServer $ \ host -> do
+    runEitherT (getRawSuccess methodGet host) `shouldReturn` Right (200, "rawSuccess")
+
+  it "Servant.API.Raw on failure" $ withServer $ \ host -> do
+    runEitherT (getRawFailure methodGet host) `shouldReturn` Right (400, "rawFailure")
 
   modifyMaxSuccess (const 20) $ do
     it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $
