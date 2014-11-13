@@ -47,6 +47,7 @@ library
     , network-uri >= 2.6
     , wai
     , warp
+    , parsec
     , safe
     , transformers
     , template-haskell
@@ -92,6 +93,7 @@ test-suite spec
     , http-types
     , network >= 2.6
     , QuickCheck
+    , parsec
     , servant
     , string-conversions
     , text

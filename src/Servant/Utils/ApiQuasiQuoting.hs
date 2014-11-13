@@ -4,14 +4,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module Servant.Utils.ApiQuasiQuoting where
 
-import Control.Applicative
-import Data.List.Split (splitOn)
-import Data.Maybe (mapMaybe)
+import Control.Monad (void)
+import Control.Applicative hiding (many, (<|>), optional)
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH
-import Safe (headMay)
+import Text.ParserCombinators.Parsec
 
 import Servant.API.Capture
 import Servant.API.Get
@@ -34,6 +34,7 @@ class ExpSYM repr' repr | repr -> repr', repr' -> repr where
     put        :: String -> repr
     delete     :: String -> repr
 
+
 infixr 6 >:
 
 (>:) :: Type -> Type -> Type
@@ -54,42 +55,91 @@ instance ExpSYM Type Type where
     delete "()"        = ConT ''Delete
     delete _           = error "Delete does not return a request body"
 
-readEntry :: ExpSYM r r => [String] -> Maybe r
-readEntry []     = Nothing
-readEntry (met:xs:typ) = case met of
-    "GET"    -> rd get
-    "POST"   -> rd post
-    "PUT"    -> rd put
-    "DELETE" -> rd delete
-    x        -> error $ "Unknown method: " ++ x
-  where typ' = splitOn "->" $ concat typ
-        rd m = case typ' of
-            []           -> readEntry' xs $ m "()"
-            [rsp]        -> readEntry' xs $ m rsp
-            (rqbd:[rsp]) -> readEntry' xs $ reqBody rqbd $ m rsp
-            _            -> error "Only functions of one argument allowed!"
-readEntry x    = error $ "Wrong number of elems in line: " ++ show x
+parseMethod :: ExpSYM repr' repr => Parser (String -> repr)
+parseMethod = try (string "GET"    >> return get)
+          <|> try (string "POST"   >> return post)
+          <|> try (string "PUT"    >> return put)
+          <|> try (string "DELETE" >> return delete)
 
-readEntry' :: ExpSYM r r => String -> r -> Maybe r
-readEntry' []   _ = Nothing
-readEntry' xs r = Just $ foldr1 (.) (tRepr <$> splitOn "/" xs) r
-    where
-          tRepr y | [x] <- splitOn ":" y   = lit x
-                  | a:[b] <- splitOn ":" y = case headMay a of
-                                                 Just '?' -> queryParam (tail a) b
-                                                 Just _   -> capture a b
-                                                 Nothing  -> error "Expecting something after '/'"
-                  | otherwise              = error "Only one ':' per section"
+parseUrlSegment :: ExpSYM repr repr => Parser (repr -> repr)
+parseUrlSegment = try parseCapture
+              <|> try parseQueryParam
+              <|> try parseLit
+  where
+      parseCapture = do
+         cname <- many (noneOf " ?/:")
+         char ':'
+         ctyp  <- many (noneOf " ?/:")
+         return $ capture cname ctyp
+      parseQueryParam = do
+         char '?'
+         cname <- many (noneOf " ?/:")
+         char ':'
+         ctyp  <- many (noneOf " ?/:")
+         return $ queryParam cname ctyp
+      parseLit = lit <$> many (noneOf " ?/:")
 
-readAll :: String -> Type
-readAll s = foldr1 union $ mapMaybe readEntry $ words <$> lines s
-   where union :: Type -> Type -> Type
-         union a = AppT (AppT (ConT ''(:<|>)) a)
+parseUrl :: ExpSYM repr repr => Parser (repr -> repr)
+parseUrl = do
+    optional $ char '/'
+    url <- parseUrlSegment `sepBy1` char '/'
+    return $ foldr1 (.) url
+
+data Typ = Val String
+         | ReqArgVal String String
+
+parseTyp :: Parser Typ
+parseTyp = do
+    f <- many (noneOf "-#\n\r")
+    spaces
+    s <- optionMaybe parseRet
+    case s of
+        Nothing -> return $ Val (stripTr f)
+        Just s' -> return $ ReqArgVal (stripTr f) (stripTr s')
+  where
+    parseRet :: Parser String
+    parseRet = do
+        string "->"
+        spaces
+        many (noneOf "#\n\r")
+    stripTr = reverse . dropWhile (== ' ') . reverse
+
+
+parseEntry :: ExpSYM repr repr => Parser repr
+parseEntry = do
+    met <- parseMethod
+    spaces
+    url <- parseUrl
+    spaces
+    typ <- parseTyp
+    case typ of
+        Val s -> return $ url (met s)
+        ReqArgVal i o -> return $ url $ reqBody i (met o)
+
+eol :: Parser String
+eol =   try (string "\n\r")
+    <|> try (string "\r\n")
+    <|> string "\n"
+    <|> string "\r"
+    <?> "end of line"
+
+eols :: Parser ()
+eols = skipMany $ void eol
+
+parseAll :: Parser Type
+parseAll = do
+    eols
+    entries <- parseEntry `endBy` eols
+    return $ foldr1 union entries
+  where union :: Type -> Type -> Type
+        union a = AppT (AppT (ConT ''(:<|>)) a)
 
 sitemap :: QuasiQuoter
 sitemap = QuasiQuoter { quoteExp = undefined
                       , quotePat = undefined
-                      , quoteType = return . readAll
+                      , quoteType = \x -> case parse parseAll "" x of
+                            Left err -> error $ show err
+                            Right st -> return st
                       , quoteDec = undefined
                       }
 
