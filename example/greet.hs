@@ -102,4 +102,4 @@ main = do
   print =<< runEitherT (deleteGreet "blah" uri)
   killThread tid
   putStrLn "\n---------\n"
-  printMarkdown docsGreet
+  putStrLn $ markdown docsGreet
