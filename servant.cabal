@@ -87,7 +87,7 @@ test-suite spec
     , deepseq
     , either
     , exceptions
-    , hspec2
+    , hspec == 2.*
     , hspec-wai
     , http-client
     , http-types
