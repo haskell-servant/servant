@@ -85,7 +85,7 @@
 -- > main = printMarkdown greetDocs
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, printMarkdown
+    HasDocs(..), docs, markdown, printMarkdown
 
   , -- * Classes you need to implement for your types
     ToSample(..), ToParam(..), ToCapture(..)
@@ -106,7 +106,6 @@ module Servant.Docs
   ) where
 
 import Control.Lens hiding (Action)
-import Control.Monad (when)
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.Hashable
@@ -114,9 +113,9 @@ import Data.HashMap.Strict (HashMap)
 import Data.List
 import Data.Monoid
 import Data.Proxy
+import Data.String.Conversions
 import GHC.Generics
 
-import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.HashMap.Strict as HM
 
 -- | Supported HTTP request methods
@@ -349,69 +348,80 @@ class ToCapture c where
 -- | Print documentation in Markdown format for
 --   the given 'API', on standard output.
 printMarkdown :: API -> IO ()
-printMarkdown = imapM_ printEndpoint
+printMarkdown = print . markdown
 
-  where printEndpoint endpoint action = do
-          putStrLn $ str
-          putStrLn $ replicate len '-'
-          putStrLn ""
-          capturesStr (action ^. captures)
-          paramsStr (action ^. params)
-          rqbodyStr (action ^. rqbody)
-          responseStr (action ^. response) 
+markdown :: API -> String
+markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
+
+  where printEndpoint :: Endpoint -> Action -> [String]
+        printEndpoint endpoint action =
+          str :
+          replicate len '-' :
+          "" :
+          capturesStr (action ^. captures) ++
+          paramsStr (action ^. params) ++
+          rqbodyStr (action ^. rqbody) ++
+          responseStr (action ^. response) ++
+          []
 
           where str = show (endpoint^.method) ++ " " ++ endpoint^.path
                 len = length str
 
-        capturesStr :: [DocCapture] -> IO ()
-        capturesStr [] = return ()
-        capturesStr l = do
-          putStrLn "**Captures**: "
-          putStrLn ""
-          mapM_ captureStr l
-          putStrLn ""
+        capturesStr :: [DocCapture] -> [String]
+        capturesStr [] = []
+        capturesStr l =
+          "**Captures**: " :
+          "" :
+          map captureStr l ++
+          "" :
+          []
         captureStr cap =
-          putStrLn $ "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
+          "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
 
-        paramsStr :: [DocQueryParam] -> IO ()
-        paramsStr [] = return ()
-        paramsStr l = do
-          putStrLn "**GET Parameters**: "
-          putStrLn ""
-          mapM_ paramStr l
-          putStrLn ""
-        paramStr param = do
-          putStrLn $ " - " ++ param ^. paramName
-          when (not (null values) || param ^. paramKind /= Flag) $
-            putStrLn $ "     - **Values**: *" ++ intercalate ", " values ++ "*"
-          putStrLn $   "     - **Description**: " ++ param ^. paramDesc
-          when (param ^. paramKind == List) $
-            putStrLn $ "     - This parameter is a **list**. All GET parameters with the name "
-                    ++ param ^. paramName ++ "[] will forward their values in a list to the handler."
-          when (param ^. paramKind == Flag) $
-            putStrLn $ "     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."
+        paramsStr :: [DocQueryParam] -> [String]
+        paramsStr [] = []
+        paramsStr l =
+          "**GET Parameters**: " :
+          "" :
+          map paramStr l ++
+          "" :
+          []
+        paramStr param = unlines $
+          (" - " ++ param ^. paramName) :
+          (if (not (null values) || param ^. paramKind /= Flag)
+            then ["     - **Values**: *" ++ intercalate ", " values ++ "*"]
+            else []) ++
+          ("     - **Description**: " ++ param ^. paramDesc) :
+          (if (param ^. paramKind == List)
+            then ["     - This parameter is a **list**. All GET parameters with the name "
+                  ++ param ^. paramName ++ "[] will forward their values in a list to the handler."]
+            else []) ++
+          (if (param ^. paramKind == Flag)
+            then ["     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."]
+            else []) ++
+          []
 
           where values = param ^. paramValues
 
-        rqbodyStr :: Maybe ByteString -> IO ()
-        rqbodyStr Nothing = return ()
-        rqbodyStr (Just b) = do
-          putStrLn "**Request Body**: "
+        rqbodyStr :: Maybe ByteString -> [String]
+        rqbodyStr Nothing = []
+        rqbodyStr (Just b) =
+          "**Request Body**: " :
           jsonStr b
 
-        jsonStr b = do
-          putStrLn ""
-          putStrLn "``` javascript"
-          LB.putStrLn b
-          putStrLn "```"
-          putStrLn ""
+        jsonStr b =
+          "" :
+          "``` javascript" :
+          cs b :
+          "```" :
+          "" :
+          []
 
-        responseStr :: Response -> IO ()
-        responseStr resp = do
-          putStrLn $ "**Response**: "
-          putStrLn $ ""
-          putStrLn $ " - Status code " ++ show (resp ^. respStatus)
-          resp ^. respBody &
-            maybe (putStrLn " - No response body\n")
-                  (\b -> putStrLn " - Response body as below." >> jsonStr b)
-          
+        responseStr :: Response -> [String]
+        responseStr resp =
+          "**Response**: " :
+          "" :
+          (" - Status code " ++ show (resp ^. respStatus)) :
+          (resp ^. respBody &
+            maybe [" - No response body\n"]
+                  (\b -> " - Response body as below." : jsonStr b))

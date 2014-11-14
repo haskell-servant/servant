@@ -33,6 +33,7 @@ library
     Servant.Server
     Servant.Utils.ApiQuasiQuoting
     Servant.Utils.Links
+    Servant.Utils.StaticFiles
   build-depends:
       base >=4.7 && <5
     , either
@@ -46,15 +47,18 @@ library
     , http-types
     , network-uri >= 2.6
     , wai
+    , wai-app-static
     , warp
     , parsec
     , safe
     , transformers
     , template-haskell
     , text
+    , system-filepath
     , lens
     , unordered-containers
     , hashable
+    , system-filepath
   hs-source-dirs: src
   default-language: Haskell2010
   ghc-options: -O0 -Wall
@@ -85,6 +89,7 @@ test-suite spec
     , aeson
     , bytestring
     , deepseq
+    , directory
     , either
     , exceptions
     , hspec == 2.*
@@ -96,6 +101,7 @@ test-suite spec
     , parsec
     , servant
     , string-conversions
+    , temporary
     , text
     , transformers
     , wai
