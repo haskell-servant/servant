@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -------------------------------------------------------------------------------
@@ -15,13 +16,13 @@
 --
 -- @docs :: 'HasDocs' api => 'Proxy' api -> 'API'@
 --
--- You can then call 'printMarkdown' on it:
+-- You can then call 'markdown' on it:
 --
--- @printMarkdown :: 'API' -> IO ()@
+-- @printMarkdown :: 'API' -> String@
 --
 -- or define a custom pretty printer:
 --
--- @yourPrettyDocs :: 'API' -> IO () -- or blaze-html's HTML, or ...@
+-- @yourPrettyDocs :: 'API' -> String -- or blaze-html's HTML, or ...@
 --
 -- The only thing you'll need to do will be to implement some classes
 -- for your captures, get parameters and request or response bodies.
@@ -69,7 +70,7 @@
 -- >   toCapture _ = DocCapture "greetid" "identifier of the greet msg to remove"
 -- >
 -- > -- API specification
--- > type TestApi = 
+-- > type TestApi =
 -- >        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
 -- >   :<|> "greet" :> RQBody Greet :> Post Greet
 -- >   :<|> "delete" :> Capture "greetid" Text :> Delete
@@ -82,13 +83,16 @@
 -- > greetDocs = docs testApi
 -- >
 -- > main :: IO ()
--- > main = printMarkdown greetDocs
+-- > main = putStrLn $ markdown greetDocs
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, markdown, printMarkdown
+    HasDocs(..), docs, markdown
 
   , -- * Classes you need to implement for your types
-    ToSample(..), ToParam(..), ToCapture(..)
+    ToSample(..)
+  , sampleByteString
+  , ToParam(..)
+  , ToCapture(..)
 
   , -- * ADTs to represent an 'API'
     Method(..)
@@ -320,7 +324,13 @@ class HasDocs layout where
 -- >
 -- >     where g = Greet "Hello, haskeller!"
 class ToJSON a => ToSample a where
-  toSample :: Proxy a -> Maybe ByteString
+  toSample :: Maybe a
+
+instance ToSample () where
+  toSample = Just ()
+
+sampleByteString :: forall a . ToSample a => Proxy a -> Maybe ByteString
+sampleByteString Proxy = fmap encode (toSample :: Maybe a)
 
 -- | The class that helps us automatically get documentation
 --   for GET parameters.
@@ -345,11 +355,8 @@ class ToParam t where
 class ToCapture c where
   toCapture :: Proxy c -> DocCapture
 
--- | Print documentation in Markdown format for
---   the given 'API', on standard output.
-printMarkdown :: API -> IO ()
-printMarkdown = print . markdown
-
+-- | Generate documentation in Markdown format for
+--   the given 'API'.
 markdown :: API -> String
 markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
 

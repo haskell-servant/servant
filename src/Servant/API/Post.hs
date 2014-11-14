@@ -42,7 +42,7 @@ instance FromJSON a => HasClient (Post a) where
   type Client (Post a) = BaseUrl -> EitherT String IO a
 
   clientWithRoute Proxy req uri =
-    performRequest methodPost req 201 uri
+    performRequestJSON methodPost req 201 uri
 
 instance ToSample a => HasDocs (Post a) where
   docsFor Proxy (endpoint, action) =
@@ -50,7 +50,7 @@ instance ToSample a => HasDocs (Post a) where
 
     where endpoint' = endpoint & method .~ DocPOST
 
-          action' = action & response.respBody .~ toSample p
+          action' = action & response.respBody .~ sampleByteString p
                            & response.respStatus .~ 201
 
           p = Proxy :: Proxy a

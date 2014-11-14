@@ -44,7 +44,7 @@ data Person = Person {
 instance ToJSON Person
 instance FromJSON Person
 instance ToSample Person where
-  toSample _proxy = Just $ encode alice
+  toSample = Just alice
 
 alice :: Person
 alice = Person "Alice" 42
