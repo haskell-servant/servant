@@ -17,9 +17,27 @@ import Servant.Docs
 import Servant.Server
 
 -- | Endpoint for DELETE requests.
+--
+-- Example:
+--
+-- >            -- DELETE /books/:isbn
+-- > type MyApi = "books" :> Capture "isbn" Text :> Delete
+--
+-- corresponds to a DELETE HTTP request at @/books/:isbn@.
 data Delete
   deriving Typeable
 
+-- | If you have a 'Delete' endpoint in your API,
+-- the handler for this endpoint is meant to delete
+-- a resource.
+--
+-- The code of the handler will, just like
+-- for 'Servant.API.Get.Get', 'Servant.API.Post.Post' and
+-- 'Servant.API.Put.Put', run in @EitherT (Int, String) IO ()@.
+-- The 'Int' represents the status code and the 'String' a message
+-- to be returned. You can use 'Control.Monad.Trans.Either.left' to
+-- painlessly error out if the conditions for a successful deletion
+-- are not met.
 instance HasServer Delete where
   type Server Delete = EitherT (Int, String) IO ()
 
@@ -35,6 +53,10 @@ instance HasServer Delete where
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
+-- | If you have a 'Delete' endpoint in your API, the client
+-- side querying function that is created when calling 'client'
+-- will just require an argument that specifies the scheme, host
+-- and port to send the request to.
 instance HasClient Delete where
   type Client Delete = BaseUrl -> EitherT String IO ()
 
