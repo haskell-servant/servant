@@ -43,7 +43,7 @@ captured _ = fromText
 -- >
 -- > server :: Server MyApi
 -- > server = getBook
--- >   where getBook :: Text -> 'EitherT' (Int, String) IO Book
+-- >   where getBook :: Text -> EitherT (Int, String) IO Book
 -- >         getBook isbn = ...
 instance (KnownSymbol capture, FromText a, HasServer sublayout)
       => HasServer (Capture capture a :> sublayout) where
