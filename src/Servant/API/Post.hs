@@ -23,6 +23,17 @@ import Servant.Server
 data Post a
   deriving Typeable
 
+-- | When implementing the handler for a 'Post' endpoint,
+-- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
+-- and 'Servant.API.Put.Put', the handler code runs in the
+-- @EitherT (Int, String) IO@ monad, where the 'Int' represents
+-- the status code and the 'String' a message, returned in case of
+-- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
+-- to quickly fail if some conditions are not met.
+--
+-- If successfully returning a value, we just require that its type has
+-- a 'ToJSON' instance and servant takes care of encoding it for you,
+-- yielding status code 201 along the way.
 instance ToJSON a => HasServer (Post a) where
   type Server (Post a) = EitherT (Int, String) IO a
 
@@ -38,6 +49,10 @@ instance ToJSON a => HasServer (Post a) where
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
+-- | If you have a 'Post' endpoint in your API, the client
+-- side querying function that is created when calling 'client'
+-- will just require an argument that specifies the scheme, host
+-- and port to send the request to.
 instance FromJSON a => HasClient (Post a) where
   type Client (Post a) = BaseUrl -> EitherT String IO a
 
