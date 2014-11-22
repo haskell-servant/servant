@@ -17,10 +17,22 @@ import Servant.Common.Req
 import Servant.Docs
 import Servant.Server
 
--- | Endpoint for PUT requests.
+-- | Endpoint for PUT requests. The type @a@ is the type of the
+-- response body that's returned.
 data Put a
   deriving Typeable
 
+-- | When implementing the handler for a 'Put' endpoint,
+-- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
+-- and 'Servant.API.Post.Post', the handler code runs in the
+-- @EitherT (Int, String) IO@ monad, where the 'Int' represents
+-- the status code and the 'String' a message, returned in case of
+-- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
+-- to quickly fail if some conditions are not met.
+--
+-- If successfully returning a value, we just require that its type has
+-- a 'ToJSON' instance and servant takes care of encoding it for you,
+-- yielding status code 200 along the way.
 instance ToJSON a => HasServer (Put a) where
   type Server (Put a) = EitherT (Int, String) IO a
 
@@ -37,6 +49,10 @@ instance ToJSON a => HasServer (Put a) where
 
     | otherwise = respond $ failWith NotFound
 
+-- | If you have a 'Put' endpoint in your API, the client
+-- side querying function that is created when calling 'client'
+-- will just require an argument that specifies the scheme, host
+-- and port to send the request to.
 instance FromJSON a => HasClient (Put a) where
   type Client (Put a) = BaseUrl -> EitherT String IO a
 
