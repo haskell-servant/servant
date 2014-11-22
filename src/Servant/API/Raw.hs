@@ -9,7 +9,6 @@ import Data.Proxy
 import Network.HTTP.Types
 import Network.Wai
 import Servant.Client
-import Servant.Common.BaseUrl
 import Servant.Common.Req
 import Servant.Docs hiding (Method)
 import Servant.Server

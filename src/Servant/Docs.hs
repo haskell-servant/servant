@@ -4,14 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 -------------------------------------------------------------------------------
--- |
--- Module      : Servant.Docs
--- License     : BSD-style
--- Maintainer  : alpmestan@gmail.com
--- Stability   : provisional
--- Portability : TH, TypeFamilies, DeriveGeneric
---
--- This module lets you get API docs for free. It lets generate
+-- | This module lets you get API docs for free. It lets generate
 -- an 'API' from the type that represents your API using 'docs':
 --
 -- @docs :: 'HasDocs' api => 'Proxy' api -> 'API'@

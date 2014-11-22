@@ -1,7 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Servant.Common.Text where
+module Servant.Common.Text
+  ( FromText(..)
+  , ToText(..)
+  ) where
 
 import Data.String.Conversions
 import Data.Int
@@ -9,11 +12,11 @@ import Data.Text
 import Data.Text.Read
 import Data.Word
 
--- | For getting values from url captures, get parameters
+-- | For getting values from url captures and query string parameters
 class FromText a where
   fromText :: Text -> Maybe a
 
--- | For putting values in paths, get parameters
+-- | For putting values in paths and query string parameters
 class ToText a where
   toText :: a -> Text
 
@@ -29,11 +32,18 @@ instance FromText String where
 instance ToText String where
   toText = cs
 
+-- |
+-- > fromText "true"  = Just True
+-- > fromText "false" = Just False
+-- > fromText _       = Nothing
 instance FromText Bool where
   fromText "true"  = Just True
   fromText "false" = Just False
   fromText _       = Nothing
 
+-- |
+-- > toText True  = "true"
+-- > toText False = "false"
 instance ToText Bool where
   toText True  = "true"
   toText False = "false"

@@ -1,9 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ViewPatterns #-}
-module Servant.Common.BaseUrl
-  ( Scheme(..)
-  , BaseUrl (..)
-  ) where
+module Servant.Common.BaseUrl where
 
 import Data.List
 import GHC.Generics

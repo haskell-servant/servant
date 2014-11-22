@@ -10,7 +10,7 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Static
 
-import Servant.API
+import Servant.API.Raw
 import Servant.Docs
 import Servant.Server
 
