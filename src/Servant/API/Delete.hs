@@ -22,8 +22,6 @@ import Servant.Server
 --
 -- >            -- DELETE /books/:isbn
 -- > type MyApi = "books" :> Capture "isbn" Text :> Delete
---
--- corresponds to a DELETE HTTP request at @/books/:isbn@.
 data Delete
   deriving Typeable
 
