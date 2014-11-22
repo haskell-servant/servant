@@ -49,15 +49,15 @@ setRQBody :: ByteString -> Req -> Req
 setRQBody b req = req { reqBody = b }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
-reqToRequest req (BaseUrl scheme host port) = fmap (setrqb . setQS ) $ parseUrl url
+reqToRequest req (BaseUrl reqScheme reqHost reqPort) = fmap (setrqb . setQS ) $ parseUrl url
 
-  where url = show $ nullURI { uriScheme = case scheme of
+  where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"
                                   Https -> "https:"
                              , uriAuthority = Just $
                                  URIAuth { uriUserInfo = ""
-                                         , uriRegName = host
-                                         , uriPort = ":" ++ show port
+                                         , uriRegName = reqHost
+                                         , uriPort = ":" ++ show reqPort
                                          }
                              , uriPath = reqPath req
                              }
@@ -79,14 +79,14 @@ __withGlobalManager action = modifyMVar __manager $ \ manager -> do
 
 
 displayHttpRequest :: Method -> String
-displayHttpRequest method = "HTTP " ++ cs method ++ " request"
+displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
 
 performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO (Int, ByteString)
-performRequest method req isWantedStatus host = do
-  partialRequest <- liftIO $ reqToRequest req host
+performRequest reqMethod req isWantedStatus reqHost = do
+  partialRequest <- liftIO $ reqToRequest req reqHost
 
-  let request = partialRequest { Client.method = method
+  let request = partialRequest { Client.method = reqMethod
                                , checkStatus = \ _status _headers _cookies -> Nothing
                                }
 
@@ -95,12 +95,12 @@ performRequest method req isWantedStatus host = do
     Client.httpLbs request manager
   case eResponse of
     Left status ->
-      left (displayHttpRequest method ++ " failed with status: " ++ showStatus status)
+      left (displayHttpRequest reqMethod ++ " failed with status: " ++ showStatus status)
 
     Right response -> do
       let status = Client.responseStatus response
       unless (isWantedStatus (statusCode status)) $
-        left (displayHttpRequest method ++ " failed with status: " ++ showStatus status)
+        left (displayHttpRequest reqMethod ++ " failed with status: " ++ showStatus status)
       return $ (statusCode status, Client.responseBody response)
   where
     showStatus (Status code message) =
@@ -109,20 +109,20 @@ performRequest method req isWantedStatus host = do
 
 performRequestJSON :: FromJSON result =>
   Method -> Req -> Int -> BaseUrl -> EitherT String IO result
-performRequestJSON method req wantedStatus host = do
-  (_status, responseBody) <- performRequest method req (== wantedStatus) host
+performRequestJSON reqMethod req wantedStatus reqHost = do
+  (_status, respBody) <- performRequest reqMethod req (== wantedStatus) reqHost
   either
-    (\ message -> left (displayHttpRequest method ++ " returned invalid json: " ++ message))
+    (\ message -> left (displayHttpRequest reqMethod ++ " returned invalid json: " ++ message))
     return
-    (decodeLenient responseBody)
+    (decodeLenient respBody)
 
 
 catchStatusCodeException :: IO a -> IO (Either Status a)
-catchStatusCodeException action = catch (Right <$> action) $
-  \ e -> case e of
-    Client.StatusCodeException status _ _ ->
-      return $ Left status
-    e -> throwIO e
+catchStatusCodeException action =
+  catch (Right <$> action) $ \e ->
+    case e of
+      Client.StatusCodeException status _ _ -> return $ Left status
+      exc -> throwIO exc
 
 -- | Like 'Data.Aeson.decode' but allows all JSON values instead of just
 -- objects and arrays.

@@ -106,7 +106,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 
   clientWithRoute Proxy req paramlist =
     clientWithRoute (Proxy :: Proxy sublayout) $
-      foldl' (\ value req -> appendToQueryString pname req value) req paramlist'
+      foldl' (\ value req' -> appendToQueryString pname req' value) req paramlist'
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)

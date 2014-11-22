@@ -19,13 +19,13 @@ data BaseUrl = BaseUrl {
   deriving (Show, Eq, Ord, Generic)
 
 showBaseUrl :: BaseUrl -> String
-showBaseUrl (BaseUrl scheme host port) =
+showBaseUrl (BaseUrl urlscheme host port) =
   schemeString ++ "//" ++ host ++ portString
     where
-      schemeString = case scheme of
+      schemeString = case urlscheme of
         Http  -> "http:"
         Https -> "https:"
-      portString = case (scheme, port) of
+      portString = case (urlscheme, port) of
         (Http, 80) -> ""
         (Https, 443) -> ""
         _ -> ":" ++ show port
@@ -46,6 +46,6 @@ parseBaseUrl s = case parseURI (removeTrailingSlash s) of
     then Left ("invalid base url: " ++ s)
     else parseBaseUrl ("http://" ++ s)
  where
-  removeTrailingSlash s = case lastMay s of
-    Just '/' -> init s
-    _ -> s
+  removeTrailingSlash str = case lastMay str of
+    Just '/' -> init str
+    _ -> str

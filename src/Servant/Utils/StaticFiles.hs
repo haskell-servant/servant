@@ -23,11 +23,11 @@ serveDocumentation proxy _request respond =
   respond $ responseLBS ok200 [] $ cs $ toHtml $ markdown $ docs proxy
 
 toHtml :: String -> String
-toHtml markdown =
+toHtml md =
   "<html>" ++
   "<body>" ++
   "<pre>" ++
-  markdown ++
+  md ++
   "</pre>" ++
   "</body>" ++
   "</html>"

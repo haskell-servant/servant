@@ -29,8 +29,8 @@ instance HasClient Raw where
   type Client Raw = Method -> BaseUrl -> EitherT String IO (Int, ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> Client Raw
-  clientWithRoute Proxy req method host =
-    performRequest method req (const True) host
+  clientWithRoute Proxy req httpMethod host =
+    performRequest httpMethod req (const True) host
 
 
 instance HasDocs Raw where
