@@ -26,6 +26,13 @@ import Servant.Server
 data Raw
 
 -- | Just pass the request to the underlying application and serve its response.
+--
+-- Example:
+--
+-- > type MyApi = "images" :> Raw
+-- >
+-- > server :: Server MyApi
+-- > server = serveDirectory "/var/www/images"
 instance HasServer Raw where
   type Server Raw = Application
   route Proxy rawApplication request respond =
