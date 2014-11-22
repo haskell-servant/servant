@@ -94,7 +94,7 @@ instance (KnownSymbol capture, ToText a, HasClient sublayout)
     where p = unpack (toText val)
 
 -- | @"books" :> 'Capture' "isbn" Text@ will appear as
--- @/books/:isbn@ in the docs
+-- @/books/:isbn@ in the docs.
 instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
       => HasDocs (Capture sym a :> sublayout) where
 
