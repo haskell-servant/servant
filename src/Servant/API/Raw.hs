@@ -18,13 +18,21 @@ import Servant.Server
 --
 -- The given 'Application' will get the request as received by the server, potentially with
 -- a modified (stripped) 'pathInfo' if the 'Application' is being routed with 'Servant.API.Sub.:>'.
+--
+-- In addition to just letting you plug in your existing WAI 'Application's,
+-- this can also be used with 'Servant.Utils.StaticFiles.serveDirectory' to serve
+-- static files stored in a particular directory on your filesystem, or to serve
+-- your API's documentation with 'Servant.Utils.StaticFiles.serveDocumentation'.
 data Raw
 
+-- | Just pass the request to the underlying application and serve its response.
 instance HasServer Raw where
   type Server Raw = Application
   route Proxy rawApplication request respond =
     rawApplication request (respond . succeedWith)
 
+-- | Pick a 'Method' and specify where the server you want to query is. You get
+-- back the status code and the response body as a 'ByteString'.
 instance HasClient Raw where
   type Client Raw = Method -> BaseUrl -> EitherT String IO (Int, ByteString)
 
