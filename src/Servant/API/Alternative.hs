@@ -58,7 +58,7 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
     clientWithRoute (Proxy :: Proxy a) req :<|>
     clientWithRoute (Proxy :: Proxy b) req
 
--- | The generated docs for @a ':<|>' b@ just append the docs
+-- | The generated docs for @a ':<|>' b@ just appends the docs
 --   for @a@ with the docs for @b@.
 instance (HasDocs layout1, HasDocs layout2)
       => HasDocs (layout1 :<|> layout2) where
