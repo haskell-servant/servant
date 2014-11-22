@@ -16,7 +16,7 @@ import Servant.Common.Req
 import Servant.Docs
 import Servant.Server
 
--- | Endpoint for DELETE requests.
+-- | Combinator for DELETE requests.
 --
 -- Example:
 --
