@@ -22,7 +22,6 @@ import Servant.API
 import Servant.Client
 import Servant.Docs
 import Servant.Server
-import Servant.Common.BaseUrl
 
 -- * Example
 
