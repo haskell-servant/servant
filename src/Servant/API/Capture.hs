@@ -39,9 +39,9 @@ captured _ = fromText
 --
 -- Example:
 --
--- > type MyApi = "books" ':>' 'Capture' "isbn" 'Text' ':>' 'Get' Book
+-- > type MyApi = "books" :> Capture "isbn" Text :> Get Book
 -- >
--- > server :: 'Server' MyApi
+-- > server :: Server MyApi
 -- > server = getBook
 -- >   where getBook :: Text -> 'EitherT' (Int, String) IO Book
 -- >         getBook isbn = ...
@@ -73,7 +73,7 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
 --
 -- Example:
 --
--- > type MyApi = "books" ':>' 'Capture' "isbn" 'Text' ':>' 'Get' Book
+-- > type MyApi = "books" :> Capture "isbn" Text :> Get Book
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
