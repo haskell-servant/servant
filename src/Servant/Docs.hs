@@ -34,7 +34,6 @@
 -- > import Data.Proxy
 -- > import Data.Text
 -- > import Servant
--- > import Servant.Docs
 -- >
 -- > -- our type for a Greeting message
 -- > data Greet = Greet { _msg :: Text }
@@ -46,7 +45,7 @@
 -- >
 -- > -- we provide a sample value for the 'Greet' type
 -- > instance ToSample Greet where
--- >   toSample Proxy = Just (encode g)
+-- >   toSample = Just g
 -- >
 -- >     where g = Greet "Hello, haskeller!"
 -- >
@@ -97,7 +96,7 @@ module Servant.Docs
   , Action, captures, params, rqbody, response, defAction
   , single
 
-  , -- * Useful modules when defining your own instances
+  , -- * Useful modules when defining your doc printers
     module Control.Lens
   , module Data.Monoid
   ) where
@@ -313,7 +312,7 @@ class HasDocs layout where
 -- > instance ToJSON Greet
 -- >
 -- > instance ToSample Greet where
--- >   toSample Proxy = Just (encode g)
+-- >   toSample = Just g
 -- >
 -- >     where g = Greet "Hello, haskeller!"
 class ToJSON a => ToSample a where
