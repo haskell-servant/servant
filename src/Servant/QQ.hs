@@ -5,7 +5,28 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
-module Servant.Utils.ApiQuasiQuoting where
+-- | QuasiQuoting utilities for API types.
+--
+-- 'sitemap' allows you to write your type in a very natural way:
+--
+-- @
+-- [sitemap|
+-- PUT        hello                 String -> ()
+-- POST       hello/p:Int           String -> ()
+-- GET        hello/?name:String    Int
+-- |]
+-- @
+--
+-- Will generate:
+--
+-- @
+--        "hello" :> ReqBody String :> Put ()
+--   :\<|> "hello" :> Capture "p" Int :> ReqBody String :> Post ()
+--   :\<|> "hello" :> QueryParam "name" String :> Get Int
+-- @
+--
+-- Note the @/@ before a @QueryParam@!
+module Servant.QQ where
 
 import Control.Monad (void)
 import Control.Applicative hiding (many, (<|>), optional)
@@ -23,6 +44,11 @@ import Servant.API.ReqBody
 import Servant.API.Sub
 import Servant.API.Alternative
 
+-- | Finally-tagless encoding for our DSL.
+-- Keeping 'repr'' and 'repr' distinct when writing functions with an
+-- @ExpSYM@ context ensures certain invariants (for instance, that there is
+-- only one of 'get', 'post', 'put', and 'delete' in a value), but
+-- sometimes requires a little more work.
 class ExpSYM repr' repr | repr -> repr', repr' -> repr where
     lit        :: String -> repr' -> repr
     capture    :: String -> String -> repr -> repr
@@ -148,6 +174,19 @@ parseAll = do
   where union :: Type -> Type -> Type
         union a = AppT (AppT (ConT ''(:<|>)) a)
 
+-- | The sitemap QuasiQuoter.
+--
+--     * @.../<var>:<type>/...@ becomes a capture
+--     * @.../?<var>:<type>@ becomes a query parameter
+--     * @<method>   ...  <typ>@ becomes a method returning @<typ>@
+--     * @<method>   ...  <typ1> -> <typ2>@ becomes a method with request
+--       body of @<typ1>@ and returning @<typ2>@
+--
+-- Comments are allowed, and have the standard Haskell format
+--
+--     * @--@ for inline
+--     * @{- ... -}@ for block
+--
 sitemap :: QuasiQuoter
 sitemap = QuasiQuoter { quoteExp = undefined
                       , quotePat = undefined

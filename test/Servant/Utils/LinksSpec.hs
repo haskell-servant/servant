@@ -6,7 +6,7 @@ module Servant.Utils.LinksSpec where
 import Test.Hspec
 
 import Servant.API
-import Servant.Utils.ApiQuasiQuotingSpec ( (~>) )
+import Servant.QQSpec ( (~>) )
 import Servant.Utils.Links (IsElem, IsLink)
 
 type TestApi =

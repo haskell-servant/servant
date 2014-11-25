@@ -31,7 +31,7 @@ module Servant.API (
 
   -- * Utilities
   -- | QuasiQuotes for endpoints
-  module Servant.Utils.ApiQuasiQuoting,
+  module Servant.QQ,
   -- | Type-safe internal URLs
   module Servant.Utils.Links,
   ) where
@@ -46,6 +46,6 @@ import Servant.API.QueryParam
 import Servant.API.Raw
 import Servant.API.ReqBody
 import Servant.API.Sub
-import Servant.Utils.ApiQuasiQuoting (sitemap)
+import Servant.QQ (sitemap)
 import Servant.Utils.Links (mkLink)
 import Servant.Utils.StaticFiles

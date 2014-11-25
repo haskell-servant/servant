@@ -6,6 +6,33 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+-- | Type safe internal links.
+--
+-- Provides the function 'mkLink':
+--
+-- @
+--   type API = Proxy ("hello" :> Get Int
+--                :<|> "bye" :> QueryParam "name" String :> Post Bool)
+--
+--   api :: API
+--   api = proxy
+--
+--   link1 :: Proxy ("hello" :> Get Int)
+--   link1 = proxy
+--
+--   link2 :: Proxy ("hello" :> Delete)
+--   link2 = proxy
+--
+--   mkLink link1 API  --  typechecks, returns 'Link "/hello"'
+--
+--   mkLink link2  API  -- doesn't typecheck
+-- @
+--
+-- That is, 'mkLink' takes two arguments, a link proxy and a sitemap, and
+-- returns a 'Link', but only typechecks if the link proxy is a valid link,
+-- and part of the sitemap.
+--
+-- __N.B.:__ 'mkLink' assumes a capture matches any string (without slashes).
 module Servant.Utils.Links where
 
 import Data.Proxy
