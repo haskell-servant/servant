@@ -14,4 +14,4 @@ $ cabal run counter
 
 And point your browser to [http://localhost:8080/index.html](http://localhost:8080/index.html).
 
-A copy of the generated docs is included in `counter.md` in this folder.
+Copies of the generated javascript functions and of the generated docs are included in `www/api.js` and `counter.md` respectively.
