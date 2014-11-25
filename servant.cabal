@@ -31,8 +31,8 @@ library
     Servant.Common.Req
     Servant.Common.Text
     Servant.Docs
+    Servant.QQ
     Servant.Server
-    Servant.Utils.ApiQuasiQuoting
     Servant.Utils.Links
     Servant.Utils.StaticFiles
   build-depends:

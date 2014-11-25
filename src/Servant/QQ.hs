@@ -21,12 +21,12 @@
 --
 -- @
 --        "hello" :> ReqBody String :> Put ()
---   :<|> "hello" :> Capture "p" Int :> ReqBody String :> Post ()
---   :<|> "hello" :> QueryParam "name" String :> Get Int
+--   :\<|> "hello" :> Capture "p" Int :> ReqBody String :> Post ()
+--   :\<|> "hello" :> QueryParam "name" String :> Get Int
 -- @
 --
--- Note the '/' before a 'QueryParam'!
-module Servant.Utils.ApiQuasiQuoting where
+-- Note the @/@ before a @QueryParam@!
+module Servant.QQ where
 
 import Control.Monad (void)
 import Control.Applicative hiding (many, (<|>), optional)
@@ -177,18 +177,14 @@ parseAll = do
 -- | The sitemap QuasiQuoter.
 --
 --     * @.../<var>:<type>/...@ becomes a capture
---
 --     * @.../?<var>:<type>@ becomes a query parameter
---
 --     * @<method>   ...  <typ>@ becomes a method returning @<typ>@
---
 --     * @<method>   ...  <typ1> -> <typ2>@ becomes a method with request
 --       body of @<typ1>@ and returning @<typ2>@
 --
 -- Comments are allowed, and have the standard Haskell format
 --
 --     * @--@ for inline
---
 --     * @{- ... -}@ for block
 --
 sitemap :: QuasiQuoter

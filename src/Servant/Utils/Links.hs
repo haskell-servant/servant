@@ -9,6 +9,7 @@
 -- | Type safe internal links.
 --
 -- Provides the function 'mkLink':
+--
 -- @
 --   type API = Proxy ("hello" :> Get Int
 --                :<|> "bye" :> QueryParam "name" String :> Post Bool)
