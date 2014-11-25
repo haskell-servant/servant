@@ -1,0 +1,40 @@
+<html>
+<head>
+  <title>Servant: counter</title>
+  <style>
+  body { text-align: center; }
+  #counter { color: green; }
+  #inc { margin: 0px 20px; background-color: green; color: white; }
+  </style>
+</head>
+<body>
+<span id="counter">Counter: 0</span>
+<button id="inc">Increase</button>
+or <a href="/doc">view the docs</a>
+
+<script src="/jquery.min.js" type="text/javascript"></script>
+<script src="/api.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+  // we get the current value stored by the server when the page is loaded
+  getCurrentValue(updateCounter, alert);
+
+  // we update the value every 1sec, in the same way
+  window.setInterval(function() {
+    getCurrentValue(updateCounter, alert);
+  }, 1000);
+});
+
+function updateCounter(response)
+{
+  $('#counter').html('Counter: ' + response.value);
+}
+
+// when the button is clicked, ask the server to increase
+// the value by one
+$('#inc').click(function() {
+  increaseCounter(updateCounter, alert);
+});
+</script>
+</body>
+</html>

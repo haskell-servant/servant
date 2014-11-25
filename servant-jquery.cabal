@@ -21,9 +21,17 @@ library
   default-language:    Haskell2010
   ghc-options:         -O2 -Wall
 
-executable greet
-  main-is: greet.hs
+executable counter
+  main-is: counter.hs
   ghc-options: -O2 -Wall
-  hs-source-dirs: example
-  build-depends: base, servant, servant-jquery
+  hs-source-dirs: examples
+  build-depends:
+      aeson
+    , base
+    , filepath
+    , servant
+    , servant-jquery
+    , stm
+    , transformers
+    , warp
   default-language: Haskell2010

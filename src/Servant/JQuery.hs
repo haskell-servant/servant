@@ -12,7 +12,12 @@
 -- Portability :  non-portable
 --
 -- Usage:
-module Servant.JQuery where
+module Servant.JQuery
+  ( jquery
+  , generateJS
+  , printJS
+  , module Servant.JQuery.Internal
+  ) where
 
 import Control.Lens
 import Data.List
