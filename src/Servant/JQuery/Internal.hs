@@ -35,7 +35,7 @@ segmentToStr :: Segment -> Bool -> String
 segmentToStr (Static s) notTheEnd =
   if notTheEnd then s else s ++ "'"
 segmentToStr (Cap s)    notTheEnd =
-  "' + " ++ s ++ if notTheEnd then " + '" else ""
+  "' + encodeURIComponent(" ++ s ++ if notTheEnd then ") + '" else ")"
 
 type Path = [Segment]
 
