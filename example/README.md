@@ -1,0 +1,2 @@
+- `greet.hs` shows how to write a simple webservice, run it, query it with automatically-derived haskell functions and print the (generated) markdown documentation for the API.
+- `greet.md` contains the aforementionned generated documentation.
