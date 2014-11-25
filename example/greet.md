@@ -29,6 +29,7 @@ GET /hello/:name
      - **Values**: *true, false*
      - **Description**: Get the greeting message in uppercase (true) or not (false). Default is false.
 
+
 **Response**: 
 
  - Status code 200
@@ -38,8 +39,8 @@ GET /hello/:name
 {"msg":"Hello, haskeller!"}
 ```
 
-DELETE /delete/:greetid
------------------------
+DELETE /greet/:greetid
+----------------------
 
 **Captures**: 
 
