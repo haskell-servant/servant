@@ -29,7 +29,6 @@ import Servant.API.QueryParam
 import Servant.API.Raw
 import Servant.API.Sub
 import Servant.API.Alternative
-import Servant.Docs
 import Servant.Server
 
 
@@ -43,8 +42,6 @@ data Person = Person {
 
 instance ToJSON Person
 instance FromJSON Person
-instance ToSample Person where
-  toSample = Just alice
 
 alice :: Person
 alice = Person "Alice" 42

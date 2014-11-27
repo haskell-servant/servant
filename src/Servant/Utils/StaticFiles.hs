@@ -1,24 +1,17 @@
--- | This module defines sever-side handlers that let you serve static files
---   and your API's docs.
+-- | This module defines a sever-side handler that lets you serve static files.
 --
 -- - 'serveDirectory' lets you serve anything that lives under a particular
 --   directory on your filesystem.
--- - 'serveDocumentation' lets you serve the markdown-version of the docs for
---   your API.
 module Servant.Utils.StaticFiles (
   serveDirectory,
-  serveDocumentation,
  ) where
 
-import Data.Proxy
 import Data.String.Conversions
 import Filesystem.Path.CurrentOS (decodeString)
-import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Application.Static
 
 import Servant.API.Raw
-import Servant.Docs
 import Servant.Server
 
 -- | Serve anything under the specified directory as a 'Raw' endpoint.
@@ -44,28 +37,3 @@ import Servant.Server
 serveDirectory :: FilePath -> Server Raw
 serveDirectory documentRoot =
   staticApp (defaultFileServerSettings (decodeString (documentRoot ++ "/")))
-
--- | Serve your API's docs as markdown embedded in an html \<pre> tag.
---
--- > type MyApi = "users" :> Get [User]
--- >         :<|> "docs   :> Raw
--- >
--- > apiProxy :: Proxy MyApi
--- > apiProxy = Proxy
--- >
--- > server :: Server MyApi
--- > server = listUsers
--- >     :<|> serveDocumentation apiProxy
-serveDocumentation :: HasDocs api => Proxy api -> Server Raw
-serveDocumentation proxy _request respond =
-  respond $ responseLBS ok200 [] $ cs $ toHtml $ markdown $ docs proxy
-
-toHtml :: String -> String
-toHtml md =
-  "<html>" ++
-  "<body>" ++
-  "<pre>" ++
-  md ++
-  "</pre>" ++
-  "</body>" ++
-  "</html>"

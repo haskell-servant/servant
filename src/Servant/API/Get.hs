@@ -11,9 +11,6 @@ import Data.String.Conversions
 import Data.Typeable
 import Network.HTTP.Types
 import Network.Wai
-import Servant.Client
-import Servant.Common.Req
-import Servant.Docs
 import Servant.Server
 
 -- | Endpoint for simple GET requests. Serves the result as JSON.
@@ -48,20 +45,3 @@ instance ToJSON result => HasServer (Get result) where
     | null (pathInfo request) && requestMethod request /= methodGet =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
-
--- | If you have a 'Get' endpoint in your API, the client
--- side querying function that is created when calling 'client'
--- will just require an argument that specifies the scheme, host
--- and port to send the request to.
-instance FromJSON result => HasClient (Get result) where
-  type Client (Get result) = BaseUrl -> EitherT String IO result
-  clientWithRoute Proxy req host =
-    performRequestJSON methodGet req 200 host
-
-instance ToSample a => HasDocs (Get a) where
-  docsFor Proxy (endpoint, action) =
-    single endpoint' action'
-
-    where endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ sampleByteString p
-          p = Proxy :: Proxy a

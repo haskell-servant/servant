@@ -11,9 +11,6 @@ import Data.String.Conversions
 import Data.Typeable
 import Network.HTTP.Types
 import Network.Wai
-import Servant.Client
-import Servant.Common.Req
-import Servant.Docs
 import Servant.Server
 
 -- | Endpoint for POST requests. The type variable represents the type of the
@@ -54,24 +51,3 @@ instance ToJSON a => HasServer (Post a) where
     | null (pathInfo request) && requestMethod request /= methodPost =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
-
--- | If you have a 'Post' endpoint in your API, the client
--- side querying function that is created when calling 'client'
--- will just require an argument that specifies the scheme, host
--- and port to send the request to.
-instance FromJSON a => HasClient (Post a) where
-  type Client (Post a) = BaseUrl -> EitherT String IO a
-
-  clientWithRoute Proxy req uri =
-    performRequestJSON methodPost req 201 uri
-
-instance ToSample a => HasDocs (Post a) where
-  docsFor Proxy (endpoint, action) =
-    single endpoint' action'
-
-    where endpoint' = endpoint & method .~ DocPOST
-
-          action' = action & response.respBody .~ sampleByteString p
-                           & response.respStatus .~ 201
-
-          p = Proxy :: Proxy a

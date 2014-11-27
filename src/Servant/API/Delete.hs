@@ -10,9 +10,6 @@ import Data.String.Conversions
 import Data.Typeable
 import Network.HTTP.Types
 import Network.Wai
-import Servant.Client
-import Servant.Common.Req
-import Servant.Docs
 import Servant.Server
 
 -- | Combinator for DELETE requests.
@@ -49,22 +46,3 @@ instance HasServer Delete where
     | null (pathInfo request) && requestMethod request /= methodDelete =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
-
--- | If you have a 'Delete' endpoint in your API, the client
--- side querying function that is created when calling 'client'
--- will just require an argument that specifies the scheme, host
--- and port to send the request to.
-instance HasClient Delete where
-  type Client Delete = BaseUrl -> EitherT String IO ()
-
-  clientWithRoute Proxy req host =
-    performRequestJSON methodDelete req 204 host
-
-instance HasDocs Delete where
-  docsFor Proxy (endpoint, action) =
-    single endpoint' action'
-
-    where endpoint' = endpoint & method .~ DocDELETE
-
-          action' = action & response.respBody .~ Nothing
-                           & response.respStatus .~ 204

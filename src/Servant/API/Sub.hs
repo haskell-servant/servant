@@ -8,9 +8,6 @@ import Data.Proxy
 import Data.String.Conversions
 import GHC.TypeLits
 import Network.Wai
-import Servant.Client
-import Servant.Common.Req
-import Servant.Docs
 import Servant.Server
 
 -- | The contained API (second argument) can be found under @("/" ++ path)@
@@ -37,22 +34,3 @@ instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout
     _ -> respond $ failWith NotFound
 
     where proxyPath = Proxy :: Proxy path
-
--- | Make the querying function append @path@ to the request path.
-instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where
-  type Client (path :> sublayout) = Client sublayout
-
-  clientWithRoute Proxy req =
-     clientWithRoute (Proxy :: Proxy sublayout) $
-       appendToPath p req
-
-    where p = symbolVal (Proxy :: Proxy path)
-
-instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) where
-
-  docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint', action)
-
-    where sublayoutP = Proxy :: Proxy sublayout
-          endpoint' = endpoint & path <>~ symbolVal pa
-          pa = Proxy :: Proxy path

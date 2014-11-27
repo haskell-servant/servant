@@ -5,10 +5,6 @@ module Servant (
   module Servant.API,
   -- | For implementing servers for servant APIs.
   module Servant.Server,
-  -- | For accessing servant APIs as API clients.
-  module Servant.Client,
-  -- | For generating documentation for servant APIs.
-  module Servant.Docs,
   -- | Using your types in request paths and query string parameters
   module Servant.Common.Text,
   -- | Utilities on top of the servant core
@@ -21,9 +17,7 @@ module Servant (
 
 import Data.Proxy
 import Servant.API
-import Servant.Client
 import Servant.Common.Text
-import Servant.Docs
 import Servant.Server
 import Servant.QQ
 import Servant.Utils.Links

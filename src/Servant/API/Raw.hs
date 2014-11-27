@@ -3,14 +3,8 @@
 {-# LANGUAGE TypeFamilies #-}
 module Servant.API.Raw where
 
-import Control.Monad.Trans.Either
-import Data.ByteString.Lazy
 import Data.Proxy
-import Network.HTTP.Types
 import Network.Wai
-import Servant.Client
-import Servant.Common.Req
-import Servant.Docs hiding (Method)
 import Servant.Server
 
 -- | Endpoint for plugging in your own Wai 'Application's.
@@ -36,17 +30,3 @@ instance HasServer Raw where
   type Server Raw = Application
   route Proxy rawApplication request respond =
     rawApplication request (respond . succeedWith)
-
--- | Pick a 'Method' and specify where the server you want to query is. You get
--- back the status code and the response body as a 'ByteString'.
-instance HasClient Raw where
-  type Client Raw = Method -> BaseUrl -> EitherT String IO (Int, ByteString)
-
-  clientWithRoute :: Proxy Raw -> Req -> Client Raw
-  clientWithRoute Proxy req httpMethod host =
-    performRequest httpMethod req (const True) host
-
-
-instance HasDocs Raw where
-  docsFor _proxy (endpoint, action) =
-    single endpoint action
