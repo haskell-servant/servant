@@ -6,11 +6,8 @@ module Servant.Utils.StaticFiles (
   serveDirectory,
  ) where
 
-import Data.String.Conversions
 import Filesystem.Path.CurrentOS (decodeString)
-import Network.Wai
 import Network.Wai.Application.Static
-
 import Servant.API.Raw
 import Servant.Server
 
