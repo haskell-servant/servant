@@ -21,7 +21,7 @@ library
     , bytestring
     , hashable
     , lens
-    , servant
+    , servant >= 0.2
     , string-conversions
     , system-filepath
     , unordered-containers
