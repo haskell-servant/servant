@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 -----------------------------------------------------------------------------
@@ -10,8 +9,6 @@
 -- Maintainer  :  Alp Mestanogullari <alpmestan@gmail.com>
 -- Stability   :  experimental
 -- Portability :  non-portable
---
--- Usage:
 module Servant.JQuery
   ( jquery
   , generateJS
@@ -21,8 +18,8 @@ module Servant.JQuery
 
 import Control.Lens
 import Data.List
+import Data.Monoid
 import Data.Proxy
-import Data.String.Interpolate
 import Servant.JQuery.Internal
 
 jquery :: HasJQ layout => Proxy layout -> JQ layout
@@ -30,18 +27,17 @@ jquery p = jqueryFor p defReq
 
 -- js codegen
 generateJS :: AjaxReq -> String
-generateJS req =
-  [i|
-function #{fname}(#{argsStr})
-{
-  $.ajax(
-    { url: #{url}
-    , success: onSuccess #{dataBody}
-    , error: onError
-    , type: '#{method}'
-    });
-}
-  |]
+generateJS req = "\n" <>
+    "function " <> fname <> "(" <> argsStr <> ")\n"
+ <> "{\n"
+ <> "  $.ajax(\n"
+ <> "    { url: " <> url <> "\n"
+ <> "    , success: onSuccess\n"
+ <> dataBody
+ <> "    , error: onError\n"
+ <> "    , type: '" <> method <> "'\n"
+ <> "    });\n"
+ <> "}\n"
 
   where argsStr = intercalate ", " args
         args = captures
@@ -61,7 +57,7 @@ function #{fname}(#{argsStr})
 
         dataBody =
           if req ^. reqBody
-            then "\n    , data: JSON.stringify(body)"
+            then "\n    , data: JSON.stringify(body)\n"
             else ""
 
         fname = req ^. funcName

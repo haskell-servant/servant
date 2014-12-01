@@ -19,9 +19,6 @@ newtype Counter = Counter { value :: Int }
 
 instance ToJSON Counter
 
-instance ToSample Counter where
-  toSample = Just 0
-
 -- * Shared counter operations
 
 -- Creating a counter that starts from 0
@@ -42,7 +39,6 @@ currentValue counter = liftIO $ readTVarIO counter
 -- * Our API type
 type TestApi = "counter" :> Post Counter -- endpoint for increasing the counter
           :<|> "counter" :> Get  Counter -- endpoint to get the current value
-          :<|> "doc"     :> Raw          -- serve the documentation
           :<|> Raw                       -- used for serving static files 
 
 testApi :: Proxy TestApi
@@ -58,7 +54,6 @@ www = "examples/www"
 server :: TVar Counter -> Server TestApi
 server counter = counterPlusOne counter     -- (+1) on the TVar
             :<|> currentValue counter       -- read the TVar
-            :<|> serveDocumentation testApi -- serve the API docs
             :<|> serveDirectory www         -- serve static files
 
 runServer :: TVar Counter -- ^ shared variable for the counter
@@ -70,7 +65,7 @@ runServer var port = run port (serve testApi $ server var)
 incCounterNamed :: FunctionName -> AjaxReq
 currentValueNamed :: FunctionName -> AjaxReq
 
-incCounterNamed :<|> currentValueNamed :<|> _ :<|> _ = jquery testApi
+incCounterNamed :<|> currentValueNamed :<|> _ = jquery testApi
 
 writeJS :: FilePath -> [AjaxReq] -> IO ()
 writeJS fp functions = writeFile fp $
