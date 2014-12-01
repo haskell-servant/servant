@@ -44,9 +44,8 @@ client :: HasClient layout => Proxy layout -> Client layout
 client p = clientWithRoute p defReq
 
 -- | This class lets us define how each API combinator
--- influences the creation of an HTTP request. Use 'client'
--- directly, this class implements the client-side
--- behavior of each combinator but you don't have to worry about it.
+-- influences the creation of an HTTP request. It's mostly
+-- an internal class, you can just use 'client'.
 class HasClient layout where
   type Client layout :: *
   clientWithRoute :: Proxy layout -> Req -> Client layout
