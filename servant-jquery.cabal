@@ -29,8 +29,8 @@ executable counter
       aeson
     , base
     , filepath
-    , servant
-    , servant-jquery
+    , servant >= 0.2
+    , servant-jquery >= 0.2
     , stm
     , transformers
     , warp
