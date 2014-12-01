@@ -62,10 +62,8 @@ runServer :: TVar Counter -- ^ shared variable for the counter
 runServer var port = run port (serve testApi $ server var)
 
 -- * Generating the JQuery code
-incCounterNamed :: FunctionName -> AjaxReq
-currentValueNamed :: FunctionName -> AjaxReq
 
-incCounterNamed :<|> currentValueNamed :<|> _ = jquery testApi
+incCounterJS :<|> currentValueJS :<|> _ = jquery testApi
 
 writeJS :: FilePath -> [AjaxReq] -> IO ()
 writeJS fp functions = writeFile fp $
@@ -75,9 +73,7 @@ main :: IO ()
 main = do
   -- write the JS code to www/api.js at startup
   writeJS (www </> "api.js")
-          [ incCounterNamed "increaseCounter"
-          , currentValueNamed "getCurrentValue"
-          ]
+          [ incCounterJS, currentValueJS ]
 
   -- setup a shared counter
   cnt <- newCounter

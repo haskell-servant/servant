@@ -1,21 +1,20 @@
 
-function increaseCounter(onSuccess, onError)
+function postcounter(onSuccess, onError)
 {
   $.ajax(
     { url: '/counter'
-    , success: onSuccess 
+    , success: onSuccess
     , error: onError
     , type: 'POST'
     });
 }
-  
-function getCurrentValue(onSuccess, onError)
+
+function getcounter(onSuccess, onError)
 {
   $.ajax(
     { url: '/counter'
-    , success: onSuccess 
+    , success: onSuccess
     , error: onError
     , type: 'GET'
     });
 }
-  

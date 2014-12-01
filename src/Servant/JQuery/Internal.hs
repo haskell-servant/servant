@@ -7,6 +7,7 @@
 module Servant.JQuery.Internal where
 
 import Control.Lens
+import Data.Monoid
 import Data.Proxy
 import GHC.TypeLits
 import Servant.API
@@ -120,31 +121,31 @@ instance (KnownSymbol sym, HasJQ sublayout)
     where str = symbolVal (Proxy :: Proxy sym)
 
 instance HasJQ Delete where
-  type JQ Delete = FunctionName -> AjaxReq
+  type JQ Delete = AjaxReq
 
-  jqueryFor Proxy req fName =
-    req & funcName  .~ fName
+  jqueryFor Proxy req =
+    req & funcName  %~ ("delete" <>)
         & reqMethod .~ "DELETE"
 
 instance HasJQ (Get a) where
-  type JQ (Get a) = FunctionName -> AjaxReq
+  type JQ (Get a) = AjaxReq
 
-  jqueryFor Proxy req fName =
-    req & funcName  .~ fName
+  jqueryFor Proxy req =
+    req & funcName  %~ ("get" <>)
         & reqMethod .~ "GET"
 
 instance HasJQ (Post a) where
-  type JQ (Post a) = FunctionName -> AjaxReq
+  type JQ (Post a) = AjaxReq
 
-  jqueryFor Proxy req fName =
-    req & funcName  .~ fName
+  jqueryFor Proxy req =
+    req & funcName  %~ ("post" <>)
         & reqMethod .~ "POST"
 
 instance HasJQ (Put a) where
-  type JQ (Put a) = FunctionName -> AjaxReq
+  type JQ (Put a) = AjaxReq
 
-  jqueryFor Proxy req fName =
-    req & funcName  .~ fName
+  jqueryFor Proxy req =
+    req & funcName  %~ ("put" <>)
         & reqMethod .~ "PUT"
 
 instance (KnownSymbol sym, HasJQ sublayout)
@@ -179,11 +180,10 @@ instance (KnownSymbol sym, HasJQ sublayout)
     where str = symbolVal (Proxy :: Proxy sym)
 
 instance HasJQ Raw where
-  type JQ Raw = Method -> FunctionName -> AjaxReq
+  type JQ Raw = Method -> AjaxReq
 
-  jqueryFor Proxy req method fName =
+  jqueryFor Proxy req method =
     req & reqMethod .~ method
-        & funcName  .~ fName
 
 instance HasJQ sublayout => HasJQ (ReqBody a :> sublayout) where
   type JQ (ReqBody a :> sublayout) = JQ sublayout
@@ -199,5 +199,6 @@ instance (KnownSymbol path, HasJQ sublayout)
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path <>~ [Static str]
+          & funcName %~ (str <>)
 
     where str = symbolVal (Proxy :: Proxy path)
