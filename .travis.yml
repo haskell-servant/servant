@@ -1,5 +1,13 @@
 language: haskell
 
+ghc:
+  - 7.8
+
+before_install:
+  - git clone https://github.com/haskell-servant/servant.git
+  - cabal sandbox init
+  - cabal sandbox add-source servant/
+
 notifications:
   irc:
     channels:
