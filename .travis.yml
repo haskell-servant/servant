@@ -1,5 +1,8 @@
 language: haskell
 
+ghc:
+  - 7.8
+
 notifications:
   irc:
     channels:
