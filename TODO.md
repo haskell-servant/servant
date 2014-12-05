@@ -1,0 +1,1 @@
+- Try to find a way to abstract over the format(s) instead of the current focus on JSON, maybe
