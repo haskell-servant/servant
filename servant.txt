@@ -2,6 +2,8 @@
 -- See Hoogle, http://www.haskell.org/hoogle/
 
 
+-- | A family of combinators for defining webservices APIs and serving them
+--   
 @package servant
 @version 0.2
 
