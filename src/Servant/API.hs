@@ -9,6 +9,8 @@ module Servant.API (
   -- * Accessing information from the request
   -- | Capturing parts of the url path as parsed values: @'Capture'@
   module Servant.API.Capture,
+  -- | Retrieving specific headers from the request
+  module Servant.API.Header,
   -- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@
   module Servant.API.QueryParam,
   -- | Accessing the request body as a JSON-encoded type: @'ReqBody'@
@@ -40,6 +42,7 @@ import Servant.API.Alternative
 import Servant.API.Capture
 import Servant.API.Delete
 import Servant.API.Get
+import Servant.API.Header
 import Servant.API.Post
 import Servant.API.Put
 import Servant.API.QueryParam

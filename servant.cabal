@@ -105,6 +105,7 @@ library
     Servant.API.Capture
     Servant.API.Delete
     Servant.API.Get
+    Servant.API.Header
     Servant.API.Post
     Servant.API.Put
     Servant.API.QueryParam
