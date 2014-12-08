@@ -1,7 +1,89 @@
 name:                servant
 version:             0.2
--- synopsis:
--- description:
+synopsis:            A family of combinators for defining webservices APIs and serving them
+description:
+  A family of combinators for defining webservices APIs and serving them
+  .
+  You can learn about the basic in <http://haskell-servant.github.io/getting-started/ the getting started> guide.
+  .
+  Here's a runnable example, with comments that defines a dummy API and
+  implements a webserver that serves this API. You can find it <https://github.com/haskell-servant/servant/blob/master/example/greet.hs here> too.
+  .
+  > {-# LANGUAGE DataKinds #-}
+  > {-# LANGUAGE PolyKinds #-}
+  > {-# LANGUAGE TypeFamilies #-}
+  > {-# LANGUAGE DeriveGeneric #-}
+  > {-# LANGUAGE TypeOperators #-}
+  > {-# LANGUAGE OverloadedStrings #-}
+  >
+  > import Data.Aeson
+  > import Data.Monoid
+  > import Data.Proxy
+  > import Data.Text
+  > import GHC.Generics
+  > import Network.Wai
+  > import Network.Wai.Handler.Warp
+  >
+  > import Servant
+  >
+  > -- * Example
+  >
+  > -- | A greet message data type
+  > newtype Greet = Greet { msg :: Text }
+  >   deriving (Generic, Show)
+  >
+  > instance FromJSON Greet
+  > instance ToJSON Greet
+  >
+  > -- API specification
+  > type TestApi =
+  >        -- GET /hello/:name?capital={true, false}
+           --     returns a Greet as JSON
+  >        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
+  >
+  >        -- POST /greet with a Greet as JSON in the request body,
+  >        --      returns a Greet as JSON
+  >   :<|> "greet" :> ReqBody Greet :> Post Greet
+  >
+  >        -- DELETE /greet/:greetid
+  >   :<|> "greet" :> Capture "greetid" Text :> Delete
+  >
+  > testApi :: Proxy TestApi
+  > testApi = Proxy
+  >
+  > -- Server-side handlers.
+  > --
+  > -- There's one handler per endpoint, which, just like in the type
+  > -- that represents the API, are glued together using :<|>.
+  > --
+  > -- Each handler runs in the 'EitherT (Int, String) IO' monad.
+  > server :: Server TestApi
+  > server = helloH :<|> postGreetH :<|> deleteGreetH
+  >
+  >   where helloH name Nothing = helloH name (Just False)
+  >         helloH name (Just False) = return . Greet $ "Hello, " <> name
+  >         helloH name (Just True) = return . Greet . toUpper $ "Hello, " <> name
+  >
+  >         postGreetH greet = return greet
+  >
+  >         deleteGreetH _ = return ()
+  >
+  > -- Turn the server into a WAI app. 'serve' is provided by servant,
+  > -- more precisely by the Servant.Server module.
+  > test :: Application
+  > test = serve testApi server
+  >
+  > -- Run the server.
+  > --
+  > -- 'run' comes from Network.Wai.Handler.Warp
+  > runTestServer :: Port -> IO ()
+  > runTestServer port = run port test
+  >
+  > -- Put this all to work!
+  > main :: IO ()
+  > main = runTestServer 8001
+homepage:            http://haskell-servant.github.io/
+Bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
@@ -11,6 +93,9 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 tested-with:         GHC >= 7.8
+source-repository head
+  type: git
+  location: http://github.com/haskell-servant/servant.git
 
 library
   exposed-modules:
@@ -52,12 +137,12 @@ library
     , warp
   hs-source-dirs: src
   default-language: Haskell2010
-  ghc-options: -O0 -Wall
+  ghc-options: -Wall
 
 executable greet
   main-is: greet.hs
   hs-source-dirs: example
-  ghc-options: -O0 -Wall
+  ghc-options: -Wall
   default-language: Haskell2010
   build-depends:
       base
