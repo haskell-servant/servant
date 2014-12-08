@@ -74,7 +74,20 @@ server = listAllBooks :&lt;|&gt; postBook
 server :: Server MyApi
 server = getBook
   where getBook :: Text -&gt; EitherT (Int, String) IO Book
-        getBook isbn = ...</pre></td></tr><tr><td class="src">(<a href="https://hackage.haskell.org/package/base-4.7.0.1/docs/GHC-TypeLits.html#t:KnownSymbol">KnownSymbol</a> sym, <a href="Servant-Server.html#t:HasServer">HasServer</a> sublayout) =&gt; <a href="Servant-Server.html#t:HasServer">HasServer</a> (<a href="Servant-API-Sub.html#t::-62-">(:&gt;)</a> * (<a href="Servant-API-QueryParam.html#t:QueryFlag">QueryFlag</a> <a href="https://hackage.haskell.org/package/base-4.7.0.1/docs/GHC-TypeLits.html#t:Symbol">Symbol</a> sym) sublayout)</td><td class="doc"><p>If you use <code><code><a href="Servant-API-QueryParam.html#t:QueryFlag">QueryFlag</a></code> &quot;published&quot;</code> in one of the endpoints for your API,
+        getBook isbn = ...</pre></td></tr><tr><td class="src">(<a href="https://hackage.haskell.org/package/base-4.7.0.1/docs/GHC-TypeLits.html#t:KnownSymbol">KnownSymbol</a> sym, <a href="Servant-Common-Text.html#t:FromText">FromText</a> a, <a href="Servant-Server.html#t:HasServer">HasServer</a> sublayout) =&gt; <a href="Servant-Server.html#t:HasServer">HasServer</a> (<a href="Servant-API-Sub.html#t::-62-">(:&gt;)</a> * (<a href="Servant-API-Header.html#t:Header">Header</a> <a href="https://hackage.haskell.org/package/base-4.7.0.1/docs/GHC-TypeLits.html#t:Symbol">Symbol</a> * sym a) sublayout)</td><td class="doc"><p>If you use <code><a href="Servant-API-Header.html#t:Header">Header</a></code> in one of the endpoints for your API,
+ this automatically requires your server-side handler to be a function
+ that takes an argument of the type specified by <code><a href="Servant-API-Header.html#t:Header">Header</a></code>.
+ This lets servant worry about extracting it from the request and turning
+ it into a value of the type you specify.</p><p>All it asks is for a <code><a href="Servant-Common-Text.html#t:FromText">FromText</a></code> instance.</p><p>Example:</p><pre>newtype Referer = Referer Text
+  deriving (Eq, Show, FromText, ToText)
+
+           -- GET /view-my-referer
+type MyApi = &quot;view-my-referer&quot; :&gt; Header &quot;Referer&quot; Referer :&gt; Get Referer
+
+server :: Server MyApi
+server = viewReferer
+  where viewReferer :: Referer -&gt; EitherT (Int, String) IO referer
+        viewReferer referer = return referer</pre></td></tr><tr><td class="src">(<a href="https://hackage.haskell.org/package/base-4.7.0.1/docs/GHC-TypeLits.html#t:KnownSymbol">KnownSymbol</a> sym, <a href="Servant-Server.html#t:HasServer">HasServer</a> sublayout) =&gt; <a href="Servant-Server.html#t:HasServer">HasServer</a> (<a href="Servant-API-Sub.html#t::-62-">(:&gt;)</a> * (<a href="Servant-API-QueryParam.html#t:QueryFlag">QueryFlag</a> <a href="https://hackage.haskell.org/package/base-4.7.0.1/docs/GHC-TypeLits.html#t:Symbol">Symbol</a> sym) sublayout)</td><td class="doc"><p>If you use <code><code><a href="Servant-API-QueryParam.html#t:QueryFlag">QueryFlag</a></code> &quot;published&quot;</code> in one of the endpoints for your API,
  this automatically requires your server-side handler to be a function
  that takes an argument of type <code><a href="https://hackage.haskell.org/package/base-4.7.0.1/docs/Data-Bool.html#t:Bool">Bool</a></code>.</p><p>Example:</p><pre>type MyApi = &quot;books&quot; :&gt; QueryFlag &quot;published&quot; :&gt; Get [Book]
 

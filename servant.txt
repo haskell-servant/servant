@@ -178,6 +178,45 @@ module Servant.API.Capture
 data Capture sym a
 instance (KnownSymbol capture, FromText a, HasServer sublayout) => HasServer (Capture capture a :> sublayout)
 
+module Servant.API.Header
+
+-- | Extract the given header's value as a value of type <tt>a</tt>.
+--   
+--   Example:
+--   
+--   <pre>
+--   newtype Referer = Referer Text
+--     deriving (Eq, Show, FromText, ToText)
+--   
+--              -- GET /view-my-referer
+--   type MyApi = "view-my-referer" :&gt; Header "from" Referer :&gt; Get Referer
+--   </pre>
+data Header sym a
+
+-- | If you use <a>Header</a> in one of the endpoints for your API, this
+--   automatically requires your server-side handler to be a function that
+--   takes an argument of the type specified by <a>Header</a>. This lets
+--   servant worry about extracting it from the request and turning it into
+--   a value of the type you specify.
+--   
+--   All it asks is for a <a>FromText</a> instance.
+--   
+--   Example:
+--   
+--   <pre>
+--   newtype Referer = Referer Text
+--     deriving (Eq, Show, FromText, ToText)
+--   
+--              -- GET /view-my-referer
+--   type MyApi = "view-my-referer" :&gt; Header "Referer" Referer :&gt; Get Referer
+--   
+--   server :: Server MyApi
+--   server = viewReferer
+--     where viewReferer :: Referer -&gt; EitherT (Int, String) IO referer
+--           viewReferer referer = return referer
+--   </pre>
+instance (KnownSymbol sym, FromText a, HasServer sublayout) => HasServer (Header sym a :> sublayout)
+
 module Servant.API.QueryParam
 
 -- | Lookup the value associated to the <tt>sym</tt> query string parameter

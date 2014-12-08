@@ -18,45 +18,48 @@
 <a name="line-9"></a>  <span class='hs-comment'>-- * Accessing information from the request</span>
 <a name="line-10"></a>  <span class='hs-comment'>-- | Capturing parts of the url path as parsed values: @'Capture'@</span>
 <a name="line-11"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Capture</span><span class='hs-layout'>,</span>
-<a name="line-12"></a>  <span class='hs-comment'>-- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@</span>
-<a name="line-13"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>QueryParam</span><span class='hs-layout'>,</span>
-<a name="line-14"></a>  <span class='hs-comment'>-- | Accessing the request body as a JSON-encoded type: @'ReqBody'@</span>
-<a name="line-15"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>ReqBody</span><span class='hs-layout'>,</span>
-<a name="line-16"></a>
-<a name="line-17"></a>  <span class='hs-comment'>-- * Actual endpoints, distinguished by HTTP method</span>
-<a name="line-18"></a>  <span class='hs-comment'>-- | GET requests</span>
-<a name="line-19"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Get</span><span class='hs-layout'>,</span>
-<a name="line-20"></a>  <span class='hs-comment'>-- | POST requests</span>
-<a name="line-21"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Post</span><span class='hs-layout'>,</span>
-<a name="line-22"></a>  <span class='hs-comment'>-- | DELETE requests</span>
-<a name="line-23"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Delete</span><span class='hs-layout'>,</span>
-<a name="line-24"></a>  <span class='hs-comment'>-- | PUT requests</span>
-<a name="line-25"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Put</span><span class='hs-layout'>,</span>
-<a name="line-26"></a>
-<a name="line-27"></a>  <span class='hs-comment'>-- * Untyped endpoints</span>
-<a name="line-28"></a>  <span class='hs-comment'>-- | Plugging in a wai 'Network.Wai.Application', serving directories</span>
-<a name="line-29"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Raw</span><span class='hs-layout'>,</span>
-<a name="line-30"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>Utils</span><span class='hs-varop'>.</span><span class='hs-conid'>StaticFiles</span><span class='hs-layout'>,</span>
-<a name="line-31"></a>
-<a name="line-32"></a>  <span class='hs-comment'>-- * Utilities</span>
-<a name="line-33"></a>  <span class='hs-comment'>-- | QuasiQuotes for endpoints</span>
-<a name="line-34"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>QQ</span><span class='hs-layout'>,</span>
-<a name="line-35"></a>  <span class='hs-comment'>-- | Type-safe internal URLs</span>
-<a name="line-36"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>Utils</span><span class='hs-varop'>.</span><span class='hs-conid'>Links</span><span class='hs-layout'>,</span>
-<a name="line-37"></a>  <span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-38"></a>
-<a name="line-39"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Alternative</span>
-<a name="line-40"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Capture</span>
-<a name="line-41"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Delete</span>
-<a name="line-42"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Get</span>
-<a name="line-43"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Post</span>
-<a name="line-44"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Put</span>
-<a name="line-45"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>QueryParam</span>
-<a name="line-46"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Raw</span>
-<a name="line-47"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>ReqBody</span>
-<a name="line-48"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Sub</span>
-<a name="line-49"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>QQ</span> <span class='hs-layout'>(</span><span class='hs-varid'>sitemap</span><span class='hs-layout'>)</span>
-<a name="line-50"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>Utils</span><span class='hs-varop'>.</span><span class='hs-conid'>Links</span> <span class='hs-layout'>(</span><span class='hs-varid'>mkLink</span><span class='hs-layout'>)</span>
-<a name="line-51"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>Utils</span><span class='hs-varop'>.</span><span class='hs-conid'>StaticFiles</span>
+<a name="line-12"></a>  <span class='hs-comment'>-- | Retrieving specific headers from the request</span>
+<a name="line-13"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Header</span><span class='hs-layout'>,</span>
+<a name="line-14"></a>  <span class='hs-comment'>-- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@</span>
+<a name="line-15"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>QueryParam</span><span class='hs-layout'>,</span>
+<a name="line-16"></a>  <span class='hs-comment'>-- | Accessing the request body as a JSON-encoded type: @'ReqBody'@</span>
+<a name="line-17"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>ReqBody</span><span class='hs-layout'>,</span>
+<a name="line-18"></a>
+<a name="line-19"></a>  <span class='hs-comment'>-- * Actual endpoints, distinguished by HTTP method</span>
+<a name="line-20"></a>  <span class='hs-comment'>-- | GET requests</span>
+<a name="line-21"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Get</span><span class='hs-layout'>,</span>
+<a name="line-22"></a>  <span class='hs-comment'>-- | POST requests</span>
+<a name="line-23"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Post</span><span class='hs-layout'>,</span>
+<a name="line-24"></a>  <span class='hs-comment'>-- | DELETE requests</span>
+<a name="line-25"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Delete</span><span class='hs-layout'>,</span>
+<a name="line-26"></a>  <span class='hs-comment'>-- | PUT requests</span>
+<a name="line-27"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Put</span><span class='hs-layout'>,</span>
+<a name="line-28"></a>
+<a name="line-29"></a>  <span class='hs-comment'>-- * Untyped endpoints</span>
+<a name="line-30"></a>  <span class='hs-comment'>-- | Plugging in a wai 'Network.Wai.Application', serving directories</span>
+<a name="line-31"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Raw</span><span class='hs-layout'>,</span>
+<a name="line-32"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>Utils</span><span class='hs-varop'>.</span><span class='hs-conid'>StaticFiles</span><span class='hs-layout'>,</span>
+<a name="line-33"></a>
+<a name="line-34"></a>  <span class='hs-comment'>-- * Utilities</span>
+<a name="line-35"></a>  <span class='hs-comment'>-- | QuasiQuotes for endpoints</span>
+<a name="line-36"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>QQ</span><span class='hs-layout'>,</span>
+<a name="line-37"></a>  <span class='hs-comment'>-- | Type-safe internal URLs</span>
+<a name="line-38"></a>  <span class='hs-keyword'>module</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>Utils</span><span class='hs-varop'>.</span><span class='hs-conid'>Links</span><span class='hs-layout'>,</span>
+<a name="line-39"></a>  <span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
+<a name="line-40"></a>
+<a name="line-41"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Alternative</span>
+<a name="line-42"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Capture</span>
+<a name="line-43"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Delete</span>
+<a name="line-44"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Get</span>
+<a name="line-45"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Header</span>
+<a name="line-46"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Post</span>
+<a name="line-47"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Put</span>
+<a name="line-48"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>QueryParam</span>
+<a name="line-49"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Raw</span>
+<a name="line-50"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>ReqBody</span>
+<a name="line-51"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>API</span><span class='hs-varop'>.</span><span class='hs-conid'>Sub</span>
+<a name="line-52"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>QQ</span> <span class='hs-layout'>(</span><span class='hs-varid'>sitemap</span><span class='hs-layout'>)</span>
+<a name="line-53"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>Utils</span><span class='hs-varop'>.</span><span class='hs-conid'>Links</span> <span class='hs-layout'>(</span><span class='hs-varid'>mkLink</span><span class='hs-layout'>)</span>
+<a name="line-54"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Servant</span><span class='hs-varop'>.</span><span class='hs-conid'>Utils</span><span class='hs-varop'>.</span><span class='hs-conid'>StaticFiles</span>
 </pre></body>
 </html>
