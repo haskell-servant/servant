@@ -13,13 +13,16 @@ import Data.Aeson
 import Data.Aeson.Parser
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
-import Data.ByteString.Lazy
+import Data.ByteString.Lazy hiding (pack)
+import Data.String
 import Data.String.Conversions
 import Data.Text
+import Data.Text.Encoding
 import Network.HTTP.Client
 import Network.HTTP.Types
 import Network.URI
 import Servant.Common.BaseUrl
+import Servant.Common.Text
 import System.IO.Unsafe
 
 import qualified Network.HTTP.Client as Client
@@ -28,10 +31,11 @@ data Req = Req
   { reqPath  :: String
   , qs       :: QueryText
   , reqBody  :: ByteString
+  , headers  :: [(String, Text)]
   }
 
 defReq :: Req
-defReq = Req "" [] ""
+defReq = Req "" [] "" []
 
 appendToPath :: String -> Req -> Req
 appendToPath p req =
@@ -45,11 +49,17 @@ appendToQueryString pname pvalue req =
   req { qs = qs req ++ [(pname, pvalue)]
       }
 
+addHeader :: ToText a => String -> a -> Req -> Req
+addHeader name val req = req { headers = headers req
+                                      ++ [(name, toText val)]
+                             }
+
 setRQBody :: ByteString -> Req -> Req
 setRQBody b req = req { reqBody = b }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
-reqToRequest req (BaseUrl reqScheme reqHost reqPort) = fmap (setrqb . setQS ) $ parseUrl url
+reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
+    fmap (setheaders . setrqb . setQS ) $ parseUrl url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"
@@ -64,6 +74,10 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) = fmap (setrqb . setQS ) $ 
 
         setrqb r = r { requestBody = RequestBodyLBS (reqBody req) }
         setQS = setQueryString $ queryTextToQuery (qs req)
+        setheaders r = r { requestHeaders = Prelude.map toProperHeader (headers req) }
+
+        toProperHeader (name, val) =
+          (fromString name, encodeUtf8 val) 
 
 
 -- * performing requests

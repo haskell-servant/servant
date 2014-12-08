@@ -21,7 +21,7 @@ import Data.Proxy
 import Data.String.Conversions
 import Data.Text (unpack)
 import GHC.TypeLits
-import Network.HTTP.Types
+import qualified Network.HTTP.Types as H
 import Servant.API
 import Servant.Common.BaseUrl
 import Servant.Common.Req
@@ -108,7 +108,7 @@ instance HasClient Delete where
   type Client Delete = BaseUrl -> EitherT String IO ()
 
   clientWithRoute Proxy req host =
-    performRequestJSON methodDelete req 204 host
+    performRequestJSON H.methodDelete req 204 host
 
 -- | If you have a 'Get' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -117,7 +117,44 @@ instance HasClient Delete where
 instance FromJSON result => HasClient (Get result) where
   type Client (Get result) = BaseUrl -> EitherT String IO result
   clientWithRoute Proxy req host =
-    performRequestJSON methodGet req 200 host
+    performRequestJSON H.methodGet req 200 host
+
+-- | If you use a 'Header' in one of your endpoints in your API,
+-- the corresponding querying function will automatically take
+-- an additional argument of the type specified by your 'Header',
+-- wrapped in Maybe.
+--
+-- That function will take care of encoding this argument as Text
+-- in the request headers.
+--
+-- All you need is for your type to have a 'ToText' instance.
+--
+-- Example:
+--
+-- > newtype Referer = Referer Text
+-- >   deriving (Eq, Show, FromText, ToText)
+-- >
+-- >            -- GET /view-my-referer
+-- > type MyApi = "view-my-referer" :> Header "Referer" Referer :> Get Referer
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > viewReferer :: Maybe Referer -> BaseUrl -> EitherT String IO Book
+-- > viewReferer = client myApi
+-- > -- then you can just use "viewRefer" to query that endpoint
+-- > -- specifying Nothing or Just "http://haskell.org/" as arguments
+instance (KnownSymbol sym, ToText a, HasClient sublayout)
+      => HasClient (Header sym a :> sublayout) where
+
+  type Client (Header sym a :> sublayout) =
+    Maybe a -> Client sublayout
+
+  clientWithRoute Proxy req mval =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      maybe req (\value -> addHeader hname value req) mval
+
+    where hname = symbolVal (Proxy :: Proxy sym)
 
 -- | If you have a 'Post' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -127,7 +164,7 @@ instance FromJSON a => HasClient (Post a) where
   type Client (Post a) = BaseUrl -> EitherT String IO a
 
   clientWithRoute Proxy req uri =
-    performRequestJSON methodPost req 201 uri
+    performRequestJSON H.methodPost req 201 uri
 
 -- | If you have a 'Put' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -137,7 +174,7 @@ instance FromJSON a => HasClient (Put a) where
   type Client (Put a) = BaseUrl -> EitherT String IO a
 
   clientWithRoute Proxy req host =
-    performRequestJSON methodPut req 200 host
+    performRequestJSON H.methodPut req 200 host
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -258,7 +295,7 @@ instance (KnownSymbol sym, HasClient sublayout)
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the status code and the response body as a 'ByteString'.
 instance HasClient Raw where
-  type Client Raw = Method -> BaseUrl -> EitherT String IO (Int, ByteString)
+  type Client Raw = H.Method -> BaseUrl -> EitherT String IO (Int, ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> Client Raw
   clientWithRoute Proxy req httpMethod host =
