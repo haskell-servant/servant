@@ -115,6 +115,7 @@ import Data.HashMap.Strict (HashMap)
 import Data.List
 import Data.Monoid
 import Data.Proxy
+import Data.Text (Text, pack, unpack)
 import Data.String.Conversions
 import GHC.Generics
 import GHC.TypeLits
@@ -255,6 +256,7 @@ defResponse = Response 200 Nothing
 -- to transform an action and add some information to it.
 data Action = Action
   { _captures :: [DocCapture]        -- type collected + user supplied info
+  , _headers  :: [Text]              -- type collected
   , _params   :: [DocQueryParam]     -- type collected + user supplied info
   , _rqbody   :: Maybe ByteString    -- user supplied
   , _response :: Response            -- user supplied
@@ -272,6 +274,7 @@ data Action = Action
 defAction :: Action
 defAction =
   Action []
+         []
          []
          Nothing
          defResponse
@@ -366,6 +369,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           replicate len '-' :
           "" :
           capturesStr (action ^. captures) ++
+          headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
           rqbodyStr (action ^. rqbody) ++
           responseStr (action ^. response) ++
@@ -384,6 +388,13 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           []
         captureStr cap =
           "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
+
+        headersStr :: [Text] -> [String]
+        headersStr [] = []
+        headersStr l = [""] ++ map headerStr l ++ [""]
+
+          where headerStr hname = "- This endpoint is sensitive to the value of the **"
+                               ++ unpack hname ++ "** HTTP header."
 
         paramsStr :: [DocQueryParam] -> [String]
         paramsStr [] = []
@@ -480,6 +491,15 @@ instance ToSample a => HasDocs (Get a) where
     where endpoint' = endpoint & method .~ DocGET
           action' = action & response.respBody .~ sampleByteString p
           p = Proxy :: Proxy a
+
+instance (KnownSymbol sym, HasDocs sublayout)
+      => HasDocs (Header sym a :> sublayout) where
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint, action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          action' = over headers (|> headername) action
+          headername = pack $ symbolVal (Proxy :: Proxy sym)
 
 instance ToSample a => HasDocs (Post a) where
   docsFor Proxy (endpoint, action) =
