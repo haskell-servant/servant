@@ -70,7 +70,7 @@ generateJS req = "\n" <>
             else "\n    , headers: { " ++ headersStr hs ++ " } }\n"
 
           where headersStr hs = intercalate ", " $ map headerStr hs
-                headerStr hname = hname ++ ": header" ++ hname
+                headerStr hname = "\"" ++ hname ++ "\": header" ++ hname
 
         fname = req ^. funcName
         method = req ^. reqMethod
