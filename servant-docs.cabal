@@ -1,7 +1,64 @@
 name:                servant-docs
 version:             0.2
--- synopsis:
--- description:
+synopsis:            generate API docs for your servant webservice
+description:
+  Library for generating API docs from a servant API definition.
+  .
+  Runnable example below that prints API docs in markdown.
+  .
+  > {-# LANGUAGE DataKinds #-}
+  > {-# LANGUAGE PolyKinds #-}
+  > {-# LANGUAGE TypeFamilies #-}
+  > {-# LANGUAGE DeriveGeneric #-}
+  > {-# LANGUAGE TypeOperators #-}
+  > {-# LANGUAGE FlexibleInstances #-}
+  > {-# LANGUAGE OverloadedStrings #-}
+  >
+  > import Data.Proxy
+  > import Data.Text
+  > import Servant
+  >
+  > -- our type for a Greeting message
+  > data Greet = Greet { _msg :: Text }
+  >   deriving (Generic, Show)
+  >
+  > -- we get our JSON serialization for free
+  > instance FromJSON Greet
+  > instance ToJSON Greet
+  >
+  > -- we provide a sample value for the 'Greet' type
+  > instance ToSample Greet where
+  >   toSample = Just g
+  >
+  >     where g = Greet "Hello, haskeller!"
+  >
+  > instance ToParam (QueryParam "capital" Bool) where
+  >   toParam _ =
+  >     DocQueryParam "capital"
+  >                   ["true", "false"]
+  >                   "Get the greeting message in uppercase (true) or not (false). Default is false."
+  >
+  > instance ToCapture (Capture "name" Text) where
+  >   toCapture _ = DocCapture "name" "name of the person to greet"
+  >
+  > instance ToCapture (Capture "greetid" Text) where
+  >   toCapture _ = DocCapture "greetid" "identifier of the greet msg to remove"
+  >
+  > -- API specification
+  > type TestApi =
+  >        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
+  >   :<|> "greet" :> RQBody Greet :> Post Greet
+  >   :<|> "delete" :> Capture "greetid" Text :> Delete
+  >
+  > testApi :: Proxy TestApi
+  > testApi = Proxy
+  >
+  > -- Generate the Documentation's ADT
+  > greetDocs :: API
+  > greetDocs = docs testApi
+  >
+  > main :: IO ()
+  > main = putStrLn $ markdown greetDocs
 license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
@@ -11,6 +68,11 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 tested-with:         GHC >= 7.8
+homepage:            http://haskell-servant.github.io/
+Bug-reports:         http://github.com/haskell-servant/servant-docs/issues
+source-repository head
+  type: git
+  location: http://github.com/haskell-servant/servant-docs.git
 
 library
   exposed-modules:
@@ -27,11 +89,11 @@ library
     , unordered-containers
   hs-source-dirs: src
   default-language: Haskell2010
-  ghc-options: -O0 -Wall
+  ghc-options: -Wall
 
 executable greet-docs
   main-is: greet.hs
   hs-source-dirs: example
-  ghc-options: -O0 -Wall
+  ghc-options: -Wall
   build-depends: base, aeson, servant, servant-docs, text
   default-language: Haskell2010
