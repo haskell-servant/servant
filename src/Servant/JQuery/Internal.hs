@@ -51,6 +51,8 @@ data QueryArg = QueryArg
   , _argType :: ArgType
   } deriving (Eq, Show)
 
+type HeaderArg = String
+
 data Url = Url
   { _path     :: Path
   , _queryStr :: [QueryArg]
@@ -63,10 +65,11 @@ type FunctionName = String
 type Method = String
 
 data AjaxReq = AjaxReq
-  { _reqUrl    :: Url
-  , _reqMethod :: Method
-  , _reqBody   :: Bool
-  , _funcName  :: FunctionName
+  { _reqUrl     :: Url
+  , _reqMethod  :: Method
+  , _reqHeaders :: [HeaderArg]
+  , _reqBody    :: Bool
+  , _funcName   :: FunctionName
   } deriving (Eq, Show)
 
 makeLenses ''QueryArg
@@ -96,7 +99,7 @@ paramToStr qarg notTheEnd =
   where name = qarg ^. argName
 
 defReq :: AjaxReq
-defReq = AjaxReq defUrl "GET" False ""
+defReq = AjaxReq defUrl "GET" [] False ""
 
 class HasJQ layout where
   type JQ layout :: *
@@ -133,6 +136,16 @@ instance HasJQ (Get a) where
   jqueryFor Proxy req =
     req & funcName  %~ ("get" <>)
         & reqMethod .~ "GET"
+
+instance (KnownSymbol sym, HasJQ sublayout)
+      => HasJQ (Header sym a :> sublayout) where
+  type JQ (Header sym a :> sublayout) = JQ sublayout
+
+  jqueryFor Proxy req =
+    jqueryFor subP (req & reqHeaders <>~ [hname])
+
+    where hname = symbolVal (Proxy :: Proxy sym)
+          subP = Proxy :: Proxy sublayout
 
 instance HasJQ (Post a) where
   type JQ (Post a) = AjaxReq

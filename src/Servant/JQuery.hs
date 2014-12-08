@@ -34,6 +34,7 @@ generateJS req = "\n" <>
  <> "    { url: " <> url <> "\n"
  <> "    , success: onSuccess\n"
  <> dataBody
+ <> reqheaders
  <> "    , error: onError\n"
  <> "    , type: '" <> method <> "'\n"
  <> "    });\n"
@@ -43,11 +44,14 @@ generateJS req = "\n" <>
         args = captures
             ++ map (view argName) queryparams
             ++ body
+            ++ map ("header"++) hs
             ++ ["onSuccess", "onError"]
         
         captures = map captureArg
                  . filter isCapture
                  $ req ^. reqUrl.path
+
+        hs = req ^. reqHeaders
 
         queryparams = req ^.. reqUrl.queryStr.traverse
 
@@ -59,6 +63,14 @@ generateJS req = "\n" <>
           if req ^. reqBody
             then "\n    , data: JSON.stringify(body)\n"
             else ""
+
+        reqheaders =
+          if null hs
+            then ""
+            else "\n    , headers: { " ++ headersStr hs ++ " } }\n"
+
+          where headersStr hs = intercalate ", " $ map headerStr hs
+                headerStr hname = hname ++ ": header" ++ hname
 
         fname = req ^. funcName
         method = req ^. reqMethod
