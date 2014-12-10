@@ -29,7 +29,6 @@ module Servant.API (
   -- * Untyped endpoints
   -- | Plugging in a wai 'Network.Wai.Application', serving directories
   module Servant.API.Raw,
-  module Servant.Utils.StaticFiles,
 
   -- * Utilities
   -- | QuasiQuotes for endpoints
@@ -51,4 +50,3 @@ import Servant.API.ReqBody
 import Servant.API.Sub
 import Servant.QQ (sitemap)
 import Servant.Utils.Links (mkLink)
-import Servant.Utils.StaticFiles
