@@ -33,7 +33,20 @@
 -- and part of the sitemap.
 --
 -- __N.B.:__ 'mkLink' assumes a capture matches any string (without slashes).
-module Servant.Utils.Links where
+module Servant.Utils.Links (
+    -- * Link and mkLink
+    -- | The only end-user utilities
+      mkLink
+    , Link
+    -- * Internal
+    -- | These functions will likely only be of interest if you are writing
+    -- more API combinators and would like to extend the behavior of
+    -- 'mkLink'
+    , ValidLinkIn()
+    , VLinkHelper(..)
+    , IsElem
+    , IsLink
+                           )where
 
 import Data.Proxy
 import GHC.TypeLits
@@ -94,6 +107,9 @@ instance ( IsElem f s ~ 'True
          , VLinkHelper f) => ValidLinkIn f s where
     mkLink _ _ = Link (vlh (Proxy :: Proxy f))
 
+-- | A safe link datatype.
+-- The only way of constructing a 'Link' is using 'mkLink', which means any
+-- 'Link' is guaranteed to be part of the mentioned API.
 data Link = Link String deriving Show
 
 class VLinkHelper f where
