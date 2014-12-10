@@ -1,6 +1,6 @@
 name:                servant-client
-version:             0.2
-synopsis: automatical derivation of haskell functions that let you query servant webservices
+version:             0.2.1
+synopsis: automatical derivation of querying functions for servant webservices
 description:
   This library lets you derive automatically Haskell functions that
   let you query each endpoint of a <http://hackage.haskell.org/package/servant servant> webservice.
@@ -47,7 +47,7 @@ library
     , http-types
     , network-uri >= 2.6
     , safe
-    , servant >= 0.2
+    , servant >= 0.2.1
     , string-conversions
     , text
     , transformers
@@ -72,7 +72,8 @@ test-suite spec
     , http-types
     , network >= 2.6
     , QuickCheck
-    , servant >= 0.2
+    , servant >= 0.2.1
     , servant-client
+    , servant-server >= 0.2.1
     , wai
     , warp
