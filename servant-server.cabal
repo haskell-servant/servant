@@ -86,6 +86,7 @@ test-suite spec
     , QuickCheck
     , parsec
     , servant
+    , servant-server
     , string-conversions
     , temporary
     , text

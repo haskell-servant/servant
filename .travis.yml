@@ -1,0 +1,15 @@
+language: haskell
+
+ghc:
+  - 7.8
+
+notifications:
+  irc:
+    channels:
+      - "irc.freenode.org#servant"
+    template:
+      - "%{repository}#%{build_number} - %{commit} on %{branch} by %{author}: %{message}"
+      - "Build details: %{build_url} - Change view: %{compare_url}"
+    skip_join: true
+    on_success: change
+    on_failure: always
