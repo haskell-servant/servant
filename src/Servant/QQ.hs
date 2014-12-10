@@ -26,7 +26,7 @@
 -- @
 --
 -- Note the @/@ before a @QueryParam@!
-module Servant.QQ where
+module Servant.QQ (sitemap) where
 
 import Control.Monad (void)
 import Control.Applicative hiding (many, (<|>), optional)
