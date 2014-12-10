@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 module Servant.API.ReqBody where
 
 -- | Extract the request body as a value of type @a@.
