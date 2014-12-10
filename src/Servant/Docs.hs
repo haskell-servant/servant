@@ -119,7 +119,7 @@ import Data.Text (Text, pack, unpack)
 import Data.String.Conversions
 import GHC.Generics
 import GHC.TypeLits
-import Servant
+import Servant.API
 
 import qualified Data.HashMap.Strict as HM
 

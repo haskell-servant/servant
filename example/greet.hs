@@ -4,9 +4,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 import Data.Aeson
+import Data.Proxy
 import Data.Text
 import GHC.Generics
-import Servant
+import Servant.API
 import Servant.Docs
 
 -- * Example
