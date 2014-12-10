@@ -1,0 +1,95 @@
+name:                servant-server
+version:             0.2.1
+synopsis:            A family of combinators for defining webservices APIs and serving them
+description:
+  A family of combinators for defining webservices APIs and serving them
+  .
+  You can learn about the basics in <http://haskell-servant.github.io/getting-started/ the getting started> guide.
+  .
+  <https://github.com/haskell-servant/servant-server/blob/master/example/greet.hs Here>'s a runnable example, with comments, that defines a dummy API and
+  implements a webserver that serves this API, using this package.
+homepage:            http://haskell-servant.github.io/
+Bug-reports:         http://github.com/haskell-servant/servant-server/issues
+license:             BSD3
+license-file:        LICENSE
+author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
+maintainer:          alpmestan@gmail.com
+copyright:           2014 Zalora South East Asia Pte Ltd
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+tested-with:         GHC >= 7.8
+source-repository head
+  type: git
+  location: http://github.com/haskell-servant/servant-server.git
+
+library
+  exposed-modules:
+    Servant
+    Servant.Server
+    Servant.Utils.StaticFiles
+  other-modules: Servant.Server.Internal
+  build-depends:
+      base >=4.7 && <5
+    , aeson
+    , attoparsec
+    , bytestring
+    , either
+    , http-types
+    , network-uri >= 2.6
+    , safe
+    , servant >= 0.2
+    , split
+    , string-conversions
+    , system-filepath
+    , text
+    , transformers
+    , wai
+    , wai-app-static
+    , warp
+  hs-source-dirs: src
+  default-language: Haskell2010
+  ghc-options: -Wall
+
+executable greet
+  main-is: greet.hs
+  hs-source-dirs: example
+  ghc-options: -Wall
+  default-language: Haskell2010
+  build-depends:
+      base
+    , servant
+    , servant-server
+    , aeson
+    , warp
+    , wai
+    , text
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  ghc-options:
+    -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures
+  default-language: Haskell2010
+  hs-source-dirs: test
+  main-is: Spec.hs
+  build-depends:
+      base == 4.*
+    , aeson
+    , bytestring
+    , directory
+    , either
+    , exceptions
+    , hspec == 2.*
+    , hspec-wai
+    , http-types
+    , network >= 2.6
+    , QuickCheck
+    , parsec
+    , servant
+    , string-conversions
+    , temporary
+    , text
+    , transformers
+    , wai
+    , wai-extra
+    , warp
