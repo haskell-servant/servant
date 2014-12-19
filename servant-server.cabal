@@ -1,5 +1,5 @@
 name:                servant-server
-version:             0.2.1
+version:             0.2.2
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -27,8 +27,8 @@ library
   exposed-modules:
     Servant
     Servant.Server
+    Servant.Server.Internal
     Servant.Utils.StaticFiles
-  other-modules: Servant.Server.Internal
   build-depends:
       base >=4.7 && <5
     , aeson
