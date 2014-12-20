@@ -109,6 +109,7 @@ module Servant.Docs
 
 import Control.Lens hiding (Action)
 import Data.Aeson
+import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.Hashable
 import Data.HashMap.Strict (HashMap)
@@ -333,7 +334,7 @@ instance ToSample () where
   toSample = Just ()
 
 sampleByteString :: forall a . ToSample a => Proxy a -> Maybe ByteString
-sampleByteString Proxy = fmap encode (toSample :: Maybe a)
+sampleByteString Proxy = fmap encodePretty (toSample :: Maybe a)
 
 -- | The class that helps us automatically get documentation
 --   for GET parameters.

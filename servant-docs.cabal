@@ -26,6 +26,7 @@ library
   build-depends:
       base >=4.7 && <5
     , aeson
+    , aeson-pretty < 0.8
     , bytestring
     , hashable
     , lens
