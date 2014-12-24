@@ -37,7 +37,7 @@ executable counter
   main-is: counter.hs
   ghc-options: -O2 -Wall
   hs-source-dirs: examples
-  
+
   if flag(example)
     buildable: True
   else
@@ -53,4 +53,17 @@ executable counter
     , stm
     , transformers
     , warp
+  default-language: Haskell2010
+
+test-suite spec
+  type:              exitcode-stdio-1.0
+  hs-source-dirs:    test
+  ghc-options:       -Wall
+  main-is:           Spec.hs
+  build-depends:
+      base == 4.*
+    , servant-jquery
+    , servant
+    , hspec >= 2.0
+    , language-ecmascript == 0.16.*
   default-language: Haskell2010

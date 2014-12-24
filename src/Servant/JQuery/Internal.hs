@@ -214,4 +214,4 @@ instance (KnownSymbol path, HasJQ sublayout)
       req & reqUrl.path <>~ [Static str]
           & funcName %~ (str <>)
 
-    where str = symbolVal (Proxy :: Proxy path)
+    where str = map (\c -> if c == '.' then '_' else c) $ symbolVal (Proxy :: Proxy path)
