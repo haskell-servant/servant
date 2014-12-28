@@ -15,6 +15,8 @@ module Servant.API (
   module Servant.API.QueryParam,
   -- | Accessing the request body as a JSON-encoded type: @'ReqBody'@
   module Servant.API.ReqBody,
+  -- | Retrieving matrix parameters from the 'URI' segment: @'MatrixParam'@
+  module Servant.API.MatrixParam,
 
   -- * Actual endpoints, distinguished by HTTP method
   -- | GET requests
@@ -45,6 +47,7 @@ import Servant.API.Header ( Header )
 import Servant.API.Post ( Post )
 import Servant.API.Put ( Put )
 import Servant.API.QueryParam ( QueryFlag, QueryParams, QueryParam )
+import Servant.API.MatrixParam ( MatrixFlag, MatrixParams, MatrixParam )
 import Servant.API.Raw ( Raw )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.Sub ( (:>)(..) )
