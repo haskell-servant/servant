@@ -34,6 +34,7 @@ library
     Servant.API.Post
     Servant.API.Put
     Servant.API.QueryParam
+    Servant.API.MatrixParam
     Servant.API.Raw
     Servant.API.ReqBody
     Servant.API.Sub
