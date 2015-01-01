@@ -29,6 +29,9 @@ import Servant.Server.Internal
 -- >   where listAllBooks = ...
 -- >         postBook book = ...
 -- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy 
+-- >
 -- > app :: Application
 -- > app = serve myApi server
 -- >
