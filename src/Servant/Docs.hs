@@ -556,6 +556,43 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs sublayout)
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
 
+
+instance (KnownSymbol sym, {- ToParam (MatrixParam sym a), -} HasDocs sublayout)
+      => HasDocs (MatrixParam sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action)
+
+    where sublayoutP = Proxy :: Proxy sublayout
+
+          endpoint' = over path (\p -> p++";"++symbolVal symP) endpoint
+          symP = Proxy :: Proxy sym
+
+
+instance (KnownSymbol sym, {- ToParam (MatrixParams sym a), -} HasDocs sublayout)
+      => HasDocs (MatrixParams sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action)
+
+    where sublayoutP = Proxy :: Proxy sublayout
+
+          endpoint' = over path (\p -> p++";"++symbolVal symP) endpoint
+          symP = Proxy :: Proxy sym
+
+
+instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
+      => HasDocs (MatrixFlag sym :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action)
+
+    where sublayoutP = Proxy :: Proxy sublayout
+
+          endpoint' = over path (\p -> p++";"++symbolVal symP) endpoint
+          symP = Proxy :: Proxy sym
+
+
 instance HasDocs Raw where
   docsFor _proxy (endpoint, action) =
     single endpoint action
