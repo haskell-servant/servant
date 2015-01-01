@@ -41,6 +41,13 @@ appendToPath :: String -> Req -> Req
 appendToPath p req =
   req { reqPath = reqPath req ++ "/" ++ p }
 
+appendToMatrixParams :: String
+                     -> Maybe String
+                     -> Req
+                     -> Req
+appendToMatrixParams pname pvalue req =
+  req { reqPath = reqPath req ++ ";" ++ pname ++ maybe "" ("=" ++) pvalue }
+
 appendToQueryString :: Text       -- ^ param name
                     -> Maybe Text -- ^ param value
                     -> Req

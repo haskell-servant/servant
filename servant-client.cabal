@@ -1,5 +1,5 @@
 name:                servant-client
-version:             0.2.1
+version:             0.2.2
 synopsis: automatical derivation of querying functions for servant webservices
 description:
   This library lets you derive automatically Haskell functions that
@@ -47,7 +47,7 @@ library
     , http-types
     , network-uri >= 2.6
     , safe
-    , servant >= 0.2.1
+    , servant >= 0.2.2
     , string-conversions
     , text
     , transformers
@@ -71,7 +71,7 @@ test-suite spec
     , hspec == 2.*
     , http-types
     , network >= 2.6
-    , QuickCheck
+    , QuickCheck >= 2.7
     , servant >= 0.2.1
     , servant-client
     , servant-server >= 0.2.1
