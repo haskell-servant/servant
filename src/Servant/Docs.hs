@@ -175,7 +175,7 @@ instance Show Endpoint where
 -- POST /foo
 -- @
 defEndpoint :: Endpoint
-defEndpoint = Endpoint "/" DocGET
+defEndpoint = Endpoint "" DocGET
 
 instance Hashable Endpoint
 
@@ -577,7 +577,7 @@ instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) wh
     docsFor sublayoutP (endpoint', action)
 
     where sublayoutP = Proxy :: Proxy sublayout
-          endpoint' = endpoint & path <>~ symbolVal pa
+          endpoint' = endpoint & path <>~ '/' : symbolVal pa
           pa = Proxy :: Proxy path
 
 {-
