@@ -210,7 +210,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
   -- if mparam = Nothing, we don't add it to the query string
   clientWithRoute Proxy req mparam =
     clientWithRoute (Proxy :: Proxy sublayout) $
-      appendToQueryString pname mparamText req
+      maybe req (flip (appendToQueryString pname) req . Just) mparamText
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)
@@ -251,7 +251,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 
   clientWithRoute Proxy req paramlist =
     clientWithRoute (Proxy :: Proxy sublayout) $
-      foldl' (\ value req' -> appendToQueryString pname req' value) req paramlist'
+      foldl' (\ req' -> maybe req' (flip (appendToQueryString pname) req' . Just)) req paramlist'
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)
