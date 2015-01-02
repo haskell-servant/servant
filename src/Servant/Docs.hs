@@ -148,19 +148,26 @@ instance Hashable Method
 -- @
 -- λ> 'defEndpoint'
 -- GET /
--- λ> 'defEndpoint' & 'path' '<>~' "foo"
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"]
 -- GET /foo
--- λ> 'defEndpoint' & 'path' '<>~' "foo" & 'method' '.~' 'DocPOST'
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'DocPOST'
 -- POST /foo
 -- @
 data Endpoint = Endpoint
-  { _path   :: String -- type collected
-  , _method :: Method -- type collected
+  { _path   :: [String] -- type collected
+  , _method :: Method   -- type collected
   } deriving (Eq, Generic)
 
 instance Show Endpoint where
   show (Endpoint p m) =
-    show m ++ " " ++ p
+    show m ++ " " ++ showPath p
+
+-- |
+-- Render a path as a '/'-delimited string
+--
+showPath :: [String] -> String
+showPath [] = "/"
+showPath ps = concatMap ('/' :) ps
 
 -- | An 'Endpoint' whose path is `"/"` and whose method is 'DocGET'
 --
@@ -169,13 +176,13 @@ instance Show Endpoint where
 -- @
 -- λ> 'defEndpoint'
 -- GET /
--- λ> 'defEndpoint' & 'path' '<>~' "foo"
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"]
 -- GET /foo
--- λ> 'defEndpoint' & 'path' '<>~' "foo" & 'method' '.~' 'DocPOST'
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'DocPOST'
 -- POST /foo
 -- @
 defEndpoint :: Endpoint
-defEndpoint = Endpoint "/" DocGET
+defEndpoint = Endpoint [] DocGET
 
 instance Hashable Endpoint
 
@@ -376,7 +383,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           responseStr (action ^. response) ++
           []
 
-          where str = show (endpoint^.method) ++ " " ++ endpoint^.path
+          where str = show (endpoint^.method) ++ " " ++ showPath (endpoint^.path)
                 len = length str
 
         capturesStr :: [DocCapture] -> [String]
@@ -472,7 +479,7 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
           captureP = Proxy :: Proxy (Capture sym a)
 
           action' = over captures (|> toCapture captureP) action
-          endpoint' = over path (\p -> p++"/:"++symbolVal symP) endpoint
+          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
           symP = Proxy :: Proxy sym
 
 
@@ -577,7 +584,7 @@ instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) wh
     docsFor sublayoutP (endpoint', action)
 
     where sublayoutP = Proxy :: Proxy sublayout
-          endpoint' = endpoint & path <>~ symbolVal pa
+          endpoint' = endpoint & path <>~ [symbolVal pa]
           pa = Proxy :: Proxy path
 
 {-
