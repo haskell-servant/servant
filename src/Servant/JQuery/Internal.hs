@@ -6,7 +6,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.JQuery.Internal where
 
+import Control.Applicative
 import Control.Lens
+import Data.Char (toLower)
 import Data.Monoid
 import Data.Proxy
 import GHC.TypeLits
@@ -28,7 +30,7 @@ captureArg (Cap s) = s
 captureArg      _  = error "captureArg called on non capture"
 
 jsSegments :: [Segment] -> String
-jsSegments []  = ""
+jsSegments []  = "/'"
 jsSegments [x] = "/" ++ segmentToStr x False
 jsSegments (x:xs) = "/" ++ segmentToStr x True ++ jsSegments xs
 
@@ -196,7 +198,8 @@ instance HasJQ Raw where
   type JQ Raw = Method -> AjaxReq
 
   jqueryFor Proxy req method =
-    req & reqMethod .~ method
+    req & funcName %~ ((toLower <$> method) <>)
+        & reqMethod .~ method
 
 instance HasJQ sublayout => HasJQ (ReqBody a :> sublayout) where
   type JQ (ReqBody a :> sublayout) = JQ sublayout
