@@ -189,16 +189,23 @@ queryParamSpec = do
               name = "ALICE"
              }
 
-type PostApi = ReqBody Person :> Post Integer
+type PostApi =
+       ReqBody Person :> Post Integer
+  :<|> "bla" :> ReqBody Person :> Post Integer
 postApi :: Proxy PostApi
 postApi = Proxy
 
 postSpec :: Spec
 postSpec = do
   describe "Servant.API.Post and .ReqBody" $ do
-    with (return (serve postApi (return . age))) $ do
+    with (return (serve postApi (return . age :<|> return . age))) $ do
       it "allows to POST a Person" $ do
         post "/" (encode alice) `shouldRespondWith` "42"{
+          matchStatus = 201
+         }
+
+      it "allows alternative routes if all have request bodies" $ do
+        post "/bla" (encode alice) `shouldRespondWith` "42"{
           matchStatus = 201
          }
 
