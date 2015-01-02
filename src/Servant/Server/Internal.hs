@@ -10,13 +10,14 @@ module Servant.Server.Internal where
 import Control.Applicative
 import Control.Monad.Trans.Either
 import Data.Aeson
-import Data.Maybe (catMaybes)
+import Data.IORef
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Monoid
 import Data.Proxy
 import Data.String
 import Data.String.Conversions
-import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
+import Data.Text (Text)
 import GHC.TypeLits
 import Network.HTTP.Types hiding (Header)
 import Network.Wai
@@ -25,7 +26,12 @@ import Servant.Common.Text
 
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = do
-  ra request (routingRespond . routeResult)
+  reqBodyRef <- newIORef Nothing
+  let memoReqBody = fromMaybe <$> (do
+        r <- requestBody request
+        writeIORef reqBodyRef $ Just r
+        return r ) <*> readIORef reqBodyRef
+  ra request{ requestBody = memoReqBody } (routingRespond . routeResult)
  where
   routingRespond :: Either RouteMismatch Response -> IO ResponseReceived
   routingRespond (Left NotFound) =
@@ -44,7 +50,7 @@ data RouteMismatch =
   | InvalidBody -- ^ an even more informative "your json request body wasn't valid" error
   deriving (Eq, Show)
 
--- | 
+-- |
 -- @
 -- > mempty = NotFound
 -- >
