@@ -27,12 +27,15 @@ import Servant.API
 import Servant.Common.Text
 
 data ReqBodyState = Uncalled
-                  | Called B.ByteString
-                  | Done B.ByteString
+                  | Called !B.ByteString
+                  | Done !B.ByteString
 
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = do
   reqBodyRef <- newIORef Uncalled
+  -- We need to check the requestBody possibly more than once, so instead
+  -- of consuming it entirely once, we cycle through it.
+  -- See https://github.com/haskell-servant/servant/issues/3
   let memoReqBody = do
           ior <- readIORef reqBodyRef
           case ior of
