@@ -99,7 +99,7 @@ module Servant.Docs
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
   , Response, respStatus, respBody, defResponse
-  , Action, captures, params, rqbody, response, defAction
+  , Action, captures, headers, params, rqbody, response, defAction
   , single
 
   , -- * Useful modules when defining your doc printers
