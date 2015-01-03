@@ -10,8 +10,10 @@ module Servant.Server.Internal where
 import Control.Applicative
 import Control.Monad.Trans.Either
 import Data.Aeson
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 import Data.IORef
-import Data.Maybe (catMaybes, fromMaybe)
+import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Proxy
 import Data.String
@@ -24,13 +26,27 @@ import Network.Wai
 import Servant.API
 import Servant.Common.Text
 
+data ReqBodyState = Uncalled
+                  | Called B.ByteString
+                  | Done B.ByteString
+
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = do
-  reqBodyRef <- newIORef Nothing
-  let memoReqBody = fromMaybe <$> (do
-        r <- requestBody request
-        writeIORef reqBodyRef $ Just r
-        return r ) <*> readIORef reqBodyRef
+  reqBodyRef <- newIORef Uncalled
+  let memoReqBody = do
+          ior <- readIORef reqBodyRef
+          case ior of
+            Uncalled -> do
+                r <- BL.toStrict <$> strictRequestBody request
+                writeIORef reqBodyRef $ Done r
+                return r
+            Called bs -> do
+                writeIORef reqBodyRef $ Done bs
+                return bs
+            Done bs -> do
+                writeIORef reqBodyRef $ Called bs
+                return B.empty
+
   ra request{ requestBody = memoReqBody } (routingRespond . routeResult)
  where
   routingRespond :: Either RouteMismatch Response -> IO ResponseReceived
