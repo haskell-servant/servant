@@ -24,10 +24,12 @@ import Servant.API
 
 type Arg = String
 
-data Segment = Static String -- ^ a static path segment. like "/foo"
-             | Cap Arg       -- ^ a capture. like "/:userid"
+data Segment = Segment { _segment :: SegmentType, _matrix :: [MatrixArg] }
   deriving (Eq, Show)
 
+data SegmentType = Static String  -- ^ a static path segment. like "/foo"
+                 | Cap Arg        -- ^ a capture. like "/:userid"
+  deriving (Eq, Show)
 
 isCapture :: Segment -> Bool
 isCapture (Cap _) = True
@@ -113,6 +115,8 @@ toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
                                      , Set.connectorPunctuation ]
 toValidFunctionName [] = "_"
 
+type MatrixArg = QueryArg
+
 data Url = Url
   { _path     :: Path
   , _queryStr :: [QueryArg]
@@ -133,13 +137,52 @@ data AjaxReq = AjaxReq
   } deriving (Eq, Show)
 
 makeLenses ''QueryArg
+makeLenses ''Segment
 makeLenses ''Url
 makeLenses ''AjaxReq
 
+isCapture :: Segment -> Bool
+isCapture (Segment (Cap _) _) = True
+isCapture                  _  = False
+
+hasMatrixArgs :: Segment -> Bool
+hasMatrixArgs (Segment _ (_:_)) = True
+hasMatrixArgs                _  = False
+
+hasArgs :: Segment -> Bool
+hasArgs s = isCapture s || hasMatrixArgs s
+
+matrixArgs :: Segment -> [MatrixArg]
+matrixArgs (Segment _ ms) = ms
+
+captureArg :: Segment -> Arg
+captureArg (Segment (Cap s) _) = s
+captureArg                  _  = error "captureArg called on non capture"
+
+jsSegments :: [Segment] -> String
+jsSegments []  = ""
+jsSegments [x] = "/" ++ segmentToStr x False
+jsSegments (x:xs) = "/" ++ segmentToStr x True ++ jsSegments xs
+
+segmentToStr :: Segment -> Bool -> String
+segmentToStr (Segment st ms) notTheEnd =
+  segmentTypeToStr st ++ jsMParams ms ++ if notTheEnd then "" else "'"
+
+segmentTypeToStr :: SegmentType -> String
+segmentTypeToStr (Static s) = s
+segmentTypeToStr (Cap s)    = "' + encodeURIComponent(" ++ s ++ ") + '"
+
+jsGParams :: String -> [QueryArg] -> String
+jsGParams _ []  = ""
+jsGParams _ [x] = paramToStr x False
+jsGParams s (x:xs) = paramToStr x True ++ s ++ jsGParams s xs
+
 jsParams :: [QueryArg] -> String
-jsParams []  = ""
-jsParams [x] = paramToStr x False
-jsParams (x:xs) = paramToStr x True ++ "&" ++ jsParams xs
+jsParams = jsGParams "&"
+
+jsMParams :: [MatrixArg] -> String
+jsMParams [] = ""
+jsMParams xs = ";" ++ jsGParams ";" xs
 
 paramToStr :: QueryArg -> Bool -> String
 paramToStr qarg notTheEnd =
@@ -184,7 +227,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Cap str]
+      req & reqUrl.path <>~ [Segment (Cap str) []]
 
     where str = symbolVal (Proxy :: Proxy sym)
 
@@ -256,6 +299,37 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
     where str = symbolVal (Proxy :: Proxy sym)
 
+instance (KnownSymbol sym, HasJQ sublayout)
+      => HasJQ (MatrixParam sym a :> sublayout) where
+  type JQ (MatrixParam sym a :> sublayout) = JQ sublayout
+
+  jqueryFor Proxy req =
+    jqueryFor (Proxy :: Proxy sublayout) $
+      req & reqUrl.path._last.matrix <>~ [QueryArg str Normal]
+
+    where str = symbolVal (Proxy :: Proxy sym)
+          strArg = str ++ "Value"
+
+instance (KnownSymbol sym, HasJQ sublayout)
+      => HasJQ (MatrixParams sym a :> sublayout) where
+  type JQ (MatrixParams sym a :> sublayout) = JQ sublayout
+
+  jqueryFor Proxy req =
+    jqueryFor (Proxy :: Proxy sublayout) $
+      req & reqUrl.path._last.matrix  <>~ [QueryArg str List]
+
+    where str = symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, HasJQ sublayout)
+      => HasJQ (MatrixFlag sym :> sublayout) where
+  type JQ (MatrixFlag sym :> sublayout) = JQ sublayout
+
+  jqueryFor Proxy req =
+    jqueryFor (Proxy :: Proxy sublayout) $
+      req & reqUrl.path._last.matrix  <>~ [QueryArg str Flag]
+
+    where str = symbolVal (Proxy :: Proxy sym)
+
 instance HasJQ Raw where
   type JQ Raw = Method -> AjaxReq
 
@@ -276,7 +350,7 @@ instance (KnownSymbol path, HasJQ sublayout)
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Static str]
+      req & reqUrl.path <>~ [Segment (Static str) []]
           & funcName %~ (str <>)
 
     where str = map (\c -> if c == '.' then '_' else c) $ symbolVal (Proxy :: Proxy path)
