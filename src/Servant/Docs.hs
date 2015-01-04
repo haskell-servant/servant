@@ -351,10 +351,10 @@ class ToJSON a => ToSample a where
   toSamples = maybe [] (return . ("",)) s
     where s = toSample :: Maybe a
 
-sampleByteString :: ToSample a => Proxy a -> Maybe ByteString
+sampleByteString :: forall a. ToSample a => Proxy a -> Maybe ByteString
 sampleByteString Proxy = fmap encodePretty (toSample :: Maybe a)
 
-sampleByteStrings :: ToSample a => Proxy a -> [(Text, ByteString)]
+sampleByteStrings :: forall a. ToSample a => Proxy a -> [(Text, ByteString)]
 sampleByteStrings Proxy = samples & traverse._2 %~ encodePretty
 
   where samples = toSamples :: [(Text, a)]
