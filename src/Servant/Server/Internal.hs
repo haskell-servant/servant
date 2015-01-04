@@ -10,22 +10,50 @@ module Servant.Server.Internal where
 import Control.Applicative
 import Control.Monad.Trans.Either
 import Data.Aeson
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
+import Data.IORef
 import Data.Maybe (catMaybes)
 import Data.Monoid
 import Data.Proxy
 import Data.String
 import Data.String.Conversions
-import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
+import Data.Text (Text)
 import GHC.TypeLits
 import Network.HTTP.Types hiding (Header)
 import Network.Wai
 import Servant.API
 import Servant.Common.Text
 
+data ReqBodyState = Uncalled
+                  | Called !B.ByteString
+                  | Done !B.ByteString
+
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = do
-  ra request (routingRespond . routeResult)
+  reqBodyRef <- newIORef Uncalled
+  -- We may need to consume the requestBody more than once.  In order to
+  -- maintain the illusion that 'requestBody' works as expected,
+  -- 'ReqBodyState' is introduced, and the complete body is memoized and
+  -- returned as many times as requested with empty "Done" marker chunks in
+  -- between.
+  -- See https://github.com/haskell-servant/servant/issues/3
+  let memoReqBody = do
+          ior <- readIORef reqBodyRef
+          case ior of
+            Uncalled -> do
+                r <- BL.toStrict <$> strictRequestBody request
+                writeIORef reqBodyRef $ Done r
+                return r
+            Called bs -> do
+                writeIORef reqBodyRef $ Done bs
+                return bs
+            Done bs -> do
+                writeIORef reqBodyRef $ Called bs
+                return B.empty
+
+  ra request{ requestBody = memoReqBody } (routingRespond . routeResult)
  where
   routingRespond :: Either RouteMismatch Response -> IO ResponseReceived
   routingRespond (Left NotFound) =
@@ -44,7 +72,7 @@ data RouteMismatch =
   | InvalidBody -- ^ an even more informative "your json request body wasn't valid" error
   deriving (Eq, Show)
 
--- | 
+-- |
 -- @
 -- > mempty = NotFound
 -- >
