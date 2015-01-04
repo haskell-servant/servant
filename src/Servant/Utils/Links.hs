@@ -54,6 +54,7 @@ import GHC.TypeLits
 import Servant.API.Capture
 import Servant.API.ReqBody
 import Servant.API.QueryParam
+import Servant.API.MatrixParam
 import Servant.API.Get
 import Servant.API.Post
 import Servant.API.Put
@@ -78,6 +79,11 @@ type family IsElem a s where
     IsElem (e :> sa) (Capture x y :> sb) = IsElem sa sb
     IsElem sa (ReqBody x :> sb)          = IsElem sa sb
     IsElem sa (QueryParam x y :> sb)     = IsElem sa sb
+    IsElem sa (QueryParams x y :> sb)    = IsElem sa sb
+    IsElem sa (QueryFlag x :> sb)        = IsElem sa sb
+    IsElem sa (MatrixParam x y :> sb)    = IsElem sa sb
+    IsElem sa (MatrixParams x y :> sb)   = IsElem sa sb
+    IsElem sa (MatrixFlag x :> sb)       = IsElem sa sb
     IsElem e e                           = 'True
     IsElem e a                           = 'False
 
