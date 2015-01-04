@@ -33,8 +33,11 @@ data ReqBodyState = Uncalled
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = do
   reqBodyRef <- newIORef Uncalled
-  -- We need to check the requestBody possibly more than once, so instead
-  -- of consuming it entirely once, we cycle through it.
+  -- We may need to consume the requestBody more than once.  In order to
+  -- maintain the illusion that 'requestBody' works as expected,
+  -- 'ReqBodyState' is introduced, and the complete body is memoized and
+  -- returned as many times as requested with empty "Done" marker chunks in
+  -- between.
   -- See https://github.com/haskell-servant/servant/issues/3
   let memoReqBody = do
           ior <- readIORef reqBodyRef
