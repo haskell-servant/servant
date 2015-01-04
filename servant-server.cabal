@@ -23,6 +23,10 @@ source-repository head
   type: git
   location: http://github.com/haskell-servant/servant-server.git
 
+extra-source-files:
+  CHANGELOG.md
+  README.md
+
 library
   exposed-modules:
     Servant
