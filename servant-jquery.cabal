@@ -1,6 +1,6 @@
 name:                servant-jquery
-version:             0.2.1
-synopsis:            Automatically derive jquery-based javascript functions to query servant webservices
+version:             0.2.2
+synopsis:            Automatically derive (jquery) javascript functions to query servant webservices
 description:
   Automatically derive jquery-based javascript functions to query servant webservices.
   .
@@ -16,6 +16,9 @@ build-type:          Simple
 cabal-version:       >=1.10
 homepage:            http://haskell-servant.github.io/
 Bug-reports:         http://github.com/haskell-servant/servant-jquery/issues
+extra-source-files:
+  CHANGELOG.md
+  README.md
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant-jquery.git
