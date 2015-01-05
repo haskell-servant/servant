@@ -209,6 +209,11 @@ postSpec = do
           matchStatus = 201
          }
 
+      it "handles trailing '/' gracefully" $ do
+        post "/bla/" (encode alice) `shouldRespondWith` "42"{
+          matchStatus = 201
+         }
+
       it "correctly rejects invalid request bodies with status 400" $ do
         post "/" "some invalid body" `shouldRespondWith` 400
 
