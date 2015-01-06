@@ -28,21 +28,39 @@
 -- Note the @/@ before a @QueryParam@!
 module Servant.QQ (sitemap) where
 
-import Control.Monad (void)
-import Control.Applicative hiding (many, (<|>), optional)
-import Language.Haskell.TH.Quote
+import Control.Monad ( void )
+import Control.Applicative ( (<$>) )
+import Language.Haskell.TH.Quote ( QuasiQuoter(..) )
 import Language.Haskell.TH
+    ( mkName, Type(AppT, ConT, LitT), TyLit(StrTyLit) )
 import Text.ParserCombinators.Parsec
-
-import Servant.API.Capture
-import Servant.API.Get
-import Servant.API.Post
-import Servant.API.Put
-import Servant.API.Delete
-import Servant.API.QueryParam
-import Servant.API.ReqBody
-import Servant.API.Sub
-import Servant.API.Alternative
+    ( try,
+      Parser,
+      manyTill,
+      endBy,
+      sepBy1,
+      optional,
+      optionMaybe,
+      string,
+      anyChar,
+      char,
+      spaces,
+      noneOf,
+      parse,
+      skipMany,
+      many,
+      lookAhead,
+      (<|>),
+      (<?>) )
+import Servant.API.Capture ( Capture )
+import Servant.API.Get ( Get )
+import Servant.API.Post ( Post )
+import Servant.API.Put ( Put )
+import Servant.API.Delete ( Delete )
+import Servant.API.QueryParam ( QueryParam )
+import Servant.API.ReqBody ( ReqBody )
+import Servant.API.Sub ( (:>) )
+import Servant.API.Alternative ( (:<|>) )
 
 -- | Finally-tagless encoding for our DSL.
 -- Keeping 'repr'' and 'repr' distinct when writing functions with an
@@ -195,4 +213,3 @@ sitemap = QuasiQuoter { quoteExp = undefined
                             Right st -> return st
                       , quoteDec = undefined
                       }
-

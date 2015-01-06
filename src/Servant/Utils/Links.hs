@@ -48,18 +48,18 @@ module Servant.Utils.Links (
     , IsLink
                            )where
 
-import Data.Proxy
-import GHC.TypeLits
+import Data.Proxy ( Proxy(..) )
+import GHC.TypeLits ( KnownSymbol, Symbol, symbolVal )
 
-import Servant.API.Capture
-import Servant.API.ReqBody
-import Servant.API.QueryParam
-import Servant.API.Get
-import Servant.API.Post
-import Servant.API.Put
-import Servant.API.Delete
-import Servant.API.Sub
-import Servant.API.Alternative
+import Servant.API.Capture ( Capture )
+import Servant.API.ReqBody ( ReqBody )
+import Servant.API.QueryParam ( QueryParam )
+import Servant.API.Get ( Get )
+import Servant.API.Post ( Post )
+import Servant.API.Put ( Put )
+import Servant.API.Delete ( Delete )
+import Servant.API.Sub ( type (:>) )
+import Servant.API.Alternative ( type (:<|>) )
 
 
 type family Or a b where
@@ -123,4 +123,3 @@ instance VLinkHelper (Get x) where
 
 instance VLinkHelper (Post x) where
     vlh _ = ""
-

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Servant.API.Delete where
 
-import Data.Typeable
+import Data.Typeable ( Typeable )
 
 -- | Combinator for DELETE requests.
 --
