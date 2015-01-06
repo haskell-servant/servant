@@ -104,6 +104,14 @@ isMismatch :: RouteResult a -> Bool
 isMismatch (RR (Left _)) = True
 isMismatch _             = False
 
+-- | Like `null . pathInfo`, but works with redundant trailing slashes.
+pathIsEmpty :: Request -> Bool
+pathIsEmpty = f . pathInfo
+  where
+    f []   = True
+    f [""] = True
+    f _    = False
+
 -- | If we get a `Right`, it has precedence over everything else.
 --
 -- This in particular means that if we could get several 'Right's,
@@ -199,14 +207,14 @@ instance HasServer Delete where
   type Server Delete = EitherT (Int, String) IO ()
 
   route Proxy action request respond
-    | null (pathInfo request) && requestMethod request == methodDelete = do
+    | pathIsEmpty request && requestMethod request == methodDelete = do
         e <- runEitherT action
         respond $ succeedWith $ case e of
           Right () ->
             responseLBS status204 [] ""
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | null (pathInfo request) && requestMethod request /= methodDelete =
+    | pathIsEmpty request && requestMethod request /= methodDelete =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
@@ -224,14 +232,14 @@ instance HasServer Delete where
 instance ToJSON result => HasServer (Get result) where
   type Server (Get result) = EitherT (Int, String) IO result
   route Proxy action request respond
-    | null (pathInfo request) && requestMethod request == methodGet = do
+    | pathIsEmpty request && requestMethod request == methodGet = do
         e <- runEitherT action
         respond . succeedWith $ case e of
           Right output ->
             responseLBS ok200 [("Content-Type", "application/json")] (encode output)
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | null (pathInfo request) && requestMethod request /= methodGet =
+    | pathIsEmpty request && requestMethod request /= methodGet =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
@@ -282,14 +290,14 @@ instance ToJSON a => HasServer (Post a) where
   type Server (Post a) = EitherT (Int, String) IO a
 
   route Proxy action request respond
-    | null (pathInfo request) && requestMethod request == methodPost = do
+    | pathIsEmpty request && requestMethod request == methodPost = do
         e <- runEitherT action
         respond . succeedWith $ case e of
           Right out ->
             responseLBS status201 [("Content-Type", "application/json")] (encode out)
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | null (pathInfo request) && requestMethod request /= methodPost =
+    | pathIsEmpty request && requestMethod request /= methodPost =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
@@ -308,14 +316,14 @@ instance ToJSON a => HasServer (Put a) where
   type Server (Put a) = EitherT (Int, String) IO a
 
   route Proxy action request respond
-    | null (pathInfo request) && requestMethod request == methodPut = do
+    | pathIsEmpty request && requestMethod request == methodPut = do
         e <- runEitherT action
         respond . succeedWith $ case e of
           Right out ->
             responseLBS ok200 [("Content-Type", "application/json")] (encode out)
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | null (pathInfo request) && requestMethod request /= methodPut =
+    | pathIsEmpty request && requestMethod request /= methodPut =
         respond $ failWith WrongMethod
 
     | otherwise = respond $ failWith NotFound
