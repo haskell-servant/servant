@@ -9,9 +9,18 @@
 {-# LANGUAGE UndecidableInstances  #-}
 module Servant.QQSpec where
 
-import Test.Hspec
+import Test.Hspec ( Expectation, Spec, shouldBe, it, describe )
 
 import Servant.API
+    ( (:<|>),
+      ReqBody,
+      QueryParam,
+      Put,
+      Get,
+      Post,
+      Capture,
+      (:>),
+      sitemap )
 
 --------------------------------------------------------------------------
 -- Types for testing
