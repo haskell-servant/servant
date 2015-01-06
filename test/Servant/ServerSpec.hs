@@ -8,28 +8,28 @@
 module Servant.ServerSpec where
 
 
-import Control.Monad.Trans.Either
-import Data.Aeson
-import Data.Char
-import Data.Proxy
-import Data.String
-import Data.String.Conversions
-import GHC.Generics
-import Network.HTTP.Types
-import Network.Wai
-import Network.Wai.Test
-import Test.Hspec
-import Test.Hspec.Wai
+import Control.Monad.Trans.Either (EitherT, left)
+import Data.Aeson (ToJSON, FromJSON, encode, decode')
+import Data.Char (toUpper)
+import Data.Proxy (Proxy(Proxy))
+import Data.String (fromString)
+import Data.String.Conversions (cs)
+import GHC.Generics (Generic)
+import Network.HTTP.Types (parseQuery, ok200)
+import Network.Wai (Application, Request, responseLBS, pathInfo, queryString, rawQueryString)
+import Network.Wai.Test (runSession, request, defaultRequest, simpleBody)
+import Test.Hspec (Spec, describe, it, shouldBe)
+import Test.Hspec.Wai (liftIO, with, get, post, shouldRespondWith, matchStatus)
 
-import Servant.API.Capture
-import Servant.API.Get
-import Servant.API.ReqBody
-import Servant.API.Post
-import Servant.API.QueryParam
-import Servant.API.Raw
-import Servant.API.Sub
-import Servant.API.Alternative
-import Servant.Server
+import Servant.API.Capture (Capture)
+import Servant.API.Get (Get)
+import Servant.API.ReqBody (ReqBody)
+import Servant.API.Post (Post)
+import Servant.API.QueryParam (QueryParam, QueryParams, QueryFlag)
+import Servant.API.Raw (Raw)
+import Servant.API.Sub ((:>))
+import Servant.API.Alternative ((:<|>)((:<|>)))
+import Servant.Server (Server, serve)
 
 
 -- * test data types
