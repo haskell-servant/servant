@@ -6,11 +6,11 @@ module Servant.Common.Text
   , ToText(..)
   ) where
 
-import Data.String.Conversions
-import Data.Int
-import Data.Text
-import Data.Text.Read
-import Data.Word
+import Data.String.Conversions ( cs )
+import Data.Int ( Int8, Int16, Int32, Int64 )
+import Data.Text ( Text )
+import Data.Text.Read ( rational, signed, decimal, Reader )
+import Data.Word ( Word, Word8, Word16, Word32, Word64 )
 
 -- | For getting values from url captures and query string parameters
 class FromText a where

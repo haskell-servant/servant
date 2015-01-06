@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Servant.API.Post where
 
-import Data.Typeable
+import Data.Typeable ( Typeable )
 
 -- | Endpoint for POST requests. The type variable represents the type of the
 -- response body (not the request body, use 'Servant.API.ReqBody.ReqBody' for

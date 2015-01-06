@@ -37,16 +37,16 @@ module Servant.API (
   module Servant.Utils.Links,
   ) where
 
-import Servant.API.Alternative
-import Servant.API.Capture
-import Servant.API.Delete
-import Servant.API.Get
-import Servant.API.Header
-import Servant.API.Post
-import Servant.API.Put
-import Servant.API.QueryParam
-import Servant.API.Raw
-import Servant.API.ReqBody
-import Servant.API.Sub
-import Servant.QQ (sitemap)
-import Servant.Utils.Links (mkLink)
+import Servant.API.Alternative ( (:<|>)(..) )
+import Servant.API.Capture ( Capture )
+import Servant.API.Delete ( Delete )
+import Servant.API.Get ( Get )
+import Servant.API.Header ( Header )
+import Servant.API.Post ( Post )
+import Servant.API.Put ( Put )
+import Servant.API.QueryParam ( QueryFlag, QueryParams, QueryParam )
+import Servant.API.Raw ( Raw )
+import Servant.API.ReqBody ( ReqBody )
+import Servant.API.Sub ( (:>)(..) )
+import Servant.QQ ( sitemap )
+import Servant.Utils.Links ( mkLink )

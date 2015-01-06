@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Servant.API.Get where
 
-import Data.Typeable
+import Data.Typeable ( Typeable )
 
 -- | Endpoint for simple GET requests. Serves the result as JSON.
 --

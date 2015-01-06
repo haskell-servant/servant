@@ -2,8 +2,7 @@
 {-# LANGUAGE TypeOperators #-}
 module Servant.API.Sub where
 
-import Data.Proxy
-import GHC.TypeLits
+import Data.Proxy ( Proxy )
 
 -- | The contained API (second argument) can be found under @("/" ++ path)@
 -- (path being the first argument).

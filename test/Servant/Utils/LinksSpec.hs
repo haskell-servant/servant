@@ -3,11 +3,13 @@
 {-# LANGUAGE TypeOperators #-}
 module Servant.Utils.LinksSpec where
 
-import Test.Hspec
+import Test.Hspec ( Spec, it, describe )
 
 import Servant.API
+    ( type (:<|>), ReqBody, QueryParam, Get, Post, Capture, type (:>) )
 import Servant.QQSpec ( (~>) )
-import Servant.Utils.Links (IsElem, IsLink)
+import Servant.Utils.Links ( IsElem, IsLink )
+
 
 type TestApi =
        "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Get Bool
@@ -49,4 +51,3 @@ isLink = describe "IsLink" $ do
     it "is False of anything with captures" $ do
         reflected (Proxy::Proxy (IsLink NotALink)) ~> False
         reflected (Proxy::Proxy (IsLink NotALink2)) ~> False
-

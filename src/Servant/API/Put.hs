@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Servant.API.Put where
 
-import Data.Typeable
+import Data.Typeable ( Typeable )
 
 -- | Endpoint for PUT requests, usually used to update a ressource.
 -- The type @a@ is the type of the response body that's returned.
