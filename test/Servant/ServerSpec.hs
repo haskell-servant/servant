@@ -94,8 +94,8 @@ captureSpec = do
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))
-        (\ "captured" request respond ->
-            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request)))) $ do
+        (\ "captured" request_ respond ->
+            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
@@ -134,7 +134,7 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize
         qpCapitalize False = return alice
         qpCapitalize True  = return alice { name = map toUpper (name alice) }
 
-        queryParamServer (Just name) = return alice{name = name}
+        queryParamServer (Just name_) = return alice{name = name_}
         queryParamServer Nothing = return alice
 
 queryParamSpec :: Spec
@@ -222,7 +222,7 @@ type RawApi = "foo" :> Raw
 rawApi :: Proxy RawApi
 rawApi = Proxy
 rawApplication :: Show a => (Request -> a) -> Application
-rawApplication f request respond = respond $ responseLBS ok200 [] (cs $ show $ f request)
+rawApplication f request_ respond = respond $ responseLBS ok200 [] (cs $ show $ f request_)
 
 rawSpec :: Spec
 rawSpec = do
@@ -264,7 +264,7 @@ unionSpec = do
         liftIO $ do
           decode' (simpleBody response) `shouldBe`
             Just alice
-        response <- get "/bar"
+        response_ <- get "/bar"
         liftIO $ do
-          decode' (simpleBody response) `shouldBe`
+          decode' (simpleBody response_) `shouldBe`
             Just jerry

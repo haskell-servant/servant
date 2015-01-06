@@ -35,7 +35,7 @@ app = serve api server
 
 server :: Server Api
 server =
-       (\ name -> return (Person name 42))
+       (\ name_ -> return (Person name_ 42))
   :<|> serveDirectory "static"
 
 withStaticFiles :: IO () -> IO ()
