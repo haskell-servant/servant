@@ -11,9 +11,11 @@ module Servant.Server
     HasServer(..)
   ) where
 
-import Data.Proxy
-import Network.Wai
+import Data.Proxy (Proxy)
+import Network.Wai (Application)
+
 import Servant.Server.Internal
+
 
 -- * Implementing Servers
 
@@ -30,7 +32,7 @@ import Servant.Server.Internal
 -- >         postBook book = ...
 -- >
 -- > myApi :: Proxy MyApi
--- > myApi = Proxy 
+-- > myApi = Proxy
 -- >
 -- > app :: Application
 -- > app = serve myApi server
@@ -39,4 +41,3 @@ import Servant.Server.Internal
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 serve :: HasServer layout => Proxy layout -> Server layout -> Application
 serve p server = toApplication (route p server)
-
