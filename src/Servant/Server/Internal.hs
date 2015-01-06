@@ -7,24 +7,26 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.Server.Internal where
 
-import Control.Applicative
-import Control.Monad.Trans.Either
-import Data.Aeson
+import Control.Applicative ((<$>))
+import Control.Monad.Trans.Either (EitherT, runEitherT)
+import Data.Aeson (ToJSON, FromJSON, encode, decode')
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
-import Data.IORef
+import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Maybe (catMaybes)
-import Data.Monoid
-import Data.Proxy
-import Data.String
-import Data.String.Conversions
+import Data.Monoid (Monoid, mempty, mappend)
+import Data.Proxy (Proxy(Proxy))
+import Data.String (fromString)
+import Data.String.Conversions (cs, (<>))
 import Data.Text.Encoding (decodeUtf8)
 import Data.Text (Text)
-import GHC.TypeLits
+import GHC.TypeLits (KnownSymbol, symbolVal)
 import Network.HTTP.Types hiding (Header)
-import Network.Wai
-import Servant.API
-import Servant.Common.Text
+import Network.Wai (Response, Request, ResponseReceived, Application, pathInfo, requestBody,
+                    strictRequestBody, lazyRequestBody, requestHeaders, requestMethod,
+                    rawQueryString, responseLBS)
+import Servant.API (QueryParams, QueryParam, QueryFlag, ReqBody, Header, Capture, Get, Delete, Put, Post, Raw, (:>), (:<|>)(..))
+import Servant.Common.Text (FromText, fromText)
 
 data ReqBodyState = Uncalled
                   | Called !B.ByteString
