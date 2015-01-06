@@ -4,7 +4,7 @@
 
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
-Generate API docs for your *servant* webservice.
+Generate API docs for your *servant* webservice. Feel free to also take a look at [servant-pandoc](https://github.com/mpickering/servant-pandoc) which uses this package to target a broad range of output formats using the excellent **pandoc**.
 
 ## Example
 

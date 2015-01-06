@@ -39,6 +39,11 @@ instance ToParam (QueryParam "capital" Bool) where
 instance ToSample Greet where
   toSample = Just $ Greet "Hello, haskeller!"
 
+  toSamples =
+    [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
+    , ("If you use ?capital=false", Greet "Hello, haskeller")
+    ]
+
 -- API specification
 type TestApi =
        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON

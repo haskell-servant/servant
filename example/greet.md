@@ -1,8 +1,7 @@
-
 POST /greet
 -----------
 
-**Request Body**:
+**Request Body**: 
 
 ``` javascript
 {
@@ -10,50 +9,66 @@ POST /greet
 }
 ```
 
-**Response**:
+**Response**: 
 
  - Status code 201
- - Response body as below.
+ - If you use ?capital=true
 
 ``` javascript
 {
-    "msg": "Hello, haskeller!"
+    "msg": "HELLO, HASKELLER"
+}
+```
+
+ - If you use ?capital=false
+
+``` javascript
+{
+    "msg": "Hello, haskeller"
 }
 ```
 
 GET /hello/:name
 ----------------
 
-**Captures**:
+**Captures**: 
 
 - *name*: name of the person to greet
 
-**GET Parameters**:
+**GET Parameters**: 
 
  - capital
      - **Values**: *true, false*
      - **Description**: Get the greeting message in uppercase (true) or not (false). Default is false.
 
 
-**Response**:
+**Response**: 
 
  - Status code 200
- - Response body as below.
+ - If you use ?capital=true
 
 ``` javascript
 {
-    "msg": "Hello, haskeller!"
+    "msg": "HELLO, HASKELLER"
+}
+```
+
+ - If you use ?capital=false
+
+``` javascript
+{
+    "msg": "Hello, haskeller"
 }
 ```
 
 DELETE /greet/:greetid
 ----------------------
 
-**Captures**:
+**Captures**: 
 
 - *greetid*: identifier of the greet msg to remove
 
-**Response**:
+**Response**: 
 
  - Status code 204
  - No response body

@@ -1,10 +1,12 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 -------------------------------------------------------------------------------
 -- | This module lets you get API docs for free. It lets generate
@@ -83,12 +85,10 @@ module Servant.Docs
   ( -- * 'HasDocs' class and key functions
     HasDocs(..), docs, markdown
 
-  {- , -- * Serving the documentation
-    serveDocumentation -}
-
   , -- * Classes you need to implement for your types
     ToSample(..)
   , sampleByteString
+  , sampleByteStrings
   , ToParam(..)
   , ToCapture(..)
 
@@ -99,7 +99,7 @@ module Servant.Docs
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
   , Response, respStatus, respBody, defResponse
-  , Action, captures, params, rqbody, response, defAction
+  , Action, captures, headers, params, rqbody, response, defAction
   , single
 
   , -- * Useful modules when defining your doc printers
@@ -114,6 +114,7 @@ import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.Hashable
 import Data.HashMap.Strict (HashMap)
 import Data.List
+import Data.Maybe (listToMaybe)
 import Data.Monoid
 import Data.Proxy
 import Data.Text (Text, pack, unpack)
@@ -123,6 +124,7 @@ import GHC.TypeLits
 import Servant.API
 
 import qualified Data.HashMap.Strict as HM
+import qualified Data.Text           as T
 
 -- | Supported HTTP request methods
 data Method = DocDELETE -- ^ the DELETE method
@@ -148,19 +150,26 @@ instance Hashable Method
 -- @
 -- λ> 'defEndpoint'
 -- GET /
--- λ> 'defEndpoint' & 'path' '<>~' "foo"
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"]
 -- GET /foo
--- λ> 'defEndpoint' & 'path' '<>~' "foo" & 'method' '.~' 'DocPOST'
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'DocPOST'
 -- POST /foo
 -- @
 data Endpoint = Endpoint
-  { _path   :: String -- type collected
-  , _method :: Method -- type collected
+  { _path   :: [String] -- type collected
+  , _method :: Method   -- type collected
   } deriving (Eq, Generic)
 
 instance Show Endpoint where
   show (Endpoint p m) =
-    show m ++ " " ++ p
+    show m ++ " " ++ showPath p
+
+-- |
+-- Render a path as a '/'-delimited string
+--
+showPath :: [String] -> String
+showPath [] = "/"
+showPath ps = concatMap ('/' :) ps
 
 -- | An 'Endpoint' whose path is `"/"` and whose method is 'DocGET'
 --
@@ -169,13 +178,13 @@ instance Show Endpoint where
 -- @
 -- λ> 'defEndpoint'
 -- GET /
--- λ> 'defEndpoint' & 'path' '<>~' "foo"
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"]
 -- GET /foo
--- λ> 'defEndpoint' & 'path' '<>~' "foo" & 'method' '.~' 'DocPOST'
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'DocPOST'
 -- POST /foo
 -- @
 defEndpoint :: Endpoint
-defEndpoint = Endpoint "/" DocGET
+defEndpoint = Endpoint [] DocGET
 
 instance Hashable Endpoint
 
@@ -226,12 +235,12 @@ data ParamKind = Normal | List | Flag
 -- Can be tweaked with two lenses.
 --
 -- > λ> defResponse
--- > Response {_respStatus = 200, _respBody = Nothing}
--- > λ> defResponse & respStatus .~ 204 & respBody .~ Just "[]"
--- > Response {_respStatus = 204, _respBody = Just "[]"}
+-- > Response {_respStatus = 200, _respBody = []}
+-- > λ> defResponse & respStatus .~ 204 & respBody .~ [("If everything goes well", "{ \"status\": \"ok\" }")]
+-- > Response {_respStatus = 204, _respBody = [("If everything goes well", "{ \"status\": \"ok\" }")]}
 data Response = Response
   { _respStatus :: Int
-  , _respBody   :: Maybe ByteString
+  , _respBody   :: [(Text, ByteString)]
   } deriving (Eq, Show)
 
 -- | Default response: status code 200, no response body.
@@ -243,7 +252,7 @@ data Response = Response
 -- > λ> defResponse & respStatus .~ 204 & respBody .~ Just "[]"
 -- > Response {_respStatus = 204, _respBody = Just "[]"}
 defResponse :: Response
-defResponse = Response 200 Nothing
+defResponse = Response 200 []
 
 -- | A datatype that represents everything that can happen
 -- at an endpoint, with its lenses:
@@ -327,14 +336,28 @@ class HasDocs layout where
 -- >   toSample = Just g
 -- >
 -- >     where g = Greet "Hello, haskeller!"
+--
+-- You can also instantiate this class using 'toSamples' instead of
+-- 'toSample': it lets you specify different responses along with
+-- some context (as 'Text') that explains when you're supposed to
+-- get the corresponding response. 
 class ToJSON a => ToSample a where
+  {-# MINIMAL (toSample | toSamples) #-}
   toSample :: Maybe a
+  toSample = fmap snd $ listToMaybe samples
+    where samples = toSamples :: [(Text, a)]
 
-instance ToSample () where
-  toSample = Just ()
+  toSamples :: [(Text, a)]
+  toSamples = maybe [] (return . ("",)) s
+    where s = toSample :: Maybe a
 
-sampleByteString :: forall a . ToSample a => Proxy a -> Maybe ByteString
+sampleByteString :: forall a. ToSample a => Proxy a -> Maybe ByteString
 sampleByteString Proxy = fmap encodePretty (toSample :: Maybe a)
+
+sampleByteStrings :: forall a. ToSample a => Proxy a -> [(Text, ByteString)]
+sampleByteStrings Proxy = samples & traverse._2 %~ encodePretty
+
+  where samples = toSamples :: [(Text, a)]
 
 -- | The class that helps us automatically get documentation
 --   for GET parameters.
@@ -376,7 +399,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           responseStr (action ^. response) ++
           []
 
-          where str = show (endpoint^.method) ++ " " ++ endpoint^.path
+          where str = show (endpoint^.method) ++ " " ++ showPath (endpoint^.path)
                 len = length str
 
         capturesStr :: [DocCapture] -> [String]
@@ -441,9 +464,13 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           "**Response**: " :
           "" :
           (" - Status code " ++ show (resp ^. respStatus)) :
-          (resp ^. respBody &
-            maybe [" - No response body\n"]
-                  (\b -> " - Response body as below." : jsonStr b))
+          bodies
+
+          where bodies = case resp ^. respBody of
+                  []        -> [" - No response body\n"]
+                  [("", r)] -> " - Response body as below." : jsonStr r
+                  xs        ->
+                    concatMap (\(ctx, r) -> (" - " <> T.unpack ctx) : jsonStr r) xs
 
 -- * Instances
 
@@ -472,7 +499,7 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
           captureP = Proxy :: Proxy (Capture sym a)
 
           action' = over captures (|> toCapture captureP) action
-          endpoint' = over path (\p -> p++"/:"++symbolVal symP) endpoint
+          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
           symP = Proxy :: Proxy sym
 
 
@@ -482,7 +509,7 @@ instance HasDocs Delete where
 
     where endpoint' = endpoint & method .~ DocDELETE
 
-          action' = action & response.respBody .~ Nothing
+          action' = action & response.respBody .~ []
                            & response.respStatus .~ 204
 
 instance ToSample a => HasDocs (Get a) where
@@ -490,7 +517,7 @@ instance ToSample a => HasDocs (Get a) where
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ sampleByteString p
+          action' = action & response.respBody .~ sampleByteStrings p
           p = Proxy :: Proxy a
 
 instance (KnownSymbol sym, HasDocs sublayout)
@@ -508,7 +535,7 @@ instance ToSample a => HasDocs (Post a) where
 
     where endpoint' = endpoint & method .~ DocPOST
 
-          action' = action & response.respBody .~ sampleByteString p
+          action' = action & response.respBody .~ sampleByteStrings p
                            & response.respStatus .~ 201
 
           p = Proxy :: Proxy a
@@ -519,7 +546,7 @@ instance ToSample a => HasDocs (Put a) where
 
     where endpoint' = endpoint & method .~ DocPUT
 
-          action' = action & response.respBody .~ sampleByteString p
+          action' = action & response.respBody .~ sampleByteStrings p
                            & response.respStatus .~ 200
 
           p = Proxy :: Proxy a
@@ -614,7 +641,7 @@ instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) wh
     docsFor sublayoutP (endpoint', action)
 
     where sublayoutP = Proxy :: Proxy sublayout
-          endpoint' = endpoint & path <>~ symbolVal pa
+          endpoint' = endpoint & path <>~ [symbolVal pa]
           pa = Proxy :: Proxy path
 
 {-
