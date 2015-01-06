@@ -1,8 +1,6 @@
 {-# LANGUAGE PolyKinds #-}
 module Servant.API.Header where
 
-import GHC.TypeLits
-
 -- | Extract the given header's value as a value of type @a@.
 --
 -- Example:

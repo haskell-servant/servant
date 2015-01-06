@@ -3,7 +3,6 @@
 module Servant.API.Sub where
 
 import Data.Proxy
-import GHC.TypeLits
 
 -- | The contained API (second argument) can be found under @("/" ++ path)@
 -- (path being the first argument).
