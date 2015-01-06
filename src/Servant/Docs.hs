@@ -216,6 +216,7 @@ data DocQueryParam = DocQueryParam
   , _paramKind   :: ParamKind
   } deriving (Eq, Show)
 
+
 -- | Type of GET parameter:
 --
 -- - Normal corresponds to @QueryParam@, i.e your usual GET parameter
@@ -265,11 +266,12 @@ defResponse = Response 200 []
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _captures :: [DocCapture]        -- type collected + user supplied info
-  , _headers  :: [Text]              -- type collected
-  , _params   :: [DocQueryParam]     -- type collected + user supplied info
-  , _rqbody   :: Maybe ByteString    -- user supplied
-  , _response :: Response            -- user supplied
+  { _captures :: [DocCapture]                 -- type collected + user supplied info
+  , _headers  :: [Text]                       -- type collected
+  , _params   :: [DocQueryParam]              -- type collected + user supplied info
+  , _mxParams :: [(String, [DocQueryParam])]  -- type collected + user supplied info
+  , _rqbody   :: Maybe ByteString             -- user supplied
+  , _response :: Response                     -- user supplied
   } deriving (Eq, Show)
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
@@ -278,12 +280,13 @@ data Action = Action
 -- Tweakable with lenses.
 --
 -- > λ> defAction
--- > Action {_captures = [], _params = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
+-- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
 -- > λ> defAction & response.respStatus .~ 201
--- > Action {_captures = [], _params = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
+-- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
 defAction :: Action
 defAction =
   Action []
+         []
          []
          []
          Nothing
@@ -393,6 +396,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           replicate len '-' :
           "" :
           capturesStr (action ^. captures) ++
+          mxParamsStr (action ^. mxParams) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
           rqbodyStr (action ^. rqbody) ++
@@ -412,6 +416,22 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           []
         captureStr cap =
           "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
+
+        mxParamsStr :: [(String, [DocQueryParam])] -> [String]
+        mxParamsStr [] = []
+        mxParamsStr l =
+          "**Matrix Parameters**: " :
+          "" :
+          map segmentStr l ++
+          "" :
+          []
+        segmentStr :: (String, [DocQueryParam]) -> String
+        segmentStr (segment, l) = unlines $
+          ("**" ++ segment ++ "**: ") :
+          "" :
+          map paramStr l ++
+          "" :
+          []
 
         headersStr :: [Text] -> [String]
         headersStr [] = []
@@ -584,15 +604,23 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs sublayout)
           action' = over params (|> toParam paramP) action
 
 
-instance (KnownSymbol sym, {- ToParam (MatrixParam sym a), -} HasDocs sublayout)
+instance (KnownSymbol sym, ToParam (MatrixParam sym a), HasDocs sublayout)
       => HasDocs (MatrixParam sym a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint', action)
+    docsFor sublayoutP (endpoint', action')
 
     where sublayoutP = Proxy :: Proxy sublayout
+          paramP = Proxy :: Proxy (MatrixParam sym a)
+          segment = endpoint ^. (path._last)
+          segment' = action ^. (mxParams._last._1)
+          endpoint' = over (path._last) (\p -> p ++ ";" ++ symbolVal symP ++ "=<value>") endpoint
 
-          endpoint' = over path (\p -> p++";"++symbolVal symP) endpoint
+          action' = if segment' /= segment
+                    -- This is the first matrix parameter for this segment, insert a new entry into the mxParams list
+                    then over mxParams (|> (segment, [toParam paramP])) action
+                    -- We've already inserted a matrix parameter for this segment, append to the existing list
+                    else action & mxParams._last._2 <>~ [toParam paramP]
           symP = Proxy :: Proxy sym
 
 
@@ -603,8 +631,7 @@ instance (KnownSymbol sym, {- ToParam (MatrixParams sym a), -} HasDocs sublayout
     docsFor sublayoutP (endpoint', action)
 
     where sublayoutP = Proxy :: Proxy sublayout
-
-          endpoint' = over path (\p -> p++";"++symbolVal symP) endpoint
+          endpoint' = over path (\p -> p ++ [";" ++ symbolVal symP ++ "=<value>"]) endpoint
           symP = Proxy :: Proxy sym
 
 
@@ -616,7 +643,7 @@ instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
 
     where sublayoutP = Proxy :: Proxy sublayout
 
-          endpoint' = over path (\p -> p++";"++symbolVal symP) endpoint
+          endpoint' = over path (\p -> p ++ [";" ++ symbolVal symP]) endpoint
           symP = Proxy :: Proxy sym
 
 
