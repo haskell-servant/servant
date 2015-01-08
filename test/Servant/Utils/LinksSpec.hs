@@ -8,29 +8,43 @@ module Servant.Utils.LinksSpec where
 import Test.Hspec ( Spec, it, describe, shouldBe, Expectation )
 import Data.Proxy ( Proxy(..) )
 
-import Servant.API
+import Servant.API ( type (:<|>), ReqBody, QueryParam, MatrixParam, MatrixParams
+    , MatrixFlag, Get, Post, Capture, type (:>) , HTML , JSON, XML )
+import Servant.QQSpec ( (~>) )
+import Servant.Utils.Links ( IsElem, IsLink )
+<<<<<<< HEAD
 
 type TestApi =
   -- Capture and query/matrix params
        "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete
 
   :<|> "parent" :> MatrixParams "name" String :> "child"
-                :> MatrixParam "gender" String :> Get String
+                :> MatrixParam "gender" String :> Get '[JSON] String
 
   -- Flags
   :<|> "ducks" :> MatrixFlag "yellow" :> MatrixFlag "loud" :> Delete
   :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete
 
   -- All of the verbs
-  :<|> "get" :> Get ()
-  :<|> "put" :> Put ()
-  :<|> "post" :> ReqBody 'True :> Post ()
+  :<|> "get" :> Get '[JSON] ()
+  :<|> "put" :> Put '[JSON] ()
+  :<|> "post" :> ReqBody 'True :> Post '[JSON] ()
   :<|> "delete" :> Header "ponies" :> Delete
   :<|> "raw" :> Raw
 
-type TestLink = "hello" :> "hi" :> Get Bool
-type TestLink2 = "greet" :> Post Bool
-type TestLink3 = "parent" :> "child" :> Get String
+type TestLink = "hello" :> "hi" :> Get '[JSON] Bool
+type TestLink2 = "greet" :> Post '[XML] Bool
+type TestLink3 = "parent" :> "child" :> Get '[JSON] String
+
+type BadTestLink = "hallo" :> "hi" :> Get '[JSON] Bool
+type BadTestLink2 = "greet" :> Get '[XML] Bool
+type BadTestLink3 = "parent" :> "child" :> MatrixFlag "male" :> Get '[JSON] String
+
+type BadTestLink' = "hello" :> "hi" :> Get '[HTML] Bool
+type BadTestLink'2 = "greet" :> Get '[HTML] Bool
+
+type NotALink = "hello" :> Capture "x" Bool :> Get '[JSON] Bool
+type NotALink2 = "hello" :> ReqBody 'True :> Get '[JSON] Bool
 
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
          => Proxy endpoint -> MkLink endpoint

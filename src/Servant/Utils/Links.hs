@@ -122,6 +122,14 @@ import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
 import Servant.API.Alternative ( type (:<|>) )
 
+-- | A safe link datatype.
+-- The only way of constructing a 'Link' is using 'safeLink', which means any
+-- 'Link' is guaranteed to be part of the mentioned API.
+data Link = Link
+  { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
+  , _queryParams :: [Param Query]
+  } deriving Show
+
 -- | If either a or b produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
     Or () b       = ()
@@ -156,14 +164,26 @@ type family IsElem endpoint api :: Constraint where
     IsElem sa (MatrixFlag x :> sb)       = IsElem sa sb
     IsElem e e                           = ()
     IsElem e a                           = IsElem' e a
+    IsElem (Get ct typ) (Get ct' typ)    = IsSubList ct ct'
+    IsElem (Post ct typ) (Post ct' typ)  = IsSubList ct ct'
+    IsElem (Put ct typ) (Put ct' typ)    = IsSubList ct ct'
+    IsElem e e                           = 'True
+    IsElem e a                           = 'False
 
--- | A safe link datatype.
--- The only way of constructing a 'Link' is using 'safeLink', which means any
--- 'Link' is guaranteed to be part of the mentioned API.
-data Link = Link
-  { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
-  , _queryParams :: [Param Query]
-  } deriving Show
+
+type family IsSubList a b where
+    IsSubList '[] b = 'True
+    IsSubList '[x] (x ': xs) = 'True
+    IsSubList '[x] (y ': ys) = IsSubList '[x] ys
+    IsSubList (x ': xs) y = IsSubList '[x] y `And` IsSubList xs y
+    IsSubList a b = 'False
+
+type family IsLink'' l where
+    IsLink'' (e :> Get cts x)  = IsLink' e
+    IsLink'' (e :> Post cts x) = IsLink' e
+    IsLink'' (e :> Put cts x)  = IsLink' e
+    IsLink'' (e :> Delete)     = IsLink' e
+    IsLink'' a                 = 'False
 
 
 -- Phantom types for Param
@@ -317,16 +337,16 @@ instance (ToText v, HasLink sub)
             addSegment (escape . unpack $ toText v) l
 
 -- Verb (terminal) instances
-instance HasLink (Get r) where
-    type MkLink (Get r) = URI
+instance HasLink (Get y r) where
+    type MkLink (Get y r) = URI
     toLink _ = linkURI
 
 instance HasLink (Post r) where
-    type MkLink (Post r) = URI
+    type MkLink (Post y r) = URI
     toLink _ = linkURI
 
-instance HasLink (Put r) where
-    type MkLink (Put r) = URI
+instance HasLink (Put y r) where
+    type MkLink (Put y r) = URI
     toLink _ = linkURI
 
 instance HasLink Delete where

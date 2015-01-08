@@ -1,4 +1,6 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE KindSignatures #-}
 module Servant.API.Post where
 
 import Data.Typeable ( Typeable )
@@ -12,6 +14,6 @@ import Data.Typeable ( Typeable )
 -- >            -- POST /books
 -- >            -- with a JSON encoded Book as the request body
 -- >            -- returning the just-created Book
--- > type MyApi = "books" :> ReqBody Book :> Post Book
-data Post a
+-- > type MyApi = "books" :> ReqBody Book :> Post '[JSON] Book
+data Post (cts::[*]) a
   deriving Typeable

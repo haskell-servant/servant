@@ -28,6 +28,7 @@ library
     Servant.API
     Servant.API.Alternative
     Servant.API.Capture
+    Servant.API.ContentTypes
     Servant.API.Delete
     Servant.API.Get
     Servant.API.Header
@@ -44,6 +45,8 @@ library
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5
+    , bytestring == 0.10.*
+    , http-types == 0.8.*
     , text >= 1
     , template-haskell
     , parsec >= 3.1

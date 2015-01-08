@@ -1,4 +1,6 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE KindSignatures #-}
 module Servant.API.Put where
 
 import Data.Typeable ( Typeable )
@@ -10,6 +12,6 @@ import Data.Typeable ( Typeable )
 --
 -- > -- PUT /books/:isbn
 -- > -- with a Book as request body, returning the updated Book
--- > type MyApi = "books" :> Capture "isbn" Text :> ReqBody Book :> Put Book
-data Put a
+-- > type MyApi = "books" :> Capture "isbn" Text :> ReqBody Book :> Put '[JSON] Book
+data Put (cts::[*]) a
   deriving Typeable

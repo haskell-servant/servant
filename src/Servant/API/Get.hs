@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
 module Servant.API.Get where
 
 import Data.Typeable ( Typeable )
@@ -7,6 +9,6 @@ import Data.Typeable ( Typeable )
 --
 -- Example:
 --
--- > type MyApi = "books" :> Get [Book]
-data Get a
+-- > type MyApi = "books" :> Get '[JSON] [Book]
+data Get (cts::[*]) a
   deriving Typeable
