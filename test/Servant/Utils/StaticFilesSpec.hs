@@ -13,6 +13,7 @@ import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (Spec, describe, it, around_)
 import Test.Hspec.Wai (with, get, shouldRespondWith)
 
+import Servant.API (JSON)
 import Servant.API.Alternative ((:<|>)((:<|>)))
 import Servant.API.Capture (Capture)
 import Servant.API.Get (Get)
@@ -23,7 +24,7 @@ import Servant.ServerSpec (Person(Person))
 import Servant.Utils.StaticFiles (serveDirectory)
 
 type Api =
-       "dummy_api" :> Capture "person_name" String :> Get Person
+       "dummy_api" :> Capture "person_name" String :> Get '[JSON] Person
   :<|> "static" :> Raw
 
 

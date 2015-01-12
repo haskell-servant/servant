@@ -22,6 +22,7 @@ import Network.Wai.Test (runSession, request, defaultRequest, simpleBody)
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Test.Hspec.Wai (liftIO, with, get, post, shouldRespondWith, matchStatus)
 
+import Servant.API (JSON)
 import Servant.API.Capture (Capture)
 import Servant.API.Get (Get)
 import Servant.API.ReqBody (ReqBody)
@@ -79,7 +80,7 @@ spec = do
   errorsSpec
 
 
-type CaptureApi = Capture "legs" Integer :> Get Animal
+type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
 captureApi :: Proxy CaptureApi
 captureApi = Proxy
 captureServer :: Integer -> EitherT (Int, String) IO Animal
@@ -105,7 +106,7 @@ captureSpec = do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
 
-type GetApi = Get Person
+type GetApi = Get '[JSON] Person
 getApi :: Proxy GetApi
 getApi = Proxy
 
@@ -123,9 +124,9 @@ getSpec = do
         post "/" "" `shouldRespondWith` 405
 
 
-type QueryParamApi = QueryParam "name" String :> Get Person
-                :<|> "a" :> QueryParams "names" String :> Get Person
-                :<|> "b" :> QueryFlag "capitalize" :> Get Person
+type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
+                :<|> "a" :> QueryParams "names" String :> Get '[JSON] Person
+                :<|> "b" :> QueryFlag "capitalize" :> Get '[JSON] Person
 
 queryParamApi :: Proxy QueryParamApi
 queryParamApi = Proxy
@@ -289,8 +290,8 @@ matrixParamSpec = do
              }
 
 type PostApi =
-       ReqBody Person :> Post Integer
-  :<|> "bla" :> ReqBody Person :> Post Integer
+       ReqBody Person :> Post '[JSON] Integer
+  :<|> "bla" :> ReqBody Person :> Post '[JSON] Integer
 postApi :: Proxy PostApi
 postApi = Proxy
 
@@ -344,8 +345,8 @@ rawSpec = do
 
 
 type AlternativeApi =
-       "foo" :> Get Person
-  :<|> "bar" :> Get Animal
+       "foo" :> Get '[JSON] Person
+  :<|> "bar" :> Get '[JSON] Animal
 unionApi :: Proxy AlternativeApi
 unionApi = Proxy
 
