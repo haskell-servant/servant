@@ -31,8 +31,10 @@ import Network.Wai ( Response, Request, ResponseReceived, Application
 import Servant.API ( QueryParams, QueryParam, QueryFlag, ReqBody, Header
                    , MatrixParams, MatrixParam, MatrixFlag,
                    , Capture, Get, Delete, Put, Post, Patch, Raw, (:>), (:<|>)(..))
-import Servant.Server.ContentTypes (AllCTRender(..), AcceptHeader(..))
+import Servant.Server.ContentTypes ( AllCTRender(..), AcceptHeader(..)
+                                   , AllCTUnrender(..) )
 import Servant.Common.Text (FromText, fromText)
+
 
 data ReqBodyState = Uncalled
                   | Called !B.ByteString
@@ -175,8 +177,8 @@ class HasServer layout where
 --   represented by @a@ and if it fails tries @b@. You must provide a request
 --   handler for each route.
 --
--- > type MyApi = "books" :> Get [Book] -- GET /books
--- >         :<|> "books" :> ReqBody Book :> Post Book -- POST /books
+-- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
+-- >         :<|> "books" :> ReqBody Book :> Post '[JSON] Book -- POST /books
 -- >
 -- > server :: Server MyApi
 -- > server = listAllBooks :<|> postBook
@@ -207,7 +209,7 @@ captured _ = fromText
 --
 -- Example:
 --
--- > type MyApi = "books" :> Capture "isbn" Text :> Get Book
+-- > type MyApi = "books" :> Capture "isbn" Text :> Get '[JSON] Book
 -- >
 -- > server :: Server MyApi
 -- > server = getBook
@@ -265,10 +267,12 @@ instance HasServer Delete where
 -- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
 -- to quickly fail if some conditions are not met.
 --
--- If successfully returning a value, we just require that its type has
--- a 'ToJSON' instance and servant takes care of encoding it for you,
--- yielding status code 200 along the way.
-instance ( AllCTRender ctypes a, ToJSON a
+-- If successfully returning a value, we use the type-level list, combined
+-- with the request's @Accept@ header, to encode the value for you
+-- (returning a status code of 200). If there was no @Accept@ header or it
+-- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- list.
+instance ( AllCTRender ctypes a
          ) => HasServer (Get ctypes a) where
   type Server (Get ctypes a) = EitherT (Int, String) IO a
   route Proxy action request respond
@@ -301,7 +305,7 @@ instance ( AllCTRender ctypes a, ToJSON a
 -- >   deriving (Eq, Show, FromText, ToText)
 -- >
 -- >            -- GET /view-my-referer
--- > type MyApi = "view-my-referer" :> Header "Referer" Referer :> Get Referer
+-- > type MyApi = "view-my-referer" :> Header "Referer" Referer :> Get '[JSON] Referer
 -- >
 -- > server :: Server MyApi
 -- > server = viewReferer
@@ -327,11 +331,13 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
 -- to quickly fail if some conditions are not met.
 --
--- If successfully returning a value, we just require that its type has
--- a 'ToJSON' instance and servant takes care of encoding it for you,
--- yielding status code 201 along the way.
-instance ( AllCTRender ctypes a, ToJSON a
-         )=> HasServer (Post ctypes a) where
+-- If successfully returning a value, we use the type-level list, combined
+-- with the request's @Accept@ header, to encode the value for you
+-- (returning a status code of 201). If there was no @Accept@ header or it
+-- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- list.
+instance ( AllCTRender ctypes a
+         ) => HasServer (Post ctypes a) where
   type Server (Post ctypes a) = EitherT (Int, String) IO a
 
   route Proxy action request respond
@@ -358,10 +364,12 @@ instance ( AllCTRender ctypes a, ToJSON a
 -- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
 -- to quickly fail if some conditions are not met.
 --
--- If successfully returning a value, we just require that its type has
--- a 'ToJSON' instance and servant takes care of encoding it for you,
--- yielding status code 200 along the way.
-instance ( AllCTRender ctypes a, ToJSON a
+-- If successfully returning a value, we use the type-level list, combined
+-- with the request's @Accept@ header, to encode the value for you
+-- (returning a status code of 201). If there was no @Accept@ header or it
+-- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- list.
+instance ( AllCTRender ctypes a
          ) => HasServer (Put ctypes a) where
   type Server (Put ctypes a) = EitherT (Int, String) IO a
 
@@ -423,7 +431,7 @@ instance (Typeable a, ToJSON a) => HasServer (Patch a) where
 --
 -- Example:
 --
--- > type MyApi = "books" :> QueryParam "author" Text :> Get [Book]
+-- > type MyApi = "books" :> QueryParam "author" Text :> Get '[JSON] [Book]
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
@@ -462,7 +470,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 --
 -- Example:
 --
--- > type MyApi = "books" :> QueryParams "authors" Text :> Get [Book]
+-- > type MyApi = "books" :> QueryParams "authors" Text :> Get '[JSON] [Book]
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
@@ -495,7 +503,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 --
 -- Example:
 --
--- > type MyApi = "books" :> QueryFlag "published" :> Get [Book]
+-- > type MyApi = "books" :> QueryFlag "published" :> Get '[JSON] [Book]
 -- >
 -- > server :: Server MyApi
 -- > server = getBooks
@@ -654,27 +662,38 @@ instance HasServer Raw where
 -- | If you use 'ReqBody' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by 'ReqBody'.
+-- The @Content-Type@ header is inspected, and the list provided is used to
+-- attempt deserialization. If the request does not have a @Content-Type@
+-- header, it is treated as @application/octet-stream@.
 -- This lets servant worry about extracting it from the request and turning
 -- it into a value of the type you specify.
+--
 --
 -- All it asks is for a 'FromJSON' instance.
 --
 -- Example:
 --
--- > type MyApi = "books" :> ReqBody Book :> Post Book
+-- > type MyApi = "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book
 -- >
 -- > server :: Server MyApi
 -- > server = postBook
 -- >   where postBook :: Book -> EitherT (Int, String) IO Book
 -- >         postBook book = ...insert into your db...
-instance (FromJSON a, HasServer sublayout)
-      => HasServer (ReqBody a :> sublayout) where
+instance ( AllCTUnrender list a, HasServer sublayout
+         ) => HasServer (ReqBody list a :> sublayout) where
 
-  type Server (ReqBody a :> sublayout) =
+  type Server (ReqBody list a :> sublayout) =
     a -> Server sublayout
 
   route Proxy subserver request respond = do
-    mrqbody <- eitherDecode' <$> lazyRequestBody request
+    -- See HTTP RFC 2616, section 7.2.1
+    -- http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
+    -- See also "W3C Internet Media Type registration, consistency of use"
+    -- http://www.w3.org/2001/tag/2002/0129-mime
+    let contentTypeH = fromMaybe "application/octet-stream"
+                     $ lookup hContentType $ requestHeaders request
+    mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
+           <$> lazyRequestBody request
     case mrqbody of
       Left e -> respond . failWith $ InvalidBody e
       Right v  -> route (Proxy :: Proxy sublayout) (subserver v) request respond

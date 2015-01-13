@@ -16,11 +16,13 @@ import Data.Proxy (Proxy(Proxy))
 import Data.String (fromString)
 import Data.String.Conversions (cs)
 import GHC.Generics (Generic)
-import Network.HTTP.Types (parseQuery, ok200, status409)
-import Network.Wai (Application, Request, responseLBS, pathInfo, queryString, rawQueryString)
-import Network.Wai.Test (runSession, request, defaultRequest, simpleBody)
+import Network.HTTP.Types (parseQuery, ok200, status409, methodPost, hContentType)
+import Network.Wai ( Application, Request, responseLBS, pathInfo
+                   , queryString, rawQueryString )
+import Network.Wai.Test (runSession, defaultRequest, simpleBody, request)
 import Test.Hspec (Spec, describe, it, shouldBe)
-import Test.Hspec.Wai (liftIO, with, get, post, shouldRespondWith, matchStatus)
+import Test.Hspec.Wai ( liftIO, with, get, post, shouldRespondWith
+                      , matchStatus, request )
 
 import Servant.API (JSON)
 import Servant.API.Capture (Capture)
@@ -171,6 +173,7 @@ queryParamSpec = do
               name = "john"
              }
 
+
       it "allows to retrieve value-less GET parameters" $
         (flip runSession) (serve queryParamApi qpServer) $ do
           let params3 = "?capitalize"
@@ -290,8 +293,8 @@ matrixParamSpec = do
              }
 
 type PostApi =
-       ReqBody Person :> Post '[JSON] Integer
-  :<|> "bla" :> ReqBody Person :> Post '[JSON] Integer
+       ReqBody '[JSON] Person :> Post '[JSON] Integer
+  :<|> "bla" :> ReqBody '[JSON] Person :> Post '[JSON] Integer
 postApi :: Proxy PostApi
 postApi = Proxy
 
@@ -299,23 +302,26 @@ postSpec :: Spec
 postSpec = do
   describe "Servant.API.Post and .ReqBody" $ do
     with (return (serve postApi (return . age :<|> return . age))) $ do
+      let post' x = Test.Hspec.Wai.request methodPost x [(hContentType
+                                                        , "application/json")]
+
       it "allows to POST a Person" $ do
-        post "/" (encode alice) `shouldRespondWith` "42"{
+        post' "/" (encode alice) `shouldRespondWith` "42"{
           matchStatus = 201
          }
 
       it "allows alternative routes if all have request bodies" $ do
-        post "/bla" (encode alice) `shouldRespondWith` "42"{
+        post' "/bla" (encode alice) `shouldRespondWith` "42"{
           matchStatus = 201
          }
 
       it "handles trailing '/' gracefully" $ do
-        post "/bla/" (encode alice) `shouldRespondWith` "42"{
+        post' "/bla/" (encode alice) `shouldRespondWith` "42"{
           matchStatus = 201
          }
 
       it "correctly rejects invalid request bodies with status 400" $ do
-        post "/" "some invalid body" `shouldRespondWith` 400
+        post' "/" "some invalid body" `shouldRespondWith` 400
 
 
 type RawApi = "foo" :> Raw
@@ -376,7 +382,7 @@ errorsSpec = do
   let ib = InvalidBody "The body is invalid"
   let wm = WrongMethod
   let nf = NotFound
-  
+
   describe "Servant.Server.Internal.RouteMismatch" $ do
     it "HttpError > *" $ do
       ib <> he `shouldBe` he

@@ -9,12 +9,17 @@ module Servant.Server
 
   , -- * Handlers for all standard combinators
     HasServer(..)
+
+  , -- * Building new Content-Types
+    Accept(..)
+  , MimeRender(..)
   ) where
 
 import Data.Proxy (Proxy)
 import Network.Wai (Application)
 
 import Servant.Server.Internal
+import Servant.Server.ContentTypes (Accept(..), MimeRender(..))
 
 
 -- * Implementing Servers
@@ -23,8 +28,8 @@ import Servant.Server.Internal
 --
 -- Example:
 --
--- > type MyApi = "books" :> Get [Book] -- GET /books
--- >         :<|> "books" :> ReqBody Book :> Post Book -- POST /books
+-- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
+-- >         :<|> "books" :> ReqBody Book :> Post '[JSON] Book -- POST /books
 -- >
 -- > server :: Server MyApi
 -- > server = listAllBooks :<|> postBook
