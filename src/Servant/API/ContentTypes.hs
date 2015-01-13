@@ -10,3 +10,4 @@ data JSON deriving Typeable
 data JavaScript deriving Typeable
 data CSS deriving Typeable
 data PlainText deriving Typeable
+data OctetStream deriving Typeable

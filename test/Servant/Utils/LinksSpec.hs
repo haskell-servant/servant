@@ -12,7 +12,6 @@ import Servant.API ( type (:<|>), ReqBody, QueryParam, MatrixParam, MatrixParams
     , MatrixFlag, Get, Post, Capture, type (:>) , HTML , JSON, XML )
 import Servant.QQSpec ( (~>) )
 import Servant.Utils.Links ( IsElem, IsLink )
-<<<<<<< HEAD
 
 type TestApi =
   -- Capture and query/matrix params
@@ -28,7 +27,7 @@ type TestApi =
   -- All of the verbs
   :<|> "get" :> Get '[JSON] ()
   :<|> "put" :> Put '[JSON] ()
-  :<|> "post" :> ReqBody 'True :> Post '[JSON] ()
+  :<|> "post" :> ReqBody '[JSON] 'True :> Post '[JSON] ()
   :<|> "delete" :> Header "ponies" :> Delete
   :<|> "raw" :> Raw
 
@@ -44,7 +43,7 @@ type BadTestLink' = "hello" :> "hi" :> Get '[HTML] Bool
 type BadTestLink'2 = "greet" :> Get '[HTML] Bool
 
 type NotALink = "hello" :> Capture "x" Bool :> Get '[JSON] Bool
-type NotALink2 = "hello" :> ReqBody 'True :> Get '[JSON] Bool
+type NotALink2 = "hello" :> ReqBody '[JSON] 'True :> Get '[JSON] Bool
 
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
          => Proxy endpoint -> MkLink endpoint

@@ -47,13 +47,26 @@ library
       base >=4.7 && <5
     , bytestring == 0.10.*
     , http-types == 0.8.*
-    , text >= 1
-    , template-haskell
+    , text >= 1 && < 2
+    , template-haskell >= 2.7 && < 2.10
     , parsec >= 3.1
-    , string-conversions >= 0.3
+    , string-conversions >= 0.3 && < 0.4
     , network-uri >= 2.6
   hs-source-dirs: src
   default-language: Haskell2010
+  extensions: DataKinds
+            , DeriveDataTypeable
+            , FunctionalDependencies
+            , KindSignatures
+            , MultiParamTypeClasses
+            , PolyKinds
+            , QuasiQuotes
+            , ScopedTypeVariables
+            , TemplateHaskell
+            , TypeFamilies
+            , TypeOperators
+            , UndecidableInstances
+            , FlexibleInstances
   ghc-options: -Wall
 
 test-suite spec

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 module Servant.API.ReqBody where
 
@@ -6,5 +7,5 @@ module Servant.API.ReqBody where
 -- Example:
 --
 -- >            -- POST /books
--- > type MyApi = "books" :> ReqBody Book :> Post Book
-data ReqBody a
+-- > type MyApi = "books" :> ReqBody '[JSON] Book :> Post Book
+data ReqBody (ls::[*]) a
