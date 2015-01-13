@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -17,6 +18,7 @@ import Data.Proxy (Proxy(..))
 import Data.String.Conversions (cs)
 import qualified Data.Text.Lazy.Encoding as Text
 import qualified Data.Text.Lazy as Text
+import GHC.Exts (Constraint)
 import qualified Network.HTTP.Media as M
 
 
@@ -39,7 +41,7 @@ class Accept ctype where
 
 -- | @text/html;charset=utf-8@
 instance Accept HTML where
-    contentType _ = "text" M.// "html"
+    contentType _ = "text" M.// "html" M./: ("charset", "utf-8")
 
 -- | @application/json;charset=utf-8@
 instance Accept JSON where
@@ -47,19 +49,19 @@ instance Accept JSON where
 
 -- | @application/xml;charset=utf-8@
 instance Accept XML where
-    contentType _ = "application" M.// "xml"
+    contentType _ = "application" M.// "xml" M./: ("charset", "utf-8")
 
 -- | @application/javascript;charset=utf-8@
 instance Accept JavaScript where
-    contentType _ = "application" M.// "javascript"
+    contentType _ = "application" M.// "javascript" M./: ("charset", "utf-8")
 
 -- | @text/css;charset=utf-8@
 instance Accept CSS where
-    contentType _ = "text" M.// "css"
+    contentType _ = "text" M.// "css" M./: ("charset", "utf-8")
 
 -- | @text/plain;charset=utf-8@
 instance Accept PlainText where
-    contentType _ = "text" M.// "plain"
+    contentType _ = "text" M.// "plain" M./: ("charset", "utf-8")
 
 -- | @application/octet-stream@
 instance Accept OctetStream where
@@ -93,7 +95,7 @@ class AllCTRender list a where
     -- mimetype).
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
-instance ( AllMimeRender ctyps a, IsEmpty ctyps ~ 'False
+instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
          ) => AllCTRender ctyps a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy ctyps
@@ -125,7 +127,7 @@ class AllCTUnrender list a where
                  -> ByteString     -- Request body
                  -> Maybe a
 
-instance ( AllMimeUnrender ctyps a, IsEmpty ctyps ~ 'False
+instance ( AllMimeUnrender ctyps a, IsNonEmpty ctyps
          ) => AllCTUnrender ctyps a where
     handleCTypeH _ ctypeH body = join $ M.mapContentMedia lkup (cs ctypeH)
       where lkup = amu (Proxy :: Proxy ctyps) body
@@ -182,9 +184,9 @@ instance ( MimeUnrender ctyp a
               pctyps = Proxy :: Proxy ctyps
               pctyp' = Proxy :: Proxy ctyp'
 
-type family IsEmpty (ls::[*]) where
-    IsEmpty '[] = 'True
-    IsEmpty x   = 'False
+type family IsNonEmpty (ls::[*]) :: Constraint where
+    IsNonEmpty '[] = 'False ~ 'True
+    IsNonEmpty x   = ()
 
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances

@@ -13,6 +13,7 @@ import Data.Function (on)
 import Data.Maybe (isJust, fromJust)
 import Data.List (maximumBy)
 import Data.Proxy (Proxy(..))
+import qualified Data.Text.Lazy as T
 import Data.String (IsString(..))
 import Data.String.Conversions (cs)
 import Network.HTTP.Types (hAccept)
@@ -45,22 +46,22 @@ handleAcceptHSpec = describe "handleAcceptH" $ do
 
     it "should return the Content-Type as the first element of the tuple" $ do
         handleAcceptH (Proxy :: Proxy '[JSON]) "*/*" (3 :: Int)
-            `shouldSatisfy` ((== "application/json") . fst . fromJust)
+            `shouldSatisfy` ((== "application/json;charset=utf-8") . fst . fromJust)
         handleAcceptH (Proxy :: Proxy '[XML, JSON]) "application/json" (3 :: Int)
-            `shouldSatisfy` ((== "application/json") . fst . fromJust)
+            `shouldSatisfy` ((== "application/json;charset=utf-8") . fst . fromJust)
         handleAcceptH (Proxy :: Proxy '[XML, JSON, HTML]) "text/html" (3 :: Int)
-            `shouldSatisfy` ((== "text/html") . fst . fromJust)
+            `shouldSatisfy` ((== "text/html;charset=utf-8") . fst . fromJust)
 
     it "should return the appropriately serialized representation" $ do
         property $ \x -> handleAcceptH (Proxy :: Proxy '[JSON]) "*/*" (x :: Int)
-            == Just ("application/json", encode x)
+            == Just ("application/json;charset=utf-8", encode x)
 
     it "respects the Accept spec ordering" $
         property $ \a b c i -> fst (fromJust $ val a b c i) == (fst $ highest a b c)
           where
-            highest a b c = maximumBy (compare `on` snd) [ ("text/html", a)
-                                                      , ("application/json", b)
-                                                      , ("application/xml", c)
+            highest a b c = maximumBy (compare `on` snd) [ ("text/html;charset=utf-8", a)
+                                                      , ("application/json;charset=utf-8", b)
+                                                      , ("application/xml;charset=utf-8", c)
                                                       ]
             acceptH a b c = addToAccept (Proxy :: Proxy HTML) a $
                             addToAccept (Proxy :: Proxy JSON) b $
@@ -69,13 +70,13 @@ handleAcceptHSpec = describe "handleAcceptH" $ do
                                         (acceptH a b c) (i :: Int)
 
 type ContentTypeApi = "foo" :> Get '[JSON] Int
-                 :<|> "bar" :> Get '[JSON, PlainText] Int
+                 :<|> "bar" :> Get '[JSON, PlainText] T.Text
 
 contentTypeApi :: Proxy ContentTypeApi
 contentTypeApi = Proxy
 
 contentTypeServer :: Server ContentTypeApi
-contentTypeServer = return 5 :<|> return 3
+contentTypeServer = return 5 :<|> return "hi"
 
 contentTypeSpec :: Spec
 contentTypeSpec = do
@@ -88,14 +89,14 @@ contentTypeSpec = do
                     requestHeaders = [(hAccept, acceptH)] ,
                     pathInfo = ["bar"]
                 }
-                assertContentType "text/plain" response
+                assertContentType "text/plain;charset=utf8" response
 
         it "returns the first content-type if the Accept header is missing" $
             flip runSession (serve contentTypeApi contentTypeServer) $ do
                 response <- Network.Wai.Test.request defaultRequest{
                     pathInfo = ["bar"]
                 }
-                assertContentType "application/json" response
+                assertContentType "application/json;charset=utf8" response
 
         it "returns 406 if it can't serve the requested content-type" $
             flip runSession (serve contentTypeApi contentTypeServer) $ do

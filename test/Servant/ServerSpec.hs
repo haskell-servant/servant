@@ -303,7 +303,7 @@ postSpec = do
   describe "Servant.API.Post and .ReqBody" $ do
     with (return (serve postApi (return . age :<|> return . age))) $ do
       let post' x = Test.Hspec.Wai.request methodPost x [(hContentType
-                                                        , "application/json")]
+                                                        , "application/json;charset=utf-8")]
 
       it "allows to POST a Person" $ do
         post' "/" (encode alice) `shouldRespondWith` "42"{
