@@ -1,5 +1,5 @@
 name:                servant-server
-version:             0.2.3
+version:             0.2.4
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -42,7 +42,7 @@ library
     , http-types
     , network-uri >= 2.6
     , safe
-    , servant >= 0.2
+    , servant >= 0.2.2
     , split
     , string-conversions
     , system-filepath

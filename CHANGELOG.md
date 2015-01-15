@@ -1,3 +1,8 @@
+master
+------
+
+* Added support for matrix parameters, see e.g. http://www.w3.org/DesignIssues/MatrixURIs.html
+
 0.2.3
 -----
 

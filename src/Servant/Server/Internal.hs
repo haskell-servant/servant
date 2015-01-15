@@ -13,19 +13,21 @@ import Data.Aeson (ToJSON, FromJSON, encode, decode')
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.List (unfoldr)
 import Data.Maybe (catMaybes)
 import Data.Monoid (Monoid, mempty, mappend)
 import Data.Proxy (Proxy(Proxy))
 import Data.String (fromString)
 import Data.String.Conversions (cs, (<>))
-import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import Network.HTTP.Types hiding (Header)
 import Network.Wai (Response, Request, ResponseReceived, Application, pathInfo, requestBody,
                     strictRequestBody, lazyRequestBody, requestHeaders, requestMethod,
                     rawQueryString, responseLBS)
-import Servant.API (QueryParams, QueryParam, QueryFlag, ReqBody, Header, Capture, Get, Delete, Put, Post, Raw, (:>), (:<|>)(..))
+import Servant.API (QueryParams, QueryParam, QueryFlag, MatrixParams, MatrixParam, MatrixFlag, ReqBody, Header, Capture, Get, Delete, Put, Post, Raw, (:>), (:<|>)(..))
 import Servant.Common.Text (FromText, fromText)
 
 data ReqBodyState = Uncalled
@@ -108,7 +110,7 @@ isMismatch _             = False
 
 -- | Like `null . pathInfo`, but works with redundant trailing slashes.
 pathIsEmpty :: Request -> Bool
-pathIsEmpty = f . pathInfo
+pathIsEmpty = f . processedPathInfo
   where
     f []   = True
     f [""] = True
@@ -129,13 +131,36 @@ type RoutingApplication =
      Request -- ^ the request, the field 'pathInfo' may be modified by url routing
   -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived
 
+splitMatrixParameters :: Text -> (Text, Text)
+splitMatrixParameters = T.break (== ';')
+
+parsePathInfo :: Request -> [Text]
+parsePathInfo = filter (/= "") . mergePairs . map splitMatrixParameters . pathInfo
+  where mergePairs = concat . unfoldr pairToList
+        pairToList []          = Nothing
+        pairToList ((a, b):xs) = Just ([a, b], xs)
+
+-- | Returns a processed pathInfo from the request.
+--
+-- In order to handle matrix parameters in the request correctly, the raw pathInfo needs to be
+-- processed, so routing works as intended. Therefor this function should be used to access
+-- the pathInfo for routing purposes.
+processedPathInfo :: Request -> [Text]
+processedPathInfo r =
+  case pinfo of
+    (x:xs) | T.head x == ';' -> xs
+    _                        -> pinfo
+  where pinfo = parsePathInfo r
+
 class HasServer layout where
   type Server layout :: *
   route :: Proxy layout -> Server layout -> RoutingApplication
 
+
+
 -- * Instances
 
--- | A server for @a ':<|>' b@ first tries to match the request again the route
+-- | A server for @a ':<|>' b@ first tries to match the request against the route
 --   represented by @a@ and if it fails tries @b@. You must provide a request
 --   handler for each route.
 --
@@ -183,7 +208,7 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
   type Server (Capture capture a :> sublayout) =
      a -> Server sublayout
 
-  route Proxy subserver request respond = case pathInfo request of
+  route Proxy subserver request respond = case processedPathInfo request of
     (first : rest)
       -> case captured captureProxy first of
            Nothing  -> respond $ failWith NotFound
@@ -193,6 +218,7 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
     _ -> respond $ failWith NotFound
 
     where captureProxy = Proxy :: Proxy (Capture capture a)
+           
 
 -- | If you have a 'Delete' endpoint in your API,
 -- the handler for this endpoint is meant to delete
@@ -441,6 +467,124 @@ instance (KnownSymbol sym, HasServer sublayout)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
 
+parseMatrixText :: B.ByteString -> QueryText
+parseMatrixText = parseQueryText
+
+-- | If you use @'MatrixParam' "author" Text@ in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a function
+-- that takes an argument of type @'Maybe' 'Text'@.
+--
+-- This lets servant worry about looking it up in the query string
+-- and turning it into a value of the type you specify, enclosed
+-- in 'Maybe', because it may not be there and servant would then
+-- hand you 'Nothing'.
+--
+-- You can control how it'll be converted from 'Text' to your type
+-- by simply providing an instance of 'FromText' for your type.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> MatrixParam "author" Text :> Get [Book]
+-- >
+-- > server :: Server MyApi
+-- > server = getBooksBy
+-- >   where getBooksBy :: Maybe Text -> EitherT (Int, String) IO [Book]
+-- >         getBooksBy Nothing       = ...return all books...
+-- >         getBooksBy (Just author) = ...return books by the given author...
+instance (KnownSymbol sym, FromText a, HasServer sublayout)
+      => HasServer (MatrixParam sym a :> sublayout) where
+
+  type Server (MatrixParam sym a :> sublayout) =
+    Maybe a -> Server sublayout
+
+  route Proxy subserver request respond = case parsePathInfo request of
+    (first : _)
+      -> do let querytext = parseMatrixText . encodeUtf8 $ T.tail first
+                param = case lookup paramname querytext of
+                  Nothing       -> Nothing -- param absent from the query string
+                  Just Nothing  -> Nothing -- param present with no value -> Nothing
+                  Just (Just v) -> fromText v -- if present, we try to convert to
+                                        -- the right type
+            route (Proxy :: Proxy sublayout) (subserver param) request respond
+    _ -> route (Proxy :: Proxy sublayout) (subserver Nothing) request respond
+
+    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+
+-- | If you use @'MatrixParams' "authors" Text@ in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a function
+-- that takes an argument of type @['Text']@.
+--
+-- This lets servant worry about looking up 0 or more values in the query string
+-- associated to @authors@ and turning each of them into a value of
+-- the type you specify.
+--
+-- You can control how the individual values are converted from 'Text' to your type
+-- by simply providing an instance of 'FromText' for your type.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> MatrixParams "authors" Text :> Get [Book]
+-- >
+-- > server :: Server MyApi
+-- > server = getBooksBy
+-- >   where getBooksBy :: [Text] -> EitherT (Int, String) IO [Book]
+-- >         getBooksBy authors = ...return all books by these authors...
+instance (KnownSymbol sym, FromText a, HasServer sublayout)
+      => HasServer (MatrixParams sym a :> sublayout) where
+
+  type Server (MatrixParams sym a :> sublayout) =
+    [a] -> Server sublayout
+
+  route Proxy subserver request respond = case parsePathInfo request of
+    (first : _)
+      -> do let matrixtext = parseMatrixText . encodeUtf8 $ T.tail first
+                -- if sym is "foo", we look for matrix parameters
+                -- named "foo" or "foo[]" and call fromText on the
+                -- corresponding values
+                parameters = filter looksLikeParam matrixtext
+                values = catMaybes $ map (convert . snd) parameters
+            route (Proxy :: Proxy sublayout) (subserver values) request respond
+    _ -> route (Proxy :: Proxy sublayout) (subserver []) request respond
+
+    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+          looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
+          convert Nothing = Nothing
+          convert (Just v) = fromText v
+
+-- | If you use @'MatrixFlag' "published"@ in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a function
+-- that takes an argument of type 'Bool'.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> MatrixFlag "published" :> Get [Book]
+-- >
+-- > server :: Server MyApi
+-- > server = getBooks
+-- >   where getBooks :: Bool -> EitherT (Int, String) IO [Book]
+-- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
+instance (KnownSymbol sym, HasServer sublayout)
+      => HasServer (MatrixFlag sym :> sublayout) where
+
+  type Server (MatrixFlag sym :> sublayout) =
+    Bool -> Server sublayout
+
+  route Proxy subserver request respond =  case parsePathInfo request of
+    (first : _)
+      -> do let matrixtext = parseMatrixText . encodeUtf8 $ T.tail first
+                param = case lookup paramname matrixtext of
+                  Just Nothing  -> True  -- param is there, with no value
+                  Just (Just v) -> examine v -- param with a value
+                  Nothing       -> False -- param not in the query string
+
+            route (Proxy :: Proxy sublayout) (subserver param) request respond
+
+    _ -> route (Proxy :: Proxy sublayout) (subserver False) request respond
+
+    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+          examine v | v == "true" || v == "1" || v == "" = True
+                    | otherwise = False
+
 -- | Just pass the request to the underlying application and serve its response.
 --
 -- Example:
@@ -486,7 +630,7 @@ instance (FromJSON a, HasServer sublayout)
 -- pass the rest of the request path to @sublayout@.
 instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout) where
   type Server (path :> sublayout) = Server sublayout
-  route Proxy subserver request respond = case pathInfo request of
+  route Proxy subserver request respond = case processedPathInfo request of
     (first : rest)
       | first == cs (symbolVal proxyPath)
       -> route (Proxy :: Proxy sublayout) subserver request{
