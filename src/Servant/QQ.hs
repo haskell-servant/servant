@@ -29,7 +29,6 @@
 module Servant.QQ (sitemap) where
 
 import Control.Monad ( void )
-import Control.Applicative ( (<$>) )
 import Language.Haskell.TH.Quote ( QuasiQuoter(..) )
 import Language.Haskell.TH
     ( mkName, Type(AppT, ConT, LitT), TyLit(StrTyLit) )

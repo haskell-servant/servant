@@ -15,6 +15,7 @@ import Servant.API
     ( (:<|>),
       ReqBody,
       QueryParam,
+      MatrixParam,
       Put,
       Get,
       Post,

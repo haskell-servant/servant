@@ -6,7 +6,7 @@ module Servant.Utils.LinksSpec where
 import Test.Hspec ( Spec, it, describe )
 
 import Servant.API
-    ( type (:<|>), ReqBody, QueryParam, Get, Post, Capture, type (:>) )
+    ( type (:<|>), ReqBody, QueryParam, MatrixParam, MatrixParams, MatrixFlag, Get, Post, Capture, type (:>) )
 import Servant.QQSpec ( (~>) )
 import Servant.Utils.Links ( IsElem, IsLink )
 
