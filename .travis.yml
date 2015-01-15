@@ -1,8 +1,37 @@
 language: haskell
 
-ghc:
-  - 7.8
+env:
+- GHCVER=7.8.3
 
+before_install:
+ - |
+    if [ $GHCVER = `ghc --numeric-version` ]; then
+        travis/cabal-apt-install --enable-tests $MODE
+        export CABAL=cabal
+    else
+        travis_retry sudo add-apt-repository -y ppa:hvr/ghc
+        travis_retry sudo apt-get update
+        travis_retry sudo apt-get install cabal-install-1.18 ghc-$GHCVER happy
+        export CABAL=cabal-1.18
+        export PATH=/opt/ghc/$GHCVER/bin:$PATH
+    fi
+ - $CABAL update
+ - |
+    if [ $GHCVER = "head" ] || [ $GHCVER = "7.8.3" ]; then
+        $CABAL install happy alex
+        export PATH=$HOME/.cabal/bin:$PATH
+    fi
+ - git clone https://github.com/haskell-servant/servant.git
+ - cabal sandbox init
+ - cabal sandbox add-source servant
+
+install:
+ - cabal install --only-dependencies --enable-tests
+
+script:
+ - cabal configure --enable-tests
+ - cabal build && cabal test
+ - cabal sdist
 notifications:
   irc:
     channels:
