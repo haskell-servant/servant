@@ -210,7 +210,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
   -- if mparam = Nothing, we don't add it to the query string
   clientWithRoute Proxy req mparam =
     clientWithRoute (Proxy :: Proxy sublayout) $
-      appendToQueryString pname mparamText req
+      maybe req (flip (appendToQueryString pname) req . Just) mparamText
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)
@@ -251,7 +251,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 
   clientWithRoute Proxy req paramlist =
     clientWithRoute (Proxy :: Proxy sublayout) $
-      foldl' (\ value req' -> appendToQueryString pname req' value) req paramlist'
+      foldl' (\ req' -> maybe req' (flip (appendToQueryString pname) req' . Just)) req paramlist'
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)
@@ -288,6 +288,121 @@ instance (KnownSymbol sym, HasClient sublayout)
     clientWithRoute (Proxy :: Proxy sublayout) $
       if flag
         then appendToQueryString paramname Nothing req
+        else req
+
+    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+
+-- | If you use a 'MatrixParam' in one of your endpoints in your API,
+-- the corresponding querying function will automatically take
+-- an additional argument of the type specified by your 'MatrixParam',
+-- enclosed in Maybe.
+--
+-- If you give Nothing, nothing will be added to the query string.
+--
+-- If you give a non-'Nothing' value, this function will take care
+-- of inserting a textual representation of this value in the query string.
+--
+-- You can control how values for your type are turned into
+-- text by specifying a 'ToText' instance for your type.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> MatrixParam "author" Text :> Get [Book]
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > getBooksBy :: Maybe Text -> BaseUrl -> EitherT String IO [Book]
+-- > getBooksBy = client myApi
+-- > -- then you can just use "getBooksBy" to query that endpoint.
+-- > -- 'getBooksBy Nothing' for all books
+-- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
+instance (KnownSymbol sym, ToText a, HasClient sublayout)
+      => HasClient (MatrixParam sym a :> sublayout) where
+
+  type Client (MatrixParam sym a :> sublayout) =
+    Maybe a -> Client sublayout
+
+  -- if mparam = Nothing, we don't add it to the query string
+  clientWithRoute Proxy req mparam =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      maybe req (flip (appendToMatrixParams pname . Just) req) mparamText
+
+    where pname = symbolVal (Proxy :: Proxy sym)
+          mparamText = fmap (cs . toText) mparam
+
+-- | If you use a 'MatrixParams' in one of your endpoints in your API,
+-- the corresponding querying function will automatically take an
+-- additional argument, a list of values of the type specified by your
+-- 'MatrixParams'.
+--
+-- If you give an empty list, nothing will be added to the query string.
+--
+-- Otherwise, this function will take care of inserting a textual
+-- representation of your values in the path segment string, under the
+-- same matrix string parameter name.
+--
+-- You can control how values for your type are turned into text by
+-- specifying a 'ToText' instance for your type.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> MatrixParams "authors" Text :> Get [Book]
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > getBooksBy :: [Text] -> BaseUrl -> EitherT String IO [Book]
+-- > getBooksBy = client myApi
+-- > -- then you can just use "getBooksBy" to query that endpoint.
+-- > -- 'getBooksBy []' for all books
+-- > -- 'getBooksBy ["Isaac Asimov", "Robert A. Heinlein"]'
+-- > --   to get all books by Asimov and Heinlein
+instance (KnownSymbol sym, ToText a, HasClient sublayout)
+      => HasClient (MatrixParams sym a :> sublayout) where
+
+  type Client (MatrixParams sym a :> sublayout) =
+    [a] -> Client sublayout
+
+  clientWithRoute Proxy req paramlist =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      foldl' (\ req' value -> maybe req' (flip (appendToMatrixParams pname) req' . Just . cs) value) req paramlist'
+
+    where pname  = cs pname'
+          pname' = symbolVal (Proxy :: Proxy sym)
+          paramlist' = map (Just . toText) paramlist
+
+-- | If you use a 'MatrixFlag' in one of your endpoints in your API,
+-- the corresponding querying function will automatically take an
+-- additional 'Bool' argument.
+--
+-- If you give 'False', nothing will be added to the path segment.
+--
+-- Otherwise, this function will insert a value-less matrix parameter
+-- under the name associated to your 'MatrixFlag'.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> MatrixFlag "published" :> Get [Book]
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > getBooks :: Bool -> BaseUrl -> EitherT String IO [Book]
+-- > getBooks = client myApi
+-- > -- then you can just use "getBooks" to query that endpoint.
+-- > -- 'getBooksBy False' for all books
+-- > -- 'getBooksBy True' to only get _already published_ books
+instance (KnownSymbol sym, HasClient sublayout)
+      => HasClient (MatrixFlag sym :> sublayout) where
+
+  type Client (MatrixFlag sym :> sublayout) =
+    Bool -> Client sublayout
+
+  clientWithRoute Proxy req flag =
+    clientWithRoute (Proxy :: Proxy sublayout) $
+      if flag
+        then appendToMatrixParams paramname Nothing req
         else req
 
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)

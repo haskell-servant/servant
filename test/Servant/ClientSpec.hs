@@ -4,7 +4,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
-
+{-# OPTIONS_GHC -fcontext-stack=25 #-}
 module Servant.ClientSpec where
 
 import Control.Concurrent
@@ -50,6 +50,9 @@ type Api =
   :<|> "param" :> QueryParam "name" String :> Get Person
   :<|> "params" :> QueryParams "names" String :> Get [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get Bool
+  :<|> "matrixparam" :> MatrixParam "name" String :> Get Person
+  :<|> "matrixparams" :> MatrixParams "name" String :> Get [Person]
+  :<|> "matrixflag" :> MatrixFlag "flag" :> Get Bool
   :<|> "rawSuccess" :> Raw
   :<|> "rawFailure" :> Raw
   :<|> "multiple" :>
@@ -72,6 +75,12 @@ server = serve api (
                    Nothing -> left (400, "missing parameter"))
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
+  :<|> (\ name -> case name of
+                   Just "alice" -> return alice
+                   Just name -> left (400, name ++ " not found")
+                   Nothing -> left (400, "missing parameter"))
+  :<|> (\ names -> return (zipWith Person names [0..]))
+  :<|> return
   :<|> (\ _request respond -> respond $ responseLBS ok200 [] "rawSuccess")
   :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
   :<|> \ a b c d -> return (a, b, c, d)
@@ -86,6 +95,9 @@ getBody :: Person -> BaseUrl -> EitherT String IO Person
 getQueryParam :: Maybe String -> BaseUrl -> EitherT String IO Person
 getQueryParams :: [String] -> BaseUrl -> EitherT String IO [Person]
 getQueryFlag :: Bool -> BaseUrl -> EitherT String IO Bool
+getMatrixParam :: Maybe String -> BaseUrl -> EitherT String IO Person
+getMatrixParams :: [String] -> BaseUrl -> EitherT String IO [Person]
+getMatrixFlag :: Bool -> BaseUrl -> EitherT String IO Bool
 getRawSuccess :: Method -> BaseUrl -> EitherT String IO (Int, ByteString)
 getRawFailure :: Method -> BaseUrl -> EitherT String IO (Int, ByteString)
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
@@ -97,6 +109,9 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
  :<|> getQueryParam
  :<|> getQueryParams
  :<|> getQueryFlag
+ :<|> getMatrixParam
+ :<|> getMatrixParams
+ :<|> getMatrixFlag
  :<|> getRawSuccess
  :<|> getRawFailure
  :<|> getMultiple)
@@ -128,6 +143,21 @@ spec = do
     forM_ [False, True] $ \ flag ->
     it (show flag) $ withServer $ \ host -> do
       runEitherT (getQueryFlag flag host) `shouldReturn` Right flag
+
+  it "Servant.API.MatrixParam" $ withServer $ \ host -> do
+    runEitherT (getMatrixParam (Just "alice") host) `shouldReturn` Right alice
+    Left result <- runEitherT (getMatrixParam (Just "bob") host)
+    result `shouldContain` "bob not found"
+
+  it "Servant.API.MatrixParam.MatrixParams" $ withServer $ \ host -> do
+    runEitherT (getMatrixParams [] host) `shouldReturn` Right []
+    runEitherT (getMatrixParams ["alice", "bob"] host)
+      `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
+
+  context "Servant.API.MatrixParam.MatrixFlag" $
+    forM_ [False, True] $ \ flag ->
+    it (show flag) $ withServer $ \ host -> do
+      runEitherT (getMatrixFlag flag host) `shouldReturn` Right flag
 
   it "Servant.API.Raw on success" $ withServer $ \ host -> do
     runEitherT (getRawSuccess methodGet host) `shouldReturn` Right (200, "rawSuccess")
