@@ -15,6 +15,7 @@ import Servant.API
     ( (:<|>),
       ReqBody,
       QueryParam,
+      MatrixParam,
       Put,
       Get,
       Post,
@@ -85,6 +86,20 @@ type SimpleQueryParam' = "hello" :> QueryParam "p" Int :> Post Bool
 type SimpleQueryParam'' = "hello" :> QueryParam "r" Int :> Post Bool
 type SimpleQueryParam''' = "hello" :> QueryParam "p" Bool :> Post Bool
 
+type SimpleMatrixParam = [sitemap|
+POST  hello;p:Int   Bool
+|]
+type SimpleMatrixParam' = "hello" :> MatrixParam "p" Int :> Post Bool
+type SimpleMatrixParam'' = "hello" :> MatrixParam "r" Int :> Post Bool
+type SimpleMatrixParam''' = "hello" :> MatrixParam "p" Bool :> Post Bool
+
+type ComplexMatrixParam = [sitemap|
+POST  hello;p:Int;q:String/world;r:Int   Bool
+|]
+type ComplexMatrixParam' = "hello" :> MatrixParam "p" Int :> MatrixParam "q" String :> "world" :> MatrixParam "r" Int :> Post Bool
+type ComplexMatrixParam'' = "hello" :> MatrixParam "p" Int :> MatrixParam "q" String :> "world" :> MatrixParam "s" Int :> Post Bool
+type ComplexMatrixParam''' = "hello" :> MatrixParam "p" Int :> MatrixParam "q" String :> "world" :> MatrixParam "r" Bool :> Post Bool
+
 -- Combinations ----------------------------------------------------------
 
 type TwoPaths = [sitemap|
@@ -153,6 +168,14 @@ spec = do
             (u::SimpleQueryParam) ~= (u::SimpleQueryParam' ) ~> True
             (u::SimpleQueryParam) ~= (u::SimpleQueryParam'') ~> False
             (u::SimpleQueryParam) ~= (u::SimpleQueryParam''') ~> False
+        it "Handles simple matrix parameters" $ do
+            (u::SimpleMatrixParam) ~= (u::SimpleMatrixParam' ) ~> True
+            (u::SimpleMatrixParam) ~= (u::SimpleMatrixParam'') ~> False
+            (u::SimpleMatrixParam) ~= (u::SimpleMatrixParam''') ~> False
+        it "Handles more complex matrix parameters" $ do
+            (u::ComplexMatrixParam) ~= (u::ComplexMatrixParam' ) ~> True
+            (u::ComplexMatrixParam) ~= (u::ComplexMatrixParam'') ~> False
+            (u::ComplexMatrixParam) ~= (u::ComplexMatrixParam''') ~> False
         it "Handles multiples paths" $ do
             (u::TwoPaths) ~= (u::TwoPaths') ~> True
         it "Ignores inline comments" $ do

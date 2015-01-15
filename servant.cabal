@@ -1,5 +1,5 @@
 name:                servant
-version:             0.2.1
+version:             0.2.2
 synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -34,6 +34,7 @@ library
     Servant.API.Post
     Servant.API.Put
     Servant.API.QueryParam
+    Servant.API.MatrixParam
     Servant.API.Raw
     Servant.API.ReqBody
     Servant.API.Sub

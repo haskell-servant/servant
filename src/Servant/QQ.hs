@@ -29,7 +29,6 @@
 module Servant.QQ (sitemap) where
 
 import Control.Monad ( void )
-import Control.Applicative ( (<$>) )
 import Language.Haskell.TH.Quote ( QuasiQuoter(..) )
 import Language.Haskell.TH
     ( mkName, Type(AppT, ConT, LitT), TyLit(StrTyLit) )
@@ -58,6 +57,7 @@ import Servant.API.Post ( Post )
 import Servant.API.Put ( Put )
 import Servant.API.Delete ( Delete )
 import Servant.API.QueryParam ( QueryParam )
+import Servant.API.MatrixParam ( MatrixParam )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.Sub ( (:>) )
 import Servant.API.Alternative ( (:<|>) )
@@ -68,15 +68,16 @@ import Servant.API.Alternative ( (:<|>) )
 -- only one of 'get', 'post', 'put', and 'delete' in a value), but
 -- sometimes requires a little more work.
 class ExpSYM repr' repr | repr -> repr', repr' -> repr where
-    lit        :: String -> repr' -> repr
-    capture    :: String -> String -> repr -> repr
-    reqBody    :: String -> repr -> repr
-    queryParam :: String -> String -> repr -> repr
-    conj       :: repr' -> repr -> repr
-    get        :: String -> repr
-    post       :: String -> repr
-    put        :: String -> repr
-    delete     :: String -> repr
+    lit         :: String -> repr' -> repr
+    capture     :: String -> String -> repr -> repr
+    reqBody     :: String -> repr -> repr
+    queryParam  :: String -> String -> repr -> repr
+    matrixParam :: String -> String -> repr -> repr
+    conj        :: repr' -> repr -> repr
+    get         :: String -> repr
+    post        :: String -> repr
+    put         :: String -> repr
+    delete      :: String -> repr
 
 
 infixr 6 >:
@@ -90,7 +91,9 @@ instance ExpSYM Type Type where
     capture name typ r = AppT (AppT (ConT ''Capture) (LitT (StrTyLit name)))
                                (ConT $ mkName typ) >: r
     reqBody typ r      = AppT (ConT ''ReqBody) (ConT $ mkName typ) >: r
-    queryParam name typ r = AppT (AppT (ConT ''QueryParam) (LitT (StrTyLit name)))
+    queryParam name typ r  = AppT (AppT (ConT ''QueryParam) (LitT (StrTyLit name)))
+                               (ConT $ mkName typ) >: r
+    matrixParam name typ r = AppT (AppT (ConT ''MatrixParam) (LitT (StrTyLit name)))
                                (ConT $ mkName typ) >: r
     conj x             = AppT (AppT (ConT ''(:>)) x)
     get  typ           = AppT (ConT ''Get) (ConT $ mkName typ)
@@ -111,17 +114,27 @@ parseUrlSegment = try parseCapture
               <|> try parseLit
   where
       parseCapture = do
-         cname <- many (noneOf " ?/:")
+         cname <- many (noneOf " ?/:;")
          char ':'
-         ctyp  <- many (noneOf " ?/:")
-         return $ capture cname ctyp
+         ctyp  <- many (noneOf " ?/:;")
+         mx <- many parseMatrixParam
+         return $ capture cname ctyp . foldr (.) id mx
       parseQueryParam = do
          char '?'
-         cname <- many (noneOf " ?/:")
+         cname <- many (noneOf " ?/:;")
          char ':'
-         ctyp  <- many (noneOf " ?/:")
+         ctyp  <- many (noneOf " ?/:;")
          return $ queryParam cname ctyp
-      parseLit = lit <$> many (noneOf " ?/:")
+      parseLit = do
+         lt <- many (noneOf " ?/:;")
+         mx <- many parseMatrixParam
+         return $ lit lt . foldr (.) id mx
+      parseMatrixParam = do
+         char ';'
+         cname <- many (noneOf " ?/:;")
+         char ':'
+         ctyp  <- many (noneOf " ?/:;")
+         return $ matrixParam cname ctyp
 
 parseUrl :: ExpSYM repr repr => Parser (repr -> repr)
 parseUrl = do
