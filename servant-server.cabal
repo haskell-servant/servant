@@ -49,7 +49,7 @@ library
     , text
     , transformers
     , wai
-    , wai-app-static
+    , wai-app-static >= 3.0.0.6
     , warp
   hs-source-dirs: src
   default-language: Haskell2010

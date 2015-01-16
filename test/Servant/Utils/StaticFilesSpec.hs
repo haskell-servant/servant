@@ -61,4 +61,4 @@ spec = do
         get "/static/foo.txt" `shouldRespondWith` "bar"
 
       it "serves the contents of index.html when requesting the root of a directory" $ do
-        get "/static" `shouldRespondWith` "index"
+        get "/static/" `shouldRespondWith` "index"
