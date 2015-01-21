@@ -65,6 +65,7 @@ test-suite spec
   main-is:           Spec.hs
   build-depends:
       base == 4.*
+    , lens
     , servant-jquery
     , servant
     , hspec >= 2.0

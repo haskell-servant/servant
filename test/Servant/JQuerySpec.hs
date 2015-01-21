@@ -14,6 +14,7 @@ import Test.Hspec
 
 import Servant.API
 import Servant.JQuery
+import Servant.JQuerySpec.CustomHeaders
 
 type TestAPI = [sitemap|
 POST    /simple                  String -> Bool
@@ -26,8 +27,14 @@ type TopLevelRawAPI = "something" :> Get Int
 type HeaderHandlingAPI = "something" :> Header "Foo" String
                                      :> Get Int
 
+type CustomAuthAPI = "something" :> Authorization "Basic" String
+                                 :> Get Int
+
 headerHandlingProxy :: Proxy HeaderHandlingAPI
 headerHandlingProxy = Proxy
+
+customAuthProxy :: Proxy CustomAuthAPI
+customAuthProxy = Proxy
 
 spec :: Spec
 spec = describe "Servant.JQuery"
@@ -52,4 +59,11 @@ generateJSSpec = describe "generateJS" $ do
         parseFromString jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerFoo"
         jsText `shouldContain` "headers: { \"Foo\": headerFoo }\n"
+
+    it "should handle complex HTTP headers" $ do
+        let jsText = generateJS $ jquery customAuthProxy
+        print jsText
+        parseFromString jsText `shouldSatisfy` isRight
+        jsText `shouldContain` "headerAuthorization"
+        jsText `shouldContain` "headers: { \"Authorization\": \"Basic \" + headerAuthorization }\n"
 

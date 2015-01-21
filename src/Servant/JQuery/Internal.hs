@@ -72,7 +72,7 @@ instance Show HeaderArg where
         | otherwise         = p
       where
         pv = "header" <> n
-        pn = "{header" <> n <> "}"
+        pn = "{" <> n <> "}"
         rp = replace pn "" p
 
 data Url = Url
