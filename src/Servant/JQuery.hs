@@ -44,7 +44,7 @@ generateJS req = "\n" <>
         args = captures
             ++ map (view argName) queryparams
             ++ body
-            ++ map ((<>) "header" . headerArgName) hs
+            ++ map (toValidFunctionName . (<>) "header" . headerArgName) hs
             ++ ["onSuccess", "onError"]
         
         captures = map captureArg
@@ -70,7 +70,9 @@ generateJS req = "\n" <>
             else "\n    , headers: { " ++ headersStr ++ " }\n"
 
           where headersStr = intercalate ", " $ map headerStr hs
-                headerStr header = "\"" ++ headerArgName header ++ "\": " ++ show header
+                headerStr header = "\"" ++
+                  headerArgName header ++
+                  "\": " ++ show header
 
         fname = req ^. funcName
         method = req ^. reqMethod

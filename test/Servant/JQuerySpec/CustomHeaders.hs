@@ -21,11 +21,23 @@ import Servant.JQuery
 data Authorization (sym :: Symbol) a
 
 instance (KnownSymbol sym, HasJQ sublayout)
-	=> HasJQ (Authorization sym a :> sublayout) where
+    => HasJQ (Authorization sym a :> sublayout) where
     type JQ (Authorization sym a :> sublayout) = JQ sublayout
 
     jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "Authorization" $
-        					   tokenType (symbolVal (Proxy :: Proxy sym)) ]
+                               tokenType (symbolVal (Proxy :: Proxy sym)) ]
       where
-      	tokenType t = t <> " {Authorization}"
+        tokenType t = t <> " {Authorization}"
+
+-- | This is a combinator that fetches an X-MyLovelyHorse header.
+data MyLovelyHorse a
+
+instance (HasJQ sublayout)
+    => HasJQ (MyLovelyHorse a :> sublayout) where
+    type JQ (MyLovelyHorse a :> sublayout) = JQ sublayout
+
+    jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
+        req & reqHeaders <>~ [ ReplaceHeaderArg "X-MyLovelyHorse" tpl ]
+      where
+        tpl = "I am good friends with {X-MyLovelyHorse}"

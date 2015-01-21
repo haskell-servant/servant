@@ -30,11 +30,17 @@ type HeaderHandlingAPI = "something" :> Header "Foo" String
 type CustomAuthAPI = "something" :> Authorization "Basic" String
                                  :> Get Int
 
+type CustomHeaderAPI = "something" :> MyLovelyHorse String
+                                   :> Get Int
+
 headerHandlingProxy :: Proxy HeaderHandlingAPI
 headerHandlingProxy = Proxy
 
 customAuthProxy :: Proxy CustomAuthAPI
 customAuthProxy = Proxy
+
+customHeaderProxy :: Proxy CustomHeaderAPI
+customHeaderProxy = Proxy
 
 spec :: Spec
 spec = describe "Servant.JQuery"
@@ -67,3 +73,9 @@ generateJSSpec = describe "generateJS" $ do
         jsText `shouldContain` "headerAuthorization"
         jsText `shouldContain` "headers: { \"Authorization\": \"Basic \" + headerAuthorization }\n"
 
+    it "should handle complex, custom HTTP headers" $ do
+        let jsText = generateJS $ jquery customHeaderProxy
+        print jsText
+        parseFromString jsText `shouldSatisfy` isRight
+        jsText `shouldContain` "headerXMyLovelyHorse"
+        jsText `shouldContain` "headers: { \"X-MyLovelyHorse\": \"I am good friends with \" + headerXMyLovelyHorse }\n"

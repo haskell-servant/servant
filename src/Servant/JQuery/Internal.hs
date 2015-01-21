@@ -9,6 +9,8 @@ module Servant.JQuery.Internal where
 import Control.Applicative
 import Control.Lens
 import Data.Char (toLower)
+import qualified Data.CharSet as Set
+import qualified Data.CharSet.Unicode.Category as Set
 import Data.List
 import Data.Monoid
 import Data.Proxy
@@ -64,16 +66,43 @@ data HeaderArg = HeaderArg
     } deriving (Eq)
 
 instance Show HeaderArg where
-    show (HeaderArg n)          = "header" <> n
+    show (HeaderArg n)          = toValidFunctionName ("header" <> n)
     show (ReplaceHeaderArg n p)
         | pn `startswith` p = pv <> " + \"" <> rp <> "\""
         | pn `endswith` p   = "\"" <> rp <> "\" + " <> pv
-        | pn `isInfixOf` p  = "\"" <> replace pn ("\"" <> pv <> "\"") p <> "\""
+        | pn `isInfixOf` p  = "\"" <> (replace pn ("\" + " <> pv <> " + \"") p) <> "\""
         | otherwise         = p
       where
-        pv = "header" <> n
+        pv = toValidFunctionName ("header" <> n)
         pn = "{" <> n <> "}"
         rp = replace pn "" p
+
+-- | Attempts to reduce the function name provided to that allowed by JS.
+-- https://mathiasbynens.be/notes/javascript-identifiers
+-- Couldn't work out how to handle zero-width characters.
+-- @TODO: specify better default function name, or throw error?
+toValidFunctionName :: String -> String
+toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
+  where
+    setFirstChar c = if firstChar c
+        then c
+        else '_'
+    firstChar c = (prefixOK c) || (or . map (Set.member c) $ firstLetterOK)
+    remainder c = (prefixOK c) || (or . map (Set.member c) $ remainderOK)
+    -- Valid prefixes
+    prefixOK c = c `elem` ['$','_']
+    -- Unicode character sets
+    firstLetterOK = [ Set.lowercaseLetter
+                    , Set.uppercaseLetter
+                    , Set.titlecaseLetter
+                    , Set.modifierLetter
+                    , Set.otherLetter
+                    , Set.letterNumber ]
+    remainderOK   = firstLetterOK <> [ Set.nonSpacingMark
+                                     , Set.spacingCombiningMark
+                                     , Set.decimalNumber
+                                     , Set.connectorPunctuation ]
+toValidFunctionName [] = "_"
 
 data Url = Url
   { _path     :: Path
