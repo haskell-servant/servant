@@ -9,8 +9,10 @@ module Servant.JQuery.Internal where
 import Control.Applicative
 import Control.Lens
 import Data.Char (toLower)
+import Data.List
 import Data.Monoid
 import Data.Proxy
+import Data.String.Utils
 import GHC.TypeLits
 import Servant.API
 
@@ -53,7 +55,25 @@ data QueryArg = QueryArg
   , _argType :: ArgType
   } deriving (Eq, Show)
 
-type HeaderArg = String
+data HeaderArg = HeaderArg
+    { headerArgName :: String
+    }
+  | ReplaceHeaderArg
+    { headerArgName :: String
+    , headerPattern :: String
+    } deriving (Eq)
+
+instance Show HeaderArg where
+    show (HeaderArg n)          = "header" <> n
+    show (ReplaceHeaderArg n p)
+        | pn `startswith` p = pv <> " + \"" <> rp <> "\""
+        | pn `endswith` p   = "\"" <> rp <> "\" + " <> pv
+        | pn `isInfixOf` p  = "\"" <> replace pn ("\"" <> pv <> "\"") p <> "\""
+        | otherwise         = p
+      where
+        pv = "header" <> n
+        pn = "{header" <> n <> "}"
+        rp = replace pn "" p
 
 data Url = Url
   { _path     :: Path
@@ -144,7 +164,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
   type JQ (Header sym a :> sublayout) = JQ sublayout
 
   jqueryFor Proxy req =
-    jqueryFor subP (req & reqHeaders <>~ [hname])
+    jqueryFor subP (req & reqHeaders <>~ [HeaderArg hname])
 
     where hname = symbolVal (Proxy :: Proxy sym)
           subP = Proxy :: Proxy sublayout

@@ -1,6 +1,9 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.JQuerySpec where
 
@@ -20,6 +23,12 @@ GET     /has.extension           Bool
 type TopLevelRawAPI = "something" :> Get Int
                   :<|> Raw
 
+type HeaderHandlingAPI = "something" :> Header "Foo" String
+                                     :> Get Int
+
+headerHandlingProxy :: Proxy HeaderHandlingAPI
+headerHandlingProxy = Proxy
+
 spec :: Spec
 spec = describe "Servant.JQuery"
     generateJSSpec
@@ -36,4 +45,11 @@ generateJSSpec = describe "generateJS" $ do
         let (_ :<|> topLevel) = jquery (Proxy :: Proxy TopLevelRawAPI)
         print $ generateJS $ topLevel "GET"
         parseFromString (generateJS $ topLevel "GET") `shouldSatisfy` isRight
+
+    it "should handle simple HTTP headers" $ do
+        let jsText = generateJS $ jquery headerHandlingProxy
+        print jsText
+        parseFromString jsText `shouldSatisfy` isRight
+        jsText `shouldContain` "headerFoo"
+        jsText `shouldContain` "headers: { \"Foo\": headerFoo }\n"
 
