@@ -9,7 +9,7 @@ module Servant.Server.Internal where
 
 import Control.Applicative ((<$>))
 import Control.Monad.Trans.Either (EitherT, runEitherT)
-import Data.Aeson (ToJSON, FromJSON, encode, decode')
+import Data.Aeson (ToJSON, FromJSON, encode, eitherDecode')
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import Data.IORef (newIORef, readIORef, writeIORef)
@@ -64,34 +64,34 @@ toApplication ra request respond = do
     respond $ responseLBS notFound404 [] "not found"
   routingRespond (Left WrongMethod) =
     respond $ responseLBS methodNotAllowed405 [] "method not allowed"
-  routingRespond (Left InvalidBody) =
-    respond $ responseLBS badRequest400 [] "Invalid JSON in request body"
+  routingRespond (Left (InvalidBody err)) =
+    respond $ responseLBS badRequest400 [] $ fromString $ "Invalid JSON in request body: " ++ err
   routingRespond (Right response) =
     respond response
 
 -- * Route mismatch
 data RouteMismatch =
-    NotFound    -- ^ the usual "not found" error
-  | WrongMethod -- ^ a more informative "you just got the HTTP method wrong" error
-  | InvalidBody -- ^ an even more informative "your json request body wasn't valid" error
+    NotFound           -- ^ the usual "not found" error
+  | WrongMethod        -- ^ a more informative "you just got the HTTP method wrong" error
+  | InvalidBody String -- ^ an even more informative "your json request body wasn't valid" error
   deriving (Eq, Show)
 
 -- |
 -- @
 -- > mempty = NotFound
 -- >
--- > NotFound    `mappend`           x = x
--- > WrongMethod `mappend` InvalidBody = InvalidBody
--- > WrongMethod `mappend`           _ = WrongMethod
--- > InvalidBody `mappend`           _ = InvalidBody
+-- > NotFound      `mappend`             x = x
+-- > WrongMethod   `mappend` InvalidBody s = InvalidBody s
+-- > WrongMethod   `mappend`             _ = WrongMethod
+-- > InvalidBody s `mappend`             _ = InvalidBody s
 -- @
 instance Monoid RouteMismatch where
   mempty = NotFound
 
-  NotFound    `mappend`           x = x
-  WrongMethod `mappend` InvalidBody = InvalidBody
-  WrongMethod `mappend`           _ = WrongMethod
-  InvalidBody `mappend`           _ = InvalidBody
+  NotFound      `mappend`             x = x
+  WrongMethod   `mappend` InvalidBody s = InvalidBody s
+  WrongMethod   `mappend`             _ = WrongMethod
+  InvalidBody s `mappend`             _ = InvalidBody s
 
 -- | A wrapper around @'Either' 'RouteMismatch' a@.
 newtype RouteResult a =
@@ -621,10 +621,10 @@ instance (FromJSON a, HasServer sublayout)
     a -> Server sublayout
 
   route Proxy subserver request respond = do
-    mrqbody <- decode' <$> lazyRequestBody request
+    mrqbody <- eitherDecode' <$> lazyRequestBody request
     case mrqbody of
-      Nothing -> respond $ failWith InvalidBody
-      Just v  -> route (Proxy :: Proxy sublayout) (subserver v) request respond
+      Left e -> respond . failWith $ InvalidBody e
+      Right v  -> route (Proxy :: Proxy sublayout) (subserver v) request respond
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @sublayout@.
