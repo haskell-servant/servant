@@ -19,6 +19,7 @@ import Data.String.Conversions
 import Data.Text
 import Data.Text.Encoding
 import Network.HTTP.Client
+import Network.HTTP.Client.TLS
 import Network.HTTP.Types
 import Network.URI
 import Servant.Common.BaseUrl
@@ -91,7 +92,7 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
 
 {-# NOINLINE __manager #-}
 __manager :: MVar Manager
-__manager = unsafePerformIO (newManager defaultManagerSettings >>= newMVar)
+__manager = unsafePerformIO (newManager tlsManagerSettings >>= newMVar)
 
 __withGlobalManager :: (Manager -> IO a) -> IO a
 __withGlobalManager action = modifyMVar __manager $ \ manager -> do
