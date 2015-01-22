@@ -12,9 +12,9 @@ import Data.Char (toLower)
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import Data.List
+import Data.List.Split
 import Data.Monoid
 import Data.Proxy
-import Data.String.Utils
 import GHC.TypeLits
 import Servant.API
 
@@ -68,14 +68,17 @@ data HeaderArg = HeaderArg
 instance Show HeaderArg where
     show (HeaderArg n)          = toValidFunctionName ("header" <> n)
     show (ReplaceHeaderArg n p)
-        | pn `startswith` p = pv <> " + \"" <> rp <> "\""
-        | pn `endswith` p   = "\"" <> rp <> "\" + " <> pv
-        | pn `isInfixOf` p  = "\"" <> (replace pn ("\" + " <> pv <> " + \"") p) <> "\""
+        | pn `isPrefixOf` p = pv <> " + \"" <> rp <> "\""
+        | pn `isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
+        | pn `isInfixOf` p  = "\"" <> (replace pn ("\" + " <> pv <> " + \"") p)
+                                   <> "\""
         | otherwise         = p
       where
         pv = toValidFunctionName ("header" <> n)
         pn = "{" <> n <> "}"
         rp = replace pn "" p
+        -- Nicked from Data.String.Utils, works on lists
+        replace old new l = intercalate new . splitOn old $ l
 
 -- | Attempts to reduce the function name provided to that allowed by JS.
 -- https://mathiasbynens.be/notes/javascript-identifiers
