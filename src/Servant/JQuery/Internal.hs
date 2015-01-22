@@ -12,9 +12,9 @@ import Data.Char (toLower)
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import Data.List
-import Data.List.Split
 import Data.Monoid
 import Data.Proxy
+import qualified Data.Text as T
 import GHC.TypeLits
 import Servant.API
 
@@ -77,8 +77,10 @@ instance Show HeaderArg where
         pv = toValidFunctionName ("header" <> n)
         pn = "{" <> n <> "}"
         rp = replace pn "" p
-        -- Nicked from Data.String.Utils, works on lists
-        replace old new l = intercalate new . splitOn old $ l
+        -- Use replace method from Data.Text
+        replace old new = T.unpack .
+            T.replace (T.pack old) (T.pack new) .
+            T.pack
 
 -- | Attempts to reduce the function name provided to that allowed by JS.
 -- https://mathiasbynens.be/notes/javascript-identifiers
