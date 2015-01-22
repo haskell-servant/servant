@@ -41,3 +41,15 @@ instance (HasJQ sublayout)
         req & reqHeaders <>~ [ ReplaceHeaderArg "X-MyLovelyHorse" tpl ]
       where
         tpl = "I am good friends with {X-MyLovelyHorse}"
+
+-- | This is a combinator that fetches an X-WhatsForDinner header.
+data WhatsForDinner a
+
+instance (HasJQ sublayout)
+    => HasJQ (WhatsForDinner a :> sublayout) where
+    type JQ (WhatsForDinner a :> sublayout) = JQ sublayout
+
+    jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
+        req & reqHeaders <>~ [ ReplaceHeaderArg "X-WhatsForDinner" tpl ]
+      where
+        tpl = "I would like {X-WhatsForDinner} with a cherry on top."

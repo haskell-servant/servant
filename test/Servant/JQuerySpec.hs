@@ -33,6 +33,9 @@ type CustomAuthAPI = "something" :> Authorization "Basic" String
 type CustomHeaderAPI = "something" :> MyLovelyHorse String
                                    :> Get Int
 
+type CustomHeaderAPI2 = "something" :> WhatsForDinner String
+                                    :> Get Int
+
 headerHandlingProxy :: Proxy HeaderHandlingAPI
 headerHandlingProxy = Proxy
 
@@ -41,6 +44,9 @@ customAuthProxy = Proxy
 
 customHeaderProxy :: Proxy CustomHeaderAPI
 customHeaderProxy = Proxy
+
+customHeaderProxy2 :: Proxy CustomHeaderAPI2
+customHeaderProxy2 = Proxy
 
 spec :: Spec
 spec = describe "Servant.JQuery"
@@ -79,3 +85,10 @@ generateJSSpec = describe "generateJS" $ do
         parseFromString jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerXMyLovelyHorse"
         jsText `shouldContain` "headers: { \"X-MyLovelyHorse\": \"I am good friends with \" + headerXMyLovelyHorse }\n"
+
+    it "should handle complex, custom HTTP headers (template replacement)" $ do
+        let jsText = generateJS $ jquery customHeaderProxy2
+        print jsText
+        parseFromString jsText `shouldSatisfy` isRight
+        jsText `shouldContain` "headerXWhatsForDinner"
+        jsText `shouldContain` "headers: { \"X-WhatsForDinner\": \"I would like \" + headerXWhatsForDinner + \" with a cherry on top.\" }\n"
