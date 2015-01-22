@@ -9,8 +9,12 @@ module Servant.JQuery.Internal where
 import Control.Applicative
 import Control.Lens
 import Data.Char (toLower)
+import qualified Data.CharSet as Set
+import qualified Data.CharSet.Unicode.Category as Set
+import Data.List
 import Data.Monoid
 import Data.Proxy
+import qualified Data.Text as T
 import GHC.TypeLits
 import Servant.API
 
@@ -53,7 +57,57 @@ data QueryArg = QueryArg
   , _argType :: ArgType
   } deriving (Eq, Show)
 
-type HeaderArg = String
+data HeaderArg = HeaderArg
+    { headerArgName :: String
+    }
+  | ReplaceHeaderArg
+    { headerArgName :: String
+    , headerPattern :: String
+    } deriving (Eq)
+
+instance Show HeaderArg where
+    show (HeaderArg n)          = toValidFunctionName ("header" <> n)
+    show (ReplaceHeaderArg n p)
+        | pn `isPrefixOf` p = pv <> " + \"" <> rp <> "\""
+        | pn `isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
+        | pn `isInfixOf` p  = "\"" <> (replace pn ("\" + " <> pv <> " + \"") p)
+                                   <> "\""
+        | otherwise         = p
+      where
+        pv = toValidFunctionName ("header" <> n)
+        pn = "{" <> n <> "}"
+        rp = replace pn "" p
+        -- Use replace method from Data.Text
+        replace old new = T.unpack .
+            T.replace (T.pack old) (T.pack new) .
+            T.pack
+
+-- | Attempts to reduce the function name provided to that allowed by JS.
+-- https://mathiasbynens.be/notes/javascript-identifiers
+-- Couldn't work out how to handle zero-width characters.
+-- @TODO: specify better default function name, or throw error?
+toValidFunctionName :: String -> String
+toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
+  where
+    setFirstChar c = if firstChar c
+        then c
+        else '_'
+    firstChar c = (prefixOK c) || (or . map (Set.member c) $ firstLetterOK)
+    remainder c = (prefixOK c) || (or . map (Set.member c) $ remainderOK)
+    -- Valid prefixes
+    prefixOK c = c `elem` ['$','_']
+    -- Unicode character sets
+    firstLetterOK = [ Set.lowercaseLetter
+                    , Set.uppercaseLetter
+                    , Set.titlecaseLetter
+                    , Set.modifierLetter
+                    , Set.otherLetter
+                    , Set.letterNumber ]
+    remainderOK   = firstLetterOK <> [ Set.nonSpacingMark
+                                     , Set.spacingCombiningMark
+                                     , Set.decimalNumber
+                                     , Set.connectorPunctuation ]
+toValidFunctionName [] = "_"
 
 data Url = Url
   { _path     :: Path
@@ -144,7 +198,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
   type JQ (Header sym a :> sublayout) = JQ sublayout
 
   jqueryFor Proxy req =
-    jqueryFor subP (req & reqHeaders <>~ [hname])
+    jqueryFor subP (req & reqHeaders <>~ [HeaderArg hname])
 
     where hname = symbolVal (Proxy :: Proxy sym)
           subP = Proxy :: Proxy sublayout
