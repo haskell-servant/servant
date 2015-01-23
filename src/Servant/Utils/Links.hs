@@ -6,29 +6,49 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 -- | Type safe internal links.
 --
 -- Provides the function 'mkLink':
 --
 -- @
---   type API = Proxy ("hello" :> Get Int
---                :<|> "bye" :> QueryParam "name" String :> Post Bool)
+--   {-# LANGUAGE DataKinds #-}
+--   {-# LANGUAGE TypeFamilies #-}
+--   {-# LANGUAGE TypeOperators #-}
+--
+--   import Servant.API
+--   import Servant.Utils.Links
+--
+--   -- You might want to put some custom types in your API
+--   data Thing = Thing
+--
+--   -- If you want these to form part of a valid URL, just add them to the
+--   -- open type family IsElem' like so:
+--   type instance IsElem' e (Thing :> s) = IsElem e s
+--
+--   type API =  "hello" :> Thing :> Get Int
+--          :<|> "bye"   :> QueryParam "name" String :> Post Bool
 --
 --   api :: API
---   api = proxy
+--   api = undefined
 --
---   link1 :: Proxy ("hello" :> Get Int)
---   link1 = proxy
+--   link1 :: "hello" :> Get Int
+--   link1 = undefined
 --
---   link2 :: Proxy ("hello" :> Delete)
---   link2 = proxy
+--   link2 :: "hello" :> Delete
+--   link2 = undefined
 --
---   mkLink link1 API  --  typechecks, returns 'Link "/hello"'
+--   main :: IO ()
+--   main =
+--       --  typechecks, prints "/hello"'
+--       let Link str = mkLink link1 api
+--       in putStrLn str
 --
---   mkLink link2  API  -- doesn't typecheck
+--       -- doesn't typecheck
+--       -- mkLink link2  api
 -- @
 --
--- That is, 'mkLink' takes two arguments, a link proxy and a sitemap, and
+-- That is, 'mkLink' takes two arguments, a link and a sitemap, and
 -- returns a 'Link', but only typechecks if the link proxy is a valid link,
 -- and part of the sitemap.
 --
@@ -37,7 +57,7 @@ module Servant.Utils.Links (
     -- * Link and mkLink
     -- | The only end-user utilities
       mkLink
-    , Link
+    , Link, unLink
     -- * Internal
     -- | These functions will likely only be of interest if you are writing
     -- more API combinators and would like to extend the behavior of
@@ -45,8 +65,9 @@ module Servant.Utils.Links (
     , ValidLinkIn()
     , VLinkHelper(..)
     , IsElem
+    , IsElem'
     , IsLink
-                           )where
+                           ) where
 
 import Data.Proxy ( Proxy(..) )
 import GHC.TypeLits ( KnownSymbol, Symbol, symbolVal )
@@ -60,6 +81,7 @@ import Servant.API.Post ( Post )
 import Servant.API.Put ( Put )
 import Servant.API.Delete ( Delete )
 import Servant.API.Sub ( type (:>) )
+import Servant.API.Raw ( Raw )
 import Servant.API.Alternative ( type (:<|>) )
 
 
@@ -73,6 +95,8 @@ type family And a b where
     And a 'False    = 'False
     And 'False b    = 'False
 
+type family IsElem' a s :: Bool
+
 type family IsElem a s where
     IsElem e (sa :<|> sb)                = Or (IsElem e sa) (IsElem e sb)
     IsElem (e :> sa) (e :> sb)           = IsElem sa sb
@@ -85,13 +109,14 @@ type family IsElem a s where
     IsElem sa (MatrixParams x y :> sb)   = IsElem sa sb
     IsElem sa (MatrixFlag x :> sb)       = IsElem sa sb
     IsElem e e                           = 'True
-    IsElem e a                           = 'False
+    IsElem e a                           = IsElem' e a
 
 type family IsLink'' l where
     IsLink'' (e :> Get x)    = IsLink' e
     IsLink'' (e :> Post x)   = IsLink' e
     IsLink'' (e :> Put x)    = IsLink' e
     IsLink'' (e :> Delete)   = IsLink' e
+    IsLink'' (e :> Raw)      = IsLink' e
     IsLink'' a               = 'False
 
 type family IsLink' e where
@@ -109,14 +134,14 @@ class ValidLinkIn f s where
                               -- is an URI within `s`
 
 instance ( IsElem f s ~ 'True
-         , IsLink f ~ 'True
+         , IsLink f   ~ 'True
          , VLinkHelper f) => ValidLinkIn f s where
     mkLink _ _ = Link (vlh (Proxy :: Proxy f))
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'mkLink', which means any
 -- 'Link' is guaranteed to be part of the mentioned API.
-data Link = Link String deriving Show
+newtype Link = Link { unLink :: String } deriving Show
 
 class VLinkHelper f where
     vlh :: forall proxy. proxy f -> String
