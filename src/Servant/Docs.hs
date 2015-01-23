@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
@@ -91,6 +92,7 @@ module Servant.Docs
   , sampleByteStrings
   , ToParam(..)
   , ToCapture(..)
+  , ToIntro(..)
 
   , -- * ADTs to represent an 'API'
     Method(..)
@@ -98,8 +100,10 @@ module Servant.Docs
   , API, emptyAPI
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
+  , DocNote(..), noteTitle, noteBody
+  , DocIntro(..), Intro
   , Response, respStatus, respBody, defResponse
-  , Action, captures, headers, params, rqbody, response, defAction
+  , Action, captures, headers, notes, params, rqbody, response, defAction
   , single
 
   , -- * Useful modules when defining your doc printers
@@ -110,6 +114,7 @@ module Servant.Docs
 import Control.Lens hiding (Action)
 import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Ord(comparing)
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.Hashable
 import Data.HashMap.Strict (HashMap)
@@ -188,12 +193,36 @@ defEndpoint = Endpoint [] DocGET
 
 instance Hashable Endpoint
 
--- | Our API type, a good old hashmap from 'Endpoint' to 'Action'
-type API = HashMap Endpoint Action
+-- | Our API documentation type, a product of top-level information and a good
+-- old hashmap from 'Endpoint' to 'Action'
+data API = API
+  { _apiIntros    :: [DocIntro]
+  , _apiEndpoints :: HashMap Endpoint Action
+  } deriving (Eq, Show)
+
+instance Monoid API where
+    API a1 b1 `mappend` API a2 b2 = API (a1 <> a2) (b1 <> b2)
+    mempty = API mempty mempty
+
+-- | A way for a developer to insert an introductory paragraph manually. This
+-- is not to be used in server or client facing API types.
+--
+-- Example:
+--
+-- > type OurAPI = "users" :> Get [User]
+-- > type IntroducedAPI = Intro "of human bondage" :> OurAPI
+-- >
+-- > instance ToIntro "of human bondage" where
+-- >    toIntro = DocIntro "A title for the intro section"
+-- >      [ "A blob of text that will be at the top."
+-- >      , "List elements are paragraphs."
+-- >      ]
+--
+data Intro (name :: Symbol)
 
 -- | An empty 'API'
 emptyAPI :: API
-emptyAPI = HM.empty
+emptyAPI = mempty
 
 -- | A type to represent captures. Holds the name of the capture
 --   and a description.
@@ -214,6 +243,26 @@ data DocQueryParam = DocQueryParam
   , _paramValues :: [String] -- user supplied
   , _paramDesc   :: String   -- user supplied
   , _paramKind   :: ParamKind
+  } deriving (Eq, Show)
+
+-- | An introductory paragraph for your documentation. You can attach these
+-- with the 'Intro' type.
+--
+data DocIntro = DocIntro
+  { _introTitle :: String   -- ^ Appears above the intro blob
+  , _introBody  :: [String] -- ^ Each String is a paragraph.
+  } deriving (Eq, Show)
+
+instance Ord DocIntro where
+    compare = comparing _introTitle
+
+-- | A type to represent extra notes that may be attached to an 'Action'.
+--
+-- This is intended to be used when writing your own HasDocs instances to
+-- add extra sections to your endpoint's documentation.
+data DocNote = DocNote
+  { _noteTitle :: String
+  , _noteBody  :: [String]
   } deriving (Eq, Show)
 
 -- | Type of GET parameter:
@@ -268,6 +317,7 @@ data Action = Action
   { _captures :: [DocCapture]        -- type collected + user supplied info
   , _headers  :: [Text]              -- type collected
   , _params   :: [DocQueryParam]     -- type collected + user supplied info
+  , _notes    :: [DocNote]           -- user supplied
   , _rqbody   :: Maybe ByteString    -- user supplied
   , _response :: Response            -- user supplied
   } deriving (Eq, Show)
@@ -286,6 +336,7 @@ defAction =
   Action []
          []
          []
+         []
          Nothing
          defResponse
 
@@ -293,12 +344,15 @@ defAction =
 --   'API' is a 'Monoid', so combine multiple endpoints with
 --   'mappend' or '<>'.
 single :: Endpoint -> Action -> API
-single = HM.singleton
+single e a = API mempty (HM.singleton e a)
 
 -- gimme some lenses
+makeLenses ''API
 makeLenses ''Endpoint
 makeLenses ''DocCapture
 makeLenses ''DocQueryParam
+makeLenses ''DocIntro
+makeLenses ''DocNote
 makeLenses ''Response
 makeLenses ''Action
 
@@ -382,16 +436,26 @@ class ToParam t where
 class ToCapture c where
   toCapture :: Proxy c -> DocCapture
 
+-- | The class to define the contents of an 'Intro'
+-- Example of an instance:
+--
+-- > instance ToIntro "an intro" where
+-- >   toIntro _ = DocIntro "This is some text"
+class ToIntro (intro :: Symbol) where
+    toIntro :: Proxy intro -> DocIntro
+
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
-markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
+markdown api = unlines $
+       introsStr (api ^. apiIntros)
+    ++ (concatMap (uncurry printEndpoint) . HM.toList $ api ^. apiEndpoints)
 
   where printEndpoint :: Endpoint -> Action -> [String]
         printEndpoint endpoint action =
           str :
-          replicate len '-' :
           "" :
+          notesStr (action ^. notes) ++
           capturesStr (action ^. captures) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
@@ -399,13 +463,35 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           responseStr (action ^. response) ++
           []
 
-          where str = show (endpoint^.method) ++ " " ++ showPath (endpoint^.path)
-                len = length str
+          where str = "## " ++ show (endpoint^.method)
+                    ++ " " ++ showPath (endpoint^.path)
+
+        introsStr :: [DocIntro] -> [String]
+        introsStr = concatMap introStr
+
+        introStr :: DocIntro -> [String]
+        introStr i =
+            ("#### " ++ i ^. introTitle) :
+            "" :
+            intersperse ""  (i ^. introBody) ++
+            "" :
+            []
+
+        notesStr :: [DocNote] -> [String]
+        notesStr = concatMap noteStr
+
+        noteStr :: DocNote -> [String]
+        noteStr nt =
+            ("#### " ++ nt ^. noteTitle) :
+            "" :
+            intersperse "" (nt ^. noteBody) ++
+            "" :
+            []
 
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
         capturesStr l =
-          "**Captures**: " :
+          "#### Captures:" :
           "" :
           map captureStr l ++
           "" :
@@ -423,7 +509,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
         paramsStr :: [DocQueryParam] -> [String]
         paramsStr [] = []
         paramsStr l =
-          "**GET Parameters**: " :
+          "#### GET Parameters:" :
           "" :
           map paramStr l ++
           "" :
@@ -448,7 +534,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
         rqbodyStr :: Maybe ByteString -> [String]
         rqbodyStr Nothing = []
         rqbodyStr (Just b) =
-          "**Request Body**: " :
+          "#### Request Body:" :
           jsonStr b
 
         jsonStr b =
@@ -461,7 +547,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
 
         responseStr :: Response -> [String]
         responseStr resp =
-          "**Response**: " :
+          "#### Response:" :
           "" :
           (" - Status code " ++ show (resp ^. respStatus)) :
           bodies
@@ -606,6 +692,15 @@ instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) wh
     where sublayoutP = Proxy :: Proxy sublayout
           endpoint' = endpoint & path <>~ [symbolVal pa]
           pa = Proxy :: Proxy path
+
+instance (KnownSymbol intro, HasDocs sublayout, ToIntro intro)
+      => HasDocs (Intro intro :> sublayout) where
+
+  docsFor Proxy x =
+    docsFor sublayoutP x & apiIntros %~ (toIntro intro <|)
+    where sublayoutP = Proxy :: Proxy sublayout
+          intro :: Proxy intro
+          intro = Proxy
 
 {-
 

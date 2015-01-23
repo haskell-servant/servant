@@ -6,7 +6,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 import Data.Aeson
 import Data.Proxy
-import Data.Text
+import Data.Text(Text)
 import GHC.Generics
 import Servant.API
 import Servant.Docs
@@ -44,6 +44,17 @@ instance ToSample Greet where
     , ("If you use ?capital=false", Greet "Hello, haskeller")
     ]
 
+instance ToIntro "on proper introductions" where
+  toIntro _ = DocIntro "On proper introductions." -- The title
+    [ "Hello there."
+    , "As documentation is usually written for humans, it's often useful \
+      \to introduce concepts with a few words." ] -- Elements are paragraphs
+
+instance ToIntro "on zebras" where
+  toIntro _ = DocIntro "This title is below the last"
+    [ "You'll also note that multiple intros are possible." ]
+
+
 -- API specification
 type TestApi =
        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
@@ -56,14 +67,17 @@ type TestApi =
        -- DELETE /greet/:greetid
   :<|> "greet" :> Capture "greetid" Text :> Delete
 
-testApi :: Proxy TestApi
-testApi = Proxy
+type IntroducedApi =
+    Intro "on proper introductions" :> Intro "on zebras" :> TestApi
+
+introducedApi :: Proxy IntroducedApi
+introducedApi = Proxy
 
 -- Generate the data that lets us have API docs. This
 -- is derived from the type as well as from
 -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
 docsGreet :: API
-docsGreet = docs testApi
+docsGreet = docs introducedApi
 
 main :: IO ()
 main = putStrLn $ markdown docsGreet

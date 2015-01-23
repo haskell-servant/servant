@@ -1,7 +1,16 @@
-POST /greet
------------
+#### On proper introductions.
 
-**Request Body**: 
+Hello there.
+
+As documentation is usually written for humans, it's often useful to introduce concepts with a few words.
+
+#### This title is below the last
+
+You'll also note that multiple intros are possible.
+
+## POST /greet
+
+#### Request Body:
 
 ``` javascript
 {
@@ -9,7 +18,7 @@ POST /greet
 }
 ```
 
-**Response**: 
+#### Response:
 
  - Status code 201
  - If you use ?capital=true
@@ -28,21 +37,20 @@ POST /greet
 }
 ```
 
-GET /hello/:name
-----------------
+## GET /hello/:name
 
-**Captures**: 
+#### Captures:
 
 - *name*: name of the person to greet
 
-**GET Parameters**: 
+#### GET Parameters:
 
  - capital
      - **Values**: *true, false*
      - **Description**: Get the greeting message in uppercase (true) or not (false). Default is false.
 
 
-**Response**: 
+#### Response:
 
  - Status code 200
  - If you use ?capital=true
@@ -61,14 +69,13 @@ GET /hello/:name
 }
 ```
 
-DELETE /greet/:greetid
-----------------------
+## DELETE /greet/:greetid
 
-**Captures**: 
+#### Captures:
 
 - *greetid*: identifier of the greet msg to remove
 
-**Response**: 
+#### Response:
 
  - Status code 204
  - No response body
