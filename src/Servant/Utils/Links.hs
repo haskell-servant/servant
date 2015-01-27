@@ -1,4 +1,5 @@
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -71,6 +72,7 @@ module Servant.Utils.Links (
 
 import Data.Proxy ( Proxy(..) )
 import GHC.TypeLits ( KnownSymbol, Symbol, symbolVal )
+import GHC.Exts(Constraint)
 
 import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
@@ -85,19 +87,16 @@ import Servant.API.Raw ( Raw )
 import Servant.API.Alternative ( type (:<|>) )
 
 
-type family Or a b where
-    Or 'False 'False = 'False
-    Or 'True b       = 'True
-    Or a 'True       = 'True
+type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
+    Or () b       = ()
+    Or a ()       = ()
 
-type family And a b where
-    And 'True 'True = 'True
-    And a 'False    = 'False
-    And 'False b    = 'False
+type family And (a :: Constraint)  (b :: Constraint) :: Constraint where
+    And () () = ()
 
-type family IsElem' a s :: Bool
+type family IsElem' a s :: Constraint
 
-type family IsElem a s where
+type family IsElem a s :: Constraint where
     IsElem e (sa :<|> sb)                = Or (IsElem e sa) (IsElem e sb)
     IsElem (e :> sa) (e :> sb)           = IsElem sa sb
     IsElem (e :> sa) (Capture x y :> sb) = IsElem sa sb
@@ -108,21 +107,20 @@ type family IsElem a s where
     IsElem sa (MatrixParam x y :> sb)    = IsElem sa sb
     IsElem sa (MatrixParams x y :> sb)   = IsElem sa sb
     IsElem sa (MatrixFlag x :> sb)       = IsElem sa sb
-    IsElem e e                           = 'True
+    IsElem e e                           = ()
     IsElem e a                           = IsElem' e a
 
-type family IsLink'' l where
+type family IsLink'' l :: Constraint where
     IsLink'' (e :> Get x)    = IsLink' e
     IsLink'' (e :> Post x)   = IsLink' e
     IsLink'' (e :> Put x)    = IsLink' e
     IsLink'' (e :> Delete)   = IsLink' e
     IsLink'' (e :> Raw)      = IsLink' e
-    IsLink'' a               = 'False
 
-type family IsLink' e where
-    IsLink' (f :: Symbol)  = 'True
+type family IsLink' e :: Constraint where
+    IsLink' (f :: Symbol)  = ()
 
-type family IsLink e where
+type family IsLink e :: Constraint where
     IsLink (a :> b)        = Or (And (IsLink' a) (IsLink'' b))
                                 (IsLink'' (a :> b))
 
@@ -133,8 +131,8 @@ class ValidLinkIn f s where
     mkLink :: f -> s -> Link  -- ^ This function will only typecheck if `f`
                               -- is an URI within `s`
 
-instance ( IsElem f s ~ 'True
-         , IsLink f   ~ 'True
+instance ( IsElem f s 
+         , IsLink f
          , VLinkHelper f) => ValidLinkIn f s where
     mkLink _ _ = Link (vlh (Proxy :: Proxy f))
 
