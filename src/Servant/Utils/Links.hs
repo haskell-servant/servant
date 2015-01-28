@@ -118,14 +118,18 @@ type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
     Or a ()       = ()
 
 -- | You may use this type family to tell the type checker that your custom type
--- is a valid part of a link like so:
---
--- Not that 'IsElem' is called, which mutually recurses back to `IsElem'`
+-- may be skipped as part of a link. This is useful for things like
+-- 'QueryParam' that are optional in a URI and do not affect them if they are
+-- omitted.
 --
 -- >>> data CustomThing
 -- >>> type instance IsElem' e (CustomThing :> s) = IsElem e s
 --
--- Now you can add a HasLink instance and you are ready to go.
+-- Note that 'IsElem' is called, which will mutually recurse back to `IsElem'`
+-- if it exhausts all other options again.
+--
+-- Once you have written a HasLink instance for CustomThing you are ready to
+-- go.
 type family IsElem' a s :: Constraint
 
 -- | Closed type family, check if endpoint is within api
@@ -164,11 +168,11 @@ data Param a
   deriving Show
 
 addSegment :: String -> Link -> Link
-addSegment seg l = l { _segments = _segments l ++ [seg] }
+addSegment seg l = l { _segments = _segments l <> [seg] }
 
 addQueryParam :: Param Query -> Link -> Link
 addQueryParam qp l =
-    l { _queryParams = _queryParams l ++ [qp] }
+    l { _queryParams = _queryParams l <> [qp] }
 
 -- Not particularly efficient for many updates. Something to optimise if it's
 -- a problem.
@@ -176,7 +180,7 @@ addMatrixParam :: Param Matrix -> Link -> Link
 addMatrixParam param l = l { _segments = f (_segments l) }
   where
     f [] = []
-    f xs = init xs ++ [g (last xs)]
+    f xs = init xs <> [g (last xs)]
     -- Modify the segment at the "top" of the stack
     g :: String -> String
     g seg =
@@ -220,7 +224,7 @@ safeLink
     -> MkLink endpoint
 safeLink endpoint _ = link endpoint mempty
 
--- | Construct a link for an endpoint
+-- | Construct a link for an endpoint.
 class HasLink endpoint where
     type MkLink endpoint
     link :: Proxy endpoint -- ^ The API endpoint you would like to point to
