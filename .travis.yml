@@ -3,6 +3,10 @@ language: haskell
 ghc:
   - 7.8
 
+after_success:
+  - sudo apt-get -y install doctest
+  - ./test-docs.sh
+
 notifications:
   irc:
     channels:

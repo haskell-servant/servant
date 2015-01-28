@@ -8,76 +8,102 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- | Type safe internal links.
+-- | Type safe generation of internal links.
 --
--- Provides the function 'mkLink':
+-- Given an API with a few endpoints:
 --
--- @
---   {-# LANGUAGE DataKinds #-}
---   {-# LANGUAGE TypeFamilies #-}
---   {-# LANGUAGE TypeOperators #-}
+-- >>> :set -XDataKinds -XTypeFamilies -XTypeOperators
+-- >>> import Servant.API
+-- >>> import Servant.Utils.Links
+-- >>> import Data.Proxy
+-- >>>
+-- >>>
+-- >>>
+-- >>> type Hello = "hello" :> Get Int
+-- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete
+-- >>> type API   = Hello :<|> Bye
+-- >>> let api = Proxy :: Proxy API
 --
---   import Servant.API
---   import Servant.Utils.Links
+-- It is possible to generate links that are guaranteed to be within 'API' with
+-- 'safeLink'.
 --
---   -- You might want to put some custom types in your API
---   data Thing = Thing
+-- The first argument to 'safeLink' is a symbol representing the endpoint you
+-- would like to point to. This will need to end in a verb like Get, or Post.
 --
---   -- If you want these to form part of a valid URL, just add them to the
---   -- open type family IsElem' like so:
---   type instance IsElem' e (Thing :> s) = IsElem e s
+-- You may omit 'QueryParam's and the like should you not want to provide them,
+-- but certain other types like 'Capture' must be included.
 --
---   type API =  "hello" :> Thing :> Get Int
---          :<|> "bye"   :> QueryParam "name" String :> Post Bool
+-- The reason you may want to omit 'QueryParam's is that safeLink is a bit
+-- magical: if parameters are included that could take input it will return a
+-- function that accepts that input and generates a link.
 --
---   api :: API
---   api = undefined
+-- This is best shown with an example. Here, a link is generated with no
+-- parameters:
 --
---   link1 :: "hello" :> Get Int
---   link1 = undefined
+-- >>> let hello = Proxy :: Proxy ("hello" :> Get Int)
+-- >>> print $ safeLink hello api
+-- hello
 --
---   link2 :: "hello" :> Delete
---   link2 = undefined
+-- If the API has an endpoint with parameters then we can generate links with
+-- or without those:
 --
---   main :: IO ()
---   main =
---       --  typechecks, prints "/hello"'
---       let Link str = mkLink link1 api
---       in putStrLn str
+-- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete)
+-- >>> print $ safeLink with api "Hubert"
+-- bye?name=Hubert
 --
---       -- doesn't typecheck
---       -- mkLink link2  api
--- @
+-- >>> let without = Proxy :: Proxy ("bye" :> Delete)
+-- >>> print $ safeLink without api
+-- bye
 --
--- That is, 'mkLink' takes two arguments, a link and a sitemap, and
--- returns a 'Link', but only typechecks if the link proxy is a valid link,
--- and part of the sitemap.
+-- Attempting to construct a link to an endpoint that does not exist in api
+-- will result in a type error like this:
 --
--- __N.B.:__ 'mkLink' assumes a capture matches any string (without slashes).
+-- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete)
+-- >>> safeLink bad_link  api
+-- <BLANKLINE>
+-- <interactive>:56:1:
+--     Could not deduce (Or
+--                         (IsElem' Delete (Get Int))
+--                         (IsElem'
+--                            ("hello" :> Delete)
+--                            ("bye" :> (QueryParam "name" String :> Delete))))
+--       arising from a use of ‘safeLink’
+--     In the expression: safeLink bad_link api
+--     In an equation for ‘it’: it = safeLink bad_link api
+--
+--  This error is essentially saying that the type family couldn't find
+--  bad_link under api after trying the open (but empty) type family
+--  `IsElem'` as a last resort.
 module Servant.Utils.Links (
-    -- * Link and mkLink
-    -- | The only end-user utilities
-      mkLink
-    , Link, unLink
-    -- * Internal
-    -- | These functions will likely only be of interest if you are writing
-    -- more API combinators and would like to extend the behavior of
-    -- 'mkLink'
-    , ValidLinkIn()
-    , VLinkHelper(..)
-    , IsElem
-    , IsElem'
-    , IsLink
-                           ) where
+  -- * Building and using safe links
+  --
+  -- | Note that 'URI' is Network.URI.URI from the network-uri package.
+    safeLink
+  , URI(..)
+  -- * Adding custom types
+  , HasLink(..)
+  , linkURI
+  , Link
+  , IsElem'
+  -- * Illustrative exports
+  , IsElem
+  , Or
+) where
 
+import Data.List
 import Data.Proxy ( Proxy(..) )
-import GHC.TypeLits ( KnownSymbol, Symbol, symbolVal )
+import Data.Text (Text, unpack)
+import Data.Monoid ( Monoid(..), (<>) )
+import Network.URI ( URI(..), escapeURIString, isUnreserved )
+import GHC.TypeLits ( KnownSymbol, symbolVal )
 import GHC.Exts(Constraint)
 
+import Servant.Common.Text
 import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.MatrixParam ( MatrixParam, MatrixParams, MatrixFlag )
+import Servant.API.Header ( Header )
 import Servant.API.Get ( Get )
 import Servant.API.Post ( Post )
 import Servant.API.Put ( Put )
@@ -86,20 +112,27 @@ import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
 import Servant.API.Alternative ( type (:<|>) )
 
-
+-- | If either a or b produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
     Or () b       = ()
     Or a ()       = ()
 
-type family And (a :: Constraint)  (b :: Constraint) :: Constraint where
-    And () () = ()
-
+-- | You may use this type family to tell the type checker that your custom type
+-- is a valid part of a link like so:
+--
+-- Not that 'IsElem' is called, which mutually recurses back to `IsElem'`
+--
+-- >>> data CustomThing
+-- >>> type instance IsElem' e (CustomThing :> s) = IsElem e s
+--
+-- Now you can add a HasLink instance and you are ready to go.
 type family IsElem' a s :: Constraint
 
-type family IsElem a s :: Constraint where
+-- | Closed type family, check if endpoint is within api
+type family IsElem endpoint api :: Constraint where
     IsElem e (sa :<|> sb)                = Or (IsElem e sa) (IsElem e sb)
     IsElem (e :> sa) (e :> sb)           = IsElem sa sb
-    IsElem (e :> sa) (Capture x y :> sb) = IsElem sa sb
+    IsElem sa (Header x :> sb)          = IsElem sa sb
     IsElem sa (ReqBody x :> sb)          = IsElem sa sb
     IsElem sa (QueryParam x y :> sb)     = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)    = IsElem sa sb
@@ -110,45 +143,187 @@ type family IsElem a s :: Constraint where
     IsElem e e                           = ()
     IsElem e a                           = IsElem' e a
 
-type family IsLink'' l :: Constraint where
-    IsLink'' (e :> Get x)    = IsLink' e
-    IsLink'' (e :> Post x)   = IsLink' e
-    IsLink'' (e :> Put x)    = IsLink' e
-    IsLink'' (e :> Delete)   = IsLink' e
-    IsLink'' (e :> Raw)      = IsLink' e
-
-type family IsLink' e :: Constraint where
-    IsLink' (f :: Symbol)  = ()
-
-type family IsLink e :: Constraint where
-    IsLink (a :> b)        = Or (And (IsLink' a) (IsLink'' b))
-                                (IsLink'' (a :> b))
-
-
--- | The 'ValidLinkIn f s' constraint holds when 's' is an API that
--- contains 'f', and 'f' is a link.
-class ValidLinkIn f s where
-    mkLink :: f -> s -> Link  -- ^ This function will only typecheck if `f`
-                              -- is an URI within `s`
-
-instance ( IsElem f s 
-         , IsLink f
-         , VLinkHelper f) => ValidLinkIn f s where
-    mkLink _ _ = Link (vlh (Proxy :: Proxy f))
-
 -- | A safe link datatype.
--- The only way of constructing a 'Link' is using 'mkLink', which means any
+-- The only way of constructing a 'Link' is using 'safeLink', which means any
 -- 'Link' is guaranteed to be part of the mentioned API.
-newtype Link = Link { unLink :: String } deriving Show
+data Link = Link
+  { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
+  , _queryParams :: [Param Query]
+  } deriving Show
 
-class VLinkHelper f where
-    vlh :: forall proxy. proxy f -> String
 
-instance (KnownSymbol s, VLinkHelper e) => VLinkHelper (s :> e) where
-    vlh _ = "/" ++ symbolVal (Proxy :: Proxy s) ++ vlh (Proxy :: Proxy e)
+-- Phantom types for Param
+data Matrix
+data Query
 
-instance VLinkHelper (Get x) where
-    vlh _ = ""
+-- | Query/Matrix param
+data Param a
+    = SingleParam    String Text
+    | ArrayElemParam String Text
+    | FlagParam      String
+  deriving Show
 
-instance VLinkHelper (Post x) where
-    vlh _ = ""
+addSegment :: String -> Link -> Link
+addSegment seg l = l { _segments = _segments l ++ [seg] }
+
+addQueryParam :: Param Query -> Link -> Link
+addQueryParam qp l =
+    l { _queryParams = _queryParams l ++ [qp] }
+
+-- Not particularly efficient for many updates. Something to optimise if it's
+-- a problem.
+addMatrixParam :: Param Matrix -> Link -> Link
+addMatrixParam param l = l { _segments = f (_segments l) }
+  where
+    f [] = []
+    f xs = init xs ++ [g (last xs)]
+    -- Modify the segment at the "top" of the stack
+    g :: String -> String
+    g seg =
+        case param of
+            SingleParam k v    -> seg <> ";" <> k <> "=" <> escape (unpack v)
+            ArrayElemParam k v -> seg <> ";" <> k <> "[]=" <> escape (unpack v)
+            FlagParam k        -> seg <> ";" <> k
+
+instance Monoid Link where
+  mempty = Link mempty mempty
+  mappend (Link a1 b1) (Link a2 b2) =
+    Link (a1 <> a2) (b1 <> b2)
+
+linkURI :: Link -> URI
+linkURI (Link segments q_params) =
+    URI mempty  -- No scheme (relative)
+        Nothing -- Or authority (relative)
+        (intercalate "/" segments)
+        (makeQueries q_params) mempty
+  where
+    makeQueries :: [Param Query] -> String
+    makeQueries [] = ""
+    makeQueries xs =
+        "?" <> intercalate "&" (fmap makeQuery xs)
+
+    makeQuery :: Param Query -> String
+    makeQuery (ArrayElemParam k v) = escape k <> "[]=" <> escape (unpack v)
+    makeQuery (SingleParam k v)    = escape k <> "=" <> escape (unpack v)
+    makeQuery (FlagParam k)        = escape k
+
+escape :: String -> String
+escape = escapeURIString isUnreserved
+
+-- | Create a valid (by construction) relative URI with query params.
+--
+-- This function will only typecheck if `endpoint` is part of the API `api`
+safeLink
+    :: forall endpoint api. (IsElem endpoint api, HasLink endpoint)
+    => Proxy endpoint -- ^ The API endpoint you would like to point to
+    -> Proxy api -- ^ The whole API that you this endpoint is a part of
+    -> MkLink endpoint
+safeLink endpoint _ = link endpoint mempty
+
+-- | Construct a link for an endpoint
+class HasLink endpoint where
+    type MkLink endpoint
+    link :: Proxy endpoint -- ^ The API endpoint you would like to point to
+         -> Link
+         -> MkLink endpoint
+
+-- Naked symbol instance
+instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
+    type MkLink (sym :> sub) = MkLink sub
+    link _ =
+        link (Proxy :: Proxy sub) . addSegment seg
+      where
+        seg = symbolVal (Proxy :: Proxy sym)
+
+
+-- QueryParam instances
+instance (KnownSymbol sym, ToText v, HasLink sub)
+    => HasLink (QueryParam sym v :> sub) where
+    type MkLink (QueryParam sym v :> sub) = v -> MkLink sub
+    link _ l v =
+        link (Proxy :: Proxy sub)
+             (addQueryParam (SingleParam k (toText v)) l)
+      where
+        k :: String
+        k = symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, ToText v, HasLink sub)
+    => HasLink (QueryParams sym v :> sub) where
+    type MkLink (QueryParams sym v :> sub) = [v] -> MkLink sub
+    link _ l =
+        link (Proxy :: Proxy sub) .
+            foldl' (\l' v -> addQueryParam (ArrayElemParam k (toText v)) l') l
+      where
+        k = symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, HasLink sub)
+    => HasLink (QueryFlag sym :> sub) where
+    type MkLink (QueryFlag sym :> sub) = Bool -> MkLink sub
+    link _ l False =
+        link (Proxy :: Proxy sub) l
+    link _ l True =
+        link (Proxy :: Proxy sub) $ addQueryParam (FlagParam k) l
+      where
+        k = symbolVal (Proxy :: Proxy sym)
+
+-- MatrixParam instances
+instance (KnownSymbol sym, ToText v, HasLink sub)
+    => HasLink (MatrixParam sym v :> sub) where
+    type MkLink (MatrixParam sym v :> sub) = v -> MkLink sub
+    link _ l v =
+        link (Proxy :: Proxy sub) $
+            addMatrixParam (SingleParam k (toText v)) l
+      where
+        k = symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, ToText v, HasLink sub)
+    => HasLink (MatrixParams sym v :> sub) where
+    type MkLink (MatrixParams sym v :> sub) = [v] -> MkLink sub
+    link _ l =
+        link (Proxy :: Proxy sub) .
+            foldl' (\l' v -> addMatrixParam (ArrayElemParam k (toText v)) l') l
+      where
+        k = symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, HasLink sub)
+    => HasLink (MatrixFlag sym :> sub) where
+    type MkLink (MatrixFlag sym :> sub) = Bool -> MkLink sub
+    link _ l False =
+        link (Proxy :: Proxy sub) l
+    link _ l True =
+        link (Proxy :: Proxy sub) $ addMatrixParam (FlagParam k) l
+      where
+        k = symbolVal (Proxy :: Proxy sym)
+
+-- Misc instances
+instance HasLink sub => HasLink (ReqBody a :> sub) where
+    type MkLink (ReqBody a :> sub) = MkLink sub
+    link _ = link (Proxy :: Proxy sub)
+
+instance (ToText v, HasLink sub)
+    => HasLink (Capture sym v :> sub) where
+    type MkLink (Capture sym v :> sub) = v -> MkLink sub
+    link _ l v =
+        link (Proxy :: Proxy sub) $
+            addSegment (escape . unpack $ toText v) l
+
+-- Verb (terminal) instances
+instance HasLink (Get r) where
+    type MkLink (Get r) = URI
+    link _ = linkURI
+
+instance HasLink (Post r) where
+    type MkLink (Post r) = URI
+    link _ = linkURI
+
+instance HasLink (Put r) where
+    type MkLink (Put r) = URI
+    link _ = linkURI
+
+instance HasLink Delete where
+    type MkLink Delete = URI
+    link _ = linkURI
+
+instance HasLink Raw where
+    type MkLink Raw = URI
+    link _ = linkURI

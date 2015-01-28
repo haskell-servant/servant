@@ -35,7 +35,7 @@ module Servant.API (
   -- * Utilities
   -- | QuasiQuotes for endpoints
   module Servant.QQ,
-  -- | Type-safe internal URLs
+  -- | Type-safe internal URIs
   module Servant.Utils.Links,
   ) where
 
@@ -52,4 +52,4 @@ import Servant.API.Raw ( Raw )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.Sub ( (:>)(..) )
 import Servant.QQ ( sitemap )
-import Servant.Utils.Links ( mkLink )
+import Servant.Utils.Links ( safeLink, URI(..) )
