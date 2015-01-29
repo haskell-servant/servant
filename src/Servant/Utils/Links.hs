@@ -25,23 +25,22 @@
 -- >>> let api = Proxy :: Proxy API
 --
 -- It is possible to generate links that are guaranteed to be within 'API' with
--- 'safeLink'.
---
--- The first argument to 'safeLink' is a symbol representing the endpoint you
--- would like to point to. This will need to end in a verb like Get, or Post.
+-- 'safeLink'. The first argument to 'safeLink' is a type representing the
+-- endpoint you would like to point to. This will need to end in a verb like
+-- Get, or Post. The second argument is the API in which you would like to
+-- ensure the endpoint is within. Further arguments may or may not be required
+-- depending on the type of the endpoint. If everything lines up you will get a
+-- 'URI' out the other end.
 --
 -- You may omit 'QueryParam's and the like should you not want to provide them,
--- but certain other types like 'Capture' must be included.
---
+-- but types which form part of the URL path like 'Capture' must be included.
 -- The reason you may want to omit 'QueryParam's is that safeLink is a bit
 -- magical: if parameters are included that could take input it will return a
--- function that accepts that input and generates a link.
---
--- This is best shown with an example. Here, a link is generated with no
--- parameters:
+-- function that accepts that input and generates a link. This is best shown
+-- with an example. Here, a link is generated with no parameters:
 --
 -- >>> let hello = Proxy :: Proxy ("hello" :> Get Int)
--- >>> print $ safeLink hello api
+-- >>> print (safeLink hello api :: URI)
 -- hello
 --
 -- If the API has an endpoint with parameters then we can generate links with
