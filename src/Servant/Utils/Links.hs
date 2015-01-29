@@ -28,9 +28,9 @@
 -- 'safeLink'. The first argument to 'safeLink' is a type representing the
 -- endpoint you would like to point to. This will need to end in a verb like
 -- Get, or Post. The second argument is the API in which you would like to
--- ensure the endpoint is within. Further arguments may or may not be required
--- depending on the type of the endpoint. If everything lines up you will get a
--- 'URI' out the other end.
+-- ensure the endpoint is within. Further arguments be required depending on
+-- the type of the endpoint. If everything lines up you will get a 'URI' out
+-- the other end.
 --
 -- You may omit 'QueryParam's and the like should you not want to provide them,
 -- but types which form part of the URL path like 'Capture' must be included.
@@ -188,11 +188,6 @@ addMatrixParam param l = l { _segments = f (_segments l) }
             ArrayElemParam k v -> seg <> ";" <> k <> "[]=" <> escape (unpack v)
             FlagParam k        -> seg <> ";" <> k
 
-instance Monoid Link where
-  mempty = Link mempty mempty
-  mappend (Link a1 b1) (Link a2 b2) =
-    Link (a1 <> a2) (b1 <> b2)
-
 linkURI :: Link -> URI
 linkURI (Link segments q_params) =
     URI mempty  -- No scheme (relative)
@@ -221,7 +216,7 @@ safeLink
     => Proxy endpoint -- ^ The API endpoint you would like to point to
     -> Proxy api -- ^ The whole API that you this endpoint is a part of
     -> MkLink endpoint
-safeLink endpoint _ = link endpoint mempty
+safeLink endpoint _ = link endpoint (Link mempty mempty)
 
 -- | Construct a link for an endpoint.
 class HasLink endpoint where
