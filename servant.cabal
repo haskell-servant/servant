@@ -48,7 +48,6 @@ library
     , parsec >= 3.1
     , string-conversions >= 0.3
     , network-uri >= 2.6
-    , safe
   hs-source-dirs: src
   default-language: Haskell2010
   ghc-options: -Wall
@@ -62,11 +61,8 @@ test-suite spec
   main-is: Spec.hs
   build-depends:
       base == 4.*
-    , deepseq
     , hspec == 2.*
     , QuickCheck
-    , network-uri
-    , parsec
     , parsec
     , servant
     , string-conversions
