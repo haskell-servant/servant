@@ -214,7 +214,7 @@ escape = escapeURIString isUnreserved
 safeLink
     :: forall endpoint api. (IsElem endpoint api, HasLink endpoint)
     => Proxy endpoint -- ^ The API endpoint you would like to point to
-    -> Proxy api -- ^ The whole API that you this endpoint is a part of
+    -> Proxy api -- ^ The whole API that this endpoint is a part of
     -> MkLink endpoint
 safeLink endpoint _ = link endpoint (Link mempty mempty)
 
