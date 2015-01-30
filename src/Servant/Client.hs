@@ -13,6 +13,7 @@ module Servant.Client
   , module Servant.Common.BaseUrl
   ) where
 
+import Control.Monad
 import Control.Monad.Trans.Either
 import Data.Aeson
 import Data.ByteString.Lazy (ByteString)
@@ -108,7 +109,7 @@ instance HasClient Delete where
   type Client Delete = BaseUrl -> EitherT String IO ()
 
   clientWithRoute Proxy req host =
-    performRequestJSON H.methodDelete req 204 host
+    void $ performRequest H.methodDelete req (== 204) host
 
 -- | If you have a 'Get' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
