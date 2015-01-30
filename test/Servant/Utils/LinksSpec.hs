@@ -1,59 +1,80 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
+
 module Servant.Utils.LinksSpec where
 
-import Test.Hspec ( Spec, it, describe )
+import Test.Hspec ( Spec, it, describe, shouldBe, Expectation )
+import Data.Proxy ( Proxy(..) )
 
 import Servant.API
-    ( type (:<|>), ReqBody, QueryParam, MatrixParam, MatrixParams, MatrixFlag, Get, Post, Capture, type (:>) )
-import Servant.QQSpec ( (~>) )
-import Servant.Utils.Links ( IsElem, IsLink )
-
 
 type TestApi =
-       "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Get Bool
-  :<|> "greet" :> ReqBody 'True :> Post Bool
-  :<|> "parent" :> MatrixParams "name" String :> "child" :> MatrixParam "gender" String :> Get String
+  -- Capture and query/matrix params
+       "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete
+
+  :<|> "parent" :> MatrixParams "name" String :> "child"
+                :> MatrixParam "gender" String :> Get String
+
+  -- Flags
+  :<|> "ducks" :> MatrixFlag "yellow" :> MatrixFlag "loud" :> Delete
+  :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete
+
+  -- All of the verbs
+  :<|> "get" :> Get ()
+  :<|> "put" :> Put ()
+  :<|> "post" :> ReqBody 'True :> Post ()
+  :<|> "delete" :> Header "ponies" :> Delete
+  :<|> "raw" :> Raw
 
 type TestLink = "hello" :> "hi" :> Get Bool
 type TestLink2 = "greet" :> Post Bool
 type TestLink3 = "parent" :> "child" :> Get String
 
-type BadTestLink = "hallo" :> "hi" :> Get Bool
-type BadTestLink2 = "greet" :> Get Bool
-type BadTestLink3 = "parent" :> "child" :> MatrixFlag "male" :> Get String
+apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
+         => Proxy endpoint -> MkLink endpoint
+apiLink = safeLink (Proxy :: Proxy TestApi)
 
-type NotALink = "hello" :> Capture "x" Bool :> Get Bool
-type NotALink2 = "hello" :> ReqBody 'True :> Get Bool
-
-data Proxy x = Proxy
-class ReflectT (x::Bool) where { reflected :: Proxy x -> Bool }
-instance ReflectT 'True where { reflected _ = True }
-instance ReflectT 'False where { reflected _ = False }
+-- | Convert a link to a URI and ensure that this maps to the given string
+-- given string
+shouldBeURI :: URI -> String -> Expectation
+shouldBeURI link expected =
+    show link `shouldBe` expected
 
 spec :: Spec
-spec = describe "Servant.API.Elem" $ do
-    isElem
-    isLink
+spec = describe "Servant.Utils.Links" $ do
+    it "Generates correct links for capture query and matrix params" $ do
+        let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete)
+        apiLink l1 "hi" `shouldBeURI` "hello/hi"
 
-isElem :: Spec
-isElem = describe "IsElem" $ do
-    it "is True when the first argument is an url within the second" $ do
-       reflected (Proxy::Proxy (IsElem TestLink TestApi)) ~> True
-       reflected (Proxy::Proxy (IsElem TestLink2 TestApi)) ~> True
-       reflected (Proxy::Proxy (IsElem TestLink3 TestApi)) ~> True
-    it "is False when the first argument is not an url within the second" $ do
-       reflected (Proxy::Proxy (IsElem BadTestLink TestApi)) ~> False
-       reflected (Proxy::Proxy (IsElem BadTestLink2 TestApi)) ~> False
-       reflected (Proxy::Proxy (IsElem BadTestLink3 TestApi)) ~> False
+        let l2 = Proxy :: Proxy ("hello" :> Capture "name" String
+                                         :> QueryParam "capital" Bool
+                                         :> Delete)
+        apiLink l2 "bye" True `shouldBeURI` "hello/bye?capital=true"
 
-isLink :: Spec
-isLink = describe "IsLink" $ do
-    it "is True when all Subs are paths and the last is a method" $ do
-        reflected (Proxy::Proxy (IsLink TestLink)) ~> True
-        reflected (Proxy::Proxy (IsLink TestLink2)) ~> True
-        reflected (Proxy::Proxy (IsLink TestLink3)) ~> True
-    it "is False of anything with captures" $ do
-        reflected (Proxy::Proxy (IsLink NotALink)) ~> False
-        reflected (Proxy::Proxy (IsLink NotALink2)) ~> False
+        let l3 = Proxy :: Proxy ("parent" :> MatrixParams "name" String
+                                          :> "child"
+                                          :> MatrixParam "gender" String
+                                          :> Get String)
+        apiLink l3 ["Hubert?x=;&", "Cumberdale"] "Edward?"
+            `shouldBeURI` "parent;name[]=Hubert%3Fx%3D%3B%26;\
+                           \name[]=Cumberdale/child;gender=Edward%3F"
+
+    it "Generates correct links for query and matrix flags" $ do
+        let l1 = Proxy :: Proxy ("balls" :> QueryFlag "bouncy"
+                                         :> QueryFlag "fast" :> Delete)
+        apiLink l1 True True `shouldBeURI` "balls?bouncy&fast"
+        apiLink l1 False True `shouldBeURI` "balls?fast"
+
+        let l2 = Proxy :: Proxy ("ducks" :> MatrixFlag "yellow"
+                                         :> MatrixFlag "loud" :> Delete)
+        apiLink l2 True True `shouldBeURI` "ducks;yellow;loud"
+        apiLink l2 False True `shouldBeURI` "ducks;loud"
+
+    it "Generates correct links for all of the verbs" $ do
+        apiLink (Proxy :: Proxy ("get" :> Get ())) `shouldBeURI` "get"
+        apiLink (Proxy :: Proxy ("put" :> Put ())) `shouldBeURI` "put"
+        apiLink (Proxy :: Proxy ("post" :> Post ())) `shouldBeURI` "post"
+        apiLink (Proxy :: Proxy ("delete" :> Delete)) `shouldBeURI` "delete"
+        apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeURI` "raw"

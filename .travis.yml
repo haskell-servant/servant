@@ -3,6 +3,13 @@ language: haskell
 ghc:
   - 7.8
 
+script:
+  - cabal configure --enable-tests && cabal build && cabal test
+  - cabal check
+  - cabal sdist
+  - cabal install doctest
+  - ./test-docs.sh
+
 notifications:
   irc:
     channels:
