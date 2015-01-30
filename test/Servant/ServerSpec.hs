@@ -11,11 +11,12 @@ module Servant.ServerSpec where
 import Control.Monad.Trans.Either (EitherT, left)
 import Data.Aeson (ToJSON, FromJSON, encode, decode')
 import Data.Char (toUpper)
+import Data.Monoid ((<>))
 import Data.Proxy (Proxy(Proxy))
 import Data.String (fromString)
 import Data.String.Conversions (cs)
 import GHC.Generics (Generic)
-import Network.HTTP.Types (parseQuery, ok200)
+import Network.HTTP.Types (parseQuery, ok200, status409)
 import Network.Wai (Application, Request, responseLBS, pathInfo, queryString, rawQueryString)
 import Network.Wai.Test (runSession, request, defaultRequest, simpleBody)
 import Test.Hspec (Spec, describe, it, shouldBe)
@@ -31,6 +32,7 @@ import Servant.API.Raw (Raw)
 import Servant.API.Sub ((:>))
 import Servant.API.Alternative ((:<|>)((:<|>)))
 import Servant.Server (Server, serve)
+import Servant.Server.Internal (RouteMismatch(..))
 
 
 -- * test data types
@@ -74,6 +76,7 @@ spec = do
   postSpec
   rawSpec
   unionSpec
+  errorsSpec
 
 
 type CaptureApi = Capture "legs" Integer :> Get Animal
@@ -364,3 +367,48 @@ unionSpec = do
         liftIO $ do
           decode' (simpleBody response_) `shouldBe`
             Just jerry
+
+-- | Test server error functionality.
+errorsSpec :: Spec
+errorsSpec = do
+  let he = HttpError status409 (Just "A custom error")
+  let ib = InvalidBody "The body is invalid"
+  let wm = WrongMethod
+  let nf = NotFound
+  
+  describe "Servant.Server.Internal.RouteMismatch" $ do
+    it "HttpError > *" $ do
+      ib <> he `shouldBe` he
+      wm <> he `shouldBe` he
+      nf <> he `shouldBe` he
+
+      he <> ib `shouldBe` he
+      he <> wm `shouldBe` he
+      he <> nf `shouldBe` he
+
+    it "HE > InvalidBody > (WM,NF)" $ do
+      he <> ib `shouldBe` he
+      wm <> ib `shouldBe` ib
+      nf <> ib `shouldBe` ib
+
+      ib <> he `shouldBe` he
+      ib <> wm `shouldBe` ib
+      ib <> nf `shouldBe` ib
+
+    it "HE > IB > WrongMethod > NF" $ do
+      he <> wm `shouldBe` he
+      ib <> wm `shouldBe` ib
+      nf <> wm `shouldBe` wm
+
+      wm <> he `shouldBe` he
+      wm <> ib `shouldBe` ib
+      wm <> nf `shouldBe` wm
+
+    it "* > NotFound" $ do
+      he <> nf `shouldBe` he
+      ib <> nf `shouldBe` ib
+      wm <> nf `shouldBe` wm
+
+      nf <> he `shouldBe` he
+      nf <> ib `shouldBe` ib
+      nf <> wm `shouldBe` wm

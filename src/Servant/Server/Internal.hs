@@ -14,7 +14,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (unfoldr)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Monoid (Monoid, mempty, mappend)
 import Data.Proxy (Proxy(Proxy))
 import Data.String (fromString)
@@ -66,6 +66,8 @@ toApplication ra request respond = do
     respond $ responseLBS methodNotAllowed405 [] "method not allowed"
   routingRespond (Left (InvalidBody err)) =
     respond $ responseLBS badRequest400 [] $ fromString $ "Invalid JSON in request body: " ++ err
+  routingRespond (Left (HttpError status body)) =
+    respond $ responseLBS status [] $ fromMaybe (BL.fromStrict $ statusMessage status) body
   routingRespond (Right response) =
     respond response
 
@@ -74,12 +76,15 @@ data RouteMismatch =
     NotFound           -- ^ the usual "not found" error
   | WrongMethod        -- ^ a more informative "you just got the HTTP method wrong" error
   | InvalidBody String -- ^ an even more informative "your json request body wasn't valid" error
+  | HttpError Status (Maybe BL.ByteString)  -- ^ an even even more informative arbitrary HTTP response code error.
   deriving (Eq, Show)
 
 -- |
 -- @
 -- > mempty = NotFound
 -- >
+-- > _             `mappend` HttpError s b = HttpError s b
+-- > HttpError s b `mappend`             _ = HttpError s b
 -- > NotFound      `mappend`             x = x
 -- > WrongMethod   `mappend` InvalidBody s = InvalidBody s
 -- > WrongMethod   `mappend`             _ = WrongMethod
@@ -88,6 +93,8 @@ data RouteMismatch =
 instance Monoid RouteMismatch where
   mempty = NotFound
 
+  _             `mappend` HttpError s b = HttpError s b
+  HttpError s b `mappend`             _ = HttpError s b
   NotFound      `mappend`             x = x
   WrongMethod   `mappend` InvalidBody s = InvalidBody s
   WrongMethod   `mappend`             _ = WrongMethod
