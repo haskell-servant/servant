@@ -25,12 +25,12 @@
 -- >>> let api = Proxy :: Proxy API
 --
 -- It is possible to generate links that are guaranteed to be within 'API' with
--- 'safeLink'. The first argument to 'safeLink' is a type representing the
--- endpoint you would like to point to. This will need to end in a verb like
--- Get, or Post. The second argument is the API in which you would like to
--- ensure the endpoint is within. Further arguments be required depending on
--- the type of the endpoint. If everything lines up you will get a 'URI' out
--- the other end.
+-- 'safeLink'. The first argument to 'safeLink' is a type representing the API
+-- you would like to restrict links to. The second argument is the destination
+-- endpoint you would like the link to point to, this will need to end with a
+-- verb like GET or POST. Further arguments may be required depending on the
+-- type of the endpoint. If everything lines up you will get a 'URI' out the
+-- other end.
 --
 -- You may omit 'QueryParam's and the like should you not want to provide them,
 -- but types which form part of the URL path like 'Capture' must be included.
@@ -40,35 +40,46 @@
 -- with an example. Here, a link is generated with no parameters:
 --
 -- >>> let hello = Proxy :: Proxy ("hello" :> Get Int)
--- >>> print (safeLink hello api :: URI)
+-- >>> print (safeLink api hello :: URI)
 -- hello
 --
 -- If the API has an endpoint with parameters then we can generate links with
 -- or without those:
 --
 -- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete)
--- >>> print $ safeLink with api "Hubert"
+-- >>> print $ safeLink api with "Hubert"
 -- bye?name=Hubert
 --
 -- >>> let without = Proxy :: Proxy ("bye" :> Delete)
--- >>> print $ safeLink without api
+-- >>> print $ safeLink api without
 -- bye
+--
+-- If you would like create a helper for generating links only within that API,
+-- you can partially apply safeLink if you specify a correct type signature
+-- like so:
+--
+-- >>> :set -XConstraintKinds
+-- >>> :{
+-- >>> let apiLink :: (IsElem endpoint API, HasLink endpoint)
+-- >>>             => Proxy endpoint -> MkLink endpoint
+-- >>>     apiLink = safeLink api
+-- >>> :}
 --
 -- Attempting to construct a link to an endpoint that does not exist in api
 -- will result in a type error like this:
 --
 -- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete)
--- >>> safeLink bad_link  api
+-- >>> safeLink api bad_link
 -- <BLANKLINE>
--- <interactive>:56:1:
+-- <interactive>:64:1:
 --     Could not deduce (Or
 --                         (IsElem' Delete (Get Int))
 --                         (IsElem'
 --                            ("hello" :> Delete)
 --                            ("bye" :> (QueryParam "name" String :> Delete))))
 --       arising from a use of ‘safeLink’
---     In the expression: safeLink bad_link api
---     In an equation for ‘it’: it = safeLink bad_link api
+--     In the expression: safeLink api bad_link
+--     In an equation for ‘it’: it = safeLink api bad_link
 --
 --  This error is essentially saying that the type family couldn't find
 --  bad_link under api after trying the open (but empty) type family
@@ -213,23 +224,23 @@ escape = escapeURIString isUnreserved
 -- This function will only typecheck if `endpoint` is part of the API `api`
 safeLink
     :: forall endpoint api. (IsElem endpoint api, HasLink endpoint)
-    => Proxy endpoint -- ^ The API endpoint you would like to point to
-    -> Proxy api -- ^ The whole API that this endpoint is a part of
+    => Proxy api      -- ^ The whole API that this endpoint is a part of
+    -> Proxy endpoint -- ^ The API endpoint you would like to point to
     -> MkLink endpoint
-safeLink endpoint _ = link endpoint (Link mempty mempty)
+safeLink _ endpoint = toLink endpoint (Link mempty mempty)
 
--- | Construct a link for an endpoint.
+-- | Construct a toLink for an endpoint.
 class HasLink endpoint where
     type MkLink endpoint
-    link :: Proxy endpoint -- ^ The API endpoint you would like to point to
+    toLink :: Proxy endpoint -- ^ The API endpoint you would like to point to
          -> Link
          -> MkLink endpoint
 
 -- Naked symbol instance
 instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
     type MkLink (sym :> sub) = MkLink sub
-    link _ =
-        link (Proxy :: Proxy sub) . addSegment seg
+    toLink _ =
+        toLink (Proxy :: Proxy sub) . addSegment seg
       where
         seg = symbolVal (Proxy :: Proxy sym)
 
@@ -238,8 +249,8 @@ instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
 instance (KnownSymbol sym, ToText v, HasLink sub)
     => HasLink (QueryParam sym v :> sub) where
     type MkLink (QueryParam sym v :> sub) = v -> MkLink sub
-    link _ l v =
-        link (Proxy :: Proxy sub)
+    toLink _ l v =
+        toLink (Proxy :: Proxy sub)
              (addQueryParam (SingleParam k (toText v)) l)
       where
         k :: String
@@ -248,8 +259,8 @@ instance (KnownSymbol sym, ToText v, HasLink sub)
 instance (KnownSymbol sym, ToText v, HasLink sub)
     => HasLink (QueryParams sym v :> sub) where
     type MkLink (QueryParams sym v :> sub) = [v] -> MkLink sub
-    link _ l =
-        link (Proxy :: Proxy sub) .
+    toLink _ l =
+        toLink (Proxy :: Proxy sub) .
             foldl' (\l' v -> addQueryParam (ArrayElemParam k (toText v)) l') l
       where
         k = symbolVal (Proxy :: Proxy sym)
@@ -257,10 +268,10 @@ instance (KnownSymbol sym, ToText v, HasLink sub)
 instance (KnownSymbol sym, HasLink sub)
     => HasLink (QueryFlag sym :> sub) where
     type MkLink (QueryFlag sym :> sub) = Bool -> MkLink sub
-    link _ l False =
-        link (Proxy :: Proxy sub) l
-    link _ l True =
-        link (Proxy :: Proxy sub) $ addQueryParam (FlagParam k) l
+    toLink _ l False =
+        toLink (Proxy :: Proxy sub) l
+    toLink _ l True =
+        toLink (Proxy :: Proxy sub) $ addQueryParam (FlagParam k) l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
@@ -268,8 +279,8 @@ instance (KnownSymbol sym, HasLink sub)
 instance (KnownSymbol sym, ToText v, HasLink sub)
     => HasLink (MatrixParam sym v :> sub) where
     type MkLink (MatrixParam sym v :> sub) = v -> MkLink sub
-    link _ l v =
-        link (Proxy :: Proxy sub) $
+    toLink _ l v =
+        toLink (Proxy :: Proxy sub) $
             addMatrixParam (SingleParam k (toText v)) l
       where
         k = symbolVal (Proxy :: Proxy sym)
@@ -277,8 +288,8 @@ instance (KnownSymbol sym, ToText v, HasLink sub)
 instance (KnownSymbol sym, ToText v, HasLink sub)
     => HasLink (MatrixParams sym v :> sub) where
     type MkLink (MatrixParams sym v :> sub) = [v] -> MkLink sub
-    link _ l =
-        link (Proxy :: Proxy sub) .
+    toLink _ l =
+        toLink (Proxy :: Proxy sub) .
             foldl' (\l' v -> addMatrixParam (ArrayElemParam k (toText v)) l') l
       where
         k = symbolVal (Proxy :: Proxy sym)
@@ -286,42 +297,42 @@ instance (KnownSymbol sym, ToText v, HasLink sub)
 instance (KnownSymbol sym, HasLink sub)
     => HasLink (MatrixFlag sym :> sub) where
     type MkLink (MatrixFlag sym :> sub) = Bool -> MkLink sub
-    link _ l False =
-        link (Proxy :: Proxy sub) l
-    link _ l True =
-        link (Proxy :: Proxy sub) $ addMatrixParam (FlagParam k) l
+    toLink _ l False =
+        toLink (Proxy :: Proxy sub) l
+    toLink _ l True =
+        toLink (Proxy :: Proxy sub) $ addMatrixParam (FlagParam k) l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
 -- Misc instances
 instance HasLink sub => HasLink (ReqBody a :> sub) where
     type MkLink (ReqBody a :> sub) = MkLink sub
-    link _ = link (Proxy :: Proxy sub)
+    toLink _ = toLink (Proxy :: Proxy sub)
 
 instance (ToText v, HasLink sub)
     => HasLink (Capture sym v :> sub) where
     type MkLink (Capture sym v :> sub) = v -> MkLink sub
-    link _ l v =
-        link (Proxy :: Proxy sub) $
+    toLink _ l v =
+        toLink (Proxy :: Proxy sub) $
             addSegment (escape . unpack $ toText v) l
 
 -- Verb (terminal) instances
 instance HasLink (Get r) where
     type MkLink (Get r) = URI
-    link _ = linkURI
+    toLink _ = linkURI
 
 instance HasLink (Post r) where
     type MkLink (Post r) = URI
-    link _ = linkURI
+    toLink _ = linkURI
 
 instance HasLink (Put r) where
     type MkLink (Put r) = URI
-    link _ = linkURI
+    toLink _ = linkURI
 
 instance HasLink Delete where
     type MkLink Delete = URI
-    link _ = linkURI
+    toLink _ = linkURI
 
 instance HasLink Raw where
     type MkLink Raw = URI
-    link _ = linkURI
+    toLink _ = linkURI

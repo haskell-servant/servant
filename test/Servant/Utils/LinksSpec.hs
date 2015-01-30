@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Servant.Utils.LinksSpec where
 
@@ -31,8 +32,9 @@ type TestLink = "hello" :> "hi" :> Get Bool
 type TestLink2 = "greet" :> Post Bool
 type TestLink3 = "parent" :> "child" :> Get String
 
-api :: Proxy TestApi
-api = Proxy
+apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
+         => Proxy endpoint -> MkLink endpoint
+apiLink = safeLink (Proxy :: Proxy TestApi)
 
 -- | Convert a link to a URI and ensure that this maps to the given string
 -- given string
@@ -44,35 +46,35 @@ spec :: Spec
 spec = describe "Servant.Utils.Links" $ do
     it "Generates correct links for capture query and matrix params" $ do
         let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete)
-        safeLink l1 api "hi" `shouldBeURI` "hello/hi"
+        apiLink l1 "hi" `shouldBeURI` "hello/hi"
 
         let l2 = Proxy :: Proxy ("hello" :> Capture "name" String
                                          :> QueryParam "capital" Bool
                                          :> Delete)
-        safeLink l2 api "bye" True `shouldBeURI` "hello/bye?capital=true"
+        apiLink l2 "bye" True `shouldBeURI` "hello/bye?capital=true"
 
         let l3 = Proxy :: Proxy ("parent" :> MatrixParams "name" String
                                           :> "child"
                                           :> MatrixParam "gender" String
                                           :> Get String)
-        safeLink l3 api ["Hubert?x=;&", "Cumberdale"] "Edward?"
+        apiLink l3 ["Hubert?x=;&", "Cumberdale"] "Edward?"
             `shouldBeURI` "parent;name[]=Hubert%3Fx%3D%3B%26;\
                            \name[]=Cumberdale/child;gender=Edward%3F"
 
     it "Generates correct links for query and matrix flags" $ do
         let l1 = Proxy :: Proxy ("balls" :> QueryFlag "bouncy"
                                          :> QueryFlag "fast" :> Delete)
-        safeLink l1 api True True `shouldBeURI` "balls?bouncy&fast"
-        safeLink l1 api False True `shouldBeURI` "balls?fast"
+        apiLink l1 True True `shouldBeURI` "balls?bouncy&fast"
+        apiLink l1 False True `shouldBeURI` "balls?fast"
 
         let l2 = Proxy :: Proxy ("ducks" :> MatrixFlag "yellow"
                                          :> MatrixFlag "loud" :> Delete)
-        safeLink l2 api True True `shouldBeURI` "ducks;yellow;loud"
-        safeLink l2 api False True `shouldBeURI` "ducks;loud"
+        apiLink l2 True True `shouldBeURI` "ducks;yellow;loud"
+        apiLink l2 False True `shouldBeURI` "ducks;loud"
 
     it "Generates correct links for all of the verbs" $ do
-        safeLink (Proxy :: Proxy ("get" :> Get ())) api `shouldBeURI` "get"
-        safeLink (Proxy :: Proxy ("put" :> Put ())) api `shouldBeURI` "put"
-        safeLink (Proxy :: Proxy ("post" :> Post ())) api `shouldBeURI` "post"
-        safeLink (Proxy :: Proxy ("delete" :> Delete)) api `shouldBeURI` "delete"
-        safeLink (Proxy :: Proxy ("raw" :> Raw)) api `shouldBeURI` "raw"
+        apiLink (Proxy :: Proxy ("get" :> Get ())) `shouldBeURI` "get"
+        apiLink (Proxy :: Proxy ("put" :> Put ())) `shouldBeURI` "put"
+        apiLink (Proxy :: Proxy ("post" :> Post ())) `shouldBeURI` "post"
+        apiLink (Proxy :: Proxy ("delete" :> Delete)) `shouldBeURI` "delete"
+        apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeURI` "raw"
