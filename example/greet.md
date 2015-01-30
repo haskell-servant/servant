@@ -13,9 +13,7 @@ You'll also note that multiple intros are possible.
 #### Request Body:
 
 ``` javascript
-{
-    "msg": "Hello, haskeller!"
-}
+"Hello, haskeller!"
 ```
 
 #### Response:
@@ -24,30 +22,37 @@ You'll also note that multiple intros are possible.
  - If you use ?capital=true
 
 ``` javascript
-{
-    "msg": "HELLO, HASKELLER"
-}
+"HELLO, HASKELLER"
 ```
 
  - If you use ?capital=false
 
 ``` javascript
-{
-    "msg": "Hello, haskeller"
-}
+"Hello, haskeller"
 ```
 
-## GET /hello/:name
+## GET /hello;lang=<value>/:name
 
 #### Captures:
 
 - *name*: name of the person to greet
 
+#### Matrix Parameters**:
+
+**hello**:
+
+ - lang
+     - **Values**: *en, sv, fr*
+     - **Description**: Get the greeting message selected language. Default is en.
+
+
+
+
 #### GET Parameters:
 
  - capital
      - **Values**: *true, false*
-     - **Description**: Get the greeting message in uppercase (true) or not (false). Default is false.
+     - **Description**: Get the greeting message in uppercase (true) or not (false).Default is false.
 
 
 #### Response:
@@ -56,17 +61,13 @@ You'll also note that multiple intros are possible.
  - If you use ?capital=true
 
 ``` javascript
-{
-    "msg": "HELLO, HASKELLER"
-}
+"HELLO, HASKELLER"
 ```
 
  - If you use ?capital=false
 
 ``` javascript
-{
-    "msg": "Hello, haskeller"
-}
+"Hello, haskeller"
 ```
 
 ## DELETE /greet/:greetid

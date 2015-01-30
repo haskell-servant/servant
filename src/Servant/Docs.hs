@@ -73,6 +73,13 @@
 -- >                   \Default is false."
 -- >                   Normal
 -- >
+-- > instance ToParam (MatrixParam "lang" String) where
+-- >   toParam _ =
+-- >     DocQueryParam "lang"
+-- >                   ["en", "sv", "fr"]
+-- >                   "Get the greeting message selected language. Default is en."
+-- >                   Normal
+-- >
 -- > instance ToSample Greet where
 -- >   toSample = Just $ Greet "Hello, haskeller!"
 -- >
@@ -95,7 +102,7 @@
 -- > -- API specification
 -- > type TestApi =
 -- >        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
--- >        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
+-- >        "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
 -- >
 -- >        -- POST /greet with a Greet as JSON in the request body,
 -- >        --             returns a Greet as JSON
@@ -116,6 +123,7 @@
 -- > -- > docs testAPI
 -- > docsGreet :: API
 -- > docsGreet = docsWithIntros [intro1, intro2] testApi
+-- >
 -- > main :: IO ()
 -- > main = putStrLn $ markdown docsGreet
 module Servant.Docs
@@ -332,12 +340,13 @@ defResponse = Response 200 []
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _captures :: [DocCapture]        -- type collected + user supplied info
-  , _headers  :: [Text]              -- type collected
-  , _params   :: [DocQueryParam]     -- type collected + user supplied info
+  { _captures :: [DocCapture]                 -- type collected + user supplied info
+  , _headers  :: [Text]                       -- type collected
+  , _params   :: [DocQueryParam]              -- type collected + user supplied info
   , _notes    :: [DocNote]           -- user supplied
-  , _rqbody   :: Maybe ByteString    -- user supplied
-  , _response :: Response            -- user supplied
+  , _mxParams :: [(String, [DocQueryParam])]  -- type collected + user supplied info
+  , _rqbody   :: Maybe ByteString             -- user supplied
+  , _response :: Response                     -- user supplied
   } deriving (Eq, Show)
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
@@ -346,12 +355,13 @@ data Action = Action
 -- Tweakable with lenses.
 --
 -- > λ> defAction
--- > Action {_captures = [], _params = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
+-- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
 -- > λ> defAction & response.respStatus .~ 201
--- > Action {_captures = [], _params = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
+-- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
 defAction :: Action
 defAction =
   Action []
+         []
          []
          []
          []
@@ -473,6 +483,7 @@ markdown api = unlines $
           "" :
           notesStr (action ^. notes) ++
           capturesStr (action ^. captures) ++
+          mxParamsStr (action ^. mxParams) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
           rqbodyStr (action ^. rqbody) ++
@@ -514,6 +525,22 @@ markdown api = unlines $
           []
         captureStr cap =
           "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
+
+        mxParamsStr :: [(String, [DocQueryParam])] -> [String]
+        mxParamsStr [] = []
+        mxParamsStr l =
+          "#### Matrix Parameters:" :
+          "" :
+          map segmentStr l ++
+          "" :
+          []
+        segmentStr :: (String, [DocQueryParam]) -> String
+        segmentStr (segment, l) = unlines $
+          ("**" ++ segment ++ "**:") :
+          "" :
+          map paramStr l ++
+          "" :
+          []
 
         headersStr :: [Text] -> [String]
         headersStr [] = []
@@ -684,6 +711,50 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs sublayout)
     where sublayoutP = Proxy :: Proxy sublayout
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
+
+
+instance (KnownSymbol sym, ToParam (MatrixParam sym a), HasDocs sublayout)
+      => HasDocs (MatrixParam sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          paramP = Proxy :: Proxy (MatrixParam sym a)
+          segment = endpoint ^. (path._last)
+          segment' = action ^. (mxParams._last._1)
+          endpoint' = over (path._last) (\p -> p ++ ";" ++ symbolVal symP ++ "=<value>") endpoint
+
+          action' = if segment' /= segment
+                    -- This is the first matrix parameter for this segment, insert a new entry into the mxParams list
+                    then over mxParams (|> (segment, [toParam paramP])) action
+                    -- We've already inserted a matrix parameter for this segment, append to the existing list
+                    else action & mxParams._last._2 <>~ [toParam paramP]
+          symP = Proxy :: Proxy sym
+
+
+instance (KnownSymbol sym, {- ToParam (MatrixParams sym a), -} HasDocs sublayout)
+      => HasDocs (MatrixParams sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action)
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          endpoint' = over path (\p -> p ++ [";" ++ symbolVal symP ++ "=<value>"]) endpoint
+          symP = Proxy :: Proxy sym
+
+
+instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
+      => HasDocs (MatrixFlag sym :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action)
+
+    where sublayoutP = Proxy :: Proxy sublayout
+
+          endpoint' = over path (\p -> p ++ [";" ++ symbolVal symP]) endpoint
+          symP = Proxy :: Proxy sym
+
 
 instance HasDocs Raw where
   docsFor _proxy (endpoint, action) =
