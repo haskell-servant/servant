@@ -15,7 +15,12 @@
 --
 -- @docs :: 'HasDocs' api => 'Proxy' api -> 'API'@
 --
--- You can then call 'markdown' on it:
+-- Alternately, if you wish to add one or more introductions to your
+-- documentation, use 'docsWithIntros':
+--
+-- @docsWithIntros :: 'HasDocs' api => [DocIntro] -> 'Proxy' api -> 'API'@
+--
+-- You can then call 'markdown' on the 'API' value:
 --
 -- @markdown :: 'API' -> String@
 --
@@ -30,61 +35,92 @@
 -- markdown pretty printer in action:
 --
 -- > {-# LANGUAGE DataKinds #-}
--- > {-# LANGUAGE PolyKinds #-}
--- > {-# LANGUAGE TypeFamilies #-}
 -- > {-# LANGUAGE DeriveGeneric #-}
 -- > {-# LANGUAGE TypeOperators #-}
 -- > {-# LANGUAGE FlexibleInstances #-}
 -- > {-# LANGUAGE OverloadedStrings #-}
--- >
+-- > {-# OPTIONS_GHC -fno-warn-orphans #-}
+-- > import Data.Aeson
 -- > import Data.Proxy
--- > import Data.Text
--- > import Servant
+-- > import Data.Text(Text)
+-- > import GHC.Generics
+-- > import Servant.API
+-- > import Servant.Docs
 -- >
--- > -- our type for a Greeting message
--- > data Greet = Greet { _msg :: Text }
+-- > -- * Example
+-- >
+-- > -- | A greet message data type
+-- > newtype Greet = Greet Text
 -- >   deriving (Generic, Show)
 -- >
--- > -- we get our JSON serialization for free
 -- > instance FromJSON Greet
 -- > instance ToJSON Greet
 -- >
--- > -- we provide a sample value for the 'Greet' type
--- > instance ToSample Greet where
--- >   toSample = Just g
--- >
--- >     where g = Greet "Hello, haskeller!"
--- >
--- > instance ToParam (QueryParam "capital" Bool) where
--- >   toParam _ =
--- >     DocQueryParam "capital"
--- >                   ["true", "false"]
--- >                   "Get the greeting message in uppercase (true) or not (false). Default is false."
--- >
+-- > -- We add some useful annotations to our captures,
+-- > -- query parameters and request body to make the docs
+-- > -- really helpful.
 -- > instance ToCapture (Capture "name" Text) where
 -- >   toCapture _ = DocCapture "name" "name of the person to greet"
 -- >
 -- > instance ToCapture (Capture "greetid" Text) where
 -- >   toCapture _ = DocCapture "greetid" "identifier of the greet msg to remove"
 -- >
+-- > instance ToParam (QueryParam "capital" Bool) where
+-- >   toParam _ =
+-- >     DocQueryParam "capital"
+-- >                   ["true", "false"]
+-- >                   "Get the greeting message in uppercase (true) or not (false).\
+-- >                   \Default is false."
+-- >                   Normal
+-- >
+-- > instance ToSample Greet where
+-- >   toSample = Just $ Greet "Hello, haskeller!"
+-- >
+-- >   toSamples =
+-- >     [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
+-- >     , ("If you use ?capital=false", Greet "Hello, haskeller")
+-- >     ]
+-- >
+-- > intro1 :: DocIntro
+-- > intro1 = DocIntro "On proper introductions." -- The title
+-- >     [ "Hello there."
+-- >     , "As documentation is usually written for humans, it's often useful \
+-- >       \to introduce concepts with a few words." ] -- Elements are paragraphs
+-- >
+-- > intro2 :: DocIntro
+-- > intro2 = DocIntro "This title is below the last"
+-- >     [ "You'll also note that multiple intros are possible." ]
+-- >
+-- >
 -- > -- API specification
 -- > type TestApi =
+-- >        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
 -- >        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
--- >   :<|> "greet" :> RQBody Greet :> Post Greet
--- >   :<|> "delete" :> Capture "greetid" Text :> Delete
+-- >
+-- >        -- POST /greet with a Greet as JSON in the request body,
+-- >        --             returns a Greet as JSON
+-- >   :<|> "greet" :> ReqBody Greet :> Post Greet
+-- >
+-- >        -- DELETE /greet/:greetid
+-- >   :<|> "greet" :> Capture "greetid" Text :> Delete
 -- >
 -- > testApi :: Proxy TestApi
 -- > testApi = Proxy
 -- >
--- > -- Generate the Documentation's ADT
--- > greetDocs :: API
--- > greetDocs = docs testApi
--- >
+-- > -- Generate the data that lets us have API docs. This
+-- > -- is derived from the type as well as from
+-- > -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
+-- > --
+-- > -- If you didn't want intros you could just call:
+-- > --
+-- > -- > docs testAPI
+-- > docsGreet :: API
+-- > docsGreet = docsWithIntros [intro1, intro2] testApi
 -- > main :: IO ()
--- > main = putStrLn $ markdown greetDocs
+-- > main = putStrLn $ markdown docsGreet
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, markdown
+    HasDocs(..), docs, docsWithIntros, markdown
 
   , -- * Classes you need to implement for your types
     ToSample(..)
@@ -92,7 +128,6 @@ module Servant.Docs
   , sampleByteStrings
   , ToParam(..)
   , ToCapture(..)
-  , ToIntro(..)
 
   , -- * ADTs to represent an 'API'
     Method(..)
@@ -101,7 +136,7 @@ module Servant.Docs
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
   , DocNote(..), noteTitle, noteBody
-  , DocIntro(..), Intro
+  , DocIntro(..)
   , Response, respStatus, respBody, defResponse
   , Action, captures, headers, notes, params, rqbody, response, defAction
   , single
@@ -204,22 +239,6 @@ instance Monoid API where
     API a1 b1 `mappend` API a2 b2 = API (a1 <> a2) (b1 <> b2)
     mempty = API mempty mempty
 
--- | A way for a developer to insert an introductory paragraph manually. This
--- is not to be used in server or client facing API types.
---
--- Example:
---
--- > type OurAPI = "users" :> Get [User]
--- > type IntroducedAPI = Intro "of human bondage" :> OurAPI
--- >
--- > instance ToIntro "of human bondage" where
--- >    toIntro = DocIntro "A title for the intro section"
--- >      [ "A blob of text that will be at the top."
--- >      , "List elements are paragraphs."
--- >      ]
---
-data Intro (name :: Symbol)
-
 -- | An empty 'API'
 emptyAPI :: API
 emptyAPI = mempty
@@ -245,9 +264,8 @@ data DocQueryParam = DocQueryParam
   , _paramKind   :: ParamKind
   } deriving (Eq, Show)
 
--- | An introductory paragraph for your documentation. You can attach these
--- with the 'Intro' type.
---
+-- | An introductory paragraph for your documentation. You can pass these to
+-- 'docsWithIntros'.
 data DocIntro = DocIntro
   { _introTitle :: String   -- ^ Appears above the intro blob
   , _introBody  :: [String] -- ^ Each String is a paragraph.
@@ -356,9 +374,15 @@ makeLenses ''DocNote
 makeLenses ''Response
 makeLenses ''Action
 
--- | Generate the docs for a given API that implements 'HasDocs'.
+-- | Generate the docs for a given API that implements 'HasDocs'. This is the
+-- default way to create documentation.
 docs :: HasDocs layout => Proxy layout -> API
 docs p = docsFor p (defEndpoint, defAction)
+
+-- | Generate the docs for a given API that implements 'HasDocs' with with any
+-- number of introduction(s)
+docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
+docsWithIntros intros p = docs p & apiIntros <>~ intros
 
 -- | The class that abstracts away the impact of API combinators
 --   on documentation generation.
@@ -435,14 +459,6 @@ class ToParam t where
 -- >   toCapture _ = DocCapture "name" "name of the person to greet"
 class ToCapture c where
   toCapture :: Proxy c -> DocCapture
-
--- | The class to define the contents of an 'Intro'
--- Example of an instance:
---
--- > instance ToIntro "an intro" where
--- >   toIntro _ = DocIntro "This is some text"
-class ToIntro (intro :: Symbol) where
-    toIntro :: Proxy intro -> DocIntro
 
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
@@ -692,15 +708,6 @@ instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) wh
     where sublayoutP = Proxy :: Proxy sublayout
           endpoint' = endpoint & path <>~ [symbolVal pa]
           pa = Proxy :: Proxy path
-
-instance (KnownSymbol intro, HasDocs sublayout, ToIntro intro)
-      => HasDocs (Intro intro :> sublayout) where
-
-  docsFor Proxy x =
-    docsFor sublayoutP x & apiIntros %~ (toIntro intro <|)
-    where sublayoutP = Proxy :: Proxy sublayout
-          intro :: Proxy intro
-          intro = Proxy
 
 {-
 

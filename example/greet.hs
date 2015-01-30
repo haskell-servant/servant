@@ -14,7 +14,7 @@ import Servant.Docs
 -- * Example
 
 -- | A greet message data type
-newtype Greet = Greet { msg :: Text }
+newtype Greet = Greet Text
   deriving (Generic, Show)
 
 instance FromJSON Greet
@@ -33,7 +33,8 @@ instance ToParam (QueryParam "capital" Bool) where
   toParam _ =
     DocQueryParam "capital"
                   ["true", "false"]
-                  "Get the greeting message in uppercase (true) or not (false). Default is false."
+                  "Get the greeting message in uppercase (true) or not (false).\
+                  \Default is false."
                   Normal
 
 instance ToSample Greet where
@@ -44,14 +45,14 @@ instance ToSample Greet where
     , ("If you use ?capital=false", Greet "Hello, haskeller")
     ]
 
-instance ToIntro "on proper introductions" where
-  toIntro _ = DocIntro "On proper introductions." -- The title
+intro1 :: DocIntro
+intro1 = DocIntro "On proper introductions." -- The title
     [ "Hello there."
     , "As documentation is usually written for humans, it's often useful \
       \to introduce concepts with a few words." ] -- Elements are paragraphs
 
-instance ToIntro "on zebras" where
-  toIntro _ = DocIntro "This title is below the last"
+intro2 :: DocIntro
+intro2 = DocIntro "This title is below the last"
     [ "You'll also note that multiple intros are possible." ]
 
 
@@ -67,17 +68,18 @@ type TestApi =
        -- DELETE /greet/:greetid
   :<|> "greet" :> Capture "greetid" Text :> Delete
 
-type IntroducedApi =
-    Intro "on proper introductions" :> Intro "on zebras" :> TestApi
-
-introducedApi :: Proxy IntroducedApi
-introducedApi = Proxy
+testApi :: Proxy TestApi
+testApi = Proxy
 
 -- Generate the data that lets us have API docs. This
 -- is derived from the type as well as from
 -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
+--
+-- If you didn't want intros you could just call:
+--
+-- > docs testAPI
 docsGreet :: API
-docsGreet = docs introducedApi
+docsGreet = docsWithIntros [intro1, intro2] testApi
 
 main :: IO ()
 main = putStrLn $ markdown docsGreet
