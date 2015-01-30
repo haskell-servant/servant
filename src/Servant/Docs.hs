@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
@@ -14,7 +15,12 @@
 --
 -- @docs :: 'HasDocs' api => 'Proxy' api -> 'API'@
 --
--- You can then call 'markdown' on it:
+-- Alternately, if you wish to add one or more introductions to your
+-- documentation, use 'docsWithIntros':
+--
+-- @docsWithIntros :: 'HasDocs' api => [DocIntro] -> 'Proxy' api -> 'API'@
+--
+-- You can then call 'markdown' on the 'API' value:
 --
 -- @markdown :: 'API' -> String@
 --
@@ -29,61 +35,100 @@
 -- markdown pretty printer in action:
 --
 -- > {-# LANGUAGE DataKinds #-}
--- > {-# LANGUAGE PolyKinds #-}
--- > {-# LANGUAGE TypeFamilies #-}
 -- > {-# LANGUAGE DeriveGeneric #-}
 -- > {-# LANGUAGE TypeOperators #-}
 -- > {-# LANGUAGE FlexibleInstances #-}
 -- > {-# LANGUAGE OverloadedStrings #-}
--- >
+-- > {-# OPTIONS_GHC -fno-warn-orphans #-}
+-- > import Data.Aeson
 -- > import Data.Proxy
--- > import Data.Text
--- > import Servant
+-- > import Data.Text(Text)
+-- > import GHC.Generics
+-- > import Servant.API
+-- > import Servant.Docs
 -- >
--- > -- our type for a Greeting message
--- > data Greet = Greet { _msg :: Text }
+-- > -- * Example
+-- >
+-- > -- | A greet message data type
+-- > newtype Greet = Greet Text
 -- >   deriving (Generic, Show)
 -- >
--- > -- we get our JSON serialization for free
 -- > instance FromJSON Greet
 -- > instance ToJSON Greet
 -- >
--- > -- we provide a sample value for the 'Greet' type
--- > instance ToSample Greet where
--- >   toSample = Just g
--- >
--- >     where g = Greet "Hello, haskeller!"
--- >
--- > instance ToParam (QueryParam "capital" Bool) where
--- >   toParam _ =
--- >     DocQueryParam "capital"
--- >                   ["true", "false"]
--- >                   "Get the greeting message in uppercase (true) or not (false). Default is false."
--- >
+-- > -- We add some useful annotations to our captures,
+-- > -- query parameters and request body to make the docs
+-- > -- really helpful.
 -- > instance ToCapture (Capture "name" Text) where
 -- >   toCapture _ = DocCapture "name" "name of the person to greet"
 -- >
 -- > instance ToCapture (Capture "greetid" Text) where
 -- >   toCapture _ = DocCapture "greetid" "identifier of the greet msg to remove"
 -- >
+-- > instance ToParam (QueryParam "capital" Bool) where
+-- >   toParam _ =
+-- >     DocQueryParam "capital"
+-- >                   ["true", "false"]
+-- >                   "Get the greeting message in uppercase (true) or not (false).\
+-- >                   \Default is false."
+-- >                   Normal
+-- >
+-- > instance ToParam (MatrixParam "lang" String) where
+-- >   toParam _ =
+-- >     DocQueryParam "lang"
+-- >                   ["en", "sv", "fr"]
+-- >                   "Get the greeting message selected language. Default is en."
+-- >                   Normal
+-- >
+-- > instance ToSample Greet where
+-- >   toSample = Just $ Greet "Hello, haskeller!"
+-- >
+-- >   toSamples =
+-- >     [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
+-- >     , ("If you use ?capital=false", Greet "Hello, haskeller")
+-- >     ]
+-- >
+-- > intro1 :: DocIntro
+-- > intro1 = DocIntro "On proper introductions." -- The title
+-- >     [ "Hello there."
+-- >     , "As documentation is usually written for humans, it's often useful \
+-- >       \to introduce concepts with a few words." ] -- Elements are paragraphs
+-- >
+-- > intro2 :: DocIntro
+-- > intro2 = DocIntro "This title is below the last"
+-- >     [ "You'll also note that multiple intros are possible." ]
+-- >
+-- >
 -- > -- API specification
 -- > type TestApi =
--- >        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
--- >   :<|> "greet" :> RQBody Greet :> Post Greet
--- >   :<|> "delete" :> Capture "greetid" Text :> Delete
+-- >        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
+-- >        "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
+-- >
+-- >        -- POST /greet with a Greet as JSON in the request body,
+-- >        --             returns a Greet as JSON
+-- >   :<|> "greet" :> ReqBody Greet :> Post Greet
+-- >
+-- >        -- DELETE /greet/:greetid
+-- >   :<|> "greet" :> Capture "greetid" Text :> Delete
 -- >
 -- > testApi :: Proxy TestApi
 -- > testApi = Proxy
 -- >
--- > -- Generate the Documentation's ADT
--- > greetDocs :: API
--- > greetDocs = docs testApi
+-- > -- Generate the data that lets us have API docs. This
+-- > -- is derived from the type as well as from
+-- > -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
+-- > --
+-- > -- If you didn't want intros you could just call:
+-- > --
+-- > -- > docs testAPI
+-- > docsGreet :: API
+-- > docsGreet = docsWithIntros [intro1, intro2] testApi
 -- >
 -- > main :: IO ()
--- > main = putStrLn $ markdown greetDocs
+-- > main = putStrLn $ markdown docsGreet
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, markdown
+    HasDocs(..), docs, docsWithIntros, markdown
 
   , -- * Classes you need to implement for your types
     ToSample(..)
@@ -98,8 +143,10 @@ module Servant.Docs
   , API, emptyAPI
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
+  , DocNote(..), noteTitle, noteBody
+  , DocIntro(..)
   , Response, respStatus, respBody, defResponse
-  , Action, captures, headers, params, rqbody, response, defAction
+  , Action, captures, headers, notes, params, rqbody, response, defAction
   , single
 
   , -- * Useful modules when defining your doc printers
@@ -110,6 +157,7 @@ module Servant.Docs
 import Control.Lens hiding (Action)
 import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Ord(comparing)
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.Hashable
 import Data.HashMap.Strict (HashMap)
@@ -188,12 +236,20 @@ defEndpoint = Endpoint [] DocGET
 
 instance Hashable Endpoint
 
--- | Our API type, a good old hashmap from 'Endpoint' to 'Action'
-type API = HashMap Endpoint Action
+-- | Our API documentation type, a product of top-level information and a good
+-- old hashmap from 'Endpoint' to 'Action'
+data API = API
+  { _apiIntros    :: [DocIntro]
+  , _apiEndpoints :: HashMap Endpoint Action
+  } deriving (Eq, Show)
+
+instance Monoid API where
+    API a1 b1 `mappend` API a2 b2 = API (a1 <> a2) (b1 <> b2)
+    mempty = API mempty mempty
 
 -- | An empty 'API'
 emptyAPI :: API
-emptyAPI = HM.empty
+emptyAPI = mempty
 
 -- | A type to represent captures. Holds the name of the capture
 --   and a description.
@@ -216,6 +272,24 @@ data DocQueryParam = DocQueryParam
   , _paramKind   :: ParamKind
   } deriving (Eq, Show)
 
+-- | An introductory paragraph for your documentation. You can pass these to
+-- 'docsWithIntros'.
+data DocIntro = DocIntro
+  { _introTitle :: String   -- ^ Appears above the intro blob
+  , _introBody  :: [String] -- ^ Each String is a paragraph.
+  } deriving (Eq, Show)
+
+instance Ord DocIntro where
+    compare = comparing _introTitle
+
+-- | A type to represent extra notes that may be attached to an 'Action'.
+--
+-- This is intended to be used when writing your own HasDocs instances to
+-- add extra sections to your endpoint's documentation.
+data DocNote = DocNote
+  { _noteTitle :: String
+  , _noteBody  :: [String]
+  } deriving (Eq, Show)
 
 -- | Type of GET parameter:
 --
@@ -269,6 +343,7 @@ data Action = Action
   { _captures :: [DocCapture]                 -- type collected + user supplied info
   , _headers  :: [Text]                       -- type collected
   , _params   :: [DocQueryParam]              -- type collected + user supplied info
+  , _notes    :: [DocNote]           -- user supplied
   , _mxParams :: [(String, [DocQueryParam])]  -- type collected + user supplied info
   , _rqbody   :: Maybe ByteString             -- user supplied
   , _response :: Response                     -- user supplied
@@ -289,6 +364,7 @@ defAction =
          []
          []
          []
+         []
          Nothing
          defResponse
 
@@ -296,18 +372,27 @@ defAction =
 --   'API' is a 'Monoid', so combine multiple endpoints with
 --   'mappend' or '<>'.
 single :: Endpoint -> Action -> API
-single = HM.singleton
+single e a = API mempty (HM.singleton e a)
 
 -- gimme some lenses
+makeLenses ''API
 makeLenses ''Endpoint
 makeLenses ''DocCapture
 makeLenses ''DocQueryParam
+makeLenses ''DocIntro
+makeLenses ''DocNote
 makeLenses ''Response
 makeLenses ''Action
 
--- | Generate the docs for a given API that implements 'HasDocs'.
+-- | Generate the docs for a given API that implements 'HasDocs'. This is the
+-- default way to create documentation.
 docs :: HasDocs layout => Proxy layout -> API
 docs p = docsFor p (defEndpoint, defAction)
+
+-- | Generate the docs for a given API that implements 'HasDocs' with with any
+-- number of introduction(s)
+docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
+docsWithIntros intros p = docs p & apiIntros <>~ intros
 
 -- | The class that abstracts away the impact of API combinators
 --   on documentation generation.
@@ -388,13 +473,15 @@ class ToCapture c where
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
-markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
+markdown api = unlines $
+       introsStr (api ^. apiIntros)
+    ++ (concatMap (uncurry printEndpoint) . HM.toList $ api ^. apiEndpoints)
 
   where printEndpoint :: Endpoint -> Action -> [String]
         printEndpoint endpoint action =
           str :
-          replicate len '-' :
           "" :
+          notesStr (action ^. notes) ++
           capturesStr (action ^. captures) ++
           mxParamsStr (action ^. mxParams) ++
           headersStr (action ^. headers) ++
@@ -403,13 +490,35 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
           responseStr (action ^. response) ++
           []
 
-          where str = show (endpoint^.method) ++ " " ++ showPath (endpoint^.path)
-                len = length str
+          where str = "## " ++ show (endpoint^.method)
+                    ++ " " ++ showPath (endpoint^.path)
+
+        introsStr :: [DocIntro] -> [String]
+        introsStr = concatMap introStr
+
+        introStr :: DocIntro -> [String]
+        introStr i =
+            ("#### " ++ i ^. introTitle) :
+            "" :
+            intersperse ""  (i ^. introBody) ++
+            "" :
+            []
+
+        notesStr :: [DocNote] -> [String]
+        notesStr = concatMap noteStr
+
+        noteStr :: DocNote -> [String]
+        noteStr nt =
+            ("#### " ++ nt ^. noteTitle) :
+            "" :
+            intersperse "" (nt ^. noteBody) ++
+            "" :
+            []
 
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
         capturesStr l =
-          "**Captures**: " :
+          "#### Captures:" :
           "" :
           map captureStr l ++
           "" :
@@ -420,14 +529,14 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
         mxParamsStr :: [(String, [DocQueryParam])] -> [String]
         mxParamsStr [] = []
         mxParamsStr l =
-          "**Matrix Parameters**: " :
+          "#### Matrix Parameters:" :
           "" :
           map segmentStr l ++
           "" :
           []
         segmentStr :: (String, [DocQueryParam]) -> String
         segmentStr (segment, l) = unlines $
-          ("**" ++ segment ++ "**: ") :
+          ("**" ++ segment ++ "**:") :
           "" :
           map paramStr l ++
           "" :
@@ -443,7 +552,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
         paramsStr :: [DocQueryParam] -> [String]
         paramsStr [] = []
         paramsStr l =
-          "**GET Parameters**: " :
+          "#### GET Parameters:" :
           "" :
           map paramStr l ++
           "" :
@@ -468,7 +577,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
         rqbodyStr :: Maybe ByteString -> [String]
         rqbodyStr Nothing = []
         rqbodyStr (Just b) =
-          "**Request Body**: " :
+          "#### Request Body:" :
           jsonStr b
 
         jsonStr b =
@@ -481,7 +590,7 @@ markdown = unlines . concat . map (uncurry printEndpoint) . HM.toList
 
         responseStr :: Response -> [String]
         responseStr resp =
-          "**Response**: " :
+          "#### Response:" :
           "" :
           (" - Status code " ++ show (resp ^. respStatus)) :
           bodies

@@ -6,7 +6,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 import Data.Aeson
 import Data.Proxy
-import Data.Text
+import Data.Text(Text)
 import GHC.Generics
 import Servant.API
 import Servant.Docs
@@ -14,7 +14,7 @@ import Servant.Docs
 -- * Example
 
 -- | A greet message data type
-newtype Greet = Greet { msg :: Text }
+newtype Greet = Greet Text
   deriving (Generic, Show)
 
 instance FromJSON Greet
@@ -33,7 +33,8 @@ instance ToParam (QueryParam "capital" Bool) where
   toParam _ =
     DocQueryParam "capital"
                   ["true", "false"]
-                  "Get the greeting message in uppercase (true) or not (false). Default is false."
+                  "Get the greeting message in uppercase (true) or not (false).\
+                  \Default is false."
                   Normal
 
 instance ToParam (MatrixParam "lang" String) where
@@ -50,6 +51,17 @@ instance ToSample Greet where
     [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
     , ("If you use ?capital=false", Greet "Hello, haskeller")
     ]
+
+intro1 :: DocIntro
+intro1 = DocIntro "On proper introductions." -- The title
+    [ "Hello there."
+    , "As documentation is usually written for humans, it's often useful \
+      \to introduce concepts with a few words." ] -- Elements are paragraphs
+
+intro2 :: DocIntro
+intro2 = DocIntro "This title is below the last"
+    [ "You'll also note that multiple intros are possible." ]
+
 
 -- API specification
 type TestApi =
@@ -69,8 +81,12 @@ testApi = Proxy
 -- Generate the data that lets us have API docs. This
 -- is derived from the type as well as from
 -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
+--
+-- If you didn't want intros you could just call:
+--
+-- > docs testAPI
 docsGreet :: API
-docsGreet = docs testApi
+docsGreet = docsWithIntros [intro1, intro2] testApi
 
 main :: IO ()
 main = putStrLn $ markdown docsGreet
