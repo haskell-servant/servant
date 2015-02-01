@@ -45,6 +45,7 @@ alice = Person "Alice" 42
 
 type Api =
        "get" :> Get Person
+  :<|> "delete" :> Delete
   :<|> "capture" :> Capture "name" String :> Get Person
   :<|> "body" :> ReqBody Person :> Post Person
   :<|> "param" :> QueryParam "name" String :> Get Person
@@ -67,6 +68,7 @@ api = Proxy
 server :: Application
 server = serve api (
        return alice
+  :<|> return ()
   :<|> (\ name -> return $ Person name 0)
   :<|> return
   :<|> (\ name -> case name of
@@ -90,6 +92,7 @@ withServer :: (BaseUrl -> IO a) -> IO a
 withServer action = withWaiDaemon (return server) action
 
 getGet :: BaseUrl -> EitherT String IO Person
+getDelete :: BaseUrl -> EitherT String IO ()
 getCapture :: String -> BaseUrl -> EitherT String IO Person
 getBody :: Person -> BaseUrl -> EitherT String IO Person
 getQueryParam :: Maybe String -> BaseUrl -> EitherT String IO Person
@@ -104,6 +107,7 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> BaseUrl
   -> EitherT String IO (String, Maybe Int, Bool, [(String, [Rational])])
 (     getGet
+ :<|> getDelete
  :<|> getCapture
  :<|> getBody
  :<|> getQueryParam
@@ -121,6 +125,9 @@ spec :: Spec
 spec = do
   it "Servant.API.Get" $ withServer $ \ host -> do
     runEitherT (getGet host) `shouldReturn` Right alice
+
+  it "Servant.API.Delete" $ withServer $ \ host -> do
+    runEitherT (getDelete host) `shouldReturn` Right ()
 
   it "Servant.API.Capture" $ withServer $ \ host -> do
     runEitherT (getCapture "Paula" host) `shouldReturn` Right (Person "Paula" 0)
