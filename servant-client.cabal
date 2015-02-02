@@ -44,6 +44,7 @@ library
     , either
     , exceptions
     , http-client
+    , http-client-tls
     , http-types
     , network-uri >= 2.6
     , safe

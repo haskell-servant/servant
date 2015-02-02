@@ -253,3 +253,4 @@ pathGen = listOf $ elements $
   filter (not . (`elem` "?%[]/#")) $
   filter isPrint $
   map chr [0..127]
+ 
