@@ -174,12 +174,12 @@ spec = do
 
   modifyMaxSuccess (const 20) $ do
     it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $
-      property $ forAllShrink pathGen shrink $ \ a -> \ b c d ->
+      property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
         ioProperty $ do
           withServer $ \ host -> do
-            result <- runEitherT (getMultiple a b c d host)
+            result <- runEitherT (getMultiple cap num flag body host)
             return $
-              result === Right (a, b, c, d)
+              result === Right (cap, num, flag, body)
 
 
   context "client correctly handles error status codes" $ do
@@ -248,9 +248,11 @@ openTestSocket = do
   port <- socketPort s
   return (fromIntegral port, s)
 
-pathGen :: Gen String
-pathGen = listOf $ elements $
-  filter (not . (`elem` "?%[]/#")) $
-  filter isPrint $
-  map chr [0..127]
+pathGen :: Gen (NonEmptyList Char)
+pathGen = fmap NonEmpty path
+ where
+  path = listOf1 $ elements $
+    filter (not . (`elem` "?%[]/#;")) $
+    filter isPrint $
+    map chr [0..127]
  
