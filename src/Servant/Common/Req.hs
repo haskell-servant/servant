@@ -85,7 +85,7 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
         setheaders r = r { requestHeaders = Prelude.map toProperHeader (headers req) }
 
         toProperHeader (name, val) =
-          (fromString name, encodeUtf8 val) 
+          (fromString name, encodeUtf8 val)
 
 
 -- * performing requests
