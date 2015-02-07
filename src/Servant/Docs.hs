@@ -8,6 +8,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PolyKinds #-}
 
 -------------------------------------------------------------------------------
 -- | This module lets you get API docs for free. It lets generate
@@ -128,7 +131,9 @@
 -- > main = putStrLn $ markdown docsGreet
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, docsWithIntros, markdown
+    HasDocs(..), docs, markdown
+    -- * Generating docs with extra information
+  , ExtraInfo(..), docsWith, docsWithIntros, safeInfo
 
   , -- * Classes you need to implement for your types
     ToSample(..)
@@ -169,7 +174,9 @@ import Data.Text (Text, pack, unpack)
 import Data.String.Conversions
 import GHC.Generics
 import GHC.TypeLits
+import GHC.Exts(Constraint)
 import Servant.API
+import Servant.Utils.Links
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text           as T
@@ -343,11 +350,20 @@ data Action = Action
   { _captures :: [DocCapture]                 -- type collected + user supplied info
   , _headers  :: [Text]                       -- type collected
   , _params   :: [DocQueryParam]              -- type collected + user supplied info
-  , _notes    :: [DocNote]           -- user supplied
   , _mxParams :: [(String, [DocQueryParam])]  -- type collected + user supplied info
+  , _notes    :: [DocNote]                    -- user supplied
   , _rqbody   :: Maybe ByteString             -- user supplied
   , _response :: Response                     -- user supplied
   } deriving (Eq, Show)
+
+-- | Combine two Actions, we can't make a monoid as merging Response breaks the
+-- laws.
+--
+-- As such, we invent a non-commutative, left associative operation
+-- 'combineAction' to mush two together taking the response from the very left.
+combineAction :: Action -> Action -> Action
+Action c h p m n r resp `combineAction` Action c' h' p' m' n' r' _ =
+        Action (c <> c') (h <> h') (p <> p') (m <> m') (n <> n') (r <> r') resp
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -389,10 +405,51 @@ makeLenses ''Action
 docs :: HasDocs layout => Proxy layout -> API
 docs p = docsFor p (defEndpoint, defAction)
 
+
+newtype ExtraInfo layout = ExtraInfo (HashMap Endpoint Action)
+instance Monoid (ExtraInfo a) where
+    mempty = ExtraInfo mempty
+    ExtraInfo a `mappend` ExtraInfo b =
+        ExtraInfo $ HM.unionWith combineAction a b
+
+-- | Closed type family, check if endpoint is exactly within API.
+
+-- We aren't sure what affects how an Endpoint is built up, so we require an
+-- exact match.
+type family IsIn (endpoint :: *) (api :: *) :: Constraint where
+    IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
+    IsIn (e :> sa) (e :> sb)           = IsIn sa sb
+    IsIn e e                           = ()
+
+
+safeInfo :: (IsIn endpoint layout, HasLink endpoint, HasDocs endpoint)
+         => Proxy endpoint -> Action -> ExtraInfo layout
+safeInfo p action =
+    let api = docsFor p (defEndpoint, defAction)
+    -- Assume one endpoint, HasLink constraint means that we should only ever
+    -- point at one endpoint.
+    in ExtraInfo $ api ^. apiEndpoints & traversed .~ action
+
+-- | Generate documentation given some initial state, in which you may wish to
+-- note that certain endpoints are special in some way.
+--
+-- If you only want to add an introduction, use 'docsWithIntros'.
+--
+-- You are expected to build up the SafeMap with safeEntry
+docsWith :: HasDocs layout
+         => [DocIntro]
+         -> ExtraInfo layout
+         -> Proxy layout
+         -> API
+docsWith intros (ExtraInfo endpoints) p =
+    docs p & apiIntros <>~ intros
+           & apiEndpoints %~ HM.unionWith combineAction endpoints
+
+
 -- | Generate the docs for a given API that implements 'HasDocs' with with any
 -- number of introduction(s)
 docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
-docsWithIntros intros p = docs p & apiIntros <>~ intros
+docsWithIntros intros = docsWith intros mempty
 
 -- | The class that abstracts away the impact of API combinators
 --   on documentation generation.

@@ -78,6 +78,14 @@ type TestApi =
 testApi :: Proxy TestApi
 testApi = Proxy
 
+extras :: ExtraInfo TestApi
+extras =
+    safeInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+             defAction & headers <>~ ["unicorns"]
+                       & notes   <>~ [ DocNote "Title" ["This is some text"]
+                                     , DocNote "Second secton" ["And some more"]
+                                     ]
+
 -- Generate the data that lets us have API docs. This
 -- is derived from the type as well as from
 -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
@@ -86,7 +94,7 @@ testApi = Proxy
 --
 -- > docs testAPI
 docsGreet :: API
-docsGreet = docsWithIntros [intro1, intro2] testApi
+docsGreet = docsWith [intro1, intro2] extras testApi
 
 main :: IO ()
 main = putStrLn $ markdown docsGreet
