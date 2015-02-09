@@ -4,7 +4,7 @@
 
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
-This library lets you derive automatically Haskell functions that let you query each endpoint of a *servant* webservice.
+This library lets you automatically derive Haskell functions that let you query each endpoint of a *servant* webservice.
 
 ## Example
 
