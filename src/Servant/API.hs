@@ -27,6 +27,8 @@ module Servant.API (
   module Servant.API.Delete,
   -- | PUT requests
   module Servant.API.Put,
+  -- | PATCH requests
+  module Servant.API.Patch,
 
   -- * Untyped endpoints
   -- | Plugging in a wai 'Network.Wai.Application', serving directories
@@ -46,6 +48,7 @@ import Servant.API.Get ( Get )
 import Servant.API.Header ( Header )
 import Servant.API.Post ( Post )
 import Servant.API.Put ( Put )
+import Servant.API.Patch ( Patch )
 import Servant.API.QueryParam ( QueryFlag, QueryParams, QueryParam )
 import Servant.API.MatrixParam ( MatrixFlag, MatrixParams, MatrixParam )
 import Servant.API.Raw ( Raw )
