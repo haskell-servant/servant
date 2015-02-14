@@ -16,18 +16,18 @@ import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.List (unfoldr)
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Monoid (Monoid, mempty, mappend)
-import Data.Proxy (Proxy(Proxy))
 import Data.String (fromString)
 import Data.String.Conversions (cs, (<>))
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Typeable
 import GHC.TypeLits (KnownSymbol, symbolVal)
 import Network.HTTP.Types hiding (Header)
 import Network.Wai (Response, Request, ResponseReceived, Application, pathInfo, requestBody,
                     strictRequestBody, lazyRequestBody, requestHeaders, requestMethod,
                     rawQueryString, responseLBS)
-import Servant.API (QueryParams, QueryParam, QueryFlag, MatrixParams, MatrixParam, MatrixFlag, ReqBody, Header, Capture, Get, Delete, Put, Post, Raw, (:>), (:<|>)(..))
+import Servant.API (QueryParams, QueryParam, QueryFlag, MatrixParams, MatrixParam, MatrixFlag, ReqBody, Header, Capture, Get, Delete, Put, Post, Patch, Raw, (:>), (:<|>)(..))
 import Servant.Common.Text (FromText, fromText)
 
 data ReqBodyState = Uncalled
@@ -361,6 +361,33 @@ instance ToJSON a => HasServer (Put a) where
     | pathIsEmpty request && requestMethod request /= methodPut =
         respond $ failWith WrongMethod
 
+    | otherwise = respond $ failWith NotFound
+
+-- | When implementing the handler for a 'Patch' endpoint,
+-- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
+-- and 'Servant.API.Put.Put', the handler code runs in the
+-- @EitherT (Int, String) IO@ monad, where the 'Int' represents
+-- the status code and the 'String' a message, returned in case of
+-- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
+-- to quickly fail if some conditions are not met.
+--
+-- If successfully returning a value, we just require that its type has
+-- a 'ToJSON' instance and servant takes care of encoding it for you,
+-- yielding status code 201 along the way.
+instance (Typeable a, ToJSON a) => HasServer (Patch a) where
+  type Server (Patch a) = EitherT (Int, String) IO a
+
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPost = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right out -> case cast out of
+              Nothing -> responseLBS status200 [("Content-Type", "application/json")] (encode out) 
+              Just () -> responseLBS status204 [] ""
+          Left (status, message) ->
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPost =
+        respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
