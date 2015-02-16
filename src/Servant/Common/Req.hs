@@ -142,7 +142,9 @@ performRequest reqMethod req isWantedStatus reqHost = do
 performRequestJSON :: FromJSON result =>
   Method -> Req -> Int -> BaseUrl -> EitherT String IO result
 performRequestJSON reqMethod req wantedStatus reqHost = do
-  (_status, respBody, _) <- performRequest reqMethod req (== wantedStatus) reqHost
+  (_status, respBody, contentType) <- performRequest reqMethod req (== wantedStatus) reqHost
+  unless (matches contentType ("application"//"json")) $
+    left $ "requested Content-Type application/json, but got " <> show contentType
   either
     (\ message -> left (displayHttpRequest reqMethod ++ " returned invalid json: " ++ message))
     return
