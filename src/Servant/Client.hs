@@ -22,6 +22,7 @@ import Data.Proxy
 import Data.String.Conversions
 import Data.Text (unpack)
 import GHC.TypeLits
+import Network.HTTP.Media
 import qualified Network.HTTP.Types as H
 import Servant.API
 import Servant.Common.BaseUrl
@@ -443,7 +444,7 @@ instance (ToJSON a, HasClient sublayout)
 
   clientWithRoute Proxy req body =
     clientWithRoute (Proxy :: Proxy sublayout) $
-      setRQBody (encode body) req
+      setRQBody (encode body) ("application" // "json" /: ("charset", "utf-8")) req
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where

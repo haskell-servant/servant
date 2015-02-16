@@ -14,12 +14,14 @@ import Data.Aeson.Parser
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
 import Data.ByteString.Lazy hiding (pack)
+import qualified Data.ByteString.Char8 as BS
 import Data.String
 import Data.String.Conversions
 import Data.Text
 import Data.Text.Encoding
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
+import Network.HTTP.Media
 import Network.HTTP.Types
 import Network.URI
 import Servant.Common.BaseUrl
@@ -31,12 +33,12 @@ import qualified Network.HTTP.Client as Client
 data Req = Req
   { reqPath  :: String
   , qs       :: QueryText
-  , reqBody  :: ByteString
+  , reqBody  :: Maybe (ByteString, MediaType)
   , headers  :: [(String, Text)]
   }
 
 defReq :: Req
-defReq = Req "" [] "" []
+defReq = Req "" [] Nothing []
 
 appendToPath :: String -> Req -> Req
 appendToPath p req =
@@ -62,8 +64,8 @@ addHeader name val req = req { headers = headers req
                                       ++ [(name, toText val)]
                              }
 
-setRQBody :: ByteString -> Req -> Req
-setRQBody b req = req { reqBody = b }
+setRQBody :: ByteString -> MediaType -> Req -> Req
+setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
@@ -80,9 +82,13 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
                              , uriPath = reqPath req
                              }
 
-        setrqb r = r { requestBody = RequestBodyLBS (reqBody req) }
+        setrqb r = case (reqBody req) of
+                     Nothing -> r
+                     Just (b,t) -> r { requestBody = RequestBodyLBS b
+                                     , requestHeaders = [(hContentType, BS.pack . show $ t)] }
         setQS = setQueryString $ queryTextToQuery (qs req)
-        setheaders r = r { requestHeaders = Prelude.map toProperHeader (headers req) }
+        setheaders r = r { requestHeaders = requestHeaders r
+                                         ++ Prelude.map toProperHeader (headers req) }
 
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)

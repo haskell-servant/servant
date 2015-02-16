@@ -45,6 +45,7 @@ library
     , exceptions
     , http-client
     , http-client-tls
+    , http-media
     , http-types
     , network-uri >= 2.6
     , safe
