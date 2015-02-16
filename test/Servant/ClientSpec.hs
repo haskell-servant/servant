@@ -17,6 +17,7 @@ import Data.Foldable (forM_)
 import Data.Proxy
 import Data.Typeable
 import GHC.Generics
+import Network.HTTP.Media
 import Network.HTTP.Types
 import Network.Socket
 import Network.Wai
@@ -101,8 +102,8 @@ getQueryFlag :: Bool -> BaseUrl -> EitherT String IO Bool
 getMatrixParam :: Maybe String -> BaseUrl -> EitherT String IO Person
 getMatrixParams :: [String] -> BaseUrl -> EitherT String IO [Person]
 getMatrixFlag :: Bool -> BaseUrl -> EitherT String IO Bool
-getRawSuccess :: Method -> BaseUrl -> EitherT String IO (Int, ByteString)
-getRawFailure :: Method -> BaseUrl -> EitherT String IO (Int, ByteString)
+getRawSuccess :: Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
+getRawFailure :: Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> BaseUrl
   -> EitherT String IO (String, Maybe Int, Bool, [(String, [Rational])])
@@ -167,10 +168,10 @@ spec = do
       runEitherT (getMatrixFlag flag host) `shouldReturn` Right flag
 
   it "Servant.API.Raw on success" $ withServer $ \ host -> do
-    runEitherT (getRawSuccess methodGet host) `shouldReturn` Right (200, "rawSuccess")
+    runEitherT (getRawSuccess methodGet host) `shouldReturn` Right (200, "rawSuccess", "application"//"octet-stream")
 
   it "Servant.API.Raw on failure" $ withServer $ \ host -> do
-    runEitherT (getRawFailure methodGet host) `shouldReturn` Right (400, "rawFailure")
+    runEitherT (getRawFailure methodGet host) `shouldReturn` Right (400, "rawFailure", "application"//"octet-stream")
 
   modifyMaxSuccess (const 20) $ do
     it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $

@@ -14,7 +14,6 @@ import Data.Aeson.Parser
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
 import Data.ByteString.Lazy hiding (pack)
-import qualified Data.ByteString.Char8 as BS
 import Data.String
 import Data.String.Conversions
 import Data.Text
@@ -85,7 +84,7 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
         setrqb r = case (reqBody req) of
                      Nothing -> r
                      Just (b,t) -> r { requestBody = RequestBodyLBS b
-                                     , requestHeaders = [(hContentType, BS.pack . show $ t)] }
+                                     , requestHeaders = [(hContentType, cs . show $ t)] }
         setQS = setQueryString $ queryTextToQuery (qs req)
         setheaders r = r { requestHeaders = requestHeaders r
                                          ++ Prelude.map toProperHeader (headers req) }
@@ -110,7 +109,7 @@ displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
 
-performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO (Int, ByteString)
+performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
 performRequest reqMethod req isWantedStatus reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
@@ -129,7 +128,12 @@ performRequest reqMethod req isWantedStatus reqHost = do
       let status = Client.responseStatus response
       unless (isWantedStatus (statusCode status)) $
         left (displayHttpRequest reqMethod ++ " failed with status: " ++ showStatus status)
-      return $ (statusCode status, Client.responseBody response)
+      ct <- case lookup "Content-Type" $ Client.responseHeaders response of
+                 Nothing -> pure $ "application"//"octet-stream"
+                 Just t -> case parseAccept t of
+                   Nothing -> left $ "invalid Content-Type header: " <> cs t
+                   Just t' -> pure t'
+      return $ (statusCode status, Client.responseBody response, ct)
   where
     showStatus (Status code message) =
       show code ++ " - " ++ cs message
@@ -138,7 +142,7 @@ performRequest reqMethod req isWantedStatus reqHost = do
 performRequestJSON :: FromJSON result =>
   Method -> Req -> Int -> BaseUrl -> EitherT String IO result
 performRequestJSON reqMethod req wantedStatus reqHost = do
-  (_status, respBody) <- performRequest reqMethod req (== wantedStatus) reqHost
+  (_status, respBody, _) <- performRequest reqMethod req (== wantedStatus) reqHost
   either
     (\ message -> left (displayHttpRequest reqMethod ++ " returned invalid json: " ++ message))
     return

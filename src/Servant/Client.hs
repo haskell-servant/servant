@@ -412,7 +412,7 @@ instance (KnownSymbol sym, HasClient sublayout)
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the status code and the response body as a 'ByteString'.
 instance HasClient Raw where
-  type Client Raw = H.Method -> BaseUrl -> EitherT String IO (Int, ByteString)
+  type Client Raw = H.Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
 
   clientWithRoute :: Proxy Raw -> Req -> Client Raw
   clientWithRoute Proxy req httpMethod host =

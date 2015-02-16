@@ -71,6 +71,7 @@ test-suite spec
     , deepseq
     , either
     , hspec == 2.*
+    , http-media
     , http-types
     , network >= 2.6
     , QuickCheck >= 2.7
