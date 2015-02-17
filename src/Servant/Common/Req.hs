@@ -13,10 +13,12 @@ import Data.Aeson
 import Data.Aeson.Parser
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
-import Data.ByteString.Lazy hiding (pack)
+import Data.ByteString.Lazy hiding (pack, filter, map)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import Data.String
 import Data.String.Conversions
-import Data.Text
+import Data.Text (Text)
 import Data.Text.Encoding
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
@@ -30,14 +32,15 @@ import System.IO.Unsafe
 import qualified Network.HTTP.Client as Client
 
 data Req = Req
-  { reqPath  :: String
-  , qs       :: QueryText
-  , reqBody  :: Maybe (ByteString, MediaType)
-  , headers  :: [(String, Text)]
+  { reqPath   :: String
+  , qs        :: QueryText
+  , reqBody   :: Maybe (ByteString, MediaType)
+  , reqAccept :: [MediaType]
+  , headers   :: [(String, Text)]
   }
 
 defReq :: Req
-defReq = Req "" [] Nothing []
+defReq = Req "" [] Nothing [] []
 
 appendToPath :: String -> Req -> Req
 appendToPath p req =
@@ -68,7 +71,7 @@ setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
-    fmap (setheaders . setrqb . setQS ) $ parseUrl url
+    fmap (setheaders . setAccept . setrqb . setQS ) $ parseUrl url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"
@@ -84,11 +87,15 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
         setrqb r = case (reqBody req) of
                      Nothing -> r
                      Just (b,t) -> r { requestBody = RequestBodyLBS b
-                                     , requestHeaders = [(hContentType, cs . show $ t)] }
+                                     , requestHeaders = requestHeaders r
+                                                     ++ [(hContentType, cs . show $ t)] }
         setQS = setQueryString $ queryTextToQuery (qs req)
         setheaders r = r { requestHeaders = requestHeaders r
                                          ++ Prelude.map toProperHeader (headers req) }
-
+        setAccept r = r { requestHeaders = filter ((/= "Accept") . fst) (requestHeaders r)
+                                        ++ [("Accept", BS.intercalate ", " (map renderAccept $ reqAccept req))] }
+        renderAccept :: MediaType -> BS.ByteString
+        renderAccept m = BSC.pack (show m)
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)
 
@@ -142,7 +149,8 @@ performRequest reqMethod req isWantedStatus reqHost = do
 performRequestJSON :: FromJSON result =>
   Method -> Req -> Int -> BaseUrl -> EitherT String IO result
 performRequestJSON reqMethod req wantedStatus reqHost = do
-  (_status, respBody, contentType) <- performRequest reqMethod req (== wantedStatus) reqHost
+  (_status, respBody, contentType) <-
+    performRequest reqMethod (req { reqAccept = ["application"//"json"] }) (== wantedStatus) reqHost
   unless (matches contentType ("application"//"json")) $
     left $ "requested Content-Type application/json, but got " <> show contentType
   either
