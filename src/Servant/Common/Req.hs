@@ -16,15 +16,17 @@ import Data.Attoparsec.ByteString
 import Data.ByteString.Lazy hiding (pack, filter, map, null)
 import Data.String
 import Data.String.Conversions
+import Data.Proxy
 import Data.Text (Text)
 import Data.Text.Encoding
-import Network.HTTP.Client
+import Network.HTTP.Client hiding (Proxy)
 import Network.HTTP.Client.TLS
 import Network.HTTP.Media
 import Network.HTTP.Types
 import Network.URI
 import Servant.Common.BaseUrl
 import Servant.Common.Text
+import Servant.Server.ContentTypes
 import System.IO.Unsafe
 
 import qualified Network.HTTP.Client as Client
@@ -142,18 +144,18 @@ performRequest reqMethod req isWantedStatus reqHost = do
     showStatus (Status code message) =
       show code ++ " - " ++ cs message
 
-
-performRequestJSON :: FromJSON result =>
-  Method -> Req -> Int -> BaseUrl -> EitherT String IO result
-performRequestJSON reqMethod req wantedStatus reqHost = do
-  (_status, respBody, contentType) <-
-    performRequest reqMethod (req { reqAccept = ["application"//"json"] }) (== wantedStatus) reqHost
-  unless (matches contentType ("application"//"json")) $
-    left $ "requested Content-Type application/json, but got " <> show contentType
-  either
-    (\ message -> left (displayHttpRequest reqMethod ++ " returned invalid json: " ++ message))
+performRequestCT :: MimeUnrender ct result =>
+  Proxy ct -> Method -> Req -> Int -> BaseUrl -> EitherT String IO result
+performRequestCT ct reqMethod req wantedStatus reqHost = do
+  let acceptCT = contentType ct
+  (_status, respBody, respCT) <-
+    performRequest reqMethod (req { reqAccept = [acceptCT] }) (== wantedStatus) reqHost
+  unless (matches respCT (acceptCT)) $
+    left $ "requested Content-Type " <> show acceptCT <> ", but got " <> show respCT
+  maybe
+    (left (displayHttpRequest reqMethod ++ " returned invalid response of type: " ++ show respCT))
     return
-    (decodeLenient respBody)
+    (fromByteString ct respBody)
 
 
 catchStatusCodeException :: IO a -> IO (Either Status a)

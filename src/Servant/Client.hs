@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -26,6 +27,7 @@ import Network.HTTP.Media
 import qualified Network.HTTP.Types as H
 import Servant.API
 import Servant.Common.BaseUrl
+import Servant.Server.ContentTypes
 import Servant.Common.Req
 import Servant.Common.Text
 
@@ -116,10 +118,10 @@ instance HasClient Delete where
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance FromJSON result => HasClient (Get result) where
-  type Client (Get result) = BaseUrl -> EitherT String IO result
+instance (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
+  type Client (Get (ct ': cts) result) = BaseUrl -> EitherT String IO result
   clientWithRoute Proxy req host =
-    performRequestJSON H.methodGet req 200 host
+    performRequestCT (Proxy :: Proxy ct) H.methodGet req 200 host
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -162,21 +164,21 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance FromJSON a => HasClient (Post a) where
-  type Client (Post a) = BaseUrl -> EitherT String IO a
+instance (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
+  type Client (Post (ct ': cts) a) = BaseUrl -> EitherT String IO a
 
   clientWithRoute Proxy req uri =
-    performRequestJSON H.methodPost req 201 uri
+    performRequestCT (Proxy :: Proxy ct) H.methodPost req 201 uri
 
 -- | If you have a 'Put' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance FromJSON a => HasClient (Put a) where
-  type Client (Put a) = BaseUrl -> EitherT String IO a
+instance (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
+  type Client (Put (ct ': cts) a) = BaseUrl -> EitherT String IO a
 
   clientWithRoute Proxy req host =
-    performRequestJSON H.methodPut req 200 host
+    performRequestCT (Proxy :: Proxy ct) H.methodPut req 200 host
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -437,9 +439,9 @@ instance HasClient Raw where
 -- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
 instance (ToJSON a, HasClient sublayout)
-      => HasClient (ReqBody a :> sublayout) where
+      => HasClient (ReqBody (ct ': cts) a :> sublayout) where
 
-  type Client (ReqBody a :> sublayout) =
+  type Client (ReqBody (ct ': cts) a :> sublayout) =
     a -> Client sublayout
 
   clientWithRoute Proxy req body =
