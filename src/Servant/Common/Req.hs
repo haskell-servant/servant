@@ -93,10 +93,8 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
         setheaders r = r { requestHeaders = requestHeaders r
                                          ++ Prelude.map toProperHeader (headers req) }
         setAccept r = r { requestHeaders = filter ((/= "Accept") . fst) (requestHeaders r)
-                                        ++ [("Accept", BS.intercalate ", " (map renderAccept $ reqAccept req))
+                                        ++ [("Accept", renderHeader $ reqAccept req)
                                               | not . null . reqAccept $ req] }
-        renderAccept :: MediaType -> BS.ByteString
-        renderAccept m = BSC.pack (show m)
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)
 
