@@ -13,7 +13,7 @@ import Data.Aeson
 import Data.Aeson.Parser
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
-import Data.ByteString.Lazy hiding (pack, filter, map)
+import Data.ByteString.Lazy hiding (pack, filter, map, null)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
 import Data.String
@@ -93,7 +93,8 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
         setheaders r = r { requestHeaders = requestHeaders r
                                          ++ Prelude.map toProperHeader (headers req) }
         setAccept r = r { requestHeaders = filter ((/= "Accept") . fst) (requestHeaders r)
-                                        ++ [("Accept", BS.intercalate ", " (map renderAccept $ reqAccept req))] }
+                                        ++ [("Accept", BS.intercalate ", " (map renderAccept $ reqAccept req))
+                                              | not . null . reqAccept $ req] }
         renderAccept :: MediaType -> BS.ByteString
         renderAccept m = BSC.pack (show m)
         toProperHeader (name, val) =
