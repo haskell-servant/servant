@@ -14,8 +14,6 @@ import Data.Aeson.Parser
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
 import Data.ByteString.Lazy hiding (pack, filter, map, null)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as BSC
 import Data.String
 import Data.String.Conversions
 import Data.Text (Text)
@@ -84,16 +82,16 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
                              , uriPath = reqPath req
                              }
 
-        setrqb r = case (reqBody req) of
+        setrqb r = case reqBody req of
                      Nothing -> r
                      Just (b,t) -> r { requestBody = RequestBodyLBS b
                                      , requestHeaders = requestHeaders r
                                                      ++ [(hContentType, cs . show $ t)] }
         setQS = setQueryString $ queryTextToQuery (qs req)
         setheaders r = r { requestHeaders = requestHeaders r
-                                         ++ Prelude.map toProperHeader (headers req) }
+                                         <> fmap toProperHeader (headers req) }
         setAccept r = r { requestHeaders = filter ((/= "Accept") . fst) (requestHeaders r)
-                                        ++ [("Accept", renderHeader $ reqAccept req)
+                                        <> [("Accept", renderHeader $ reqAccept req)
                                               | not . null . reqAccept $ req] }
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)
@@ -139,7 +137,7 @@ performRequest reqMethod req isWantedStatus reqHost = do
                  Just t -> case parseAccept t of
                    Nothing -> left $ "invalid Content-Type header: " <> cs t
                    Just t' -> pure t'
-      return $ (statusCode status, Client.responseBody response, ct)
+      return (statusCode status, Client.responseBody response, ct)
   where
     showStatus (Status code message) =
       show code ++ " - " ++ cs message
