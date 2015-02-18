@@ -52,6 +52,11 @@ instance ToSample Greet where
     , ("If you use ?capital=false", Greet "Hello, haskeller")
     ]
 
+-- We define some introductory sections, these will appear at the top of the
+-- documentation.
+--
+-- We pass them in with 'docsWith', below. If you only want to add
+-- introductions, you may use 'docsWithIntros'
 intro1 :: DocIntro
 intro1 = DocIntro "On proper introductions." -- The title
     [ "Hello there."
@@ -78,8 +83,11 @@ type TestApi =
 testApi :: Proxy TestApi
 testApi = Proxy
 
-extras :: ExtraInfo TestApi
-extras =
+-- Build some extra information for the DELETE /greet/:greetid endpoint. We
+-- want to add documentation about a secret unicorn header and some extra
+-- notes.
+extra :: ExtraInfo TestApi
+extra =
     safeInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
              defAction & headers <>~ ["unicorns"]
                        & notes   <>~ [ DocNote "Title" ["This is some text"]
@@ -90,11 +98,11 @@ extras =
 -- is derived from the type as well as from
 -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
 --
--- If you didn't want intros you could just call:
+-- If you didn't want intros and extra information, you could just call:
 --
--- > docs testAPI
+-- > docs testAPI :: API
 docsGreet :: API
-docsGreet = docsWith [intro1, intro2] extras testApi
+docsGreet = docsWith [intro1, intro2] extra testApi
 
 main :: IO ()
 main = putStrLn $ markdown docsGreet

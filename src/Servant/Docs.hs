@@ -91,6 +91,11 @@
 -- >     , ("If you use ?capital=false", Greet "Hello, haskeller")
 -- >     ]
 -- >
+-- > -- We define some introductory sections, these will appear at the top of the
+-- > -- documentation.
+-- > --
+-- > -- We pass them in with 'docsWith', below. If you only want to add
+-- > -- introductions, you may use 'docsWithIntros'
 -- > intro1 :: DocIntro
 -- > intro1 = DocIntro "On proper introductions." -- The title
 -- >     [ "Hello there."
@@ -117,15 +122,26 @@
 -- > testApi :: Proxy TestApi
 -- > testApi = Proxy
 -- >
+-- > -- Build some extra information for the DELETE /greet/:greetid endpoint. We
+-- > -- want to add documentation about a secret unicorn header and some extra
+-- > -- notes.
+-- > extra :: ExtraInfo TestApi
+-- > extra =
+-- >     safeInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+-- >              defAction & headers <>~ ["unicorns"]
+-- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
+-- >                                      , DocNote "Second secton" ["And some more"]
+-- >                                      ]
+-- >
 -- > -- Generate the data that lets us have API docs. This
 -- > -- is derived from the type as well as from
 -- > -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
 -- > --
--- > -- If you didn't want intros you could just call:
+-- > -- If you didn't want intros and extra information, you could just call:
 -- > --
--- > -- > docs testAPI
+-- > -- > docs testAPI :: API
 -- > docsGreet :: API
--- > docsGreet = docsWithIntros [intro1, intro2] testApi
+-- > docsGreet = docsWith [intro1, intro2] extra testApi
 -- >
 -- > main :: IO ()
 -- > main = putStrLn $ markdown docsGreet
@@ -298,6 +314,17 @@ data DocNote = DocNote
   , _noteBody  :: [String]
   } deriving (Eq, Show)
 
+-- | Type of extra information that a user may wish to "union" with their
+-- documentation.
+--
+-- These are intended to be built using safeInfo.
+-- Multiple ExtraInfo may be combined with the monoid instance.
+newtype ExtraInfo layout = ExtraInfo (HashMap Endpoint Action)
+instance Monoid (ExtraInfo a) where
+    mempty = ExtraInfo mempty
+    ExtraInfo a `mappend` ExtraInfo b =
+        ExtraInfo $ HM.unionWith combineAction a b
+
 -- | Type of GET parameter:
 --
 -- - Normal corresponds to @QueryParam@, i.e your usual GET parameter
@@ -405,13 +432,6 @@ makeLenses ''Action
 docs :: HasDocs layout => Proxy layout -> API
 docs p = docsFor p (defEndpoint, defAction)
 
-
-newtype ExtraInfo layout = ExtraInfo (HashMap Endpoint Action)
-instance Monoid (ExtraInfo a) where
-    mempty = ExtraInfo mempty
-    ExtraInfo a `mappend` ExtraInfo b =
-        ExtraInfo $ HM.unionWith combineAction a b
-
 -- | Closed type family, check if endpoint is exactly within API.
 
 -- We aren't sure what affects how an Endpoint is built up, so we require an
@@ -421,6 +441,18 @@ type family IsIn (endpoint :: *) (api :: *) :: Constraint where
     IsIn (e :> sa) (e :> sb)           = IsIn sa sb
     IsIn e e                           = ()
 
+-- | Create an 'ExtraInfo' that is garunteed to be within the given API layout.
+--
+-- The safety here is to ensure that you only add custom documentation to an
+-- endpoint that actually exists within your API.
+--
+-- > extra :: ExtraInfo TestApi
+-- > extra =
+-- >     safeInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+-- >              defAction & headers <>~ ["unicorns"]
+-- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
+-- >                                      , DocNote "Second secton" ["And some more"]
+-- >                                      ]
 
 safeInfo :: (IsIn endpoint layout, HasLink endpoint, HasDocs endpoint)
          => Proxy endpoint -> Action -> ExtraInfo layout
@@ -430,12 +462,18 @@ safeInfo p action =
     -- point at one endpoint.
     in ExtraInfo $ api ^. apiEndpoints & traversed .~ action
 
--- | Generate documentation given some initial state, in which you may wish to
--- note that certain endpoints are special in some way.
+-- | Generate documentation given some extra introductions (in the form of
+-- 'DocInfo') and some extra endpoint documentation (in the form of
+-- 'ExtraInfo'.
+--
+-- The extra introductions will be prepended to the top of the documentation,
+-- before the specific endpoint documentation. The extra endpoint documentation
+-- will be "unioned" with the automatically generated endpoint documentation.
+--
+-- You are expected to build up the ExtraInfo with the Monoid instance and
+-- 'safeInfo'.
 --
 -- If you only want to add an introduction, use 'docsWithIntros'.
---
--- You are expected to build up the SafeMap with safeEntry
 docsWith :: HasDocs layout
          => [DocIntro]
          -> ExtraInfo layout
@@ -485,7 +523,7 @@ class HasDocs layout where
 -- You can also instantiate this class using 'toSamples' instead of
 -- 'toSample': it lets you specify different responses along with
 -- some context (as 'Text') that explains when you're supposed to
--- get the corresponding response. 
+-- get the corresponding response.
 class ToJSON a => ToSample a where
   {-# MINIMAL (toSample | toSamples) #-}
   toSample :: Maybe a
@@ -588,9 +626,7 @@ markdown api = unlines $
         mxParamsStr l =
           "#### Matrix Parameters:" :
           "" :
-          map segmentStr l ++
-          "" :
-          []
+          map segmentStr l
         segmentStr :: (String, [DocQueryParam]) -> String
         segmentStr (segment, l) = unlines $
           ("**" ++ segment ++ "**:") :

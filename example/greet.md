@@ -37,14 +37,13 @@ You'll also note that multiple intros are possible.
 
 - *name*: name of the person to greet
 
-#### Matrix Parameters**:
+#### Matrix Parameters:
 
 **hello**:
 
  - lang
      - **Values**: *en, sv, fr*
      - **Description**: Get the greeting message selected language. Default is en.
-
 
 
 
@@ -72,13 +71,24 @@ You'll also note that multiple intros are possible.
 
 ## DELETE /greet/:greetid
 
+#### Title
+
+This is some text
+
+#### Second secton
+
+And some more
+
 #### Captures:
 
 - *greetid*: identifier of the greet msg to remove
 
+
+- This endpoint is sensitive to the value of the **unicorns** HTTP header.
+
 #### Response:
 
- - Status code 204
+ - Status code 200
  - No response body
 
 
