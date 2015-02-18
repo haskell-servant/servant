@@ -66,11 +66,11 @@ intro2 = DocIntro "This title is below the last"
 -- API specification
 type TestApi =
        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
-       "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
+       "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON] Greet
 
        -- POST /greet with a Greet as JSON in the request body,
        --             returns a Greet as JSON
-  :<|> "greet" :> ReqBody Greet :> Post Greet
+  :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
 
        -- DELETE /greet/:greetid
   :<|> "greet" :> Capture "greetid" Text :> Delete

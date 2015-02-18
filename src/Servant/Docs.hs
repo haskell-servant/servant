@@ -102,11 +102,11 @@
 -- > -- API specification
 -- > type TestApi =
 -- >        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
--- >        "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
+-- >        "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON] Greet
 -- >
 -- >        -- POST /greet with a Greet as JSON in the request body,
 -- >        --             returns a Greet as JSON
--- >   :<|> "greet" :> ReqBody Greet :> Post Greet
+-- >   :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
 -- >
 -- >        -- DELETE /greet/:greetid
 -- >   :<|> "greet" :> Capture "greetid" Text :> Delete
@@ -154,7 +154,7 @@ module Servant.Docs
   , module Data.Monoid
   ) where
 
-import Control.Lens hiding (Action)
+import Control.Lens
 import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Ord(comparing)
@@ -641,7 +641,7 @@ instance HasDocs Delete where
           action' = action & response.respBody .~ []
                            & response.respStatus .~ 204
 
-instance ToSample a => HasDocs (Get a) where
+instance ToSample a => HasDocs (Get cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
@@ -658,7 +658,7 @@ instance (KnownSymbol sym, HasDocs sublayout)
           action' = over headers (|> headername) action
           headername = pack $ symbolVal (Proxy :: Proxy sym)
 
-instance ToSample a => HasDocs (Post a) where
+instance ToSample a => HasDocs (Post cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
@@ -669,7 +669,7 @@ instance ToSample a => HasDocs (Post a) where
 
           p = Proxy :: Proxy a
 
-instance ToSample a => HasDocs (Put a) where
+instance ToSample a => HasDocs (Put cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
@@ -761,7 +761,7 @@ instance HasDocs Raw where
     single endpoint action
 
 instance (ToSample a, HasDocs sublayout)
-      => HasDocs (ReqBody a :> sublayout) where
+      => HasDocs (ReqBody cts a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =
     docsFor sublayoutP (endpoint, action')
