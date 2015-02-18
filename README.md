@@ -12,7 +12,8 @@ We've written a [Getting Started](http://haskell-servant.github.io/getting-start
 
 ## Repositories and Haddocks
 
-- The core [servant](http://github.com/haskell-servant) package - [docs](http://haskell-servant.github.io/servant/)
-- (Haskell) client-side function generation with [servant-client](http://github.com/haskell-servant/servant-client) - [docs](http://haskell-servant.github.io/servant-client/)
-- (Javascript) client-side function generation with [servant-jquery](http://github.com/haskell-servant/servant-jquery) - [docs](http://haskell-servant.github.io/servant-jquery/)
-- API docs generation with [servant-docs](http://github.com/haskell-servant/servant-docs) - [docs](http://haskell-servant.github.io/servant-docs/)
+- The core [servant](http://github.com/haskell-servant) package - [docs](http://hackage.haskell.org/package/servant)
+- Implementing an HTTP server for a webservice API with [servant-server](http://github.com/haskell-servant/servant-server) - [docs](http://hackage.haskell.org/package/servant-server)
+- (Haskell) client-side function generation with [servant-client](http://github.com/haskell-servant/servant-client) - [docs](http://hackage.haskell.org/package/servant-client)
+- (Javascript) client-side function generation with [servant-jquery](http://github.com/haskell-servant/servant-jquery) - [docs](http://hackage.haskell.org/package/servant-jquery)
+- API docs generation with [servant-docs](http://github.com/haskell-servant/servant-docs) - [docs](http://hackage.haskell.org/package/servant-docs)
