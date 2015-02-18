@@ -11,12 +11,11 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Servant.API.ContentTypes where
 
-import           Data.Typeable
-
 import           Control.Monad           (join)
 import qualified Data.ByteString         as BS
 import           Data.ByteString.Lazy    (ByteString)
 import           Data.String.Conversions (cs)
+import           Data.Typeable
 import           GHC.Exts                (Constraint)
 import qualified Network.HTTP.Media      as M
 

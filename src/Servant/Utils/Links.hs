@@ -20,7 +20,7 @@
 -- >>>
 -- >>>
 -- >>>
--- >>> type Hello = "hello" :> Get Int
+-- >>> type Hello = "hello" :> Get '[JSON] Int
 -- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete
 -- >>> type API   = Hello :<|> Bye
 -- >>> let api = Proxy :: Proxy API
@@ -40,7 +40,7 @@
 -- function that accepts that input and generates a link. This is best shown
 -- with an example. Here, a link is generated with no parameters:
 --
--- >>> let hello = Proxy :: Proxy ("hello" :> Get Int)
+-- >>> let hello = Proxy :: Proxy ("hello" :> Get '[JSON] Int)
 -- >>> print (safeLink api hello :: URI)
 -- hello
 --
@@ -74,7 +74,7 @@
 -- <BLANKLINE>
 -- <interactive>:64:1:
 --     Could not deduce (Or
---                         (IsElem' Delete (Get Int))
+--                         (IsElem' Delete (Get '[JSON] Int))
 --                         (IsElem'
 --                            ("hello" :> Delete)
 --                            ("bye" :> (QueryParam "name" String :> Delete))))
