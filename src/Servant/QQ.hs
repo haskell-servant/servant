@@ -72,7 +72,8 @@ data PathElemE
 data OptsE
 data SitemapE
 
-
+sitemap = undefined
+{-
 data Validation e a = Failure e
                     | Success a
 
@@ -93,13 +94,13 @@ data Exp a where
 data ParseError = ParseError Int String
 
 parseEverything :: String -> Exp SitemapE
-parseEverything str = removeComments <$> lines str
+parseEverything str = undefined {-removeComments <$> lines str
     where removeComments = takeWhile (/= '#')
           parseLines _  [] = []
           parseLines lineno (x:xs) = case opts of
-                                         [] -> (parseUrlLine x):parseLines rest
-                                         xs -> (parseUrlLine x `AddOpts`
-            where (opts, rest) = span (startsWith ' ') xs
+                 [] -> (parseUrlLine x):parseLines rest
+                 xs -> undefined
+              where (opts, rest) = span (startsWith ' ') xs -}
 
 
 
@@ -340,3 +341,4 @@ sitemap = QuasiQuoter { quoteExp = undefined
                             Right st -> return st
                       , quoteDec = undefined
                       }
+-}

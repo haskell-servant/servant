@@ -8,10 +8,7 @@ module Servant.Utils.LinksSpec where
 import Test.Hspec ( Spec, it, describe, shouldBe, Expectation )
 import Data.Proxy ( Proxy(..) )
 
-import Servant.API ( type (:<|>), ReqBody, QueryParam, MatrixParam, MatrixParams
-    , MatrixFlag, Get, Post, Capture, type (:>) , HTML , JSON, XML )
-import Servant.QQSpec ( (~>) )
-import Servant.Utils.Links ( IsElem, IsLink )
+import Servant.API
 
 type TestApi =
   -- Capture and query/matrix params
@@ -69,7 +66,7 @@ spec = describe "Servant.Utils.Links" $ do
         let l3 = Proxy :: Proxy ("parent" :> MatrixParams "name" String
                                           :> "child"
                                           :> MatrixParam "gender" String
-                                          :> Get String)
+                                          :> Get '[JSON] String)
         apiLink l3 ["Hubert?x=;&", "Cumberdale"] "Edward?"
             `shouldBeURI` "parent;name[]=Hubert%3Fx%3D%3B%26;\
                            \name[]=Cumberdale/child;gender=Edward%3F"
@@ -86,8 +83,8 @@ spec = describe "Servant.Utils.Links" $ do
         apiLink l2 False True `shouldBeURI` "ducks;loud"
 
     it "Generates correct links for all of the verbs" $ do
-        apiLink (Proxy :: Proxy ("get" :> Get ())) `shouldBeURI` "get"
-        apiLink (Proxy :: Proxy ("put" :> Put ())) `shouldBeURI` "put"
-        apiLink (Proxy :: Proxy ("post" :> Post ())) `shouldBeURI` "post"
+        apiLink (Proxy :: Proxy ("get" :> Get '[JSON] ())) `shouldBeURI` "get"
+        apiLink (Proxy :: Proxy ("put" :> Put '[JSON] ())) `shouldBeURI` "put"
+        apiLink (Proxy :: Proxy ("post" :> Post '[JSON] ())) `shouldBeURI` "post"
         apiLink (Proxy :: Proxy ("delete" :> Delete)) `shouldBeURI` "delete"
         apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeURI` "raw"

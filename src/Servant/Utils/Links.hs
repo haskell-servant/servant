@@ -136,6 +136,10 @@ type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
     Or () b       = ()
     Or a ()       = ()
 
+-- | If both a or b produce an empty constraint, produce an empty constraint.
+type family And (a :: Constraint) (b :: Constraint) :: Constraint where
+    And () ()      = ()
+
 -- | You may use this type family to tell the type checker that your custom type
 -- may be skipped as part of a link. This is useful for things like
 -- 'QueryParam' that are optional in a URI and do not affect them if they are
@@ -164,29 +168,19 @@ type family IsElem endpoint api :: Constraint where
     IsElem sa (MatrixParam x y :> sb)    = IsElem sa sb
     IsElem sa (MatrixParams x y :> sb)   = IsElem sa sb
     IsElem sa (MatrixFlag x :> sb)       = IsElem sa sb
-    IsElem e e                           = ()
-    IsElem e a                           = IsElem' e a
     IsElem (Get ct typ) (Get ct' typ)    = IsSubList ct ct'
     IsElem (Post ct typ) (Post ct' typ)  = IsSubList ct ct'
     IsElem (Put ct typ) (Put ct' typ)    = IsSubList ct ct'
-    IsElem e e                           = 'True
-    IsElem e a                           = 'False
+    IsElem e e                           = ()
+    IsElem e a                           = IsElem' e a
 
 
-type family IsSubList a b where
-    IsSubList '[] b = 'True
-    IsSubList '[x] (x ': xs) = 'True
+type family IsSubList a b :: Constraint where
+    IsSubList '[] b = ()
+    IsSubList '[x] (x ': xs) = ()
     IsSubList '[x] (y ': ys) = IsSubList '[x] ys
     IsSubList (x ': xs) y = IsSubList '[x] y `And` IsSubList xs y
-    IsSubList a b = 'False
-
-type family IsLink'' l where
-    IsLink'' (e :> Get cts x)  = IsLink' e
-    IsLink'' (e :> Post cts x) = IsLink' e
-    IsLink'' (e :> Put cts x)  = IsLink' e
-    IsLink'' (e :> Delete)     = IsLink' e
-    IsLink'' a                 = 'False
-
+    IsSubList a b = 'True ~ 'False
 
 -- Phantom types for Param
 data Matrix
@@ -343,7 +337,7 @@ instance HasLink (Get y r) where
     type MkLink (Get y r) = URI
     toLink _ = linkURI
 
-instance HasLink (Post r) where
+instance HasLink (Post y r) where
     type MkLink (Post y r) = URI
     toLink _ = linkURI
 
