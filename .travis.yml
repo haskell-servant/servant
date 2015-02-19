@@ -35,6 +35,7 @@ script:
 
 after_script:
   - cabal install hpc-coveralls
+  - export PATH=.cabal-sandbox/bin:$PATH
   - hpc-coveralls --exclude-dir=test spec
 
 notifications:
