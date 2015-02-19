@@ -1,9 +1,12 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Servant.JQuery.Internal where
 
 import Control.Applicative
@@ -15,6 +18,7 @@ import Data.List
 import Data.Monoid
 import Data.Proxy
 import qualified Data.Text as T
+import GHC.Exts (Constraint)
 import GHC.TypeLits
 import Servant.API
 
@@ -157,7 +161,12 @@ paramToStr qarg notTheEnd =
 defReq :: AjaxReq
 defReq = AjaxReq defUrl "GET" [] False ""
 
-class HasJQ layout where
+type family Elem (a :: *) (ls::[*]) :: Constraint where
+  Elem a '[] = 'False ~ 'True
+  Elem a (a ': list) = ()
+  Elem a (b ': list) = Elem a list
+
+class HasJQ (layout :: *) where
   type JQ layout :: *
   jqueryFor :: Proxy layout -> AjaxReq -> JQ layout
 
@@ -186,8 +195,8 @@ instance HasJQ Delete where
     req & funcName  %~ ("delete" <>)
         & reqMethod .~ "DELETE"
 
-instance HasJQ (Get a) where
-  type JQ (Get a) = AjaxReq
+instance Elem JSON list => HasJQ (Get list a) where
+  type JQ (Get list a) = AjaxReq
 
   jqueryFor Proxy req =
     req & funcName  %~ ("get" <>)
@@ -203,15 +212,15 @@ instance (KnownSymbol sym, HasJQ sublayout)
     where hname = symbolVal (Proxy :: Proxy sym)
           subP = Proxy :: Proxy sublayout
 
-instance HasJQ (Post a) where
-  type JQ (Post a) = AjaxReq
+instance Elem JSON list => HasJQ (Post list a) where
+  type JQ (Post list a) = AjaxReq
 
   jqueryFor Proxy req =
     req & funcName  %~ ("post" <>)
         & reqMethod .~ "POST"
 
-instance HasJQ (Put a) where
-  type JQ (Put a) = AjaxReq
+instance Elem JSON list => HasJQ (Put list a) where
+  type JQ (Put list a) = AjaxReq
 
   jqueryFor Proxy req =
     req & funcName  %~ ("put" <>)
@@ -226,7 +235,6 @@ instance (KnownSymbol sym, HasJQ sublayout)
       req & reqUrl.queryStr <>~ [QueryArg str Normal]
 
     where str = symbolVal (Proxy :: Proxy sym)
-          strArg = str ++ "Value"
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (QueryParams sym a :> sublayout) where
@@ -255,8 +263,8 @@ instance HasJQ Raw where
     req & funcName %~ ((toLower <$> method) <>)
         & reqMethod .~ method
 
-instance HasJQ sublayout => HasJQ (ReqBody a :> sublayout) where
-  type JQ (ReqBody a :> sublayout) = JQ sublayout
+instance (Elem JSON list, HasJQ sublayout) => HasJQ (ReqBody list a :> sublayout) where
+  type JQ (ReqBody list a :> sublayout) = JQ sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
