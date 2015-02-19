@@ -32,6 +32,7 @@ library
     , aeson-pretty < 0.8
     , bytestring
     , hashable
+    , http-media
     , lens
     , servant >= 0.2.1
     , string-conversions
@@ -46,5 +47,5 @@ executable greet-docs
   main-is: greet.hs
   hs-source-dirs: example
   ghc-options: -Wall
-  build-depends: base, aeson, servant, servant-docs, text
+  build-depends: base, aeson, aeson-pretty, servant, servant-docs, text
   default-language: Haskell2010
