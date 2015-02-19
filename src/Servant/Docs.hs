@@ -148,8 +148,8 @@ module Servant.Docs
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
   , DocNote(..), noteTitle, noteBody
   , DocIntro(..)
-  , Response, respStatus, respBody, defResponse
-  , Action, captures, headers, notes, params, rqbody, response, defAction
+  , Response, respStatus, respTypes, respBody, defResponse
+  , Action, captures, headers, notes, params, rqtypes, rqbody, response, defAction
   , single
 
   , -- * Useful modules when defining your doc printers
@@ -304,22 +304,24 @@ data DocNote = DocNote
 data ParamKind = Normal | List | Flag
   deriving (Eq, Show)
 
--- | A type to represent an HTTP response. Has an 'Int' status and
--- a 'Maybe ByteString' response body. Tweak 'defResponse' using
--- the 'respStatus' and 'respBody' lenses if you want.
+-- | A type to represent an HTTP response. Has an 'Int' status, a list of
+-- possible 'MediaType's, and a list of example 'ByteString' response bodies.
+-- Tweak 'defResponse' using the 'respStatus', 'respTypes' and 'respBody'
+-- lenses if you want.
 --
 -- If you want to respond with a non-empty response body, you'll most likely
 -- want to write a 'ToSample' instance for the type that'll be represented
--- as some JSON in the response.
+-- as encoded data in the response.
 --
--- Can be tweaked with two lenses.
+-- Can be tweaked with three lenses.
 --
 -- > λ> defResponse
--- > Response {_respStatus = 200, _respBody = []}
+-- > Response {_respStatus = 200, _respTypes = [], _respBody = []}
 -- > λ> defResponse & respStatus .~ 204 & respBody .~ [("If everything goes well", "{ \"status\": \"ok\" }")]
--- > Response {_respStatus = 204, _respBody = [("If everything goes well", "{ \"status\": \"ok\" }")]}
+-- > Response {_respStatus = 204, _respTypes = [], _respBody = [("If everything goes well", "{ \"status\": \"ok\" }")]}
 data Response = Response
   { _respStatus :: Int
+  , _respTypes  :: [M.MediaType]
   , _respBody   :: [(Text, M.MediaType, ByteString)]
   } deriving (Eq, Show)
 
@@ -332,7 +334,7 @@ data Response = Response
 -- > λ> defResponse & respStatus .~ 204 & respBody .~ Just "[]"
 -- > Response {_respStatus = 204, _respBody = Just "[]"}
 defResponse :: Response
-defResponse = Response 200 []
+defResponse = Response 200 [] []
 
 -- | A datatype that represents everything that can happen
 -- at an endpoint, with its lenses:
@@ -345,13 +347,14 @@ defResponse = Response 200 []
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _captures :: [DocCapture]                 -- type collected + user supplied info
-  , _headers  :: [Text]                       -- type collected
-  , _params   :: [DocQueryParam]              -- type collected + user supplied info
-  , _notes    :: [DocNote]           -- user supplied
-  , _mxParams :: [(String, [DocQueryParam])]  -- type collected + user supplied info
-  , _rqbody   :: Maybe [(M.MediaType, ByteString)] -- user supplied
-  , _response :: Response                     -- user supplied
+  { _captures :: [DocCapture]                -- type collected + user supplied info
+  , _headers  :: [Text]                      -- type collected
+  , _params   :: [DocQueryParam]             -- type collected + user supplied info
+  , _notes    :: [DocNote]                   -- user supplied
+  , _mxParams :: [(String, [DocQueryParam])] -- type collected + user supplied info
+  , _rqtypes  :: [M.MediaType]               -- type collected
+  , _rqbody   :: [(M.MediaType, ByteString)] -- user supplied
+  , _response :: Response                    -- user supplied
   } deriving (Eq, Show)
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
@@ -370,7 +373,8 @@ defAction =
          []
          []
          []
-         Nothing
+         []
+         []
          defResponse
 
 -- | Create an API that's comprised of a single endpoint.
@@ -449,9 +453,9 @@ sampleByteString
     :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
     => Proxy ctypes
     -> Proxy a
-    -> Maybe [(M.MediaType, ByteString)]
+    -> [(M.MediaType, ByteString)]
 sampleByteString ctypes@Proxy Proxy =
-    fmap (amr ctypes) (toSample :: Maybe a)
+    maybe [] (amr ctypes) (toSample :: Maybe a)
 
 -- | Synthesise a list of sample values of a particular type, encoded in the
 -- specified media types.
@@ -464,6 +468,25 @@ sampleByteStrings ctypes@Proxy Proxy =
     let samples = toSamples :: [(Text, a)]
         enc (t, s) = uncurry (t,,) <$> amr ctypes s
     in concatMap enc samples
+
+-- | Generate a list of 'MediaType' values describing the content types
+-- accepted by an API component.
+class SupportedTypes (list :: [*]) where
+    supportedTypes :: Proxy list -> [M.MediaType]
+
+instance SupportedTypes '[] where
+    supportedTypes Proxy = []
+
+instance (Accept ctype) => SupportedTypes '[ctype] where
+    supportedTypes Proxy = [ contentType (Proxy :: Proxy ctype) ]
+
+instance (Accept ctype, Accept ctype', SupportedTypes rest)
+        => SupportedTypes (ctype ': ctype' ': rest) where
+
+    supportedTypes Proxy =
+        [ contentType (Proxy :: Proxy ctype)
+        , contentType (Proxy :: Proxy ctype')
+        ] <> supportedTypes (Proxy :: Proxy rest)
 
 -- | The class that helps us automatically get documentation
 --   for GET parameters.
@@ -504,7 +527,7 @@ markdown api = unlines $
           mxParamsStr (action ^. mxParams) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
-          rqbodyStr (action ^. rqbody) ++
+          rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
           responseStr (action ^. response) ++
           []
 
@@ -518,7 +541,7 @@ markdown api = unlines $
         introStr i =
             ("#### " ++ i ^. introTitle) :
             "" :
-            intersperse ""  (i ^. introBody) ++
+            intersperse "" (i ^. introBody) ++
             "" :
             []
 
@@ -541,6 +564,7 @@ markdown api = unlines $
           map captureStr l ++
           "" :
           []
+
         captureStr cap =
           "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
 
@@ -552,6 +576,7 @@ markdown api = unlines $
           map segmentStr l ++
           "" :
           []
+
         segmentStr :: (String, [DocQueryParam]) -> String
         segmentStr (segment, l) = unlines $
           ("**" ++ segment ++ "**:") :
@@ -575,8 +600,9 @@ markdown api = unlines $
           map paramStr l ++
           "" :
           []
+
         paramStr param = unlines $
-          (" - " ++ param ^. paramName) :
+          ("- " ++ param ^. paramName) :
           (if (not (null values) || param ^. paramKind /= Flag)
             then ["     - **Values**: *" ++ intercalate ", " values ++ "*"]
             else []) ++
@@ -592,12 +618,20 @@ markdown api = unlines $
 
           where values = param ^. paramValues
 
-        rqbodyStr :: Maybe [(M.MediaType, ByteString)]-> [String]
-        rqbodyStr Nothing = []
-        rqbodyStr (Just b) = concatMap formatBody b
+        rqbodyStr :: [M.MediaType] -> [(M.MediaType, ByteString)]-> [String]
+        rqbodyStr [] [] = []
+        rqbodyStr types samples =
+            ["#### Request:", ""]
+            <> formatTypes types
+            <> concatMap formatBody samples
+
+        formatTypes [] = []
+        formatTypes ts = ["- Supported content types are: ", ""]
+            <> map (\t -> "    - `" <> show t <> "`") ts
+            <> [""]
 
         formatBody (m, b) =
-          "#### Request Body: `" <> show (M.mainType m <> "/" <> M.subType m) <> "`" :
+          "- Example: `" <> cs (M.mainType m <> "/" <> M.subType m) <> "`" :
           contentStr m b
 
         markdownForType mime_type =
@@ -606,6 +640,7 @@ markdown api = unlines $
                 ("application", "xml") -> "xml"
                 ("application", "json") -> "javascript"
                 ("application", "javascript") -> "javascript"
+                ("text", "css") -> "css"
                 (_, _) -> ""
 
         contentStr mime_type body =
@@ -620,14 +655,16 @@ markdown api = unlines $
         responseStr resp =
           "#### Response:" :
           "" :
-          (" - Status code " ++ show (resp ^. respStatus)) :
+          ("- Status code " ++ show (resp ^. respStatus)) :
+          "" :
+          formatTypes (resp ^. respTypes) ++
           bodies
 
           where bodies = case resp ^. respBody of
-                  []        -> [" - No response body\n"]
-                  [("", t, r)] -> " - Response body as below." : contentStr t r
+                  []        -> ["- No response body\n"]
+                  [("", t, r)] -> "- Response body as below." : contentStr t r
                   xs        ->
-                    concatMap (\(ctx, t, r) -> (" - " <> T.unpack ctx) : contentStr t r) xs
+                    concatMap (\(ctx, t, r) -> ("- " <> T.unpack ctx) : contentStr t r) xs
 
 -- * Instances
 
@@ -669,15 +706,16 @@ instance HasDocs Delete where
           action' = action & response.respBody .~ []
                            & response.respStatus .~ 204
 
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a) => HasDocs (Get cts a) where
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
+    => HasDocs (Get cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocGET
           action' = action & response.respBody .~ sampleByteStrings t p
+                           & response.respTypes .~ supportedTypes t
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
-
 
 instance (KnownSymbol sym, HasDocs sublayout)
       => HasDocs (Header sym a :> sublayout) where
@@ -688,22 +726,26 @@ instance (KnownSymbol sym, HasDocs sublayout)
           action' = over headers (|> headername) action
           headername = pack $ symbolVal (Proxy :: Proxy sym)
 
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a) => HasDocs (Post cts a) where
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
+    => HasDocs (Post cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocPOST
           action' = action & response.respBody .~ sampleByteStrings t p
+                           & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 201
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a) => HasDocs (Put cts a) where
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
+    => HasDocs (Put cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocPUT
           action' = action & response.respBody .~ sampleByteStrings t p
+                           & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 200
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
@@ -790,7 +832,7 @@ instance HasDocs Raw where
 -- example data. However, there's no reason to believe that the instances of
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
 -- both are even defined) for any particular type.
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, HasDocs sublayout)
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, HasDocs sublayout, SupportedTypes cts)
       => HasDocs (ReqBody cts a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =
@@ -798,6 +840,7 @@ instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, HasDocs sublayout)
 
     where sublayoutP = Proxy :: Proxy sublayout
           action' = action & rqbody .~ sampleByteString t p
+                           & rqtypes .~ supportedTypes t
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
