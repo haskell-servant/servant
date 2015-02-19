@@ -1,13 +1,16 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -------------------------------------------------------------------------------
 -- | This module lets you get API docs for free. It lets generate
@@ -154,25 +157,27 @@ module Servant.Docs
   , module Data.Monoid
   ) where
 
+import Control.Applicative
 import Control.Lens
 import Data.Aeson
-import Data.Aeson.Encode.Pretty (encodePretty)
-import Data.Ord(comparing)
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.Hashable
 import Data.HashMap.Strict (HashMap)
 import Data.List
-import Data.Maybe (listToMaybe)
+import Data.Maybe
 import Data.Monoid
+import Data.Ord (comparing)
 import Data.Proxy
-import Data.Text (Text, pack, unpack)
 import Data.String.Conversions
+import Data.Text (Text, pack, unpack)
 import GHC.Generics
 import GHC.TypeLits
 import Servant.API
+import Servant.API.ContentTypes
 
 import qualified Data.HashMap.Strict as HM
-import qualified Data.Text           as T
+import qualified Data.Text as T
+import qualified Network.HTTP.Media as M
 
 -- | Supported HTTP request methods
 data Method = DocDELETE -- ^ the DELETE method
@@ -315,7 +320,7 @@ data ParamKind = Normal | List | Flag
 -- > Response {_respStatus = 204, _respBody = [("If everything goes well", "{ \"status\": \"ok\" }")]}
 data Response = Response
   { _respStatus :: Int
-  , _respBody   :: [(Text, ByteString)]
+  , _respBody   :: [(Text, M.MediaType, ByteString)]
   } deriving (Eq, Show)
 
 -- | Default response: status code 200, no response body.
@@ -345,7 +350,7 @@ data Action = Action
   , _params   :: [DocQueryParam]              -- type collected + user supplied info
   , _notes    :: [DocNote]           -- user supplied
   , _mxParams :: [(String, [DocQueryParam])]  -- type collected + user supplied info
-  , _rqbody   :: Maybe ByteString             -- user supplied
+  , _rqbody   :: Maybe [(M.MediaType, ByteString)] -- user supplied
   , _response :: Response                     -- user supplied
   } deriving (Eq, Show)
 
@@ -428,24 +433,38 @@ class HasDocs layout where
 -- You can also instantiate this class using 'toSamples' instead of
 -- 'toSample': it lets you specify different responses along with
 -- some context (as 'Text') that explains when you're supposed to
--- get the corresponding response. 
+-- get the corresponding response.
 class ToJSON a => ToSample a where
   {-# MINIMAL (toSample | toSamples) #-}
   toSample :: Maybe a
-  toSample = fmap snd $ listToMaybe samples
+  toSample = snd <$> listToMaybe samples
     where samples = toSamples :: [(Text, a)]
 
   toSamples :: [(Text, a)]
   toSamples = maybe [] (return . ("",)) s
     where s = toSample :: Maybe a
 
-sampleByteString :: forall a. ToSample a => Proxy a -> Maybe ByteString
-sampleByteString Proxy = fmap encodePretty (toSample :: Maybe a)
+-- | Synthesise a sample value of a type, encoded in the specified media types.
+sampleByteString
+    :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
+    => Proxy ctypes
+    -> Proxy a
+    -> Maybe [(M.MediaType, ByteString)]
+sampleByteString ctypes@Proxy Proxy =
+    fmap (amr ctypes) (toSample :: Maybe a)
 
-sampleByteStrings :: forall a. ToSample a => Proxy a -> [(Text, ByteString)]
-sampleByteStrings Proxy = samples & traverse._2 %~ encodePretty
-
-  where samples = toSamples :: [(Text, a)]
+-- | Synthesise a list of sample values of a particular type, encoded in the
+-- specified media types.
+sampleByteStrings
+    :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
+    => Proxy ctypes
+    -> Proxy a
+    -> [(Text, M.MediaType, ByteString)]
+sampleByteStrings ctypes@Proxy Proxy =
+    let samples = toSamples :: [(Text, a)]
+        ext t (a,b) = (t,a,b)
+        enc (t, s) = ext t <$> amr ctypes s
+    in concatMap enc samples
 
 -- | The class that helps us automatically get documentation
 --   for GET parameters.
@@ -574,16 +593,26 @@ markdown api = unlines $
 
           where values = param ^. paramValues
 
-        rqbodyStr :: Maybe ByteString -> [String]
+        rqbodyStr :: Maybe [(M.MediaType, ByteString)]-> [String]
         rqbodyStr Nothing = []
-        rqbodyStr (Just b) =
-          "#### Request Body:" :
-          jsonStr b
+        rqbodyStr (Just b) = concatMap formatBody b
 
-        jsonStr b =
+        formatBody (m, b) =
+          "#### Request Body: `" <> show (M.mainType m <> "/" <> M.subType m) <> "`" :
+          contentStr m b
+
+        markdownForType mime_type =
+            case (M.mainType mime_type, M.subType mime_type) of
+                ("text", "html") -> "html"
+                ("application", "xml") -> "xml"
+                ("application", "json") -> "javascript"
+                ("application", "javascript") -> "javascript"
+                (_, _) -> ""
+
+        contentStr mime_type body =
           "" :
-          "``` javascript" :
-          cs b :
+          "``` " <> markdownForType mime_type :
+          cs body :
           "```" :
           "" :
           []
@@ -597,9 +626,9 @@ markdown api = unlines $
 
           where bodies = case resp ^. respBody of
                   []        -> [" - No response body\n"]
-                  [("", r)] -> " - Response body as below." : jsonStr r
+                  [("", t, r)] -> " - Response body as below." : contentStr t r
                   xs        ->
-                    concatMap (\(ctx, r) -> (" - " <> T.unpack ctx) : jsonStr r) xs
+                    concatMap (\(ctx, t, r) -> (" - " <> T.unpack ctx) : contentStr t r) xs
 
 -- * Instances
 
@@ -641,13 +670,15 @@ instance HasDocs Delete where
           action' = action & response.respBody .~ []
                            & response.respStatus .~ 204
 
-instance ToSample a => HasDocs (Get cts a) where
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a) => HasDocs (Get cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ sampleByteStrings p
+          action' = action & response.respBody .~ sampleByteStrings t p
+          t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
+
 
 instance (KnownSymbol sym, HasDocs sublayout)
       => HasDocs (Header sym a :> sublayout) where
@@ -658,28 +689,25 @@ instance (KnownSymbol sym, HasDocs sublayout)
           action' = over headers (|> headername) action
           headername = pack $ symbolVal (Proxy :: Proxy sym)
 
-instance ToSample a => HasDocs (Post cts a) where
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a) => HasDocs (Post cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocPOST
-
-          action' = action & response.respBody .~ sampleByteStrings p
+          action' = action & response.respBody .~ sampleByteStrings t p
                            & response.respStatus .~ 201
-
+          t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance ToSample a => HasDocs (Put cts a) where
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a) => HasDocs (Put cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocPUT
-
-          action' = action & response.respBody .~ sampleByteStrings p
+          action' = action & response.respBody .~ sampleByteStrings t p
                            & response.respStatus .~ 200
-
+          t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
-
 
 instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sublayout)
       => HasDocs (QueryParam sym a :> sublayout) where
@@ -755,20 +783,23 @@ instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
           endpoint' = over path (\p -> p ++ [";" ++ symbolVal symP]) endpoint
           symP = Proxy :: Proxy sym
 
-
 instance HasDocs Raw where
   docsFor _proxy (endpoint, action) =
     single endpoint action
 
-instance (ToSample a, HasDocs sublayout)
+-- TODO: We use 'AllMimeRender' here because we need to be able to show the
+-- example data. However, there's no reason to believe that the instances of
+-- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
+-- both are even defined) for any particular type.
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, HasDocs sublayout)
       => HasDocs (ReqBody cts a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =
     docsFor sublayoutP (endpoint, action')
 
     where sublayoutP = Proxy :: Proxy sublayout
-
-          action' = action & rqbody .~ sampleByteString p
+          action' = action & rqbody .~ sampleByteString t p
+          t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
 instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) where
