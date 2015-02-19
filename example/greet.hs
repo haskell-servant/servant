@@ -8,9 +8,8 @@
 import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Proxy
+import Data.String.Conversions
 import Data.Text (Text)
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.Encoding as T
 import GHC.Generics
 import Servant.API
 import Servant.API.ContentTypes
@@ -26,12 +25,10 @@ instance FromJSON Greet
 instance ToJSON Greet
 
 instance MimeRender JSON Greet where
-    toByteString Proxy v = encodePretty v
+    toByteString Proxy = encodePretty
 
 instance MimeRender HTML Greet where
-    toByteString Proxy (Greet s) = "<h1>" <> (c s) <> "</h1>"
-      where
-        c = T.encodeUtf8 . T.fromStrict
+    toByteString Proxy (Greet s) = "<h1>" <> cs s <> "</h1>"
 
 -- We add some useful annotations to our captures,
 -- query parameters and request body to make the docs
