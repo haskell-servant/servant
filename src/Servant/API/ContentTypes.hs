@@ -110,7 +110,7 @@ instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
 class Accept ctype => MimeUnrender ctype a where
     fromByteString :: Proxy ctype -> ByteString -> Either String a
 
-class AllCTUnrender list a where
+class (IsNonEmpty list) => AllCTUnrender list a where
     handleCTypeH :: Proxy list
                  -> ByteString     -- Content-Type header
                  -> ByteString     -- Request body
