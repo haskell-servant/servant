@@ -9,7 +9,7 @@ module Servant.Server.Internal where
 
 import Control.Applicative ((<$>))
 import Control.Monad.Trans.Either (EitherT, runEitherT)
-import Data.Aeson (ToJSON, FromJSON, encode, eitherDecode')
+import Data.Aeson (ToJSON)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import Data.IORef (newIORef, readIORef, writeIORef)
@@ -29,10 +29,10 @@ import Network.Wai ( Response, Request, ResponseReceived, Application
                    , lazyRequestBody, requestHeaders, requestMethod,
                     rawQueryString, responseLBS)
 import Servant.API ( QueryParams, QueryParam, QueryFlag, ReqBody, Header
-                   , MatrixParams, MatrixParam, MatrixFlag,
+                   , MatrixParams, MatrixParam, MatrixFlag
                    , Capture, Get, Delete, Put, Post, Patch, Raw, (:>), (:<|>)(..))
-import Servant.Server.ContentTypes ( AllCTRender(..), AcceptHeader(..)
-                                   , AllCTUnrender(..) )
+import Servant.API.ContentTypes ( AllCTRender(..), AcceptHeader(..)
+                                   , AllCTUnrender(..),)
 import Servant.Common.Text (FromText, fromText)
 
 
@@ -72,39 +72,33 @@ toApplication ra request respond = do
     respond $ responseLBS methodNotAllowed405 [] "method not allowed"
   routingRespond (Left (InvalidBody err)) =
     respond $ responseLBS badRequest400 [] $ fromString $ "Invalid JSON in request body: " ++ err
+  routingRespond (Left UnsupportedMediaType) =
+    respond $ responseLBS unsupportedMediaType415 [] "unsupported media type"
   routingRespond (Left (HttpError status body)) =
     respond $ responseLBS status [] $ fromMaybe (BL.fromStrict $ statusMessage status) body
   routingRespond (Right response) =
     respond response
 
+-- Note that the ordering of the constructors has great significance! It
+-- determines the Ord instance and, consequently, the monoid instance.
 -- * Route mismatch
 data RouteMismatch =
     NotFound           -- ^ the usual "not found" error
   | WrongMethod        -- ^ a more informative "you just got the HTTP method wrong" error
+  | UnsupportedMediaType -- ^ request body has unsupported media type
   | InvalidBody String -- ^ an even more informative "your json request body wasn't valid" error
   | HttpError Status (Maybe BL.ByteString)  -- ^ an even even more informative arbitrary HTTP response code error.
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
--- |
--- @
--- > mempty = NotFound
--- >
--- > _             `mappend` HttpError s b = HttpError s b
--- > HttpError s b `mappend`             _ = HttpError s b
--- > NotFound      `mappend`             x = x
--- > WrongMethod   `mappend` InvalidBody s = InvalidBody s
--- > WrongMethod   `mappend`             _ = WrongMethod
--- > InvalidBody s `mappend`             _ = InvalidBody s
--- @
 instance Monoid RouteMismatch where
   mempty = NotFound
+  -- The following isn't great, since it picks @InvalidBody@ based on
+  -- alphabetical ordering, but any choice would be arbitrary.
+  --
+  -- "As one judge said to the other, 'Be just and if you can't be just, be
+  -- arbitrary'" -- William Burroughs
+  mappend = max
 
-  _             `mappend` HttpError s b = HttpError s b
-  HttpError s b `mappend`             _ = HttpError s b
-  NotFound      `mappend`             x = x
-  WrongMethod   `mappend` InvalidBody s = InvalidBody s
-  WrongMethod   `mappend`             _ = WrongMethod
-  InvalidBody s `mappend`             _ = InvalidBody s
 
 -- | A wrapper around @'Either' 'RouteMismatch' a@.
 newtype RouteResult a =
@@ -401,15 +395,22 @@ instance ( AllCTRender ctypes a
 -- If successfully returning a value, we just require that its type has
 -- a 'ToJSON' instance and servant takes care of encoding it for you,
 -- yielding status code 201 along the way.
-instance (Typeable a, ToJSON a) => HasServer (Patch a) where
-  type Server (Patch a) = EitherT (Int, String) IO a
+instance ( AllCTRender ctypes a
+         , Typeable a
+         , ToJSON a) => HasServer (Patch ctypes a) where
+  type Server (Patch ctypes a) = EitherT (Int, String) IO a
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
         e <- runEitherT action
         respond . succeedWith $ case e of
           Right out -> case cast out of
-              Nothing -> responseLBS status200 [("Content-Type", "application/json")] (encode out)
+              Nothing -> do
+                  let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+                  case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) out of
+                    Nothing -> responseLBS (mkStatus 406 "") [] ""
+                    Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
+                                                                   , cs contentT)] body
               Just () -> responseLBS status204 [] ""
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
@@ -695,8 +696,9 @@ instance ( AllCTUnrender list a, HasServer sublayout
     mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
            <$> lazyRequestBody request
     case mrqbody of
-      Left e -> respond . failWith $ InvalidBody e
-      Right v  -> route (Proxy :: Proxy sublayout) (subserver v) request respond
+      Nothing -> respond . failWith $ UnsupportedMediaType
+      Just (Left e) -> respond . failWith $ InvalidBody e
+      Just (Right v) -> route (Proxy :: Proxy sublayout) (subserver v) request respond
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @sublayout@.

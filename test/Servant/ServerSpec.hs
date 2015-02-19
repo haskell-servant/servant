@@ -209,10 +209,10 @@ queryParamSpec = do
               name = "Alice"
              }
 
-type MatrixParamApi = "a" :> MatrixParam "name" String :> Get Person
-                :<|> "b" :> MatrixParams "names" String :> "bsub" :> MatrixParams "names" String :> Get Person
-                :<|> "c" :> MatrixFlag "capitalize" :> Get Person
-                :<|> "d" :> Capture "foo" Integer :> MatrixParam "name" String :> MatrixFlag "capitalize" :> "dsub" :> Get Person
+type MatrixParamApi = "a" :> MatrixParam "name" String :> Get '[JSON] Person
+                :<|> "b" :> MatrixParams "names" String :> "bsub" :> MatrixParams "names" String :> Get '[JSON] Person
+                :<|> "c" :> MatrixFlag "capitalize" :> Get '[JSON] Person
+                :<|> "d" :> Capture "foo" Integer :> MatrixParam "name" String :> MatrixFlag "capitalize" :> "dsub" :> Get '[JSON] Person
 
 matrixParamApi :: Proxy MatrixParamApi
 matrixParamApi = Proxy
@@ -322,6 +322,11 @@ postSpec = do
 
       it "correctly rejects invalid request bodies with status 400" $ do
         post' "/" "some invalid body" `shouldRespondWith` 400
+
+      it "responds with 415 if the requested media type is unsupported" $ do
+        let post'' x = Test.Hspec.Wai.request methodPost x [(hContentType
+                                                            , "application/nonsense")]
+        post'' "/" "anything at all" `shouldRespondWith` 415
 
 
 type RawApi = "foo" :> Raw

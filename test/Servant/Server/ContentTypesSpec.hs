@@ -24,8 +24,9 @@ import Test.Hspec
 import Test.QuickCheck
 
 import Servant.API
+import Servant.API.ContentTypes
 import Servant.Server
-import Servant.Server.ContentTypes
+import Servant.Server.ContentTypes ()
 
 
 spec :: Spec

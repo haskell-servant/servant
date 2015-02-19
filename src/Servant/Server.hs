@@ -10,16 +10,13 @@ module Servant.Server
   , -- * Handlers for all standard combinators
     HasServer(..)
 
-  , -- * Building new Content-Types
-    Accept(..)
-  , MimeRender(..)
   ) where
 
 import Data.Proxy (Proxy)
 import Network.Wai (Application)
 
 import Servant.Server.Internal
-import Servant.Server.ContentTypes (Accept(..), MimeRender(..))
+import Servant.Server.ContentTypes ()
 
 
 -- * Implementing Servers
