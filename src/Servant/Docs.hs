@@ -477,16 +477,10 @@ class SupportedTypes (list :: [*]) where
 instance SupportedTypes '[] where
     supportedTypes Proxy = []
 
-instance (Accept ctype) => SupportedTypes '[ctype] where
-    supportedTypes Proxy = [ contentType (Proxy :: Proxy ctype) ]
-
-instance (Accept ctype, Accept ctype', SupportedTypes rest)
-        => SupportedTypes (ctype ': ctype' ': rest) where
-
+instance (Accept ctype, SupportedTypes rest) => SupportedTypes (ctype ': rest)
+  where
     supportedTypes Proxy =
-        [ contentType (Proxy :: Proxy ctype)
-        , contentType (Proxy :: Proxy ctype')
-        ] <> supportedTypes (Proxy :: Proxy rest)
+        contentType (Proxy :: Proxy ctype) : supportedTypes (Proxy :: Proxy rest)
 
 -- | The class that helps us automatically get documentation
 --   for GET parameters.
