@@ -10,5 +10,5 @@ import Data.Typeable ( Typeable )
 -- Example:
 --
 -- > type MyApi = "books" :> Get '[JSON] [Book]
-data Get (cts::[*]) a
+data Get (contentTypes::[*]) a
   deriving Typeable

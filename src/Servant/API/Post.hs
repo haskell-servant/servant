@@ -15,5 +15,5 @@ import Data.Typeable ( Typeable )
 -- >            -- with a JSON encoded Book as the request body
 -- >            -- returning the just-created Book
 -- > type MyApi = "books" :> ReqBody Book :> Post '[JSON] Book
-data Post (cts::[*]) a
+data Post (contentTypes::[*]) a
   deriving Typeable

@@ -180,7 +180,6 @@ type family IsSubList a b :: Constraint where
     IsSubList '[x] (x ': xs) = ()
     IsSubList '[x] (y ': ys) = IsSubList '[x] ys
     IsSubList (x ': xs) y = IsSubList '[x] y `And` IsSubList xs y
-    IsSubList a b = 'True ~ 'False
 
 -- Phantom types for Param
 data Matrix

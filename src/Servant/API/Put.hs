@@ -13,5 +13,5 @@ import Data.Typeable ( Typeable )
 -- > -- PUT /books/:isbn
 -- > -- with a Book as request body, returning the updated Book
 -- > type MyApi = "books" :> Capture "isbn" Text :> ReqBody Book :> Put '[JSON] Book
-data Put (cts::[*]) a
+data Put (contentTypes::[*]) a
   deriving Typeable

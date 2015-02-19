@@ -11,7 +11,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Servant.API.ContentTypes where
 
-import           Control.Monad           (join)
 import qualified Data.ByteString         as BS
 import           Data.ByteString.Lazy    (ByteString)
 import           Data.String.Conversions (cs)
@@ -102,27 +101,25 @@ instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
          ) => AllCTRender ctyps a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy ctyps
-            amrs = amr pctyps val
-            lkup = zip (map fst amrs) $ map (\(a,b) -> (cs $ show a, b)) amrs
-
-
+            amrs = allMimeRender pctyps val
+            lkup = fmap (\(a,b) -> (a, (cs $ show a, b))) amrs
 
 
 --------------------------------------------------------------------------
 -- * Unrender
 class Accept ctype => MimeUnrender ctype a where
-    fromByteString :: Proxy ctype -> ByteString -> Maybe a
+    fromByteString :: Proxy ctype -> ByteString -> Either String a
 
 class AllCTUnrender list a where
     handleCTypeH :: Proxy list
                  -> ByteString     -- Content-Type header
                  -> ByteString     -- Request body
-                 -> Maybe a
+                 -> Maybe (Either String a)
 
 instance ( AllMimeUnrender ctyps a, IsNonEmpty ctyps
          ) => AllCTUnrender ctyps a where
-    handleCTypeH _ ctypeH body = join $ M.mapContentMedia lkup (cs ctypeH)
-      where lkup = amu (Proxy :: Proxy ctyps) body
+    handleCTypeH _ ctypeH body = M.mapContentMedia lkup (cs ctypeH)
+      where lkup = allMimeUnrender (Proxy :: Proxy ctyps) body
 
 --------------------------------------------------------------------------
 -- * Utils (Internal)
@@ -132,50 +129,42 @@ instance ( AllMimeUnrender ctyps a, IsNonEmpty ctyps
 -- Check that all elements of list are instances of MimeRender
 --------------------------------------------------------------------------
 class AllMimeRender ls a where
-    amr :: Proxy ls
-        -> a                              -- value to serialize
-        -> [(M.MediaType, ByteString)]    -- content-types/response pairs
+    allMimeRender :: Proxy ls
+                  -> a                              -- value to serialize
+                  -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
 instance ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
-    amr _ a = [(contentType pctyp, toByteString pctyp a)]
+    allMimeRender _ a = [(contentType pctyp, toByteString pctyp a)]
         where pctyp = Proxy :: Proxy ctyp
 
 instance ( MimeRender ctyp a
-         , MimeRender ctyp' a        -- at least two elems to avoid overlap
-         , AllMimeRender ctyps a
+         , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
-    amr _ a = (contentType pctyp, toByteString pctyp a)
-             :(contentType pctyp', toByteString pctyp' a)
-             :(amr pctyps a)
+    allMimeRender _ a = (contentType pctyp, toByteString pctyp a)
+                       :(allMimeRender pctyps a)
         where pctyp = Proxy :: Proxy ctyp
-              pctyps = Proxy :: Proxy ctyps
-              pctyp' = Proxy :: Proxy ctyp'
+              pctyps = Proxy :: Proxy (ctyp' ': ctyps)
 
 
 instance AllMimeRender '[] a where
-    amr _ _ = []
+    allMimeRender _ _ = []
 
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
 --------------------------------------------------------------------------
 class AllMimeUnrender ls a where
-    amu :: Proxy ls -> ByteString -> [(M.MediaType, Maybe a)]
+    allMimeUnrender :: Proxy ls -> ByteString -> [(M.MediaType, Either String a)]
 
-instance ( MimeUnrender ctyp a ) => AllMimeUnrender '[ctyp] a where
-    amu _ val = [(contentType pctyp, fromByteString pctyp val)]
-        where pctyp = Proxy :: Proxy ctyp
+instance AllMimeUnrender '[] a where
+    allMimeUnrender _ _ = []
 
 instance ( MimeUnrender ctyp a
-         , MimeUnrender ctyp' a
          , AllMimeUnrender ctyps a
-         ) => AllMimeUnrender (ctyp ': ctyp' ': ctyps) a where
-    amu _ val = (contentType pctyp, fromByteString pctyp val)
-               :(contentType pctyp', fromByteString pctyp' val)
-               :(amu pctyps val)
+         ) => AllMimeUnrender (ctyp ': ctyps) a where
+    allMimeUnrender _ val = (contentType pctyp, fromByteString pctyp val)
+                           :(allMimeUnrender pctyps val)
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy ctyps
-              pctyp' = Proxy :: Proxy ctyp'
 
 type family IsNonEmpty (ls::[*]) :: Constraint where
-    IsNonEmpty '[] = 'False ~ 'True
-    IsNonEmpty x   = ()
+    IsNonEmpty (x ': xs)   = ()

@@ -8,4 +8,4 @@ module Servant.API.ReqBody where
 --
 -- >            -- POST /books
 -- > type MyApi = "books" :> ReqBody '[JSON] Book :> Post Book
-data ReqBody (ls::[*]) a
+data ReqBody (contentTypes::[*]) a
