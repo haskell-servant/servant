@@ -8,6 +8,18 @@ before_install:
   - cabal sandbox init
   - cabal sandbox add-source servant/
 
+install:
+ - cabal install --only-dependencies --enable-tests
+
+script:
+ - cabal configure --enable-tests --enable-library-coverage
+ - cabal build && cabal test
+ - cabal check
+
+after_script:
+  - cabal install hpc-coveralls
+  - hpc-coveralls --exclude-dir=test spec
+
 notifications:
   irc:
     channels:

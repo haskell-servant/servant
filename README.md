@@ -1,6 +1,7 @@
 # servant-jquery
 
 [![Build Status](https://secure.travis-ci.org/haskell-servant/servant-jquery.svg)](http://travis-ci.org/haskell-servant/servant-jquery)
+[![Coverage Status](https://coveralls.io/repos/haskell-servant/servant-jquery/badge.svg)](https://coveralls.io/r/haskell-servant/servant-jquery)
 
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
