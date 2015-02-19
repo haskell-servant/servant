@@ -29,9 +29,14 @@ install:
  - cabal install --only-dependencies --enable-tests
 
 script:
- - cabal configure --enable-tests
+ - cabal configure --enable-tests --enable-library-coverage
  - cabal build && cabal test
  - cabal sdist
+
+after_script:
+  - cabal install hpc-coveralls
+  - hpc-coveralls --exclude-dir=test spec
+
 notifications:
   irc:
     channels:

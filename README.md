@@ -1,6 +1,7 @@
 # servant-server
 
 [![Build Status](https://secure.travis-ci.org/haskell-servant/servant-server.svg)](http://travis-ci.org/haskell-servant/servant-server)
+[![Coverage Status](https://coveralls.io/repos/haskell-servant/servant-server/badge.svg)](https://coveralls.io/r/haskell-servant/servant-server)
 
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
