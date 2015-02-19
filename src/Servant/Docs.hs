@@ -462,7 +462,7 @@ sampleByteStrings
     -> [(Text, M.MediaType, ByteString)]
 sampleByteStrings ctypes@Proxy Proxy =
     let samples = toSamples :: [(Text, a)]
-        enc (t, s) = (\(m,b) -> (t,m,b)) <$> amr ctypes s
+        enc (t, s) = uncurry (t,,) <$> amr ctypes s
     in concatMap enc samples
 
 -- | The class that helps us automatically get documentation
