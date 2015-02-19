@@ -4,11 +4,15 @@ ghc:
   - 7.8
 
 script:
-  - cabal configure --enable-tests && cabal build && cabal test
+  - cabal configure --enable-tests --enable-library-coverage && cabal build && cabal test
   - cabal check
   - cabal sdist
   - cabal install doctest
   - ./test-docs.sh
+
+after_script:
+  - cabal install hpc-coveralls
+  - hpc-coveralls --exclude-dir=test spec
 
 notifications:
   irc:
