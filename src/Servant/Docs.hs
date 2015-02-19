@@ -455,7 +455,7 @@ sampleByteString
     -> Proxy a
     -> [(M.MediaType, ByteString)]
 sampleByteString ctypes@Proxy Proxy =
-    maybe [] (amr ctypes) (toSample :: Maybe a)
+    maybe [] (allMimeRender ctypes) (toSample :: Maybe a)
 
 -- | Synthesise a list of sample values of a particular type, encoded in the
 -- specified media types.
@@ -466,7 +466,7 @@ sampleByteStrings
     -> [(Text, M.MediaType, ByteString)]
 sampleByteStrings ctypes@Proxy Proxy =
     let samples = toSamples :: [(Text, a)]
-        enc (t, s) = uncurry (t,,) <$> amr ctypes s
+        enc (t, s) = uncurry (t,,) <$> allMimeRender ctypes s
     in concatMap enc samples
 
 -- | Generate a list of 'MediaType' values describing the content types

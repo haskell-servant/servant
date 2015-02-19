@@ -12,7 +12,6 @@ import Data.String.Conversions
 import Data.Text (Text)
 import GHC.Generics
 import Servant.API
-import Servant.API.ContentTypes
 import Servant.Docs
 
 -- * Example
