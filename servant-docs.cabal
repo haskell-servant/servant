@@ -29,14 +29,12 @@ library
   build-depends:
       base >=4.7 && <5
     , aeson
-    , aeson-pretty < 0.8
     , bytestring
     , hashable
     , http-media
     , lens
     , servant >= 0.2.1
     , string-conversions
-    , system-filepath
     , text
     , unordered-containers
   hs-source-dirs: src
