@@ -87,6 +87,7 @@ test-suite spec
   build-depends:
       base == 4.*
     , aeson
+    , bytestring
     , hspec == 2.*
     , QuickCheck
     , parsec

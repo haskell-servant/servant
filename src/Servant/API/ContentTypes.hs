@@ -104,7 +104,7 @@ instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
 -- > instance Accept MyContentType where
 -- >    contentType _ = "example" // "prs.me.mine" /: ("charset", "utf-8")
 -- >
--- > instance Show a => MimeRender MyContentType where
+-- > instance Show a => MimeUnrender MyContentType where
 -- >    fromByteString _ bs = MyContentType $ unpack bs
 -- >
 -- > type MyAPI = "path" :> ReqBody '[MyContentType] :> Get '[JSON] Int
@@ -191,6 +191,11 @@ instance MimeRender PlainText TextS.Text where
 instance MimeRender OctetStream ByteString where
     toByteString _ = id
 
+-- | `toStrict`
+instance MimeRender OctetStream BS.ByteString where
+    toByteString _ = fromStrict
+
+
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances
 
@@ -209,3 +214,7 @@ instance MimeUnrender PlainText TextS.Text where
 -- | `Right . id`
 instance MimeUnrender OctetStream ByteString where
     fromByteString _ = Right . id
+
+-- | `Right . toStrict`
+instance MimeUnrender OctetStream BS.ByteString where
+    fromByteString _ = Right . toStrict
