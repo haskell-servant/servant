@@ -125,6 +125,12 @@ spec = describe "Servant.API.ContentTypes" $ do
                     "𝕺𝖋 𝖘𝖍𝖔𝖊𝖘--𝖆𝖓𝖉 𝖘𝖍𝖎𝖕𝖘--𝖆𝖓𝖉 𝖘𝖊𝖆𝖑𝖎𝖓𝖌-𝖜𝖆𝖝-- "
                     `shouldSatisfy` isJustLeft
 
+            it "returns Just (Right val) if the decoding succeeds" $ do
+                let val = SomeData "Of cabbages--and kings" 12
+                handleCTypeH (Proxy :: Proxy '[JSON]) "application/json"
+                    (encode val)
+                    `shouldBe` Just (Right val)
+
 
 data SomeData = SomeData { record1 :: String, record2 :: Int }
     deriving (Generic, Eq, Show)
