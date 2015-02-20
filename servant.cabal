@@ -86,6 +86,7 @@ test-suite spec
   main-is: Spec.hs
   build-depends:
       base == 4.*
+    , aeson
     , hspec == 2.*
     , QuickCheck
     , parsec

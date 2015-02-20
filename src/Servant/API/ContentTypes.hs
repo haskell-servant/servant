@@ -15,10 +15,12 @@ import           Control.Arrow           (left)
 import           Data.Aeson              (FromJSON, ToJSON, eitherDecode,
                                           encode)
 import qualified Data.ByteString         as BS
-import           Data.ByteString.Lazy    (ByteString)
+import           Data.ByteString.Lazy    (ByteString, fromStrict, toStrict)
 import           Data.String.Conversions (cs)
-import qualified Data.Text.Lazy          as Text
-import qualified Data.Text.Lazy.Encoding as Text
+import qualified Data.Text.Lazy          as TextL
+import qualified Data.Text.Lazy.Encoding as TextL
+import qualified Data.Text               as TextS
+import qualified Data.Text.Encoding      as TextS
 import           Data.Typeable
 import           GHC.Exts                (Constraint)
 import qualified Network.HTTP.Media      as M
@@ -73,6 +75,7 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 -- >    toByteString _ val = pack ("This is MINE! " ++ show val)
 -- >
 -- > type MyAPI = "path" :> Get '[MyContentType] Int
+--
 class Accept ctype => MimeRender ctype a where
     toByteString  :: Proxy ctype -> a -> ByteString
 
@@ -92,6 +95,20 @@ instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
 
 --------------------------------------------------------------------------
 -- * Unrender
+
+-- | Instantiate this class to register a way of deserializing a type based
+-- on the request's @Content-Type@ header.
+--
+-- > data MyContentType = MyContentType String
+-- >
+-- > instance Accept MyContentType where
+-- >    contentType _ = "example" // "prs.me.mine" /: ("charset", "utf-8")
+-- >
+-- > instance Show a => MimeRender MyContentType where
+-- >    fromByteString _ bs = MyContentType $ unpack bs
+-- >
+-- > type MyAPI = "path" :> ReqBody '[MyContentType] :> Get '[JSON] Int
+--
 class Accept ctype => MimeUnrender ctype a where
     fromByteString :: Proxy ctype -> ByteString -> Either String a
 
@@ -162,9 +179,13 @@ type family IsNonEmpty (ls::[*]) :: Constraint where
 instance ToJSON a => MimeRender JSON a where
     toByteString _ = encode
 
--- | `Text.encodeUtf8`
-instance MimeRender PlainText Text.Text where
-    toByteString _ = Text.encodeUtf8
+-- | `TextL.encodeUtf8`
+instance MimeRender PlainText TextL.Text where
+    toByteString _ = TextL.encodeUtf8
+
+-- | `fromStrict . TextS.encodeUtf8`
+instance MimeRender PlainText TextS.Text where
+    toByteString _ = fromStrict . TextS.encodeUtf8
 
 -- | `id`
 instance MimeRender OctetStream ByteString where
@@ -177,9 +198,13 @@ instance MimeRender OctetStream ByteString where
 instance FromJSON a => MimeUnrender JSON a where
     fromByteString _ = eitherDecode
 
--- | `left show . Text.decodeUtf8'`
-instance MimeUnrender PlainText Text.Text where
-    fromByteString _ = left show . Text.decodeUtf8'
+-- | `left show . TextL.decodeUtf8'`
+instance MimeUnrender PlainText TextL.Text where
+    fromByteString _ = left show . TextL.decodeUtf8'
+
+-- | `left show . TextS.decodeUtf8' . toStrict`
+instance MimeUnrender PlainText TextS.Text where
+    fromByteString _ = left show . TextS.decodeUtf8' . toStrict
 
 -- | `Right . id`
 instance MimeUnrender OctetStream ByteString where
