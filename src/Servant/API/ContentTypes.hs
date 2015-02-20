@@ -44,9 +44,9 @@ data OctetStream deriving Typeable
 class Accept ctype where
     contentType   :: Proxy ctype -> M.MediaType
 
--- | @application/json;charset=utf-8@
+-- | @application/json@
 instance Accept JSON where
-    contentType _ = "application" M.// "json" M./: ("charset", "utf-8")
+    contentType _ = "application" M.// "json"
 
 -- | @text/plain;charset=utf-8@
 instance Accept PlainText where
