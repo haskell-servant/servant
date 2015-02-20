@@ -1,5 +1,7 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Servant.API.Raw where
 
+import Data.Typeable (Typeable)
 -- | Endpoint for plugging in your own Wai 'Application's.
 --
 -- The given 'Application' will get the request as received by the server, potentially with
@@ -9,4 +11,4 @@ module Servant.API.Raw where
 -- this can also be used with 'Servant.Utils.StaticFiles.serveDirectory' to serve
 -- static files stored in a particular directory on your filesystem, or to serve
 -- your API's documentation with 'Servant.Utils.StaticFiles.serveDocumentation'.
-data Raw
+data Raw deriving Typeable

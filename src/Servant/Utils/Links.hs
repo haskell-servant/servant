@@ -2,10 +2,11 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Type safe generation of internal links.
@@ -19,7 +20,7 @@
 -- >>>
 -- >>>
 -- >>>
--- >>> type Hello = "hello" :> Get Int
+-- >>> type Hello = "hello" :> Get '[JSON] Int
 -- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete
 -- >>> type API   = Hello :<|> Bye
 -- >>> let api = Proxy :: Proxy API
@@ -39,7 +40,7 @@
 -- function that accepts that input and generates a link. This is best shown
 -- with an example. Here, a link is generated with no parameters:
 --
--- >>> let hello = Proxy :: Proxy ("hello" :> Get Int)
+-- >>> let hello = Proxy :: Proxy ("hello" :> Get '[JSON] Int)
 -- >>> print (safeLink api hello :: URI)
 -- hello
 --
@@ -73,7 +74,7 @@
 -- <BLANKLINE>
 -- <interactive>:64:1:
 --     Could not deduce (Or
---                         (IsElem' Delete (Get Int))
+--                         (IsElem' Delete (Get '[JSON] Int))
 --                         (IsElem'
 --                            ("hello" :> Delete)
 --                            ("bye" :> (QueryParam "name" String :> Delete))))
@@ -122,10 +123,22 @@ import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
 import Servant.API.Alternative ( type (:<|>) )
 
+-- | A safe link datatype.
+-- The only way of constructing a 'Link' is using 'safeLink', which means any
+-- 'Link' is guaranteed to be part of the mentioned API.
+data Link = Link
+  { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
+  , _queryParams :: [Param Query]
+  } deriving Show
+
 -- | If either a or b produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
     Or () b       = ()
     Or a ()       = ()
+
+-- | If both a or b produce an empty constraint, produce an empty constraint.
+type family And (a :: Constraint) (b :: Constraint) :: Constraint where
+    And () ()      = ()
 
 -- | You may use this type family to tell the type checker that your custom type
 -- may be skipped as part of a link. This is useful for things like
@@ -147,24 +160,26 @@ type family IsElem endpoint api :: Constraint where
     IsElem e (sa :<|> sb)                = Or (IsElem e sa) (IsElem e sb)
     IsElem (e :> sa) (e :> sb)           = IsElem sa sb
     IsElem sa (Header x :> sb)          = IsElem sa sb
-    IsElem sa (ReqBody x :> sb)          = IsElem sa sb
+    IsElem sa (ReqBody y x :> sb)        = IsElem sa sb
+    IsElem (e :> sa) (Capture x y :> sb) = IsElem sa sb
     IsElem sa (QueryParam x y :> sb)     = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)    = IsElem sa sb
     IsElem sa (QueryFlag x :> sb)        = IsElem sa sb
     IsElem sa (MatrixParam x y :> sb)    = IsElem sa sb
     IsElem sa (MatrixParams x y :> sb)   = IsElem sa sb
     IsElem sa (MatrixFlag x :> sb)       = IsElem sa sb
+    IsElem (Get ct typ) (Get ct' typ)    = IsSubList ct ct'
+    IsElem (Post ct typ) (Post ct' typ)  = IsSubList ct ct'
+    IsElem (Put ct typ) (Put ct' typ)    = IsSubList ct ct'
     IsElem e e                           = ()
     IsElem e a                           = IsElem' e a
 
--- | A safe link datatype.
--- The only way of constructing a 'Link' is using 'safeLink', which means any
--- 'Link' is guaranteed to be part of the mentioned API.
-data Link = Link
-  { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
-  , _queryParams :: [Param Query]
-  } deriving Show
 
+type family IsSubList a b :: Constraint where
+    IsSubList '[] b = ()
+    IsSubList '[x] (x ': xs) = ()
+    IsSubList '[x] (y ': ys) = IsSubList '[x] ys
+    IsSubList (x ': xs) y = IsSubList '[x] y `And` IsSubList xs y
 
 -- Phantom types for Param
 data Matrix
@@ -317,16 +332,16 @@ instance (ToText v, HasLink sub)
             addSegment (escape . unpack $ toText v) l
 
 -- Verb (terminal) instances
-instance HasLink (Get r) where
-    type MkLink (Get r) = URI
+instance HasLink (Get y r) where
+    type MkLink (Get y r) = URI
     toLink _ = linkURI
 
-instance HasLink (Post r) where
-    type MkLink (Post r) = URI
+instance HasLink (Post y r) where
+    type MkLink (Post y r) = URI
     toLink _ = linkURI
 
-instance HasLink (Put r) where
-    type MkLink (Put r) = URI
+instance HasLink (Put y r) where
+    type MkLink (Put y r) = URI
     toLink _ = linkURI
 
 instance HasLink Delete where

@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
 module Servant.API.Patch where
 
 import Data.Typeable ( Typeable )
@@ -11,9 +13,9 @@ import Data.Typeable ( Typeable )
 --
 -- Example:
 --
--- >            -- POST /books
+-- >            -- PATCH /books
 -- >            -- with a JSON encoded Book as the request body
 -- >            -- returning the just-created Book
--- > type MyApi = "books" :> ReqBody Book :> Post Book
-data Patch a
+-- > type MyApi = "books" :> ReqBody Book :> Patch '[JSON] Book
+data Patch (contentTypes::[*]) a
   deriving Typeable
