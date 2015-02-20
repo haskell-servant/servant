@@ -41,7 +41,6 @@ library
     Servant.API.ReqBody
     Servant.API.Sub
     Servant.Common.Text
-    Servant.QQ
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5

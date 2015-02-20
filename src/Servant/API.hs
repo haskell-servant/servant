@@ -38,8 +38,6 @@ module Servant.API (
   module Servant.API.Raw,
 
   -- * Utilities
-  -- | QuasiQuotes for endpoints
-  module Servant.QQ,
   -- | Type-safe internal URIs
   module Servant.Utils.Links,
   ) where
@@ -59,5 +57,4 @@ import Servant.API.MatrixParam ( MatrixFlag, MatrixParams, MatrixParam )
 import Servant.API.Raw ( Raw )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.Sub ( (:>)(..) )
-import Servant.QQ ( sitemap )
 import Servant.Utils.Links ( safeLink, URI(..), IsElem, IsElem', HasLink(..) )
