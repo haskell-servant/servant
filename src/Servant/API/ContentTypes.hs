@@ -12,11 +12,14 @@
 module Servant.API.ContentTypes where
 
 import           Control.Arrow           (left)
+import           Control.Monad
 import           Data.Aeson              (FromJSON, ToJSON, eitherDecode,
                                           encode)
 import qualified Data.ByteString         as BS
 import           Data.ByteString.Lazy    (ByteString, fromStrict, toStrict)
+import qualified Data.ByteString.Lazy    as B
 import           Data.String.Conversions (cs)
+import           Data.Monoid
 import qualified Data.Text.Lazy          as TextL
 import qualified Data.Text.Lazy.Encoding as TextL
 import qualified Data.Text               as TextS
@@ -24,10 +27,13 @@ import qualified Data.Text.Encoding      as TextS
 import           Data.Typeable
 import           GHC.Exts                (Constraint)
 import qualified Network.HTTP.Media      as M
+import           Network.URI             (unEscapeString, escapeURIString,
+                                          isUnreserved)
 
 -- * Provided content types
 data JSON deriving Typeable
 data PlainText deriving Typeable
+data FormUrlEncoded deriving Typeable
 data OctetStream deriving Typeable
 
 -- * Accept class
@@ -47,6 +53,10 @@ class Accept ctype where
 -- | @application/json@
 instance Accept JSON where
     contentType _ = "application" M.// "json"
+
+-- | @application/x-www-form-urlencoded@
+instance Accept FormUrlEncoded where
+    contentType _ = "application" M.// "x-www-form-urlencoded"
 
 -- | @text/plain;charset=utf-8@
 instance Accept PlainText where
@@ -179,6 +189,10 @@ type family IsNonEmpty (ls::[*]) :: Constraint where
 instance ToJSON a => MimeRender JSON a where
     toByteString _ = encode
 
+-- | `encodeFormUrlEncoded . toFormUrlEncoded`
+instance ToFormUrlEncoded a => MimeRender FormUrlEncoded a where
+    toByteString _ = encodeFormUrlEncoded . toFormUrlEncoded
+
 -- | `TextL.encodeUtf8`
 instance MimeRender PlainText TextL.Text where
     toByteString _ = TextL.encodeUtf8
@@ -191,7 +205,7 @@ instance MimeRender PlainText TextS.Text where
 instance MimeRender OctetStream ByteString where
     toByteString _ = id
 
--- | `toStrict`
+-- | `fromStrict`
 instance MimeRender OctetStream BS.ByteString where
     toByteString _ = fromStrict
 
@@ -202,6 +216,10 @@ instance MimeRender OctetStream BS.ByteString where
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where
     fromByteString _ = eitherDecode
+
+-- | `decodeFormUrlEncoded >=> fromFormUrlEncoded`
+instance FromFormUrlEncoded a => MimeUnrender FormUrlEncoded a where
+    fromByteString _ = decodeFormUrlEncoded >=> fromFormUrlEncoded
 
 -- | `left show . TextL.decodeUtf8'`
 instance MimeUnrender PlainText TextL.Text where
@@ -218,3 +236,46 @@ instance MimeUnrender OctetStream ByteString where
 -- | `Right . toStrict`
 instance MimeUnrender OctetStream BS.ByteString where
     fromByteString _ = Right . toStrict
+
+
+--------------------------------------------------------------------------
+-- * FormUrlEncoded
+
+-- | A type that can be converted to @application/x-www-form-urlencoded@
+class ToFormUrlEncoded a where
+  toFormUrlEncoded :: a -> [(TextS.Text, TextS.Text)]
+
+instance ToFormUrlEncoded [(TextS.Text, TextS.Text)] where
+  toFormUrlEncoded = id
+
+-- | A type that can be converted from @application/x-www-form-urlencoded@,
+-- with the possibility of failure.
+class FromFormUrlEncoded a where
+  fromFormUrlEncoded :: [(TextS.Text, TextS.Text)] -> Either String a
+
+instance FromFormUrlEncoded [(TextS.Text, TextS.Text)] where
+  fromFormUrlEncoded = return
+
+encodeFormUrlEncoded :: [(TextS.Text, TextS.Text)] -> ByteString
+encodeFormUrlEncoded xs =
+    let escape :: TextS.Text -> ByteString
+        escape = cs . escapeURIString isUnreserved . cs
+        encodePair :: (TextS.Text, TextS.Text) -> ByteString
+        encodePair (k, v) = escape k <> "=" <> escape v
+    in B.intercalate "&" $ map encodePair xs
+
+decodeFormUrlEncoded :: ByteString -> Either String [(TextS.Text, TextS.Text)]
+decodeFormUrlEncoded "" = return []
+decodeFormUrlEncoded q = do
+    let xs :: [TextS.Text]
+        xs = TextS.splitOn "&" . cs $ q
+        parsePair :: TextS.Text -> Either String (TextS.Text, TextS.Text)
+        parsePair p =
+            case TextS.splitOn "=" p of
+                [k,v] -> return ( unescape k
+                                , unescape v
+                                )
+                _ -> Left $ "not a valid pair: " <> cs p
+        unescape :: TextS.Text -> TextS.Text
+        unescape = cs . unEscapeString . cs . TextS.intercalate "%20" . TextS.splitOn "+"
+    mapM parsePair xs

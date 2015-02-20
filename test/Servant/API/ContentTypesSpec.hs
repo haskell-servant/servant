@@ -38,6 +38,12 @@ spec = describe "Servant.API.ContentTypes" $ do
             let p = Proxy :: Proxy JSON
             property $ \x -> fromByteString p (toByteString p x) == Right (x::SomeData)
 
+    describe "The FormUrlEncoded Content-Type type" $ do
+
+        it "has fromByteString reverse toByteString" $ do
+            let p = Proxy :: Proxy FormUrlEncoded
+            property $ \x -> fromByteString p (toByteString p x) == Right (x::[(TextS.Text,TextS.Text)])
+
     describe "The PlainText Content-Type type" $ do
 
         it "has fromByteString reverse toByteString (lazy Text)" $ do
