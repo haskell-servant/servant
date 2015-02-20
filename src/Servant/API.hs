@@ -46,9 +46,8 @@ module Servant.API (
 
 import Servant.API.Alternative ( (:<|>)(..) )
 import Servant.API.Capture ( Capture )
-import Servant.API.ContentTypes ( HTML, XML, JSON, JavaScript, CSS
-                                , PlainText, OctetStream, MimeRender(..)
-                                , MimeUnrender(..))
+import Servant.API.ContentTypes ( JSON , PlainText, OctetStream
+                                , MimeRender(..) , MimeUnrender(..))
 import Servant.API.Delete ( Delete )
 import Servant.API.Get ( Get )
 import Servant.API.Header ( Header )

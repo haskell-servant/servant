@@ -1,29 +1,30 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Servant.API.ContentTypes where
 
+import           Control.Arrow           (left)
+import           Data.Aeson              (FromJSON, ToJSON, eitherDecode,
+                                          encode)
 import qualified Data.ByteString         as BS
 import           Data.ByteString.Lazy    (ByteString)
 import           Data.String.Conversions (cs)
+import qualified Data.Text.Lazy          as Text
+import qualified Data.Text.Lazy.Encoding as Text
 import           Data.Typeable
 import           GHC.Exts                (Constraint)
 import qualified Network.HTTP.Media      as M
 
 -- * Provided content types
-data XML deriving Typeable
-data HTML deriving Typeable
 data JSON deriving Typeable
-data JavaScript deriving Typeable
-data CSS deriving Typeable
 data PlainText deriving Typeable
 data OctetStream deriving Typeable
 
@@ -41,25 +42,9 @@ data OctetStream deriving Typeable
 class Accept ctype where
     contentType   :: Proxy ctype -> M.MediaType
 
--- | @text/html;charset=utf-8@
-instance Accept HTML where
-    contentType _ = "text" M.// "html" M./: ("charset", "utf-8")
-
 -- | @application/json;charset=utf-8@
 instance Accept JSON where
     contentType _ = "application" M.// "json" M./: ("charset", "utf-8")
-
--- | @application/xml;charset=utf-8@
-instance Accept XML where
-    contentType _ = "application" M.// "xml" M./: ("charset", "utf-8")
-
--- | @application/javascript;charset=utf-8@
-instance Accept JavaScript where
-    contentType _ = "application" M.// "javascript" M./: ("charset", "utf-8")
-
--- | @text/css;charset=utf-8@
-instance Accept CSS where
-    contentType _ = "text" M.// "css" M./: ("charset", "utf-8")
 
 -- | @text/plain;charset=utf-8@
 instance Accept PlainText where
@@ -168,3 +153,34 @@ instance ( MimeUnrender ctyp a
 
 type family IsNonEmpty (ls::[*]) :: Constraint where
     IsNonEmpty (x ': xs)   = ()
+
+
+--------------------------------------------------------------------------
+-- * MimeRender Instances
+
+-- | `encode`
+instance ToJSON a => MimeRender JSON a where
+    toByteString _ = encode
+
+-- | `Text.encodeUtf8`
+instance MimeRender PlainText Text.Text where
+    toByteString _ = Text.encodeUtf8
+
+-- | `id`
+instance MimeRender OctetStream ByteString where
+    toByteString _ = id
+
+--------------------------------------------------------------------------
+-- * MimeUnrender Instances
+
+-- | `eitherDecode`
+instance FromJSON a => MimeUnrender JSON a where
+    fromByteString _ = eitherDecode
+
+-- | `left show . Text.decodeUtf8'`
+instance MimeUnrender PlainText Text.Text where
+    fromByteString _ = left show . Text.decodeUtf8'
+
+-- | `Right . id`
+instance MimeUnrender OctetStream ByteString where
+    fromByteString _ = Right . id

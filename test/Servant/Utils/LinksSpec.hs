@@ -29,15 +29,15 @@ type TestApi =
   :<|> "raw" :> Raw
 
 type TestLink = "hello" :> "hi" :> Get '[JSON] Bool
-type TestLink2 = "greet" :> Post '[XML] Bool
+type TestLink2 = "greet" :> Post '[PlainText] Bool
 type TestLink3 = "parent" :> "child" :> Get '[JSON] String
 
 type BadTestLink = "hallo" :> "hi" :> Get '[JSON] Bool
-type BadTestLink2 = "greet" :> Get '[XML] Bool
+type BadTestLink2 = "greet" :> Get '[PlainText] Bool
 type BadTestLink3 = "parent" :> "child" :> MatrixFlag "male" :> Get '[JSON] String
 
-type BadTestLink' = "hello" :> "hi" :> Get '[HTML] Bool
-type BadTestLink'2 = "greet" :> Get '[HTML] Bool
+type BadTestLink' = "hello" :> "hi" :> Get '[OctetStream] Bool
+type BadTestLink'2 = "greet" :> Get '[OctetStream] Bool
 
 type NotALink = "hello" :> Capture "x" Bool :> Get '[JSON] Bool
 type NotALink2 = "hello" :> ReqBody '[JSON] 'True :> Get '[JSON] Bool
