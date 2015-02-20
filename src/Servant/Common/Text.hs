@@ -13,10 +13,14 @@ import Data.Text.Read ( rational, signed, decimal, Reader )
 import Data.Word ( Word, Word8, Word16, Word32, Word64 )
 
 -- | For getting values from url captures and query string parameters
+-- Instances should obey:
+-- > fromText (toText a) == Just a
 class FromText a where
   fromText :: Text -> Maybe a
 
 -- | For putting values in paths and query string parameters
+-- Instances should obey:
+-- > fromText (toText a) == Just a
 class ToText a where
   toText :: a -> Text
 
@@ -109,7 +113,7 @@ instance ToText Word64 where
   toText = cs . show
 
 instance FromText Integer where
-  fromText = runReader decimal
+  fromText = runReader (signed decimal)
 
 instance ToText Integer where
   toText = cs . show

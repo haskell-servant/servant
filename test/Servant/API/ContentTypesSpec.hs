@@ -21,6 +21,7 @@ import qualified Data.Text.Lazy           as TextL
 import           GHC.Generics
 import           Test.Hspec
 import           Test.QuickCheck
+import           Test.QuickCheck.Instances ()
 
 import           Servant.API.ContentTypes
 
@@ -145,12 +146,6 @@ instance ToJSON SomeData
 instance Arbitrary SomeData where
     arbitrary = SomeData <$> arbitrary <*> arbitrary
 
-instance Arbitrary TextL.Text where
-    arbitrary = TextL.pack <$> arbitrary
-
-instance Arbitrary TextS.Text where
-    arbitrary = TextS.pack <$> arbitrary
-
 instance Arbitrary ZeroToOne where
     arbitrary = ZeroToOne <$> elements [ x / 10 | x <- [1..10]]
 
@@ -168,12 +163,6 @@ instance ToJSON ByteString where
 
 instance IsString AcceptHeader where
     fromString = AcceptHeader . fromString
-
-instance Arbitrary BSL.ByteString where
-    arbitrary = cs <$> (arbitrary :: Gen String)
-
-instance Arbitrary ByteString where
-    arbitrary = cs <$> (arbitrary :: Gen String)
 
 addToAccept :: Accept a => Proxy a -> ZeroToOne -> AcceptHeader -> AcceptHeader
 addToAccept p (ZeroToOne f) (AcceptHeader h) = AcceptHeader (cont h)

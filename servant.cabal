@@ -89,6 +89,7 @@ test-suite spec
     , bytestring
     , hspec == 2.*
     , QuickCheck
+    , quickcheck-instances
     , parsec
     , servant
     , string-conversions
