@@ -11,8 +11,12 @@ script:
   - ./test-docs.sh
 
 after_script:
-  - cabal install hpc-coveralls
-  - hpc-coveralls --exclude-dir=test spec
+    - |
+        if [ "$TRAVIS_PULL_REQUEST" -eq "$TRAVIS_PULL_REQUEST" ] 2>/dev/null ; then
+          cabal install hpc-coveralls
+          hpc-coveralls --exclude-dir=test spec
+        fi
+
 
 notifications:
   irc:
