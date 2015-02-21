@@ -31,7 +31,6 @@ library
   exposed-modules:
     Servant
     Servant.Server
-    Servant.Server.ContentTypes
     Servant.Server.Internal
     Servant.Utils.StaticFiles
   build-depends:
@@ -40,7 +39,6 @@ library
       , attoparsec         >= 0.12 && < 0.13
       , bytestring         >= 0.10 && < 0.11
       , either             >= 4.3  && < 4.4
-      , http-media         >= 0.4  && < 0.5
       , http-types         >= 0.8  && < 0.9
       , network-uri        >= 2.6  && < 2.7
       , safe               >= 0.3  && < 0.4

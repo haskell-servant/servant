@@ -16,7 +16,6 @@ import Data.Proxy (Proxy)
 import Network.Wai (Application)
 
 import Servant.Server.Internal
-import Servant.Server.ContentTypes ()
 
 
 -- * Implementing Servers
