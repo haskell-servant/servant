@@ -6,7 +6,6 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 import Data.Aeson
-import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Proxy
 import Data.String.Conversions
 import Data.Text (Text)
@@ -20,16 +19,14 @@ import Servant.Docs
 newtype Greet = Greet Text
   deriving (Generic, Show)
 
+-- | We can get JSON support automatically. This will be used to parse
+-- and encode a Greeting as 'JSON'.
 instance FromJSON Greet
 instance ToJSON Greet
 
--- | A 'Greet' value can be rendered to 'JSON'.
-instance MimeRender JSON Greet where
-    toByteString Proxy = encodePretty
-
--- | A 'Greet' value can be rendered to 'HTML'.
-instance MimeRender HTML Greet where
-    toByteString Proxy (Greet s) = "<h1>" <> cs s <> "</h1>"
+-- | We can also implement 'MimeRender' for additional formats like 'PlainText'.
+instance MimeRender PlainText Greet where
+    toByteString Proxy (Greet s) = "\"" <> cs s <> "\""
 
 -- We add some useful annotations to our captures,
 -- query parameters and request body to make the docs
@@ -76,8 +73,8 @@ intro2 = DocIntro "This title is below the last"
 
 -- API specification
 type TestApi =
-       -- GET /hello/:name?capital={true, false}  returns a Greet as JSON or HTML
-       "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON, HTML] Greet
+       -- GET /hello/:name?capital={true, false}  returns a Greet as JSON or PlainText
+       "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON, PlainText] Greet
 
        -- POST /greet with a Greet as JSON in the request body,
        --             returns a Greet as JSON
