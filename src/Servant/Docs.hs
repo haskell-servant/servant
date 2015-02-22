@@ -127,7 +127,7 @@
 -- > -- notes.
 -- > extra :: ExtraInfo TestApi
 -- > extra =
--- >     safeInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+-- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
 -- >              defAction & headers <>~ ["unicorns"]
 -- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
 -- >                                      , DocNote "Second secton" ["And some more"]
@@ -149,7 +149,7 @@ module Servant.Docs
   ( -- * 'HasDocs' class and key functions
     HasDocs(..), docs, markdown
     -- * Generating docs with extra information
-  , ExtraInfo(..), docsWith, docsWithIntros, safeInfo
+  , ExtraInfo(..), docsWith, docsWithIntros, extraInfo
 
   , -- * Classes you need to implement for your types
     ToSample(..)
@@ -317,7 +317,7 @@ data DocNote = DocNote
 -- | Type of extra information that a user may wish to "union" with their
 -- documentation.
 --
--- These are intended to be built using safeInfo.
+-- These are intended to be built using extraInfo.
 -- Multiple ExtraInfo may be combined with the monoid instance.
 newtype ExtraInfo layout = ExtraInfo (HashMap Endpoint Action)
 instance Monoid (ExtraInfo a) where
@@ -448,15 +448,15 @@ type family IsIn (endpoint :: *) (api :: *) :: Constraint where
 --
 -- > extra :: ExtraInfo TestApi
 -- > extra =
--- >     safeInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+-- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
 -- >              defAction & headers <>~ ["unicorns"]
 -- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
 -- >                                      , DocNote "Second secton" ["And some more"]
 -- >                                      ]
 
-safeInfo :: (IsIn endpoint layout, HasLink endpoint, HasDocs endpoint)
+extraInfo :: (IsIn endpoint layout, HasLink endpoint, HasDocs endpoint)
          => Proxy endpoint -> Action -> ExtraInfo layout
-safeInfo p action =
+extraInfo p action =
     let api = docsFor p (defEndpoint, defAction)
     -- Assume one endpoint, HasLink constraint means that we should only ever
     -- point at one endpoint.
@@ -471,7 +471,7 @@ safeInfo p action =
 -- will be "unioned" with the automatically generated endpoint documentation.
 --
 -- You are expected to build up the ExtraInfo with the Monoid instance and
--- 'safeInfo'.
+-- 'extraInfo'.
 --
 -- If you only want to add an introduction, use 'docsWithIntros'.
 docsWith :: HasDocs layout

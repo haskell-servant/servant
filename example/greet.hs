@@ -88,7 +88,7 @@ testApi = Proxy
 -- notes.
 extra :: ExtraInfo TestApi
 extra =
-    safeInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+    extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
              defAction & headers <>~ ["unicorns"]
                        & notes   <>~ [ DocNote "Title" ["This is some text"]
                                      , DocNote "Second secton" ["And some more"]
