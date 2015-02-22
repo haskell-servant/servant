@@ -10,24 +10,35 @@ You'll also note that multiple intros are possible.
 
 ## POST /greet
 
-#### Request Body:
+#### Request:
 
-``` javascript
+- Supported content types are:
+
+    - `application/json`
+
+- Example: `application/json`
+
+```javascript
 "Hello, haskeller!"
 ```
 
 #### Response:
 
- - Status code 201
- - If you use ?capital=true
+- Status code 201
 
-``` javascript
+- Supported content types are:
+
+    - `application/json`
+
+- If you use ?capital=true
+
+```javascript
 "HELLO, HASKELLER"
 ```
 
- - If you use ?capital=false
+- If you use ?capital=false
 
-``` javascript
+```javascript
 "Hello, haskeller"
 ```
 
@@ -37,48 +48,77 @@ You'll also note that multiple intros are possible.
 
 - *name*: name of the person to greet
 
-#### Matrix Parameters**:
+#### Matrix Parameters:
 
 **hello**:
 
- - lang
+- lang
      - **Values**: *en, sv, fr*
      - **Description**: Get the greeting message selected language. Default is en.
 
 
 
-
 #### GET Parameters:
 
- - capital
+- capital
      - **Values**: *true, false*
      - **Description**: Get the greeting message in uppercase (true) or not (false).Default is false.
 
 
 #### Response:
 
- - Status code 200
- - If you use ?capital=true
+- Status code 200
 
-``` javascript
+- Supported content types are:
+
+    - `application/json`
+    - `text/plain;charset=utf-8`
+
+- If you use ?capital=true
+
+```javascript
 "HELLO, HASKELLER"
 ```
 
- - If you use ?capital=false
+- If you use ?capital=true
 
-``` javascript
+```
+"HELLO, HASKELLER"
+```
+
+- If you use ?capital=false
+
+```javascript
+"Hello, haskeller"
+```
+
+- If you use ?capital=false
+
+```
 "Hello, haskeller"
 ```
 
 ## DELETE /greet/:greetid
 
+#### Title
+
+This is some text
+
+#### Second secton
+
+And some more
+
 #### Captures:
 
 - *greetid*: identifier of the greet msg to remove
 
+
+- This endpoint is sensitive to the value of the **unicorns** HTTP header.
+
 #### Response:
 
- - Status code 204
- - No response body
+- Status code 200
+
+- No response body
 
 

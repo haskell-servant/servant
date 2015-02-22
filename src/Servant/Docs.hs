@@ -1,16 +1,16 @@
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TupleSections         #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PolyKinds #-}
 
 -------------------------------------------------------------------------------
 -- | This module lets you get API docs for free. It lets generate
@@ -37,15 +37,17 @@
 -- Here's a little (but complete) example that you can run to see the
 -- markdown pretty printer in action:
 --
--- > {-# LANGUAGE DataKinds #-}
--- > {-# LANGUAGE DeriveGeneric #-}
--- > {-# LANGUAGE TypeOperators #-}
--- > {-# LANGUAGE FlexibleInstances #-}
--- > {-# LANGUAGE OverloadedStrings #-}
+-- > {-# LANGUAGE DataKinds             #-}
+-- > {-# LANGUAGE DeriveGeneric         #-}
+-- > {-# LANGUAGE FlexibleInstances     #-}
+-- > {-# LANGUAGE MultiParamTypeClasses #-}
+-- > {-# LANGUAGE OverloadedStrings     #-}
+-- > {-# LANGUAGE TypeOperators         #-}
 -- > {-# OPTIONS_GHC -fno-warn-orphans #-}
 -- > import Data.Aeson
 -- > import Data.Proxy
--- > import Data.Text(Text)
+-- > import Data.String.Conversions
+-- > import Data.Text (Text)
 -- > import GHC.Generics
 -- > import Servant.API
 -- > import Servant.Docs
@@ -56,8 +58,14 @@
 -- > newtype Greet = Greet Text
 -- >   deriving (Generic, Show)
 -- >
+-- > -- | We can get JSON support automatically. This will be used to parse
+-- > -- and encode a Greeting as 'JSON'.
 -- > instance FromJSON Greet
 -- > instance ToJSON Greet
+-- >
+-- > -- | We can also implement 'MimeRender' for additional formats like 'PlainText'.
+-- > instance MimeRender PlainText Greet where
+-- >     toByteString Proxy (Greet s) = "\"" <> cs s <> "\""
 -- >
 -- > -- We add some useful annotations to our captures,
 -- > -- query parameters and request body to make the docs
@@ -91,6 +99,11 @@
 -- >     , ("If you use ?capital=false", Greet "Hello, haskeller")
 -- >     ]
 -- >
+-- > -- We define some introductory sections, these will appear at the top of the
+-- > -- documentation.
+-- > --
+-- > -- We pass them in with 'docsWith', below. If you only want to add
+-- > -- introductions, you may use 'docsWithIntros'
 -- > intro1 :: DocIntro
 -- > intro1 = DocIntro "On proper introductions." -- The title
 -- >     [ "Hello there."
@@ -104,8 +117,8 @@
 -- >
 -- > -- API specification
 -- > type TestApi =
--- >        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
--- >        "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON] Greet
+-- >        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON or PlainText
+-- >        "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON, PlainText] Greet
 -- >
 -- >        -- POST /greet with a Greet as JSON in the request body,
 -- >        --             returns a Greet as JSON
@@ -117,21 +130,34 @@
 -- > testApi :: Proxy TestApi
 -- > testApi = Proxy
 -- >
+-- > -- Build some extra information for the DELETE /greet/:greetid endpoint. We
+-- > -- want to add documentation about a secret unicorn header and some extra
+-- > -- notes.
+-- > extra :: ExtraInfo TestApi
+-- > extra =
+-- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+-- >              defAction & headers <>~ ["unicorns"]
+-- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
+-- >                                      , DocNote "Second secton" ["And some more"]
+-- >                                      ]
+-- >
 -- > -- Generate the data that lets us have API docs. This
 -- > -- is derived from the type as well as from
 -- > -- the 'ToCapture', 'ToParam' and 'ToSample' instances from above.
 -- > --
--- > -- If you didn't want intros you could just call:
+-- > -- If you didn't want intros and extra information, you could just call:
 -- > --
--- > -- > docs testAPI
+-- > -- > docs testAPI :: API
 -- > docsGreet :: API
--- > docsGreet = docsWithIntros [intro1, intro2] testApi
+-- > docsGreet = docsWith [intro1, intro2] extra testApi
 -- >
 -- > main :: IO ()
 -- > main = putStrLn $ markdown docsGreet
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, docsWithIntros, markdown
+    HasDocs(..), docs, markdown
+    -- * Generating docs with extra information
+  , ExtraInfo(..), docsWith, docsWithIntros, extraInfo
 
   , -- * Classes you need to implement for your types
     ToSample(..)
@@ -158,7 +184,7 @@ module Servant.Docs
   ) where
 
 import Control.Applicative
-import Control.Lens
+import Control.Lens hiding (Action)
 import Data.Aeson
 import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.Hashable
@@ -172,7 +198,9 @@ import Data.String.Conversions
 import Data.Text (Text, pack, unpack)
 import GHC.Generics
 import GHC.TypeLits
+import GHC.Exts(Constraint)
 import Servant.API
+import Servant.Utils.Links
 import Servant.API.ContentTypes
 
 import qualified Data.HashMap.Strict as HM
@@ -296,6 +324,17 @@ data DocNote = DocNote
   , _noteBody  :: [String]
   } deriving (Eq, Show)
 
+-- | Type of extra information that a user may wish to "union" with their
+-- documentation.
+--
+-- These are intended to be built using extraInfo.
+-- Multiple ExtraInfo may be combined with the monoid instance.
+newtype ExtraInfo layout = ExtraInfo (HashMap Endpoint Action)
+instance Monoid (ExtraInfo a) where
+    mempty = ExtraInfo mempty
+    ExtraInfo a `mappend` ExtraInfo b =
+        ExtraInfo $ HM.unionWith combineAction a b
+
 -- | Type of GET parameter:
 --
 -- - Normal corresponds to @QueryParam@, i.e your usual GET parameter
@@ -357,6 +396,16 @@ data Action = Action
   , _response :: Response                    -- user supplied
   } deriving (Eq, Show)
 
+-- | Combine two Actions, we can't make a monoid as merging Response breaks the
+-- laws.
+--
+-- As such, we invent a non-commutative, left associative operation
+-- 'combineAction' to mush two together taking the response, body and content
+-- types from the very left.
+combineAction :: Action -> Action -> Action
+Action c h p n m ts body resp `combineAction` Action c' h' p' n' m' _ _ _ =
+        Action (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
+
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
 --
@@ -398,10 +447,62 @@ makeLenses ''Action
 docs :: HasDocs layout => Proxy layout -> API
 docs p = docsFor p (defEndpoint, defAction)
 
+-- | Closed type family, check if endpoint is exactly within API.
+
+-- We aren't sure what affects how an Endpoint is built up, so we require an
+-- exact match.
+type family IsIn (endpoint :: *) (api :: *) :: Constraint where
+    IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
+    IsIn (e :> sa) (e :> sb)           = IsIn sa sb
+    IsIn e e                           = ()
+
+-- | Create an 'ExtraInfo' that is garunteed to be within the given API layout.
+--
+-- The safety here is to ensure that you only add custom documentation to an
+-- endpoint that actually exists within your API.
+--
+-- > extra :: ExtraInfo TestApi
+-- > extra =
+-- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+-- >              defAction & headers <>~ ["unicorns"]
+-- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
+-- >                                      , DocNote "Second secton" ["And some more"]
+-- >                                      ]
+
+extraInfo :: (IsIn endpoint layout, HasLink endpoint, HasDocs endpoint)
+          => Proxy endpoint -> Action -> ExtraInfo layout
+extraInfo p action =
+    let api = docsFor p (defEndpoint, defAction)
+    -- Assume one endpoint, HasLink constraint means that we should only ever
+    -- point at one endpoint.
+    in ExtraInfo $ api ^. apiEndpoints & traversed .~ action
+
+-- | Generate documentation given some extra introductions (in the form of
+-- 'DocInfo') and some extra endpoint documentation (in the form of
+-- 'ExtraInfo'.
+--
+-- The extra introductions will be prepended to the top of the documentation,
+-- before the specific endpoint documentation. The extra endpoint documentation
+-- will be "unioned" with the automatically generated endpoint documentation.
+--
+-- You are expected to build up the ExtraInfo with the Monoid instance and
+-- 'extraInfo'.
+--
+-- If you only want to add an introduction, use 'docsWithIntros'.
+docsWith :: HasDocs layout
+         => [DocIntro]
+         -> ExtraInfo layout
+         -> Proxy layout
+         -> API
+docsWith intros (ExtraInfo endpoints) p =
+    docs p & apiIntros <>~ intros
+           & apiEndpoints %~ HM.unionWith combineAction endpoints
+
+
 -- | Generate the docs for a given API that implements 'HasDocs' with with any
 -- number of introduction(s)
 docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
-docsWithIntros intros p = docs p & apiIntros <>~ intros
+docsWithIntros intros = docsWith intros mempty
 
 -- | The class that abstracts away the impact of API combinators
 --   on documentation generation.
@@ -567,10 +668,7 @@ markdown api = unlines $
         mxParamsStr l =
           "#### Matrix Parameters:" :
           "" :
-          map segmentStr l ++
-          "" :
-          []
-
+          map segmentStr l
         segmentStr :: (String, [DocQueryParam]) -> String
         segmentStr (segment, l) = unlines $
           ("**" ++ segment ++ "**:") :
@@ -620,7 +718,7 @@ markdown api = unlines $
             <> concatMap formatBody samples
 
         formatTypes [] = []
-        formatTypes ts = ["- Supported content types are: ", ""]
+        formatTypes ts = ["- Supported content types are:", ""]
             <> map (\t -> "    - `" <> show t <> "`") ts
             <> [""]
 
@@ -639,7 +737,7 @@ markdown api = unlines $
 
         contentStr mime_type body =
           "" :
-          "``` " <> markdownForType mime_type :
+          "```" <> markdownForType mime_type :
           cs body :
           "```" :
           "" :
