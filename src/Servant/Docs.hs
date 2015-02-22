@@ -625,7 +625,7 @@ markdown api = unlines $
             <> [""]
 
         formatBody (m, b) =
-          "- Example: `" <> cs (M.mainType m <> "/" <> M.subType m) <> "`" :
+          "- Example: `" <> cs (show m) <> "`" :
           contentStr m b
 
         markdownForType mime_type =
