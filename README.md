@@ -27,9 +27,14 @@ import Servant
 data Greet = Greet { _msg :: Text }
   deriving (Generic, Show)
 
--- we get our JSON serialization for free
+-- we get our JSON serialization for free. This will be used by the default
+-- 'MimeRender' instance for 'JSON'.
 instance FromJSON Greet
 instance ToJSON Greet
+
+-- We can also implement 'MimeRender' explicitly for additional formats.
+instance MimeRender PlainText Greet where
+    toByteString Proxy (Greet s) = "<h1>" <> cs s <> "</h1>"
 
 -- we provide a sample value for the 'Greet' type
 instance ToSample Greet where
@@ -51,8 +56,8 @@ instance ToCapture (Capture "greetid" Text) where
 
 -- API specification
 type TestApi =
-       "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
-  :<|> "greet" :> RQBody Greet :> Post Greet
+       "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON,PlainText] Greet
+  :<|> "greet" :> RQBody '[JSON] Greet :> Post '[JSON] Greet
   :<|> "delete" :> Capture "greetid" Text :> Delete
 
 testApi :: Proxy TestApi
