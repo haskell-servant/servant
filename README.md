@@ -31,6 +31,14 @@ data Greet = Greet { _msg :: Text }
 instance FromJSON Greet
 instance ToJSON Greet
 
+-- we can render a Greeting into JSON using this ToJSON instance
+instance MimeRender JSON Greet where
+    toByteString Proxy = encodePretty
+
+-- or we can render it to HTML
+instance MimeRender HTML Greet where
+    toByteString Proxy (Greet s) = "<h1>" <> cs s <> "</h1>"
+
 -- we provide a sample value for the 'Greet' type
 instance ToSample Greet where
   toSample = Just g
@@ -51,8 +59,8 @@ instance ToCapture (Capture "greetid" Text) where
 
 -- API specification
 type TestApi =
-       "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get Greet
-  :<|> "greet" :> RQBody Greet :> Post Greet
+       "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON,HTML] Greet
+  :<|> "greet" :> RQBody '[JSON] Greet :> Post '[JSON] Greet
   :<|> "delete" :> Capture "greetid" Text :> Delete
 
 testApi :: Proxy TestApi

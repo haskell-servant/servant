@@ -23,9 +23,11 @@ newtype Greet = Greet Text
 instance FromJSON Greet
 instance ToJSON Greet
 
+-- | A 'Greet' value can be rendered to 'JSON'.
 instance MimeRender JSON Greet where
     toByteString Proxy = encodePretty
 
+-- | A 'Greet' value can be rendered to 'HTML'.
 instance MimeRender HTML Greet where
     toByteString Proxy (Greet s) = "<h1>" <> cs s <> "</h1>"
 
@@ -74,12 +76,12 @@ intro2 = DocIntro "This title is below the last"
 
 -- API specification
 type TestApi =
-       -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
+       -- GET /hello/:name?capital={true, false}  returns a Greet as JSON or HTML
        "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON, HTML] Greet
 
        -- POST /greet with a Greet as JSON in the request body,
        --             returns a Greet as JSON
-  :<|> "greet" :> ReqBody '[JSON,HTML] Greet :> Post '[JSON] Greet
+  :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
 
        -- DELETE /greet/:greetid
   :<|> "greet" :> Capture "greetid" Text :> Delete
