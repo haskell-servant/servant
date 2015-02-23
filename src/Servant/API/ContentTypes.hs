@@ -261,6 +261,7 @@ encodeFormUrlEncoded xs =
     let escape :: TextS.Text -> ByteString
         escape = cs . escapeURIString isUnreserved . cs
         encodePair :: (TextS.Text, TextS.Text) -> ByteString
+        encodePair (k, "") = escape k
         encodePair (k, v) = escape k <> "=" <> escape v
     in B.intercalate "&" $ map encodePair xs
 
@@ -275,6 +276,7 @@ decodeFormUrlEncoded q = do
                 [k,v] -> return ( unescape k
                                 , unescape v
                                 )
+                [k] -> return ( unescape k, "" )
                 _ -> Left $ "not a valid pair: " <> cs p
         unescape :: TextS.Text -> TextS.Text
         unescape = cs . unEscapeString . cs . TextS.intercalate "%20" . TextS.splitOn "+"

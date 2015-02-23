@@ -6,11 +6,12 @@
 module Servant.API.ContentTypesSpec where
 
 import           Control.Applicative
+import           Control.Arrow
 import           Data.Aeson
 import           Data.Function            (on)
 import           Data.Proxy
 
-import           Data.ByteString.Char8
+import           Data.ByteString.Char8    (ByteString, append, pack)
 import qualified Data.ByteString.Lazy     as BSL
 import           Data.List                (maximumBy)
 import           Data.Maybe               (fromJust, isJust, isNothing)
@@ -19,6 +20,7 @@ import           Data.String.Conversions  (cs)
 import qualified Data.Text                as TextS
 import qualified Data.Text.Lazy           as TextL
 import           GHC.Generics
+import           Network.URL              (importParams, exportParams)
 import           Test.Hspec
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances ()
@@ -43,6 +45,14 @@ spec = describe "Servant.API.ContentTypes" $ do
         it "has fromByteString reverse toByteString" $ do
             let p = Proxy :: Proxy FormUrlEncoded
             property $ \x -> fromByteString p (toByteString p x) == Right (x::[(TextS.Text,TextS.Text)])
+
+        it "has fromByteString reverse exportParams (Network.URL)" $ do
+            let p = Proxy :: Proxy FormUrlEncoded
+            property $ \x -> (fromByteString p . cs . exportParams . map (cs *** cs) $ x) == Right (x::[(TextS.Text,TextS.Text)])
+
+        it "has importParams (Network.URL) reverse toByteString" $ do
+            let p = Proxy :: Proxy FormUrlEncoded
+            property $ \x -> (fmap (map (cs *** cs)) . importParams . cs . toByteString p $ x) == Just (x::[(TextS.Text,TextS.Text)])
 
     describe "The PlainText Content-Type type" $ do
 
