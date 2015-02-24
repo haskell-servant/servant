@@ -209,12 +209,6 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 import qualified Network.HTTP.Media as M
 
--- | Temporary orphan.  Can be eliminated as soon as
--- https://github.com/zmthy/http-media/pull/12 has been released.
--- (Also consider removing StandaloneDeriving language ext above.)
-instance Ord M.MediaType where
-  compare t t' = compare (show t) (show t')
-
 -- | Supported HTTP request methods
 data Method = DocDELETE -- ^ the DELETE method
             | DocGET    -- ^ the GET method

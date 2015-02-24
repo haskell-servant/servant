@@ -31,7 +31,7 @@ library
     , aeson
     , bytestring
     , hashable
-    , http-media
+    , http-media >= 0.6
     , lens
     , servant >= 0.2.1
     , string-conversions
