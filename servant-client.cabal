@@ -78,5 +78,6 @@ test-suite spec
     , servant >= 0.2.1
     , servant-client
     , servant-server >= 0.2.1
+    , text
     , wai
     , warp

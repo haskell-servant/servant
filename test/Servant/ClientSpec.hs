@@ -3,6 +3,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fcontext-stack=25 #-}
 module Servant.ClientSpec where
@@ -14,8 +15,9 @@ import Data.Aeson
 import Data.ByteString.Lazy (ByteString)
 import Data.Char
 import Data.Foldable (forM_)
+import Data.Monoid
 import Data.Proxy
-import Data.Typeable
+import qualified Data.Text as T
 import GHC.Generics
 import Network.HTTP.Media
 import Network.HTTP.Types
@@ -27,6 +29,7 @@ import Test.Hspec.QuickCheck
 import Test.QuickCheck
 
 import Servant.API
+import Servant.API.ContentTypes
 import Servant.Client
 import Servant.Server
 
@@ -41,22 +44,35 @@ data Person = Person {
 instance ToJSON Person
 instance FromJSON Person
 
+instance ToFormUrlEncoded Person where
+    toFormUrlEncoded Person{..} =
+        [("name", T.pack name), ("age", T.pack (show age))]
+
+lookupEither :: (Show a, Eq a) => a -> [(a,b)] -> Either String b
+lookupEither x xs = do
+    maybe (Left $ "could not find key " <> show x) return $ lookup x xs
+
+instance FromFormUrlEncoded Person where
+    fromFormUrlEncoded xs = do
+        n <- lookupEither "name" xs
+        a <- lookupEither "age" xs
+        return $ Person (T.unpack n) (read $ T.unpack a)
+
+
 alice :: Person
 alice = Person "Alice" 42
 
 type Api =
        "get" :> Get '[JSON] Person
   :<|> "delete" :> Delete
-  :<|> "capture" :> Capture "name" String :> Get '[JSON] Person
-  :<|> "body" :> ReqBody '[JSON] Person :> Post '[JSON] Person
-  :<|> "param" :> QueryParam "name" String :> Get '[JSON] Person
+  :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
+  :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
+  :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
-{-
   :<|> "matrixparam" :> MatrixParam "name" String :> Get '[JSON] Person
   :<|> "matrixparams" :> MatrixParams "name" String :> Get '[JSON] [Person]
   :<|> "matrixflag" :> MatrixFlag "flag" :> Get '[JSON] Bool
--}
   :<|> "rawSuccess" :> Raw
   :<|> "rawFailure" :> Raw
   :<|> "multiple" :>
@@ -80,14 +96,12 @@ server = serve api (
                    Nothing -> left (400, "missing parameter"))
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
-{-
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
                    Just name -> left (400, name ++ " not found")
                    Nothing -> left (400, "missing parameter"))
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
--}
   :<|> (\ _request respond -> respond $ responseLBS ok200 [] "rawSuccess")
   :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
   :<|> \ a b c d -> return (a, b, c, d)
@@ -103,11 +117,9 @@ getBody :: Person -> BaseUrl -> EitherT String IO Person
 getQueryParam :: Maybe String -> BaseUrl -> EitherT String IO Person
 getQueryParams :: [String] -> BaseUrl -> EitherT String IO [Person]
 getQueryFlag :: Bool -> BaseUrl -> EitherT String IO Bool
-{-
 getMatrixParam :: Maybe String -> BaseUrl -> EitherT String IO Person
 getMatrixParams :: [String] -> BaseUrl -> EitherT String IO [Person]
 getMatrixFlag :: Bool -> BaseUrl -> EitherT String IO Bool
--}
 getRawSuccess :: Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
 getRawFailure :: Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
@@ -120,11 +132,9 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
  :<|> getQueryParam
  :<|> getQueryParams
  :<|> getQueryFlag
-{-
  :<|> getMatrixParam
  :<|> getMatrixParams
  :<|> getMatrixFlag
--}
  :<|> getRawSuccess
  :<|> getRawFailure
  :<|> getMultiple)

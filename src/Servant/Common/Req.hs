@@ -9,10 +9,6 @@ import Control.Monad
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
-import Data.Aeson
-import Data.Aeson.Parser
-import Data.Aeson.Types
-import Data.Attoparsec.ByteString
 import Data.ByteString.Lazy hiding (pack, filter, map, null)
 import Data.String
 import Data.String.Conversions
