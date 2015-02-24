@@ -26,8 +26,8 @@ import GHC.TypeLits
 import Network.HTTP.Media
 import qualified Network.HTTP.Types as H
 import Servant.API
+import Servant.API.ContentTypes
 import Servant.Common.BaseUrl
-import Servant.Server.ContentTypes
 import Servant.Common.Req
 import Servant.Common.Text
 
@@ -438,15 +438,16 @@ instance HasClient Raw where
 -- > addBook :: Book -> BaseUrl -> EitherT String IO Book
 -- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
-instance (ToJSON a, HasClient sublayout)
+instance (MimeRender ct a, HasClient sublayout)
       => HasClient (ReqBody (ct ': cts) a :> sublayout) where
 
   type Client (ReqBody (ct ': cts) a :> sublayout) =
     a -> Client sublayout
 
   clientWithRoute Proxy req body =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      setRQBody (encode body) ("application" // "json" /: ("charset", "utf-8")) req
+    clientWithRoute (Proxy :: Proxy sublayout) $ do
+      let ctProxy = Proxy :: Proxy ct
+      setRQBody (toByteString ctProxy body) (contentType ctProxy) req
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where

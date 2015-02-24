@@ -24,9 +24,9 @@ import Network.HTTP.Client.TLS
 import Network.HTTP.Media
 import Network.HTTP.Types
 import Network.URI
+import Servant.API.ContentTypes
 import Servant.Common.BaseUrl
 import Servant.Common.Text
-import Servant.Server.ContentTypes
 import System.IO.Unsafe
 
 import qualified Network.HTTP.Client as Client
@@ -152,8 +152,8 @@ performRequestCT ct reqMethod req wantedStatus reqHost = do
     performRequest reqMethod (req { reqAccept = [acceptCT] }) (== wantedStatus) reqHost
   unless (matches respCT (acceptCT)) $
     left $ "requested Content-Type " <> show acceptCT <> ", but got " <> show respCT
-  maybe
-    (left (displayHttpRequest reqMethod ++ " returned invalid response of type: " ++ show respCT))
+  either
+    (left . ((displayHttpRequest reqMethod ++ " returned invalid response of type" ++ show respCT) ++))
     return
     (fromByteString ct respBody)
 
@@ -164,10 +164,3 @@ catchStatusCodeException action =
     case e of
       Client.StatusCodeException status _ _ -> return $ Left status
       exc -> throwIO exc
-
--- | Like 'Data.Aeson.decode' but allows all JSON values instead of just
--- objects and arrays.
-decodeLenient :: FromJSON a => ByteString -> Either String a
-decodeLenient input = do
-  v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
-  parseEither parseJSON v
