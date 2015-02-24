@@ -8,6 +8,7 @@
 module Servant.ServerSpec where
 
 
+import Control.Monad (when)
 import Control.Monad.Trans.Either (EitherT, left)
 import Data.Aeson (ToJSON, FromJSON, encode, decode')
 import Data.Char (toUpper)
@@ -16,21 +17,18 @@ import Data.Proxy (Proxy(Proxy))
 import Data.String (fromString)
 import Data.String.Conversions (cs)
 import GHC.Generics (Generic)
-import Network.HTTP.Types (parseQuery, ok200, status409)
-import Network.Wai (Application, Request, responseLBS, pathInfo, queryString, rawQueryString)
-import Network.Wai.Test (runSession, request, defaultRequest, simpleBody)
+import Network.HTTP.Types ( parseQuery, ok200, status409, methodPost
+                          , methodDelete, hContentType)
+import Network.Wai ( Application, Request, responseLBS, pathInfo
+                   , queryString, rawQueryString )
+import Network.Wai.Test (runSession, defaultRequest, simpleBody, request)
 import Test.Hspec (Spec, describe, it, shouldBe)
-import Test.Hspec.Wai (liftIO, with, get, post, shouldRespondWith, matchStatus)
+import Test.Hspec.Wai ( liftIO, with, get, post, shouldRespondWith
+                      , matchStatus, request )
 
-import Servant.API.Capture (Capture)
-import Servant.API.Get (Get)
-import Servant.API.ReqBody (ReqBody)
-import Servant.API.Post (Post)
-import Servant.API.QueryParam (QueryParam, QueryParams, QueryFlag)
-import Servant.API.MatrixParam (MatrixParam, MatrixParams, MatrixFlag)
-import Servant.API.Raw (Raw)
-import Servant.API.Sub ((:>))
-import Servant.API.Alternative ((:<|>)((:<|>)))
+import Servant.API (JSON, Capture, Get, ReqBody, Post, QueryParam
+                   , QueryParams, QueryFlag, MatrixParam, MatrixParams
+                   , MatrixFlag, Raw, (:>), (:<|>)(..), Header, Delete )
 import Servant.Server (Server, serve)
 import Servant.Server.Internal (RouteMismatch(..))
 
@@ -74,12 +72,13 @@ spec = do
   queryParamSpec
   matrixParamSpec
   postSpec
+  headerSpec
   rawSpec
   unionSpec
   errorsSpec
 
 
-type CaptureApi = Capture "legs" Integer :> Get Animal
+type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
 captureApi :: Proxy CaptureApi
 captureApi = Proxy
 captureServer :: Integer -> EitherT (Int, String) IO Animal
@@ -105,7 +104,7 @@ captureSpec = do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
 
-type GetApi = Get Person
+type GetApi = Get '[JSON] Person
 getApi :: Proxy GetApi
 getApi = Proxy
 
@@ -123,9 +122,9 @@ getSpec = do
         post "/" "" `shouldRespondWith` 405
 
 
-type QueryParamApi = QueryParam "name" String :> Get Person
-                :<|> "a" :> QueryParams "names" String :> Get Person
-                :<|> "b" :> QueryFlag "capitalize" :> Get Person
+type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
+                :<|> "a" :> QueryParams "names" String :> Get '[JSON] Person
+                :<|> "b" :> QueryFlag "capitalize" :> Get '[JSON] Person
 
 queryParamApi :: Proxy QueryParamApi
 queryParamApi = Proxy
@@ -170,6 +169,7 @@ queryParamSpec = do
               name = "john"
              }
 
+
       it "allows to retrieve value-less GET parameters" $
         (flip runSession) (serve queryParamApi qpServer) $ do
           let params3 = "?capitalize"
@@ -205,10 +205,10 @@ queryParamSpec = do
               name = "Alice"
              }
 
-type MatrixParamApi = "a" :> MatrixParam "name" String :> Get Person
-                :<|> "b" :> MatrixParams "names" String :> "bsub" :> MatrixParams "names" String :> Get Person
-                :<|> "c" :> MatrixFlag "capitalize" :> Get Person
-                :<|> "d" :> Capture "foo" Integer :> MatrixParam "name" String :> MatrixFlag "capitalize" :> "dsub" :> Get Person
+type MatrixParamApi = "a" :> MatrixParam "name" String :> Get '[JSON] Person
+                :<|> "b" :> MatrixParams "names" String :> "bsub" :> MatrixParams "names" String :> Get '[JSON] Person
+                :<|> "c" :> MatrixFlag "capitalize" :> Get '[JSON] Person
+                :<|> "d" :> Capture "foo" Integer :> MatrixParam "name" String :> MatrixFlag "capitalize" :> "dsub" :> Get '[JSON] Person
 
 matrixParamApi :: Proxy MatrixParamApi
 matrixParamApi = Proxy
@@ -289,8 +289,8 @@ matrixParamSpec = do
              }
 
 type PostApi =
-       ReqBody Person :> Post Integer
-  :<|> "bla" :> ReqBody Person :> Post Integer
+       ReqBody '[JSON] Person :> Post '[JSON] Integer
+  :<|> "bla" :> ReqBody '[JSON] Person :> Post '[JSON] Integer
 postApi :: Proxy PostApi
 postApi = Proxy
 
@@ -298,23 +298,58 @@ postSpec :: Spec
 postSpec = do
   describe "Servant.API.Post and .ReqBody" $ do
     with (return (serve postApi (return . age :<|> return . age))) $ do
+      let post' x = Test.Hspec.Wai.request methodPost x [(hContentType
+                                                        , "application/json;charset=utf-8")]
+
       it "allows to POST a Person" $ do
-        post "/" (encode alice) `shouldRespondWith` "42"{
+        post' "/" (encode alice) `shouldRespondWith` "42"{
           matchStatus = 201
          }
 
       it "allows alternative routes if all have request bodies" $ do
-        post "/bla" (encode alice) `shouldRespondWith` "42"{
+        post' "/bla" (encode alice) `shouldRespondWith` "42"{
           matchStatus = 201
          }
 
       it "handles trailing '/' gracefully" $ do
-        post "/bla/" (encode alice) `shouldRespondWith` "42"{
+        post' "/bla/" (encode alice) `shouldRespondWith` "42"{
           matchStatus = 201
          }
 
       it "correctly rejects invalid request bodies with status 400" $ do
-        post "/" "some invalid body" `shouldRespondWith` 400
+        post' "/" "some invalid body" `shouldRespondWith` 400
+
+      it "responds with 415 if the requested media type is unsupported" $ do
+        let post'' x = Test.Hspec.Wai.request methodPost x [(hContentType
+                                                            , "application/nonsense")]
+        post'' "/" "anything at all" `shouldRespondWith` 415
+
+type HeaderApi a = Header "MyHeader" a :> Delete
+headerApi :: Proxy (HeaderApi a)
+headerApi = Proxy
+
+headerSpec :: Spec
+headerSpec = describe "Servant.API.Header" $ do
+
+    let expectsInt :: Maybe Int -> EitherT (Int,String) IO ()
+        expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
+        expectsInt Nothing  = error "Expected an int"
+
+    let expectsString :: Maybe String -> EitherT (Int,String) IO ()
+        expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
+        expectsString Nothing  = error "Expected a string"
+
+    with (return (serve headerApi expectsInt)) $ do
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"5")]
+
+        it "passes the header to the handler (Int)" $
+            delete' "/" "" `shouldRespondWith` 204
+
+    with (return (serve headerApi expectsString)) $ do
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"more from you")]
+
+        it "passes the header to the handler (String)" $
+            delete' "/" "" `shouldRespondWith` 204
 
 
 type RawApi = "foo" :> Raw
@@ -344,8 +379,8 @@ rawSpec = do
 
 
 type AlternativeApi =
-       "foo" :> Get Person
-  :<|> "bar" :> Get Animal
+       "foo" :> Get '[JSON] Person
+  :<|> "bar" :> Get '[JSON] Animal
 unionApi :: Proxy AlternativeApi
 unionApi = Proxy
 
@@ -375,7 +410,7 @@ errorsSpec = do
   let ib = InvalidBody "The body is invalid"
   let wm = WrongMethod
   let nf = NotFound
-  
+
   describe "Servant.Server.Internal.RouteMismatch" $ do
     it "HttpError > *" $ do
       ib <> he `shouldBe` he

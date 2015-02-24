@@ -8,7 +8,6 @@ module Servant (
   -- | Using your types in request paths and query string parameters
   module Servant.Common.Text,
   -- | Utilities on top of the servant core
-  module Servant.QQ,
   module Servant.Utils.Links,
   module Servant.Utils.StaticFiles,
   -- | Useful re-exports
@@ -19,6 +18,5 @@ import Data.Proxy
 import Servant.API
 import Servant.Common.Text
 import Servant.Server
-import Servant.QQ
 import Servant.Utils.Links
 import Servant.Utils.StaticFiles

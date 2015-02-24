@@ -9,6 +9,7 @@ module Servant.Server
 
   , -- * Handlers for all standard combinators
     HasServer(..)
+
   ) where
 
 import Data.Proxy (Proxy)
@@ -23,8 +24,8 @@ import Servant.Server.Internal
 --
 -- Example:
 --
--- > type MyApi = "books" :> Get [Book] -- GET /books
--- >         :<|> "books" :> ReqBody Book :> Post Book -- POST /books
+-- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
+-- >         :<|> "books" :> ReqBody Book :> Post '[JSON] Book -- POST /books
 -- >
 -- > server :: Server MyApi
 -- > server = listAllBooks :<|> postBook
