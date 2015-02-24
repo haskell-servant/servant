@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE KindSignatures #-}
-module Servant.API.Put where
+module Servant.API.Put (Put) where
 
 import Data.Typeable ( Typeable )
 
@@ -10,8 +10,15 @@ import Data.Typeable ( Typeable )
 --
 -- Example:
 --
--- > -- PUT /books/:isbn
--- > -- with a Book as request body, returning the updated Book
--- > type MyApi = "books" :> Capture "isbn" Text :> ReqBody Book :> Put '[JSON] Book
-data Put (contentTypes::[*]) a
+-- >>> -- PUT /books/:isbn
+-- >>> -- with a Book as request body, returning the updated Book
+-- >>> type MyApi = "books" :> Capture "isbn" Text :> ReqBody '[JSON] Book :> Put '[JSON] Book
+data Put (contentTypes :: [*]) a
   deriving Typeable
+
+-- $setup
+-- >>> import Servant.API
+-- >>> import Data.Aeson
+-- >>> import Data.Text
+-- >>> data Book
+-- >>> instance ToJSON Book where { toJSON = undefined }

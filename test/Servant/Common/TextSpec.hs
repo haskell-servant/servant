@@ -1,12 +1,12 @@
 module Servant.Common.TextSpec where
 
-import Servant.Common.Text
-import Test.Hspec
-import Test.QuickCheck
-import Test.QuickCheck.Instances ()
-import Data.Int ( Int8, Int16, Int32, Int64 )
-import Data.Text ( Text )
-import Data.Word ( Word, Word8, Word16, Word32, Word64 )
+import           Data.Int                  (Int16, Int32, Int64, Int8)
+import           Data.Text                 (Text)
+import           Data.Word                 (Word, Word16, Word32, Word64, Word8)
+import           Servant.Common.Text
+import           Test.Hspec
+import           Test.QuickCheck
+import           Test.QuickCheck.Instances ()
 
 spec :: Spec
 spec = describe "Servant.Common.Text" $ do
