@@ -212,7 +212,7 @@ data Method = DocDELETE -- ^ the DELETE method
             | DocGET    -- ^ the GET method
             | DocPOST   -- ^ the POST method
             | DocPUT    -- ^ the PUT method
-  deriving (Eq, Generic)
+  deriving (Eq, Ord, Generic)
 
 instance Show Method where
   show DocGET = "GET"
@@ -239,7 +239,7 @@ instance Hashable Method
 data Endpoint = Endpoint
   { _path   :: [String] -- type collected
   , _method :: Method   -- type collected
-  } deriving (Eq, Generic)
+  } deriving (Eq, Ord, Generic)
 
 instance Show Endpoint where
   show (Endpoint p m) =
@@ -291,7 +291,7 @@ emptyAPI = mempty
 data DocCapture = DocCapture
   { _capSymbol :: String -- type supplied
   , _capDesc   :: String -- user supplied
-  } deriving (Eq, Show)
+  } deriving (Eq, Ord, Show)
 
 -- | A type to represent a /GET/ parameter from the Query String. Holds its name,
 --   the possible values (leave empty if there isn't a finite number of them),
@@ -303,7 +303,7 @@ data DocQueryParam = DocQueryParam
   , _paramValues :: [String] -- user supplied
   , _paramDesc   :: String   -- user supplied
   , _paramKind   :: ParamKind
-  } deriving (Eq, Show)
+  } deriving (Eq, Ord, Show)
 
 -- | An introductory paragraph for your documentation. You can pass these to
 -- 'docsWithIntros'.
@@ -322,7 +322,7 @@ instance Ord DocIntro where
 data DocNote = DocNote
   { _noteTitle :: String
   , _noteBody  :: [String]
-  } deriving (Eq, Show)
+  } deriving (Eq, Ord, Show)
 
 -- | Type of extra information that a user may wish to "union" with their
 -- documentation.
@@ -341,7 +341,7 @@ instance Monoid (ExtraInfo a) where
 -- - List corresponds to @QueryParams@, i.e GET parameters with multiple values
 -- - Flag corresponds to @QueryFlag@, i.e a value-less GET parameter
 data ParamKind = Normal | List | Flag
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | A type to represent an HTTP response. Has an 'Int' status, a list of
 -- possible 'MediaType's, and a list of example 'ByteString' response bodies.
@@ -362,7 +362,7 @@ data Response = Response
   { _respStatus :: Int
   , _respTypes  :: [M.MediaType]
   , _respBody   :: [(Text, M.MediaType, ByteString)]
-  } deriving (Eq, Show)
+  } deriving (Eq, Ord, Show)
 
 -- | Default response: status code 200, no response body.
 --
@@ -394,7 +394,7 @@ data Action = Action
   , _rqtypes  :: [M.MediaType]               -- type collected
   , _rqbody   :: [(M.MediaType, ByteString)] -- user supplied
   , _response :: Response                    -- user supplied
-  } deriving (Eq, Show)
+  } deriving (Eq, Ord, Show)
 
 -- | Combine two Actions, we can't make a monoid as merging Response breaks the
 -- laws.
@@ -611,7 +611,7 @@ class ToCapture c where
 markdown :: API -> String
 markdown api = unlines $
        introsStr (api ^. apiIntros)
-    ++ (concatMap (uncurry printEndpoint) . HM.toList $ api ^. apiEndpoints)
+    ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
 
   where printEndpoint :: Endpoint -> Action -> [String]
         printEndpoint endpoint action =
