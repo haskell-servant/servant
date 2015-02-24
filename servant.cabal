@@ -46,7 +46,7 @@ library
       base >=4.7 && <5
     , aeson >= 0.7
     , bytestring == 0.10.*
-    , http-media >= 0.4 && < 0.6
+    , http-media >= 0.4 && < 0.7
     , http-types == 0.8.*
     , text >= 1 && < 2
     , template-haskell >= 2.7 && < 2.10
