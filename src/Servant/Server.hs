@@ -4,12 +4,14 @@
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
 module Servant.Server
-  ( -- * Implementing an API
+  ( -- * Run a wai application from an API
     serve
+
+  , -- * Construct a wai Application from an API
+    toApplication
 
   , -- * Handlers for all standard combinators
     HasServer(..)
-
   ) where
 
 import Data.Proxy (Proxy)
@@ -40,5 +42,10 @@ import Servant.Server.Internal
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
+--
+-- (If you need access to the wai 'Application' type, use
+-- 'toApplication'.  This is useful for writing custom servers that do
+-- things other than routing (e.g. dumping all requests and responses
+-- to a file).)
 serve :: HasServer layout => Proxy layout -> Server layout -> Application
 serve p server = toApplication (route p server)
