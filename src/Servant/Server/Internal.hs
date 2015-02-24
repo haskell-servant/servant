@@ -276,7 +276,7 @@ instance ( AllCTRender ctypes a
           Right output -> do
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
-              Nothing -> responseLBS (mkStatus 406 "") [] ""
+              Nothing -> responseLBS (mkStatus 406 "Not Acceptable") [] ""
               Just (contentT, body) -> responseLBS ok200 [ ("Content-Type"
                                                          , cs contentT)] body
           Left (status, message) ->
