@@ -8,6 +8,7 @@
 module Servant.ServerSpec where
 
 
+import Control.Monad (when)
 import Control.Monad.Trans.Either (EitherT, left)
 import Data.Aeson (ToJSON, FromJSON, encode, decode')
 import Data.Char (toUpper)
@@ -16,7 +17,8 @@ import Data.Proxy (Proxy(Proxy))
 import Data.String (fromString)
 import Data.String.Conversions (cs)
 import GHC.Generics (Generic)
-import Network.HTTP.Types (parseQuery, ok200, status409, methodPost, hContentType)
+import Network.HTTP.Types ( parseQuery, ok200, status409, methodPost
+                          , methodDelete, hContentType)
 import Network.Wai ( Application, Request, responseLBS, pathInfo
                    , queryString, rawQueryString )
 import Network.Wai.Test (runSession, defaultRequest, simpleBody, request)
@@ -24,16 +26,9 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 import Test.Hspec.Wai ( liftIO, with, get, post, shouldRespondWith
                       , matchStatus, request )
 
-import Servant.API (JSON)
-import Servant.API.Capture (Capture)
-import Servant.API.Get (Get)
-import Servant.API.ReqBody (ReqBody)
-import Servant.API.Post (Post)
-import Servant.API.QueryParam (QueryParam, QueryParams, QueryFlag)
-import Servant.API.MatrixParam (MatrixParam, MatrixParams, MatrixFlag)
-import Servant.API.Raw (Raw)
-import Servant.API.Sub ((:>))
-import Servant.API.Alternative ((:<|>)((:<|>)))
+import Servant.API (JSON, Capture, Get, ReqBody, Post, QueryParam
+                   , QueryParams, QueryFlag, MatrixParam, MatrixParams
+                   , MatrixFlag, Raw, (:>), (:<|>)(..), Header, Delete )
 import Servant.Server (Server, serve)
 import Servant.Server.Internal (RouteMismatch(..))
 
@@ -77,6 +72,7 @@ spec = do
   queryParamSpec
   matrixParamSpec
   postSpec
+  headerSpec
   rawSpec
   unionSpec
   errorsSpec
@@ -327,6 +323,33 @@ postSpec = do
         let post'' x = Test.Hspec.Wai.request methodPost x [(hContentType
                                                             , "application/nonsense")]
         post'' "/" "anything at all" `shouldRespondWith` 415
+
+type HeaderApi a = Header "MyHeader" a :> Delete
+headerApi :: Proxy (HeaderApi a)
+headerApi = Proxy
+
+headerSpec :: Spec
+headerSpec = describe "Servant.API.Header" $ do
+
+    let expectsInt :: Maybe Int -> EitherT (Int,String) IO ()
+        expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
+        expectsInt Nothing  = error "Expected an int"
+
+    let expectsString :: Maybe String -> EitherT (Int,String) IO ()
+        expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
+        expectsString Nothing  = error "Expected a string"
+
+    with (return (serve headerApi expectsInt)) $ do
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"5")]
+
+        it "passes the header to the handler (Int)" $
+            delete' "/" "" `shouldRespondWith` 204
+
+    with (return (serve headerApi expectsString)) $ do
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"more from you")]
+
+        it "passes the header to the handler (String)" $
+            delete' "/" "" `shouldRespondWith` 204
 
 
 type RawApi = "foo" :> Raw
