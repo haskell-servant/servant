@@ -11,7 +11,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE StandaloneDeriving #-}
 
 -------------------------------------------------------------------------------
 -- | This module lets you get API docs for free. It lets generate
@@ -191,7 +190,6 @@ import Data.ByteString.Lazy.Char8 (ByteString)
 import Data.Hashable
 import Data.HashMap.Strict (HashMap)
 import Data.List
-import Data.Function (on)
 import Data.Maybe
 import Data.Monoid
 import Data.Ord (comparing)
