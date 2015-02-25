@@ -11,24 +11,28 @@
 {-# LANGUAGE UndecidableInstances  #-}
 module Servant.API.ContentTypes where
 
-import           Control.Arrow           (left)
+import           Control.Applicative        ((<*))
+import           Control.Arrow              (left)
 import           Control.Monad
-import           Data.Aeson              (FromJSON, ToJSON, eitherDecode,
-                                          encode)
-import qualified Data.ByteString         as BS
-import           Data.ByteString.Lazy    (ByteString, fromStrict, toStrict)
-import qualified Data.ByteString.Lazy    as B
-import           Data.String.Conversions (cs)
+import           Data.Aeson                 (FromJSON, ToJSON, Value,
+                                             encode, parseJSON)
+import           Data.Aeson.Parser          (value)
+import           Data.Aeson.Types           (parseEither)
+import           Data.Attoparsec.ByteString (endOfInput, parseOnly)
+import qualified Data.ByteString            as BS
+import           Data.ByteString.Lazy       (ByteString, fromStrict, toStrict)
+import qualified Data.ByteString.Lazy       as B
 import           Data.Monoid
-import qualified Data.Text.Lazy          as TextL
-import qualified Data.Text.Lazy.Encoding as TextL
-import qualified Data.Text               as TextS
-import qualified Data.Text.Encoding      as TextS
+import           Data.String.Conversions    (cs)
+import qualified Data.Text                  as TextS
+import qualified Data.Text.Encoding         as TextS
+import qualified Data.Text.Lazy             as TextL
+import qualified Data.Text.Lazy.Encoding    as TextL
 import           Data.Typeable
-import           GHC.Exts                (Constraint)
-import qualified Network.HTTP.Media      as M
-import           Network.URI             (unEscapeString, escapeURIString,
-                                          isUnreserved)
+import           GHC.Exts                   (Constraint)
+import qualified Network.HTTP.Media         as M
+import           Network.URI                (escapeURIString, isUnreserved,
+                                             unEscapeString)
 
 -- * Provided content types
 data JSON deriving Typeable
@@ -190,6 +194,8 @@ instance ToJSON a => MimeRender JSON a where
     toByteString _ = encode
 
 -- | `encodeFormUrlEncoded . toFormUrlEncoded`
+-- Note that the `fromByteString p (toByteString p x) == Right x` law only
+-- holds if every element of x is non-null (i.e., not `("", "")`)
 instance ToFormUrlEncoded a => MimeRender FormUrlEncoded a where
     toByteString _ = encodeFormUrlEncoded . toFormUrlEncoded
 
@@ -213,11 +219,20 @@ instance MimeRender OctetStream BS.ByteString where
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances
 
+-- | Like 'Data.Aeson.eitherDecode' but allows all JSON values instead of just
+-- objects and arrays.
+eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
+eitherDecodeLenient input = do
+    v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
+    parseEither parseJSON v
+
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where
-    fromByteString _ = eitherDecode
+    fromByteString _ = eitherDecodeLenient
 
 -- | `decodeFormUrlEncoded >=> fromFormUrlEncoded`
+-- Note that the `fromByteString p (toByteString p x) == Right x` law only
+-- holds if every element of x is non-null (i.e., not `("", "")`)
 instance FromFormUrlEncoded a => MimeUnrender FormUrlEncoded a where
     fromByteString _ = decodeFormUrlEncoded >=> fromFormUrlEncoded
 
