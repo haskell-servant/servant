@@ -8,22 +8,24 @@ module Servant.API.ContentTypesSpec where
 import           Control.Applicative
 import           Control.Arrow
 import           Data.Aeson
-import           Data.Function            (on)
+import           Data.Aeson.Parser          (jstring)
+import           Data.Attoparsec.ByteString (parseOnly)
+import           Data.Function              (on)
 import           Data.Proxy
 
-import           Data.ByteString.Char8    (ByteString, append, pack)
-import qualified Data.ByteString.Lazy     as BSL
-import           Data.List                (maximumBy)
-import           Data.Maybe               (fromJust, isJust, isNothing)
-import           Data.String              (IsString (..))
-import           Data.String.Conversions  (cs)
-import qualified Data.Text                as TextS
-import qualified Data.Text.Lazy           as TextL
+import           Data.ByteString.Char8      (ByteString, append, pack)
+import qualified Data.ByteString.Lazy       as BSL
+import           Data.List                  (maximumBy)
+import           Data.Maybe                 (fromJust, isJust, isNothing)
+import           Data.String                (IsString (..))
+import           Data.String.Conversions    (cs)
+import qualified Data.Text                  as TextS
+import qualified Data.Text.Lazy             as TextL
 import           GHC.Generics
-import           Network.URL              (importParams, exportParams)
+import           Network.URL                (exportParams, importParams)
 import           Test.Hspec
 import           Test.QuickCheck
-import           Test.QuickCheck.Instances ()
+import           Test.QuickCheck.Instances  ()
 
 import           Servant.API.ContentTypes
 
@@ -42,17 +44,23 @@ spec = describe "Servant.API.ContentTypes" $ do
 
     describe "The FormUrlEncoded Content-Type type" $ do
 
+        let isNonNull ("", "") = False
+            isNonNull _        = True
+
         it "has fromByteString reverse toByteString" $ do
             let p = Proxy :: Proxy FormUrlEncoded
-            property $ \x -> fromByteString p (toByteString p x) == Right (x::[(TextS.Text,TextS.Text)])
+            property $ \x -> all isNonNull x
+                ==> fromByteString p (toByteString p x) == Right (x::[(TextS.Text,TextS.Text)])
 
         it "has fromByteString reverse exportParams (Network.URL)" $ do
             let p = Proxy :: Proxy FormUrlEncoded
-            property $ \x -> (fromByteString p . cs . exportParams . map (cs *** cs) $ x) == Right (x::[(TextS.Text,TextS.Text)])
+            property $ \x -> all isNonNull x
+                ==> (fromByteString p . cs . exportParams . map (cs *** cs) $ x) == Right (x::[(TextS.Text,TextS.Text)])
 
         it "has importParams (Network.URL) reverse toByteString" $ do
             let p = Proxy :: Proxy FormUrlEncoded
-            property $ \x -> (fmap (map (cs *** cs)) . importParams . cs . toByteString p $ x) == Just (x::[(TextS.Text,TextS.Text)])
+            property $ \x -> all isNonNull x
+                ==> (fmap (map (cs *** cs)) . importParams . cs . toByteString p $ x) == Just (x::[(TextS.Text,TextS.Text)])
 
     describe "The PlainText Content-Type type" $ do
 
@@ -147,6 +155,14 @@ spec = describe "Servant.API.ContentTypes" $ do
                 handleCTypeH (Proxy :: Proxy '[JSON]) "application/json"
                     (encode val)
                     `shouldBe` Just (Right val)
+
+    describe "eitherDecodeLenient" $ do
+
+        it "parses top-level strings" $ do
+            let toMaybe = either (const Nothing) Just
+            -- The Left messages differ, so convert to Maybe
+            property $ \x -> toMaybe (eitherDecodeLenient x)
+                `shouldBe` toMaybe (parseOnly jstring $ cs x)
 
 
 data SomeData = SomeData { record1 :: String, record2 :: Int }
