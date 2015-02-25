@@ -9,19 +9,18 @@ import Control.Monad
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
-import Data.Aeson
-import Data.Aeson.Parser
-import Data.Aeson.Types
-import Data.Attoparsec.ByteString
-import Data.ByteString.Lazy hiding (pack)
+import Data.ByteString.Lazy hiding (pack, filter, map, null)
 import Data.String
 import Data.String.Conversions
-import Data.Text
+import Data.Proxy
+import Data.Text (Text)
 import Data.Text.Encoding
-import Network.HTTP.Client
+import Network.HTTP.Client hiding (Proxy)
 import Network.HTTP.Client.TLS
+import Network.HTTP.Media
 import Network.HTTP.Types
 import Network.URI
+import Servant.API.ContentTypes
 import Servant.Common.BaseUrl
 import Servant.Common.Text
 import System.IO.Unsafe
@@ -29,14 +28,15 @@ import System.IO.Unsafe
 import qualified Network.HTTP.Client as Client
 
 data Req = Req
-  { reqPath  :: String
-  , qs       :: QueryText
-  , reqBody  :: ByteString
-  , headers  :: [(String, Text)]
+  { reqPath   :: String
+  , qs        :: QueryText
+  , reqBody   :: Maybe (ByteString, MediaType)
+  , reqAccept :: [MediaType]
+  , headers   :: [(String, Text)]
   }
 
 defReq :: Req
-defReq = Req "" [] "" []
+defReq = Req "" [] Nothing [] []
 
 appendToPath :: String -> Req -> Req
 appendToPath p req =
@@ -62,12 +62,12 @@ addHeader name val req = req { headers = headers req
                                       ++ [(name, toText val)]
                              }
 
-setRQBody :: ByteString -> Req -> Req
-setRQBody b req = req { reqBody = b }
+setRQBody :: ByteString -> MediaType -> Req -> Req
+setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
-    fmap (setheaders . setrqb . setQS ) $ parseUrl url
+    fmap (setheaders . setAccept . setrqb . setQS ) $ parseUrl url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"
@@ -80,10 +80,17 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
                              , uriPath = reqPath req
                              }
 
-        setrqb r = r { requestBody = RequestBodyLBS (reqBody req) }
+        setrqb r = case reqBody req of
+                     Nothing -> r
+                     Just (b,t) -> r { requestBody = RequestBodyLBS b
+                                     , requestHeaders = requestHeaders r
+                                                     ++ [(hContentType, cs . show $ t)] }
         setQS = setQueryString $ queryTextToQuery (qs req)
-        setheaders r = r { requestHeaders = Prelude.map toProperHeader (headers req) }
-
+        setheaders r = r { requestHeaders = requestHeaders r
+                                         <> fmap toProperHeader (headers req) }
+        setAccept r = r { requestHeaders = filter ((/= "Accept") . fst) (requestHeaders r)
+                                        <> [("Accept", renderHeader $ reqAccept req)
+                                              | not . null . reqAccept $ req] }
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)
 
@@ -104,7 +111,7 @@ displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
 
-performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO (Int, ByteString)
+performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
 performRequest reqMethod req isWantedStatus reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
@@ -123,20 +130,28 @@ performRequest reqMethod req isWantedStatus reqHost = do
       let status = Client.responseStatus response
       unless (isWantedStatus (statusCode status)) $
         left (displayHttpRequest reqMethod ++ " failed with status: " ++ showStatus status)
-      return $ (statusCode status, Client.responseBody response)
+      ct <- case lookup "Content-Type" $ Client.responseHeaders response of
+                 Nothing -> pure $ "application"//"octet-stream"
+                 Just t -> case parseAccept t of
+                   Nothing -> left $ "invalid Content-Type header: " <> cs t
+                   Just t' -> pure t'
+      return (statusCode status, Client.responseBody response, ct)
   where
     showStatus (Status code message) =
       show code ++ " - " ++ cs message
 
-
-performRequestJSON :: FromJSON result =>
-  Method -> Req -> Int -> BaseUrl -> EitherT String IO result
-performRequestJSON reqMethod req wantedStatus reqHost = do
-  (_status, respBody) <- performRequest reqMethod req (== wantedStatus) reqHost
+performRequestCT :: MimeUnrender ct result =>
+  Proxy ct -> Method -> Req -> Int -> BaseUrl -> EitherT String IO result
+performRequestCT ct reqMethod req wantedStatus reqHost = do
+  let acceptCT = contentType ct
+  (_status, respBody, respCT) <-
+    performRequest reqMethod (req { reqAccept = [acceptCT] }) (== wantedStatus) reqHost
+  unless (matches respCT (acceptCT)) $
+    left $ "requested Content-Type " <> show acceptCT <> ", but got " <> show respCT
   either
-    (\ message -> left (displayHttpRequest reqMethod ++ " returned invalid json: " ++ message))
+    (left . ((displayHttpRequest reqMethod ++ " returned invalid response of type" ++ show respCT) ++))
     return
-    (decodeLenient respBody)
+    (fromByteString ct respBody)
 
 
 catchStatusCodeException :: IO a -> IO (Either Status a)
@@ -145,10 +160,3 @@ catchStatusCodeException action =
     case e of
       Client.StatusCodeException status _ _ -> return $ Left status
       exc -> throwIO exc
-
--- | Like 'Data.Aeson.decode' but allows all JSON values instead of just
--- objects and arrays.
-decodeLenient :: FromJSON a => ByteString -> Either String a
-decodeLenient input = do
-  v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
-  parseEither parseJSON v

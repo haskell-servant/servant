@@ -45,6 +45,7 @@ library
     , exceptions
     , http-client
     , http-client-tls
+    , http-media
     , http-types
     , network-uri >= 2.6
     , safe
@@ -70,11 +71,13 @@ test-suite spec
     , deepseq
     , either
     , hspec == 2.*
+    , http-media
     , http-types
     , network >= 2.6
     , QuickCheck >= 2.7
     , servant >= 0.2.1
     , servant-client
     , servant-server >= 0.2.1
+    , text
     , wai
     , warp
