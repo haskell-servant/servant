@@ -4,12 +4,14 @@
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
 module Servant.Server
-  ( -- * Implementing an API
+  ( -- * Run a wai application from an API
     serve
+
+  , -- * Construct a wai Application from an API
+    toApplication
 
   , -- * Handlers for all standard combinators
     HasServer(..)
-
   ) where
 
 import Data.Proxy (Proxy)
