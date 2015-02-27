@@ -42,10 +42,5 @@ import Servant.Server.Internal
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
---
--- (If you need access to the wai 'Application' type, use
--- 'toApplication'.  This is useful for writing custom servers that do
--- things other than routing (e.g. dumping all requests and responses
--- to a file).)
 serve :: HasServer layout => Proxy layout -> Server layout -> Application
 serve p server = toApplication (route p server)
