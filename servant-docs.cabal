@@ -33,7 +33,7 @@ library
     , bytestring
     , hashable
     , lens
-    , servant >= 0.2.1
+    , servant >= 0.2.1 && < 0.3
     , string-conversions
     , system-filepath
     , text
