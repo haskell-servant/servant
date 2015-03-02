@@ -12,6 +12,7 @@ module Servant.Server
 
   , -- * Handlers for all standard combinators
     HasServer(..)
+  , Server
   ) where
 
 import Data.Proxy (Proxy)
