@@ -1,16 +1,16 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module Servant.Common.Text
   ( FromText(..)
   , ToText(..)
   ) where
 
-import Data.String.Conversions ( cs )
-import Data.Int ( Int8, Int16, Int32, Int64 )
-import Data.Text ( Text )
-import Data.Text.Read ( rational, signed, decimal, Reader )
-import Data.Word ( Word, Word8, Word16, Word32, Word64 )
+import           Data.Int                (Int16, Int32, Int64, Int8)
+import           Data.String.Conversions (cs)
+import           Data.Text               (Text)
+import           Data.Text.Read          (Reader, decimal, rational, signed)
+import           Data.Word               (Word, Word16, Word32, Word64, Word8)
 
 -- | For getting values from url captures and query string parameters
 -- Instances should obey:
@@ -37,17 +37,22 @@ instance ToText String where
   toText = cs
 
 -- |
--- > fromText "true"  = Just True
--- > fromText "false" = Just False
--- > fromText _       = Nothing
+-- >>> fromText ("true"::Text) :: Maybe Bool
+-- Just True
+-- >>> fromText ("false"::Text) :: Maybe Bool
+-- Just False
+-- >>> fromText ("anything else"::Text) :: Maybe Bool
+-- Nothing
 instance FromText Bool where
   fromText "true"  = Just True
   fromText "false" = Just False
   fromText _       = Nothing
 
 -- |
--- > toText True  = "true"
--- > toText False = "false"
+-- >>> toText True
+-- "true"
+-- >>> toText False
+-- "false"
 instance ToText Bool where
   toText True  = "true"
   toText False = "false"

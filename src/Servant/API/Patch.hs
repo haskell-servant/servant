@@ -1,9 +1,9 @@
+{-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-module Servant.API.Patch where
+{-# LANGUAGE KindSignatures     #-}
+module Servant.API.Patch (Patch) where
 
-import Data.Typeable ( Typeable )
+import           Data.Typeable (Typeable)
 
 -- | Endpoint for PATCH requests. The type variable represents the type of the
 -- response body (not the request body, use 'Servant.API.ReqBody.ReqBody' for
@@ -13,9 +13,16 @@ import Data.Typeable ( Typeable )
 --
 -- Example:
 --
--- >            -- PATCH /books
--- >            -- with a JSON encoded Book as the request body
--- >            -- returning the just-created Book
--- > type MyApi = "books" :> ReqBody Book :> Patch '[JSON] Book
-data Patch (contentTypes::[*]) a
+-- >>>            -- PATCH /books
+-- >>>            -- with a JSON encoded Book as the request body
+-- >>>            -- returning the just-created Book
+-- >>> type MyApi = "books" :> ReqBody '[JSON] Book :> Patch '[JSON] Book
+data Patch (contentTypes :: [*]) a
   deriving Typeable
+
+-- $setup
+-- >>> import Servant.API
+-- >>> import Data.Aeson
+-- >>> import Data.Text
+-- >>> data Book
+-- >>> instance ToJSON Book where { toJSON = undefined }

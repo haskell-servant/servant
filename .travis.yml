@@ -7,14 +7,12 @@ script:
   - cabal configure --enable-tests --enable-library-coverage && cabal build && cabal test
   - cabal check
   - cabal sdist
-  - cabal install doctest
-  - ./test-docs.sh
 
 after_script:
   - |
     if [ "$TRAVIS_PULL_REQUEST" -eq "$TRAVIS_PULL_REQUEST" ] 2>/dev/null || [ "$TRAVIS_BRANCH" == "master" ] ; then
       cabal install hpc-coveralls
-      hpc-coveralls --exclude-dir=test spec
+      hpc-coveralls --exclude-dir=test spec doctests
     fi
 
 

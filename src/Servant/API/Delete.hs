@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-module Servant.API.Delete where
+module Servant.API.Delete (Delete) where
 
 import Data.Typeable ( Typeable )
 
@@ -7,7 +7,15 @@ import Data.Typeable ( Typeable )
 --
 -- Example:
 --
--- >            -- DELETE /books/:isbn
--- > type MyApi = "books" :> Capture "isbn" Text :> Delete
+-- >>>            -- DELETE /books/:isbn
+-- >>> type MyApi = "books" :> Capture "isbn" Text :> Delete
 data Delete
   deriving Typeable
+
+
+-- $setup
+-- >>> import Servant.API
+-- >>> import Data.Aeson
+-- >>> import Data.Text
+-- >>> data Book
+-- >>> instance ToJSON Book where { toJSON = undefined }

@@ -1,14 +1,19 @@
-{-# LANGUAGE PolyKinds #-}
-module Servant.API.MatrixParam where
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE PolyKinds          #-}
+module Servant.API.MatrixParam (MatrixFlag, MatrixParam, MatrixParams) where
 
+import           Data.Typeable (Typeable)
+import           GHC.TypeLits  (Symbol)
 -- | Lookup the value associated to the @sym@ matrix string parameter
 -- and try to extract it as a value of type @a@.
 --
 -- Example:
 --
--- > -- /books;author=<author name>
--- > type MyApi = "books" :> MatrixParam "author" Text :> Get [Book]
-data MatrixParam sym a
+-- >>> -- /books;author=<author name>
+-- >>> type MyApi = "books" :> MatrixParam "author" Text :> Get '[JSON] [Book]
+data MatrixParam (sym :: Symbol) a
+    deriving (Typeable)
 
 -- | Lookup the values associated to the @sym@ matrix string parameter
 -- and try to extract it as a value of type @[a]@. This is typically
@@ -19,9 +24,10 @@ data MatrixParam sym a
 --
 -- Example:
 --
--- > -- /books;authors[]=<author1>;authors[]=<author2>;...
--- > type MyApi = "books" :> MatrixParams "authors" Text :> Get [Book]
-data MatrixParams sym a
+-- >>> -- /books;authors[]=<author1>;authors[]=<author2>;...
+-- >>> type MyApi = "books" :> MatrixParams "authors" Text :> Get '[JSON] [Book]
+data MatrixParams (sym :: Symbol) a
+    deriving (Typeable)
 
 -- | Lookup a potentially value-less matrix string parameter
 -- with boolean semantics. If the param @sym@ is there without any value,
@@ -30,6 +36,15 @@ data MatrixParams sym a
 --
 -- Example:
 --
--- > -- /books;published
--- > type MyApi = "books" :> MatrixFlag "published" :> Get [Book]
-data MatrixFlag sym
+-- >>> -- /books;published
+-- >>> type MyApi = "books" :> MatrixFlag "published" :> Get '[JSON] [Book]
+data MatrixFlag (sym :: Symbol)
+    deriving (Typeable)
+
+
+-- $setup
+-- >>> import Servant.API
+-- >>> import Data.Aeson
+-- >>> import Data.Text
+-- >>> data Book
+-- >>> instance ToJSON Book where { toJSON = undefined }
