@@ -5,8 +5,10 @@ ghc:
 
 before_install:
   - git clone https://github.com/haskell-servant/servant.git
+  - git clone https://github.com/haskell-servant/servant-server.git
   - cabal sandbox init
   - cabal sandbox add-source servant/
+  - cabal sandbox add-source servant-server/
 
 install:
  - cabal install --only-dependencies --enable-tests
