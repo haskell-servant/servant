@@ -53,7 +53,8 @@ import           Servant.API.Alternative  ((:<|>) (..))
 import           Servant.API.Capture      (Capture)
 import           Servant.API.ContentTypes (JSON, MimeRender (..),
                                            MimeUnrender (..), OctetStream,
-                                           PlainText)
+                                           PlainText, FormUrlEncoded,
+                                           FromFormUrlEncoded(..), ToFormUrlEncoded(..))
 import           Servant.API.Delete       (Delete)
 import           Servant.API.Get          (Get)
 import           Servant.API.Header       (Header)
