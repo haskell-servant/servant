@@ -13,11 +13,12 @@ import Language.ECMAScript3.Parser (parseFromString)
 import Test.Hspec
 
 import Servant.API
+import Servant.API.ContentTypes
 import Servant.JQuery
 import Servant.JQuerySpec.CustomHeaders
 
-type TestAPI = "simple" :> ReqBody '[JSON] String :> Post '[JSON] Bool
-          :<|> "has.extension" :> Get '[JSON] Bool
+type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON] Bool
+          :<|> "has.extension" :> Get '[FormUrlEncoded,JSON] Bool
 
 type TopLevelRawAPI = "something" :> Get '[JSON] Int
                   :<|> Raw
