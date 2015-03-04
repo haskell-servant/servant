@@ -13,28 +13,27 @@ import Language.ECMAScript3.Parser (parseFromString)
 import Test.Hspec
 
 import Servant.API
+import Servant.API.ContentTypes
 import Servant.JQuery
 import Servant.JQuerySpec.CustomHeaders
 
-type TestAPI = [sitemap|
-POST    /simple                  String -> Bool
-GET     /has.extension           Bool
-|]
+type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON] Bool
+          :<|> "has.extension" :> Get '[FormUrlEncoded,JSON] Bool
 
-type TopLevelRawAPI = "something" :> Get Int
+type TopLevelRawAPI = "something" :> Get '[JSON] Int
                   :<|> Raw
 
 type HeaderHandlingAPI = "something" :> Header "Foo" String
-                                     :> Get Int
+                                     :> Get '[JSON] Int
 
 type CustomAuthAPI = "something" :> Authorization "Basic" String
-                                 :> Get Int
+                                 :> Get '[JSON] Int
 
 type CustomHeaderAPI = "something" :> MyLovelyHorse String
-                                   :> Get Int
+                                   :> Get '[JSON] Int
 
 type CustomHeaderAPI2 = "something" :> WhatsForDinner String
-                                    :> Get Int
+                                    :> Get '[JSON] Int
 
 headerHandlingProxy :: Proxy HeaderHandlingAPI
 headerHandlingProxy = Proxy
