@@ -3,13 +3,13 @@
 module Servant.Common.Req where
 
 import Control.Applicative
-import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
 import Data.ByteString.Lazy hiding (pack, filter, map, null)
+import Data.IORef
 import Data.String
 import Data.String.Conversions
 import Data.Proxy
@@ -98,13 +98,11 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
 -- * performing requests
 
 {-# NOINLINE __manager #-}
-__manager :: MVar Manager
-__manager = unsafePerformIO (newManager tlsManagerSettings >>= newMVar)
+__manager :: IORef Manager
+__manager = unsafePerformIO (newManager tlsManagerSettings >>= newIORef)
 
 __withGlobalManager :: (Manager -> IO a) -> IO a
-__withGlobalManager action = modifyMVar __manager $ \ manager -> do
-  result <- action manager
-  return (manager, result)
+__withGlobalManager action = readIORef __manager >>= action
 
 
 displayHttpRequest :: Method -> String
