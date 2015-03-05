@@ -71,7 +71,7 @@ toApplication ra request respond = do
   routingRespond (Left WrongMethod) =
     respond $ responseLBS methodNotAllowed405 [] "method not allowed"
   routingRespond (Left (InvalidBody err)) =
-    respond $ responseLBS badRequest400 [] $ fromString $ "Invalid JSON in request body: " ++ err
+    respond $ responseLBS badRequest400 [] $ fromString $ "invalid request body: " ++ err
   routingRespond (Left UnsupportedMediaType) =
     respond $ responseLBS unsupportedMediaType415 [] "unsupported media type"
   routingRespond (Left (HttpError status body)) =
