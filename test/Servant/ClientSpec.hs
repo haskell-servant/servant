@@ -8,6 +8,8 @@
 {-# OPTIONS_GHC -fcontext-stack=25 #-}
 module Servant.ClientSpec where
 
+import Control.Applicative
+import qualified Control.Arrow as Arrow
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Trans.Either
@@ -29,7 +31,6 @@ import Test.Hspec.QuickCheck
 import Test.QuickCheck
 
 import Servant.API
-import Servant.API.ContentTypes
 import Servant.Client
 import Servant.Server
 
@@ -110,21 +111,21 @@ server = serve api (
 withServer :: (BaseUrl -> IO a) -> IO a
 withServer action = withWaiDaemon (return server) action
 
-getGet :: BaseUrl -> EitherT String IO Person
-getDelete :: BaseUrl -> EitherT String IO ()
-getCapture :: String -> BaseUrl -> EitherT String IO Person
-getBody :: Person -> BaseUrl -> EitherT String IO Person
-getQueryParam :: Maybe String -> BaseUrl -> EitherT String IO Person
-getQueryParams :: [String] -> BaseUrl -> EitherT String IO [Person]
-getQueryFlag :: Bool -> BaseUrl -> EitherT String IO Bool
-getMatrixParam :: Maybe String -> BaseUrl -> EitherT String IO Person
-getMatrixParams :: [String] -> BaseUrl -> EitherT String IO [Person]
-getMatrixFlag :: Bool -> BaseUrl -> EitherT String IO Bool
-getRawSuccess :: Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
-getRawFailure :: Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
+getGet :: BaseUrl -> EitherT ServantError IO Person
+getDelete :: BaseUrl -> EitherT ServantError IO ()
+getCapture :: String -> BaseUrl -> EitherT ServantError IO Person
+getBody :: Person -> BaseUrl -> EitherT ServantError IO Person
+getQueryParam :: Maybe String -> BaseUrl -> EitherT ServantError IO Person
+getQueryParams :: [String] -> BaseUrl -> EitherT ServantError IO [Person]
+getQueryFlag :: Bool -> BaseUrl -> EitherT ServantError IO Bool
+getMatrixParam :: Maybe String -> BaseUrl -> EitherT ServantError IO Person
+getMatrixParams :: [String] -> BaseUrl -> EitherT ServantError IO [Person]
+getMatrixFlag :: Bool -> BaseUrl -> EitherT ServantError IO Bool
+getRawSuccess :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
+getRawFailure :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> BaseUrl
-  -> EitherT String IO (String, Maybe Int, Bool, [(String, [Rational])])
+  -> EitherT ServantError IO (String, Maybe Int, Bool, [(String, [Rational])])
 (     getGet
  :<|> getDelete
  :<|> getCapture
@@ -143,32 +144,32 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
 spec :: Spec
 spec = do
   it "Servant.API.Get" $ withServer $ \ host -> do
-    runEitherT (getGet host) `shouldReturn` Right alice
+    (Arrow.left show <$> runEitherT (getGet host)) `shouldReturn` Right alice
 
   it "Servant.API.Delete" $ withServer $ \ host -> do
-    runEitherT (getDelete host) `shouldReturn` Right ()
+    (Arrow.left show <$> runEitherT (getDelete host)) `shouldReturn` Right ()
 
   it "Servant.API.Capture" $ withServer $ \ host -> do
-    runEitherT (getCapture "Paula" host) `shouldReturn` Right (Person "Paula" 0)
+    (Arrow.left show <$> runEitherT (getCapture "Paula" host)) `shouldReturn` Right (Person "Paula" 0)
 
   it "Servant.API.ReqBody" $ withServer $ \ host -> do
     let p = Person "Clara" 42
-    runEitherT (getBody p host) `shouldReturn` Right p
+    (Arrow.left show <$> runEitherT (getBody p host)) `shouldReturn` Right p
 
   it "Servant.API.QueryParam" $ withServer $ \ host -> do
-    runEitherT (getQueryParam (Just "alice") host) `shouldReturn` Right alice
-    Left result <- runEitherT (getQueryParam (Just "bob") host)
-    result `shouldContain` "bob not found"
+    (Arrow.left show <$> runEitherT (getQueryParam (Just "alice") host)) `shouldReturn` Right alice
+    Left (FailureResponse s _ _) <- runEitherT (getQueryParam (Just "bob") host)
+    statusCode s `shouldBe` 400
 
   it "Servant.API.QueryParam.QueryParams" $ withServer $ \ host -> do
-    runEitherT (getQueryParams [] host) `shouldReturn` Right []
-    runEitherT (getQueryParams ["alice", "bob"] host)
+    (Arrow.left show <$> runEitherT (getQueryParams [] host)) `shouldReturn` Right []
+    (Arrow.left show <$> runEitherT (getQueryParams ["alice", "bob"] host))
       `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
   context "Servant.API.QueryParam.QueryFlag" $
     forM_ [False, True] $ \ flag ->
     it (show flag) $ withServer $ \ host -> do
-      runEitherT (getQueryFlag flag host) `shouldReturn` Right flag
+      (Arrow.left show <$> runEitherT (getQueryFlag flag host)) `shouldReturn` Right flag
 
 {-
   it "Servant.API.MatrixParam" $ withServer $ \ host -> do
@@ -188,17 +189,19 @@ spec = do
 -}
 
   it "Servant.API.Raw on success" $ withServer $ \ host -> do
-    runEitherT (getRawSuccess methodGet host) `shouldReturn` Right (200, "rawSuccess", "application"//"octet-stream")
+    (Arrow.left show <$> runEitherT (getRawSuccess methodGet host))
+      `shouldReturn` Right (200, "rawSuccess", "application"//"octet-stream")
 
   it "Servant.API.Raw on failure" $ withServer $ \ host -> do
-    runEitherT (getRawFailure methodGet host) `shouldReturn` Right (400, "rawFailure", "application"//"octet-stream")
+    (Arrow.left show <$> runEitherT (getRawFailure methodGet host))
+      `shouldReturn` Right (400, "rawFailure", "application"//"octet-stream")
 
   modifyMaxSuccess (const 20) $ do
     it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $
       property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
         ioProperty $ do
           withServer $ \ host -> do
-            result <- runEitherT (getMultiple cap num flag body host)
+            result <- Arrow.left show <$> runEitherT (getMultiple cap num flag body host)
             return $
               result === Right (cap, num, flag, body)
 
@@ -209,10 +212,10 @@ spec = do
           it desc $
           withWaiDaemon (return (serve api (left (500, "error message")))) $
           \ host -> do
-            let getResponse :: BaseUrl -> EitherT String IO ()
+            let getResponse :: BaseUrl -> EitherT ServantError IO ()
                 getResponse = client api
-            Left result <- runEitherT (getResponse host)
-            result `shouldContain` "error message"
+            Left (FailureResponse status _ _) <- runEitherT (getResponse host)
+            status `shouldBe` (Status 500 "error message")
     mapM_ test $
       (WrappedApi (Proxy :: Proxy Delete), "Delete") :
       (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Delete") :
@@ -222,7 +225,7 @@ spec = do
 
 data WrappedApi where
   WrappedApi :: (HasServer api, Server api ~ EitherT (Int, String) IO a,
-                 HasClient api, Client api ~ (BaseUrl -> EitherT String IO ())) =>
+                 HasClient api, Client api ~ (BaseUrl -> EitherT ServantError IO ())) =>
     Proxy api -> WrappedApi
 
 

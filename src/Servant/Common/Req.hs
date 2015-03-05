@@ -27,6 +27,14 @@ import System.IO.Unsafe
 
 import qualified Network.HTTP.Client as Client
 
+data ServantError
+  = FailureResponse Status MediaType ByteString
+  | DecodeFailure String MediaType ByteString
+  | UnsupportedContentType MediaType ByteString
+  | ConnectionError HttpException
+  | InvalidContentTypeHeader String
+  deriving (Show)
+
 data Req = Req
   { reqPath   :: String
   , qs        :: QueryText
@@ -109,7 +117,7 @@ displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
 
-performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
+performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
 performRequest reqMethod req isWantedStatus reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
@@ -118,43 +126,39 @@ performRequest reqMethod req isWantedStatus reqHost = do
                                }
 
   eResponse <- liftIO $ __withGlobalManager $ \ manager ->
-    catchStatusCodeException $
+    catchHttpException $
     Client.httpLbs request manager
   case eResponse of
-    Left status ->
-      left (displayHttpRequest reqMethod ++ " failed with status: " ++ showStatus status)
+    Left err ->
+      left $ ConnectionError err
 
     Right response -> do
       let status = Client.responseStatus response
-      unless (isWantedStatus (statusCode status)) $
-        left (displayHttpRequest reqMethod ++ " failed with status: " ++ showStatus status)
+          body = Client.responseBody response
+          status_code = statusCode status
       ct <- case lookup "Content-Type" $ Client.responseHeaders response of
                  Nothing -> pure $ "application"//"octet-stream"
                  Just t -> case parseAccept t of
-                   Nothing -> left $ "invalid Content-Type header: " <> cs t
+                   Nothing -> left . InvalidContentTypeHeader . cs $ t
                    Just t' -> pure t'
-      return (statusCode status, Client.responseBody response, ct)
-  where
-    showStatus (Status code message) =
-      show code ++ " - " ++ cs message
+      unless (isWantedStatus status_code) $
+        left $ FailureResponse status ct body
+      return (status_code, body, ct)
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> Int -> BaseUrl -> EitherT String IO result
+  Proxy ct -> Method -> Req -> Int -> BaseUrl -> EitherT ServantError IO result
 performRequestCT ct reqMethod req wantedStatus reqHost = do
   let acceptCT = contentType ct
   (_status, respBody, respCT) <-
     performRequest reqMethod (req { reqAccept = [acceptCT] }) (== wantedStatus) reqHost
   unless (matches respCT (acceptCT)) $
-    left $ "requested Content-Type " <> show acceptCT <> ", but got " <> show respCT
+    left $ UnsupportedContentType respCT respBody
   either
-    (left . ((displayHttpRequest reqMethod ++ " returned invalid response of type" ++ show respCT) ++))
+    (left . (\s -> DecodeFailure s respCT respBody))
     return
     (fromByteString ct respBody)
 
 
-catchStatusCodeException :: IO a -> IO (Either Status a)
-catchStatusCodeException action =
-  catch (Right <$> action) $ \e ->
-    case e of
-      Client.StatusCodeException status _ _ -> return $ Left status
-      exc -> throwIO exc
+catchHttpException :: IO a -> IO (Either HttpException a)
+catchHttpException action =
+  catch (Right <$> action) (pure . Left)

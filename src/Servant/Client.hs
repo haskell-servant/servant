@@ -11,12 +11,12 @@
 module Servant.Client
   ( client
   , HasClient(..)
+  , ServantError(..)
   , module Servant.Common.BaseUrl
   ) where
 
 import Control.Monad
 import Control.Monad.Trans.Either
-import Data.Aeson
 import Data.ByteString.Lazy (ByteString)
 import Data.List
 import Data.Proxy
@@ -29,7 +29,6 @@ import Servant.API
 import Servant.API.ContentTypes
 import Servant.Common.BaseUrl
 import Servant.Common.Req
-import Servant.Common.Text
 
 -- * Accessing APIs as a Client
 
@@ -109,7 +108,7 @@ instance (KnownSymbol capture, ToText a, HasClient sublayout)
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
 instance HasClient Delete where
-  type Client Delete = BaseUrl -> EitherT String IO ()
+  type Client Delete = BaseUrl -> EitherT ServantError IO ()
 
   clientWithRoute Proxy req host =
     void $ performRequest H.methodDelete req (== 204) host
@@ -119,7 +118,7 @@ instance HasClient Delete where
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
 instance (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
-  type Client (Get (ct ': cts) result) = BaseUrl -> EitherT String IO result
+  type Client (Get (ct ': cts) result) = BaseUrl -> EitherT ServantError IO result
   clientWithRoute Proxy req host =
     performRequestCT (Proxy :: Proxy ct) H.methodGet req 200 host
 
@@ -165,7 +164,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
 instance (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
-  type Client (Post (ct ': cts) a) = BaseUrl -> EitherT String IO a
+  type Client (Post (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req uri =
     performRequestCT (Proxy :: Proxy ct) H.methodPost req 201 uri
@@ -175,7 +174,7 @@ instance (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
 instance (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
-  type Client (Put (ct ': cts) a) = BaseUrl -> EitherT String IO a
+  type Client (Put (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
     performRequestCT (Proxy :: Proxy ct) H.methodPut req 200 host
@@ -414,7 +413,7 @@ instance (KnownSymbol sym, HasClient sublayout)
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the status code and the response body as a 'ByteString'.
 instance HasClient Raw where
-  type Client Raw = H.Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
+  type Client Raw = H.Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
 
   clientWithRoute :: Proxy Raw -> Req -> Client Raw
   clientWithRoute Proxy req httpMethod host =
