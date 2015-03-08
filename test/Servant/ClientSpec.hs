@@ -5,7 +5,9 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fcontext-stack=25 #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.ClientSpec where
 
 import Control.Applicative
@@ -21,6 +23,7 @@ import Data.Monoid
 import Data.Proxy
 import qualified Data.Text as T
 import GHC.Generics
+import Network.HTTP.Client (HttpException(..))
 import Network.HTTP.Media
 import Network.HTTP.Types
 import Network.Socket
@@ -59,6 +62,10 @@ instance FromFormUrlEncoded Person where
         a <- lookupEither "age" xs
         return $ Person (T.unpack n) (read $ T.unpack a)
 
+deriving instance Eq ServantError
+
+instance Eq HttpException where
+  a == b = show a == show b
 
 alice :: Person
 alice = Person "Alice" 42
@@ -110,6 +117,19 @@ server = serve api (
 
 withServer :: (BaseUrl -> IO a) -> IO a
 withServer action = withWaiDaemon (return server) action
+
+type FailApi =
+       "get" :> Get '[FormUrlEncoded] Person
+failApi :: Proxy FailApi
+failApi = Proxy
+
+failServer :: Application
+failServer = serve failApi (
+       return alice
+ )
+
+withFailServer :: (BaseUrl -> IO a) -> IO a
+withFailServer action = withWaiDaemon (return failServer) action
 
 getGet :: BaseUrl -> EitherT ServantError IO Person
 getDelete :: BaseUrl -> EitherT ServantError IO ()
@@ -216,10 +236,26 @@ spec = do
             responseStatus `shouldBe` (Status 500 "error message")
     mapM_ test $
       (WrappedApi (Proxy :: Proxy Delete), "Delete") :
-      (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Delete") :
-      (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Delete") :
-      (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Delete") :
+      (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get") :
+      (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post") :
+      (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put") :
       []
+
+  context "client returns errors appropriately" $ do
+    it "reports connection errors" $ do
+      Right host <- return $ parseBaseUrl "127.0.0.1:987654"
+      Left (ConnectionError (FailedConnectionException2 "127.0.0.1" 987654 False _)) <- runEitherT (getGet host)
+      return ()
+    it "reports non-success responses" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getDelete host)
+      case res of
+        FailureResponse (Status 404 "Not Found") _ _ -> return ()
+        _ -> fail $ "expected 404 response, but got " <> show res
+    it "reports unsupported content types" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getGet host)
+      case res of
+        FailureResponse (Status 404 "Not Found") _ _ -> return ()
+        _ -> fail $ "expected 404 response, but got " <> show res
 
 data WrappedApi where
   WrappedApi :: (HasServer api, Server api ~ EitherT (Int, String) IO a,
