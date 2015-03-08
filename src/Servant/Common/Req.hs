@@ -28,11 +28,27 @@ import System.IO.Unsafe
 import qualified Network.HTTP.Client as Client
 
 data ServantError
-  = FailureResponse Status MediaType ByteString
-  | DecodeFailure String MediaType ByteString
-  | UnsupportedContentType MediaType ByteString
-  | ConnectionError HttpException
-  | InvalidContentTypeHeader String
+  = FailureResponse
+    { responseStatus            :: Status
+    , responseContentType       :: MediaType
+    , responseBody              :: ByteString
+    }
+  | DecodeFailure
+    { decodeError               :: String
+    , responseContentType       :: MediaType
+    , responseBody              :: ByteString
+    }
+  | UnsupportedContentType
+    { responseContentType       :: MediaType
+    , responseBody              :: ByteString
+    }
+  | ConnectionError
+    { connectionError           :: HttpException
+    }
+  | InvalidContentTypeHeader
+    { responseContentTypeHeader :: ByteString
+    , responseBody              :: ByteString
+    }
   deriving (Show)
 
 data Req = Req
@@ -139,7 +155,7 @@ performRequest reqMethod req isWantedStatus reqHost = do
       ct <- case lookup "Content-Type" $ Client.responseHeaders response of
                  Nothing -> pure $ "application"//"octet-stream"
                  Just t -> case parseAccept t of
-                   Nothing -> left . InvalidContentTypeHeader . cs $ t
+                   Nothing -> left $ InvalidContentTypeHeader (cs t) body
                    Just t' -> pure t'
       unless (isWantedStatus status_code) $
         left $ FailureResponse status ct body
