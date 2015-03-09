@@ -118,19 +118,6 @@ server = serve api (
 withServer :: (BaseUrl -> IO a) -> IO a
 withServer action = withWaiDaemon (return server) action
 
-type FailApi =
-       "get" :> Get '[FormUrlEncoded] Person
-failApi :: Proxy FailApi
-failApi = Proxy
-
-failServer :: Application
-failServer = serve failApi (
-       return alice
- )
-
-withFailServer :: (BaseUrl -> IO a) -> IO a
-withFailServer action = withWaiDaemon (return failServer) action
-
 getGet :: BaseUrl -> EitherT ServantError IO Person
 getDelete :: BaseUrl -> EitherT ServantError IO ()
 getCapture :: String -> BaseUrl -> EitherT ServantError IO Person
@@ -160,6 +147,23 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
  :<|> getRawFailure
  :<|> getMultiple)
     = client api
+
+type FailApi =
+       "get" :> Raw
+  :<|> "capture" :> Capture "name" String :> Raw
+  :<|> "body" :> Raw
+failApi :: Proxy FailApi
+failApi = Proxy
+
+failServer :: Application
+failServer = serve failApi (
+       (\ _request respond -> respond $ responseLBS ok200 [] "")
+  :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
+  :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
+ )
+
+withFailServer :: (BaseUrl -> IO a) -> IO a
+withFailServer action = withWaiDaemon (return failServer) action
 
 spec :: Spec
 spec = do
@@ -242,20 +246,36 @@ spec = do
       []
 
   context "client returns errors appropriately" $ do
-    it "reports connection errors" $ do
-      Right host <- return $ parseBaseUrl "127.0.0.1:987654"
-      Left (ConnectionError (FailedConnectionException2 "127.0.0.1" 987654 False _)) <- runEitherT (getGet host)
-      return ()
-    it "reports non-success responses" $ withFailServer $ \ host -> do
+    it "reports FailureResponse" $ withFailServer $ \ host -> do
       Left res <- runEitherT (getDelete host)
       case res of
         FailureResponse (Status 404 "Not Found") _ _ -> return ()
         _ -> fail $ "expected 404 response, but got " <> show res
-    it "reports unsupported content types" $ withFailServer $ \ host -> do
+
+    it "reports DecodeFailure" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getCapture "foo" host)
+      case res of
+        DecodeFailure _ ("application/json") _ -> return ()
+        _ -> fail $ "expected DecodeFailure, but got " <> show res
+
+    it "reports ConnectionError" $ do
+      Right host <- return $ parseBaseUrl "127.0.0.1:987654"
       Left res <- runEitherT (getGet host)
       case res of
-        FailureResponse (Status 404 "Not Found") _ _ -> return ()
-        _ -> fail $ "expected 404 response, but got " <> show res
+        ConnectionError (FailedConnectionException2 "127.0.0.1" 987654 False _) -> return ()
+        _ -> fail $ "expected ConnectionError, but got " <> show res
+
+    it "reports UnsupportedContentType" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getGet host)
+      case res of
+        UnsupportedContentType ("application/octet-stream") _ -> return ()
+        _ -> fail $ "expected UnsupportedContentType, but got " <> show res
+
+    it "reports InvalidContentTypeHeader" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getBody alice host)
+      case res of
+        InvalidContentTypeHeader "fooooo" _ -> return ()
+        _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
   WrappedApi :: (HasServer api, Server api ~ EitherT (Int, String) IO a,
