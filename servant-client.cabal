@@ -71,6 +71,7 @@ test-suite spec
     , deepseq
     , either
     , hspec == 2.*
+    , http-client
     , http-media
     , http-types
     , network >= 2.6

@@ -5,9 +5,13 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fcontext-stack=25 #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.ClientSpec where
 
+import Control.Applicative
+import qualified Control.Arrow as Arrow
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Trans.Either
@@ -19,6 +23,7 @@ import Data.Monoid
 import Data.Proxy
 import qualified Data.Text as T
 import GHC.Generics
+import Network.HTTP.Client (HttpException(..))
 import Network.HTTP.Media
 import Network.HTTP.Types
 import Network.Socket
@@ -29,7 +34,6 @@ import Test.Hspec.QuickCheck
 import Test.QuickCheck
 
 import Servant.API
-import Servant.API.ContentTypes
 import Servant.Client
 import Servant.Server
 
@@ -58,6 +62,10 @@ instance FromFormUrlEncoded Person where
         a <- lookupEither "age" xs
         return $ Person (T.unpack n) (read $ T.unpack a)
 
+deriving instance Eq ServantError
+
+instance Eq HttpException where
+  a == b = show a == show b
 
 alice :: Person
 alice = Person "Alice" 42
@@ -110,21 +118,21 @@ server = serve api (
 withServer :: (BaseUrl -> IO a) -> IO a
 withServer action = withWaiDaemon (return server) action
 
-getGet :: BaseUrl -> EitherT String IO Person
-getDelete :: BaseUrl -> EitherT String IO ()
-getCapture :: String -> BaseUrl -> EitherT String IO Person
-getBody :: Person -> BaseUrl -> EitherT String IO Person
-getQueryParam :: Maybe String -> BaseUrl -> EitherT String IO Person
-getQueryParams :: [String] -> BaseUrl -> EitherT String IO [Person]
-getQueryFlag :: Bool -> BaseUrl -> EitherT String IO Bool
-getMatrixParam :: Maybe String -> BaseUrl -> EitherT String IO Person
-getMatrixParams :: [String] -> BaseUrl -> EitherT String IO [Person]
-getMatrixFlag :: Bool -> BaseUrl -> EitherT String IO Bool
-getRawSuccess :: Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
-getRawFailure :: Method -> BaseUrl -> EitherT String IO (Int, ByteString, MediaType)
+getGet :: BaseUrl -> EitherT ServantError IO Person
+getDelete :: BaseUrl -> EitherT ServantError IO ()
+getCapture :: String -> BaseUrl -> EitherT ServantError IO Person
+getBody :: Person -> BaseUrl -> EitherT ServantError IO Person
+getQueryParam :: Maybe String -> BaseUrl -> EitherT ServantError IO Person
+getQueryParams :: [String] -> BaseUrl -> EitherT ServantError IO [Person]
+getQueryFlag :: Bool -> BaseUrl -> EitherT ServantError IO Bool
+getMatrixParam :: Maybe String -> BaseUrl -> EitherT ServantError IO Person
+getMatrixParams :: [String] -> BaseUrl -> EitherT ServantError IO [Person]
+getMatrixFlag :: Bool -> BaseUrl -> EitherT ServantError IO Bool
+getRawSuccess :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
+getRawFailure :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> BaseUrl
-  -> EitherT String IO (String, Maybe Int, Bool, [(String, [Rational])])
+  -> EitherT ServantError IO (String, Maybe Int, Bool, [(String, [Rational])])
 (     getGet
  :<|> getDelete
  :<|> getCapture
@@ -140,65 +148,82 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
  :<|> getMultiple)
     = client api
 
+type FailApi =
+       "get" :> Raw
+  :<|> "capture" :> Capture "name" String :> Raw
+  :<|> "body" :> Raw
+failApi :: Proxy FailApi
+failApi = Proxy
+
+failServer :: Application
+failServer = serve failApi (
+       (\ _request respond -> respond $ responseLBS ok200 [] "")
+  :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
+  :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
+ )
+
+withFailServer :: (BaseUrl -> IO a) -> IO a
+withFailServer action = withWaiDaemon (return failServer) action
+
 spec :: Spec
 spec = do
   it "Servant.API.Get" $ withServer $ \ host -> do
-    runEitherT (getGet host) `shouldReturn` Right alice
+    (Arrow.left show <$> runEitherT (getGet host)) `shouldReturn` Right alice
 
   it "Servant.API.Delete" $ withServer $ \ host -> do
-    runEitherT (getDelete host) `shouldReturn` Right ()
+    (Arrow.left show <$> runEitherT (getDelete host)) `shouldReturn` Right ()
 
   it "Servant.API.Capture" $ withServer $ \ host -> do
-    runEitherT (getCapture "Paula" host) `shouldReturn` Right (Person "Paula" 0)
+    (Arrow.left show <$> runEitherT (getCapture "Paula" host)) `shouldReturn` Right (Person "Paula" 0)
 
   it "Servant.API.ReqBody" $ withServer $ \ host -> do
     let p = Person "Clara" 42
-    runEitherT (getBody p host) `shouldReturn` Right p
+    (Arrow.left show <$> runEitherT (getBody p host)) `shouldReturn` Right p
 
   it "Servant.API.QueryParam" $ withServer $ \ host -> do
-    runEitherT (getQueryParam (Just "alice") host) `shouldReturn` Right alice
-    Left result <- runEitherT (getQueryParam (Just "bob") host)
-    result `shouldContain` "bob not found"
+    Arrow.left show <$> runEitherT (getQueryParam (Just "alice") host) `shouldReturn` Right alice
+    Left FailureResponse{..} <- runEitherT (getQueryParam (Just "bob") host)
+    responseStatus `shouldBe` Status 400 "bob not found"
 
   it "Servant.API.QueryParam.QueryParams" $ withServer $ \ host -> do
-    runEitherT (getQueryParams [] host) `shouldReturn` Right []
-    runEitherT (getQueryParams ["alice", "bob"] host)
+    (Arrow.left show <$> runEitherT (getQueryParams [] host)) `shouldReturn` Right []
+    (Arrow.left show <$> runEitherT (getQueryParams ["alice", "bob"] host))
       `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
   context "Servant.API.QueryParam.QueryFlag" $
     forM_ [False, True] $ \ flag ->
     it (show flag) $ withServer $ \ host -> do
-      runEitherT (getQueryFlag flag host) `shouldReturn` Right flag
+      (Arrow.left show <$> runEitherT (getQueryFlag flag host)) `shouldReturn` Right flag
 
-{-
   it "Servant.API.MatrixParam" $ withServer $ \ host -> do
-    runEitherT (getMatrixParam (Just "alice") host) `shouldReturn` Right alice
-    Left result <- runEitherT (getMatrixParam (Just "bob") host)
-    result `shouldContain` "bob not found"
+    Arrow.left show <$> runEitherT (getMatrixParam (Just "alice") host) `shouldReturn` Right alice
+    Left FailureResponse{..} <- runEitherT (getMatrixParam (Just "bob") host)
+    responseStatus `shouldBe` Status 400 "bob not found"
 
   it "Servant.API.MatrixParam.MatrixParams" $ withServer $ \ host -> do
-    runEitherT (getMatrixParams [] host) `shouldReturn` Right []
-    runEitherT (getMatrixParams ["alice", "bob"] host)
+    Arrow.left show <$> runEitherT (getMatrixParams [] host) `shouldReturn` Right []
+    Arrow.left show <$> runEitherT (getMatrixParams ["alice", "bob"] host)
       `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
   context "Servant.API.MatrixParam.MatrixFlag" $
     forM_ [False, True] $ \ flag ->
     it (show flag) $ withServer $ \ host -> do
-      runEitherT (getMatrixFlag flag host) `shouldReturn` Right flag
--}
+      Arrow.left show <$> runEitherT (getMatrixFlag flag host) `shouldReturn` Right flag
 
   it "Servant.API.Raw on success" $ withServer $ \ host -> do
-    runEitherT (getRawSuccess methodGet host) `shouldReturn` Right (200, "rawSuccess", "application"//"octet-stream")
+    (Arrow.left show <$> runEitherT (getRawSuccess methodGet host))
+      `shouldReturn` Right (200, "rawSuccess", "application"//"octet-stream")
 
   it "Servant.API.Raw on failure" $ withServer $ \ host -> do
-    runEitherT (getRawFailure methodGet host) `shouldReturn` Right (400, "rawFailure", "application"//"octet-stream")
+    (Arrow.left show <$> runEitherT (getRawFailure methodGet host))
+      `shouldReturn` Right (400, "rawFailure", "application"//"octet-stream")
 
   modifyMaxSuccess (const 20) $ do
     it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $
       property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
         ioProperty $ do
           withServer $ \ host -> do
-            result <- runEitherT (getMultiple cap num flag body host)
+            result <- Arrow.left show <$> runEitherT (getMultiple cap num flag body host)
             return $
               result === Right (cap, num, flag, body)
 
@@ -209,20 +234,52 @@ spec = do
           it desc $
           withWaiDaemon (return (serve api (left (500, "error message")))) $
           \ host -> do
-            let getResponse :: BaseUrl -> EitherT String IO ()
+            let getResponse :: BaseUrl -> EitherT ServantError IO ()
                 getResponse = client api
-            Left result <- runEitherT (getResponse host)
-            result `shouldContain` "error message"
+            Left FailureResponse{..} <- runEitherT (getResponse host)
+            responseStatus `shouldBe` (Status 500 "error message")
     mapM_ test $
       (WrappedApi (Proxy :: Proxy Delete), "Delete") :
-      (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Delete") :
-      (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Delete") :
-      (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Delete") :
+      (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get") :
+      (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post") :
+      (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put") :
       []
+
+  context "client returns errors appropriately" $ do
+    it "reports FailureResponse" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getDelete host)
+      case res of
+        FailureResponse (Status 404 "Not Found") _ _ -> return ()
+        _ -> fail $ "expected 404 response, but got " <> show res
+
+    it "reports DecodeFailure" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getCapture "foo" host)
+      case res of
+        DecodeFailure _ ("application/json") _ -> return ()
+        _ -> fail $ "expected DecodeFailure, but got " <> show res
+
+    it "reports ConnectionError" $ do
+      Right host <- return $ parseBaseUrl "127.0.0.1:987654"
+      Left res <- runEitherT (getGet host)
+      case res of
+        ConnectionError (FailedConnectionException2 "127.0.0.1" 987654 False _) -> return ()
+        _ -> fail $ "expected ConnectionError, but got " <> show res
+
+    it "reports UnsupportedContentType" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getGet host)
+      case res of
+        UnsupportedContentType ("application/octet-stream") _ -> return ()
+        _ -> fail $ "expected UnsupportedContentType, but got " <> show res
+
+    it "reports InvalidContentTypeHeader" $ withFailServer $ \ host -> do
+      Left res <- runEitherT (getBody alice host)
+      case res of
+        InvalidContentTypeHeader "fooooo" _ -> return ()
+        _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
   WrappedApi :: (HasServer api, Server api ~ EitherT (Int, String) IO a,
-                 HasClient api, Client api ~ (BaseUrl -> EitherT String IO ())) =>
+                 HasClient api, Client api ~ (BaseUrl -> EitherT ServantError IO ())) =>
     Proxy api -> WrappedApi
 
 
