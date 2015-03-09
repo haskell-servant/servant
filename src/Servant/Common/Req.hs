@@ -8,7 +8,7 @@ import Control.Monad
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
-import Data.ByteString.Lazy hiding (pack, filter, map, null)
+import Data.ByteString.Lazy hiding (pack, filter, map, null, elem)
 import Data.IORef
 import Data.String
 import Data.String.Conversions
@@ -162,11 +162,11 @@ performRequest reqMethod req isWantedStatus reqHost = do
       return (status_code, body, ct)
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> Int -> BaseUrl -> EitherT ServantError IO result
+  Proxy ct -> Method -> Req -> [Int] -> BaseUrl -> EitherT ServantError IO result
 performRequestCT ct reqMethod req wantedStatus reqHost = do
   let acceptCT = contentType ct
   (_status, respBody, respCT) <-
-    performRequest reqMethod (req { reqAccept = [acceptCT] }) (== wantedStatus) reqHost
+    performRequest reqMethod (req { reqAccept = [acceptCT] }) (`elem` wantedStatus) reqHost
   unless (matches respCT (acceptCT)) $
     left $ UnsupportedContentType respCT respBody
   either

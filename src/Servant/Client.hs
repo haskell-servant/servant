@@ -120,7 +120,7 @@ instance HasClient Delete where
 instance (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
   type Client (Get (ct ': cts) result) = BaseUrl -> EitherT ServantError IO result
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodGet req 200 host
+    performRequestCT (Proxy :: Proxy ct) H.methodGet req [200] host
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -167,7 +167,7 @@ instance (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
   type Client (Post (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req uri =
-    performRequestCT (Proxy :: Proxy ct) H.methodPost req 201 uri
+    performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] uri
 
 -- | If you have a 'Put' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -177,7 +177,7 @@ instance (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
   type Client (Put (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodPut req 200 host
+    performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] host
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
