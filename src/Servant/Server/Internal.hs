@@ -165,7 +165,6 @@ class HasServer layout where
 
 type Server' layout = ServerT layout (EitherT (Int, String) IO)
 
-
 -- * Instances
 
 -- | A server for @a ':<|>' b@ first tries to match the request against the route
@@ -184,7 +183,7 @@ instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
   type ServerT (a :<|> b) m = ServerT a m :<|> ServerT b m
 
   route Proxy (a :<|> b) request respond =
-    route pa a request $ \ mResponse ->
+    route pa a request $ \mResponse ->
       if isMismatch mResponse
         then route pb b request $ \mResponse' -> respond (mResponse <> mResponse')
         else respond mResponse
