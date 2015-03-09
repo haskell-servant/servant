@@ -18,7 +18,7 @@ module Servant.Server
 
 import Data.Proxy (Proxy)
 import Network.Wai (Application)
-import Servant.API (Canonicalize)
+import Servant.API (Canonicalize, canonicalize)
 import Servant.Server.Internal
 
 
