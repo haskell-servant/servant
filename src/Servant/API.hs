@@ -48,12 +48,14 @@ module Servant.API (
 
   -- * Canonicalizing (flattening) API types
   Canonicalize,
+  canonicalize,
 
   -- * Utilities
   module Servant.Utils.Links,
   -- | Type-safe internal URIs
   ) where
 
+import           Data.Proxy               (Proxy(..))
 import           Servant.Common.Text      (FromText(..), ToText(..))
 import           Servant.API.Alternative  ((:<|>) (..))
 import           Servant.API.Capture      (Capture)
@@ -97,3 +99,6 @@ type family Canonicalize api :: * where
 type family Redex a b c :: * where
   Redex a a first = Canonicalize first :> a
   Redex a b first = Canonicalize (first :> b)
+
+canonicalize :: Canonicalize layout ~ t => Proxy layout -> Proxy t
+canonicalize Proxy = Proxy
