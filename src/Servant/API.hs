@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Servant.API (
 
   -- * Combinators
@@ -43,6 +46,9 @@ module Servant.API (
   module Servant.Common.Text,
   -- | Classes and instances for types that can be converted to and from @Text@
 
+  -- * Canonicalizing (flattening) API types
+  Canonicalize,
+
   -- * Utilities
   module Servant.Utils.Links,
   -- | Type-safe internal URIs
@@ -69,3 +75,25 @@ import           Servant.API.ReqBody      (ReqBody)
 import           Servant.API.Sub          ((:>))
 import           Servant.Utils.Links      (HasLink (..), IsElem, IsElem',
                                            URI (..), safeLink)
+
+-- | Turn an API type into its canonical form.
+--
+-- The canonical form is defined and will basically turn:
+--
+-- > "hello" :> (Get Hello :<|> ReqBody Hello :> Put Hello)
+--
+-- into
+--
+-- > ("hello" :> Get Hello) :<|> ("hello" :> ReqBody Hello :> Put Hello)
+--
+-- i.e distributing all ':>'-separated bits into the subsequent ':<|>'s.
+type family Canonicalize api :: * where
+  -- requires UndecidableInstances
+  Canonicalize (a :> (b :<|> c)) = ((a :> Canonicalize b)  :<|>  (a :> Canonicalize c))
+  Canonicalize (a :> b)          = Redex b (Canonicalize b) a
+  Canonicalize (a :<|> b)        = Canonicalize a :<|> Canonicalize b
+  Canonicalize a                 = a
+
+type family Redex a b c :: * where
+  Redex a a first = Canonicalize first :> a
+  Redex a b first = Canonicalize (first :> b)
