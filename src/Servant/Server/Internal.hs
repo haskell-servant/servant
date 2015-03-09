@@ -163,9 +163,6 @@ class HasServer layout where
   type Server' layout :: *
   route :: Proxy layout -> Server' layout -> RoutingApplication
 
-canonicalize :: Canonicalize layout ~ t => Proxy layout -> Proxy t
-canonicalize Proxy = Proxy
-
 -- * Instances
 
 -- | A server for @a ':<|>' b@ first tries to match the request against the route
