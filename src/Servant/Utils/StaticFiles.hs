@@ -9,7 +9,7 @@ module Servant.Utils.StaticFiles (
 import Filesystem.Path.CurrentOS (decodeString)
 import Network.Wai.Application.Static (staticApp, defaultFileServerSettings)
 import Servant.API.Raw (Raw)
-import Servant.Server.Internal (Server)
+import Servant.Server (Server)
 
 -- | Serve anything under the specified directory as a 'Raw' endpoint.
 --

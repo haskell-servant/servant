@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
@@ -12,11 +13,12 @@ module Servant.Server
 
   , -- * Handlers for all standard combinators
     HasServer(..)
+  , Server
   ) where
 
 import Data.Proxy (Proxy)
 import Network.Wai (Application)
-
+import Servant.API (Canonicalize)
 import Servant.Server.Internal
 
 
@@ -42,5 +44,7 @@ import Servant.Server.Internal
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
-serve :: HasServer layout => Proxy layout -> Server layout -> Application
-serve p server = toApplication (route p server)
+serve :: HasServer (Canonicalize layout) => Proxy layout -> Server layout -> Application
+serve p server = toApplication (route (canonicalize p) server)
+
+type Server layout = Server' (Canonicalize layout)
