@@ -167,12 +167,14 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
   Elem a (b ': list) = Elem a list
 
 class HasJQ (layout :: *) where
-  type JQ layout :: *
-  jqueryFor :: Proxy layout -> AjaxReq -> JQ layout
+  type JQ' layout :: *
+  jqueryFor :: Proxy layout -> AjaxReq -> JQ' layout
+
+type JQ layout = JQ' (Canonicalize layout)
 
 instance (HasJQ a, HasJQ b)
       => HasJQ (a :<|> b) where
-  type JQ (a :<|> b) = JQ a :<|> JQ b
+  type JQ' (a :<|> b) = JQ' a :<|> JQ' b
 
   jqueryFor Proxy req =
          jqueryFor (Proxy :: Proxy a) req
@@ -180,7 +182,7 @@ instance (HasJQ a, HasJQ b)
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (Capture sym a :> sublayout) where
-  type JQ (Capture sym a :> sublayout) = JQ sublayout
+  type JQ' (Capture sym a :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
@@ -189,14 +191,14 @@ instance (KnownSymbol sym, HasJQ sublayout)
     where str = symbolVal (Proxy :: Proxy sym)
 
 instance HasJQ Delete where
-  type JQ Delete = AjaxReq
+  type JQ' Delete = AjaxReq
 
   jqueryFor Proxy req =
     req & funcName  %~ ("delete" <>)
         & reqMethod .~ "DELETE"
 
 instance Elem JSON list => HasJQ (Get list a) where
-  type JQ (Get list a) = AjaxReq
+  type JQ' (Get list a) = AjaxReq
 
   jqueryFor Proxy req =
     req & funcName  %~ ("get" <>)
@@ -204,7 +206,7 @@ instance Elem JSON list => HasJQ (Get list a) where
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (Header sym a :> sublayout) where
-  type JQ (Header sym a :> sublayout) = JQ sublayout
+  type JQ' (Header sym a :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor subP (req & reqHeaders <>~ [HeaderArg hname])
@@ -213,14 +215,14 @@ instance (KnownSymbol sym, HasJQ sublayout)
           subP = Proxy :: Proxy sublayout
 
 instance Elem JSON list => HasJQ (Post list a) where
-  type JQ (Post list a) = AjaxReq
+  type JQ' (Post list a) = AjaxReq
 
   jqueryFor Proxy req =
     req & funcName  %~ ("post" <>)
         & reqMethod .~ "POST"
 
 instance Elem JSON list => HasJQ (Put list a) where
-  type JQ (Put list a) = AjaxReq
+  type JQ' (Put list a) = AjaxReq
 
   jqueryFor Proxy req =
     req & funcName  %~ ("put" <>)
@@ -228,7 +230,7 @@ instance Elem JSON list => HasJQ (Put list a) where
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (QueryParam sym a :> sublayout) where
-  type JQ (QueryParam sym a :> sublayout) = JQ sublayout
+  type JQ' (QueryParam sym a :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
@@ -238,7 +240,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (QueryParams sym a :> sublayout) where
-  type JQ (QueryParams sym a :> sublayout) = JQ sublayout
+  type JQ' (QueryParams sym a :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
@@ -248,7 +250,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (QueryFlag sym :> sublayout) where
-  type JQ (QueryFlag sym :> sublayout) = JQ sublayout
+  type JQ' (QueryFlag sym :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
@@ -257,14 +259,14 @@ instance (KnownSymbol sym, HasJQ sublayout)
     where str = symbolVal (Proxy :: Proxy sym)
 
 instance HasJQ Raw where
-  type JQ Raw = Method -> AjaxReq
+  type JQ' Raw = Method -> AjaxReq
 
   jqueryFor Proxy req method =
     req & funcName %~ ((toLower <$> method) <>)
         & reqMethod .~ method
 
 instance (Elem JSON list, HasJQ sublayout) => HasJQ (ReqBody list a :> sublayout) where
-  type JQ (ReqBody list a :> sublayout) = JQ sublayout
+  type JQ' (ReqBody list a :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
@@ -272,7 +274,7 @@ instance (Elem JSON list, HasJQ sublayout) => HasJQ (ReqBody list a :> sublayout
 
 instance (KnownSymbol path, HasJQ sublayout)
       => HasJQ (path :> sublayout) where
-  type JQ (path :> sublayout) = JQ sublayout
+  type JQ' (path :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
