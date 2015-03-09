@@ -26,8 +26,8 @@ import Data.Proxy
 import Servant.API
 import Servant.JQuery.Internal
 
-jquery :: HasJQ layout => Proxy layout -> JQ layout
-jquery p = jqueryFor p defReq
+jquery :: HasJQ (Canonicalize layout) => Proxy layout -> JQ layout
+jquery p = jqueryFor (canonicalize p) defReq
 
 -- js codegen
 generateJS :: AjaxReq -> String
