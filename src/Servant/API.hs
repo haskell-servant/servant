@@ -80,7 +80,12 @@ import           Servant.Utils.Links      (HasLink (..), IsElem, IsElem',
 
 -- | Turn an API type into its canonical form.
 --
--- The canonical form is defined and will basically turn:
+-- The canonical form of an API type is basically the all-flattened form
+-- of the original type. More formally, it takes a type as input and hands you
+-- back an /equivalent/ type formed of toplevel `:<|>`-separated chains of `:>`s,
+-- i.e with all `:>`s distributed inside the `:<|>`s.
+--
+-- It basically turns:
 --
 -- > "hello" :> (Get Hello :<|> ReqBody Hello :> Put Hello)
 --
@@ -101,5 +106,5 @@ type family Redex a b c :: * where
   Redex a a first = Canonicalize first :> a
   Redex a b first = Canonicalize (first :> b)
 
-canonicalize :: Canonicalize layout ~ t => Proxy layout -> Proxy t
+canonicalize :: Proxy layout -> Proxy (Canonicalize layout)
 canonicalize Proxy = Proxy
