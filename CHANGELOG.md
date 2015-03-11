@@ -7,6 +7,7 @@
 * Make the clients for `Raw` endpoints return the whole `Response` value (to be able to access response headers for example)
 * Support for PATCH
 * Make () instances expect No Content status code, and not try to decode body.
+* `Canonicalize` API types before generating client functions for them
 
 0.2.2
 -----
