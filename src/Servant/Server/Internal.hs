@@ -4,12 +4,12 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.Server.Internal where
 
 import Control.Applicative ((<$>))
 import Control.Monad.Trans.Either (EitherT, runEitherT)
-import Data.Aeson (ToJSON)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import Data.IORef (newIORef, readIORef, writeIORef)
@@ -286,6 +286,19 @@ instance ( AllCTRender ctypes a
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
+instance HasServer (Get ctypes ()) where
+  type ServerT (Get ctypes ()) m = m ()
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodGet = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right () -> responseLBS noContent204 [] ""
+          Left (status, message) ->
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodGet =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
 -- | If you use 'Header' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by 'Header'.
@@ -351,6 +364,19 @@ instance ( AllCTRender ctypes a
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
+instance HasServer (Post ctypes ()) where
+  type ServerT (Post ctypes ()) m = m ()
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPost = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right () -> responseLBS noContent204 [] ""
+          Left (status, message) ->
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPost =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
 -- | When implementing the handler for a 'Put' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
 -- and 'Servant.API.Post.Post', the handler code runs in the
@@ -382,7 +408,19 @@ instance ( AllCTRender ctypes a
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPut =
         respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
 
+instance HasServer (Put ctypes ()) where
+  type ServerT (Put ctypes ()) m = m ()
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPut = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right () -> responseLBS noContent204 [] ""
+          Left (status, message) ->
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPut =
+        respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
 -- | When implementing the handler for a 'Patch' endpoint,
@@ -397,25 +435,35 @@ instance ( AllCTRender ctypes a
 -- a 'ToJSON' instance and servant takes care of encoding it for you,
 -- yielding status code 201 along the way.
 instance ( AllCTRender ctypes a
-         , Typeable a
-         , ToJSON a) => HasServer (Patch ctypes a) where
+         ) => HasServer (Patch ctypes a) where
   type ServerT (Patch ctypes a) m = m a
 
   route Proxy action request respond
-    | pathIsEmpty request && requestMethod request == methodPost = do
+    | pathIsEmpty request && requestMethod request == methodPatch = do
         e <- runEitherT action
         respond . succeedWith $ case e of
-          Right out -> case cast out of
-              Nothing -> do
-                  let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
-                  case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) out of
-                    Nothing -> responseLBS (mkStatus 406 "") [] ""
-                    Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
-                                                                   , cs contentT)] body
-              Just () -> responseLBS status204 [] ""
+          Right output -> do
+            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
+              Nothing -> responseLBS (mkStatus 406 "") [] ""
+              Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
+                                                             , cs contentT)] body
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | pathIsEmpty request && requestMethod request /= methodPost =
+    | pathIsEmpty request && requestMethod request /= methodPatch =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+instance HasServer (Patch ctypes ()) where
+  type ServerT (Patch ctypes ()) m = m ()
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPatch = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right () -> responseLBS noContent204 [] ""
+          Left (status, message) ->
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPatch =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
