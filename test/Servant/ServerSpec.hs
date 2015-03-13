@@ -1,36 +1,40 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators       #-}
 
 module Servant.ServerSpec where
 
 
-import Control.Monad (when)
-import Control.Monad.Trans.Either (EitherT, left)
-import Data.Aeson (ToJSON, FromJSON, encode, decode')
-import Data.Char (toUpper)
-import Data.Monoid ((<>))
-import Data.Proxy (Proxy(Proxy))
-import Data.String (fromString)
-import Data.String.Conversions (cs)
-import GHC.Generics (Generic)
-import Network.HTTP.Types ( parseQuery, ok200, status409, methodPost
-                          , methodDelete, hContentType)
-import Network.Wai ( Application, Request, responseLBS, pathInfo
-                   , queryString, rawQueryString )
-import Network.Wai.Test (runSession, defaultRequest, simpleBody, request)
-import Test.Hspec (Spec, describe, it, shouldBe)
-import Test.Hspec.Wai ( liftIO, with, get, post, shouldRespondWith
-                      , matchStatus, request )
+import           Control.Monad              (when)
+import           Control.Monad.Trans.Either (EitherT, left)
+import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
+import           Data.Char                  (toUpper)
+import           Data.Monoid                ((<>))
+import           Data.Proxy                 (Proxy (Proxy))
+import           Data.String                (fromString)
+import           Data.String.Conversions    (cs)
+import           GHC.Generics               (Generic)
+import           Network.HTTP.Types         (hContentType, methodDelete,
+                                             methodPatch, methodPost, methodPut,
+                                             ok200, parseQuery, status409)
+import           Network.Wai                (Application, Request, pathInfo,
+                                             queryString, rawQueryString,
+                                             responseLBS)
+import           Network.Wai.Test           (defaultRequest, request,
+                                             runSession, simpleBody)
+import           Test.Hspec                 (Spec, describe, it, shouldBe)
+import           Test.Hspec.Wai             (get, liftIO, matchStatus, post,
+                                             request, shouldRespondWith, with)
 
-import Servant.API (JSON, Capture, Get, ReqBody, Post, QueryParam
-                   , QueryParams, QueryFlag, MatrixParam, MatrixParams
-                   , MatrixFlag, Raw, (:>), (:<|>)(..), Header, Delete )
-import Servant.Server (Server, serve)
-import Servant.Server.Internal (RouteMismatch(..))
+import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
+                                             Get, Header, JSON, MatrixFlag,
+                                             MatrixParam, MatrixParams, Patch,
+                                             Post, Put, QueryFlag, QueryParam,
+                                             QueryParams, Raw, ReqBody)
+import           Servant.Server             (Server, serve)
+import           Servant.Server.Internal    (RouteMismatch (..))
 
 
 -- * test data types
@@ -69,9 +73,11 @@ spec :: Spec
 spec = do
   captureSpec
   getSpec
+  postSpec
+  putSpec
+  patchSpec
   queryParamSpec
   matrixParamSpec
-  postSpec
   headerSpec
   rawSpec
   unionSpec
@@ -105,13 +111,15 @@ captureSpec = do
 
 
 type GetApi = Get '[JSON] Person
+        :<|> "empty" :> Get '[] ()
 getApi :: Proxy GetApi
 getApi = Proxy
 
 getSpec :: Spec
 getSpec = do
   describe "Servant.API.Get" $ do
-    with (return (serve getApi (return alice))) $ do
+    let server = return alice :<|> return ()
+    with (return $ serve getApi server) $ do
       it "allows to GET a Person" $ do
         response <- get "/"
         return response `shouldRespondWith` 200
@@ -120,6 +128,10 @@ getSpec = do
 
       it "throws 405 (wrong method) on POSTs" $ do
         post "/" "" `shouldRespondWith` 405
+
+      it "returns 204 if the type is '()'" $ do
+        get "empty" `shouldRespondWith` ""{ matchStatus = 204 }
+
 
 
 type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
@@ -291,13 +303,16 @@ matrixParamSpec = do
 type PostApi =
        ReqBody '[JSON] Person :> Post '[JSON] Integer
   :<|> "bla" :> ReqBody '[JSON] Person :> Post '[JSON] Integer
+  :<|> "empty" :> Post '[] ()
+
 postApi :: Proxy PostApi
 postApi = Proxy
 
 postSpec :: Spec
 postSpec = do
   describe "Servant.API.Post and .ReqBody" $ do
-    with (return (serve postApi (return . age :<|> return . age))) $ do
+    let server = return . age :<|> return . age :<|> return ()
+    with (return $ serve postApi server) $ do
       let post' x = Test.Hspec.Wai.request methodPost x [(hContentType
                                                         , "application/json;charset=utf-8")]
 
@@ -319,10 +334,97 @@ postSpec = do
       it "correctly rejects invalid request bodies with status 400" $ do
         post' "/" "some invalid body" `shouldRespondWith` 400
 
+      it "returns 204 if the type is '()'" $ do
+        post' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
+
       it "responds with 415 if the requested media type is unsupported" $ do
         let post'' x = Test.Hspec.Wai.request methodPost x [(hContentType
                                                             , "application/nonsense")]
         post'' "/" "anything at all" `shouldRespondWith` 415
+
+type PutApi =
+       ReqBody '[JSON] Person :> Put '[JSON] Integer
+  :<|> "bla" :> ReqBody '[JSON] Person :> Put '[JSON] Integer
+  :<|> "empty" :> Put '[] ()
+
+putApi :: Proxy PutApi
+putApi = Proxy
+
+putSpec :: Spec
+putSpec = do
+  describe "Servant.API.Put and .ReqBody" $ do
+    let server = return . age :<|> return . age :<|> return ()
+    with (return $ serve putApi server) $ do
+      let put' x = Test.Hspec.Wai.request methodPut x [(hContentType
+                                                        , "application/json;charset=utf-8")]
+
+      it "allows to put a Person" $ do
+        put' "/" (encode alice) `shouldRespondWith` "42"{
+          matchStatus = 200
+         }
+
+      it "allows alternative routes if all have request bodies" $ do
+        put' "/bla" (encode alice) `shouldRespondWith` "42"{
+          matchStatus = 200
+         }
+
+      it "handles trailing '/' gracefully" $ do
+        put' "/bla/" (encode alice) `shouldRespondWith` "42"{
+          matchStatus = 200
+         }
+
+      it "correctly rejects invalid request bodies with status 400" $ do
+        put' "/" "some invalid body" `shouldRespondWith` 400
+
+      it "returns 204 if the type is '()'" $ do
+        put' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
+
+      it "responds with 415 if the requested media type is unsupported" $ do
+        let put'' x = Test.Hspec.Wai.request methodPut x [(hContentType
+                                                            , "application/nonsense")]
+        put'' "/" "anything at all" `shouldRespondWith` 415
+
+type PatchApi =
+       ReqBody '[JSON] Person :> Patch '[JSON] Integer
+  :<|> "bla" :> ReqBody '[JSON] Person :> Patch '[JSON] Integer
+  :<|> "empty" :> Patch '[] ()
+
+patchApi :: Proxy PatchApi
+patchApi = Proxy
+
+patchSpec :: Spec
+patchSpec = do
+  describe "Servant.API.Patch and .ReqBody" $ do
+    let server = return . age :<|> return . age :<|> return ()
+    with (return $ serve patchApi server) $ do
+      let patch' x = Test.Hspec.Wai.request methodPatch x [(hContentType
+                                                        , "application/json;charset=utf-8")]
+
+      it "allows to patch a Person" $ do
+        patch' "/" (encode alice) `shouldRespondWith` "42"{
+          matchStatus = 200
+         }
+
+      it "allows alternative routes if all have request bodies" $ do
+        patch' "/bla" (encode alice) `shouldRespondWith` "42"{
+          matchStatus = 200
+         }
+
+      it "handles trailing '/' gracefully" $ do
+        patch' "/bla/" (encode alice) `shouldRespondWith` "42"{
+          matchStatus = 200
+         }
+
+      it "correctly rejects invalid request bodies with status 400" $ do
+        patch' "/" "some invalid body" `shouldRespondWith` 400
+
+      it "returns 204 if the type is '()'" $ do
+        patch' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
+
+      it "responds with 415 if the requested media type is unsupported" $ do
+        let patch'' x = Test.Hspec.Wai.request methodPatch x [(hContentType
+                                                            , "application/nonsense")]
+        patch'' "/" "anything at all" `shouldRespondWith` 415
 
 type HeaderApi a = Header "MyHeader" a :> Delete
 headerApi :: Proxy (HeaderApi a)
