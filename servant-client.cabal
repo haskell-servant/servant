@@ -74,6 +74,7 @@ test-suite spec
     , http-client
     , http-media
     , http-types
+    , HUnit
     , network >= 2.6
     , QuickCheck >= 2.7
     , servant >= 0.2.1

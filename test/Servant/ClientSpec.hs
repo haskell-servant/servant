@@ -23,14 +23,15 @@ import Data.Monoid
 import Data.Proxy
 import qualified Data.Text as T
 import GHC.Generics
-import Network.HTTP.Client (HttpException(..))
+import qualified Network.HTTP.Client as C
 import Network.HTTP.Media
 import Network.HTTP.Types
 import Network.Socket
-import Network.Wai
+import Network.Wai hiding (Response)
 import Network.Wai.Handler.Warp
 import Test.Hspec
 import Test.Hspec.QuickCheck
+import Test.HUnit
 import Test.QuickCheck
 
 import Servant.API
@@ -64,7 +65,7 @@ instance FromFormUrlEncoded Person where
 
 deriving instance Eq ServantError
 
-instance Eq HttpException where
+instance Eq C.HttpException where
   a == b = show a == show b
 
 alice :: Person
@@ -128,8 +129,8 @@ getQueryFlag :: Bool -> BaseUrl -> EitherT ServantError IO Bool
 getMatrixParam :: Maybe String -> BaseUrl -> EitherT ServantError IO Person
 getMatrixParams :: [String] -> BaseUrl -> EitherT ServantError IO [Person]
 getMatrixFlag :: Bool -> BaseUrl -> EitherT ServantError IO Bool
-getRawSuccess :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
-getRawFailure :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
+getRawSuccess :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, C.Response ByteString)
+getRawFailure :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, C.Response ByteString)
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> BaseUrl
   -> EitherT ServantError IO (String, Maybe Int, Bool, [(String, [Rational])])
@@ -211,12 +212,22 @@ spec = do
       Arrow.left show <$> runEitherT (getMatrixFlag flag host) `shouldReturn` Right flag
 
   it "Servant.API.Raw on success" $ withServer $ \ host -> do
-    (Arrow.left show <$> runEitherT (getRawSuccess methodGet host))
-      `shouldReturn` Right (200, "rawSuccess", "application"//"octet-stream")
+    res <- runEitherT (getRawSuccess methodGet host)
+    case res of
+      Left e -> assertFailure $ show e
+      Right (code, body, ct, response) -> do
+        (code, body, ct) `shouldBe` (200, "rawSuccess", "application"//"octet-stream")
+        C.responseBody response `shouldBe` body
+        C.responseStatus response `shouldBe` ok200
 
   it "Servant.API.Raw on failure" $ withServer $ \ host -> do
-    (Arrow.left show <$> runEitherT (getRawFailure methodGet host))
-      `shouldReturn` Right (400, "rawFailure", "application"//"octet-stream")
+    res <- runEitherT (getRawFailure methodGet host)
+    case res of
+      Left e -> assertFailure $ show e
+      Right (code, body, ct, response) -> do
+        (code, body, ct) `shouldBe` (400, "rawFailure", "application"//"octet-stream")
+        C.responseBody response `shouldBe` body
+        C.responseStatus response `shouldBe` badRequest400
 
   modifyMaxSuccess (const 20) $ do
     it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $
@@ -262,7 +273,7 @@ spec = do
       Right host <- return $ parseBaseUrl "127.0.0.1:987654"
       Left res <- runEitherT (getGet host)
       case res of
-        ConnectionError (FailedConnectionException2 "127.0.0.1" 987654 False _) -> return ()
+        ConnectionError (C.FailedConnectionException2 "127.0.0.1" 987654 False _) -> return ()
         _ -> fail $ "expected ConnectionError, but got " <> show res
 
     it "reports UnsupportedContentType" $ withFailServer $ \ host -> do
