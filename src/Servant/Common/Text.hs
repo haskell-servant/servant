@@ -11,6 +11,7 @@ import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import           Data.Text.Read          (Reader, decimal, rational, signed)
 import           Data.Word               (Word, Word16, Word32, Word64, Word8)
+import           GHC.Float               (double2Float)
 
 -- | For getting values from url captures and query string parameters
 -- Instances should obey:
@@ -130,7 +131,9 @@ instance ToText Double where
   toText = cs . show
 
 instance FromText Float where
-  fromText = runReader rational
+  -- Double is more practically accurate due to weird rounding when using
+  -- rational. We convert to double and then convert to Float.
+  fromText = fmap double2Float . runReader rational
 
 instance ToText Float where
   toText = cs . show
