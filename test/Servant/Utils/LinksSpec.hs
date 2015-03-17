@@ -29,7 +29,7 @@ type TestApi =
   :<|> "raw" :> Raw
 
 type TestLink = "hello" :> "hi" :> Get '[JSON] Bool
-type TestLink2 = "greet" :> Post '[PlainText] Bool
+type TestLink2 = "greet" :> ReqBody '[JSON] [Int] :> Post '[PlainText] Bool
 type TestLink3 = "parent" :> "child" :> Get '[JSON] String
 
 type BadTestLink = "hallo" :> "hi" :> Get '[JSON] Bool
