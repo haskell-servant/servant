@@ -61,7 +61,7 @@ spec = describe "Servant.Common.Text" $ do
         -- http://en.wikipedia.org/wiki/Floating_point#Internal_representation
         it "holds for Double" $
             property $ \x ->
-                x < 1.0e15 && x > 1.0e-16 ==>
+                x < 1.0e15 && x > 1.0e-15 ==>
                     textLaw (x :: Double)
 
         it "holds for Float" $
