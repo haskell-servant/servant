@@ -159,7 +159,7 @@ type family IsElem' a s :: Constraint
 type family IsElem endpoint api :: Constraint where
     IsElem e (sa :<|> sb)                = Or (IsElem e sa) (IsElem e sb)
     IsElem (e :> sa) (e :> sb)           = IsElem sa sb
-    IsElem sa (Header x :> sb)          = IsElem sa sb
+    IsElem sa (Header x :> sb)           = IsElem sa sb
     IsElem sa (ReqBody y x :> sb)        = IsElem sa sb
     IsElem (e :> sa) (Capture x y :> sb) = IsElem sa sb
     IsElem sa (QueryParam x y :> sb)     = IsElem sa sb
@@ -320,8 +320,8 @@ instance (KnownSymbol sym, HasLink sub)
         k = symbolVal (Proxy :: Proxy sym)
 
 -- Misc instances
-instance HasLink sub => HasLink (ReqBody a :> sub) where
-    type MkLink (ReqBody a :> sub) = MkLink sub
+instance HasLink sub => HasLink (ReqBody ct a :> sub) where
+    type MkLink (ReqBody ct a :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
 instance (ToText v, HasLink sub)

@@ -55,11 +55,19 @@ spec = describe "Servant.Common.Text" $ do
         it "holds for Integer" $
             property $ \x -> textLaw (x :: Integer)
 
+        -- The following two properties are only reasonably expected to hold up
+        -- to a certain precision.
+        --
+        -- http://en.wikipedia.org/wiki/Floating_point#Internal_representation
         it "holds for Double" $
-            property $ \x -> textLaw (x :: Double)
+            property $ \x ->
+                x < 1.0e15 && x > 1.0e-16 ==>
+                    textLaw (x :: Double)
 
         it "holds for Float" $
-            property $ \x -> textLaw (x :: Float)
+            property $ \x ->
+                x < 1.0e7 && x > 1.0e-7 ==>
+                    textLaw (x :: Float)
 
 textLaw :: (FromText a, ToText a, Eq a) => a -> Bool
 textLaw a = fromText (toText a) == Just a
