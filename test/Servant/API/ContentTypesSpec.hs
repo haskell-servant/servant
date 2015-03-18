@@ -23,8 +23,10 @@ import           Data.String.Conversions    (cs)
 import qualified Data.Text                  as TextS
 import qualified Data.Text.Lazy             as TextL
 import           GHC.Generics
+import qualified Network.HTTP.Types         as H
 import           Network.URL                (exportParams, importParams)
 import           Test.Hspec
+import           Test.HUnit
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances  ()
 
@@ -164,6 +166,22 @@ spec = describe "Servant.API.ContentTypes" $ do
             -- The Left messages differ, so convert to Maybe
             property $ \x -> toMaybe (eitherDecodeLenient x)
                 `shouldBe` toMaybe (parseOnly jstring $ cs x)
+
+    describe "ResponseHeaders" $ do
+
+        it "decoding succeeds and only returns the specified header" $ do
+            let res = fromByteString (Proxy :: Proxy (ResponseHeaders '["TestHeader"] JSON))
+                                     [("Foo", "NOOOOO"), ("TestHeader", "YAY")]
+                                     "1"
+            res `shouldBe` Right ([("TestHeader", "YAY") :: H.Header], (1 :: Int))
+
+        it "decoding fails if a required header is not present" $ do
+            let res = fromByteString (Proxy :: Proxy (ResponseHeaders '["TestHeader"] JSON))
+                                     [("Foo", "NOOOOO")]
+                                     "1" :: Either String ([H.Header], Int)
+            case res of
+                Right _ -> assertFailure "Expected an error"
+                Left _ -> return ()
 
 
 data SomeData = SomeData { record1 :: String, record2 :: Int }

@@ -332,6 +332,12 @@ instance MimeUnrender OctetStream BS.ByteString where
 class KnownSymbols a where
     symbolVals :: Proxy a -> [String]
 
+instance KnownSymbols '[] where
+    symbolVals _ = []
+
+instance (KnownSymbol x, KnownSymbols xs) => KnownSymbols (x ': xs) where
+    symbolVals _ = symbolVal (Proxy :: Proxy x) : symbolVals (Proxy :: Proxy xs)
+
 instance (KnownSymbols hs, MimeUnrender ct a)
          => MimeUnrender (ResponseHeaders hs ct) ([H.Header], a) where
     fromByteString _ hs body = do

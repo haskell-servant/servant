@@ -90,7 +90,9 @@ test-suite spec
     , aeson
     , attoparsec
     , bytestring
+    , http-types
     , hspec == 2.*
+    , HUnit
     , QuickCheck
     , quickcheck-instances
     , parsec
