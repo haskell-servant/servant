@@ -190,7 +190,7 @@ instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
 --
 -- >>> :{
 --instance Read a => MimeUnrender MyContentType a where
---    fromByteString _ bs = case BSC.take 12 bs of
+--    fromByteString _ _ bs = case BSC.take 12 bs of
 --      "MyContentType" -> return . read . BSC.unpack $ BSC.drop 12 bs
 --      _ -> Left "didn't start with the magic incantation"
 -- :}
