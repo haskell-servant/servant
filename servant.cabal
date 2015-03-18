@@ -47,6 +47,7 @@ library
     , aeson >= 0.7
     , attoparsec >= 0.12
     , bytestring == 0.10.*
+    , case-insensitive
     , http-media >= 0.4 && < 0.7
     , http-types == 0.8.*
     , text >= 1 && < 2
