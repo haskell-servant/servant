@@ -117,8 +117,6 @@ toValidFunctionName [] = "_"
 
 type MatrixArg = QueryArg
 
-type MatrixArg = QueryArg
-
 data Url = Url
   { _path     :: Path
   , _queryStr :: [QueryArg]
