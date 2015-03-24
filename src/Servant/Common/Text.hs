@@ -6,12 +6,12 @@ module Servant.Common.Text
   , ToText(..)
   ) where
 
+import           Control.Applicative     ((<$>))
 import           Data.Int                (Int16, Int32, Int64, Int8)
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import           Data.Text.Read          (Reader, decimal, rational, signed)
 import           Data.Word               (Word, Word16, Word32, Word64, Word8)
-import           GHC.Float               (double2Float)
 
 -- | For getting values from url captures and query string parameters
 -- Instances should obey:
@@ -125,7 +125,7 @@ instance ToText Integer where
   toText = cs . show
 
 instance FromText Double where
-  fromText = runReader rational
+  fromText x = fromRational <$> runReader rational x
 
 instance ToText Double where
   toText = cs . show
@@ -133,7 +133,7 @@ instance ToText Double where
 instance FromText Float where
   -- Double is more practically accurate due to weird rounding when using
   -- rational. We convert to double and then convert to Float.
-  fromText = fmap double2Float . runReader rational
+  fromText x = fromRational <$> runReader rational x
 
 instance ToText Float where
   toText = cs . show

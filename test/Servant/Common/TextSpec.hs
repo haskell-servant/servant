@@ -60,14 +60,10 @@ spec = describe "Servant.Common.Text" $ do
         --
         -- http://en.wikipedia.org/wiki/Floating_point#Internal_representation
         it "holds for Double" $
-            property $ \x ->
-                x < 1.0e15 && x > 1.0e-15 ==>
-                    textLaw (x :: Double)
+            property $ \x -> textLaw (x :: Double)
 
         it "holds for Float" $
-            property $ \x ->
-                x < 1.0e7 && x > 1.0e-7 ==>
-                    textLaw (x :: Float)
+            property $ \x -> textLaw (x :: Float)
 
 textLaw :: (FromText a, ToText a, Eq a) => a -> Bool
 textLaw a = fromText (toText a) == Just a
