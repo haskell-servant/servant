@@ -111,7 +111,7 @@ instance HasClient Delete where
   type Client Delete = BaseUrl -> EitherT ServantError IO ()
 
   clientWithRoute Proxy req host =
-    void $ performRequest H.methodDelete req (== 204) host
+    void $ performRequest H.methodDelete req (`elem` [200, 202, 204]) host
 
 -- | If you have a 'Get' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -120,7 +120,7 @@ instance HasClient Delete where
 instance (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
   type Client (Get (ct ': cts) result) = BaseUrl -> EitherT ServantError IO result
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodGet req [200] host
+    performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] host
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
