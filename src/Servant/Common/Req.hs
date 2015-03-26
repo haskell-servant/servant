@@ -174,6 +174,10 @@ performRequestCT ct reqMethod req wantedStatus reqHost = do
     return
     (fromByteString ct respBody)
 
+performRequestNoBody :: Method -> Req -> [Int] -> BaseUrl -> EitherT ServantError IO ()
+performRequestNoBody reqMethod req wantedStatus reqHost = do
+  _ <- performRequest reqMethod req (`elem` wantedStatus) reqHost
+  return ()
 
 catchHttpException :: IO a -> IO (Either HttpException a)
 catchHttpException action =

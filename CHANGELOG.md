@@ -5,6 +5,8 @@
 * Support multiple concurrent threads
 * Use `ServantError` to report Errors instead of `String`
 * Make the clients for `Raw` endpoints return the whole `Response` value (to be able to access response headers for example)
+* Support for PATCH
+* Make () instances expect No Content status code, and not try to decode body.
 
 0.2.2
 -----

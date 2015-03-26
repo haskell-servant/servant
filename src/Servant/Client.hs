@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- | This module provides 'client' which can automatically generate
 -- querying functions for each endpoint just from the type representing your
@@ -123,6 +124,13 @@ instance (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
   clientWithRoute Proxy req host =
     performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] host
 
+-- | If you have a 'Get xs ()' endpoint, the client expects a 204 No Content
+-- HTTP header.
+instance HasClient (Get (ct ': cts) ()) where
+  type Client (Get (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  clientWithRoute Proxy req host =
+    performRequestNoBody H.methodGet req [204] host
+
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
 -- an additional argument of the type specified by your 'Header',
@@ -170,6 +178,13 @@ instance (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
   clientWithRoute Proxy req uri =
     performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] uri
 
+-- | If you have a 'Post xs ()' endpoint, the client expects a 204 No Content
+-- HTTP header.
+instance HasClient (Post (ct ': cts) ()) where
+  type Client (Post (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  clientWithRoute Proxy req host =
+    void $ performRequestNoBody H.methodPost req [204] host
+
 -- | If you have a 'Put' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
@@ -179,6 +194,30 @@ instance (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
 
   clientWithRoute Proxy req host =
     performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] host
+
+-- | If you have a 'Put xs ()' endpoint, the client expects a 204 No Content
+-- HTTP header.
+instance HasClient (Put (ct ': cts) ()) where
+  type Client (Put (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  clientWithRoute Proxy req host =
+    void $ performRequestNoBody H.methodPut req [204] host
+
+-- | If you have a 'Patch' endpoint in your API, the client
+-- side querying function that is created when calling 'client'
+-- will just require an argument that specifies the scheme, host
+-- and port to send the request to.
+instance (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
+  type Client (Patch (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
+
+  clientWithRoute Proxy req host =
+    performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] host
+
+-- | If you have a 'Patch xs ()' endpoint, the client expects a 204 No Content
+-- HTTP header.
+instance HasClient (Patch (ct ': cts) ()) where
+  type Client (Patch (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  clientWithRoute Proxy req host =
+    void $ performRequestNoBody H.methodPatch req [204] host
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -222,7 +261,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 
 -- | If you use a 'QueryParams' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
--- an additional argument, a list of values of the type specified 
+-- an additional argument, a list of values of the type specified
 -- by your 'QueryParams'.
 --
 -- If you give an empty list, nothing will be added to the query string.
