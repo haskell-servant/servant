@@ -23,6 +23,7 @@ import Data.Proxy
 import Data.String.Conversions
 import Data.Text (unpack)
 import GHC.TypeLits
+import Network.HTTP.Client (Response)
 import Network.HTTP.Media
 import qualified Network.HTTP.Types as H
 import Servant.API
@@ -411,12 +412,12 @@ instance (KnownSymbol sym, HasClient sublayout)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | Pick a 'Method' and specify where the server you want to query is. You get
--- back the status code and the response body as a 'ByteString'.
+-- back the full `Response`.
 instance HasClient Raw where
-  type Client Raw = H.Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
+  type Client Raw = H.Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, Response ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> Client Raw
-  clientWithRoute Proxy req httpMethod host =
+  clientWithRoute Proxy req httpMethod host = do
     performRequest httpMethod req (const True) host
 
 -- | If you use a 'ReqBody' in one of your endpoints in your API,

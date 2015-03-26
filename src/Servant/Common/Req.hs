@@ -133,7 +133,7 @@ displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
 
-performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType)
+performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, Response ByteString)
 performRequest reqMethod req isWantedStatus reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
@@ -159,13 +159,13 @@ performRequest reqMethod req isWantedStatus reqHost = do
                    Just t' -> pure t'
       unless (isWantedStatus status_code) $
         left $ FailureResponse status ct body
-      return (status_code, body, ct)
+      return (status_code, body, ct, response)
 
 performRequestCT :: MimeUnrender ct result =>
   Proxy ct -> Method -> Req -> [Int] -> BaseUrl -> EitherT ServantError IO result
 performRequestCT ct reqMethod req wantedStatus reqHost = do
   let acceptCT = contentType ct
-  (_status, respBody, respCT) <-
+  (_status, respBody, respCT, _response) <-
     performRequest reqMethod (req { reqAccept = [acceptCT] }) (`elem` wantedStatus) reqHost
   unless (matches respCT (acceptCT)) $
     left $ UnsupportedContentType respCT respBody
