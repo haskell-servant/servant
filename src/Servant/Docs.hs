@@ -177,10 +177,6 @@ module Servant.Docs
   , Response, respStatus, respTypes, respBody, defResponse
   , Action, captures, headers, notes, params, rqtypes, rqbody, response, defAction
   , single
-
-  , -- * Useful modules when defining your doc printers
-    module Control.Lens
-  , module Data.Monoid
   ) where
 
 import Control.Applicative
