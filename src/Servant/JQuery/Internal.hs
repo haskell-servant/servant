@@ -31,25 +31,6 @@ data SegmentType = Static String  -- ^ a static path segment. like "/foo"
                  | Cap Arg        -- ^ a capture. like "/:userid"
   deriving (Eq, Show)
 
-isCapture :: Segment -> Bool
-isCapture (Cap _) = True
-isCapture      _  = False
-
-captureArg :: Segment -> Arg
-captureArg (Cap s) = s
-captureArg      _  = error "captureArg called on non capture"
-
-jsSegments :: [Segment] -> String
-jsSegments []  = "/'"
-jsSegments [x] = "/" ++ segmentToStr x False
-jsSegments (x:xs) = "/" ++ segmentToStr x True ++ jsSegments xs
-
-segmentToStr :: Segment -> Bool -> String
-segmentToStr (Static s) notTheEnd =
-  if notTheEnd then s else s ++ "'"
-segmentToStr (Cap s)    notTheEnd =
-  "' + encodeURIComponent(" ++ s ++ if notTheEnd then ") + '" else ")"
-
 type Path = [Segment]
 
 data ArgType =
@@ -305,7 +286,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path._last.matrix <>~ [QueryArg str Normal]
+      req & reqUrl.path._last.matrix <>~ [QueryArg strArg Normal]
 
     where str = symbolVal (Proxy :: Proxy sym)
           strArg = str ++ "Value"
