@@ -273,14 +273,14 @@ instance ( AllCTRender ctypes a
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
         e <- runEitherT action
-        respond . succeedWith $ case e of
+        respond $ case e of
           Right output -> do
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
-              Nothing -> responseLBS (mkStatus 406 "Not Acceptable") [] ""
-              Just (contentT, body) -> responseLBS ok200 [ ("Content-Type"
-                                                         , cs contentT)] body
-          Left (status, message) ->
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS ok200 [ ("Content-Type" , cs contentT)] body
+          Left (status, message) -> succeedWith $
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodGet =
         respond $ failWith WrongMethod
@@ -351,14 +351,14 @@ instance ( AllCTRender ctypes a
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
         e <- runEitherT action
-        respond . succeedWith $ case e of
+        respond $ case e of
           Right output -> do
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
-              Nothing -> responseLBS (mkStatus 406 "") [] ""
-              Just (contentT, body) -> responseLBS status201 [ ("Content-Type"
-                                                             , cs contentT)] body
-          Left (status, message) ->
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS status201 [ ("Content-Type" , cs contentT)] body
+          Left (status, message) -> succeedWith $
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPost =
         respond $ failWith WrongMethod
@@ -397,14 +397,14 @@ instance ( AllCTRender ctypes a
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
         e <- runEitherT action
-        respond . succeedWith $ case e of
+        respond $ case e of
           Right output -> do
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
-              Nothing -> responseLBS (mkStatus 406 "") [] ""
-              Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
-                                                             , cs contentT)] body
-          Left (status, message) ->
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS status200 [ ("Content-Type" , cs contentT)] body
+          Left (status, message) -> succeedWith $
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPut =
         respond $ failWith WrongMethod
@@ -441,14 +441,14 @@ instance ( AllCTRender ctypes a
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPatch = do
         e <- runEitherT action
-        respond . succeedWith $ case e of
+        respond $ case e of
           Right output -> do
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
-              Nothing -> responseLBS (mkStatus 406 "") [] ""
-              Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
-                                                             , cs contentT)] body
-          Left (status, message) ->
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS status200 [ ("Content-Type" , cs contentT)] body
+          Left (status, message) -> succeedWith $
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPatch =
         respond $ failWith WrongMethod

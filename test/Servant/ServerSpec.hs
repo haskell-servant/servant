@@ -15,6 +15,7 @@ import           Data.Monoid                ((<>))
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs)
+import qualified Data.Text                  as T
 import           GHC.Generics               (Generic)
 import           Network.HTTP.Types         (hContentType, methodDelete,
                                              methodPatch, methodPost, methodPut,
@@ -31,8 +32,9 @@ import           Test.Hspec.Wai             (get, liftIO, matchStatus, post,
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Get, Header, JSON, MatrixFlag,
                                              MatrixParam, MatrixParams, Patch,
-                                             Post, Put, QueryFlag, QueryParam,
-                                             QueryParams, Raw, ReqBody)
+                                             PlainText, Post, Put, QueryFlag,
+                                             QueryParam, QueryParams, Raw,
+                                             ReqBody)
 import           Servant.Server             (Server, serve)
 import           Servant.Server.Internal    (RouteMismatch (..))
 
@@ -483,6 +485,7 @@ rawSpec = do
 type AlternativeApi =
        "foo" :> Get '[JSON] Person
   :<|> "bar" :> Get '[JSON] Animal
+  :<|> "foo" :> Get '[PlainText] T.Text
 unionApi :: Proxy AlternativeApi
 unionApi = Proxy
 
@@ -490,6 +493,7 @@ unionServer :: Server AlternativeApi
 unionServer =
        return alice
   :<|> return jerry
+  :<|> return "a string"
 
 unionSpec :: Spec
 unionSpec = do
@@ -504,6 +508,8 @@ unionSpec = do
         liftIO $ do
           decode' (simpleBody response_) `shouldBe`
             Just jerry
+      it "checks all endpoints before returning 406" $ do
+        get "/foo" `shouldRespondWith` 200
 
 -- | Test server error functionality.
 errorsSpec :: Spec
