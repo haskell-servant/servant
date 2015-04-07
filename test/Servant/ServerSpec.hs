@@ -15,8 +15,10 @@ import           Data.Monoid                ((<>))
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs)
+import qualified Data.Text                  as T
 import           GHC.Generics               (Generic)
-import           Network.HTTP.Types         (hContentType, methodDelete,
+import           Network.HTTP.Types         (hAccept, hContentType,
+                                             methodDelete, methodGet,
                                              methodPatch, methodPost, methodPut,
                                              ok200, parseQuery, status409)
 import           Network.Wai                (Application, Request, pathInfo,
@@ -31,8 +33,9 @@ import           Test.Hspec.Wai             (get, liftIO, matchStatus, post,
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Get, Header, JSON, MatrixFlag,
                                              MatrixParam, MatrixParams, Patch,
-                                             Post, Put, QueryFlag, QueryParam,
-                                             QueryParams, Raw, ReqBody)
+                                             PlainText, Post, Put, QueryFlag,
+                                             QueryParam, QueryParams, Raw,
+                                             ReqBody)
 import           Servant.Server             (Server, serve)
 import           Servant.Server.Internal    (RouteMismatch (..))
 
@@ -41,7 +44,7 @@ import           Servant.Server.Internal    (RouteMismatch (..))
 
 data Person = Person {
   name :: String,
-  age :: Integer
+  age  :: Integer
  }
   deriving (Eq, Show, Generic)
 
@@ -52,7 +55,7 @@ alice :: Person
 alice = Person "Alice" 42
 
 data Animal = Animal {
-  species :: String,
+  species      :: String,
   numberOfLegs :: Integer
  }
   deriving (Eq, Show, Generic)
@@ -97,10 +100,13 @@ captureSpec :: Spec
 captureSpec = do
   describe "Servant.API.Capture" $ do
     with (return (serve captureApi captureServer)) $ do
+
       it "can capture parts of the 'pathInfo'" $ do
         response <- get "/2"
-        liftIO $ do
-          decode' (simpleBody response) `shouldBe` Just tweety
+        liftIO $ decode' (simpleBody response) `shouldBe` Just tweety
+
+      it "returns 404 if the decoding fails" $ do
+        get "/notAnInt" `shouldRespondWith` 404
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))
@@ -120,17 +126,22 @@ getSpec = do
   describe "Servant.API.Get" $ do
     let server = return alice :<|> return ()
     with (return $ serve getApi server) $ do
+
       it "allows to GET a Person" $ do
         response <- get "/"
         return response `shouldRespondWith` 200
-        liftIO $ do
-          decode' (simpleBody response) `shouldBe` Just alice
+        liftIO $ decode' (simpleBody response) `shouldBe` Just alice
 
       it "throws 405 (wrong method) on POSTs" $ do
         post "/" "" `shouldRespondWith` 405
+        post "/empty" "" `shouldRespondWith` 405
 
       it "returns 204 if the type is '()'" $ do
         get "empty" `shouldRespondWith` ""{ matchStatus = 204 }
+
+      it "returns 415 if the Accept header is not supported" $ do
+        Test.Hspec.Wai.request methodGet "" [(hAccept, "crazy/mime")] ""
+          `shouldRespondWith` 415
 
 
 
@@ -483,6 +494,10 @@ rawSpec = do
 type AlternativeApi =
        "foo" :> Get '[JSON] Person
   :<|> "bar" :> Get '[JSON] Animal
+  :<|> "foo" :> Get '[PlainText] T.Text
+  :<|> "bar" :> Post '[JSON] Animal
+  :<|> "bar" :> Put '[JSON] Animal
+  :<|> "bar" :> Delete
 unionApi :: Proxy AlternativeApi
 unionApi = Proxy
 
@@ -490,11 +505,16 @@ unionServer :: Server AlternativeApi
 unionServer =
        return alice
   :<|> return jerry
+  :<|> return "a string"
+  :<|> return jerry
+  :<|> return jerry
+  :<|> return ()
 
 unionSpec :: Spec
 unionSpec = do
   describe "Servant.API.Alternative" $ do
     with (return $ serve unionApi unionServer) $ do
+
       it "unions endpoints" $ do
         response <- get "/foo"
         liftIO $ do
@@ -504,6 +524,12 @@ unionSpec = do
         liftIO $ do
           decode' (simpleBody response_) `shouldBe`
             Just jerry
+
+      it "checks all endpoints before returning 415" $ do
+        get "/foo" `shouldRespondWith` 200
+
+      it "returns 404 if the path does not exist" $ do
+        get "/nonexistent" `shouldRespondWith` 404
 
 -- | Test server error functionality.
 errorsSpec :: Spec
