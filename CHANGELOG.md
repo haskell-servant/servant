@@ -2,6 +2,7 @@
 ---
 * Extend `HeaderArg` to support more advanced HTTP header handling (https://github.com/haskell-servant/servant-jquery/pull/6)
 * Support content-type aware combinators (but require that endpoints support JSON)
+* Add support for Matrix params (https://github.com/haskell-servant/servant-jquery/pull/11)
 
 0.2.2
 -----
