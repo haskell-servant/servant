@@ -25,10 +25,10 @@ source-repository head
 
 library
   exposed-modules:
-    Servant.Docs
+      Servant.Docs
+    , Servant.Docs.Internal
   build-depends:
       base >=4.7 && <5
-    , aeson
     , bytestring
     , hashable
     , http-media >= 0.6
@@ -45,5 +45,27 @@ executable greet-docs
   main-is: greet.hs
   hs-source-dirs: example
   ghc-options: -Wall
-  build-depends: base, aeson, lens, servant, servant-docs, string-conversions, text
+  build-depends:
+      base
+    , aeson
+    , lens
+    , servant
+    , servant-docs
+    , string-conversions
+    , text
   default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs: test
+  ghc-options: -Wall
+  build-depends:
+      base
+    , aeson
+    , hspec
+    , servant
+    , servant-docs
+    , string-conversions
+  default-language: Haskell2010
+
