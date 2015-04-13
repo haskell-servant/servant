@@ -39,6 +39,7 @@ library
     Servant.API.MatrixParam
     Servant.API.Raw
     Servant.API.ReqBody
+    Servant.API.ResponseHeaders
     Servant.API.Sub
     Servant.Common.Text
     Servant.Utils.Links
@@ -47,6 +48,8 @@ library
     , aeson >= 0.7
     , attoparsec >= 0.12
     , bytestring == 0.10.*
+    , bytestring-conversion == 0.3.*
+    , case-insensitive >= 1.2
     , http-media >= 0.4 && < 0.7
     , http-types == 0.8.*
     , text >= 1 && < 2
