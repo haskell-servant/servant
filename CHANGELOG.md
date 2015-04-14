@@ -8,3 +8,4 @@
 * Removed the home-made QuasiQuote for writing API types in a more human-friendly format until we come up with a better design for it
 * Make most if not all of the haddock code examples run through doctest
 * Some general code cleanup
+* Add response headers

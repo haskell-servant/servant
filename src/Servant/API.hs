@@ -38,6 +38,9 @@ module Servant.API (
   -- | Serializing and deserializing types based on @Accept@ and
   -- @Content-Type@ headers.
 
+  -- * Response Headers
+  module Servant.API.ResponseHeaders,
+
   -- * Untyped endpoints
   module Servant.API.Raw,
   -- | Plugging in a wai 'Network.Wai.Application', serving directories
@@ -55,28 +58,32 @@ module Servant.API (
   -- | Type-safe internal URIs
   ) where
 
-import           Data.Proxy               (Proxy(..))
-import           Servant.Common.Text      (FromText(..), ToText(..))
-import           Servant.API.Alternative  ((:<|>) (..))
-import           Servant.API.Capture      (Capture)
-import           Servant.API.ContentTypes (JSON, MimeRender (..),
-                                           MimeUnrender (..), OctetStream,
-                                           PlainText, FormUrlEncoded,
-                                           FromFormUrlEncoded(..), ToFormUrlEncoded(..))
-import           Servant.API.Delete       (Delete)
-import           Servant.API.Get          (Get)
-import           Servant.API.Header       (Header)
-import           Servant.API.MatrixParam  (MatrixFlag, MatrixParam,
-                                           MatrixParams)
-import           Servant.API.Patch        (Patch)
-import           Servant.API.Post         (Post)
-import           Servant.API.Put          (Put)
-import           Servant.API.QueryParam   (QueryFlag, QueryParam, QueryParams)
-import           Servant.API.Raw          (Raw)
-import           Servant.API.ReqBody      (ReqBody)
-import           Servant.API.Sub          ((:>))
-import           Servant.Utils.Links      (HasLink (..), IsElem, IsElem',
-                                           URI (..), safeLink)
+import           Data.Proxy                  (Proxy (..))
+import           Servant.API.Alternative     ((:<|>) (..))
+import           Servant.API.Capture         (Capture)
+import           Servant.API.ContentTypes    (FormUrlEncoded,
+                                              FromFormUrlEncoded (..), JSON,
+                                              MimeRender (..),
+                                              MimeUnrender (..), OctetStream,
+                                              PlainText, ToFormUrlEncoded (..))
+import           Servant.API.Delete          (Delete)
+import           Servant.API.Get             (Get)
+import           Servant.API.Header          (Header(..))
+import           Servant.API.MatrixParam     (MatrixFlag, MatrixParam,
+                                              MatrixParams)
+import           Servant.API.Patch           (Patch)
+import           Servant.API.Post            (Post)
+import           Servant.API.Put             (Put)
+import           Servant.API.QueryParam      (QueryFlag, QueryParam,
+                                              QueryParams)
+import           Servant.API.Raw             (Raw)
+import           Servant.API.ReqBody         (ReqBody)
+import           Servant.API.ResponseHeaders ( Headers, getHeaders, getResponse
+                                             , AddHeader(addHeader) )
+import           Servant.API.Sub             ((:>))
+import           Servant.Common.Text         (FromText (..), ToText (..))
+import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
+                                              URI (..), safeLink)
 
 -- | Turn an API type into its canonical form.
 --

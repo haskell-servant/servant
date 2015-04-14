@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE PolyKinds          #-}
-module Servant.API.Header (Header) where
+module Servant.API.Header where
 
 import           Data.Typeable (Typeable)
 import           GHC.TypeLits  (Symbol)
@@ -13,7 +13,7 @@ import           GHC.TypeLits  (Symbol)
 -- >>>
 -- >>>            -- GET /view-my-referer
 -- >>> type MyApi = "view-my-referer" :> Header "from" Referer :> Get '[JSON] Referer
-data Header (sym :: Symbol) a
+data Header (sym :: Symbol) a = Header a
     deriving Typeable
 
 -- $setup

@@ -142,12 +142,12 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 -- >    contentType _ = "example" // "prs.me.mine" /: ("charset", "utf-8")
 -- >
 -- > instance Show a => MimeRender MyContentType where
--- >    toByteString _ val = pack ("This is MINE! " ++ show val)
+-- >    mimeRender _ val = pack ("This is MINE! " ++ show val)
 -- >
 -- > type MyAPI = "path" :> Get '[MyContentType] Int
 --
 class Accept ctype => MimeRender ctype a where
-    toByteString  :: Proxy ctype -> a -> ByteString
+    mimeRender  :: Proxy ctype -> a -> ByteString
 
 class AllCTRender (list :: [*]) a where
     -- If the Accept header can be matched, returns (Just) a tuple of the
@@ -180,7 +180,7 @@ instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
 --
 -- >>> :{
 --instance Read a => MimeUnrender MyContentType a where
---    fromByteString _ bs = case BSC.take 12 bs of
+--    mimeUnrender _ bs = case BSC.take 12 bs of
 --      "MyContentType" -> return . read . BSC.unpack $ BSC.drop 12 bs
 --      _ -> Left "didn't start with the magic incantation"
 -- :}
@@ -188,7 +188,7 @@ instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
 -- >>> type MyAPI = "path" :> ReqBody '[MyContentType] Int :> Get '[JSON] Int
 --
 class Accept ctype => MimeUnrender ctype a where
-    fromByteString :: Proxy ctype -> ByteString -> Either String a
+    mimeUnrender :: Proxy ctype -> ByteString -> Either String a
 
 class (IsNonEmpty list) => AllCTUnrender (list :: [*]) a where
     handleCTypeH :: Proxy list
@@ -214,13 +214,13 @@ class AllMimeRender (list :: [*]) a where
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
 instance ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
-    allMimeRender _ a = [(contentType pctyp, toByteString pctyp a)]
+    allMimeRender _ a = [(contentType pctyp, mimeRender pctyp a)]
         where pctyp = Proxy :: Proxy ctyp
 
 instance ( MimeRender ctyp a
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
-    allMimeRender _ a = (contentType pctyp, toByteString pctyp a)
+    allMimeRender _ a = (contentType pctyp, mimeRender pctyp a)
                        :(allMimeRender pctyps a)
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy (ctyp' ': ctyps)
@@ -243,7 +243,7 @@ instance AllMimeUnrender '[] a where
 instance ( MimeUnrender ctyp a
          , AllMimeUnrender ctyps a
          ) => AllMimeUnrender (ctyp ': ctyps) a where
-    allMimeUnrender _ val = (contentType pctyp, fromByteString pctyp val)
+    allMimeUnrender _ val = (contentType pctyp, mimeUnrender pctyp val)
                            :(allMimeUnrender pctyps val)
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy ctyps
@@ -257,29 +257,29 @@ type family IsNonEmpty (list :: [*]) :: Constraint where
 
 -- | `encode`
 instance ToJSON a => MimeRender JSON a where
-    toByteString _ = encode
+    mimeRender _ = encode
 
 -- | @encodeFormUrlEncoded . toFormUrlEncoded@
--- Note that the @fromByteString p (toByteString p x) == Right x@ law only
+-- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
 instance ToFormUrlEncoded a => MimeRender FormUrlEncoded a where
-    toByteString _ = encodeFormUrlEncoded . toFormUrlEncoded
+    mimeRender _ = encodeFormUrlEncoded . toFormUrlEncoded
 
 -- | `TextL.encodeUtf8`
 instance MimeRender PlainText TextL.Text where
-    toByteString _ = TextL.encodeUtf8
+    mimeRender _ = TextL.encodeUtf8
 
 -- | @fromStrict . TextS.encodeUtf8@
 instance MimeRender PlainText TextS.Text where
-    toByteString _ = fromStrict . TextS.encodeUtf8
+    mimeRender _ = fromStrict . TextS.encodeUtf8
 
 -- | @id@
 instance MimeRender OctetStream ByteString where
-    toByteString _ = id
+    mimeRender _ = id
 
 -- | `fromStrict`
 instance MimeRender OctetStream BS.ByteString where
-    toByteString _ = fromStrict
+    mimeRender _ = fromStrict
 
 
 --------------------------------------------------------------------------
@@ -294,29 +294,29 @@ eitherDecodeLenient input = do
 
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where
-    fromByteString _ = eitherDecodeLenient
+    mimeUnrender _ = eitherDecodeLenient
 
 -- | @decodeFormUrlEncoded >=> fromFormUrlEncoded@
--- Note that the @fromByteString p (toByteString p x) == Right x@ law only
+-- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
 instance FromFormUrlEncoded a => MimeUnrender FormUrlEncoded a where
-    fromByteString _ = decodeFormUrlEncoded >=> fromFormUrlEncoded
+    mimeUnrender _ = decodeFormUrlEncoded >=> fromFormUrlEncoded
 
 -- | @left show . TextL.decodeUtf8'@
 instance MimeUnrender PlainText TextL.Text where
-    fromByteString _ = left show . TextL.decodeUtf8'
+    mimeUnrender _ = left show . TextL.decodeUtf8'
 
 -- | @left show . TextS.decodeUtf8' . toStrict@
 instance MimeUnrender PlainText TextS.Text where
-    fromByteString _ = left show . TextS.decodeUtf8' . toStrict
+    mimeUnrender _ = left show . TextS.decodeUtf8' . toStrict
 
 -- | @Right . id@
 instance MimeUnrender OctetStream ByteString where
-    fromByteString _ = Right . id
+    mimeUnrender _ = Right . id
 
 -- | @Right . toStrict@
 instance MimeUnrender OctetStream BS.ByteString where
-    fromByteString _ = Right . toStrict
+    mimeUnrender _ = Right . toStrict
 
 
 --------------------------------------------------------------------------
