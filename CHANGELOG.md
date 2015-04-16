@@ -6,6 +6,7 @@
 * Export `toApplication` from `Servant.Server` (https://github.com/haskell-servant/servant-server/pull/29)
 * Support other Monads than just `EitherT (Int, String) IO` (https://github.com/haskell-servant/servant-server/pull/21)
 * Make methods return status code 204 if they return () (https://github.com/haskell-servant/servant-server/issues/28)
+* Add server support for response headers
 
 0.2.4
 -----

@@ -3,13 +3,16 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE FlexibleInstances       #-}
 
 module Servant.ServerSpec where
 
 
-import           Control.Monad              (when)
+import           Control.Monad              (forM_, when)
 import           Control.Monad.Trans.Either (EitherT, left)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
+import           Data.ByteString.Conversion ()
 import           Data.Char                  (toUpper)
 import           Data.Monoid                ((<>))
 import           Data.Proxy                 (Proxy (Proxy))
@@ -27,15 +30,17 @@ import           Network.Wai                (Application, Request, pathInfo,
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody)
 import           Test.Hspec                 (Spec, describe, it, shouldBe)
-import           Test.Hspec.Wai             (get, liftIO, matchStatus, post,
-                                             request, shouldRespondWith, with)
+import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
+                                             matchStatus, post, request,
+                                             shouldRespondWith, with, (<:>))
 
-import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
-                                             Get, Header, JSON, MatrixFlag,
-                                             MatrixParam, MatrixParams, Patch,
-                                             PlainText, Post, Put, QueryFlag,
-                                             QueryParam, QueryParams, Raw,
-                                             ReqBody)
+import           Servant.API                ((:<|>) (..), (:>),
+                                             AddHeader (addHeader), Capture,
+                                             Delete, Get, Header (..), Headers,
+                                             JSON, MatrixFlag, MatrixParam,
+                                             MatrixParams, Patch, PlainText,
+                                             Post, Put, QueryFlag, QueryParam,
+                                             QueryParams, Raw, ReqBody)
 import           Servant.Server             (Server, serve)
 import           Servant.Server.Internal    (RouteMismatch (..))
 
@@ -85,6 +90,7 @@ spec = do
   rawSpec
   unionSpec
   errorsSpec
+  responseHeadersSpec
 
 
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
@@ -530,6 +536,42 @@ unionSpec = do
 
       it "returns 404 if the path does not exist" $ do
         get "/nonexistent" `shouldRespondWith` 404
+
+type ResponseHeadersApi =
+       Get   '[JSON] (Headers '[Header "H1" Int, Header "H2" String] String)
+  :<|> Post  '[JSON] (Headers '[Header "H1" Int, Header "H2" String] String)
+  :<|> Put   '[JSON] (Headers '[Header "H1" Int, Header "H2" String] String)
+  :<|> Patch '[JSON] (Headers '[Header "H1" Int, Header "H2" String] String)
+
+
+responseHeadersServer :: Server ResponseHeadersApi
+responseHeadersServer = let h = return $ addHeader 5 $ addHeader "kilroy" "hi"
+  in h :<|> h :<|> h :<|> h
+
+
+responseHeadersSpec :: Spec
+responseHeadersSpec = describe "ResponseHeaders" $ do
+  with (return $ serve (Proxy :: Proxy ResponseHeadersApi) responseHeadersServer) $ do
+
+    let methods = [(methodGet, 200), (methodPost, 201), (methodPut, 200), (methodPatch, 200)]
+
+    it "includes the headers in the response" $
+      forM_ methods $ \(method, expected) ->
+        Test.Hspec.Wai.request method "/" [] ""
+          `shouldRespondWith` "\"hi\""{ matchHeaders = ["H1" <:> "5", "H2" <:> "kilroy"]
+                                      , matchStatus  = expected
+                                      }
+
+    it "responds with not found for non-existent endpoints" $
+      forM_ methods $ \(method,_) ->
+        Test.Hspec.Wai.request method "blahblah" [] ""
+          `shouldRespondWith` 404
+
+    it "returns 415 if the Accept header is not supported" $
+      forM_ methods $ \(method,_) ->
+        Test.Hspec.Wai.request method "" [(hAccept, "crazy/mime")] ""
+          `shouldRespondWith` 415
+
 
 -- | Test server error functionality.
 errorsSpec :: Spec

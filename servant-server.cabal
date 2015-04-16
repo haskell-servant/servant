@@ -80,6 +80,7 @@ test-suite spec
       base == 4.*
     , aeson
     , bytestring
+    , bytestring-conversion
     , directory
     , either
     , exceptions
