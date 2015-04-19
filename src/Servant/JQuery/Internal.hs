@@ -284,7 +284,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (MatrixParam sym a :> sublayout) where
-  type JQ (MatrixParam sym a :> sublayout) = JQ sublayout
+  type JQ' (MatrixParam sym a :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
@@ -295,7 +295,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (MatrixParams sym a :> sublayout) where
-  type JQ (MatrixParams sym a :> sublayout) = JQ sublayout
+  type JQ' (MatrixParams sym a :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
@@ -305,7 +305,7 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
 instance (KnownSymbol sym, HasJQ sublayout)
       => HasJQ (MatrixFlag sym :> sublayout) where
-  type JQ (MatrixFlag sym :> sublayout) = JQ sublayout
+  type JQ' (MatrixFlag sym :> sublayout) = JQ' sublayout
 
   jqueryFor Proxy req =
     jqueryFor (Proxy :: Proxy sublayout) $
