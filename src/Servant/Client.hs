@@ -13,6 +13,7 @@
 module Servant.Client
   ( client
   , HasClient(..)
+  , Client
   , ServantError(..)
   , module Servant.Common.BaseUrl
   ) where
@@ -130,7 +131,7 @@ instance (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
 -- | If you have a 'Get xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
 instance HasClient (Get (ct ': cts) ()) where
-  type Client (Get (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  type Client' (Get (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     performRequestNoBody H.methodGet req [204] host
 
@@ -167,7 +168,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 
   clientWithRoute Proxy req mval =
     clientWithRoute (Proxy :: Proxy sublayout) $
-      maybe req (\value -> addHeader hname value req) mval
+      maybe req (\value -> Servant.Common.Req.addHeader hname value req) mval
 
     where hname = symbolVal (Proxy :: Proxy sym)
 
@@ -184,7 +185,7 @@ instance (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
 -- | If you have a 'Post xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
 instance HasClient (Post (ct ': cts) ()) where
-  type Client (Post (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  type Client' (Post (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPost req [204] host
 
@@ -201,7 +202,7 @@ instance (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
 -- | If you have a 'Put xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
 instance HasClient (Put (ct ': cts) ()) where
-  type Client (Put (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  type Client' (Put (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPut req [204] host
 
@@ -210,7 +211,7 @@ instance HasClient (Put (ct ': cts) ()) where
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
 instance (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
-  type Client (Patch (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
+  type Client' (Patch (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
     performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] host
@@ -218,7 +219,7 @@ instance (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
 -- | If you have a 'Patch xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
 instance HasClient (Patch (ct ': cts) ()) where
-  type Client (Patch (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  type Client' (Patch (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPatch req [204] host
 
@@ -489,7 +490,7 @@ instance (MimeRender ct a, HasClient sublayout)
   clientWithRoute Proxy req body =
     clientWithRoute (Proxy :: Proxy sublayout) $ do
       let ctProxy = Proxy :: Proxy ct
-      setRQBody (toByteString ctProxy body) (contentType ctProxy) req
+      setRQBody (mimeRender ctProxy body) (contentType ctProxy) req
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where
