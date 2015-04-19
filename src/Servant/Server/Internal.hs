@@ -1,45 +1,52 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE PolyKinds            #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
 module Servant.Server.Internal where
 
-import Control.Applicative ((<$>))
-import Control.Monad.Trans.Either (EitherT, runEitherT)
-import Data.Aeson (ToJSON)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as BL
-import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.List (unfoldr)
-import Data.Maybe (catMaybes, fromMaybe)
-import Data.Monoid (Monoid, mempty, mappend)
-import Data.String (fromString)
-import Data.String.Conversions (cs, (<>))
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Typeable
-import GHC.TypeLits (KnownSymbol, symbolVal)
-import Network.HTTP.Types hiding (Header)
-import Network.Wai ( Response, Request, ResponseReceived, Application
-                   , pathInfo, requestBody, strictRequestBody
-                   , lazyRequestBody, requestHeaders, requestMethod,
-                    rawQueryString, responseLBS)
-import Servant.API ( QueryParams, QueryParam, QueryFlag, ReqBody, Header
-                   , MatrixParams, MatrixParam, MatrixFlag
-                   , Capture, Get, Delete, Put, Post, Patch, Raw, (:>), (:<|>)(..)
-                   , Canonicalize)
-import Servant.API.ContentTypes ( AllCTRender(..), AcceptHeader(..)
-                                   , AllCTUnrender(..),)
-import Servant.Common.Text (FromText, fromText)
-
+import           Control.Applicative         ((<$>))
+import           Control.Monad.Trans.Either  (EitherT, runEitherT)
+import qualified Data.ByteString             as B
+import qualified Data.ByteString.Lazy        as BL
+import           Data.IORef                  (newIORef, readIORef, writeIORef)
+import           Data.List                   (unfoldr)
+import           Data.Maybe                  (catMaybes, fromMaybe)
+import           Data.Monoid                 (Monoid, mappend, mempty)
+import           Data.String                 (fromString)
+import           Data.String.Conversions     (cs, (<>))
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
+import           Data.Text.Encoding          (decodeUtf8, encodeUtf8)
+import           Data.Typeable
+import           GHC.TypeLits                (KnownSymbol, symbolVal)
+import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
+import           Network.Wai                 (Application, Request, Response,
+                                              ResponseReceived, lazyRequestBody,
+                                              pathInfo, rawQueryString,
+                                              requestBody, requestHeaders,
+                                              requestMethod, responseLBS,
+                                              strictRequestBody)
+import           Servant.API                 ((:<|>) (..), (:>), Capture,
+                                              Canonicalize, Delete, Get, Header,
+                                              MatrixFlag, MatrixParam, MatrixParams,
+                                              Patch, Post, Put, QueryFlag,
+                                              QueryParam, QueryParams, Raw,
+                                              ReqBody)
+import           Servant.API.ContentTypes    (AcceptHeader (..),
+                                              AllCTRender (..),
+                                              AllCTUnrender (..))
+import           Servant.API.ResponseHeaders (Headers, getResponse, getHeaders)
+import           Servant.Common.Text         (FromText, fromText)
 
 data ReqBodyState = Uncalled
                   | Called !B.ByteString
                   | Done !B.ByteString
+
 
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = do
@@ -281,15 +288,49 @@ instance ( AllCTRender ctypes a
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
         e <- runEitherT action
-        respond . succeedWith $ case e of
+        respond $ case e of
           Right output -> do
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
-              Nothing -> responseLBS (mkStatus 406 "Not Acceptable") [] ""
-              Just (contentT, body) -> responseLBS ok200 [ ("Content-Type"
-                                                         , cs contentT)] body
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS ok200 [ ("Content-Type" , cs contentT)] body
+          Left (status, message) -> succeedWith $
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodGet =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+-- '()' ==> 204 No Content
+instance HasServer (Get ctypes ()) where
+  type ServerT (Get ctypes ()) m = m ()
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodGet = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right () -> responseLBS noContent204 [] ""
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodGet =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+-- Add response headers
+instance ( AllCTRender ctypes v ) => HasServer (Get ctypes (Headers h v)) where
+  type ServerT (Get ctypes (Headers h v)) m = m (Headers h v)
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodGet = do
+      e <- runEitherT action
+      respond $ case e of
+        Right output -> do
+          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+              headers = getHeaders output
+          case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
+            Nothing -> failWith UnsupportedMediaType
+            Just (contentT, body) -> succeedWith $
+              responseLBS ok200 ( ("Content-Type" , cs contentT) : headers) body
+        Left (status, message) -> succeedWith $
+          responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodGet =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -347,15 +388,48 @@ instance ( AllCTRender ctypes a
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
         e <- runEitherT action
-        respond . succeedWith $ case e of
+        respond $ case e of
           Right output -> do
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
-              Nothing -> responseLBS (mkStatus 406 "") [] ""
-              Just (contentT, body) -> responseLBS status201 [ ("Content-Type"
-                                                             , cs contentT)] body
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS status201 [ ("Content-Type" , cs contentT)] body
+          Left (status, message) -> succeedWith $
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPost =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+instance HasServer (Post ctypes ()) where
+  type ServerT (Post ctypes ()) m = m ()
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPost = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right () -> responseLBS noContent204 [] ""
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPost =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+-- Add response headers
+instance ( AllCTRender ctypes v ) => HasServer (Post ctypes (Headers h v)) where
+  type ServerT (Post ctypes (Headers h v)) m = m (Headers h v)
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPost = do
+      e <- runEitherT action
+      respond $ case e of
+        Right output -> do
+          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+              headers = getHeaders output
+          case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
+            Nothing -> failWith UnsupportedMediaType
+            Just (contentT, body) -> succeedWith $
+              responseLBS status201 ( ("Content-Type" , cs contentT) : headers) body
+        Left (status, message) -> succeedWith $
+          responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPost =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -370,7 +444,7 @@ instance ( AllCTRender ctypes a
 --
 -- If successfully returning a value, we use the type-level list, combined
 -- with the request's @Accept@ header, to encode the value for you
--- (returning a status code of 201). If there was no @Accept@ header or it
+-- (returning a status code of 200). If there was no @Accept@ header or it
 -- was @*/*@, we return encode using the first @Content-Type@ type on the
 -- list.
 instance ( AllCTRender ctypes a
@@ -381,18 +455,50 @@ instance ( AllCTRender ctypes a
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
         e <- runEitherT action
-        respond . succeedWith $ case e of
+        respond $ case e of
           Right output -> do
             let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
-              Nothing -> responseLBS (mkStatus 406 "") [] ""
-              Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
-                                                             , cs contentT)] body
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS status200 [ ("Content-Type" , cs contentT)] body
+          Left (status, message) -> succeedWith $
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPut =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+instance HasServer (Put ctypes ()) where
+  type ServerT (Put ctypes ()) m = m ()
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPut = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right () -> responseLBS noContent204 [] ""
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
     | pathIsEmpty request && requestMethod request /= methodPut =
         respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
 
+-- Add response headers
+instance ( AllCTRender ctypes v ) => HasServer (Put ctypes (Headers h v)) where
+  type ServerT (Put ctypes (Headers h v)) m = m (Headers h v)
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPut = do
+      e <- runEitherT action
+      respond $ case e of
+        Right output -> do
+          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+              headers = getHeaders output
+          case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
+            Nothing -> failWith UnsupportedMediaType
+            Just (contentT, body) -> succeedWith $
+              responseLBS status200 ( ("Content-Type" , cs contentT) : headers) body
+        Left (status, message) -> succeedWith $
+          responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPut =
+        respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
 -- | When implementing the handler for a 'Patch' endpoint,
@@ -405,28 +511,57 @@ instance ( AllCTRender ctypes a
 --
 -- If successfully returning a value, we just require that its type has
 -- a 'ToJSON' instance and servant takes care of encoding it for you,
--- yielding status code 201 along the way.
+-- yielding status code 200 along the way.
 instance ( AllCTRender ctypes a
-         , Typeable a
-         , ToJSON a) => HasServer (Patch ctypes a) where
-
+         ) => HasServer (Patch ctypes a) where
   type ServerT' (Patch ctypes a) m = m a
 
   route Proxy action request respond
-    | pathIsEmpty request && requestMethod request == methodPost = do
+    | pathIsEmpty request && requestMethod request == methodPatch = do
+        e <- runEitherT action
+        respond $ case e of
+          Right output -> do
+            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS status200 [ ("Content-Type" , cs contentT)] body
+          Left (status, message) -> succeedWith $
+            responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPatch =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+instance HasServer (Patch ctypes ()) where
+  type ServerT (Patch ctypes ()) m = m ()
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPatch = do
         e <- runEitherT action
         respond . succeedWith $ case e of
-          Right out -> case cast out of
-              Nothing -> do
-                  let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
-                  case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) out of
-                    Nothing -> responseLBS (mkStatus 406 "") [] ""
-                    Just (contentT, body) -> responseLBS status200 [ ("Content-Type"
-                                                                   , cs contentT)] body
-              Just () -> responseLBS status204 [] ""
+          Right () -> responseLBS noContent204 [] ""
           Left (status, message) ->
             responseLBS (mkStatus status (cs message)) [] (cs message)
-    | pathIsEmpty request && requestMethod request /= methodPost =
+    | pathIsEmpty request && requestMethod request /= methodPatch =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+-- Add response headers
+instance ( AllCTRender ctypes v ) => HasServer (Patch ctypes (Headers h v)) where
+  type ServerT (Patch ctypes (Headers h v)) m = m (Headers h v)
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodPatch = do
+      e <- runEitherT action
+      respond $ case e of
+        Right outpatch -> do
+          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+              headers = getHeaders outpatch
+          case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse outpatch) of
+            Nothing -> failWith UnsupportedMediaType
+            Just (contentT, body) -> succeedWith $
+              responseLBS status200 ( ("Content-Type" , cs contentT) : headers) body
+        Left (status, message) -> succeedWith $
+          responseLBS (mkStatus status (cs message)) [] (cs message)
+    | pathIsEmpty request && requestMethod request /= methodPatch =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
