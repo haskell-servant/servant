@@ -303,7 +303,7 @@ instance ( AllCTRender ctypes a
 
 -- '()' ==> 204 No Content
 instance HasServer (Get ctypes ()) where
-  type ServerT (Get ctypes ()) m = m ()
+  type ServerT' (Get ctypes ()) m = m ()
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
         e <- runEitherT action
@@ -317,7 +317,7 @@ instance HasServer (Get ctypes ()) where
 
 -- Add response headers
 instance ( AllCTRender ctypes v ) => HasServer (Get ctypes (Headers h v)) where
-  type ServerT (Get ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT' (Get ctypes (Headers h v)) m = m (Headers h v)
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
       e <- runEitherT action
@@ -402,7 +402,7 @@ instance ( AllCTRender ctypes a
     | otherwise = respond $ failWith NotFound
 
 instance HasServer (Post ctypes ()) where
-  type ServerT (Post ctypes ()) m = m ()
+  type ServerT' (Post ctypes ()) m = m ()
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
         e <- runEitherT action
@@ -416,7 +416,7 @@ instance HasServer (Post ctypes ()) where
 
 -- Add response headers
 instance ( AllCTRender ctypes v ) => HasServer (Post ctypes (Headers h v)) where
-  type ServerT (Post ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT' (Post ctypes (Headers h v)) m = m (Headers h v)
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
       e <- runEitherT action
@@ -469,7 +469,7 @@ instance ( AllCTRender ctypes a
     | otherwise = respond $ failWith NotFound
 
 instance HasServer (Put ctypes ()) where
-  type ServerT (Put ctypes ()) m = m ()
+  type ServerT' (Put ctypes ()) m = m ()
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
         e <- runEitherT action
@@ -483,7 +483,7 @@ instance HasServer (Put ctypes ()) where
 
 -- Add response headers
 instance ( AllCTRender ctypes v ) => HasServer (Put ctypes (Headers h v)) where
-  type ServerT (Put ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT' (Put ctypes (Headers h v)) m = m (Headers h v)
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
       e <- runEitherT action
@@ -533,7 +533,7 @@ instance ( AllCTRender ctypes a
     | otherwise = respond $ failWith NotFound
 
 instance HasServer (Patch ctypes ()) where
-  type ServerT (Patch ctypes ()) m = m ()
+  type ServerT' (Patch ctypes ()) m = m ()
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPatch = do
         e <- runEitherT action
@@ -547,7 +547,7 @@ instance HasServer (Patch ctypes ()) where
 
 -- Add response headers
 instance ( AllCTRender ctypes v ) => HasServer (Patch ctypes (Headers h v)) where
-  type ServerT (Patch ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT' (Patch ctypes (Headers h v)) m = m (Headers h v)
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPatch = do
       e <- runEitherT action
