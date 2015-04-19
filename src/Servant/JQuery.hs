@@ -48,7 +48,7 @@ generateJS req = "\n" <>
             ++ body
             ++ map (toValidFunctionName . (<>) "header" . headerArgName) hs
             ++ ["onSuccess", "onError"]
-        
+
         captures = map captureArg
                  . filter isCapture
                  $ req ^. reqUrl.path
@@ -78,7 +78,8 @@ generateJS req = "\n" <>
 
         fname = req ^. funcName
         method = req ^. reqMethod
-        url = "'"
+        url = if url' == "'" then "'/'" else url'
+        url' = "'"
            ++ urlArgs
            ++ queryArgs
 

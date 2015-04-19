@@ -13,7 +13,6 @@ import Language.ECMAScript3.Parser (parseFromString)
 import Test.Hspec
 
 import Servant.API
-import Servant.API.ContentTypes
 import Servant.JQuery
 import Servant.JQuerySpec.CustomHeaders
 
