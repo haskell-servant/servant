@@ -56,7 +56,7 @@ instance ToSample Int where
   toSample = Just 17
 
 instance MimeRender PlainText Int where
-  toByteString _ = cs . show
+  mimeRender _ = cs . show
 
 
 type TestApi1 = Get '[JSON, PlainText] Int

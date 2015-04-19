@@ -27,7 +27,7 @@ instance ToJSON Greet
 
 -- | We can also implement 'MimeRender' for additional formats like 'PlainText'.
 instance MimeRender PlainText Greet where
-    toByteString Proxy (Greet s) = "\"" <> cs s <> "\""
+    mimeRender Proxy (Greet s) = "\"" <> cs s <> "\""
 
 -- We add some useful annotations to our captures,
 -- query parameters and request body to make the docs
