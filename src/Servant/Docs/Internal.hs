@@ -273,8 +273,8 @@ makeLenses ''Action
 
 -- | Generate the docs for a given API that implements 'HasDocs'. This is the
 -- default way to create documentation.
-docs :: HasDocs layout => Proxy layout -> API
-docs p = docsFor p (defEndpoint, defAction)
+docs :: HasDocs (Canonicalize layout) => Proxy layout -> API
+docs p = docsFor (canonicalize p) (defEndpoint, defAction)
 
 -- | Closed type family, check if endpoint is exactly within API.
 
@@ -318,7 +318,7 @@ extraInfo p action =
 -- 'extraInfo'.
 --
 -- If you only want to add an introduction, use 'docsWithIntros'.
-docsWith :: HasDocs layout
+docsWith :: HasDocs (Canonicalize layout)
          => [DocIntro]
          -> ExtraInfo layout
          -> Proxy layout
@@ -330,7 +330,7 @@ docsWith intros (ExtraInfo endpoints) p =
 
 -- | Generate the docs for a given API that implements 'HasDocs' with with any
 -- number of introduction(s)
-docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
+docsWithIntros :: HasDocs (Canonicalize layout) => [DocIntro] -> Proxy layout -> API
 docsWithIntros intros = docsWith intros mempty
 
 -- | The class that abstracts away the impact of API combinators
