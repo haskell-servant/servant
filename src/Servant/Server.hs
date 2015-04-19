@@ -14,6 +14,7 @@ module Servant.Server
   , -- * Handlers for all standard combinators
     HasServer(..)
   , Server
+  , ServerT
   ) where
 
 import Data.Proxy (Proxy)
@@ -46,5 +47,3 @@ import Servant.Server.Internal
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 serve :: HasServer (Canonicalize layout) => Proxy layout -> Server layout -> Application
 serve p server = toApplication (route (canonicalize p) server)
-
-type Server layout = Server' (Canonicalize layout)
