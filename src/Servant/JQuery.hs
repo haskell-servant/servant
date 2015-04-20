@@ -112,6 +112,6 @@ instance GenerateCode rest => GenerateCode (AjaxReq :<|> rest) where
 -- | Directly generate all the javascript functions for your API
 --   from a 'Proxy' for your API type. You can then write it to
 --   a file or integrate it in a page, for example.
-jsForAPI :: (HasJQ api, GenerateCode (JQ api))
+jsForAPI :: (HasJQ (Canonicalize api), GenerateCode (JQ api))
          => Proxy api -> String
 jsForAPI p = jsFor (jquery p)
