@@ -172,7 +172,7 @@ performRequestCT ct reqMethod req wantedStatus reqHost = do
   either
     (left . (\s -> DecodeFailure s respCT respBody))
     return
-    (fromByteString ct respBody)
+    (mimeUnrender ct respBody)
 
 performRequestNoBody :: Method -> Req -> [Int] -> BaseUrl -> EitherT ServantError IO ()
 performRequestNoBody reqMethod req wantedStatus reqHost = do

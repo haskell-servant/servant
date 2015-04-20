@@ -1,42 +1,42 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE GADTs              #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_GHC -fcontext-stack=25 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.ClientSpec where
 
-import Control.Applicative
-import qualified Control.Arrow as Arrow
-import Control.Concurrent
-import Control.Exception
-import Control.Monad.Trans.Either
-import Data.Aeson
-import Data.ByteString.Lazy (ByteString)
-import Data.Char
-import Data.Foldable (forM_)
-import Data.Monoid
-import Data.Proxy
-import qualified Data.Text as T
-import GHC.Generics
-import qualified Network.HTTP.Client as C
-import Network.HTTP.Media
-import Network.HTTP.Types
-import Network.Socket
-import Network.Wai hiding (Response)
-import Network.Wai.Handler.Warp
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Test.HUnit
-import Test.QuickCheck
+import           Control.Applicative
+import qualified Control.Arrow              as Arrow
+import           Control.Concurrent
+import           Control.Exception
+import           Control.Monad.Trans.Either
+import           Data.Aeson
+import           Data.ByteString.Lazy       (ByteString)
+import           Data.Char
+import           Data.Foldable              (forM_)
+import           Data.Monoid
+import           Data.Proxy
+import qualified Data.Text                  as T
+import           GHC.Generics
+import qualified Network.HTTP.Client        as C
+import           Network.HTTP.Media
+import           Network.HTTP.Types
+import           Network.Socket
+import           Network.Wai                hiding (Response)
+import           Network.Wai.Handler.Warp
+import           Test.Hspec
+import           Test.Hspec.QuickCheck
+import           Test.HUnit
+import           Test.QuickCheck
 
-import Servant.API
-import Servant.Client
-import Servant.Server
+import           Servant.API
+import           Servant.Client
+import           Servant.Server
 
 -- * test data types
 
@@ -289,8 +289,8 @@ spec = do
         _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
-  WrappedApi :: (HasServer api, Server api ~ EitherT (Int, String) IO a,
-                 HasClient api, Client api ~ (BaseUrl -> EitherT ServantError IO ())) =>
+  WrappedApi :: (HasServer (Canonicalize api), Server api ~ EitherT (Int, String) IO a,
+                 HasClient (Canonicalize api), Client api ~ (BaseUrl -> EitherT ServantError IO ())) =>
     Proxy api -> WrappedApi
 
 
