@@ -3,6 +3,10 @@ language: haskell
 ghc:
   - 7.8
 
+install:
+  - ghc --version
+  - cabal --version
+
 script:
   - ./scripts/test-all.sh
 
