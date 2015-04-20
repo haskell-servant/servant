@@ -8,21 +8,24 @@
 #   DESCRIPTION: Run tests for all source directories listed in $SOURCES.
 #                Uses local versions of those sources.
 #
+#  REQUIREMENTS: bash >= 4
 #===============================================================================
 
 set -o nounset
 set -o errexit
 
-SOURCES=( servant servant-server servant-client servant-jquery servant-docs )
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 GHC_FLAGS="-Werror"
+SOURCES_TXT="$( dirname $DIR)/sources.txt"
+
+declare -a SOURCES
+readarray -t SOURCES < "$SOURCES_TXT"
+
 
 prepare_sandbox () {
     cabal sandbox init
     for s in ${SOURCES[@]} ; do
-        cd "$s"
-        cabal sandbox init --sandbox=../
-        cabal sandbox add-source .
-        cd ..
+        (cd "$s" && cabal sandbox init --sandbox=../ && cabal sandbox add-source .)
     done
 }
 
