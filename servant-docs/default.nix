@@ -12,7 +12,7 @@ mkDerivation {
     aeson base bytestring hashable http-media lens servant
     string-conversions text unordered-containers
   ];
-  testDepends = [ aeson base hspec lens servant ];
+  testDepends = [ aeson base hspec servant string-conversions ];
   homepage = "http://haskell-servant.github.io/";
   description = "generate API docs for your servant webservice";
   license = stdenv.lib.licenses.bsd3;

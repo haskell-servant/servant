@@ -1,12 +1,22 @@
-{ pkgs ? import <nixpkgs> { config.allowUnfree = true; }
-, src ?  builtins.filterSource (path: type:
-    type != "unknown" &&
-    baseNameOf path != ".git" &&
-    baseNameOf path != "result" &&
-    baseNameOf path != "dist") ./.
+{ mkDerivation, aeson, attoparsec, base, bytestring
+, bytestring-conversion, case-insensitive, doctest, filemanip
+, hspec, http-media, http-types, network-uri, parsec, QuickCheck
+, quickcheck-instances, stdenv, string-conversions, text, url
 }:
-pkgs.haskellPackages.buildLocalCabalWithArgs {
-  name = "servant";
-  inherit src;
-  args = {};
+mkDerivation {
+  pname = "servant";
+  version = "0.2.2";
+  src = ./.;
+  buildDepends = [
+    aeson attoparsec base bytestring bytestring-conversion
+    case-insensitive http-media http-types network-uri
+    string-conversions text
+  ];
+  testDepends = [
+    aeson attoparsec base bytestring doctest filemanip hspec parsec
+    QuickCheck quickcheck-instances string-conversions text url
+  ];
+  homepage = "http://haskell-servant.github.io/";
+  description = "A family of combinators for defining webservices APIs";
+  license = stdenv.lib.licenses.bsd3;
 }

@@ -1,15 +1,28 @@
-{ pkgs ? import <nixpkgs> { config.allowUnfree = true; }
-, src ?  builtins.filterSource (path: type:
-    type != "unknown" &&
-    baseNameOf path != ".git" &&
-    baseNameOf path != "result" &&
-    baseNameOf path != "dist") ./.
-, servant ? import ../servant {}
+{ mkDerivation, aeson, attoparsec, base, bytestring
+, bytestring-conversion, directory, either, exceptions, hspec
+, hspec-wai, http-types, network, network-uri, parsec, QuickCheck
+, safe, servant, split, stdenv, string-conversions, system-filepath
+, temporary, text, transformers, wai, wai-app-static, wai-extra
+, warp
 }:
-pkgs.haskellPackages.buildLocalCabalWithArgs {
-  name = "servant-server";
-  inherit src;
-  args = {
-      inherit servant;
-  };
+mkDerivation {
+  pname = "servant-server";
+  version = "0.2.4";
+  src = ./.;
+  isLibrary = true;
+  isExecutable = true;
+  buildDepends = [
+    aeson attoparsec base bytestring either http-types network-uri safe
+    servant split string-conversions system-filepath text transformers
+    wai wai-app-static warp
+  ];
+  testDepends = [
+    aeson base bytestring bytestring-conversion directory either
+    exceptions hspec hspec-wai http-types network parsec QuickCheck
+    servant string-conversions temporary text transformers wai
+    wai-extra warp
+  ];
+  homepage = "http://haskell-servant.github.io/";
+  description = "A family of combinators for defining webservices APIs and serving them";
+  license = stdenv.lib.licenses.bsd3;
 }
