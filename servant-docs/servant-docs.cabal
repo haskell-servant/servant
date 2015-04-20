@@ -5,6 +5,8 @@ description:
   Library for generating API docs from a servant API definition.
   .
   Runnable example <https://github.com/haskell-servant/servant-docs/blob/master/example/greet.hs here>.
+  .
+  <https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni

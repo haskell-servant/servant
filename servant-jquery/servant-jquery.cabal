@@ -7,6 +7,8 @@ description:
   You can find an example <https://github.com/haskell-servant/servant/blob/master/servant-jquery/examples/counter.hs here>
   which serves the generated javascript to a webpage that allows you to trigger
   webservice calls.
+  .
+  <https://github.com/haskell-servant/servant/blob/master/servant-jquery/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari

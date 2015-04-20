@@ -16,6 +16,8 @@ description:
   > getAllBooks :: BaseUrl -> EitherT String IO [Book]
   > postNewBook :: Book -> BaseUrl -> EitherT String IO Book
   > (getAllBooks :<|> postNewBook) = client myApi
+  .
+  <https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
