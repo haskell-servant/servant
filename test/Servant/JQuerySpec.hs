@@ -90,3 +90,7 @@ generateJSSpec = describe "generateJS" $ do
         parseFromString jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerXWhatsForDinner"
         jsText `shouldContain` "headers: { \"X-WhatsForDinner\": \"I would like \" + headerXWhatsForDinner + \" with a cherry on top.\" }\n"
+
+    it "can generate the whole javascript code string at once with jsForAPI" $ do
+        let jsStr = jsForAPI (Proxy :: Proxy TestAPI)
+        parseFromString jsStr `shouldSatisfy` isRight

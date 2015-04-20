@@ -13,8 +13,10 @@
 module Servant.JQuery
   ( jquery
   , generateJS
+  , jsForAPI
   , printJS
   , module Servant.JQuery.Internal
+  , GenerateCode(..)
   ) where
 
 import Control.Lens
@@ -92,3 +94,24 @@ generateJS req = "\n" <>
 
 printJS :: AjaxReq -> IO ()
 printJS = putStrLn . generateJS
+
+-- | Utility class used by 'jsForAPI' which will
+--   directly hand you all the Javascript code
+--   instead of handing you a ':<|>'-separated list
+--   of 'AjaxReq' like 'jquery' and then having to
+--   use 'generateJS' on each 'AjaxReq'.
+class GenerateCode reqs where
+  jsFor :: reqs -> String
+
+instance GenerateCode AjaxReq where
+  jsFor = generateJS
+
+instance GenerateCode rest => GenerateCode (AjaxReq :<|> rest) where
+  jsFor (req :<|> rest) = jsFor req ++ jsFor rest
+
+-- | Directly generate all the javascript functions for your API
+--   from a 'Proxy' for your API type. You can then write it to
+--   a file or integrate it in a page, for example.
+jsForAPI :: (HasJQ (Canonicalize api), GenerateCode (JQ api))
+         => Proxy api -> String
+jsForAPI p = jsFor (jquery p)
