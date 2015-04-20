@@ -3,25 +3,12 @@ language: haskell
 ghc:
   - 7.8
 
-before_install:
-  - cabal update
-  - cabal sandbox init
-
 install:
-  - cabal install --only-dependencies --enable-tests
+  - ghc --version
+  - cabal --version
 
 script:
-  - cabal configure --enable-tests --enable-library-coverage && cabal build && cabal test
-  - cabal check
-  - cabal sdist
-
-after_script:
-  - |
-    if [ "$TRAVIS_PULL_REQUEST" -eq "$TRAVIS_PULL_REQUEST" ] 2>/dev/null || [ "$TRAVIS_BRANCH" == "master" ] ; then
-      cabal install hpc-coveralls
-      hpc-coveralls --exclude-dir=test spec doctests
-    fi
-
+  - ./scripts/test-all.sh
 
 notifications:
   irc:
