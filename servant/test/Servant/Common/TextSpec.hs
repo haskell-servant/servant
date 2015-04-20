@@ -1,8 +1,13 @@
+{-# LANGUAGE CPP #-}
 module Servant.Common.TextSpec where
 
 import           Data.Int                  (Int16, Int32, Int64, Int8)
 import           Data.Text                 (Text)
-import           Data.Word                 (Word, Word16, Word32, Word64, Word8)
+import           Data.Word                 (Word16, Word32, Word64, Word8
+#if !MIN_VERSION_base(4,8,0)
+                 , Word
+#endif
+                 )
 import           Servant.Common.Text
 import           Test.Hspec
 import           Test.QuickCheck

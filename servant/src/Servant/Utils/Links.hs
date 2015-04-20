@@ -1,13 +1,13 @@
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE CPP                    #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 -- | Type safe generation of internal links.
 --
@@ -104,7 +104,11 @@ module Servant.Utils.Links (
 import Data.List
 import Data.Proxy ( Proxy(..) )
 import Data.Text (Text, unpack)
+#if !MIN_VERSION_base(4,8,0)
 import Data.Monoid ( Monoid(..), (<>) )
+#else
+import Data.Monoid ( (<>) )
+#endif
 import Network.URI ( URI(..), escapeURIString, isUnreserved )
 import GHC.TypeLits ( KnownSymbol, symbolVal )
 import GHC.Exts(Constraint)

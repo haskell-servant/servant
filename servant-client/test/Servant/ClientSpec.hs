@@ -340,6 +340,6 @@ pathGen :: Gen (NonEmptyList Char)
 pathGen = fmap NonEmpty path
  where
   path = listOf1 $ elements $
-    filter (not . (`elem` "?%[]/#;")) $
+    filter (not . (`elem` ("?%[]/#;" :: String))) $
     filter isPrint $
     map chr [0..127]

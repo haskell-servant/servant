@@ -2,12 +2,17 @@
 # Also a good way of running the tests for all packages
 with (import <nixpkgs> {}).pkgs;
 let modifiedHaskellPackages = haskellngPackages.override {
-      overrides = self: super: {
-        servant = self.callPackage ../servant {};
-        servant-server = self.callPackage ../servant-server {};
-        servant-client = self.callPackage ../servant-client {};
-        servant-jquery = self.callPackage ../servant-jquery {};
-        servant-docs   = self.callPackage ../servant-docs {};
+      overrides = with haskell-ng.lib ; self: super: {
+        servant = appendConfigureFlag ( self.callPackage ../servant {} )
+            "--ghc-options=-Werror";
+        servant-server = appendConfigureFlag (self.callPackage
+                ../servant-server {}) "--ghc-options=-Werror";
+        servant-client = appendConfigureFlag (self.callPackage
+            ../servant-client {}) "--ghc-options=-Werror";
+        servant-jquery = appendConfigureFlag (self.callPackage
+            ../servant-jquery {}) "--ghc-options=-Werror";
+        servant-docs   = appendConfigureFlag (self.callPackage ../servant-docs
+            {}) "--ghc-options=-Werror";
       };
     };
 in modifiedHaskellPackages.ghcWithPackages ( p : with p ; [

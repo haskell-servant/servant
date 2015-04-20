@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -6,12 +7,18 @@ module Servant.Common.Text
   , ToText(..)
   ) where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative     ((<$>))
+#endif
 import           Data.Int                (Int16, Int32, Int64, Int8)
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import           Data.Text.Read          (Reader, decimal, rational, signed)
-import           Data.Word               (Word, Word16, Word32, Word64, Word8)
+import           Data.Word               (Word16, Word32, Word64, Word8
+#if !MIN_VERSION_base(4,8,0)
+        , Word
+#endif
+        )
 
 -- | For getting values from url captures and query string parameters
 -- Instances should obey:

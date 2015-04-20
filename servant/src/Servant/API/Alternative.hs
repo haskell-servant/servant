@@ -1,8 +1,11 @@
+{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeOperators      #-}
 module Servant.API.Alternative ((:<|>)(..)) where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid   (Monoid (..))
+#endif
 import           Data.Typeable (Typeable)
 -- | Union of two APIs, first takes precedence in case of overlap.
 --

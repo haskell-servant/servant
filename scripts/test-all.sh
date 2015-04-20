@@ -17,15 +17,16 @@ set -o errexit
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 GHC_FLAGS="-Werror"
 SOURCES_TXT="$( dirname $DIR)/sources.txt"
+CABAL=${CABAL:-cabal}
 
 declare -a SOURCES
 readarray -t SOURCES < "$SOURCES_TXT"
 
 
 prepare_sandbox () {
-    cabal sandbox init
+    $CABAL sandbox init
     for s in ${SOURCES[@]} ; do
-        (cd "$s" && cabal sandbox init --sandbox=../ && cabal sandbox add-source .)
+        (cd "$s" && $CABAL sandbox init --sandbox=../ && $CABAL sandbox add-source .)
     done
 }
 
@@ -33,10 +34,10 @@ test_each () {
     for s in ${SOURCES[@]} ; do
         echo "Testing $s..."
         cd "$s"
-        cabal install --only-dependencies --enable-tests
-        cabal configure --enable-tests --ghc-options="$GHC_FLAGS"
-        cabal build
-        cabal test
+        $CABAL install --only-dependencies --enable-tests
+        $CABAL configure --enable-tests --ghc-options="$GHC_FLAGS"
+        $CABAL build
+        $CABAL test
         cd ..
     done
 }

@@ -1,12 +1,15 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE InstanceSigs         #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
+#if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE OverlappingInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+#endif
 -- | This module provides 'client' which can automatically generate
 -- querying functions for each endpoint just from the type representing your
 -- API.
@@ -18,21 +21,21 @@ module Servant.Client
   , module Servant.Common.BaseUrl
   ) where
 
-import Control.Monad
-import Control.Monad.Trans.Either
-import Data.ByteString.Lazy (ByteString)
-import Data.List
-import Data.Proxy
-import Data.String.Conversions
-import Data.Text (unpack)
-import GHC.TypeLits
-import Network.HTTP.Client (Response)
-import Network.HTTP.Media
-import qualified Network.HTTP.Types as H
-import Servant.API
-import Servant.API.ContentTypes
-import Servant.Common.BaseUrl
-import Servant.Common.Req
+import           Control.Monad
+import           Control.Monad.Trans.Either
+import           Data.ByteString.Lazy       (ByteString)
+import           Data.List
+import           Data.Proxy
+import           Data.String.Conversions
+import           Data.Text                  (unpack)
+import           GHC.TypeLits
+import           Network.HTTP.Client        (Response)
+import           Network.HTTP.Media
+import qualified Network.HTTP.Types         as H
+import           Servant.API
+import           Servant.API.ContentTypes
+import           Servant.Common.BaseUrl
+import           Servant.Common.Req
 
 -- * Accessing APIs as a Client
 
@@ -123,14 +126,22 @@ instance HasClient Delete where
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+  (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
   type Client' (Get (ct ': cts) result) = BaseUrl -> EitherT ServantError IO result
   clientWithRoute Proxy req host =
     performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] host
 
 -- | If you have a 'Get xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
-instance HasClient (Get (ct ': cts) ()) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  HasClient (Get (ct ': cts) ()) where
   type Client' (Get (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     performRequestNoBody H.methodGet req [204] host
@@ -176,7 +187,11 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+  (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
   type Client' (Post (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req uri =
@@ -184,7 +199,11 @@ instance (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
 
 -- | If you have a 'Post xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
-instance HasClient (Post (ct ': cts) ()) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  HasClient (Post (ct ': cts) ()) where
   type Client' (Post (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPost req [204] host
@@ -193,7 +212,11 @@ instance HasClient (Post (ct ': cts) ()) where
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+  (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
   type Client' (Put (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
@@ -201,7 +224,11 @@ instance (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
 
 -- | If you have a 'Put xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
-instance HasClient (Put (ct ': cts) ()) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  HasClient (Put (ct ': cts) ()) where
   type Client' (Put (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPut req [204] host
@@ -210,7 +237,11 @@ instance HasClient (Put (ct ': cts) ()) where
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+  (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
   type Client' (Patch (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
@@ -218,7 +249,11 @@ instance (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
 
 -- | If you have a 'Patch xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
-instance HasClient (Patch (ct ': cts) ()) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  HasClient (Patch (ct ': cts) ()) where
   type Client' (Patch (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPatch req [204] host
