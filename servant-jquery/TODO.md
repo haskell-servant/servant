@@ -1,0 +1,1 @@
+- Investigate the best way to offer cross-origin requests
