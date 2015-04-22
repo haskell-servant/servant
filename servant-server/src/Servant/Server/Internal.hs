@@ -1,22 +1,28 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
+#if !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE OverlappingInstances #-}
+#endif
+
 module Servant.Server.Internal where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
+import           Data.Monoid                 (Monoid, mappend, mempty)
+#endif
 import           Control.Monad.Trans.Either  (EitherT, runEitherT)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import           Data.IORef                  (newIORef, readIORef, writeIORef)
 import           Data.List                   (unfoldr)
 import           Data.Maybe                  (catMaybes, fromMaybe)
-import           Data.Monoid                 (Monoid, mappend, mempty)
 import           Data.String                 (fromString)
 import           Data.String.Conversions     (cs, (<>))
 import           Data.Text                   (Text)
@@ -278,10 +284,13 @@ instance HasServer Delete where
 -- If successfully returning a value, we use the type-level list, combined
 -- with the request's @Accept@ header, to encode the value for you
 -- (returning a status code of 200). If there was no @Accept@ header or it
--- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
-instance ( AllCTRender ctypes a
-         ) => HasServer (Get ctypes a) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         ( AllCTRender ctypes a ) => HasServer (Get ctypes a) where
 
   type ServerT' (Get ctypes a) m = m a
 
@@ -290,7 +299,7 @@ instance ( AllCTRender ctypes a
         e <- runEitherT action
         respond $ case e of
           Right output -> do
-            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
@@ -302,8 +311,14 @@ instance ( AllCTRender ctypes a
     | otherwise = respond $ failWith NotFound
 
 -- '()' ==> 204 No Content
-instance HasServer (Get ctypes ()) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+          HasServer (Get ctypes ()) where
+
   type ServerT' (Get ctypes ()) m = m ()
+
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
         e <- runEitherT action
@@ -316,14 +331,20 @@ instance HasServer (Get ctypes ()) where
     | otherwise = respond $ failWith NotFound
 
 -- Add response headers
-instance ( AllCTRender ctypes v ) => HasServer (Get ctypes (Headers h v)) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+          ( AllCTRender ctypes v ) => HasServer (Get ctypes (Headers h v)) where
+
   type ServerT' (Get ctypes (Headers h v)) m = m (Headers h v)
+
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
       e <- runEitherT action
       respond $ case e of
         Right output -> do
-          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders output
           case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
             Nothing -> failWith UnsupportedMediaType
@@ -378,9 +399,13 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- If successfully returning a value, we use the type-level list, combined
 -- with the request's @Accept@ header, to encode the value for you
 -- (returning a status code of 201). If there was no @Accept@ header or it
--- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
-instance ( AllCTRender ctypes a
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         ( AllCTRender ctypes a
          ) => HasServer (Post ctypes a) where
 
   type ServerT' (Post ctypes a) m = m a
@@ -390,7 +415,7 @@ instance ( AllCTRender ctypes a
         e <- runEitherT action
         respond $ case e of
           Right output -> do
-            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
@@ -401,8 +426,14 @@ instance ( AllCTRender ctypes a
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
-instance HasServer (Post ctypes ()) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         HasServer (Post ctypes ()) where
+
   type ServerT' (Post ctypes ()) m = m ()
+
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
         e <- runEitherT action
@@ -415,14 +446,20 @@ instance HasServer (Post ctypes ()) where
     | otherwise = respond $ failWith NotFound
 
 -- Add response headers
-instance ( AllCTRender ctypes v ) => HasServer (Post ctypes (Headers h v)) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         ( AllCTRender ctypes v ) => HasServer (Post ctypes (Headers h v)) where
+
   type ServerT' (Post ctypes (Headers h v)) m = m (Headers h v)
+
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
       e <- runEitherT action
       respond $ case e of
         Right output -> do
-          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders output
           case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
             Nothing -> failWith UnsupportedMediaType
@@ -445,10 +482,13 @@ instance ( AllCTRender ctypes v ) => HasServer (Post ctypes (Headers h v)) where
 -- If successfully returning a value, we use the type-level list, combined
 -- with the request's @Accept@ header, to encode the value for you
 -- (returning a status code of 200). If there was no @Accept@ header or it
--- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
-instance ( AllCTRender ctypes a
-         ) => HasServer (Put ctypes a) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         ( AllCTRender ctypes a) => HasServer (Put ctypes a) where
 
   type ServerT' (Put ctypes a) m = m a
 
@@ -457,7 +497,7 @@ instance ( AllCTRender ctypes a
         e <- runEitherT action
         respond $ case e of
           Right output -> do
-            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
@@ -468,8 +508,14 @@ instance ( AllCTRender ctypes a
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
-instance HasServer (Put ctypes ()) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         HasServer (Put ctypes ()) where
+
   type ServerT' (Put ctypes ()) m = m ()
+
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
         e <- runEitherT action
@@ -482,14 +528,20 @@ instance HasServer (Put ctypes ()) where
     | otherwise = respond $ failWith NotFound
 
 -- Add response headers
-instance ( AllCTRender ctypes v ) => HasServer (Put ctypes (Headers h v)) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         ( AllCTRender ctypes v ) => HasServer (Put ctypes (Headers h v)) where
+
   type ServerT' (Put ctypes (Headers h v)) m = m (Headers h v)
+
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
       e <- runEitherT action
       respond $ case e of
         Right output -> do
-          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders output
           case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
             Nothing -> failWith UnsupportedMediaType
@@ -512,8 +564,12 @@ instance ( AllCTRender ctypes v ) => HasServer (Put ctypes (Headers h v)) where
 -- If successfully returning a value, we just require that its type has
 -- a 'ToJSON' instance and servant takes care of encoding it for you,
 -- yielding status code 200 along the way.
-instance ( AllCTRender ctypes a
-         ) => HasServer (Patch ctypes a) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         ( AllCTRender ctypes a) => HasServer (Patch ctypes a) where
+
   type ServerT' (Patch ctypes a) m = m a
 
   route Proxy action request respond
@@ -521,7 +577,7 @@ instance ( AllCTRender ctypes a
         e <- runEitherT action
         respond $ case e of
           Right output -> do
-            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
@@ -532,8 +588,14 @@ instance ( AllCTRender ctypes a
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
 
-instance HasServer (Patch ctypes ()) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+          HasServer (Patch ctypes ()) where
+
   type ServerT' (Patch ctypes ()) m = m ()
+
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPatch = do
         e <- runEitherT action
@@ -546,14 +608,20 @@ instance HasServer (Patch ctypes ()) where
     | otherwise = respond $ failWith NotFound
 
 -- Add response headers
-instance ( AllCTRender ctypes v ) => HasServer (Patch ctypes (Headers h v)) where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         ( AllCTRender ctypes v ) => HasServer (Patch ctypes (Headers h v)) where
+
   type ServerT' (Patch ctypes (Headers h v)) m = m (Headers h v)
+
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPatch = do
       e <- runEitherT action
       respond $ case e of
         Right outpatch -> do
-          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders outpatch
           case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse outpatch) of
             Nothing -> failWith UnsupportedMediaType
@@ -864,3 +932,6 @@ instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout
     _ -> respond $ failWith NotFound
 
     where proxyPath = Proxy :: Proxy path
+
+ct_wildcard :: B.ByteString
+ct_wildcard = "*" <> "/" <> "*" -- Because CPP

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE FlexibleContexts       #-}
@@ -6,11 +7,13 @@
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE KindSignatures         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverlappingInstances   #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
+#if !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE OverlappingInstances   #-}
+#endif
 
 -- | This module provides facilities for adding headers to a response.
 --
@@ -50,13 +53,21 @@ class AddHeader h v orig new
     | h v orig -> new, new -> h, new -> v, new -> orig where
   addHeader :: v -> orig -> new
 
-instance ( KnownSymbol h, ToByteString v
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         ( KnownSymbol h, ToByteString v
          ) => AddHeader h v (Headers (fst ': rest)  a) (Headers (Header h v ': fst ': rest) a) where
     addHeader a (Headers resp heads) = Headers resp ((headerName, toByteString' a) : heads)
       where
         headerName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
 
-instance ( KnownSymbol h, ToByteString v
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         ( KnownSymbol h, ToByteString v
          , new ~ (Headers '[Header h v] a)
          ) => AddHeader h v a new where
     addHeader a resp = Headers resp [(headerName, toByteString' a)]

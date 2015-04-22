@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DeriveGeneric        #-}
@@ -13,7 +14,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Servant.Docs.Internal where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
+#endif
 import           Control.Lens
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import           Data.Hashable

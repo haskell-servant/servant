@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE FlexibleContexts   #-}
@@ -10,7 +11,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.ClientSpec where
 
-import           Control.Applicative
+#if !MIN_VERSION_base(4,8,0)
+import           Control.Applicative         ((<$>))
+#endif
 import qualified Control.Arrow              as Arrow
 import           Control.Concurrent
 import           Control.Exception
@@ -340,6 +343,6 @@ pathGen :: Gen (NonEmptyList Char)
 pathGen = fmap NonEmpty path
  where
   path = listOf1 $ elements $
-    filter (not . (`elem` "?%[]/#;")) $
+    filter (not . (`elem` ("?%[]/#;" :: String))) $
     filter isPrint $
     map chr [0..127]

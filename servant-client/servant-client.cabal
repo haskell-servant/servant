@@ -16,6 +16,8 @@ description:
   > getAllBooks :: BaseUrl -> EitherT String IO [Book]
   > postNewBook :: Book -> BaseUrl -> EitherT String IO Book
   > (getAllBooks :<|> postNewBook) = client myApi
+  .
+  <https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
@@ -26,10 +28,10 @@ build-type:          Simple
 cabal-version:       >=1.10
 tested-with:         GHC >= 7.8
 homepage:            http://haskell-servant.github.io/
-Bug-reports:         http://github.com/haskell-servant/servant-client/issues
+Bug-reports:         http://github.com/haskell-servant/servant/issues
 source-repository head
   type: git
-  location: http://github.com/haskell-servant/servant-client.git
+  location: http://github.com/haskell-servant/servant.git
 
 library
   exposed-modules:

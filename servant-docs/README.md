@@ -1,14 +1,12 @@
 # servant-docs
 
-[![Build Status](https://secure.travis-ci.org/haskell-servant/servant-docs.svg)](http://travis-ci.org/haskell-servant/servant-docs)
-
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
 Generate API docs for your *servant* webservice. Feel free to also take a look at [servant-pandoc](https://github.com/mpickering/servant-pandoc) which uses this package to target a broad range of output formats using the excellent **pandoc**.
 
 ## Example
 
-See [here](https://github.com/haskell-servant/servant-docs/blob/master/example/greet.md) for the output of the following program.
+See [here](https://github.com/haskell-servant/servant/tree/master/servant-docs/blob/master/example/greet.md) for the output of the following program.
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}

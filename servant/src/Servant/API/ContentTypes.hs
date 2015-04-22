@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
@@ -63,7 +64,9 @@ module Servant.API.ContentTypes
     , eitherDecodeLenient
     ) where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative        ((<*))
+#endif
 import           Control.Arrow              (left)
 import           Control.Monad
 import           Data.Aeson                 (FromJSON, ToJSON, Value,
