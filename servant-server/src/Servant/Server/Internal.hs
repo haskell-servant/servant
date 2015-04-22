@@ -10,16 +10,19 @@
 #if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE OverlappingInstances #-}
 #endif
+
 module Servant.Server.Internal where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
+import           Data.Monoid                 (Monoid, mappend, mempty)
+#endif
 import           Control.Monad.Trans.Either  (EitherT, runEitherT)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import           Data.IORef                  (newIORef, readIORef, writeIORef)
 import           Data.List                   (unfoldr)
 import           Data.Maybe                  (catMaybes, fromMaybe)
-import           Data.Monoid                 (Monoid, mappend, mempty)
 import           Data.String                 (fromString)
 import           Data.String.Conversions     (cs, (<>))
 import           Data.Text                   (Text)
@@ -281,7 +284,7 @@ instance HasServer Delete where
 -- If successfully returning a value, we use the type-level list, combined
 -- with the request's @Accept@ header, to encode the value for you
 -- (returning a status code of 200). If there was no @Accept@ header or it
--- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
 instance
 #if MIN_VERSION_base(4,8,0)
@@ -296,7 +299,7 @@ instance
         e <- runEitherT action
         respond $ case e of
           Right output -> do
-            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
@@ -341,7 +344,7 @@ instance
       e <- runEitherT action
       respond $ case e of
         Right output -> do
-          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders output
           case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
             Nothing -> failWith UnsupportedMediaType
@@ -396,7 +399,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- If successfully returning a value, we use the type-level list, combined
 -- with the request's @Accept@ header, to encode the value for you
 -- (returning a status code of 201). If there was no @Accept@ header or it
--- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
 instance
 #if MIN_VERSION_base(4,8,0)
@@ -412,7 +415,7 @@ instance
         e <- runEitherT action
         respond $ case e of
           Right output -> do
-            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
@@ -456,7 +459,7 @@ instance
       e <- runEitherT action
       respond $ case e of
         Right output -> do
-          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders output
           case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
             Nothing -> failWith UnsupportedMediaType
@@ -479,7 +482,7 @@ instance
 -- If successfully returning a value, we use the type-level list, combined
 -- with the request's @Accept@ header, to encode the value for you
 -- (returning a status code of 200). If there was no @Accept@ header or it
--- was @*/*@, we return encode using the first @Content-Type@ type on the
+-- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
 instance
 #if MIN_VERSION_base(4,8,0)
@@ -494,7 +497,7 @@ instance
         e <- runEitherT action
         respond $ case e of
           Right output -> do
-            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
@@ -538,7 +541,7 @@ instance
       e <- runEitherT action
       respond $ case e of
         Right output -> do
-          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders output
           case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
             Nothing -> failWith UnsupportedMediaType
@@ -574,7 +577,7 @@ instance
         e <- runEitherT action
         respond $ case e of
           Right output -> do
-            let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
@@ -618,7 +621,7 @@ instance
       e <- runEitherT action
       respond $ case e of
         Right outpatch -> do
-          let accH = fromMaybe "*/*" $ lookup hAccept $ requestHeaders request
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders outpatch
           case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse outpatch) of
             Nothing -> failWith UnsupportedMediaType
@@ -929,3 +932,6 @@ instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout
     _ -> respond $ failWith NotFound
 
     where proxyPath = Proxy :: Proxy path
+
+ct_wildcard :: B.ByteString
+ct_wildcard = "*" <> "/" <> "*" -- Because CPP
