@@ -18,7 +18,7 @@ import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 
 type HackageAPI =
-	     "users" :> Get '[JSON] [UserSummary]
+       "users" :> Get '[JSON] [UserSummary]
   :<|> "user" :> Capture "username" Username :> Get '[JSON] UserDetailed
   :<|> "packages" :> Get '[JSON] [Package]
 
