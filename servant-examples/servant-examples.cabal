@@ -27,3 +27,17 @@ executable hackage
     , transformers
   hs-source-dirs:      hackage
   default-language:    Haskell2010
+
+executable wai-middleware
+  main-is: wai-middleware.hs
+  build-depends:
+      aeson >= 0.8
+    , base >= 4.7
+    , servant
+    , servant-server
+    , text
+    , wai
+    , wai-extra
+    , warp
+  hs-source-dirs: wai-middleware
+  default-language: Haskell2010
