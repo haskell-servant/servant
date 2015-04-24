@@ -36,6 +36,8 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.API.ResponseHeaders
+import           Servant.API.ContentTypes
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
 
@@ -62,6 +64,7 @@ class HasClient layout where
   type Client layout :: *
   clientWithRoute :: Proxy layout -> Req -> Client layout
 
+type Client layout = Client' layout
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
 --   one function for querying @a@ and another one for querying @b@,
@@ -107,9 +110,10 @@ instance (KnownSymbol capture, ToText a, HasClient sublayout)
   type Client (Capture capture a :> sublayout) =
     a -> Client sublayout
 
-  clientWithRoute Proxy req val =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      appendToPath p req
+  clientWithRoute Proxy req baseurl val =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (appendToPath p req)
+                    baseurl
 
     where p = unpack (toText val)
 
@@ -122,9 +126,9 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Delete (ct ': cts) a) where
-  type Client (Delete (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
-  clientWithRoute Proxy req host =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] host
+  type Client (Delete (ct ': cts) a) = EitherT ServantError IO a
+  clientWithRoute Proxy req baseurl =
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl
 
 -- | If you have a 'Delete xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -133,9 +137,9 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Delete (ct ': cts) ()) where
-  type Client (Delete (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
-  clientWithRoute Proxy req host =
-    void $ performRequestNoBody H.methodDelete req [204] host
+  type Client (Delete (ct ': cts) ()) = EitherT ServantError IO ()
+  clientWithRoute Proxy req baseurl =
+    void $ performRequestNoBody H.methodDelete req [204] baseurl
 
 -- | If you have a 'Delete xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -145,13 +149,12 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Delete (ct ': cts) (Headers ls a)) where
-  type Client (Delete (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
-  clientWithRoute Proxy req host = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] host
+  type Client (Delete (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req baseurl = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
-
 
 -- | If you have a 'Get' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -162,9 +165,9 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
-  type Client (Get (ct ': cts) result) = BaseUrl -> EitherT ServantError IO result
-  clientWithRoute Proxy req host =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] host
+  type Client (Get (ct ': cts) result) = EitherT ServantError IO result
+  clientWithRoute Proxy req baseurl =
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] baseurl
 
 -- | If you have a 'Get xs ()' endpoint, the client expects a 204 No Content
 -- HTTP status.
@@ -173,9 +176,9 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Get (ct ': cts) ()) where
-  type Client (Get (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
-  clientWithRoute Proxy req host =
-    performRequestNoBody H.methodGet req [204] host
+  type Client (Get (ct ': cts) ()) = EitherT ServantError IO ()
+  clientWithRoute Proxy req baseurl =
+    performRequestNoBody H.methodGet req [204] baseurl
 
 -- | If you have a 'Get xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -185,9 +188,9 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Get (ct ': cts) (Headers ls a)) where
-  type Client (Get (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
-  clientWithRoute Proxy req host = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203, 204] host
+  type Client (Get (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req baseurl = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203, 204] baseurl
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -223,9 +226,13 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
   type Client (Header sym a :> sublayout) =
     Maybe a -> Client sublayout
 
-  clientWithRoute Proxy req mval =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      maybe req (\value -> Servant.Common.Req.addHeader hname value req) mval
+  clientWithRoute Proxy req baseurl mval =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (maybe req
+                           (\value -> Servant.Common.Req.addHeader hname value req)
+                           mval
+                    )
+                    baseurl
 
     where hname = symbolVal (Proxy :: Proxy sym)
 
@@ -238,10 +245,9 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
-  type Client (Post (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
-
-  clientWithRoute Proxy req uri =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] uri
+  type Client (Post (ct ': cts) a) = EitherT ServantError IO a
+  clientWithRoute Proxy req baseurl =
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] baseurl
 
 -- | If you have a 'Post xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -250,9 +256,9 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Post (ct ': cts) ()) where
-  type Client (Post (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
-  clientWithRoute Proxy req host =
-    void $ performRequestNoBody H.methodPost req [204] host
+  type Client (Post (ct ': cts) ()) = EitherT ServantError IO ()
+  clientWithRoute Proxy req baseurl =
+    void $ performRequestNoBody H.methodPost req [204] baseurl
 
 -- | If you have a 'Post xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -262,9 +268,9 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Post (ct ': cts) (Headers ls a)) where
-  type Client (Post (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
-  clientWithRoute Proxy req host = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201] host
+  type Client (Post (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req baseurl = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201] baseurl
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -278,10 +284,9 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
-  type Client (Put (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
-
-  clientWithRoute Proxy req host =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] host
+  type Client (Put (ct ': cts) a) = EitherT ServantError IO a
+  clientWithRoute Proxy req baseurl =
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] baseurl
 
 -- | If you have a 'Put xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -290,9 +295,9 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Put (ct ': cts) ()) where
-  type Client (Put (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
-  clientWithRoute Proxy req host =
-    void $ performRequestNoBody H.methodPut req [204] host
+  type Client (Put (ct ': cts) ()) = EitherT ServantError IO ()
+  clientWithRoute Proxy req baseurl =
+    void $ performRequestNoBody H.methodPut req [204] baseurl
 
 -- | If you have a 'Put xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -302,9 +307,9 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Put (ct ': cts) (Headers ls a)) where
-  type Client (Put (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
-  clientWithRoute Proxy req host = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPut req [200, 201] host
+  type Client (Put (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req baseurl = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPut req [200, 201] baseurl
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -318,10 +323,9 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
-  type Client (Patch (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
-
-  clientWithRoute Proxy req host =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] host
+  type Client (Patch (ct ': cts) a) = EitherT ServantError IO a
+  clientWithRoute Proxy req baseurl =
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] baseurl
 
 -- | If you have a 'Patch xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -330,9 +334,9 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Patch (ct ': cts) ()) where
-  type Client (Patch (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
-  clientWithRoute Proxy req host =
-    void $ performRequestNoBody H.methodPatch req [204] host
+  type Client (Patch (ct ': cts) ()) = EitherT ServantError IO ()
+  clientWithRoute Proxy req baseurl =
+    void $ performRequestNoBody H.methodPatch req [204] baseurl
 
 -- | If you have a 'Patch xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -342,9 +346,9 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Patch (ct ': cts) (Headers ls a)) where
-  type Client (Patch (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
-  clientWithRoute Proxy req host = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200, 201, 204] host
+  type Client (Patch (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req baseurl = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200, 201, 204] baseurl
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -381,9 +385,13 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
     Maybe a -> Client sublayout
 
   -- if mparam = Nothing, we don't add it to the query string
-  clientWithRoute Proxy req mparam =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      maybe req (flip (appendToQueryString pname) req . Just) mparamText
+  clientWithRoute Proxy req baseurl mparam =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (maybe req
+                           (flip (appendToQueryString pname) req . Just)
+                           mparamText
+                    )
+                    baseurl
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)
@@ -422,9 +430,13 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
   type Client (QueryParams sym a :> sublayout) =
     [a] -> Client sublayout
 
-  clientWithRoute Proxy req paramlist =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      foldl' (\ req' -> maybe req' (flip (appendToQueryString pname) req' . Just)) req paramlist'
+  clientWithRoute Proxy req baseurl paramlist =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (foldl' (\ req' -> maybe req' (flip (appendToQueryString pname) req' . Just))
+                            req
+                            paramlist'
+                    )
+                    baseurl
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)
@@ -457,11 +469,13 @@ instance (KnownSymbol sym, HasClient sublayout)
   type Client (QueryFlag sym :> sublayout) =
     Bool -> Client sublayout
 
-  clientWithRoute Proxy req flag =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      if flag
-        then appendToQueryString paramname Nothing req
-        else req
+  clientWithRoute Proxy req baseurl flag =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (if flag
+                       then appendToQueryString paramname Nothing req
+                       else req
+                    )
+                    baseurl
 
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
@@ -497,9 +511,13 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
     Maybe a -> Client sublayout
 
   -- if mparam = Nothing, we don't add it to the query string
-  clientWithRoute Proxy req mparam =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      maybe req (flip (appendToMatrixParams pname . Just) req) mparamText
+  clientWithRoute Proxy req baseurl mparam =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (maybe req
+                           (flip (appendToMatrixParams pname . Just) req)
+                           mparamText
+                    )
+                    baseurl
 
     where pname = symbolVal (Proxy :: Proxy sym)
           mparamText = fmap (cs . toText) mparam
@@ -537,9 +555,13 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
   type Client (MatrixParams sym a :> sublayout) =
     [a] -> Client sublayout
 
-  clientWithRoute Proxy req paramlist =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      foldl' (\ req' value -> maybe req' (flip (appendToMatrixParams pname) req' . Just . cs) value) req paramlist'
+  clientWithRoute Proxy req baseurl paramlist =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (foldl' (\ req' value -> maybe req' (flip (appendToMatrixParams pname) req' . Just . cs) value)
+                            req
+                            paramlist'
+                    )
+                    baseurl
 
     where pname  = cs pname'
           pname' = symbolVal (Proxy :: Proxy sym)
@@ -572,22 +594,24 @@ instance (KnownSymbol sym, HasClient sublayout)
   type Client (MatrixFlag sym :> sublayout) =
     Bool -> Client sublayout
 
-  clientWithRoute Proxy req flag =
-    clientWithRoute (Proxy :: Proxy sublayout) $
-      if flag
-        then appendToMatrixParams paramname Nothing req
-        else req
+  clientWithRoute Proxy req baseurl flag =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (if flag
+                       then appendToMatrixParams paramname Nothing req
+                       else req
+                    )
+                    baseurl
 
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
 instance HasClient Raw where
-  type Client Raw = H.Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
+  type Client Raw = H.Method -> EitherT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> Client Raw
-  clientWithRoute Proxy req httpMethod host = do
-    performRequest httpMethod req (const True) host
+  clientWithRoute Proxy req httpMethod baseurl = do
+    performRequest httpMethod req (const True) baseurl
 
 -- | If you use a 'ReqBody' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -613,18 +637,23 @@ instance (MimeRender ct a, HasClient sublayout)
   type Client (ReqBody (ct ': cts) a :> sublayout) =
     a -> Client sublayout
 
-  clientWithRoute Proxy req body =
-    clientWithRoute (Proxy :: Proxy sublayout) $ do
-      let ctProxy = Proxy :: Proxy ct
-      setRQBody (mimeRender ctProxy body) (contentType ctProxy) req
+  clientWithRoute Proxy req baseurl body =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (let ctProxy = Proxy :: Proxy ct
+                     in setRQBody (mimeRender ctProxy body)
+                                  (contentType ctProxy)
+                                  req
+                    )
+                    baseurl
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where
   type Client (path :> sublayout) = Client sublayout
 
-  clientWithRoute Proxy req =
-     clientWithRoute (Proxy :: Proxy sublayout) $
-       appendToPath p req
+  clientWithRoute Proxy req baseurl =
+     clientWithRoute (Proxy :: Proxy sublayout)
+                     (appendToPath p req)
+                     baseurl
 
     where p = symbolVal (Proxy :: Proxy path)
 
