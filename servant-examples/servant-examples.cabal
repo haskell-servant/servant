@@ -1,0 +1,56 @@
+name:                servant-examples
+version:             0.3
+synopsis:            Example programs for servant
+description:         Example programs for servant,
+                     showcasing solutions to common needs.
+homepage:            http://haskell-servant.github.io/
+license:             BSD3
+license-file:        LICENSE
+author:              Alp Mestanogullari
+maintainer:          alpmestan@gmail.com
+-- copyright:           
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable hackage
+  main-is:             hackage.hs
+  build-depends:
+      aeson >= 0.8
+    , base >=4.7
+    , either
+    , servant
+    , servant-client
+    , text
+    , transformers
+  hs-source-dirs:      hackage
+  default-language:    Haskell2010
+
+executable wai-middleware
+  main-is: wai-middleware.hs
+  build-depends:
+      aeson >= 0.8
+    , base >= 4.7
+    , servant
+    , servant-server
+    , text
+    , wai
+    , wai-extra
+    , warp
+  hs-source-dirs: wai-middleware
+  default-language: Haskell2010
+
+executable auth-combinator
+  main-is: auth-combinator.hs
+  build-depends:
+      aeson >= 0.8
+    , base >= 4.7
+    , bytestring
+    , http-types
+    , servant
+    , servant-server
+    , text
+    , wai
+    , warp
+  hs-source-dirs: auth-combinator
+  default-language: Haskell2010
