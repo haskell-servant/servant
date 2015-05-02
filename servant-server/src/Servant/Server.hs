@@ -16,6 +16,10 @@ module Servant.Server
   , Server
   , ServerT
 
+    -- * Enter
+    -- Applying functions to all handlers
+  , Enter(..)
+
     -- * Default error type
   , ServantErr(..)
     -- ** 3XX
@@ -59,6 +63,7 @@ import Network.Wai (Application)
 import Servant.API (Canonicalize, canonicalize)
 import Servant.Server.Internal
 import Servant.Server.Internal.ServantErr
+import Servant.Server.Internal.Enter
 
 
 -- * Implementing Servers

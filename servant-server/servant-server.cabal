@@ -37,6 +37,7 @@ library
     Servant.Server
     Servant.Server.Internal
     Servant.Server.Internal.ServantErr
+    Servant.Server.Internal.Enter
     Servant.Utils.StaticFiles
   build-depends:
         base               >= 4.7  && < 5
@@ -46,6 +47,8 @@ library
       , either             >= 4.3  && < 4.4
       , http-types         >= 0.8  && < 0.9
       , network-uri        >= 2.6  && < 2.7
+      , mtl                >= 2    && < 3
+      , mmorph             >= 1
       , safe               >= 0.3  && < 0.4
       , servant            >= 0.2  && < 0.4
       , split              >= 0.2  && < 0.3
@@ -101,6 +104,7 @@ test-suite spec
     , temporary
     , text
     , transformers
+    , mtl
     , wai
     , wai-extra
     , warp
