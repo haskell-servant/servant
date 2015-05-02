@@ -20,7 +20,7 @@ library
   exposed-modules:     Servant.HTML.Lucid
   -- other-modules:
   -- other-extensions:
-  build-depends:       base >=4.7 && <4.8
+  build-depends:       base >=4.7 && <5
                      , http-media
                      , lucid
                      , servant

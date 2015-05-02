@@ -54,7 +54,6 @@ module Servant.API (
   -- | Type-safe internal URIs
   ) where
 
-import           Data.Proxy                  (Proxy (..))
 import           Servant.API.Alternative     ((:<|>) (..))
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,

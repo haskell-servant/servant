@@ -660,7 +660,11 @@ instance HasDocs Delete where
           action' = action & response.respBody .~ []
                            & response.respStatus .~ 204
 
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLe #-}
+#endif
+        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Get cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -671,7 +675,11 @@ instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Get cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) =
@@ -694,7 +702,11 @@ instance (KnownSymbol sym, HasDocs sublayout)
           action' = over headers (|> headername) action
           headername = pack $ symbolVal (Proxy :: Proxy sym)
 
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Post cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -706,7 +718,11 @@ instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Post cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) =
@@ -721,7 +737,11 @@ instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Put cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -733,7 +753,11 @@ instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Put cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) =

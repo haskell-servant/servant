@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverlappingInstances   #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
@@ -11,7 +10,9 @@
 {-# LANGUAGE UndecidableInstances   #-}
 module Servant.Server.Internal.Enter where
 
+#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
+#endif
 import qualified Control.Category            as C
 #if MIN_VERSION_mtl(2,2,1)
 import           Control.Monad.Except

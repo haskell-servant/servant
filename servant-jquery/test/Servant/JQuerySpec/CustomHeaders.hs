@@ -22,7 +22,7 @@ data Authorization (sym :: Symbol) a
 
 instance (KnownSymbol sym, HasJQ sublayout)
     => HasJQ (Authorization sym a :> sublayout) where
-    type JQ' (Authorization sym a :> sublayout) = JQ' sublayout
+    type JQ (Authorization sym a :> sublayout) = JQ sublayout
 
     jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "Authorization" $
@@ -35,7 +35,7 @@ data MyLovelyHorse a
 
 instance (HasJQ sublayout)
     => HasJQ (MyLovelyHorse a :> sublayout) where
-    type JQ' (MyLovelyHorse a :> sublayout) = JQ' sublayout
+    type JQ (MyLovelyHorse a :> sublayout) = JQ sublayout
 
     jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "X-MyLovelyHorse" tpl ]
@@ -47,7 +47,7 @@ data WhatsForDinner a
 
 instance (HasJQ sublayout)
     => HasJQ (WhatsForDinner a :> sublayout) where
-    type JQ' (WhatsForDinner a :> sublayout) = JQ' sublayout
+    type JQ (WhatsForDinner a :> sublayout) = JQ sublayout
 
     jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "X-WhatsForDinner" tpl ]

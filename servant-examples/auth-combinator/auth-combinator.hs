@@ -26,7 +26,7 @@ isGoodCookie = return . (== "good password")
 data AuthProtected
 
 instance HasServer rest => HasServer (AuthProtected :> rest) where
-  type ServerT' (AuthProtected :> rest) m = ServerT' rest m
+  type ServerT (AuthProtected :> rest) m = ServerT rest m
 
   route Proxy a request respond =
     case lookup "Cookie" (requestHeaders request) of

@@ -16,7 +16,6 @@
 module Servant.Client
   ( client
   , HasClient(..)
-  , Client
   , ServantError(..)
   , module Servant.Common.BaseUrl
   ) where
