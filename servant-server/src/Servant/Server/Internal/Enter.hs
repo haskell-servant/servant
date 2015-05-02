@@ -21,7 +21,9 @@ import           Control.Monad.Morph
 import           Control.Monad.Reader
 import qualified Control.Monad.State.Lazy    as LState
 import qualified Control.Monad.State.Strict  as SState
+#if MIN_VERSION_mtl(2,2,1)
 import           Control.Monad.Trans.Either
+#endif
 import qualified Control.Monad.Writer.Lazy   as LWriter
 import qualified Control.Monad.Writer.Strict as SWriter
 import           Data.Typeable
@@ -41,6 +43,8 @@ instance (Enter b arg ret) => Enter (a -> b) arg (a -> ret) where
 
 -- ** Useful instances
 
+-- | A natural transformation from @m@ to @n@. Used to `enter` particular
+-- datatypes.
 newtype m :~> n = Nat { unNat :: forall a. m a -> n a} deriving Typeable
 
 instance C.Category (:~>) where
@@ -50,8 +54,9 @@ instance C.Category (:~>) where
 instance Enter (m a) (m :~> n) (n a) where
     enter (Nat f) = f
 
-liftNat :: (MonadTrans t, Monad m) => m :~> t m
-liftNat = Nat lift
+-- | Like `lift`.
+liftNat :: (Control.Monad.Morph.MonadTrans t, Monad m) => m :~> t m
+liftNat = Nat Control.Monad.Morph.lift
 
 runReaderTNat :: r -> (ReaderT r m :~> m)
 runReaderTNat a = Nat (`runReaderT` a)
@@ -86,11 +91,14 @@ fromExceptT = Nat $ \x -> EitherT $ runExceptT x
 hoistNat :: (MFunctor t, Monad m) => (m :~> n) ->  (t m :~> t n)
 hoistNat (Nat n) = Nat $ hoist n
 
+-- | Like @mmorph@'s `embed`.
 embedNat :: (MMonad t, Monad n) => (m :~> t n) -> (t m :~> t n)
 embedNat (Nat n) = Nat $ embed n
 
+-- | Like @mmorph@'s `squash`.
 squashNat :: (Monad m, MMonad t) => t (t m) :~> t m
 squashNat = Nat squash
 
+-- | Like @mmorph@'s `generalize`.
 generalizeNat :: Applicative m => Identity :~> m
 generalizeNat = Nat (pure . runIdentity)

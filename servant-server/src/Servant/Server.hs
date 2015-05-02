@@ -1,6 +1,7 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
@@ -17,8 +18,27 @@ module Servant.Server
   , ServerT
 
     -- * Enter
-    -- Applying functions to all handlers
-  , Enter(..)
+    -- $enterDoc
+
+    -- ** Basic functions and datatypes
+  , enter
+  , (:~>)(..)
+    -- ** `Nat` utilities
+  , liftNat
+  , runReaderTNat
+  , evalStateTLNat
+  , evalStateTSNat
+  , logWriterTLNat
+  , logWriterTSNat
+#if MIN_VERSION_mtl(2,2,1)
+  , fromExceptT
+#endif
+  -- ** Functions based on <https://hackage.haskell.org/package/mmorph mmorph>
+  , hoistNat
+  , embedNat
+  , squashNat
+  , generalizeNat
+
 
     -- * Default error type
   , ServantErr(..)
@@ -58,12 +78,12 @@ module Servant.Server
 
   ) where
 
-import Data.Proxy (Proxy)
-import Network.Wai (Application)
-import Servant.API (Canonicalize, canonicalize)
-import Servant.Server.Internal
-import Servant.Server.Internal.ServantErr
-import Servant.Server.Internal.Enter
+import           Data.Proxy                         (Proxy)
+import           Network.Wai                        (Application)
+import           Servant.API                        (Canonicalize, canonicalize)
+import           Servant.Server.Internal
+import           Servant.Server.Internal.Enter
+import           Servant.Server.Internal.ServantErr
 
 
 -- * Implementing Servers
@@ -88,5 +108,30 @@ import Servant.Server.Internal.Enter
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
+--
 serve :: HasServer (Canonicalize layout) => Proxy layout -> Server layout -> Application
 serve p server = toApplication (route (canonicalize p) server)
+
+
+-- Documentation
+
+-- $enterDoc
+-- Sometimes our cherished `EitherT` monad isn't quite the type you'd like for
+-- your handlers. Maybe you want to thread some configuration in a @Reader@
+-- monad. Or have your types ensure that your handlers don't do any IO. Enter
+-- `enter`.
+--
+-- With `enter`, you can provide a function, wrapped in the `(:~>)` / `Nat`
+-- newtype, to convert any number of endpoints from one type constructor to
+-- another. For example
+--
+-- >>> import Control.Monad.Reader
+-- >>> import qualified Control.Category as C
+-- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String
+-- >>> let readerServer = return 1797 :<|> ask :: ServerT ReaderAPI (Reader String)
+-- >>> let mainServer = enter (generalizeNat C.. (runReaderTNat "hi")) readerServer :: Server ReaderAPI
+--
+
+-- $setup
+-- >>> import Servant.API
+-- >>> import Servant.Server

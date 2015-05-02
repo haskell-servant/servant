@@ -9,7 +9,6 @@ import           Control.Monad.Trans.Either
 import           Data.Proxy
 import           Servant.API
 import           Servant.Server
-import           Servant.Server.Internal.Enter
 
 import           Test.Hspec                    (Spec, describe, it)
 import           Test.Hspec.Wai                (get, matchStatus, post,
