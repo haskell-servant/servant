@@ -6,6 +6,7 @@
 * Remove ToJSON superclass from ToSample
 * Split out Internal module
 * `Canonicalize` API types before generating the docs for them
+* Add support for response headers
 
 0.3
 ---

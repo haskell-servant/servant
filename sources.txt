@@ -4,3 +4,5 @@ servant-docs
 servant-jquery
 servant-server
 servant-examples
+servant-blaze
+servant-lucid

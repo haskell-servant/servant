@@ -8,6 +8,7 @@
 * Support for PATCH
 * Make () instances expect No Content status code, and not try to decode body.
 * `Canonicalize` API types before generating client functions for them
+* Add support for response headers
 
 0.2.2
 -----
