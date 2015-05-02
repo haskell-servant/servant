@@ -28,8 +28,6 @@ module Servant.API.ResponseHeaders
     , AddHeader(addHeader)
     , BuildHeadersTo(buildHeadersTo)
     , GetHeaders(getHeaders)
-    , getHeadersHList
-    , getResponse
     , HeaderValMap
     , HList(..)
     ) where
