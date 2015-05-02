@@ -40,7 +40,6 @@ import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
-import           Servant.API.ResponseHeaders
 import           Servant.Utils.Links
 
 import qualified Data.HashMap.Strict        as HM
@@ -373,8 +372,8 @@ class HasDocs layout where
 -- > instance FromJSON Greet
 -- > instance ToJSON Greet
 -- >
--- > instance ToSample Greet where
--- >   toSample = Just g
+-- > instance ToSample Greet Greet where
+-- >   toSample _ = Just g
 -- >
 -- >     where g = Greet "Hello, haskeller!"
 --
