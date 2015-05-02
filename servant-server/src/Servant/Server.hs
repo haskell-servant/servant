@@ -15,12 +15,50 @@ module Servant.Server
     HasServer(..)
   , Server
   , ServerT
+
+    -- * Default error type
+  , ServantErr(..)
+    -- ** 3XX
+  , err300
+  , err301
+  , err302
+  , err303
+  , err304
+  , err305
+  , err307
+    -- ** 4XX
+  , err400
+  , err401
+  , err402
+  , err403
+  , err404
+  , err405
+  , err406
+  , err407
+  , err409
+  , err410
+  , err411
+  , err412
+  , err413
+  , err414
+  , err415
+  , err416
+  , err417
+   -- * 5XX
+  , err500
+  , err501
+  , err502
+  , err503
+  , err504
+  , err505
+
   ) where
 
 import Data.Proxy (Proxy)
 import Network.Wai (Application)
 import Servant.API (Canonicalize, canonicalize)
 import Servant.Server.Internal
+import Servant.Server.Internal.ServantErr
 
 
 -- * Implementing Servers

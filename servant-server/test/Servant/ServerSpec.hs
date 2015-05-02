@@ -35,13 +35,13 @@ import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              shouldRespondWith, with, (<:>))
 
 import           Servant.API                ((:<|>) (..), (:>),
-                                             AddHeader (addHeader), Capture,
+                                             addHeader, Capture,
                                              Delete, Get, Header (..), Headers,
                                              JSON, MatrixFlag, MatrixParam,
                                              MatrixParams, Patch, PlainText,
                                              Post, Put, QueryFlag, QueryParam,
                                              QueryParams, Raw, ReqBody)
-import           Servant.Server             (Server, serve)
+import           Servant.Server             (Server, serve, ServantErr(..), err404)
 import           Servant.Server.Internal    (RouteMismatch (..))
 
 
@@ -96,11 +96,11 @@ spec = do
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
 captureApi :: Proxy CaptureApi
 captureApi = Proxy
-captureServer :: Integer -> EitherT (Int, String) IO Animal
+captureServer :: Integer -> EitherT ServantErr IO Animal
 captureServer legs = case legs of
   4 -> return jerry
   2 -> return tweety
-  _ -> left (404, "not found")
+  _ -> left err404
 
 captureSpec :: Spec
 captureSpec = do
@@ -450,11 +450,11 @@ headerApi = Proxy
 headerSpec :: Spec
 headerSpec = describe "Servant.API.Header" $ do
 
-    let expectsInt :: Maybe Int -> EitherT (Int,String) IO ()
+    let expectsInt :: Maybe Int -> EitherT ServantErr IO ()
         expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
         expectsInt Nothing  = error "Expected an int"
 
-    let expectsString :: Maybe String -> EitherT (Int,String) IO ()
+    let expectsString :: Maybe String -> EitherT ServantErr IO ()
         expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
         expectsString Nothing  = error "Expected a string"
 

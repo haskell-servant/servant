@@ -25,7 +25,7 @@
 -- example above).
 module Servant.API.ResponseHeaders
     ( Headers(..)
-    , addHeader
+    , AddHeader(addHeader)
     , BuildHeadersTo(buildHeadersTo)
     , GetHeaders(getHeaders)
     , getHeadersHList

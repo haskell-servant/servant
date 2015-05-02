@@ -36,6 +36,7 @@ library
     Servant
     Servant.Server
     Servant.Server.Internal
+    Servant.Server.Internal.ServantErr
     Servant.Utils.StaticFiles
   build-depends:
         base               >= 4.7  && < 5

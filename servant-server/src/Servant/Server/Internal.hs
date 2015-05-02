@@ -50,6 +50,8 @@ import           Servant.API.ResponseHeaders (Headers, getResponse, GetHeaders,
                                               getHeaders)
 import           Servant.Common.Text         (FromText, fromText)
 
+import           Servant.Server.Internal.ServantErr
+
 data ReqBodyState = Uncalled
                   | Called !B.ByteString
                   | Done !B.ByteString
@@ -180,7 +182,7 @@ class HasServer layout where
   route :: Proxy layout -> Server' layout -> RoutingApplication
 
 type Server layout = Server' (Canonicalize layout)
-type Server' layout = ServerT' layout (EitherT (Int, String) IO)
+type Server' layout = ServerT' layout (EitherT ServantErr IO)
 type ServerT layout m = ServerT' (Canonicalize layout) m
 
 -- * Instances
@@ -266,10 +268,8 @@ instance HasServer Delete where
     | pathIsEmpty request && requestMethod request == methodDelete = do
         e <- runEitherT action
         respond $ succeedWith $ case e of
-          Right () ->
-            responseLBS status204 [] ""
-          Left (status, message) ->
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Right () -> responseLBS status204 [] ""
+          Left err -> responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodDelete =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -305,8 +305,7 @@ instance
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
                 responseLBS ok200 [ ("Content-Type" , cs contentT)] body
-          Left (status, message) -> succeedWith $
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodGet =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -325,8 +324,7 @@ instance
         e <- runEitherT action
         respond . succeedWith $ case e of
           Right () -> responseLBS noContent204 [] ""
-          Left (status, message) ->
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Left err -> responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodGet =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -352,8 +350,7 @@ instance
             Nothing -> failWith UnsupportedMediaType
             Just (contentT, body) -> succeedWith $
               responseLBS ok200 ( ("Content-Type" , cs contentT) : headers) body
-        Left (status, message) -> succeedWith $
-          responseLBS (mkStatus status (cs message)) [] (cs message)
+        Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodGet =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -422,8 +419,7 @@ instance
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
                 responseLBS status201 [ ("Content-Type" , cs contentT)] body
-          Left (status, message) -> succeedWith $
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPost =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -441,8 +437,7 @@ instance
         e <- runEitherT action
         respond . succeedWith $ case e of
           Right () -> responseLBS noContent204 [] ""
-          Left (status, message) ->
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Left err -> responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPost =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -468,8 +463,7 @@ instance
             Nothing -> failWith UnsupportedMediaType
             Just (contentT, body) -> succeedWith $
               responseLBS status201 ( ("Content-Type" , cs contentT) : headers) body
-        Left (status, message) -> succeedWith $
-          responseLBS (mkStatus status (cs message)) [] (cs message)
+        Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPost =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -505,8 +499,7 @@ instance
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
                 responseLBS status200 [ ("Content-Type" , cs contentT)] body
-          Left (status, message) -> succeedWith $
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPut =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -524,8 +517,7 @@ instance
         e <- runEitherT action
         respond . succeedWith $ case e of
           Right () -> responseLBS noContent204 [] ""
-          Left (status, message) ->
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Left err -> responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPut =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -551,8 +543,7 @@ instance
             Nothing -> failWith UnsupportedMediaType
             Just (contentT, body) -> succeedWith $
               responseLBS status200 ( ("Content-Type" , cs contentT) : headers) body
-        Left (status, message) -> succeedWith $
-          responseLBS (mkStatus status (cs message)) [] (cs message)
+        Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPut =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -586,8 +577,7 @@ instance
               Nothing -> failWith UnsupportedMediaType
               Just (contentT, body) -> succeedWith $
                 responseLBS status200 [ ("Content-Type" , cs contentT)] body
-          Left (status, message) -> succeedWith $
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPatch =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -605,8 +595,7 @@ instance
         e <- runEitherT action
         respond . succeedWith $ case e of
           Right () -> responseLBS noContent204 [] ""
-          Left (status, message) ->
-            responseLBS (mkStatus status (cs message)) [] (cs message)
+          Left err -> responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPatch =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
@@ -632,8 +621,7 @@ instance
             Nothing -> failWith UnsupportedMediaType
             Just (contentT, body) -> succeedWith $
               responseLBS status200 ( ("Content-Type" , cs contentT) : headers) body
-        Left (status, message) -> succeedWith $
-          responseLBS (mkStatus status (cs message)) [] (cs message)
+        Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodPatch =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
