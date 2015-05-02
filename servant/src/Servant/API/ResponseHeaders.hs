@@ -109,9 +109,10 @@ instance
 #endif
          ( KnownSymbol h, ToByteString x, GetHeaders (HList xs)
          ) => GetHeaders (HList (Header h x ': xs)) where
-    getHeaders (Header val `HCons` rest) = (headerName , toByteString' val):getHeaders rest
-      where headerName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
-    getHeaders (UndecodableHeader h `HCons` rest) = (headerName,  h) : getHeaders rest
+    getHeaders hdrs = case hdrs of
+        Header val `HCons` rest -> (headerName , toByteString' val):getHeaders rest
+        UndecodableHeader h `HCons` rest -> (headerName,  h) : getHeaders rest
+        MissingHeader `HCons` rest -> getHeaders rest
       where headerName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
 
 instance
