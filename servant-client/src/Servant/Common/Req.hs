@@ -157,7 +157,7 @@ performRequest reqMethod req isWantedStatus reqHost = do
     Right response -> do
       let status = Client.responseStatus response
           body = Client.responseBody response
-          headers = Client.responseHeaders response
+          hrds = Client.responseHeaders response
           status_code = statusCode status
       ct <- case lookup "Content-Type" $ Client.responseHeaders response of
                  Nothing -> pure $ "application"//"octet-stream"
@@ -166,19 +166,19 @@ performRequest reqMethod req isWantedStatus reqHost = do
                    Just t' -> pure t'
       unless (isWantedStatus status_code) $
         left $ FailureResponse status ct body
-      return (status_code, body, ct, headers, response)
+      return (status_code, body, ct, hrds, response)
 
 
 performRequestCT :: MimeUnrender ct result =>
   Proxy ct -> Method -> Req -> [Int] -> BaseUrl -> EitherT ServantError IO ([HTTP.Header], result)
 performRequestCT ct reqMethod req wantedStatus reqHost = do
   let acceptCT = contentType ct
-  (_status, respBody, respCT, headers, _response) <-
+  (_status, respBody, respCT, hrds, _response) <-
     performRequest reqMethod (req { reqAccept = [acceptCT] }) (`elem` wantedStatus) reqHost
   unless (matches respCT (acceptCT)) $ left $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
     Left err -> left $ DecodeFailure err respCT respBody
-    Right val -> return (headers, val)
+    Right val -> return (hrds, val)
 
 performRequestNoBody :: Method -> Req -> [Int] -> BaseUrl -> EitherT ServantError IO ()
 performRequestNoBody reqMethod req wantedStatus reqHost = do
