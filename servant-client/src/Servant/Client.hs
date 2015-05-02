@@ -21,6 +21,9 @@ module Servant.Client
   , module Servant.Common.BaseUrl
   ) where
 
+#if !MIN_VERSION_base(4,8,0)
+import           Control.Applicative        ((<$>))
+#endif
 import           Control.Monad
 import           Control.Monad.Trans.Either
 import           Data.ByteString.Lazy       (ByteString)
@@ -32,7 +35,9 @@ import           GHC.TypeLits
 import           Network.HTTP.Client        (Response)
 import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
+import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.API.ResponseHeaders
 import           Servant.API.ContentTypes
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
@@ -133,10 +138,10 @@ instance
   (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
   type Client' (Get (ct ': cts) result) = BaseUrl -> EitherT ServantError IO result
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] host
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] host
 
 -- | If you have a 'Get xs ()' endpoint, the client expects a 204 No Content
--- HTTP header.
+-- HTTP status.
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
@@ -145,6 +150,21 @@ instance
   type Client' (Get (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     performRequestNoBody H.methodGet req [204] host
+
+-- | If you have a 'Get xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Get (ct ': cts) (Headers ls a)) where
+  type Client' (Get (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203, 204] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -195,7 +215,7 @@ instance
   type Client' (Post (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req uri =
-    performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] uri
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] uri
 
 -- | If you have a 'Post xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -207,6 +227,21 @@ instance
   type Client' (Post (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPost req [204] host
+
+-- | If you have a 'Post xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Post (ct ': cts) (Headers ls a)) where
+  type Client' (Post (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
 
 -- | If you have a 'Put' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -220,7 +255,7 @@ instance
   type Client' (Put (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] host
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] host
 
 -- | If you have a 'Put xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -232,6 +267,21 @@ instance
   type Client' (Put (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPut req [204] host
+
+-- | If you have a 'Put xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Put (ct ': cts) (Headers ls a)) where
+  type Client' (Put (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPut req [200, 201] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
 
 -- | If you have a 'Patch' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -245,7 +295,7 @@ instance
   type Client' (Patch (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] host
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] host
 
 -- | If you have a 'Patch xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -257,6 +307,21 @@ instance
   type Client' (Patch (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPatch req [204] host
+
+-- | If you have a 'Patch xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Patch (ct ': cts) (Headers ls a)) where
+  type Client' (Patch (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200, 201, 204] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -492,7 +557,7 @@ instance (KnownSymbol sym, HasClient sublayout)
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
 instance HasClient Raw where
-  type Client' Raw = H.Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, Response ByteString)
+  type Client' Raw = H.Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> Client' Raw
   clientWithRoute Proxy req httpMethod host = do

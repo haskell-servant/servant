@@ -13,10 +13,8 @@ let modifiedHaskellPackages = haskellngPackages.override {
             ../servant-jquery {}) "--ghc-options=-Werror";
         servant-docs     = appendConfigureFlag (self.callPackage ../servant-docs
             {}) "--ghc-options=-Werror";
-        servant-examples = appendConfigureFlag (self.callPackage ../servant-examples
-            {}) "--ghc-options=-Werror";
       };
     };
 in modifiedHaskellPackages.ghcWithPackages ( p : with p ; [
-    servant servant-server servant-client servant-jquery servant-docs servant-examples
+    servant servant-server servant-client servant-jquery servant-docs
 ])

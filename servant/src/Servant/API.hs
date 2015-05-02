@@ -78,8 +78,9 @@ import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
 import           Servant.API.ReqBody         (ReqBody)
-import           Servant.API.ResponseHeaders ( Headers, getHeaders, getResponse
-                                             , AddHeader(addHeader) )
+import           Servant.API.ResponseHeaders (Headers, getHeaders,
+                                              getHeadersHList, getResponse,
+                                              buildHeadersTo, addHeader)
 import           Servant.API.Sub             ((:>))
 import           Servant.Common.Text         (FromText (..), ToText (..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',

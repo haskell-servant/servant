@@ -7,7 +7,7 @@
 {-# LANGUAGE RecordWildCards    #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators      #-}
-{-# OPTIONS_GHC -fcontext-stack=25 #-}
+{-# OPTIONS_GHC -fcontext-stack=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.ClientSpec where
 
@@ -28,7 +28,8 @@ import qualified Data.Text                  as T
 import           GHC.Generics
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
-import           Network.HTTP.Types
+import           Network.HTTP.Types         hiding (Header)
+import qualified Network.HTTP.Types         as HTTP
 import           Network.Socket
 import           Network.Wai                hiding (Response)
 import           Network.Wai.Handler.Warp
@@ -74,6 +75,8 @@ instance Eq C.HttpException where
 alice :: Person
 alice = Person "Alice" 42
 
+type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
+
 type Api =
        "get" :> Get '[JSON] Person
   :<|> "delete" :> Delete
@@ -93,6 +96,7 @@ type Api =
             QueryFlag "third" :>
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
+  :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
 api :: Proxy Api
 api = Proxy
 
@@ -105,6 +109,7 @@ server = serve api (
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
                    Just name -> left (400, name ++ " not found")
+
                    Nothing -> left (400, "missing parameter"))
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
@@ -116,7 +121,8 @@ server = serve api (
   :<|> return
   :<|> (\ _request respond -> respond $ responseLBS ok200 [] "rawSuccess")
   :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
-  :<|> \ a b c d -> return (a, b, c, d)
+  :<|> (\ a b c d -> return (a, b, c, d))
+  :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
  )
 
 withServer :: (BaseUrl -> IO a) -> IO a
@@ -132,11 +138,14 @@ getQueryFlag :: Bool -> BaseUrl -> EitherT ServantError IO Bool
 getMatrixParam :: Maybe String -> BaseUrl -> EitherT ServantError IO Person
 getMatrixParams :: [String] -> BaseUrl -> EitherT ServantError IO [Person]
 getMatrixFlag :: Bool -> BaseUrl -> EitherT ServantError IO Bool
-getRawSuccess :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, C.Response ByteString)
-getRawFailure :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, C.Response ByteString)
+getRawSuccess :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString,
+        MediaType, [HTTP.Header], C.Response ByteString)
+getRawFailure :: Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString,
+        MediaType, [HTTP.Header], C.Response ByteString)
 getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> BaseUrl
   -> EitherT ServantError IO (String, Maybe Int, Bool, [(String, [Rational])])
+getRespHeaders :: BaseUrl -> EitherT ServantError IO (Headers TestHeaders Bool)
 (     getGet
  :<|> getDelete
  :<|> getCapture
@@ -149,7 +158,8 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
  :<|> getMatrixFlag
  :<|> getRawSuccess
  :<|> getRawFailure
- :<|> getMultiple)
+ :<|> getMultiple
+ :<|> getRespHeaders)
     = client api
 
 type FailApi =
@@ -218,7 +228,7 @@ spec = do
     res <- runEitherT (getRawSuccess methodGet host)
     case res of
       Left e -> assertFailure $ show e
-      Right (code, body, ct, response) -> do
+      Right (code, body, ct, _, response) -> do
         (code, body, ct) `shouldBe` (200, "rawSuccess", "application"//"octet-stream")
         C.responseBody response `shouldBe` body
         C.responseStatus response `shouldBe` ok200
@@ -227,10 +237,16 @@ spec = do
     res <- runEitherT (getRawFailure methodGet host)
     case res of
       Left e -> assertFailure $ show e
-      Right (code, body, ct, response) -> do
+      Right (code, body, ct, _, response) -> do
         (code, body, ct) `shouldBe` (400, "rawFailure", "application"//"octet-stream")
         C.responseBody response `shouldBe` body
         C.responseStatus response `shouldBe` badRequest400
+
+  it "Returns headers appropriately" $ withServer $ \ host -> do
+    res <- runEitherT (getRespHeaders host)
+    case res of
+      Left e -> assertFailure $ show e
+      Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
   modifyMaxSuccess (const 20) $ do
     it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $

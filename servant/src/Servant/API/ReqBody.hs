@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE PolyKinds          #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.ReqBody where
 
 import           Data.Typeable (Typeable)

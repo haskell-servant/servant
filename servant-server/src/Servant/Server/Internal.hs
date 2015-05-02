@@ -46,7 +46,8 @@ import           Servant.API                 ((:<|>) (..), (:>), Capture,
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..))
-import           Servant.API.ResponseHeaders (Headers, getResponse, getHeaders)
+import           Servant.API.ResponseHeaders (Headers, getResponse, GetHeaders,
+                                              getHeaders)
 import           Servant.Common.Text         (FromText, fromText)
 
 data ReqBodyState = Uncalled
@@ -335,7 +336,8 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-          ( AllCTRender ctypes v ) => HasServer (Get ctypes (Headers h v)) where
+          ( GetHeaders (Headers h v), AllCTRender ctypes v
+          ) => HasServer (Get ctypes (Headers h v)) where
 
   type ServerT' (Get ctypes (Headers h v)) m = m (Headers h v)
 
@@ -450,7 +452,8 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-         ( AllCTRender ctypes v ) => HasServer (Post ctypes (Headers h v)) where
+         ( GetHeaders (Headers h v), AllCTRender ctypes v
+         ) => HasServer (Post ctypes (Headers h v)) where
 
   type ServerT' (Post ctypes (Headers h v)) m = m (Headers h v)
 
@@ -532,7 +535,8 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-         ( AllCTRender ctypes v ) => HasServer (Put ctypes (Headers h v)) where
+         ( GetHeaders (Headers h v), AllCTRender ctypes v
+         ) => HasServer (Put ctypes (Headers h v)) where
 
   type ServerT' (Put ctypes (Headers h v)) m = m (Headers h v)
 
@@ -612,7 +616,8 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-         ( AllCTRender ctypes v ) => HasServer (Patch ctypes (Headers h v)) where
+         ( GetHeaders (Headers h v), AllCTRender ctypes v
+         ) => HasServer (Patch ctypes (Headers h v)) where
 
   type ServerT' (Patch ctypes (Headers h v)) m = m (Headers h v)
 

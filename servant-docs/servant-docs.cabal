@@ -32,8 +32,11 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , bytestring-conversion
+    , case-insensitive
     , hashable
     , http-media >= 0.6
+    , http-types >= 0.7
     , lens
     , servant >= 0.2.1
     , string-conversions
@@ -50,6 +53,7 @@ executable greet-docs
   build-depends:
       base
     , aeson
+    , bytestring-conversion
     , lens
     , servant
     , servant-docs

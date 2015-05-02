@@ -1,17 +1,22 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE DeriveGeneric        #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE PolyKinds            #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TemplateHaskell      #-}
-{-# LANGUAGE TupleSections        #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE CPP                    #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TupleSections          #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
+#if !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE OverlappingInstances   #-}
+#endif
 module Servant.Docs.Internal where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -19,6 +24,7 @@ import           Control.Applicative
 #endif
 import           Control.Lens
 import           Data.ByteString.Lazy.Char8 (ByteString)
+import qualified Data.CaseInsensitive       as CI
 import           Data.Hashable
 import           Data.HashMap.Strict        (HashMap)
 import           Data.List
@@ -26,6 +32,7 @@ import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord                   (comparing)
 import           Data.Proxy
+import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.String.Conversions
 import           Data.Text                  (Text, pack, unpack)
 import           GHC.Exts                   (Constraint)
@@ -33,11 +40,13 @@ import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
+import           Servant.API.ResponseHeaders
 import           Servant.Utils.Links
 
 import qualified Data.HashMap.Strict        as HM
 import qualified Data.Text                  as T
 import qualified Network.HTTP.Media         as M
+import qualified Network.HTTP.Types         as HTTP
 
 -- | Supported HTTP request methods
 data Method = DocDELETE -- ^ the DELETE method
@@ -191,9 +200,10 @@ data ParamKind = Normal | List | Flag
 -- > λ> defResponse & respStatus .~ 204 & respBody .~ [("If everything goes well", "{ \"status\": \"ok\" }")]
 -- > Response {_respStatus = 204, _respTypes = [], _respBody = [("If everything goes well", "{ \"status\": \"ok\" }")]}
 data Response = Response
-  { _respStatus :: Int
-  , _respTypes  :: [M.MediaType]
-  , _respBody   :: [(Text, M.MediaType, ByteString)]
+  { _respStatus  :: Int
+  , _respTypes   :: [M.MediaType]
+  , _respBody    :: [(Text, M.MediaType, ByteString)]
+  , _respHeaders :: [HTTP.Header]
   } deriving (Eq, Ord, Show)
 
 -- | Default response: status code 200, no response body.
@@ -205,7 +215,12 @@ data Response = Response
 -- > λ> defResponse & respStatus .~ 204 & respBody .~ Just "[]"
 -- > Response {_respStatus = 204, _respBody = Just "[]"}
 defResponse :: Response
-defResponse = Response 200 [] []
+defResponse = Response
+  { _respStatus  = 200
+  , _respTypes   = []
+  , _respBody    = []
+  , _respHeaders = []
+  }
 
 -- | A datatype that represents everything that can happen
 -- at an endpoint, with its lenses:
@@ -371,34 +386,53 @@ class HasDocs layout where
 -- 'toSample': it lets you specify different responses along with
 -- some context (as 'Text') that explains when you're supposed to
 -- get the corresponding response.
-class ToSample a where
+class ToSample a b | a -> b where
   {-# MINIMAL (toSample | toSamples) #-}
-  toSample :: Maybe a
-  toSample = snd <$> listToMaybe samples
-    where samples = toSamples :: [(Text, a)]
+  toSample :: Proxy a -> Maybe b
+  toSample _ = snd <$> listToMaybe samples
+    where samples = toSamples (Proxy :: Proxy a)
 
-  toSamples :: [(Text, a)]
-  toSamples = maybe [] (return . ("",)) s
-    where s = toSample :: Maybe a
+  toSamples :: Proxy a -> [(Text, b)]
+  toSamples _ = maybe [] (return . ("",)) s
+    where s = toSample (Proxy :: Proxy a)
+
+instance ToSample a b => ToSample (Headers ls a) b where
+  toSample _  = toSample (Proxy :: Proxy a)
+  toSamples _ = toSamples (Proxy :: Proxy a)
+
+
+class AllHeaderSamples ls where
+    allHeaderToSample :: Proxy ls -> [HTTP.Header]
+
+instance AllHeaderSamples '[] where
+    allHeaderToSample _  = []
+
+instance (ToByteString l, AllHeaderSamples ls, ToSample l l, KnownSymbol h)
+    => AllHeaderSamples (Header h l ': ls) where
+    allHeaderToSample _ = (mkHeader (toSample (Proxy :: Proxy l))) :
+                          allHeaderToSample (Proxy :: Proxy ls)
+      where headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy h)
+            mkHeader (Just x) = (headerName, cs $ toByteString x)
+            mkHeader Nothing  = (headerName, "<no header sample provided>")
 
 -- | Synthesise a sample value of a type, encoded in the specified media types.
 sampleByteString
-    :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
+    :: forall ctypes a b. (ToSample a b, IsNonEmpty ctypes, AllMimeRender ctypes b)
     => Proxy ctypes
     -> Proxy a
     -> [(M.MediaType, ByteString)]
 sampleByteString ctypes@Proxy Proxy =
-    maybe [] (allMimeRender ctypes) (toSample :: Maybe a)
+    maybe [] (allMimeRender ctypes) $ toSample (Proxy :: Proxy a)
 
 -- | Synthesise a list of sample values of a particular type, encoded in the
 -- specified media types.
 sampleByteStrings
-    :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
+    :: forall ctypes a b. (ToSample a b, IsNonEmpty ctypes, AllMimeRender ctypes b)
     => Proxy ctypes
     -> Proxy a
     -> [(Text, M.MediaType, ByteString)]
 sampleByteStrings ctypes@Proxy Proxy =
-    let samples = toSamples :: [(Text, a)]
+    let samples = toSamples (Proxy :: Proxy a)
         enc (t, s) = uncurry (t,,) <$> allMimeRender ctypes s
     in concatMap enc samples
 
@@ -580,6 +614,7 @@ markdown api = unlines $
           "#### Response:" :
           "" :
           ("- Status code " ++ show (resp ^. respStatus)) :
+          ("- Headers: " ++ show (resp ^. respHeaders)) :
           "" :
           formatTypes (resp ^. respTypes) ++
           bodies
@@ -630,7 +665,7 @@ instance HasDocs Delete where
           action' = action & response.respBody .~ []
                            & response.respStatus .~ 204
 
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
+instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Get cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -638,6 +673,20 @@ instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
     where endpoint' = endpoint & method .~ DocGET
           action' = action & response.respBody .~ sampleByteStrings t p
                            & response.respTypes .~ supportedTypes t
+          t = Proxy :: Proxy cts
+          p = Proxy :: Proxy a
+
+instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+         , AllHeaderSamples ls , GetHeaders (HList ls) )
+    => HasDocs (Get cts (Headers ls a)) where
+  docsFor Proxy (endpoint, action) =
+    single endpoint' action'
+
+    where hdrs = allHeaderToSample (Proxy :: Proxy ls)
+          endpoint' = endpoint & method .~ DocGET
+          action' = action & response.respBody .~ sampleByteStrings t p
+                           & response.respTypes .~ supportedTypes t
+                           & response.respHeaders .~ hdrs
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
@@ -650,7 +699,7 @@ instance (KnownSymbol sym, HasDocs sublayout)
           action' = over headers (|> headername) action
           headername = pack $ symbolVal (Proxy :: Proxy sym)
 
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
+instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Post cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -662,7 +711,22 @@ instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
+instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+         , AllHeaderSamples ls , GetHeaders (HList ls) )
+    => HasDocs (Post cts (Headers ls a)) where
+  docsFor Proxy (endpoint, action) =
+    single endpoint' action'
+
+    where hdrs = allHeaderToSample (Proxy :: Proxy ls)
+          endpoint' = endpoint & method .~ DocPOST
+          action' = action & response.respBody .~ sampleByteStrings t p
+                           & response.respTypes .~ supportedTypes t
+                           & response.respStatus .~ 201
+                           & response.respHeaders .~ hdrs
+          t = Proxy :: Proxy cts
+          p = Proxy :: Proxy a
+
+instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Put cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -671,6 +735,21 @@ instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
           action' = action & response.respBody .~ sampleByteStrings t p
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 200
+          t = Proxy :: Proxy cts
+          p = Proxy :: Proxy a
+
+instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+         , AllHeaderSamples ls , GetHeaders (HList ls) )
+    => HasDocs (Put cts (Headers ls a)) where
+  docsFor Proxy (endpoint, action) =
+    single endpoint' action'
+
+    where hdrs = allHeaderToSample (Proxy :: Proxy ls)
+          endpoint' = endpoint & method .~ DocPUT
+          action' = action & response.respBody .~ sampleByteStrings t p
+                           & response.respTypes .~ supportedTypes t
+                           & response.respStatus .~ 200
+                           & response.respHeaders .~ hdrs
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
@@ -756,7 +835,8 @@ instance HasDocs Raw where
 -- example data. However, there's no reason to believe that the instances of
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
 -- both are even defined) for any particular type.
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, HasDocs sublayout, SupportedTypes cts)
+instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, HasDocs sublayout
+         , SupportedTypes cts)
       => HasDocs (ReqBody cts a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =

@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# OPTIONS_HADDOCK not-home       #-}
 
 -- | A collection of basic Content-Types (also known as Internet Media
 -- Types, or MIME types). Additionally, this module provides classes that

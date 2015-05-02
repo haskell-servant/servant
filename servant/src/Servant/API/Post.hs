@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE KindSignatures     #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Post (Post) where
 
 import           Data.Typeable (Typeable)

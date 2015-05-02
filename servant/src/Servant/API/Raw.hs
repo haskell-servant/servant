@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Raw where
 
 import Data.Typeable (Typeable)

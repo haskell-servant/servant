@@ -1,6 +1,7 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Put (Put) where
 
 import Data.Typeable ( Typeable )
