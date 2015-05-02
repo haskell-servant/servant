@@ -37,8 +37,6 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
-import           Servant.API.ResponseHeaders
-import           Servant.API.ContentTypes
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
 

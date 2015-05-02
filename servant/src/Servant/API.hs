@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Servant.API (
 
@@ -61,14 +61,14 @@ module Servant.API (
 import           Data.Proxy                  (Proxy (..))
 import           Servant.API.Alternative     ((:<|>) (..))
 import           Servant.API.Capture         (Capture)
-import           Servant.API.ContentTypes    (Accept(..), FormUrlEncoded,
+import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
                                               MimeRender (..),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
 import           Servant.API.Delete          (Delete)
 import           Servant.API.Get             (Get)
-import           Servant.API.Header          (Header(..))
+import           Servant.API.Header          (Header (..))
 import           Servant.API.MatrixParam     (MatrixFlag, MatrixParam,
                                               MatrixParams)
 import           Servant.API.Patch           (Patch)
@@ -78,9 +78,11 @@ import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
 import           Servant.API.ReqBody         (ReqBody)
-import           Servant.API.ResponseHeaders (Headers, getHeaders,
-                                              getHeadersHList, getResponse,
-                                              buildHeadersTo, addHeader)
+import           Servant.API.ResponseHeaders (AddHeader (addHeader),
+                                              BuildHeadersTo (buildHeadersTo),
+                                              GetHeaders (getHeaders),
+                                              HList (..), Headers (..),
+                                              getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
 import           Servant.Common.Text         (FromText (..), ToText (..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',

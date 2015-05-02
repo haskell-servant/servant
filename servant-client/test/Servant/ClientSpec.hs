@@ -108,15 +108,14 @@ server = serve api (
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
-                   Just name -> left (400, name ++ " not found")
-
-                   Nothing -> left (400, "missing parameter"))
+                   Just name -> left $ ServantErr 400 (name ++ " not found") "" []
+                   Nothing -> left $ ServantErr 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
-                   Just name -> left (400, name ++ " not found")
-                   Nothing -> left (400, "missing parameter"))
+                   Just name -> left $ ServantErr 400 (name ++ " not found") "" []
+                   Nothing -> left $ ServantErr 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (\ _request respond -> respond $ responseLBS ok200 [] "rawSuccess")
@@ -262,7 +261,7 @@ spec = do
     let test :: (WrappedApi, String) -> Spec
         test (WrappedApi api, desc) =
           it desc $
-          withWaiDaemon (return (serve api (left (500, "error message")))) $
+          withWaiDaemon (return (serve api (left $ ServantErr 500 "error message" "" []))) $
           \ host -> do
             let getResponse :: BaseUrl -> EitherT ServantError IO ()
                 getResponse = client api
@@ -308,7 +307,7 @@ spec = do
         _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
-  WrappedApi :: (HasServer (Canonicalize api), Server api ~ EitherT (Int, String) IO a,
+  WrappedApi :: (HasServer (Canonicalize api), Server api ~ EitherT ServantErr IO a,
                  HasClient (Canonicalize api), Client api ~ (BaseUrl -> EitherT ServantError IO ())) =>
     Proxy api -> WrappedApi
 
