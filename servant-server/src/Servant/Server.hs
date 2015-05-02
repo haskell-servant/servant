@@ -15,7 +15,6 @@ module Servant.Server
   , -- * Handlers for all standard combinators
     HasServer(..)
   , Server
-  , ServerT
 
     -- * Enter
     -- $enterDoc
@@ -80,7 +79,6 @@ module Servant.Server
 
 import           Data.Proxy                         (Proxy)
 import           Network.Wai                        (Application)
-import           Servant.API                        (Canonicalize, canonicalize)
 import           Servant.Server.Internal
 import           Servant.Server.Internal.Enter
 import           Servant.Server.Internal.ServantErr
@@ -109,8 +107,8 @@ import           Servant.Server.Internal.ServantErr
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: HasServer (Canonicalize layout) => Proxy layout -> Server layout -> Application
-serve p server = toApplication (route (canonicalize p) server)
+serve :: HasServer layout => Proxy layout -> Server layout -> Application
+serve p server = toApplication (route p server)
 
 
 -- Documentation

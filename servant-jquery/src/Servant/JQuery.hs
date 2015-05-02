@@ -26,8 +26,8 @@ import Data.Proxy
 import Servant.API
 import Servant.JQuery.Internal
 
-jquery :: HasJQ (Canonicalize layout) => Proxy layout -> JQ layout
-jquery p = jqueryFor (canonicalize p) defReq
+jquery :: HasJQ layout => Proxy layout -> JQ layout
+jquery p = jqueryFor p defReq
 
 -- js codegen
 generateJS :: AjaxReq -> String
@@ -112,6 +112,5 @@ instance GenerateCode rest => GenerateCode (AjaxReq :<|> rest) where
 -- | Directly generate all the javascript functions for your API
 --   from a 'Proxy' for your API type. You can then write it to
 --   a file or integrate it in a page, for example.
-jsForAPI :: (HasJQ (Canonicalize api), GenerateCode (JQ api))
-         => Proxy api -> String
+jsForAPI :: (HasJQ api, GenerateCode (JQ api)) => Proxy api -> String
 jsForAPI p = jsFor (jquery p)

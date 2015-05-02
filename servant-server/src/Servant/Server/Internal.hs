@@ -38,7 +38,7 @@ import           Network.Wai                 (Application, Request, Response,
                                               requestMethod, responseLBS,
                                               strictRequestBody)
 import           Servant.API                 ((:<|>) (..), (:>), Capture,
-                                              Canonicalize, Delete, Get, Header,
+                                               Delete, Get, Header,
                                               MatrixFlag, MatrixParam, MatrixParams,
                                               Patch, Post, Put, QueryFlag,
                                               QueryParam, QueryParams, Raw,
@@ -177,13 +177,11 @@ processedPathInfo r =
   where pinfo = parsePathInfo r
 
 class HasServer layout where
-  type ServerT' layout (m :: * -> *) :: *
+  type ServerT layout (m :: * -> *) :: *
 
-  route :: Proxy layout -> Server' layout -> RoutingApplication
+  route :: Proxy layout -> Server layout -> RoutingApplication
 
-type Server layout = Server' (Canonicalize layout)
-type Server' layout = ServerT' layout (EitherT ServantErr IO)
-type ServerT layout m = ServerT' (Canonicalize layout) m
+type Server layout = ServerT layout (EitherT ServantErr IO)
 
 -- * Instances
 
@@ -200,7 +198,7 @@ type ServerT layout m = ServerT' (Canonicalize layout) m
 -- >         postBook book = ...
 instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
 
-  type ServerT' (a :<|> b) m = ServerT' a m :<|> ServerT' b m
+  type ServerT (a :<|> b) m = ServerT a m :<|> ServerT b m
 
   route Proxy (a :<|> b) request respond =
     route pa a request $ \mResponse ->
@@ -234,8 +232,8 @@ captured _ = fromText
 instance (KnownSymbol capture, FromText a, HasServer sublayout)
       => HasServer (Capture capture a :> sublayout) where
 
-  type ServerT' (Capture capture a :> sublayout) m =
-     a -> ServerT' sublayout m
+  type ServerT (Capture capture a :> sublayout) m =
+     a -> ServerT sublayout m
 
   route Proxy subserver request respond = case processedPathInfo request of
     (first : rest)
@@ -262,7 +260,7 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
 -- are not met.
 instance HasServer Delete where
 
-  type ServerT' Delete m = m ()
+  type ServerT Delete m = m ()
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodDelete = do
@@ -293,7 +291,7 @@ instance
 #endif
          ( AllCTRender ctypes a ) => HasServer (Get ctypes a) where
 
-  type ServerT' (Get ctypes a) m = m a
+  type ServerT (Get ctypes a) m = m a
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
@@ -317,7 +315,7 @@ instance
 #endif
           HasServer (Get ctypes ()) where
 
-  type ServerT' (Get ctypes ()) m = m ()
+  type ServerT (Get ctypes ()) m = m ()
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
@@ -337,7 +335,7 @@ instance
           ( GetHeaders (Headers h v), AllCTRender ctypes v
           ) => HasServer (Get ctypes (Headers h v)) where
 
-  type ServerT' (Get ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT (Get ctypes (Headers h v)) m = m (Headers h v)
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodGet = do
@@ -378,8 +376,8 @@ instance
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (Header sym a :> sublayout) where
 
-  type ServerT' (Header sym a :> sublayout) m =
-    Maybe a -> ServerT' sublayout m
+  type ServerT (Header sym a :> sublayout) m =
+    Maybe a -> ServerT sublayout m
 
   route Proxy subserver request respond = do
     let mheader = fromText . decodeUtf8 =<< lookup str (requestHeaders request)
@@ -407,7 +405,7 @@ instance
          ( AllCTRender ctypes a
          ) => HasServer (Post ctypes a) where
 
-  type ServerT' (Post ctypes a) m = m a
+  type ServerT (Post ctypes a) m = m a
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
@@ -430,7 +428,7 @@ instance
 #endif
          HasServer (Post ctypes ()) where
 
-  type ServerT' (Post ctypes ()) m = m ()
+  type ServerT (Post ctypes ()) m = m ()
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
@@ -450,7 +448,7 @@ instance
          ( GetHeaders (Headers h v), AllCTRender ctypes v
          ) => HasServer (Post ctypes (Headers h v)) where
 
-  type ServerT' (Post ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT (Post ctypes (Headers h v)) m = m (Headers h v)
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPost = do
@@ -487,7 +485,7 @@ instance
 #endif
          ( AllCTRender ctypes a) => HasServer (Put ctypes a) where
 
-  type ServerT' (Put ctypes a) m = m a
+  type ServerT (Put ctypes a) m = m a
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
@@ -510,7 +508,7 @@ instance
 #endif
          HasServer (Put ctypes ()) where
 
-  type ServerT' (Put ctypes ()) m = m ()
+  type ServerT (Put ctypes ()) m = m ()
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
@@ -530,7 +528,7 @@ instance
          ( GetHeaders (Headers h v), AllCTRender ctypes v
          ) => HasServer (Put ctypes (Headers h v)) where
 
-  type ServerT' (Put ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT (Put ctypes (Headers h v)) m = m (Headers h v)
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPut = do
@@ -565,7 +563,7 @@ instance
 #endif
          ( AllCTRender ctypes a) => HasServer (Patch ctypes a) where
 
-  type ServerT' (Patch ctypes a) m = m a
+  type ServerT (Patch ctypes a) m = m a
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPatch = do
@@ -588,7 +586,7 @@ instance
 #endif
           HasServer (Patch ctypes ()) where
 
-  type ServerT' (Patch ctypes ()) m = m ()
+  type ServerT (Patch ctypes ()) m = m ()
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPatch = do
@@ -608,7 +606,7 @@ instance
          ( GetHeaders (Headers h v), AllCTRender ctypes v
          ) => HasServer (Patch ctypes (Headers h v)) where
 
-  type ServerT' (Patch ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT (Patch ctypes (Headers h v)) m = m (Headers h v)
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodPatch = do
@@ -650,8 +648,8 @@ instance
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (QueryParam sym a :> sublayout) where
 
-  type ServerT' (QueryParam sym a :> sublayout) m =
-    Maybe a -> ServerT' sublayout m
+  type ServerT (QueryParam sym a :> sublayout) m =
+    Maybe a -> ServerT sublayout m
 
   route Proxy subserver request respond = do
     let querytext = parseQueryText $ rawQueryString request
@@ -688,8 +686,8 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (QueryParams sym a :> sublayout) where
 
-  type ServerT' (QueryParams sym a :> sublayout) m =
-    [a] -> ServerT' sublayout m
+  type ServerT (QueryParams sym a :> sublayout) m =
+    [a] -> ServerT sublayout m
 
   route Proxy subserver request respond = do
     let querytext = parseQueryText $ rawQueryString request
@@ -721,8 +719,8 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 instance (KnownSymbol sym, HasServer sublayout)
       => HasServer (QueryFlag sym :> sublayout) where
 
-  type ServerT' (QueryFlag sym :> sublayout) m =
-    Bool -> ServerT' sublayout m
+  type ServerT (QueryFlag sym :> sublayout) m =
+    Bool -> ServerT sublayout m
 
   route Proxy subserver request respond = do
     let querytext = parseQueryText $ rawQueryString request
@@ -764,8 +762,8 @@ parseMatrixText = parseQueryText
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (MatrixParam sym a :> sublayout) where
 
-  type ServerT' (MatrixParam sym a :> sublayout) m =
-    Maybe a -> ServerT' sublayout m
+  type ServerT (MatrixParam sym a :> sublayout) m =
+    Maybe a -> ServerT sublayout m
 
   route Proxy subserver request respond = case parsePathInfo request of
     (first : _)
@@ -802,8 +800,8 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (MatrixParams sym a :> sublayout) where
 
-  type ServerT' (MatrixParams sym a :> sublayout) m =
-    [a] -> ServerT' sublayout m
+  type ServerT (MatrixParams sym a :> sublayout) m =
+    [a] -> ServerT sublayout m
 
   route Proxy subserver request respond = case parsePathInfo request of
     (first : _)
@@ -836,8 +834,8 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 instance (KnownSymbol sym, HasServer sublayout)
       => HasServer (MatrixFlag sym :> sublayout) where
 
-  type ServerT' (MatrixFlag sym :> sublayout) m =
-    Bool -> ServerT' sublayout m
+  type ServerT (MatrixFlag sym :> sublayout) m =
+    Bool -> ServerT sublayout m
 
   route Proxy subserver request respond =  case parsePathInfo request of
     (first : _)
@@ -865,7 +863,7 @@ instance (KnownSymbol sym, HasServer sublayout)
 -- > server = serveDirectory "/var/www/images"
 instance HasServer Raw where
 
-  type ServerT' Raw m = Application
+  type ServerT Raw m = Application
 
   route Proxy rawApplication request respond =
     rawApplication request (respond . succeedWith)
@@ -893,8 +891,8 @@ instance HasServer Raw where
 instance ( AllCTUnrender list a, HasServer sublayout
          ) => HasServer (ReqBody list a :> sublayout) where
 
-  type ServerT' (ReqBody list a :> sublayout) m =
-    a -> ServerT' sublayout m
+  type ServerT (ReqBody list a :> sublayout) m =
+    a -> ServerT sublayout m
 
   route Proxy subserver request respond = do
     -- See HTTP RFC 2616, section 7.2.1
@@ -914,7 +912,7 @@ instance ( AllCTUnrender list a, HasServer sublayout
 -- pass the rest of the request path to @sublayout@.
 instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout) where
 
-  type ServerT' (path :> sublayout) m = ServerT' sublayout m
+  type ServerT (path :> sublayout) m = ServerT sublayout m
 
   route Proxy subserver request respond = case processedPathInfo request of
     (first : rest)

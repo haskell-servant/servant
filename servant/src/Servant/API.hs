@@ -49,10 +49,6 @@ module Servant.API (
   module Servant.Common.Text,
   -- | Classes and instances for types that can be converted to and from @Text@
 
-  -- * Canonicalizing (flattening) API types
-  Canonicalize,
-  canonicalize,
-
   -- * Utilities
   module Servant.Utils.Links,
   -- | Type-safe internal URIs
@@ -88,33 +84,3 @@ import           Servant.Common.Text         (FromText (..), ToText (..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)
 
--- | Turn an API type into its canonical form.
---
--- The canonical form of an API type is basically the all-flattened form
--- of the original type. More formally, it takes a type as input and hands you
--- back an /equivalent/ type formed of toplevel `:<|>`-separated chains of `:>`s,
--- i.e with all `:>`s distributed inside the `:<|>`s.
---
--- It basically turns:
---
--- > "hello" :> (Get Hello :<|> ReqBody Hello :> Put Hello)
---
--- into
---
--- > ("hello" :> Get Hello) :<|> ("hello" :> ReqBody Hello :> Put Hello)
---
--- i.e distributing all ':>'-separated bits into the subsequent ':<|>'s.
-type family Canonicalize api :: * where
-  -- requires UndecidableInstances
-  Canonicalize (a :> (b :<|> c)) = a :> Canonicalize b :<|> a :> Canonicalize c
-  Canonicalize ((a :<|> b) :> c) = a :> Canonicalize c :<|> b :> Canonicalize c
-  Canonicalize (a :> b)          = Redex b (Canonicalize b) a
-  Canonicalize (a :<|> b)        = Canonicalize a :<|> Canonicalize b
-  Canonicalize a                 = a
-
-type family Redex a b c :: * where
-  Redex a a first = Canonicalize first :> a
-  Redex a b first = Canonicalize (first :> b)
-
-canonicalize :: Proxy layout -> Proxy (Canonicalize layout)
-canonicalize Proxy = Proxy

@@ -307,8 +307,8 @@ spec = do
         _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
-  WrappedApi :: (HasServer (Canonicalize api), Server api ~ EitherT ServantErr IO a,
-                 HasClient (Canonicalize api), Client api ~ (BaseUrl -> EitherT ServantError IO ())) =>
+  WrappedApi :: (HasServer api, Server api ~ EitherT ServantErr IO a,
+                 HasClient api, Client api ~ (BaseUrl -> EitherT ServantError IO ())) =>
     Proxy api -> WrappedApi
 
 
