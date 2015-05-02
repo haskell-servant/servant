@@ -61,7 +61,7 @@ module Servant.API (
 import           Data.Proxy                  (Proxy (..))
 import           Servant.API.Alternative     ((:<|>) (..))
 import           Servant.API.Capture         (Capture)
-import           Servant.API.ContentTypes    (FormUrlEncoded,
+import           Servant.API.ContentTypes    (Accept(..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
                                               MimeRender (..),
                                               MimeUnrender (..), OctetStream,
