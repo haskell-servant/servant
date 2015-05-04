@@ -6,6 +6,8 @@
 * Remove ToJSON superclass from ToSample
 * Split out Internal module
 * Add support for response headers
+* Allow `ToSample` to return a different type than it's arguments
+* Add Proxy argument to `ToSample`
 
 0.3
 ---
