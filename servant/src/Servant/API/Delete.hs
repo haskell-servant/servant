@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Delete (Delete) where
 
 import Data.Typeable ( Typeable )

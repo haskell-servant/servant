@@ -5,9 +5,11 @@
 * Support for `Accept`/`Content-type` headers and for the content-type aware combinators in *servant-0.3*
 * Export `toApplication` from `Servant.Server` (https://github.com/haskell-servant/servant-server/pull/29)
 * Support other Monads than just `EitherT (Int, String) IO` (https://github.com/haskell-servant/servant-server/pull/21)
-* Canonicalize API types before generating the handler types with `Server`
 * Make methods return status code 204 if they return () (https://github.com/haskell-servant/servant-server/issues/28)
 * Add server support for response headers
+* Use `ServantErr` instead of `(Int,String)` in `EitherT` handlers
+* Add `errXXX` functions for HTTP errors with sensible default reason strings
+* Add `enter` function for applying natural transformations to handlers
 
 0.2.4
 -----

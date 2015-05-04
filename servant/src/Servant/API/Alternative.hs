@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeOperators      #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Alternative ((:<|>)(..)) where
 
 #if !MIN_VERSION_base(4,8,0)

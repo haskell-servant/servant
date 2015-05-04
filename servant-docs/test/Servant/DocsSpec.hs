@@ -46,14 +46,14 @@ data Datatype1 = Datatype1 { dt1field1 :: String
 
 instance ToJSON Datatype1
 
-instance ToSample Datatype1 where
-  toSample = Just $ Datatype1 "field 1" 13
+instance ToSample Datatype1 Datatype1 where
+  toSample _ = Just $ Datatype1 "field 1" 13
 
-instance ToSample String where
-  toSample = Just "a string"
+instance ToSample String String where
+  toSample _ = Just "a string"
 
-instance ToSample Int where
-  toSample = Just 17
+instance ToSample Int Int where
+  toSample _ = Just 17
 
 instance MimeRender PlainText Int where
   mimeRender _ = cs . show

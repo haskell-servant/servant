@@ -5,7 +5,9 @@
 * Render endpoints in a canonical order (https://github.com/haskell-servant/servant-docs/pull/15)
 * Remove ToJSON superclass from ToSample
 * Split out Internal module
-* `Canonicalize` API types before generating the docs for them
+* Add support for response headers
+* Allow `ToSample` to return a different type than it's arguments
+* Add Proxy argument to `ToSample`
 
 0.3
 ---

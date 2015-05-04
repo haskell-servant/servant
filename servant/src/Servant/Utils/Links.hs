@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
+{-# OPTIONS_HADDOCK not-home        #-}
 
 -- | Type safe generation of internal links.
 --

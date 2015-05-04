@@ -21,3 +21,4 @@ cabal.config
 *.prof
 *.aux
 *.hp
+Setup

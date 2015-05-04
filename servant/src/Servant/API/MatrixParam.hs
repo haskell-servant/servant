@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE PolyKinds          #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.MatrixParam (MatrixFlag, MatrixParam, MatrixParams) where
 
 import           Data.Typeable (Typeable)

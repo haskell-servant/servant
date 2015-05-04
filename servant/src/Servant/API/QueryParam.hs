@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# LANGUAGE PolyKinds          #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParams) where
 
 import           Data.Typeable (Typeable)

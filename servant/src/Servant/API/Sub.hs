@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE PolyKinds          #-}
 {-# LANGUAGE TypeOperators      #-}
+{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Sub ((:>)) where
 
 import           Data.Typeable (Typeable)

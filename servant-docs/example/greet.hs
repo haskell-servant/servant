@@ -53,13 +53,16 @@ instance ToParam (MatrixParam "lang" String) where
                   "Get the greeting message selected language. Default is en."
                   Normal
 
-instance ToSample Greet where
-  toSample = Just $ Greet "Hello, haskeller!"
+instance ToSample Greet Greet where
+  toSample _ = Just $ Greet "Hello, haskeller!"
 
-  toSamples =
+  toSamples _ =
     [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
     , ("If you use ?capital=false", Greet "Hello, haskeller")
     ]
+
+instance ToSample Int Int where
+  toSample _ = Just 1729
 
 -- We define some introductory sections, these will appear at the top of the
 -- documentation.
@@ -84,7 +87,7 @@ type TestApi =
 
        -- POST /greet with a Greet as JSON in the request body,
        --             returns a Greet as JSON
-  :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
+  :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] (Headers '[Header "X-Example" Int] Greet)
 
        -- DELETE /greet/:greetid
   :<|> "greet" :> Capture "greetid" Text :> Delete

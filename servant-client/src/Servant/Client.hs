@@ -16,11 +16,13 @@
 module Servant.Client
   ( client
   , HasClient(..)
-  , Client
   , ServantError(..)
   , module Servant.Common.BaseUrl
   ) where
 
+#if !MIN_VERSION_base(4,8,0)
+import           Control.Applicative        ((<$>))
+#endif
 import           Control.Monad
 import           Control.Monad.Trans.Either
 import           Data.ByteString.Lazy       (ByteString)
@@ -32,8 +34,8 @@ import           GHC.TypeLits
 import           Network.HTTP.Client        (Response)
 import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
+import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
-import           Servant.API.ContentTypes
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
 
@@ -50,17 +52,16 @@ import           Servant.Common.Req
 -- > getAllBooks :: BaseUrl -> EitherT String IO [Book]
 -- > postNewBook :: Book -> BaseUrl -> EitherT String IO Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
-client :: HasClient (Canonicalize layout) => Proxy layout -> Client layout
-client p = clientWithRoute (canonicalize p) defReq
+client :: HasClient layout => Proxy layout -> Client layout
+client p = clientWithRoute p defReq
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
 -- an internal class, you can just use 'client'.
 class HasClient layout where
-  type Client' layout :: *
-  clientWithRoute :: Proxy layout -> Req -> Client' layout
+  type Client layout :: *
+  clientWithRoute :: Proxy layout -> Req -> Client layout
 
-type Client layout = Client' (Canonicalize layout)
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
 --   one function for querying @a@ and another one for querying @b@,
@@ -76,7 +77,7 @@ type Client layout = Client' (Canonicalize layout)
 -- > postNewBook :: Book -> BaseUrl -> EitherT String IO Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
-  type Client' (a :<|> b) = Client' a :<|> Client' b
+  type Client (a :<|> b) = Client a :<|> Client b
   clientWithRoute Proxy req =
     clientWithRoute (Proxy :: Proxy a) req :<|>
     clientWithRoute (Proxy :: Proxy b) req
@@ -103,8 +104,8 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
 instance (KnownSymbol capture, ToText a, HasClient sublayout)
       => HasClient (Capture capture a :> sublayout) where
 
-  type Client' (Capture capture a :> sublayout) =
-    a -> Client' sublayout
+  type Client (Capture capture a :> sublayout) =
+    a -> Client sublayout
 
   clientWithRoute Proxy req val =
     clientWithRoute (Proxy :: Proxy sublayout) $
@@ -117,7 +118,7 @@ instance (KnownSymbol capture, ToText a, HasClient sublayout)
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
 instance HasClient Delete where
-  type Client' Delete = BaseUrl -> EitherT ServantError IO ()
+  type Client Delete = BaseUrl -> EitherT ServantError IO ()
 
   clientWithRoute Proxy req host =
     void $ performRequest H.methodDelete req (`elem` [200, 202, 204]) host
@@ -131,20 +132,35 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
-  type Client' (Get (ct ': cts) result) = BaseUrl -> EitherT ServantError IO result
+  type Client (Get (ct ': cts) result) = BaseUrl -> EitherT ServantError IO result
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] host
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] host
 
 -- | If you have a 'Get xs ()' endpoint, the client expects a 204 No Content
--- HTTP header.
+-- HTTP status.
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
   HasClient (Get (ct ': cts) ()) where
-  type Client' (Get (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  type Client (Get (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     performRequestNoBody H.methodGet req [204] host
+
+-- | If you have a 'Get xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Get (ct ': cts) (Headers ls a)) where
+  type Client (Get (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203, 204] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -174,8 +190,8 @@ instance
 instance (KnownSymbol sym, ToText a, HasClient sublayout)
       => HasClient (Header sym a :> sublayout) where
 
-  type Client' (Header sym a :> sublayout) =
-    Maybe a -> Client' sublayout
+  type Client (Header sym a :> sublayout) =
+    Maybe a -> Client sublayout
 
   clientWithRoute Proxy req mval =
     clientWithRoute (Proxy :: Proxy sublayout) $
@@ -192,10 +208,10 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
-  type Client' (Post (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
+  type Client (Post (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req uri =
-    performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] uri
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] uri
 
 -- | If you have a 'Post xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -204,9 +220,24 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Post (ct ': cts) ()) where
-  type Client' (Post (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  type Client (Post (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPost req [204] host
+
+-- | If you have a 'Post xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Post (ct ': cts) (Headers ls a)) where
+  type Client (Post (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
 
 -- | If you have a 'Put' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -217,10 +248,10 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
-  type Client' (Put (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
+  type Client (Put (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] host
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] host
 
 -- | If you have a 'Put xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -229,9 +260,24 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Put (ct ': cts) ()) where
-  type Client' (Put (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  type Client (Put (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPut req [204] host
+
+-- | If you have a 'Put xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Put (ct ': cts) (Headers ls a)) where
+  type Client (Put (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPut req [200, 201] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
 
 -- | If you have a 'Patch' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
@@ -242,10 +288,10 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
-  type Client' (Patch (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
+  type Client (Patch (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
 
   clientWithRoute Proxy req host =
-    performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] host
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] host
 
 -- | If you have a 'Patch xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -254,9 +300,24 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Patch (ct ': cts) ()) where
-  type Client' (Patch (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  type Client (Patch (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
   clientWithRoute Proxy req host =
     void $ performRequestNoBody H.methodPatch req [204] host
+
+-- | If you have a 'Patch xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Patch (ct ': cts) (Headers ls a)) where
+  type Client (Patch (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200, 201, 204] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -286,8 +347,8 @@ instance
 instance (KnownSymbol sym, ToText a, HasClient sublayout)
       => HasClient (QueryParam sym a :> sublayout) where
 
-  type Client' (QueryParam sym a :> sublayout) =
-    Maybe a -> Client' sublayout
+  type Client (QueryParam sym a :> sublayout) =
+    Maybe a -> Client sublayout
 
   -- if mparam = Nothing, we don't add it to the query string
   clientWithRoute Proxy req mparam =
@@ -328,8 +389,8 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 instance (KnownSymbol sym, ToText a, HasClient sublayout)
       => HasClient (QueryParams sym a :> sublayout) where
 
-  type Client' (QueryParams sym a :> sublayout) =
-    [a] -> Client' sublayout
+  type Client (QueryParams sym a :> sublayout) =
+    [a] -> Client sublayout
 
   clientWithRoute Proxy req paramlist =
     clientWithRoute (Proxy :: Proxy sublayout) $
@@ -363,8 +424,8 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 instance (KnownSymbol sym, HasClient sublayout)
       => HasClient (QueryFlag sym :> sublayout) where
 
-  type Client' (QueryFlag sym :> sublayout) =
-    Bool -> Client' sublayout
+  type Client (QueryFlag sym :> sublayout) =
+    Bool -> Client sublayout
 
   clientWithRoute Proxy req flag =
     clientWithRoute (Proxy :: Proxy sublayout) $
@@ -402,8 +463,8 @@ instance (KnownSymbol sym, HasClient sublayout)
 instance (KnownSymbol sym, ToText a, HasClient sublayout)
       => HasClient (MatrixParam sym a :> sublayout) where
 
-  type Client' (MatrixParam sym a :> sublayout) =
-    Maybe a -> Client' sublayout
+  type Client (MatrixParam sym a :> sublayout) =
+    Maybe a -> Client sublayout
 
   -- if mparam = Nothing, we don't add it to the query string
   clientWithRoute Proxy req mparam =
@@ -443,8 +504,8 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 instance (KnownSymbol sym, ToText a, HasClient sublayout)
       => HasClient (MatrixParams sym a :> sublayout) where
 
-  type Client' (MatrixParams sym a :> sublayout) =
-    [a] -> Client' sublayout
+  type Client (MatrixParams sym a :> sublayout) =
+    [a] -> Client sublayout
 
   clientWithRoute Proxy req paramlist =
     clientWithRoute (Proxy :: Proxy sublayout) $
@@ -478,8 +539,8 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 instance (KnownSymbol sym, HasClient sublayout)
       => HasClient (MatrixFlag sym :> sublayout) where
 
-  type Client' (MatrixFlag sym :> sublayout) =
-    Bool -> Client' sublayout
+  type Client (MatrixFlag sym :> sublayout) =
+    Bool -> Client sublayout
 
   clientWithRoute Proxy req flag =
     clientWithRoute (Proxy :: Proxy sublayout) $
@@ -492,9 +553,9 @@ instance (KnownSymbol sym, HasClient sublayout)
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
 instance HasClient Raw where
-  type Client' Raw = H.Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, Response ByteString)
+  type Client Raw = H.Method -> BaseUrl -> EitherT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
 
-  clientWithRoute :: Proxy Raw -> Req -> Client' Raw
+  clientWithRoute :: Proxy Raw -> Req -> Client Raw
   clientWithRoute Proxy req httpMethod host = do
     performRequest httpMethod req (const True) host
 
@@ -519,8 +580,8 @@ instance HasClient Raw where
 instance (MimeRender ct a, HasClient sublayout)
       => HasClient (ReqBody (ct ': cts) a :> sublayout) where
 
-  type Client' (ReqBody (ct ': cts) a :> sublayout) =
-    a -> Client' sublayout
+  type Client (ReqBody (ct ': cts) a :> sublayout) =
+    a -> Client sublayout
 
   clientWithRoute Proxy req body =
     clientWithRoute (Proxy :: Proxy sublayout) $ do
@@ -529,7 +590,7 @@ instance (MimeRender ct a, HasClient sublayout)
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where
-  type Client' (path :> sublayout) = Client' sublayout
+  type Client (path :> sublayout) = Client sublayout
 
   clientWithRoute Proxy req =
      clientWithRoute (Proxy :: Proxy sublayout) $
