@@ -85,3 +85,4 @@ test-suite spec
     , text
     , wai
     , warp
+    , transformers
