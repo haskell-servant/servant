@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
-module GS1 where
+module GS2 where
 
 import Data.Aeson
 import Data.Time.Calendar
@@ -25,18 +25,25 @@ instance ToJSON Day where
 instance ToJSON User
 
 type UserAPI = "users" :> Get '[JSON] [User]
+          :<|> "albert" :> Get '[JSON] User
+          :<|> "isaac" :> Get '[JSON] User
+
+isaac :: User
+isaac = User "Isaac Newton" 372 "isaac@newton.co.uk" (fromGregorian 1683 3 1)
+
+albert :: User
+albert = User "Albert Einstein" 136 "ae@mc2.org" (fromGregorian 1905 12 1)
 
 users :: [User]
-users = 
-  [ User "Isaac Newton"    372 "isaac@newton.co.uk" (fromGregorian 1683  3 1)
-  , User "Albert Einstein" 136 "ae@mc2.org"         (fromGregorian 1905 12 1)
-  ]
+users = [isaac, albert]
 
 userAPI :: Proxy UserAPI
 userAPI = Proxy
 
 server :: Server UserAPI
 server = return users
+    :<|> return albert
+    :<|> return isaac
 
 app :: Application
 app = serve userAPI server
