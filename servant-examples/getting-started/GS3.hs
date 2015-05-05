@@ -51,7 +51,7 @@ emailForClient c = Email from' to' subject' body'
                 ++ "Since you've recently turned " ++ show (age c)
                 ++ ", have you checked out our latest "
                 ++ intercalate ", " (interested_in c)
-                ++ " ? Give us a visit!"
+                ++ " products? Give us a visit!"
 
 type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
@@ -65,15 +65,15 @@ server = position
     :<|> hello
     :<|> marketing
 
-  where position :: Int -> Int -> EitherT Int IO Position
+  where position :: Int -> Int -> EitherT ServantErr IO Position
         position x y = return (Position x y)
 
-        hello :: Maybe String -> EitherT Int IO HelloMessage
+        hello :: Maybe String -> EitherT ServantErr IO HelloMessage
         hello mname = return . HelloMessage $ case mname of
           Nothing -> "Hello, anonymous coward"
           Just n  -> "Hello, " ++ n
 
-        marketing :: ClientInfo -> EitherT Int IO Email
+        marketing :: ClientInfo -> EitherT ServantErr IO Email
         marketing clientinfo = return (emailForClient clientinfo)
 
 app :: Application
