@@ -117,11 +117,41 @@ instance (KnownSymbol capture, ToText a, HasClient sublayout)
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance HasClient Delete where
-  type Client Delete = BaseUrl -> EitherT ServantError IO ()
-
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+  (MimeUnrender ct a) => HasClient (Delete (ct ': cts) a) where
+  type Client (Delete (ct ': cts) a) = BaseUrl -> EitherT ServantError IO a
   clientWithRoute Proxy req host =
-    void $ performRequest H.methodDelete req (`elem` [200, 202, 204]) host
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] host
+
+-- | If you have a 'Delete xs ()' endpoint, the client expects a 204 No Content
+-- HTTP header.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  HasClient (Delete (ct ': cts) ()) where
+  type Client (Delete (ct ': cts) ()) = BaseUrl -> EitherT ServantError IO ()
+  clientWithRoute Proxy req host =
+    void $ performRequestNoBody H.methodDelete req [204] host
+
+-- | If you have a 'Delete xs (Headers ls x)' endpoint, the client expects the
+-- corresponding headers.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+  ( MimeUnrender ct a, BuildHeadersTo ls
+  ) => HasClient (Delete (ct ': cts) (Headers ls a)) where
+  type Client (Delete (ct ': cts) (Headers ls a)) = BaseUrl -> EitherT ServantError IO (Headers ls a)
+  clientWithRoute Proxy req host = do
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] host
+    return $ Headers { getResponse = resp
+                     , getHeadersHList = buildHeadersTo hdrs
+                     }
+
 
 -- | If you have a 'Get' endpoint in your API, the client
 -- side querying function that is created when calling 'client'

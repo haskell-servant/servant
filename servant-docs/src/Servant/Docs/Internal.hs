@@ -651,14 +651,38 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
           symP = Proxy :: Proxy sym
 
 
-instance HasDocs Delete where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLe #-}
+#endif
+        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
+    => HasDocs (Delete cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocDELETE
+          action' = action & response.respBody .~ sampleByteStrings t p
+                           & response.respTypes .~ supportedTypes t
+          t = Proxy :: Proxy cts
+          p = Proxy :: Proxy a
 
-          action' = action & response.respBody .~ []
-                           & response.respStatus .~ 204
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+         , AllHeaderSamples ls , GetHeaders (HList ls) )
+    => HasDocs (Delete cts (Headers ls a)) where
+  docsFor Proxy (endpoint, action) =
+    single endpoint' action'
+
+    where hdrs = allHeaderToSample (Proxy :: Proxy ls)
+          endpoint' = endpoint & method .~ DocDELETE
+          action' = action & response.respBody .~ sampleByteStrings t p
+                           & response.respTypes .~ supportedTypes t
+                           & response.respHeaders .~ hdrs
+          t = Proxy :: Proxy cts
+          p = Proxy :: Proxy a
 
 instance
 #if MIN_VERSION_base(4,8,0)

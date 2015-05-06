@@ -79,7 +79,8 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
 type Api =
        "get" :> Get '[JSON] Person
-  :<|> "delete" :> Delete
+  :<|> "delete" :> Delete '[JSON] ()
+  :<|> "deleteString" :> Delete '[JSON] String
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
@@ -104,6 +105,7 @@ server :: Application
 server = serve api (
        return alice
   :<|> return ()
+  :<|> return "ok"
   :<|> (\ name -> return $ Person name 0)
   :<|> return
   :<|> (\ name -> case name of
@@ -129,6 +131,7 @@ withServer action = withWaiDaemon (return server) action
 
 getGet :: BaseUrl -> EitherT ServantError IO Person
 getDelete :: BaseUrl -> EitherT ServantError IO ()
+getDeleteString :: BaseUrl -> EitherT ServantError IO String
 getCapture :: String -> BaseUrl -> EitherT ServantError IO Person
 getBody :: Person -> BaseUrl -> EitherT ServantError IO Person
 getQueryParam :: Maybe String -> BaseUrl -> EitherT ServantError IO Person
@@ -147,6 +150,7 @@ getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])]
 getRespHeaders :: BaseUrl -> EitherT ServantError IO (Headers TestHeaders Bool)
 (     getGet
  :<|> getDelete
+ :<|> getDeleteString
  :<|> getCapture
  :<|> getBody
  :<|> getQueryParam
@@ -183,8 +187,12 @@ spec = do
   it "Servant.API.Get" $ withServer $ \ host -> do
     (Arrow.left show <$> runEitherT (getGet host)) `shouldReturn` Right alice
 
-  it "Servant.API.Delete" $ withServer $ \ host -> do
-    (Arrow.left show <$> runEitherT (getDelete host)) `shouldReturn` Right ()
+  context "Servant.API.Delete" $ do
+    it "return no body" $ withServer $ \ host -> do
+      (Arrow.left show <$> runEitherT (getDelete host)) `shouldReturn` Right ()
+
+    it "return body" $ withServer $ \ host -> do
+      (Arrow.left show <$> runEitherT (getDeleteString host)) `shouldReturn` Right "ok"
 
   it "Servant.API.Capture" $ withServer $ \ host -> do
     (Arrow.left show <$> runEitherT (getCapture "Paula" host)) `shouldReturn` Right (Person "Paula" 0)
@@ -268,7 +276,7 @@ spec = do
             Left FailureResponse{..} <- runEitherT (getResponse host)
             responseStatus `shouldBe` (Status 500 "error message")
     mapM_ test $
-      (WrappedApi (Proxy :: Proxy Delete), "Delete") :
+      (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete") :
       (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get") :
       (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post") :
       (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put") :

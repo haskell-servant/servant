@@ -443,7 +443,7 @@ patchSpec = do
                                                             , "application/nonsense")]
         patch'' "/" "anything at all" `shouldRespondWith` 415
 
-type HeaderApi a = Header "MyHeader" a :> Delete
+type HeaderApi a = Header "MyHeader" a :> Delete '[JSON] ()
 headerApi :: Proxy (HeaderApi a)
 headerApi = Proxy
 
@@ -503,7 +503,7 @@ type AlternativeApi =
   :<|> "foo" :> Get '[PlainText] T.Text
   :<|> "bar" :> Post '[JSON] Animal
   :<|> "bar" :> Put '[JSON] Animal
-  :<|> "bar" :> Delete
+  :<|> "bar" :> Delete '[JSON] ()
 unionApi :: Proxy AlternativeApi
 unionApi = Proxy
 

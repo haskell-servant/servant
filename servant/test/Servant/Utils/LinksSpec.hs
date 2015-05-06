@@ -12,20 +12,20 @@ import Servant.API
 
 type TestApi =
   -- Capture and query/matrix params
-       "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete
+       "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete '[JSON] ()
 
   :<|> "parent" :> MatrixParams "name" String :> "child"
                 :> MatrixParam "gender" String :> Get '[JSON] String
 
   -- Flags
-  :<|> "ducks" :> MatrixFlag "yellow" :> MatrixFlag "loud" :> Delete
-  :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete
+  :<|> "ducks" :> MatrixFlag "yellow" :> MatrixFlag "loud" :> Delete '[JSON] ()
+  :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete '[JSON] ()
 
   -- All of the verbs
   :<|> "get" :> Get '[JSON] ()
   :<|> "put" :> Put '[JSON] ()
   :<|> "post" :> ReqBody '[JSON] 'True :> Post '[JSON] ()
-  :<|> "delete" :> Header "ponies" :> Delete
+  :<|> "delete" :> Header "ponies" :> Delete '[JSON] ()
   :<|> "raw" :> Raw
 
 type TestLink = "hello" :> "hi" :> Get '[JSON] Bool
@@ -55,12 +55,12 @@ shouldBeURI link expected =
 spec :: Spec
 spec = describe "Servant.Utils.Links" $ do
     it "Generates correct links for capture query and matrix params" $ do
-        let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete)
+        let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete '[JSON] ())
         apiLink l1 "hi" `shouldBeURI` "hello/hi"
 
         let l2 = Proxy :: Proxy ("hello" :> Capture "name" String
                                          :> QueryParam "capital" Bool
-                                         :> Delete)
+                                         :> Delete '[JSON] ())
         apiLink l2 "bye" True `shouldBeURI` "hello/bye?capital=true"
 
         let l3 = Proxy :: Proxy ("parent" :> MatrixParams "name" String
@@ -73,12 +73,12 @@ spec = describe "Servant.Utils.Links" $ do
 
     it "Generates correct links for query and matrix flags" $ do
         let l1 = Proxy :: Proxy ("balls" :> QueryFlag "bouncy"
-                                         :> QueryFlag "fast" :> Delete)
+                                         :> QueryFlag "fast" :> Delete '[JSON] ())
         apiLink l1 True True `shouldBeURI` "balls?bouncy&fast"
         apiLink l1 False True `shouldBeURI` "balls?fast"
 
         let l2 = Proxy :: Proxy ("ducks" :> MatrixFlag "yellow"
-                                         :> MatrixFlag "loud" :> Delete)
+                                         :> MatrixFlag "loud" :> Delete '[JSON] ())
         apiLink l2 True True `shouldBeURI` "ducks;yellow;loud"
         apiLink l2 False True `shouldBeURI` "ducks;loud"
 
@@ -86,5 +86,5 @@ spec = describe "Servant.Utils.Links" $ do
         apiLink (Proxy :: Proxy ("get" :> Get '[JSON] ())) `shouldBeURI` "get"
         apiLink (Proxy :: Proxy ("put" :> Put '[JSON] ())) `shouldBeURI` "put"
         apiLink (Proxy :: Proxy ("post" :> Post '[JSON] ())) `shouldBeURI` "post"
-        apiLink (Proxy :: Proxy ("delete" :> Delete)) `shouldBeURI` "delete"
+        apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] ())) `shouldBeURI` "delete"
         apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeURI` "raw"

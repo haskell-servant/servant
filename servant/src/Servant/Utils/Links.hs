@@ -22,7 +22,7 @@
 -- >>>
 -- >>>
 -- >>> type Hello = "hello" :> Get '[JSON] Int
--- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete
+-- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] ()
 -- >>> type API   = Hello :<|> Bye
 -- >>> let api = Proxy :: Proxy API
 --
@@ -48,11 +48,11 @@
 -- If the API has an endpoint with parameters then we can generate links with
 -- or without those:
 --
--- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete)
+-- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] ())
 -- >>> print $ safeLink api with "Hubert"
 -- bye?name=Hubert
 --
--- >>> let without = Proxy :: Proxy ("bye" :> Delete)
+-- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] ())
 -- >>> print $ safeLink api without
 -- bye
 --
@@ -70,15 +70,15 @@
 -- Attempting to construct a link to an endpoint that does not exist in api
 -- will result in a type error like this:
 --
--- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete)
+-- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] ())
 -- >>> safeLink api bad_link
 -- <BLANKLINE>
 -- <interactive>:64:1:
 --     Could not deduce (Or
---                         (IsElem' Delete (Get '[JSON] Int))
+--                         (IsElem' (Delete '[JSON] ()) (Get '[JSON] Int))
 --                         (IsElem'
---                            ("hello" :> Delete)
---                            ("bye" :> (QueryParam "name" String :> Delete))))
+--                            ("hello" :> Delete '[JSON] ())
+--                            ("bye" :> (QueryParam "name" String :> Delete '[JSON] ()))))
 --       arising from a use of ‘safeLink’
 --     In the expression: safeLink api bad_link
 --     In an equation for ‘it’: it = safeLink api bad_link
@@ -176,6 +176,7 @@ type family IsElem endpoint api :: Constraint where
     IsElem (Get ct typ) (Get ct' typ)    = IsSubList ct ct'
     IsElem (Post ct typ) (Post ct' typ)  = IsSubList ct ct'
     IsElem (Put ct typ) (Put ct' typ)    = IsSubList ct ct'
+    IsElem (Delete ct typ) (Delete ct' typ)    = IsSubList ct ct'
     IsElem e e                           = ()
     IsElem e a                           = IsElem' e a
 
@@ -349,8 +350,8 @@ instance HasLink (Put y r) where
     type MkLink (Put y r) = URI
     toLink _ = linkURI
 
-instance HasLink Delete where
-    type MkLink Delete = URI
+instance HasLink (Delete y r) where
+    type MkLink (Delete y r) = URI
     toLink _ = linkURI
 
 instance HasLink Raw where

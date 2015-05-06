@@ -258,16 +258,70 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
 -- to be returned. You can use 'Control.Monad.Trans.Either.left' to
 -- painlessly error out if the conditions for a successful deletion
 -- are not met.
-instance HasServer Delete where
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         ( AllCTRender ctypes a
+         ) => HasServer (Delete ctypes a) where
 
-  type ServerT Delete m = m ()
+  type ServerT (Delete ctypes a) m = m a
 
   route Proxy action request respond
     | pathIsEmpty request && requestMethod request == methodDelete = do
         e <- runEitherT action
-        respond $ succeedWith $ case e of
-          Right () -> responseLBS status204 [] ""
+        respond $ case e of
+          Right output -> do
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+            case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) output of
+              Nothing -> failWith UnsupportedMediaType
+              Just (contentT, body) -> succeedWith $
+                responseLBS status200 [ ("Content-Type" , cs contentT)] body
+          Left err -> succeedWith $ responseServantErr err
+    | pathIsEmpty request && requestMethod request /= methodDelete =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         HasServer (Delete ctypes ()) where
+
+  type ServerT (Delete ctypes ()) m = m ()
+
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodDelete = do
+        e <- runEitherT action
+        respond . succeedWith $ case e of
+          Right () -> responseLBS noContent204 [] ""
           Left err -> responseServantErr err
+    | pathIsEmpty request && requestMethod request /= methodDelete =
+        respond $ failWith WrongMethod
+    | otherwise = respond $ failWith NotFound
+
+-- Add response headers
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif
+         ( GetHeaders (Headers h v), AllCTRender ctypes v
+         ) => HasServer (Delete ctypes (Headers h v)) where
+
+  type ServerT (Delete ctypes (Headers h v)) m = m (Headers h v)
+
+  route Proxy action request respond
+    | pathIsEmpty request && requestMethod request == methodDelete = do
+      e <- runEitherT action
+      respond $ case e of
+        Right output -> do
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+              headers = getHeaders output
+          case handleAcceptH (Proxy :: Proxy ctypes) (AcceptHeader accH) (getResponse output) of
+            Nothing -> failWith UnsupportedMediaType
+            Just (contentT, body) -> succeedWith $
+              responseLBS status200 ( ("Content-Type" , cs contentT) : headers) body
+        Left err -> succeedWith $ responseServantErr err
     | pathIsEmpty request && requestMethod request /= methodDelete =
         respond $ failWith WrongMethod
     | otherwise = respond $ failWith NotFound
