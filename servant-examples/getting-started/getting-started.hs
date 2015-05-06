@@ -8,6 +8,7 @@ import qualified GS3
 import qualified GS4
 import qualified GS5
 import qualified GS6
+import qualified GS7
 
 app :: String -> Maybe Application
 app n = case n of
@@ -17,6 +18,7 @@ app n = case n of
   "4" -> Just GS4.app
   "5" -> Just GS5.app
   "6" -> Just GS6.app
+  "7" -> Just GS7.app
   _   -> Nothing
 
 main :: IO ()
