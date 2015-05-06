@@ -19,12 +19,14 @@ executable getting-started
   build-depends:
       aeson >= 0.8
     , base >= 4.7
+    , directory
     , either
     , lucid
     , servant
     , servant-lucid
     , servant-server
     , time
+    , transformers
     , wai
     , warp
   hs-source-dirs: getting-started
