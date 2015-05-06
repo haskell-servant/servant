@@ -876,30 +876,3 @@ instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) wh
           endpoint' = endpoint & path <>~ [symbolVal pa]
           pa = Proxy :: Proxy path
 
-{-
-
--- | Serve your API's docs as markdown embedded in an html \<pre> tag.
---
--- > type MyApi = "users" :> Get [User]
--- >         :<|> "docs   :> Raw
--- >
--- > apiProxy :: Proxy MyApi
--- > apiProxy = Proxy
--- >
--- > server :: Server MyApi
--- > server = listUsers
--- >     :<|> serveDocumentation apiProxy
-serveDocumentation :: HasDocs api => Proxy api -> Server Raw
-serveDocumentation proxy _request respond =
-  respond $ responseLBS ok200 [] $ cs $ toHtml $ markdown $ docs proxy
-
-toHtml :: String -> String
-toHtml md =
-  "<html>" ++
-  "<body>" ++
-  "<pre>" ++
-  md ++
-  "</pre>" ++
-  "</body>" ++
-  "</html>"
--}
