@@ -20,7 +20,9 @@ executable getting-started
       aeson >= 0.8
     , base >= 4.7
     , either
+    , lucid
     , servant
+    , servant-lucid
     , servant-server
     , time
     , wai

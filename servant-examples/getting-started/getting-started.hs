@@ -5,12 +5,14 @@ import System.Environment
 import qualified GS1
 import qualified GS2
 import qualified GS3
+import qualified GS4
 
 app :: String -> Maybe Application
 app n = case n of
   "1" -> Just GS1.app
   "2" -> Just GS2.app
   "3" -> Just GS3.app
+  "4" -> Just GS4.app
   _   -> Nothing
 
 main :: IO ()
