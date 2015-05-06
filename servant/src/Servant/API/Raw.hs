@@ -10,6 +10,5 @@ import Data.Typeable (Typeable)
 --
 -- In addition to just letting you plug in your existing WAI 'Application's,
 -- this can also be used with 'Servant.Utils.StaticFiles.serveDirectory' to serve
--- static files stored in a particular directory on your filesystem, or to serve
--- your API's documentation with 'Servant.Utils.StaticFiles.serveDocumentation'.
+-- static files stored in a particular directory on your filesystem
 data Raw deriving Typeable
