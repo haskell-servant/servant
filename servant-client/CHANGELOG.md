@@ -1,5 +1,6 @@
 0.3
 ---
+* `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
 * Support content-type aware combinators and `Accept`/`Content-type` headers
 * Added a lot of tests
 * Support multiple concurrent threads

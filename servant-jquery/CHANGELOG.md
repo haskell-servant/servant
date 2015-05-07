@@ -1,5 +1,6 @@
 0.3
 ---
+* `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
 * Extend `HeaderArg` to support more advanced HTTP header handling (https://github.com/haskell-servant/servant-jquery/pull/6)
 * Support content-type aware combinators (but require that endpoints support JSON)
 * Add support for Matrix params (https://github.com/haskell-servant/servant-jquery/pull/11)

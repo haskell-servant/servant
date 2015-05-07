@@ -53,13 +53,8 @@ instance ToParam (MatrixParam "lang" String) where
                   "Get the greeting message selected language. Default is en."
                   Normal
 
-instance ToSample () Greet where
-  toSample _ = Just $ Greet "Hello, haskeller!"
-
-  toSamples _ =
-    [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
-    , ("If you use ?capital=false", Greet "Hello, haskeller")
-    ]
+instance ToSample () () where
+  toSample _ = Just ()
 
 instance ToSample Greet Greet where
   toSample _ = Just $ Greet "Hello, haskeller!"

@@ -1,5 +1,6 @@
 0.3
 ---
+* `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
 * Multiple content-type/accept support for all the relevant combinators
 * Provide *JSON*, *PlainText*, *OctetStream* and *FormUrlEncoded* content types out of the box
 * Type-safe link generation to API endpoints
