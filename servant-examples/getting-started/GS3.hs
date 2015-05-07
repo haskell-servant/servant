@@ -14,13 +14,15 @@ import Servant
 data Position = Position
   { x :: Int
   , y :: Int
-  } deriving Generic
+  } deriving (Show, Generic)
 
+instance FromJSON Position
 instance ToJSON Position
 
 newtype HelloMessage = HelloMessage { msg :: String }
-  deriving Generic
+  deriving (Show, Generic)
 
+instance FromJSON HelloMessage
 instance ToJSON HelloMessage
 
 data ClientInfo = ClientInfo
@@ -28,17 +30,19 @@ data ClientInfo = ClientInfo
   , email :: String
   , age :: Int
   , interested_in :: [String]
-  } deriving Generic
+  } deriving (Show, Generic)
 
 instance FromJSON ClientInfo
+instance ToJSON ClientInfo
 
 data Email = Email
   { from :: String
   , to :: String
   , subject :: String
   , body :: String
-  } deriving Generic
+  } deriving (Show, Generic)
 
+instance FromJSON Email
 instance ToJSON Email
 
 emailForClient :: ClientInfo -> Email

@@ -19,6 +19,7 @@ app n = case n of
   "5" -> Just GS5.app
   "6" -> Just GS6.app
   "7" -> Just GS7.app
+  "8" -> Just GS3.app
   _   -> Nothing
 
 main :: IO ()
