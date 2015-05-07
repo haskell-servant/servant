@@ -1,5 +1,6 @@
 0.3
 ---
+* `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
 * Add a `RouteMismatch` constructor for arbitrary HTTP response codes (https://github.com/haskell-servant/servant-server/pull/22)
 * Add support for the `Patch` combinator
 * Support for `Accept`/`Content-type` headers and for the content-type aware combinators in *servant-0.3*

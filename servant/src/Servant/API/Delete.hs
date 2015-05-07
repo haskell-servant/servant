@@ -1,4 +1,6 @@
+{-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE KindSignatures     #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Delete (Delete) where
 
@@ -10,7 +12,7 @@ import Data.Typeable ( Typeable )
 --
 -- >>>            -- DELETE /books/:isbn
 -- >>> type MyApi = "books" :> Capture "isbn" Text :> Delete
-data Delete
+data Delete (contentTypes :: [*]) a
   deriving Typeable
 
 

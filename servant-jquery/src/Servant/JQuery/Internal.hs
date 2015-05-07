@@ -215,8 +215,8 @@ instance (KnownSymbol sym, HasJQ sublayout)
 
     where str = symbolVal (Proxy :: Proxy sym)
 
-instance HasJQ Delete where
-  type JQ Delete = AjaxReq
+instance Elem JSON list => HasJQ (Delete list a) where
+  type JQ (Delete list a) = AjaxReq
 
   jqueryFor Proxy req =
     req & funcName  %~ ("delete" <>)

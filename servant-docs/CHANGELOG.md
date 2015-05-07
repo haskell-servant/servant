@@ -1,5 +1,6 @@
 0.4
 ---
+* `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
 * Allow for extra information to be added to the docs
 * Support content-type aware combinators of *servant-0.3*
 * Render endpoints in a canonical order (https://github.com/haskell-servant/servant-docs/pull/15)

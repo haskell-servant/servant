@@ -53,6 +53,9 @@ instance ToParam (MatrixParam "lang" String) where
                   "Get the greeting message selected language. Default is en."
                   Normal
 
+instance ToSample () () where
+  toSample _ = Just ()
+
 instance ToSample Greet Greet where
   toSample _ = Just $ Greet "Hello, haskeller!"
 
@@ -90,7 +93,7 @@ type TestApi =
   :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] (Headers '[Header "X-Example" Int] Greet)
 
        -- DELETE /greet/:greetid
-  :<|> "greet" :> Capture "greetid" Text :> Delete
+  :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] ()
 
 testApi :: Proxy TestApi
 testApi = Proxy
@@ -100,7 +103,7 @@ testApi = Proxy
 -- notes.
 extra :: ExtraInfo TestApi
 extra =
-    extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+    extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete '[JSON] ())) $
              defAction & headers <>~ ["unicorns"]
                        & notes   <>~ [ DocNote "Title" ["This is some text"]
                                      , DocNote "Second secton" ["And some more"]
