@@ -320,7 +320,7 @@ failSpec = withFailServer $ \ baseUrl -> do
 
 data WrappedApi where
   WrappedApi :: (HasServer api, Server api ~ EitherT ServantErr IO a,
-                 HasClient api, Client' api ~ EitherT ServantError IO ()) =>
+                 HasClient api, Client api ~ EitherT ServantError IO ()) =>
     Proxy api -> WrappedApi
 
 
