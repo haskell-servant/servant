@@ -36,8 +36,6 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
-import           Servant.API.ResponseHeaders
-import           Servant.API.ContentTypes
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
 
@@ -54,15 +52,15 @@ import           Servant.Common.Req
 -- > getAllBooks :: BaseUrl -> EitherT String IO [Book]
 -- > postNewBook :: Book -> BaseUrl -> EitherT String IO Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
-client :: HasClient layout => Proxy layout -> Client layout
-client p = clientWithRoute p defReq
+client :: HasClient layout => Proxy layout -> BaseUrl -> Client layout
+client p baseurl = clientWithRoute p defReq baseurl
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
 -- an internal class, you can just use 'client'.
 class HasClient layout where
   type Client' layout :: *
-  clientWithRoute :: Proxy layout -> Req -> Client layout
+  clientWithRoute :: Proxy layout -> Req -> BaseUrl -> Client' layout
 
 type Client layout = Client' layout
 
@@ -80,10 +78,10 @@ type Client layout = Client' layout
 -- > postNewBook :: Book -> BaseUrl -> EitherT String IO Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
-  type Client (a :<|> b) = Client a :<|> Client b
-  clientWithRoute Proxy req =
-    clientWithRoute (Proxy :: Proxy a) req :<|>
-    clientWithRoute (Proxy :: Proxy b) req
+  type Client' (a :<|> b) = Client' a :<|> Client' b
+  clientWithRoute Proxy req baseurl =
+    clientWithRoute (Proxy :: Proxy a) req baseurl :<|>
+    clientWithRoute (Proxy :: Proxy b) req baseurl
 
 -- | If you use a 'Capture' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -126,7 +124,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Delete (ct ': cts) a) where
-  type Client (Delete (ct ': cts) a) = EitherT ServantError IO a
+  type Client' (Delete (ct ': cts) a) = EitherT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl
 
@@ -137,7 +135,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Delete (ct ': cts) ()) where
-  type Client (Delete (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client' (Delete (ct ': cts) ()) = EitherT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodDelete req [204] baseurl
 
@@ -149,7 +147,7 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Delete (ct ': cts) (Headers ls a)) where
-  type Client (Delete (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  type Client' (Delete (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl = do
     (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl
     return $ Headers { getResponse = resp
@@ -165,7 +163,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
-  type Client (Get (ct ': cts) result) = EitherT ServantError IO result
+  type Client' (Get (ct ': cts) result) = EitherT ServantError IO result
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] baseurl
 
@@ -176,7 +174,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Get (ct ': cts) ()) where
-  type Client (Get (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client' (Get (ct ': cts) ()) = EitherT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     performRequestNoBody H.methodGet req [204] baseurl
 
@@ -245,7 +243,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
-  type Client (Post (ct ': cts) a) = EitherT ServantError IO a
+  type Client' (Post (ct ': cts) a) = EitherT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] baseurl
 
@@ -256,7 +254,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Post (ct ': cts) ()) where
-  type Client (Post (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client' (Post (ct ': cts) ()) = EitherT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodPost req [204] baseurl
 
@@ -284,7 +282,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
-  type Client (Put (ct ': cts) a) = EitherT ServantError IO a
+  type Client' (Put (ct ': cts) a) = EitherT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] baseurl
 
@@ -295,7 +293,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Put (ct ': cts) ()) where
-  type Client (Put (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client' (Put (ct ': cts) ()) = EitherT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodPut req [204] baseurl
 
@@ -323,7 +321,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
-  type Client (Patch (ct ': cts) a) = EitherT ServantError IO a
+  type Client' (Patch (ct ': cts) a) = EitherT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] baseurl
 
@@ -334,7 +332,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Patch (ct ': cts) ()) where
-  type Client (Patch (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client' (Patch (ct ': cts) ()) = EitherT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodPatch req [204] baseurl
 
@@ -609,8 +607,8 @@ instance (KnownSymbol sym, HasClient sublayout)
 instance HasClient Raw where
   type Client' Raw = H.Method -> EitherT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
 
-  clientWithRoute :: Proxy Raw -> Req -> Client Raw
-  clientWithRoute Proxy req httpMethod baseurl = do
+  clientWithRoute :: Proxy Raw -> Req -> BaseUrl -> Client' Raw
+  clientWithRoute Proxy req baseurl httpMethod = do
     performRequest httpMethod req (const True) baseurl
 
 -- | If you use a 'ReqBody' in one of your endpoints in your API,
