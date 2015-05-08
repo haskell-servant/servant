@@ -8,7 +8,6 @@
 import Control.Lens
 import Data.Aeson
 import Data.Proxy
-import Data.ByteString.Conversion
 import Data.String.Conversions
 import Data.Text (Text)
 import GHC.Generics

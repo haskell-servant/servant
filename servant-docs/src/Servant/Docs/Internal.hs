@@ -40,7 +40,6 @@ import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
-import           Servant.API.ResponseHeaders
 import           Servant.Utils.Links
 
 import qualified Data.HashMap.Strict        as HM
@@ -396,6 +395,7 @@ instance ToSample a b => ToSample (Headers ls a) b where
   toSample _  = toSample (Proxy :: Proxy a)
   toSamples _ = toSamples (Proxy :: Proxy a)
 
+
 class AllHeaderSamples ls where
     allHeaderToSample :: Proxy ls -> [HTTP.Header]
 
@@ -684,15 +684,11 @@ instance
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-<<<<<<< HEAD
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLe #-}
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
-=======
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
->>>>>>> Headers for all
     => HasDocs (Get cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -703,15 +699,11 @@ instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-<<<<<<< HEAD
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
-=======
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
->>>>>>> Headers for all
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Get cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) =
@@ -734,15 +726,11 @@ instance (KnownSymbol sym, HasDocs sublayout)
           action' = over headers (|> headername) action
           headername = pack $ symbolVal (Proxy :: Proxy sym)
 
-<<<<<<< HEAD
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
-=======
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
->>>>>>> Headers for all
     => HasDocs (Post cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -754,15 +742,11 @@ instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-<<<<<<< HEAD
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
          (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
-=======
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
->>>>>>> Headers for all
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Post cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) =
@@ -777,15 +761,11 @@ instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-<<<<<<< HEAD
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
-=======
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
->>>>>>> Headers for all
     => HasDocs (Put cts a) where
   docsFor Proxy (endpoint, action) =
     single endpoint' action'
@@ -797,15 +777,11 @@ instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-<<<<<<< HEAD
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
-=======
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
->>>>>>> Headers for all
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Put cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) =

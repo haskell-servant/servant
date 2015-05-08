@@ -81,7 +81,6 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 type Api =
        "get" :> Get '[JSON] Person
   :<|> "delete" :> Delete '[JSON] ()
-  :<|> "deleteString" :> Delete '[JSON] String
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
@@ -106,7 +105,6 @@ server :: Application
 server = serve api (
        return alice
   :<|> return ()
-  :<|> return "ok"
   :<|> (\ name -> return $ Person name 0)
   :<|> return
   :<|> (\ name -> case name of
@@ -267,13 +265,11 @@ spec = withServer $ \ baseUrl -> do
               Left FailureResponse{..} <- runEitherT getResponse
               responseStatus `shouldBe` (Status 500 "error message")
       mapM_ test $
-        (WrappedApi (Proxy :: Proxy Delete), "Delete") :
+        (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete") :
         (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get") :
         (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post") :
         (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put") :
         []
-
-type RawRight = (Int, ByteString, MediaType, [HTTP.Header], C.Response ByteString)
 
 failSpec :: IO ()
 failSpec = withFailServer $ \ baseUrl -> do
