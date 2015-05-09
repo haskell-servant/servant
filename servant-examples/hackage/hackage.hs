@@ -54,29 +54,26 @@ instance FromJSON Package
 hackageAPI :: Proxy HackageAPI
 hackageAPI = Proxy
 
-getUsers :: BaseUrl -> EitherT ServantError IO [UserSummary] 
-getUser :: Username -> BaseUrl -> EitherT ServantError IO UserDetailed
-getPackages :: BaseUrl -> EitherT ServantError IO [Package]
-getUsers :<|> getUser :<|> getPackages = client hackageAPI
-
-run :: (BaseUrl -> r) -> r
-run f = f (BaseUrl Http "hackage.haskell.org" 80)
+getUsers :: EitherT ServantError IO [UserSummary]
+getUser :: Username -> EitherT ServantError IO UserDetailed
+getPackages :: EitherT ServantError IO [Package]
+getUsers :<|> getUser :<|> getPackages = client hackageAPI $ BaseUrl Http "hackage.haskell.org" 80
 
 main :: IO ()
 main = print =<< uselessNumbers
 
 uselessNumbers :: IO (Either ServantError ())
 uselessNumbers = runEitherT $ do
-  users <- run getUsers
+  users <- getUsers
   liftIO . putStrLn $ show (length users) ++ " users"
 
   user <- liftIO $ do
     putStrLn "Enter a valid hackage username"
     T.getLine
-  userDetailed <- run (getUser user)
+  userDetailed <- (getUser user)
   liftIO . T.putStrLn $ user <> " maintains " <> T.pack (show (length $ groups userDetailed)) <> " packages"
-  
-  packages <- run getPackages 
+
+  packages <- getPackages
   let monadPackages = filter (isMonadPackage . packageName) packages
   liftIO . putStrLn $ show (length monadPackages) ++ " monad packages"
 
