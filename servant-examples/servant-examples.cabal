@@ -25,13 +25,11 @@ executable getting-started
     , http-types
     , js-jquery
     , lucid
-    , pandoc
     , probable
     , servant
     , servant-docs
     , servant-jquery
     , servant-lucid
-    , servant-pandoc >= 0.2
     , servant-server
     , text
     , time

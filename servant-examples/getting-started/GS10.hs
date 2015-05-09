@@ -13,9 +13,6 @@ import Network.HTTP.Types
 import Network.Wai
 import Servant
 import Servant.Docs
-import Servant.Docs.Pandoc (pandoc)
-import Text.Pandoc.Options (def, WriterOptions(..))
-import Text.Pandoc.Writers.HTML (writeHtmlString)
 import qualified GS3
 
 type DocsAPI = GS3.API :<|> Raw
@@ -57,38 +54,18 @@ api = Proxy
 docsBS :: ByteString
 docsBS = encodeUtf8
        . pack
-       . writeHtmlString opts
-       . pandoc
+       . markdown
        $ docsWithIntros [intro] GS3.api
 
-  where opts = def { writerHtml5 = True
-                   , writerTableOfContents = True
-                   , writerHighlight = True
-                   , writerStandalone = True
-                   , writerTemplate =
-                      concat
-                        [ "<!DOCTYPE html><html>"
-                        , "<head>"
-                        , "<meta charset=\"UTF-8\">"
-                        , "<title>API Docs - $title$</title>"
-                        , "</head>"
-                        , "<body>"
-                        , "$toc$"
-                        , "<hr />"
-                        , "$body$"
-                        , "</body>"
-                        , "</html>"
-                        ]
-                   }
-        intro = DocIntro "Welcome" ["This is our super webservice's API.", "Enjoy!"]
+  where intro = DocIntro "Welcome" ["This is our super webservice's API.", "Enjoy!"]
 
 server :: Server DocsAPI
 server = GS3.server :<|> serveDocs
 
   where serveDocs _ respond =
-          respond $ responseLBS ok200 [html] docsBS
+          respond $ responseLBS ok200 [plain] docsBS
 
-        html = ("Content-Type", "text/html")
+        plain = ("Content-Type", "text/plain")
 
 app :: Application
 app = serve api server
