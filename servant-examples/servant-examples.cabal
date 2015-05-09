@@ -1,5 +1,5 @@
 name:                servant-examples
-version:             0.3
+version:             0.4
 synopsis:            Example programs for servant
 description:         Example programs for servant,
                      showcasing solutions to common needs.
@@ -8,7 +8,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari
 maintainer:          alpmestan@gmail.com
--- copyright:           
+-- copyright:
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
@@ -19,8 +19,8 @@ executable hackage
       aeson >= 0.8
     , base >=4.7
     , either
-    , servant
-    , servant-client
+    , servant == 0.4.*
+    , servant-client == 0.4.*
     , text
     , transformers
   hs-source-dirs:      hackage
@@ -48,7 +48,7 @@ executable auth-combinator
     , bytestring
     , http-types
     , servant
-    , servant-server
+    , servant-server == 0.4.*
     , text
     , wai
     , warp

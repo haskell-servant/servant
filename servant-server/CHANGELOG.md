@@ -1,9 +1,9 @@
-0.3
+0.4
 ---
 * `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
 * Add a `RouteMismatch` constructor for arbitrary HTTP response codes (https://github.com/haskell-servant/servant-server/pull/22)
 * Add support for the `Patch` combinator
-* Support for `Accept`/`Content-type` headers and for the content-type aware combinators in *servant-0.3*
+* Support for `Accept`/`Content-type` headers and for the content-type aware combinators in *servant-0.4*
 * Export `toApplication` from `Servant.Server` (https://github.com/haskell-servant/servant-server/pull/29)
 * Support other Monads than just `EitherT (Int, String) IO` (https://github.com/haskell-servant/servant-server/pull/21)
 * Make methods return status code 204 if they return () (https://github.com/haskell-servant/servant-server/issues/28)

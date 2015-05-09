@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "servant-jquery";
-  version = "0.2.2";
+  version = "0.4.0";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
