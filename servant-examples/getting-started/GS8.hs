@@ -12,27 +12,24 @@ import GS3
 
 position :: Int -- ^ value for "x"
          -> Int -- ^ value for "y"
-         -> BaseUrl
          -> EitherT ServantError IO Position
 
 hello :: Maybe String -- ^ an optional value for "name"
-      -> BaseUrl
       -> EitherT ServantError IO HelloMessage
 
 marketing :: ClientInfo -- ^ value for the request body
-          -> BaseUrl
           -> EitherT ServantError IO Email
 
-position :<|> hello :<|> marketing = client api 
+position :<|> hello :<|> marketing = client api baseUrl
 
 baseUrl :: BaseUrl
 baseUrl = BaseUrl Http "localhost" 8081
 
 queries :: EitherT ServantError IO (Position, HelloMessage, Email)
 queries = do
-  pos <- position 10 10 baseUrl
-  msg <- hello (Just "servant") baseUrl
-  em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]) baseUrl
+  pos <- position 10 10
+  msg <- hello (Just "servant")
+  em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"])
   return (pos, msg, em)
 
 run :: IO ()
