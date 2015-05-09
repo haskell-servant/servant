@@ -495,7 +495,7 @@ markdown api = unlines $
 
         introStr :: DocIntro -> [String]
         introStr i =
-            ("#### " ++ i ^. introTitle) :
+            ("## " ++ i ^. introTitle) :
             "" :
             intersperse "" (i ^. introBody) ++
             "" :
