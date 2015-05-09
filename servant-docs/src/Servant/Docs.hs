@@ -155,11 +155,11 @@ module Servant.Docs
   , -- * ADTs to represent an 'API'
     Method(..)
   , Endpoint, path, method, defEndpoint
-  , API, emptyAPI
+  , API, apiIntros, apiEndpoints, emptyAPI
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
   , DocNote(..), noteTitle, noteBody
-  , DocIntro(..)
+  , DocIntro(..), introTitle, introBody
   , Response(..), respStatus, respTypes, respBody, defResponse
   , Action, captures, headers, notes, params, rqtypes, rqbody, response, defAction
   , single
