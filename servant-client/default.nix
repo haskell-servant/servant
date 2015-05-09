@@ -6,7 +6,7 @@
 }:
 mkDerivation {
   pname = "servant-client";
-  version = "0.2.2";
+  version = "0.4.0";
   src = ./.;
   buildDepends = [
     aeson attoparsec base bytestring either exceptions http-client

@@ -1,4 +1,4 @@
-0.3
+0.4
 ---
 * `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
 * Support content-type aware combinators and `Accept`/`Content-type` headers

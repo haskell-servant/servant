@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "servant-docs";
-  version = "0.3";
+  version = "0.4";
   src = ./.;
   isLibrary = true;
   isExecutable = true;

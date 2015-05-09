@@ -5,7 +5,7 @@
 }:
 mkDerivation {
   pname = "servant";
-  version = "0.2.2";
+  version = "0.4.0";
   src = ./.;
   buildDepends = [
     aeson attoparsec base bytestring bytestring-conversion
