@@ -9,24 +9,26 @@ import qualified GS4
 import qualified GS5
 import qualified GS6
 import qualified GS7
+import qualified GS9
 
-app :: String -> Maybe Application
-app n = case n of
-  "1" -> Just GS1.app
-  "2" -> Just GS2.app
-  "3" -> Just GS3.app
-  "4" -> Just GS4.app
-  "5" -> Just GS5.app
-  "6" -> Just GS6.app
-  "7" -> Just GS7.app
-  "8" -> Just GS3.app
-  _   -> Nothing
+app :: String -> (Application -> IO ()) -> IO ()
+app n f = case n of
+  "1" -> f GS1.app
+  "2" -> f GS2.app
+  "3" -> f GS3.app
+  "4" -> f GS4.app
+  "5" -> f GS5.app
+  "6" -> f GS6.app
+  "7" -> f GS7.app
+  "8" -> f GS3.app
+  "9" -> GS9.writeJSFiles >> f GS9.app
+  _   -> usage
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
-    [n] -> maybe usage (run 8081) (app n)
+    [n] -> app n (run 8081)
     _   -> usage
 
 usage :: IO ()
