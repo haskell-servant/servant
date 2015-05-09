@@ -2,19 +2,21 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings #-}
 module GS9 where
 
 import Control.Applicative
 import Control.Monad.IO.Class
 import Data.Aeson
-import Data.Char
-import Data.List
+import Data.Text (Text)
 import GHC.Generics
-import qualified Language.Javascript.JQuery as JQ
 import Math.Probable
 import Network.Wai
 import Servant
 import Servant.JQuery
+
+import qualified Data.Text                  as T
+import qualified Language.Javascript.JQuery as JQ
 
 data Point = Point
   { x :: Double
@@ -29,24 +31,24 @@ randomPoint = liftIO . mwc $ Point <$> d <*> d
   where d = doubleIn (-1, 1)
 
 data Search a = Search
-  { query   :: String
+  { query   :: Text
   , results :: [a]
   } deriving Generic
 
-mkSearch :: String -> [a] -> Search a
+mkSearch :: Text -> [a] -> Search a
 mkSearch = Search
 
 instance ToJSON a => ToJSON (Search a)
 
 data Book = Book
-  { author :: String
-  , title  :: String
+  { author :: Text
+  , title  :: Text
   , year   :: Int
   } deriving Generic
 
 instance ToJSON Book
 
-book :: String -> String -> Int -> Book
+book :: Text -> Text -> Int -> Book
 book = Book
 
 books :: [Book]
@@ -59,18 +61,18 @@ books =
   , book "Richard Bird" "Introduction to Functional Programming using Haskell" 1998
   ]
 
-searchBook :: Monad m => Maybe String -> m (Search Book)
+searchBook :: Monad m => Maybe Text -> m (Search Book)
 searchBook Nothing  = return (mkSearch "" books)
 searchBook (Just q) = return (mkSearch q books')
 
-  where books' = filter (\b -> q' `isInfixOf` map toLower (author b)
-                            || q' `isInfixOf` map toLower (title b)
+  where books' = filter (\b -> q' `T.isInfixOf` T.toLower (author b)
+                            || q' `T.isInfixOf` T.toLower (title b)
                         )
                         books
-        q' = map toLower q
+        q' = T.toLower q
 
 type API = "point" :> Get '[JSON] Point
-      :<|> "books" :> QueryParam "q" String :> Get '[JSON] (Search Book)
+      :<|> "books" :> QueryParam "q" Text :> Get '[JSON] (Search Book)
 
 type API' = API :<|> Raw
 

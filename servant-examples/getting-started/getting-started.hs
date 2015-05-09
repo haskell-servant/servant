@@ -10,6 +10,7 @@ import qualified GS5
 import qualified GS6
 import qualified GS7
 import qualified GS9
+import qualified GS10
 
 app :: String -> (Application -> IO ()) -> IO ()
 app n f = case n of
@@ -22,6 +23,7 @@ app n f = case n of
   "7" -> f GS7.app
   "8" -> f GS3.app
   "9" -> GS9.writeJSFiles >> f GS9.app
+  "10" -> f GS10.app
   _   -> usage
 
 main :: IO ()

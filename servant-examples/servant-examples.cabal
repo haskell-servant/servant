@@ -15,19 +15,25 @@ cabal-version:       >=1.10
 
 executable getting-started
   main-is: getting-started.hs
-  other-modules: GS1, GS2, GS3, GS4, GS5, GS6, GS7, GS8, GS9
+  other-modules: GS1, GS2, GS3, GS4, GS5, GS6, GS7, GS8, GS9, GS10
   build-depends:
       aeson >= 0.8
     , base >= 4.7
+    , bytestring
     , directory
     , either
+    , http-types
     , js-jquery
     , lucid
+    , pandoc
     , probable
     , servant
+    , servant-docs
     , servant-jquery
     , servant-lucid
+    , servant-pandoc >= 0.2
     , servant-server
+    , text
     , time
     , transformers
     , wai
