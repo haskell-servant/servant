@@ -10,10 +10,10 @@ import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Text (Text)
 import GHC.Generics
-import Math.Probable
 import Network.Wai
 import Servant
 import Servant.JQuery
+import System.Random
 
 import qualified Data.Text                  as T
 import qualified Language.Javascript.JQuery as JQ
@@ -26,9 +26,10 @@ data Point = Point
 instance ToJSON Point
 
 randomPoint :: MonadIO m => m Point
-randomPoint = liftIO . mwc $ Point <$> d <*> d
-  
-  where d = doubleIn (-1, 1)
+randomPoint = liftIO . getStdRandom $ \g ->
+  let (rx, g')  = randomR (-1, 1) g
+      (ry, g'') = randomR (-1, 1) g'
+  in (Point rx ry, g'')
 
 data Search a = Search
   { query   :: Text

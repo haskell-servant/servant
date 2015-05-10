@@ -25,7 +25,7 @@ executable getting-started
     , http-types
     , js-jquery
     , lucid
-    , probable
+    , random
     , servant
     , servant-docs
     , servant-jquery
