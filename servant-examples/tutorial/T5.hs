@@ -3,7 +3,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
-module GS5 where
+module T5 where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either

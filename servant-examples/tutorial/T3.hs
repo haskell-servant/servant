@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
-module GS3 where
+module T3 where
 
 import Control.Monad.Trans.Either
 import Data.Aeson

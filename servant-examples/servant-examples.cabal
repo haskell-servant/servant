@@ -13,9 +13,9 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
-executable getting-started
-  main-is: getting-started.hs
-  other-modules: GS1, GS2, GS3, GS4, GS5, GS6, GS7, GS8, GS9, GS10
+executable tutorial
+  main-is: tutorial.hs
+  other-modules: T1, T2, T3, T4, T5, T6, T7, T8, T9, T10
   build-depends:
       aeson >= 0.8
     , base >= 4.7
@@ -36,12 +36,12 @@ executable getting-started
     , transformers
     , wai
     , warp
-  hs-source-dirs: getting-started
+  hs-source-dirs: tutorial
   default-language: Haskell2010
 
-executable gs8-main
-  main-is: gs8-main.hs
-  hs-source-dirs: getting-started
+executable t8-main
+  main-is: t8-main.hs
+  hs-source-dirs: tutorial
   default-language: Haskell2010
   build-depends:
       aeson

@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-module GS4 where
+module T4 where
 
 import Data.Aeson
 import Data.Foldable (foldMap)

@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-module GS7 where
+module T7 where
 
 import Control.Monad.Trans.Either
 import Control.Monad.Trans.Reader

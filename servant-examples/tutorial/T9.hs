@@ -3,7 +3,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
-module GS9 where
+module T9 where
 
 import Control.Applicative
 import Control.Monad.IO.Class
@@ -89,16 +89,16 @@ server = randomPoint
 
 server' :: Server API'
 server' = server
-     :<|> serveDirectory "getting-started/gs9"
+     :<|> serveDirectory "tutorial/t9"
 
 apiJS :: String
 apiJS = jsForAPI api
 
 writeJSFiles :: IO ()
 writeJSFiles = do
-  writeFile "getting-started/gs9/api.js" apiJS
+  writeFile "tutorial/t9/api.js" apiJS
   jq <- readFile =<< JQ.file
-  writeFile "getting-started/gs9/jq.js" jq
+  writeFile "tutorial/t9/jq.js" jq
 
 app :: Application
 app = serve api' server'
