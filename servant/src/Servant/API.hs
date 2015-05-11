@@ -5,6 +5,8 @@ module Servant.API (
   -- | Type-level combinator for expressing subrouting: @':>'@
   module Servant.API.Alternative,
   -- | Type-level combinator for alternative endpoints: @':<|>'@
+  module Servant.API.Authentication,
+  -- | Type-level combinator for endpoints requiring auth: @'BasicAuth'@
 
   -- * Accessing information from the request
   module Servant.API.Capture,
@@ -60,6 +62,7 @@ module Servant.API (
   ) where
 
 import           Servant.API.Alternative     ((:<|>) (..))
+import           Servant.API.Authentication  (BasicAuth)
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
