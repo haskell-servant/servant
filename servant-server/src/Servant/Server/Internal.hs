@@ -26,11 +26,14 @@ import           Control.Monad.Trans.Except  (ExceptT)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
-import           Data.Maybe                  (fromMaybe, mapMaybe)
+import           Data.ByteString.Base64      (decodeLenient)
+import qualified Data.ByteString.Lazy        as BL
+import           Data.Maybe                  (mapMaybe, fromMaybe)
 import           Data.String                 (fromString)
 import           Data.String.Conversions     (ConvertibleStrings, cs, (<>))
 import           Data.Text                   (Text)
 import           Data.Typeable
+import           Data.Word8                  (isSpace, _colon, toLower)
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
 import           Network.Socket              (SockAddr)
@@ -65,6 +68,11 @@ class HasServer layout where
   route :: Proxy layout -> Delayed (Server layout) -> Router
 
 type Server layout = ServerT layout (ExceptT ServantErr IO)
+
+-- | A type-indexed class to encapsulate Basic authentication handling.
+-- Authentication handling is indexed by the lookup type.
+class BasicAuthLookup lookup a | lookup -> a where
+    basicAuthLookup :: Proxy lookup -> B.ByteString -> B.ByteString -> IO (Maybe a)
 
 -- * Instances
 
@@ -238,6 +246,42 @@ instance
   type ServerT (Delete ctypes (Headers h v)) m = m (Headers h v)
 
   route Proxy = methodRouterHeaders methodDelete (Proxy :: Proxy ctypes) ok200
+
+-- | Authentication
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         (HasServer sublayout, BasicAuthLookup lookup authVal) => HasServer (BasicAuth realm lookup authVal :> sublayout) where
+    type ServerT (BasicAuth realm lookup authVal :> sublayout) m = authVal -> ServerT sublayout m
+    route proxy action request response =
+        case lookup "Authorization" (requestHeaders request) of
+            Nothing     -> error "handle no authorization header" -- 401
+            Just authBs ->
+                -- ripped from: https://hackage.haskell.org/package/wai-extra-1.3.4.5/docs/src/Network-Wai-Middleware-HttpAuth.html#basicAuth
+                let (x,y) = B.break isSpace authBs in
+                    if B.map toLower x == "basic"
+                    then checkB64 (B.dropWhile isSpace y)
+                    else error "not basic authentication" -- 401
+      where
+        checkB64 encoded =
+            case B.uncons passwordWithColonAtHead of
+                Just (_, password) -> do
+                    -- let's check these credentials using the user-provided lookup method
+                    maybeAuthData <- basicAuthLookup (Proxy :: Proxy lookup) username password
+                    case maybeAuthData of
+                        Nothing         -> error "bad password" -- 403
+                        (Just authData) ->
+                            route (Proxy :: Proxy sublayout) (action authData) request response
+
+                -- no username:password present
+                Nothing            -> error "No password" -- 403
+          where
+            raw = decodeLenient encoded
+            -- split username and password at the colon ':' char.
+            (username, passwordWithColonAtHead) = B.breakByte _colon raw
+
+
 
 -- | When implementing the handler for a 'Get' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Post.Post'

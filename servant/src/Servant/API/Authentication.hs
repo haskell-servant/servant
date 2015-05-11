@@ -12,7 +12,7 @@ import           GHC.TypeLits  (Symbol)
 --
 -- Example:
 -- >>> type MyApi = BasicAuth "book-realm" DB :> "books" :> Get '[JSON] [Book]
-data BasicAuth (realm :: Symbol) lookup
+data BasicAuth (realm :: Symbol) lookup a
     deriving (Typeable)
 
 -- $setup
