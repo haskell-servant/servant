@@ -4,7 +4,7 @@ synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
   .
-  You can learn about the basics in <http://haskell-servant.github.io/getting-started/ the getting started> guide.
+  You can learn about the basics in the <http://haskell-servant.github.io/tutorial tutorial>.
   .
   <https://github.com/haskell-servant/servant-server/blob/master/example/greet.hs Here>'s a runnable example, with comments, that defines a dummy API and
   implements a webserver that serves this API, using the <http://hackage.haskell.org/package/servant-server servant-server> package.
