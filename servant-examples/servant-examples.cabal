@@ -18,7 +18,7 @@ executable tutorial
   other-modules: T1, T2, T3, T4, T5, T6, T7, T8, T9, T10
   build-depends:
       aeson >= 0.8
-    , base >= 4.7
+    , base >= 4.7 && < 5
     , bytestring
     , directory
     , either
@@ -45,7 +45,7 @@ executable t8-main
   default-language: Haskell2010
   build-depends:
       aeson
-    , base
+    , base >= 4.7 && < 5
     , either
     , servant
     , servant-client
@@ -56,7 +56,7 @@ executable hackage
   main-is:             hackage.hs
   build-depends:
       aeson >= 0.8
-    , base >=4.7
+    , base >=4.7 && < 5
     , either
     , servant == 0.4.*
     , servant-client == 0.4.*
@@ -69,7 +69,7 @@ executable wai-middleware
   main-is: wai-middleware.hs
   build-depends:
       aeson >= 0.8
-    , base >= 4.7
+    , base >= 4.7 && < 5
     , servant
     , servant-server
     , text
@@ -83,7 +83,7 @@ executable auth-combinator
   main-is: auth-combinator.hs
   build-depends:
       aeson >= 0.8
-    , base >= 4.7
+    , base >= 4.7 && < 5
     , bytestring
     , http-types
     , servant
