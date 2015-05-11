@@ -11,8 +11,7 @@ import           GHC.TypeLits  (Symbol)
 -- type to encapsulate authentication logic.
 --
 -- Example:
--- >>> type AuthLookup = Text -> IO User
--- >>> type MyApi = BasicAuth "book-realm" :> "books" :> Get '[JSON] [Book]
+-- >>> type MyApi = BasicAuth "book-realm" DB :> "books" :> Get '[JSON] [Book]
 data BasicAuth (realm :: Symbol) lookup
     deriving (Typeable)
 
@@ -20,6 +19,6 @@ data BasicAuth (realm :: Symbol) lookup
 -- >>> import Servant.API
 -- >>> import Data.Aeson
 -- >>> import Data.Text
--- >>> data User
+-- >>> data DB
 -- >>> data Book
 -- >>> instance ToJSON Book where { toJSON = undefined }
