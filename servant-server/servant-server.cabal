@@ -43,7 +43,6 @@ library
     Servant.Server.Internal.ServantErr
     Servant.Utils.StaticFiles
   build-depends:
-<<<<<<< HEAD
         base               >= 4.7  && < 5
       , aeson              >= 0.7  && < 0.11
       , attoparsec         >= 0.12 && < 0.14
@@ -67,7 +66,7 @@ library
       , wai                >= 3.0  && < 3.1
       , wai-app-static     >= 3.0  && < 3.2
       , warp               >= 3.0  && < 3.2
-
+      , word8              >= 0.1.0
   hs-source-dirs: src
   default-language: Haskell2010
   ghc-options: -Wall
