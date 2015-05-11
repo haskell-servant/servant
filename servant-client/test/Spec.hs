@@ -4,4 +4,3 @@ main :: IO ()
 main = do
   spec
   failSpec
-
