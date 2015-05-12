@@ -40,18 +40,18 @@ import           Data.Word8                  (isSpace, _colon, toLower)
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
 import           Network.Socket              (SockAddr)
-import           Network.Wai                 (Application, Request, Response,
+import           Network.Wai                 (Application, isSecure, httpVersion, Request, Response,
                                               ResponseReceived, lazyRequestBody,
-                                              pathInfo, rawQueryString,
+                                              pathInfo, rawQueryString, remoteHost,
                                               requestBody, requestHeaders,
                                               requestMethod, responseLBS,
-                                              strictRequestBody)
+                                              strictRequestBody, vault)
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
-                                               Delete, Get, Header,
+                                               Delete, Get, Header, IsSecure(Secure, NotSecure),
                                               MatrixFlag, MatrixParam, MatrixParams,
                                               Patch, Post, Put, QueryFlag,
                                               QueryParam, QueryParams, Raw,
-                                              ReqBody)
+                                              RemoteHost, ReqBody, Vault)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..))
@@ -80,8 +80,8 @@ type Server layout = ServerT layout (ExceptT ServantErr IO)
 -- >   type BasicAuthVal = ExampleUser
 -- >   basicAuthLookup _ _ _ = return Nothing
 class BasicAuthLookup lookup where
-    type BasicAuthVal
-    basicAuthLookup :: Proxy lookup -> B.ByteString -> B.ByteString -> IO (Maybe BasicAuthVal)
+    type BasicAuthVal lookup :: *
+    basicAuthLookup :: Proxy lookup -> B.ByteString -> B.ByteString -> IO (Maybe (BasicAuthVal lookup))
 
 -- * Instances
 
@@ -258,7 +258,7 @@ instance
     => HasServer (BasicAuth realm lookup :> sublayout) where
 
     type ServerT (BasicAuth realm lookup :> sublayout) m
-        = BasicAuthVal -> ServerT sublayout m
+        = BasicAuthVal lookup -> ServerT sublayout m
 
     route _ action request respond =
         case lookup "Authorization" (requestHeaders request) of
