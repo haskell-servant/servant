@@ -71,8 +71,15 @@ type Server layout = ServerT layout (ExceptT ServantErr IO)
 
 -- | A type-indexed class to encapsulate Basic authentication handling.
 -- Authentication handling is indexed by the lookup type.
-class BasicAuthLookup lookup a | lookup -> a where
-    basicAuthLookup :: Proxy lookup -> B.ByteString -> B.ByteString -> IO (Maybe a)
+--
+-- > data ExampleAuthDB
+-- > data ExampleUser
+-- > instance BasicAuthLookup ExampleAuthDB where
+-- >   type BasicAuthVal = ExampleUser
+-- >   basicAuthLookup _ _ _ = return Nothing
+class BasicAuthLookup lookup where
+    type BasicAuthVal
+    basicAuthLookup :: Proxy lookup -> B.ByteString -> B.ByteString -> IO (Maybe BasicAuthVal)
 
 -- * Instances
 
@@ -252,31 +259,44 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-         (HasServer sublayout, BasicAuthLookup lookup authVal) => HasServer (BasicAuth realm lookup authVal :> sublayout) where
-    type ServerT (BasicAuth realm lookup authVal :> sublayout) m = authVal -> ServerT sublayout m
-    route proxy action request response =
+    ( HasServer sublayout
+    , BasicAuthLookup lookup
+    , KnownSymbol realm
+    )
+    => HasServer (BasicAuth realm lookup :> sublayout) where
+
+    type ServerT (BasicAuth realm lookup :> sublayout) m
+        = BasicAuthVal -> ServerT sublayout m
+
+    route _ action request respond =
         case lookup "Authorization" (requestHeaders request) of
-            Nothing     -> error "handle no authorization header" -- 401
+            Nothing     -> respond . succeedWith $ authFailure401
             Just authBs ->
                 -- ripped from: https://hackage.haskell.org/package/wai-extra-1.3.4.5/docs/src/Network-Wai-Middleware-HttpAuth.html#basicAuth
                 let (x,y) = B.break isSpace authBs in
                     if B.map toLower x == "basic"
-                    then checkB64 (B.dropWhile isSpace y)
-                    else error "not basic authentication" -- 401
+                         -- check base64-encoded password
+                    then checkB64AndRespond (B.dropWhile isSpace y)
+                         -- Authenticaiton header is not Basic, fail with 401.
+                    else respond . succeedWith $ authFailure401
       where
-        checkB64 encoded =
+        realmBytes = (fromString . symbolVal) (Proxy :: Proxy realm)
+        headerBytes = "Basic realm=\"" <> realmBytes <> "\""
+        authFailure401 = responseLBS status401 [("WWW-Authenticate", headerBytes)] ""
+        checkB64AndRespond encoded =
             case B.uncons passwordWithColonAtHead of
                 Just (_, password) -> do
                     -- let's check these credentials using the user-provided lookup method
                     maybeAuthData <- basicAuthLookup (Proxy :: Proxy lookup) username password
                     case maybeAuthData of
-                        Nothing         -> error "bad password" -- 403
+                        Nothing         -> respond . succeedWith $ authFailure403
                         (Just authData) ->
-                            route (Proxy :: Proxy sublayout) (action authData) request response
+                            route (Proxy :: Proxy sublayout) (action authData) request respond
 
                 -- no username:password present
-                Nothing            -> error "No password" -- 403
+                Nothing            -> respond . succeedWith $ authFailure401
           where
+            authFailure403 = responseLBS status403 [] ""
             raw = decodeLenient encoded
             -- split username and password at the colon ':' char.
             (username, passwordWithColonAtHead) = B.breakByte _colon raw
