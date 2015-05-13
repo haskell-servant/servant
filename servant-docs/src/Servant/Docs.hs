@@ -30,6 +30,7 @@
 -- > {-# LANGUAGE OverloadedStrings     #-}
 -- > {-# LANGUAGE TypeOperators         #-}
 -- > {-# OPTIONS_GHC -fno-warn-orphans #-}
+-- > import Control.Lens
 -- > import Data.Aeson
 -- > import Data.Proxy
 -- > import Data.String.Conversions
@@ -51,7 +52,7 @@
 -- >
 -- > -- | We can also implement 'MimeRender' for additional formats like 'PlainText'.
 -- > instance MimeRender PlainText Greet where
--- >     toByteString Proxy (Greet s) = "\"" <> cs s <> "\""
+-- >     mimeRender Proxy (Greet s) = "\"" <> cs s <> "\""
 -- >
 -- > -- We add some useful annotations to our captures,
 -- > -- query parameters and request body to make the docs
@@ -111,7 +112,7 @@
 -- >   :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
 -- >
 -- >        -- DELETE /greet/:greetid
--- >   :<|> "greet" :> Capture "greetid" Text :> Delete
+-- >   :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] ()
 -- >
 -- > testApi :: Proxy TestApi
 -- > testApi = Proxy
@@ -121,7 +122,7 @@
 -- > -- notes.
 -- > extra :: ExtraInfo TestApi
 -- > extra =
--- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
+-- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete '[JSON] ())) $
 -- >              defAction & headers <>~ ["unicorns"]
 -- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
 -- >                                      , DocNote "Second secton" ["And some more"]
