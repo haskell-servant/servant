@@ -107,6 +107,8 @@ test-suite doctests
               , servant
               , doctest
               , filemanip
+              , directory
+              , filepath
  type: exitcode-stdio-1.0
  main-is: test/Doctests.hs
  buildable: True

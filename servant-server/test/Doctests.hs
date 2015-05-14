@@ -1,14 +1,18 @@
 module Main where
 
+import           Data.List (isPrefixOf)
+import           System.Directory
+import           System.FilePath
 import           System.FilePath.Find
 import           Test.DocTest
 
 main :: IO ()
 main = do
     files <- find always (extension ==? ".hs") "src"
+    cabalMacrosFile <- getCabalMacrosFile
     doctest $ [ "-isrc"
               , "-optP-include"
-              , "-optPdist/build/autogen/cabal_macros.h"
+              , "-optP" ++ cabalMacrosFile
               , "-XOverloadedStrings"
               , "-XFlexibleInstances"
               , "-XMultiParamTypeClasses"
@@ -16,3 +20,10 @@ main = do
               , "-XTypeOperators"
               ] ++ files
 
+getCabalMacrosFile :: IO FilePath
+getCabalMacrosFile = do
+  contents <- getDirectoryContents "dist"
+  let rest = "build" </> "autogen" </> "cabal_macros.h"
+  return $ case filter ("dist-sandbox-" `isPrefixOf`) contents of
+    [x] -> "dist" </> x </> rest
+    [] -> "dist" </> rest
