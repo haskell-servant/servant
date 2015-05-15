@@ -32,7 +32,7 @@ instance ToJSON Greet
 
 -- We can also implement 'MimeRender' explicitly for additional formats.
 instance MimeRender PlainText Greet where
-    toByteString Proxy (Greet s) = "<h1>" <> cs s <> "</h1>"
+    mimeRender Proxy (Greet s) = "<h1>" <> cs s <> "</h1>"
 
 -- we provide a sample value for the 'Greet' type
 instance ToSample Greet where
@@ -56,7 +56,7 @@ instance ToCapture (Capture "greetid" Text) where
 type TestApi =
        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON,PlainText] Greet
   :<|> "greet" :> RQBody '[JSON] Greet :> Post '[JSON] Greet
-  :<|> "delete" :> Capture "greetid" Text :> Delete
+  :<|> "delete" :> Capture "greetid" Text :> Delete '[] ()
 
 testApi :: Proxy TestApi
 testApi = Proxy

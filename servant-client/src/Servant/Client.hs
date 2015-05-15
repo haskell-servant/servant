@@ -43,15 +43,16 @@ import           Servant.Common.Req
 
 -- | 'client' allows you to produce operations to query an API from a client.
 --
--- > type MyApi = "books" :> Get [Book] -- GET /books
--- >         :<|> "books" :> ReqBody Book :> Post Book -- POST /books
+-- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
+-- >         :<|> "books" :> ReqBody '[JSON] Book :> Post Book -- POST /books
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getAllBooks :: BaseUrl -> EitherT String IO [Book]
--- > postNewBook :: Book -> BaseUrl -> EitherT String IO Book
--- > (getAllBooks :<|> postNewBook) = client myApi
+-- > getAllBooks :: EitherT String IO [Book]
+-- > postNewBook :: Book -> EitherT String IO Book
+-- > (getAllBooks :<|> postNewBook) = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 client :: HasClient layout => Proxy layout -> BaseUrl -> Client layout
 client p baseurl = clientWithRoute p defReq baseurl
 
@@ -68,15 +69,16 @@ class HasClient layout where
 --   one function for querying @a@ and another one for querying @b@,
 --   stitching them together with ':<|>', which really is just like a pair.
 --
--- > type MyApi = "books" :> Get [Book] -- GET /books
--- >         :<|> "books" :> ReqBody Book :> Post Book -- POST /books
+-- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
+-- >         :<|> "books" :> ReqBody '[JSON] Book :> Post Book -- POST /books
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getAllBooks :: BaseUrl -> EitherT String IO [Book]
--- > postNewBook :: Book -> BaseUrl -> EitherT String IO Book
--- > (getAllBooks :<|> postNewBook) = client myApi
+-- > getAllBooks :: EitherT String IO [Book]
+-- > postNewBook :: Book -> EitherT String IO Book
+-- > (getAllBooks :<|> postNewBook) = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
   type Client (a :<|> b) = Client a :<|> Client b
   clientWithRoute Proxy req baseurl =
@@ -94,13 +96,14 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
 --
 -- Example:
 --
--- > type MyApi = "books" :> Capture "isbn" Text :> Get Book
+-- > type MyApi = "books" :> Capture "isbn" Text :> Get '[JSON] Book
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBook :: Text -> BaseUrl -> EitherT String IO Book
--- > getBook = client myApi
+-- > getBook :: Text -> EitherT String IO Book
+-- > getBook = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBook" to query that endpoint
 instance (KnownSymbol capture, ToText a, HasClient sublayout)
       => HasClient (Capture capture a :> sublayout) where
@@ -205,19 +208,20 @@ instance
 --
 -- Example:
 --
--- > newtype Referer = Referer Text
--- >   deriving (Eq, Show, FromText, ToText)
+-- > newtype Referer = Referer { referrer :: Text }
+-- >   deriving (Eq, Show, Generic, FromText, ToText)
 -- >
 -- >            -- GET /view-my-referer
--- > type MyApi = "view-my-referer" :> Header "Referer" Referer :> Get Referer
+-- > type MyApi = "view-my-referer" :> Header "Referer" Referer :> Get '[JSON] Referer
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > viewReferer :: Maybe Referer -> BaseUrl -> EitherT String IO Book
--- > viewReferer = client myApi
+-- > viewReferer :: Maybe Referer -> EitherT String IO Book
+-- > viewReferer = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "viewRefer" to query that endpoint
--- > -- specifying Nothing or Just "http://haskell.org/" as arguments
+-- > -- specifying Nothing or e.g Just "http://haskell.org/" as arguments
 instance (KnownSymbol sym, ToText a, HasClient sublayout)
       => HasClient (Header sym a :> sublayout) where
 
@@ -366,13 +370,14 @@ instance
 --
 -- Example:
 --
--- > type MyApi = "books" :> QueryParam "author" Text :> Get [Book]
+-- > type MyApi = "books" :> QueryParam "author" Text :> Get '[JSON] [Book]
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: Maybe Text -> BaseUrl -> EitherT String IO [Book]
--- > getBooksBy = client myApi
+-- > getBooksBy :: Maybe Text -> EitherT String IO [Book]
+-- > getBooksBy = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
@@ -411,13 +416,14 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 --
 -- Example:
 --
--- > type MyApi = "books" :> QueryParams "authors" Text :> Get [Book]
+-- > type MyApi = "books" :> QueryParams "authors" Text :> Get '[JSON] [Book]
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: [Text] -> BaseUrl -> EitherT String IO [Book]
--- > getBooksBy = client myApi
+-- > getBooksBy :: [Text] -> EitherT String IO [Book]
+-- > getBooksBy = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy []' for all books
 -- > -- 'getBooksBy ["Isaac Asimov", "Robert A. Heinlein"]'
@@ -451,13 +457,14 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 --
 -- Example:
 --
--- > type MyApi = "books" :> QueryFlag "published" :> Get [Book]
+-- > type MyApi = "books" :> QueryFlag "published" :> Get '[JSON] [Book]
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooks :: Bool -> BaseUrl -> EitherT String IO [Book]
--- > getBooks = client myApi
+-- > getBooks :: Bool -> EitherT String IO [Book]
+-- > getBooks = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooks" to query that endpoint.
 -- > -- 'getBooksBy False' for all books
 -- > -- 'getBooksBy True' to only get _already published_ books
@@ -492,13 +499,14 @@ instance (KnownSymbol sym, HasClient sublayout)
 --
 -- Example:
 --
--- > type MyApi = "books" :> MatrixParam "author" Text :> Get [Book]
+-- > type MyApi = "books" :> MatrixParam "author" Text :> Get '[JSON] [Book]
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: Maybe Text -> BaseUrl -> EitherT String IO [Book]
--- > getBooksBy = client myApi
+-- > getBooksBy :: Maybe Text -> EitherT String IO [Book]
+-- > getBooksBy = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
@@ -536,13 +544,14 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 --
 -- Example:
 --
--- > type MyApi = "books" :> MatrixParams "authors" Text :> Get [Book]
+-- > type MyApi = "books" :> MatrixParams "authors" Text :> Get '[JSON] [Book]
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: [Text] -> BaseUrl -> EitherT String IO [Book]
--- > getBooksBy = client myApi
+-- > getBooksBy :: [Text] -> EitherT String IO [Book]
+-- > getBooksBy = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy []' for all books
 -- > -- 'getBooksBy ["Isaac Asimov", "Robert A. Heinlein"]'
@@ -576,13 +585,14 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 --
 -- Example:
 --
--- > type MyApi = "books" :> MatrixFlag "published" :> Get [Book]
+-- > type MyApi = "books" :> MatrixFlag "published" :> Get '[JSON] [Book]
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooks :: Bool -> BaseUrl -> EitherT String IO [Book]
--- > getBooks = client myApi
+-- > getBooks :: Bool -> EitherT String IO [Book]
+-- > getBooks = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooks" to query that endpoint.
 -- > -- 'getBooksBy False' for all books
 -- > -- 'getBooksBy True' to only get _already published_ books
@@ -621,13 +631,14 @@ instance HasClient Raw where
 --
 -- Example:
 --
--- > type MyApi = "books" :> ReqBody Book :> Post Book
+-- > type MyApi = "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > addBook :: Book -> BaseUrl -> EitherT String IO Book
--- > addBook = client myApi
+-- > addBook :: Book -> EitherT String IO Book
+-- > addBook = client myApi host
+-- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "addBook" to query that endpoint
 instance (MimeRender ct a, HasClient sublayout)
       => HasClient (ReqBody (ct ': cts) a :> sublayout) where
