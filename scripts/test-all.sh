@@ -28,7 +28,7 @@ declare -a SDISTS
 prepare_sandbox () {
     $CABAL sandbox init
     for s in ${SOURCES[@]} ; do
-        (cd "$s" && $CABAL sandbox init --sandbox=../.cabal-sandbox/ && $CABAL sandbox add-source .)
+        (cd "$s" && $CABAL clean && $CABAL sandbox init --sandbox=../.cabal-sandbox/ && $CABAL sandbox add-source .)
     done
     $CABAL install --enable-tests ${SOURCES[@]}
 }
