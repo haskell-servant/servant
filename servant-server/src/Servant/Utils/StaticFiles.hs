@@ -7,7 +7,7 @@ module Servant.Utils.StaticFiles (
   serveDirectory,
  ) where
 
-import Data.List (isSuffixOf)
+import System.FilePath (addTrailingPathSeparator)
 import Network.Wai.Application.Static (staticApp, defaultFileServerSettings)
 import Servant.API.Raw (Raw)
 import Servant.Server (Server)
@@ -38,8 +38,7 @@ import Filesystem.Path.CurrentOS (decodeString)
 serveDirectory :: FilePath -> Server Raw
 serveDirectory =
 #if MIN_VERSION_wai_app_static(3,1,0)
-    staticApp . defaultFileServerSettings . mkSuff
+    staticApp . defaultFileServerSettings . addTrailingPathSeparator
 #else
-    staticApp . defaultFileServerSettings . decodeString . mkSuff
+    staticApp . defaultFileServerSettings . decodeString . addTrailingPathSeparator
 #endif
-  where mkSuff x = if "/" `isSuffixOf` x then x else x ++ "/"
