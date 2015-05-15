@@ -26,19 +26,19 @@ readarray -t SOURCES < "$SOURCES_TXT"
 prepare_sandbox () {
     $CABAL sandbox init
     for s in ${SOURCES[@]} ; do
-        (cd "$s" && $CABAL sandbox init --sandbox=../ && $CABAL sandbox add-source .)
+        (cd "$s" && $CABAL sandbox init --sandbox=../.cabal-sandbox/ && $CABAL sandbox add-source .)
     done
+    $CABAL install --enable-tests ${SOURCES[@]}
 }
 
 test_each () {
     for s in ${SOURCES[@]} ; do
         echo "Testing $s..."
-        cd "$s"
-        $CABAL install --only-dependencies --enable-tests
+        pushd "$s"
         $CABAL configure --enable-tests --ghc-options="$GHC_FLAGS"
         $CABAL build
         $CABAL test
-        cd ..
+        popd
     done
 }
 
