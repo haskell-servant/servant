@@ -137,10 +137,9 @@ data Link = Link
   } deriving Show
 
 -- | If either a or b produce an empty constraint, produce an empty constraint.
---
--- This works because of:
--- https://ghc.haskell.org/trac/ghc/wiki/NewAxioms/CoincidentOverlap
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
+    -- This works because of:
+    -- https://ghc.haskell.org/trac/ghc/wiki/NewAxioms/CoincidentOverlap
     Or () b       = ()
     Or a ()       = ()
 
