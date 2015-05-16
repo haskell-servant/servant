@@ -138,15 +138,17 @@ data Link = Link
 
 -- | If either a or b produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
+    -- This works because of:
+    -- https://ghc.haskell.org/trac/ghc/wiki/NewAxioms/CoincidentOverlap
     Or () b       = ()
     Or a ()       = ()
 
 -- | If both a or b produce an empty constraint, produce an empty constraint.
 type family And (a :: Constraint) (b :: Constraint) :: Constraint where
-    And () ()      = ()
+    And () ()     = ()
 
--- | You may use this type family to tell the type checker that your custom type
--- may be skipped as part of a link. This is useful for things like
+-- | You may use this type family to tell the type checker that your custom
+-- type may be skipped as part of a link. This is useful for things like
 -- 'QueryParam' that are optional in a URI and do not affect them if they are
 -- omitted.
 --
@@ -162,30 +164,30 @@ type family IsElem' a s :: Constraint
 
 -- | Closed type family, check if endpoint is within api
 type family IsElem endpoint api :: Constraint where
-    IsElem e (sa :<|> sb)                = Or (IsElem e sa) (IsElem e sb)
-    IsElem (e :> sa) (e :> sb)           = IsElem sa sb
-    IsElem sa (Header x :> sb)           = IsElem sa sb
-    IsElem sa (ReqBody y x :> sb)        = IsElem sa sb
-    IsElem (e :> sa) (Capture x y :> sb) = IsElem sa sb
-    IsElem sa (QueryParam x y :> sb)     = IsElem sa sb
-    IsElem sa (QueryParams x y :> sb)    = IsElem sa sb
-    IsElem sa (QueryFlag x :> sb)        = IsElem sa sb
-    IsElem sa (MatrixParam x y :> sb)    = IsElem sa sb
-    IsElem sa (MatrixParams x y :> sb)   = IsElem sa sb
-    IsElem sa (MatrixFlag x :> sb)       = IsElem sa sb
-    IsElem (Get ct typ) (Get ct' typ)    = IsSubList ct ct'
-    IsElem (Post ct typ) (Post ct' typ)  = IsSubList ct ct'
-    IsElem (Put ct typ) (Put ct' typ)    = IsSubList ct ct'
-    IsElem (Delete ct typ) (Delete ct' typ)    = IsSubList ct ct'
-    IsElem e e                           = ()
-    IsElem e a                           = IsElem' e a
+    IsElem e (sa :<|> sb)                   = Or (IsElem e sa) (IsElem e sb)
+    IsElem (e :> sa) (e :> sb)              = IsElem sa sb
+    IsElem sa (Header x :> sb)              = IsElem sa sb
+    IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
+    IsElem (e :> sa) (Capture x y :> sb)    = IsElem sa sb
+    IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
+    IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
+    IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
+    IsElem sa (MatrixParam x y :> sb)       = IsElem sa sb
+    IsElem sa (MatrixParams x y :> sb)      = IsElem sa sb
+    IsElem sa (MatrixFlag x :> sb)          = IsElem sa sb
+    IsElem (Get ct typ) (Get ct' typ)       = IsSubList ct ct'
+    IsElem (Post ct typ) (Post ct' typ)     = IsSubList ct ct'
+    IsElem (Put ct typ) (Put ct' typ)       = IsSubList ct ct'
+    IsElem (Delete ct typ) (Delete ct' typ) = IsSubList ct ct'
+    IsElem e e                              = ()
+    IsElem e a                              = IsElem' e a
 
 
 type family IsSubList a b :: Constraint where
-    IsSubList '[] b = ()
+    IsSubList '[] b          = ()
     IsSubList '[x] (x ': xs) = ()
     IsSubList '[x] (y ': ys) = IsSubList '[x] ys
-    IsSubList (x ': xs) y = IsSubList '[x] y `And` IsSubList xs y
+    IsSubList (x ': xs) y    = IsSubList '[x] y `And` IsSubList xs y
 
 -- Phantom types for Param
 data Matrix
