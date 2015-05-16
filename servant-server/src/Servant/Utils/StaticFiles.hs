@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- | This module defines a sever-side handler that lets you serve static files.
 --
 -- - 'serveDirectory' lets you serve anything that lives under a particular
@@ -6,10 +7,13 @@ module Servant.Utils.StaticFiles (
   serveDirectory,
  ) where
 
-import Filesystem.Path.CurrentOS (decodeString)
+import Data.List (isSuffixOf)
 import Network.Wai.Application.Static (staticApp, defaultFileServerSettings)
 import Servant.API.Raw (Raw)
 import Servant.Server (Server)
+#if !MIN_VERSION_wai_app_static(3,1,0)
+import Filesystem.Path.CurrentOS (decodeString)
+#endif
 
 -- | Serve anything under the specified directory as a 'Raw' endpoint.
 --
@@ -32,5 +36,10 @@ import Servant.Server (Server)
 -- handler in the last position, because /servant/ will try to match the handlers
 -- in order.
 serveDirectory :: FilePath -> Server Raw
-serveDirectory documentRoot =
-  staticApp (defaultFileServerSettings (decodeString (documentRoot ++ "/")))
+serveDirectory =
+#if MIN_VERSION_wai_app_static(3,1,0)
+    staticApp . defaultFileServerSettings . mkSuff
+#else
+    staticApp . defaultFileServerSettings . decodeString . mkSuff
+#endif
+  where mkSuff x = if "/" `isSuffixOf` x then x else x ++ "/"
