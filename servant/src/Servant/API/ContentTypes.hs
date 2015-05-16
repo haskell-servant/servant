@@ -70,11 +70,12 @@ import           Control.Applicative        ((<*))
 #endif
 import           Control.Arrow              (left)
 import           Control.Monad
-import           Data.Aeson                 (FromJSON, ToJSON, Value,
-                                             encode, parseJSON)
+import           Data.Aeson                 (FromJSON, ToJSON, encode,
+                                             parseJSON)
 import           Data.Aeson.Parser          (value)
 import           Data.Aeson.Types           (parseEither)
-import           Data.Attoparsec.ByteString (endOfInput, parseOnly)
+import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
+                                                   skipSpace, (<?>))
 import qualified Data.ByteString            as BS
 import           Data.ByteString.Lazy       (ByteString, fromStrict, toStrict)
 import qualified Data.ByteString.Lazy       as B
@@ -291,10 +292,22 @@ instance MimeRender OctetStream BS.ByteString where
 
 -- | Like 'Data.Aeson.eitherDecode' but allows all JSON values instead of just
 -- objects and arrays.
+--
+-- Will handle trailing whitespace, but not trailing junk. ie.
+--
+-- >>> eitherDecodeLenient "1 " :: Either String Int
+-- Right 1
+--
+-- >>> eitherDecodeLenient "1 junk" :: Either String Int
+-- Left "trailing junk after valid JSON: endOfInput"
 eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
-eitherDecodeLenient input = do
-    v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
-    parseEither parseJSON v
+eitherDecodeLenient input =
+    parseOnly parser (cs input) >>= parseEither parseJSON
+  where
+    parser =
+        Data.Aeson.Parser.value
+        <* skipSpace
+        <* (endOfInput <?> "trailing junk after valid JSON")
 
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where
