@@ -66,30 +66,31 @@ module Servant.API.ContentTypes
     ) where
 
 #if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative        ((<*))
+import           Control.Applicative              ((*>), (<*))
 #endif
-import           Control.Arrow              (left)
+import           Control.Arrow                    (left)
 import           Control.Monad
-import           Data.Aeson                 (FromJSON, ToJSON, encode,
-                                             parseJSON)
-import           Data.Aeson.Parser          (value)
-import           Data.Aeson.Types           (parseEither)
+import           Data.Aeson                       (FromJSON, ToJSON, encode,
+                                                   parseJSON)
+import           Data.Aeson.Parser                (value)
+import           Data.Aeson.Types                 (parseEither)
 import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
                                                    skipSpace, (<?>))
-import qualified Data.ByteString            as BS
-import           Data.ByteString.Lazy       (ByteString, fromStrict, toStrict)
-import qualified Data.ByteString.Lazy       as B
+import qualified Data.ByteString                  as BS
+import           Data.ByteString.Lazy             (ByteString, fromStrict,
+                                                   toStrict)
+import qualified Data.ByteString.Lazy             as B
 import           Data.Monoid
-import           Data.String.Conversions    (cs)
-import qualified Data.Text                  as TextS
-import qualified Data.Text.Encoding         as TextS
-import qualified Data.Text.Lazy             as TextL
-import qualified Data.Text.Lazy.Encoding    as TextL
+import           Data.String.Conversions          (cs)
+import qualified Data.Text                        as TextS
+import qualified Data.Text.Encoding               as TextS
+import qualified Data.Text.Lazy                   as TextL
+import qualified Data.Text.Lazy.Encoding          as TextL
 import           Data.Typeable
-import           GHC.Exts                   (Constraint)
-import qualified Network.HTTP.Media         as M
-import           Network.URI                (escapeURIString, isUnreserved,
-                                             unEscapeString)
+import           GHC.Exts                         (Constraint)
+import qualified Network.HTTP.Media               as M
+import           Network.URI                      (escapeURIString,
+                                                   isUnreserved, unEscapeString)
 
 -- * Provided content types
 data JSON deriving Typeable
@@ -304,10 +305,10 @@ eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
 eitherDecodeLenient input =
     parseOnly parser (cs input) >>= parseEither parseJSON
   where
-    parser =
-        Data.Aeson.Parser.value
-        <* skipSpace
-        <* (endOfInput <?> "trailing junk after valid JSON")
+    parser = skipSpace
+          *> Data.Aeson.Parser.value
+          <* skipSpace
+          <* (endOfInput <?> "trailing junk after valid JSON")
 
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where

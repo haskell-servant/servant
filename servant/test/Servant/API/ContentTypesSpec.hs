@@ -8,15 +8,15 @@ module Servant.API.ContentTypesSpec where
 
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
+import           Data.Monoid
 #endif
 import           Control.Arrow
-import Data.Either
 import           Data.Aeson
 import           Data.Aeson.Parser          (jstring)
 import           Data.Attoparsec.ByteString (parseOnly)
+import           Data.Either
 import           Data.Function              (on)
 import           Data.Proxy
-
 import           Data.ByteString.Char8      (ByteString, append, pack)
 import qualified Data.ByteString.Lazy       as BSL
 import           Data.List                  (maximumBy)
@@ -26,7 +26,6 @@ import           Data.String.Conversions    (cs)
 import qualified Data.Text                  as TextS
 import qualified Data.Text.Lazy             as TextL
 import           GHC.Generics
-import Data.Monoid
 import           Network.URL                (exportParams, importParams)
 import           Test.Hspec
 import           Test.QuickCheck
@@ -42,6 +41,9 @@ spec = describe "Servant.API.ContentTypes" $ do
 
         it "handles whitespace at end of input" $ do
             mimeUnrender p "[1] " `shouldBe` Right [1 :: Int]
+
+        it "handles whitespace at beginning of input" $ do
+            mimeUnrender p " [1] " `shouldBe` Right [1 :: Int]
 
         it "does not like junk at end of input" $ do
             mimeUnrender p "[1] this probably shouldn't work"
