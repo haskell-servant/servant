@@ -14,6 +14,8 @@ module Servant.API (
   -- | Capturing parts of the url path as parsed values: @'Capture'@
   module Servant.API.Header,
   -- | Retrieving specific headers from the request
+  module Servant.API.Cookie,
+  -- | Retrieving specific cookies from the request
   module Servant.API.QueryParam,
   -- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@
   module Servant.API.ReqBody,
@@ -61,6 +63,7 @@ import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               MimeRender (..),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
+import           Servant.API.Cookie          (Cookie (..))
 import           Servant.API.Delete          (Delete)
 import           Servant.API.Get             (Get)
 import           Servant.API.Header          (Header (..))

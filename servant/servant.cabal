@@ -34,6 +34,7 @@ library
     Servant.API.Delete
     Servant.API.Get
     Servant.API.Header
+    Servant.API.Cookie
     Servant.API.Patch
     Servant.API.Post
     Servant.API.Put

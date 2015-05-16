@@ -35,7 +35,7 @@ import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              shouldRespondWith, with, (<:>))
 
 import           Servant.API                ((:<|>) (..), (:>),
-                                             addHeader, Capture,
+                                             addHeader, Capture, Cookie,
                                              Delete, Get, Header (..), Headers,
                                              JSON, MatrixFlag, MatrixParam,
                                              MatrixParams, Patch, PlainText,
@@ -87,6 +87,7 @@ spec = do
   queryParamSpec
   matrixParamSpec
   headerSpec
+  cookieSpec
   rawSpec
   unionSpec
   errorsSpec
@@ -466,6 +467,34 @@ headerSpec = describe "Servant.API.Header" $ do
 
     with (return (serve headerApi expectsString)) $ do
         let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"more from you")]
+
+        it "passes the header to the handler (String)" $
+            delete' "/" "" `shouldRespondWith` 204
+
+type CookieApi a = Cookie "my-cookie" a :> Delete '[JSON] ()
+
+cookieApi :: Proxy (CookieApi a)
+cookieApi = Proxy
+
+cookieSpec :: Spec
+cookieSpec = describe "Servant.API.Cookie" $ do
+
+    let expectsInt :: Maybe Int -> EitherT ServantErr IO ()
+        expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
+        expectsInt Nothing  = error "Expected an int"
+
+    let expectsString :: Maybe String -> EitherT ServantErr IO ()
+        expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
+        expectsString Nothing  = error "Expected a string"
+
+    with (return (serve cookieApi expectsInt)) $ do
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("Cookie" ,"my-cookie=5;")]
+
+        it "passes the header to the handler (Int)" $
+            delete' "/" "" `shouldRespondWith` 204
+
+    with (return (serve cookieApi expectsString)) $ do
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("Cookie" ,"my-cookie=more from you;")]
 
         it "passes the header to the handler (String)" $
             delete' "/" "" `shouldRespondWith` 204
