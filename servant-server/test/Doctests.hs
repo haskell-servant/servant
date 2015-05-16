@@ -27,3 +27,5 @@ getCabalMacrosFile = do
   return $ case filter ("dist-sandbox-" `isPrefixOf`) contents of
     [x] -> "dist" </> x </> rest
     [] -> "dist" </> rest
+    xs -> error $ "ran doctests with multiple dist/dist-sandbox-xxxxx's: \n"
+                ++ show xs ++ "\nTry cabal clean"
