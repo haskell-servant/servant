@@ -1,3 +1,7 @@
+0.4.1
+-----
+* The `HasClient` instance for `Delete cts ()` now does not care at all about content types provided.
+
 0.4
 ---
 * `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
