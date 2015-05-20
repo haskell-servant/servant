@@ -1,8 +1,8 @@
 servant
+servant-server
 servant-client
 servant-docs
 servant-jquery
-servant-server
 servant-examples
 servant-blaze
 servant-lucid

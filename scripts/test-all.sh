@@ -23,24 +23,36 @@ declare -a SOURCES
 readarray -t SOURCES < "$SOURCES_TXT"
 
 
-prepare_sandbox () {
-    $CABAL sandbox init
-    for s in ${SOURCES[@]} ; do
-        (cd "$s" && $CABAL sandbox init --sandbox=../.cabal-sandbox/ && $CABAL sandbox add-source .)
-    done
-    $CABAL install --enable-tests ${SOURCES[@]}
-}
-
 test_each () {
     for s in ${SOURCES[@]} ; do
         echo "Testing $s..."
         pushd "$s"
+        $CABAL install --enable-tests --only-dep
+        $CABAL check
         $CABAL configure --enable-tests --ghc-options="$GHC_FLAGS"
         $CABAL build
         $CABAL test
+        $CABAL install
         popd
     done
 }
 
-prepare_sandbox
+via_sdist () {
+    echo "Testing sdists"
+    local -a SDISTS
+    for s in ${SOURCES[@]} ; do
+        cd "$s" && cabal sdist
+        local SDIST_FILE=$(cabal info . | awk '{print $2 ".tar.gz";exit}')
+        if [ -f "dist/$SDIST_FILE" ] ; then
+            SDISTS+=("$s/dist/$SDIST_FILE")
+        else
+            echo "could not find sdist for $s"
+            exit 1
+        fi
+        cd ..
+    done
+    $CABAL install --force-reinstalls --enable-tests ${SDISTS[@]}
+}
+
 test_each
+via_sdist
