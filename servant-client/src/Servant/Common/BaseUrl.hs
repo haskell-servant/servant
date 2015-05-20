@@ -2,8 +2,10 @@
 {-# LANGUAGE ViewPatterns #-}
 module Servant.Common.BaseUrl where
 
+import Control.Monad.Catch (MonadThrow, throwM)
 import Data.List
 import GHC.Generics
+import Network.HTTP.Client (HttpException(InvalidUrlException))
 import Network.URI
 import Safe
 import Text.Read
@@ -34,20 +36,20 @@ showBaseUrl (BaseUrl urlscheme host port) =
         (Https, 443) -> ""
         _ -> ":" ++ show port
 
-parseBaseUrl :: String -> Either String BaseUrl
+parseBaseUrl :: MonadThrow m => String -> m BaseUrl
 parseBaseUrl s = case parseURI (removeTrailingSlash s) of
   -- This is a rather hacky implementation and should be replaced with something
   -- implemented in attoparsec (which is already a dependency anyhow (via aeson)).
   Just (URI "http:" (Just (URIAuth "" host (':' : (readMaybe -> Just port)))) "" "" "") ->
-    Right (BaseUrl Http host port)
+    return (BaseUrl Http host port)
   Just (URI "http:" (Just (URIAuth "" host "")) "" "" "") ->
-    Right (BaseUrl Http host 80)
+    return (BaseUrl Http host 80)
   Just (URI "https:" (Just (URIAuth "" host (':' : (readMaybe -> Just port)))) "" "" "") ->
-    Right (BaseUrl Https host port)
+    return (BaseUrl Https host port)
   Just (URI "https:" (Just (URIAuth "" host "")) "" "" "") ->
-    Right (BaseUrl Https host 443)
+    return (BaseUrl Https host 443)
   _ -> if "://" `isInfixOf` s
-    then Left ("invalid base url: " ++ s)
+    then throwM (InvalidUrlException s "Invalid base URL")
     else parseBaseUrl ("http://" ++ s)
  where
   removeTrailingSlash str = case lastMay str of
