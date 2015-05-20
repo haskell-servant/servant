@@ -25,22 +25,16 @@ readarray -t SOURCES < "$SOURCES_TXT"
 declare -a SDISTS
 
 
-prepare_sandbox () {
-    $CABAL sandbox init
-    for s in ${SOURCES[@]} ; do
-        (cd "$s" && $CABAL clean && $CABAL sandbox init --sandbox=../.cabal-sandbox/ && $CABAL sandbox add-source .)
-    done
-    $CABAL install --enable-tests ${SOURCES[@]}
-}
-
 test_each () {
     for s in ${SOURCES[@]} ; do
         echo "Testing $s..."
         pushd "$s"
+        $CABAL install --enable-tests --only-dep
         $CABAL check
         $CABAL configure --enable-tests --ghc-options="$GHC_FLAGS"
         $CABAL build
         $CABAL test
+        $CABAL install
         popd
     done
 }
@@ -62,6 +56,5 @@ via_sdist () {
     $CABAL install --force-reinstalls --enable-tests ${SDISTS[@]}
 }
 
-prepare_sandbox
 test_each
 via_sdist
