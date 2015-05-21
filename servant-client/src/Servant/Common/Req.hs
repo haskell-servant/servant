@@ -55,6 +55,8 @@ data ServantError
     }
   deriving (Show)
 
+instance Exception ServantError
+
 data Req = Req
   { reqPath   :: String
   , qs        :: QueryText
