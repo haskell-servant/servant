@@ -66,29 +66,31 @@ module Servant.API.ContentTypes
     ) where
 
 #if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative        ((<*))
+import           Control.Applicative              ((*>), (<*))
 #endif
-import           Control.Arrow              (left)
+import           Control.Arrow                    (left)
 import           Control.Monad
-import           Data.Aeson                 (FromJSON, ToJSON, Value,
-                                             encode, parseJSON)
-import           Data.Aeson.Parser          (value)
-import           Data.Aeson.Types           (parseEither)
-import           Data.Attoparsec.ByteString (endOfInput, parseOnly)
-import qualified Data.ByteString            as BS
-import           Data.ByteString.Lazy       (ByteString, fromStrict, toStrict)
-import qualified Data.ByteString.Lazy       as B
+import           Data.Aeson                       (FromJSON, ToJSON, encode,
+                                                   parseJSON)
+import           Data.Aeson.Parser                (value)
+import           Data.Aeson.Types                 (parseEither)
+import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
+                                                   skipSpace, (<?>))
+import qualified Data.ByteString                  as BS
+import           Data.ByteString.Lazy             (ByteString, fromStrict,
+                                                   toStrict)
+import qualified Data.ByteString.Lazy             as B
 import           Data.Monoid
-import           Data.String.Conversions    (cs)
-import qualified Data.Text                  as TextS
-import qualified Data.Text.Encoding         as TextS
-import qualified Data.Text.Lazy             as TextL
-import qualified Data.Text.Lazy.Encoding    as TextL
+import           Data.String.Conversions          (cs)
+import qualified Data.Text                        as TextS
+import qualified Data.Text.Encoding               as TextS
+import qualified Data.Text.Lazy                   as TextL
+import qualified Data.Text.Lazy.Encoding          as TextL
 import           Data.Typeable
-import           GHC.Exts                   (Constraint)
-import qualified Network.HTTP.Media         as M
-import           Network.URI                (escapeURIString, isUnreserved,
-                                             unEscapeString)
+import           GHC.Exts                         (Constraint)
+import qualified Network.HTTP.Media               as M
+import           Network.URI                      (escapeURIString,
+                                                   isUnreserved, unEscapeString)
 
 -- * Provided content types
 data JSON deriving Typeable
@@ -291,10 +293,22 @@ instance MimeRender OctetStream BS.ByteString where
 
 -- | Like 'Data.Aeson.eitherDecode' but allows all JSON values instead of just
 -- objects and arrays.
+--
+-- Will handle trailing whitespace, but not trailing junk. ie.
+--
+-- >>> eitherDecodeLenient "1 " :: Either String Int
+-- Right 1
+--
+-- >>> eitherDecodeLenient "1 junk" :: Either String Int
+-- Left "trailing junk after valid JSON: endOfInput"
 eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
-eitherDecodeLenient input = do
-    v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
-    parseEither parseJSON v
+eitherDecodeLenient input =
+    parseOnly parser (cs input) >>= parseEither parseJSON
+  where
+    parser = skipSpace
+          *> Data.Aeson.Parser.value
+          <* skipSpace
+          <* (endOfInput <?> "trailing junk after valid JSON")
 
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where

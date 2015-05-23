@@ -8,14 +8,15 @@ module Servant.API.ContentTypesSpec where
 
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
+import           Data.Monoid
 #endif
 import           Control.Arrow
 import           Data.Aeson
 import           Data.Aeson.Parser          (jstring)
 import           Data.Attoparsec.ByteString (parseOnly)
+import           Data.Either
 import           Data.Function              (on)
 import           Data.Proxy
-
 import           Data.ByteString.Char8      (ByteString, append, pack)
 import qualified Data.ByteString.Lazy       as BSL
 import           Data.List                  (maximumBy)
@@ -36,54 +37,56 @@ spec :: Spec
 spec = describe "Servant.API.ContentTypes" $ do
 
     describe "The JSON Content-Type type" $ do
+        let p = Proxy :: Proxy JSON
+
+        it "handles whitespace at end of input" $ do
+            mimeUnrender p "[1] " `shouldBe` Right [1 :: Int]
+
+        it "handles whitespace at beginning of input" $ do
+            mimeUnrender p " [1] " `shouldBe` Right [1 :: Int]
+
+        it "does not like junk at end of input" $ do
+            mimeUnrender p "[1] this probably shouldn't work"
+              `shouldSatisfy` (isLeft :: Either a [Int] -> Bool)
 
         it "has mimeUnrender reverse mimeRender for valid top-level json ([Int]) " $ do
-            let p = Proxy :: Proxy JSON
             property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::[Int])
 
         it "has mimeUnrender reverse mimeRender for valid top-level json " $ do
-            let p = Proxy :: Proxy JSON
             property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::SomeData)
 
     describe "The FormUrlEncoded Content-Type type" $ do
-
-        let isNonNull ("", "") = False
-            isNonNull _        = True
+        let p = Proxy :: Proxy FormUrlEncoded
 
         it "has mimeUnrender reverse mimeRender" $ do
-            let p = Proxy :: Proxy FormUrlEncoded
-            property $ \x -> all isNonNull x
+            property $ \x -> all (/= mempty) x
                 ==> mimeUnrender p (mimeRender p x) == Right (x::[(TextS.Text,TextS.Text)])
 
         it "has mimeUnrender reverse exportParams (Network.URL)" $ do
-            let p = Proxy :: Proxy FormUrlEncoded
-            property $ \x -> all isNonNull x
+            property $ \x -> all (/= mempty) x
                 ==> (mimeUnrender p . cs . exportParams . map (cs *** cs) $ x) == Right (x::[(TextS.Text,TextS.Text)])
 
         it "has importParams (Network.URL) reverse mimeRender" $ do
-            let p = Proxy :: Proxy FormUrlEncoded
-            property $ \x -> all isNonNull x
+            property $ \x -> all (/= mempty) x
                 ==> (fmap (map (cs *** cs)) . importParams . cs . mimeRender p $ x) == Just (x::[(TextS.Text,TextS.Text)])
 
     describe "The PlainText Content-Type type" $ do
+        let p = Proxy :: Proxy PlainText
 
         it "has mimeUnrender reverse mimeRender (lazy Text)" $ do
-            let p = Proxy :: Proxy PlainText
             property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::TextL.Text)
 
         it "has mimeUnrender reverse mimeRender (strict Text)" $ do
-            let p = Proxy :: Proxy PlainText
             property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::TextS.Text)
 
     describe "The OctetStream Content-Type type" $ do
+        let p = Proxy :: Proxy OctetStream
 
         it "is id (Lazy ByteString)" $ do
-            let p = Proxy :: Proxy OctetStream
             property $ \x -> mimeRender p x == (x :: BSL.ByteString)
                 && mimeUnrender p x == Right x
 
         it "is fromStrict/toStrict (Strict ByteString)" $ do
-            let p = Proxy :: Proxy OctetStream
             property $ \x -> mimeRender p x == BSL.fromStrict (x :: ByteString)
                 && mimeUnrender p (BSL.fromStrict x) == Right x
 
