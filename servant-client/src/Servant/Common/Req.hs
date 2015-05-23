@@ -1,3 +1,4 @@
+{-# LANGUAGE AutoDeriveTypeable  #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
