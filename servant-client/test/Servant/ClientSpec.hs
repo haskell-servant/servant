@@ -303,7 +303,7 @@ failSpec = withFailServer $ \ baseUrl -> do
       it "reports ConnectionError" $ do
         Left res <- runEitherT getGetWrongHost
         case res of
-          ConnectionError (C.FailedConnectionException2 "127.0.0.1" 19872 False _) -> return ()
+          ConnectionError _ -> return ()
           _ -> fail $ "expected ConnectionError, but got " <> show res
 
       it "reports UnsupportedContentType" $ do
