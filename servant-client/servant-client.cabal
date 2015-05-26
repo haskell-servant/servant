@@ -56,6 +56,9 @@ test-suite spec
   default-language: Haskell2010
   hs-source-dirs: test
   main-is: Spec.hs
+  other-modules:
+      Servant.ClientSpec
+    , Servant.Common.BaseUrlSpec
   build-depends:
       base == 4.*
     , aeson
