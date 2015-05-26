@@ -80,7 +80,7 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
 type Api =
        "get" :> Get '[JSON] Person
-  :<|> "delete" :> Delete '[JSON] ()
+  :<|> "deleteEmpty" :> Delete '[] ()
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
@@ -98,6 +98,7 @@ type Api =
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
+  :<|> "deleteContentType" :> Delete '[JSON] ()
 api :: Proxy Api
 api = Proxy
 
@@ -123,6 +124,7 @@ server = serve api (
   :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
+  :<|> return ()
  )
 
 withServer :: (BaseUrl -> IO a) -> IO a
@@ -148,7 +150,7 @@ withFailServer action = withWaiDaemon (return failServer) action
 spec :: IO ()
 spec = withServer $ \ baseUrl -> do
   let getGet :: EitherT ServantError IO Person
-      getDelete :: EitherT ServantError IO ()
+      getDeleteEmpty :: EitherT ServantError IO ()
       getCapture :: String -> EitherT ServantError IO Person
       getBody :: Person -> EitherT ServantError IO Person
       getQueryParam :: Maybe String -> EitherT ServantError IO Person
@@ -161,8 +163,9 @@ spec = withServer $ \ baseUrl -> do
       getRawFailure :: Method -> EitherT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], C.Response ByteString)
       getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])] -> EitherT ServantError IO (String, Maybe Int, Bool, [(String, [Rational])])
       getRespHeaders :: EitherT ServantError IO (Headers TestHeaders Bool)
+      getDeleteContentType :: EitherT ServantError IO ()
       (     getGet
-       :<|> getDelete
+       :<|> getDeleteEmpty
        :<|> getCapture
        :<|> getBody
        :<|> getQueryParam
@@ -174,15 +177,20 @@ spec = withServer $ \ baseUrl -> do
        :<|> getRawSuccess
        :<|> getRawFailure
        :<|> getMultiple
-       :<|> getRespHeaders)
+       :<|> getRespHeaders
+       :<|> getDeleteContentType)
          = client api baseUrl
 
   hspec $ do
     it "Servant.API.Get" $ do
       (Arrow.left show <$> runEitherT getGet) `shouldReturn` Right alice
 
-    it "Servant.API.Delete" $ do
-      (Arrow.left show <$> runEitherT getDelete) `shouldReturn` Right ()
+    describe "Servant.API.Delete" $ do
+      it "allows empty content type" $ do
+        (Arrow.left show <$> runEitherT getDeleteEmpty) `shouldReturn` Right ()
+
+      it "allows content type" $ do
+        (Arrow.left show <$> runEitherT getDeleteContentType) `shouldReturn` Right ()
 
     it "Servant.API.Capture" $ do
       (Arrow.left show <$> runEitherT (getCapture "Paula")) `shouldReturn` Right (Person "Paula" 0)
@@ -274,11 +282,11 @@ spec = withServer $ \ baseUrl -> do
 failSpec :: IO ()
 failSpec = withFailServer $ \ baseUrl -> do
   let getGet :: EitherT ServantError IO Person
-      getDelete :: EitherT ServantError IO ()
+      getDeleteEmpty :: EitherT ServantError IO ()
       getCapture :: String -> EitherT ServantError IO Person
       getBody :: Person -> EitherT ServantError IO Person
       (     getGet
-       :<|> getDelete
+       :<|> getDeleteEmpty
        :<|> getCapture
        :<|> getBody
        :<|> _ )
@@ -289,7 +297,7 @@ failSpec = withFailServer $ \ baseUrl -> do
   hspec $ do
     context "client returns errors appropriately" $ do
       it "reports FailureResponse" $ do
-        Left res <- runEitherT getDelete
+        Left res <- runEitherT getDeleteEmpty
         case res of
           FailureResponse (Status 404 "Not Found") _ _ -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res

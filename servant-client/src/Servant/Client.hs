@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 #if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE OverlappingInstances #-}
 #endif
@@ -126,8 +127,9 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-  (MimeUnrender ct a) => HasClient (Delete (ct ': cts) a) where
-  type Client (Delete (ct ': cts) a) = EitherT ServantError IO a
+  -- See https://downloads.haskell.org/~ghc/7.8.2/docs/html/users_guide/type-class-extensions.html#undecidable-instances
+  (MimeUnrender ct a, cts' ~ (ct ': cts)) => HasClient (Delete cts' a) where
+  type Client (Delete cts' a) = EitherT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl
 
@@ -137,8 +139,8 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-  HasClient (Delete (ct ': cts) ()) where
-  type Client (Delete (ct ': cts) ()) = EitherT ServantError IO ()
+  HasClient (Delete cts ()) where
+  type Client (Delete cts ()) = EitherT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodDelete req [204] baseurl
 
@@ -148,9 +150,10 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-  ( MimeUnrender ct a, BuildHeadersTo ls
-  ) => HasClient (Delete (ct ': cts) (Headers ls a)) where
-  type Client (Delete (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  -- See https://downloads.haskell.org/~ghc/7.8.2/docs/html/users_guide/type-class-extensions.html#undecidable-instances
+  ( MimeUnrender ct a, BuildHeadersTo ls, cts' ~ (ct ': cts)
+  ) => HasClient (Delete cts' (Headers ls a)) where
+  type Client (Delete cts' (Headers ls a)) = EitherT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl = do
     (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl
     return $ Headers { getResponse = resp
