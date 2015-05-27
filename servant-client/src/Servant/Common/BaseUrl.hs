@@ -1,11 +1,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ViewPatterns #-}
-module Servant.Common.BaseUrl where
+module Servant.Common.BaseUrl (
+  -- * types
+    BaseUrl (..)
+  , InvalidBaseUrlException
+  , Scheme (..)
+  -- * functions
+  , parseBaseUrl
+  , showBaseUrl
+) where
 
-import Control.Monad.Catch (MonadThrow, throwM)
+import Control.Monad.Catch (MonadThrow, throwM, Exception)
 import Data.List
 import GHC.Generics
-import Network.HTTP.Client (HttpException(InvalidUrlException))
 import Network.URI
 import Safe
 import Text.Read
@@ -36,6 +43,9 @@ showBaseUrl (BaseUrl urlscheme host port) =
         (Https, 443) -> ""
         _ -> ":" ++ show port
 
+newtype InvalidBaseUrlException = InvalidBaseUrlException { _getInvalidUrlException :: String } deriving Show
+instance Exception InvalidBaseUrlException
+
 parseBaseUrl :: MonadThrow m => String -> m BaseUrl
 parseBaseUrl s = case parseURI (removeTrailingSlash s) of
   -- This is a rather hacky implementation and should be replaced with something
@@ -49,7 +59,7 @@ parseBaseUrl s = case parseURI (removeTrailingSlash s) of
   Just (URI "https:" (Just (URIAuth "" host "")) "" "" "") ->
     return (BaseUrl Https host 443)
   _ -> if "://" `isInfixOf` s
-    then throwM (InvalidUrlException s "Invalid base URL")
+    then throwM (InvalidBaseUrlException $ "Invalid base URL: " ++ s)
     else parseBaseUrl ("http://" ++ s)
  where
   removeTrailingSlash str = case lastMay str of
