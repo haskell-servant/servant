@@ -1,3 +1,8 @@
+0.4.1
+-----
+* Allow whitespace after parsing JSON
+* Stricter matching for `safeLink` for `Capture`
+
 0.4
 ---
 * `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
