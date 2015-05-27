@@ -1,3 +1,8 @@
+0.4.1
+-----
+* Bump attoparsec upper bound to < 0.14
+* Bump wai-app-static upper bound to < 3.2
+
 0.4
 ---
 * `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
