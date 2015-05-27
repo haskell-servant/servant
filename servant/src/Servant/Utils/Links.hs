@@ -72,8 +72,7 @@
 --
 -- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] ())
 -- >>> safeLink api bad_link
--- <BLANKLINE>
--- <interactive>:64:1:
+-- ...
 --     Could not deduce (Or
 --                         (IsElem' (Delete '[JSON] ()) (Get '[JSON] Int))
 --                         (IsElem'
@@ -168,7 +167,8 @@ type family IsElem endpoint api :: Constraint where
     IsElem (e :> sa) (e :> sb)              = IsElem sa sb
     IsElem sa (Header x :> sb)              = IsElem sa sb
     IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
-    IsElem (e :> sa) (Capture x y :> sb)    = IsElem sa sb
+    IsElem (Capture z y :> sa) (Capture x y :> sb)
+                                            = IsElem sa sb
     IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
     IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
