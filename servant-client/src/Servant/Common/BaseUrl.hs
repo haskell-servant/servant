@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE ViewPatterns       #-}
 module Servant.Common.BaseUrl (
   -- * types
     BaseUrl (..)
@@ -12,6 +13,7 @@ module Servant.Common.BaseUrl (
 
 import Control.Monad.Catch (MonadThrow, throwM, Exception)
 import Data.List
+import Data.Typeable
 import GHC.Generics
 import Network.URI
 import Safe
@@ -43,7 +45,7 @@ showBaseUrl (BaseUrl urlscheme host port) =
         (Https, 443) -> ""
         _ -> ":" ++ show port
 
-newtype InvalidBaseUrlException = InvalidBaseUrlException { _getInvalidUrlException :: String } deriving Show
+data InvalidBaseUrlException = InvalidBaseUrlException String deriving (Show, Typeable)
 instance Exception InvalidBaseUrlException
 
 parseBaseUrl :: MonadThrow m => String -> m BaseUrl

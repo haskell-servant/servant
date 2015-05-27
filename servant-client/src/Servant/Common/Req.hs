@@ -1,4 +1,4 @@
-{-# LANGUAGE AutoDeriveTypeable  #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -19,6 +19,7 @@ import Data.String.Conversions
 import Data.Proxy
 import Data.Text (Text)
 import Data.Text.Encoding
+import Data.Typeable
 import Network.HTTP.Client hiding (Proxy)
 import Network.HTTP.Client.TLS
 import Network.HTTP.Media
@@ -54,7 +55,7 @@ data ServantError
     { responseContentTypeHeader :: ByteString
     , responseBody              :: ByteString
     }
-  deriving (Show)
+  deriving (Show, Typeable)
 
 instance Exception ServantError
 
