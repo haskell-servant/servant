@@ -2,6 +2,7 @@
 -----
 * Bump attoparsec upper bound to < 0.14
 * Bump wai-app-static upper bound to < 3.2
+* Bump either upper bound to < 4.5
 
 0.4
 ---
