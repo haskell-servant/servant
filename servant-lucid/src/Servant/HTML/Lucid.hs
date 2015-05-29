@@ -24,7 +24,7 @@ import           Servant.API        (Accept (..), MimeRender (..))
 
 data HTML deriving Typeable
 
--- | @text/plain;charset=utf-8@
+-- | @text/html;charset=utf-8@
 instance Accept HTML where
     contentType _ = "text" M.// "html" M./: ("charset", "utf-8")
 
