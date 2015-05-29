@@ -1,5 +1,5 @@
 name:                servant-server
-version:             0.4.0
+version:             0.4.1
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them

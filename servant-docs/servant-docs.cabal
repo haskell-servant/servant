@@ -1,5 +1,5 @@
 name:                servant-docs
-version:             0.4.0
+version:             0.4.1
 synopsis:            generate API docs for your servant webservice
 description:
   Library for generating API docs from a servant API definition.
