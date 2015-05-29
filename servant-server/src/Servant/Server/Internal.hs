@@ -227,7 +227,7 @@ captured _ = fromText
 -- >
 -- > server :: Server MyApi
 -- > server = getBook
--- >   where getBook :: Text -> EitherT (Int, String) IO Book
+-- >   where getBook :: Text -> EitherT ServantErr IO Book
 -- >         getBook isbn = ...
 instance (KnownSymbol capture, FromText a, HasServer sublayout)
       => HasServer (Capture capture a :> sublayout) where
@@ -253,7 +253,7 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
 --
 -- The code of the handler will, just like
 -- for 'Servant.API.Get.Get', 'Servant.API.Post.Post' and
--- 'Servant.API.Put.Put', run in @EitherT (Int, String) IO ()@.
+-- 'Servant.API.Put.Put', run in @EitherT ServantErr IO ()@.
 -- The 'Int' represents the status code and the 'String' a message
 -- to be returned. You can use 'Control.Monad.Trans.Either.left' to
 -- painlessly error out if the conditions for a successful deletion
@@ -329,7 +329,7 @@ instance
 -- | When implementing the handler for a 'Get' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Post.Post'
 -- and 'Servant.API.Put.Put', the handler code runs in the
--- @EitherT (Int, String) IO@ monad, where the 'Int' represents
+-- @EitherT ServantErr IO@ monad, where the 'Int' represents
 -- the status code and the 'String' a message, returned in case of
 -- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
 -- to quickly fail if some conditions are not met.
@@ -425,7 +425,7 @@ instance
 -- >
 -- > server :: Server MyApi
 -- > server = viewReferer
--- >   where viewReferer :: Referer -> EitherT (Int, String) IO referer
+-- >   where viewReferer :: Referer -> EitherT ServantErr IO referer
 -- >         viewReferer referer = return referer
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (Header sym a :> sublayout) where
@@ -442,7 +442,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- | When implementing the handler for a 'Post' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
 -- and 'Servant.API.Put.Put', the handler code runs in the
--- @EitherT (Int, String) IO@ monad, where the 'Int' represents
+-- @EitherT ServantErr IO@ monad, where the 'Int' represents
 -- the status code and the 'String' a message, returned in case of
 -- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
 -- to quickly fail if some conditions are not met.
@@ -523,7 +523,7 @@ instance
 -- | When implementing the handler for a 'Put' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
 -- and 'Servant.API.Post.Post', the handler code runs in the
--- @EitherT (Int, String) IO@ monad, where the 'Int' represents
+-- @EitherT ServantErr IO@ monad, where the 'Int' represents
 -- the status code and the 'String' a message, returned in case of
 -- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
 -- to quickly fail if some conditions are not met.
@@ -603,7 +603,7 @@ instance
 -- | When implementing the handler for a 'Patch' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
 -- and 'Servant.API.Put.Put', the handler code runs in the
--- @EitherT (Int, String) IO@ monad, where the 'Int' represents
+-- @EitherT ServantErr IO@ monad, where the 'Int' represents
 -- the status code and the 'String' a message, returned in case of
 -- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
 -- to quickly fail if some conditions are not met.
@@ -696,7 +696,7 @@ instance
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: Maybe Text -> EitherT (Int, String) IO [Book]
+-- >   where getBooksBy :: Maybe Text -> EitherT ServantErr IO [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
@@ -735,7 +735,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: [Text] -> EitherT (Int, String) IO [Book]
+-- >   where getBooksBy :: [Text] -> EitherT ServantErr IO [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (QueryParams sym a :> sublayout) where
@@ -768,7 +768,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooks
--- >   where getBooks :: Bool -> EitherT (Int, String) IO [Book]
+-- >   where getBooks :: Bool -> EitherT ServantErr IO [Book]
 -- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
 instance (KnownSymbol sym, HasServer sublayout)
       => HasServer (QueryFlag sym :> sublayout) where
@@ -810,7 +810,7 @@ parseMatrixText = parseQueryText
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: Maybe Text -> EitherT (Int, String) IO [Book]
+-- >   where getBooksBy :: Maybe Text -> EitherT ServantErr IO [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
@@ -849,7 +849,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: [Text] -> EitherT (Int, String) IO [Book]
+-- >   where getBooksBy :: [Text] -> EitherT ServantErr IO [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (MatrixParams sym a :> sublayout) where
@@ -883,7 +883,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooks
--- >   where getBooks :: Bool -> EitherT (Int, String) IO [Book]
+-- >   where getBooks :: Bool -> EitherT ServantErr IO [Book]
 -- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
 instance (KnownSymbol sym, HasServer sublayout)
       => HasServer (MatrixFlag sym :> sublayout) where
@@ -940,7 +940,7 @@ instance HasServer Raw where
 -- >
 -- > server :: Server MyApi
 -- > server = postBook
--- >   where postBook :: Book -> EitherT (Int, String) IO Book
+-- >   where postBook :: Book -> EitherT ServantErr IO Book
 -- >         postBook book = ...insert into your db...
 instance ( AllCTUnrender list a, HasServer sublayout
          ) => HasServer (ReqBody list a :> sublayout) where
