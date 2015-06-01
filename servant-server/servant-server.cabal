@@ -36,6 +36,7 @@ library
     Servant
     Servant.Server
     Servant.Server.Internal
+    Servant.Server.Internal.Authentication
     Servant.Server.Internal.Enter
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication

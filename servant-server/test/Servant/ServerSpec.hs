@@ -556,6 +556,100 @@ routerSpec = do
       it "calls f on route result" $ do
         get "" `shouldRespondWith` 202
 
+type PrioErrorsApi = ReqBody '[JSON] Person :> "foo" :> Get '[JSON] Integer
+
+prioErrorsApi :: Proxy PrioErrorsApi
+prioErrorsApi = Proxy
+
+-- | Test the relative priority of error responses from the server.
+--
+-- In particular, we check whether matching continues even if a 'ReqBody'
+-- or similar construct is encountered early in a path. We don't want to
+-- see a complaint about the request body unless the path actually matches.
+--
+prioErrorsSpec :: Spec
+prioErrorsSpec = describe "PrioErrors" $ do
+  let server = return . age
+  with (return $ serve prioErrorsApi server) $ do
+    let check (mdescr, method) path (cdescr, ctype, body) resp =
+          it fulldescr $
+            Test.Hspec.Wai.request method path [(hContentType, ctype)] body
+              `shouldRespondWith` resp
+          where
+            fulldescr = "returns " ++ show (matchStatus resp) ++ " on " ++ mdescr
+                     ++ " " ++ cs path ++ " (" ++ cdescr ++ ")"
+
+        get' = ("GET", methodGet)
+        put' = ("PUT", methodPut)
+
+        txt   = ("text"        , "text/plain;charset=utf8"      , "42"        )
+        ijson = ("invalid json", "application/json;charset=utf8", "invalid"   )
+        vjson = ("valid json"  , "application/json;charset=utf8", encode alice)
+
+    check get' "/"    txt   404
+    check get' "/bar" txt   404
+    check get' "/foo" txt   415
+    check put' "/"    txt   404
+    check put' "/bar" txt   404
+    check put' "/foo" txt   405
+    check get' "/"    ijson 404
+    check get' "/bar" ijson 404
+    check get' "/foo" ijson 400
+    check put' "/"    ijson 404
+    check put' "/bar" ijson 404
+    check put' "/foo" ijson 405
+    check get' "/"    vjson 404
+    check get' "/bar" vjson 404
+    check get' "/foo" vjson 200
+    check put' "/"    vjson 404
+    check put' "/bar" vjson 404
+    check put' "/foo" vjson 405
+
+-- | Test server error functionality.
+errorsSpec :: Spec
+errorsSpec = do
+  let he = HttpError status409 [] (Just "A custom error")
+  let ib = InvalidBody "The body is invalid"
+  let wm = WrongMethod
+  let nf = NotFound
+
+  describe "Servant.Server.Internal.RouteMismatch" $ do
+    it "HttpError > *" $ do
+      ib <> he `shouldBe` he
+      wm <> he `shouldBe` he
+      nf <> he `shouldBe` he
+
+      he <> ib `shouldBe` he
+      he <> wm `shouldBe` he
+      he <> nf `shouldBe` he
+
+    it "HE > InvalidBody > (WM,NF)" $ do
+      he <> ib `shouldBe` he
+      wm <> ib `shouldBe` ib
+      nf <> ib `shouldBe` ib
+
+      ib <> he `shouldBe` he
+      ib <> wm `shouldBe` ib
+      ib <> nf `shouldBe` ib
+
+    it "HE > IB > WrongMethod > NF" $ do
+      he <> wm `shouldBe` he
+      ib <> wm `shouldBe` ib
+      nf <> wm `shouldBe` wm
+
+      wm <> he `shouldBe` he
+      wm <> ib `shouldBe` ib
+      wm <> nf `shouldBe` wm
+
+    it "* > NotFound" $ do
+      he <> nf `shouldBe` he
+      ib <> nf `shouldBe` ib
+      wm <> nf `shouldBe` wm
+
+      nf <> he `shouldBe` he
+      nf <> ib `shouldBe` ib
+      nf <> wm `shouldBe` wm
+
 type MiscCombinatorsAPI
   =    "version" :> HttpVersion :> Get '[JSON] String
   :<|> "secure"  :> IsSecure :> Get '[JSON] String
@@ -644,4 +738,4 @@ authRequiredSpec = do
                 foo401 <- get "/foo"
                 bar401 <- get "/bar"
                 WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"foo-realm\"" foo401)
-                WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"foo-realm\"" bar401)
+                WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"bar-realm\"" bar401)
