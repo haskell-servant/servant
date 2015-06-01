@@ -28,14 +28,15 @@ data AuthProtected
 instance HasServer rest => HasServer (AuthProtected :> rest) where
   type ServerT (AuthProtected :> rest) m = ServerT rest m
 
-  route Proxy a request respond =
-    case lookup "Cookie" (requestHeaders request) of
-      Nothing -> respond . succeedWith $ responseLBS status401 [] "Missing auth header."
-      Just v  -> do
-        authGranted <- isGoodCookie v
-        if authGranted
-          then route (Proxy :: Proxy rest) a request respond
-          else respond . succeedWith $ responseLBS status403 [] "Invalid cookie."
+  route Proxy a = WithRequest $ \ request ->
+    route (Proxy :: Proxy rest) $ do
+      case lookup "Cookie" (requestHeaders request) of
+        Nothing -> return $ failWith $ HttpError status401 (Just "Missing auth header.")
+        Just v  -> do
+          authGranted <- isGoodCookie v
+          if authGranted
+            then a
+            else return $ failWith $ HttpError status403 (Just "Invalid cookie.")
 
 type PrivateAPI = Get '[JSON] [PrivateData]
 
