@@ -659,7 +659,7 @@ prioErrorsSpec = describe "PrioErrors" $ do
 -- | Test server error functionality.
 errorsSpec :: Spec
 errorsSpec = do
-  let he = HttpError status409 (Just "A custom error")
+  let he = HttpError status409 [] (Just "A custom error")
   let ib = InvalidBody "The body is invalid"
   let wm = WrongMethod
   let nf = NotFound
@@ -789,4 +789,4 @@ authRequiredSpec = do
                 foo401 <- get "/foo"
                 bar401 <- get "/bar"
                 WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"foo-realm\"" foo401)
-                WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"foo-realm\"" bar401)
+                WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"bar-realm\"" bar401)

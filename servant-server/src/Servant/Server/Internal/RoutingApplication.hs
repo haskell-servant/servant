@@ -16,8 +16,7 @@ import           Data.IORef                         (newIORef, readIORef,
 import           Data.Maybe                         (fromMaybe)
 import           Data.Monoid                        ((<>))
 import           Data.String                        (fromString)
-import           Network.HTTP.Types                 hiding (Header,
-                                                     ResponseHeaders)
+import           Network.HTTP.Types                 hiding (Header, ResponseHeaders)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived,
                                                      requestBody, responseLBS,
@@ -32,7 +31,7 @@ type RoutingApplication =
 -- | A wrapper around @'Either' 'RouteMismatch' a@.
 newtype RouteResult a =
   RR { routeResult :: Either RouteMismatch a }
-  deriving (Eq, Show, Functor, Applicative)
+  deriving (Show, Functor, Applicative, Monad)
 
 -- | If we get a `Right`, it has precedence over everything else.
 --
@@ -52,8 +51,21 @@ data RouteMismatch =
   | WrongMethod        -- ^ a more informative "you just got the HTTP method wrong" error
   | UnsupportedMediaType -- ^ request body has unsupported media type
   | InvalidBody String -- ^ an even more informative "your json request body wasn't valid" error
-  | HttpError Status (Maybe BL.ByteString)  -- ^ an even even more informative arbitrary HTTP response code error.
-  deriving (Eq, Ord, Show)
+  | HttpError Status [Header] (Maybe BL.ByteString)  -- ^ an even even more informative arbitrary HTTP response code error.
+  | RouteMismatch Response -- ^ an arbitrary mismatch with custom Response.
+
+instance Show RouteMismatch where
+    show = const "hello"
+
+-- | specialized 'Less Than' for use with Monoid RouteMismatch
+(<=:) :: RouteMismatch -> RouteMismatch -> Bool
+{-# INLINE (<=:) #-}
+NotFound             <=: _   = True
+WrongMethod          <=: rmm = not (rmm <=: NotFound)
+UnsupportedMediaType <=: rmm = not (rmm <=: WrongMethod)
+InvalidBody _        <=: rmm = not (rmm <=: UnsupportedMediaType)
+HttpError _ _ _      <=: rmm = not (rmm <=: (InvalidBody ""))
+RouteMismatch _      <=: _   = False
 
 instance Monoid RouteMismatch where
   mempty = NotFound
@@ -62,7 +74,20 @@ instance Monoid RouteMismatch where
   --
   -- "As one judge said to the other, 'Be just and if you can't be just, be
   -- arbitrary'" -- William Burroughs
-  mappend = max
+  --
+  -- It used to be the case that `mappend = max` but getting rid of the `Eq`
+  -- and `Ord` instance meant we had to roll out our own max ;\
+  rmm                  `mappend` NotFound                           = rmm
+  NotFound             `mappend` rmm                                = rmm
+  WrongMethod          `mappend` rmm | rmm <=: WrongMethod          = WrongMethod
+  WrongMethod          `mappend` rmm                                = rmm
+  UnsupportedMediaType `mappend` rmm | rmm <=: UnsupportedMediaType = UnsupportedMediaType
+  UnsupportedMediaType `mappend` rmm                                = rmm
+  i@(InvalidBody _)    `mappend` rmm | rmm <=: i                    = i
+  InvalidBody _        `mappend` rmm                                = rmm
+  h@(HttpError _ _ _)  `mappend` rmm | rmm <=: h                    = h
+  HttpError _ _ _      `mappend` rmm                                = rmm
+  r@(RouteMismatch _)  `mappend` _                                  = r
 
 data ReqBodyState = Uncalled
                   | Called !B.ByteString
@@ -102,8 +127,10 @@ toApplication ra request respond = do
     respond $ responseLBS badRequest400 [] $ fromString $ "invalid request body: " ++ err
   routingRespond (Left UnsupportedMediaType) =
     respond $ responseLBS unsupportedMediaType415 [] "unsupported media type"
-  routingRespond (Left (HttpError status body)) =
-    respond $ responseLBS status [] $ fromMaybe (BL.fromStrict $ statusMessage status) body
+  routingRespond (Left (HttpError status headers body)) =
+    respond $ responseLBS status headers $ fromMaybe (BL.fromStrict $ statusMessage status) body
+  routingRespond (Left (RouteMismatch resp)) =
+    respond resp
   routingRespond (Right response) =
     respond response
 
