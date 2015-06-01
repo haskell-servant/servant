@@ -35,8 +35,11 @@ library
     Servant
     Servant.Server
     Servant.Server.Internal
-    Servant.Server.Internal.ServantErr
     Servant.Server.Internal.Enter
+    Servant.Server.Internal.PathInfo
+    Servant.Server.Internal.Router
+    Servant.Server.Internal.RoutingApplication
+    Servant.Server.Internal.ServantErr
     Servant.Utils.StaticFiles
   build-depends:
         base               >= 4.7  && < 5

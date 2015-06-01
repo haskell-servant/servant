@@ -42,7 +42,8 @@ import           Servant.API                ((:<|>) (..), (:>),
                                              Post, Put, QueryFlag, QueryParam,
                                              QueryParams, Raw, ReqBody)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
-import           Servant.Server.Internal    (RouteMismatch (..))
+import           Servant.Server.Internal.RoutingApplication
+                                            (RouteMismatch (..))
 
 
 -- * test data types
