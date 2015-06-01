@@ -46,7 +46,6 @@ instance Monoid (RouteResult a) where
 
 -- Note that the ordering of the constructors has great significance! It
 -- determines the Ord instance and, consequently, the monoid instance.
--- * Route mismatch
 data RouteMismatch =
     NotFound           -- ^ the usual "not found" error
   | WrongMethod        -- ^ a more informative "you just got the HTTP method wrong" error
