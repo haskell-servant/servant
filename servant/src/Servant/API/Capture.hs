@@ -9,6 +9,7 @@ import           GHC.TypeLits  (Symbol)
 -- | Capture a value from the request path under a certain type @a@.
 --
 -- Example:
+--
 -- >>>            -- GET /books/:isbn
 -- >>> type MyApi = "books" :> Capture "isbn" Text :> Get '[JSON] Book
 data Capture (sym :: Symbol) a
