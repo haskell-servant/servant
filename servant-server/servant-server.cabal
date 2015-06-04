@@ -51,7 +51,7 @@ library
       , safe               >= 0.3  && < 0.4
       , servant            == 0.4.*
       , split              >= 0.2  && < 0.3
-      , string-conversions >= 0.3  && < 0.4
+      , string-conversions >= 0.3  && < 0.5
       , system-filepath    >= 0.4  && < 0.5
       , filepath           >= 1
       , text               >= 1.2  && < 1.3
