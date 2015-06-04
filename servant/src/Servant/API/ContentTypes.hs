@@ -166,7 +166,7 @@ instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy ctyps
             amrs = allMimeRender pctyps val
-            lkup = fmap (\(a,b) -> (a, (cs $ show a, b))) amrs
+            lkup = fmap (\(a,b) -> (a, (fromStrict $ M.renderHeader a, b))) amrs
 
 
 --------------------------------------------------------------------------
