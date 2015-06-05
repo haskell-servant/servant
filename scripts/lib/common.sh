@@ -10,7 +10,7 @@
 #===============================================================================
 
 
-DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+DIR=$( dirname $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ))
 DRY_RUN=false
 POSITION="none"
 SOURCES_TXT="$( dirname $DIR)/sources.txt"
