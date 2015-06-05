@@ -11,7 +11,8 @@
 set -o nounset
 set -o errexit
 
-. lib/common.sh
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+. "$DIR"/lib/common.sh
 
 for s in ${SOURCES[@]} ; do
     echo $s
