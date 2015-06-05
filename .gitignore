@@ -1,8 +1,8 @@
-dist
-bin
-lib
-share
-packages
+/dist
+/bin
+/lib
+/share
+/packages
 *-packages.conf.d
 cabal-dev
 add-source-timestamps

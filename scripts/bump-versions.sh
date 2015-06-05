@@ -16,31 +16,14 @@
 set -o nounset
 set -o errexit
 
-DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-DRY_RUN=false
-POSITION="none"
-SOURCES_TXT="$( dirname $DIR)/sources.txt"
-
-declare -a SOURCES
-readarray -t SOURCES < "$SOURCES_TXT"
+. lib/common.sh
 
 usage () {
-    echo " bump-versions <POSITION> [-d|--dry-run]"
+    echo " bump-versions.sh <POSITION> [-d|--dry-run]"
     echo "             | [-h|--help]"
     echo "    Bumps the specified positional version of all servant packages."
     echo "    POSITION is a number between 0 and 3, inclusive."
     exit 0
-}
-
-join () { local IFS="$1"; shift; echo "$*"; }
-
-versions_equal () {
-    local NUM=$(find . -name 'servant*.cabal' | xargs grep "^version:" | awk '{ print $2 }' | uniq -c | wc -l)
-    if [ 1 -eq $NUM ] ; then
-        return 0
-    else
-        echo "versions of packages are not all the same!" && exit 1
-    fi
 }
 
 if [ $# -eq 0 ] ; then

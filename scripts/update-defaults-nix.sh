@@ -12,11 +12,7 @@ set -o nounset
 set -o errexit
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-BASE_DIR="$( dirname $DIR)"
-SOURCES_TXT="$BASE_DIR/sources.txt"
-
-declare -a SOURCES
-readarray -t SOURCES < "$SOURCES_TXT"
+. "$DIR"/lib/common.sh
 
 for s in ${SOURCES[@]} ; do
     echo $s
