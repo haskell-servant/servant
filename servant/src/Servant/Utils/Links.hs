@@ -122,6 +122,7 @@ import Servant.API.Header ( Header )
 import Servant.API.Get ( Get )
 import Servant.API.Post ( Post )
 import Servant.API.Put ( Put )
+import Servant.API.Patch ( Patch )
 import Servant.API.Delete ( Delete )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
@@ -178,6 +179,7 @@ type family IsElem endpoint api :: Constraint where
     IsElem (Get ct typ) (Get ct' typ)       = IsSubList ct ct'
     IsElem (Post ct typ) (Post ct' typ)     = IsSubList ct ct'
     IsElem (Put ct typ) (Put ct' typ)       = IsSubList ct ct'
+    IsElem (Patch ct typ) (Patch ct' typ)   = IsSubList ct ct'
     IsElem (Delete ct typ) (Delete ct' typ) = IsSubList ct ct'
     IsElem e e                              = ()
     IsElem e a                              = IsElem' e a
@@ -350,6 +352,10 @@ instance HasLink (Post y r) where
 
 instance HasLink (Put y r) where
     type MkLink (Put y r) = URI
+    toLink _ = linkURI
+
+instance HasLink (Patch y r) where
+    type MkLink (Patch y r) = URI
     toLink _ = linkURI
 
 instance HasLink (Delete y r) where

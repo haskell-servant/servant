@@ -1,3 +1,7 @@
+0.4.2
+-----
+* Fix missing cases for `Patch` in `safeLink`
+
 0.4.1
 -----
 * Allow whitespace after parsing JSON
