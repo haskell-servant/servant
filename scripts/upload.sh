@@ -26,13 +26,16 @@ usage () {
 
 
 upload_package () {
-    local package="$0"
-    local cabalFile="$0.cabal"
+    local package="$1"
+    local user="$2"
+    local pass="$3"
+    local cabalFile="$package.cabal"
     pushd "$package"
     local version=$(grep -i '^version:' $cabalFile | awk '{ print $2 }')
-    local sdist="${package}-${version}.tar.gz"
+    local sdist="dist/${package}-${version}.tar.gz"
     cabal sdist
-    cabal upload --user="$USER" --password="$PASS" "$sdist"
+    echo "User is: $user"
+    cabal upload --user="$user" --password="$pass" "$sdist"
     popd
 }
 
@@ -40,13 +43,10 @@ upload_package () {
 if [ $# -ne 2 ] ; then
     echo "expecting two arguments."
     usage
-else
-    USER="$0"
-    PASS="$1"
 fi
 
 versions_equal
 
 for s in ${SOURCES[@]} ; do
-    upload_package "$s"
+    upload_package "$s" "$1" "$2"
 done
