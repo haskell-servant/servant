@@ -72,8 +72,7 @@
 --
 -- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] ())
 -- >>> safeLink api bad_link
--- <BLANKLINE>
--- <interactive>:64:1:
+-- ...
 --     Could not deduce (Or
 --                         (IsElem' (Delete '[JSON] ()) (Get '[JSON] Int))
 --                         (IsElem'
@@ -123,6 +122,7 @@ import Servant.API.Header ( Header )
 import Servant.API.Get ( Get )
 import Servant.API.Post ( Post )
 import Servant.API.Put ( Put )
+import Servant.API.Patch ( Patch )
 import Servant.API.Delete ( Delete )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
@@ -168,7 +168,8 @@ type family IsElem endpoint api :: Constraint where
     IsElem (e :> sa) (e :> sb)              = IsElem sa sb
     IsElem sa (Header x :> sb)              = IsElem sa sb
     IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
-    IsElem (e :> sa) (Capture x y :> sb)    = IsElem sa sb
+    IsElem (Capture z y :> sa) (Capture x y :> sb)
+                                            = IsElem sa sb
     IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
     IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
@@ -178,6 +179,7 @@ type family IsElem endpoint api :: Constraint where
     IsElem (Get ct typ) (Get ct' typ)       = IsSubList ct ct'
     IsElem (Post ct typ) (Post ct' typ)     = IsSubList ct ct'
     IsElem (Put ct typ) (Put ct' typ)       = IsSubList ct ct'
+    IsElem (Patch ct typ) (Patch ct' typ)   = IsSubList ct ct'
     IsElem (Delete ct typ) (Delete ct' typ) = IsSubList ct ct'
     IsElem e e                              = ()
     IsElem e a                              = IsElem' e a
@@ -350,6 +352,10 @@ instance HasLink (Post y r) where
 
 instance HasLink (Put y r) where
     type MkLink (Put y r) = URI
+    toLink _ = linkURI
+
+instance HasLink (Patch y r) where
+    type MkLink (Patch y r) = URI
     toLink _ = linkURI
 
 instance HasLink (Delete y r) where

@@ -1,5 +1,5 @@
 name:                servant-server
-version:             0.4.0
+version:             0.4.1
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -35,15 +35,19 @@ library
     Servant
     Servant.Server
     Servant.Server.Internal
-    Servant.Server.Internal.ServantErr
     Servant.Server.Internal.Enter
+    Servant.Server.Internal.PathInfo
+    Servant.Server.Internal.Router
+    Servant.Server.Internal.RoutingApplication
+    Servant.Server.Internal.ServantErr
     Servant.Utils.StaticFiles
   build-depends:
         base               >= 4.7  && < 5
-      , aeson              >= 0.7  && < 0.9
-      , attoparsec         >= 0.12 && < 0.13
+      , aeson              >= 0.7  && < 0.10
+      , attoparsec         >= 0.12 && < 0.14
       , bytestring         >= 0.10 && < 0.11
-      , either             >= 4.3  && < 4.4
+      , containers         >= 0.5  && < 0.6
+      , either             >= 4.3  && < 4.5
       , http-types         >= 0.8  && < 0.9
       , network-uri        >= 2.6  && < 2.7
       , mtl                >= 2    && < 3
@@ -51,7 +55,7 @@ library
       , safe               >= 0.3  && < 0.4
       , servant            == 0.4.*
       , split              >= 0.2  && < 0.3
-      , string-conversions >= 0.3  && < 0.4
+      , string-conversions >= 0.3  && < 0.5
       , system-filepath    >= 0.4  && < 0.5
       , filepath           >= 1
       , text               >= 1.2  && < 1.3

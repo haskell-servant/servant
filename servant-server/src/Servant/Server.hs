@@ -81,7 +81,6 @@ import           Data.Proxy                         (Proxy)
 import           Network.Wai                        (Application)
 import           Servant.Server.Internal
 import           Servant.Server.Internal.Enter
-import           Servant.Server.Internal.ServantErr
 
 
 -- * Implementing Servers
@@ -108,7 +107,7 @@ import           Servant.Server.Internal.ServantErr
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
 serve :: HasServer layout => Proxy layout -> Server layout -> Application
-serve p server = toApplication (route p server)
+serve p server = toApplication (runRouter (route p (return (RR (Right server)))))
 
 
 -- Documentation

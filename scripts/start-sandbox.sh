@@ -14,11 +14,7 @@ set -o nounset
 set -o errexit
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-SOURCES_TXT="$( dirname $DIR)/sources.txt"
-CABAL=${CABAL:-cabal}
-
-declare -a SOURCES
-readarray -t SOURCES < "$SOURCES_TXT"
+. "$DIR"/lib/common.sh
 
 prepare_sandbox () {
     $CABAL sandbox init

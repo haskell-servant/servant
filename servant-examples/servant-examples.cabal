@@ -1,5 +1,5 @@
 name:                servant-examples
-version:             0.4
+version:             0.4.1
 synopsis:            Example programs for servant
 description:         Example programs for servant,
                      showcasing solutions to common needs.
@@ -26,11 +26,11 @@ executable tutorial
     , js-jquery
     , lucid
     , random
-    , servant
-    , servant-docs
-    , servant-jquery
-    , servant-lucid
-    , servant-server
+    , servant == 0.4.*
+    , servant-docs == 0.4.*
+    , servant-jquery == 0.4.*
+    , servant-lucid == 0.4.*
+    , servant-server == 0.4.*
     , text
     , time
     , transformers
@@ -47,9 +47,9 @@ executable t8-main
       aeson
     , base >= 4.7 && < 5
     , either
-    , servant
-    , servant-client
-    , servant-server
+    , servant == 0.4.*
+    , servant-client == 0.4.*
+    , servant-server == 0.4.*
     , wai
 
 executable hackage
@@ -70,8 +70,8 @@ executable wai-middleware
   build-depends:
       aeson >= 0.8
     , base >= 4.7 && < 5
-    , servant
-    , servant-server
+    , servant == 0.4.*
+    , servant-server == 0.4.*
     , text
     , wai
     , wai-extra
@@ -86,7 +86,7 @@ executable auth-combinator
     , base >= 4.7 && < 5
     , bytestring
     , http-types
-    , servant
+    , servant == 0.4.*
     , servant-server == 0.4.*
     , text
     , wai
