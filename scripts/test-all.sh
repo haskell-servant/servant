@@ -25,9 +25,9 @@ prepare_sandbox () {
         (cd "$s" && $CABAL sandbox init --sandbox=../.cabal-sandbox/ && $CABAL sandbox add-source .)
     done
     if $TRAVIS ; then
-        travis_retry $CABAL install --enable-tests ${SOURCES[@]}
+        travis_retry $CABAL install -v --enable-tests ${SOURCES[@]}
     else
-        $CABAL install -vvv --enable-tests ${SOURCES[@]}
+        $CABAL install --enable-tests ${SOURCES[@]}
     fi
 }
 

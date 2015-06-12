@@ -15,6 +15,7 @@ DRY_RUN=false
 POSITION="none"
 SOURCES_TXT="$( dirname $DIR)/sources.txt"
 CABAL=${CABAL:-cabal}
+TRAVIS=${TRAVIS:-false}
 
 declare -a SOURCES
 readarray -t SOURCES < "$SOURCES_TXT"
