@@ -12,8 +12,6 @@ import           Data.Monoid
 #endif
 import           Control.Arrow
 import           Data.Aeson
-import           Data.Aeson.Parser          (jstring)
-import           Data.Attoparsec.ByteString (parseOnly)
 import           Data.Either
 import           Data.Function              (on)
 import           Data.Proxy
@@ -164,11 +162,14 @@ spec = describe "Servant.API.ContentTypes" $ do
 
     describe "eitherDecodeLenient" $ do
 
+    -- aeson >= 0.9 decodes top-level strings
+#if MIN_VERSION_aeson(0,9,0)
         it "parses top-level strings" $ do
             let toMaybe = either (const Nothing) Just
             -- The Left messages differ, so convert to Maybe
             property $ \x -> toMaybe (eitherDecodeLenient x)
-                `shouldBe` toMaybe (parseOnly jstring $ cs x)
+                `shouldBe` (decode x :: Maybe String)
+#endif
 
 
 data SomeData = SomeData { record1 :: String, record2 :: Int }
