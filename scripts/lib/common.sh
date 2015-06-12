@@ -29,3 +29,26 @@ versions_equal () {
         echo "versions of packages are not all the same!" && exit 1
     fi
 }
+
+travis_retry() {
+  # From
+  # https://github.com/travis-ci/travis-build/blob/18bd04e965b9bfaa49cd6bdcd8dcb1513b8d2fcd/lib/travis/build/templates/header.sh
+  local result=0
+  local count=1
+  while [ $count -le 3 ]; do
+    [ $result -ne 0 ] && {
+      echo -e "\n${ANSI_RED}The command \"$@\" failed. Retrying, $count of 3.${ANSI_RESET}\n" >&2
+    }
+    "$@"
+    result=$?
+    [ $result -eq 0 ] && break
+    count=$(($count + 1))
+    sleep 1
+  done
+
+  [ $count -gt 3 ] && {
+    echo -e "\n${ANSI_RED}The command \"$@\" failed 3 times.${ANSI_RESET}\n" >&2
+  }
+
+  return $result
+}
