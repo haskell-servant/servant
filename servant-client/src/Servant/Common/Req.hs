@@ -53,7 +53,7 @@ data ServantError
     , responseBody              :: ByteString
     }
   | ConnectionError
-    { connectionError           :: String
+    { connectionError           :: SomeException
     }
   deriving (Show, Typeable)
 
@@ -156,7 +156,7 @@ performRequest reqMethod req isWantedStatus reqHost = do
       Client.httpLbs request manager
   case eResponse of
     Left err ->
-      left $ ConnectionError (show err)
+      left . ConnectionError $ SomeException err
 
     Right response -> do
       let status = Client.responseStatus response
@@ -192,4 +192,4 @@ performRequestNoBody reqMethod req wantedStatus reqHost = do
 catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =
   catch (Right <$> action) $ \e ->
-    pure . Left . ConnectionError . show $ (e :: HttpException)
+    pure . Left . ConnectionError $ SomeException (e :: HttpException)

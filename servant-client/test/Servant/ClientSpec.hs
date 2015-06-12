@@ -68,11 +68,6 @@ instance FromFormUrlEncoded Person where
         a <- lookupEither "age" xs
         return $ Person (T.unpack n) (read $ T.unpack a)
 
-deriving instance Eq ServantError
-
-instance Eq C.HttpException where
-  a == b = show a == show b
-
 alice :: Person
 alice = Person "Alice" 42
 
