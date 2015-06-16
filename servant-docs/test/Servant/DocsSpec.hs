@@ -7,7 +7,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 module Servant.DocsSpec where
 
+import           Control.Lens
 import           Data.Aeson
+import           Data.Monoid
 import           Data.Proxy
 import           Data.String.Conversions (cs)
 import           GHC.Generics
@@ -21,7 +23,27 @@ spec = describe "Servant.Docs" $ do
 
   describe "markdown" $ do
     let md = markdown (docs (Proxy :: Proxy TestApi1))
+    tests md
 
+  describe "markdown with extra info" $ do
+    let
+      extra = extraInfo
+              (Proxy :: Proxy (Get '[JSON, PlainText] Int))
+              (defAction & notes <>~ [DocNote "Get an Integer" ["get an integer in Json or plain text"]])
+              <>
+              extraInfo
+              (Proxy :: Proxy (ReqBody '[JSON] String :> Post '[JSON] Datatype1))
+              (defAction & notes <>~ [DocNote "Post data" ["Posts some Json data"]])
+      md = markdown (docsWith [] extra (Proxy :: Proxy TestApi1))
+    tests md
+    it "contains the extra info provided" $ do
+      md `shouldContain` "Get an Integer"
+      md `shouldContain` "Post data"
+      md `shouldContain` "get an integer in Json or plain text"
+      md `shouldContain` "Posts some Json data"
+
+ where
+   tests md = do
     it "mentions supported content-types" $ do
       md `shouldContain` "application/json"
       md `shouldContain` "text/plain;charset=utf-8"
@@ -34,10 +56,11 @@ spec = describe "Servant.Docs" $ do
       md `shouldContain` "POST"
       md `shouldContain` "GET"
 
-    it "contains response samples" $ do
+    it "contains response samples" $
       md `shouldContain` "{\"dt1field1\":\"field 1\",\"dt1field2\":13}"
-    it "contains request body samples" $ do
+    it "contains request body samples" $
       md `shouldContain` "17"
+
 -- * APIs
 
 data Datatype1 = Datatype1 { dt1field1 :: String
