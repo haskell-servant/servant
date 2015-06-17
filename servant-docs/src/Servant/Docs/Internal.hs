@@ -338,7 +338,7 @@ extraInfo p action =
 docsWith :: HasDocs layout => [DocIntro] -> ExtraInfo layout -> Proxy layout -> API
 docsWith intros (ExtraInfo endpoints) p =
     docs p & apiIntros <>~ intros
-           & apiEndpoints %~ HM.unionWith combineAction endpoints
+           & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
 
 
 -- | Generate the docs for a given API that implements 'HasDocs' with with any
