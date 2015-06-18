@@ -341,6 +341,10 @@ instance (ToText v, HasLink sub)
         toLink (Proxy :: Proxy sub) $
             addSegment (escape . unpack $ toText v) l
 
+instance HasLink sub => HasLink (Header sym a :> sub) where
+	type MkLink (Header sym a :> sub) = MkLink sub
+	toLink _ = toLink (Proxy :: Proxy sub)
+
 -- Verb (terminal) instances
 instance HasLink (Get y r) where
     type MkLink (Get y r) = URI
