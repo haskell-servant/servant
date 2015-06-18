@@ -25,11 +25,11 @@ instance ToJSON Person
 
 -- HTML serialization of a single person
 instance ToHtml Person where
-  toHtml p =
+  toHtml person =
     tr_ $ do
-      td_ (toHtml $ firstName p)
-      td_ (toHtml $ lastName p)
-      td_ (toHtml . show $ age p)
+      td_ (toHtml $ firstName person)
+      td_ (toHtml $ lastName person)
+      td_ (toHtml . show $ age person)
 
   toHtmlRaw = toHtml
 
@@ -37,9 +37,9 @@ instance ToHtml Person where
 instance ToHtml [Person] where
   toHtml persons = table_ $ do
     tr_ $ do
-      td_ "first name"
-      td_ "last name"
-      td_ "age"
+      th_ "first name"
+      th_ "last name"
+      th_ "age"
 
     foldMap toHtml persons
 
