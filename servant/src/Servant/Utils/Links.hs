@@ -273,10 +273,10 @@ instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
 -- QueryParam instances
 instance (KnownSymbol sym, ToText v, HasLink sub)
     => HasLink (QueryParam sym v :> sub) where
-    type MkLink (QueryParam sym v :> sub) = v -> MkLink sub
-    toLink _ l v =
-        toLink (Proxy :: Proxy sub)
-             (addQueryParam (SingleParam k (toText v)) l)
+    type MkLink (QueryParam sym v :> sub) = Maybe v -> MkLink sub
+    toLink _ l mv =
+        toLink (Proxy :: Proxy sub) $
+            maybe id (addQueryParam . SingleParam k . toText) mv l
       where
         k :: String
         k = symbolVal (Proxy :: Proxy sym)
