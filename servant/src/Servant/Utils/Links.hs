@@ -49,7 +49,7 @@
 -- or without those:
 --
 -- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] ())
--- >>> print $ safeLink api with "Hubert"
+-- >>> print $ safeLink api with (Just "Hubert")
 -- bye?name=Hubert
 --
 -- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] ())
@@ -273,10 +273,10 @@ instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
 -- QueryParam instances
 instance (KnownSymbol sym, ToText v, HasLink sub)
     => HasLink (QueryParam sym v :> sub) where
-    type MkLink (QueryParam sym v :> sub) = v -> MkLink sub
-    toLink _ l v =
-        toLink (Proxy :: Proxy sub)
-             (addQueryParam (SingleParam k (toText v)) l)
+    type MkLink (QueryParam sym v :> sub) = Maybe v -> MkLink sub
+    toLink _ l mv =
+        toLink (Proxy :: Proxy sub) $
+            maybe id (addQueryParam . SingleParam k . toText) mv l
       where
         k :: String
         k = symbolVal (Proxy :: Proxy sym)
@@ -303,10 +303,10 @@ instance (KnownSymbol sym, HasLink sub)
 -- MatrixParam instances
 instance (KnownSymbol sym, ToText v, HasLink sub)
     => HasLink (MatrixParam sym v :> sub) where
-    type MkLink (MatrixParam sym v :> sub) = v -> MkLink sub
-    toLink _ l v =
+    type MkLink (MatrixParam sym v :> sub) = Maybe v -> MkLink sub
+    toLink _ l mv =
         toLink (Proxy :: Proxy sub) $
-            addMatrixParam (SingleParam k (toText v)) l
+            maybe id (addMatrixParam . SingleParam k . toText) mv l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
