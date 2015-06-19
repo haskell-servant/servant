@@ -61,7 +61,7 @@ spec = describe "Servant.Utils.Links" $ do
         let l2 = Proxy :: Proxy ("hello" :> Capture "name" String
                                          :> QueryParam "capital" Bool
                                          :> Delete '[JSON] ())
-        apiLink l2 "bye" True `shouldBeURI` "hello/bye?capital=true"
+        apiLink l2 "bye" (Just True) `shouldBeURI` "hello/bye?capital=true"
 
         let l3 = Proxy :: Proxy ("parent" :> MatrixParams "name" String
                                           :> "child"
