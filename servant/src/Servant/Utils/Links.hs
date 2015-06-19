@@ -303,10 +303,10 @@ instance (KnownSymbol sym, HasLink sub)
 -- MatrixParam instances
 instance (KnownSymbol sym, ToText v, HasLink sub)
     => HasLink (MatrixParam sym v :> sub) where
-    type MkLink (MatrixParam sym v :> sub) = v -> MkLink sub
-    toLink _ l v =
+    type MkLink (MatrixParam sym v :> sub) = Maybe v -> MkLink sub
+    toLink _ l mv =
         toLink (Proxy :: Proxy sub) $
-            addMatrixParam (SingleParam k (toText v)) l
+            maybe id (addMatrixParam . SingleParam k . toText) mv l
       where
         k = symbolVal (Proxy :: Proxy sym)
 

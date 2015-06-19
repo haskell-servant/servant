@@ -67,7 +67,7 @@ spec = describe "Servant.Utils.Links" $ do
                                           :> "child"
                                           :> MatrixParam "gender" String
                                           :> Get '[JSON] String)
-        apiLink l3 ["Hubert?x=;&", "Cumberdale"] "Edward?"
+        apiLink l3 ["Hubert?x=;&", "Cumberdale"] (Just "Edward?")
             `shouldBeURI` "parent;name[]=Hubert%3Fx%3D%3B%26;\
                            \name[]=Cumberdale/child;gender=Edward%3F"
 
