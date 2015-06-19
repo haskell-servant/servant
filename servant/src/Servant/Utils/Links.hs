@@ -49,7 +49,7 @@
 -- or without those:
 --
 -- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] ())
--- >>> print $ safeLink api with "Hubert"
+-- >>> print $ safeLink api with (Just "Hubert")
 -- bye?name=Hubert
 --
 -- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] ())
