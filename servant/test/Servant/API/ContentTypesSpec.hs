@@ -160,10 +160,10 @@ spec = describe "Servant.API.ContentTypes" $ do
                     (encode val)
                     `shouldBe` Just (Right val)
 
+#if MIN_VERSION_aeson(0,9,0)
+    -- aeson >= 0.9 decodes top-level strings
     describe "eitherDecodeLenient" $ do
 
-    -- aeson >= 0.9 decodes top-level strings
-#if MIN_VERSION_aeson(0,9,0)
         it "parses top-level strings" $ do
             let toMaybe = either (const Nothing) Just
             -- The Left messages differ, so convert to Maybe
