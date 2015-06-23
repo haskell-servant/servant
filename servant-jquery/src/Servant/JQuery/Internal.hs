@@ -338,3 +338,27 @@ instance (KnownSymbol path, HasJQ sublayout)
           & funcName %~ (str <>)
 
     where str = map (\c -> if c == '.' then '_' else c) $ symbolVal (Proxy :: Proxy path)
+
+instance HasJQ sublayout => HasJQ (RemoteHost :> sublayout) where
+  type JQ (RemoteHost :> sublayout) = JQ sublayout
+
+  jqueryFor Proxy req =
+    jqueryFor (Proxy :: Proxy sublayout) req
+
+instance HasJQ sublayout => HasJQ (IsSecure :> sublayout) where
+  type JQ (IsSecure :> sublayout) = JQ sublayout
+
+  jqueryFor Proxy req =
+    jqueryFor (Proxy :: Proxy sublayout) req
+
+instance HasJQ sublayout => HasJQ (Vault :> sublayout) where
+  type JQ (Vault :> sublayout) = JQ sublayout
+
+  jqueryFor Proxy req =
+    jqueryFor (Proxy :: Proxy sublayout) req
+
+instance HasJQ sublayout => HasJQ (HttpVersion :> sublayout) where
+  type JQ (HttpVersion :> sublayout) = JQ sublayout
+
+  jqueryFor Proxy req =
+    jqueryFor (Proxy :: Proxy sublayout) req

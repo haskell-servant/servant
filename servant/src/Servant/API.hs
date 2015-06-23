@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
 module Servant.API (
 
   -- * Combinators
@@ -14,12 +11,20 @@ module Servant.API (
   -- | Capturing parts of the url path as parsed values: @'Capture'@
   module Servant.API.Header,
   -- | Retrieving specific headers from the request
+  module Servant.API.HttpVersion,
+  -- | Retrieving the HTTP version of the request
   module Servant.API.QueryParam,
   -- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@
   module Servant.API.ReqBody,
   -- | Accessing the request body as a JSON-encoded type: @'ReqBody'@
   module Servant.API.MatrixParam,
   -- | Retrieving matrix parameters from the 'URI' segment: @'MatrixParam'@
+  module Servant.API.RemoteHost,
+  -- | Retrieving the IP of the client
+  module Servant.API.IsSecure,
+  -- | Is the request made through HTTPS?
+  module Servant.API.Vault,
+  -- | Access the location for arbitrary data to be shared by applications and middleware
 
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Get,
@@ -64,6 +69,8 @@ import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
 import           Servant.API.Delete          (Delete)
 import           Servant.API.Get             (Get)
 import           Servant.API.Header          (Header (..))
+import           Servant.API.HttpVersion     (HttpVersion(..))
+import           Servant.API.IsSecure        (IsSecure(..))
 import           Servant.API.MatrixParam     (MatrixFlag, MatrixParam,
                                               MatrixParams)
 import           Servant.API.Patch           (Patch)
@@ -72,6 +79,7 @@ import           Servant.API.Put             (Put)
 import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
+import           Servant.API.RemoteHost      (RemoteHost)
 import           Servant.API.ReqBody         (ReqBody)
 import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               BuildHeadersTo (buildHeadersTo),
@@ -79,6 +87,7 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               HList (..), Headers (..),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
+import           Servant.API.Vault           (Vault)
 import           Servant.Common.Text         (FromText (..), ToText (..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)

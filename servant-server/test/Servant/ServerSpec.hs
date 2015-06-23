@@ -37,9 +37,9 @@ import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
 import           Servant.API                ((:<|>) (..), (:>),
                                              addHeader, Capture,
                                              Delete, Get, Header (..), Headers,
-                                             JSON, MatrixFlag, MatrixParam,
-                                             MatrixParams, Patch, PlainText,
-                                             Post, Put, QueryFlag, QueryParam,
+                                             HttpVersion, IsSecure(..), JSON, MatrixFlag,
+                                             MatrixParam, MatrixParams, Patch, PlainText,
+                                             Post, Put, RemoteHost, QueryFlag, QueryParam,
                                              QueryParams, Raw, ReqBody)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
 import           Servant.Server.Internal.RoutingApplication
@@ -93,6 +93,7 @@ spec = do
   prioErrorsSpec
   errorsSpec
   responseHeadersSpec
+  miscReqCombinatorsSpec
 
 
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
@@ -667,3 +668,35 @@ errorsSpec = do
       nf <> he `shouldBe` he
       nf <> ib `shouldBe` ib
       nf <> wm `shouldBe` wm
+
+type MiscCombinatorsAPI
+  =    "version" :> HttpVersion :> Get '[JSON] String
+  :<|> "secure"  :> IsSecure :> Get '[JSON] String
+  :<|> "host"    :> RemoteHost :> Get '[JSON] String
+
+miscApi :: Proxy MiscCombinatorsAPI
+miscApi = Proxy
+
+miscServ :: Server MiscCombinatorsAPI
+miscServ = versionHandler
+      :<|> secureHandler
+      :<|> hostHandler
+
+  where versionHandler = return . show
+        secureHandler Secure = return "secure"
+        secureHandler NotSecure = return "not secure"
+        hostHandler = return . show
+
+miscReqCombinatorsSpec :: Spec
+miscReqCombinatorsSpec = with (return $ serve miscApi miscServ) $
+  describe "Misc. combinators for request inspection" $ do
+    it "Successfully gets the HTTP version specified in the request" $
+      go "/version" "\"HTTP/1.0\""
+
+    it "Checks that hspec-wai uses HTTP, not HTTPS" $
+      go "/secure" "\"not secure\""
+
+    it "Checks that hspec-wai issues request from 0.0.0.0" $
+      go "/host" "\"0.0.0.0:0\""
+
+  where go path res = Test.Hspec.Wai.get path `shouldRespondWith` res

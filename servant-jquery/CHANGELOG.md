@@ -1,3 +1,8 @@
+HEAD
+----
+
+* Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
+
 0.4
 ---
 * `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body
