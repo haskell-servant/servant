@@ -452,13 +452,13 @@ headerApi = Proxy
 headerSpec :: Spec
 headerSpec = describe "Servant.API.Header" $ do
 
-    let expectsInt :: Maybe Int -> EitherT ServantErr IO ()
-        expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
-        expectsInt Nothing  = error "Expected an int"
+    let expectsInt :: Either String (Maybe Int) -> EitherT ServantErr IO ()
+        expectsInt (Right (Just x)) = when (x /= 5) $ error "Expected 5"
+        expectsInt _                = error "Expected an int"
 
-    let expectsString :: Maybe String -> EitherT ServantErr IO ()
-        expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
-        expectsString Nothing  = error "Expected a string"
+    let expectsString :: Either String (Maybe String) -> EitherT ServantErr IO ()
+        expectsString (Right (Just x)) = when (x /= "more from you") $ error "Expected more from you"
+        expectsString _                = error "Expected a string"
 
     with (return (serve headerApi expectsInt)) $ do
         let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"5")]

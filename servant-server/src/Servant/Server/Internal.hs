@@ -284,12 +284,17 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (Header sym a :> sublayout) where
 
   type ServerT (Header sym a :> sublayout) m =
-    Maybe a -> ServerT sublayout m
+    Either String (Maybe a) -> ServerT sublayout m
 
   route Proxy subserver = WithRequest $ \ request ->
-    let mheader = fromText . decodeUtf8 =<< lookup str (requestHeaders request)
+    let mheader = case lookup str (requestHeaders request) of
+            Nothing -> Right Nothing
+            Just x  -> case fromText $ decodeUtf8 x of
+                Nothing -> Left  $ "Failed to decode " <> headerVal <> " header"
+                Just v  -> Right $ Just v
     in  route (Proxy :: Proxy sublayout) (feedTo subserver mheader)
-    where str = fromString $ symbolVal (Proxy :: Proxy sym)
+    where headerVal = symbolVal (Proxy :: Proxy sym)
+          str       = fromString headerVal
 
 -- | When implementing the handler for a 'Post' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
