@@ -68,11 +68,6 @@ instance FromFormUrlEncoded Person where
         a <- lookupEither "age" xs
         return $ Person (T.unpack n) (read $ T.unpack a)
 
-deriving instance Eq ServantError
-
-instance Eq C.HttpException where
-  a == b = show a == show b
-
 alice :: Person
 alice = Person "Alice" 42
 
@@ -311,7 +306,7 @@ failSpec = withFailServer $ \ baseUrl -> do
       it "reports ConnectionError" $ do
         Left res <- runEitherT getGetWrongHost
         case res of
-          ConnectionError (C.FailedConnectionException2 "127.0.0.1" 19872 False _) -> return ()
+          ConnectionError _ -> return ()
           _ -> fail $ "expected ConnectionError, but got " <> show res
 
       it "reports UnsupportedContentType" $ do

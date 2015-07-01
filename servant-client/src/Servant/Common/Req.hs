@@ -48,12 +48,12 @@ data ServantError
     { responseContentType       :: MediaType
     , responseBody              :: ByteString
     }
-  | ConnectionError
-    { connectionError           :: HttpException
-    }
   | InvalidContentTypeHeader
     { responseContentTypeHeader :: ByteString
     , responseBody              :: ByteString
+    }
+  | ConnectionError
+    { connectionError           :: SomeException
     }
   deriving (Show, Typeable)
 
@@ -152,11 +152,11 @@ performRequest reqMethod req isWantedStatus reqHost = do
                                }
 
   eResponse <- liftIO $ __withGlobalManager $ \ manager ->
-    catchHttpException $
-    Client.httpLbs request manager
+    catchConnectionError $
+      Client.httpLbs request manager
   case eResponse of
     Left err ->
-      left $ ConnectionError err
+      left . ConnectionError $ SomeException err
 
     Right response -> do
       let status = Client.responseStatus response
@@ -189,6 +189,7 @@ performRequestNoBody reqMethod req wantedStatus reqHost = do
   _ <- performRequest reqMethod req (`elem` wantedStatus) reqHost
   return ()
 
-catchHttpException :: IO a -> IO (Either HttpException a)
-catchHttpException action =
-  catch (Right <$> action) (pure . Left)
+catchConnectionError :: IO a -> IO (Either ServantError a)
+catchConnectionError action =
+  catch (Right <$> action) $ \e ->
+    pure . Left . ConnectionError $ SomeException (e :: HttpException)
