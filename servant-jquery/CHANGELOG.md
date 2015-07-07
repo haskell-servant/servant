@@ -1,3 +1,7 @@
+0.4.3
+-----
+* Content type now set to JSON when a request body is sent (#122)
+
 0.4
 ---
 * `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body

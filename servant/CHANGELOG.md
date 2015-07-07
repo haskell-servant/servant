@@ -1,3 +1,7 @@
+0.4.3
+-----
+* Add missing HasLink instance for Header (https://github.com/haskell-servant/servant/issues/128)
+
 0.4.1
 -----
 * Allow whitespace after parsing JSON

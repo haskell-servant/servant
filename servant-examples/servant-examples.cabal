@@ -1,5 +1,5 @@
 name:                servant-examples
-version:             0.4.2
+version:             0.4.3
 synopsis:            Example programs for servant
 description:         Example programs for servant,
                      showcasing solutions to common needs.
