@@ -37,6 +37,7 @@ generateJS req = "\n" <>
  <> "  $.ajax(\n"
  <> "    { url: " <> url <> "\n"
  <> "    , success: onSuccess\n"
+ <> "    , contentType: \"application/json\"\n"
  <> dataBody
  <> reqheaders
  <> "    , error: onError\n"
