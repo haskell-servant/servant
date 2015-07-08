@@ -37,6 +37,7 @@ generateJS req = "\n" <>
  <> "  $.ajax(\n"
  <> "    { url: " <> url <> "\n"
  <> "    , success: onSuccess\n"
+ <> contentType
  <> dataBody
  <> reqheaders
  <> "    , error: onError\n"
@@ -66,6 +67,11 @@ generateJS req = "\n" <>
         dataBody =
           if req ^. reqBody
             then "\n    , data: JSON.stringify(body)\n"
+            else ""
+
+        contentType =
+          if req ^. reqBody
+            then "\n   , contentType: 'application/json'\n"
             else ""
 
         reqheaders =
