@@ -65,13 +65,14 @@ generateJS req = "\n" <>
 
         dataBody =
           if req ^. reqBody
-            then "\n    , data: JSON.stringify(body)\n"
+            then "    , data: JSON.stringify(body)\n" <>
+                 "    , contentType: 'application/json'\n"
             else ""
 
         reqheaders =
           if null hs
             then ""
-            else "\n    , headers: { " ++ headersStr ++ " }\n"
+            else "    , headers: { " ++ headersStr ++ " }\n"
 
           where headersStr = intercalate ", " $ map headerStr hs
                 headerStr header = "\"" ++
