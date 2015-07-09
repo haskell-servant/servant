@@ -1,3 +1,7 @@
+0.4.3
+-----
+* docsWith will no longer eat your documentation (https://github.com/haskell-servant/servant/pull/124)
+
 0.4
 ---
 * `Delete` now is like `Get`, `Post`, `Put`, and `Patch` and returns a response body

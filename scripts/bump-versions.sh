@@ -16,7 +16,8 @@
 set -o nounset
 set -o errexit
 
-. lib/common.sh
+DIR=$( dirname $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ))
+. "${DIR}/scripts/lib/common.sh"
 
 usage () {
     echo " bump-versions.sh <POSITION> [-d|--dry-run]"
@@ -54,8 +55,11 @@ while [ "${1:-unset}" != "unset" ] ; do
 done
 
 if $DRY_RUN ; then
-   bumper --dry-run -"$POSITION" $(join , "${SOURCES[@]}")
+   echo "Would have bumped position ${POSITION} on these packages:"
+   ( cd "$ROOT" && bumper --dry-run -"$POSITION" $(join , "${SOURCES[@]}") )
 else
-   bumper -"$POSITION" $(join , "${SOURCES[@]}")
+   ( cd "$ROOT" && bumper -"$POSITION" $(join , "${SOURCES[@]}") )
 fi
 
+# Trailing newline, bumper does not ship with its own.
+echo
