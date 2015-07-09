@@ -39,7 +39,7 @@ import           Network.Wai                 (Application, lazyRequestBody,
                                               rawQueryString, requestHeaders,
                                               requestMethod, responseLBS)
 import           Servant.API                 ((:<|>) (..), (:>), Capture,
-                                               Delete, Get, Header,
+                                               Cookie, Delete, Get, Header,
                                               MatrixFlag, MatrixParam, MatrixParams,
                                               Patch, Post, Put, QueryFlag,
                                               QueryParam, QueryParams, Raw,
@@ -55,6 +55,7 @@ import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
+import           Web.Cookie                  (parseCookiesText)
 
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
@@ -290,6 +291,35 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
     let mheader = fromText . decodeUtf8 =<< lookup str (requestHeaders request)
     in  route (Proxy :: Proxy sublayout) (feedTo subserver mheader)
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
+
+-- | If you use 'Cookie' in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a function
+-- that takes an argument of the type specified by 'Cookie'.
+-- This lets servant worry about extracting it from the request and turning
+-- it into a value of the type you specify.
+--
+-- All it asks is for a 'FromText' instance.
+--
+-- Example:
+--
+-- >            -- GET /test
+-- > type MyApi = "test" :> Cookie "token" Text :> Get '[JSON] Text
+-- >
+-- > server :: Server MyApi
+-- > server = test
+-- >   where test :: Maybe Text -> EitherT ServantErr IO Text
+-- >         test token = return token
+instance (KnownSymbol sym, FromText a, HasServer sublayout)
+      => HasServer (Cookie sym a :> sublayout) where
+
+  type ServerT (Cookie sym a :> sublayout) m =
+    Maybe a -> ServerT sublayout m
+
+  route Proxy subserver request respond = do
+    let mheader = lookup "cookie" (requestHeaders request)
+        mc = fromText =<< lookup str =<< fmap parseCookiesText mheader
+    route (Proxy :: Proxy sublayout) (subserver mc) request respond
+      where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | When implementing the handler for a 'Post' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
