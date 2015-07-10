@@ -35,15 +35,17 @@ import           Data.Text.Encoding          (decodeUtf8, encodeUtf8)
 import           Data.Typeable
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
+import           Network.Socket              (SockAddr)
 import           Network.Wai                 (Application, lazyRequestBody,
                                               rawQueryString, requestHeaders,
-                                              requestMethod, responseLBS)
+                                              requestMethod, responseLBS, remoteHost,
+                                              isSecure, vault, httpVersion)
 import           Servant.API                 ((:<|>) (..), (:>), Capture,
-                                               Delete, Get, Header,
-                                              MatrixFlag, MatrixParam, MatrixParams,
-                                              Patch, Post, Put, QueryFlag,
-                                              QueryParam, QueryParams, Raw,
-                                              ReqBody)
+                                              Delete, Get, Header,
+                                              IsSecure(..), MatrixFlag, MatrixParam,
+                                              MatrixParams, Patch, Post, Put,
+                                              QueryFlag, QueryParam, QueryParams,
+                                              Raw, RemoteHost, ReqBody, Vault)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..))
@@ -720,6 +722,32 @@ instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout
     M.singleton (cs (symbolVal proxyPath))
                 (route (Proxy :: Proxy sublayout) subserver)
     where proxyPath = Proxy :: Proxy path
+
+instance HasServer api => HasServer (RemoteHost :> api) where
+  type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
+
+  route Proxy subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) (feedTo subserver $ remoteHost req)
+
+instance HasServer api => HasServer (IsSecure :> api) where
+  type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
+
+  route Proxy subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) (feedTo subserver $ secure req)
+
+    where secure req = if isSecure req then Secure else NotSecure
+
+instance HasServer api => HasServer (Vault :> api) where
+  type ServerT (Vault :> api) m = Vault -> ServerT api m
+
+  route Proxy subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) (feedTo subserver $ vault req)
+
+instance HasServer api => HasServer (HttpVersion :> api) where
+  type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
+
+  route Proxy subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) (feedTo subserver $ httpVersion req)
 
 ct_wildcard :: B.ByteString
 ct_wildcard = "*" <> "/" <> "*" -- Because CPP

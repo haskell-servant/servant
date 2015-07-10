@@ -1,3 +1,8 @@
+HEAD
+----
+
+* Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
+
 0.4.1
 -----
 * The `HasClient` instance for `Delete cts ()` now does not care at all about content types provided.

@@ -1,3 +1,8 @@
+HEAD
+----
+
+* Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
+
 0.4.1
 -----
 * Bump attoparsec upper bound to < 0.14

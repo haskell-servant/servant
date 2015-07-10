@@ -1,3 +1,8 @@
+HEAD
+----
+
+* Add `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
+
 0.4.2
 -----
 * Fix missing cases for `Patch` in `safeLink`

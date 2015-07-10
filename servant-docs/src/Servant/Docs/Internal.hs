@@ -900,3 +900,18 @@ instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) wh
           endpoint' = endpoint & path <>~ [symbolVal pa]
           pa = Proxy :: Proxy path
 
+instance HasDocs sublayout => HasDocs (RemoteHost :> sublayout) where
+  docsFor Proxy ep =
+    docsFor (Proxy :: Proxy sublayout) ep
+
+instance HasDocs sublayout => HasDocs (IsSecure :> sublayout) where
+  docsFor Proxy ep =
+    docsFor (Proxy :: Proxy sublayout) ep
+
+instance HasDocs sublayout => HasDocs (HttpVersion :> sublayout) where
+  docsFor Proxy ep =
+    docsFor (Proxy :: Proxy sublayout) ep
+
+instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
+  docsFor Proxy ep =
+    docsFor (Proxy :: Proxy sublayout) ep

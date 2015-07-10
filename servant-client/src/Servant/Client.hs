@@ -669,3 +669,20 @@ instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout
 
     where p = symbolVal (Proxy :: Proxy path)
 
+instance HasClient api => HasClient (Vault :> api) where
+  type Client (Vault :> api) = Client api
+
+  clientWithRoute Proxy req baseurl =
+    clientWithRoute (Proxy :: Proxy api) req baseurl
+
+instance HasClient api => HasClient (RemoteHost :> api) where
+  type Client (RemoteHost :> api) = Client api
+
+  clientWithRoute Proxy req baseurl =
+    clientWithRoute (Proxy :: Proxy api) req baseurl
+
+instance HasClient api => HasClient (IsSecure :> api) where
+  type Client (IsSecure :> api) = Client api
+
+  clientWithRoute Proxy req baseurl =
+    clientWithRoute (Proxy :: Proxy api) req baseurl
