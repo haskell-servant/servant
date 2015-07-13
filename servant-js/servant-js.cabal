@@ -80,7 +80,7 @@ test-suite spec
     , lens
     , servant-js
     , servant
-    , hspec >= 2.0
+    , hspec >= 2.1.8
     , hspec-expectations
     , language-ecmascript >= 0.16
   default-language: Haskell2010
