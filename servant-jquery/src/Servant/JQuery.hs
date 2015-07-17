@@ -11,107 +11,58 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 module Servant.JQuery
-  ( jquery
+  ( javascript
   , generateJS
   , jsForAPI
+  , listFromAPI
   , printJS
   , module Servant.JQuery.Internal
   , GenerateCode(..)
+  , CommonGeneratorOptions(..)
   ) where
 
-import Control.Lens
-import Data.List
-import Data.Monoid
 import Data.Proxy
 import Servant.API
 import Servant.JQuery.Internal
 
-jquery :: HasJQ layout => Proxy layout -> JQ layout
-jquery p = jqueryFor p defReq
+javascript :: HasJS layout => Proxy layout -> JS layout
+javascript p = javascriptFor p defReq
 
--- js codegen
-generateJS :: AjaxReq -> String
-generateJS req = "\n" <>
-    "function " <> fname <> "(" <> argsStr <> ")\n"
- <> "{\n"
- <> "  $.ajax(\n"
- <> "    { url: " <> url <> "\n"
- <> "    , success: onSuccess\n"
- <> dataBody
- <> reqheaders
- <> "    , error: onError\n"
- <> "    , type: '" <> method <> "'\n"
- <> "    });\n"
- <> "}\n"
+printJS :: AjaxReq -> JavaScriptGenerator -> IO ()
+printJS req gen = putStrLn (generateJS req gen)
 
-  where argsStr = intercalate ", " args
-        args = captures
-            ++ map (view argName) queryparams
-            ++ body
-            ++ map (toValidFunctionName . (<>) "header" . headerArgName) hs
-            ++ ["onSuccess", "onError"]
-
-        captures = map captureArg
-                 . filter isCapture
-                 $ req ^. reqUrl.path
-
-        hs = req ^. reqHeaders
-
-        queryparams = req ^.. reqUrl.queryStr.traverse
-
-        body = if req ^. reqBody
-                 then ["body"]
-                 else []
-
-        dataBody =
-          if req ^. reqBody
-            then "    , data: JSON.stringify(body)\n" <>
-                 "    , contentType: 'application/json'\n"
-            else ""
-
-        reqheaders =
-          if null hs
-            then ""
-            else "    , headers: { " ++ headersStr ++ " }\n"
-
-          where headersStr = intercalate ", " $ map headerStr hs
-                headerStr header = "\"" ++
-                  headerArgName header ++
-                  "\": " ++ show header
-
-        fname = req ^. funcName
-        method = req ^. reqMethod
-        url = if url' == "'" then "'/'" else url'
-        url' = "'"
-           ++ urlArgs
-           ++ queryArgs
-
-        urlArgs = jsSegments
-                $ req ^.. reqUrl.path.traverse
-
-        queryArgs = if null queryparams
-                      then ""
-                      else " + '?" ++ jsParams queryparams
-
-printJS :: AjaxReq -> IO ()
-printJS = putStrLn . generateJS
+generateJS :: AjaxReq -> JavaScriptGenerator -> String
+generateJS req  gen = gen $ req
 
 -- | Utility class used by 'jsForAPI' which will
 --   directly hand you all the Javascript code
 --   instead of handing you a ':<|>'-separated list
---   of 'AjaxReq' like 'jquery' and then having to
+--   of 'AjaxReq' like 'javascript' and then having to
 --   use 'generateJS' on each 'AjaxReq'.
 class GenerateCode reqs where
-  jsFor :: reqs -> String
+  jsFor :: reqs -> JavaScriptGenerator -> String
 
 instance GenerateCode AjaxReq where
   jsFor = generateJS
 
 instance GenerateCode rest => GenerateCode (AjaxReq :<|> rest) where
-  jsFor (req :<|> rest) = jsFor req ++ jsFor rest
+  jsFor (req :<|> rest) gen = jsFor req gen ++ jsFor rest gen
 
 -- | Directly generate all the javascript functions for your API
 --   from a 'Proxy' for your API type. You can then write it to
 --   a file or integrate it in a page, for example.
-jsForAPI :: (HasJQ api, GenerateCode (JQ api)) => Proxy api -> String
-jsForAPI p = jsFor (jquery p)
+jsForAPI :: (HasJS api, GenerateCode (JS api)) => Proxy api
+    -> JavaScriptGenerator -> String
+jsForAPI p = jsFor (javascript p)
+
+class GenerateList reqs where
+  generateList :: reqs -> [AjaxReq]
+
+instance GenerateList AjaxReq where
+  generateList r = [r]
+
+instance GenerateList rest => GenerateList (AjaxReq :<|> rest) where
+  generateList (r :<|> rest) = r : generateList rest
+
+listFromAPI :: (HasJS api, GenerateList (JS api)) => Proxy api -> [AjaxReq]
+listFromAPI p = generateList (javascript p)

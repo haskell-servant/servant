@@ -33,6 +33,9 @@ flag example
 
 library
   exposed-modules:     Servant.JQuery
+                       Servant.JQuery.Angular
+                       Servant.JQuery.JQuery
+                       Servant.JQuery.Vanilla
   other-modules:       Servant.JQuery.Internal
   build-depends:       base >=4.5 && <5
                      , charset

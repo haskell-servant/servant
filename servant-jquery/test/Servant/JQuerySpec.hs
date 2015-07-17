@@ -14,6 +14,9 @@ import Test.Hspec
 
 import Servant.API
 import Servant.JQuery
+import qualified Servant.JQuery.Vanilla as JS
+import qualified Servant.JQuery.JQuery as JQ
+import qualified Servant.JQuery.Angular as NG
 import Servant.JQuerySpec.CustomHeaders
 
 type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON] Bool
@@ -46,51 +49,107 @@ customHeaderProxy = Proxy
 customHeaderProxy2 :: Proxy CustomHeaderAPI2
 customHeaderProxy2 = Proxy
 
-spec :: Spec
-spec = describe "Servant.JQuery"
-    generateJSSpec
+data TestNames = Vanilla
+               | VanillaCustom
+               | JQuery
+               | JQueryCustom
+               | Angular
+               | AngularCustom
+                 deriving (Show, Eq)
 
-generateJSSpec :: Spec
-generateJSSpec = describe "generateJS" $ do
+customOptions :: CommonGeneratorOptions
+customOptions = defCommonGeneratorOptions {
+            successCallback = "okCallback",
+            errorCallback = "errorCallback"
+        }
+                 
+spec :: Spec
+spec = describe "Servant.JQuery" $ do
+    (generateJSSpec Vanilla JS.generateVanillaJS)
+    (generateJSSpec VanillaCustom $ JS.generateVanillaJSWith customOptions)
+    (generateJSSpec JQuery JQ.generateJQueryJS)
+    (generateJSSpec JQueryCustom $ JQ.generateJQueryJSWith customOptions)
+    (generateJSSpec Angular $ NG.generateAngularJS NG.defAngularOptions)
+    (generateJSSpec AngularCustom $ (NG.generateAngularJSWith NG.defAngularOptions) customOptions)
+    
+    (angularSpec Angular)
+    (angularSpec AngularCustom)
+
+angularSpec :: TestNames -> Spec    
+angularSpec test = describe specLabel $ do
+    it "should implement a service globally" $ do
+        let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldContain` (".service('" ++ testName ++ "'")
+        
+    it "should depend on $http service globally" $ do
+        let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldContain` ("('" ++ testName ++ "', function($http) {")
+        
+    it "should not depend on $http service in handlers" $ do
+        let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldNotContain` "getsomething($http, "
+    where
+        specLabel = "generateJS(" ++ (show test) ++ ")"
+        --output = putStrLn
+        output _ = return ()
+        testName = "MyService"
+        ngOpts = NG.defAngularOptions { NG.serviceName = testName }
+        genJS req = NG.wrapInService ngOpts req
+    
+generateJSSpec :: TestNames -> (AjaxReq -> String) -> Spec
+generateJSSpec n gen = describe specLabel $ do
     it "should generate valid javascript" $ do
-        let (postSimple :<|> getHasExtension ) = jquery (Proxy :: Proxy TestAPI)
-        parseFromString (generateJS postSimple) `shouldSatisfy` isRight
-        parseFromString (generateJS getHasExtension) `shouldSatisfy` isRight
-        print $ generateJS getHasExtension
+        let (postSimple :<|> getHasExtension ) = javascript (Proxy :: Proxy TestAPI)
+        parseFromString (genJS postSimple) `shouldSatisfy` isRight
+        parseFromString (genJS getHasExtension) `shouldSatisfy` isRight
+        output $ genJS getHasExtension
 
     it "should use non-empty function names" $ do
-        let (_ :<|> topLevel) = jquery (Proxy :: Proxy TopLevelRawAPI)
-        print $ generateJS $ topLevel "GET"
-        parseFromString (generateJS $ topLevel "GET") `shouldSatisfy` isRight
+        let (_ :<|> topLevel) = javascript (Proxy :: Proxy TopLevelRawAPI)
+        output $ genJS (topLevel "GET")
+        parseFromString (genJS $ topLevel "GET") `shouldSatisfy` isRight
 
     it "should handle simple HTTP headers" $ do
-        let jsText = generateJS $ jquery headerHandlingProxy
-        print jsText
+        let jsText = genJS $ javascript headerHandlingProxy
+        output jsText
         parseFromString jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerFoo"
-        jsText `shouldContain` "headers: { \"Foo\": headerFoo }\n"
+        jsText `shouldContain`  (header n "Foo" $ "headerFoo")
 
     it "should handle complex HTTP headers" $ do
-        let jsText = generateJS $ jquery customAuthProxy
-        print jsText
+        let jsText = genJS $ javascript customAuthProxy
+        output jsText
         parseFromString jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerAuthorization"
-        jsText `shouldContain` "headers: { \"Authorization\": \"Basic \" + headerAuthorization }\n"
+        jsText `shouldContain`  (header n "Authorization" $ "\"Basic \" + headerAuthorization")
 
     it "should handle complex, custom HTTP headers" $ do
-        let jsText = generateJS $ jquery customHeaderProxy
-        print jsText
+        let jsText = genJS $ javascript customHeaderProxy
+        output jsText
         parseFromString jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerXMyLovelyHorse"
-        jsText `shouldContain` "headers: { \"X-MyLovelyHorse\": \"I am good friends with \" + headerXMyLovelyHorse }\n"
+        jsText `shouldContain`  (header n "X-MyLovelyHorse" $ "\"I am good friends with \" + headerXMyLovelyHorse")
 
     it "should handle complex, custom HTTP headers (template replacement)" $ do
-        let jsText = generateJS $ jquery customHeaderProxy2
-        print jsText
+        let jsText = genJS $ javascript customHeaderProxy2
+        output jsText
         parseFromString jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerXWhatsForDinner"
-        jsText `shouldContain` "headers: { \"X-WhatsForDinner\": \"I would like \" + headerXWhatsForDinner + \" with a cherry on top.\" }\n"
+        jsText `shouldContain`  (header n "X-WhatsForDinner" $ "\"I would like \" + headerXWhatsForDinner + \" with a cherry on top.\"")
 
     it "can generate the whole javascript code string at once with jsForAPI" $ do
-        let jsStr = jsForAPI (Proxy :: Proxy TestAPI)
+        let jsStr = jsForAPI (Proxy :: Proxy TestAPI) gen
         parseFromString jsStr `shouldSatisfy` isRight
+    where
+        specLabel = "generateJS(" ++ (show n) ++ ")"
+        --output = print
+        output _ = return ()
+        genJS req = generateJS req gen
+        header :: TestNames -> String -> String -> String
+        header v headerName headerValue
+            | v `elem` [Vanilla, VanillaCustom] = "xhr.setRequestHeader(\"" ++ headerName ++ "\", " ++ headerValue ++ ");\n"
+            | otherwise = "headers: { \"" ++ headerName ++ "\": " ++ headerValue ++ " }\n"
+        --header _ _ _ = "Not Implemented"
