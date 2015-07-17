@@ -13,6 +13,7 @@ import GHC.Generics
 import Network.Wai
 import Servant
 import Servant.JQuery
+import Servant.JQuery.JQuery
 import System.Random
 
 import qualified Data.Text                  as T
@@ -92,7 +93,7 @@ server' = server
      :<|> serveDirectory "tutorial/t9"
 
 apiJS :: String
-apiJS = jsForAPI api
+apiJS = jsForAPI api generateJQueryJS
 
 writeJSFiles :: IO ()
 writeJSFiles = do
