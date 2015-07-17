@@ -25,7 +25,28 @@ import GHC.Exts (Constraint)
 import GHC.TypeLits
 import Servant.API
 
+data CommonGeneratorOptions = CommonGeneratorOptions {
+        -- Function transforming function names
+        functionName :: String -> String,
+        -- Name used when a user want to send the request body (to let you redefine it)
+        requestBody :: String,
+        successCallback :: String,
+        errorCallback :: String,
+        moduleName :: String
+    }
+
+defCommonGeneratorOptions :: CommonGeneratorOptions
+defCommonGeneratorOptions = CommonGeneratorOptions {
+      functionName = id,
+      requestBody = "body",
+      successCallback = "onSuccess",
+      errorCallback = "onError",
+      moduleName = ""
+    }
+    
 type Arg = String
+
+type JavaScriptGenerator = AjaxReq -> String
 
 data Segment = Segment { _segment :: SegmentType, _matrix :: [MatrixArg] }
   deriving (Eq, Show)
@@ -193,172 +214,172 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
   Elem a (a ': list) = ()
   Elem a (b ': list) = Elem a list
 
-class HasJQ (layout :: *) where
-  type JQ layout :: *
-  jqueryFor :: Proxy layout -> AjaxReq -> JQ layout
+class HasJS (layout :: *) where
+  type JS layout :: *
+  javascriptFor :: Proxy layout -> AjaxReq -> JS layout
 
-instance (HasJQ a, HasJQ b)
-      => HasJQ (a :<|> b) where
-  type JQ (a :<|> b) = JQ a :<|> JQ b
+instance (HasJS a, HasJS b)
+      => HasJS (a :<|> b) where
+  type JS (a :<|> b) = JS a :<|> JS b
 
-  jqueryFor Proxy req =
-         jqueryFor (Proxy :: Proxy a) req
-    :<|> jqueryFor (Proxy :: Proxy b) req
+  javascriptFor Proxy req =
+         javascriptFor (Proxy :: Proxy a) req
+    :<|> javascriptFor (Proxy :: Proxy b) req
 
-instance (KnownSymbol sym, HasJQ sublayout)
-      => HasJQ (Capture sym a :> sublayout) where
-  type JQ (Capture sym a :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+      => HasJS (Capture sym a :> sublayout) where
+  type JS (Capture sym a :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path <>~ [Segment (Cap str) []]
 
     where str = symbolVal (Proxy :: Proxy sym)
 
-instance Elem JSON list => HasJQ (Delete list a) where
-  type JQ (Delete list a) = AjaxReq
+instance Elem JSON list => HasJS (Delete list a) where
+  type JS (Delete list a) = AjaxReq
 
-  jqueryFor Proxy req =
+  javascriptFor Proxy req =
     req & funcName  %~ ("delete" <>)
         & reqMethod .~ "DELETE"
 
-instance Elem JSON list => HasJQ (Get list a) where
-  type JQ (Get list a) = AjaxReq
+instance Elem JSON list => HasJS (Get list a) where
+  type JS (Get list a) = AjaxReq
 
-  jqueryFor Proxy req =
+  javascriptFor Proxy req =
     req & funcName  %~ ("get" <>)
         & reqMethod .~ "GET"
 
-instance (KnownSymbol sym, HasJQ sublayout)
-      => HasJQ (Header sym a :> sublayout) where
-  type JQ (Header sym a :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+      => HasJS (Header sym a :> sublayout) where
+  type JS (Header sym a :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor subP (req & reqHeaders <>~ [HeaderArg hname])
+  javascriptFor Proxy req =
+    javascriptFor subP (req & reqHeaders <>~ [HeaderArg hname])
 
     where hname = symbolVal (Proxy :: Proxy sym)
           subP = Proxy :: Proxy sublayout
 
-instance Elem JSON list => HasJQ (Post list a) where
-  type JQ (Post list a) = AjaxReq
+instance Elem JSON list => HasJS (Post list a) where
+  type JS (Post list a) = AjaxReq
 
-  jqueryFor Proxy req =
+  javascriptFor Proxy req =
     req & funcName  %~ ("post" <>)
         & reqMethod .~ "POST"
 
-instance Elem JSON list => HasJQ (Put list a) where
-  type JQ (Put list a) = AjaxReq
+instance Elem JSON list => HasJS (Put list a) where
+  type JS (Put list a) = AjaxReq
 
-  jqueryFor Proxy req =
+  javascriptFor Proxy req =
     req & funcName  %~ ("put" <>)
         & reqMethod .~ "PUT"
 
-instance (KnownSymbol sym, HasJQ sublayout)
-      => HasJQ (QueryParam sym a :> sublayout) where
-  type JQ (QueryParam sym a :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+      => HasJS (QueryParam sym a :> sublayout) where
+  type JS (QueryParam sym a :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg str Normal]
 
     where str = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, HasJQ sublayout)
-      => HasJQ (QueryParams sym a :> sublayout) where
-  type JQ (QueryParams sym a :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+      => HasJS (QueryParams sym a :> sublayout) where
+  type JS (QueryParams sym a :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg str List]
 
     where str = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, HasJQ sublayout)
-      => HasJQ (QueryFlag sym :> sublayout) where
-  type JQ (QueryFlag sym :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+      => HasJS (QueryFlag sym :> sublayout) where
+  type JS (QueryFlag sym :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg str Flag]
 
     where str = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, HasJQ sublayout)
-      => HasJQ (MatrixParam sym a :> sublayout) where
-  type JQ (MatrixParam sym a :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+      => HasJS (MatrixParam sym a :> sublayout) where
+  type JS (MatrixParam sym a :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path._last.matrix <>~ [QueryArg strArg Normal]
 
     where str = symbolVal (Proxy :: Proxy sym)
           strArg = str ++ "Value"
 
-instance (KnownSymbol sym, HasJQ sublayout)
-      => HasJQ (MatrixParams sym a :> sublayout) where
-  type JQ (MatrixParams sym a :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+      => HasJS (MatrixParams sym a :> sublayout) where
+  type JS (MatrixParams sym a :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path._last.matrix  <>~ [QueryArg str List]
 
     where str = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, HasJQ sublayout)
-      => HasJQ (MatrixFlag sym :> sublayout) where
-  type JQ (MatrixFlag sym :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+      => HasJS (MatrixFlag sym :> sublayout) where
+  type JS (MatrixFlag sym :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path._last.matrix  <>~ [QueryArg str Flag]
 
     where str = symbolVal (Proxy :: Proxy sym)
 
-instance HasJQ Raw where
-  type JQ Raw = Method -> AjaxReq
+instance HasJS Raw where
+  type JS Raw = Method -> AjaxReq
 
-  jqueryFor Proxy req method =
+  javascriptFor Proxy req method =
     req & funcName %~ ((toLower <$> method) <>)
         & reqMethod .~ method
 
-instance (Elem JSON list, HasJQ sublayout) => HasJQ (ReqBody list a :> sublayout) where
-  type JQ (ReqBody list a :> sublayout) = JQ sublayout
+instance (Elem JSON list, HasJS sublayout) => HasJS (ReqBody list a :> sublayout) where
+  type JS (ReqBody list a :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqBody .~ True
 
-instance (KnownSymbol path, HasJQ sublayout)
-      => HasJQ (path :> sublayout) where
-  type JQ (path :> sublayout) = JQ sublayout
+instance (KnownSymbol path, HasJS sublayout)
+      => HasJS (path :> sublayout) where
+  type JS (path :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) $
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path <>~ [Segment (Static str) []]
           & funcName %~ (str <>)
 
     where str = map (\c -> if c == '.' then '_' else c) $ symbolVal (Proxy :: Proxy path)
 
-instance HasJQ sublayout => HasJQ (RemoteHost :> sublayout) where
-  type JQ (RemoteHost :> sublayout) = JQ sublayout
+instance HasJS sublayout => HasJS (RemoteHost :> sublayout) where
+  type JS (RemoteHost :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) req
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) req
 
-instance HasJQ sublayout => HasJQ (IsSecure :> sublayout) where
-  type JQ (IsSecure :> sublayout) = JQ sublayout
+instance HasJS sublayout => HasJS (IsSecure :> sublayout) where
+  type JS (IsSecure :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) req
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) req
 
-instance HasJQ sublayout => HasJQ (Vault :> sublayout) where
-  type JQ (Vault :> sublayout) = JQ sublayout
+instance HasJS sublayout => HasJS (Vault :> sublayout) where
+  type JS (Vault :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) req
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) req
 
-instance HasJQ sublayout => HasJQ (HttpVersion :> sublayout) where
-  type JQ (HttpVersion :> sublayout) = JQ sublayout
+instance HasJS sublayout => HasJS (HttpVersion :> sublayout) where
+  type JS (HttpVersion :> sublayout) = JS sublayout
 
-  jqueryFor Proxy req =
-    jqueryFor (Proxy :: Proxy sublayout) req
+  javascriptFor Proxy req =
+    javascriptFor (Proxy :: Proxy sublayout) req

@@ -1,0 +1,40 @@
+<html ng-app="counterApp">
+<head>
+  <title>Servant: counter</title>
+  <style>
+  body { text-align: center; }
+  #counter { color: green; }
+  #inc { margin: 0px 20px; background-color: green; color: white; }
+  </style>
+  <script src="angular.min.js" type="text/javascript"></script>
+  <script src="api.js" type="text/javascript"></script>
+</head>
+<body ng-controller="CounterCtrl">
+<h1>Angular version</h1>
+<span id="counter">{{ 'Counter: ' + counter }}</span>
+<button ng-click="incCounter()" id="inc">Increase</button>
+or <a href="/doc">view the docs</a>
+<script type="text/javascript">
+var counterApp = angular.module('counterApp', []);
+
+counterApp.controller('CounterCtrl', ['$scope', '$http', '$interval', function ($scope,$http, $interval) {
+  // Let's define how we publish information to the $scope
+  var publishCounter = function (response) { $scope.counter = response.value; };
+  
+  $scope.getCounter = function() {
+    getcounter($http)
+        .success(publishCounter);
+  }
+  $scope.incCounter = function() {
+    postcounter($http)
+        .success(publishCounter);
+  }
+  
+  // Initialize the counter on load
+  $scope.getCounter();
+  // we update the value every 1sec, in the same way
+  $interval($scope.getCounter, 1000);
+}]);
+</script>
+</body>
+</html>
