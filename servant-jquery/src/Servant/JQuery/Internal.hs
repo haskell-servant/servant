@@ -25,24 +25,26 @@ import GHC.Exts (Constraint)
 import GHC.TypeLits
 import Servant.API
 
-data CommonGeneratorOptions = CommonGeneratorOptions {
-        -- Function transforming function names
-        functionName :: String -> String,
-        -- Name used when a user want to send the request body (to let you redefine it)
-        requestBody :: String,
-        successCallback :: String,
-        errorCallback :: String,
-        moduleName :: String
-    }
+-- | this structure is used by JavaScriptGenerator implementations to let you
+-- customize the output
+data CommonGeneratorOptions = CommonGeneratorOptions
+  { 
+    functionRenamer :: String -> String  -- ^ function transforming function names
+  , requestBody :: String                -- ^ name used when a user want to send the request body (to let you redefine it)
+  , successCallback :: String            -- ^ name of the callback parameter when the request was successful
+  , errorCallback :: String              -- ^ name of the callback parameter when the request reported an error
+  , moduleName :: String                 -- ^ namespace on which we define the js function (empty mean local var)
+  }
 
 defCommonGeneratorOptions :: CommonGeneratorOptions
-defCommonGeneratorOptions = CommonGeneratorOptions {
-      functionName = id,
-      requestBody = "body",
-      successCallback = "onSuccess",
-      errorCallback = "onError",
-      moduleName = ""
-    }
+defCommonGeneratorOptions = CommonGeneratorOptions
+  {
+    functionRenamer = id
+  , requestBody = "body"
+  , successCallback = "onSuccess"
+  , errorCallback = "onError"
+  , moduleName = ""
+  }
     
 type Arg = String
 

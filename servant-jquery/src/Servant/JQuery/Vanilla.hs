@@ -5,10 +5,11 @@ import Control.Lens
 import Data.List
 import Data.Monoid
 
+-- | js codegen using XmlHttpRequest using default generation options
 generateVanillaJS :: AjaxReq -> String
 generateVanillaJS = generateVanillaJSWith defCommonGeneratorOptions
 
--- js codegen using XmlHttpRequest
+-- | js codegen using XmlHttpRequest
 generateVanillaJSWith :: CommonGeneratorOptions -> AjaxReq -> String
 generateVanillaJSWith opts req = "\n" <>
     fname <> " = function(" <> argsStr <> ")\n"
@@ -70,7 +71,7 @@ generateVanillaJSWith opts req = "\n" <>
         namespace = if null (moduleName opts)
                        then "var "
                        else (moduleName opts) <> "."
-        fname = namespace <> (functionName opts $ req ^. funcName)
+        fname = namespace <> (functionRenamer opts $ req ^. funcName)
         
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'

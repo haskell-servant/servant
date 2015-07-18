@@ -5,23 +5,29 @@ import Control.Lens
 import Data.List
 import Data.Monoid
 
-data AngularOptions = AngularOptions {
-        serviceName :: String,
-        prologue :: String -> String -> String,
-        epilogue :: String
-    }
+data AngularOptions = AngularOptions
+  { serviceName :: String                         -- ^ When generating code with wrapInService,
+                                                  -- ^ name of the service to generate
+  , prologue :: String -> String -> String        -- ^ beginning of the service definition
+  , epilogue :: String                            -- ^ end of the service definition
+  }
 
 defAngularOptions :: AngularOptions
-defAngularOptions = AngularOptions {
-        serviceName = "",
-        prologue = \svc m -> m <> "service('" <> svc <> "', function($http) {\n"
-                               <> "  return ({",
-                               epilogue = "});\n});\n"
+defAngularOptions = AngularOptions
+  { serviceName = ""
+  , prologue = \svc m -> m <> "service('" <> svc <> "', function($http) {\n"
+                           <> "  return ({"
+  , epilogue = "});\n});\n"
     }
 
+-- | Instead of simply generating top level functions, generates a service instance
+-- on which your controllers can depend to access your API
+-- This variant uses default AngularOptions
 wrapInService :: AngularOptions -> [AjaxReq] -> String
 wrapInService ngOpts reqs = wrapInServiceWith ngOpts defCommonGeneratorOptions reqs
 
+-- | Instead of simply generating top level functions, generates a service instance
+-- on which your controllers can depend to access your API
 wrapInServiceWith :: AngularOptions -> CommonGeneratorOptions -> [AjaxReq] -> String
 wrapInServiceWith ngOpts opts reqs = 
     ((prologue ngOpts) svc mName)
@@ -34,10 +40,11 @@ wrapInServiceWith ngOpts opts reqs =
                    then "app."
                    else (moduleName opts) <> "."
     
+-- js codegen using $http service from Angular using default options
 generateAngularJS :: AngularOptions -> AjaxReq -> String
 generateAngularJS ngOpts = generateAngularJSWith ngOpts defCommonGeneratorOptions
     
--- js codegen using $http
+-- js codegen using $http service from Angular
 generateAngularJSWith ::  AngularOptions -> CommonGeneratorOptions -> AjaxReq -> String
 generateAngularJSWith ngOptions opts req = "\n" <>
     fname <> fsep <> " function(" <> argsStr <> ")\n"
@@ -105,7 +112,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
                 
         fsep = if hasService then ":" else " ="
                 
-        fname = namespace <> (functionName opts $ req ^. funcName)
+        fname = namespace <> (functionRenamer opts $ req ^. funcName)
         
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
