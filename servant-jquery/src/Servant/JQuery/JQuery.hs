@@ -5,10 +5,11 @@ import Control.Lens
 import Data.List
 import Data.Monoid
 
+-- | js codegen using JQuery using default options
 generateJQueryJS :: AjaxReq -> String
 generateJQueryJS = generateJQueryJSWith defCommonGeneratorOptions
 
--- js codegen using  JQuery
+-- | js codegen using JQuery
 generateJQueryJSWith :: CommonGeneratorOptions -> AjaxReq -> String
 generateJQueryJSWith opts req = "\n" <>
     fname <> " = function(" <> argsStr <> ")\n"
@@ -64,7 +65,7 @@ generateJQueryJSWith opts req = "\n" <>
         namespace = if null (moduleName opts)
                        then "var "
                        else (moduleName opts) <> "."
-        fname = namespace <> (functionName opts $ req ^. funcName)
+        fname = namespace <> (functionRenamer opts $ req ^. funcName)
         
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
