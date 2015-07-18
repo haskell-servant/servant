@@ -1,9 +1,11 @@
+{-# LANGUAGE QuasiQuotes #-}
 module Servant.JQuery.Angular where
 
 import Servant.JQuery.Internal
 import Control.Lens
 import Data.List
 import Data.Monoid
+import Data.String.Interpolate
 
 data AngularOptions = AngularOptions
   { serviceName :: String                         -- ^ When generating code with wrapInService,
@@ -15,8 +17,8 @@ data AngularOptions = AngularOptions
 defAngularOptions :: AngularOptions
 defAngularOptions = AngularOptions
   { serviceName = ""
-  , prologue = \svc m -> m <> "service('" <> svc <> "', function($http) {\n"
-                           <> "  return ({"
+  , prologue = \svc m -> [i|#{m}service('#{svc}', function($http) {
+  return ({|]
   , epilogue = "});\n});\n"
     }
 
@@ -46,16 +48,17 @@ generateAngularJS ngOpts = generateAngularJSWith ngOpts defCommonGeneratorOption
     
 -- js codegen using $http service from Angular
 generateAngularJSWith ::  AngularOptions -> CommonGeneratorOptions -> AjaxReq -> String
-generateAngularJSWith ngOptions opts req = "\n" <>
-    fname <> fsep <> " function(" <> argsStr <> ")\n"
- <> "{\n"
- <> "  return $http(\n"
- <> "    { url: " <> url <> "\n"
- <> dataBody
- <> reqheaders
- <> "    , method: '" <> method <> "'\n"
- <> "    });\n"
- <> "}\n"
+generateAngularJSWith ngOptions opts req = [i|
+  #{fname}#{fsep} function(#{argsStr})
+  {
+   return $http(
+     { url: #{url}
+     #{dataBody}
+     #{reqheaders}
+     , method: '#{method}'
+      });
+  }
+|]
 
   where argsStr = intercalate ", " args
         args = http

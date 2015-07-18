@@ -1,9 +1,11 @@
+{-# LANGUAGE QuasiQuotes #-}
 module Servant.JQuery.JQuery where
 
 import Servant.JQuery.Internal
 import Control.Lens
 import Data.List
 import Data.Monoid
+import Data.String.Interpolate
 
 -- | js codegen using JQuery using default options
 generateJQueryJS :: AjaxReq -> String
@@ -11,18 +13,19 @@ generateJQueryJS = generateJQueryJSWith defCommonGeneratorOptions
 
 -- | js codegen using JQuery
 generateJQueryJSWith :: CommonGeneratorOptions -> AjaxReq -> String
-generateJQueryJSWith opts req = "\n" <>
-    fname <> " = function(" <> argsStr <> ")\n"
- <> "{\n"
- <> "  $.ajax(\n"
- <> "    { url: " <> url <> "\n"
- <> "    , success: " <> onSuccess <> "\n"
- <> dataBody
- <> reqheaders
- <> "    , error: " <> onError <> "\n"
- <> "    , type: '" <> method <> "'\n"
- <> "    });\n"
- <> "}\n"
+generateJQueryJSWith opts req = [i|
+  #{fname} = function(#{argsStr})
+  {
+   $.ajax(
+     { url: #{url}
+     , success: #{onSuccess}
+     #{dataBody}
+     #{reqheaders}
+     , error: #{onError}
+     , type: '#{method}'
+    });
+  }
+|]
 
   where argsStr = intercalate ", " args
         args = captures
