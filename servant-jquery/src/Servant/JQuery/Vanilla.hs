@@ -1,11 +1,9 @@
-{-# LANGUAGE QuasiQuotes #-}
 module Servant.JQuery.Vanilla where
 
 import Servant.JQuery.Internal
 import Control.Lens
 import Data.List
 import Data.Monoid
-import Data.String.Interpolate
 
 -- | js codegen using XmlHttpRequest using default generation options
 generateVanillaJS :: AjaxReq -> String
@@ -13,25 +11,24 @@ generateVanillaJS = generateVanillaJSWith defCommonGeneratorOptions
 
 -- | js codegen using XmlHttpRequest
 generateVanillaJSWith :: CommonGeneratorOptions -> AjaxReq -> String
-generateVanillaJSWith opts req = [i|
-   #{fname} = function(#{argsStr})
-   {
-     var xhr = new XMLHttpRequest();
-     xhr.open('#{method}', #{url}, true);
-     #{reqheaders}
-     xhr.onreadystatechange = function (e) {
-       if (xhr.readyState == 4) {
-         var value = JSON.parse(xhr.responseText);
-           if (xhr.status == 200 || xhr.status == 201) {
-             #{onSuccess}(value);
-           } else {
-             #{onError}(value);
-           }
-         }
-       }
-       xhr.send(#{dataBody});
-   }
-|]
+generateVanillaJSWith opts req = "\n" <>
+    fname <> " = function(" <> argsStr <> ")\n"
+ <> "{\n"
+ <> "  var xhr = new XMLHttpRequest();\n"
+ <> "  xhr.open('" <> method <> "', " <> url <> ", true);\n"
+ <>    reqheaders
+ <> "  xhr.onreadystatechange = function (e) {\n"
+ <> "    if (xhr.readyState == 4) {\n"
+ <> "        var value = JSON.parse(xhr.responseText);\n"
+ <> "      if (xhr.status == 200 || xhr.status == 201) {\n"
+ <> "        onSuccess(value);\n"
+ <> "      } else {\n"
+ <> "        onError(value);\n"
+ <> "      }\n"
+ <> "    }\n"
+ <> "  }\n"
+ <> "  xhr.send(" <> dataBody <> ");\n"
+ <> "}\n"
 
   where argsStr = intercalate ", " args
         args = captures
