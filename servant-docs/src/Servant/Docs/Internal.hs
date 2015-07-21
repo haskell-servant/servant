@@ -624,7 +624,11 @@ markdown api = unlines $
 
 -- | The generated docs for @a ':<|>' b@ just appends the docs
 --   for @a@ with the docs for @b@.
-instance (HasDocs layout1, HasDocs layout2)
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         (HasDocs layout1, HasDocs layout2)
       => HasDocs (layout1 :<|> layout2) where
 
   docsFor Proxy (ep, action) = docsFor p1 (ep, action) <> docsFor p2 (ep, action)
