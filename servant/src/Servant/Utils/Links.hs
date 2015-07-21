@@ -166,7 +166,7 @@ type family IsElem' a s :: Constraint
 type family IsElem endpoint api :: Constraint where
     IsElem e (sa :<|> sb)                   = Or (IsElem e sa) (IsElem e sb)
     IsElem (e :> sa) (e :> sb)              = IsElem sa sb
-    IsElem sa (Header x :> sb)              = IsElem sa sb
+    IsElem sa (Header sym x :> sb)          = IsElem sa sb
     IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
     IsElem (Capture z y :> sa) (Capture x y :> sb)
                                             = IsElem sa sb

@@ -25,7 +25,7 @@ type TestApi =
   :<|> "get" :> Get '[JSON] ()
   :<|> "put" :> Put '[JSON] ()
   :<|> "post" :> ReqBody '[JSON] 'True :> Post '[JSON] ()
-  :<|> "delete" :> Header "ponies" :> Delete '[JSON] ()
+  :<|> "delete" :> Header "ponies" String :> Delete '[JSON] ()
   :<|> "raw" :> Raw
 
 type TestLink = "hello" :> "hi" :> Get '[JSON] Bool
