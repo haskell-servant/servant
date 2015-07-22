@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -6,6 +7,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.Mock ( HasMock(..) ) where
 
+#if !MIN_VERSION_base(4,8,0)
+import           Control.Applicative         ((<$>))
+#endif
 import Control.Monad.IO.Class
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.Proxy
