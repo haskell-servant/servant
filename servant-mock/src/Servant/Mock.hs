@@ -8,7 +8,7 @@
 module Servant.Mock ( HasMock(..) ) where
 
 #if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative         ((<$>))
+import Control.Applicative
 #endif
 import Control.Monad.IO.Class
 import Data.ByteString.Lazy.Char8 (pack)
