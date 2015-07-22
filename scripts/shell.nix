@@ -9,12 +9,12 @@ let modifiedHaskellPackages = haskellngPackages.override {
                 ../servant-server {}) "--ghc-options=-Werror";
         servant-client   = appendConfigureFlag (self.callPackage
             ../servant-client {}) "--ghc-options=-Werror";
-        servant-jquery   = appendConfigureFlag (self.callPackage
-            ../servant-jquery {}) "--ghc-options=-Werror";
+        servant-js   = appendConfigureFlag (self.callPackage
+            ../servant-js {}) "--ghc-options=-Werror";
         servant-docs     = appendConfigureFlag (self.callPackage ../servant-docs
             {}) "--ghc-options=-Werror";
       };
     };
 in modifiedHaskellPackages.ghcWithPackages ( p : with p ; [
-    servant servant-server servant-client servant-jquery servant-docs
+    servant servant-server servant-client servant-js servant-docs
 ])

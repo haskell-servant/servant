@@ -3,7 +3,7 @@
 , servant-server, stdenv, stm, text, transformers, warp
 }:
 mkDerivation {
-  pname = "servant-jquery";
+  pname = "servant-js";
   version = "0.4.0";
   src = ./.;
   isLibrary = true;
@@ -16,6 +16,6 @@ mkDerivation {
     base hspec hspec-expectations language-ecmascript lens servant
   ];
   homepage = "http://haskell-servant.github.io/";
-  description = "Automatically derive (jquery) javascript functions to query servant webservices";
+  description = "Automatically derive javascript functions to query servant webservices";
   license = stdenv.lib.licenses.bsd3;
 }

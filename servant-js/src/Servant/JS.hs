@@ -5,25 +5,24 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Servant.JQuery
--- Copyright   :  (C) 2014 Alp Mestanogullari
 -- License     :  BSD3
 -- Maintainer  :  Alp Mestanogullari <alpmestan@gmail.com>
 -- Stability   :  experimental
 -- Portability :  non-portable
-module Servant.JQuery
+module Servant.JS
   ( javascript
   , generateJS
   , jsForAPI
   , listFromAPI
   , printJS
-  , module Servant.JQuery.Internal
+  , module Servant.JS.Internal
   , GenerateCode(..)
   , CommonGeneratorOptions(..)
   ) where
 
 import Data.Proxy
 import Servant.API
-import Servant.JQuery.Internal
+import Servant.JS.Internal
 
 javascript :: HasJS layout => Proxy layout -> JS layout
 javascript p = javascriptFor p defReq

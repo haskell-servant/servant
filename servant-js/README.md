@@ -1,3 +1,14 @@
+# servant-js
+
+![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
+
+This library lets you derive automatically (JQuery based) Javascript functions that let you query each endpoint of a *servant* webservice.
+
+## Example
+
+Read more about the following example [here](https://github.com/haskell-servant/servant/tree/master/servant-jquery/tree/master/examples#examples).
+
+``` haskell
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -11,10 +22,6 @@ import GHC.Generics
 import Network.Wai.Handler.Warp (run)
 import Servant
 import Servant.JQuery
-import qualified Servant.JQuery as SJQ
-import qualified Servant.JQuery.Vanilla as JS
-import qualified Servant.JQuery.JQuery as JQ
-import qualified Servant.JQuery.Angular as NG
 import System.FilePath
 
 -- * A simple Counter data type
@@ -41,9 +48,9 @@ currentValue :: MonadIO m => TVar Counter -> m Counter
 currentValue counter = liftIO $ readTVarIO counter
 
 -- * Our API type
-type TestApi = "counter" :> Post '[JSON] Counter -- endpoint for increasing the counter
-          :<|> "counter" :> Get '[JSON] Counter -- endpoint to get the current value
-          :<|> Raw                       -- used for serving static files 
+type TestApi = "counter" :> Post Counter -- endpoint for increasing the counter
+          :<|> "counter" :> Get  Counter -- endpoint to get the current value
+          :<|> Raw                       -- used for serving static files
 
 testApi :: Proxy TestApi
 testApi = Proxy
@@ -66,31 +73,17 @@ runServer :: TVar Counter -- ^ shared variable for the counter
 runServer var port = run port (serve testApi $ server var)
 
 -- * Generating the JQuery code
-incCounterJS :: AjaxReq
-currentValueJS :: AjaxReq
-incCounterJS :<|> currentValueJS :<|> _ = javascript testApi
 
-writeJS :: JavaScriptGenerator -> FilePath -> [AjaxReq] -> IO ()
-writeJS gen fp functions = writeFile fp $
-  concatMap (\req -> generateJS req gen) functions
-  
-writeServiceJS :: FilePath -> [AjaxReq] -> IO ()
-writeServiceJS fp functions = writeFile fp $
-  NG.wrapInServiceWith (NG.defAngularOptions { NG.serviceName = "counterSvc" })
-    (defCommonGeneratorOptions { SJQ.moduleName = "counterApp" }) functions
-  
+incCounterJS :<|> currentValueJS :<|> _ = jquery testApi
+
+writeJS :: FilePath -> [AjaxReq] -> IO ()
+writeJS fp functions = writeFile fp $
+  concatMap generateJS functions
+
 main :: IO ()
 main = do
   -- write the JS code to www/api.js at startup
-  writeJS JQ.generateJQueryJS (www </> "jquery" </> "api.js")
-          [ incCounterJS, currentValueJS ]
-  writeJS JS.generateVanillaJS (www </> "vanilla" </> "api.js")
-          [ incCounterJS, currentValueJS ]
-  writeJS (NG.generateAngularJS 
-            NG.defAngularOptions) (www </> "angular" </> "api.js")
-          [ incCounterJS, currentValueJS ]
-  writeServiceJS 
-          (www </> "angular" </> "api.service.js")
+  writeJS (www </> "api.js")
           [ incCounterJS, currentValueJS ]
 
   -- setup a shared counter
@@ -98,3 +91,4 @@ main = do
 
   -- listen to requests on port 8080
   runServer cnt 8080
+```

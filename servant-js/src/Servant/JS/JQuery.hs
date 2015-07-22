@@ -1,6 +1,6 @@
-module Servant.JQuery.JQuery where
+module Servant.JS.JQuery where
 
-import Servant.JQuery.Internal
+import Servant.JS.Internal
 import Control.Lens
 import Data.List
 import Data.Monoid

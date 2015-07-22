@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Servant.JQuery.Internal where
+module Servant.JS.Internal where
 
 #if !MIN_VERSION_base(4,8,0)
 import Control.Applicative

@@ -1,17 +1,18 @@
-module Servant.JQuery.Angular where
+module Servant.JS.Angular where
 
-import Servant.JQuery.Internal
+import Servant.JS.Internal
 import Control.Lens
 import Data.List
 import Data.Monoid
 
 data AngularOptions = AngularOptions
   { serviceName :: String                         -- ^ When generating code with wrapInService,
-                                                  -- ^ name of the service to generate
+                                                  --   name of the service to generate
   , prologue :: String -> String -> String        -- ^ beginning of the service definition
   , epilogue :: String                            -- ^ end of the service definition
   }
 
+-- | Default options for the Angular codegen. Used by 'wrapInService'.
 defAngularOptions :: AngularOptions
 defAngularOptions = AngularOptions
   { serviceName = ""
@@ -21,8 +22,8 @@ defAngularOptions = AngularOptions
     }
 
 -- | Instead of simply generating top level functions, generates a service instance
--- on which your controllers can depend to access your API
--- This variant uses default AngularOptions
+-- on which your controllers can depend to access your API.
+-- This variant uses default 'AngularOptions'.
 wrapInService :: AngularOptions -> [AjaxReq] -> String
 wrapInService ngOpts reqs = wrapInServiceWith ngOpts defCommonGeneratorOptions reqs
 

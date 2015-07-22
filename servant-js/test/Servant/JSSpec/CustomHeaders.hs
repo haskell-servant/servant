@@ -6,14 +6,14 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
-module Servant.JQuerySpec.CustomHeaders where
+module Servant.JSSpec.CustomHeaders where
 
 import Control.Lens
 import Data.Monoid
 import Data.Proxy
 import GHC.TypeLits
 import Servant.API
-import Servant.JQuery
+import Servant.JS
 
 -- | This is a hypothetical combinator that fetches an Authorization header.
 -- The symbol in the header denotes what kind of authentication we are
