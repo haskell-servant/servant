@@ -5,6 +5,7 @@ import Control.Lens
 import Data.List
 import Data.Monoid
 
+-- | Options specific to the angular code generator
 data AngularOptions = AngularOptions
   { serviceName :: String                         -- ^ When generating code with wrapInService,
                                                   --   name of the service to generate
@@ -24,28 +25,37 @@ defAngularOptions = AngularOptions
 -- | Instead of simply generating top level functions, generates a service instance
 -- on which your controllers can depend to access your API.
 -- This variant uses default 'AngularOptions'.
-wrapInService :: AngularOptions -> [AjaxReq] -> String
-wrapInService ngOpts reqs = wrapInServiceWith ngOpts defCommonGeneratorOptions reqs
+angularService :: AngularOptions -> JavaScriptGenerator
+angularService ngOpts = angularServiceWith ngOpts defCommonGeneratorOptions
 
 -- | Instead of simply generating top level functions, generates a service instance
 -- on which your controllers can depend to access your API
-wrapInServiceWith :: AngularOptions -> CommonGeneratorOptions -> [AjaxReq] -> String
-wrapInServiceWith ngOpts opts reqs = 
-    ((prologue ngOpts) svc mName)
-    <> (intercalate "," $ map generator reqs) <>
-    (epilogue ngOpts)
+angularServiceWith :: AngularOptions -> CommonGeneratorOptions -> JavaScriptGenerator
+angularServiceWith ngOpts opts reqs = 
+    prologue ngOpts svc mName
+    <> intercalate "," (map generator reqs) <>
+    epilogue ngOpts
     where
-        generator req = (generateAngularJSWith ngOpts opts req)
+        generator req = generateAngularJSWith ngOpts opts req
         svc = serviceName ngOpts
         mName = if null (moduleName opts)
                    then "app."
-                   else (moduleName opts) <> "."
-    
--- js codegen using $http service from Angular using default options
+                   else moduleName opts <> "."
+
+-- | Generate regular javacript functions that use
+--   the $http service, using default values for 'CommonGeneratorOptions'.
+angular :: AngularOptions -> JavaScriptGenerator
+angular ngopts = angularWith ngopts defCommonGeneratorOptions
+
+-- | Generate regular javascript functions that use the $http service.
+angularWith :: AngularOptions -> CommonGeneratorOptions -> JavaScriptGenerator
+angularWith ngopts opts = intercalate "\n\n" . map (generateAngularJSWith ngopts opts)
+
+-- | js codegen using $http service from Angular using default options
 generateAngularJS :: AngularOptions -> AjaxReq -> String
 generateAngularJS ngOpts = generateAngularJSWith ngOpts defCommonGeneratorOptions
     
--- js codegen using $http service from Angular
+-- | js codegen using $http service from Angular
 generateAngularJSWith ::  AngularOptions -> CommonGeneratorOptions -> AjaxReq -> String
 generateAngularJSWith ngOptions opts req = "\n" <>
     fname <> fsep <> " function(" <> argsStr <> ")\n"

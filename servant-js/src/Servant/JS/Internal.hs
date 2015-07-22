@@ -36,6 +36,17 @@ data CommonGeneratorOptions = CommonGeneratorOptions
   , moduleName :: String                 -- ^ namespace on which we define the js function (empty mean local var)
   }
 
+-- | Default options.
+--
+-- @
+-- > defCommonGeneratorOptions = CommonGeneratorOptions
+-- >   { functionRenamer = id
+-- >   , requestBody = "body"
+-- >   , successCallback = "onSuccess"
+-- >   , errorCallback = "onError"
+-- >   , moduleName = ""
+-- >   }
+-- @
 defCommonGeneratorOptions :: CommonGeneratorOptions
 defCommonGeneratorOptions = CommonGeneratorOptions
   {
@@ -48,7 +59,10 @@ defCommonGeneratorOptions = CommonGeneratorOptions
     
 type Arg = String
 
-type JavaScriptGenerator = AjaxReq -> String
+-- A 'JavascriptGenerator' just takes the data found in the API type
+-- for each endpoint and generates Javascript code in a String. Several
+-- generators are available in this package.
+type JavaScriptGenerator = [AjaxReq] -> String
 
 data Segment = Segment { _segment :: SegmentType, _matrix :: [MatrixArg] }
   deriving (Eq, Show)

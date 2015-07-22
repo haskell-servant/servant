@@ -5,6 +5,17 @@ import Control.Lens
 import Data.List
 import Data.Monoid
 
+-- | Generate javascript functions that use the /jQuery/ library
+--   to make the AJAX calls. Uses 'defCommonGeneratorOptions'
+--   for the generator options.
+jquery :: JavaScriptGenerator
+jquery = concat . map generateJQueryJS
+
+-- | Generate javascript functions that use the /jQuery/ library
+--   to make the AJAX calls. Lets you specify your own 'CommonGeneratorOptions'.
+jqueryWith :: CommonGeneratorOptions -> JavaScriptGenerator
+jqueryWith opts = concat . map (generateJQueryJSWith opts)
+
 -- | js codegen using JQuery using default options
 generateJQueryJS :: AjaxReq -> String
 generateJQueryJS = generateJQueryJSWith defCommonGeneratorOptions

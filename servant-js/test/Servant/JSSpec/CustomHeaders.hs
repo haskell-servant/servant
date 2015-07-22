@@ -14,6 +14,7 @@ import Data.Proxy
 import GHC.TypeLits
 import Servant.API
 import Servant.JS
+import Servant.JS.Internal
 
 -- | This is a hypothetical combinator that fetches an Authorization header.
 -- The symbol in the header denotes what kind of authentication we are

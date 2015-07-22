@@ -93,7 +93,7 @@ server' = server
      :<|> serveDirectory "tutorial/t9"
 
 apiJS :: String
-apiJS = jsForAPI api generateJQueryJS
+apiJS = jsForAPI api jquery
 
 writeJSFiles :: IO ()
 writeJSFiles = do

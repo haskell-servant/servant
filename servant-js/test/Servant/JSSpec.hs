@@ -97,15 +97,13 @@ angularSpec test = describe specLabel $ do
         output _ = return ()
         testName = "MyService"
         ngOpts = NG.defAngularOptions { NG.serviceName = testName }
-        genJS req = NG.wrapInService ngOpts req
+        genJS req = NG.angularService ngOpts req
     
 generateJSSpec :: TestNames -> (AjaxReq -> String) -> Spec
 generateJSSpec n gen = describe specLabel $ do
     it "should generate valid javascript" $ do
-        let (postSimple :<|> getHasExtension ) = javascript (Proxy :: Proxy TestAPI)
-        parseFromString (genJS postSimple) `shouldSatisfy` isRight
-        parseFromString (genJS getHasExtension) `shouldSatisfy` isRight
-        output $ genJS getHasExtension
+        let s = jsForAPI (Proxy :: Proxy TestAPI) (concat . map gen)
+        parseFromString s `shouldSatisfy` isRight
 
     it "should use non-empty function names" $ do
         let (_ :<|> topLevel) = javascript (Proxy :: Proxy TopLevelRawAPI)
@@ -141,13 +139,13 @@ generateJSSpec n gen = describe specLabel $ do
         jsText `shouldContain`  (header n "X-WhatsForDinner" $ "\"I would like \" + headerXWhatsForDinner + \" with a cherry on top.\"")
 
     it "can generate the whole javascript code string at once with jsForAPI" $ do
-        let jsStr = jsForAPI (Proxy :: Proxy TestAPI) gen
+        let jsStr = jsForAPI (Proxy :: Proxy TestAPI) (concat . map gen)
         parseFromString jsStr `shouldSatisfy` isRight
     where
         specLabel = "generateJS(" ++ (show n) ++ ")"
         --output = print
         output _ = return ()
-        genJS req = generateJS req gen
+        genJS req = gen req
         header :: TestNames -> String -> String -> String
         header v headerName headerValue
             | v `elem` [Vanilla, VanillaCustom] = "xhr.setRequestHeader(\"" ++ headerName ++ "\", " ++ headerValue ++ ");\n"

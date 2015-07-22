@@ -5,6 +5,18 @@ import Control.Lens
 import Data.List
 import Data.Monoid
 
+-- | Generate vanilla javascript functions to make AJAX requests
+--   to your API, using /XMLHttpRequest/. Uses 'defCommonGeneratorOptions'
+--   for the 'CommonGeneratorOptions'.
+vanillaJS :: JavaScriptGenerator
+vanillaJS = concat . map generateVanillaJS
+
+-- | Generate vanilla javascript functions to make AJAX requests
+--   to your API, using /XMLHttpRequest/. Lets you specify your
+--   own options.
+vanillaJSWith :: CommonGeneratorOptions -> JavaScriptGenerator
+vanillaJSWith opts = concat . map (generateVanillaJSWith opts)
+
 -- | js codegen using XmlHttpRequest using default generation options
 generateVanillaJS :: AjaxReq -> String
 generateVanillaJS = generateVanillaJSWith defCommonGeneratorOptions
