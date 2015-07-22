@@ -12,8 +12,8 @@ import Data.Text (Text)
 import GHC.Generics
 import Network.Wai
 import Servant
-import Servant.JQuery
-import Servant.JQuery.JQuery
+import Servant.JS
+import Servant.JS.JQuery
 import System.Random
 
 import qualified Data.Text                  as T
