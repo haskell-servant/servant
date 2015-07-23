@@ -65,15 +65,15 @@ customOptions = defCommonGeneratorOptions {
                  
 spec :: Spec
 spec = describe "Servant.JQuery" $ do
-    (generateJSSpec Vanilla JS.generateVanillaJS)
-    (generateJSSpec VanillaCustom $ JS.generateVanillaJSWith customOptions)
-    (generateJSSpec JQuery JQ.generateJQueryJS)
-    (generateJSSpec JQueryCustom $ JQ.generateJQueryJSWith customOptions)
-    (generateJSSpec Angular $ NG.generateAngularJS NG.defAngularOptions)
-    (generateJSSpec AngularCustom $ (NG.generateAngularJSWith NG.defAngularOptions) customOptions)
+    generateJSSpec Vanilla       JS.generateVanillaJS
+    generateJSSpec VanillaCustom (JS.generateVanillaJSWith customOptions)
+    generateJSSpec JQuery        JQ.generateJQueryJS
+    generateJSSpec JQueryCustom  (JQ.generateJQueryJSWith customOptions)
+    generateJSSpec Angular       (NG.generateAngularJS NG.defAngularOptions)
+    generateJSSpec AngularCustom (NG.generateAngularJSWith NG.defAngularOptions customOptions)
     
-    (angularSpec Angular)
-    (angularSpec AngularCustom)
+    angularSpec    Angular
+    angularSpec    AngularCustom
 
 angularSpec :: TestNames -> Spec    
 angularSpec test = describe specLabel $ do
@@ -143,11 +143,9 @@ generateJSSpec n gen = describe specLabel $ do
         parseFromString jsStr `shouldSatisfy` isRight
     where
         specLabel = "generateJS(" ++ (show n) ++ ")"
-        --output = print
         output _ = return ()
         genJS req = gen req
         header :: TestNames -> String -> String -> String
         header v headerName headerValue
             | v `elem` [Vanilla, VanillaCustom] = "xhr.setRequestHeader(\"" ++ headerName ++ "\", " ++ headerValue ++ ");\n"
             | otherwise = "headers: { \"" ++ headerName ++ "\": " ++ headerValue ++ " }\n"
-        --header _ _ _ = "Not Implemented"
