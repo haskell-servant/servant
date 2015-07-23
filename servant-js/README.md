@@ -1,3 +1,14 @@
+# servant-js
+
+![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
+
+This library lets you derive automatically (JQuery based) Javascript functions that let you query each endpoint of a *servant* webservice.
+
+## Example
+
+Read more about the following example [here](https://github.com/haskell-servant/servant/tree/master/servant-jquery/tree/master/examples#examples).
+
+``` haskell
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -39,7 +50,7 @@ currentValue counter = liftIO $ readTVarIO counter
 -- * Our API type
 type TestApi = "counter" :> Post Counter -- endpoint for increasing the counter
           :<|> "counter" :> Get  Counter -- endpoint to get the current value
-          :<|> Raw                       -- used for serving static files 
+          :<|> Raw                       -- used for serving static files
 
 testApi :: Proxy TestApi
 testApi = Proxy
@@ -80,3 +91,4 @@ main = do
 
   -- listen to requests on port 8080
   runServer cnt 8080
+```

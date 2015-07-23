@@ -1,8 +1,10 @@
-name:                servant-jquery
+name:                servant-js
 version:             0.4.1
-synopsis:            Automatically derive (jquery) javascript functions to query servant webservices
+synopsis:            Automatically derive javascript functions to query servant webservices.
 description:
   Automatically derive jquery-based javascript functions to query servant webservices.
+  .
+  Supports deriving functions using vanilla javascript AJAX requests, Angular or JQuery.
   .
   You can find an example <https://github.com/haskell-servant/servant/blob/master/servant-jquery/examples/counter.hs here>
   which serves the generated javascript to a webpage that allows you to trigger
@@ -32,8 +34,11 @@ flag example
   default: False
 
 library
-  exposed-modules:     Servant.JQuery
-  other-modules:       Servant.JQuery.Internal
+  exposed-modules:     Servant.JS
+                       Servant.JS.Angular
+                       Servant.JS.JQuery
+                       Servant.JS.Vanilla
+                       Servant.JS.Internal
   build-depends:       base >=4.5 && <5
                      , charset
                      , lens >= 4
@@ -59,7 +64,7 @@ executable counter
     , filepath
     , servant == 0.4.*
     , servant-server == 0.4.*
-    , servant-jquery == 0.4.*
+    , servant-js == 0.4.*
     , stm
     , transformers
     , warp
@@ -73,7 +78,7 @@ test-suite spec
   build-depends:
       base == 4.*
     , lens
-    , servant-jquery
+    , servant-js
     , servant
     , hspec >= 2.0
     , hspec-expectations

@@ -32,7 +32,7 @@ executable tutorial
     , random
     , servant == 0.4.*
     , servant-docs == 0.4.*
-    , servant-jquery == 0.4.*
+    , servant-js == 0.4.*
     , servant-lucid == 0.4.*
     , servant-server == 0.4.*
     , text

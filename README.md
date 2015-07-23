@@ -13,7 +13,7 @@ In order to minimize the dependencies depending on your needs, we provide these 
 - `servant-server`, which lets you *implement* an HTTP server with handlers for each endpoint of an API.
 - `servant-client`, which lets you derive automatically Haskell functions that let you query each endpoint of a `servant` webservice.
 - `servant-docs`, which lets you generate API docs for your webservice.
-- `servant-jquery`, which lets you derive Javascript functions (based on jquery) to query your API's endpoints, in the same spirit as `servant-client`.
+- `servant-js`, which lets you derive Javascript functions (using vanilla JS ajax requests, angular or jquery) to query your API's endpoints, in the same spirit as `servant-client`.
 - `servant-blaze` and `servant-lucid` provide easy HTML rendering of your data as an `HTML` content-type "combinator".
 
 ## Tutorial

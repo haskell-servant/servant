@@ -1,7 +1,7 @@
 servant
 servant-client
 servant-docs
-servant-jquery
+servant-js
 servant-server
 servant-examples
 servant-blaze

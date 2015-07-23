@@ -6,25 +6,26 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
-module Servant.JQuerySpec.CustomHeaders where
+module Servant.JSSpec.CustomHeaders where
 
 import Control.Lens
 import Data.Monoid
 import Data.Proxy
 import GHC.TypeLits
 import Servant.API
-import Servant.JQuery
+import Servant.JS
+import Servant.JS.Internal
 
 -- | This is a hypothetical combinator that fetches an Authorization header.
 -- The symbol in the header denotes what kind of authentication we are
 -- using -- Basic, Digest, whatever.
 data Authorization (sym :: Symbol) a
 
-instance (KnownSymbol sym, HasJQ sublayout)
-    => HasJQ (Authorization sym a :> sublayout) where
-    type JQ (Authorization sym a :> sublayout) = JQ sublayout
+instance (KnownSymbol sym, HasJS sublayout)
+    => HasJS (Authorization sym a :> sublayout) where
+    type JS (Authorization sym a :> sublayout) = JS sublayout
 
-    jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
+    javascriptFor Proxy req = javascriptFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "Authorization" $
                                tokenType (symbolVal (Proxy :: Proxy sym)) ]
       where
@@ -33,11 +34,11 @@ instance (KnownSymbol sym, HasJQ sublayout)
 -- | This is a combinator that fetches an X-MyLovelyHorse header.
 data MyLovelyHorse a
 
-instance (HasJQ sublayout)
-    => HasJQ (MyLovelyHorse a :> sublayout) where
-    type JQ (MyLovelyHorse a :> sublayout) = JQ sublayout
+instance (HasJS sublayout)
+    => HasJS (MyLovelyHorse a :> sublayout) where
+    type JS (MyLovelyHorse a :> sublayout) = JS sublayout
 
-    jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
+    javascriptFor Proxy req = javascriptFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "X-MyLovelyHorse" tpl ]
       where
         tpl = "I am good friends with {X-MyLovelyHorse}"
@@ -45,11 +46,11 @@ instance (HasJQ sublayout)
 -- | This is a combinator that fetches an X-WhatsForDinner header.
 data WhatsForDinner a
 
-instance (HasJQ sublayout)
-    => HasJQ (WhatsForDinner a :> sublayout) where
-    type JQ (WhatsForDinner a :> sublayout) = JQ sublayout
+instance (HasJS sublayout)
+    => HasJS (WhatsForDinner a :> sublayout) where
+    type JS (WhatsForDinner a :> sublayout) = JS sublayout
 
-    jqueryFor Proxy req = jqueryFor (Proxy :: Proxy sublayout) $
+    javascriptFor Proxy req = javascriptFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "X-WhatsForDinner" tpl ]
       where
         tpl = "I would like {X-WhatsForDinner} with a cherry on top."
