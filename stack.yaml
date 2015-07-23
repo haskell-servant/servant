@@ -1,0 +1,15 @@
+flags:
+  servant-jquery:
+    example: false
+packages:
+  - servant-examples/
+  - servant-docs/
+  - servant-blaze/
+  - servant-client/
+  - servant-jquery/
+  - servant-lucid/
+  - servant/
+  - servant-server/
+extra-deps:
+  - doctest-0.10.1
+resolver: lts-2.17
