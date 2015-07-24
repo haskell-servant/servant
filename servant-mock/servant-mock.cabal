@@ -1,0 +1,46 @@
+name:                servant-mock
+version:             0.4
+synopsis:            Derive a mock server for free from your servant API types
+description:
+  Derive a mock server for free from your servant API types
+  .
+  See the @Servant.Mock@ module for the documentation and an example.
+homepage:            http://github.com/haskell-servant/servant
+license:             BSD3
+license-file:        LICENSE
+author:              Alp Mestanogullari
+maintainer:          alpmestan@gmail.com
+copyright:           2015 Alp Mestanogullari
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+
+flag example
+  description: Build the example too
+  manual: True
+  default: False
+
+library
+  exposed-modules:
+    Servant.Mock
+  build-depends:
+    base >=4.7 && <5,
+    bytestring >= 0.10 && <0.11,
+    http-types >= 0.8 && <0.9,
+    servant >= 0.4,
+    servant-server >= 0.4,
+    transformers >= 0.3 && <0.5,
+    QuickCheck >= 2.8 && <2.9,
+    wai >= 3.0 && <3.1
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable mock-app
+  main-is: main.hs
+  hs-source-dirs: example
+  default-language: Haskell2010
+  build-depends: aeson, base, servant-mock, servant-server, QuickCheck, warp
+  if flag(example)
+    buildable: True
+  else
+    buildable: False
