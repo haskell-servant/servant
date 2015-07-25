@@ -22,3 +22,4 @@ cabal.config
 *.aux
 *.hp
 Setup
+.stack-work

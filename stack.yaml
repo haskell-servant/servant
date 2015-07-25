@@ -1,0 +1,15 @@
+flags:
+  servant-js:
+    example: false
+packages:
+- servant/
+- servant-blaze/
+- servant-client/
+- servant-docs/
+- servant-examples/
+- servant-js/
+- servant-lucid/
+- servant-mock/
+- servant-server/
+extra-deps: []
+resolver: nightly-2015-07-24
