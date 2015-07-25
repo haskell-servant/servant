@@ -1,30 +1,26 @@
-language: haskell
+sudo: false
 
 env:
-  - CABALVER=1.18 GHCVER=7.8.4
-  - CABALVER=1.22 GHCVER=7.10.1
-
-before_install:
- - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
- - travis_retry sudo apt-get update
- - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER
- - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
- - travis_retry cabal update
+#  - GHCVER=7.8.4 STACK_YAML=stack.yaml
+  - GHCVER=7.10.1 STACK_YAML=stack.yaml
 
 install:
- - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
- - cabal --version
+ # ghc
+ - export PATH=/opt/ghc/$GHCVER/bin:$PATH
+ # stack
+ - mkdir -p ~/.local/bin
+ - export PATH=~/.local/bin:$PATH
+ - travis_retry curl -L https://github.com/commercialhaskell/stack/releases/download/v0.1.2.0/stack-0.1.2.0-x86_64-linux.gz | gunzip > ~/.local/bin/stack
+ - chmod a+x ~/.local/bin/stack
 
 script:
-  - ./scripts/test-all.sh
+ - stack build
+ - stack test
 
-notifications:
-  irc:
-    channels:
-      - "irc.freenode.org#servant"
-    template:
-      - "%{repository}#%{build_number} - %{commit} on %{branch} by %{author}: %{message}"
-      - "Build details: %{build_url} - Change view: %{compare_url}"
-    skip_join: true
-    on_success: change
-    on_failure: always
+addons:
+  apt:
+    sources:
+    - hvr-ghc
+    packages:
+    - ghc-7.8.4
+    - ghc-7.10.1
