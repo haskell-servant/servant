@@ -24,7 +24,9 @@ generateAxiosJSWith :: CommonGeneratorOptions -> AjaxReq -> String
 generateAxiosJSWith opts req = "\n" <>
     fname <> " = function(" <> argsStr <> ")\n"
  <> "{\n"
- <> "  return axios." <> method <> "(" <> url <> ",\n"
+ <> "  return axios(" <> url <> ",\n"
+ <> "    {\n"
+ <> "      method: '" <> method <> "'\n"
  <> dataBody
  <> reqheaders
  <> "    });\n"
@@ -76,7 +78,7 @@ generateAxiosJSWith opts req = "\n" <>
         method = map toLower $ req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
-           ++ urlPrefix opts
+           -- ++ urlPrefix opts
            ++ urlArgs
            ++ queryArgs
 

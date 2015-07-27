@@ -17,6 +17,7 @@ import Servant.JS
 import qualified Servant.JS.Vanilla as JS
 import qualified Servant.JS.JQuery as JQ
 import qualified Servant.JS.Angular as NG
+import qualified Servant.JS.Axios as AX
 import Servant.JSSpec.CustomHeaders
 
 type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON] Bool
@@ -55,6 +56,8 @@ data TestNames = Vanilla
                | JQueryCustom
                | Angular
                | AngularCustom
+               | Axios
+               | AxiosCustom
                  deriving (Show, Eq)
 
 customOptions :: CommonGeneratorOptions
@@ -71,6 +74,8 @@ spec = describe "Servant.JQuery" $ do
     generateJSSpec JQueryCustom  (JQ.generateJQueryJSWith customOptions)
     generateJSSpec Angular       (NG.generateAngularJS NG.defAngularOptions)
     generateJSSpec AngularCustom (NG.generateAngularJSWith NG.defAngularOptions customOptions)
+    generateJSSpec Axios        AX.generateAxiosJS
+    generateJSSpec AxiosCustom  (AX.generateAxiosJSWith customOptions)
     
     angularSpec    Angular
     angularSpec    AngularCustom
@@ -143,7 +148,7 @@ generateJSSpec n gen = describe specLabel $ do
         parseFromString jsStr `shouldSatisfy` isRight
     where
         specLabel = "generateJS(" ++ (show n) ++ ")"
-        output _ = return ()
+        output = putStrLn
         genJS req = gen req
         header :: TestNames -> String -> String -> String
         header v headerName headerValue
