@@ -24,9 +24,8 @@ generateAxiosJSWith :: CommonGeneratorOptions -> AjaxReq -> String
 generateAxiosJSWith opts req = "\n" <>
     fname <> " = function(" <> argsStr <> ")\n"
  <> "{\n"
- <> "  return axios(" <> url <> ",\n"
- <> "    {\n"
- <> "      method: '" <> method <> "'\n"
+ <> "  return axios({ url: " <> url <> "\n"
+ <> "    , method: '" <> method <> "'\n"
  <> dataBody
  <> reqheaders
  <> "    });\n"
