@@ -95,6 +95,10 @@ module Servant.JS
   , AngularOptions(..)
   , defAngularOptions
 
+  , -- * Axios code generation
+    axios
+  , axiosWith
+
   , -- * Misc.
     listFromAPI
   , javascript
@@ -106,6 +110,7 @@ module Servant.JS
 import Data.Proxy
 import Servant.API
 import Servant.JS.Angular
+import Servant.JS.Axios
 import Servant.JS.Internal
 import Servant.JS.JQuery
 import Servant.JS.Vanilla
