@@ -1,5 +1,5 @@
 name:                servant-examples
-version:             0.4.1
+version:             0.5
 synopsis:            Example programs for servant
 description:         Example programs for servant,
                      showcasing solutions to common needs.
@@ -30,11 +30,11 @@ executable tutorial
     , js-jquery
     , lucid
     , random
-    , servant == 0.4.*
-    , servant-docs == 0.4.*
-    , servant-js == 0.4.*
-    , servant-lucid == 0.4.*
-    , servant-server == 0.4.*
+    , servant == 0.5.*
+    , servant-docs == 0.5.*
+    , servant-js == 0.5.*
+    , servant-lucid == 0.5.*
+    , servant-server == 0.5.*
     , text
     , time
     , transformers
@@ -51,9 +51,9 @@ executable t8-main
       aeson
     , base >= 4.7 && < 5
     , either
-    , servant == 0.4.*
-    , servant-client == 0.4.*
-    , servant-server == 0.4.*
+    , servant == 0.5.*
+    , servant-client == 0.5.*
+    , servant-server == 0.5.*
     , wai
 
 executable hackage
@@ -62,8 +62,8 @@ executable hackage
       aeson >= 0.8
     , base >=4.7 && < 5
     , either
-    , servant == 0.4.*
-    , servant-client == 0.4.*
+    , servant == 0.5.*
+    , servant-client == 0.5.*
     , text
     , transformers
   hs-source-dirs:      hackage
@@ -74,8 +74,8 @@ executable wai-middleware
   build-depends:
       aeson >= 0.8
     , base >= 4.7 && < 5
-    , servant == 0.4.*
-    , servant-server == 0.4.*
+    , servant == 0.5.*
+    , servant-server == 0.5.*
     , text
     , wai
     , wai-extra
@@ -90,8 +90,8 @@ executable auth-combinator
     , base >= 4.7 && < 5
     , bytestring
     , http-types
-    , servant == 0.4.*
-    , servant-server == 0.4.*
+    , servant == 0.5.*
+    , servant-server == 0.5.*
     , text
     , wai
     , warp

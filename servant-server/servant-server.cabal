@@ -1,5 +1,5 @@
 name:                servant-server
-version:             0.4.1
+version:             0.5
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -55,7 +55,7 @@ library
       , mmorph             >= 1
       , network            >= 2.6  && < 2.7
       , safe               >= 0.3  && < 0.4
-      , servant            == 0.4.*
+      , servant            == 0.5.*
       , split              >= 0.2  && < 0.3
       , string-conversions >= 0.3  && < 0.5
       , system-filepath    >= 0.4  && < 0.5
