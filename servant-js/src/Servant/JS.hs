@@ -79,6 +79,11 @@ module Servant.JS
     CommonGeneratorOptions(..)
   , defCommonGeneratorOptions
 
+  , -- * Function renamers
+    concatRenamer
+  , snakeCaseRenamer
+  , camelCaseRenamer
+
   , -- * Vanilla Javascript code generation
     vanillaJS
   , vanillaJSWith
