@@ -34,6 +34,7 @@ data CommonGeneratorOptions = CommonGeneratorOptions
   , successCallback :: String            -- ^ name of the callback parameter when the request was successful
   , errorCallback :: String              -- ^ name of the callback parameter when the request reported an error
   , moduleName :: String                 -- ^ namespace on which we define the js function (empty mean local var)
+  , urlPrefix :: String                  -- ^ a prefix we should add to the Url in the JS codegen
   }
 
 -- | Default options.
@@ -45,6 +46,7 @@ data CommonGeneratorOptions = CommonGeneratorOptions
 -- >   , successCallback = "onSuccess"
 -- >   , errorCallback = "onError"
 -- >   , moduleName = ""
+-- >   , urlPrefix = ""
 -- >   }
 -- @
 defCommonGeneratorOptions :: CommonGeneratorOptions
@@ -55,6 +57,7 @@ defCommonGeneratorOptions = CommonGeneratorOptions
   , successCallback = "onSuccess"
   , errorCallback = "onError"
   , moduleName = ""
+  , urlPrefix = ""
   }
     
 type Arg = String
