@@ -148,7 +148,7 @@ generateJSSpec n gen = describe specLabel $ do
         parseFromString jsStr `shouldSatisfy` isRight
     where
         specLabel = "generateJS(" ++ (show n) ++ ")"
-        output = putStrLn
+        output _ = return ()
         genJS req = gen req
         header :: TestNames -> String -> String -> String
         header v headerName headerValue
