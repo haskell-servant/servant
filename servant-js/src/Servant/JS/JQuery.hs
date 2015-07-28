@@ -81,6 +81,7 @@ generateJQueryJSWith opts req = "\n" <>
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
+           ++ urlPrefix opts
            ++ urlArgs
            ++ queryArgs
 
