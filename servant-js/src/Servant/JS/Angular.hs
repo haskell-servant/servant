@@ -123,7 +123,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
                 
         fsep = if hasService then ":" else " ="
                 
-        fname = namespace <> (functionRenamer opts $ req ^. funcName)
+        fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
         
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'

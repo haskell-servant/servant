@@ -29,7 +29,7 @@ import Servant.API
 -- customize the output
 data CommonGeneratorOptions = CommonGeneratorOptions
   { 
-    functionRenamer :: FunctionName -> String  -- ^ function transforming function names
+    functionNameBuilder :: FunctionName -> String  -- ^ function generating function names
   , requestBody :: String                -- ^ name used when a user want to send the request body (to let you redefine it)
   , successCallback :: String            -- ^ name of the callback parameter when the request was successful
   , errorCallback :: String              -- ^ name of the callback parameter when the request reported an error
@@ -40,7 +40,7 @@ data CommonGeneratorOptions = CommonGeneratorOptions
 --
 -- @
 -- > defCommonGeneratorOptions = CommonGeneratorOptions
--- >   { functionRenamer = concatRenamer
+-- >   { functionNameBuilder = camelCase
 -- >   , requestBody = "body"
 -- >   , successCallback = "onSuccess"
 -- >   , errorCallback = "onError"
@@ -50,29 +50,29 @@ data CommonGeneratorOptions = CommonGeneratorOptions
 defCommonGeneratorOptions :: CommonGeneratorOptions
 defCommonGeneratorOptions = CommonGeneratorOptions
   {
-    functionRenamer = concatRenamer
+    functionNameBuilder = camelCase
   , requestBody = "body"
   , successCallback = "onSuccess"
   , errorCallback = "onError"
   , moduleName = ""
   }
 
--- | Function renamer that simply concat each part together
-concatRenamer :: FunctionName -> String
-concatRenamer = concat
+-- | Function name builder that simply concat each part together
+concatCase :: FunctionName -> String
+concatCase = concat
     
--- | Function renamer using the snake_case convention.
+-- | Function name builder using the snake_case convention.
 -- each part is separated by a single underscore character.
-snakeCaseRenamer :: FunctionName -> String
-snakeCaseRenamer = intercalate "_"
+snakeCase :: FunctionName -> String
+snakeCase = intercalate "_"
     
--- | Function renamer using the CamelCase convention.
+-- | Function name builder using the CamelCase convention.
 -- each part begins with an upper case character.
-camelCaseRenamer :: FunctionName -> String
-camelCaseRenamer [] = ""
-camelCaseRenamer (p:ps) = concat $ p : camelCaseRenamer' ps
-   where camelCaseRenamer' [] = []
-         camelCaseRenamer' (r:rs) = capitalize r : camelCaseRenamer' rs
+camelCase :: FunctionName -> String
+camelCase [] = ""
+camelCase (p:ps) = concat $ p : camelCase' ps
+   where camelCase' [] = []
+         camelCase' (r:rs) = capitalize r : camelCase' rs
          capitalize [] = []
          capitalize (x:xs) = toUpper x : xs
     
