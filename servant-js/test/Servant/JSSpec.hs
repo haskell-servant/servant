@@ -78,7 +78,31 @@ spec = describe "Servant.JQuery" $ do
     generateJSSpec AxiosCustom  (AX.generateAxiosJSWith (AX.defAxiosOptions { withCredentials = True }) customOptions)
     
     angularSpec    Angular
+    axiosSpec
     --angularSpec    AngularCustom
+
+axiosSpec :: Spec    
+axiosSpec = describe specLabel $ do
+    it "should add withCredentials when needed" $ do
+        let jsText = genJS withCredOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldContain` ("withCredentials: true")
+    it "should add xsrfCookieName when needed" $ do
+        let jsText = genJS cookieOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldContain` ("xsrfCookieName: 'MyXSRFcookie'")
+    it "should add withCredentials when needed" $ do
+        let jsText = genJS headerOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldContain` ("xsrfHeaderName: 'MyXSRFheader'")
+    where
+        specLabel = "Axios"
+        output _ = return ()
+        withCredOpts = AX.defAxiosOptions { AX.withCredentials = True }
+        cookieOpts = AX.defAxiosOptions { AX.xsrfCookieName = Just "MyXSRFcookie" }
+        headerOpts = AX.defAxiosOptions { AX.xsrfHeaderName = Just "MyXSRFheader" }
+        genJS :: AxiosOptions -> [AjaxReq] -> String
+        genJS opts req = concat $ map (AX.generateAxiosJS opts) req
 
 angularSpec :: TestNames -> Spec    
 angularSpec test = describe specLabel $ do
@@ -97,7 +121,7 @@ angularSpec test = describe specLabel $ do
         output jsText
         jsText `shouldNotContain` "getsomething($http, "
     where
-        specLabel = "generateJS(" ++ (show test) ++ ")"
+        specLabel = "AngularJS(" ++ (show test) ++ ")"
         output _ = return ()
         testName = "MyService"
         ngOpts = NG.defAngularOptions { NG.serviceName = testName }
