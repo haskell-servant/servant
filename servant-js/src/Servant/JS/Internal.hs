@@ -268,6 +268,7 @@ instance (KnownSymbol sym, HasJS sublayout)
   javascriptFor Proxy req =
     javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path <>~ [Segment (Cap str) []]
+          & funcName %~ (++ ["by", str])
 
     where str = symbolVal (Proxy :: Proxy sym)
 
