@@ -20,11 +20,11 @@ counterApp.controller('CounterCtrl', function ($scope,counterSvc, $interval) {
   var publishCounter = function (response) { $scope.counter = response.value; };
   
   $scope.getCounter = function() {
-    counterSvc.getcounter()
+    counterSvc.getCounter()
         .success(publishCounter);
   }
   $scope.incCounter = function() {
-    counterSvc.postcounter()
+    counterSvc.postCounter()
         .success(publishCounter);
   }
   
