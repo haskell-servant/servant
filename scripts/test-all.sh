@@ -27,7 +27,7 @@ prepare_sandbox () {
     if $TRAVIS ; then
         travis_retry $CABAL install --enable-tests ${SOURCES[@]}
     else
-        $CABAL install --enable-tests ${SOURCES[@]}
+        $CABAL install --max-backjumps -1 --reorder-goals --enable-tests ${SOURCES[@]}
     fi
 }
 

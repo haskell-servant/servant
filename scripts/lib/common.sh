@@ -19,7 +19,7 @@ CABAL=${CABAL:-cabal}
 TRAVIS=${TRAVIS:-false}
 
 declare -a SOURCES
-readarray -t SOURCES < "$SOURCES_TXT"
+SOURCES=$(awk -F= '{print $1}' "$SOURCES_TXT")
 
 join () { local IFS="$1"; shift; echo "$*"; }
 
