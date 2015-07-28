@@ -117,7 +117,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
         method = map toLower $ req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
-           -- ++ urlPrefix opts
+           ++ urlPrefix opts
            ++ urlArgs
            ++ queryArgs
 
