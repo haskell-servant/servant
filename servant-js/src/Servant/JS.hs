@@ -98,6 +98,8 @@ module Servant.JS
   , -- * Axios code generation
     axios
   , axiosWith
+  , AxiosOptions(..)
+  , defAxiosOptions
 
   , -- * Misc.
     listFromAPI

@@ -61,10 +61,10 @@ data TestNames = Vanilla
                  deriving (Show, Eq)
 
 customOptions :: CommonGeneratorOptions
-customOptions = defCommonGeneratorOptions {
-            successCallback = "okCallback",
-            errorCallback = "errorCallback"
-        }
+customOptions = defCommonGeneratorOptions
+  { successCallback = "okCallback"
+  , errorCallback = "errorCallback"
+  }
                  
 spec :: Spec
 spec = describe "Servant.JQuery" $ do
@@ -74,11 +74,11 @@ spec = describe "Servant.JQuery" $ do
     generateJSSpec JQueryCustom  (JQ.generateJQueryJSWith customOptions)
     generateJSSpec Angular       (NG.generateAngularJS NG.defAngularOptions)
     generateJSSpec AngularCustom (NG.generateAngularJSWith NG.defAngularOptions customOptions)
-    generateJSSpec Axios        AX.generateAxiosJS
-    generateJSSpec AxiosCustom  (AX.generateAxiosJSWith customOptions)
+    generateJSSpec Axios        (AX.generateAxiosJS AX.defAxiosOptions)
+    generateJSSpec AxiosCustom  (AX.generateAxiosJSWith (AX.defAxiosOptions { withCredentials = True }) customOptions)
     
     angularSpec    Angular
-    angularSpec    AngularCustom
+    --angularSpec    AngularCustom
 
 angularSpec :: TestNames -> Spec    
 angularSpec test = describe specLabel $ do
@@ -98,7 +98,6 @@ angularSpec test = describe specLabel $ do
         jsText `shouldNotContain` "getsomething($http, "
     where
         specLabel = "generateJS(" ++ (show test) ++ ")"
-        --output = putStrLn
         output _ = return ()
         testName = "MyService"
         ngOpts = NG.defAngularOptions { NG.serviceName = testName }
