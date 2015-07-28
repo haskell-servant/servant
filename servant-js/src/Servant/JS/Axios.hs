@@ -51,7 +51,7 @@ generateAxiosJSWith opts req = "\n" <>
 
         dataBody =
           if req ^. reqBody
-            then "    , data: JSON.stringify(body)\n" <>
+            then "    , data: body\n" <>
                  "    , responseType: 'json'\n"
             else ""
 
