@@ -112,7 +112,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
                where
                   hasNoModule = null (moduleName opts)
                 
-        fname = namespace <> (functionRenamer opts $ req ^. funcName)
+        fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
         
         method = map toLower $ req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
