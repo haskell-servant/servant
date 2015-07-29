@@ -16,11 +16,11 @@
 <script type="text/javascript">
 window.addEventListener('load', function() {
   // we get the current value stored by the server when the page is loaded
-  getcounter(updateCounter, alert);
+  getCounter(updateCounter, alert);
 
   // we update the value every 1sec, in the same way
   window.setInterval(function() {
-    getcounter(updateCounter, alert);
+    getCounter(updateCounter, alert);
   }, 1000);
 });
 
@@ -32,7 +32,7 @@ function updateCounter(response)
 // when the button is clicked, ask the server to increase
 // the value by one
 document.getElementById('inc').addEventListener('click', function() {
-  postcounter(updateCounter, alert);
+  postCounter(updateCounter, alert);
 });
 </script>
 </body>

@@ -14,7 +14,7 @@ module Servant.JS.Internal where
 import Control.Applicative
 #endif
 import Control.Lens
-import Data.Char (toLower)
+import Data.Char (toLower, toUpper)
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import Data.List
@@ -29,7 +29,7 @@ import Servant.API
 -- customize the output
 data CommonGeneratorOptions = CommonGeneratorOptions
   { 
-    functionRenamer :: String -> String  -- ^ function transforming function names
+    functionNameBuilder :: FunctionName -> String  -- ^ function generating function names
   , requestBody :: String                -- ^ name used when a user want to send the request body (to let you redefine it)
   , successCallback :: String            -- ^ name of the callback parameter when the request was successful
   , errorCallback :: String              -- ^ name of the callback parameter when the request reported an error
@@ -41,7 +41,7 @@ data CommonGeneratorOptions = CommonGeneratorOptions
 --
 -- @
 -- > defCommonGeneratorOptions = CommonGeneratorOptions
--- >   { functionRenamer = id
+-- >   { functionNameBuilder = camelCase
 -- >   , requestBody = "body"
 -- >   , successCallback = "onSuccess"
 -- >   , errorCallback = "onError"
@@ -52,13 +52,32 @@ data CommonGeneratorOptions = CommonGeneratorOptions
 defCommonGeneratorOptions :: CommonGeneratorOptions
 defCommonGeneratorOptions = CommonGeneratorOptions
   {
-    functionRenamer = id
+    functionNameBuilder = camelCase
   , requestBody = "body"
   , successCallback = "onSuccess"
   , errorCallback = "onError"
   , moduleName = ""
   , urlPrefix = ""
   }
+
+-- | Function name builder that simply concat each part together
+concatCase :: FunctionName -> String
+concatCase = concat
+    
+-- | Function name builder using the snake_case convention.
+-- each part is separated by a single underscore character.
+snakeCase :: FunctionName -> String
+snakeCase = intercalate "_"
+    
+-- | Function name builder using the CamelCase convention.
+-- each part begins with an upper case character.
+camelCase :: FunctionName -> String
+camelCase [] = ""
+camelCase (p:ps) = concat $ p : camelCase' ps
+   where camelCase' [] = []
+         camelCase' (r:rs) = capitalize r : camelCase' rs
+         capitalize [] = []
+         capitalize (x:xs) = toUpper x : xs
     
 type Arg = String
 
@@ -149,7 +168,7 @@ data Url = Url
 defUrl :: Url
 defUrl = Url [] []
 
-type FunctionName = String
+type FunctionName = [String]
 type Method = String
 
 data AjaxReq = AjaxReq
@@ -226,7 +245,7 @@ paramToStr qarg notTheEnd =
   where name = qarg ^. argName
 
 defReq :: AjaxReq
-defReq = AjaxReq defUrl "GET" [] False ""
+defReq = AjaxReq defUrl "GET" [] False []
 
 type family Elem (a :: *) (ls::[*]) :: Constraint where
   Elem a '[] = 'False ~ 'True
@@ -252,6 +271,7 @@ instance (KnownSymbol sym, HasJS sublayout)
   javascriptFor Proxy req =
     javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path <>~ [Segment (Cap str) []]
+          & funcName %~ (++ ["by", str])
 
     where str = symbolVal (Proxy :: Proxy sym)
 
@@ -259,14 +279,14 @@ instance Elem JSON list => HasJS (Delete list a) where
   type JS (Delete list a) = AjaxReq
 
   javascriptFor Proxy req =
-    req & funcName  %~ ("delete" <>)
+    req & funcName  %~ ("delete" :)
         & reqMethod .~ "DELETE"
 
 instance Elem JSON list => HasJS (Get list a) where
   type JS (Get list a) = AjaxReq
 
   javascriptFor Proxy req =
-    req & funcName  %~ ("get" <>)
+    req & funcName  %~ ("get" :)
         & reqMethod .~ "GET"
 
 instance (KnownSymbol sym, HasJS sublayout)
@@ -283,14 +303,14 @@ instance Elem JSON list => HasJS (Post list a) where
   type JS (Post list a) = AjaxReq
 
   javascriptFor Proxy req =
-    req & funcName  %~ ("post" <>)
+    req & funcName  %~ ("post" :)
         & reqMethod .~ "POST"
 
 instance Elem JSON list => HasJS (Put list a) where
   type JS (Put list a) = AjaxReq
 
   javascriptFor Proxy req =
-    req & funcName  %~ ("put" <>)
+    req & funcName  %~ ("put" :)
         & reqMethod .~ "PUT"
 
 instance (KnownSymbol sym, HasJS sublayout)
@@ -358,7 +378,7 @@ instance HasJS Raw where
   type JS Raw = Method -> AjaxReq
 
   javascriptFor Proxy req method =
-    req & funcName %~ ((toLower <$> method) <>)
+    req & funcName %~ ((toLower <$> method) :)
         & reqMethod .~ method
 
 instance (Elem JSON list, HasJS sublayout) => HasJS (ReqBody list a :> sublayout) where
@@ -375,7 +395,7 @@ instance (KnownSymbol path, HasJS sublayout)
   javascriptFor Proxy req =
     javascriptFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path <>~ [Segment (Static str) []]
-          & funcName %~ (str <>)
+          & funcName %~ (++ [str])
 
     where str = map (\c -> if c == '.' then '_' else c) $ symbolVal (Proxy :: Proxy path)
 
