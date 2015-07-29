@@ -17,6 +17,7 @@ import Servant.JS
 import qualified Servant.JS.Vanilla as JS
 import qualified Servant.JS.JQuery as JQ
 import qualified Servant.JS.Angular as NG
+import qualified Servant.JS.Axios as AX
 import Servant.JSSpec.CustomHeaders
 
 type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON] Bool
@@ -55,13 +56,15 @@ data TestNames = Vanilla
                | JQueryCustom
                | Angular
                | AngularCustom
+               | Axios
+               | AxiosCustom
                  deriving (Show, Eq)
 
 customOptions :: CommonGeneratorOptions
-customOptions = defCommonGeneratorOptions {
-            successCallback = "okCallback",
-            errorCallback = "errorCallback"
-        }
+customOptions = defCommonGeneratorOptions
+  { successCallback = "okCallback"
+  , errorCallback = "errorCallback"
+  }
                  
 spec :: Spec
 spec = describe "Servant.JQuery" $ do
@@ -71,9 +74,35 @@ spec = describe "Servant.JQuery" $ do
     generateJSSpec JQueryCustom  (JQ.generateJQueryJSWith customOptions)
     generateJSSpec Angular       (NG.generateAngularJS NG.defAngularOptions)
     generateJSSpec AngularCustom (NG.generateAngularJSWith NG.defAngularOptions customOptions)
+    generateJSSpec Axios        (AX.generateAxiosJS AX.defAxiosOptions)
+    generateJSSpec AxiosCustom  (AX.generateAxiosJSWith (AX.defAxiosOptions { withCredentials = True }) customOptions)
     
     angularSpec    Angular
-    angularSpec    AngularCustom
+    axiosSpec
+    --angularSpec    AngularCustom
+
+axiosSpec :: Spec    
+axiosSpec = describe specLabel $ do
+    it "should add withCredentials when needed" $ do
+        let jsText = genJS withCredOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldContain` ("withCredentials: true")
+    it "should add xsrfCookieName when needed" $ do
+        let jsText = genJS cookieOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldContain` ("xsrfCookieName: 'MyXSRFcookie'")
+    it "should add withCredentials when needed" $ do
+        let jsText = genJS headerOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        output jsText
+        jsText `shouldContain` ("xsrfHeaderName: 'MyXSRFheader'")
+    where
+        specLabel = "Axios"
+        output _ = return ()
+        withCredOpts = AX.defAxiosOptions { AX.withCredentials = True }
+        cookieOpts = AX.defAxiosOptions { AX.xsrfCookieName = Just "MyXSRFcookie" }
+        headerOpts = AX.defAxiosOptions { AX.xsrfHeaderName = Just "MyXSRFheader" }
+        genJS :: AxiosOptions -> [AjaxReq] -> String
+        genJS opts req = concat $ map (AX.generateAxiosJS opts) req
 
 angularSpec :: TestNames -> Spec    
 angularSpec test = describe specLabel $ do
@@ -92,8 +121,7 @@ angularSpec test = describe specLabel $ do
         output jsText
         jsText `shouldNotContain` "getsomething($http, "
     where
-        specLabel = "generateJS(" ++ (show test) ++ ")"
-        --output = putStrLn
+        specLabel = "AngularJS(" ++ (show test) ++ ")"
         output _ = return ()
         testName = "MyService"
         ngOpts = NG.defAngularOptions { NG.serviceName = testName }

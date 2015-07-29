@@ -36,6 +36,7 @@ flag example
 library
   exposed-modules:     Servant.JS
                        Servant.JS.Angular
+                       Servant.JS.Axios
                        Servant.JS.JQuery
                        Servant.JS.Vanilla
                        Servant.JS.Internal
