@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "servant-js";
-  version = "0.4.0";
+  version = "0.5";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
