@@ -21,7 +21,7 @@ import           Data.String.Conversions    (cs)
 import qualified Data.Text                  as T
 import           GHC.Generics               (Generic)
 import           Network.HTTP.Types         (hAccept, hContentType,
-                                             methodDelete, methodGet,
+                                             methodDelete, methodGet, methodHead,
                                              methodPatch, methodPost, methodPut,
                                              ok200, parseQuery, status409)
 import           Network.Wai                (Application, Request, pathInfo,
@@ -33,7 +33,6 @@ import           Test.Hspec                 (Spec, describe, it, shouldBe)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, post, request,
                                              shouldRespondWith, with, (<:>))
-
 import           Servant.API                ((:<|>) (..), (:>),
                                              addHeader, Capture,
                                              Delete, Get, Header (..), Headers,
@@ -82,6 +81,7 @@ spec :: Spec
 spec = do
   captureSpec
   getSpec
+  headSpec
   postSpec
   putSpec
   patchSpec
@@ -127,13 +127,14 @@ captureSpec = do
 
 type GetApi = Get '[JSON] Person
         :<|> "empty" :> Get '[] ()
+        :<|> "post" :> Post '[] ()
 getApi :: Proxy GetApi
 getApi = Proxy
 
 getSpec :: Spec
 getSpec = do
   describe "Servant.API.Get" $ do
-    let server = return alice :<|> return ()
+    let server = return alice :<|> return () :<|> return ()
     with (return $ serve getApi server) $ do
 
       it "allows to GET a Person" $ do
@@ -146,12 +147,39 @@ getSpec = do
         post "/empty" "" `shouldRespondWith` 405
 
       it "returns 204 if the type is '()'" $ do
-        get "empty" `shouldRespondWith` ""{ matchStatus = 204 }
+        get "/empty" `shouldRespondWith` ""{ matchStatus = 204 }
 
       it "returns 415 if the Accept header is not supported" $ do
         Test.Hspec.Wai.request methodGet "" [(hAccept, "crazy/mime")] ""
           `shouldRespondWith` 415
 
+
+headSpec :: Spec
+headSpec = do
+  describe "Servant.API.Head" $ do
+    let server = return alice :<|> return () :<|> return ()
+    with (return $ serve getApi server) $ do
+
+      it "allows to GET a Person" $ do
+        response <- Test.Hspec.Wai.request methodHead "/" [] ""
+        return response `shouldRespondWith` 200
+        liftIO $ decode' (simpleBody response) `shouldBe` (Nothing :: Maybe Person)
+
+      it "does not allow HEAD to POST route" $ do
+        response <- Test.Hspec.Wai.request methodHead "/post" [] ""
+        return response `shouldRespondWith` 405
+
+      it "throws 405 (wrong method) on POSTs" $ do
+        post "/" "" `shouldRespondWith` 405
+        post "/empty" "" `shouldRespondWith` 405
+
+      it "returns 204 if the type is '()'" $ do
+        response <- Test.Hspec.Wai.request methodHead "/empty" [] ""
+        return response `shouldRespondWith` ""{ matchStatus = 204 }
+
+      it "returns 415 if the Accept header is not supported" $ do
+        Test.Hspec.Wai.request methodHead "" [(hAccept, "crazy/mime")] ""
+          `shouldRespondWith` 415
 
 
 type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
