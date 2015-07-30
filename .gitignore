@@ -1,4 +1,4 @@
-/dist
+**/*/dist
 /bin
 /lib
 /share
