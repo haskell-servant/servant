@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE KindSignatures #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Raw where
 
@@ -11,4 +12,5 @@ import           Data.Typeable (Typeable)
 -- In addition to just letting you plug in your existing WAI 'Application's,
 -- this can also be used with 'Servant.Utils.StaticFiles.serveDirectory' to serve
 -- static files stored in a particular directory on your filesystem
-data Raw deriving Typeable
+newtype Raw (m :: * -> *) a = Raw a
+    deriving Typeable

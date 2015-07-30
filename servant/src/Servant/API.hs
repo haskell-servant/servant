@@ -78,7 +78,7 @@ import           Servant.API.Post            (Post)
 import           Servant.API.Put             (Put)
 import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
-import           Servant.API.Raw             (Raw)
+import           Servant.API.Raw             (Raw(..))
 import           Servant.API.RemoteHost      (RemoteHost)
 import           Servant.API.ReqBody         (ReqBody)
 import           Servant.API.ResponseHeaders (AddHeader (addHeader),

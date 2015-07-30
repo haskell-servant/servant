@@ -622,6 +622,7 @@ instance HasClient Raw where
   type Client Raw = H.Method -> ExceptT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> BaseUrl -> Manager -> Client Raw
+  clientWithRoute :: Proxy (Raw m a) -> Req -> BaseUrl -> Manager -> Client (Raw m a)
   clientWithRoute Proxy req baseurl manager httpMethod = do
     performRequest httpMethod req (const True) baseurl manager
 

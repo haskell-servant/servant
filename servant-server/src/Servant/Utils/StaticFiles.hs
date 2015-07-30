@@ -8,8 +8,10 @@ module Servant.Utils.StaticFiles (
  ) where
 
 import           Network.Wai.Application.Static (defaultFileServerSettings,
+                                                 StaticSettings,
                                                  staticApp)
-import           Servant.API.Raw                (Raw)
+import           Network.Wai                    (Application)
+import           Servant.API.Raw                (Raw(..))
 import           Servant.Server                 (Server)
 import           System.FilePath                (addTrailingPathSeparator)
 #if !MIN_VERSION_wai_app_static(3,1,0)
@@ -36,10 +38,14 @@ import           Filesystem.Path.CurrentOS      (decodeString)
 -- behind a /\/static\// prefix. In that case, remember to put the 'serveDirectory'
 -- handler in the last position, because /servant/ will try to match the handlers
 -- in order.
-serveDirectory :: FilePath -> Server Raw
-serveDirectory =
+serveDirectoryWith :: StaticSettings -> Server (Raw m Application)
+serveDirectoryWith settings = Raw (staticApp settings)
+
+serveDirectory :: FilePath -> Server (Raw m Application)
+serveDirectory = serveDirectoryWith . defaultFileServerSettings .
 #if MIN_VERSION_wai_app_static(3,1,0)
-    staticApp . defaultFileServerSettings . addTrailingPathSeparator
+  id .
 #else
-    staticApp . defaultFileServerSettings . decodeString . addTrailingPathSeparator
+  decodeString .
 #endif
+  addTrailingPathSeparator
