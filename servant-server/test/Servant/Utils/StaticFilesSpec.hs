@@ -15,14 +15,14 @@ import           System.IO.Temp            (withSystemTempDirectory)
 import           Test.Hspec                (Spec, around_, describe, it)
 import           Test.Hspec.Wai            (get, shouldRespondWith, with)
 
-import           Servant.API               ((:<|>) ((:<|>)), Capture, Get, Raw, (:>), JSON)
+import           Servant.API               ((:<|>) ((:<|>)), Capture, Get, Raw(..), (:>), JSON)
 import           Servant.Server            (Server, serve, Config(EmptyConfig))
 import           Servant.ServerSpec        (Person (Person))
 import           Servant.Utils.StaticFiles (serveDirectory)
 
 type Api =
        "dummy_api" :> Capture "person_name" String :> Get '[JSON] Person
-  :<|> "static" :> Raw
+  :<|> "static" :> Raw IO Application
 
 
 api :: Proxy Api

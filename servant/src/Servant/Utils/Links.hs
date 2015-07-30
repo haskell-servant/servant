@@ -300,6 +300,6 @@ instance HasLink (Verb m s ct a) where
     type MkLink (Verb m s ct a) = URI
     toLink _ = linkURI
 
-instance HasLink Raw where
-    type MkLink Raw = URI
+instance HasLink (Raw m a) where
+    type MkLink (Raw m a) = URI
     toLink _ = linkURI

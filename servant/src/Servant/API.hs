@@ -62,7 +62,7 @@ import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
 import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
-import           Servant.API.Raw             (Raw)
+import           Servant.API.Raw             (Raw(..))
 import           Servant.API.RemoteHost      (RemoteHost)
 import           Servant.API.ReqBody         (ReqBody)
 import           Servant.API.ResponseHeaders (AddHeader (addHeader),

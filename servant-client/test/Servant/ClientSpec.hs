@@ -40,7 +40,7 @@ import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
 import           Network.HTTP.Types         (Status (..), badRequest400,
                                              methodGet, ok200, status400)
-import           Network.Socket
+import           Network.Socket             hiding (Raw)
 import           Network.Wai                (Application, responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
@@ -101,8 +101,8 @@ type Api =
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
-  :<|> "rawSuccess" :> Raw
-  :<|> "rawFailure" :> Raw
+  :<|> "rawSuccess" :> Raw IO Application
+  :<|> "rawFailure" :> Raw IO Application
   :<|> "multiple" :>
             Capture "first" String :>
             QueryParam "second" Int :>
@@ -126,8 +126,8 @@ server = serve api EmptyConfig (
                    Nothing -> throwE $ ServantErr 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
-  :<|> (\ _request respond -> respond $ responseLBS ok200 [] "rawSuccess")
-  :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
+  :<|> Raw (\ _request respond -> respond $ responseLBS ok200 [] "rawSuccess")
+  :<|> Raw (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
@@ -135,17 +135,17 @@ server = serve api EmptyConfig (
 
 
 type FailApi =
-       "get" :> Raw
-  :<|> "capture" :> Capture "name" String :> Raw
-  :<|> "body" :> Raw
+       "get" :> Raw IO Application
+  :<|> "capture" :> Capture "name" String :> Raw IO Application
+  :<|> "body" :> Raw IO Application
 failApi :: Proxy FailApi
 failApi = Proxy
 
 failServer :: Application
 failServer = serve failApi EmptyConfig (
-       (\ _request respond -> respond $ responseLBS ok200 [] "")
-  :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
-  :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
+       Raw (\ _request respond -> respond $ responseLBS ok200 [] "")
+  :<|> (\ _capture -> Raw (\ _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] ""))
+  :<|> Raw (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
  )
 
 {-# NOINLINE manager #-}

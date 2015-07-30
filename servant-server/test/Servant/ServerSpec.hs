@@ -45,7 +45,7 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              NoContent (..), Patch, PlainText,
                                              Post, Put,
                                              QueryFlag, QueryParam, QueryParams,
-                                             Raw, RemoteHost, ReqBody,
+                                             Raw(..), RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server             (ServantErr (..), Server, err404,
@@ -197,10 +197,10 @@ captureSpec = do
         get "/notAnInt" `shouldRespondWith` 404
 
     with (return (serve
-        (Proxy :: Proxy (Capture "captured" String :> Raw))
+        (Proxy :: Proxy (Capture "captured" String :> Raw IO Application))
         EmptyConfig
-        (\ "captured" request_ respond ->
-            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+        (\ "captured" -> Raw (\ request_ respond ->
+            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_))))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
@@ -360,7 +360,7 @@ headerSpec = describe "Servant.API.Header" $ do
 -- * rawSpec {{{
 ------------------------------------------------------------------------------
 
-type RawApi = "foo" :> Raw
+type RawApi = "foo" :> Raw IO Application
 
 rawApi :: Proxy RawApi
 rawApi = Proxy
@@ -373,7 +373,7 @@ rawSpec :: Spec
 rawSpec = do
   describe "Servant.API.Raw" $ do
     it "runs applications" $ do
-      (flip runSession) (serve rawApi EmptyConfig (rawApplication (const (42 :: Integer)))) $ do
+      (flip runSession) (serve rawApi EmptyConfig (Raw (rawApplication (const (42 :: Integer))))) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo"]
          }
@@ -381,7 +381,7 @@ rawSpec = do
           simpleBody response `shouldBe` "42"
 
     it "gets the pathInfo modified" $ do
-      (flip runSession) (serve rawApi EmptyConfig (rawApplication pathInfo)) $ do
+      (flip runSession) (serve rawApi EmptyConfig (Raw (rawApplication pathInfo))) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo", "bar"]
          }
