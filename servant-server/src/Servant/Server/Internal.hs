@@ -43,7 +43,7 @@ import           Servant.API                 ((:<|>) (..), (:>), Capture,
                                               Delete, Get, Header,
                                               IsSecure(..), Patch, Post, Put,
                                               QueryFlag, QueryParam, QueryParams,
-                                              Raw, RemoteHost, ReqBody, Vault)
+                                              Raw(..), RemoteHost, ReqBody, Vault)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..),
@@ -559,18 +559,20 @@ instance (KnownSymbol sym, HasServer sublayout)
 --
 -- Example:
 --
--- > type MyApi = "images" :> Raw
+-- > type MyApi = "images" :> Raw IO Application
 -- >
 -- > server :: Server MyApi
 -- > server = serveDirectory "/var/www/images"
-instance HasServer Raw where
+class ToRawApplication a where
+  toRawApplication :: a -> Application
 
-  type ServerT Raw m = Application
+instance ToRawApplication a => HasServer (Raw m a) where
+  type ServerT (Raw m a) n = Raw n a
 
   route Proxy rawApplication = LeafRouter $ \ request respond -> do
     r <- runDelayed rawApplication
     case r of
-      Route app   -> app request (respond . Route)
+      Route (Raw app)   -> (toRawApplication app) request (respond . Route)
       Fail a      -> respond $ Fail a
       FailFatal e -> respond $ FailFatal e
 
