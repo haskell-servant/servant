@@ -566,6 +566,9 @@ instance (KnownSymbol sym, HasServer sublayout)
 class ToRawApplication a where
   toRawApplication :: a -> Application
 
+instance ToRawApplication Application where
+  toRawApplication = id
+
 instance ToRawApplication a => HasServer (Raw m a) where
   type ServerT (Raw m a) n = Raw n a
 
