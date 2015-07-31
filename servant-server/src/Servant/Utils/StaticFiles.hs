@@ -38,10 +38,10 @@ import           Filesystem.Path.CurrentOS      (decodeString)
 -- behind a /\/static\// prefix. In that case, remember to put the 'serveDirectory'
 -- handler in the last position, because /servant/ will try to match the handlers
 -- in order.
-serveDirectoryWith :: StaticSettings -> Server (Raw Application m)
+serveDirectoryWith :: StaticSettings -> ServerT (Raw Application m) n
 serveDirectoryWith settings = Raw (staticApp settings)
 
-serveDirectory :: FilePath -> Server (Raw Application m)
+serveDirectory :: FilePath -> ServerT (Raw Application m) n
 serveDirectory = serveDirectoryWith . defaultFileServerSettings .
 #if MIN_VERSION_wai_app_static(3,1,0)
   id .
