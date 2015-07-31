@@ -1,6 +1,10 @@
 HEAD
 ----
-
+* Add `serveDirectoryWith` user can supply custom `StaticSettings`
+* Update `serveDirectory` for servant Raw changes
+* Add `class ToRawApplication` for servant Raw changes
+* Update `instance Server Raw` for servant Raw changes
+* Add `instance Enter Raw` for servant Raw changes
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Drop `EitherT` in favor of `ExceptT`
 * Use `http-api-data` instead of `Servant.Common.Text`

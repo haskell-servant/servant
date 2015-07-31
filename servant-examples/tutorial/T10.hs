@@ -15,7 +15,7 @@ import           Servant
 import           Servant.Docs
 import qualified T3
 
-type DocsAPI = T3.API :<|> Raw Apllication IO
+type DocsAPI = T3.API :<|> Raw Application IO
 
 instance ToCapture (Capture "x" Int) where
   toCapture _ = DocCapture "x" "(integer) position on the x axis"
@@ -62,8 +62,8 @@ docsBS = encodeUtf8
 server :: Server DocsAPI
 server = T3.server :<|> serveDocs
 
-  where serveDocs _ respond =
-          respond $ responseLBS ok200 [plain] docsBS
+  where serveDocs = Raw (\_ respond ->
+          respond $ responseLBS ok200 [plain] docsBS)
 
         plain = ("Content-Type", "text/plain")
 
