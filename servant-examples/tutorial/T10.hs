@@ -15,7 +15,7 @@ import           Servant
 import           Servant.Docs
 import qualified T3
 
-type DocsAPI = T3.API :<|> Raw
+type DocsAPI = T3.API :<|> Raw Apllication IO
 
 instance ToCapture (Capture "x" Int) where
   toCapture _ = DocCapture "x" "(integer) position on the x axis"

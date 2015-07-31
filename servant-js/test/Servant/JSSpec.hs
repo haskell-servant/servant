@@ -24,7 +24,7 @@ type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON]
           :<|> "has.extension" :> Get '[FormUrlEncoded,JSON] Bool
 
 type TopLevelRawAPI = "something" :> Get '[JSON] Int
-                  :<|> Raw
+                  :<|> Raw () IO
 
 type HeaderHandlingAPI = "something" :> Header "Foo" String
                                      :> Get '[JSON] Int
