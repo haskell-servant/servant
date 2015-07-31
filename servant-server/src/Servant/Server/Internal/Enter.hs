@@ -49,6 +49,9 @@ instance C.Category (:~>) where
     id = Nat id
     Nat f . Nat g = Nat (f . g)
 
+instance Enter (Raw a m) (m :~> n) (Raw a n) where
+    enter _ (Raw a) = Raw a
+
 instance Enter (m a) (m :~> n) (n a) where
     enter (Nat f) = f
 

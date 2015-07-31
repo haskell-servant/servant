@@ -27,7 +27,7 @@ import           Servant.Utils.StaticFiles (serveDirectory)
 
 type Api =
        "dummy_api" :> Capture "person_name" String :> Get '[JSON] Person
-  :<|> "static" :> Raw IO Application
+  :<|> "static" :> Raw Application IO
 
 
 api :: Proxy Api

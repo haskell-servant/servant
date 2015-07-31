@@ -122,8 +122,8 @@ captureSpec = do
         get "/notAnInt" `shouldRespondWith` 404
 
     with (return (serve
-        (Proxy :: Proxy (Capture "captured" String :> Raw IO Application))
-        (Raw (\ "captured" request_ respond ->
+        (Proxy :: Proxy (Capture "captured" String :> Raw Application IO))
+        (\ "captured" -> Raw (\ request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_))))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
@@ -423,7 +423,7 @@ headerSpec = describe "Servant.API.Header" $ do
             delete' "/" "" `shouldRespondWith` 204
 
 
-type RawApi = "foo" :> Raw IO Application
+type RawApi = "foo" :> Raw Application IO
 rawApi :: Proxy RawApi
 rawApi = Proxy
 rawApplication :: Show a => (Request -> a) -> Application
@@ -433,7 +433,7 @@ rawSpec :: Spec
 rawSpec = do
   describe "Servant.API.Raw" $ do
     it "runs applications" $ do
-      (flip runSession) (serve rawApi (rawApplication (const (42 :: Integer)))) $ do
+      (flip runSession) (serve rawApi (Raw (rawApplication (const (42 :: Integer))))) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo"]
          }
@@ -441,7 +441,7 @@ rawSpec = do
           simpleBody response `shouldBe` "42"
 
     it "gets the pathInfo modified" $ do
-      (flip runSession) (serve rawApi (rawApplication pathInfo)) $ do
+      (flip runSession) (serve rawApi (Raw (rawApplication pathInfo))) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo", "bar"]
          }

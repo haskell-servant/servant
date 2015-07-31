@@ -132,9 +132,9 @@ server = serve api (
 
 
 type FailApi =
-       "get" :> Raw IO Application
-  :<|> "capture" :> Capture "name" String :> Raw IO Application
-  :<|> "body" :> Raw IO Application
+       "get" :> Raw Application IO
+  :<|> "capture" :> Capture "name" String :> Raw Application IO
+  :<|> "body" :> Raw Application IO
 failApi :: Proxy FailApi
 failApi = Proxy
 
