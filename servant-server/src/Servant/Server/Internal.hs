@@ -25,10 +25,11 @@ import           Control.Applicative         ((<$>))
 #endif
 import           Control.Monad.Trans.Either  (EitherT)
 import qualified Data.ByteString             as B
+import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
 import           Data.Maybe                  (catMaybes, fromMaybe)
 import           Data.String                 (fromString)
-import           Data.String.Conversions     (cs, (<>))
+import           Data.String.Conversions     (cs, (<>), ConvertibleStrings)
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
 import           Data.Text.Encoding          (decodeUtf8, encodeUtf8)
@@ -39,7 +40,8 @@ import           Network.Socket              (SockAddr)
 import           Network.Wai                 (Application, lazyRequestBody,
                                               rawQueryString, requestHeaders,
                                               requestMethod, responseLBS, remoteHost,
-                                              isSecure, vault, httpVersion)
+                                              isSecure, vault, httpVersion, Response,
+                                              Request)
 import           Servant.API                 ((:<|>) (..), (:>), Capture,
                                               Delete, Get, Header,
                                               IsSecure(..), MatrixFlag, MatrixParam,
@@ -121,6 +123,24 @@ instance (KnownSymbol capture, FromText a, HasServer sublayout)
                Just v   -> feedTo subserver v)
     where captureProxy = Proxy :: Proxy (Capture capture a)
 
+allowedMethodHead :: Method -> Request -> Bool
+allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
+
+allowedMethod :: Method -> Request -> Bool
+allowedMethod method request = allowedMethodHead method request || requestMethod request == method
+
+processMethodRouter :: forall a. ConvertibleStrings a B.ByteString
+                    => Maybe (a, BL.ByteString) -> Status -> Method
+                    -> Maybe [(HeaderName, B.ByteString)]
+                    -> Request -> RouteResult Response
+processMethodRouter handleA status method headers request = case handleA of
+  Nothing -> failWith UnsupportedMediaType
+  Just (contentT, body) -> succeedWith $ responseLBS status hdrs bdy
+    where
+      bdy = case allowedMethodHead method request of
+        True -> ""
+        False -> body
+      hdrs = (hContentType, cs contentT) : (fromMaybe [] headers)
 
 methodRouter :: (AllCTRender ctypes a)
              => Method -> Proxy ctypes -> Status
@@ -129,13 +149,11 @@ methodRouter :: (AllCTRender ctypes a)
 methodRouter method proxy status action = LeafRouter route'
   where
     route' request respond
-      | pathIsEmpty request && requestMethod request == method = do
+      | pathIsEmpty request && allowedMethod method request = do
           runAction action respond $ \ output -> do
             let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-            case handleAcceptH proxy (AcceptHeader accH) output of
-              Nothing -> failWith UnsupportedMediaType
-              Just (contentT, body) -> succeedWith $
-                responseLBS status [ ("Content-Type" , cs contentT)] body
+                handleA = handleAcceptH proxy (AcceptHeader accH) output
+            processMethodRouter handleA status method Nothing request
       | pathIsEmpty request && requestMethod request /= method =
           respond $ failWith WrongMethod
       | otherwise = respond $ failWith NotFound
@@ -147,14 +165,12 @@ methodRouterHeaders :: (GetHeaders (Headers h v), AllCTRender ctypes v)
 methodRouterHeaders method proxy status action = LeafRouter route'
   where
     route' request respond
-      | pathIsEmpty request && requestMethod request == method = do
+      | pathIsEmpty request && allowedMethod method request = do
         runAction action respond $ \ output -> do
           let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               headers = getHeaders output
-          case handleAcceptH proxy (AcceptHeader accH) (getResponse output) of
-            Nothing -> failWith UnsupportedMediaType
-            Just (contentT, body) -> succeedWith $
-              responseLBS status ( ("Content-Type" , cs contentT) : headers) body
+              handleA = handleAcceptH proxy (AcceptHeader accH) (getResponse output)
+          processMethodRouter handleA status method (Just headers) request
       | pathIsEmpty request && requestMethod request /= method =
           respond $ failWith WrongMethod
       | otherwise = respond $ failWith NotFound
@@ -165,7 +181,7 @@ methodRouterEmpty :: Method
 methodRouterEmpty method action = LeafRouter route'
   where
     route' request respond
-      | pathIsEmpty request && requestMethod request == method = do
+      | pathIsEmpty request && allowedMethod method request = do
           runAction action respond $ \ () ->
             succeedWith $ responseLBS noContent204 [] ""
       | pathIsEmpty request && requestMethod request /= method =
@@ -612,7 +628,6 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
                   values = catMaybes $ map (convert . snd) parameters
               route (Proxy :: Proxy sublayout) (feedTo subserver values)
       _ -> route (Proxy :: Proxy sublayout) (feedTo subserver [])
-
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
@@ -644,11 +659,8 @@ instance (KnownSymbol sym, HasServer sublayout)
                     Just Nothing  -> True  -- param is there, with no value
                     Just (Just v) -> examine v -- param with a value
                     Nothing       -> False -- param not in the query string
-  
               route (Proxy :: Proxy sublayout) (feedTo subserver param)
-  
       _ -> route (Proxy :: Proxy sublayout) (feedTo subserver False)
-
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
