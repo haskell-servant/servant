@@ -43,9 +43,7 @@ serveDirectoryWith settings = Raw (staticApp settings)
 
 serveDirectory :: FilePath -> ServerT (Raw Application m) n
 serveDirectory = serveDirectoryWith . defaultFileServerSettings .
-#if MIN_VERSION_wai_app_static(3,1,0)
-  id .
-#else
+#if !MIN_VERSION_wai_app_static(3,1,0)
   decodeString .
 #endif
   addTrailingPathSeparator
