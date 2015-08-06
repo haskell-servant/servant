@@ -156,8 +156,8 @@ class GenerateList reqs where
 instance GenerateList AjaxReq where
   generateList r = [r]
 
-instance GenerateList rest => GenerateList (AjaxReq :<|> rest) where
-  generateList (r :<|> rest) = r : generateList rest
+instance (GenerateList start, GenerateList rest) => GenerateList (start :<|> rest) where
+  generateList (start :<|> rest) = (generateList start) ++ (generateList rest)
 
 -- | Generate the necessary data for JS codegen as a list, each 'AjaxReq'
 --   describing one endpoint from your API type. 
