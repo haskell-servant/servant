@@ -6,7 +6,7 @@
 module Servant.Server.Internal.Authentication
 ( AuthProtected (..)
 , AuthData (..)
-, AuthHandlers (..)
+, AuthHandlers (AuthHandlers, onMissingAuthData, onUnauthenticated)
 , basicAuthLax
 , basicAuthStrict
 , laxProtect
@@ -36,7 +36,7 @@ class AuthData a where
 -- | handlers to deal with authentication failures.
 data AuthHandlers authData = AuthHandlers
     {   -- we couldn't find the right type of auth data (or any, for that matter)
-        onMissingauthData :: IO Response
+        onMissingAuthData :: IO Response
     ,
         -- we found the right type of auth data in the request but the check failed
         onUnauthenticated :: authData -> IO Response
