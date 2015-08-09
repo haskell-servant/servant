@@ -86,7 +86,7 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = strictProtect isGoodCookie (const (return prvdata)) cookieAuthHandlers
+server = strictProtect isGoodCookie cookieAuthHandlers (const (return prvdata))
     :<|> return pubdata
 
   where prvdata = [PrivateData "this is a secret"]
