@@ -45,8 +45,8 @@ data AuthHandlers authData = AuthHandlers
 -- | concrete type to provide when in 'Strict' mode.
 data instance AuthProtected authData usr subserver 'Strict =
     AuthProtectedStrict { checkAuthStrict :: authData -> IO (Maybe usr)
-                        , subServerStrict :: subserver
                         , authHandlers :: AuthHandlers authData
+                        , subServerStrict :: subserver
                         }
 
 -- | concrete type to provide when in 'Lax' mode.
@@ -63,8 +63,8 @@ laxProtect = AuthProtectedLax
 
 -- | handy function to build an auth-protected bit of API with a Strict policy
 strictProtect :: (authData -> IO (Maybe usr)) -- ^ check auth
-              -> subserver                    -- ^ handlers for the auth-protected bits of the API
               -> AuthHandlers authData        -- ^ functions to call on auth failure
+              -> subserver                    -- ^ handlers for the auth-protected bits of the API
               -> AuthProtected authData usr subserver 'Strict
 strictProtect = AuthProtectedStrict
 
@@ -92,7 +92,7 @@ basicAuthStrict :: KnownSymbol realm
                 => (BasicAuth realm -> IO (Maybe usr))
                 -> subserver
                 -> AuthProtected (BasicAuth realm) usr subserver 'Strict
-basicAuthStrict check subserver = strictProtect check subserver basicAuthHandlers
+basicAuthStrict check subserver = strictProtect check basicAuthHandlers subserver
 
 -- | Basic authentication combinator with lax failure.
 basicAuthLax :: KnownSymbol realm
