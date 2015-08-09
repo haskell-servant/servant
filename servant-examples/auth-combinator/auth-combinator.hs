@@ -14,19 +14,42 @@ import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Servant
 import           Servant.Server.Internal
+import Data.Aeson
+import Data.ByteString (ByteString)
+import Data.ByteString.Builder.Internal (byteStringCopy)
+import Data.Monoid ((<>))
+import Data.Text (Text)
+import GHC.Generics
+import Network.HTTP.Types
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import Servant.API.Authentication
+import Servant.Server.Internal
+import Servant.Server.Internal.Authentication (strictProtect, AuthHandlers(AuthHandlers))
 
--- Pretty much stolen/adapted from
--- https://github.com/haskell-servant/HaskellSGMeetup2015/blob/master/examples/authentication-combinator/AuthenticationCombinator.hs
+-- | An example of a custom authentication framework that checks a Cookie for a
+-- value.
 
-type DBLookup = ByteString -> IO Bool
+-- | Data we will use to test for authentication
+data CookieAuth = CookieAuth { cookie :: ByteString }
 
+-- | a 'User' datatype we get once the authentication data is tested.
+type User = ByteString
+
+-- | we will look up authentication data in the database and extract a User.
+type DBLookup = CookieAuth -> IO (Maybe User)
+
+-- | method that tests for authentication and extracts a User type.
 isGoodCookie :: DBLookup
-isGoodCookie = return . (== "good password")
+isGoodCookie (CookieAuth cookie) = if cookie == "good cookie" then return (Just "one user") else return Nothing
 
-data AuthProtected
-
-instance HasServer rest => HasServer (AuthProtected :> rest) where
-  type ServerT (AuthProtected :> rest) m = ServerT rest m
+-- | Response handlers: what do we do when authentication doesn't work.
+cookieAuthHandlers :: AuthHandlers CookieAuth
+cookieAuthHandlers = AuthHandlers missingAuth notAuthenticated
+  where
+    missingAuth :: IO Response
+    missingAuth = return $ (responseBuilder status401 [] "Missing Cookie header.")
 
   route Proxy subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy rest) $ addAcceptCheck subserver $ cookieCheck request
@@ -39,28 +62,43 @@ instance HasServer rest => HasServer (AuthProtected :> rest) where
                 then return $ Route ()
                 else return $ FailFatal err403 { errBody = "Invalid cookie" }
 
-type PrivateAPI = Get '[JSON] [PrivateData]
+    notAuthenticated :: CookieAuth -> IO Response
+    notAuthenticated (CookieAuth cookie) = return $
+        responseBuilder status401 [] ("Invalid cookie: " <> byteStringCopy cookie)
 
-type PublicAPI = Get '[JSON] [PublicData]
+-- | 'AuthData' is a typeclass that provides a method to extract authentication
+-- data from a 'Reqest'
+instance AuthData CookieAuth where
+    authData req = fmap CookieAuth (lookup "Cookie" (requestHeaders req))
 
-type API = "private" :> AuthProtected :> PrivateAPI
-      :<|> PublicAPI
-
+-- | some data we will return from our API that is protected
 newtype PrivateData = PrivateData { ssshhh :: Text }
   deriving (Eq, Show, Generic)
 
 instance ToJSON PrivateData
 
+-- | Some data we will return from our API that is not protected
 newtype PublicData = PublicData { somedata :: Text }
   deriving (Eq, Show, Generic)
 
 instance ToJSON PublicData
 
+-- | Private API (will require authentication) as a type
+type PrivateAPI = Get '[JSON] [PrivateData]
+
+-- | Public API (non-authenticated) as a type
+type PublicAPI = Get '[JSON] [PublicData]
+
+-- | Our full API as a type with authentication
+type API = AuthProtect CookieAuth User 'Strict :> "private" :>  PrivateAPI
+      :<|> PublicAPI
+
 api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = return prvdata :<|> return pubdata
+server = strictProtect isGoodCookie (const (return prvdata)) cookieAuthHandlers
+    :<|> return pubdata
 
   where prvdata = [PrivateData "this is a secret"]
         pubdata = [PublicData "this is a public piece of data"]
