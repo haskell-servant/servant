@@ -16,7 +16,7 @@ module Servant.Server.Internal.Authentication
 import           Control.Monad              (guard)
 import qualified Data.ByteString            as B
 import           Data.ByteString.Base64     (decodeLenient)
-import           Data.Monoid                ((<>))
+import           Data.Monoid                ((<>), mempty)
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.Word8                 (isSpace, toLower, _colon)
