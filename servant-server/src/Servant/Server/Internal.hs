@@ -15,6 +15,7 @@
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
+  , module Servant.Server.Internal.Authentication
   , module Servant.Server.Internal.PathInfo
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication

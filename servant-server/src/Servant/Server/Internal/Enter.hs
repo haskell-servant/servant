@@ -106,7 +106,7 @@ generalizeNat = Nat (pure . runIdentity)
 
 -- | 'Enter' instance for AuthProtectedStrict
 instance Enter subserver arg ret => Enter (AuthProtected authData usr subserver 'Strict) arg (AuthProtected authData usr ret 'Strict) where
-    enter arg (AuthProtectedStrict check subserver handlers) = AuthProtectedStrict check (enter arg subserver) handlers
+    enter arg (AuthProtectedStrict check handlers subserver) = AuthProtectedStrict check handlers (enter arg subserver)
 
 
 -- | 'Enter' instance for AuthProtectedLax

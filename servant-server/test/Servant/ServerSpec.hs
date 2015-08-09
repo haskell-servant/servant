@@ -778,7 +778,6 @@ authRequiredApi = Proxy
 authRequiredServer :: Server AuthRequiredAPI
 authRequiredServer = basicAuthStrict basicAuthFooCheck (const . return $ alice)
                 :<|> basicAuthStrict basicAuthBarCheck (const . return $ jerry)
--- authRequiredServer =  const (return alice) :<|> const (return jerry)
 
 -- base64-encoded "servant:server"
 base64ServantColonServer :: ByteString
