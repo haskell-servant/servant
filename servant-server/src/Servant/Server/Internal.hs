@@ -23,7 +23,7 @@ module Servant.Server.Internal
   ) where
 
 #if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative                        ((<$>))
+import           Control.Applicative                        ((<$>), pure)
 #endif
 import           Control.Monad.Trans.Except  (ExceptT)
 import qualified Data.ByteString             as B

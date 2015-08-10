@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -16,7 +17,11 @@ module Servant.Server.Internal.Authentication
 import           Control.Monad              (guard)
 import qualified Data.ByteString            as B
 import           Data.ByteString.Base64     (decodeLenient)
+#if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid                ((<>), mempty)
+#else
+import           Data.Monoid                ((<>))
+#endif
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.Word8                 (isSpace, toLower, _colon)
