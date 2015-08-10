@@ -43,7 +43,7 @@ type TestApi = "counter" :> Post '[JSON] Counter -- endpoint for increasing the 
           :<|> "counter" :> Get '[JSON] Counter -- endpoint to get the current value
 
 type TestApi' = TestApi
-           :<|> Raw Application IO -- used for serving static files
+          :<|> Raw IO Application -- used for serving static files
 
 -- this proxy only targets the proper endpoints of our API,
 -- not the static file serving bit

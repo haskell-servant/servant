@@ -26,7 +26,7 @@ type TestApi =
   :<|> "put" :> Put '[JSON] ()
   :<|> "post" :> ReqBody '[JSON] 'True :> Post '[JSON] ()
   :<|> "delete" :> Header "ponies" String :> Delete '[JSON] ()
-  :<|> "raw" :> Raw () IO
+  :<|> "raw" :> Raw IO ()
 
 type TestLink = "hello" :> "hi" :> Get '[JSON] Bool
 type TestLink2 = "greet" :> ReqBody '[JSON] [Int] :> Post '[PlainText] Bool
@@ -87,4 +87,4 @@ spec = describe "Servant.Utils.Links" $ do
         apiLink (Proxy :: Proxy ("put" :> Put '[JSON] ())) `shouldBeURI` "put"
         apiLink (Proxy :: Proxy ("post" :> Post '[JSON] ())) `shouldBeURI` "post"
         apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] ())) `shouldBeURI` "delete"
-        apiLink (Proxy :: Proxy ("raw" :> Raw () IO)) `shouldBeURI` "raw"
+        apiLink (Proxy :: Proxy ("raw" :> Raw IO ())) `shouldBeURI` "raw"

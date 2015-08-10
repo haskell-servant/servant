@@ -84,8 +84,8 @@ type Api =
   :<|> "matrixparam" :> MatrixParam "name" String :> Get '[JSON] Person
   :<|> "matrixparams" :> MatrixParams "name" String :> Get '[JSON] [Person]
   :<|> "matrixflag" :> MatrixFlag "flag" :> Get '[JSON] Bool
-  :<|> "rawSuccess" :> Raw Application IO
-  :<|> "rawFailure" :> Raw Application IO
+  :<|> "rawSuccess" :> Raw IO Application
+  :<|> "rawFailure" :> Raw IO Application
   :<|> "multiple" :>
             Capture "first" String :>
             QueryParam "second" Int :>
@@ -126,9 +126,9 @@ withServer :: (BaseUrl -> IO a) -> IO a
 withServer action = withWaiDaemon (return server) action
 
 type FailApi =
-       "get" :> Raw Application IO
-  :<|> "capture" :> Capture "name" String :> Raw Application IO
-  :<|> "body" :> Raw Application IO
+       "get" :> Raw IO Application
+  :<|> "capture" :> Capture "name" String :> Raw IO Application
+  :<|> "body" :> Raw IO Application
 failApi :: Proxy FailApi
 failApi = Proxy
 

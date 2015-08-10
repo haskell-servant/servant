@@ -940,7 +940,7 @@ instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
           endpoint' = over path (\p -> p ++ [";" ++ symbolVal symP]) endpoint
           symP = Proxy :: Proxy sym
 
-instance HasDocs (Raw a m) where
+instance HasDocs (Raw m a) where
   docsFor _proxy (endpoint, action) =
     single endpoint action
 

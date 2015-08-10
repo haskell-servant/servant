@@ -50,7 +50,7 @@ currentValue counter = liftIO $ readTVarIO counter
 -- * Our API type
 type TestApi = "counter" :> Post Counter -- endpoint for increasing the counter
           :<|> "counter" :> Get  Counter -- endpoint to get the current value
-          :<|> Raw Application IO        -- used for serving static files
+          :<|> Raw IO Application        -- used for serving static files
 
 testApi :: Proxy TestApi
 testApi = Proxy

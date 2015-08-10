@@ -118,7 +118,7 @@ captureSpec = do
         get "/notAnInt" `shouldRespondWith` 404
 
     with (return (serve
-        (Proxy :: Proxy (Capture "captured" String :> Raw Application IO))
+        (Proxy :: Proxy (Capture "captured" String :> Raw IO Application))
         (\ "captured" -> Raw (\ request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_))))) $ do
       it "strips the captured path snippet from pathInfo" $ do
@@ -502,7 +502,7 @@ headerSpec = describe "Servant.API.Header" $ do
             delete' "/" "" `shouldRespondWith` 204
 
 
-type RawApi = "foo" :> Raw Application IO
+type RawApi = "foo" :> Raw IO Application
 rawApi :: Proxy RawApi
 rawApi = Proxy
 rawApplication :: Show a => (Request -> a) -> Application
