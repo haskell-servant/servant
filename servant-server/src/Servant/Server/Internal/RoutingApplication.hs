@@ -77,7 +77,6 @@ instance Monoid RouteMismatch where
   h@(HttpError _ _ _)  `mappend` rmm | rmm <=: h                    = h
   HttpError _ _ _      `mappend` rmm                                = rmm
   r@(RouteMismatch _)  `mappend` _                                  = r
->>>>>>> 272091e... Second Iteration of Authentication
 
 data ReqBodyState = Uncalled
                   | Called !B.ByteString
@@ -108,7 +107,6 @@ toApplication ra request respond = do
 
   ra request{ requestBody = memoReqBody } routingRespond
  where
-<<<<<<< HEAD
   routingRespond :: RouteResult Response -> IO ResponseReceived
   routingRespond (Fail err)      = respond $ responseServantErr err
   routingRespond (FailFatal err) = respond $ responseServantErr err
@@ -282,25 +280,6 @@ runDelayed (Delayed captures method body server) =
 -- Also takes a continuation for how to turn the
 -- result of the delayed server into a response.
 runAction :: Delayed (ExceptT ServantErr IO a)
-=======
-  routingRespond :: Either RouteMismatch Response -> IO ResponseReceived
-  routingRespond (Left NotFound) =
-    respond $ responseLBS notFound404 [] "not found"
-  routingRespond (Left WrongMethod) =
-    respond $ responseLBS methodNotAllowed405 [] "method not allowed"
-  routingRespond (Left (InvalidBody err)) =
-    respond $ responseLBS badRequest400 [] $ fromString $ "invalid request body: " ++ err
-  routingRespond (Left UnsupportedMediaType) =
-    respond $ responseLBS unsupportedMediaType415 [] "unsupported media type"
-  routingRespond (Left (HttpError status headers body)) =
-    respond $ responseLBS status headers $ fromMaybe (BL.fromStrict $ statusMessage status) body
-  routingRespond (Left (RouteMismatch resp)) =
-    respond resp
-  routingRespond (Right response) =
-    respond response
-
-runAction :: IO (RouteResult (ExceptT ServantErr IO a))
->>>>>>> 272091e... Second Iteration of Authentication
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
