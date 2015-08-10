@@ -54,9 +54,6 @@ data RouteMismatch =
   | HttpError Status [Header] (Maybe BL.ByteString)  -- ^ an even even more informative arbitrary HTTP response code error.
   | RouteMismatch Response -- ^ an arbitrary mismatch with custom Response.
 
-instance Show RouteMismatch where
-    show = const "hello"
-
 -- | specialized 'Less Than' for use with Monoid RouteMismatch
 (<=:) :: RouteMismatch -> RouteMismatch -> Bool
 {-# INLINE (<=:) #-}
