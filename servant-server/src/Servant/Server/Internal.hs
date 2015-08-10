@@ -569,8 +569,8 @@ class ToRawApplication a where
 instance ToRawApplication Application where
   toRawApplication = id
 
-instance ToRawApplication a => HasServer (Raw a m) where
-  type ServerT (Raw a m) n = Raw a n
+instance ToRawApplication a => HasServer (Raw m a) where
+  type ServerT (Raw m a) n = Raw n a
 
   route Proxy rawApplication = LeafRouter $ \ request respond -> do
     r <- runDelayed rawApplication

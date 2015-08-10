@@ -76,7 +76,7 @@ searchBook (Just q) = return (mkSearch q books')
 type API = "point" :> Get '[JSON] Point
       :<|> "books" :> QueryParam "q" Text :> Get '[JSON] (Search Book)
 
-type API' = API :<|> Raw Application IO
+type API' = API :<|> Raw IO Application
 
 api :: Proxy API
 api = Proxy

@@ -6,7 +6,7 @@ module T6 where
 import           Network.Wai
 import           Servant
 
-type API = "code" :> Raw Application IO
+type API = "code" :> Raw IO Application
 
 api :: Proxy API
 api = Proxy
