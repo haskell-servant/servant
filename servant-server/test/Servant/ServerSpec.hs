@@ -19,6 +19,11 @@ import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
 import           Data.ByteString            (ByteString)
 import           Data.ByteString.Conversion ()
 import           Data.Char                  (toUpper)
+#if !MIN_VERSION_base(4,8,0)
+import           Data.Monoid                ((<>), mempty)
+#else
+import           Data.Monoid                ((<>))
+#endif
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs)
