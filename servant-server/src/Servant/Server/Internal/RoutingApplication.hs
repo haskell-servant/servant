@@ -31,7 +31,7 @@ type RoutingApplication =
 -- | A wrapper around @'Either' 'RouteMismatch' a@.
 newtype RouteResult a =
   RR { routeResult :: Either RouteMismatch a }
-  deriving (Show, Functor, Applicative, Monad)
+  deriving (Functor, Applicative, Monad)
 
 -- | If we get a `Right`, it has precedence over everything else.
 --
