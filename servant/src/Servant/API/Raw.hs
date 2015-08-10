@@ -12,7 +12,7 @@ import           Data.Typeable (Typeable)
 -- In addition to just letting you plug in your existing WAI 'Application's,
 -- this can also be used with 'Servant.Utils.StaticFiles.serveDirectory' to serve
 -- static files stored in a particular directory on your filesystem
-newtype Raw a (m :: * -> *) = Raw {
+newtype Raw (m :: * -> *) a = Raw {
     unRaw :: a
     }
     deriving (Eq, Show, Typeable)

@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE OverlappingInstances   #-}
 {-# LANGUAGE UndecidableInstances   #-}
 module Servant.Server.Internal.Enter where
 
@@ -30,13 +31,15 @@ import           Servant.API
 class Enter typ arg ret | typ arg -> ret, typ ret -> arg where
     enter :: arg -> typ -> ret
 
+data IsRaw
+
 -- **  Servant combinators
-instance ( Enter typ1 arg1 ret1, Enter typ2 arg2 ret2
+instance ( Enter typ1 arg1 ret1 , Enter typ2 arg2 ret2
          , arg1 ~ arg2
          ) => Enter (typ1 :<|> typ2) arg1 (ret1 :<|> ret2) where
     enter e (a :<|> b) = enter e a :<|> enter e b
 
-instance (Enter b arg ret) => Enter (a -> b) arg (a -> ret) where
+instance (Enter b arg ret) => Enter (a -> b) arg (a -> ret)  where
     enter arg f a = enter arg (f a)
 
 -- ** Useful instances
@@ -49,10 +52,10 @@ instance C.Category (:~>) where
     id = Nat id
     Nat f . Nat g = Nat (f . g)
 
-instance Enter (Raw a m) (m :~> n) (Raw a n) where
+instance (Raw m' ~ m, Raw n' ~ n) => Enter (m a) (m' :~> n') (n a)  where
     enter _ (Raw a) = Raw a
 
-instance Enter (m a) (m :~> n) (n a) where
+instance Enter (m a) (m :~> n) (n a)  where
     enter (Nat f) = f
 
 -- | Like `lift`.

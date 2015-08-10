@@ -166,7 +166,7 @@ instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Post ctypes a) where
 instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Put ctypes a) where
   mock _ = mockArbitrary
 
-instance HasMock (Raw Application m) where
+instance HasMock (Raw m Application) where
   mock _ = Raw (\req respond -> do
     bdy <- genBody
     respond $ responseLBS status200 [] bdy)
