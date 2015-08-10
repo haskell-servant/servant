@@ -10,6 +10,6 @@ spec :: Spec
 spec = describe "Servant.API.Raw" $ do
   describe "unRaw" $ do
     it "unRaw returns proper value" $ do
-      let p = Raw "testing" :: Raw String IO
+      let p = Raw "testing" :: Raw IO String
       p `shouldBe` (Raw "testing")
       (unRaw p) `shouldBe` "testing"

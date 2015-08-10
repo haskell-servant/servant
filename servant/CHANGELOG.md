@@ -1,6 +1,6 @@
 HEAD
 ----
-* Change Raw from `data Raw ...` to `newtype Raw a (m :: * -> *) = Raw a ...`
+* Change Raw from `data Raw ...` to `newtype Raw (m :: * -> *) a = Raw ... a`
 * Add `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Fix safeLink, so Header is not in fact required.
 * Add more instances for (:<|>)

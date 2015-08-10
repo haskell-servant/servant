@@ -26,7 +26,7 @@ spec = describe "module Servant.Server.Enter" $ do
 
 type ReaderAPI = "int" :> Get '[JSON] Int
             :<|> "string" :> Post '[JSON] String
-            :<|> "static" :> Raw Application (Reader String)
+            :<|> "static" :> Raw (Reader String) Application
 
 type IdentityAPI = "bool" :> Get '[JSON] Bool
 
