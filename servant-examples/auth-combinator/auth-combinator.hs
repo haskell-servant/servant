@@ -34,13 +34,13 @@ import Servant.Server.Internal.Authentication (strictProtect, AuthHandlers(AuthH
 -- | Data we will use to test for authentication
 data CookieAuth = CookieAuth { cookie :: ByteString }
 
--- | a 'User' datatype we get once the authentication data is tested.
+-- | A 'User' datatype we get once the authentication data is tested.
 type User = ByteString
 
--- | we will look up authentication data in the database and extract a User.
+-- | We will look up authentication data in the database and extract a User.
 type DBLookup = CookieAuth -> IO (Maybe User)
 
--- | method that tests for authentication and extracts a User type.
+-- | Method that tests for authentication and extracts a User type.
 isGoodCookie :: DBLookup
 isGoodCookie (CookieAuth cookie) = if cookie == "good cookie" then return (Just "one user") else return Nothing
 
@@ -56,11 +56,11 @@ cookieAuthHandlers = AuthHandlers missingAuth notAuthenticated
         responseBuilder status401 [] ("Invalid cookie: " <> byteStringCopy cookie)
 
 -- | 'AuthData' is a typeclass that provides a method to extract authentication
--- data from a 'Reqest'
+-- data from a 'Request'
 instance AuthData CookieAuth where
     authData req = fmap CookieAuth (lookup "Cookie" (requestHeaders req))
 
--- | some data we will return from our API that is protected
+-- | Some data we will return from our API that is protected
 newtype PrivateData = PrivateData { ssshhh :: Text }
   deriving (Eq, Show, Generic)
 
