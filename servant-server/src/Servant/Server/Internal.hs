@@ -218,19 +218,18 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 
--- | When implementing the handler for a 'Put' endpoint,
--- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
--- and 'Servant.API.Post.Post', the handler code runs in the
--- @EitherT ServantErr IO@ monad, where the 'Int' represents
--- the status code and the 'String' a message, returned in case of
--- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
+-- | When implementing the handler for an 'HttpMethod' endpoint,
+-- the handler code runs in the @EitherT ServantErr IO@ monad.
+--
+-- You can quite handily use 'Control.Monad.Trans.EitherT.left'
 -- to quickly fail if some conditions are not met.
 --
--- If successfully returning a value, we use the type-level list, combined
--- with the request's @Accept@ header, to encode the value for you
--- (returning a status code of 200). If there was no @Accept@ header or it
--- was @*\/\*@, we return encode using the first @Content-Type@ type on the
--- list.
+-- If successfully returning a value, we use the type-level list,
+-- combined with the request's @Accept@ header, to encode the value
+-- for you (returning the default status code for the method -
+-- e.g. for GET the status code will be 200). If there was no @Accept@
+-- header or it was @*\/\*@, we encode the result using the first
+-- @Content-Type@ type in the list.
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
