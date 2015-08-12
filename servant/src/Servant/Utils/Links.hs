@@ -74,7 +74,9 @@
 -- >>> safeLink api bad_link
 -- ...
 --     Could not deduce (Or
---                         (IsElem' (Delete '[JSON] ()) (Get '[JSON] Int))
+--                         (IsElem' 
+--                            (HttpMethod "DELETE" 200 '[JSON] ())
+--                            (HttpMethod "GET" 200 '[JSON] Int))
 --                         (IsElem'
 --                            ("hello" :> Delete '[JSON] ())
 --                            ("bye" :> (QueryParam "name" String :> Delete '[JSON] ()))))
