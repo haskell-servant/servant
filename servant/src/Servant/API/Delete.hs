@@ -11,7 +11,7 @@ import           Servant.API.Methods
 -- Example:
 --
 -- >>>            -- DELETE /books/:isbn
--- >>> type MyApi = "books" :> Capture "isbn" Text :> Delete
+-- >>> type MyApi = "books" :> Capture "isbn" Text :> Delete '[JSON] ()
 type Delete (contentTypes :: [*]) a = HttpMethod "DELETE" 200 contentTypes a
 
 -- $setup
