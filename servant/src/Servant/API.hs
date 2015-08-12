@@ -27,6 +27,8 @@ module Servant.API (
   -- | Access the location for arbitrary data to be shared by applications and middleware
 
   -- * Actual endpoints, distinguished by HTTP method
+  module Servant.API.Methods,
+  -- | Ability to define more methods
   module Servant.API.Get,
   -- | @GET@ requests
   module Servant.API.Post,
@@ -73,6 +75,7 @@ import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
 import           Servant.API.MatrixParam     (MatrixFlag, MatrixParam,
                                               MatrixParams)
+import           Servant.API.Methods         (HttpMethod)
 import           Servant.API.Patch           (Patch)
 import           Servant.API.Post            (Post)
 import           Servant.API.Put             (Put)

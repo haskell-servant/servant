@@ -4,7 +4,7 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Delete (Delete) where
 
-import           Data.Typeable (Typeable)
+import           Servant.API.Methods
 
 -- | Combinator for DELETE requests.
 --
@@ -12,9 +12,7 @@ import           Data.Typeable (Typeable)
 --
 -- >>>            -- DELETE /books/:isbn
 -- >>> type MyApi = "books" :> Capture "isbn" Text :> Delete
-data Delete (contentTypes :: [*]) a
-  deriving Typeable
-
+type Delete (contentTypes :: [*]) a = HttpMethod "DELETE" 200 contentTypes a
 
 -- $setup
 -- >>> import Servant.API
