@@ -3,6 +3,11 @@ HEAD
 
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Drop `EitherT` in favor of `ExceptT`
+* Support for the new authentication framework. Including:
+  * `HasServer` instances for `AuthProtect` in `Strict` and `Lax` mode
+  * `Enter` instances for `AuthProtected`
+  * combinators to support `Basic` authentication.
+  * combinators to support `JWT` authentication
 
 0.4.1
 -----
