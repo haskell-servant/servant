@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE TypeFamilies       #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Patch (Patch) where
 
@@ -18,7 +19,9 @@ import           Servant.API.Methods
 -- >>>            -- with a JSON encoded Book as the request body
 -- >>>            -- returning the just-created Book
 -- >>> type MyApi = "books" :> ReqBody '[JSON] Book :> Patch '[JSON] Book
-type Patch (contentTypes :: [*]) a = HttpMethod "PATCH" 200 contentTypes a
+type Patch (contentTypes :: [*]) a = HttpMethod "PATCH" contentTypes a
+
+type instance DefaultStatusCode "PATCH" = 200
 
 -- $setup
 -- >>> import Servant.API

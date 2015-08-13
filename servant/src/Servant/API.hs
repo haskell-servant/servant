@@ -75,7 +75,7 @@ import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
 import           Servant.API.MatrixParam     (MatrixFlag, MatrixParam,
                                               MatrixParams)
-import           Servant.API.Methods         (HttpMethod)
+import           Servant.API.Methods         (DefaultStatusCode, HttpMethod)
 import           Servant.API.Patch           (Patch)
 import           Servant.API.Post            (Post)
 import           Servant.API.Put             (Put)

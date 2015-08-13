@@ -43,7 +43,7 @@ import           Network.Wai                 (Application, lazyRequestBody,
                                               requestMethod, responseLBS, remoteHost,
                                               isSecure, vault, httpVersion, Response,
                                               Request)
-import           Servant.API                 ((:<|>) (..), (:>), Capture,
+import           Servant.API                 ((:<|>) (..), (:>), Capture, DefaultStatusCode,
                                               Header, HttpMethod, IsSecure(..),
                                               MatrixFlag, MatrixParam, MatrixParams,
                                               QueryFlag, QueryParam, QueryParams,
@@ -236,25 +236,24 @@ instance
 #endif
          ( AllCTRender ctypes a
          , KnownSymbol method
-         , KnownNat status
-         ) => HasServer (HttpMethod method status ctypes a) where
+         , KnownNat (DefaultStatusCode method)
+         ) => HasServer (HttpMethod method ctypes a) where
 
-  type ServerT (HttpMethod method status ctypes a) m = m a
+  type ServerT (HttpMethod method ctypes a) m = m a
 
   route Proxy = methodRouter method (Proxy :: Proxy ctypes) status
     where 
       method = B8.pack $ symbolVal (Proxy :: Proxy method)
-      status = toEnum $ fromInteger $ natVal (Proxy :: Proxy status)
+      status = toEnum $ fromInteger $ natVal (Proxy :: Proxy (DefaultStatusCode method))
 
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif 
         ( KnownSymbol method
-        , KnownNat status
-        ) => HasServer (HttpMethod method status ctypes ()) where
+        ) => HasServer (HttpMethod method ctypes ()) where
 
-  type ServerT (HttpMethod method status ctypes ()) m = m ()
+  type ServerT (HttpMethod method ctypes ()) m = m ()
 
   route Proxy = methodRouterEmpty method
     where 
@@ -269,15 +268,15 @@ instance
          ( GetHeaders (Headers h v)
          , AllCTRender ctypes v
          , KnownSymbol method
-         , KnownNat status
-         ) => HasServer (HttpMethod method status ctypes (Headers h v)) where
+         , KnownNat (DefaultStatusCode method)
+         ) => HasServer (HttpMethod method ctypes (Headers h v)) where
 
-  type ServerT (HttpMethod method status ctypes (Headers h v)) m = m (Headers h v)
+  type ServerT (HttpMethod method ctypes (Headers h v)) m = m (Headers h v)
 
   route Proxy = methodRouterHeaders method (Proxy :: Proxy ctypes) status
     where 
       method = B8.pack $ symbolVal (Proxy :: Proxy method)
-      status = toEnum $ fromInteger $ natVal (Proxy :: Proxy status)
+      status = toEnum $ fromInteger $ natVal (Proxy :: Proxy (DefaultStatusCode method))
 
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,

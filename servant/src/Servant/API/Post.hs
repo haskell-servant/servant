@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE TypeFamilies       #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Post (Post) where
 
@@ -16,7 +17,9 @@ import           Servant.API.Methods
 -- >>>            -- with a JSON encoded Book as the request body
 -- >>>            -- returning the just-created Book
 -- >>> type MyApi = "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book
-type Post (contentTypes :: [*]) a = HttpMethod "POST" 201 contentTypes a
+type Post (contentTypes :: [*]) a = HttpMethod "POST" contentTypes a
+
+type instance DefaultStatusCode "POST" = 201
 
 -- $setup
 -- >>> import Servant.API
