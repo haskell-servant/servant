@@ -1,19 +1,13 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
+-- | An example of a custom authentication framework that checks a Cookie for a
+-- value.
 
-import           Data.Aeson
-import           Data.ByteString          (ByteString)
-import           Data.Text                (Text)
-import           GHC.Generics
-import           Network.Wai
-import           Network.Wai.Handler.Warp
-import           Servant
-import           Servant.Server.Internal
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 import Data.Aeson
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder.Internal (byteStringCopy)
@@ -27,9 +21,6 @@ import Servant
 import Servant.API.Authentication
 import Servant.Server.Internal
 import Servant.Server.Internal.Authentication (strictProtect, AuthHandlers(AuthHandlers))
-
--- | An example of a custom authentication framework that checks a Cookie for a
--- value.
 
 -- | Data we will use to test for authentication
 data CookieAuth = CookieAuth { cookie :: ByteString }

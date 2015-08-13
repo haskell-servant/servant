@@ -60,13 +60,13 @@ data instance AuthProtected authData usr subserver 'Lax =
                      , subServerLax :: subserver
                      }
 
--- | handy function to build an auth-protected bit of API with a Lax policy
+-- | handy function to build an auth-protected bit of API with a 'Lax' policy
 laxProtect :: (authData -> IO (Maybe usr)) -- ^ check auth
            -> subserver                    -- ^ the handlers for the auth-aware bits of the API
            -> AuthProtected authData usr subserver 'Lax
 laxProtect = AuthProtectedLax
 
--- | handy function to build an auth-protected bit of API with a Strict policy
+-- | handy function to build an auth-protected bit of API with a 'Strict' policy
 strictProtect :: (authData -> IO (Maybe usr)) -- ^ check auth
               -> AuthHandlers authData        -- ^ functions to call on auth failure
               -> subserver                    -- ^ handlers for the auth-protected bits of the API
