@@ -8,6 +8,11 @@ HEAD
 * Remove `RouteMismatch`.
 * Redefined constructors of `RouteResult`.
 * Added `Delayed` and related functions (`addMethodCheck`, `addAcceptCheck`, `addBodyCheck`, `runDelayed`)
+* Support for the new authentication framework. Including:
+  * `HasServer` instances for `AuthProtect` in `Strict` and `Lax` mode
+  * `Enter` instances for `AuthProtected`
+  * combinators to support `Basic` authentication.
+  * combinators to support `JWT` authentication
 
 0.4.1
 -----
