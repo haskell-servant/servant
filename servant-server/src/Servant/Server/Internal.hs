@@ -137,9 +137,7 @@ processMethodRouter handleA status method headers request = case handleA of
   Nothing -> failWith UnsupportedMediaType
   Just (contentT, body) -> succeedWith $ responseLBS status hdrs bdy
     where
-      bdy = case allowedMethodHead method request of
-        True -> ""
-        False -> body
+      bdy = if allowedMethodHead method request then "" else body
       hdrs = (hContentType, cs contentT) : (fromMaybe [] headers)
 
 methodRouter :: (AllCTRender ctypes a)
@@ -512,7 +510,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
         -- named "foo" or "foo[]" and call fromText on the
         -- corresponding values
         parameters = filter looksLikeParam querytext
-        values = catMaybes $ map (convert . snd) parameters
+        values = mapMaybe (convert . snd) parameters
     in  route (Proxy :: Proxy sublayout) (feedTo subserver values)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
@@ -625,7 +623,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
                   -- named "foo" or "foo[]" and call fromText on the
                   -- corresponding values
                   parameters = filter looksLikeParam matrixtext
-                  values = catMaybes $ map (convert . snd) parameters
+                  values = mapMaybe (convert . snd) parameters
               route (Proxy :: Proxy sublayout) (feedTo subserver values)
       _ -> route (Proxy :: Proxy sublayout) (feedTo subserver [])
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
