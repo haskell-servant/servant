@@ -4,7 +4,7 @@ module Servant.API.RemoteHost
     RemoteHost
   ) where
 
-import Data.Typeable
+import           Data.Typeable
 
 -- | Provides access to the host or IP address
 --   from which the HTTP request was sent.

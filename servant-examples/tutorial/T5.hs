@@ -1,17 +1,17 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 module T5 where
 
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Either
-import Data.Aeson
-import GHC.Generics
-import Network.Wai
-import Servant
-import System.Directory
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Either
+import           Data.Aeson
+import           GHC.Generics
+import           Network.Wai
+import           Servant
+import           System.Directory
 
 type IOAPI = "myfile.txt" :> Get '[JSON] FileContent
 

@@ -1,8 +1,9 @@
-import Network.Wai
-import Network.Wai.Handler.Warp
-import System.Environment
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           System.Environment
 
 import qualified T1
+import qualified T10
 import qualified T2
 import qualified T3
 import qualified T4
@@ -10,7 +11,6 @@ import qualified T5
 import qualified T6
 import qualified T7
 import qualified T9
-import qualified T10
 
 app :: String -> (Application -> IO ()) -> IO ()
 app n f = case n of

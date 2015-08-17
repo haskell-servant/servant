@@ -12,22 +12,22 @@ import           Data.Monoid
 #endif
 import           Control.Arrow
 import           Data.Aeson
+import           Data.ByteString.Char8     (ByteString, append, pack)
+import qualified Data.ByteString.Lazy      as BSL
 import           Data.Either
-import           Data.Function              (on)
+import           Data.Function             (on)
+import           Data.List                 (maximumBy)
+import           Data.Maybe                (fromJust, isJust, isNothing)
 import           Data.Proxy
-import           Data.ByteString.Char8      (ByteString, append, pack)
-import qualified Data.ByteString.Lazy       as BSL
-import           Data.List                  (maximumBy)
-import           Data.Maybe                 (fromJust, isJust, isNothing)
-import           Data.String                (IsString (..))
-import           Data.String.Conversions    (cs)
-import qualified Data.Text                  as TextS
-import qualified Data.Text.Lazy             as TextL
+import           Data.String               (IsString (..))
+import           Data.String.Conversions   (cs)
+import qualified Data.Text                 as TextS
+import qualified Data.Text.Lazy            as TextL
 import           GHC.Generics
-import           Network.URL                (exportParams, importParams)
+import           Network.URL               (exportParams, importParams)
 import           Test.Hspec
 import           Test.QuickCheck
-import           Test.QuickCheck.Instances  ()
+import           Test.QuickCheck.Instances ()
 
 import           Servant.API.ContentTypes
 

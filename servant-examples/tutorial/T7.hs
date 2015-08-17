@@ -1,12 +1,12 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeFamilies  #-}
 {-# LANGUAGE TypeOperators #-}
 module T7 where
 
-import Control.Monad.Trans.Either
-import Control.Monad.Trans.Reader
-import Network.Wai
-import Servant
+import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Reader
+import           Network.Wai
+import           Servant
 
 type ReaderAPI = "a" :> Get '[JSON] Int
             :<|> "b" :> Get '[JSON] String

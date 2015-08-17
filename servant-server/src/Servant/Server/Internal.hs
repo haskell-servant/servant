@@ -27,7 +27,7 @@ import           Control.Monad.Trans.Either  (EitherT)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
-import           Data.Maybe                  (catMaybes, fromMaybe)
+import           Data.Maybe                  (mapMaybe, fromMaybe)
 import           Data.String                 (fromString)
 import           Data.String.Conversions     (cs, (<>), ConvertibleStrings)
 import           Data.Text                   (Text)

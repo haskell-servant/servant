@@ -1,18 +1,18 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module T10 where
 
-import Data.ByteString.Lazy (ByteString)
-import Data.Text.Lazy (pack)
-import Data.Text.Lazy.Encoding (encodeUtf8)
-import Network.HTTP.Types
-import Network.Wai
-import Servant
-import Servant.Docs
+import           Data.ByteString.Lazy    (ByteString)
+import           Data.Text.Lazy          (pack)
+import           Data.Text.Lazy.Encoding (encodeUtf8)
+import           Network.HTTP.Types
+import           Network.Wai
+import           Servant
+import           Servant.Docs
 import qualified T3
 
 type DocsAPI = T3.API :<|> Raw

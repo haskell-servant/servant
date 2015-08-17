@@ -3,16 +3,16 @@
 {-# LANGUAGE TypeOperators     #-}
 module Servant.Server.Internal.EnterSpec where
 
-import qualified Control.Category              as C
+import qualified Control.Category           as C
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Either
 import           Data.Proxy
 import           Servant.API
 import           Servant.Server
 
-import           Test.Hspec                    (Spec, describe, it)
-import           Test.Hspec.Wai                (get, matchStatus, post,
-                                                shouldRespondWith, with)
+import           Test.Hspec                 (Spec, describe, it)
+import           Test.Hspec.Wai             (get, matchStatus, post,
+                                             shouldRespondWith, with)
 
 spec :: Spec
 spec = describe "module Servant.Server.Enter" $ do

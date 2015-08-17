@@ -1,16 +1,16 @@
 module Servant.JS.Angular where
 
-import Servant.JS.Internal
-import Control.Lens
-import Data.List
-import Data.Monoid
+import           Control.Lens
+import           Data.List
+import           Data.Monoid
+import           Servant.JS.Internal
 
 -- | Options specific to the angular code generator
 data AngularOptions = AngularOptions
   { serviceName :: String                         -- ^ When generating code with wrapInService,
                                                   --   name of the service to generate
-  , prologue :: String -> String -> String        -- ^ beginning of the service definition
-  , epilogue :: String                            -- ^ end of the service definition
+  , prologue    :: String -> String -> String        -- ^ beginning of the service definition
+  , epilogue    :: String                            -- ^ end of the service definition
   }
 
 -- | Default options for the Angular codegen. Used by 'wrapInService'.
@@ -31,7 +31,7 @@ angularService ngOpts = angularServiceWith ngOpts defCommonGeneratorOptions
 -- | Instead of simply generating top level functions, generates a service instance
 -- on which your controllers can depend to access your API
 angularServiceWith :: AngularOptions -> CommonGeneratorOptions -> JavaScriptGenerator
-angularServiceWith ngOpts opts reqs = 
+angularServiceWith ngOpts opts reqs =
     prologue ngOpts svc mName
     <> intercalate "," (map generator reqs) <>
     epilogue ngOpts
@@ -54,7 +54,7 @@ angularWith ngopts opts = intercalate "\n\n" . map (generateAngularJSWith ngopts
 -- | js codegen using $http service from Angular using default options
 generateAngularJS :: AngularOptions -> AjaxReq -> String
 generateAngularJS ngOpts = generateAngularJSWith ngOpts defCommonGeneratorOptions
-    
+
 -- | js codegen using $http service from Angular
 generateAngularJSWith ::  AngularOptions -> CommonGeneratorOptions -> AjaxReq -> String
 generateAngularJSWith ngOptions opts req = "\n" <>
@@ -74,7 +74,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
             ++ map (view argName) queryparams
             ++ body
             ++ map (toValidFunctionName . (<>) "header" . headerArgName) hs
-        
+
         -- If we want to generate Top Level Function, they must depend on
         -- the $http service, if we generate a service, the functions will
         -- inherit this dependency from the service
@@ -118,13 +118,13 @@ generateAngularJSWith ngOptions opts req = "\n" <>
                     else (moduleName opts) <> "."
             where
                 hasNoModule = null (moduleName opts)
-        
+
         hasService = not $ null (serviceName ngOptions)
-                
+
         fsep = if hasService then ":" else " ="
-                
+
         fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
-        
+
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"

@@ -7,18 +7,18 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.JSSpec where
 
-import Data.Either (isRight)
-import Data.Proxy
-import Language.ECMAScript3.Parser (parseFromString)
-import Test.Hspec
+import           Data.Either                  (isRight)
+import           Data.Proxy
+import           Language.ECMAScript3.Parser  (parseFromString)
+import           Test.Hspec
 
-import Servant.API
-import Servant.JS
-import qualified Servant.JS.Vanilla as JS
-import qualified Servant.JS.JQuery as JQ
-import qualified Servant.JS.Angular as NG
-import qualified Servant.JS.Axios as AX
-import Servant.JSSpec.CustomHeaders
+import           Servant.API
+import           Servant.JS
+import qualified Servant.JS.Angular           as NG
+import qualified Servant.JS.Axios             as AX
+import qualified Servant.JS.JQuery            as JQ
+import qualified Servant.JS.Vanilla           as JS
+import           Servant.JSSpec.CustomHeaders
 
 type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON] Bool
           :<|> "has.extension" :> Get '[FormUrlEncoded,JSON] Bool

@@ -14,9 +14,9 @@ module Servant (
   Proxy(..),
   ) where
 
-import Data.Proxy
-import Servant.API
-import Servant.Common.Text
-import Servant.Server
-import Servant.Utils.Links
-import Servant.Utils.StaticFiles
+import           Data.Proxy
+import           Servant.API
+import           Servant.Common.Text
+import           Servant.Server
+import           Servant.Utils.Links
+import           Servant.Utils.StaticFiles

@@ -11,13 +11,13 @@ module Servant.Common.BaseUrl (
   , showBaseUrl
 ) where
 
-import Control.Monad.Catch (MonadThrow, throwM, Exception)
-import Data.List
-import Data.Typeable
-import GHC.Generics
-import Network.URI
-import Safe
-import Text.Read
+import           Control.Monad.Catch (Exception, MonadThrow, throwM)
+import           Data.List
+import           Data.Typeable
+import           GHC.Generics
+import           Network.URI
+import           Safe
+import           Text.Read
 
 -- | URI scheme to use
 data Scheme =
@@ -29,8 +29,8 @@ data Scheme =
 --   for servant's automatically-generated clients.
 data BaseUrl = BaseUrl
   { baseUrlScheme :: Scheme -- ^ URI scheme to use
-  , baseUrlHost :: String   -- ^ host (eg "haskell.org")
-  , baseUrlPort :: Int      -- ^ port (eg 80)
+  , baseUrlHost   :: String   -- ^ host (eg "haskell.org")
+  , baseUrlPort   :: Int      -- ^ port (eg 80)
   } deriving (Show, Eq, Ord, Generic)
 
 showBaseUrl :: BaseUrl -> String

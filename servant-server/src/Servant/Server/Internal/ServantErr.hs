@@ -2,10 +2,10 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Servant.Server.Internal.ServantErr where
 
-import qualified Data.ByteString.Char8     as BS
-import qualified Data.ByteString.Lazy      as LBS
-import qualified Network.HTTP.Types        as HTTP
-import           Network.Wai               (responseLBS, Response)
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy  as LBS
+import qualified Network.HTTP.Types    as HTTP
+import           Network.Wai           (Response, responseLBS)
 
 data ServantErr = ServantErr { errHTTPCode     :: Int
                              , errReasonPhrase :: String

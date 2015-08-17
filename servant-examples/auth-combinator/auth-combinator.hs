@@ -1,19 +1,19 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-import Data.Aeson
-import Data.ByteString (ByteString)
-import Data.Text (Text)
-import GHC.Generics
-import Network.HTTP.Types
-import Network.Wai
-import Network.Wai.Handler.Warp
-import Servant
-import Servant.Server.Internal
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
+import           Data.Aeson
+import           Data.ByteString          (ByteString)
+import           Data.Text                (Text)
+import           GHC.Generics
+import           Network.HTTP.Types
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           Servant
+import           Servant.Server.Internal
 
 -- Pretty much stolen/adapted from
 -- https://github.com/haskell-servant/HaskellSGMeetup2015/blob/master/examples/authentication-combinator/AuthenticationCombinator.hs

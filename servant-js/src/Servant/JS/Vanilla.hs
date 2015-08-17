@@ -1,9 +1,9 @@
 module Servant.JS.Vanilla where
 
-import Servant.JS.Internal
-import Control.Lens
-import Data.List
-import Data.Monoid
+import           Control.Lens
+import           Data.List
+import           Data.Monoid
+import           Servant.JS.Internal
 
 -- | Generate vanilla javascript functions to make AJAX requests
 --   to your API, using /XMLHttpRequest/. Uses 'defCommonGeneratorOptions'

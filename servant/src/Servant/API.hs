@@ -69,8 +69,8 @@ import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
 import           Servant.API.Delete          (Delete)
 import           Servant.API.Get             (Get)
 import           Servant.API.Header          (Header (..))
-import           Servant.API.HttpVersion     (HttpVersion(..))
-import           Servant.API.IsSecure        (IsSecure(..))
+import           Servant.API.HttpVersion     (HttpVersion (..))
+import           Servant.API.IsSecure        (IsSecure (..))
 import           Servant.API.MatrixParam     (MatrixFlag, MatrixParam,
                                               MatrixParams)
 import           Servant.API.Patch           (Patch)

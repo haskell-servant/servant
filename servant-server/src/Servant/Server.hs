@@ -77,8 +77,8 @@ module Servant.Server
 
   ) where
 
-import           Data.Proxy                         (Proxy)
-import           Network.Wai                        (Application)
+import           Data.Proxy                    (Proxy)
+import           Network.Wai                   (Application)
 import           Servant.Server.Internal
 import           Servant.Server.Internal.Enter
 

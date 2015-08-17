@@ -1,20 +1,20 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 module T9 where
 
-import Control.Applicative
-import Control.Monad.IO.Class
-import Data.Aeson
-import Data.Text (Text)
-import GHC.Generics
-import Network.Wai
-import Servant
-import Servant.JS
-import Servant.JS.JQuery
-import System.Random
+import           Control.Applicative
+import           Control.Monad.IO.Class
+import           Data.Aeson
+import           Data.Text                  (Text)
+import           GHC.Generics
+import           Network.Wai
+import           Servant
+import           Servant.JS
+import           Servant.JS.JQuery
+import           System.Random
 
 import qualified Data.Text                  as T
 import qualified Language.Javascript.JQuery as JQ

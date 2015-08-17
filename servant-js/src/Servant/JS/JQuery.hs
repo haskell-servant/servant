@@ -1,9 +1,9 @@
 module Servant.JS.JQuery where
 
-import Servant.JS.Internal
-import Control.Lens
-import Data.List
-import Data.Monoid
+import           Control.Lens
+import           Data.List
+import           Data.Monoid
+import           Servant.JS.Internal
 
 -- | Generate javascript functions that use the /jQuery/ library
 --   to make the AJAX calls. Uses 'defCommonGeneratorOptions'

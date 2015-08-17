@@ -4,7 +4,7 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Put (Put) where
 
-import Data.Typeable ( Typeable )
+import           Data.Typeable (Typeable)
 
 -- | Endpoint for PUT requests, usually used to update a ressource.
 -- The type @a@ is the type of the response body that's returned.

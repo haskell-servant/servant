@@ -7,12 +7,13 @@ module Servant.Utils.StaticFiles (
   serveDirectory,
  ) where
 
-import System.FilePath (addTrailingPathSeparator)
-import Network.Wai.Application.Static (staticApp, defaultFileServerSettings)
-import Servant.API.Raw (Raw)
-import Servant.Server (Server)
+import           Network.Wai.Application.Static (defaultFileServerSettings,
+                                                 staticApp)
+import           Servant.API.Raw                (Raw)
+import           Servant.Server                 (Server)
+import           System.FilePath                (addTrailingPathSeparator)
 #if !MIN_VERSION_wai_app_static(3,1,0)
-import Filesystem.Path.CurrentOS (decodeString)
+import           Filesystem.Path.CurrentOS      (decodeString)
 #endif
 
 -- | Serve anything under the specified directory as a 'Raw' endpoint.

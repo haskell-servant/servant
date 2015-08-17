@@ -1,18 +1,18 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 module T4 where
 
-import Data.Aeson
-import Data.Foldable (foldMap)
-import GHC.Generics
-import Lucid
-import Network.Wai
-import Servant
-import Servant.HTML.Lucid
+import           Data.Aeson
+import           Data.Foldable      (foldMap)
+import           GHC.Generics
+import           Lucid
+import           Network.Wai
+import           Servant
+import           Servant.HTML.Lucid
 
 data Person = Person
   { firstName :: String

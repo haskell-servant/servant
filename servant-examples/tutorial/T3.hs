@@ -1,15 +1,15 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies  #-}
 {-# LANGUAGE TypeOperators #-}
 module T3 where
 
-import Control.Monad.Trans.Either
-import Data.Aeson
-import Data.List
-import GHC.Generics
-import Network.Wai
-import Servant
+import           Control.Monad.Trans.Either
+import           Data.Aeson
+import           Data.List
+import           GHC.Generics
+import           Network.Wai
+import           Servant
 
 data Position = Position
   { x :: Int
@@ -26,9 +26,9 @@ instance FromJSON HelloMessage
 instance ToJSON HelloMessage
 
 data ClientInfo = ClientInfo
-  { name :: String
-  , email :: String
-  , age :: Int
+  { name          :: String
+  , email         :: String
+  , age           :: Int
   , interested_in :: [String]
   } deriving (Show, Generic)
 
@@ -36,10 +36,10 @@ instance FromJSON ClientInfo
 instance ToJSON ClientInfo
 
 data Email = Email
-  { from :: String
-  , to :: String
+  { from    :: String
+  , to      :: String
   , subject :: String
-  , body :: String
+  , body    :: String
   } deriving (Show, Generic)
 
 instance FromJSON Email

@@ -4,7 +4,7 @@ module Servant.API.IsSecure
     IsSecure(..)
   ) where
 
-import Data.Typeable
+import           Data.Typeable
 
 -- | Was this request made over an SSL connection?
 --
