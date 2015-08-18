@@ -37,6 +37,8 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.API.Authentication (AuthProtect)
+import           Servant.Client.Authentication (AuthenticateRequest(authReq))
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
 
@@ -118,6 +120,15 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
                     manager
 
     where p = unpack (toUrlPiece val)
+
+-- | Authentication
+instance (AuthenticateRequest authdata, HasClient sublayout) => HasClient (AuthProtect authdata (usr :: *) policy :> sublayout) where
+    type Client (AuthProtect authdata usr policy :> sublayout) = authdata -> Client sublayout
+
+    clientWithRoute Proxy req baseurl val =
+        clientWithRoute (Proxy :: Proxy sublayout)
+                        (authReq val req)
+                        baseurl
 
 -- | If you have a 'Delete' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
