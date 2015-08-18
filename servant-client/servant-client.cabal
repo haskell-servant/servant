@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
+    Servant.Client.Authentication
     Servant.Common.BaseUrl
     Servant.Common.Req
   build-depends:
@@ -64,6 +65,7 @@ test-suite spec
     , transformers
     , transformers-compat
     , aeson
+    , base64-bytestring
     , bytestring
     , deepseq
     , hspec == 2.*

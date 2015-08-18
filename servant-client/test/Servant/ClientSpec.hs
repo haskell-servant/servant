@@ -20,12 +20,14 @@ import           Control.Concurrent
 import           Control.Exception
 import           Control.Monad.Trans.Except
 import           Data.Aeson
+import qualified Data.ByteString.Base64     as B64
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.Char
 import           Data.Foldable              (forM_)
 import           Data.Monoid
 import           Data.Proxy
 import qualified Data.Text                  as T
+import qualified Data.Text.Encoding         as TE
 import           GHC.Generics
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
@@ -40,8 +42,12 @@ import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
+import           Servant.API.Authentication
 import           Servant.Client
+import qualified Servant.Common.Req         as SCR
+import           Servant.Client.Authentication (AuthenticateRequest(authReq))
 import           Servant.Server
+import           Servant.Server.Internal.Authentication
 
 -- * test data types
 
@@ -94,6 +100,24 @@ type Api =
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
   :<|> "deleteContentType" :> Delete '[JSON] ()
+  :<|> AuthProtect (BasicAuth "realm") Person 'Strict :> Get '[JSON] Person
+
+-- base64-encoded "servant:server"
+base64ServantColonServer :: ByteString
+base64ServantColonServer = "c2VydmFudDpzZXJ2ZXI="
+
+type AuthUser = T.Text
+
+basicAuthCheck :: BasicAuth "realm" -> IO (Maybe Person)
+basicAuthCheck (BasicAuth user pass) = if user == "servant" && pass == "server"
+                                       then return (Just $ Person "servant" 17)
+                                       else return Nothing
+
+instance AuthenticateRequest (BasicAuth realm) where
+    authReq (BasicAuth user pass) req =
+        let authText = TE.decodeUtf8 ("Basic " <> B64.encode (user <> ":" <> pass)) in
+            SCR.addHeader "Authorization" authText req
+
 api :: Proxy Api
 api = Proxy
 
@@ -120,6 +144,7 @@ server = serve api (
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return ()
+  :<|> basicAuthStrict basicAuthCheck (const . return $ alice)
  )
 
 withServer :: (BaseUrl -> IO a) -> IO a
@@ -144,6 +169,7 @@ withFailServer action = withWaiDaemon (return failServer) action
 
 spec :: IO ()
 spec = withServer $ \ baseUrl -> do
+<<<<<<< HEAD
   manager <- C.newManager C.defaultManagerSettings
   let getGet :: ExceptT ServantError IO Person
       getDeleteEmpty :: ExceptT ServantError IO ()
@@ -174,7 +200,8 @@ spec = withServer $ \ baseUrl -> do
        :<|> getRawFailure
        :<|> getMultiple
        :<|> getRespHeaders
-       :<|> getDeleteContentType)
+       :<|> getDeleteContentType
+       :<|> getPrivatePerson)
          = client api baseUrl manager
 
   hspec $ do
@@ -249,6 +276,15 @@ spec = withServer $ \ baseUrl -> do
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
+    it "Handles Authentication appropriatley" $ withServer $ \ _ -> do
+      (Arrow.left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
+
+    it "returns 401 when not properly authenticated" $ do
+      Left res <- runExceptT (getPrivatePerson (BasicAuth "xxx" "yyy"))
+      case res of
+        FailureResponse (Status 401 _) _ _ -> return ()
+        _ -> fail $ "expcted 401 response, but got " <> show res
+
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $
         property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
@@ -256,7 +292,6 @@ spec = withServer $ \ baseUrl -> do
             result <- left show <$> runExceptT (getMultiple cap num flag body)
             return $
               result === Right (cap, num, flag, body)
-
 
     context "client correctly handles error status codes" $ do
       let test :: (WrappedApi, String) -> Spec
@@ -322,6 +357,7 @@ failSpec = withFailServer $ \ baseUrl -> do
         case res of
           InvalidContentTypeHeader "fooooo" _ -> return ()
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
+
 
 data WrappedApi where
   WrappedApi :: (HasServer api, Server api ~ ExceptT ServantErr IO a,
