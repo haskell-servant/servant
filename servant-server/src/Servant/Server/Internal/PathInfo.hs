@@ -1,10 +1,10 @@
-{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Servant.Server.Internal.PathInfo where
 
-import           Data.List                   (unfoldr)
-import           Data.Text                   (Text)
-import qualified Data.Text                   as T
-import           Network.Wai                 (Request, pathInfo)
+import           Data.List   (unfoldr)
+import           Data.Text   (Text)
+import qualified Data.Text   as T
+import           Network.Wai (Request, pathInfo)
 
 -- | Like `null . pathInfo`, but works with redundant trailing slashes.
 pathIsEmpty :: Request -> Bool

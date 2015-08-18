@@ -1,24 +1,24 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators     #-}
 
 
-import Data.Monoid ((<>))
+import           Data.Monoid              ((<>))
 #if !MIN_VERSION_base(4,8,0)
-import Control.Applicative((<$>))
+import           Control.Applicative      ((<$>))
 #endif
-import Network.Wai
-import Servant
-import Network.EngineIO.Wai
-import Network.Wai.Handler.Warp (run)
+import           Network.EngineIO.Wai
+import           Network.Wai
+import           Network.Wai.Handler.Warp (run)
+import           Servant
 
 
-import qualified Control.Concurrent.STM as STM
-import qualified Network.SocketIO as SocketIO
+import qualified Control.Concurrent.STM   as STM
+import qualified Network.SocketIO         as SocketIO
 
 
-import Chat (eioServer, ServerState (..))
+import           Chat                     (ServerState (..), eioServer)
 
 
 type API = "socket.io" :> Raw

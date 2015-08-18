@@ -1,5 +1,5 @@
-{-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE CPP                    #-}
+{-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
@@ -23,6 +23,7 @@ module Servant.Docs.Internal where
 import           Control.Applicative
 #endif
 import           Control.Lens
+import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
 import           Data.Hashable
@@ -32,7 +33,6 @@ import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord                   (comparing)
 import           Data.Proxy
-import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.String.Conversions
 import           Data.Text                  (Text, pack, unpack)
 import           GHC.Exts                   (Constraint)

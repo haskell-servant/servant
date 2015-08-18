@@ -7,18 +7,18 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.JSSpec where
 
-import Data.Either (isRight)
-import Data.Proxy
-import Language.ECMAScript3.Parser (parseFromString)
-import Test.Hspec
+import           Data.Either                  (isRight)
+import           Data.Proxy
+import           Language.ECMAScript3.Parser  (parseFromString)
+import           Test.Hspec
 
-import Servant.API
-import Servant.JS
-import qualified Servant.JS.Vanilla as JS
-import qualified Servant.JS.JQuery as JQ
-import qualified Servant.JS.Angular as NG
-import qualified Servant.JS.Axios as AX
-import Servant.JSSpec.CustomHeaders
+import           Servant.API
+import           Servant.JS
+import qualified Servant.JS.Angular           as NG
+import qualified Servant.JS.Axios             as AX
+import qualified Servant.JS.JQuery            as JQ
+import qualified Servant.JS.Vanilla           as JS
+import           Servant.JSSpec.CustomHeaders
 
 type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON] Bool
           :<|> "has.extension" :> Get '[FormUrlEncoded,JSON] Bool
@@ -65,7 +65,7 @@ customOptions = defCommonGeneratorOptions
   { successCallback = "okCallback"
   , errorCallback = "errorCallback"
   }
-                 
+
 spec :: Spec
 spec = describe "Servant.JQuery" $ do
     generateJSSpec Vanilla       JS.generateVanillaJS
@@ -76,12 +76,12 @@ spec = describe "Servant.JQuery" $ do
     generateJSSpec AngularCustom (NG.generateAngularJSWith NG.defAngularOptions customOptions)
     generateJSSpec Axios        (AX.generateAxiosJS AX.defAxiosOptions)
     generateJSSpec AxiosCustom  (AX.generateAxiosJSWith (AX.defAxiosOptions { withCredentials = True }) customOptions)
-    
+
     angularSpec    Angular
     axiosSpec
     --angularSpec    AngularCustom
 
-axiosSpec :: Spec    
+axiosSpec :: Spec
 axiosSpec = describe specLabel $ do
     it "should add withCredentials when needed" $ do
         let jsText = genJS withCredOpts $ listFromAPI (Proxy :: Proxy TestAPI)
@@ -102,20 +102,20 @@ axiosSpec = describe specLabel $ do
         cookieOpts = AX.defAxiosOptions { AX.xsrfCookieName = Just "MyXSRFcookie" }
         headerOpts = AX.defAxiosOptions { AX.xsrfHeaderName = Just "MyXSRFheader" }
         genJS :: AxiosOptions -> [AjaxReq] -> String
-        genJS opts req = concat $ map (AX.generateAxiosJS opts) req
+        genJS opts req = concatMap (AX.generateAxiosJS opts) req
 
-angularSpec :: TestNames -> Spec    
+angularSpec :: TestNames -> Spec
 angularSpec test = describe specLabel $ do
     it "should implement a service globally" $ do
         let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
         output jsText
         jsText `shouldContain` (".service('" ++ testName ++ "'")
-        
+
     it "should depend on $http service globally" $ do
         let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
         output jsText
         jsText `shouldContain` ("('" ++ testName ++ "', function($http) {")
-        
+
     it "should not depend on $http service in handlers" $ do
         let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
         output jsText
@@ -126,11 +126,11 @@ angularSpec test = describe specLabel $ do
         testName = "MyService"
         ngOpts = NG.defAngularOptions { NG.serviceName = testName }
         genJS req = NG.angularService ngOpts req
-    
+
 generateJSSpec :: TestNames -> (AjaxReq -> String) -> Spec
 generateJSSpec n gen = describe specLabel $ do
     it "should generate valid javascript" $ do
-        let s = jsForAPI (Proxy :: Proxy TestAPI) (concat . map gen)
+        let s = jsForAPI (Proxy :: Proxy TestAPI) (concatMap gen)
         parseFromString s `shouldSatisfy` isRight
 
     it "should use non-empty function names" $ do
@@ -167,7 +167,7 @@ generateJSSpec n gen = describe specLabel $ do
         jsText `shouldContain`  (header n "X-WhatsForDinner" $ "\"I would like \" + headerXWhatsForDinner + \" with a cherry on top.\"")
 
     it "can generate the whole javascript code string at once with jsForAPI" $ do
-        let jsStr = jsForAPI (Proxy :: Proxy TestAPI) (concat . map gen)
+        let jsStr = jsForAPI (Proxy :: Proxy TestAPI) (concatMap gen)
         parseFromString jsStr `shouldSatisfy` isRight
     where
         specLabel = "generateJS(" ++ (show n) ++ ")"

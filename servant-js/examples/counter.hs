@@ -1,19 +1,19 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeOperators              #-}
 
-import Control.Concurrent.STM
-import Control.Monad.IO.Class
-import Data.Aeson
-import Data.Proxy
-import GHC.Generics
-import Network.Wai.Handler.Warp (run)
-import Servant
-import Servant.JS
-import qualified Servant.JS as SJS
-import qualified Servant.JS.Angular as NG
-import System.FilePath
+import           Control.Concurrent.STM
+import           Control.Monad.IO.Class
+import           Data.Aeson
+import           Data.Proxy
+import           GHC.Generics
+import           Network.Wai.Handler.Warp (run)
+import           Servant
+import           Servant.JS
+import qualified Servant.JS               as SJS
+import qualified Servant.JS.Angular       as NG
+import           System.FilePath
 
 -- * A simple Counter data type
 newtype Counter = Counter { value :: Int }
@@ -43,7 +43,7 @@ type TestApi = "counter" :> Post '[JSON] Counter -- endpoint for increasing the 
           :<|> "counter" :> Get '[JSON] Counter -- endpoint to get the current value
 
 type TestApi' = TestApi
-           :<|> Raw -- used for serving static files 
+           :<|> Raw -- used for serving static files
 
 -- this proxy only targets the proper endpoints of our API,
 -- not the static file serving bit
@@ -82,7 +82,7 @@ writeServiceJS fp =
                                     (defCommonGeneratorOptions { SJS.moduleName = "counterApp" })
                 )
                 fp
-  
+
 main :: IO ()
 main = do
   -- write the JS code to www/api.js at startup

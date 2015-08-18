@@ -99,7 +99,7 @@ setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
-    fmap (setheaders . setAccept . setrqb . setQS ) $ parseUrl url
+    setheaders . setAccept . setrqb . setQS <$> parseUrl url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"

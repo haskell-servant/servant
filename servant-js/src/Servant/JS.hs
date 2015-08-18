@@ -1,7 +1,7 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeOperators     #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Servant.JS
@@ -114,13 +114,13 @@ module Servant.JS
   , AjaxReq
   ) where
 
-import Data.Proxy
-import Servant.API
-import Servant.JS.Angular
-import Servant.JS.Axios
-import Servant.JS.Internal
-import Servant.JS.JQuery
-import Servant.JS.Vanilla
+import           Data.Proxy
+import           Servant.API
+import           Servant.JS.Angular
+import           Servant.JS.Axios
+import           Servant.JS.Internal
+import           Servant.JS.JQuery
+import           Servant.JS.Vanilla
 
 -- | Generate the data necessary to generate javascript code
 --   for all the endpoints of an API, as ':<|>'-separated values
@@ -160,6 +160,6 @@ instance (GenerateList start, GenerateList rest) => GenerateList (start :<|> res
   generateList (start :<|> rest) = (generateList start) ++ (generateList rest)
 
 -- | Generate the necessary data for JS codegen as a list, each 'AjaxReq'
---   describing one endpoint from your API type. 
+--   describing one endpoint from your API type.
 listFromAPI :: (HasJS api, GenerateList (JS api)) => Proxy api -> [AjaxReq]
 listFromAPI p = generateList (javascript p)

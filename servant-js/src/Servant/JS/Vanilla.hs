@@ -1,21 +1,21 @@
 module Servant.JS.Vanilla where
 
-import Servant.JS.Internal
-import Control.Lens
-import Data.List
-import Data.Monoid
+import           Control.Lens
+import           Data.List
+import           Data.Monoid
+import           Servant.JS.Internal
 
 -- | Generate vanilla javascript functions to make AJAX requests
 --   to your API, using /XMLHttpRequest/. Uses 'defCommonGeneratorOptions'
 --   for the 'CommonGeneratorOptions'.
 vanillaJS :: JavaScriptGenerator
-vanillaJS = concat . map generateVanillaJS
+vanillaJS = concatMap generateVanillaJS
 
 -- | Generate vanilla javascript functions to make AJAX requests
 --   to your API, using /XMLHttpRequest/. Lets you specify your
 --   own options.
 vanillaJSWith :: CommonGeneratorOptions -> JavaScriptGenerator
-vanillaJSWith opts = concat . map (generateVanillaJSWith opts)
+vanillaJSWith opts = concatMap (generateVanillaJSWith opts)
 
 -- | js codegen using XmlHttpRequest using default generation options
 generateVanillaJS :: AjaxReq -> String
@@ -56,11 +56,11 @@ generateVanillaJSWith opts req = "\n" <>
         hs = req ^. reqHeaders
 
         queryparams = req ^.. reqUrl.queryStr.traverse
-        
+
         body = if req ^. reqBody
                  then [requestBody opts]
                  else []
-                 
+
         onSuccess = successCallback opts
         onError = errorCallback opts
 
@@ -68,7 +68,7 @@ generateVanillaJSWith opts req = "\n" <>
           if req ^. reqBody
             then "JSON.stringify(body)\n"
             else "null"
-                      
+
 
         reqheaders =
           if null hs
@@ -84,7 +84,7 @@ generateVanillaJSWith opts req = "\n" <>
                        then "var "
                        else (moduleName opts) <> "."
         fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
-        
+
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"

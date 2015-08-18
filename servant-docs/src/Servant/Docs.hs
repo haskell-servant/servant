@@ -166,4 +166,4 @@ module Servant.Docs
   , single
   ) where
 
-import Servant.Docs.Internal
+import           Servant.Docs.Internal

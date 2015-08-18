@@ -1,10 +1,10 @@
 module Servant.JS.Axios where
 
-import Servant.JS.Internal
-import Control.Lens
-import Data.Char (toLower)
-import Data.List
-import Data.Monoid
+import           Control.Lens
+import           Data.Char           (toLower)
+import           Data.List
+import           Data.Monoid
+import           Servant.JS.Internal
 
 -- | Axios 'configuration' type
 -- Let you customize the generation using Axios capabilities
@@ -13,9 +13,9 @@ data AxiosOptions = AxiosOptions
     -- should be made using credentials
     withCredentials :: !Bool
     -- | the name of the cookie to use as a value for xsrf token
-  , xsrfCookieName :: !(Maybe String)
+  , xsrfCookieName  :: !(Maybe String)
     -- | the name of the header to use as a value for xsrf token
-  , xsrfHeaderName :: !(Maybe String)
+  , xsrfHeaderName  :: !(Maybe String)
   }
 
 -- | Default instance of the AxiosOptions
@@ -40,7 +40,7 @@ axiosWith aopts opts = intercalate "\n\n" . map (generateAxiosJSWith aopts opts)
 -- | js codegen using axios library using default options
 generateAxiosJS :: AxiosOptions -> AjaxReq -> String
 generateAxiosJS aopts = generateAxiosJSWith aopts defCommonGeneratorOptions
-    
+
 -- | js codegen using axios library
 generateAxiosJSWith :: AxiosOptions -> CommonGeneratorOptions -> AjaxReq -> String
 generateAxiosJSWith aopts opts req = "\n" <>
@@ -61,7 +61,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
             ++ map (view argName) queryparams
             ++ body
             ++ map (toValidFunctionName . (<>) "header" . headerArgName) hs
-        
+
         captures = map captureArg
                  . filter isCapture
                  $ req ^. reqUrl.path
@@ -85,7 +85,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
             then "    , withCredentials: true\n"
             else ""
 
-        xsrfCookie = 
+        xsrfCookie =
           case xsrfCookieName aopts of
             Just name -> "    , xsrfCookieName: '" <> name <> "'\n"
             Nothing   -> ""
@@ -111,9 +111,9 @@ generateAxiosJSWith aopts opts req = "\n" <>
                   else (moduleName opts) <> "."
                where
                   hasNoModule = null (moduleName opts)
-                
+
         fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
-        
+
         method = map toLower $ req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"

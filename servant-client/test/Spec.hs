@@ -1,4 +1,4 @@
-import Servant.ClientSpec (spec, failSpec)
+import           Servant.ClientSpec (failSpec, spec)
 
 main :: IO ()
 main = do

@@ -4,7 +4,7 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Delete (Delete) where
 
-import Data.Typeable ( Typeable )
+import           Data.Typeable (Typeable)
 
 -- | Combinator for DELETE requests.
 --

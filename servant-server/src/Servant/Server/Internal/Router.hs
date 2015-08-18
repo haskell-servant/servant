@@ -1,10 +1,10 @@
 module Servant.Server.Internal.Router where
 
-import           Data.Map                    (Map)
-import qualified Data.Map                    as M
-import           Data.Monoid                 ((<>))
-import           Data.Text                   (Text)
-import           Network.Wai                 (Request, pathInfo)
+import           Data.Map                                   (Map)
+import qualified Data.Map                                   as M
+import           Data.Monoid                                ((<>))
+import           Data.Text                                  (Text)
+import           Network.Wai                                (Request, pathInfo)
 import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.RoutingApplication
 

@@ -1,19 +1,19 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds         #-}
+{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TypeOperators     #-}
 
-import Data.Aeson
-import Data.Monoid
-import Data.Proxy
-import Data.Text
-import GHC.Generics
-import Network.Wai
-import Network.Wai.Handler.Warp
+import           Data.Aeson
+import           Data.Monoid
+import           Data.Proxy
+import           Data.Text
+import           GHC.Generics
+import           Network.Wai
+import           Network.Wai.Handler.Warp
 
-import Servant
+import           Servant
 
 -- * Example
 

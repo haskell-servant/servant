@@ -1,6 +1,6 @@
 module Main where
 
-import           Data.List (isPrefixOf)
+import           Data.List            (isPrefixOf)
 import           System.Directory
 import           System.FilePath
 import           System.FilePath.Find

@@ -28,7 +28,7 @@ import Servant.API
 -- | this structure is used by JavaScriptGenerator implementations to let you
 -- customize the output
 data CommonGeneratorOptions = CommonGeneratorOptions
-  { 
+  {
     functionNameBuilder :: FunctionName -> String  -- ^ function generating function names
   , requestBody :: String                -- ^ name used when a user want to send the request body (to let you redefine it)
   , successCallback :: String            -- ^ name of the callback parameter when the request was successful
@@ -63,12 +63,12 @@ defCommonGeneratorOptions = CommonGeneratorOptions
 -- | Function name builder that simply concat each part together
 concatCase :: FunctionName -> String
 concatCase = concat
-    
+
 -- | Function name builder using the snake_case convention.
 -- each part is separated by a single underscore character.
 snakeCase :: FunctionName -> String
 snakeCase = intercalate "_"
-    
+
 -- | Function name builder using the CamelCase convention.
 -- each part begins with an upper case character.
 camelCase :: FunctionName -> String
@@ -78,7 +78,7 @@ camelCase (p:ps) = concat $ p : camelCase' ps
          camelCase' (r:rs) = capitalize r : camelCase' rs
          capitalize [] = []
          capitalize (x:xs) = toUpper x : xs
-    
+
 type Arg = String
 
 -- A 'JavascriptGenerator' just takes the data found in the API type
@@ -141,8 +141,8 @@ toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
     setFirstChar c = if firstChar c
         then c
         else '_'
-    firstChar c = (prefixOK c) || (or . map (Set.member c) $ firstLetterOK)
-    remainder c = (prefixOK c) || (or . map (Set.member c) $ remainderOK)
+    firstChar c = prefixOK c || any (Set.member c) firstLetterOK
+    remainder c = prefixOK c || any (Set.member c) remainderOK
     -- Valid prefixes
     prefixOK c = c `elem` ['$','_']
     -- Unicode character sets

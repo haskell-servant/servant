@@ -1,10 +1,10 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 -- |
 -- Module     : Servant.Mock
 -- Copyright  : 2015 Alp Mestanogullari
@@ -51,18 +51,18 @@
 module Servant.Mock ( HasMock(..) ) where
 
 #if !MIN_VERSION_base(4,8,0)
-import Control.Applicative
+import           Control.Applicative
 #endif
-import Control.Monad.IO.Class
-import Data.ByteString.Lazy.Char8 (pack)
-import Data.Proxy
-import GHC.TypeLits
-import Network.HTTP.Types.Status
-import Network.Wai
-import Servant
-import Servant.API.ContentTypes
-import Test.QuickCheck.Arbitrary (Arbitrary(..), vector)
-import Test.QuickCheck.Gen (Gen, generate)
+import           Control.Monad.IO.Class
+import           Data.ByteString.Lazy.Char8 (pack)
+import           Data.Proxy
+import           GHC.TypeLits
+import           Network.HTTP.Types.Status
+import           Network.Wai
+import           Servant
+import           Servant.API.ContentTypes
+import           Test.QuickCheck.Arbitrary  (Arbitrary (..), vector)
+import           Test.QuickCheck.Gen        (Gen, generate)
 
 -- | 'HasMock' defines an interpretation of API types
 --   than turns them into random-response-generating
@@ -169,7 +169,7 @@ instance HasMock Raw where
     bdy <- genBody
     respond $ responseLBS status200 [] bdy
 
-    where genBody = fmap pack $ generate (vector 100 :: Gen [Char])
+    where genBody = pack <$> generate (vector 100 :: Gen [Char])
 
 mockArbitrary :: (MonadIO m, Arbitrary a) => m a
 mockArbitrary = liftIO (generate arbitrary)

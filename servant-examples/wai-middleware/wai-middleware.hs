@@ -1,13 +1,13 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
-import Data.Aeson
-import Data.Text
-import GHC.Generics
-import Network.Wai
-import Network.Wai.Handler.Warp
-import Network.Wai.Middleware.RequestLogger
-import Servant
+import           Data.Aeson
+import           Data.Text
+import           GHC.Generics
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           Network.Wai.Middleware.RequestLogger
+import           Servant
 
 data Product = Product
   { name              :: Text

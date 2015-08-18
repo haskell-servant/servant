@@ -1,14 +1,14 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeFamilies  #-}
 {-# LANGUAGE TypeOperators #-}
 module T8 where
 
-import Control.Monad.Trans.Either
-import Data.Aeson
-import Servant
-import Servant.Client
+import           Control.Monad.Trans.Either
+import           Data.Aeson
+import           Servant
+import           Servant.Client
 
-import T3
+import           T3
 
 position :: Int -- ^ value for "x"
          -> Int -- ^ value for "y"

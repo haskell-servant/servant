@@ -2,7 +2,7 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Raw where
 
-import Data.Typeable (Typeable)
+import           Data.Typeable (Typeable)
 -- | Endpoint for plugging in your own Wai 'Application's.
 --
 -- The given 'Application' will get the request as received by the server, potentially with

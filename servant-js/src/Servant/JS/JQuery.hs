@@ -1,20 +1,20 @@
 module Servant.JS.JQuery where
 
-import Servant.JS.Internal
-import Control.Lens
-import Data.List
-import Data.Monoid
+import           Control.Lens
+import           Data.List
+import           Data.Monoid
+import           Servant.JS.Internal
 
 -- | Generate javascript functions that use the /jQuery/ library
 --   to make the AJAX calls. Uses 'defCommonGeneratorOptions'
 --   for the generator options.
 jquery :: JavaScriptGenerator
-jquery = concat . map generateJQueryJS
+jquery = concatMap generateJQueryJS
 
 -- | Generate javascript functions that use the /jQuery/ library
 --   to make the AJAX calls. Lets you specify your own 'CommonGeneratorOptions'.
 jqueryWith :: CommonGeneratorOptions -> JavaScriptGenerator
-jqueryWith opts = concat . map (generateJQueryJSWith opts)
+jqueryWith opts = concatMap (generateJQueryJSWith opts)
 
 -- | js codegen using JQuery using default options
 generateJQueryJS :: AjaxReq -> String
@@ -53,7 +53,7 @@ generateJQueryJSWith opts req = "\n" <>
         body = if req ^. reqBody
                  then [requestBody opts]
                  else []
-        
+
         onSuccess = successCallback opts
         onError = errorCallback opts
 
@@ -77,7 +77,7 @@ generateJQueryJSWith opts req = "\n" <>
                        then "var "
                        else (moduleName opts) <> "."
         fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
-        
+
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
