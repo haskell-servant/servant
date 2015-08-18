@@ -30,7 +30,6 @@ import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
 import qualified Data.ByteString                            as B
-import           Data.ByteString.Base64      (decodeLenient)
 import qualified Data.ByteString.Lazy                       as BL
 import qualified Data.Map                                   as M
 import           Data.Maybe                  (mapMaybe, fromMaybe)

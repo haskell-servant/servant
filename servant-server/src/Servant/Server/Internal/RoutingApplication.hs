@@ -17,7 +17,7 @@ import           Data.IORef                         (newIORef, readIORef,
                                                      writeIORef)
 import           Data.Maybe                         (fromMaybe)
 import           Data.String                        (fromString)
-import           Network.HTTP.Types                 hiding (Header, ResponseHeaders)
+import           Network.HTTP.Types                 hiding (ResponseHeaders)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived,
                                                      requestBody,
