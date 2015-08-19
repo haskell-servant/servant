@@ -129,6 +129,8 @@ allowedMethodHead method request = method == methodGet && requestMethod request 
 allowedMethod :: Method -> Request -> Bool
 allowedMethod method request = allowedMethodHead method request || requestMethod request == method
 
+type ServantSuccess a = (Status, a)
+
 processMethodRouter :: forall a. ConvertibleStrings a B.ByteString
                     => Maybe (a, BL.ByteString) -> Status -> Method
                     -> Maybe [(HeaderName, B.ByteString)]
@@ -141,7 +143,9 @@ processMethodRouter handleA status method headers request = case handleA of
       hdrs = (hContentType, cs contentT) : (fromMaybe [] headers)
 
 methodRouter :: (AllCTRender ctypes a)
-             => Method -> Proxy ctypes -> Status
+             => Method
+             -> Proxy ctypes
+             -> Status
              -> IO (RouteResult (EitherT ServantErr IO a))
              -> Router
 methodRouter method proxy status action = LeafRouter route'
@@ -149,6 +153,23 @@ methodRouter method proxy status action = LeafRouter route'
     route' request respond
       | pathIsEmpty request && allowedMethod method request = do
           runAction action respond $ \ output -> do
+            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+                handleA = handleAcceptH proxy (AcceptHeader accH) output
+            processMethodRouter handleA status method Nothing request
+      | pathIsEmpty request && requestMethod request /= method =
+          respond $ failWith WrongMethod
+      | otherwise = respond $ failWith NotFound
+
+methodRouterStatusResult :: (AllCTRender ctypes a)
+                         => Method
+                         -> Proxy ctypes
+                         -> IO (RouteResult (EitherT ServantErr IO (ServantSuccess a)))
+                         -> Router
+methodRouterStatusResult method proxy action = LeafRouter route'
+  where
+    route' request respond
+      | pathIsEmpty request && allowedMethod method request = do
+          runAction action respond $ \(status, output) -> do
             let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
                 handleA = handleAcceptH proxy (AcceptHeader accH) output
             processMethodRouter handleA status method Nothing request
@@ -245,6 +266,21 @@ instance
     where 
       method = B8.pack $ symbolVal (Proxy :: Proxy method)
       status = toEnum $ fromInteger $ natVal (Proxy :: Proxy (DefaultStatusCode method))
+
+
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPING #-}
+#endif 
+        ( AllCTRender ctypes a
+        , KnownSymbol method
+        ) => HasServer (HttpMethod method ctypes (ServantSuccess a)) where
+
+  type ServerT (HttpMethod method ctypes (ServantSuccess a)) m = m (ServantSuccess a)
+
+  route Proxy = methodRouterStatusResult method (Proxy :: Proxy ctypes)
+    where 
+      method = B8.pack $ symbolVal (Proxy :: Proxy method)
 
 instance
 #if MIN_VERSION_base(4,8,0)
