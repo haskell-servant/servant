@@ -1,37 +1,40 @@
 {-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.Common.Req where
 
 #if !MIN_VERSION_base(4,8,0)
-import Control.Applicative
+import           Control.Applicative
 #endif
-import Control.Exception
-import Control.Monad
-import Control.Monad.Catch (MonadThrow)
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Either
-import Data.ByteString.Lazy hiding (pack, filter, map, null, elem)
-import Data.IORef
-import Data.String
-import Data.String.Conversions
-import Data.Proxy
-import Data.Text (Text)
-import Data.Text.Encoding
-import Data.Typeable
-import Network.HTTP.Client hiding (Proxy)
-import Network.HTTP.Client.TLS
-import Network.HTTP.Media
-import Network.HTTP.Types
-import qualified Network.HTTP.Types.Header   as HTTP
-import Network.URI
-import Servant.API.ContentTypes
-import Servant.Common.BaseUrl
-import Servant.Common.Text
-import System.IO.Unsafe
+import           Control.Exception
+import           Control.Monad
+import           Control.Monad.Catch        (MonadThrow)
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Either
+import           Data.ByteString.Lazy       hiding (elem, filter, map, null,
+                                             pack)
+import           Data.IORef
+import           Data.Proxy
+import           Data.String
+import           Data.String.Conversions
+import           Data.Text                  (Text)
+import           Data.Text.Encoding
+import           Data.Typeable
+import           GHC.Generics
+import           Network.HTTP.Client        hiding (Proxy)
+import           Network.HTTP.Client.TLS
+import           Network.HTTP.Media
+import           Network.HTTP.Types
+import qualified Network.HTTP.Types.Header  as HTTP
+import           Network.URI
+import           Servant.API.ContentTypes
+import           Servant.Common.BaseUrl
+import           Servant.Common.Text
+import           System.IO.Unsafe
 
-import qualified Network.HTTP.Client as Client
+import qualified Network.HTTP.Client        as Client
 
 data ServantError
   = FailureResponse
@@ -55,7 +58,7 @@ data ServantError
   | ConnectionError
     { connectionError           :: SomeException
     }
-  deriving (Show, Typeable)
+  deriving (Eq, Show, Typeable, Generic)
 
 instance Exception ServantError
 
@@ -65,7 +68,7 @@ data Req = Req
   , reqBody   :: Maybe (ByteString, MediaType)
   , reqAccept :: [MediaType]
   , headers   :: [(String, Text)]
-  }
+  } deriving (Eq, Show, Typeable, Generic)
 
 defReq :: Req
 defReq = Req "" [] Nothing [] []
