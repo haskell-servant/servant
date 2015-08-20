@@ -33,6 +33,7 @@ library
       base >=4.7 && <5
     , aeson
     , attoparsec
+    , base64-bytestring
     , bytestring
     , exceptions
     , http-client
@@ -65,7 +66,6 @@ test-suite spec
     , transformers
     , transformers-compat
     , aeson
-    , base64-bytestring
     , bytestring
     , deepseq
     , hspec == 2.*

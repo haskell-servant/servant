@@ -20,14 +20,12 @@ import           Control.Concurrent
 import           Control.Exception
 import           Control.Monad.Trans.Except
 import           Data.Aeson
-import qualified Data.ByteString.Base64     as B64
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.Char
 import           Data.Foldable              (forM_)
 import           Data.Monoid
 import           Data.Proxy
 import qualified Data.Text                  as T
-import qualified Data.Text.Encoding         as TE
 import           GHC.Generics
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
@@ -44,8 +42,7 @@ import           Test.QuickCheck
 import           Servant.API
 import           Servant.API.Authentication
 import           Servant.Client
-import qualified Servant.Common.Req         as SCR
-import           Servant.Client.Authentication (AuthenticateRequest(authReq))
+import           Servant.Client.Authentication()
 import           Servant.Server
 import           Servant.Server.Internal.Authentication
 
@@ -112,11 +109,6 @@ basicAuthCheck :: BasicAuth "realm" -> IO (Maybe Person)
 basicAuthCheck (BasicAuth user pass) = if user == "servant" && pass == "server"
                                        then return (Just $ Person "servant" 17)
                                        else return Nothing
-
-instance AuthenticateRequest (BasicAuth realm) where
-    authReq (BasicAuth user pass) req =
-        let authText = TE.decodeUtf8 ("Basic " <> B64.encode (user <> ":" <> pass)) in
-            SCR.addHeader "Authorization" authText req
 
 api :: Proxy Api
 api = Proxy
