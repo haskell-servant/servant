@@ -20,12 +20,12 @@ import Data.Proxy
 import Data.Text (Text)
 import Data.Text.Encoding
 import Data.Typeable
-import Network.HTTP.Client hiding (Proxy)
+import Network.HTTP.Client hiding (Proxy, path)
 import Network.HTTP.Client.TLS
 import Network.HTTP.Media
 import Network.HTTP.Types
 import qualified Network.HTTP.Types.Header   as HTTP
-import Network.URI
+import Network.URI hiding (path)
 import Servant.API.ContentTypes
 import Servant.Common.BaseUrl
 import Servant.Common.Text
@@ -98,7 +98,7 @@ setRQBody :: ByteString -> MediaType -> Req -> Req
 setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
-reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
+reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
     setheaders . setAccept . setrqb . setQS <$> parseUrl url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
@@ -109,7 +109,7 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort) =
                                          , uriRegName = reqHost
                                          , uriPort = ":" ++ show reqPort
                                          }
-                             , uriPath = reqPath req
+                             , uriPath = path ++ reqPath req
                              }
 
         setrqb r = case reqBody req of

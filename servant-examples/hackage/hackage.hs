@@ -57,7 +57,7 @@ hackageAPI = Proxy
 getUsers :: EitherT ServantError IO [UserSummary]
 getUser :: Username -> EitherT ServantError IO UserDetailed
 getPackages :: EitherT ServantError IO [Package]
-getUsers :<|> getUser :<|> getPackages = client hackageAPI $ BaseUrl Http "hackage.haskell.org" 80
+getUsers :<|> getUser :<|> getPackages = client hackageAPI $ BaseUrl Http "hackage.haskell.org" 80 ""
 
 main :: IO ()
 main = print =<< uselessNumbers

@@ -23,7 +23,7 @@ marketing :: ClientInfo -- ^ value for the request body
 position :<|> hello :<|> marketing = client api baseUrl
 
 baseUrl :: BaseUrl
-baseUrl = BaseUrl Http "localhost" 8081
+baseUrl = BaseUrl Http "localhost" 8081 ""
 
 queries :: EitherT ServantError IO (Position, HelloMessage, Email)
 queries = do
