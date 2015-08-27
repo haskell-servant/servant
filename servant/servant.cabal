@@ -6,9 +6,6 @@ description:
   .
   You can learn about the basics in the <http://haskell-servant.github.io/tutorial tutorial>.
   .
-  <https://github.com/haskell-servant/servant-server/blob/master/example/greet.hs Here>'s a runnable example, with comments, that defines a dummy API and
-  implements a webserver that serves this API, using the <http://hackage.haskell.org/package/servant-server servant-server> package.
-  .
   <https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md CHANGELOG>
 homepage:            http://haskell-servant.github.io/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
