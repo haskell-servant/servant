@@ -2,6 +2,7 @@ HEAD
 ----
 
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
+* Added support for `path` on `BaseUrl`.
 
 0.4.1
 -----

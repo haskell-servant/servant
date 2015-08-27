@@ -287,7 +287,7 @@ failSpec = withFailServer $ \ baseUrl -> do
        :<|> _ )
          = client api baseUrl
       getGetWrongHost :: EitherT ServantError IO Person
-      (getGetWrongHost :<|> _) = client api (BaseUrl Http "127.0.0.1" 19872)
+      (getGetWrongHost :<|> _) = client api (BaseUrl Http "127.0.0.1" 19872 "")
 
   hspec $ do
     context "client returns errors appropriately" $ do
@@ -347,7 +347,7 @@ withWaiDaemon mkApplication action = do
       runSettingsSocket settings socket application)
             `finally` notifyKilled ()
     krakenPort <- waitForStart
-    let baseUrl = (BaseUrl Http "localhost" 80){baseUrlPort = krakenPort}
+    let baseUrl = (BaseUrl Http "localhost" 80 ""){baseUrlPort = krakenPort}
     return (thread, waitForKilled, baseUrl)
   free (thread, waitForKilled, _) = do
     killThread thread
