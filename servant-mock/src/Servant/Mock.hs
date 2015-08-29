@@ -112,18 +112,6 @@ instance (KnownSymbol s, FromText a, HasMock rest) => HasMock (Capture s a :> re
 instance (AllCTUnrender ctypes a, HasMock rest) => HasMock (ReqBody ctypes a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
-instance HasMock rest => HasMock (RemoteHost :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
-
-instance HasMock rest => HasMock (IsSecure :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
-
-instance HasMock rest => HasMock (Vault :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
-
-instance HasMock rest => HasMock (HttpVersion :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
-
 instance (KnownSymbol s, FromText a, HasMock rest)
       => HasMock (QueryParam s a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
