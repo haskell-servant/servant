@@ -4,6 +4,7 @@ flags:
 packages:
 - servant/
 - servant-blaze/
+- servant-cassava/
 - servant-client/
 - servant-docs/
 - servant-examples/
