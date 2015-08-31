@@ -35,7 +35,7 @@ test_each () {
     for s in ${SOURCES[@]} ; do
         echo "Testing $s..."
         pushd "$s"
-        $CABAL configure --enable-tests --ghc-options="$GHC_FLAGS"
+        $CABAL configure --enable-tests --enable-library-coverage --ghc-options="$GHC_FLAGS"
         $CABAL build
         $CABAL test
         popd

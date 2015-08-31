@@ -18,6 +18,10 @@ install:
 script:
   - ./scripts/test-all.sh
 
+after_script:
+  - cabal install hpc-coveralls
+  - hpc-coveralls servant-server/test
+
 notifications:
   irc:
     channels:
