@@ -9,7 +9,6 @@ before_install:
  - travis_retry sudo apt-get update
  - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER
  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
- - export PATH=$HOME/.cabal/bin:$PATH
  - travis_retry cabal update
 
 install:
@@ -21,7 +20,7 @@ script:
 
 after_script:
   - cabal install hpc-coveralls
-  - hpc-coveralls servant-server/test
+  - .cabal-sandbox/bin/hpc-coveralls servant-server/test
 
 notifications:
   irc:
