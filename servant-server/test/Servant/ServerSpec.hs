@@ -30,8 +30,8 @@ import           Network.Wai                (Application, Request, pathInfo,
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody)
 import           Test.Hspec                 (Spec, describe, it, shouldBe)
-import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
-                                             matchStatus, post, request,
+import           Test.Hspec.Wai             (ResponseMatcher, get, liftIO, matchHeaders,
+                                             matchStatus, post, put, request,
                                              shouldRespondWith, with, (<:>))
 import           Servant.API                ((:<|>) (..), (:>),
                                              addHeader, Capture,
@@ -94,6 +94,9 @@ spec = do
   errorsSpec
   responseHeadersSpec
   miscReqCombinatorsSpec
+  errorRoutingUser404Spec
+  errorRoutingBodyParseErrorSpec
+  errorRouting405
 
 
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
@@ -728,3 +731,78 @@ miscReqCombinatorsSpec = with (return $ serve miscApi miscServ) $
       go "/host" "\"0.0.0.0:0\""
 
   where go path res = Test.Hspec.Wai.get path `shouldRespondWith` res
+
+
+type ErrorRoutingUser404
+  =    "un"   :> Get '[JSON] Int
+  :<|> "deux" :> Get '[JSON] Int
+  :<|>           Get '[JSON] Int
+
+errorRoutingUser404Spec :: Spec
+errorRoutingUser404Spec =
+  describe "Handlers can trigger re-routing by responding with error status 404" $ do
+    describe "happy handlers" $ do
+      let hs = return 1 :<|> return 2 :<|> return 3
+      go hs "/un"   "1"
+      go hs "/deux" "2"
+      go hs "/"     "3"
+      go hs "/n/a"  404
+    describe "re-route from /un handler" $ do
+      let hs = left err404 :<|> return 2 :<|> return 3
+      go hs "/un"   "2"
+      go hs "/deux" "2"
+      go hs "/"     "3"
+      go hs "/n/a"  404
+  where
+    go :: Server ErrorRoutingUser404 -> String -> ResponseMatcher -> Spec
+    go hs path resp = with (return $ serve (Proxy :: Proxy ErrorRoutingUser404) hs) $
+      it path $ Test.Hspec.Wai.get (cs path) `shouldRespondWith` resp
+
+
+type ErrorRoutingBodyParseError
+  =    "sum" :> ReqBody '[JSON] [Int] :> Post '[JSON] Int
+  :<|> "const"                        :> Post '[JSON] Int
+
+errorRoutingBodyParseErrorSpec :: Spec
+errorRoutingBodyParseErrorSpec =
+  describe "Broken request body triggers error response (not re-routing)" $ do
+    let hs = (return . sum) :<|> return 2
+    describe "happy handlers" $ do
+      go hs "/sum"   "[1, 2]" "3"
+      go hs "/const" ""       ("2" { matchStatus = 201 })
+    describe "parse error" $ do
+      go hs "/sum"   "@@@"    400
+      go hs "/const" ""       ("2" { matchStatus = 201 })
+  where
+    go :: Server ErrorRoutingBodyParseError -> String -> String -> ResponseMatcher -> Spec
+    go hs path body resp = with (return $ serve (Proxy :: Proxy ErrorRoutingBodyParseError) hs) $
+      it (show (path, body)) $
+        Test.Hspec.Wai.post (cs path) (cs body) `shouldRespondWith` resp
+
+
+type ErrorRouting405
+  =    "content" :> Get '[JSON] Int
+  :<|> "content" :> Post '[JSON] Int
+  :<|> ""        :> Get '[JSON] Int
+
+errorRouting405 :: Spec
+errorRouting405 =
+  describe "Different methods on same end-point" $ do
+    let hs = return 1 :<|> return 2 :<|> return 3
+    go hs "get"  "/content" "1"
+    go hs "post" "/content" ("2" { matchStatus = 201 })
+    go hs "put"  "/content" 405
+    go hs "get"  "/"        "3"
+    go hs "put"  "/"        405
+    go hs "get"  "/n/a"     404
+    go hs "put"  "/n/a"     404
+  where
+    go :: Server ErrorRouting405 -> String -> String -> ResponseMatcher -> Spec
+    go hs method path resp = with (return $ serve (Proxy :: Proxy ErrorRouting405) hs) $ do
+      let runReq = case method of
+            "get"  -> Test.Hspec.Wai.get  (cs path)
+            "post" -> Test.Hspec.Wai.post (cs path) ""
+            "put"  -> Test.Hspec.Wai.put  (cs path) ""
+            _      -> error $ "errorRouting405: unknown method: " ++ show method
+          msg = show (method, path)
+      it msg $ runReq `shouldRespondWith` resp
