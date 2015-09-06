@@ -1,30 +1,27 @@
-language: haskell
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libgmp-dev
 
 env:
-  - CABALVER=1.18 GHCVER=7.8.4
-  - CABALVER=1.22 GHCVER=7.10.1
-
-before_install:
- - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
- - travis_retry sudo apt-get update
- - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER
- - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
- - travis_retry cabal update
+  - STACK_YAML=stack-ghc-7.8.4.yaml
+  - STACK_YAML=stack.yaml
 
 install:
- - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
- - cabal --version
+  # stack
+  - mkdir -p ~/.local/bin
+  - travis_retry curl -L https://github.com/commercialhaskell/stack/releases/download/v0.1.4.0/stack-0.1.4.0-x86_64-linux.tar.gz | tar -xvzf -
+  - mv stack ~/.local/bin
+  - export PATH=~/.local/bin:$PATH
+  - stack --version
 
 script:
-  - ./scripts/test-all.sh
+  - stack setup
+  - stack build
+  - stack test
 
-notifications:
-  irc:
-    channels:
-      - "irc.freenode.org#servant"
-    template:
-      - "%{repository}#%{build_number} - %{commit} on %{branch} by %{author}: %{message}"
-      - "Build details: %{build_url} - Change view: %{compare_url}"
-    skip_join: true
-    on_success: change
-    on_failure: always
+cache:
+  directories:
+    - $HOME/.stack

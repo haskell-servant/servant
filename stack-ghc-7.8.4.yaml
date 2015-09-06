@@ -1,0 +1,22 @@
+flags: {}
+packages:
+- servant-examples/
+- servant-docs/
+- servant-blaze/
+- servant-client/
+- servant-lucid/
+- servant-mock/
+- servant-js/
+- servant/
+- servant-server/
+extra-deps:
+- hspec-2.2.0
+- hspec-core-2.2.0
+- hspec-discover-2.2.0
+- hspec-expectations-0.7.2
+- doctest-0.10.1
+- engine-io-1.2.10
+- engine-io-wai-1.0.3
+- socket-io-1.3.3
+- stm-delay-0.1.1.1
+resolver: lts-2.22
