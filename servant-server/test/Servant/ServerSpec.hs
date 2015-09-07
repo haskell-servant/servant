@@ -762,14 +762,16 @@ errorRoutingUser404Spec =
 type ErrorRoutingBodyParseError
   =    "sum" :> ReqBody '[JSON] [Int] :> Post '[JSON] Int
   :<|> "const"                        :> Post '[JSON] Int
+  :<|> Raw
 
 errorRoutingBodyParseErrorSpec :: Spec
 errorRoutingBodyParseErrorSpec =
   describe "Broken request body triggers error response (not re-routing)" $ do
-    let hs = (return . sum) :<|> return 2
+    let hs = (return . sum) :<|> return 2 :<|> (\_ cont -> cont (responseLBS ok200 [] "Raw"))
     describe "happy handlers" $ do
       go hs "/sum"   "[1, 2]" "3"
       go hs "/const" ""       ("2" { matchStatus = 201 })
+      go hs "/n/a"   ""       "Raw"
     describe "parse error" $ do
       go hs "/sum"   "@@@"    400
       go hs "/const" ""       ("2" { matchStatus = 201 })
