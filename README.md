@@ -53,7 +53,7 @@ Or `nix`:
 ./scripts/update-nix-files.sh   # Get up-to-date shell.nix files
 ```
 
-Though we aren't sticklers for style, the `.stylish-haskel.yaml` and `HLint.hs`
+Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
 files in the repository provide a good baseline for consistency.
 
 Please include a description of the changes in your PR in the `CHANGELOG.md` of
