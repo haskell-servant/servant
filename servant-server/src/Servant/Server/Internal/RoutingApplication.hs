@@ -1,7 +1,9 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE ViewPatterns               #-}
 module Servant.Server.Internal.RoutingApplication where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -10,6 +12,7 @@ import           Data.Monoid                        (Monoid, mappend, mempty)
 #endif
 import           Control.Monad.Trans.Either         (EitherT, runEitherT)
 import qualified Data.ByteString                    as B
+import qualified Data.ByteString.Char8              as BS
 import qualified Data.ByteString.Lazy               as BL
 import           Data.IORef                         (newIORef, readIORef,
                                                      writeIORef)
@@ -41,6 +44,7 @@ newtype RouteResult a =
 instance Monoid (RouteResult a) where
   mempty = RR $ Left mempty
 
+  unrecoverable@(RR (Left (HttpError (statusCode -> s) _))) `mappend` RR (Right _) | s /= 404 = unrecoverable
   RR (Left x)  `mappend` RR (Left y)  = RR $ Left (x <> y)
   RR (Left _)  `mappend` RR (Right y) = RR $ Right y
   r            `mappend` _            = r
@@ -119,7 +123,7 @@ runAction action respond k = do
       e <- runEitherT a
       respond $ case e of
         Right x  -> k x
-        Left err -> succeedWith $ responseServantErr err
+        Left err -> failWithServantError err
     go (RR (Left err)) = respond $ failWith err
 
 feedTo :: IO (RouteResult (a -> b)) -> a -> IO (RouteResult b)
@@ -136,10 +140,15 @@ extractR (RR (Left err))         = RR (Left err)
 failWith :: RouteMismatch -> RouteResult a
 failWith = RR . Left
 
+-- FIXME: add headers field to HttpError constructor.
+failWithServantError :: ServantErr -> RouteResult a
+failWithServantError ServantErr{..} = failWith $ HttpError status {- errHeaders -} (Just errBody)
+  where
+    status = mkStatus errHTTPCode (BS.pack errReasonPhrase)
+
 succeedWith :: a -> RouteResult a
 succeedWith = RR . Right
 
 isMismatch :: RouteResult a -> Bool
 isMismatch (RR (Left _)) = True
 isMismatch _             = False
-
