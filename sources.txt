@@ -1,4 +1,5 @@
 servant
+servant-cassava
 servant-client
 servant-docs
 servant-js
