@@ -4,6 +4,7 @@ let
   haskellPackages = pkgs.haskellPackages.override {
     overrides = self: super: {
       servant = pkgs.haskell.lib.dontCheck (pkgs.haskell.lib.appendConfigureFlag (self.callPackage ../servant {}) "--ghc-options=-Werror");
+      servant-cassava = pkgs.haskell.lib.dontCheck (pkgs.haskell.lib.appendConfigureFlag (self.callPackage ../servant-cassava {}) "--ghc-options=-Werror");
       servant-client = pkgs.haskell.lib.dontCheck (pkgs.haskell.lib.appendConfigureFlag (self.callPackage ../servant-client {}) "--ghc-options=-Werror");
       servant-js = pkgs.haskell.lib.dontCheck (pkgs.haskell.lib.appendConfigureFlag (self.callPackage ../servant-js {}) "--ghc-options=-Werror");
       servant-server = pkgs.haskell.lib.dontCheck (pkgs.haskell.lib.appendConfigureFlag (self.callPackage ../servant-server {}) "--ghc-options=-Werror");
