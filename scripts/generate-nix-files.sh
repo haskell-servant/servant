@@ -1,9 +1,9 @@
 #!/bin/bash -
 #===============================================================================
 #
-#          FILE: update-nix-files.sh
+#          FILE: generate-nix-files.sh
 #
-#         USAGE: ./update-nix-files.sh
+#         USAGE: ./generate-nix-files.sh
 #
 #   DESCRIPTION: Update nix files at top-level and add all packages
 #

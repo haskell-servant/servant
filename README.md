@@ -50,7 +50,7 @@ stack test     # Run all the tests
 
 Or `nix`:
 ```shell
-./scripts/update-nix-files.sh   # Get up-to-date shell.nix files
+./scripts/generate-nix-files.sh   # Get up-to-date shell.nix files
 ```
 
 Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
