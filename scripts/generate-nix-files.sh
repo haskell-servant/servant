@@ -1,9 +1,9 @@
 #!/bin/bash -
 #===============================================================================
 #
-#          FILE: update-nix-files.sh
+#          FILE: generate-nix-files.sh
 #
-#         USAGE: ./update-nix-files.sh
+#         USAGE: ./generate-nix-files.sh
 #
 #   DESCRIPTION: Update nix files at top-level and add all packages
 #
@@ -38,8 +38,10 @@ write-package-shell-nix () {
 
 update-nix-files () {
     for s in ${SOURCES[@]} ; do
-        cd "$s" && cabal2nix . > default.nix
+        pushd "$s" > /dev/null
+        cabal2nix . > default.nix
         write-package-shell-nix $s
+        popd > /dev/null
     done
 }
 

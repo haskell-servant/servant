@@ -23,3 +23,5 @@ cabal.config
 *.hp
 Setup
 .stack-work
+shell.nix
+default.nix
