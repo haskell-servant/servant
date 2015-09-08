@@ -38,8 +38,10 @@ write-package-shell-nix () {
 
 update-nix-files () {
     for s in ${SOURCES[@]} ; do
-        cd "$s" && cabal2nix . > default.nix
+        pushd "$s" > /dev/null
+        cabal2nix . > default.nix
         write-package-shell-nix $s
+        popd > /dev/null
     done
 }
 
