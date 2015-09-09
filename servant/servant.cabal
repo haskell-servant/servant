@@ -33,6 +33,7 @@ library
     Servant.API.Header
     Servant.API.HttpVersion
     Servant.API.IsSecure
+    Servant.API.Methods
     Servant.API.Patch
     Servant.API.Post
     Servant.API.Put
