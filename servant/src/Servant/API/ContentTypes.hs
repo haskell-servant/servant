@@ -80,6 +80,7 @@ import qualified Data.ByteString                  as BS
 import           Data.ByteString.Lazy             (ByteString, fromStrict,
                                                    toStrict)
 import qualified Data.ByteString.Lazy             as B
+import qualified Data.ByteString.Lazy.Char8       as BC
 import           Data.Monoid
 import           Data.String.Conversions          (cs)
 import qualified Data.Text                        as TextS
@@ -279,6 +280,10 @@ instance MimeRender PlainText TextL.Text where
 instance MimeRender PlainText TextS.Text where
     mimeRender _ = fromStrict . TextS.encodeUtf8
 
+-- | @BC.pack@
+instance MimeRender PlainText String where
+    mimeRender _ = BC.pack
+
 -- | @id@
 instance MimeRender OctetStream ByteString where
     mimeRender _ = id
@@ -327,6 +332,10 @@ instance MimeUnrender PlainText TextL.Text where
 -- | @left show . TextS.decodeUtf8' . toStrict@
 instance MimeUnrender PlainText TextS.Text where
     mimeUnrender _ = left show . TextS.decodeUtf8' . toStrict
+
+-- | @Right . BC.unpack@
+instance MimeUnrender PlainText String where
+    mimeUnrender _ = Right . BC.unpack
 
 -- | @Right . id@
 instance MimeUnrender OctetStream ByteString where
