@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.API.ContentTypesSpec where
 
@@ -33,6 +34,20 @@ import           Servant.API.ContentTypes
 
 spec :: Spec
 spec = describe "Servant.API.ContentTypes" $ do
+
+    describe "handleAcceptH" $ do
+        let p = Proxy :: Proxy '[PlainText]
+
+        it "matches any charset if none were provided" $ do
+            let without = handleAcceptH p (AcceptHeader "text/plain")
+                with    = handleAcceptH p (AcceptHeader "text/plain;charset=utf-8")
+                wisdom  = "ubi sub ubi" :: String
+            without wisdom `shouldBe` with wisdom
+
+        it "does not match non utf-8 charsets" $  do
+            let badCharset = handleAcceptH p (AcceptHeader "text/plain;charset=whoknows")
+                s          = "cheese" :: String
+            badCharset s `shouldBe` Nothing
 
     describe "The JSON Content-Type type" $ do
         let p = Proxy :: Proxy JSON

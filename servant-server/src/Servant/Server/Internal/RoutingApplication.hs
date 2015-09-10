@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -6,21 +7,17 @@ module Servant.Server.Internal.RoutingApplication where
 
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative                (Applicative, (<$>))
-import           Data.Monoid                        (Monoid, mappend, mempty)
+import           Data.Monoid                        (Monoid, mappend, mempty,
+                                                     (<>))
 #endif
 import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
 import qualified Data.ByteString                    as B
 import qualified Data.ByteString.Lazy               as BL
 import           Data.IORef                         (newIORef, readIORef,
                                                      writeIORef)
-import           Data.Maybe                         (fromMaybe)
-import           Data.Monoid                        ((<>))
-import           Data.String                        (fromString)
-import           Network.HTTP.Types                 hiding (Header,
-                                                     ResponseHeaders)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived,
-                                                     requestBody, responseLBS,
+                                                     requestBody,
                                                      strictRequestBody)
 import           Servant.API                        ((:<|>) (..))
 import           Servant.Server.Internal.ServantErr
@@ -30,39 +27,12 @@ type RoutingApplication =
   -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived
 
 -- | A wrapper around @'Either' 'RouteMismatch' a@.
-newtype RouteResult a =
-  RR { routeResult :: Either RouteMismatch a }
-  deriving (Eq, Show, Functor, Applicative)
-
--- | If we get a `Right`, it has precedence over everything else.
---
--- This in particular means that if we could get several 'Right's,
--- only the first we encounter would be taken into account.
-instance Monoid (RouteResult a) where
-  mempty = RR $ Left mempty
-
-  RR (Left x)  `mappend` RR (Left y)  = RR $ Left (x <> y)
-  RR (Left _)  `mappend` RR (Right y) = RR $ Right y
-  r            `mappend` _            = r
-
--- Note that the ordering of the constructors has great significance! It
--- determines the Ord instance and, consequently, the monoid instance.
-data RouteMismatch =
-    NotFound           -- ^ the usual "not found" error
-  | WrongMethod        -- ^ a more informative "you just got the HTTP method wrong" error
-  | UnsupportedMediaType -- ^ request body has unsupported media type
-  | InvalidBody String -- ^ an even more informative "your json request body wasn't valid" error
-  | HttpError Status (Maybe BL.ByteString)  -- ^ an even even more informative arbitrary HTTP response code error.
-  deriving (Eq, Ord, Show)
-
-instance Monoid RouteMismatch where
-  mempty = NotFound
-  -- The following isn't great, since it picks @InvalidBody@ based on
-  -- alphabetical ordering, but any choice would be arbitrary.
-  --
-  -- "As one judge said to the other, 'Be just and if you can't be just, be
-  -- arbitrary'" -- William Burroughs
-  mappend = max
+data RouteResult a =
+    Retriable ServantErr      -- ^ Keep trying other paths. The @ServantErr@
+                              -- should only be 404 or 405.
+  | NonRetriable ServantErr   -- ^ Stop trying.
+  | HandlerVal a
+  deriving (Eq, Show, Read, Functor)
 
 data ReqBodyState = Uncalled
                   | Called !B.ByteString
@@ -91,55 +61,52 @@ toApplication ra request respond = do
                 writeIORef reqBodyRef $ Called bs
                 return B.empty
 
-  ra request{ requestBody = memoReqBody } (routingRespond . routeResult)
+  ra request{ requestBody = memoReqBody } routingRespond
  where
-  routingRespond :: Either RouteMismatch Response -> IO ResponseReceived
-  routingRespond (Left NotFound) =
-    respond $ responseLBS notFound404 [] "not found"
-  routingRespond (Left WrongMethod) =
-    respond $ responseLBS methodNotAllowed405 [] "method not allowed"
-  routingRespond (Left (InvalidBody err)) =
-    respond $ responseLBS badRequest400 [] $ fromString $ "invalid request body: " ++ err
-  routingRespond (Left UnsupportedMediaType) =
-    respond $ responseLBS unsupportedMediaType415 [] "unsupported media type"
-  routingRespond (Left (HttpError status body)) =
-    respond $ responseLBS status [] $ fromMaybe (BL.fromStrict $ statusMessage status) body
-  routingRespond (Right response) =
-    respond response
+  routingRespond :: RouteResult Response -> IO ResponseReceived
+  routingRespond (Retriable err)    = respond $! responseServantErr err
+  routingRespond (NonRetriable err) = respond $! responseServantErr err
+  routingRespond (HandlerVal v)     = respond v
 
 runAction :: IO (RouteResult (ExceptT ServantErr IO a))
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
-runAction action respond k = do
-  r <- action
-  go r
+runAction action respond k = action >>= go >>= respond
   where
-    go (RR (Right a))  = do
+    go (Retriable  e)   = return $! Retriable e
+    go (NonRetriable e) = return . succeedWith $! responseServantErr e
+    go (HandlerVal a)   = do
       e <- runExceptT a
-      respond $ case e of
-        Right x  -> k x
-        Left err -> succeedWith $ responseServantErr err
-    go (RR (Left err)) = respond $ failWith err
+      case e of
+        Left err -> return . succeedWith $! responseServantErr err
+        Right x  -> return $! k x
 
 feedTo :: IO (RouteResult (a -> b)) -> a -> IO (RouteResult b)
 feedTo f x = (($ x) <$>) <$> f
 
 extractL :: RouteResult (a :<|> b) -> RouteResult a
-extractL (RR (Right (a :<|> _))) = RR (Right a)
-extractL (RR (Left err))         = RR (Left err)
+extractL (HandlerVal (a :<|> _)) = HandlerVal a
+extractL (Retriable x)           = Retriable x
+extractL (NonRetriable x)        = NonRetriable x
 
 extractR :: RouteResult (a :<|> b) -> RouteResult b
-extractR (RR (Right (_ :<|> b))) = RR (Right b)
-extractR (RR (Left err))         = RR (Left err)
+extractR (HandlerVal (_ :<|> b)) = HandlerVal b
+extractR (Retriable x)           = Retriable x
+extractR (NonRetriable x)        = NonRetriable x
 
-failWith :: RouteMismatch -> RouteResult a
-failWith = RR . Left
+-- | Fail with a @ServantErr@, but keep trying other paths and.
+failWith :: ServantErr -> RouteResult a
+failWith = Retriable
 
+-- | Fail with immediately @ServantErr@.
+failFatallyWith :: ServantErr -> RouteResult a
+failFatallyWith = NonRetriable
+
+-- | Return a value, and don't try other paths.
 succeedWith :: a -> RouteResult a
-succeedWith = RR . Right
+succeedWith = HandlerVal
 
 isMismatch :: RouteResult a -> Bool
-isMismatch (RR (Left _)) = True
+isMismatch (Retriable _) = True
 isMismatch _             = False
-

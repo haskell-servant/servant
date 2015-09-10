@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+
 import           Data.Aeson
 import           Data.ByteString          (ByteString)
 import           Data.Text                (Text)
@@ -31,12 +32,12 @@ instance HasServer rest => HasServer (AuthProtected :> rest) where
   route Proxy a = WithRequest $ \ request ->
     route (Proxy :: Proxy rest) $ do
       case lookup "Cookie" (requestHeaders request) of
-        Nothing -> return $ failWith $ HttpError status401 (Just "Missing auth header.")
+        Nothing -> return $! failFatallyWith err401 { errBody = "Missing auth header" }
         Just v  -> do
           authGranted <- isGoodCookie v
           if authGranted
             then a
-            else return $ failWith $ HttpError status403 (Just "Invalid cookie.")
+            else return $! failFatallyWith err403 { errBody = "Invalid cookie" }
 
 type PrivateAPI = Get '[JSON] [PrivateData]
 

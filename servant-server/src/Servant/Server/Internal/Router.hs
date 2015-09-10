@@ -7,6 +7,8 @@ import qualified Data.Map                                   as M
 import           Data.Monoid                                ((<>))
 import           Data.Text                                  (Text)
 import           Network.Wai                                (Request, Response, pathInfo)
+import           Servant.Server.Internal.ServantErr
+import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.RoutingApplication
 
 type Router = Router' RoutingApplication
@@ -63,17 +65,24 @@ runRouter (StaticRouter table) request respond =
       | Just router <- M.lookup first table
       -> let request' = request { pathInfo = rest }
          in  runRouter router request' respond
-    _ -> respond $ failWith NotFound
+    _ -> respond $ failWith err404
 runRouter (DynamicRouter fun)  request respond =
   case pathInfo request of
     first : rest
       -> let request' = request { pathInfo = rest }
          in  runRouter (fun first) request' respond
-    _ -> respond $ failWith NotFound
+    _ -> respond $ failWith err404
 runRouter (LeafRouter app)     request respond = app request respond
 runRouter (Choice r1 r2)       request respond =
   runRouter r1 request $ \ mResponse1 ->
     if isMismatch mResponse1
       then runRouter r2 request $ \ mResponse2 ->
-             respond (mResponse1 <> mResponse2)
+             respond (highestPri mResponse1 mResponse2)
       else respond mResponse1
+  where
+    highestPri (Retriable r1) (Retriable r2) =
+      if errHTTPCode r1 == 404 && errHTTPCode r2 /= 404
+        then (Retriable r2)
+        else (Retriable r1)
+    highestPri (Retriable _) y = y
+    highestPri x _ = x

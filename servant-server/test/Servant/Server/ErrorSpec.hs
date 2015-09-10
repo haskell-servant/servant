@@ -7,9 +7,9 @@ module Servant.Server.ErrorSpec (spec) where
 
 import           Data.Aeson                 (encode)
 import qualified Data.ByteString.Lazy.Char8 as BC
-import           Control.Monad.Trans.Either (left)
 import           Data.Proxy
-import           Network.HTTP.Types         (methodGet, methodPost)
+import           Network.HTTP.Types         (hAccept, hContentType, methodGet,
+                                             methodPost)
 import           Test.Hspec
 import           Test.Hspec.Wai
 
@@ -31,8 +31,9 @@ import           Servant
 
 spec :: Spec
 spec = describe "HTTP Errors" $ do
-    errorOrder
-    errorRetry
+    errorOrderSpec
+    errorRetrySpec
+    errorChoiceSpec
 
 ------------------------------------------------------------------------------
 -- * Error Order {{{
@@ -42,24 +43,24 @@ type ErrorOrderApi = "home"
                   :> Capture "t" Int
                   :> Post '[JSON] Int
 
+
 errorOrderApi :: Proxy ErrorOrderApi
 errorOrderApi = Proxy
 
 errorOrderServer :: Server ErrorOrderApi
-errorOrderServer = \_ _ -> left err402
+errorOrderServer = \_ _ -> return 5
 
-errorOrder :: Spec
-errorOrder = describe "HTTP error order"
+errorOrderSpec :: Spec
+errorOrderSpec = describe "HTTP error order"
            $ with (return $ serve errorOrderApi errorOrderServer) $ do
-  let badContentType  = ("Content-Type", "text/plain")
-      badAccept       = ("Accept", "text/plain")
+  let badContentType  = (hContentType, "text/plain")
+      badAccept       = (hAccept, "text/plain")
       badMethod       = methodGet
       badUrl          = "home/nonexistent"
       badBody         = "nonsense"
-      goodContentType = ("Content-Type", "application/json")
-      goodAccept      = ("Accept", "application/json")
+      goodContentType = (hContentType, "application/json")
       goodMethod      = methodPost
-      goodUrl         = "home/5"
+      goodUrl         = "home/2"
       goodBody        = encode (5 :: Int)
 
   it "has 404 as its highest priority error" $ do
@@ -82,10 +83,6 @@ errorOrder = describe "HTTP error order"
     request goodMethod goodUrl [goodContentType, badAccept] goodBody
       `shouldRespondWith` 406
 
-  it "returns handler errors as its lower priority errors" $ do
-    request goodMethod goodUrl [goodContentType, goodAccept] goodBody
-      `shouldRespondWith` 402
-
 -- }}}
 ------------------------------------------------------------------------------
 -- * Error Retry {{{
@@ -95,9 +92,10 @@ type ErrorRetryApi
   :<|> "a" :> ReqBody '[PlainText] Int :> Post '[JSON] Int                -- 1
   :<|> "a" :> ReqBody '[JSON] Int      :> Post '[PlainText] Int           -- 2
   :<|> "a" :> ReqBody '[JSON] String   :> Post '[JSON] Int                -- 3
-  :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[PlainText] Int           -- 4
-  :<|>        ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 5
+  :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 4
+  :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[PlainText] Int           -- 5
   :<|>        ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 6
+  :<|>        ReqBody '[JSON] Int      :> Post '[JSON] Int                -- 7
 
 errorRetryApi :: Proxy ErrorRetryApi
 errorRetryApi = Proxy
@@ -111,19 +109,21 @@ errorRetryServer
   :<|> (\_ -> return 4)
   :<|> (\_ -> return 5)
   :<|> (\_ -> return 6)
+  :<|> (\_ -> return 7)
 
-errorRetry :: Spec
-errorRetry = describe "Handler search"
+errorRetrySpec :: Spec
+errorRetrySpec = describe "Handler search"
            $ with (return $ serve errorRetryApi errorRetryServer) $ do
-  let plainCT     = ("Content-Type", "text/plain")
-      plainAccept = ("Accept", "text/plain")
-      jsonCT      = ("Content-Type", "application/json")
-      jsonAccept  = ("Accept", "application/json")
+
+  let plainCT     = (hContentType, "text/plain")
+      plainAccept = (hAccept, "text/plain")
+      jsonCT      = (hContentType, "application/json")
+      jsonAccept  = (hAccept, "application/json")
       jsonBody    = encode (1797 :: Int)
 
   it "should continue when URLs don't match" $ do
     request methodPost "" [jsonCT, jsonAccept] jsonBody
-     `shouldRespondWith` 201 { matchBody = Just $ encode (5 :: Int) }
+     `shouldRespondWith` 201 { matchBody = Just $ encode (7 :: Int) }
 
   it "should continue when methods don't match" $ do
     request methodGet "a" [jsonCT, jsonAccept] jsonBody
@@ -140,6 +140,50 @@ errorRetry = describe "Handler search"
   it "should not continue when Accepts don't match" $ do
     request methodPost "a" [jsonCT, plainAccept] jsonBody
      `shouldRespondWith` 406
+
+-- }}}
+------------------------------------------------------------------------------
+-- * Error Choice {{{
+
+type ErrorChoiceApi
+     = "path0" :> Get '[JSON] Int                                     -- 0
+  :<|> "path1" :> Post '[JSON] Int                                    -- 1
+  :<|> "path2" :> Post '[PlainText] Int                               -- 2
+  :<|> "path3" :> ReqBody '[JSON] Int :> Post '[PlainText] Int        -- 3
+  :<|> "path4" :> (ReqBody '[PlainText] Int :> Post '[PlainText] Int  -- 4
+             :<|>  ReqBody '[PlainText] Int :> Post '[JSON] Int)      -- 5
+
+errorChoiceApi :: Proxy ErrorChoiceApi
+errorChoiceApi = Proxy
+
+errorChoiceServer :: Server ErrorChoiceApi
+errorChoiceServer = return 0
+               :<|> return 1
+               :<|> return 2
+               :<|> (\_ -> return 3)
+               :<|> (\_ -> return 4)
+               :<|> (\_ -> return 5)
+
+
+errorChoiceSpec :: Spec
+errorChoiceSpec = describe "Multiple handlers return errors"
+                $ with (return $ serve errorChoiceApi errorChoiceServer) $ do
+
+  it "should respond with 404 if no path matches" $ do
+    request methodGet "" [] "" `shouldRespondWith` 404
+
+  it "should respond with 405 if a path but not method matches" $ do
+    request methodGet "path2" [] "" `shouldRespondWith` 405
+
+  it "should respond with the corresponding error if path and method match" $ do
+    request methodPost "path3" [(hContentType, "text/plain;charset=utf-8")] ""
+      `shouldRespondWith` 415
+    request methodPost "path3" [(hContentType, "application/json")] ""
+      `shouldRespondWith` 400
+    request methodPost "path4" [(hContentType, "text/plain;charset=utf-8"),
+                                (hAccept, "application/json")] ""
+      `shouldRespondWith` 406
+
 
 -- }}}
 ------------------------------------------------------------------------------
