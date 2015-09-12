@@ -8,6 +8,8 @@ HEAD
 * Add more `ToSamples` instances: `Bool`, `Ordering`, tuples (up to 7), `[]`, `Maybe`, `Either`, `Const`, `ZipList` and some monoids
 * Move `toSample` out of `ToSample` class
 * Add a few helper functions to define `toSamples`
+* Support for new Authentication framework
+* Added `ToAuthInfo` typeclass.
 
 0.4
 ---
