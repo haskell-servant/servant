@@ -44,7 +44,7 @@ testApi = Proxy
 -- There's one handler per endpoint, which, just like in the type
 -- that represents the API, are glued together using :<|>.
 --
--- Each handler runs in the 'EitherT ServantErr IO' monad.
+-- Each handler runs in the 'ExceptT ServantErr IO' monad.
 server :: Server TestApi
 server = helloH :<|> postGreetH :<|> deleteGreetH
 

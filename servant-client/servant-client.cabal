@@ -33,7 +33,6 @@ library
     , aeson
     , attoparsec
     , bytestring
-    , either
     , exceptions
     , http-client
     , http-client-tls
@@ -61,10 +60,10 @@ test-suite spec
     , Servant.Common.BaseUrlSpec
   build-depends:
       base == 4.*
+    , transformers
     , aeson
     , bytestring
     , deepseq
-    , either
     , hspec == 2.*
     , http-client
     , http-media

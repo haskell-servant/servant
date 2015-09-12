@@ -22,9 +22,6 @@ import           Control.Monad.Morph
 import           Control.Monad.Reader
 import qualified Control.Monad.State.Lazy    as LState
 import qualified Control.Monad.State.Strict  as SState
-#if MIN_VERSION_mtl(2,2,1)
-import           Control.Monad.Trans.Either
-#endif
 import qualified Control.Monad.Writer.Lazy   as LWriter
 import qualified Control.Monad.Writer.Strict as SWriter
 import           Data.Typeable
@@ -82,11 +79,6 @@ logWriterTLNat logger = Nat $ \x -> do
     (a, w) <- LWriter.runWriterT x
     liftIO $ logger w
     return a
-
-#if MIN_VERSION_mtl(2,2,1)
-fromExceptT :: ExceptT e m :~> EitherT e m
-fromExceptT = Nat $ \x -> EitherT $ runExceptT x
-#endif
 
 -- | Like @mmorph@'s `hoist`.
 hoistNat :: (MFunctor t, Monad m) => (m :~> n) ->  (t m :~> t n)

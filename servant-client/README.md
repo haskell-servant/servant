@@ -13,8 +13,8 @@ type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
 myApi :: Proxy MyApi
 myApi = Proxy
 
-getAllBooks :: EitherT String IO [Book]
-postNewBook :: Book -> EitherT String IO Book
+getAllBooks :: ExceptT String IO [Book]
+postNewBook :: Book -> ExceptT String IO Book
 -- 'client' allows you to produce operations to query an API from a client.
 (getAllBooks :<|> postNewBook) = client myApi host
   where host = BaseUrl Http "localhost" 8080

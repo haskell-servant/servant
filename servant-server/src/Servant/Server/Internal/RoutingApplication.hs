@@ -8,7 +8,7 @@ module Servant.Server.Internal.RoutingApplication where
 import           Control.Applicative                (Applicative, (<$>))
 import           Data.Monoid                        (Monoid, mappend, mempty)
 #endif
-import           Control.Monad.Trans.Either         (EitherT, runEitherT)
+import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
 import qualified Data.ByteString                    as B
 import qualified Data.ByteString.Lazy               as BL
 import           Data.IORef                         (newIORef, readIORef,
@@ -107,7 +107,7 @@ toApplication ra request respond = do
   routingRespond (Right response) =
     respond response
 
-runAction :: IO (RouteResult (EitherT ServantErr IO a))
+runAction :: IO (RouteResult (ExceptT ServantErr IO a))
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
@@ -116,7 +116,7 @@ runAction action respond k = do
   go r
   where
     go (RR (Right a))  = do
-      e <- runEitherT a
+      e <- runExceptT a
       respond $ case e of
         Right x  -> k x
         Left err -> succeedWith $ responseServantErr err

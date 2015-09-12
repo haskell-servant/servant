@@ -6,7 +6,7 @@
 module T5 where
 
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Data.Aeson
 import           GHC.Generics
 import           Network.Wai
@@ -29,7 +29,7 @@ server = do
   exists <- liftIO (doesFileExist "myfile.txt")
   if exists
     then liftIO (readFile "myfile.txt") >>= return . FileContent
-    else left custom404Err
+    else throwE custom404Err
 
   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
 

@@ -25,7 +25,6 @@ executable tutorial
     , base >= 4.7 && < 5
     , bytestring
     , directory
-    , either
     , http-types
     , js-jquery
     , lucid
@@ -50,10 +49,10 @@ executable t8-main
   build-depends:
       aeson
     , base >= 4.7 && < 5
-    , either
     , servant == 0.5.*
     , servant-client == 0.5.*
     , servant-server == 0.5.*
+    , transformers
     , wai
 
 executable hackage
@@ -61,7 +60,6 @@ executable hackage
   build-depends:
       aeson >= 0.8
     , base >=4.7 && < 5
-    , either
     , servant == 0.5.*
     , servant-client == 0.5.*
     , text

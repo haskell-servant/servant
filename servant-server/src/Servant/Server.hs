@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -29,9 +28,6 @@ module Servant.Server
   , evalStateTSNat
   , logWriterTLNat
   , logWriterTSNat
-#if MIN_VERSION_mtl(2,2,1)
-  , fromExceptT
-#endif
   -- ** Functions based on <https://hackage.haskell.org/package/mmorph mmorph>
   , hoistNat
   , embedNat
@@ -113,7 +109,7 @@ serve p server = toApplication (runRouter (route p (return (RR (Right server))))
 -- Documentation
 
 -- $enterDoc
--- Sometimes our cherished `EitherT` monad isn't quite the type you'd like for
+-- Sometimes our cherished `ExceptT` monad isn't quite the type you'd like for
 -- your handlers. Maybe you want to thread some configuration in a @Reader@
 -- monad. Or have your types ensure that your handlers don't do any IO. Enter
 -- `enter`.

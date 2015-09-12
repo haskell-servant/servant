@@ -11,7 +11,7 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 import Data.ByteString.Lazy hiding (pack, filter, map, null, elem)
 import Data.IORef
 import Data.String
@@ -142,7 +142,7 @@ displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
 
 performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl
-               -> EitherT ServantError IO ( Int, ByteString, MediaType
+               -> ExceptT ServantError IO ( Int, ByteString, MediaType
                                           , [HTTP.Header], Response ByteString)
 performRequest reqMethod req isWantedStatus reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
@@ -156,7 +156,7 @@ performRequest reqMethod req isWantedStatus reqHost = do
       Client.httpLbs request manager
   case eResponse of
     Left err ->
-      left . ConnectionError $ SomeException err
+      throwE . ConnectionError $ SomeException err
 
     Right response -> do
       let status = Client.responseStatus response
@@ -166,25 +166,25 @@ performRequest reqMethod req isWantedStatus reqHost = do
       ct <- case lookup "Content-Type" $ Client.responseHeaders response of
                  Nothing -> pure $ "application"//"octet-stream"
                  Just t -> case parseAccept t of
-                   Nothing -> left $ InvalidContentTypeHeader (cs t) body
+                   Nothing -> throwE $ InvalidContentTypeHeader (cs t) body
                    Just t' -> pure t'
       unless (isWantedStatus status_code) $
-        left $ FailureResponse status ct body
+        throwE $ FailureResponse status ct body
       return (status_code, body, ct, hrds, response)
 
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> [Int] -> BaseUrl -> EitherT ServantError IO ([HTTP.Header], result)
+  Proxy ct -> Method -> Req -> [Int] -> BaseUrl -> ExceptT ServantError IO ([HTTP.Header], result)
 performRequestCT ct reqMethod req wantedStatus reqHost = do
   let acceptCT = contentType ct
   (_status, respBody, respCT, hrds, _response) <-
     performRequest reqMethod (req { reqAccept = [acceptCT] }) (`elem` wantedStatus) reqHost
-  unless (matches respCT (acceptCT)) $ left $ UnsupportedContentType respCT respBody
+  unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
-    Left err -> left $ DecodeFailure err respCT respBody
+    Left err -> throwE $ DecodeFailure err respCT respBody
     Right val -> return (hrds, val)
 
-performRequestNoBody :: Method -> Req -> [Int] -> BaseUrl -> EitherT ServantError IO ()
+performRequestNoBody :: Method -> Req -> [Int] -> BaseUrl -> ExceptT ServantError IO ()
 performRequestNoBody reqMethod req wantedStatus reqHost = do
   _ <- performRequest reqMethod req (`elem` wantedStatus) reqHost
   return ()

@@ -91,8 +91,8 @@ class HasServer api => HasMock api where
   --   actually "means" 2 request handlers, of the following types:
   --
   --   @
-  --   getUser :: EitherT ServantErr IO User
-  --   getBook :: EitherT ServantErr IO Book
+  --   getUser :: ExceptT ServantErr IO User
+  --   getBook :: ExceptT ServantErr IO Book
   --   @
   --
   --   So under the hood, 'mock' uses the 'IO' bit to generate

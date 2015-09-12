@@ -2,6 +2,7 @@ HEAD
 ----
 
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
+* Drop `EitherT` in favor of `ExceptT`
 
 0.4.1
 -----
