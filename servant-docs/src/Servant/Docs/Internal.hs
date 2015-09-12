@@ -43,6 +43,7 @@ import           GHC.Exts                   (Constraint)
 import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API
+import           Servant.API.Authentication
 import           Servant.API.ContentTypes
 import           Servant.Utils.Links
 
@@ -81,8 +82,8 @@ instance Hashable Method
 -- POST /foo
 -- @
 data Endpoint = Endpoint
-  { _path   :: [String] -- type collected
-  , _method :: Method   -- type collected
+  { _path           :: [String]     -- type collected
+  , _method         :: Method       -- type collected
   } deriving (Eq, Ord, Generic)
 
 instance Show Endpoint where
@@ -235,6 +236,13 @@ defResponse = Response
   , _respHeaders = []
   }
 
+-- | A type to represent Authentication information about an endpoint.
+data AuthenticationInfo = AuthenticationInfo
+  { _authIntro        :: String
+  , _authDataRequired :: String
+  , _authUserReturned :: String
+  } deriving (Eq, Ord, Show)
+
 -- | A datatype that represents everything that can happen
 -- at an endpoint, with its lenses:
 --
@@ -246,7 +254,8 @@ defResponse = Response
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _captures :: [DocCapture]                -- type collected + user supplied info
+  { _authInfo :: Maybe AuthenticationInfo    -- type collected + user supplied info
+  , _captures :: [DocCapture]                -- type collected + user supplied info
   , _headers  :: [Text]                      -- type collected
   , _params   :: [DocQueryParam]             -- type collected + user supplied info
   , _notes    :: [DocNote]                   -- user supplied
@@ -263,8 +272,8 @@ data Action = Action
 -- 'combineAction' to mush two together taking the response, body and content
 -- types from the very left.
 combineAction :: Action -> Action -> Action
-Action c h p n m ts body resp `combineAction` Action c' h' p' n' m' _ _ _ =
-        Action (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
+Action a c h p n m ts body resp `combineAction` Action _ c' h' p' n' m' _ _ _ =
+        Action a (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -272,12 +281,13 @@ Action c h p n m ts body resp `combineAction` Action c' h' p' n' m' _ _ _ =
 -- Tweakable with lenses.
 --
 -- > λ> defAction
--- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
+-- > Action {_authentication = Nothing, _captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
 -- > λ> defAction & response.respStatus .~ 201
--- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
+-- > Action {_authentication = Nothing, _captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
 defAction :: Action
 defAction =
-  Action []
+  Action Nothing
+         []
          []
          []
          []
@@ -295,6 +305,7 @@ single e a = API mempty (HM.singleton e a)
 -- gimme some lenses
 makeLenses ''DocOptions
 makeLenses ''API
+makeLenses ''AuthenticationInfo
 makeLenses ''Endpoint
 makeLenses ''DocCapture
 makeLenses ''DocQueryParam
@@ -533,6 +544,10 @@ class ToParam t where
 class ToCapture c where
   toCapture :: Proxy c -> DocCapture
 
+-- | The class that helps us get documentation for authenticated endpoints
+class ToAuthInfo a where
+    toAuthInfo :: Proxy a -> AuthenticationInfo
+
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
@@ -545,6 +560,7 @@ markdown api = unlines $
           str :
           "" :
           notesStr (action ^. notes) ++
+          authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
           mxParamsStr (action ^. mxParams) ++
           headersStr (action ^. headers) ++
@@ -576,6 +592,16 @@ markdown api = unlines $
             "" :
             intersperse "" (nt ^. noteBody) ++
             "" :
+            []
+
+        authStr :: Maybe AuthenticationInfo -> [String]
+        authStr Nothing = []
+        authStr (Just auth) =
+            "#### Authentication" :
+            "This endpoint is protected." :
+            auth ^. authIntro :
+            "Data to supply" :
+            auth ^. authDataRequired :
             []
 
         capturesStr :: [DocCapture] -> [String]
@@ -720,6 +746,22 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
           endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
           symP = Proxy :: Proxy sym
 
+-- | authentication instance.
+instance
+#if MIN_VERSION_base(4,8,0)
+        {-# OVERLAPPABLE #-}
+#endif
+         ( HasDocs sublayout
+         , ToSample auth auth
+         , ToSample usr usr
+         , ToAuthInfo (AuthProtect auth usr policy)
+         )
+         => HasDocs (AuthProtect auth usr policy :> sublayout) where
+            docsFor Proxy (endpoint, action) =
+              docsFor (Proxy :: Proxy sublayout) (endpoint, action')
+
+                where
+                  action' = action & authInfo .~ Just (toAuthInfo (Proxy :: Proxy (AuthProtect auth usr policy)))
 
 instance
 #if MIN_VERSION_base(4,8,0)
