@@ -9,6 +9,8 @@ HEAD
 * Move `toSample` out of `ToSample` class
 * Add a few helper functions to define `toSamples`
 * Remove matrix params.
+* Support for new Authentication framework
+* Added `ToAuthInfo` typeclass.
 
 0.4
 ---
