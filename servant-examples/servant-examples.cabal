@@ -37,6 +37,7 @@ executable tutorial
     , text
     , time
     , transformers
+    , transformers-compat
     , wai
     , warp
   hs-source-dirs: tutorial
@@ -53,6 +54,7 @@ executable t8-main
     , servant-client == 0.5.*
     , servant-server == 0.5.*
     , transformers
+    , transformers-compat
     , wai
 
 executable hackage
@@ -64,6 +66,7 @@ executable hackage
     , servant-client == 0.5.*
     , text
     , transformers
+    , transformers-compat
   hs-source-dirs:      hackage
   default-language:    Haskell2010
 
