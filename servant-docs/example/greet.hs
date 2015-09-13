@@ -75,7 +75,7 @@ instance ToSample Cookie Cookie where
 instance ToSample SecretData SecretData where
   toSample _ = Just (SecretData "shhhhh!")
 
-instance ToAuthInfo (AuthProtect Cookie User 'Strict) where
+instance ToAuthInfo (AuthProtect Cookie User policy) where
     toAuthInfo _ = AuthenticationInfo "In this sentence we outline how authentication works."
                                       "The following data is required on each request as a serialized header."
 
@@ -109,6 +109,8 @@ type TestApi =
 
        -- GET /private
   :<|> "private" :> AuthProtect Cookie User 'Strict :> Get '[JSON] SecretData
+       -- GET /private-lax
+  :<|> "private-lax" :> AuthProtect Cookie User 'Lax :> Get '[JSON] SecretData
 
 testApi :: Proxy TestApi
 testApi = Proxy
