@@ -103,7 +103,7 @@ import           Servant.Server.Internal.Enter
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
 serve :: HasServer layout => Proxy layout -> Server layout -> Application
-serve p server = toApplication (runRouter (route p (return (HandlerVal server))))
+serve p server = toApplication (runRouter (route p (return (Route server))))
 
 
 -- Documentation

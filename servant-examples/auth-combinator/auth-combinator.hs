@@ -32,12 +32,12 @@ instance HasServer rest => HasServer (AuthProtected :> rest) where
   route Proxy a = WithRequest $ \ request ->
     route (Proxy :: Proxy rest) $ do
       case lookup "Cookie" (requestHeaders request) of
-        Nothing -> return $! failFatallyWith err401 { errBody = "Missing auth header" }
+        Nothing -> return $! FailFatal err401 { errBody = "Missing auth header" }
         Just v  -> do
           authGranted <- isGoodCookie v
           if authGranted
             then a
-            else return $! failFatallyWith err403 { errBody = "Invalid cookie" }
+            else return $ FailFatal err403 { errBody = "Invalid cookie" }
 
 type PrivateAPI = Get '[JSON] [PrivateData]
 

@@ -1,10 +1,9 @@
 {-# LANGUAGE DeriveFunctor #-}
-
+{-# LANGUAGE CPP #-}
 module Servant.Server.Internal.Router where
 
 import           Data.Map                                   (Map)
 import qualified Data.Map                                   as M
-import           Data.Monoid                                ((<>))
 import           Data.Text                                  (Text)
 import           Network.Wai                                (Request, Response, pathInfo)
 import           Servant.Server.Internal.ServantErr
@@ -65,24 +64,23 @@ runRouter (StaticRouter table) request respond =
       | Just router <- M.lookup first table
       -> let request' = request { pathInfo = rest }
          in  runRouter router request' respond
-    _ -> respond $ failWith err404
+    _ -> respond $ Fail err404
 runRouter (DynamicRouter fun)  request respond =
   case pathInfo request of
     first : rest
       -> let request' = request { pathInfo = rest }
          in  runRouter (fun first) request' respond
-    _ -> respond $ failWith err404
+    _ -> respond $ Fail err404
 runRouter (LeafRouter app)     request respond = app request respond
 runRouter (Choice r1 r2)       request respond =
-  runRouter r1 request $ \ mResponse1 ->
-    if isMismatch mResponse1
-      then runRouter r2 request $ \ mResponse2 ->
-             respond (highestPri mResponse1 mResponse2)
-      else respond mResponse1
+  runRouter r1 request $ \ mResponse1 -> case mResponse1 of
+    Fail _ -> runRouter r2 request $ \ mResponse2 ->
+      respond (highestPri mResponse1 mResponse2)
+    _      -> respond mResponse1
   where
-    highestPri (Retriable r1) (Retriable r2) =
-      if errHTTPCode r1 == 404 && errHTTPCode r2 /= 404
-        then (Retriable r2)
-        else (Retriable r1)
-    highestPri (Retriable _) y = y
+    highestPri (Fail e1) (Fail e2) =
+      if errHTTPCode e1 == 404 && errHTTPCode e2 /= 404
+        then Fail e2
+        else Fail e1
+    highestPri (Fail _) y = y
     highestPri x _ = x

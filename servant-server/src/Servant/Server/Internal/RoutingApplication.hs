@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeOperators              #-}
 module Servant.Server.Internal.RoutingApplication where
@@ -28,10 +27,10 @@ type RoutingApplication =
 
 -- | A wrapper around @'Either' 'RouteMismatch' a@.
 data RouteResult a =
-    Retriable ServantErr      -- ^ Keep trying other paths. The @ServantErr@
+    Fail ServantErr           -- ^ Keep trying other paths. The @ServantErr@
                               -- should only be 404 or 405.
-  | NonRetriable ServantErr   -- ^ Stop trying.
-  | HandlerVal a
+  | FailFatal ServantErr      -- ^ Don't other paths.
+  | Route a
   deriving (Eq, Show, Read, Functor)
 
 data ReqBodyState = Uncalled
@@ -64,9 +63,9 @@ toApplication ra request respond = do
   ra request{ requestBody = memoReqBody } routingRespond
  where
   routingRespond :: RouteResult Response -> IO ResponseReceived
-  routingRespond (Retriable err)    = respond $! responseServantErr err
-  routingRespond (NonRetriable err) = respond $! responseServantErr err
-  routingRespond (HandlerVal v)     = respond v
+  routingRespond (Fail err)    = respond $! responseServantErr err
+  routingRespond (FailFatal err) = respond $! responseServantErr err
+  routingRespond (Route v)     = respond v
 
 runAction :: IO (RouteResult (ExceptT ServantErr IO a))
           -> (RouteResult Response -> IO r)
@@ -74,39 +73,23 @@ runAction :: IO (RouteResult (ExceptT ServantErr IO a))
           -> IO r
 runAction action respond k = action >>= go >>= respond
   where
-    go (Retriable  e)   = return $! Retriable e
-    go (NonRetriable e) = return . succeedWith $! responseServantErr e
-    go (HandlerVal a)   = do
+    go (Fail  e)   = return $ Fail e
+    go (FailFatal e) = return $ FailFatal e
+    go (Route a)   = do
       e <- runExceptT a
       case e of
-        Left err -> return . succeedWith $! responseServantErr err
+        Left err -> return . Route $ responseServantErr err
         Right x  -> return $! k x
 
 feedTo :: IO (RouteResult (a -> b)) -> a -> IO (RouteResult b)
 feedTo f x = (($ x) <$>) <$> f
 
 extractL :: RouteResult (a :<|> b) -> RouteResult a
-extractL (HandlerVal (a :<|> _)) = HandlerVal a
-extractL (Retriable x)           = Retriable x
-extractL (NonRetriable x)        = NonRetriable x
+extractL (Route (a :<|> _)) = Route a
+extractL (Fail x)           = Fail x
+extractL (FailFatal x)      = FailFatal x
 
 extractR :: RouteResult (a :<|> b) -> RouteResult b
-extractR (HandlerVal (_ :<|> b)) = HandlerVal b
-extractR (Retriable x)           = Retriable x
-extractR (NonRetriable x)        = NonRetriable x
-
--- | Fail with a @ServantErr@, but keep trying other paths and.
-failWith :: ServantErr -> RouteResult a
-failWith = Retriable
-
--- | Fail with immediately @ServantErr@.
-failFatallyWith :: ServantErr -> RouteResult a
-failFatallyWith = NonRetriable
-
--- | Return a value, and don't try other paths.
-succeedWith :: a -> RouteResult a
-succeedWith = HandlerVal
-
-isMismatch :: RouteResult a -> Bool
-isMismatch (Retriable _) = True
-isMismatch _             = False
+extractR (Route (_ :<|> b)) = Route b
+extractR (Fail x)           = Fail x
+extractR (FailFatal x)      = FailFatal x

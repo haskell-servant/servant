@@ -5,6 +5,11 @@ HEAD
 * Drop `EitherT` in favor of `ExceptT`
 * Use `http-api-data` instead of `Servant.Common.Text`
 * Remove matrix params.
+* Remove `RouteMismatch`.
+* Redefined constructors of `RouteResult`.
+* Add `failFatallyWith`.
+* Make all (framework-generated) HTTP errors except 404 and 405 not try other
+  handlers.
 
 0.4.1
 -----
