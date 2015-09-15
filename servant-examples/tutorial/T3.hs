@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 module T3 where
 
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Data.Aeson
 import           Data.List
 import           GHC.Generics
@@ -69,15 +69,15 @@ server = position
     :<|> hello
     :<|> marketing
 
-  where position :: Int -> Int -> EitherT ServantErr IO Position
+  where position :: Int -> Int -> ExceptT ServantErr IO Position
         position x y = return (Position x y)
 
-        hello :: Maybe String -> EitherT ServantErr IO HelloMessage
+        hello :: Maybe String -> ExceptT ServantErr IO HelloMessage
         hello mname = return . HelloMessage $ case mname of
           Nothing -> "Hello, anonymous coward"
           Just n  -> "Hello, " ++ n
 
-        marketing :: ClientInfo -> EitherT ServantErr IO Email
+        marketing :: ClientInfo -> ExceptT ServantErr IO Email
         marketing clientinfo = return (emailForClient clientinfo)
 
 app :: Application

@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 module T7 where
 
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Control.Monad.Trans.Reader
 import           Network.Wai
 import           Servant
@@ -26,7 +26,7 @@ readerServerT = a :<|> b
 readerServer :: Server ReaderAPI
 readerServer = enter readerToEither readerServerT
 
-  where readerToEither :: Reader String :~> EitherT ServantErr IO
+  where readerToEither :: Reader String :~> ExceptT ServantErr IO
         readerToEither = Nat $ \r -> return (runReader r "hi")
 
 app :: Application

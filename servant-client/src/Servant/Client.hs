@@ -25,7 +25,7 @@ module Servant.Client
 import           Control.Applicative        ((<$>))
 #endif
 import           Control.Monad
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.List
 import           Data.Proxy
@@ -50,8 +50,8 @@ import           Servant.Common.Req
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getAllBooks :: EitherT String IO [Book]
--- > postNewBook :: Book -> EitherT String IO Book
+-- > getAllBooks :: ExceptT String IO [Book]
+-- > postNewBook :: Book -> ExceptT String IO Book
 -- > (getAllBooks :<|> postNewBook) = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 client :: HasClient layout => Proxy layout -> BaseUrl -> Client layout
@@ -76,8 +76,8 @@ class HasClient layout where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getAllBooks :: EitherT String IO [Book]
--- > postNewBook :: Book -> EitherT String IO Book
+-- > getAllBooks :: ExceptT String IO [Book]
+-- > postNewBook :: Book -> ExceptT String IO Book
 -- > (getAllBooks :<|> postNewBook) = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
@@ -102,7 +102,7 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBook :: Text -> EitherT String IO Book
+-- > getBook :: Text -> ExceptT String IO Book
 -- > getBook = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBook" to query that endpoint
@@ -129,7 +129,7 @@ instance
 #endif
   -- See https://downloads.haskell.org/~ghc/7.8.2/docs/html/users_guide/type-class-extensions.html#undecidable-instances
   (MimeUnrender ct a, cts' ~ (ct ': cts)) => HasClient (Delete cts' a) where
-  type Client (Delete cts' a) = EitherT ServantError IO a
+  type Client (Delete cts' a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl
 
@@ -140,7 +140,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Delete cts ()) where
-  type Client (Delete cts ()) = EitherT ServantError IO ()
+  type Client (Delete cts ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodDelete req [204] baseurl
 
@@ -153,7 +153,7 @@ instance
   -- See https://downloads.haskell.org/~ghc/7.8.2/docs/html/users_guide/type-class-extensions.html#undecidable-instances
   ( MimeUnrender ct a, BuildHeadersTo ls, cts' ~ (ct ': cts)
   ) => HasClient (Delete cts' (Headers ls a)) where
-  type Client (Delete cts' (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  type Client (Delete cts' (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl = do
     (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl
     return $ Headers { getResponse = resp
@@ -169,7 +169,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
-  type Client (Get (ct ': cts) result) = EitherT ServantError IO result
+  type Client (Get (ct ': cts) result) = ExceptT ServantError IO result
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] baseurl
 
@@ -180,7 +180,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Get (ct ': cts) ()) where
-  type Client (Get (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client (Get (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     performRequestNoBody H.methodGet req [204] baseurl
 
@@ -192,7 +192,7 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Get (ct ': cts) (Headers ls a)) where
-  type Client (Get (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  type Client (Get (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl = do
     (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203, 204] baseurl
     return $ Headers { getResponse = resp
@@ -220,7 +220,7 @@ instance
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > viewReferer :: Maybe Referer -> EitherT String IO Book
+-- > viewReferer :: Maybe Referer -> ExceptT String IO Book
 -- > viewReferer = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "viewRefer" to query that endpoint
@@ -250,7 +250,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
-  type Client (Post (ct ': cts) a) = EitherT ServantError IO a
+  type Client (Post (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] baseurl
 
@@ -261,7 +261,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Post (ct ': cts) ()) where
-  type Client (Post (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client (Post (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodPost req [204] baseurl
 
@@ -273,7 +273,7 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Post (ct ': cts) (Headers ls a)) where
-  type Client (Post (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  type Client (Post (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl = do
     (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201] baseurl
     return $ Headers { getResponse = resp
@@ -289,7 +289,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
-  type Client (Put (ct ': cts) a) = EitherT ServantError IO a
+  type Client (Put (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] baseurl
 
@@ -300,7 +300,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Put (ct ': cts) ()) where
-  type Client (Put (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client (Put (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodPut req [204] baseurl
 
@@ -312,7 +312,7 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Put (ct ': cts) (Headers ls a)) where
-  type Client (Put (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  type Client (Put (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl = do
     (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPut req [200, 201] baseurl
     return $ Headers { getResponse = resp
@@ -328,7 +328,7 @@ instance
          {-# OVERLAPPABLE #-}
 #endif
   (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
-  type Client (Patch (ct ': cts) a) = EitherT ServantError IO a
+  type Client (Patch (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] baseurl
 
@@ -339,7 +339,7 @@ instance
          {-# OVERLAPPING #-}
 #endif
   HasClient (Patch (ct ': cts) ()) where
-  type Client (Patch (ct ': cts) ()) = EitherT ServantError IO ()
+  type Client (Patch (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl =
     void $ performRequestNoBody H.methodPatch req [204] baseurl
 
@@ -351,7 +351,7 @@ instance
 #endif
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Patch (ct ': cts) (Headers ls a)) where
-  type Client (Patch (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
+  type Client (Patch (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl = do
     (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200, 201, 204] baseurl
     return $ Headers { getResponse = resp
@@ -378,7 +378,7 @@ instance
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: Maybe Text -> EitherT String IO [Book]
+-- > getBooksBy :: Maybe Text -> ExceptT String IO [Book]
 -- > getBooksBy = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooksBy" to query that endpoint.
@@ -424,7 +424,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: [Text] -> EitherT String IO [Book]
+-- > getBooksBy :: [Text] -> ExceptT String IO [Book]
 -- > getBooksBy = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooksBy" to query that endpoint.
@@ -465,7 +465,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooks :: Bool -> EitherT String IO [Book]
+-- > getBooks :: Bool -> ExceptT String IO [Book]
 -- > getBooks = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooks" to query that endpoint.
@@ -507,7 +507,7 @@ instance (KnownSymbol sym, HasClient sublayout)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: Maybe Text -> EitherT String IO [Book]
+-- > getBooksBy :: Maybe Text -> ExceptT String IO [Book]
 -- > getBooksBy = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooksBy" to query that endpoint.
@@ -552,7 +552,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: [Text] -> EitherT String IO [Book]
+-- > getBooksBy :: [Text] -> ExceptT String IO [Book]
 -- > getBooksBy = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooksBy" to query that endpoint.
@@ -593,7 +593,7 @@ instance (KnownSymbol sym, ToText a, HasClient sublayout)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooks :: Bool -> EitherT String IO [Book]
+-- > getBooks :: Bool -> ExceptT String IO [Book]
 -- > getBooks = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "getBooks" to query that endpoint.
@@ -618,7 +618,7 @@ instance (KnownSymbol sym, HasClient sublayout)
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
 instance HasClient Raw where
-  type Client Raw = H.Method -> EitherT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
+  type Client Raw = H.Method -> ExceptT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> BaseUrl -> Client Raw
   clientWithRoute Proxy req baseurl httpMethod = do
@@ -639,7 +639,7 @@ instance HasClient Raw where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > addBook :: Book -> EitherT String IO Book
+-- > addBook :: Book -> ExceptT String IO Book
 -- > addBook = client myApi host
 -- >   where host = BaseUrl Http "localhost" 8080
 -- > -- then you can just use "addBook" to query that endpoint

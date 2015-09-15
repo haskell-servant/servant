@@ -23,7 +23,7 @@ module Servant.Server.Internal
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
 #endif
-import           Control.Monad.Trans.Either  (EitherT)
+import           Control.Monad.Trans.Except  (ExceptT)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
@@ -65,7 +65,7 @@ class HasServer layout where
 
   route :: Proxy layout -> IO (RouteResult (Server layout)) -> Router
 
-type Server layout = ServerT layout (EitherT ServantErr IO)
+type Server layout = ServerT layout (ExceptT ServantErr IO)
 
 -- * Instances
 
@@ -107,7 +107,7 @@ captured _ = fromText
 -- >
 -- > server :: Server MyApi
 -- > server = getBook
--- >   where getBook :: Text -> EitherT ServantErr IO Book
+-- >   where getBook :: Text -> ExceptT ServantErr IO Book
 -- >         getBook isbn = ...
 instance (KnownSymbol capture, FromText a, HasServer sublayout)
       => HasServer (Capture capture a :> sublayout) where
@@ -142,7 +142,7 @@ processMethodRouter handleA status method headers request = case handleA of
 
 methodRouter :: (AllCTRender ctypes a)
              => Method -> Proxy ctypes -> Status
-             -> IO (RouteResult (EitherT ServantErr IO a))
+             -> IO (RouteResult (ExceptT ServantErr IO a))
              -> Router
 methodRouter method proxy status action = LeafRouter route'
   where
@@ -158,7 +158,7 @@ methodRouter method proxy status action = LeafRouter route'
 
 methodRouterHeaders :: (GetHeaders (Headers h v), AllCTRender ctypes v)
                     => Method -> Proxy ctypes -> Status
-                    -> IO (RouteResult (EitherT ServantErr IO (Headers h v)))
+                    -> IO (RouteResult (ExceptT ServantErr IO (Headers h v)))
                     -> Router
 methodRouterHeaders method proxy status action = LeafRouter route'
   where
@@ -174,7 +174,7 @@ methodRouterHeaders method proxy status action = LeafRouter route'
       | otherwise = respond $ failWith NotFound
 
 methodRouterEmpty :: Method
-                  -> IO (RouteResult (EitherT ServantErr IO ()))
+                  -> IO (RouteResult (ExceptT ServantErr IO ()))
                   -> Router
 methodRouterEmpty method action = LeafRouter route'
   where
@@ -192,9 +192,9 @@ methodRouterEmpty method action = LeafRouter route'
 --
 -- The code of the handler will, just like
 -- for 'Servant.API.Get.Get', 'Servant.API.Post.Post' and
--- 'Servant.API.Put.Put', run in @EitherT ServantErr IO ()@.
+-- 'Servant.API.Put.Put', run in @ExceptT ServantErr IO ()@.
 -- The 'Int' represents the status code and the 'String' a message
--- to be returned. You can use 'Control.Monad.Trans.Either.left' to
+-- to be returned. You can use 'Control.Monad.Trans.Except.throwE' to
 -- painlessly error out if the conditions for a successful deletion
 -- are not met.
 instance
@@ -233,9 +233,9 @@ instance
 -- | When implementing the handler for a 'Get' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Post.Post'
 -- and 'Servant.API.Put.Put', the handler code runs in the
--- @EitherT ServantErr IO@ monad, where the 'Int' represents
+-- @ExceptT ServantErr IO@ monad, where the 'Int' represents
 -- the status code and the 'String' a message, returned in case of
--- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
+-- failure. You can quite handily use 'Control.Monad.Trans.Except.throwE'
 -- to quickly fail if some conditions are not met.
 --
 -- If successfully returning a value, we use the type-level list, combined
@@ -294,7 +294,7 @@ instance
 -- >
 -- > server :: Server MyApi
 -- > server = viewReferer
--- >   where viewReferer :: Referer -> EitherT ServantErr IO referer
+-- >   where viewReferer :: Referer -> ExceptT ServantErr IO referer
 -- >         viewReferer referer = return referer
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (Header sym a :> sublayout) where
@@ -310,9 +310,9 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- | When implementing the handler for a 'Post' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
 -- and 'Servant.API.Put.Put', the handler code runs in the
--- @EitherT ServantErr IO@ monad, where the 'Int' represents
+-- @ExceptT ServantErr IO@ monad, where the 'Int' represents
 -- the status code and the 'String' a message, returned in case of
--- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
+-- failure. You can quite handily use 'Control.Monad.Trans.Except.throwE'
 -- to quickly fail if some conditions are not met.
 --
 -- If successfully returning a value, we use the type-level list, combined
@@ -356,9 +356,9 @@ instance
 -- | When implementing the handler for a 'Put' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
 -- and 'Servant.API.Post.Post', the handler code runs in the
--- @EitherT ServantErr IO@ monad, where the 'Int' represents
+-- @ExceptT ServantErr IO@ monad, where the 'Int' represents
 -- the status code and the 'String' a message, returned in case of
--- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
+-- failure. You can quite handily use 'Control.Monad.Trans.Except.throwE'
 -- to quickly fail if some conditions are not met.
 --
 -- If successfully returning a value, we use the type-level list, combined
@@ -401,9 +401,9 @@ instance
 -- | When implementing the handler for a 'Patch' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
 -- and 'Servant.API.Put.Put', the handler code runs in the
--- @EitherT ServantErr IO@ monad, where the 'Int' represents
+-- @ExceptT ServantErr IO@ monad, where the 'Int' represents
 -- the status code and the 'String' a message, returned in case of
--- failure. You can quite handily use 'Control.Monad.Trans.EitherT.left'
+-- failure. You can quite handily use 'Control.Monad.Trans.Except.throwE'
 -- to quickly fail if some conditions are not met.
 --
 -- If successfully returning a value, we just require that its type has
@@ -459,7 +459,7 @@ instance
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: Maybe Text -> EitherT ServantErr IO [Book]
+-- >   where getBooksBy :: Maybe Text -> ExceptT ServantErr IO [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
@@ -496,7 +496,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: [Text] -> EitherT ServantErr IO [Book]
+-- >   where getBooksBy :: [Text] -> ExceptT ServantErr IO [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (QueryParams sym a :> sublayout) where
@@ -527,7 +527,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooks
--- >   where getBooks :: Bool -> EitherT ServantErr IO [Book]
+-- >   where getBooks :: Bool -> ExceptT ServantErr IO [Book]
 -- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
 instance (KnownSymbol sym, HasServer sublayout)
       => HasServer (QueryFlag sym :> sublayout) where
@@ -567,7 +567,7 @@ parseMatrixText = parseQueryText
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: Maybe Text -> EitherT ServantErr IO [Book]
+-- >   where getBooksBy :: Maybe Text -> ExceptT ServantErr IO [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
@@ -607,7 +607,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: [Text] -> EitherT ServantErr IO [Book]
+-- >   where getBooksBy :: [Text] -> ExceptT ServantErr IO [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
 instance (KnownSymbol sym, FromText a, HasServer sublayout)
       => HasServer (MatrixParams sym a :> sublayout) where
@@ -641,7 +641,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooks
--- >   where getBooks :: Bool -> EitherT ServantErr IO [Book]
+-- >   where getBooks :: Bool -> ExceptT ServantErr IO [Book]
 -- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
 instance (KnownSymbol sym, HasServer sublayout)
       => HasServer (MatrixFlag sym :> sublayout) where
@@ -699,7 +699,7 @@ instance HasServer Raw where
 -- >
 -- > server :: Server MyApi
 -- > server = postBook
--- >   where postBook :: Book -> EitherT ServantErr IO Book
+-- >   where postBook :: Book -> ExceptT ServantErr IO Book
 -- >         postBook book = ...insert into your db...
 instance ( AllCTUnrender list a, HasServer sublayout
          ) => HasServer (ReqBody list a :> sublayout) where

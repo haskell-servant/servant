@@ -5,7 +5,7 @@
 import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Data.Aeson
 import           Data.Monoid
 import           Data.Proxy
@@ -54,16 +54,16 @@ instance FromJSON Package
 hackageAPI :: Proxy HackageAPI
 hackageAPI = Proxy
 
-getUsers :: EitherT ServantError IO [UserSummary]
-getUser :: Username -> EitherT ServantError IO UserDetailed
-getPackages :: EitherT ServantError IO [Package]
+getUsers :: ExceptT ServantError IO [UserSummary]
+getUser :: Username -> ExceptT ServantError IO UserDetailed
+getPackages :: ExceptT ServantError IO [Package]
 getUsers :<|> getUser :<|> getPackages = client hackageAPI $ BaseUrl Http "hackage.haskell.org" 80 ""
 
 main :: IO ()
 main = print =<< uselessNumbers
 
 uselessNumbers :: IO (Either ServantError ())
-uselessNumbers = runEitherT $ do
+uselessNumbers = runExceptT $ do
   users <- getUsers
   liftIO . putStrLn $ show (length users) ++ " users"
 

@@ -10,7 +10,7 @@ module Servant.ServerSpec where
 
 
 import           Control.Monad              (forM_, when)
-import           Control.Monad.Trans.Either (EitherT, left)
+import           Control.Monad.Trans.Except (ExceptT, throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
 import           Data.ByteString.Conversion ()
 import           Data.Char                  (toUpper)
@@ -99,11 +99,11 @@ spec = do
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
 captureApi :: Proxy CaptureApi
 captureApi = Proxy
-captureServer :: Integer -> EitherT ServantErr IO Animal
+captureServer :: Integer -> ExceptT ServantErr IO Animal
 captureServer legs = case legs of
   4 -> return jerry
   2 -> return tweety
-  _ -> left err404
+  _ -> throwE err404
 
 captureSpec :: Spec
 captureSpec = do
@@ -481,11 +481,11 @@ headerApi = Proxy
 headerSpec :: Spec
 headerSpec = describe "Servant.API.Header" $ do
 
-    let expectsInt :: Maybe Int -> EitherT ServantErr IO ()
+    let expectsInt :: Maybe Int -> ExceptT ServantErr IO ()
         expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
         expectsInt Nothing  = error "Expected an int"
 
-    let expectsString :: Maybe String -> EitherT ServantErr IO ()
+    let expectsString :: Maybe String -> ExceptT ServantErr IO ()
         expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
         expectsString Nothing  = error "Expected a string"
 

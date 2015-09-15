@@ -5,7 +5,7 @@ module Servant.Server.Internal.EnterSpec where
 
 import qualified Control.Category           as C
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Data.Proxy
 import           Servant.API
 import           Servant.Server
@@ -34,7 +34,7 @@ combinedAPI = Proxy
 readerServer' :: ServerT ReaderAPI (Reader String)
 readerServer' = return 1797 :<|> ask
 
-fReader :: Reader String :~> EitherT ServantErr IO
+fReader :: Reader String :~> ExceptT ServantErr IO
 fReader = generalizeNat C.. (runReaderTNat "hi")
 
 readerServer :: Server ReaderAPI

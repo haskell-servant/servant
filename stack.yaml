@@ -14,4 +14,4 @@ packages:
 - servant-server/
 extra-deps:
 - engine-io-wai-1.0.2
-resolver: nightly-2015-09-05
+resolver: nightly-2015-09-10
