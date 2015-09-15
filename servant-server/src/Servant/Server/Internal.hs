@@ -686,7 +686,8 @@ instance HasServer Raw where
 -- that takes an argument of the type specified by 'ReqBody'.
 -- The @Content-Type@ header is inspected, and the list provided is used to
 -- attempt deserialization. If the request does not have a @Content-Type@
--- header, it is treated as @application/octet-stream@.
+-- header, it is treated as @application/octet-stream@ (as specified in
+-- <http://tools.ietf.org/html/rfc7231#section-3.1.1.5 RFC7231>.
 -- This lets servant worry about extracting it from the request and turning
 -- it into a value of the type you specify.
 --
