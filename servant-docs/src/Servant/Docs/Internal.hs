@@ -919,3 +919,90 @@ instance HasDocs sublayout => HasDocs (HttpVersion :> sublayout) where
 instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
   docsFor Proxy ep =
     docsFor (Proxy :: Proxy sublayout) ep
+
+
+-- polymorphic 'ToSample' instances
+
+instance ( ToSample a a
+         , ToSample b b
+         ) => ToSample (a, b) (a, b) where
+    toSample _ = (,)
+        <$> toSample (Proxy :: Proxy a)
+        <*> toSample (Proxy :: Proxy b)
+    toSamples _ = render
+        <$> toSamples (Proxy :: Proxy a)
+        <*> toSamples (Proxy :: Proxy b)
+      where render (ta, va) (tb, vb)
+              = ("("  <> ta <>
+                 ", " <> tb <>
+                 ")"
+                , (va, vb))
+
+instance ( ToSample a a
+         , ToSample b b
+         , ToSample c c
+         ) => ToSample (a, b, c) (a, b, c) where
+    toSample _ = (,,)
+        <$> toSample (Proxy :: Proxy a)
+        <*> toSample (Proxy :: Proxy b)
+        <*> toSample (Proxy :: Proxy c)
+    toSamples _ = render
+        <$> toSamples (Proxy :: Proxy a)
+        <*> toSamples (Proxy :: Proxy b)
+        <*> toSamples (Proxy :: Proxy c)
+      where render (ta, va) (tb, vb) (tc, vc)
+              = ("("  <> ta <>
+                 ", " <> tb <>
+                 ", " <> tc <>
+                 ")"
+                , (va, vb, vc))
+
+instance ( ToSample a a
+         , ToSample b b
+         , ToSample c c
+         , ToSample d d
+         ) => ToSample (a, b, c, d) (a, b, c, d) where
+    toSample _ = (,,,)
+        <$> toSample (Proxy :: Proxy a)
+        <*> toSample (Proxy :: Proxy b)
+        <*> toSample (Proxy :: Proxy c)
+        <*> toSample (Proxy :: Proxy d)
+    toSamples _ = render
+        <$> toSamples (Proxy :: Proxy a)
+        <*> toSamples (Proxy :: Proxy b)
+        <*> toSamples (Proxy :: Proxy c)
+        <*> toSamples (Proxy :: Proxy d)
+      where render (ta, va) (tb, vb) (tc, vc) (td, vd)
+              = ("("  <> ta <>
+                 ", " <> tb <>
+                 ", " <> tc <>
+                 ", " <> td <>
+                 ")"
+                , (va, vb, vc, vd))
+
+instance ( ToSample a a
+         , ToSample b b
+         , ToSample c c
+         , ToSample d d
+         , ToSample e e
+         ) => ToSample (a, b, c, d, e) (a, b, c, d, e) where
+    toSample _ = (,,,,)
+        <$> toSample (Proxy :: Proxy a)
+        <*> toSample (Proxy :: Proxy b)
+        <*> toSample (Proxy :: Proxy c)
+        <*> toSample (Proxy :: Proxy d)
+        <*> toSample (Proxy :: Proxy e)
+    toSamples _ = render
+        <$> toSamples (Proxy :: Proxy a)
+        <*> toSamples (Proxy :: Proxy b)
+        <*> toSamples (Proxy :: Proxy c)
+        <*> toSamples (Proxy :: Proxy d)
+        <*> toSamples (Proxy :: Proxy e)
+      where render (ta, va) (tb, vb) (tc, vc) (td, vd) (te, ve)
+              = ("("  <> ta <>
+                 ", " <> tb <>
+                 ", " <> tc <>
+                 ", " <> td <>
+                 ", " <> te <>
+                 ")"
+                , (va, vb, vc, vd, ve))
