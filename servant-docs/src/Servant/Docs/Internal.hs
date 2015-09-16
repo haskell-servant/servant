@@ -1006,3 +1006,69 @@ instance ( ToSample a a
                  ", " <> te <>
                  ")"
                 , (va, vb, vc, vd, ve))
+
+instance ( ToSample a a
+         , ToSample b b
+         , ToSample c c
+         , ToSample d d
+         , ToSample e e
+         , ToSample f f
+         ) => ToSample (a, b, c, d, e, f) (a, b, c, d, e, f) where
+    toSample _ = (,,,,,)
+        <$> toSample (Proxy :: Proxy a)
+        <*> toSample (Proxy :: Proxy b)
+        <*> toSample (Proxy :: Proxy c)
+        <*> toSample (Proxy :: Proxy d)
+        <*> toSample (Proxy :: Proxy e)
+        <*> toSample (Proxy :: Proxy f)
+    toSamples _ = render
+        <$> toSamples (Proxy :: Proxy a)
+        <*> toSamples (Proxy :: Proxy b)
+        <*> toSamples (Proxy :: Proxy c)
+        <*> toSamples (Proxy :: Proxy d)
+        <*> toSamples (Proxy :: Proxy e)
+        <*> toSamples (Proxy :: Proxy f)
+      where render (ta, va) (tb, vb) (tc, vc) (td, vd) (te, ve) (tf, vf)
+              = ("("  <> ta <>
+                 ", " <> tb <>
+                 ", " <> tc <>
+                 ", " <> td <>
+                 ", " <> te <>
+                 ", " <> tf <>
+                 ")"
+                , (va, vb, vc, vd, ve, vf))
+
+instance ( ToSample a a
+         , ToSample b b
+         , ToSample c c
+         , ToSample d d
+         , ToSample e e
+         , ToSample f f
+         , ToSample g g
+         ) => ToSample (a, b, c, d, e, f, g) (a, b, c, d, e, f, g) where
+    toSample _ = (,,,,,,)
+        <$> toSample (Proxy :: Proxy a)
+        <*> toSample (Proxy :: Proxy b)
+        <*> toSample (Proxy :: Proxy c)
+        <*> toSample (Proxy :: Proxy d)
+        <*> toSample (Proxy :: Proxy e)
+        <*> toSample (Proxy :: Proxy f)
+        <*> toSample (Proxy :: Proxy g)
+    toSamples _ = render
+        <$> toSamples (Proxy :: Proxy a)
+        <*> toSamples (Proxy :: Proxy b)
+        <*> toSamples (Proxy :: Proxy c)
+        <*> toSamples (Proxy :: Proxy d)
+        <*> toSamples (Proxy :: Proxy e)
+        <*> toSamples (Proxy :: Proxy f)
+        <*> toSamples (Proxy :: Proxy g)
+      where render (ta, va) (tb, vb) (tc, vc) (td, vd) (te, ve) (tf, vf) (tg, vg)
+              = ("("  <> ta <>
+                 ", " <> tb <>
+                 ", " <> tc <>
+                 ", " <> td <>
+                 ", " <> te <>
+                 ", " <> tf <>
+                 ", " <> tg <>
+                 ")"
+                , (va, vb, vc, vd, ve, vf, vg))
