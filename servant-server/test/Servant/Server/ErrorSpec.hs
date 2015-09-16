@@ -5,12 +5,14 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.Server.ErrorSpec (spec) where
 
+import           Control.Monad.Trans.Except (throwE)
 import           Data.Aeson                 (encode)
-import qualified Data.ByteString.Lazy.Char8 as BCL
 import qualified Data.ByteString.Char8      as BC
+import qualified Data.ByteString.Lazy.Char8 as BCL
 import           Data.Proxy
 import           Network.HTTP.Types         (hAccept, hContentType, methodGet,
                                              methodPost, methodPut)
+import           Safe                       (readMay)
 import           Test.Hspec
 import           Test.Hspec.Wai
 
@@ -54,7 +56,7 @@ errorOrderApi :: Proxy ErrorOrderApi
 errorOrderApi = Proxy
 
 errorOrderServer :: Server ErrorOrderApi
-errorOrderServer = \_ _ -> return 5
+errorOrderServer = \_ _ -> throwE err402
 
 errorOrderSpec :: Spec
 errorOrderSpec = describe "HTTP error order"
@@ -65,6 +67,7 @@ errorOrderSpec = describe "HTTP error order"
       badUrl          = "home/nonexistent"
       badBody         = "nonsense"
       goodContentType = (hContentType, "application/json")
+      goodAccept      = (hAccept, "application/json")
       goodMethod      = methodPost
       goodUrl         = "home/2"
       goodBody        = encode (5 :: Int)
@@ -89,6 +92,10 @@ errorOrderSpec = describe "HTTP error order"
     request goodMethod goodUrl [goodContentType, badAccept] goodBody
       `shouldRespondWith` 406
 
+  it "has handler-level errors as last priority" $ do
+    request goodMethod goodUrl [goodContentType, goodAccept] goodBody
+      `shouldRespondWith` 402
+
 type PrioErrorsApi = ReqBody '[JSON] Integer :> "foo" :> Get '[JSON] Integer
 
 prioErrorsApi :: Proxy PrioErrorsApi
@@ -107,7 +114,7 @@ prioErrorsSpec = describe "PrioErrors" $ do
               `shouldRespondWith` resp
           where
             fulldescr = "returns " ++ show (matchStatus resp) ++ " on " ++ mdescr
-                     ++ " " ++ (BC.unpack path) ++ " (" ++ cdescr ++ ")"
+                     ++ " " ++ BC.unpack path ++ " (" ++ cdescr ++ ")"
 
         get' = ("GET", methodGet)
         put' = ("PUT", methodPut)
@@ -140,7 +147,7 @@ prioErrorsSpec = describe "PrioErrors" $ do
 -- * Error Retry {{{
 
 type ErrorRetryApi
-     = "a" :> ReqBody '[JSON] Int      :> Post '[JSON] Int                -- 0
+     = "a" :> ReqBody '[JSON] Int      :> Post '[JSON] Int                -- err402
   :<|> "a" :> ReqBody '[PlainText] Int :> Post '[JSON] Int                -- 1
   :<|> "a" :> ReqBody '[JSON] Int      :> Post '[PlainText] Int           -- 2
   :<|> "a" :> ReqBody '[JSON] String   :> Post '[JSON] Int                -- 3
@@ -154,7 +161,7 @@ errorRetryApi = Proxy
 
 errorRetryServer :: Server ErrorRetryApi
 errorRetryServer
-     = (\_ -> return 0)
+     = (\_ -> throwE err402)
   :<|> (\_ -> return 1)
   :<|> (\_ -> return 2)
   :<|> (\_ -> return 3)
@@ -180,18 +187,6 @@ errorRetrySpec = describe "Handler search"
   it "should continue when methods don't match" $ do
     request methodGet "a" [jsonCT, jsonAccept] jsonBody
      `shouldRespondWith` 200 { matchBody = Just $ encode (4 :: Int) }
-
-  it "should not continue when Content-Types don't match" $ do
-    request methodPost "a" [plainCT, jsonAccept] jsonBody
-     `shouldRespondWith` 415
-
-  it "should not continue when body can't be deserialized" $ do
-    request methodPost "a" [jsonCT, jsonAccept] (encode ("nonsense" :: String))
-     `shouldRespondWith` 400
-
-  it "should not continue when Accepts don't match" $ do
-    request methodPost "a" [jsonCT, plainAccept] jsonBody
-     `shouldRespondWith` 406
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -233,7 +228,7 @@ errorChoiceSpec = describe "Multiple handlers return errors"
     request methodPost "path3" [(hContentType, "application/json")] ""
       `shouldRespondWith` 400
     request methodPost "path4" [(hContentType, "text/plain;charset=utf-8"),
-                                (hAccept, "application/json")] ""
+                                (hAccept, "blah")] "5"
       `shouldRespondWith` 406
 
 
@@ -242,10 +237,8 @@ errorChoiceSpec = describe "Multiple handlers return errors"
 -- * Instances {{{
 
 instance MimeUnrender PlainText Int where
-    mimeUnrender _ = Right . read . BCL.unpack
+    mimeUnrender _ x = maybe (Left "no parse") Right (readMay $ BCL.unpack x)
 
 instance MimeRender PlainText Int where
     mimeRender _ = BCL.pack . show
 -- }}}
---
-

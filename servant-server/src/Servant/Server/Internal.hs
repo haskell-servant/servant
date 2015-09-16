@@ -46,7 +46,9 @@ import           Servant.API                 ((:<|>) (..), (:>), Capture,
                                               Raw, RemoteHost, ReqBody, Vault)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
-                                              AllCTUnrender (..))
+                                              AllCTUnrender (..),
+                                              AllMime,
+                                              canHandleAcceptH)
 import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
                                               getResponse)
 
@@ -60,7 +62,7 @@ import           Web.HttpApiData.Internal (parseUrlPieceMaybe, parseHeaderMaybe,
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
 
-  route :: Proxy layout -> IO (RouteResult (Server layout)) -> Router
+  route :: Proxy layout -> Delayed (Server layout) -> Router
 
 type Server layout = ServerT layout (ExceptT ServantErr IO)
 
@@ -81,8 +83,8 @@ instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
 
   type ServerT (a :<|> b) m = ServerT a m :<|> ServerT b m
 
-  route Proxy server = choice (route pa (extractL <$> server))
-                              (route pb (extractR <$> server))
+  route Proxy server = choice (route pa ((\ (a :<|> _) -> a) <$> server))
+                              (route pb ((\ (_ :<|> b) -> b) <$> server))
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b
 
@@ -112,12 +114,15 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
   type ServerT (Capture capture a :> sublayout) m =
      a -> ServerT sublayout m
 
-  route Proxy subserver =
-    DynamicRouter $ \ first -> case captured captureProxy first of
-       Nothing  -> LeafRouter (\_ r -> r $ Fail err404)
-       Just v   -> route (Proxy :: Proxy sublayout) (feedTo subserver v)
-
-    where captureProxy = Proxy :: Proxy (Capture capture a)
+  route Proxy d =
+    DynamicRouter $ \ first ->
+        route (Proxy :: Proxy sublayout)
+              (addCapture d $ case captured captureProxy first of
+                 Nothing -> return $ Fail err404
+                 Just v  -> return $ Route v
+              )
+    where
+      captureProxy = Proxy :: Proxy (Capture capture a)
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
@@ -130,56 +135,64 @@ processMethodRouter :: forall a. ConvertibleStrings a B.ByteString
                     -> Maybe [(HeaderName, B.ByteString)]
                     -> Request -> RouteResult Response
 processMethodRouter handleA status method headers request = case handleA of
-  Nothing -> FailFatal err406
-  Just (contentT, body) -> Route $! responseLBS status hdrs bdy
+  Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
+  Just (contentT, body) -> Route $ responseLBS status hdrs bdy
     where
       bdy = if allowedMethodHead method request then "" else body
       hdrs = (hContentType, cs contentT) : (fromMaybe [] headers)
 
+methodCheck :: Method -> Request -> IO (RouteResult ())
+methodCheck method request
+  | allowedMethod method request = return $ Route ()
+  | otherwise                    = return $ Fail err405
+
+acceptCheck :: (AllMime list) => Proxy list -> B.ByteString -> IO (RouteResult ())
+acceptCheck proxy accH
+  | canHandleAcceptH proxy (AcceptHeader accH) = return $ Route ()
+  | otherwise                                  = return $ Fail err406
+
 methodRouter :: (AllCTRender ctypes a)
              => Method -> Proxy ctypes -> Status
-             -> IO (RouteResult (ExceptT ServantErr IO a))
+             -> Delayed (ExceptT ServantErr IO a)
              -> Router
 methodRouter method proxy status action = LeafRouter route'
   where
     route' request respond
-      | pathIsEmpty request && allowedMethod method request = do
-          runAction action respond $ \ output -> do
-            let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-                handleA = handleAcceptH proxy (AcceptHeader accH) output
-            processMethodRouter handleA status method Nothing request
-      | pathIsEmpty request && requestMethod request /= method =
-          respond $ Fail err405
+      | pathIsEmpty request =
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+          in runAction (action `addMethodCheck` methodCheck method request
+                               `addAcceptCheck` acceptCheck proxy  accH
+                       ) respond $ \ output -> do
+               let handleA = handleAcceptH proxy (AcceptHeader accH) output
+               processMethodRouter handleA status method Nothing request
       | otherwise = respond $ Fail err404
 
 methodRouterHeaders :: (GetHeaders (Headers h v), AllCTRender ctypes v)
                     => Method -> Proxy ctypes -> Status
-                    -> IO (RouteResult (ExceptT ServantErr IO (Headers h v)))
+                    -> Delayed (ExceptT ServantErr IO (Headers h v))
                     -> Router
 methodRouterHeaders method proxy status action = LeafRouter route'
   where
     route' request respond
-      | pathIsEmpty request && allowedMethod method request = do
-        runAction action respond $ \ output -> do
-          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-              headers = getHeaders output
-              handleA = handleAcceptH proxy (AcceptHeader accH) (getResponse output)
-          processMethodRouter handleA status method (Just headers) request
-      | pathIsEmpty request && requestMethod request /= method =
-          respond $ Fail err405
+      | pathIsEmpty request =
+          let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+          in runAction (action `addMethodCheck` methodCheck method request
+                               `addAcceptCheck` acceptCheck proxy  accH
+                       ) respond $ \ output -> do
+                let headers = getHeaders output
+                    handleA = handleAcceptH proxy (AcceptHeader accH) (getResponse output)
+                processMethodRouter handleA status method (Just headers) request
       | otherwise = respond $ Fail err404
 
 methodRouterEmpty :: Method
-                  -> IO (RouteResult (ExceptT ServantErr IO ()))
+                  -> Delayed (ExceptT ServantErr IO ())
                   -> Router
 methodRouterEmpty method action = LeafRouter route'
   where
     route' request respond
-      | pathIsEmpty request && allowedMethod method request = do
-          runAction action respond $ \ () ->
+      | pathIsEmpty request = do
+          runAction (addMethodCheck action (methodCheck method request)) respond $ \ () ->
             Route $! responseLBS noContent204 [] ""
-      | pathIsEmpty request && requestMethod request /= method =
-          respond $ Fail err405
       | otherwise = respond $ Fail err404
 
 -- | If you have a 'Delete' endpoint in your API,
@@ -300,7 +313,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   route Proxy subserver = WithRequest $ \ request ->
     let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
-    in  route (Proxy :: Proxy sublayout) (feedTo subserver mheader)
+    in  route (Proxy :: Proxy sublayout) (passToServer subserver mheader)
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | When implementing the handler for a 'Post' endpoint,
@@ -472,7 +485,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
             Just Nothing  -> Nothing -- param present with no value -> Nothing
             Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                         -- the right type
-    in route (Proxy :: Proxy sublayout) (feedTo subserver param)
+    in route (Proxy :: Proxy sublayout) (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -507,7 +520,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
         -- corresponding values
         parameters = filter looksLikeParam querytext
         values = mapMaybe (convert . snd) parameters
-    in  route (Proxy :: Proxy sublayout) (feedTo subserver values)
+    in  route (Proxy :: Proxy sublayout) (passToServer subserver values)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
@@ -537,7 +550,7 @@ instance (KnownSymbol sym, HasServer sublayout)
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value
           Nothing       -> False -- param not in the query string
-    in  route (Proxy :: Proxy sublayout) (feedTo subserver param)
+    in  route (Proxy :: Proxy sublayout) (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
@@ -555,7 +568,7 @@ instance HasServer Raw where
   type ServerT Raw m = Application
 
   route Proxy rawApplication = LeafRouter $ \ request respond -> do
-    r <- rawApplication
+    r <- runDelayed rawApplication
     case r of
       Route app   -> app request (respond . Route)
       Fail a      -> respond $ Fail a
@@ -589,19 +602,21 @@ instance ( AllCTUnrender list a, HasServer sublayout
     a -> ServerT sublayout m
 
   route Proxy subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy sublayout) $ do
-      -- See HTTP RFC 2616, section 7.2.1
-      -- http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
-      -- See also "W3C Internet Media Type registration, consistency of use"
-      -- http://www.w3.org/2001/tag/2002/0129-mime
-      let contentTypeH = fromMaybe "application/octet-stream"
-                       $ lookup hContentType $ requestHeaders request
-      mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
-             <$> lazyRequestBody request
-      case mrqbody of
-        Nothing -> return $ FailFatal err415
-        Just (Left e) -> return $ FailFatal err400 { errBody = cs e }
-        Just (Right v) -> feedTo subserver v
+    route (Proxy :: Proxy sublayout) (addBodyCheck subserver (bodyCheck request))
+    where
+      bodyCheck request = do
+        -- See HTTP RFC 2616, section 7.2.1
+        -- http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
+        -- See also "W3C Internet Media Type registration, consistency of use"
+        -- http://www.w3.org/2001/tag/2002/0129-mime
+        let contentTypeH = fromMaybe "application/octet-stream"
+                         $ lookup hContentType $ requestHeaders request
+        mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
+               <$> lazyRequestBody request
+        case mrqbody of
+          Nothing        -> return $ FailFatal err415
+          Just (Left e)  -> return $ FailFatal err400 { errBody = cs e }
+          Just (Right v) -> return $ Route v
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @sublayout@.
@@ -618,13 +633,13 @@ instance HasServer api => HasServer (RemoteHost :> api) where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (feedTo subserver $ remoteHost req)
+    route (Proxy :: Proxy api) (passToServer subserver $ remoteHost req)
 
 instance HasServer api => HasServer (IsSecure :> api) where
   type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (feedTo subserver $ secure req)
+    route (Proxy :: Proxy api) (passToServer subserver $ secure req)
 
     where secure req = if isSecure req then Secure else NotSecure
 
@@ -632,13 +647,13 @@ instance HasServer api => HasServer (Vault :> api) where
   type ServerT (Vault :> api) m = Vault -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (feedTo subserver $ vault req)
+    route (Proxy :: Proxy api) (passToServer subserver $ vault req)
 
 instance HasServer api => HasServer (HttpVersion :> api) where
   type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (feedTo subserver $ httpVersion req)
+    route (Proxy :: Proxy api) (passToServer subserver $ httpVersion req)
 
 pathIsEmpty :: Request -> Bool
 pathIsEmpty = go . pathInfo

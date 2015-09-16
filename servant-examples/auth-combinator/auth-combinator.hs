@@ -10,7 +10,6 @@ import           Data.Aeson
 import           Data.ByteString          (ByteString)
 import           Data.Text                (Text)
 import           GHC.Generics
-import           Network.HTTP.Types
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Servant
@@ -29,15 +28,16 @@ data AuthProtected
 instance HasServer rest => HasServer (AuthProtected :> rest) where
   type ServerT (AuthProtected :> rest) m = ServerT rest m
 
-  route Proxy a = WithRequest $ \ request ->
-    route (Proxy :: Proxy rest) $ do
-      case lookup "Cookie" (requestHeaders request) of
-        Nothing -> return $! FailFatal err401 { errBody = "Missing auth header" }
-        Just v  -> do
-          authGranted <- isGoodCookie v
-          if authGranted
-            then a
-            else return $ FailFatal err403 { errBody = "Invalid cookie" }
+  route Proxy subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy rest) $ addAcceptCheck subserver $ cookieCheck request
+      where
+        cookieCheck req = case lookup "Cookie" (requestHeaders req) of
+            Nothing -> return $ FailFatal err401 { errBody = "Missing auth header" }
+            Just v  -> do
+              authGranted <- isGoodCookie v
+              if authGranted
+                then return $ Route ()
+                else return $ FailFatal err403 { errBody = "Invalid cookie" }
 
 type PrivateAPI = Get '[JSON] [PrivateData]
 

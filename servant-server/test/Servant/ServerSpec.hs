@@ -1,20 +1,12 @@
-<<<<<<< HEAD
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DeriveGeneric        #-}
-=======
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleInstances    #-}
->>>>>>> Review fixes
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-<<<<<<< HEAD
 {-# LANGUAGE FlexibleInstances    #-}
-=======
->>>>>>> Review fixes
 
 module Servant.ServerSpec where
 
@@ -55,6 +47,7 @@ import           Test.Hspec                 (Spec, describe, it, shouldBe)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, post, request,
                                              shouldRespondWith, with, (<:>))
+<<<<<<< HEAD
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Get, Header (..), Headers,
                                              HttpVersion, IsSecure (..), JSON,
@@ -63,12 +56,12 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Raw, RemoteHost, ReqBody,
                                              addHeader)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
+=======
+import           Servant.Server.Internal.RoutingApplication (toApplication, RouteResult(..))
+>>>>>>> Rebase cleanup and test fixes.
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
-import           Servant.Server.Internal.RoutingApplication
-                                            (RouteResult(..), RouteMismatch(..),
-                                             toApplication)
 
 
 -- * test data types
@@ -279,13 +272,13 @@ queryParamSpec = do
              }
 
           let params3'' = "?unknown="
-          response3' <- Network.Wai.Test.request defaultRequest{
+          response3'' <- Network.Wai.Test.request defaultRequest{
             rawQueryString = params3'',
             queryString = parseQuery params3'',
             pathInfo = ["b"]
            }
           liftIO $
-            decode' (simpleBody response3') `shouldBe` Just alice{
+            decode' (simpleBody response3'') `shouldBe` Just alice{
               name = "Alice"
              }
 
@@ -553,7 +546,7 @@ routerSpec = do
 
         router', router :: Router
         router' = tweakResponse (twk <$>) router
-        router = LeafRouter $ \_ cont -> cont (RR . Right $ responseBuilder (Status 201 "") [] "")
+        router = LeafRouter $ \_ cont -> cont (Route $ responseBuilder (Status 201 "") [] "")
 
         twk :: Response -> Response
         twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b

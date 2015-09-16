@@ -108,6 +108,7 @@ test-suite spec
     , network >= 2.6
     , QuickCheck
     , parsec
+    , safe
     , servant
     , servant-server
     , string-conversions

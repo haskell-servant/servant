@@ -6,9 +6,9 @@ import           Data.Map                                   (Map)
 import qualified Data.Map                                   as M
 import           Data.Text                                  (Text)
 import           Network.Wai                                (Request, Response, pathInfo)
-import           Servant.Server.Internal.ServantErr
 import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.RoutingApplication
+import           Servant.Server.Internal.ServantErr
 
 type Router = Router' RoutingApplication
 
@@ -77,10 +77,18 @@ runRouter (Choice r1 r2)       request respond =
     Fail _ -> runRouter r2 request $ \ mResponse2 ->
       respond (highestPri mResponse1 mResponse2)
     _      -> respond mResponse1
-  where
-    highestPri (Fail e1) (Fail e2) =
-      if errHTTPCode e1 == 404 && errHTTPCode e2 /= 404
-        then Fail e2
-        else Fail e1
-    highestPri (Fail _) y = y
-    highestPri x _ = x
+   where
+     highestPri (Fail e1) (Fail e2) =
+       if worseHTTPCode (errHTTPCode e1) (errHTTPCode e2)
+         then Fail e2
+         else Fail e1
+     highestPri (Fail _) y = y
+     highestPri x _ = x
+
+
+-- Priority on HTTP codes.
+--
+-- It just so happens that 404 < 405 < 406 as far as
+-- we are concerned here, so we can use (<).
+worseHTTPCode :: Int -> Int -> Bool
+worseHTTPCode = (<)
