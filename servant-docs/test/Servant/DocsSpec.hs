@@ -1,7 +1,9 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
@@ -42,6 +44,21 @@ spec = describe "Servant.Docs" $ do
       md `shouldContain` "get an integer in Json or plain text"
       md `shouldContain` "Posts some Json data"
 
+  describe "tuple samples" $ do
+    it "looks like expected" $ do
+      (toSample  (Proxy :: Proxy (TT, UT)))     `shouldBe` Just (TT1,UT1)
+      (toSample  (Proxy :: Proxy (TT, UT, UT))) `shouldBe` Just (TT1,UT1,UT1)
+      (toSamples (Proxy :: Proxy (TT, UT)))     `shouldBe`
+         [ ("(eins, yks)",(TT1,UT1)), ("(eins, kaks)",(TT1,UT2))
+         , ("(zwei, yks)",(TT2,UT1)), ("(zwei, kaks)",(TT2,UT2))
+         ]
+      (toSamples (Proxy :: Proxy (TT, UT, UT))) `shouldBe`
+         [ ("(eins, yks, yks)",(TT1,UT1,UT1)),  ("(eins, yks, kaks)",(TT1,UT1,UT2))
+         , ("(eins, kaks, yks)",(TT1,UT2,UT1)), ("(eins, kaks, kaks)",(TT1,UT2,UT2))
+         , ("(zwei, yks, yks)",(TT2,UT1,UT1)),  ("(zwei, yks, kaks)",(TT2,UT1,UT2))
+         , ("(zwei, kaks, yks)",(TT2,UT2,UT1)), ("(zwei, kaks, kaks)",(TT2,UT2,UT2))
+         ]
+
  where
    tests md = do
     it "mentions supported content-types" $ do
@@ -81,7 +98,16 @@ instance ToSample Int Int where
 instance MimeRender PlainText Int where
   mimeRender _ = cs . show
 
-
 type TestApi1 = Get '[JSON, PlainText] Int
            :<|> ReqBody '[JSON] String :> Post '[JSON] Datatype1
 
+data TT = TT1 | TT2 deriving (Show, Eq)
+data UT = UT1 | UT2 deriving (Show, Eq)
+
+instance ToSample TT TT where
+  toSample _ = Just TT1
+  toSamples _ = [("eins", TT1), ("zwei", TT2)]
+
+instance ToSample UT UT where
+  toSample _ = Just UT1
+  toSamples _ = [("yks", UT1), ("kaks", UT2)]
