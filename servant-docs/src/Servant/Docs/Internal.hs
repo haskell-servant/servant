@@ -961,6 +961,11 @@ instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
   docsFor Proxy ep =
     docsFor (Proxy :: Proxy sublayout) ep
 
+-- 'ToSample' instances for simple types
+
+instance ToSample () ()
+instance ToSample Bool Bool
+instance ToSample Ordering Ordering
 
 -- polymorphic 'ToSample' instances
 
