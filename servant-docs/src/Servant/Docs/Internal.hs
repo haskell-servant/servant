@@ -23,6 +23,7 @@ module Servant.Docs.Internal where
 import           Control.Applicative
 import           Control.Arrow              (second)
 import           Control.Lens               hiding (List, to, from)
+import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
@@ -394,12 +395,12 @@ defaultSample :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) =
 defaultSample _ = to <$> gtoSample (Proxy :: Proxy (Rep a))
 
 defaultSamples :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
-defaultSamples _ = second to <$> gtoSamples (Proxy :: Proxy (Rep a))
+defaultSamples _ = Omega.runOmega $ second to <$> gtoSamples (Proxy :: Proxy (Rep a))
 
 class GToSample t s where
   gtoSample  :: proxy t -> Maybe (s x)
-  gtoSample _ = snd <$> listToMaybe (gtoSamples (Proxy :: Proxy t))
-  gtoSamples :: proxy t -> [(Text, s x)]
+  gtoSample _ = snd <$> listToMaybe (Omega.runOmega (gtoSamples (Proxy :: Proxy t)))
+  gtoSamples :: proxy t -> Omega.Omega (Text, s x)
   gtoSamples _ = maybe empty (pure . ("",)) (gtoSample (Proxy :: Proxy t))
 
 instance GToSample U1 U1 where
@@ -426,7 +427,7 @@ instance (GToSample p p', GToSample q q') => GToSample (p :+: q) (p' :+: q') whe
 
 instance ToSample a b => GToSample (K1 i a) (K1 i b) where
   gtoSample  _ = K1 <$> toSample (Proxy :: Proxy a)
-  gtoSamples _ = second K1 <$> toSamples (Proxy :: Proxy a)
+  gtoSamples _ = second K1 <$> Omega.each (toSamples (Proxy :: Proxy a))
 
 instance (GToSample f g) => GToSample (M1 i a f) (M1 i a g) where
   gtoSample  _ = M1 <$> gtoSample (Proxy :: Proxy f)
