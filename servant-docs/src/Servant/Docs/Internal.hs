@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DefaultSignatures      #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -19,10 +20,9 @@
 #endif
 module Servant.Docs.Internal where
 
-#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
-#endif
-import           Control.Lens               hiding (List)
+import           Control.Arrow              (second)
+import           Control.Lens               hiding (List, to, from)
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
@@ -382,14 +382,55 @@ class HasDocs layout where
 -- some context (as 'Text') that explains when you're supposed to
 -- get the corresponding response.
 class ToSample a b | a -> b where
-  {-# MINIMAL (toSample | toSamples) #-}
   toSample :: Proxy a -> Maybe b
   toSample _ = snd <$> listToMaybe samples
     where samples = toSamples (Proxy :: Proxy a)
 
   toSamples :: Proxy a -> [(Text, b)]
-  toSamples _ = maybe [] (return . ("",)) s
-    where s = toSample (Proxy :: Proxy a)
+  default toSamples :: (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
+  toSamples = defaultSamples
+
+defaultSample :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> Maybe b
+defaultSample _ = to <$> gtoSample (Proxy :: Proxy (Rep a))
+
+defaultSamples :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
+defaultSamples _ = second to <$> gtoSamples (Proxy :: Proxy (Rep a))
+
+class GToSample t s where
+  gtoSample  :: proxy t -> Maybe (s x)
+  gtoSample _ = snd <$> listToMaybe (gtoSamples (Proxy :: Proxy t))
+  gtoSamples :: proxy t -> [(Text, s x)]
+  gtoSamples _ = maybe empty (pure . ("",)) (gtoSample (Proxy :: Proxy t))
+
+instance GToSample U1 U1 where
+  gtoSample _ = Just U1
+
+instance GToSample V1 V1 where
+  gtoSample _ = Nothing
+
+instance (GToSample p p', GToSample q q') => GToSample (p :*: q) (p' :*: q') where
+  gtoSample  _ = (:*:)  <$> gtoSample  (Proxy :: Proxy p) <*> gtoSample  (Proxy :: Proxy q)
+  gtoSamples _ = render <$> ps <*> qs
+    where
+      ps = gtoSamples (Proxy :: Proxy p)
+      qs = gtoSamples (Proxy :: Proxy q)
+      render (ta, a) (tb, b)
+        | T.null ta || T.null tb = (ta <> tb, a :*: b)
+        | otherwise              = (ta <> ", " <> tb, a :*: b)
+
+instance (GToSample p p', GToSample q q') => GToSample (p :+: q) (p' :+: q') where
+  gtoSamples _ = lefts <|> rights
+    where
+      lefts  = second L1 <$> gtoSamples (Proxy :: Proxy p)
+      rights = second R1 <$> gtoSamples (Proxy :: Proxy q)
+
+instance ToSample a b => GToSample (K1 i a) (K1 i b) where
+  gtoSample  _ = K1 <$> toSample (Proxy :: Proxy a)
+  gtoSamples _ = second K1 <$> toSamples (Proxy :: Proxy a)
+
+instance (GToSample f g) => GToSample (M1 i a f) (M1 i a g) where
+  gtoSample  _ = M1 <$> gtoSample (Proxy :: Proxy f)
+  gtoSamples _ = second M1 <$> gtoSamples (Proxy :: Proxy f)
 
 instance ToSample a b => ToSample (Headers ls a) b where
   toSample _  = toSample (Proxy :: Proxy a)
