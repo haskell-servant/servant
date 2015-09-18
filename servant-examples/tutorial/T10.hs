@@ -24,7 +24,7 @@ instance ToCapture (Capture "y" Int) where
   toCapture _ = DocCapture "y" "(integer) position on the y axis"
 
 instance ToSample T3.Position T3.Position where
-  toSample _ = Just (T3.Position 3 14)
+  toSamples _ = singleSample (T3.Position 3 14)
 
 instance ToParam (QueryParam "name" String) where
   toParam _ =
@@ -43,10 +43,10 @@ ci :: T3.ClientInfo
 ci = T3.ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]
 
 instance ToSample T3.ClientInfo T3.ClientInfo where
-  toSample _ = Just ci
+  toSamples _ = singleSample ci
 
 instance ToSample T3.Email T3.Email where
-  toSample _ = Just (T3.emailForClient ci)
+  toSamples _ = singleSample (T3.emailForClient ci)
 
 api :: Proxy DocsAPI
 api = Proxy

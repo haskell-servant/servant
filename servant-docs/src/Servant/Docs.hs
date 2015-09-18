@@ -148,6 +148,9 @@ module Servant.Docs
 
   , -- * Classes you need to implement for your types
     ToSample(..)
+  , toSample
+  , noSamples
+  , singleSample
   , sampleByteString
   , sampleByteStrings
   , ToParam(..)

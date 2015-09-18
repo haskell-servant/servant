@@ -374,7 +374,7 @@ class HasDocs layout where
 -- > instance ToJSON Greet
 -- >
 -- > instance ToSample Greet Greet where
--- >   toSample _ = Just g
+-- >   toSamples _ = singleSample g
 -- >
 -- >     where g = Greet "Hello, haskeller!"
 --
@@ -383,34 +383,34 @@ class HasDocs layout where
 -- some context (as 'Text') that explains when you're supposed to
 -- get the corresponding response.
 class ToSample a b | a -> b where
-  toSample :: Proxy a -> Maybe b
-  toSample _ = snd <$> listToMaybe samples
-    where samples = toSamples (Proxy :: Proxy a)
-
   toSamples :: Proxy a -> [(Text, b)]
   default toSamples :: (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
   toSamples = defaultSamples
 
-defaultSample :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> Maybe b
-defaultSample _ = to <$> gtoSample (Proxy :: Proxy (Rep a))
+toSample :: forall a b. ToSample a b => Proxy a -> Maybe b
+toSample _ = snd <$> listToMaybe (toSamples (Proxy :: Proxy a))
+
+-- | No samples.
+noSamples :: [(Text, a)]
+noSamples = empty
+
+-- | Single sample without description.
+singleSample :: a -> [(Text, a)]
+singleSample x = [("", x)]
 
 defaultSamples :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
 defaultSamples _ = Omega.runOmega $ second to <$> gtoSamples (Proxy :: Proxy (Rep a))
 
 class GToSample t s where
-  gtoSample  :: proxy t -> Maybe (s x)
-  gtoSample _ = snd <$> listToMaybe (Omega.runOmega (gtoSamples (Proxy :: Proxy t)))
   gtoSamples :: proxy t -> Omega.Omega (Text, s x)
-  gtoSamples _ = maybe empty (pure . ("",)) (gtoSample (Proxy :: Proxy t))
 
 instance GToSample U1 U1 where
-  gtoSample _ = Just U1
+  gtoSamples _ = Omega.each (singleSample U1)
 
 instance GToSample V1 V1 where
-  gtoSample _ = Nothing
+  gtoSamples _ = empty
 
 instance (GToSample p p', GToSample q q') => GToSample (p :*: q) (p' :*: q') where
-  gtoSample  _ = (:*:)  <$> gtoSample  (Proxy :: Proxy p) <*> gtoSample  (Proxy :: Proxy q)
   gtoSamples _ = render <$> ps <*> qs
     where
       ps = gtoSamples (Proxy :: Proxy p)
@@ -426,15 +426,12 @@ instance (GToSample p p', GToSample q q') => GToSample (p :+: q) (p' :+: q') whe
       rights = second R1 <$> gtoSamples (Proxy :: Proxy q)
 
 instance ToSample a b => GToSample (K1 i a) (K1 i b) where
-  gtoSample  _ = K1 <$> toSample (Proxy :: Proxy a)
   gtoSamples _ = second K1 <$> Omega.each (toSamples (Proxy :: Proxy a))
 
 instance (GToSample f g) => GToSample (M1 i a f) (M1 i a g) where
-  gtoSample  _ = M1 <$> gtoSample (Proxy :: Proxy f)
   gtoSamples _ = second M1 <$> gtoSamples (Proxy :: Proxy f)
 
 instance ToSample a b => ToSample (Headers ls a) b where
-  toSample _  = toSample (Proxy :: Proxy a)
   toSamples _ = toSamples (Proxy :: Proxy a)
 
 

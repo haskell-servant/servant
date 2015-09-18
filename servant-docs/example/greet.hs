@@ -54,15 +54,13 @@ instance ToParam (MatrixParam "lang" String) where
                   Normal
 
 instance ToSample Greet Greet where
-  toSample _ = Just $ Greet "Hello, haskeller!"
-
   toSamples _ =
     [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
     , ("If you use ?capital=false", Greet "Hello, haskeller")
     ]
 
 instance ToSample Int Int where
-  toSample _ = Just 1729
+  toSamples _ = singleSample 1729
 
 -- We define some introductory sections, these will appear at the top of the
 -- documentation.
