@@ -971,3 +971,7 @@ instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e) 
 instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e, ToSample f f) => ToSample (a, b, c, d, e, f) (a, b, c, d, e, f)
 instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e, ToSample f f, ToSample g g) => ToSample (a, b, c, d, e, f, g) (a, b, c, d, e, f, g)
 
+instance ToSample a a => ToSample (Maybe a) (Maybe a)
+instance (ToSample a a, ToSample b b) => ToSample (Either a b) (Either a b)
+instance ToSample a a => ToSample [a] [a]
+
