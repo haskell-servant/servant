@@ -1,36 +1,19 @@
 # servant - A Type-Level Web DSL
 
-[![Build Status](https://secure.travis-ci.org/haskell-servant/servant.svg)](http://travis-ci.org/haskell-servant/servant)
-
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
-## Quotes
+## Getting Started
 
-> Servant may just be the coolest single Haskell library.
->   - <cite>ephrion, [reddit](https://www.reddit.com/r/haskell/comments/3g8jb0/contenttype_bliss/ctw75hg)</cite>
+We have a [tutorial](http://haskell-servant.github.io/tutorial) that
+introduces the core features of servant. After this article, you should be able
+to write your first servant webservices, learning the rest from the haddocks'
+examples.
 
-<br>
+Other blog posts, videos and slides can be found on the
+[website](http://haskell-servant.github.io/).
 
-> servant is awesome so far, there's really nothing else like it right now for
-> haskell. ... It's absolutely fantastic, I look back at my old [other haskell
-> web framework] code and it might as well have been javascript. Great work,
-> just great.
->   - <cite>dmj, #servant</cite>
-
-<br>
-
-> It is one of the coolest libraries I have ever seen.
->   - <cite>Taylor Fausak, [Type safe web services in Haskell with Servant](http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/)</cite>
-
-
-## Tutorial
-
-We have a [tutorial](http://haskell-servant.github.io/tutorial) guide that
-introduces the core types and features of servant. After this article, you
-should be able to write your first servant webservices, learning the rest from
-the haddocks' examples.
-
-Other blog posts, videos and slides can be found on the [website](http://haskell-servant.github.io/)
+If you need help, drop by the IRC channel (#servant on freenode) or [mailing
+list](https://groups.google.com/forum/#!forum/haskell-servant).
 
 ## Contributing
 
@@ -59,3 +42,21 @@ files in the repository provide a good baseline for consistency.
 
 Please include a description of the changes in your PR in the `CHANGELOG.md` of
 the packages you've changed. And of course, write tests!
+
+## Quotes
+
+> Servant may just be the coolest single Haskell library.
+>   - <cite>ephrion, [reddit](https://www.reddit.com/r/haskell/comments/3g8jb0/contenttype_bliss/ctw75hg)</cite>
+
+<br>
+
+> servant is awesome so far, there's really nothing else like it right now for
+> haskell. ... It's absolutely fantastic, I look back at my old [other haskell
+> web framework] code and it might as well have been javascript. Great work,
+> just great.
+>   - <cite>dmj, #servant</cite>
+
+<br>
+
+> It is one of the coolest libraries I have ever seen.
+>   - <cite>Taylor Fausak, [Type safe web services in Haskell with Servant](http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/)</cite>
