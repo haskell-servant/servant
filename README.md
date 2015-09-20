@@ -43,20 +43,3 @@ files in the repository provide a good baseline for consistency.
 Please include a description of the changes in your PR in the `CHANGELOG.md` of
 the packages you've changed. And of course, write tests!
 
-## Quotes
-
-> Servant may just be the coolest single Haskell library.
->   - <cite>ephrion, [reddit](https://www.reddit.com/r/haskell/comments/3g8jb0/contenttype_bliss/ctw75hg)</cite>
-
-<br>
-
-> servant is awesome so far, there's really nothing else like it right now for
-> haskell. ... It's absolutely fantastic, I look back at my old [other haskell
-> web framework] code and it might as well have been javascript. Great work,
-> just great.
->   - <cite>dmj, #servant</cite>
-
-<br>
-
-> It is one of the coolest libraries I have ever seen.
->   - <cite>Taylor Fausak, [Type safe web services in Haskell with Servant](http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/)</cite>
