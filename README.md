@@ -1,28 +1,27 @@
-# servant
+# servant - A Type-Level Web DSL
 
 [![Build Status](https://secure.travis-ci.org/haskell-servant/servant.svg)](http://travis-ci.org/haskell-servant/servant)
-[![Coverage Status](https://coveralls.io/repos/haskell-servant/servant/badge.svg)](https://coveralls.io/r/haskell-servant/servant)
 
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
-These libraries provides a family of combinators to define webservices and
-automatically generate the documentation and client-side querying functions for
-each endpoint.
+## Quotes
 
-In order to minimize the dependencies depending on your needs, we provide these
-features under different packages.
+> Servant may just be the coolest single Haskell library.
+>   - <cite>ephrion, [reddit](https://www.reddit.com/r/haskell/comments/3g8jb0/contenttype_bliss/ctw75hg)</cite>
 
-- `servant`, which contains everything you need to *declare* a webservice API.
-- `servant-server`, which lets you *implement* an HTTP server with handlers for
-each endpoint of an API.
-- `servant-client`, which lets you derive automatically Haskell functions that
-let you query each endpoint of a `servant` webservice.
-- `servant-docs`, which lets you generate API docs for your webservice.
-- `servant-js`, which lets you derive Javascript functions (using vanilla JS
-ajax requests, angular or jquery) to query your API's endpoints, in the same
-spirit as `servant-client`.
-- `servant-blaze` and `servant-lucid` provide easy HTML rendering of your data
-as an `HTML` content-type "combinator".
+<br>
+
+> servant is awesome so far, there's really nothing else like it right now for
+> haskell. ... It's absolutely fantastic, I look back at my old [other haskell
+> web framework] code and it might as well have been javascript. Great work,
+> just great.
+>   - <cite>dmj, #servant</cite>
+
+<br>
+
+> It is one of the coolest libraries I have ever seen.
+>   - <cite>Taylor Fausak, [Type safe web services in Haskell with Servant](http://taylor.fausak.me/2015/08/23/type-safe-web-services-in-haskell-with-servant/)</cite>
+
 
 ## Tutorial
 
@@ -30,6 +29,8 @@ We have a [tutorial](http://haskell-servant.github.io/tutorial) guide that
 introduces the core types and features of servant. After this article, you
 should be able to write your first servant webservices, learning the rest from
 the haddocks' examples.
+
+Other blog posts, videos and slides can be found on the [website](http://haskell-servant.github.io/)
 
 ## Contributing
 
