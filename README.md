@@ -1,35 +1,19 @@
-# servant
-
-[![Build Status](https://secure.travis-ci.org/haskell-servant/servant.svg)](http://travis-ci.org/haskell-servant/servant)
-[![Coverage Status](https://coveralls.io/repos/haskell-servant/servant/badge.svg)](https://coveralls.io/r/haskell-servant/servant)
+# servant - A Type-Level Web DSL
 
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
-These libraries provides a family of combinators to define webservices and
-automatically generate the documentation and client-side querying functions for
-each endpoint.
+## Getting Started
 
-In order to minimize the dependencies depending on your needs, we provide these
-features under different packages.
+We have a [tutorial](http://haskell-servant.github.io/tutorial) that
+introduces the core features of servant. After this article, you should be able
+to write your first servant webservices, learning the rest from the haddocks'
+examples.
 
-- `servant`, which contains everything you need to *declare* a webservice API.
-- `servant-server`, which lets you *implement* an HTTP server with handlers for
-each endpoint of an API.
-- `servant-client`, which lets you derive automatically Haskell functions that
-let you query each endpoint of a `servant` webservice.
-- `servant-docs`, which lets you generate API docs for your webservice.
-- `servant-js`, which lets you derive Javascript functions (using vanilla JS
-ajax requests, angular or jquery) to query your API's endpoints, in the same
-spirit as `servant-client`.
-- `servant-blaze` and `servant-lucid` provide easy HTML rendering of your data
-as an `HTML` content-type "combinator".
+Other blog posts, videos and slides can be found on the
+[website](http://haskell-servant.github.io/).
 
-## Tutorial
-
-We have a [tutorial](http://haskell-servant.github.io/tutorial) guide that
-introduces the core types and features of servant. After this article, you
-should be able to write your first servant webservices, learning the rest from
-the haddocks' examples.
+If you need help, drop by the IRC channel (#servant on freenode) or [mailing
+list](https://groups.google.com/forum/#!forum/haskell-servant).
 
 ## Contributing
 
@@ -58,3 +42,4 @@ files in the repository provide a good baseline for consistency.
 
 Please include a description of the changes in your PR in the `CHANGELOG.md` of
 the packages you've changed. And of course, write tests!
+
