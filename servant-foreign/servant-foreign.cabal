@@ -19,7 +19,7 @@ source-repository head
 
 library
   exposed-modules:     Servant.Foreign
-  build-depends:       base >=4.8 && <5
+  build-depends:       base == 4.*
                      , charset
                      , lens >= 4
                      , servant >= 0.5
