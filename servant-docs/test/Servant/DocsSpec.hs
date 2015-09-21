@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
@@ -95,7 +94,7 @@ instance ToSample Datatype1 Datatype1 where
   toSamples _ = singleSample $ Datatype1 "field 1" 13
 
 instance ToSample Char Char where
-  toSamples _ = map ("",) ['a'..'z']
+  toSamples _ = samples ['a'..'z']
 
 instance ToSample Int Int where
   toSamples _ = singleSample 17

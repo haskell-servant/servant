@@ -151,6 +151,7 @@ module Servant.Docs
   , toSample
   , noSamples
   , singleSample
+  , samples
   , sampleByteString
   , sampleByteStrings
   , ToParam(..)

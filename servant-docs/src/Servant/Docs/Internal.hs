@@ -399,6 +399,10 @@ noSamples = empty
 singleSample :: a -> [(Text, a)]
 singleSample x = [("", x)]
 
+-- | Samples without documentation.
+samples :: [a] -> [(Text, a)]
+samples = map ("",)
+
 -- | Default sample Generic-based inputs/outputs.
 defaultSamples :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
 defaultSamples _ = Omega.runOmega $ second to <$> gtoSamples (Proxy :: Proxy (Rep a))
