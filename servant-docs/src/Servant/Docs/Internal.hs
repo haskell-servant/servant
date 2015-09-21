@@ -980,3 +980,17 @@ instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e, 
 instance ToSample a a => ToSample (Maybe a) (Maybe a)
 instance (ToSample a a, ToSample b b) => ToSample (Either a b) (Either a b)
 instance ToSample a a => ToSample [a] [a]
+
+-- ToSample instances for Control.Applicative types
+instance ToSample a a => ToSample (Const a b) (Const a b)
+instance ToSample a a => ToSample (ZipList a) (ZipList a)
+
+-- ToSample instances for Data.Monoid newtypes
+instance ToSample All All
+instance ToSample Any Any
+instance ToSample a a => ToSample (Sum a) (Sum a)
+instance ToSample a a => ToSample (Product a) (Product a)
+instance ToSample a a => ToSample (First a) (First a)
+instance ToSample a a => ToSample (Last a) (Last a)
+instance ToSample a a => ToSample (Dual a) (Dual a)
+
