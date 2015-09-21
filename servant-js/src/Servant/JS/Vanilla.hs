@@ -3,6 +3,7 @@ module Servant.JS.Vanilla where
 import           Control.Lens
 import           Data.List
 import           Data.Monoid
+import           Servant.Foreign
 import           Servant.JS.Internal
 
 -- | Generate vanilla javascript functions to make AJAX requests

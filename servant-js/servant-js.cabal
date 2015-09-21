@@ -37,14 +37,12 @@ library
   exposed-modules:     Servant.JS
                        Servant.JS.Angular
                        Servant.JS.Axios
+                       Servant.JS.Internal
                        Servant.JS.JQuery
                        Servant.JS.Vanilla
-                       Servant.JS.Internal
   build-depends:       base >=4.5 && <5
-                     , charset
                      , lens >= 4
-                     , servant == 0.5.*
-                     , text
+                     , servant-foreign
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
@@ -59,16 +57,16 @@ executable counter
   else
     buildable: False
 
-  build-depends:
-      aeson
-    , base
-    , filepath
-    , servant == 0.5.*
-    , servant-server == 0.5.*
-    , servant-js == 0.5.*
-    , stm
-    , transformers
-    , warp
+  build-depends:    aeson
+                  , base
+                  , filepath
+                  , lens >= 4
+                  , servant
+                  , servant-server
+                  , servant-js
+                  , stm
+                  , transformers
+                  , warp
   default-language: Haskell2010
 
 test-suite spec
@@ -76,12 +74,12 @@ test-suite spec
   hs-source-dirs:    test
   ghc-options:       -Wall
   main-is:           Spec.hs
-  build-depends:
-      base == 4.*
-    , lens
-    , servant-js
-    , servant
-    , hspec >= 2.1.8
-    , hspec-expectations
-    , language-ecmascript >= 0.16
-  default-language: Haskell2010
+  build-depends:     base == 4.*
+                   , hspec >= 2.1.8
+                   , hspec-expectations
+                   , language-ecmascript >= 0.16
+                   , lens
+                   , lens >= 4
+                   , servant
+                   , servant-js
+  default-language:  Haskell2010

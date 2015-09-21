@@ -76,7 +76,7 @@ module Servant.JS
   , JavaScriptGenerator
 
   , -- * Options common to all generators
-    CommonGeneratorOptions(..)
+    CommonGeneratorOptions
   , defCommonGeneratorOptions
 
   , -- * Function renamers
@@ -109,13 +109,10 @@ module Servant.JS
   , -- * Misc.
     listFromAPI
   , javascript
-  , HasJS(..)
   , GenerateList(..)
-  , AjaxReq
   ) where
 
 import           Data.Proxy
-import           Servant.API
 import           Servant.JS.Angular
 import           Servant.JS.Axios
 import           Servant.JS.Internal
@@ -125,13 +122,13 @@ import           Servant.JS.Vanilla
 -- | Generate the data necessary to generate javascript code
 --   for all the endpoints of an API, as ':<|>'-separated values
 --   of type 'AjaxReq'.
-javascript :: HasJS layout => Proxy layout -> JS layout
-javascript p = javascriptFor p defReq
+javascript :: HasForeign layout => Proxy layout -> Foreign layout
+javascript p = foreignFor p defReq
 
 -- | Directly generate all the javascript functions for your API
 --   from a 'Proxy' for your API type. You can then write it to
 --   a file or integrate it in a page, for example.
-jsForAPI :: (HasJS api, GenerateList (JS api))
+jsForAPI :: (HasForeign api, GenerateList (Foreign api))
          => Proxy api -- ^ proxy for your API type
          -> JavaScriptGenerator -- ^ js code generator to use (angular, vanilla js, jquery, others)
          -> String              -- ^ a string that you can embed in your pages or write to a file
@@ -140,7 +137,7 @@ jsForAPI p gen = gen (listFromAPI p)
 -- | Directly generate all the javascript functions for your API
 --   from a 'Proxy' for your API type using the given generator
 --   and write the resulting code to a file at the given path.
-writeJSForAPI :: (HasJS api, GenerateList (JS api))
+writeJSForAPI :: (HasForeign api, GenerateList (Foreign api))
               => Proxy api -- ^ proxy for your API type
               -> JavaScriptGenerator -- ^ js code generator to use (angular, vanilla js, jquery, others)
               -> FilePath -- ^ path to the file you want to write the resulting javascript code into
@@ -161,5 +158,6 @@ instance (GenerateList start, GenerateList rest) => GenerateList (start :<|> res
 
 -- | Generate the necessary data for JS codegen as a list, each 'AjaxReq'
 --   describing one endpoint from your API type.
-listFromAPI :: (HasJS api, GenerateList (JS api)) => Proxy api -> [AjaxReq]
+listFromAPI :: (HasForeign api, GenerateList (Foreign api)) => Proxy api -> [AjaxReq]
 listFromAPI p = generateList (javascript p)
+

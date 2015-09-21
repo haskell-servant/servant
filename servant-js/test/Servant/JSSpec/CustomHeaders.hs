@@ -12,8 +12,6 @@ import           Control.Lens
 import           Data.Monoid
 import           Data.Proxy
 import           GHC.TypeLits
-import           Servant.API
-import           Servant.JS
 import           Servant.JS.Internal
 
 -- | This is a hypothetical combinator that fetches an Authorization header.
@@ -21,11 +19,11 @@ import           Servant.JS.Internal
 -- using -- Basic, Digest, whatever.
 data Authorization (sym :: Symbol) a
 
-instance (KnownSymbol sym, HasJS sublayout)
-    => HasJS (Authorization sym a :> sublayout) where
-    type JS (Authorization sym a :> sublayout) = JS sublayout
+instance (KnownSymbol sym, HasForeign sublayout)
+    => HasForeign (Authorization sym a :> sublayout) where
+    type Foreign (Authorization sym a :> sublayout) = Foreign sublayout
 
-    javascriptFor Proxy req = javascriptFor (Proxy :: Proxy sublayout) $
+    foreignFor Proxy req = foreignFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "Authorization" $
                                tokenType (symbolVal (Proxy :: Proxy sym)) ]
       where
@@ -34,11 +32,11 @@ instance (KnownSymbol sym, HasJS sublayout)
 -- | This is a combinator that fetches an X-MyLovelyHorse header.
 data MyLovelyHorse a
 
-instance (HasJS sublayout)
-    => HasJS (MyLovelyHorse a :> sublayout) where
-    type JS (MyLovelyHorse a :> sublayout) = JS sublayout
+instance (HasForeign sublayout)
+    => HasForeign (MyLovelyHorse a :> sublayout) where
+    type Foreign (MyLovelyHorse a :> sublayout) = Foreign sublayout
 
-    javascriptFor Proxy req = javascriptFor (Proxy :: Proxy sublayout) $
+    foreignFor Proxy req = foreignFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "X-MyLovelyHorse" tpl ]
       where
         tpl = "I am good friends with {X-MyLovelyHorse}"
@@ -46,11 +44,11 @@ instance (HasJS sublayout)
 -- | This is a combinator that fetches an X-WhatsForDinner header.
 data WhatsForDinner a
 
-instance (HasJS sublayout)
-    => HasJS (WhatsForDinner a :> sublayout) where
-    type JS (WhatsForDinner a :> sublayout) = JS sublayout
+instance (HasForeign sublayout)
+    => HasForeign (WhatsForDinner a :> sublayout) where
+    type Foreign (WhatsForDinner a :> sublayout) = Foreign sublayout
 
-    javascriptFor Proxy req = javascriptFor (Proxy :: Proxy sublayout) $
+    foreignFor Proxy req = foreignFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "X-WhatsForDinner" tpl ]
       where
         tpl = "I would like {X-WhatsForDinner} with a cherry on top."

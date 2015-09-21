@@ -4,6 +4,7 @@ import           Control.Lens
 import           Data.Char           (toLower)
 import           Data.List
 import           Data.Monoid
+import           Servant.Foreign
 import           Servant.JS.Internal
 
 -- | Axios 'configuration' type
