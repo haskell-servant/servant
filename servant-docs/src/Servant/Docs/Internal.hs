@@ -387,6 +387,7 @@ class ToSample a b | a -> b where
   default toSamples :: (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
   toSamples = defaultSamples
 
+-- | Sample input or output (if there is at least one).
 toSample :: forall a b. ToSample a b => Proxy a -> Maybe b
 toSample _ = snd <$> listToMaybe (toSamples (Proxy :: Proxy a))
 
@@ -398,9 +399,13 @@ noSamples = empty
 singleSample :: a -> [(Text, a)]
 singleSample x = [("", x)]
 
+-- | Default sample Generic-based inputs/outputs.
 defaultSamples :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
 defaultSamples _ = Omega.runOmega $ second to <$> gtoSamples (Proxy :: Proxy (Rep a))
 
+-- | @'ToSample'@ for Generics.
+--
+-- The use of @'Omega'@ allows for more productive sample generation.
 class GToSample t s where
   gtoSamples :: proxy t -> Omega.Omega (Text, s x)
 
@@ -959,14 +964,12 @@ instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
   docsFor Proxy ep =
     docsFor (Proxy :: Proxy sublayout) ep
 
--- 'ToSample' instances for simple types
-
+-- ToSample instances for simple types
 instance ToSample () ()
 instance ToSample Bool Bool
 instance ToSample Ordering Ordering
 
--- polymorphic 'ToSample' instances
-
+-- polymorphic ToSample instances
 instance (ToSample a a, ToSample b b) => ToSample (a, b) (a, b)
 instance (ToSample a a, ToSample b b, ToSample c c) => ToSample (a, b, c) (a, b, c)
 instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d) => ToSample (a, b, c, d) (a, b, c, d)
@@ -977,4 +980,3 @@ instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e, 
 instance ToSample a a => ToSample (Maybe a) (Maybe a)
 instance (ToSample a a, ToSample b b) => ToSample (Either a b) (Either a b)
 instance ToSample a a => ToSample [a] [a]
-
