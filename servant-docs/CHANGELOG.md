@@ -2,6 +2,11 @@ HEAD
 ----
 
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
+* Support maximum samples setting with new `DocOptions` type (used by `docsWithOptions` and `docsWith`)
+* Add Generic-based default implementation for `ToSample` class
+* Add more `ToSamples` instances: `Bool`, `Ordering`, tuples (up to 7), `[]`, `Maybe`, `Either`, `Const`, `ZipList` and some monoids
+* Move `toSample` out of `ToSample` class
+* Add a few helper functions to define `toSamples`
 
 0.4
 ---

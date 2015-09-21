@@ -53,19 +53,14 @@ instance ToParam (MatrixParam "lang" String) where
                   "Get the greeting message selected language. Default is en."
                   Normal
 
-instance ToSample () () where
-  toSample _ = Just ()
-
 instance ToSample Greet Greet where
-  toSample _ = Just $ Greet "Hello, haskeller!"
-
   toSamples _ =
     [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
     , ("If you use ?capital=false", Greet "Hello, haskeller")
     ]
 
 instance ToSample Int Int where
-  toSample _ = Just 1729
+  toSamples _ = singleSample 1729
 
 -- We define some introductory sections, these will appear at the top of the
 -- documentation.
@@ -117,7 +112,7 @@ extra =
 --
 -- > docs testAPI :: API
 docsGreet :: API
-docsGreet = docsWith [intro1, intro2] extra testApi
+docsGreet = docsWith defaultDocOptions [intro1, intro2] extra testApi
 
 main :: IO ()
 main = putStrLn $ markdown docsGreet

@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DefaultSignatures      #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -8,6 +9,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TupleSections          #-}
@@ -19,10 +21,10 @@
 #endif
 module Servant.Docs.Internal where
 
-#if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
-#endif
-import           Control.Lens               hiding (List)
+import           Control.Arrow              (second)
+import           Control.Lens               hiding (List, to, from)
+import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
@@ -175,6 +177,16 @@ instance Monoid (ExtraInfo a) where
     ExtraInfo a `mappend` ExtraInfo b =
         ExtraInfo $ HM.unionWith combineAction a b
 
+-- | Documentation options.
+data DocOptions = DocOptions
+  { _maxSamples :: Int    -- ^ Maximum samples allowed.
+  } deriving (Show)
+
+-- | Default documentation options.
+defaultDocOptions :: DocOptions
+defaultDocOptions = DocOptions
+  { _maxSamples = 5 }
+
 -- | Type of GET parameter:
 --
 -- - Normal corresponds to @QueryParam@, i.e your usual GET parameter
@@ -279,6 +291,7 @@ single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
 -- gimme some lenses
+makeLenses ''DocOptions
 makeLenses ''API
 makeLenses ''Endpoint
 makeLenses ''DocCapture
@@ -290,8 +303,14 @@ makeLenses ''Action
 
 -- | Generate the docs for a given API that implements 'HasDocs'. This is the
 -- default way to create documentation.
+--
+-- prop> docs == docsWithOptions defaultDocOptions
 docs :: HasDocs layout => Proxy layout -> API
-docs p = docsFor p (defEndpoint, defAction)
+docs p = docsWithOptions p defaultDocOptions
+
+-- | Generate the docs for a given API that implements 'HasDocs'.
+docsWithOptions :: HasDocs layout => Proxy layout -> DocOptions -> API
+docsWithOptions p = docsFor p (defEndpoint, defAction)
 
 -- | Closed type family, check if endpoint is exactly within API.
 
@@ -318,7 +337,7 @@ type family IsIn (endpoint :: *) (api :: *) :: Constraint where
 extraInfo :: (IsIn endpoint layout, HasLink endpoint, HasDocs endpoint)
           => Proxy endpoint -> Action -> ExtraInfo layout
 extraInfo p action =
-    let api = docsFor p (defEndpoint, defAction)
+    let api = docsFor p (defEndpoint, defAction) defaultDocOptions
     -- Assume one endpoint, HasLink constraint means that we should only ever
     -- point at one endpoint.
     in ExtraInfo $ api ^. apiEndpoints & traversed .~ action
@@ -335,21 +354,22 @@ extraInfo p action =
 -- 'extraInfo'.
 --
 -- If you only want to add an introduction, use 'docsWithIntros'.
-docsWith :: HasDocs layout => [DocIntro] -> ExtraInfo layout -> Proxy layout -> API
-docsWith intros (ExtraInfo endpoints) p =
-    docs p & apiIntros <>~ intros
-           & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
+docsWith :: HasDocs layout => DocOptions -> [DocIntro] -> ExtraInfo layout -> Proxy layout -> API
+docsWith opts intros (ExtraInfo endpoints) p =
+    docsWithOptions p opts
+      & apiIntros <>~ intros
+      & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
 
 
 -- | Generate the docs for a given API that implements 'HasDocs' with with any
 -- number of introduction(s)
 docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
-docsWithIntros intros = docsWith intros mempty
+docsWithIntros intros = docsWith defaultDocOptions intros mempty
 
 -- | The class that abstracts away the impact of API combinators
 --   on documentation generation.
 class HasDocs layout where
-  docsFor :: Proxy layout -> (Endpoint, Action) -> API
+  docsFor :: Proxy layout -> (Endpoint, Action) -> DocOptions -> API
 
 -- | The class that lets us display a sample input or output in the supported
 -- content-types when generating documentation for endpoints that either:
@@ -373,7 +393,7 @@ class HasDocs layout where
 -- > instance ToJSON Greet
 -- >
 -- > instance ToSample Greet Greet where
--- >   toSample _ = Just g
+-- >   toSamples _ = singleSample g
 -- >
 -- >     where g = Greet "Hello, haskeller!"
 --
@@ -382,17 +402,64 @@ class HasDocs layout where
 -- some context (as 'Text') that explains when you're supposed to
 -- get the corresponding response.
 class ToSample a b | a -> b where
-  {-# MINIMAL (toSample | toSamples) #-}
-  toSample :: Proxy a -> Maybe b
-  toSample _ = snd <$> listToMaybe samples
-    where samples = toSamples (Proxy :: Proxy a)
-
   toSamples :: Proxy a -> [(Text, b)]
-  toSamples _ = maybe [] (return . ("",)) s
-    where s = toSample (Proxy :: Proxy a)
+  default toSamples :: (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
+  toSamples = defaultSamples
+
+-- | Sample input or output (if there is at least one).
+toSample :: forall a b. ToSample a b => Proxy a -> Maybe b
+toSample _ = snd <$> listToMaybe (toSamples (Proxy :: Proxy a))
+
+-- | No samples.
+noSamples :: [(Text, a)]
+noSamples = empty
+
+-- | Single sample without description.
+singleSample :: a -> [(Text, a)]
+singleSample x = [("", x)]
+
+-- | Samples without documentation.
+samples :: [a] -> [(Text, a)]
+samples = map ("",)
+
+-- | Default sample Generic-based inputs/outputs.
+defaultSamples :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
+defaultSamples _ = Omega.runOmega $ second to <$> gtoSamples (Proxy :: Proxy (Rep a))
+
+-- | @'ToSample'@ for Generics.
+--
+-- The use of @'Omega'@ allows for more productive sample generation.
+class GToSample t s where
+  gtoSamples :: proxy t -> Omega.Omega (Text, s x)
+
+instance GToSample U1 U1 where
+  gtoSamples _ = Omega.each (singleSample U1)
+
+instance GToSample V1 V1 where
+  gtoSamples _ = empty
+
+instance (GToSample p p', GToSample q q') => GToSample (p :*: q) (p' :*: q') where
+  gtoSamples _ = render <$> ps <*> qs
+    where
+      ps = gtoSamples (Proxy :: Proxy p)
+      qs = gtoSamples (Proxy :: Proxy q)
+      render (ta, a) (tb, b)
+        | T.null ta || T.null tb = (ta <> tb, a :*: b)
+        | otherwise              = (ta <> ", " <> tb, a :*: b)
+
+instance (GToSample p p', GToSample q q') => GToSample (p :+: q) (p' :+: q') where
+  gtoSamples _ = lefts <|> rights
+    where
+      lefts  = second L1 <$> gtoSamples (Proxy :: Proxy p)
+      rights = second R1 <$> gtoSamples (Proxy :: Proxy q)
+
+instance ToSample a b => GToSample (K1 i a) (K1 i b) where
+  gtoSamples _ = second K1 <$> Omega.each (toSamples (Proxy :: Proxy a))
+
+instance (GToSample f g) => GToSample (M1 i a f) (M1 i a g) where
+  gtoSamples _ = second M1 <$> gtoSamples (Proxy :: Proxy f)
 
 instance ToSample a b => ToSample (Headers ls a) b where
-  toSample _  = toSample (Proxy :: Proxy a)
   toSamples _ = toSamples (Proxy :: Proxy a)
 
 
@@ -661,11 +728,11 @@ instance
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Delete cts a) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocDELETE
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
@@ -677,12 +744,12 @@ instance
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Delete cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where hdrs = allHeaderToSample (Proxy :: Proxy ls)
           endpoint' = endpoint & method .~ DocDELETE
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respHeaders .~ hdrs
           t = Proxy :: Proxy cts
@@ -694,11 +761,11 @@ instance
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Get cts a) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
@@ -710,12 +777,12 @@ instance
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Get cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where hdrs = allHeaderToSample (Proxy :: Proxy ls)
           endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respHeaders .~ hdrs
           t = Proxy :: Proxy cts
@@ -736,11 +803,11 @@ instance
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Post cts a) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocPOST
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 201
           t = Proxy :: Proxy cts
@@ -753,12 +820,12 @@ instance
          (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Post cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where hdrs = allHeaderToSample (Proxy :: Proxy ls)
           endpoint' = endpoint & method .~ DocPOST
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 201
                            & response.respHeaders .~ hdrs
@@ -771,11 +838,11 @@ instance
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Put cts a) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocPUT
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 200
           t = Proxy :: Proxy cts
@@ -788,12 +855,12 @@ instance
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Put cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where hdrs = allHeaderToSample (Proxy :: Proxy ls)
           endpoint' = endpoint & method .~ DocPUT
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 200
                            & response.respHeaders .~ hdrs
@@ -875,7 +942,7 @@ instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
           symP = Proxy :: Proxy sym
 
 instance HasDocs Raw where
-  docsFor _proxy (endpoint, action) =
+  docsFor _proxy (endpoint, action) _ =
     single endpoint action
 
 -- TODO: We use 'AllMimeRender' here because we need to be able to show the
@@ -920,155 +987,33 @@ instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
   docsFor Proxy ep =
     docsFor (Proxy :: Proxy sublayout) ep
 
+-- ToSample instances for simple types
+instance ToSample () ()
+instance ToSample Bool Bool
+instance ToSample Ordering Ordering
 
--- polymorphic 'ToSample' instances
+-- polymorphic ToSample instances
+instance (ToSample a a, ToSample b b) => ToSample (a, b) (a, b)
+instance (ToSample a a, ToSample b b, ToSample c c) => ToSample (a, b, c) (a, b, c)
+instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d) => ToSample (a, b, c, d) (a, b, c, d)
+instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e) => ToSample (a, b, c, d, e) (a, b, c, d, e)
+instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e, ToSample f f) => ToSample (a, b, c, d, e, f) (a, b, c, d, e, f)
+instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e, ToSample f f, ToSample g g) => ToSample (a, b, c, d, e, f, g) (a, b, c, d, e, f, g)
 
-instance ( ToSample a a
-         , ToSample b b
-         ) => ToSample (a, b) (a, b) where
-    toSample _ = (,)
-        <$> toSample (Proxy :: Proxy a)
-        <*> toSample (Proxy :: Proxy b)
-    toSamples _ = render
-        <$> toSamples (Proxy :: Proxy a)
-        <*> toSamples (Proxy :: Proxy b)
-      where render (ta, va) (tb, vb)
-              = ("("  <> ta <>
-                 ", " <> tb <>
-                 ")"
-                , (va, vb))
+instance ToSample a a => ToSample (Maybe a) (Maybe a)
+instance (ToSample a a, ToSample b b) => ToSample (Either a b) (Either a b)
+instance ToSample a a => ToSample [a] [a]
 
-instance ( ToSample a a
-         , ToSample b b
-         , ToSample c c
-         ) => ToSample (a, b, c) (a, b, c) where
-    toSample _ = (,,)
-        <$> toSample (Proxy :: Proxy a)
-        <*> toSample (Proxy :: Proxy b)
-        <*> toSample (Proxy :: Proxy c)
-    toSamples _ = render
-        <$> toSamples (Proxy :: Proxy a)
-        <*> toSamples (Proxy :: Proxy b)
-        <*> toSamples (Proxy :: Proxy c)
-      where render (ta, va) (tb, vb) (tc, vc)
-              = ("("  <> ta <>
-                 ", " <> tb <>
-                 ", " <> tc <>
-                 ")"
-                , (va, vb, vc))
+-- ToSample instances for Control.Applicative types
+instance ToSample a a => ToSample (Const a b) (Const a b)
+instance ToSample a a => ToSample (ZipList a) (ZipList a)
 
-instance ( ToSample a a
-         , ToSample b b
-         , ToSample c c
-         , ToSample d d
-         ) => ToSample (a, b, c, d) (a, b, c, d) where
-    toSample _ = (,,,)
-        <$> toSample (Proxy :: Proxy a)
-        <*> toSample (Proxy :: Proxy b)
-        <*> toSample (Proxy :: Proxy c)
-        <*> toSample (Proxy :: Proxy d)
-    toSamples _ = render
-        <$> toSamples (Proxy :: Proxy a)
-        <*> toSamples (Proxy :: Proxy b)
-        <*> toSamples (Proxy :: Proxy c)
-        <*> toSamples (Proxy :: Proxy d)
-      where render (ta, va) (tb, vb) (tc, vc) (td, vd)
-              = ("("  <> ta <>
-                 ", " <> tb <>
-                 ", " <> tc <>
-                 ", " <> td <>
-                 ")"
-                , (va, vb, vc, vd))
+-- ToSample instances for Data.Monoid newtypes
+instance ToSample All All
+instance ToSample Any Any
+instance ToSample a a => ToSample (Sum a) (Sum a)
+instance ToSample a a => ToSample (Product a) (Product a)
+instance ToSample a a => ToSample (First a) (First a)
+instance ToSample a a => ToSample (Last a) (Last a)
+instance ToSample a a => ToSample (Dual a) (Dual a)
 
-instance ( ToSample a a
-         , ToSample b b
-         , ToSample c c
-         , ToSample d d
-         , ToSample e e
-         ) => ToSample (a, b, c, d, e) (a, b, c, d, e) where
-    toSample _ = (,,,,)
-        <$> toSample (Proxy :: Proxy a)
-        <*> toSample (Proxy :: Proxy b)
-        <*> toSample (Proxy :: Proxy c)
-        <*> toSample (Proxy :: Proxy d)
-        <*> toSample (Proxy :: Proxy e)
-    toSamples _ = render
-        <$> toSamples (Proxy :: Proxy a)
-        <*> toSamples (Proxy :: Proxy b)
-        <*> toSamples (Proxy :: Proxy c)
-        <*> toSamples (Proxy :: Proxy d)
-        <*> toSamples (Proxy :: Proxy e)
-      where render (ta, va) (tb, vb) (tc, vc) (td, vd) (te, ve)
-              = ("("  <> ta <>
-                 ", " <> tb <>
-                 ", " <> tc <>
-                 ", " <> td <>
-                 ", " <> te <>
-                 ")"
-                , (va, vb, vc, vd, ve))
-
-instance ( ToSample a a
-         , ToSample b b
-         , ToSample c c
-         , ToSample d d
-         , ToSample e e
-         , ToSample f f
-         ) => ToSample (a, b, c, d, e, f) (a, b, c, d, e, f) where
-    toSample _ = (,,,,,)
-        <$> toSample (Proxy :: Proxy a)
-        <*> toSample (Proxy :: Proxy b)
-        <*> toSample (Proxy :: Proxy c)
-        <*> toSample (Proxy :: Proxy d)
-        <*> toSample (Proxy :: Proxy e)
-        <*> toSample (Proxy :: Proxy f)
-    toSamples _ = render
-        <$> toSamples (Proxy :: Proxy a)
-        <*> toSamples (Proxy :: Proxy b)
-        <*> toSamples (Proxy :: Proxy c)
-        <*> toSamples (Proxy :: Proxy d)
-        <*> toSamples (Proxy :: Proxy e)
-        <*> toSamples (Proxy :: Proxy f)
-      where render (ta, va) (tb, vb) (tc, vc) (td, vd) (te, ve) (tf, vf)
-              = ("("  <> ta <>
-                 ", " <> tb <>
-                 ", " <> tc <>
-                 ", " <> td <>
-                 ", " <> te <>
-                 ", " <> tf <>
-                 ")"
-                , (va, vb, vc, vd, ve, vf))
-
-instance ( ToSample a a
-         , ToSample b b
-         , ToSample c c
-         , ToSample d d
-         , ToSample e e
-         , ToSample f f
-         , ToSample g g
-         ) => ToSample (a, b, c, d, e, f, g) (a, b, c, d, e, f, g) where
-    toSample _ = (,,,,,,)
-        <$> toSample (Proxy :: Proxy a)
-        <*> toSample (Proxy :: Proxy b)
-        <*> toSample (Proxy :: Proxy c)
-        <*> toSample (Proxy :: Proxy d)
-        <*> toSample (Proxy :: Proxy e)
-        <*> toSample (Proxy :: Proxy f)
-        <*> toSample (Proxy :: Proxy g)
-    toSamples _ = render
-        <$> toSamples (Proxy :: Proxy a)
-        <*> toSamples (Proxy :: Proxy b)
-        <*> toSamples (Proxy :: Proxy c)
-        <*> toSamples (Proxy :: Proxy d)
-        <*> toSamples (Proxy :: Proxy e)
-        <*> toSamples (Proxy :: Proxy f)
-        <*> toSamples (Proxy :: Proxy g)
-      where render (ta, va) (tb, vb) (tc, vc) (td, vd) (te, ve) (tf, vf) (tg, vg)
-              = ("("  <> ta <>
-                 ", " <> tb <>
-                 ", " <> tc <>
-                 ", " <> td <>
-                 ", " <> te <>
-                 ", " <> tf <>
-                 ", " <> tg <>
-                 ")"
-                , (va, vb, vc, vd, ve, vf, vg))
