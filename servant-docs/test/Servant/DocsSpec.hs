@@ -36,7 +36,7 @@ spec = describe "Servant.Docs" $ do
               extraInfo
               (Proxy :: Proxy (ReqBody '[JSON] String :> Post '[JSON] Datatype1))
               (defAction & notes <>~ [DocNote "Post data" ["Posts some Json data"]])
-      md = markdown (docsWith [] extra (Proxy :: Proxy TestApi1))
+      md = markdown (docsWith defaultDocOptions [] extra (Proxy :: Proxy TestApi1))
     tests md
     it "contains the extra info provided" $ do
       md `shouldContain` "Get an Integer"

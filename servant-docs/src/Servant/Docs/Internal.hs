@@ -9,6 +9,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TupleSections          #-}
@@ -176,6 +177,16 @@ instance Monoid (ExtraInfo a) where
     ExtraInfo a `mappend` ExtraInfo b =
         ExtraInfo $ HM.unionWith combineAction a b
 
+-- | Documentation options.
+data DocOptions = DocOptions
+  { _maxSamples :: Int    -- ^ Maximum samples allowed.
+  } deriving (Show)
+
+-- | Default documentation options.
+defaultDocOptions :: DocOptions
+defaultDocOptions = DocOptions
+  { _maxSamples = 5 }
+
 -- | Type of GET parameter:
 --
 -- - Normal corresponds to @QueryParam@, i.e your usual GET parameter
@@ -280,6 +291,7 @@ single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
 -- gimme some lenses
+makeLenses ''DocOptions
 makeLenses ''API
 makeLenses ''Endpoint
 makeLenses ''DocCapture
@@ -291,8 +303,14 @@ makeLenses ''Action
 
 -- | Generate the docs for a given API that implements 'HasDocs'. This is the
 -- default way to create documentation.
+--
+-- prop> docs == docsWithOptions defaultDocOptions
 docs :: HasDocs layout => Proxy layout -> API
-docs p = docsFor p (defEndpoint, defAction)
+docs p = docsWithOptions p defaultDocOptions
+
+-- | Generate the docs for a given API that implements 'HasDocs'.
+docsWithOptions :: HasDocs layout => Proxy layout -> DocOptions -> API
+docsWithOptions p = docsFor p (defEndpoint, defAction)
 
 -- | Closed type family, check if endpoint is exactly within API.
 
@@ -319,7 +337,7 @@ type family IsIn (endpoint :: *) (api :: *) :: Constraint where
 extraInfo :: (IsIn endpoint layout, HasLink endpoint, HasDocs endpoint)
           => Proxy endpoint -> Action -> ExtraInfo layout
 extraInfo p action =
-    let api = docsFor p (defEndpoint, defAction)
+    let api = docsFor p (defEndpoint, defAction) defaultDocOptions
     -- Assume one endpoint, HasLink constraint means that we should only ever
     -- point at one endpoint.
     in ExtraInfo $ api ^. apiEndpoints & traversed .~ action
@@ -336,21 +354,22 @@ extraInfo p action =
 -- 'extraInfo'.
 --
 -- If you only want to add an introduction, use 'docsWithIntros'.
-docsWith :: HasDocs layout => [DocIntro] -> ExtraInfo layout -> Proxy layout -> API
-docsWith intros (ExtraInfo endpoints) p =
-    docs p & apiIntros <>~ intros
-           & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
+docsWith :: HasDocs layout => DocOptions -> [DocIntro] -> ExtraInfo layout -> Proxy layout -> API
+docsWith opts intros (ExtraInfo endpoints) p =
+    docsWithOptions p opts
+      & apiIntros <>~ intros
+      & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
 
 
 -- | Generate the docs for a given API that implements 'HasDocs' with with any
 -- number of introduction(s)
 docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
-docsWithIntros intros = docsWith intros mempty
+docsWithIntros intros = docsWith defaultDocOptions intros mempty
 
 -- | The class that abstracts away the impact of API combinators
 --   on documentation generation.
 class HasDocs layout where
-  docsFor :: Proxy layout -> (Endpoint, Action) -> API
+  docsFor :: Proxy layout -> (Endpoint, Action) -> DocOptions -> API
 
 -- | The class that lets us display a sample input or output in the supported
 -- content-types when generating documentation for endpoints that either:
@@ -709,11 +728,11 @@ instance
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Delete cts a) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocDELETE
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
@@ -725,12 +744,12 @@ instance
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Delete cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where hdrs = allHeaderToSample (Proxy :: Proxy ls)
           endpoint' = endpoint & method .~ DocDELETE
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respHeaders .~ hdrs
           t = Proxy :: Proxy cts
@@ -742,11 +761,11 @@ instance
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Get cts a) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
@@ -758,12 +777,12 @@ instance
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Get cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where hdrs = allHeaderToSample (Proxy :: Proxy ls)
           endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respHeaders .~ hdrs
           t = Proxy :: Proxy cts
@@ -784,11 +803,11 @@ instance
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Post cts a) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocPOST
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 201
           t = Proxy :: Proxy cts
@@ -801,12 +820,12 @@ instance
          (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Post cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where hdrs = allHeaderToSample (Proxy :: Proxy ls)
           endpoint' = endpoint & method .~ DocPOST
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 201
                            & response.respHeaders .~ hdrs
@@ -819,11 +838,11 @@ instance
 #endif
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
     => HasDocs (Put cts a) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ DocPUT
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 200
           t = Proxy :: Proxy cts
@@ -836,12 +855,12 @@ instance
         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Put cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) =
+  docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
     where hdrs = allHeaderToSample (Proxy :: Proxy ls)
           endpoint' = endpoint & method .~ DocPUT
-          action' = action & response.respBody .~ sampleByteStrings t p
+          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ supportedTypes t
                            & response.respStatus .~ 200
                            & response.respHeaders .~ hdrs
@@ -923,7 +942,7 @@ instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
           symP = Proxy :: Proxy sym
 
 instance HasDocs Raw where
-  docsFor _proxy (endpoint, action) =
+  docsFor _proxy (endpoint, action) _ =
     single endpoint action
 
 -- TODO: We use 'AllMimeRender' here because we need to be able to show the

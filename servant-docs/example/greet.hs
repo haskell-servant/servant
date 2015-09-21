@@ -112,7 +112,7 @@ extra =
 --
 -- > docs testAPI :: API
 docsGreet :: API
-docsGreet = docsWith [intro1, intro2] extra testApi
+docsGreet = docsWith defaultDocOptions [intro1, intro2] extra testApi
 
 main :: IO ()
 main = putStrLn $ markdown docsGreet

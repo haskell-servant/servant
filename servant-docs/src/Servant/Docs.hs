@@ -144,7 +144,9 @@ module Servant.Docs
   ( -- * 'HasDocs' class and key functions
     HasDocs(..), docs, markdown
     -- * Generating docs with extra information
-  , ExtraInfo(..), docsWith, docsWithIntros, extraInfo
+  , docsWith, docsWithIntros, docsWithOptions
+  , ExtraInfo(..), extraInfo
+  , DocOptions(..) , defaultDocOptions, maxSamples
 
   , -- * Classes you need to implement for your types
     ToSample(..)
