@@ -20,7 +20,7 @@ function renderBook(book)
 function searchBooks()
 {
   var q = $('#q').val();
-  getbooks(q, updateResults, console.log)
+  getBooks(q, updateResults, console.log)
 }
 
 searchBooks();
@@ -54,7 +54,7 @@ function update(id, val)
 
 function refresh()
 {
-  getpoint(f, console.log);
+  getPoint(f, console.log);
 }
 
 window.setInterval(refresh, 200);
