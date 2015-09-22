@@ -21,7 +21,6 @@ module Servant.Foreign
   , HeaderArg(..)
   , ArgType(..)
   , Req
-  , toValidFunctionName
   , captureArg
   , defReq
   , concatCase
@@ -48,12 +47,8 @@ import Control.Applicative
 #endif
 import Control.Lens hiding (List)
 import Data.Char (toLower, toUpper)
-import qualified Data.CharSet as Set
-import qualified Data.CharSet.Unicode.Category as Set
 import Data.List
-import Data.Monoid
 import Data.Proxy
-import qualified Data.Text as T
 import GHC.Exts (Constraint)
 import GHC.TypeLits
 import Servant.API
@@ -105,58 +100,8 @@ data HeaderArg = HeaderArg
   | ReplaceHeaderArg
     { headerArgName :: String
     , headerPattern :: String
-    } deriving (Eq)
+    } deriving (Eq, Show)
 
-
--- | 
-instance Show HeaderArg where
-  show (HeaderArg n)          = toValidFunctionName ("header" <> n)
-  show (ReplaceHeaderArg n p)
-      | pn `isPrefixOf` p = pv <> " + \"" <> rp <> "\""
-      | pn `isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
-      | pn `isInfixOf` p  = "\"" <> (replace pn ("\" + " <> pv <> " + \"") p)
-                                 <> "\""
-      | otherwise         = p
-    where
-      pv = toValidFunctionName ("header" <> n)
-      pn = "{" <> n <> "}"
-      rp = replace pn "" p
-      -- Use replace method from Data.Text
-      replace old new = T.unpack .
-          T.replace (T.pack old) (T.pack new) .
-          T.pack
-
--- | Attempts to reduce the function name provided to that allowed by @'Foreign'@.
---
--- Here we are making an assumption that js identifiers are common enough.
--- https://mathiasbynens.be/notes/javascript-identifiers
--- Couldn't work out how to handle zero-width characters.
--- TODO: compare it with other generated languages(such as ruby via lackey)
--- and generalize.
--- 
--- @TODO: specify better default function name, or throw error?
-toValidFunctionName :: String -> String
-toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
-  where
-    setFirstChar c = if firstChar c
-        then c
-        else '_'
-    firstChar c = prefixOK c || any (Set.member c) firstLetterOK
-    remainder c = prefixOK c || any (Set.member c) remainderOK
-    -- Valid prefixes
-    prefixOK c = c `elem` ['$','_']
-    -- Unicode character sets
-    firstLetterOK = [ Set.lowercaseLetter
-                    , Set.uppercaseLetter
-                    , Set.titlecaseLetter
-                    , Set.modifierLetter
-                    , Set.otherLetter
-                    , Set.letterNumber ]
-    remainderOK   = firstLetterOK <> [ Set.nonSpacingMark
-                                     , Set.spacingCombiningMark
-                                     , Set.decimalNumber
-                                     , Set.connectorPunctuation ]
-toValidFunctionName [] = "_"
 
 type MatrixArg = QueryArg
 

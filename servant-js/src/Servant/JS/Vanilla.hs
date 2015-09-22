@@ -79,7 +79,7 @@ generateVanillaJSWith opts req = "\n" <>
           where headersStr = intercalate "\n" $ map headerStr hs
                 headerStr header = "  xhr.setRequestHeader(\"" ++
                   headerArgName header ++
-                  "\", " ++ show header ++ ");"
+                  "\", " ++ toJSHeader header ++ ");"
 
         namespace = if null (moduleName opts)
                        then "var "

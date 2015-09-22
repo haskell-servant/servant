@@ -109,7 +109,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
           where headersStr = intercalate ", " $ map headerStr hs
                 headerStr header = "\"" ++
                   headerArgName header ++
-                  "\": " ++ show header
+                  "\": " ++ toJSHeader header
 
         namespace =
             if hasService

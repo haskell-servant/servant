@@ -10,6 +10,8 @@ module Servant.JS.Internal
   , jsGParams
   , jsMParams
   , paramToStr
+  , toValidFunctionName
+  , toJSHeader
   -- re-exports
   , (:<|>)(..)
   , (:>)
@@ -29,8 +31,13 @@ module Servant.JS.Internal
   , Header
   ) where 
 
-import Control.Lens hiding (List)
-import Servant.Foreign
+import           Control.Lens hiding (List)
+import qualified Data.CharSet as Set
+import qualified Data.CharSet.Unicode.Category as Set
+import           Data.List
+import           Data.Monoid
+import qualified Data.Text as T
+import           Servant.Foreign
 
 type AjaxReq = Req
 
@@ -73,6 +80,51 @@ defCommonGeneratorOptions = CommonGeneratorOptions
   , moduleName = ""
   , urlPrefix = ""
   }
+
+-- | Attempts to reduce the function name provided to that allowed by @'Foreign'@.
+--
+-- https://mathiasbynens.be/notes/javascript-identifiers
+-- Couldn't work out how to handle zero-width characters.
+--
+-- @TODO: specify better default function name, or throw error?
+toValidFunctionName :: String -> String
+toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
+  where
+    setFirstChar c = if firstChar c then c else '_'
+    firstChar c = prefixOK c || any (Set.member c) firstLetterOK
+    remainder c = prefixOK c || any (Set.member c) remainderOK
+    -- Valid prefixes
+    prefixOK c = c `elem` ['$','_']
+    -- Unicode character sets
+    firstLetterOK = [ Set.lowercaseLetter
+                    , Set.uppercaseLetter
+                    , Set.titlecaseLetter
+                    , Set.modifierLetter
+                    , Set.otherLetter
+                    , Set.letterNumber ]
+    remainderOK   = firstLetterOK
+               <> [ Set.nonSpacingMark
+                  , Set.spacingCombiningMark
+                  , Set.decimalNumber
+                  , Set.connectorPunctuation ]
+toValidFunctionName [] = "_"
+
+toJSHeader :: HeaderArg -> String
+toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> n)
+toJSHeader (ReplaceHeaderArg n p)
+  | pn `isPrefixOf` p = pv <> " + \"" <> rp <> "\""
+  | pn `isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
+  | pn `isInfixOf` p  = "\"" <> (replace pn ("\" + " <> pv <> " + \"") p)
+                             <> "\""
+  | otherwise         = p
+  where
+    pv = toValidFunctionName ("header" <> n)
+    pn = "{" <> n <> "}"
+    rp = replace pn "" p
+    -- Use replace method from Data.Text
+    replace old new = T.unpack
+                    . T.replace (T.pack old) (T.pack new)
+                    . T.pack
 
 jsSegments :: [Segment] -> String
 jsSegments []  = ""

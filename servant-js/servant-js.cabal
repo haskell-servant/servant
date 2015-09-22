@@ -41,8 +41,10 @@ library
                        Servant.JS.JQuery
                        Servant.JS.Vanilla
   build-depends:       base >=4.5 && <5
+                     , charset
                      , lens >= 4
                      , servant-foreign >= 0.1
+                     , text
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
@@ -82,4 +84,5 @@ test-suite spec
                    , lens >= 4
                    , servant
                    , servant-js
+                   , text
   default-language:  Haskell2010
