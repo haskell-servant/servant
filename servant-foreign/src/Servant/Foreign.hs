@@ -21,8 +21,6 @@ module Servant.Foreign
   , HeaderArg(..)
   , ArgType(..)
   , Req
-  , CommonGeneratorOptions(..)
-  , defCommonGeneratorOptions
   , toValidFunctionName
   , captureArg
   , defReq
@@ -59,41 +57,6 @@ import qualified Data.Text as T
 import GHC.Exts (Constraint)
 import GHC.TypeLits
 import Servant.API
-
--- | This structure is used by specific implementations to let you
--- customize the output
-data CommonGeneratorOptions = CommonGeneratorOptions
-  {
-    functionNameBuilder :: FunctionName -> String  -- ^ function generating function names
-  , requestBody :: String                -- ^ name used when a user want to send the request body (to let you redefine it)
-  , successCallback :: String            -- ^ name of the callback parameter when the request was successful
-  , errorCallback :: String              -- ^ name of the callback parameter when the request reported an error
-  , moduleName :: String                 -- ^ namespace on which we define the foreign function (empty mean local var)
-  , urlPrefix :: String                  -- ^ a prefix we should add to the Url in the codegen
-  }
-
--- | Default options.
---
--- @
--- > defCommonGeneratorOptions = CommonGeneratorOptions
--- >   { functionNameBuilder = camelCase
--- >   , requestBody = "body"
--- >   , successCallback = "onSuccess"
--- >   , errorCallback = "onError"
--- >   , moduleName = ""
--- >   , urlPrefix = ""
--- >   }
--- @
-defCommonGeneratorOptions :: CommonGeneratorOptions
-defCommonGeneratorOptions = CommonGeneratorOptions
-  {
-    functionNameBuilder = camelCase
-  , requestBody = "body"
-  , successCallback = "onSuccess"
-  , errorCallback = "onError"
-  , moduleName = ""
-  , urlPrefix = ""
-  }
 
 -- | Function name builder that simply concat each part together
 concatCase :: FunctionName -> String
@@ -233,7 +196,6 @@ defReq :: Req
 defReq = Req defUrl "GET" [] False []
 
 type family Elem (a :: *) (ls::[*]) :: Constraint where
-  Elem a '[] = 'False ~ 'True
   Elem a (a ': list) = ()
   Elem a (b ': list) = Elem a list
 
