@@ -1,5 +1,5 @@
 name:                servant-foreign
-version:             0.1.0.0
+version:             0.5.0.0
 synopsis:            Abstract all necessary info for client code-generation in arbitrary programming language.
 description:         Consolidates such projects as servant-js and lackey.
 license:             BSD3
