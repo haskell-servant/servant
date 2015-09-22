@@ -80,7 +80,6 @@ test-suite spec
                    , hspec >= 2.1.8
                    , hspec-expectations
                    , language-ecmascript >= 0.16
-                   , lens
                    , lens >= 4
                    , servant
                    , servant-js
