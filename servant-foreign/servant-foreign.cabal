@@ -1,7 +1,14 @@
 name:                servant-foreign
-version:             0.5.0.0
-synopsis:            Abstract all necessary info for client code-generation in arbitrary programming language.
-description:         Consolidates such projects as servant-js and lackey.
+version:             0.5
+synopsis:            Helper types and functions for generating client functions for servant APIs in any programming language
+description:
+  Helper types and functions for generating client functions for servant APIs in any programming language
+  .
+  This package provides types and functions that collect all the data needed to generate client functions in the programming language of your choice. This effectively means you only have to write the code that "pretty-prints" this data as some code in your target language.
+  .
+  See the servant-js module for an example
+  .
+  <https://github.com/haskell-servant/servant/blob/master/servant-foreign/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
 author:              Denis Redozubov
@@ -19,8 +26,8 @@ source-repository head
 
 library
   exposed-modules:     Servant.Foreign
-  build-depends:       base == 4.*
-                     , lens == 4.*
+  build-depends:       base    == 4.*
+                     , lens    == 4.*
                      , servant == 0.5.*
   hs-source-dirs:      src
   default-language:    Haskell2010
