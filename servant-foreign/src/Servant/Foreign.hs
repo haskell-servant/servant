@@ -1,13 +1,14 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TemplateHaskell      #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
@@ -140,7 +141,12 @@ captureArg                  _  = error "captureArg called on non capture"
 defReq :: Req
 defReq = Req defUrl "GET" [] False []
 
+-- | To be used exclusively as a "negative" return type/constraint
+-- by @'Elem`@ type family.
+class NotFound
+
 type family Elem (a :: *) (ls::[*]) :: Constraint where
+  Elem a '[]         = NotFound
   Elem a (a ': list) = ()
   Elem a (b ': list) = Elem a list
 
