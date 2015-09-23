@@ -22,18 +22,20 @@ module Servant.Docs.Internal where
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
 #endif
-import           Control.Lens
+import           Control.Lens               (makeLenses, over, traversed, (%~),
+                                             (&), (.~), (<>~), (^.), _1, _2,
+                                             _last, (|>))
+import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
-import           Data.Hashable
+import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
 import           Data.List
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord                   (comparing)
-import           Data.Proxy
-import           Data.ByteString.Conversion (ToByteString, toByteString)
-import           Data.String.Conversions
+import           Data.Proxy                 (Proxy(Proxy))
+import           Data.String.Conversions    (cs)
 import           Data.Text                  (Text, pack, unpack)
 import           GHC.Exts                   (Constraint)
 import           GHC.Generics

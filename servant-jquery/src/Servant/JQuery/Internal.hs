@@ -11,19 +11,20 @@
 module Servant.JQuery.Internal where
 
 #if !MIN_VERSION_base(4,8,0)
-import Control.Applicative
+import           Control.Applicative
 #endif
-import Control.Lens
-import Data.Char (toLower)
-import qualified Data.CharSet as Set
+import           Control.Lens                  (makeLenses, (%~), (&), (.~)
+                                               , (<>~), (^.), _last)
+import           Data.Char                     (toLower)
+import qualified Data.CharSet                  as Set
 import qualified Data.CharSet.Unicode.Category as Set
-import Data.List
-import Data.Monoid
-import Data.Proxy
-import qualified Data.Text as T
-import GHC.Exts (Constraint)
-import GHC.TypeLits
-import Servant.API
+import           Data.List
+import           Data.Monoid
+import           Data.Proxy
+import qualified Data.Text                     as T
+import           GHC.Exts                      (Constraint)
+import           GHC.TypeLits
+import           Servant.API
 
 type Arg = String
 

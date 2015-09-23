@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Servant.API.ContentTypesSpec where
 
 #if !MIN_VERSION_base(4,8,0)

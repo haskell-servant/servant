@@ -11,4 +11,5 @@ packages:
 extra-deps:
 - engine-io-wai-1.0.2
 - attoparsec-0.13.0.1
+- aeson-0.10.0.0
 resolver: nightly-2015-07-24

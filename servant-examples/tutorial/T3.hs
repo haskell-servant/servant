@@ -70,7 +70,7 @@ server = position
     :<|> marketing
 
   where position :: Int -> Int -> EitherT ServantErr IO Position
-        position x y = return (Position x y)
+        position a b = return (Position a b)
 
         hello :: Maybe String -> EitherT ServantErr IO HelloMessage
         hello mname = return . HelloMessage $ case mname of
