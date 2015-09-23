@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                servant-lucid
-version:             0.4.4.3
+version:             0.4.4.4
 synopsis:            Servant support for lucid
 -- description:
 homepage:            http://haskell-servant.github.io/
