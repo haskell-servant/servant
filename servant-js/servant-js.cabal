@@ -77,6 +77,9 @@ test-suite spec
   hs-source-dirs:    test
   ghc-options:       -Wall
   main-is:           Spec.hs
+  other-modules:
+      Servant.JSSpec
+      Servant.JSSpec.CustomHeaders
   build-depends:     base
                    , hspec >= 2.1.8
                    , hspec-expectations

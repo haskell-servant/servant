@@ -29,9 +29,9 @@ module Servant.JS.Internal
   , Get
   , Raw
   , Header
-  ) where 
+  ) where
 
-import           Control.Lens hiding (List)
+import           Control.Lens                  ((^.))
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import           Data.List

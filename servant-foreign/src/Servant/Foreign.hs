@@ -3,8 +3,10 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+#if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE NullaryTypeClasses    #-}
+#endif
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -47,7 +49,8 @@ module Servant.Foreign
 #if !MIN_VERSION_base(4,8,0)
 import Control.Applicative
 #endif
-import Control.Lens hiding (List)
+import           Control.Lens                  (makeLenses, (%~), (&), (.~),
+                                                (<>~), _last)
 import Data.Char (toLower, toUpper)
 import Data.List
 import Data.Proxy

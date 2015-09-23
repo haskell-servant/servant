@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.IO.Class
