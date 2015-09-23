@@ -1,3 +1,8 @@
+0.4.3
+-----
+
+* Bump aeson upper-bound to < 0.11
+
 0.4.1
 -----
 * Bump attoparsec upper bound to < 0.14
