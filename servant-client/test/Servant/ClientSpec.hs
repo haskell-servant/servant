@@ -9,7 +9,6 @@
 {-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_GHC -fcontext-stack=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
 module Servant.ClientSpec where
 

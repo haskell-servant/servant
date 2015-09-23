@@ -17,7 +17,8 @@ set -o errexit
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 . "$DIR"/lib/common.sh
 
-GHC_FLAGS="-Werror"
+# TODO: Remove missing-methods after https://github.com/bos/aeson/issues/290
+GHC_FLAGS="-Werror -fno-warn-missing-methods"
 
 prepare_sandbox () {
     $CABAL sandbox init
