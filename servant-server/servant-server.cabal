@@ -92,7 +92,6 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules:
-      Servant.Server.ErrorSpec
       Servant.Server.Internal.EnterSpec
       Servant.ServerSpec
       Servant.Utils.StaticFilesSpec
