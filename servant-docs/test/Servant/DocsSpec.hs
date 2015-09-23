@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
+{-# OPTIONS_GHC -fno-warn-missing-methods  #-}
 module Servant.DocsSpec where
 
 import           Control.Lens

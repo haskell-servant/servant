@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 -- |
 -- Module     : Servant.Mock
 -- Copyright  : 2015 Alp Mestanogullari
@@ -153,7 +154,7 @@ instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Put ctypes a) where
   mock _ = mockArbitrary
 
 instance HasMock Raw where
-  mock _ = \req respond -> do
+  mock _ = \_ respond -> do
     bdy <- genBody
     respond $ responseLBS status200 [] bdy
 

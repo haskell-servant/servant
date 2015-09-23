@@ -4,6 +4,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-missing-methods #-}
 module T4 where
 
 import Data.Aeson
@@ -35,13 +37,13 @@ instance ToHtml Person where
 
 -- HTML serialization of a list of persons
 instance ToHtml [Person] where
-  toHtml persons = table_ $ do
+  toHtml ps = table_ $ do
     tr_ $ do
       th_ "first name"
       th_ "last name"
       th_ "age"
 
-    foldMap toHtml persons
+    foldMap toHtml ps
 
   toHtmlRaw = toHtml
 
