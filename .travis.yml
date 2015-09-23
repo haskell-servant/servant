@@ -19,7 +19,7 @@ install:
 
 script:
   - stack setup
-  - stack build
+  - stack build --pedantic
   - stack test
 
 cache:
