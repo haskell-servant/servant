@@ -5,7 +5,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
-{-# OPTIONS_GHC -fno-warn-unused-binds #-}
 import           Data.Aeson
 import           Data.ByteString          (ByteString)
 import           Data.Text                (Text)

@@ -4,7 +4,6 @@
 module T8 where
 
 import           Control.Monad.Trans.Except
-import           Data.Aeson
 import           Servant
 import           Servant.Client
 
