@@ -19,7 +19,7 @@ install:
 
 script:
   - stack setup
-  - stack build --pedantic
+  - stack build --ghc-options "-Werror"
   - stack test
 
 cache:
