@@ -3,6 +3,7 @@ module Servant.JS.Angular where
 import           Control.Lens
 import           Data.List
 import           Data.Monoid
+import           Servant.Foreign
 import           Servant.JS.Internal
 
 -- | Options specific to the angular code generator
@@ -108,7 +109,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
           where headersStr = intercalate ", " $ map headerStr hs
                 headerStr header = "\"" ++
                   headerArgName header ++
-                  "\": " ++ show header
+                  "\": " ++ toJSHeader header
 
         namespace =
             if hasService

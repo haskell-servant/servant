@@ -3,6 +3,7 @@ module Servant.JS.JQuery where
 import           Control.Lens
 import           Data.List
 import           Data.Monoid
+import           Servant.Foreign
 import           Servant.JS.Internal
 
 -- | Generate javascript functions that use the /jQuery/ library
@@ -71,7 +72,7 @@ generateJQueryJSWith opts req = "\n" <>
           where headersStr = intercalate ", " $ map headerStr hs
                 headerStr header = "\"" ++
                   headerArgName header ++
-                  "\": " ++ show header
+                  "\": " ++ toJSHeader header
 
         namespace = if null (moduleName opts)
                        then "var "

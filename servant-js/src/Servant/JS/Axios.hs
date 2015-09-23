@@ -4,6 +4,7 @@ import           Control.Lens
 import           Data.Char           (toLower)
 import           Data.List
 import           Data.Monoid
+import           Servant.Foreign
 import           Servant.JS.Internal
 
 -- | Axios 'configuration' type
@@ -103,7 +104,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
           where headersStr = intercalate ", " $ map headerStr hs
                 headerStr header = "\"" ++
                   headerArgName header ++
-                  "\": " ++ show header
+                  "\": " ++ toJSHeader header
 
         namespace =
                if hasNoModule

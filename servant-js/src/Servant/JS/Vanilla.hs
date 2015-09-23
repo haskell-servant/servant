@@ -3,6 +3,7 @@ module Servant.JS.Vanilla where
 import           Control.Lens
 import           Data.List
 import           Data.Monoid
+import           Servant.Foreign
 import           Servant.JS.Internal
 
 -- | Generate vanilla javascript functions to make AJAX requests
@@ -78,7 +79,7 @@ generateVanillaJSWith opts req = "\n" <>
           where headersStr = intercalate "\n" $ map headerStr hs
                 headerStr header = "  xhr.setRequestHeader(\"" ++
                   headerArgName header ++
-                  "\", " ++ show header ++ ");"
+                  "\", " ++ toJSHeader header ++ ");"
 
         namespace = if null (moduleName opts)
                        then "var "

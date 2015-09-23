@@ -12,8 +12,8 @@ import           Data.Proxy
 import           Language.ECMAScript3.Parser  (parseFromString)
 import           Test.Hspec
 
-import           Servant.API
 import           Servant.JS
+import           Servant.JS.Internal
 import qualified Servant.JS.Angular           as NG
 import qualified Servant.JS.Axios             as AX
 import qualified Servant.JS.JQuery            as JQ
@@ -75,7 +75,7 @@ spec = describe "Servant.JQuery" $ do
     generateJSSpec Angular       (NG.generateAngularJS NG.defAngularOptions)
     generateJSSpec AngularCustom (NG.generateAngularJSWith NG.defAngularOptions customOptions)
     generateJSSpec Axios        (AX.generateAxiosJS AX.defAxiosOptions)
-    generateJSSpec AxiosCustom  (AX.generateAxiosJSWith (AX.defAxiosOptions { withCredentials = True }) customOptions)
+    generateJSSpec AxiosCustom  (AX.generateAxiosJSWith (AX.defAxiosOptions { AX.withCredentials = True }) customOptions)
 
     angularSpec    Angular
     axiosSpec
