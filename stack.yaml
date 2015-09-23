@@ -1,6 +1,8 @@
 flags:
   servant-js:
     example: false
+ghc-options:
+    "*": -Wall
 packages:
 - servant/
 - servant-blaze/

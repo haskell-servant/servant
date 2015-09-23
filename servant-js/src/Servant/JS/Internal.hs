@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 module Servant.JS.Internal
   ( JavaScriptGenerator
   , CommonGeneratorOptions(..)
@@ -29,7 +30,7 @@ module Servant.JS.Internal
   , Get
   , Raw
   , Header
-  ) where 
+  ) where
 
 import           Control.Lens hiding (List)
 import qualified Data.CharSet as Set

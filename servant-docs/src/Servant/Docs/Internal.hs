@@ -23,19 +23,21 @@ module Servant.Docs.Internal where
 
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               hiding (List, to, from)
+import           Control.Lens               (makeLenses, over, traversed, (%~),
+                                             (&), (.~), (<>~), (^.), _1, _2,
+                                             _last, (|>))
 import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
-import           Data.Hashable
+import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
 import           Data.List
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord                   (comparing)
-import           Data.Proxy
-import           Data.String.Conversions
+import           Data.Proxy                 (Proxy(Proxy))
+import           Data.String.Conversions    (cs)
 import           Data.Text                  (Text, pack, unpack)
 import           GHC.Exts                   (Constraint)
 import           GHC.Generics
@@ -494,9 +496,9 @@ sampleByteStrings
     -> Proxy a
     -> [(Text, M.MediaType, ByteString)]
 sampleByteStrings ctypes@Proxy Proxy =
-    let samples = toSamples (Proxy :: Proxy a)
+    let samples' = toSamples (Proxy :: Proxy a)
         enc (t, s) = uncurry (t,,) <$> allMimeRender ctypes s
-    in concatMap enc samples
+    in concatMap enc samples'
 
 -- | Generate a list of 'MediaType' values describing the content types
 -- accepted by an API component.
@@ -640,10 +642,10 @@ markdown api = unlines $
 
         rqbodyStr :: [M.MediaType] -> [(M.MediaType, ByteString)]-> [String]
         rqbodyStr [] [] = []
-        rqbodyStr types samples =
+        rqbodyStr types s =
             ["#### Request:", ""]
             <> formatTypes types
-            <> concatMap formatBody samples
+            <> concatMap formatBody s
 
         formatTypes [] = []
         formatTypes ts = ["- Supported content types are:", ""]
