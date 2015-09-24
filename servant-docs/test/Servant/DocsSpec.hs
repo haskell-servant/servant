@@ -30,7 +30,7 @@ spec = describe "Servant.Docs" $ do
   describe "markdown with extra info" $ do
     let
       extra = extraInfo
-              (Proxy :: Proxy (Get '[JSON, PlainText] Int))
+              (Proxy :: Proxy (Get '[JSON, PlainText] (Headers '[Header "Location" String] Int)))
               (defAction & notes <>~ [DocNote "Get an Integer" ["get an integer in Json or plain text"]])
               <>
               extraInfo
@@ -90,26 +90,26 @@ data Datatype1 = Datatype1 { dt1field1 :: String
 
 instance ToJSON Datatype1
 
-instance ToSample Datatype1 Datatype1 where
+instance ToSample Datatype1 where
   toSamples _ = singleSample $ Datatype1 "field 1" 13
 
-instance ToSample Char Char where
+instance ToSample Char where
   toSamples _ = samples ['a'..'z']
 
-instance ToSample Int Int where
+instance ToSample Int where
   toSamples _ = singleSample 17
 
 instance MimeRender PlainText Int where
   mimeRender _ = cs . show
 
-type TestApi1 = Get '[JSON, PlainText] Int
+type TestApi1 = Get '[JSON, PlainText] (Headers '[Header "Location" String] Int)
            :<|> ReqBody '[JSON] String :> Post '[JSON] Datatype1
 
 data TT = TT1 | TT2 deriving (Show, Eq)
 data UT = UT1 | UT2 deriving (Show, Eq)
 
-instance ToSample TT TT where
+instance ToSample TT where
   toSamples _ = [("eins", TT1), ("zwei", TT2)]
 
-instance ToSample UT UT where
+instance ToSample UT where
   toSamples _ = [("yks", UT1), ("kaks", UT2)]
