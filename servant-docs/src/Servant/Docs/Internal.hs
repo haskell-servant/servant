@@ -403,13 +403,13 @@ class HasDocs layout where
 -- 'toSample': it lets you specify different responses along with
 -- some context (as 'Text') that explains when you're supposed to
 -- get the corresponding response.
-class ToSample a b | a -> b where
-  toSamples :: Proxy a -> [(Text, b)]
-  default toSamples :: (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
+class ToSample a where
+  toSamples :: Proxy a -> [(Text, a)]
+  default toSamples :: (Generic a, GToSample (Rep a)) => Proxy a -> [(Text, a)]
   toSamples = defaultSamples
 
 -- | Sample input or output (if there is at least one).
-toSample :: forall a b. ToSample a b => Proxy a -> Maybe b
+toSample :: forall a. ToSample a => Proxy a -> Maybe a
 toSample _ = snd <$> listToMaybe (toSamples (Proxy :: Proxy a))
 
 -- | No samples.
@@ -425,22 +425,22 @@ samples :: [a] -> [(Text, a)]
 samples = map ("",)
 
 -- | Default sample Generic-based inputs/outputs.
-defaultSamples :: forall a b. (Generic a, Generic b, GToSample (Rep a) (Rep b)) => Proxy a -> [(Text, b)]
+defaultSamples :: forall a. (Generic a, GToSample (Rep a)) => Proxy a -> [(Text, a)]
 defaultSamples _ = Omega.runOmega $ second to <$> gtoSamples (Proxy :: Proxy (Rep a))
 
 -- | @'ToSample'@ for Generics.
 --
 -- The use of @'Omega'@ allows for more productive sample generation.
-class GToSample t s where
-  gtoSamples :: proxy t -> Omega.Omega (Text, s x)
+class GToSample t where
+  gtoSamples :: proxy t -> Omega.Omega (Text, t x)
 
-instance GToSample U1 U1 where
+instance GToSample U1 where
   gtoSamples _ = Omega.each (singleSample U1)
 
-instance GToSample V1 V1 where
+instance GToSample V1 where
   gtoSamples _ = empty
 
-instance (GToSample p p', GToSample q q') => GToSample (p :*: q) (p' :*: q') where
+instance (GToSample p, GToSample q) => GToSample (p :*: q) where
   gtoSamples _ = render <$> ps <*> qs
     where
       ps = gtoSamples (Proxy :: Proxy p)
@@ -449,20 +449,17 @@ instance (GToSample p p', GToSample q q') => GToSample (p :*: q) (p' :*: q') whe
         | T.null ta || T.null tb = (ta <> tb, a :*: b)
         | otherwise              = (ta <> ", " <> tb, a :*: b)
 
-instance (GToSample p p', GToSample q q') => GToSample (p :+: q) (p' :+: q') where
+instance (GToSample p, GToSample q) => GToSample (p :+: q) where
   gtoSamples _ = lefts <|> rights
     where
       lefts  = second L1 <$> gtoSamples (Proxy :: Proxy p)
       rights = second R1 <$> gtoSamples (Proxy :: Proxy q)
 
-instance ToSample a b => GToSample (K1 i a) (K1 i b) where
+instance ToSample a => GToSample (K1 i a) where
   gtoSamples _ = second K1 <$> Omega.each (toSamples (Proxy :: Proxy a))
 
-instance (GToSample f g) => GToSample (M1 i a f) (M1 i a g) where
+instance (GToSample f) => GToSample (M1 i a f) where
   gtoSamples _ = second M1 <$> gtoSamples (Proxy :: Proxy f)
-
-instance ToSample a b => ToSample (Headers ls a) b where
-  toSamples _ = toSamples (Proxy :: Proxy a)
 
 
 class AllHeaderSamples ls where
@@ -471,7 +468,7 @@ class AllHeaderSamples ls where
 instance AllHeaderSamples '[] where
     allHeaderToSample _  = []
 
-instance (ToByteString l, AllHeaderSamples ls, ToSample l l, KnownSymbol h)
+instance (ToByteString l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
     => AllHeaderSamples (Header h l ': ls) where
     allHeaderToSample _ = (mkHeader (toSample (Proxy :: Proxy l))) :
                           allHeaderToSample (Proxy :: Proxy ls)
@@ -481,7 +478,7 @@ instance (ToByteString l, AllHeaderSamples ls, ToSample l l, KnownSymbol h)
 
 -- | Synthesise a sample value of a type, encoded in the specified media types.
 sampleByteString
-    :: forall ctypes a b. (ToSample a b, IsNonEmpty ctypes, AllMimeRender ctypes b)
+    :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
     => Proxy ctypes
     -> Proxy a
     -> [(M.MediaType, ByteString)]
@@ -491,7 +488,7 @@ sampleByteString ctypes@Proxy Proxy =
 -- | Synthesise a list of sample values of a particular type, encoded in the
 -- specified media types.
 sampleByteStrings
-    :: forall ctypes a b. (ToSample a b, IsNonEmpty ctypes, AllMimeRender ctypes b)
+    :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
     => Proxy ctypes
     -> Proxy a
     -> [(Text, M.MediaType, ByteString)]
@@ -728,7 +725,7 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLe #-}
 #endif
-        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
+        (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
     => HasDocs (Delete cts a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
@@ -743,7 +740,7 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+        (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Delete cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
@@ -761,7 +758,7 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLe #-}
 #endif
-        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
+        (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
     => HasDocs (Get cts a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
@@ -776,7 +773,7 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+        (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Get cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
@@ -803,7 +800,7 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
+        (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
     => HasDocs (Post cts a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
@@ -819,7 +816,7 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-         (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+         (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Post cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
@@ -838,7 +835,7 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts)
+        (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts)
     => HasDocs (Put cts a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
@@ -854,7 +851,7 @@ instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
-        (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, SupportedTypes cts
+        (ToSample a, IsNonEmpty cts, AllMimeRender cts a, SupportedTypes cts
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Put cts (Headers ls a)) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
@@ -951,7 +948,7 @@ instance HasDocs Raw where
 -- example data. However, there's no reason to believe that the instances of
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
 -- both are even defined) for any particular type.
-instance (ToSample a b, IsNonEmpty cts, AllMimeRender cts b, HasDocs sublayout
+instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, HasDocs sublayout
          , SupportedTypes cts)
       => HasDocs (ReqBody cts a :> sublayout) where
 
@@ -990,32 +987,32 @@ instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
     docsFor (Proxy :: Proxy sublayout) ep
 
 -- ToSample instances for simple types
-instance ToSample () ()
-instance ToSample Bool Bool
-instance ToSample Ordering Ordering
+instance ToSample ()
+instance ToSample Bool
+instance ToSample Ordering
 
 -- polymorphic ToSample instances
-instance (ToSample a a, ToSample b b) => ToSample (a, b) (a, b)
-instance (ToSample a a, ToSample b b, ToSample c c) => ToSample (a, b, c) (a, b, c)
-instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d) => ToSample (a, b, c, d) (a, b, c, d)
-instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e) => ToSample (a, b, c, d, e) (a, b, c, d, e)
-instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e, ToSample f f) => ToSample (a, b, c, d, e, f) (a, b, c, d, e, f)
-instance (ToSample a a, ToSample b b, ToSample c c, ToSample d d, ToSample e e, ToSample f f, ToSample g g) => ToSample (a, b, c, d, e, f, g) (a, b, c, d, e, f, g)
+instance (ToSample a, ToSample b) => ToSample (a, b)
+instance (ToSample a, ToSample b, ToSample c) => ToSample (a, b, c)
+instance (ToSample a, ToSample b, ToSample c, ToSample d) => ToSample (a, b, c, d)
+instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e) => ToSample (a, b, c, d, e)
+instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e, ToSample f) => ToSample (a, b, c, d, e, f)
+instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e, ToSample f, ToSample g) => ToSample (a, b, c, d, e, f, g)
 
-instance ToSample a a => ToSample (Maybe a) (Maybe a)
-instance (ToSample a a, ToSample b b) => ToSample (Either a b) (Either a b)
-instance ToSample a a => ToSample [a] [a]
+instance ToSample a => ToSample (Maybe a)
+instance (ToSample a, ToSample b) => ToSample (Either a b)
+instance ToSample a => ToSample [a]
 
 -- ToSample instances for Control.Applicative types
-instance ToSample a a => ToSample (Const a b) (Const a b)
-instance ToSample a a => ToSample (ZipList a) (ZipList a)
+instance ToSample a => ToSample (Const a b)
+instance ToSample a => ToSample (ZipList a)
 
 -- ToSample instances for Data.Monoid newtypes
-instance ToSample All All
-instance ToSample Any Any
-instance ToSample a a => ToSample (Sum a) (Sum a)
-instance ToSample a a => ToSample (Product a) (Product a)
-instance ToSample a a => ToSample (First a) (First a)
-instance ToSample a a => ToSample (Last a) (Last a)
-instance ToSample a a => ToSample (Dual a) (Dual a)
+instance ToSample All
+instance ToSample Any
+instance ToSample a => ToSample (Sum a)
+instance ToSample a => ToSample (Product a)
+instance ToSample a => ToSample (First a)
+instance ToSample a => ToSample (Last a)
+instance ToSample a => ToSample (Dual a)
 
