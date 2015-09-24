@@ -1,26 +1,32 @@
 sudo: false
 
-addons:
-  apt:
-    packages:
-      - libgmp-dev
+language: c
 
 env:
-  - STACK_YAML=stack-ghc-7.8.4.yaml
-  - STACK_YAML=stack.yaml
+  - GHCVER=7.8.4
+  - GHCVER=7.10.2
+
+addons:
+  apt:
+    sources:
+      - hvr-ghc
+    packages:
+      - ghc-7.8.4
+      - ghc-7.10.2
+      - cabal-install-1.22
+      - libgmp-dev
 
 install:
-  # stack
-  - mkdir -p ~/.local/bin
-  - travis_retry curl -L https://github.com/commercialhaskell/stack/releases/download/v0.1.4.0/stack-0.1.4.0-x86_64-linux.tar.gz | tar -xvzf -
-  - mv stack ~/.local/bin
-  - export PATH=~/.local/bin:$PATH
-  - stack --version
+  - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/1.22/bin:$PATH
+  - ghc --version
+  - cabal --version
+  - travis_retry cabal update
+  - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
 
 script:
-  - stack setup
-  - stack build --test --ghc-options "-Werror"
+  - for package in $(cat sources.txt); do (cd $package && tinc && cabal configure --enable-tests --ghc-options=-Werror --disable-optimization && cabal build && cabal test) || exit 1; done
 
 cache:
   directories:
-    - $HOME/.stack
+    - $HOME/.tinc/cache
