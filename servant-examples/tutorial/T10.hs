@@ -23,7 +23,7 @@ instance ToCapture (Capture "x" Int) where
 instance ToCapture (Capture "y" Int) where
   toCapture _ = DocCapture "y" "(integer) position on the y axis"
 
-instance ToSample T3.Position T3.Position where
+instance ToSample T3.Position where
   toSamples _ = singleSample (T3.Position 3 14)
 
 instance ToParam (QueryParam "name" String) where
@@ -33,7 +33,7 @@ instance ToParam (QueryParam "name" String) where
                   "Name of the person to say hello to."
                   Normal
 
-instance ToSample T3.HelloMessage T3.HelloMessage where
+instance ToSample T3.HelloMessage where
   toSamples _ =
     [ ("When a value is provided for 'name'", T3.HelloMessage "Hello, Alp")
     , ("When 'name' is not specified", T3.HelloMessage "Hello, anonymous coward")
@@ -42,10 +42,10 @@ instance ToSample T3.HelloMessage T3.HelloMessage where
 ci :: T3.ClientInfo
 ci = T3.ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]
 
-instance ToSample T3.ClientInfo T3.ClientInfo where
+instance ToSample T3.ClientInfo where
   toSamples _ = singleSample ci
 
-instance ToSample T3.Email T3.Email where
+instance ToSample T3.Email where
   toSamples _ = singleSample (T3.emailForClient ci)
 
 api :: Proxy DocsAPI
