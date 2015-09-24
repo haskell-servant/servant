@@ -78,7 +78,7 @@
 -- >                   "Get the greeting message selected language. Default is en."
 -- >                   Normal
 -- >
--- > instance ToSample Greet Greet where
+-- > instance ToSample Greet where
 -- >   toSample _ = Just $ Greet "Hello, haskeller!"
 -- >
 -- >   toSamples _ =

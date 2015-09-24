@@ -394,7 +394,7 @@ class HasDocs layout where
 -- > instance FromJSON Greet
 -- > instance ToJSON Greet
 -- >
--- > instance ToSample Greet Greet where
+-- > instance ToSample Greet where
 -- >   toSamples _ = singleSample g
 -- >
 -- >     where g = Greet "Hello, haskeller!"
