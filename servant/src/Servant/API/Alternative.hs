@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DeriveTraversable  #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Alternative ((:<|>)(..)) where
@@ -17,7 +19,7 @@ import           Data.Typeable (Typeable)
 --        :<|> "books" :> ReqBody '[JSON] Book :> Post '[JSON] () -- POST /books
 -- :}
 data a :<|> b = a :<|> b
-    deriving (Typeable, Eq, Show)
+    deriving (Typeable, Eq, Show, Functor, Traversable, Foldable, Bounded)
 infixr 8 :<|>
 
 instance (Monoid a, Monoid b) => Monoid (a :<|> b) where
