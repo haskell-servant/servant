@@ -12,6 +12,9 @@ import           Data.Monoid
 import           Data.Proxy
 import           Data.Text                  (Text)
 import           GHC.Generics
+import           Network.HTTP.Client        (Manager, defaultManagerSettings,
+                                             newManager)
+import           System.IO.Unsafe           (unsafePerformIO)
 import           Servant.API
 import           Servant.Client
 
@@ -55,10 +58,16 @@ instance FromJSON Package
 hackageAPI :: Proxy HackageAPI
 hackageAPI = Proxy
 
+
+{-# NOINLINE manager #-}
+manager :: Manager
+manager = unsafePerformIO $ newManager defaultManagerSettings
+
 getUsers :: ExceptT ServantError IO [UserSummary]
 getUser :: Username -> ExceptT ServantError IO UserDetailed
 getPackages :: ExceptT ServantError IO [Package]
-getUsers :<|> getUser :<|> getPackages = client hackageAPI $ BaseUrl Http "hackage.haskell.org" 80 ""
+getUsers :<|> getUser :<|> getPackages =
+    client hackageAPI (BaseUrl Http "hackage.haskell.org" 80 "") manager
 
 main :: IO ()
 main = print =<< uselessNumbers
@@ -71,7 +80,7 @@ uselessNumbers = runExceptT $ do
   user <- liftIO $ do
     putStrLn "Enter a valid hackage username"
     T.getLine
-  userDetailed <- (getUser user)
+  userDetailed <- getUser user
   liftIO . T.putStrLn $ user <> " maintains " <> T.pack (show (length $ groups userDetailed)) <> " packages"
 
   packages <- getPackages
