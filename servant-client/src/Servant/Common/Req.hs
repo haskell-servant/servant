@@ -13,7 +13,6 @@ import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Except
 import Data.ByteString.Lazy hiding (pack, filter, map, null, elem)
-import Data.IORef
 import Data.String
 import Data.String.Conversions
 import Data.Proxy
@@ -21,7 +20,6 @@ import Data.Text (Text)
 import Data.Text.Encoding
 import Data.Typeable
 import Network.HTTP.Client hiding (Proxy, path)
-import Network.HTTP.Client.TLS
 import Network.HTTP.Media
 import Network.HTTP.Types
 import qualified Network.HTTP.Types.Header   as HTTP
@@ -29,7 +27,6 @@ import Network.URI hiding (path)
 import Servant.API.ContentTypes
 import Servant.Common.BaseUrl
 import Servant.Common.Text
-import System.IO.Unsafe
 
 import qualified Network.HTTP.Client as Client
 
@@ -129,31 +126,21 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
 
 -- * performing requests
 
-{-# NOINLINE __manager #-}
-__manager :: IORef Manager
-__manager = unsafePerformIO (newManager tlsManagerSettings >>= newIORef)
-
-__withGlobalManager :: (Manager -> IO a) -> IO a
-__withGlobalManager action = readIORef __manager >>= action
-
-
 displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
 
-performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl
+performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> Manager
                -> ExceptT ServantError IO ( Int, ByteString, MediaType
                                           , [HTTP.Header], Response ByteString)
-performRequest reqMethod req isWantedStatus reqHost = do
+performRequest reqMethod req isWantedStatus reqHost manager = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
   let request = partialRequest { Client.method = reqMethod
                                , checkStatus = \ _status _headers _cookies -> Nothing
                                }
 
-  eResponse <- liftIO $ __withGlobalManager $ \ manager ->
-    catchConnectionError $
-      Client.httpLbs request manager
+  eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
   case eResponse of
     Left err ->
       throwE . ConnectionError $ SomeException err
@@ -174,20 +161,19 @@ performRequest reqMethod req isWantedStatus reqHost = do
 
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> [Int] -> BaseUrl -> ExceptT ServantError IO ([HTTP.Header], result)
-performRequestCT ct reqMethod req wantedStatus reqHost = do
+  Proxy ct -> Method -> Req -> [Int] -> BaseUrl -> Manager -> ExceptT ServantError IO ([HTTP.Header], result)
+performRequestCT ct reqMethod req wantedStatus reqHost manager = do
   let acceptCT = contentType ct
   (_status, respBody, respCT, hrds, _response) <-
-    performRequest reqMethod (req { reqAccept = [acceptCT] }) (`elem` wantedStatus) reqHost
+    performRequest reqMethod (req { reqAccept = [acceptCT] }) (`elem` wantedStatus) reqHost manager
   unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
     Left err -> throwE $ DecodeFailure err respCT respBody
     Right val -> return (hrds, val)
 
-performRequestNoBody :: Method -> Req -> [Int] -> BaseUrl -> ExceptT ServantError IO ()
-performRequestNoBody reqMethod req wantedStatus reqHost = do
-  _ <- performRequest reqMethod req (`elem` wantedStatus) reqHost
-  return ()
+performRequestNoBody :: Method -> Req -> [Int] -> BaseUrl -> Manager -> ExceptT ServantError IO ()
+performRequestNoBody reqMethod req wantedStatus reqHost manager =
+  void $ performRequest reqMethod req (`elem` wantedStatus) reqHost manager
 
 catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =
