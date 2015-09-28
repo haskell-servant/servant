@@ -3,6 +3,7 @@ HEAD
 
 * Add `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Fix safeLink, so Header is not in fact required.
+* Added more instances for (:<|>)
 
 0.4.2
 -----
