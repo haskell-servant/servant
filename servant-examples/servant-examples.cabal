@@ -53,6 +53,7 @@ executable t8-main
   build-depends:
       aeson
     , base >= 4.7 && < 5
+    , http-client > 0.4 && < 0.5
     , servant == 0.5.*
     , servant-client == 0.5.*
     , servant-server == 0.5.*
@@ -65,6 +66,7 @@ executable hackage
   build-depends:
       aeson >= 0.8
     , base >=4.7 && < 5
+    , http-client > 0.4 && < 0.5
     , servant == 0.5.*
     , servant-client == 0.5.*
     , text

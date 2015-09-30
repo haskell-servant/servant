@@ -144,6 +144,7 @@ withFailServer action = withWaiDaemon (return failServer) action
 
 spec :: IO ()
 spec = withServer $ \ baseUrl -> do
+  manager <- C.newManager C.defaultManagerSettings
   let getGet :: ExceptT ServantError IO Person
       getDeleteEmpty :: ExceptT ServantError IO ()
       getCapture :: String -> ExceptT ServantError IO Person
@@ -174,7 +175,7 @@ spec = withServer $ \ baseUrl -> do
        :<|> getMultiple
        :<|> getRespHeaders
        :<|> getDeleteContentType)
-         = client api baseUrl
+         = client api baseUrl manager
 
   hspec $ do
     it "Servant.API.Get" $ do
@@ -264,7 +265,7 @@ spec = withServer $ \ baseUrl -> do
             withWaiDaemon (return (serve api (throwE $ ServantErr 500 "error message" "" []))) $
             \ host -> do
               let getResponse :: ExceptT ServantError IO ()
-                  getResponse = client api host
+                  getResponse = client api host manager
               Left FailureResponse{..} <- runExceptT getResponse
               responseStatus `shouldBe` (Status 500 "error message")
       mapM_ test $
@@ -276,6 +277,7 @@ spec = withServer $ \ baseUrl -> do
 
 failSpec :: IO ()
 failSpec = withFailServer $ \ baseUrl -> do
+  manager <- C.newManager C.defaultManagerSettings
   let getGet :: ExceptT ServantError IO Person
       getDeleteEmpty :: ExceptT ServantError IO ()
       getCapture :: String -> ExceptT ServantError IO Person
@@ -285,9 +287,9 @@ failSpec = withFailServer $ \ baseUrl -> do
        :<|> getCapture
        :<|> getBody
        :<|> _ )
-         = client api baseUrl
+         = client api baseUrl manager
       getGetWrongHost :: ExceptT ServantError IO Person
-      (getGetWrongHost :<|> _) = client api (BaseUrl Http "127.0.0.1" 19872 "")
+      (getGetWrongHost :<|> _) = client api (BaseUrl Http "127.0.0.1" 19872 "") manager
 
   hspec $ do
     context "client returns errors appropriately" $ do

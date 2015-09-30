@@ -4,8 +4,11 @@
 module T8 where
 
 import           Control.Monad.Trans.Except
+import           Network.HTTP.Client        (Manager, defaultManagerSettings,
+                                             newManager)
 import           Servant
 import           Servant.Client
+import           System.IO.Unsafe           (unsafePerformIO)
 
 import           T3
 
@@ -19,10 +22,14 @@ hello :: Maybe String -- ^ an optional value for "name"
 marketing :: ClientInfo -- ^ value for the request body
           -> ExceptT ServantError IO Email
 
-position :<|> hello :<|> marketing = client api baseUrl
+position :<|> hello :<|> marketing = client api baseUrl manager
 
 baseUrl :: BaseUrl
 baseUrl = BaseUrl Http "localhost" 8081 ""
+
+{-# NOINLINE manager #-}
+manager :: Manager
+manager = unsafePerformIO $ newManager defaultManagerSettings
 
 queries :: ExceptT ServantError IO (Position, HelloMessage, Email)
 queries = do

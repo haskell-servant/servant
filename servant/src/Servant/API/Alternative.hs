@@ -1,13 +1,20 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveFunctor      #-}
+#if !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE DeriveFoldable     #-}
+#endif
+{-# LANGUAGE DeriveTraversable  #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Alternative ((:<|>)(..)) where
 
 #if !MIN_VERSION_base(4,8,0)
-import           Data.Monoid   (Monoid (..))
+import           Data.Monoid      (Monoid (..))
+import           Data.Traversable (Traversable)
+import           Data.Foldable    (Foldable)
 #endif
-import           Data.Typeable (Typeable)
+import           Data.Typeable    (Typeable)
 -- | Union of two APIs, first takes precedence in case of overlap.
 --
 -- Example:
@@ -17,7 +24,7 @@ import           Data.Typeable (Typeable)
 --        :<|> "books" :> ReqBody '[JSON] Book :> Post '[JSON] () -- POST /books
 -- :}
 data a :<|> b = a :<|> b
-    deriving (Typeable, Eq, Show)
+    deriving (Typeable, Eq, Show, Functor, Traversable, Foldable, Bounded)
 infixr 8 :<|>
 
 instance (Monoid a, Monoid b) => Monoid (a :<|> b) where
