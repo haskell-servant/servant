@@ -8,9 +8,7 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-#if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE OverlappingInstances   #-}
-#endif
 module Servant.Server.Internal.Enter where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -30,14 +28,13 @@ import qualified Control.Monad.Writer.Strict as SWriter
 import           Data.Typeable
 import           Servant.API
 
-class Enter typ arg ret | typ arg -> ret, typ ret -> arg where
+class Enter typ arg ret | typ ret -> arg, arg ret -> typ where
     enter :: arg -> typ -> ret
 
 data IsRaw
 
 -- **  Servant combinators
-instance ( Enter typ1 arg1 ret1 , Enter typ2 arg2 ret2
-         , arg1 ~ arg2
+instance ( Enter typ1 arg1 ret1 , Enter typ2 arg1 ret2
          ) => Enter (typ1 :<|> typ2) arg1 (ret1 :<|> ret2) where
     enter e (a :<|> b) = enter e a :<|> enter e b
 
@@ -54,19 +51,12 @@ instance C.Category (:~>) where
     id = Nat id
     Nat f . Nat g = Nat (f . g)
 
-instance
-#if MIN_VERSION_base(4,8,0)
-    {-# OVERLAPPABLE #-}
-#endif
-    (Raw m' ~ m, Raw n' ~ n) => Enter (m a) (m' :~> n') (n a)  where
-        enter _ (Raw a) = Raw a
 
-instance
-#if MIN_VERSION_base(4,8,0)
-    {-# OVERLAPPING #-}
-#endif
-    Enter (m a) (m :~> n) (n a)  where
-        enter (Nat f) = f
+instance Enter (m a) (m :~> n) (n a)  where
+    enter (Nat f) = f
+
+instance (Raw m' ~ m, Raw n' ~ n) => Enter (m a) (m' :~> n') (n a)  where
+    enter _ (Raw a) = Raw a
 
 -- | Like `lift`.
 liftNat :: (Control.Monad.Morph.MonadTrans t, Monad m) => m :~> t m

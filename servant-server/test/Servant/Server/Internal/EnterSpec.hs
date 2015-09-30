@@ -24,6 +24,15 @@ spec :: Spec
 spec = describe "module Servant.Server.Enter" $ do
     enterSpec
 
+type ReaderAPI' = "ep1" :> Get '[JSON] String :<|> "ep2" :> Get '[JSON] String
+readerServera' :: Reader String String :<|> Reader String String
+readerServera' = ask :<|> ask
+
+x :: Reader String :~> EitherT ServantErr IO
+x = (generalizeNat C.. (runReaderTNat "hi"))
+mainServer' :: Server ReaderAPI'
+mainServer' = enter x readerServera'
+
 type ReaderAPI = "int" :> Get '[JSON] Int
             :<|> "string" :> Post '[JSON] String
             :<|> "static" :> Raw (Reader String) Application
