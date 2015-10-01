@@ -941,7 +941,7 @@ instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
           symP = Proxy :: Proxy sym
 
 instance HasDocs (Raw m a) where
-  docsFor _proxy (endpoint, action) =
+  docsFor _proxy (endpoint, action) _ =
     single endpoint action
 
 -- TODO: We use 'AllMimeRender' here because we need to be able to show the

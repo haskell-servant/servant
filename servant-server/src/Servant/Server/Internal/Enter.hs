@@ -8,7 +8,9 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
+#if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE OverlappingInstances   #-}
+#endif
 module Servant.Server.Internal.Enter where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -51,12 +53,19 @@ instance C.Category (:~>) where
     id = Nat id
     Nat f . Nat g = Nat (f . g)
 
+instance
+#if MIN_VERSION_base(4,8,0)
+    {-# OVERLAPPING #-}
+#endif
+    Enter (m a) (m :~> n) (n a)  where
+        enter (Nat f) = f
 
-instance Enter (m a) (m :~> n) (n a)  where
-    enter (Nat f) = f
-
-instance (Raw m' ~ m, Raw n' ~ n) => Enter (m a) (m' :~> n') (n a)  where
-    enter _ (Raw a) = Raw a
+instance
+#if MIN_VERSION_base(4,8,0)
+    {-# OVERLAPPABLE #-}
+#endif
+    (Raw m' ~ m, Raw n' ~ n) => Enter (m a) (m' :~> n') (n a)  where
+        enter _ (Raw a) = Raw a
 
 -- | Like `lift`.
 liftNat :: (Control.Monad.Morph.MonadTrans t, Monad m) => m :~> t m
