@@ -28,7 +28,7 @@ type ReaderAPI' = "ep1" :> Get '[JSON] String :<|> "ep2" :> Get '[JSON] String
 readerServera' :: Reader String String :<|> Reader String String
 readerServera' = ask :<|> ask
 
-x :: Reader String :~> EitherT ServantErr IO
+x :: Reader String :~> ExceptT ServantErr IO
 x = (generalizeNat C.. (runReaderTNat "hi"))
 mainServer' :: Server ReaderAPI'
 mainServer' = enter x readerServera'
