@@ -13,6 +13,8 @@ module Servant.Server.Internal.Authentication
 , basicAuthStrict
 , laxProtect
 , strictProtect
+, jwtAuthHandlers
+, jwtAuth
         ) where
 
 import           Control.Monad              (guard, (<=<))
@@ -133,5 +135,5 @@ jwtAuthHandlers =
 -- One can use  strictProtect and laxProtect to make more complex authentication
 -- and authorization schemes.  For an example of that, see our tutorial: @placeholder@
 jwtAuth :: Secret -> subserver -> AuthProtected (JWT UnverifiedJWT) (JWT VerifiedJWT) subserver 'Strict
-jwtAuth  secret subserver = strictProtect (return . JWT.verify secret) jwtAuthHandlers subserver
+jwtAuth secret subserver = strictProtect (return . JWT.verify secret) jwtAuthHandlers subserver
 
