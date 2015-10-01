@@ -73,14 +73,14 @@ instance ToSample Greet where
 instance ToSample Int where
   toSamples _ = singleSample 1729
 
-instance ToSample User User where
-  toSample _ = Just (User "I'm a user!")
+instance ToSample User  where
+  toSamples _ = singleSample (User "I'm a user!")
 
-instance ToSample Cookie Cookie where
-  toSample _ = Just (Cookie "cookie")
+instance ToSample Cookie where
+  toSamples _ = singleSample (Cookie "cookie")
 
-instance ToSample SecretData SecretData where
-  toSample _ = Just (SecretData "shhhhh!")
+instance ToSample SecretData where
+  toSamples _ = singleSample (SecretData "shhhhh!")
 
 instance ToAuthInfo (AuthProtect Cookie User policy) where
     toAuthInfo _ = AuthenticationInfo "In this sentence we outline how authentication works."

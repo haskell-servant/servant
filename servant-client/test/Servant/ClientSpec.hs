@@ -161,7 +161,6 @@ withFailServer action = withWaiDaemon (return failServer) action
 
 spec :: IO ()
 spec = withServer $ \ baseUrl -> do
-<<<<<<< HEAD
   manager <- C.newManager C.defaultManagerSettings
   let getGet :: ExceptT ServantError IO Person
       getDeleteEmpty :: ExceptT ServantError IO ()
@@ -269,7 +268,7 @@ spec = withServer $ \ baseUrl -> do
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
     it "Handles Authentication appropriatley" $ withServer $ \ _ -> do
-      (Arrow.left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
+      (Control.Arrow.left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
 
     it "returns 401 when not properly authenticated" $ do
       Left res <- runExceptT (getPrivatePerson (BasicAuth "xxx" "yyy"))

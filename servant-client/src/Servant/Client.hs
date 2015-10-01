@@ -125,10 +125,11 @@ instance (KnownSymbol capture, ToText a, HasClient sublayout)
 instance (AuthenticateRequest authdata, HasClient sublayout) => HasClient (AuthProtect authdata (usr :: *) policy :> sublayout) where
     type Client (AuthProtect authdata usr policy :> sublayout) = authdata -> Client sublayout
 
-    clientWithRoute Proxy req baseurl val =
+    clientWithRoute Proxy req baseurl manager val =
         clientWithRoute (Proxy :: Proxy sublayout)
                         (authReq val req)
                         baseurl
+                        manager
 
 -- | If you have a 'Delete' endpoint in your API, the client
 -- side querying function that is created when calling 'client'
