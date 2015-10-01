@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE FlexibleInstances   #-}
 
 module Servant.Server.Internal.Authentication
 ( AuthProtected (..)
@@ -14,7 +15,7 @@ module Servant.Server.Internal.Authentication
 , strictProtect
         ) where
 
-import           Control.Monad              (guard)
+import           Control.Monad              (guard, (<=<))
 import qualified Data.ByteString            as B
 import           Data.ByteString.Base64     (decodeLenient)
 #if !MIN_VERSION_base(4,8,0)
@@ -26,12 +27,17 @@ import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.Word8                 (isSpace, toLower, _colon)
 import           GHC.TypeLits               (KnownSymbol, symbolVal)
+import           Data.Text.Encoding         (decodeUtf8)
+import           Data.Text                  (splitOn)
 import           Network.HTTP.Types.Status  (status401)
 import           Network.Wai                (Request, Response, requestHeaders,
                                              responseBuilder)
 import           Servant.API.Authentication (AuthPolicy (Strict, Lax),
                                              AuthProtected,
                                              BasicAuth (BasicAuth))
+
+import            Web.JWT                    (JWT, UnverifiedJWT, VerifiedJWT, Secret)
+import qualified  Web.JWT as JWT             (decode, verify)
 
 -- | Class to represent the ability to extract authentication-related
 -- data from a 'Request' object.
@@ -105,3 +111,27 @@ basicAuthLax :: KnownSymbol realm
              -> subserver
              -> AuthProtected (BasicAuth realm) usr subserver 'Lax
 basicAuthLax = laxProtect
+
+
+
+instance AuthData (JWT UnverifiedJWT) where
+  authData req = do
+    -- We might want to write a proper parser for this? but split works fine...
+    hdr <- lookup "Authorization" . requestHeaders $ req
+    ["Bearer", token] <- return . splitOn " " . decodeUtf8 $ hdr
+    JWT.decode token
+
+
+jwtAuthHandlers :: AuthHandlers (JWT UnverifiedJWT)
+jwtAuthHandlers =
+  let authFailure = responseBuilder status401 [] mempty
+  in AuthHandlers (return authFailure) ((const . return) authFailure)
+
+
+-- | A default implementation of an AuthProtected for JWT.
+-- Use this to quickly add jwt authentication to your project.
+-- One can use  strictProtect and laxProtect to make more complex authentication
+-- and authorization schemes.  For an example of that, see our tutorial: @placeholder@
+jwtAuth :: Secret -> subserver -> AuthProtected (JWT UnverifiedJWT) (JWT VerifiedJWT) subserver 'Strict
+jwtAuth  secret subserver = strictProtect (return . JWT.verify secret) jwtAuthHandlers subserver
+
