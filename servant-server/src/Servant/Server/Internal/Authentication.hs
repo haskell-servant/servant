@@ -38,7 +38,7 @@ import           Servant.API.Authentication (AuthPolicy (Strict, Lax),
                                              AuthProtected,
                                              BasicAuth (BasicAuth))
 
-import            Web.JWT                    (JWT, UnverifiedJWT, VerifiedJWT, Secret)
+import            Web.JWT                    (JWT, UnverifiedJWT, VerifiedJWT, Secret, JSON)
 import qualified  Web.JWT as JWT             (decode, verify)
 
 -- | Class to represent the ability to extract authentication-related
@@ -116,15 +116,16 @@ basicAuthLax = laxProtect
 
 
 
-instance AuthData (JWT UnverifiedJWT) where
+instance AuthData JSON where
   authData req = do
     -- We might want to write a proper parser for this? but split works fine...
     hdr <- lookup "Authorization" . requestHeaders $ req
     ["Bearer", token] <- return . splitOn " " . decodeUtf8 $ hdr
-    JWT.decode token
+    _ <- JWT.decode token -- try decode it. otherwise it's not a proper token
+    return token
 
 
-jwtAuthHandlers :: AuthHandlers (JWT UnverifiedJWT)
+jwtAuthHandlers :: AuthHandlers JSON
 jwtAuthHandlers =
   let authFailure = responseBuilder status401 [] mempty
   in AuthHandlers (return authFailure) ((const . return) authFailure)
@@ -134,6 +135,6 @@ jwtAuthHandlers =
 -- Use this to quickly add jwt authentication to your project.
 -- One can use  strictProtect and laxProtect to make more complex authentication
 -- and authorization schemes.  For an example of that, see our tutorial: @placeholder@
-jwtAuth :: Secret -> subserver -> AuthProtected (JWT UnverifiedJWT) (JWT VerifiedJWT) subserver 'Strict
-jwtAuth secret subserver = strictProtect (return . JWT.verify secret) jwtAuthHandlers subserver
+jwtAuth :: Secret -> subserver -> AuthProtected JSON (JWT VerifiedJWT) subserver 'Strict
+jwtAuth secret subserver = strictProtect (return . (JWT.verify secret <=< JWT.decode)) jwtAuthHandlers subserver
 
