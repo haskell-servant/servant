@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 -- | Authentication for clients
 
@@ -8,6 +9,7 @@ module Servant.Client.Authentication (
 
 import Data.ByteString.Base64  (encode)
 import Data.Monoid ((<>))
+import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import Servant.API.Authentication (BasicAuth(BasicAuth))
 import Servant.Common.Req (addHeader, Req)
@@ -23,3 +25,8 @@ instance AuthenticateRequest (BasicAuth realm) where
         let authText = decodeUtf8 ("Basic " <> encode (user <> ":" <> pass)) in
             addHeader "Authorization" authText req
 
+type JSON = Text
+instance AuthenticateRequest JSON where
+  authReq token req =
+    let authText = ("Bearer " <> token)
+    in addHeader "Authorization" authText req
