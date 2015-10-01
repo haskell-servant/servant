@@ -30,13 +30,12 @@ module Servant.Docs
   , DocOptions(..) , defaultDocOptions, maxSamples
 
   , -- * Classes you need to implement for your types
-<<<<<<< HEAD
     ToSample(..)
   , toSample
   , noSamples
   , singleSample
   , samples
-    ToAuthInfo(..)
+  , ToAuthInfo(..)
   , sampleByteString
   , sampleByteStrings
   , ToParam(..)

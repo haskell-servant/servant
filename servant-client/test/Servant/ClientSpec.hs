@@ -173,6 +173,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     it "Servant.API.Get" $ \(_, baseUrl) -> do
       let getGet = getNth (Proxy :: Proxy 0) $ client api baseUrl manager
+
   manager <- C.newManager C.defaultManagerSettings
   let getGet :: ExceptT ServantError IO Person
       getDeleteEmpty :: ExceptT ServantError IO ()
@@ -273,7 +274,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
     it "Handles Authentication appropriatley" $ withServer $ \ _ -> do
-      (Arrow.left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
+      (Control.Arrow.left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
 
     it "returns 401 when not properly authenticated" $ do
       Left res <- runExceptT (getPrivatePerson (BasicAuth "xxx" "yyy"))

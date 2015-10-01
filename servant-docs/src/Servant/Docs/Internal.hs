@@ -725,8 +725,8 @@ instance
         {-# OVERLAPPABLE #-}
 #endif
          ( HasDocs sublayout
-         , ToSample auth auth
-         , ToSample usr usr
+         , ToSample auth
+         , ToSample usr
          , ToAuthInfo (AuthProtect auth usr policy)
          )
          => HasDocs (AuthProtect auth usr policy :> sublayout) where
