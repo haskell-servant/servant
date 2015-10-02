@@ -54,10 +54,11 @@ import           Control.Lens                  (makeLenses, (%~), (&), (.~),
 import Data.Char (toLower, toUpper)
 import Data.List
 import Data.Proxy
+import Data.Text (Text)
 import GHC.Exts (Constraint)
 import GHC.TypeLits
 import Servant.API
-
+import Servant.API.Authentication
 -- | Function name builder that simply concat each part together
 concatCase :: FunctionName -> String
 concatCase = concat
@@ -105,7 +106,11 @@ data HeaderArg = HeaderArg
   | ReplaceHeaderArg
     { headerArgName :: String
     , headerPattern :: String
-    } deriving (Eq, Show)
+    }
+  | HeaderArgGen
+    { headerArgName    :: String
+    , headerArgGenBody :: (String -> String)
+    }
 
 
 type MatrixArg = QueryArg
@@ -127,7 +132,7 @@ data Req = Req
   , _reqHeaders :: [HeaderArg]
   , _reqBody    :: Bool
   , _funcName   :: FunctionName
-  } deriving (Eq, Show)
+  }
 
 makeLenses ''QueryArg
 makeLenses ''Segment
@@ -200,6 +205,30 @@ instance (KnownSymbol sym, HasForeign sublayout)
 
     where hname = symbolVal (Proxy :: Proxy sym)
           subP = Proxy :: Proxy sublayout
+
+instance (HasForeign sublayout)
+      => HasForeign (AuthProtect (BasicAuth realm) (usr :: *) (policy :: AuthPolicy) :> sublayout) where
+  type Foreign (AuthProtect (BasicAuth realm) (usr :: *) (policy :: AuthPolicy) :> sublayout) = Foreign sublayout
+
+  foreignFor Proxy req =
+    foreignFor (Proxy :: Proxy sublayout) (req & reqHeaders <>~
+      [HeaderArgGen "Authorization" $ \authdata ->
+        "(function("++authdata++"){" ++
+        "return \"Basic \" + btoa("++authdata++".username+\":\"+"++authdata ++ ".password)" ++
+        "})("++authdata++")"
+      ])
+  
+instance (HasForeign sublayout)
+      => HasForeign (AuthProtect Text (usr :: *) (policy :: AuthPolicy) :> sublayout) where
+  type Foreign (AuthProtect Text (usr :: *) (policy :: AuthPolicy) :> sublayout) = Foreign sublayout
+
+  foreignFor Proxy req =
+    foreignFor (Proxy :: Proxy sublayout) (req & reqHeaders <>~
+      [HeaderArgGen "Authorization" $ \authdata ->
+        "(function("++authdata++"){" ++
+        "return \"Bearer \" + "++authdata++";"++
+        "})("++authdata++")"
+      ])
 
 instance Elem JSON list => HasForeign (Post list a) where
   type Foreign (Post list a) = Req

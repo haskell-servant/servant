@@ -111,6 +111,7 @@ toValidFunctionName [] = "_"
 
 toJSHeader :: HeaderArg -> String
 toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> n)
+toJSHeader (HeaderArgGen n b)     = b (toJSHeader (HeaderArg n))
 toJSHeader (ReplaceHeaderArg n p)
   | pn `isPrefixOf` p = pv <> " + \"" <> rp <> "\""
   | pn `isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
