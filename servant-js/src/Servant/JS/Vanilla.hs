@@ -1,7 +1,9 @@
+{-#LANGUAGE OverloadedStrings #-}
 module Servant.JS.Vanilla where
 
 import           Control.Lens
-import           Data.List
+import           Data.Text (Text)
+import qualified Data.Text as T
 import           Data.Monoid
 import           Servant.Foreign
 import           Servant.JS.Internal
@@ -10,20 +12,20 @@ import           Servant.JS.Internal
 --   to your API, using /XMLHttpRequest/. Uses 'defCommonGeneratorOptions'
 --   for the 'CommonGeneratorOptions'.
 vanillaJS :: JavaScriptGenerator
-vanillaJS = concatMap generateVanillaJS
+vanillaJS = mconcat . map generateVanillaJS
 
 -- | Generate vanilla javascript functions to make AJAX requests
 --   to your API, using /XMLHttpRequest/. Lets you specify your
 --   own options.
 vanillaJSWith :: CommonGeneratorOptions -> JavaScriptGenerator
-vanillaJSWith opts = concatMap (generateVanillaJSWith opts)
+vanillaJSWith opts = mconcat . map (generateVanillaJSWith opts)
 
 -- | js codegen using XmlHttpRequest using default generation options
-generateVanillaJS :: AjaxReq -> String
+generateVanillaJS :: AjaxReq -> Text
 generateVanillaJS = generateVanillaJSWith defCommonGeneratorOptions
 
 -- | js codegen using XmlHttpRequest
-generateVanillaJSWith :: CommonGeneratorOptions -> AjaxReq -> String
+generateVanillaJSWith :: CommonGeneratorOptions -> AjaxReq -> Text
 generateVanillaJSWith opts req = "\n" <>
     fname <> " = function(" <> argsStr <> ")\n"
  <> "{\n"
@@ -43,7 +45,7 @@ generateVanillaJSWith opts req = "\n" <>
  <> "  xhr.send(" <> dataBody <> ");\n"
  <> "}\n"
 
-  where argsStr = intercalate ", " args
+  where argsStr = T.intercalate ", " args
         args = captures
             ++ map (view argName) queryparams
             ++ body
@@ -74,14 +76,14 @@ generateVanillaJSWith opts req = "\n" <>
         reqheaders =
           if null hs
             then ""
-            else headersStr ++ "\n"
+            else headersStr <> "\n"
 
-          where headersStr = intercalate "\n" $ map headerStr hs
-                headerStr header = "  xhr.setRequestHeader(\"" ++
-                  headerArgName header ++
-                  "\", " ++ toJSHeader header ++ ");"
+          where headersStr = T.intercalate "\n" $ map headerStr hs
+                headerStr header = "  xhr.setRequestHeader(\"" <>
+                  headerArgName header <>
+                  "\", " <> toJSHeader header <> ");"
 
-        namespace = if null (moduleName opts)
+        namespace = if moduleName opts == ""
                        then "var "
                        else (moduleName opts) <> "."
         fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
@@ -89,13 +91,13 @@ generateVanillaJSWith opts req = "\n" <>
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
-           ++ urlPrefix opts
-           ++ urlArgs
-           ++ queryArgs
+           <> urlPrefix opts
+           <> urlArgs
+           <> queryArgs
 
         urlArgs = jsSegments
                 $ req ^.. reqUrl.path.traverse
 
         queryArgs = if null queryparams
                       then ""
-                      else " + '?" ++ jsParams queryparams
+                      else " + '?" <> jsParams queryparams

@@ -1,3 +1,4 @@
+{-#LANGUAGE OverloadedStrings #-}
 module Servant.JS.Internal
   ( JavaScriptGenerator
   , CommonGeneratorOptions(..)
@@ -34,28 +35,28 @@ module Servant.JS.Internal
 import           Control.Lens                  ((^.))
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
-import           Data.List
 import           Data.Monoid
 import qualified Data.Text as T
+import           Data.Text (Text)
 import           Servant.Foreign
 
 type AjaxReq = Req
 
 -- A 'JavascriptGenerator' just takes the data found in the API type
--- for each endpoint and generates Javascript code in a String. Several
+-- for each endpoint and generates Javascript code in a Text. Several
 -- generators are available in this package.
-type JavaScriptGenerator = [Req] -> String
+type JavaScriptGenerator = [Req] -> Text
 
 -- | This structure is used by specific implementations to let you
 -- customize the output
 data CommonGeneratorOptions = CommonGeneratorOptions
   {
-    functionNameBuilder :: FunctionName -> String  -- ^ function generating function names
-  , requestBody :: String                -- ^ name used when a user want to send the request body (to let you redefine it)
-  , successCallback :: String            -- ^ name of the callback parameter when the request was successful
-  , errorCallback :: String              -- ^ name of the callback parameter when the request reported an error
-  , moduleName :: String                 -- ^ namespace on which we define the foreign function (empty mean local var)
-  , urlPrefix :: String                  -- ^ a prefix we should add to the Url in the codegen
+    functionNameBuilder :: FunctionName -> Text  -- ^ function generating function names
+  , requestBody :: Text                -- ^ name used when a user want to send the request body (to let you redefine it)
+  , successCallback :: Text            -- ^ name of the callback parameter when the request was successful
+  , errorCallback :: Text              -- ^ name of the callback parameter when the request reported an error
+  , moduleName :: Text                 -- ^ namespace on which we define the foreign function (empty mean local var)
+  , urlPrefix :: Text                  -- ^ a prefix we should add to the Url in the codegen
   }
 
 -- | Default options.
@@ -87,7 +88,34 @@ defCommonGeneratorOptions = CommonGeneratorOptions
 -- Couldn't work out how to handle zero-width characters.
 --
 -- @TODO: specify better default function name, or throw error?
-toValidFunctionName :: String -> String
+toValidFunctionName :: Text -> Text
+-- @TODO: Cons text
+--
+
+toValidFunctionName t =
+  case T.uncons t of
+    Just (x,xs) ->
+      setFirstChar x `T.cons` T.filter remainder xs 
+    Nothing -> "_"
+  where
+    setFirstChar c = if firstChar c then c else '_'
+    firstChar c = prefixOK c || any (Set.member c) firstLetterOK
+    remainder c = prefixOK c || any (Set.member c) remainderOK
+    -- Valid prefixes
+    prefixOK c = c `elem` ['$','_']
+    -- Unicode character sets
+    firstLetterOK = [ Set.lowercaseLetter
+                    , Set.uppercaseLetter
+                    , Set.titlecaseLetter
+                    , Set.modifierLetter
+                    , Set.otherLetter
+                    , Set.letterNumber ]
+    remainderOK   = firstLetterOK
+               <> [ Set.nonSpacingMark
+                  , Set.spacingCombiningMark
+                  , Set.decimalNumber
+                  , Set.connectorPunctuation ]
+{-
 toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
   where
     setFirstChar c = if firstChar c then c else '_'
@@ -108,59 +136,56 @@ toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
                   , Set.decimalNumber
                   , Set.connectorPunctuation ]
 toValidFunctionName [] = "_"
+-}
 
-toJSHeader :: HeaderArg -> String
+toJSHeader :: HeaderArg -> Text
 toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> n)
 toJSHeader (ReplaceHeaderArg n p)
-  | pn `isPrefixOf` p = pv <> " + \"" <> rp <> "\""
-  | pn `isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
-  | pn `isInfixOf` p  = "\"" <> (replace pn ("\" + " <> pv <> " + \"") p)
+  | pn `T.isPrefixOf` p = pv <> " + \"" <> rp <> "\""
+  | pn `T.isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
+  | pn `T.isInfixOf` p  = "\"" <> (T.replace pn ("\" + " <> pv <> " + \"") p)
                              <> "\""
   | otherwise         = p
   where
     pv = toValidFunctionName ("header" <> n)
     pn = "{" <> n <> "}"
-    rp = replace pn "" p
-    -- Use replace method from Data.Text
-    replace old new = T.unpack
-                    . T.replace (T.pack old) (T.pack new)
-                    . T.pack
+    rp = T.replace pn "" p
 
-jsSegments :: [Segment] -> String
+jsSegments :: [Segment] -> Text
 jsSegments []  = ""
-jsSegments [x] = "/" ++ segmentToStr x False
-jsSegments (x:xs) = "/" ++ segmentToStr x True ++ jsSegments xs
+jsSegments [x] = "/" <> segmentToStr x False
+jsSegments (x:xs) = "/" <> segmentToStr x True <> jsSegments xs
 
-segmentToStr :: Segment -> Bool -> String
+segmentToStr :: Segment -> Bool -> Text
 segmentToStr (Segment st ms) notTheEnd =
-  segmentTypeToStr st ++ jsMParams ms ++ if notTheEnd then "" else "'"
+  segmentTypeToStr st <> jsMParams ms <> if notTheEnd then "" else "'"
 
-segmentTypeToStr :: SegmentType -> String
+segmentTypeToStr :: SegmentType -> Text
 segmentTypeToStr (Static s) = s
-segmentTypeToStr (Cap s)    = "' + encodeURIComponent(" ++ s ++ ") + '"
+segmentTypeToStr (Cap s)    = "' + encodeURIComponent(" <> s <> ") + '"
 
-jsGParams :: String -> [QueryArg] -> String
+jsGParams :: Text -> [QueryArg] -> Text
 jsGParams _ []     = ""
 jsGParams _ [x]    = paramToStr x False
-jsGParams s (x:xs) = paramToStr x True ++ s ++ jsGParams s xs
+jsGParams s (x:xs) = paramToStr x True <> s <> jsGParams s xs
 
-jsParams :: [QueryArg] -> String
+jsParams :: [QueryArg] -> Text
 jsParams = jsGParams "&"
 
-jsMParams :: [MatrixArg] -> String
+jsMParams :: [MatrixArg] -> Text
 jsMParams [] = ""
-jsMParams xs = ";" ++ jsGParams ";" xs
+jsMParams xs = ";" <> jsGParams ";" xs
 
-paramToStr :: QueryArg -> Bool -> String
+paramToStr :: QueryArg -> Bool -> Text
 paramToStr qarg notTheEnd =
   case qarg ^. argType of
     Normal -> name
-           ++ "=' + encodeURIComponent("
-           ++ name
-           ++ if notTheEnd then ") + '" else ")"
-    Flag   -> name ++ "="
+           <> "=' + encodeURIComponent("
+           <> name
+           <> if notTheEnd then ") + '" else ")"
+    Flag   -> name <> "="
     List   -> name
-           ++ "[]=' + encodeURIComponent("
-           ++ name
-           ++ if notTheEnd then ") + '" else ")"
+           <> "[]=' + encodeURIComponent("
+           <> name
+           <> if notTheEnd then ") + '" else ")"
   where name = qarg ^. argName

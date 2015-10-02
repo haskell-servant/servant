@@ -39,7 +39,7 @@
 -- Let's keep it simple and produce vanilla Javascript code with the default options.
 --
 -- @
--- jsCode :: String
+-- jsCode :: Text
 -- jsCode = 'jsForAPI' api 'vanillaJS'
 -- @
 --
@@ -60,7 +60,7 @@
 -- All you need to do to use it is to use 'vanillaJSWith' and pass it @myOptions@.
 --
 -- @
--- jsCodeWithMyOptions :: String
+-- jsCodeWithMyOptions :: Text
 -- jsCodeWithMyOptions = 'jsForAPI' api ('vanillaJSWith' myOptions)
 -- @
 --
@@ -112,7 +112,10 @@ module Servant.JS
   , GenerateList(..)
   ) where
 
+import           Prelude hiding (writeFile)
 import           Data.Proxy
+import           Data.Text
+import           Data.Text.IO        (writeFile)
 import           Servant.JS.Angular
 import           Servant.JS.Axios
 import           Servant.JS.Internal
@@ -131,7 +134,7 @@ javascript p = foreignFor p defReq
 jsForAPI :: (HasForeign api, GenerateList (Foreign api))
          => Proxy api -- ^ proxy for your API type
          -> JavaScriptGenerator -- ^ js code generator to use (angular, vanilla js, jquery, others)
-         -> String              -- ^ a string that you can embed in your pages or write to a file
+         -> Text                -- ^ a text that you can embed in your pages or write to a file
 jsForAPI p gen = gen (listFromAPI p)
 
 -- | Directly generate all the javascript functions for your API
@@ -142,6 +145,8 @@ writeJSForAPI :: (HasForeign api, GenerateList (Foreign api))
               -> JavaScriptGenerator -- ^ js code generator to use (angular, vanilla js, jquery, others)
               -> FilePath -- ^ path to the file you want to write the resulting javascript code into
               -> IO ()
+
+-- TODO Data.Text
 writeJSForAPI p gen fp = writeFile fp (jsForAPI p gen)
 
 -- | Utility class used by 'jsForAPI' which computes
