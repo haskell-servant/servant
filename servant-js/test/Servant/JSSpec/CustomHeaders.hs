@@ -5,12 +5,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE OverloadedStrings   #-}
 
 module Servant.JSSpec.CustomHeaders where
 
 import           Control.Lens
 import           Data.Monoid
 import           Data.Proxy
+import           Data.Text (pack)
 import           GHC.TypeLits
 import           Servant.JS.Internal
 
@@ -25,7 +27,7 @@ instance (KnownSymbol sym, HasForeign sublayout)
 
     foreignFor Proxy req = foreignFor (Proxy :: Proxy sublayout) $
         req & reqHeaders <>~ [ ReplaceHeaderArg "Authorization" $
-                               tokenType (symbolVal (Proxy :: Proxy sym)) ]
+                               tokenType (pack . symbolVal $ (Proxy :: Proxy sym)) ]
       where
         tokenType t = t <> " {Authorization}"
 

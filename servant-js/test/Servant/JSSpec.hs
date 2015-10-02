@@ -4,13 +4,17 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.JSSpec where
 
 import           Data.Either                  (isRight)
+import           Data.Monoid                  ((<>))
 import           Data.Proxy
-import           Language.ECMAScript3.Parser  (parseFromString)
-import           Test.Hspec
+import           Data.Text                    (Text)
+import qualified Data.Text                    as T
+import           Language.ECMAScript3.Parser  (program, parse)
+import           Test.Hspec  hiding (shouldContain, shouldNotContain)
 
 import           Servant.JS
 import           Servant.JS.Internal
@@ -20,22 +24,22 @@ import qualified Servant.JS.JQuery            as JQ
 import qualified Servant.JS.Vanilla           as JS
 import           Servant.JSSpec.CustomHeaders
 
-type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] String :> Post '[JSON] Bool
+type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] Text :> Post '[JSON] Bool
           :<|> "has.extension" :> Get '[FormUrlEncoded,JSON] Bool
 
 type TopLevelRawAPI = "something" :> Get '[JSON] Int
                   :<|> Raw
 
-type HeaderHandlingAPI = "something" :> Header "Foo" String
+type HeaderHandlingAPI = "something" :> Header "Foo" Text
                                      :> Get '[JSON] Int
 
-type CustomAuthAPI = "something" :> Authorization "Basic" String
+type CustomAuthAPI = "something" :> Authorization "Basic" Text
                                  :> Get '[JSON] Int
 
-type CustomHeaderAPI = "something" :> MyLovelyHorse String
+type CustomHeaderAPI = "something" :> MyLovelyHorse Text
                                    :> Get '[JSON] Int
 
-type CustomHeaderAPI2 = "something" :> WhatsForDinner String
+type CustomHeaderAPI2 = "something" :> WhatsForDinner Text
                                     :> Get '[JSON] Int
 
 headerHandlingProxy :: Proxy HeaderHandlingAPI
@@ -81,12 +85,16 @@ spec = describe "Servant.JQuery" $ do
     axiosSpec
     --angularSpec    AngularCustom
 
+
+a `shouldContain` b  = shouldSatisfy a (T.isInfixOf b)
+a `shouldNotContain` b  = shouldNotSatisfy a (T.isInfixOf b)
+
 axiosSpec :: Spec
 axiosSpec = describe specLabel $ do
     it "should add withCredentials when needed" $ do
         let jsText = genJS withCredOpts $ listFromAPI (Proxy :: Proxy TestAPI)
         output jsText
-        jsText `shouldContain` ("withCredentials: true")
+        jsText `shouldContain` "withCredentials: true"
     it "should add xsrfCookieName when needed" $ do
         let jsText = genJS cookieOpts $ listFromAPI (Proxy :: Proxy TestAPI)
         output jsText
@@ -101,79 +109,80 @@ axiosSpec = describe specLabel $ do
         withCredOpts = AX.defAxiosOptions { AX.withCredentials = True }
         cookieOpts = AX.defAxiosOptions { AX.xsrfCookieName = Just "MyXSRFcookie" }
         headerOpts = AX.defAxiosOptions { AX.xsrfHeaderName = Just "MyXSRFheader" }
-        genJS :: AxiosOptions -> [AjaxReq] -> String
-        genJS opts req = concatMap (AX.generateAxiosJS opts) req
+        genJS :: AxiosOptions -> [AjaxReq] -> Text
+        genJS opts req = mconcat . map (AX.generateAxiosJS opts) $ req
 
 angularSpec :: TestNames -> Spec
 angularSpec test = describe specLabel $ do
     it "should implement a service globally" $ do
         let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
         output jsText
-        jsText `shouldContain` (".service('" ++ testName ++ "'")
+        jsText `shouldContain` (".service('" <> testName <> "'")
 
     it "should depend on $http service globally" $ do
         let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
         output jsText
-        jsText `shouldContain` ("('" ++ testName ++ "', function($http) {")
+        jsText `shouldContain` ("('" <> testName <> "', function($http) {")
 
     it "should not depend on $http service in handlers" $ do
         let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
         output jsText
         jsText `shouldNotContain` "getsomething($http, "
     where
-        specLabel = "AngularJS(" ++ (show test) ++ ")"
+        specLabel = "AngularJS(" <> (show test) <> ")"
         output _ = return ()
         testName = "MyService"
         ngOpts = NG.defAngularOptions { NG.serviceName = testName }
         genJS req = NG.angularService ngOpts req
 
-generateJSSpec :: TestNames -> (AjaxReq -> String) -> Spec
+parseFromText = parse program ""
+generateJSSpec :: TestNames -> (AjaxReq -> Text) -> Spec
 generateJSSpec n gen = describe specLabel $ do
     it "should generate valid javascript" $ do
-        let s = jsForAPI (Proxy :: Proxy TestAPI) (concatMap gen)
-        parseFromString s `shouldSatisfy` isRight
+        let s = jsForAPI (Proxy :: Proxy TestAPI) (mconcat . map gen)
+        parseFromText s `shouldSatisfy` isRight
 
     it "should use non-empty function names" $ do
         let (_ :<|> topLevel) = javascript (Proxy :: Proxy TopLevelRawAPI)
         output $ genJS (topLevel "GET")
-        parseFromString (genJS $ topLevel "GET") `shouldSatisfy` isRight
+        parseFromText (genJS $ topLevel "GET") `shouldSatisfy` isRight
 
     it "should handle simple HTTP headers" $ do
         let jsText = genJS $ javascript headerHandlingProxy
         output jsText
-        parseFromString jsText `shouldSatisfy` isRight
+        parseFromText jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerFoo"
         jsText `shouldContain`  (header n "Foo" $ "headerFoo")
 
     it "should handle complex HTTP headers" $ do
         let jsText = genJS $ javascript customAuthProxy
         output jsText
-        parseFromString jsText `shouldSatisfy` isRight
+        parseFromText jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerAuthorization"
         jsText `shouldContain`  (header n "Authorization" $ "\"Basic \" + headerAuthorization")
 
     it "should handle complex, custom HTTP headers" $ do
         let jsText = genJS $ javascript customHeaderProxy
         output jsText
-        parseFromString jsText `shouldSatisfy` isRight
+        parseFromText jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerXMyLovelyHorse"
         jsText `shouldContain`  (header n "X-MyLovelyHorse" $ "\"I am good friends with \" + headerXMyLovelyHorse")
 
     it "should handle complex, custom HTTP headers (template replacement)" $ do
         let jsText = genJS $ javascript customHeaderProxy2
         output jsText
-        parseFromString jsText `shouldSatisfy` isRight
+        parseFromText jsText `shouldSatisfy` isRight
         jsText `shouldContain` "headerXWhatsForDinner"
         jsText `shouldContain`  (header n "X-WhatsForDinner" $ "\"I would like \" + headerXWhatsForDinner + \" with a cherry on top.\"")
 
     it "can generate the whole javascript code string at once with jsForAPI" $ do
         let jsStr = jsForAPI (Proxy :: Proxy TestAPI) (concatMap gen)
-        parseFromString jsStr `shouldSatisfy` isRight
+        parseFromText jsStr `shouldSatisfy` isRight
     where
-        specLabel = "generateJS(" ++ (show n) ++ ")"
+        specLabel = "generateJS(" <> (show n) <> ")"
         output _ = return ()
         genJS req = gen req
-        header :: TestNames -> String -> String -> String
+        header :: TestNames -> Text -> Text -> Text
         header v headerName headerValue
-            | v `elem` [Vanilla, VanillaCustom] = "xhr.setRequestHeader(\"" ++ headerName ++ "\", " ++ headerValue ++ ");\n"
-            | otherwise = "headers: { \"" ++ headerName ++ "\": " ++ headerValue ++ " }\n"
+            | v `elem` [Vanilla, VanillaCustom] = "xhr.setRequestHeader(\"" <> headerName <> "\", " <> headerValue <> ");\n"
+            | otherwise = "headers: { \"" <> headerName <> "\": " <> headerValue <> " }\n"
