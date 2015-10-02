@@ -12,6 +12,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
@@ -51,38 +52,37 @@ import Control.Applicative
 #endif
 import           Control.Lens                  (makeLenses, (%~), (&), (.~),
                                                 (<>~), _last)
-import Data.Char (toLower, toUpper)
-import Data.List
+import Data.Monoid ((<>))
+import Data.Text
 import Data.Proxy
 import GHC.Exts (Constraint)
 import GHC.TypeLits
 import Servant.API
+import Prelude hiding (concat)
 
 -- | Function name builder that simply concat each part together
-concatCase :: FunctionName -> String
+concatCase :: FunctionName -> Text
 concatCase = concat
 
 -- | Function name builder using the snake_case convention.
 -- each part is separated by a single underscore character.
-snakeCase :: FunctionName -> String
+snakeCase :: FunctionName -> Text
 snakeCase = intercalate "_"
 
 -- | Function name builder using the CamelCase convention.
 -- each part begins with an upper case character.
-camelCase :: FunctionName -> String
+camelCase :: FunctionName -> Text
 camelCase [] = ""
 camelCase (p:ps) = concat $ p : camelCase' ps
    where camelCase' [] = []
-         camelCase' (r:rs) = capitalize r : camelCase' rs
-         capitalize [] = []
-         capitalize (x:xs) = toUpper x : xs
+         camelCase' (r:rs) = toUpper r : camelCase' rs
 
-type Arg = String
+type Arg = Text
 
 data Segment = Segment { _segment :: SegmentType, _matrix :: [MatrixArg] }
   deriving (Eq, Show)
 
-data SegmentType = Static String  -- ^ a static path segment. like "/foo"
+data SegmentType = Static Text  -- ^ a static path segment. like "/foo"
                  | Cap Arg        -- ^ a capture. like "/:userid"
   deriving (Eq, Show)
 
@@ -100,11 +100,11 @@ data QueryArg = QueryArg
   } deriving (Eq, Show)
 
 data HeaderArg = HeaderArg
-    { headerArgName :: String
+    { headerArgName :: Text
     }
   | ReplaceHeaderArg
-    { headerArgName :: String
-    , headerPattern :: String
+    { headerArgName :: Text
+    , headerPattern :: Text
     } deriving (Eq, Show)
 
 
@@ -118,8 +118,8 @@ data Url = Url
 defUrl :: Url
 defUrl = Url [] []
 
-type FunctionName = [String]
-type Method = String
+type FunctionName = [Text]
+type Method = Text
 
 data Req = Req
   { _reqUrl     :: Url
@@ -175,7 +175,7 @@ instance (KnownSymbol sym, HasForeign sublayout)
       req & reqUrl.path <>~ [Segment (Cap str) []]
           & funcName %~ (++ ["by", str])
 
-    where str = symbolVal (Proxy :: Proxy sym)
+    where str = pack . symbolVal $ (Proxy :: Proxy sym)
 
 instance Elem JSON list => HasForeign (Delete list a) where
   type Foreign (Delete list a) = Req
@@ -198,7 +198,7 @@ instance (KnownSymbol sym, HasForeign sublayout)
   foreignFor Proxy req =
     foreignFor subP (req & reqHeaders <>~ [HeaderArg hname])
 
-    where hname = symbolVal (Proxy :: Proxy sym)
+    where hname = pack . symbolVal $ (Proxy :: Proxy sym)
           subP = Proxy :: Proxy sublayout
 
 instance Elem JSON list => HasForeign (Post list a) where
@@ -223,7 +223,7 @@ instance (KnownSymbol sym, HasForeign sublayout)
     foreignFor (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg str Normal]
 
-    where str = symbolVal (Proxy :: Proxy sym)
+    where str = pack . symbolVal $ (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, HasForeign sublayout)
       => HasForeign (QueryParams sym a :> sublayout) where
@@ -233,7 +233,7 @@ instance (KnownSymbol sym, HasForeign sublayout)
     foreignFor (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg str List]
 
-    where str = symbolVal (Proxy :: Proxy sym)
+    where str = pack . symbolVal $ (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, HasForeign sublayout)
       => HasForeign (QueryFlag sym :> sublayout) where
@@ -243,7 +243,7 @@ instance (KnownSymbol sym, HasForeign sublayout)
     foreignFor (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg str Flag]
 
-    where str = symbolVal (Proxy :: Proxy sym)
+    where str = pack . symbolVal $ (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, HasForeign sublayout)
       => HasForeign (MatrixParam sym a :> sublayout) where
@@ -253,8 +253,8 @@ instance (KnownSymbol sym, HasForeign sublayout)
     foreignFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path._last.matrix <>~ [QueryArg strArg Normal]
 
-    where str = symbolVal (Proxy :: Proxy sym)
-          strArg = str ++ "Value"
+    where str = pack . symbolVal $ (Proxy :: Proxy sym)
+          strArg = str <> "Value"
 
 instance (KnownSymbol sym, HasForeign sublayout)
       => HasForeign (MatrixParams sym a :> sublayout) where
@@ -264,7 +264,7 @@ instance (KnownSymbol sym, HasForeign sublayout)
     foreignFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path._last.matrix  <>~ [QueryArg str List]
 
-    where str = symbolVal (Proxy :: Proxy sym)
+    where str = pack . symbolVal $ (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, HasForeign sublayout)
       => HasForeign (MatrixFlag sym :> sublayout) where
@@ -274,13 +274,13 @@ instance (KnownSymbol sym, HasForeign sublayout)
     foreignFor (Proxy :: Proxy sublayout) $
       req & reqUrl.path._last.matrix  <>~ [QueryArg str Flag]
 
-    where str = symbolVal (Proxy :: Proxy sym)
+    where str = pack . symbolVal $ (Proxy :: Proxy sym)
 
 instance HasForeign Raw where
   type Foreign Raw = Method -> Req
 
   foreignFor Proxy req method =
-    req & funcName %~ ((toLower <$> method) :)
+    req & funcName %~ ((toLower method) :)
         & reqMethod .~ method
 
 instance (Elem JSON list, HasForeign sublayout) => HasForeign (ReqBody list a :> sublayout) where
@@ -299,7 +299,7 @@ instance (KnownSymbol path, HasForeign sublayout)
       req & reqUrl.path <>~ [Segment (Static str) []]
           & funcName %~ (++ [str])
 
-    where str = map (\c -> if c == '.' then '_' else c) $ symbolVal (Proxy :: Proxy path)
+    where str = Data.Text.map (\c -> if c == '.' then '_' else c) . pack . symbolVal $ (Proxy :: Proxy path)
 
 instance HasForeign sublayout => HasForeign (RemoteHost :> sublayout) where
   type Foreign (RemoteHost :> sublayout) = Foreign sublayout
