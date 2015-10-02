@@ -4,11 +4,19 @@
 {-# LANGUAGE PolyKinds          #-}
 {-# LANGUAGE TypeFamilies       #-}
 {-# OPTIONS_HADDOCK not-home    #-}
-module Servant.API.Authentication where
+module Servant.API.Authentication
+( AuthPolicy (..)
+, AuthProtect (..)
+, AuthProtected (..)
+, BasicAuth (..)
+, JWTAuth
+) where
+
 
 import           Data.ByteString (ByteString)
 import           Data.Typeable   (Typeable)
 import           GHC.TypeLits    (Symbol)
+import           Data.Text       (Text)
 
 -- | we can be either Strict or Lax.
 -- Strict: all handlers under 'AuthProtect' take a 'usr' argument.
@@ -29,3 +37,5 @@ data family AuthProtected authdata usr subserver :: AuthPolicy -> *
 data BasicAuth (realm :: Symbol) = BasicAuth { baUser :: ByteString
                                              , baPass :: ByteString
                                              } deriving (Eq, Show, Typeable)
+
+type JWTAuth = Text

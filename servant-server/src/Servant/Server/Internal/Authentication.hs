@@ -30,16 +30,17 @@ import           Data.String                (fromString)
 import           Data.Word8                 (isSpace, toLower, _colon)
 import           GHC.TypeLits               (KnownSymbol, symbolVal)
 import           Data.Text.Encoding         (decodeUtf8)
-import           Data.Text                  (splitOn)
+import           Data.Text                  (splitOn, Text)
 import           Network.HTTP.Types.Status  (status401)
 import           Network.Wai                (Request, Response, requestHeaders,
                                              responseBuilder)
 import           Servant.API.Authentication (AuthPolicy (Strict, Lax),
                                              AuthProtected,
-                                             BasicAuth (BasicAuth))
+                                             BasicAuth (BasicAuth),
+                                             JWTAuth)
 
 import            Web.JWT                    (JWT, UnverifiedJWT, VerifiedJWT, Secret, JSON)
-import qualified  Web.JWT as JWT             (decode, verify)
+import qualified  Web.JWT as JWT             (decode, verify, secret)
 
 -- | Class to represent the ability to extract authentication-related
 -- data from a 'Request' object.
@@ -116,7 +117,7 @@ basicAuthLax = laxProtect
 
 
 
-instance AuthData JSON where
+instance AuthData JWTAuth where
   authData req = do
     -- We might want to write a proper parser for this? but split works fine...
     hdr <- lookup "Authorization" . requestHeaders $ req
@@ -135,6 +136,7 @@ jwtAuthHandlers =
 -- Use this to quickly add jwt authentication to your project.
 -- One can use  strictProtect and laxProtect to make more complex authentication
 -- and authorization schemes.  For an example of that, see our tutorial: @placeholder@
-jwtAuth :: Secret -> subserver -> AuthProtected JSON (JWT VerifiedJWT) subserver 'Strict
-jwtAuth secret subserver = strictProtect (return . (JWT.verify secret <=< JWT.decode)) jwtAuthHandlers subserver
+-- TODO more advanced one
+jwtAuth :: Text -> subserver -> AuthProtected JSON (JWT VerifiedJWT) subserver 'Strict
+jwtAuth secret subserver = strictProtect (return . (JWT.verify (JWT.secret secret) <=< JWT.decode)) jwtAuthHandlers subserver
 
