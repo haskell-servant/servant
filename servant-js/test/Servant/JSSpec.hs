@@ -9,7 +9,7 @@
 module Servant.JSSpec where
 
 import           Data.Either                  (isRight)
-import           Data.Monoid                  ((<>))
+import           Data.Monoid                  ((<>), mconcat)
 import           Data.Proxy
 import           Data.Text                    (Text)
 import qualified Data.Text                    as T
@@ -176,7 +176,7 @@ generateJSSpec n gen = describe specLabel $ do
         jsText `shouldContain`  (header n "X-WhatsForDinner" $ "\"I would like \" + headerXWhatsForDinner + \" with a cherry on top.\"")
 
     it "can generate the whole javascript code string at once with jsForAPI" $ do
-        let jsStr = jsForAPI (Proxy :: Proxy TestAPI) (concatMap gen)
+        let jsStr = jsForAPI (Proxy :: Proxy TestAPI) (mconcat . map gen)
         parseFromText jsStr `shouldSatisfy` isRight
     where
         specLabel = "generateJS(" <> (show n) <> ")"
