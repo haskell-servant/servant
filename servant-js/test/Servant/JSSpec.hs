@@ -9,7 +9,7 @@
 module Servant.JSSpec where
 
 import           Data.Either                  (isRight)
-import           Data.Monoid                  ((<>), mconcat)
+import           Data.Monoid                  ((<>))
 import           Data.Proxy
 import           Data.Text                    (Text)
 import qualified Data.Text                    as T
@@ -85,8 +85,10 @@ spec = describe "Servant.JQuery" $ do
     axiosSpec
     --angularSpec    AngularCustom
 
-
+shouldContain :: Text -> Text -> Expectation
 a `shouldContain` b  = shouldSatisfy a (T.isInfixOf b)
+
+shouldNotContain :: Text -> Text -> Expectation
 a `shouldNotContain` b  = shouldNotSatisfy a (T.isInfixOf b)
 
 axiosSpec :: Spec
@@ -135,9 +137,9 @@ angularSpec test = describe specLabel $ do
         ngOpts = NG.defAngularOptions { NG.serviceName = testName }
         genJS req = NG.angularService ngOpts req
 
-parseFromText = parse program ""
 generateJSSpec :: TestNames -> (AjaxReq -> Text) -> Spec
 generateJSSpec n gen = describe specLabel $ do
+    let parseFromText = parse program ""
     it "should generate valid javascript" $ do
         let s = jsForAPI (Proxy :: Proxy TestAPI) (mconcat . map gen)
         parseFromText s `shouldSatisfy` isRight
