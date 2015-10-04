@@ -89,9 +89,6 @@ defCommonGeneratorOptions = CommonGeneratorOptions
 --
 -- @TODO: specify better default function name, or throw error?
 toValidFunctionName :: Text -> Text
--- @TODO: Cons text
---
-
 toValidFunctionName t =
   case T.uncons t of
     Just (x,xs) ->
@@ -101,9 +98,7 @@ toValidFunctionName t =
     setFirstChar c = if firstChar c then c else '_'
     firstChar c = prefixOK c || any (Set.member c) firstLetterOK
     remainder c = prefixOK c || any (Set.member c) remainderOK
-    -- Valid prefixes
     prefixOK c = c `elem` ['$','_']
-    -- Unicode character sets
     firstLetterOK = [ Set.lowercaseLetter
                     , Set.uppercaseLetter
                     , Set.titlecaseLetter
@@ -115,28 +110,6 @@ toValidFunctionName t =
                   , Set.spacingCombiningMark
                   , Set.decimalNumber
                   , Set.connectorPunctuation ]
-{-
-toValidFunctionName (x:xs) = [setFirstChar x] <> filter remainder xs
-  where
-    setFirstChar c = if firstChar c then c else '_'
-    firstChar c = prefixOK c || any (Set.member c) firstLetterOK
-    remainder c = prefixOK c || any (Set.member c) remainderOK
-    -- Valid prefixes
-    prefixOK c = c `elem` ['$','_']
-    -- Unicode character sets
-    firstLetterOK = [ Set.lowercaseLetter
-                    , Set.uppercaseLetter
-                    , Set.titlecaseLetter
-                    , Set.modifierLetter
-                    , Set.otherLetter
-                    , Set.letterNumber ]
-    remainderOK   = firstLetterOK
-               <> [ Set.nonSpacingMark
-                  , Set.spacingCombiningMark
-                  , Set.decimalNumber
-                  , Set.connectorPunctuation ]
-toValidFunctionName [] = "_"
--}
 
 toJSHeader :: HeaderArg -> Text
 toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> n)

@@ -145,8 +145,6 @@ writeJSForAPI :: (HasForeign api, GenerateList (Foreign api))
               -> JavaScriptGenerator -- ^ js code generator to use (angular, vanilla js, jquery, others)
               -> FilePath -- ^ path to the file you want to write the resulting javascript code into
               -> IO ()
-
--- TODO Data.Text
 writeJSForAPI p gen fp = writeFile fp (jsForAPI p gen)
 
 -- | Utility class used by 'jsForAPI' which computes
