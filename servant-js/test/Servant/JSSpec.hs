@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE QuasiQuotes         #-}
@@ -9,7 +10,11 @@
 module Servant.JSSpec where
 
 import           Data.Either                  (isRight)
+#if !MIN_VERSION_base(4,8,0)
+import           Data.Monoid                  ((<>),mconcat)
+#else
 import           Data.Monoid                  ((<>))
+#endif
 import           Data.Proxy
 import           Data.Text                    (Text)
 import qualified Data.Text                    as T
