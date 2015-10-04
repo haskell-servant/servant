@@ -96,20 +96,24 @@ toValidFunctionName t =
     Nothing -> "_"
   where
     setFirstChar c = if firstChar c then c else '_'
-    firstChar c = prefixOK c || any (Set.member c) firstLetterOK
-    remainder c = prefixOK c || any (Set.member c) remainderOK
+    firstChar c = prefixOK c || Set.member c firstLetterOK
+    remainder c = prefixOK c || Set.member c remainderOK
     prefixOK c = c `elem` ['$','_']
-    firstLetterOK = [ Set.lowercaseLetter
-                    , Set.uppercaseLetter
-                    , Set.titlecaseLetter
-                    , Set.modifierLetter
-                    , Set.otherLetter
-                    , Set.letterNumber ]
+    firstLetterOK = mconcat
+                      [ Set.lowercaseLetter
+                      , Set.uppercaseLetter
+                      , Set.titlecaseLetter
+                      , Set.modifierLetter
+                      , Set.otherLetter
+                      , Set.letterNumber 
+                      ]
     remainderOK   = firstLetterOK
-               <> [ Set.nonSpacingMark
-                  , Set.spacingCombiningMark
-                  , Set.decimalNumber
-                  , Set.connectorPunctuation ]
+               <> mconcat
+                    [ Set.nonSpacingMark
+                    , Set.spacingCombiningMark
+                    , Set.decimalNumber
+                    , Set.connectorPunctuation
+                    ]
 
 toJSHeader :: HeaderArg -> Text
 toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> n)
