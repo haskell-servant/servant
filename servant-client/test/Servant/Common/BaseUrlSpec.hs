@@ -30,32 +30,33 @@ spec = do
   describe "parseBaseUrl" $ do
     it "is total" $ do
       property $ \ string ->
-        deepseq (fmap show (parseBaseUrl string)) True
+        deepseq (fmap show (parseBaseUrl string :: Maybe BaseUrl)) True
 
     it "is the inverse of showBaseUrl" $ do
       property $ \ baseUrl ->
         counterexample (showBaseUrl baseUrl) $
-        parseBaseUrl (showBaseUrl baseUrl) ===
-          Right baseUrl
+        (parseBaseUrl (showBaseUrl baseUrl) :: Maybe BaseUrl) ===
+          Just baseUrl
 
     context "trailing slashes" $ do
       it "allows trailing slashes" $ do
-        parseBaseUrl "foo.com/" `shouldBe` Right (BaseUrl Http "foo.com" 80 "")
+        (parseBaseUrl "foo.com/" :: Maybe BaseUrl)`shouldBe` Just (BaseUrl Http "foo.com" 80 "")
+
       it "allows trailing slashes in paths" $ do
-        parseBaseUrl "foo.com/api/" `shouldBe` Right (BaseUrl Http "foo.com" 80 "api")
+        (parseBaseUrl "foo.com/api/" :: Maybe BaseUrl) `shouldBe` Just (BaseUrl Http "foo.com" 80 "api")
 
     context "urls without scheme" $ do
       it "assumes http" $ do
-        parseBaseUrl "foo.com" `shouldBe` Right (BaseUrl Http "foo.com" 80 "")
+        (parseBaseUrl "foo.com" :: Maybe BaseUrl) `shouldBe` Just (BaseUrl Http "foo.com" 80 "")
 
       it "allows port numbers" $ do
-        parseBaseUrl "foo.com:8080" `shouldBe` Right (BaseUrl Http "foo.com" 8080 "")
+        (parseBaseUrl "foo.com:8080" :: Maybe BaseUrl) `shouldBe` Just (BaseUrl Http "foo.com" 8080 "")
 
     it "can parse paths" $ do
-      parseBaseUrl "http://foo.com/api" `shouldBe` Right (BaseUrl Http "foo.com" 80 "api") 
+      (parseBaseUrl "http://foo.com/api" :: Maybe BaseUrl) `shouldBe` Just (BaseUrl Http "foo.com" 80 "api")
 
     it "rejects ftp urls" $ do
-      parseBaseUrl "ftp://foo.com" `shouldSatisfy` isLeft
+      (parseBaseUrl "ftp://foo.com" :: Maybe BaseUrl) `shouldBe` Nothing
 
 instance Arbitrary BaseUrl where
   arbitrary = BaseUrl <$>
