@@ -226,15 +226,14 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           C.responseBody response `shouldBe` body
           C.responseStatus response `shouldBe` ok200
 
-    it "Servant.API.Raw on failure" $ \(_, baseUrl) -> do
+    it "Servant.API.Raw should return a Left in case of failure" $ do
       let getRawFailure = getNth (Proxy :: Proxy 11) $ client api baseUrl manager
       res <- runExceptT (getRawFailure methodGet)
       case res of
-        Left e -> assertFailure $ show e
-        Right (code, body, ct, _, response) -> do
-          (code, body, ct) `shouldBe` (400, "rawFailure", "application"//"octet-stream")
-          C.responseBody response `shouldBe` body
-          C.responseStatus response `shouldBe` badRequest400
+        Right _ -> assertFailure "expected Left, but got Right"
+        Left e -> do
+          Servant.Client.responseStatus e `shouldBe` status400
+          Servant.Client.responseBody e `shouldBe` "rawFailure"
 
     it "Returns headers appropriately" $ \(_, baseUrl) -> do
       let getRespHeaders = getNth (Proxy :: Proxy 13) $ client api baseUrl manager
@@ -349,14 +348,14 @@ pathGen = fmap NonEmpty path
 class GetNth (n :: Nat) a b | n a -> b where
     getNth :: Proxy n -> a -> b
 
-instance 
+instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
   GetNth 0 (x :<|> y) x where
       getNth _ (x :<|> _) = x
 
-instance 
+instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
@@ -366,14 +365,14 @@ instance
 class GetLast a b | a -> b where
     getLast :: a -> b
 
-instance 
+instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif
   (GetLast b c) => GetLast (a :<|> b) c where
       getLast (_ :<|> b) = getLast b
 
-instance 
+instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
 #endif

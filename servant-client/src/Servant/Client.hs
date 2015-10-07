@@ -130,10 +130,8 @@ instance
   (MimeUnrender ct a, cts' ~ (ct ': cts)) => HasClient (Delete cts' a) where
   type Client (Delete cts' a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl manager
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req baseurl manager
 
--- | If you have a 'Delete xs ()' endpoint, the client expects a 204 No Content
--- HTTP header.
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
@@ -141,7 +139,7 @@ instance
   HasClient (Delete cts ()) where
   type Client (Delete cts ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody H.methodDelete req [204] baseurl manager
+    void $ performRequestNoBody H.methodDelete req baseurl manager
 
 -- | If you have a 'Delete xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -153,7 +151,7 @@ instance
   ) => HasClient (Delete cts' (Headers ls a)) where
   type Client (Delete cts' (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl manager = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req [200, 202] baseurl manager
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req baseurl manager
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -169,10 +167,8 @@ instance
   (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
   type Client (Get (ct ': cts) result) = ExceptT ServantError IO result
   clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203] baseurl manager
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req baseurl manager
 
--- | If you have a 'Get xs ()' endpoint, the client expects a 204 No Content
--- HTTP status.
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
@@ -180,7 +176,7 @@ instance
   HasClient (Get (ct ': cts) ()) where
   type Client (Get (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
-    performRequestNoBody H.methodGet req [204] baseurl manager
+    performRequestNoBody H.methodGet req baseurl manager
 
 -- | If you have a 'Get xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -192,7 +188,7 @@ instance
   ) => HasClient (Get (ct ': cts) (Headers ls a)) where
   type Client (Get (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl manager = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodGet req [200, 203, 204] baseurl manager
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodGet req baseurl manager
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -251,10 +247,8 @@ instance
   (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
   type Client (Post (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] baseurl manager
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req baseurl manager
 
--- | If you have a 'Post xs ()' endpoint, the client expects a 204 No Content
--- HTTP header.
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
@@ -262,7 +256,7 @@ instance
   HasClient (Post (ct ': cts) ()) where
   type Client (Post (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody H.methodPost req [204] baseurl manager
+    void $ performRequestNoBody H.methodPost req baseurl manager
 
 -- | If you have a 'Post xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -274,7 +268,7 @@ instance
   ) => HasClient (Post (ct ': cts) (Headers ls a)) where
   type Client (Post (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl manager = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201] baseurl manager
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req baseurl manager
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -290,10 +284,8 @@ instance
   (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
   type Client (Put (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req [200,201] baseurl manager
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req baseurl manager
 
--- | If you have a 'Put xs ()' endpoint, the client expects a 204 No Content
--- HTTP header.
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
@@ -301,7 +293,7 @@ instance
   HasClient (Put (ct ': cts) ()) where
   type Client (Put (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody H.methodPut req [204] baseurl manager
+    void $ performRequestNoBody H.methodPut req baseurl manager
 
 -- | If you have a 'Put xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -313,7 +305,7 @@ instance
   ) => HasClient (Put (ct ': cts) (Headers ls a)) where
   type Client (Put (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl manager= do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPut req [200, 201] baseurl manager
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPut req baseurl manager
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -329,10 +321,8 @@ instance
   (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
   type Client (Patch (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200,201] baseurl manager
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req baseurl manager
 
--- | If you have a 'Patch xs ()' endpoint, the client expects a 204 No Content
--- HTTP header.
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPING #-}
@@ -340,7 +330,7 @@ instance
   HasClient (Patch (ct ': cts) ()) where
   type Client (Patch (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody H.methodPatch req [204] baseurl manager
+    void $ performRequestNoBody H.methodPatch req baseurl manager
 
 -- | If you have a 'Patch xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
@@ -352,7 +342,7 @@ instance
   ) => HasClient (Patch (ct ': cts) (Headers ls a)) where
   type Client (Patch (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl manager = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPatch req [200, 201, 204] baseurl manager
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPatch req baseurl manager
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -623,7 +613,7 @@ instance HasClient Raw where
 
   clientWithRoute :: Proxy Raw -> Req -> BaseUrl -> Manager -> Client Raw
   clientWithRoute Proxy req baseurl manager httpMethod = do
-    performRequest httpMethod req (const True) baseurl manager
+    performRequest httpMethod req baseurl manager
 
 -- | If you use a 'ReqBody' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take

@@ -131,10 +131,10 @@ displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
 
-performRequest :: Method -> Req -> (Int -> Bool) -> BaseUrl -> Manager
+performRequest :: Method -> Req -> BaseUrl -> Manager
                -> ExceptT ServantError IO ( Int, ByteString, MediaType
                                           , [HTTP.Header], Response ByteString)
-performRequest reqMethod req isWantedStatus reqHost manager = do
+performRequest reqMethod req reqHost manager = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
   let request = partialRequest { Client.method = reqMethod
@@ -156,25 +156,25 @@ performRequest reqMethod req isWantedStatus reqHost manager = do
                  Just t -> case parseAccept t of
                    Nothing -> throwE $ InvalidContentTypeHeader (cs t) body
                    Just t' -> pure t'
-      unless (isWantedStatus status_code) $
+      unless (status_code >= 200 && status_code < 300) $
         throwE $ FailureResponse status ct body
       return (status_code, body, ct, hrds, response)
 
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> [Int] -> BaseUrl -> Manager -> ExceptT ServantError IO ([HTTP.Header], result)
-performRequestCT ct reqMethod req wantedStatus reqHost manager = do
+  Proxy ct -> Method -> Req -> BaseUrl -> Manager -> ExceptT ServantError IO ([HTTP.Header], result)
+performRequestCT ct reqMethod req reqHost manager = do
   let acceptCT = contentType ct
   (_status, respBody, respCT, hrds, _response) <-
-    performRequest reqMethod (req { reqAccept = [acceptCT] }) (`elem` wantedStatus) reqHost manager
+    performRequest reqMethod (req { reqAccept = [acceptCT] }) reqHost manager
   unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
     Left err -> throwE $ DecodeFailure err respCT respBody
     Right val -> return (hrds, val)
 
-performRequestNoBody :: Method -> Req -> [Int] -> BaseUrl -> Manager -> ExceptT ServantError IO ()
-performRequestNoBody reqMethod req wantedStatus reqHost manager =
-  void $ performRequest reqMethod req (`elem` wantedStatus) reqHost manager
+performRequestNoBody :: Method -> Req -> BaseUrl -> Manager -> ExceptT ServantError IO ()
+performRequestNoBody reqMethod req reqHost manager =
+  void $ performRequest reqMethod req reqHost manager
 
 catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =
