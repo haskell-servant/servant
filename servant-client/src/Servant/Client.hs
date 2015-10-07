@@ -252,7 +252,7 @@ instance
   (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
   type Client (Post (ct ': cts) a) = EitherT ServantError IO a
   clientWithRoute Proxy req baseurl =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200,201] baseurl
+    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201, 202] baseurl
 
 -- | If you have a 'Post xs ()' endpoint, the client expects a 204 No Content
 -- HTTP header.
@@ -275,7 +275,7 @@ instance
   ) => HasClient (Post (ct ': cts) (Headers ls a)) where
   type Client (Post (ct ': cts) (Headers ls a)) = EitherT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201] baseurl
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req [200, 201, 202] baseurl
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
