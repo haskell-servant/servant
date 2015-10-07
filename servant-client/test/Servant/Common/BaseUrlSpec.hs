@@ -22,7 +22,9 @@ spec = do
     it "shows the path of a BaseUrl" $ do
       showBaseUrl (BaseUrl Http "foo.com" 80 "api") `shouldBe` "http://foo.com/api"
     it "shows the path of an https BaseUrl" $ do
-      showBaseUrl (BaseUrl Https "foo.com" 80 "api") `shouldBe` "https://foo.com/api"
+      showBaseUrl (BaseUrl Https "foo.com" 443 "api") `shouldBe` "https://foo.com/api"
+    it "handles leading slashes in path" $ do
+      showBaseUrl (BaseUrl Https "foo.com" 443 "/api") `shouldBe` "https://foo.com/api"
 
   describe "httpBaseUrl" $ do
     it "allows to construct default http BaseUrls" $ do
@@ -34,8 +36,8 @@ spec = do
         deepseq (fmap show (parse string )) True
 
     it "is the inverse of showBaseUrl" $ do
-      property $ \ baseUrl ->
-        counterexample (showBaseUrl baseUrl) $ parse (showBaseUrl baseUrl) === Just baseUrl
+      property $ \ baseUrl -> counterexample (showBaseUrl baseUrl) $
+        parse (showBaseUrl baseUrl) === Just baseUrl
 
     context "trailing slashes" $ do
       it "allows trailing slashes" $ do
@@ -55,7 +57,7 @@ spec = do
       parse "http://foo.com/api" `shouldBe` Just (BaseUrl Http "foo.com" 80 "api")
 
     it "rejects ftp urls" $ do
-      (parse "ftp://foo.com") `shouldBe` Nothing
+      parse "ftp://foo.com" `shouldBe` Nothing
 
 instance Arbitrary BaseUrl where
   arbitrary = BaseUrl <$>
