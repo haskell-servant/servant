@@ -32,7 +32,7 @@ import           Data.String                 (fromString)
 import           Data.String.Conversions     (cs, (<>), ConvertibleStrings)
 import           Data.Text                   (Text)
 import qualified Data.Text                   as T
-import           Data.Text.Encoding          (decodeUtf8, encodeUtf8)
+import           Data.Text.Encoding          (encodeUtf8)
 import           Data.Typeable
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
