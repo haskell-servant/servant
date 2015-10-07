@@ -44,7 +44,6 @@ library
     Servant.API.ResponseHeaders
     Servant.API.Sub
     Servant.API.Vault
-    Servant.Common.Text
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5
