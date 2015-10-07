@@ -19,7 +19,7 @@ import           Servant.API               (JSON)
 import           Servant.API.Alternative   ((:<|>) ((:<|>)))
 import           Servant.API.Capture       (Capture)
 import           Servant.API.Get           (Get)
-import           Servant.API.Raw           (Raw)
+import           Servant.API.Raw           (Raw(..))
 import           Servant.API.Sub           ((:>))
 import           Servant.Server            (Server, serve)
 import           Servant.ServerSpec        (Person (Person))
@@ -27,7 +27,7 @@ import           Servant.Utils.StaticFiles (serveDirectory)
 
 type Api =
        "dummy_api" :> Capture "person_name" String :> Get '[JSON] Person
-  :<|> "static" :> Raw
+  :<|> "static" :> Raw IO Application
 
 
 api :: Proxy Api

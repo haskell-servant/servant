@@ -1,6 +1,6 @@
 HEAD
 ----
-
+* Update `instance HasClient Raw` for servant Raw changes
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Added support for `path` on `BaseUrl`.
 * `client` now takes an explicit `Manager` argument.

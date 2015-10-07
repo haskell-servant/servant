@@ -47,7 +47,7 @@ import           Servant.API                 ((:<|>) (..), (:>), Capture,
                                               IsSecure(..), MatrixFlag, MatrixParam,
                                               MatrixParams, Patch, Post, Put,
                                               QueryFlag, QueryParam, QueryParams,
-                                              Raw, RemoteHost, ReqBody, Vault)
+                                              Raw(..), RemoteHost, ReqBody, Vault)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..))
@@ -667,19 +667,24 @@ instance (KnownSymbol sym, HasServer sublayout)
 --
 -- Example:
 --
--- > type MyApi = "images" :> Raw
+-- > type MyApi = "images" :> Raw IO Application
 -- >
 -- > server :: Server MyApi
 -- > server = serveDirectory "/var/www/images"
-instance HasServer Raw where
+class ToRawApplication a where
+  toRawApplication :: a -> Application
 
-  type ServerT Raw m = Application
+instance ToRawApplication Application where
+  toRawApplication = id
+
+instance ToRawApplication a => HasServer (Raw m a) where
+  type ServerT (Raw m a) n = Raw n a
 
   route Proxy rawApplication = LeafRouter $ \ request respond -> do
     r <- rawApplication
     case r of
       RR (Left err)  -> respond $ failWith err
-      RR (Right app) -> app request (respond . succeedWith)
+      RR (Right (Raw app)) -> (toRawApplication app) request (respond . succeedWith)
 
 -- | If you use 'ReqBody' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
