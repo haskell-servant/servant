@@ -13,6 +13,7 @@ import           Servant.Common.BaseUrl
 
 spec :: Spec
 spec = do
+  let parse = parseBaseUrl :: String -> Maybe BaseUrl
   describe "showBaseUrl" $ do
     it "shows a BaseUrl" $ do
       showBaseUrl (BaseUrl Http "foo.com" 80 "") `shouldBe` "http://foo.com"
@@ -30,33 +31,31 @@ spec = do
   describe "parseBaseUrl" $ do
     it "is total" $ do
       property $ \ string ->
-        deepseq (fmap show (parseBaseUrl string :: Maybe BaseUrl)) True
+        deepseq (fmap show (parse string )) True
 
     it "is the inverse of showBaseUrl" $ do
       property $ \ baseUrl ->
-        counterexample (showBaseUrl baseUrl) $
-        (parseBaseUrl (showBaseUrl baseUrl) :: Maybe BaseUrl) ===
-          Just baseUrl
+        counterexample (showBaseUrl baseUrl) $ parse (showBaseUrl baseUrl) === Just baseUrl
 
     context "trailing slashes" $ do
       it "allows trailing slashes" $ do
-        (parseBaseUrl "foo.com/" :: Maybe BaseUrl)`shouldBe` Just (BaseUrl Http "foo.com" 80 "")
+        parse "foo.com/" `shouldBe` Just (BaseUrl Http "foo.com" 80 "")
 
       it "allows trailing slashes in paths" $ do
-        (parseBaseUrl "foo.com/api/" :: Maybe BaseUrl) `shouldBe` Just (BaseUrl Http "foo.com" 80 "api")
+        parse "foo.com/api/" `shouldBe` Just (BaseUrl Http "foo.com" 80 "api")
 
     context "urls without scheme" $ do
       it "assumes http" $ do
-        (parseBaseUrl "foo.com" :: Maybe BaseUrl) `shouldBe` Just (BaseUrl Http "foo.com" 80 "")
+        parse "foo.com" `shouldBe` Just (BaseUrl Http "foo.com" 80 "")
 
       it "allows port numbers" $ do
-        (parseBaseUrl "foo.com:8080" :: Maybe BaseUrl) `shouldBe` Just (BaseUrl Http "foo.com" 8080 "")
+        parse "foo.com:8080" `shouldBe` Just (BaseUrl Http "foo.com" 8080 "")
 
     it "can parse paths" $ do
-      (parseBaseUrl "http://foo.com/api" :: Maybe BaseUrl) `shouldBe` Just (BaseUrl Http "foo.com" 80 "api")
+      parse "http://foo.com/api" `shouldBe` Just (BaseUrl Http "foo.com" 80 "api")
 
     it "rejects ftp urls" $ do
-      (parseBaseUrl "ftp://foo.com" :: Maybe BaseUrl) `shouldBe` Nothing
+      (parse "ftp://foo.com") `shouldBe` Nothing
 
 instance Arbitrary BaseUrl where
   arbitrary = BaseUrl <$>
@@ -71,8 +70,8 @@ instance Arbitrary BaseUrl where
     hostNameGen = do
       first <- elements letters
       middle <- listOf1 $ elements (letters ++ ['0' .. '9'] ++ ['.', '-'])
-      last <- elements letters
-      return (first : middle ++ [last])
+      last' <- elements letters
+      return (first : middle ++ [last'])
     portGen = frequency $
       (1, return 80) :
       (1, return 443) :
