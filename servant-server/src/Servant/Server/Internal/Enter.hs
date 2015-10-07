@@ -33,8 +33,6 @@ import           Servant.API
 class Enter typ arg ret | typ ret -> arg, arg ret -> typ where
     enter :: arg -> typ -> ret
 
-data IsRaw
-
 -- **  Servant combinators
 instance ( Enter typ1 arg1 ret1 , Enter typ2 arg1 ret2
          ) => Enter (typ1 :<|> typ2) arg1 (ret1 :<|> ret2) where

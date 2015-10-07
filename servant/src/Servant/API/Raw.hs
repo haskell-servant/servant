@@ -22,12 +22,15 @@ import Control.Applicative (liftA2)
 #endif
 -- | Endpoint for plugging in your own Wai 'Application's.
 --
--- The given 'Application' will get the request as received by the server, potentially with
--- a modified (stripped) 'pathInfo' if the 'Application' is being routed with 'Servant.API.Sub.:>'.
+-- The given 'Application' will get the request as received by the server,
+-- potentially with a modified (stripped) 'pathInfo' if the 'Application' is
+-- being routed with 'Servant.API.Sub.:>'.
 --
 -- In addition to just letting you plug in your existing WAI 'Application's,
 -- this can also be used with 'Servant.Utils.StaticFiles.serveDirectory' to serve
 -- static files stored in a particular directory on your filesystem
+--
+-- The phantom type (@m@) is used internally, and can generally be ignored.
 newtype Raw (m :: * -> *) a = Raw {
     unRaw :: a
     } deriving (Eq, Read, Show, Ord, Typeable, Ix, Bounded, Data, Generic, Generic1)
