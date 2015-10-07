@@ -154,6 +154,7 @@ module Servant.Docs
   , noSamples
   , singleSample
   , samples
+  , ToAuthInfo(..)
   , sampleByteString
   , sampleByteStrings
   , ToParam(..)
@@ -163,12 +164,13 @@ module Servant.Docs
     Method(..)
   , Endpoint, path, method, defEndpoint
   , API, apiIntros, apiEndpoints, emptyAPI
+  , AuthenticationInfo(..), authIntro, authDataRequired
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
   , DocNote(..), noteTitle, noteBody
   , DocIntro(..), introTitle, introBody
   , Response(..), respStatus, respTypes, respBody, defResponse
-  , Action, captures, headers, notes, params, rqtypes, rqbody, response, defAction
+  , Action, authInfo, captures, headers, notes, params, rqtypes, rqbody, response, defAction
   , single
   ) where
 

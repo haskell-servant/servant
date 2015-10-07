@@ -12,6 +12,7 @@ import Data.String.Conversions
 import Data.Text (Text)
 import GHC.Generics
 import Servant.API
+import Servant.API.Authentication
 import Servant.Docs
 
 -- * Example
@@ -28,6 +29,16 @@ instance ToJSON Greet
 -- | We can also implement 'MimeRender' for additional formats like 'PlainText'.
 instance MimeRender PlainText Greet where
     mimeRender Proxy (Greet s) = "\"" <> cs s <> "\""
+
+-- | Our required authentication object
+newtype Cookie = Cookie String deriving (Show)
+
+-- | Our user object returned when someone has been authenticated
+newtype User = User String deriving (Show)
+
+-- | Some secret data returned from the /private endpoint.
+newtype SecretData = SecretData Text deriving (Generic, Show)
+instance ToJSON SecretData
 
 -- We add some useful annotations to our captures,
 -- query parameters and request body to make the docs
@@ -62,6 +73,19 @@ instance ToSample Greet where
 instance ToSample Int where
   toSamples _ = singleSample 1729
 
+instance ToSample User  where
+  toSamples _ = singleSample (User "I'm a user!")
+
+instance ToSample Cookie where
+  toSamples _ = singleSample (Cookie "cookie")
+
+instance ToSample SecretData where
+  toSamples _ = singleSample (SecretData "shhhhh!")
+
+instance ToAuthInfo (AuthProtect Cookie User policy) where
+    toAuthInfo _ = AuthenticationInfo "In this sentence we outline how authentication works."
+                                      "The following data is required on each request as a serialized header."
+
 -- We define some introductory sections, these will appear at the top of the
 -- documentation.
 --
@@ -89,6 +113,11 @@ type TestApi =
 
        -- DELETE /greet/:greetid
   :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] ()
+
+       -- GET /private
+  :<|> "private" :> AuthProtect Cookie User 'Strict :> Get '[JSON] SecretData
+       -- GET /private-lax
+  :<|> "private-lax" :> AuthProtect Cookie User 'Lax :> Get '[JSON] SecretData
 
 testApi :: Proxy TestApi
 testApi = Proxy

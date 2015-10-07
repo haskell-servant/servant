@@ -1,19 +1,21 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE PolyKinds            #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 #if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances #-}
+{-# LANGUAGE OverlappingInstances       #-}
 #endif
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
+  , module Servant.Server.Internal.Authentication
   , module Servant.Server.Internal.PathInfo
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
@@ -21,40 +23,67 @@ module Servant.Server.Internal
   ) where
 
 #if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative         ((<$>))
+import           Control.Applicative                        ((<$>), pure)
 #endif
 import           Control.Monad.Trans.Except  (ExceptT)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
+import qualified Data.ByteString                            as B
+import qualified Data.ByteString.Lazy                       as BL
+import qualified Data.Map                                   as M
 import           Data.Maybe                  (mapMaybe, fromMaybe)
-import           Data.String                 (fromString)
-import           Data.String.Conversions     (cs, (<>), ConvertibleStrings)
-import           Data.Text                   (Text)
-import qualified Data.Text                   as T
-import           Data.Text.Encoding          (decodeUtf8, encodeUtf8)
+import           Data.String                                (fromString)
+import           Data.String.Conversions                    (ConvertibleStrings, cs, (<>))
+import           Data.Text                                  (Text)
+import qualified Data.Text                                  as T
+import           Data.Text.Encoding                         (decodeUtf8,
+                                                             encodeUtf8)
 import           Data.Typeable
-import           GHC.TypeLits                (KnownSymbol, symbolVal)
-import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
-import           Network.Socket              (SockAddr)
-import           Network.Wai                 (Application, lazyRequestBody,
-                                              rawQueryString, requestHeaders,
-                                              requestMethod, responseLBS, remoteHost,
-                                              isSecure, vault, httpVersion, Response,
-                                              Request)
-import           Servant.API                 ((:<|>) (..), (:>), Capture,
-                                              Delete, Get, Header,
-                                              IsSecure(..), MatrixFlag, MatrixParam,
-                                              MatrixParams, Patch, Post, Put,
-                                              QueryFlag, QueryParam, QueryParams,
-                                              Raw, RemoteHost, ReqBody, Vault)
-import           Servant.API.ContentTypes    (AcceptHeader (..),
-                                              AllCTRender (..),
-                                              AllCTUnrender (..))
-import           Servant.API.ResponseHeaders (Headers, getResponse, GetHeaders,
-                                              getHeaders)
-import           Servant.Common.Text         (FromText, fromText)
-
+import           GHC.TypeLits                               (KnownSymbol,
+                                                             symbolVal)
+import           Network.HTTP.Types                         hiding (Header,
+                                                             ResponseHeaders)
+import           Network.Socket                             (SockAddr)
+import           Network.Wai                                (Application,
+                                                             httpVersion,
+                                                             isSecure,
+                                                             lazyRequestBody,
+                                                             rawQueryString,
+                                                             remoteHost,
+                                                             Response,
+                                                             Request,
+                                                             requestHeaders,
+                                                             requestMethod,
+                                                             responseLBS, vault)
+import           Servant.API                                ((:<|>) (..), (:>),
+                                                             Capture, Delete,
+                                                             Get, Header, IsSecure (Secure, NotSecure),
+                                                             MatrixFlag,
+                                                             MatrixParam,
+                                                             MatrixParams,
+                                                             Patch, Post, Put,
+                                                             QueryFlag,
+                                                             QueryParam,
+                                                             QueryParams, Raw,
+                                                             RemoteHost,
+                                                             ReqBody, Vault)
+import           Servant.API.Authentication                 (AuthPolicy (Strict, Lax),
+                                                             AuthProtect,
+                                                             AuthProtected)
+import           Servant.API.ContentTypes                   (AcceptHeader (..),
+                                                             AllCTRender (..),
+                                                             AllCTUnrender (..))
+import           Servant.API.ResponseHeaders                (GetHeaders,
+                                                             Headers,
+                                                             getHeaders,
+                                                             getResponse)
+import           Servant.Common.Text                        (FromText, fromText)
+import           Servant.Server.Internal.Authentication     (AuthData (authData),
+                                                             AuthProtected (..),
+                                                             checkAuthStrict,
+                                                             AuthHandlers(onMissingAuthData,
+                                                             onUnauthenticated))
 import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
@@ -229,6 +258,75 @@ instance
   type ServerT (Delete ctypes (Headers h v)) m = m (Headers h v)
 
   route Proxy = methodRouterHeaders methodDelete (Proxy :: Proxy ctypes) ok200
+
+-- | Authentication in Strict mode.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         (AuthData authdata , HasServer sublayout) => HasServer (AuthProtect authdata (usr :: *) 'Strict :> sublayout) where
+
+    type ServerT (AuthProtect authdata usr 'Strict :> sublayout) m = AuthProtected authdata usr (usr -> ServerT sublayout m) 'Strict
+
+    route _ subserver = WithRequest $ \req ->
+        route (Proxy :: Proxy sublayout) $ do
+            -- Note: this may perform IO for each attempt at matching.
+            rr <- routeResult <$> subserver
+
+            case rr of
+                -- Successful route match, so we extract the author-provided
+                -- auth data.
+                Right authProtectionStrict ->
+                    case authData req of
+                        -- could not pull authenticate data out of the request
+                        Nothing -> do
+                            -- we're in strict mode: don't let the request go
+                            -- call the provided "on missing auth" handler
+                            resp <- onMissingAuthData (authHandlers authProtectionStrict)
+                            return $ failWith (RouteMismatch resp)
+
+                        -- succesfully pulled auth data out of the Request
+                        Just authData' -> do
+                            mUsr <- (checkAuthStrict authProtectionStrict) authData'
+                            case mUsr of
+                                -- this user is not authenticated.
+                                Nothing -> do
+                                    resp <- onUnauthenticated (authHandlers authProtectionStrict) authData'
+                                    return $ failWith (RouteMismatch resp)
+
+                                -- this user is authenticated.
+                                Just usr ->
+                                    (return . succeedWith . subServerStrict authProtectionStrict) usr
+                -- route did not match, propagate failure.
+                Left rMismatch ->
+                    return (failWith rMismatch)
+
+-- | Authentication in Lax mode.
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+         (AuthData authdata , HasServer sublayout) => HasServer (AuthProtect authdata (usr :: *) 'Lax :> sublayout) where
+
+    type ServerT (AuthProtect authdata usr 'Lax :> sublayout) m = AuthProtected authdata usr (Maybe usr -> ServerT sublayout m) 'Lax
+
+    route _ subserver = WithRequest $ \req ->
+        route (Proxy :: Proxy sublayout) $ do
+            -- Note: this may perform IO for each attempt at matching.
+            rr <- routeResult <$> subserver
+                -- Successful route match, so we extract the author-provided
+                -- auth data.
+            case rr of
+                -- route matched, extract author-provided lax authentication data
+                Right authProtectionLax -> do
+                    -- extract a user from the request object and perform
+                    -- authentication on it. In Lax mode, we just pass `Maybe usr`
+                    -- to the autho.
+                    musr <- maybe (pure Nothing) (checkAuthLax authProtectionLax) (authData req)
+                    (return . succeedWith . subServerLax authProtectionLax) musr
+                -- route did not match, propagate failure
+                Left rMismatch ->
+                    return (failWith rMismatch)
 
 -- | When implementing the handler for a 'Get' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Post.Post'
@@ -657,7 +755,9 @@ instance (KnownSymbol sym, HasServer sublayout)
                     Just Nothing  -> True  -- param is there, with no value
                     Just (Just v) -> examine v -- param with a value
                     Nothing       -> False -- param not in the query string
+
               route (Proxy :: Proxy sublayout) (feedTo subserver param)
+
       _ -> route (Proxy :: Proxy sublayout) (feedTo subserver False)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True

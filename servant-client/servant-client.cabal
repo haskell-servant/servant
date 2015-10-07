@@ -26,12 +26,14 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
+    Servant.Client.Authentication
     Servant.Common.BaseUrl
     Servant.Common.Req
   build-depends:
       base >=4.7 && <5
     , aeson
     , attoparsec
+    , base64-bytestring
     , bytestring
     , exceptions
     , http-client

@@ -40,8 +40,11 @@ import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
+import           Servant.API.Authentication
 import           Servant.Client
+import           Servant.Client.Authentication()
 import           Servant.Server
+import           Servant.Server.Internal.Authentication
 
 -- * test data types
 
@@ -94,6 +97,19 @@ type Api =
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
   :<|> "deleteContentType" :> Delete '[JSON] ()
+  :<|> AuthProtect (BasicAuth "realm") Person 'Strict :> Get '[JSON] Person
+
+-- base64-encoded "servant:server"
+base64ServantColonServer :: ByteString
+base64ServantColonServer = "c2VydmFudDpzZXJ2ZXI="
+
+type AuthUser = T.Text
+
+basicAuthCheck :: BasicAuth "realm" -> IO (Maybe Person)
+basicAuthCheck (BasicAuth user pass) = if user == "servant" && pass == "server"
+                                       then return (Just $ Person "servant" 17)
+                                       else return Nothing
+
 api :: Proxy Api
 api = Proxy
 
@@ -120,6 +136,7 @@ server = serve api (
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return ()
+  :<|> basicAuthStrict basicAuthCheck (const . return $ alice)
  )
 
 withServer :: (BaseUrl -> IO a) -> IO a
@@ -174,7 +191,8 @@ spec = withServer $ \ baseUrl -> do
        :<|> getRawFailure
        :<|> getMultiple
        :<|> getRespHeaders
-       :<|> getDeleteContentType)
+       :<|> getDeleteContentType
+       :<|> getPrivatePerson)
          = client api baseUrl manager
 
   hspec $ do
@@ -249,6 +267,15 @@ spec = withServer $ \ baseUrl -> do
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
+    it "Handles Authentication appropriatley" $ withServer $ \ _ -> do
+      (Control.Arrow.left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
+
+    it "returns 401 when not properly authenticated" $ do
+      Left res <- runExceptT (getPrivatePerson (BasicAuth "xxx" "yyy"))
+      case res of
+        FailureResponse (Status 401 _) _ _ -> return ()
+        _ -> fail $ "expected 401 response, but got " <> show res
+
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $
         property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
@@ -256,7 +283,6 @@ spec = withServer $ \ baseUrl -> do
             result <- left show <$> runExceptT (getMultiple cap num flag body)
             return $
               result === Right (cap, num, flag, body)
-
 
     context "client correctly handles error status codes" $ do
       let test :: (WrappedApi, String) -> Spec
@@ -322,6 +348,7 @@ failSpec = withFailServer $ \ baseUrl -> do
         case res of
           InvalidContentTypeHeader "fooooo" _ -> return ()
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
+
 
 data WrappedApi where
   WrappedApi :: (HasServer api, Server api ~ ExceptT ServantErr IO a,
