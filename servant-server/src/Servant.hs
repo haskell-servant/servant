@@ -5,8 +5,6 @@ module Servant (
   module Servant.API,
   -- | For implementing servers for servant APIs.
   module Servant.Server,
-  -- | Using your types in request paths and query string parameters
-  module Servant.Common.Text,
   -- | Utilities on top of the servant core
   module Servant.Utils.Links,
   module Servant.Utils.StaticFiles,
@@ -16,7 +14,6 @@ module Servant (
 
 import           Data.Proxy
 import           Servant.API
-import           Servant.Common.Text
 import           Servant.Server
 import           Servant.Utils.Links
 import           Servant.Utils.StaticFiles

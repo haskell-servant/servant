@@ -20,7 +20,6 @@ infixr 9 :>
 
 -- $setup
 -- >>> import Servant.API
--- >>> import Servant.Common.Text
 -- >>> import Data.Aeson
 -- >>> import Data.Text
 -- >>> data World

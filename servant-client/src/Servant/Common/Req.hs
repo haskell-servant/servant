@@ -26,9 +26,10 @@ import qualified Network.HTTP.Types.Header   as HTTP
 import Network.URI hiding (path)
 import Servant.API.ContentTypes
 import Servant.Common.BaseUrl
-import Servant.Common.Text
 
 import qualified Network.HTTP.Client as Client
+
+import Web.HttpApiData
 
 data ServantError
   = FailureResponse
@@ -86,9 +87,9 @@ appendToQueryString pname pvalue req =
   req { qs = qs req ++ [(pname, pvalue)]
       }
 
-addHeader :: ToText a => String -> a -> Req -> Req
+addHeader :: ToHttpApiData a => String -> a -> Req -> Req
 addHeader name val req = req { headers = headers req
-                                      ++ [(name, toText val)]
+                                      ++ [(name, decodeUtf8 (toHeader val))]
                              }
 
 setRQBody :: ByteString -> MediaType -> Req -> Req

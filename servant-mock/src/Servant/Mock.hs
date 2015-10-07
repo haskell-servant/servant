@@ -107,7 +107,7 @@ instance (HasMock a, HasMock b) => HasMock (a :<|> b) where
 instance (KnownSymbol path, HasMock rest) => HasMock (path :> rest) where
   mock _ = mock (Proxy :: Proxy rest)
 
-instance (KnownSymbol s, FromText a, HasMock rest) => HasMock (Capture s a :> rest) where
+instance (KnownSymbol s, FromHttpApiData a, HasMock rest) => HasMock (Capture s a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
 instance (AllCTUnrender ctypes a, HasMock rest) => HasMock (ReqBody ctypes a :> rest) where
@@ -125,29 +125,29 @@ instance HasMock rest => HasMock (Vault :> rest) where
 instance HasMock rest => HasMock (HttpVersion :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
-instance (KnownSymbol s, FromText a, HasMock rest)
+instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
       => HasMock (QueryParam s a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
-instance (KnownSymbol s, FromText a, HasMock rest)
+instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
       => HasMock (QueryParams s a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
 instance (KnownSymbol s, HasMock rest) => HasMock (QueryFlag s :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
-instance (KnownSymbol s, FromText a, HasMock rest)
+instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
       => HasMock (MatrixParam s a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
-instance (KnownSymbol s, FromText a, HasMock rest)
+instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
       => HasMock (MatrixParams s a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
 instance (KnownSymbol s, HasMock rest) => HasMock (MatrixFlag s :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
-instance (KnownSymbol h, FromText a, HasMock rest) => HasMock (Header h a :> rest) where
+instance (KnownSymbol h, FromHttpApiData a, HasMock rest) => HasMock (Header h a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
 instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Delete ctypes a) where

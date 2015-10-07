@@ -53,12 +53,14 @@ import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTUnrender (..))
 import           Servant.API.ResponseHeaders (Headers, getResponse, GetHeaders,
                                               getHeaders)
-import           Servant.Common.Text         (FromText, fromText)
 
 import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
+
+import           Web.HttpApiData          (FromHttpApiData)
+import           Web.HttpApiData.Internal (parseUrlPieceMaybe, parseHeaderMaybe, parseQueryParamMaybe)
 
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
@@ -89,8 +91,8 @@ instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b
 
-captured :: FromText a => proxy (Capture sym a) -> Text -> Maybe a
-captured _ = fromText
+captured :: FromHttpApiData a => proxy (Capture sym a) -> Text -> Maybe a
+captured _ = parseUrlPieceMaybe
 
 -- | If you use 'Capture' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -99,7 +101,7 @@ captured _ = fromText
 -- it into a value of the type you specify.
 --
 -- You can control how it'll be converted from 'Text' to your type
--- by simply providing an instance of 'FromText' for your type.
+-- by simply providing an instance of 'FromHttpApiData' for your type.
 --
 -- Example:
 --
@@ -109,7 +111,7 @@ captured _ = fromText
 -- > server = getBook
 -- >   where getBook :: Text -> ExceptT ServantErr IO Book
 -- >         getBook isbn = ...
-instance (KnownSymbol capture, FromText a, HasServer sublayout)
+instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
       => HasServer (Capture capture a :> sublayout) where
 
   type ServerT (Capture capture a :> sublayout) m =
@@ -282,12 +284,12 @@ instance
 -- This lets servant worry about extracting it from the request and turning
 -- it into a value of the type you specify.
 --
--- All it asks is for a 'FromText' instance.
+-- All it asks is for a 'FromHttpApiData' instance.
 --
 -- Example:
 --
 -- > newtype Referer = Referer Text
--- >   deriving (Eq, Show, FromText, ToText)
+-- >   deriving (Eq, Show, FromHttpApiData, ToText)
 -- >
 -- >            -- GET /view-my-referer
 -- > type MyApi = "view-my-referer" :> Header "Referer" Referer :> Get '[JSON] Referer
@@ -296,14 +298,14 @@ instance
 -- > server = viewReferer
 -- >   where viewReferer :: Referer -> ExceptT ServantErr IO referer
 -- >         viewReferer referer = return referer
-instance (KnownSymbol sym, FromText a, HasServer sublayout)
+instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
       => HasServer (Header sym a :> sublayout) where
 
   type ServerT (Header sym a :> sublayout) m =
     Maybe a -> ServerT sublayout m
 
   route Proxy subserver = WithRequest $ \ request ->
-    let mheader = fromText . decodeUtf8 =<< lookup str (requestHeaders request)
+    let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
     in  route (Proxy :: Proxy sublayout) (feedTo subserver mheader)
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
@@ -451,7 +453,7 @@ instance
 -- hand you 'Nothing'.
 --
 -- You can control how it'll be converted from 'Text' to your type
--- by simply providing an instance of 'FromText' for your type.
+-- by simply providing an instance of 'FromHttpApiData' for your type.
 --
 -- Example:
 --
@@ -462,7 +464,7 @@ instance
 -- >   where getBooksBy :: Maybe Text -> ExceptT ServantErr IO [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
-instance (KnownSymbol sym, FromText a, HasServer sublayout)
+instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
       => HasServer (QueryParam sym a :> sublayout) where
 
   type ServerT (QueryParam sym a :> sublayout) m =
@@ -474,7 +476,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
           case lookup paramname querytext of
             Nothing       -> Nothing -- param absent from the query string
             Just Nothing  -> Nothing -- param present with no value -> Nothing
-            Just (Just v) -> fromText v -- if present, we try to convert to
+            Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                         -- the right type
     in route (Proxy :: Proxy sublayout) (feedTo subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
@@ -488,7 +490,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- the type you specify.
 --
 -- You can control how the individual values are converted from 'Text' to your type
--- by simply providing an instance of 'FromText' for your type.
+-- by simply providing an instance of 'FromHttpApiData' for your type.
 --
 -- Example:
 --
@@ -498,7 +500,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- > server = getBooksBy
 -- >   where getBooksBy :: [Text] -> ExceptT ServantErr IO [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
-instance (KnownSymbol sym, FromText a, HasServer sublayout)
+instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
       => HasServer (QueryParams sym a :> sublayout) where
 
   type ServerT (QueryParams sym a :> sublayout) m =
@@ -507,7 +509,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
   route Proxy subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
         -- if sym is "foo", we look for query string parameters
-        -- named "foo" or "foo[]" and call fromText on the
+        -- named "foo" or "foo[]" and call parseQueryParam on the
         -- corresponding values
         parameters = filter looksLikeParam querytext
         values = mapMaybe (convert . snd) parameters
@@ -515,7 +517,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
-          convert (Just v) = fromText v
+          convert (Just v) = parseQueryParamMaybe v
 
 -- | If you use @'QueryFlag' "published"@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -559,7 +561,7 @@ parseMatrixText = parseQueryText
 -- hand you 'Nothing'.
 --
 -- You can control how it'll be converted from 'Text' to your type
--- by simply providing an instance of 'FromText' for your type.
+-- by simply providing an instance of 'FromHttpApiData' for your type.
 --
 -- Example:
 --
@@ -570,7 +572,7 @@ parseMatrixText = parseQueryText
 -- >   where getBooksBy :: Maybe Text -> ExceptT ServantErr IO [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
-instance (KnownSymbol sym, FromText a, HasServer sublayout)
+instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
       => HasServer (MatrixParam sym a :> sublayout) where
 
   type ServerT (MatrixParam sym a :> sublayout) m =
@@ -583,7 +585,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
                   param = case lookup paramname querytext of
                     Nothing       -> Nothing -- param absent from the query string
                     Just Nothing  -> Nothing -- param present with no value -> Nothing
-                    Just (Just v) -> fromText v -- if present, we try to convert to
+                    Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                           -- the right type
               route (Proxy :: Proxy sublayout) (feedTo subserver param)
       _   -> route (Proxy :: Proxy sublayout) (feedTo subserver Nothing)
@@ -599,7 +601,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- the type you specify.
 --
 -- You can control how the individual values are converted from 'Text' to your type
--- by simply providing an instance of 'FromText' for your type.
+-- by simply providing an instance of 'FromHttpApiData' for your type.
 --
 -- Example:
 --
@@ -609,7 +611,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
 -- > server = getBooksBy
 -- >   where getBooksBy :: [Text] -> ExceptT ServantErr IO [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
-instance (KnownSymbol sym, FromText a, HasServer sublayout)
+instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
       => HasServer (MatrixParams sym a :> sublayout) where
 
   type ServerT (MatrixParams sym a :> sublayout) m =
@@ -620,7 +622,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
       (first : _)
         -> do let matrixtext = parseMatrixText . encodeUtf8 $ T.tail first
                   -- if sym is "foo", we look for matrix parameters
-                  -- named "foo" or "foo[]" and call fromText on the
+                  -- named "foo" or "foo[]" and call parseQueryParam on the
                   -- corresponding values
                   parameters = filter looksLikeParam matrixtext
                   values = mapMaybe (convert . snd) parameters
@@ -629,7 +631,7 @@ instance (KnownSymbol sym, FromText a, HasServer sublayout)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
-          convert (Just v) = fromText v
+          convert (Just v) = parseQueryParamMaybe v
 
 -- | If you use @'MatrixFlag' "published"@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
