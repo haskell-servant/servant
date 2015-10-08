@@ -113,7 +113,7 @@ import Network.URI ( URI(..), escapeURIString, isUnreserved )
 import GHC.TypeLits ( KnownSymbol, symbolVal )
 import GHC.Exts(Constraint)
 
-import Servant.Common.Text
+import Web.HttpApiData
 import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
@@ -271,22 +271,22 @@ instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
 
 
 -- QueryParam instances
-instance (KnownSymbol sym, ToText v, HasLink sub)
+instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
     => HasLink (QueryParam sym v :> sub) where
     type MkLink (QueryParam sym v :> sub) = Maybe v -> MkLink sub
     toLink _ l mv =
         toLink (Proxy :: Proxy sub) $
-            maybe id (addQueryParam . SingleParam k . toText) mv l
+            maybe id (addQueryParam . SingleParam k . toQueryParam) mv l
       where
         k :: String
         k = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, ToText v, HasLink sub)
+instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
     => HasLink (QueryParams sym v :> sub) where
     type MkLink (QueryParams sym v :> sub) = [v] -> MkLink sub
     toLink _ l =
         toLink (Proxy :: Proxy sub) .
-            foldl' (\l' v -> addQueryParam (ArrayElemParam k (toText v)) l') l
+            foldl' (\l' v -> addQueryParam (ArrayElemParam k (toQueryParam v)) l') l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
@@ -301,21 +301,21 @@ instance (KnownSymbol sym, HasLink sub)
         k = symbolVal (Proxy :: Proxy sym)
 
 -- MatrixParam instances
-instance (KnownSymbol sym, ToText v, HasLink sub)
+instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
     => HasLink (MatrixParam sym v :> sub) where
     type MkLink (MatrixParam sym v :> sub) = Maybe v -> MkLink sub
     toLink _ l mv =
         toLink (Proxy :: Proxy sub) $
-            maybe id (addMatrixParam . SingleParam k . toText) mv l
+            maybe id (addMatrixParam . SingleParam k . toQueryParam) mv l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, ToText v, HasLink sub)
+instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
     => HasLink (MatrixParams sym v :> sub) where
     type MkLink (MatrixParams sym v :> sub) = [v] -> MkLink sub
     toLink _ l =
         toLink (Proxy :: Proxy sub) .
-            foldl' (\l' v -> addMatrixParam (ArrayElemParam k (toText v)) l') l
+            foldl' (\l' v -> addMatrixParam (ArrayElemParam k (toQueryParam v)) l') l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
@@ -334,12 +334,12 @@ instance HasLink sub => HasLink (ReqBody ct a :> sub) where
     type MkLink (ReqBody ct a :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
-instance (ToText v, HasLink sub)
+instance (ToHttpApiData v, HasLink sub)
     => HasLink (Capture sym v :> sub) where
     type MkLink (Capture sym v :> sub) = v -> MkLink sub
     toLink _ l v =
         toLink (Proxy :: Proxy sub) $
-            addSegment (escape . unpack $ toText v) l
+            addSegment (escape . unpack $ toUrlPiece v) l
 
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub

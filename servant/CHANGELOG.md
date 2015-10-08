@@ -3,7 +3,8 @@ HEAD
 
 * Add `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Fix safeLink, so Header is not in fact required.
-* Added more instances for (:<|>)
+* Add more instances for (:<|>)
+* Use `http-api-data` instead of `Servant.Common.Text`
 
 0.4.2
 -----

@@ -23,7 +23,6 @@ data Header (sym :: Symbol) a = Header a
 
 -- $setup
 -- >>> import Servant.API
--- >>> import Servant.Common.Text
 -- >>> import Data.Aeson
 -- >>> import Data.Text
 -- >>> data Book

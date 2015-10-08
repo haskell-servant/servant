@@ -50,9 +50,9 @@ module Servant.API (
   module Servant.API.Raw,
   -- | Plugging in a wai 'Network.Wai.Application', serving directories
 
-  -- * FromText and ToText
-  module Servant.Common.Text,
-  -- | Classes and instances for types that can be converted to and from @Text@
+  -- * FromHttpApiData and ToHttpApiData
+  module Web.HttpApiData,
+  -- | Classes and instances for types that can be converted to and from HTTP API data.
 
   -- * Utilities
   module Servant.Utils.Links,
@@ -88,7 +88,7 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
 import           Servant.API.Vault           (Vault)
-import           Servant.Common.Text         (FromText (..), ToText (..))
+import           Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)
 

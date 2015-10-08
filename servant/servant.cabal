@@ -44,7 +44,6 @@ library
     Servant.API.ResponseHeaders
     Servant.API.Sub
     Servant.API.Vault
-    Servant.Common.Text
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5
@@ -53,6 +52,7 @@ library
     , bytestring == 0.10.*
     , bytestring-conversion == 0.3.*
     , case-insensitive >= 1.2
+    , http-api-data >= 0.1  && < 0.2
     , http-media >= 0.4 && < 0.7
     , http-types == 0.8.*
     , text >= 1 && < 2
@@ -93,7 +93,6 @@ test-suite spec
   other-modules:
       Servant.API.ContentTypesSpec
       Servant.API.ResponseHeadersSpec
-      Servant.Common.TextSpec
       Servant.Utils.LinksSpec
   build-depends:
       base == 4.*

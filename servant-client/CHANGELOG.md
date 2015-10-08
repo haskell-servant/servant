@@ -5,6 +5,7 @@ HEAD
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Added support for `path` on `BaseUrl`.
 * `client` now takes an explicit `Manager` argument.
+* Use `http-api-data` instead of `Servant.Common.Text`
 
 0.4.1
 -----
