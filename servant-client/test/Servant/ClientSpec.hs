@@ -18,6 +18,7 @@
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -fcontext-stack=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 module Servant.ClientSpec where
 
@@ -25,22 +26,26 @@ module Servant.ClientSpec where
 import           Control.Applicative        ((<$>))
 #endif
 import           Control.Arrow              (left)
-import           Control.Concurrent
-import           Control.Exception
-import           Control.Monad.Trans.Except
+import           Control.Concurrent         (forkIO, killThread, newEmptyMVar,
+                                             putMVar, readMVar)
+import           Control.Exception          (bracket, finally)
+import           Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import           Data.Aeson
 import           Data.Char
+import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
 import qualified Data.Text                  as T
-import           GHC.Generics
+import           GHC.Generics               (Generic)
 import           GHC.TypeLits
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
-import           Network.HTTP.Types         hiding (Header)
+import           Network.HTTP.Types         (Method, Status (..), badRequest400,
+                                             methodGet, ok200)
+import qualified Network.HTTP.Types         as HTTP
 import           Network.Socket
-import           Network.Wai                hiding (Response)
+import           Network.Wai                (Application, responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.Hspec
@@ -117,7 +122,7 @@ server = serve api (
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
-                   Just name -> throwE $ ServantErr 400 (name ++ " not found") "" []
+                   Just n -> throwE $ ServantErr 400 (n ++ " not found") "" []
                    Nothing -> throwE $ ServantErr 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return

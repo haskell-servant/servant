@@ -47,7 +47,6 @@ module Servant.Foreign
   ) where
 
 import           Control.Lens (makeLenses, (%~), (&), (.~), (<>~))
-import           Data.Monoid  ((<>))
 import           Data.Proxy
 import           Data.Text
 import           GHC.Exts     (Constraint)
