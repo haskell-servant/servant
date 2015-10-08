@@ -16,6 +16,7 @@ import           Servant.JS
 import           System.Random
 
 import qualified Data.Text                  as T
+import qualified Data.Text.IO               as TIO
 import qualified Language.Javascript.JQuery as JQ
 
 data Point = Point
@@ -91,14 +92,14 @@ server' :: Server API'
 server' = server
      :<|> serveDirectory "tutorial/t9"
 
-apiJS :: String
+apiJS :: Text
 apiJS = jsForAPI api jquery
 
 writeJSFiles :: IO ()
 writeJSFiles = do
-  writeFile "tutorial/t9/api.js" apiJS
-  jq <- readFile =<< JQ.file
-  writeFile "tutorial/t9/jq.js" jq
+  TIO.writeFile "tutorial/t9/api.js" apiJS
+  jq <- TIO.readFile =<< JQ.file
+  TIO.writeFile "tutorial/t9/jq.js" jq
 
 app :: Application
 app = serve api' server'

@@ -1,17 +1,19 @@
+{-#LANGUAGE OverloadedStrings #-}
 module Servant.JS.Angular where
 
 import           Control.Lens
-import           Data.List
 import           Data.Monoid
+import qualified Data.Text as T
+import           Data.Text (Text)
 import           Servant.Foreign
 import           Servant.JS.Internal
 
 -- | Options specific to the angular code generator
 data AngularOptions = AngularOptions
-  { serviceName :: String                         -- ^ When generating code with wrapInService,
+  { serviceName :: Text                         -- ^ When generating code with wrapInService,
                                                   --   name of the service to generate
-  , prologue    :: String -> String -> String        -- ^ beginning of the service definition
-  , epilogue    :: String                            -- ^ end of the service definition
+  , prologue    :: Text -> Text -> Text        -- ^ beginning of the service definition
+  , epilogue    :: Text                            -- ^ end of the service definition
   }
 
 -- | Default options for the Angular codegen. Used by 'wrapInService'.
@@ -34,12 +36,12 @@ angularService ngOpts = angularServiceWith ngOpts defCommonGeneratorOptions
 angularServiceWith :: AngularOptions -> CommonGeneratorOptions -> JavaScriptGenerator
 angularServiceWith ngOpts opts reqs =
     prologue ngOpts svc mName
-    <> intercalate "," (map generator reqs) <>
+    <> T.intercalate "," (map generator reqs) <>
     epilogue ngOpts
     where
         generator req = generateAngularJSWith ngOpts opts req
         svc = serviceName ngOpts
-        mName = if null (moduleName opts)
+        mName = if moduleName opts == ""
                    then "app."
                    else moduleName opts <> "."
 
@@ -50,14 +52,14 @@ angular ngopts = angularWith ngopts defCommonGeneratorOptions
 
 -- | Generate regular javascript functions that use the $http service.
 angularWith :: AngularOptions -> CommonGeneratorOptions -> JavaScriptGenerator
-angularWith ngopts opts = intercalate "\n\n" . map (generateAngularJSWith ngopts opts)
+angularWith ngopts opts = T.intercalate "\n\n" . map (generateAngularJSWith ngopts opts)
 
 -- | js codegen using $http service from Angular using default options
-generateAngularJS :: AngularOptions -> AjaxReq -> String
+generateAngularJS :: AngularOptions -> AjaxReq -> Text
 generateAngularJS ngOpts = generateAngularJSWith ngOpts defCommonGeneratorOptions
 
 -- | js codegen using $http service from Angular
-generateAngularJSWith ::  AngularOptions -> CommonGeneratorOptions -> AjaxReq -> String
+generateAngularJSWith ::  AngularOptions -> CommonGeneratorOptions -> AjaxReq -> Text
 generateAngularJSWith ngOptions opts req = "\n" <>
     fname <> fsep <> " function(" <> argsStr <> ")\n"
  <> "{\n"
@@ -69,7 +71,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
  <> "    });\n"
  <> "}\n"
 
-  where argsStr = intercalate ", " args
+  where argsStr = T.intercalate ", " args
         args = http
             ++ captures
             ++ map (view argName) queryparams
@@ -79,7 +81,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
         -- If we want to generate Top Level Function, they must depend on
         -- the $http service, if we generate a service, the functions will
         -- inherit this dependency from the service
-        http = case length (serviceName ngOptions) of
+        http = case T.length (serviceName ngOptions) of
                   0 -> ["$http"]
                   _ -> []
 
@@ -104,12 +106,12 @@ generateAngularJSWith ngOptions opts req = "\n" <>
         reqheaders =
           if null hs
             then ""
-            else "    , headers: { " ++ headersStr ++ " }\n"
+            else "    , headers: { " <> headersStr <> " }\n"
 
-          where headersStr = intercalate ", " $ map headerStr hs
-                headerStr header = "\"" ++
-                  headerArgName header ++
-                  "\": " ++ toJSHeader header
+          where headersStr = T.intercalate ", " $ map headerStr hs
+                headerStr header = "\"" <>
+                  headerArgName header <>
+                  "\": " <> toJSHeader header
 
         namespace =
             if hasService
@@ -118,9 +120,9 @@ generateAngularJSWith ngOptions opts req = "\n" <>
                     then "var "
                     else (moduleName opts) <> "."
             where
-                hasNoModule = null (moduleName opts)
+                hasNoModule = moduleName opts == ""
 
-        hasService = not $ null (serviceName ngOptions)
+        hasService = serviceName ngOptions /= ""
 
         fsep = if hasService then ":" else " ="
 
@@ -129,13 +131,13 @@ generateAngularJSWith ngOptions opts req = "\n" <>
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
-           ++ urlPrefix opts
-           ++ urlArgs
-           ++ queryArgs
+           <> urlPrefix opts
+           <> urlArgs
+           <> queryArgs
 
         urlArgs = jsSegments
                 $ req ^.. reqUrl.path.traverse
 
         queryArgs = if null queryparams
                       then ""
-                      else " + '?" ++ jsParams queryparams
+                      else " + '?" <> jsParams queryparams

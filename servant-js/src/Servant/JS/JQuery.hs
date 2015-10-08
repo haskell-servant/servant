@@ -1,8 +1,10 @@
+{-#LANGUAGE OverloadedStrings #-}
 module Servant.JS.JQuery where
 
 import           Control.Lens
-import           Data.List
 import           Data.Monoid
+import qualified Data.Text as T
+import           Data.Text (Text)
 import           Servant.Foreign
 import           Servant.JS.Internal
 
@@ -10,19 +12,19 @@ import           Servant.JS.Internal
 --   to make the AJAX calls. Uses 'defCommonGeneratorOptions'
 --   for the generator options.
 jquery :: JavaScriptGenerator
-jquery = concatMap generateJQueryJS
+jquery = mconcat . map generateJQueryJS
 
 -- | Generate javascript functions that use the /jQuery/ library
 --   to make the AJAX calls. Lets you specify your own 'CommonGeneratorOptions'.
 jqueryWith :: CommonGeneratorOptions -> JavaScriptGenerator
-jqueryWith opts = concatMap (generateJQueryJSWith opts)
+jqueryWith opts = mconcat . map (generateJQueryJSWith opts)
 
 -- | js codegen using JQuery using default options
-generateJQueryJS :: AjaxReq -> String
+generateJQueryJS :: AjaxReq -> Text
 generateJQueryJS = generateJQueryJSWith defCommonGeneratorOptions
 
 -- | js codegen using JQuery
-generateJQueryJSWith :: CommonGeneratorOptions -> AjaxReq -> String
+generateJQueryJSWith :: CommonGeneratorOptions -> AjaxReq -> Text
 generateJQueryJSWith opts req = "\n" <>
     fname <> " = function(" <> argsStr <> ")\n"
  <> "{\n"
@@ -36,7 +38,7 @@ generateJQueryJSWith opts req = "\n" <>
  <> "    });\n"
  <> "}\n"
 
-  where argsStr = intercalate ", " args
+  where argsStr = T.intercalate ", " args
         args = captures
             ++ map (view argName) queryparams
             ++ body
@@ -67,14 +69,14 @@ generateJQueryJSWith opts req = "\n" <>
         reqheaders =
           if null hs
             then ""
-            else "    , headers: { " ++ headersStr ++ " }\n"
+            else "    , headers: { " <> headersStr <> " }\n"
 
-          where headersStr = intercalate ", " $ map headerStr hs
-                headerStr header = "\"" ++
-                  headerArgName header ++
-                  "\": " ++ toJSHeader header
+          where headersStr = T.intercalate ", " $ map headerStr hs
+                headerStr header = "\"" <>
+                  headerArgName header <>
+                  "\": " <> toJSHeader header
 
-        namespace = if null (moduleName opts)
+        namespace = if (moduleName opts) == ""
                        then "var "
                        else (moduleName opts) <> "."
         fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
@@ -82,13 +84,13 @@ generateJQueryJSWith opts req = "\n" <>
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
-           ++ urlPrefix opts
-           ++ urlArgs
-           ++ queryArgs
+           <> urlPrefix opts
+           <> urlArgs
+           <> queryArgs
 
         urlArgs = jsSegments
                 $ req ^.. reqUrl.path.traverse
 
         queryArgs = if null queryparams
                       then ""
-                      else " + '?" ++ jsParams queryparams
+                      else " + '?" <> jsParams queryparams

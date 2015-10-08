@@ -1,9 +1,10 @@
+{-#LANGUAGE OverloadedStrings #-}
 module Servant.JS.Axios where
 
 import           Control.Lens
-import           Data.Char           (toLower)
-import           Data.List
 import           Data.Monoid
+import           Data.Text (Text)
+import qualified Data.Text as T
 import           Servant.Foreign
 import           Servant.JS.Internal
 
@@ -14,9 +15,9 @@ data AxiosOptions = AxiosOptions
     -- should be made using credentials
     withCredentials :: !Bool
     -- | the name of the cookie to use as a value for xsrf token
-  , xsrfCookieName  :: !(Maybe String)
+  , xsrfCookieName  :: !(Maybe Text)
     -- | the name of the header to use as a value for xsrf token
-  , xsrfHeaderName  :: !(Maybe String)
+  , xsrfHeaderName  :: !(Maybe Text)
   }
 
 -- | Default instance of the AxiosOptions
@@ -36,14 +37,14 @@ axios aopts = axiosWith aopts defCommonGeneratorOptions
 
 -- | Generate regular javascript functions that use the axios library.
 axiosWith :: AxiosOptions -> CommonGeneratorOptions -> JavaScriptGenerator
-axiosWith aopts opts = intercalate "\n\n" . map (generateAxiosJSWith aopts opts)
+axiosWith aopts opts = T.intercalate "\n\n" . map (generateAxiosJSWith aopts opts)
 
 -- | js codegen using axios library using default options
-generateAxiosJS :: AxiosOptions -> AjaxReq -> String
+generateAxiosJS :: AxiosOptions -> AjaxReq -> Text
 generateAxiosJS aopts = generateAxiosJSWith aopts defCommonGeneratorOptions
 
 -- | js codegen using axios library
-generateAxiosJSWith :: AxiosOptions -> CommonGeneratorOptions -> AjaxReq -> String
+generateAxiosJSWith :: AxiosOptions -> CommonGeneratorOptions -> AjaxReq -> Text
 generateAxiosJSWith aopts opts req = "\n" <>
     fname <> " = function(" <> argsStr <> ")\n"
  <> "{\n"
@@ -57,7 +58,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
  <> "    });\n"
  <> "}\n"
 
-  where argsStr = intercalate ", " args
+  where argsStr = T.intercalate ", " args
         args = captures
             ++ map (view argName) queryparams
             ++ body
@@ -101,30 +102,30 @@ generateAxiosJSWith aopts opts req = "\n" <>
             then ""
             else "    , headers: { " <> headersStr <> " }\n"
 
-          where headersStr = intercalate ", " $ map headerStr hs
-                headerStr header = "\"" ++
-                  headerArgName header ++
-                  "\": " ++ toJSHeader header
+          where headersStr = T.intercalate ", " $ map headerStr hs
+                headerStr header = "\"" <>
+                  headerArgName header <>
+                  "\": " <> toJSHeader header
 
         namespace =
                if hasNoModule
                   then "var "
                   else (moduleName opts) <> "."
                where
-                  hasNoModule = null (moduleName opts)
+                  hasNoModule = moduleName opts == ""
 
         fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
 
-        method = map toLower $ req ^. reqMethod
+        method = T.toLower $ req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
-           ++ urlPrefix opts
-           ++ urlArgs
-           ++ queryArgs
+           <> urlPrefix opts
+           <> urlArgs
+           <> queryArgs
 
         urlArgs = jsSegments
                 $ req ^.. reqUrl.path.traverse
 
         queryArgs = if null queryparams
                       then ""
-                      else " + '?" ++ jsParams queryparams
+                      else " + '?" <> jsParams queryparams

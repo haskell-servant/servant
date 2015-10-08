@@ -1,6 +1,7 @@
 HEAD
 ----
 
+* Use the `text` package instead of `String`.
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Added support for `path` on `BaseUrl`.
 * `client` now takes an explicit `Manager` argument.
