@@ -38,13 +38,13 @@ import           Test.Hspec                 (Spec, describe, it, shouldBe)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, post, request,
                                              shouldRespondWith, with, (<:>))
-import           Servant.API                ((:<|>) (..), (:>),
-                                             addHeader, Capture,
-                                             Delete, Get, Header (..), Headers,
-                                             HttpVersion, IsSecure(..), JSON, MatrixFlag,
-                                             MatrixParam, MatrixParams, Patch, PlainText,
-                                             Post, Put, RemoteHost, QueryFlag, QueryParam,
-                                             QueryParams, Raw, ReqBody)
+import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
+                                             Get, Header (..), Headers,
+                                             HttpVersion, IsSecure (..), JSON,
+                                             Patch, PlainText, Post, Put,
+                                             QueryFlag, QueryParam, QueryParams,
+                                             Raw, RemoteHost, ReqBody,
+                                             addHeader)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
@@ -95,7 +95,6 @@ spec = do
   putSpec
   patchSpec
   queryParamSpec
-  matrixParamSpec
   headerSpec
   rawSpec
   unionSpec
@@ -273,89 +272,6 @@ queryParamSpec = do
           liftIO $
             decode' (simpleBody response3') `shouldBe` Just alice{
               name = "Alice"
-             }
-
-type MatrixParamApi = "a" :> MatrixParam "name" String :> Get '[JSON] Person
-                :<|> "b" :> MatrixParams "names" String :> "bsub" :> MatrixParams "names" String :> Get '[JSON] Person
-                :<|> "c" :> MatrixFlag "capitalize" :> Get '[JSON] Person
-                :<|> "d" :> Capture "foo" Integer :> MatrixParam "name" String :> MatrixFlag "capitalize" :> "dsub" :> Get '[JSON] Person
-
-matrixParamApi :: Proxy MatrixParamApi
-matrixParamApi = Proxy
-
-mpServer :: Server MatrixParamApi
-mpServer = matrixParamServer :<|> mpNames :<|> mpCapitalize alice :<|> mpComplex
-  where mpNames (_:name2:_) _ = return alice { name = name2 }
-        mpNames _           _ = return alice
-
-        mpCapitalize p False = return p
-        mpCapitalize p True  = return p { name = map toUpper (name p) }
-
-        matrixParamServer (Just name) = return alice{name = name}
-        matrixParamServer Nothing = return alice
-
-        mpAge age p = return p { age = age }
-        mpComplex capture name cap = matrixParamServer name >>= flip mpCapitalize cap >>= mpAge capture
-
-matrixParamSpec :: Spec
-matrixParamSpec = do
-  describe "Servant.API.MatrixParam" $ do
-      it "allows to retrieve simple matrix parameters" $
-        (flip runSession) (serve matrixParamApi mpServer) $ do
-          response1 <- Network.Wai.Test.request defaultRequest{
-            pathInfo = ["a;name=bob"]
-           }
-          liftIO $ do
-            decode' (simpleBody response1) `shouldBe` Just alice{
-              name = "bob"
-             }
-
-      it "allows to retrieve lists in matrix parameters" $
-        (flip runSession) (serve matrixParamApi mpServer) $ do
-          response2 <- Network.Wai.Test.request defaultRequest{
-            pathInfo = ["b;names=bob;names=john", "bsub;names=anna;names=sarah"]
-           }
-          liftIO $
-            decode' (simpleBody response2) `shouldBe` Just alice{
-              name = "john"
-             }
-
-      it "allows to retrieve value-less matrix parameters" $
-        (flip runSession) (serve matrixParamApi mpServer) $ do
-          response3 <- Network.Wai.Test.request defaultRequest{
-            pathInfo = ["c;capitalize"]
-           }
-          liftIO $
-            decode' (simpleBody response3) `shouldBe` Just alice{
-              name = "ALICE"
-             }
-
-          response3' <- Network.Wai.Test.request defaultRequest{
-            pathInfo = ["c;capitalize="]
-           }
-          liftIO $
-            decode' (simpleBody response3') `shouldBe` Just alice{
-              name = "ALICE"
-             }
-
-      it "allows to retrieve matrix parameters on captured segments" $
-        (flip runSession) (serve matrixParamApi mpServer) $ do
-          response4 <- Network.Wai.Test.request defaultRequest{
-            pathInfo = ["d", "12;name=stephen;capitalize", "dsub"]
-           }
-          liftIO $
-            decode' (simpleBody response4) `shouldBe` Just alice{
-              name = "STEPHEN",
-              age = 12
-             }
-
-          response4' <- Network.Wai.Test.request defaultRequest{
-            pathInfo = ["d;ignored=1", "5", "dsub"]
-           }
-          liftIO $
-            decode' (simpleBody response4') `shouldBe` Just alice{
-              name = "Alice",
-              age = 5
              }
 
 type PostApi =

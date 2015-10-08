@@ -17,8 +17,6 @@ module Servant.API (
   -- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@
   module Servant.API.ReqBody,
   -- | Accessing the request body as a JSON-encoded type: @'ReqBody'@
-  module Servant.API.MatrixParam,
-  -- | Retrieving matrix parameters from the 'URI' segment: @'MatrixParam'@
   module Servant.API.RemoteHost,
   -- | Retrieving the IP of the client
   module Servant.API.IsSecure,
@@ -71,8 +69,6 @@ import           Servant.API.Get             (Get)
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
-import           Servant.API.MatrixParam     (MatrixFlag, MatrixParam,
-                                              MatrixParams)
 import           Servant.API.Patch           (Patch)
 import           Servant.API.Post            (Post)
 import           Servant.API.Put             (Put)

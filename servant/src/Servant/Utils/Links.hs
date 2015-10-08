@@ -117,7 +117,6 @@ import Web.HttpApiData
 import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
-import Servant.API.MatrixParam ( MatrixParam, MatrixParams, MatrixFlag )
 import Servant.API.Header ( Header )
 import Servant.API.Get ( Get )
 import Servant.API.Post ( Post )
@@ -173,9 +172,6 @@ type family IsElem endpoint api :: Constraint where
     IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
     IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
-    IsElem sa (MatrixParam x y :> sb)       = IsElem sa sb
-    IsElem sa (MatrixParams x y :> sb)      = IsElem sa sb
-    IsElem sa (MatrixFlag x :> sb)          = IsElem sa sb
     IsElem (Get ct typ) (Get ct' typ)       = IsSubList ct ct'
     IsElem (Post ct typ) (Post ct' typ)     = IsSubList ct ct'
     IsElem (Put ct typ) (Put ct' typ)       = IsSubList ct ct'
@@ -192,10 +188,9 @@ type family IsSubList a b :: Constraint where
     IsSubList (x ': xs) y    = IsSubList '[x] y `And` IsSubList xs y
 
 -- Phantom types for Param
-data Matrix
 data Query
 
--- | Query/Matrix param
+-- | Query param
 data Param a
     = SingleParam    String Text
     | ArrayElemParam String Text
@@ -208,21 +203,6 @@ addSegment seg l = l { _segments = _segments l <> [seg] }
 addQueryParam :: Param Query -> Link -> Link
 addQueryParam qp l =
     l { _queryParams = _queryParams l <> [qp] }
-
--- Not particularly efficient for many updates. Something to optimise if it's
--- a problem.
-addMatrixParam :: Param Matrix -> Link -> Link
-addMatrixParam param l = l { _segments = f (_segments l) }
-  where
-    f [] = []
-    f xs = init xs <> [g (last xs)]
-    -- Modify the segment at the "top" of the stack
-    g :: String -> String
-    g seg =
-        case param of
-            SingleParam k v    -> seg <> ";" <> k <> "=" <> escape (unpack v)
-            ArrayElemParam k v -> seg <> ";" <> k <> "[]=" <> escape (unpack v)
-            FlagParam k        -> seg <> ";" <> k
 
 linkURI :: Link -> URI
 linkURI (Link segments q_params) =
@@ -297,35 +277,6 @@ instance (KnownSymbol sym, HasLink sub)
         toLink (Proxy :: Proxy sub) l
     toLink _ l True =
         toLink (Proxy :: Proxy sub) $ addQueryParam (FlagParam k) l
-      where
-        k = symbolVal (Proxy :: Proxy sym)
-
--- MatrixParam instances
-instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
-    => HasLink (MatrixParam sym v :> sub) where
-    type MkLink (MatrixParam sym v :> sub) = Maybe v -> MkLink sub
-    toLink _ l mv =
-        toLink (Proxy :: Proxy sub) $
-            maybe id (addMatrixParam . SingleParam k . toQueryParam) mv l
-      where
-        k = symbolVal (Proxy :: Proxy sym)
-
-instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
-    => HasLink (MatrixParams sym v :> sub) where
-    type MkLink (MatrixParams sym v :> sub) = [v] -> MkLink sub
-    toLink _ l =
-        toLink (Proxy :: Proxy sub) .
-            foldl' (\l' v -> addMatrixParam (ArrayElemParam k (toQueryParam v)) l') l
-      where
-        k = symbolVal (Proxy :: Proxy sym)
-
-instance (KnownSymbol sym, HasLink sub)
-    => HasLink (MatrixFlag sym :> sub) where
-    type MkLink (MatrixFlag sym :> sub) = Bool -> MkLink sub
-    toLink _ l False =
-        toLink (Proxy :: Proxy sub) l
-    toLink _ l True =
-        toLink (Proxy :: Proxy sub) $ addMatrixParam (FlagParam k) l
       where
         k = symbolVal (Proxy :: Proxy sym)
 

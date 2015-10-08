@@ -37,7 +37,6 @@ library
     Servant.Server
     Servant.Server.Internal
     Servant.Server.Internal.Enter
-    Servant.Server.Internal.PathInfo
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServantErr

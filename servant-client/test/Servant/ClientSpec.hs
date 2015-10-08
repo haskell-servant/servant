@@ -96,9 +96,6 @@ type Api =
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
-  :<|> "matrixparam" :> MatrixParam "name" String :> Get '[JSON] Person
-  :<|> "matrixparams" :> MatrixParams "name" String :> Get '[JSON] [Person]
-  :<|> "matrixflag" :> MatrixFlag "flag" :> Get '[JSON] Bool
   :<|> "rawSuccess" :> Raw
   :<|> "rawFailure" :> Raw
   :<|> "multiple" :>
@@ -117,12 +114,6 @@ server = serve api (
        return alice
   :<|> return ()
   :<|> (\ name -> return $ Person name 0)
-  :<|> return
-  :<|> (\ name -> case name of
-                   Just "alice" -> return alice
-                   Just name -> throwE $ ServantErr 400 (name ++ " not found") "" []
-                   Nothing -> throwE $ ServantErr 400 "missing parameter" "" [])
-  :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
@@ -198,26 +189,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         let getQueryFlag = getNth (Proxy :: Proxy 6) $ client api baseUrl manager
         (left show <$> runExceptT (getQueryFlag flag)) `shouldReturn` Right flag
 
-    it "Servant.API.MatrixParam" $ \(_, baseUrl) -> do
-      let getMatrixParam = getNth (Proxy :: Proxy 7) $ client api baseUrl manager
-      left show <$> runExceptT (getMatrixParam (Just "alice")) `shouldReturn` Right alice
-      Left FailureResponse{..} <- runExceptT (getMatrixParam (Just "bob"))
-      responseStatus `shouldBe` Status 400 "bob not found"
-
-    it "Servant.API.MatrixParam.MatrixParams" $ \(_, baseUrl) -> do
-      let getMatrixParams = getNth (Proxy :: Proxy 8) $ client api baseUrl manager
-      left show <$> runExceptT (getMatrixParams []) `shouldReturn` Right []
-      left show <$> runExceptT (getMatrixParams ["alice", "bob"])
-        `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
-
-    context "Servant.API.MatrixParam.MatrixFlag" $
-      forM_ [False, True] $ \ flag ->
-      it (show flag) $ \(_, baseUrl) -> do
-        let getMatrixFlag = getNth (Proxy :: Proxy 9) $ client api baseUrl manager
-        left show <$> runExceptT (getMatrixFlag flag) `shouldReturn` Right flag
-
-    it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
-      let getRawSuccess = getNth (Proxy :: Proxy 10) $ client api baseUrl manager
+    it "Servant.API.Raw on success" $ do
       res <- runExceptT (getRawSuccess methodGet)
       case res of
         Left e -> assertFailure $ show e
