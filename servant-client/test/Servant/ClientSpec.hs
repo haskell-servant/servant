@@ -29,7 +29,7 @@ import           Control.Monad.Trans.Except
 import           Data.Aeson
 import           Data.Char
 import           Data.Foldable              (forM_)
-import           Data.Monoid
+import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
 import qualified Data.Text                  as T
 import           GHC.Generics
@@ -166,9 +166,9 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         let getDeleteEmpty = getNth (Proxy :: Proxy 1) $ client api baseUrl manager
         (left show <$> runExceptT getDeleteEmpty) `shouldReturn` Right ()
 
-      {-it "allows content type" $ \(_, baseUrl) -> do-}
-        {-let getDeleteContentType = getNth (Proxy :: Proxy 14) $ client api baseUrl manager-}
-        {-(left show <$> runExceptT getDeleteContentType) `shouldReturn` Right ()-}
+      it "allows content type" $ \(_, baseUrl) -> do
+        let getDeleteContentType = getLast $ client api baseUrl manager
+        (left show <$> runExceptT getDeleteContentType) `shouldReturn` Right ()
 
     it "Servant.API.Capture" $ \(_, baseUrl) -> do
       let getCapture = getNth (Proxy :: Proxy 2) $ client api baseUrl manager
@@ -350,8 +350,14 @@ class GetNth (n :: Nat) a b | n a -> b where
 instance GetNth 0 (x :<|> y) x where
     getNth _ (x :<|> _) = x
 
-{-instance GetNth 0 x x where-}
-    {-getNth _ = id-}
-
 instance (GetNth (n - 1) x y) => GetNth n (a :<|> x) y where
     getNth _ (_ :<|> x) = getNth (Proxy :: Proxy (n - 1)) x
+
+class GetLast a b | a -> b where
+    getLast :: a -> b
+
+instance (GetLast b c) => GetLast (a :<|> b) c where
+    getLast (_ :<|> b) = getLast b
+
+instance GetLast a a where
+    getLast a = a
