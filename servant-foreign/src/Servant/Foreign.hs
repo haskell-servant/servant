@@ -20,7 +20,6 @@ module Servant.Foreign
   ( HasForeign(..)
   , Segment(..)
   , SegmentType(..)
-  , MatrixArg
   , FunctionName
   , QueryArg(..)
   , HeaderArg(..)
@@ -47,15 +46,14 @@ module Servant.Foreign
   , module Servant.API
   ) where
 
-import           Control.Lens                  (makeLenses, (%~), (&), (.~),
-                                                (<>~), _last)
-import Data.Monoid ((<>))
-import Data.Text
-import Data.Proxy
-import GHC.Exts (Constraint)
-import GHC.TypeLits
-import Servant.API
-import Prelude hiding (concat)
+import           Control.Lens (makeLenses, (%~), (&), (.~), (<>~))
+import           Data.Monoid  ((<>))
+import           Data.Proxy
+import           Data.Text
+import           GHC.Exts     (Constraint)
+import           GHC.TypeLits
+import           Prelude      hiding (concat)
+import           Servant.API
 
 -- | Function name builder that simply concat each part together
 concatCase :: FunctionName -> Text
@@ -76,7 +74,7 @@ camelCase (p:ps) = concat $ p : camelCase' ps
 
 type Arg = Text
 
-data Segment = Segment { _segment :: SegmentType, _matrix :: [MatrixArg] }
+newtype Segment = Segment { _segment :: SegmentType  }
   deriving (Eq, Show)
 
 data SegmentType = Static Text  -- ^ a static path segment. like "/foo"
@@ -105,8 +103,6 @@ data HeaderArg = HeaderArg
     } deriving (Eq, Show)
 
 
-type MatrixArg = QueryArg
-
 data Url = Url
   { _path     :: Path
   , _queryStr :: [QueryArg]
@@ -132,12 +128,12 @@ makeLenses ''Url
 makeLenses ''Req
 
 isCapture :: Segment -> Bool
-isCapture (Segment (Cap _) _) = True
-isCapture                  _  = False
+isCapture (Segment (Cap _)) = True
+isCapture                _  = False
 
 captureArg :: Segment -> Arg
-captureArg (Segment (Cap s) _) = s
-captureArg                  _  = error "captureArg called on non capture"
+captureArg (Segment (Cap s)) = s
+captureArg                 _ = error "captureArg called on non capture"
 
 defReq :: Req
 defReq = Req defUrl "GET" [] False []
@@ -169,7 +165,7 @@ instance (KnownSymbol sym, HasForeign sublayout)
 
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Segment (Cap str) []]
+      req & reqUrl.path <>~ [Segment (Cap str)]
           & funcName %~ (++ ["by", str])
 
     where str = pack . symbolVal $ (Proxy :: Proxy sym)
@@ -242,37 +238,6 @@ instance (KnownSymbol sym, HasForeign sublayout)
 
     where str = pack . symbolVal $ (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, HasForeign sublayout)
-      => HasForeign (MatrixParam sym a :> sublayout) where
-  type Foreign (MatrixParam sym a :> sublayout) = Foreign sublayout
-
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path._last.matrix <>~ [QueryArg strArg Normal]
-
-    where str = pack . symbolVal $ (Proxy :: Proxy sym)
-          strArg = str <> "Value"
-
-instance (KnownSymbol sym, HasForeign sublayout)
-      => HasForeign (MatrixParams sym a :> sublayout) where
-  type Foreign (MatrixParams sym a :> sublayout) = Foreign sublayout
-
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path._last.matrix  <>~ [QueryArg str List]
-
-    where str = pack . symbolVal $ (Proxy :: Proxy sym)
-
-instance (KnownSymbol sym, HasForeign sublayout)
-      => HasForeign (MatrixFlag sym :> sublayout) where
-  type Foreign (MatrixFlag sym :> sublayout) = Foreign sublayout
-
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path._last.matrix  <>~ [QueryArg str Flag]
-
-    where str = pack . symbolVal $ (Proxy :: Proxy sym)
-
 instance HasForeign Raw where
   type Foreign Raw = Method -> Req
 
@@ -293,7 +258,7 @@ instance (KnownSymbol path, HasForeign sublayout)
 
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Segment (Static str) []]
+      req & reqUrl.path <>~ [Segment (Static str)]
           & funcName %~ (++ [str])
 
     where str = Data.Text.map (\c -> if c == '.' then '_' else c) . pack . symbolVal $ (Proxy :: Proxy path)

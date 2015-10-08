@@ -24,8 +24,7 @@ module Servant.Docs.Internal where
 import           Control.Applicative
 import           Control.Arrow              (second)
 import           Control.Lens               (makeLenses, over, traversed, (%~),
-                                             (&), (.~), (<>~), (^.), _1, _2,
-                                             _last, (|>))
+                                             (&), (.~), (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
@@ -546,7 +545,6 @@ markdown api = unlines $
           "" :
           notesStr (action ^. notes) ++
           capturesStr (action ^. captures) ++
-          mxParamsStr (action ^. mxParams) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
           rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
@@ -589,20 +587,6 @@ markdown api = unlines $
 
         captureStr cap =
           "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
-
-        mxParamsStr :: [(String, [DocQueryParam])] -> [String]
-        mxParamsStr [] = []
-        mxParamsStr l =
-          "#### Matrix Parameters:" :
-          "" :
-          map segmentStr l
-        segmentStr :: (String, [DocQueryParam]) -> String
-        segmentStr (segment, l) = unlines $
-          ("**" ++ segment ++ "**:") :
-          "" :
-          map paramStr l ++
-          "" :
-          []
 
         headersStr :: [Text] -> [String]
         headersStr [] = []
@@ -897,48 +881,6 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs sublayout)
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
 
-
-instance (KnownSymbol sym, ToParam (MatrixParam sym a), HasDocs sublayout)
-      => HasDocs (MatrixParam sym a :> sublayout) where
-
-  docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint', action')
-
-    where sublayoutP = Proxy :: Proxy sublayout
-          paramP = Proxy :: Proxy (MatrixParam sym a)
-          segment = endpoint ^. (path._last)
-          segment' = action ^. (mxParams._last._1)
-          endpoint' = over (path._last) (\p -> p ++ ";" ++ symbolVal symP ++ "=<value>") endpoint
-
-          action' = if segment' /= segment
-                    -- This is the first matrix parameter for this segment, insert a new entry into the mxParams list
-                    then over mxParams (|> (segment, [toParam paramP])) action
-                    -- We've already inserted a matrix parameter for this segment, append to the existing list
-                    else action & mxParams._last._2 <>~ [toParam paramP]
-          symP = Proxy :: Proxy sym
-
-
-instance (KnownSymbol sym, {- ToParam (MatrixParams sym a), -} HasDocs sublayout)
-      => HasDocs (MatrixParams sym a :> sublayout) where
-
-  docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint', action)
-
-    where sublayoutP = Proxy :: Proxy sublayout
-          endpoint' = over path (\p -> p ++ [";" ++ symbolVal symP ++ "=<value>"]) endpoint
-          symP = Proxy :: Proxy sym
-
-
-instance (KnownSymbol sym, {- ToParam (MatrixFlag sym), -} HasDocs sublayout)
-      => HasDocs (MatrixFlag sym :> sublayout) where
-
-  docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint', action)
-
-    where sublayoutP = Proxy :: Proxy sublayout
-
-          endpoint' = over path (\p -> p ++ [";" ++ symbolVal symP]) endpoint
-          symP = Proxy :: Proxy sym
 
 instance HasDocs Raw where
   docsFor _proxy (endpoint, action) _ =

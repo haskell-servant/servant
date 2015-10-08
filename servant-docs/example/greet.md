@@ -1,10 +1,10 @@
-#### On proper introductions.
+## On proper introductions.
 
 Hello there.
 
 As documentation is usually written for humans, it's often useful to introduce concepts with a few words.
 
-#### This title is below the last
+## This title is below the last
 
 You'll also note that multiple intros are possible.
 
@@ -19,12 +19,13 @@ You'll also note that multiple intros are possible.
 - Example: `application/json`
 
 ```javascript
-"Hello, haskeller!"
+"HELLO, HASKELLER"
 ```
 
 #### Response:
 
 - Status code 201
+- Headers: [("X-Example","1729")]
 
 - Supported content types are:
 
@@ -42,21 +43,43 @@ You'll also note that multiple intros are possible.
 "Hello, haskeller"
 ```
 
-## GET /hello;lang=<value>/:name
+## DELETE /greet/:greetid
+
+#### Title
+
+This is some text
+
+#### Second secton
+
+And some more
+
+#### Captures:
+
+- *greetid*: identifier of the greet msg to remove
+
+
+- This endpoint is sensitive to the value of the **unicorns** HTTP header.
+
+#### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json`
+
+- Response body as below.
+
+```javascript
+[]
+```
+
+## GET /hello/:name
 
 #### Captures:
 
 - *name*: name of the person to greet
-
-#### Matrix Parameters:
-
-**hello**:
-
-- lang
-     - **Values**: *en, sv, fr*
-     - **Description**: Get the greeting message selected language. Default is en.
-
-
 
 #### GET Parameters:
 
@@ -68,6 +91,7 @@ You'll also note that multiple intros are possible.
 #### Response:
 
 - Status code 200
+- Headers: []
 
 - Supported content types are:
 
@@ -97,28 +121,5 @@ You'll also note that multiple intros are possible.
 ```
 "Hello, haskeller"
 ```
-
-## DELETE /greet/:greetid
-
-#### Title
-
-This is some text
-
-#### Second secton
-
-And some more
-
-#### Captures:
-
-- *greetid*: identifier of the greet msg to remove
-
-
-- This endpoint is sensitive to the value of the **unicorns** HTTP header.
-
-#### Response:
-
-- Status code 200
-
-- No response body
 
 
