@@ -52,7 +52,7 @@ library
     , bytestring == 0.10.*
     , bytestring-conversion == 0.3.*
     , case-insensitive >= 1.2
-    , http-api-data
+    , http-api-data >= 0.1  && < 0.2
     , http-media >= 0.4 && < 0.7
     , http-types == 0.8.*
     , text >= 1 && < 2

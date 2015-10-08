@@ -34,7 +34,7 @@ library
     , attoparsec
     , bytestring
     , exceptions
-    , http-api-data
+    , http-api-data >= 0.1  && < 0.2
     , http-client
     , http-client-tls
     , http-media
