@@ -32,12 +32,19 @@ data BaseUrl = BaseUrl
   , baseUrlHost   :: String   -- ^ host (eg "haskell.org")
   , baseUrlPort   :: Int      -- ^ port (eg 80)
   , baseUrlPath   :: String   -- ^ path (eg "/a/b/c")
-  } deriving (Show, Eq, Ord, Generic)
+  } deriving (Show, Ord, Generic)
+
+instance Eq BaseUrl where
+    BaseUrl a b c path == BaseUrl a' b' c' path'
+        = a == a' && b == b' && c == c' && s path == s path'
+        where s ('/':x) = x
+              s x       = x
 
 showBaseUrl :: BaseUrl -> String
 showBaseUrl (BaseUrl urlscheme host port path) =
-  schemeString ++ "//" ++ host ++ portString ++ path
+  schemeString ++ "//" ++ host ++ (portString </> path)
     where
+      a </> b = if "/" `isPrefixOf` b || null b then a ++ b else a ++ '/':b
       schemeString = case urlscheme of
         Http  -> "http:"
         Https -> "https:"

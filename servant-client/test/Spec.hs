@@ -1,7 +1,1 @@
-import           Servant.ClientSpec (failSpec, spec)
-
-main :: IO ()
-main = do
-  spec
-  failSpec
-
+{-# OPTIONS_GHC -F -pgmF hspec-discover #-}
