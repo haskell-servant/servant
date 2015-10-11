@@ -6,6 +6,7 @@ HEAD
 * Added support for `path` on `BaseUrl`.
 * `client` now takes an explicit `Manager` argument.
 * Use `http-api-data` instead of `Servant.Common.Text`
+* Client functions now consider any 2xx succesful.
 
 0.4.1
 -----
