@@ -11,7 +11,7 @@ import           Data.Typeable (Typeable)
 -- Example:
 --
 -- >>>            -- DELETE /books/:isbn
--- >>> type MyApi = "books" :> Capture "isbn" Text :> Delete
+-- >>> type MyApi = "books" :> Capture "isbn" Text :> Delete '[] ()
 data Delete (contentTypes :: [*]) a
   deriving Typeable
 
