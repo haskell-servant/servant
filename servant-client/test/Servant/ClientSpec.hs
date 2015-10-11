@@ -226,7 +226,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           C.responseBody response `shouldBe` body
           C.responseStatus response `shouldBe` ok200
 
-    it "Servant.API.Raw should return a Left in case of failure" $ do
+    it "Servant.API.Raw should return a Left in case of failure" $ \(_, baseUrl) -> do
       let getRawFailure = getNth (Proxy :: Proxy 11) $ client api baseUrl manager
       res <- runExceptT (getRawFailure methodGet)
       case res of
