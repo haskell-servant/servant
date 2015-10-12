@@ -26,9 +26,7 @@ data Router' a =
       -- ^ left-biased choice between two routers
   deriving Functor
 
--- | Apply a function to the result of a router in functor style.  The result contains the failure
--- cases so one use case is to turn failures into middleware response values with appropriate status
--- codes, message bodies, etc.
+-- | Apply a transformation to the response of a `Router`.
 tweakResponse :: (RouteResult Response -> RouteResult Response) -> Router -> Router
 tweakResponse f = fmap (\a -> \req cont -> a req (cont . f))
 
