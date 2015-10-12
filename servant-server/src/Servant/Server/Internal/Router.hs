@@ -4,7 +4,7 @@ import           Data.Map                                   (Map)
 import qualified Data.Map                                   as M
 import           Data.Monoid                                ((<>))
 import           Data.Text                                  (Text)
-import           Network.Wai                                (Request, pathInfo)
+import           Network.Wai                                (Request, Response, pathInfo)
 import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.RoutingApplication
 
@@ -20,6 +20,13 @@ data Router =
       -- ^ to be used for routes that match an empty path
   | Choice        Router Router
       -- ^ left-biased choice between two routers
+
+fmapRouter :: (RouteResult Response -> RouteResult Response) -> Router -> Router
+fmapRouter f (LeafRouter a) = LeafRouter $ \req cont -> a req (cont . f)
+fmapRouter f (StaticRouter m) = StaticRouter (fmapRouter f <$> m)
+fmapRouter f (DynamicRouter d) = DynamicRouter (fmapRouter f <$> d)
+fmapRouter f (Choice r1 r2) = Choice (fmapRouter f r1) (fmapRouter f r2)
+fmapRouter f (WithRequest g) = WithRequest (fmapRouter f . g)
 
 -- | Smart constructor for the choice between routers.
 -- We currently optimize the following cases:
@@ -69,4 +76,3 @@ runRouter (Choice r1 r2)       request respond =
       then runRouter r2 request $ \ mResponse2 ->
              respond (mResponse1 <> mResponse2)
       else respond mResponse1
-
