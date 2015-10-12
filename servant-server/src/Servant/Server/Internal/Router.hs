@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module Servant.Server.Internal.Router where
 
 import           Data.Map                                   (Map)
@@ -8,25 +10,27 @@ import           Network.Wai                                (Request, Response, 
 import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.RoutingApplication
 
+type Router = Router' RoutingApplication
+
 -- | Internal representation of a router.
-data Router =
+data Router' a =
     WithRequest   (Request -> Router)
       -- ^ current request is passed to the router
   | StaticRouter  (Map Text Router)
       -- ^ first path component used for lookup and removed afterwards
   | DynamicRouter (Text -> Router)
       -- ^ first path component used for lookup and removed afterwards
-  | LeafRouter    RoutingApplication
+  | LeafRouter    a
       -- ^ to be used for routes that match an empty path
   | Choice        Router Router
       -- ^ left-biased choice between two routers
+  deriving Functor
 
-fmapRouter :: (RouteResult Response -> RouteResult Response) -> Router -> Router
-fmapRouter f (LeafRouter a) = LeafRouter $ \req cont -> a req (cont . f)
-fmapRouter f (StaticRouter m) = StaticRouter (fmapRouter f <$> m)
-fmapRouter f (DynamicRouter d) = DynamicRouter (fmapRouter f <$> d)
-fmapRouter f (Choice r1 r2) = Choice (fmapRouter f r1) (fmapRouter f r2)
-fmapRouter f (WithRequest g) = WithRequest (fmapRouter f . g)
+-- | Apply a function to the result of a router in functor style.  The result contains the failure
+-- cases so one use case is to turn failures into middleware response values with appropriate status
+-- codes, message bodies, etc.
+tweakResponse :: (RouteResult Response -> RouteResult Response) -> Router -> Router
+tweakResponse f = fmap (\a -> \req cont -> a req (cont . f))
 
 -- | Smart constructor for the choice between routers.
 -- We currently optimize the following cases:
