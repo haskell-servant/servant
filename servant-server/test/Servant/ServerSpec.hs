@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE OverloadedStrings    #-}
@@ -8,7 +9,9 @@
 
 module Servant.ServerSpec where
 
-
+#if !MIN_VERSION_base(4,8,0)
+import           Control.Applicative        ((<$>))
+#endif
 import           Control.Monad              (forM_, when)
 import           Control.Monad.Trans.Except (ExceptT, throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
@@ -23,10 +26,12 @@ import           GHC.Generics               (Generic)
 import           Network.HTTP.Types         (hAccept, hContentType,
                                              methodDelete, methodGet, methodHead,
                                              methodPatch, methodPost, methodPut,
-                                             ok200, parseQuery, status409)
+                                             ok200, parseQuery, status409,
+                                             Status(..))
 import           Network.Wai                (Application, Request, pathInfo,
                                              queryString, rawQueryString,
-                                             responseLBS)
+                                             responseLBS, responseBuilder)
+import           Network.Wai.Internal       (Response(ResponseBuilder))
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody)
 import           Test.Hspec                 (Spec, describe, it, shouldBe)
@@ -41,8 +46,12 @@ import           Servant.API                ((:<|>) (..), (:>),
                                              Post, Put, RemoteHost, QueryFlag, QueryParam,
                                              QueryParams, Raw, ReqBody)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
+import           Servant.Server.Internal.Router
+                                            (tweakResponse, runRouter,
+                                             Router, Router'(LeafRouter))
 import           Servant.Server.Internal.RoutingApplication
-                                            (RouteMismatch (..))
+                                            (RouteResult(..), RouteMismatch(..),
+                                             toApplication)
 
 
 -- * test data types
@@ -92,6 +101,7 @@ spec = do
   unionSpec
   prioErrorsSpec
   errorsSpec
+  routerSpec
   responseHeadersSpec
   miscReqCombinatorsSpec
 
@@ -696,6 +706,24 @@ errorsSpec = do
       nf <> he `shouldBe` he
       nf <> ib `shouldBe` ib
       nf <> wm `shouldBe` wm
+
+routerSpec :: Spec
+routerSpec = do
+  describe "Servant.Server.Internal.Router" $ do
+    let app' :: Application
+        app' = toApplication $ runRouter router'
+
+        router', router :: Router
+        router' = tweakResponse (twk <$>) router
+        router = LeafRouter $ \_ cont -> cont (RR . Right $ responseBuilder (Status 201 "") [] "")
+
+        twk :: Response -> Response
+        twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b
+        twk b = b
+
+    describe "tweakResponse" . with (return app') $ do
+      it "calls f on route result" $ do
+        get "" `shouldRespondWith` 202
 
 type MiscCombinatorsAPI
   =    "version" :> HttpVersion :> Get '[JSON] String
