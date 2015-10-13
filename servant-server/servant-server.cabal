@@ -45,7 +45,7 @@ library
       , attoparsec         >= 0.12 && < 0.14
       , bytestring         >= 0.10 && < 0.11
       , either             >= 4.3  && < 4.5
-      , http-types         >= 0.8  && < 0.9
+      , http-types         >= 0.8  && < 0.10
       , network-uri        >= 2.6  && < 2.7
       , mtl                >= 2    && < 3
       , mmorph             >= 1
