@@ -26,12 +26,10 @@ module Servant.ClientSpec where
 import           Control.Applicative        ((<$>))
 #endif
 import           Control.Arrow              (left)
-import           Control.Concurrent         (forkIO, killThread, newEmptyMVar,
-                                             putMVar, readMVar)
-import           Control.Exception          (bracket, finally)
+import           Control.Concurrent         (forkIO, killThread, ThreadId)
+import           Control.Exception          (bracket)
 import           Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import           Data.Aeson
-import           Data.Char
 import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
@@ -41,9 +39,8 @@ import           GHC.Generics               (Generic)
 import           GHC.TypeLits
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
-import           Network.HTTP.Types         (Method, Status (..), badRequest400,
-                                             methodGet, ok200)
-import qualified Network.HTTP.Types         as HTTP
+import           Network.HTTP.Types         (Status (..), badRequest400,
+                                             methodGet, ok200, status400)
 import           Network.Socket
 import           Network.Wai                (Application, responseLBS)
 import           Network.Wai.Handler.Warp
@@ -194,7 +191,8 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         let getQueryFlag = getNth (Proxy :: Proxy 6) $ client api baseUrl manager
         (left show <$> runExceptT (getQueryFlag flag)) `shouldReturn` Right flag
 
-    it "Servant.API.Raw on success" $ do
+    it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
+      let getRawSuccess = getNth (Proxy :: Proxy 7) $ client api baseUrl manager
       res <- runExceptT (getRawSuccess methodGet)
       case res of
         Left e -> assertFailure $ show e
@@ -204,7 +202,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           C.responseStatus response `shouldBe` ok200
 
     it "Servant.API.Raw should return a Left in case of failure" $ \(_, baseUrl) -> do
-      let getRawFailure = getNth (Proxy :: Proxy 11) $ client api baseUrl manager
+      let getRawFailure = getNth (Proxy :: Proxy 8) $ client api baseUrl manager
       res <- runExceptT (getRawFailure methodGet)
       case res of
         Right _ -> assertFailure "expected Left, but got Right"
@@ -213,7 +211,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           Servant.Client.responseBody e `shouldBe` "rawFailure"
 
     it "Returns headers appropriately" $ \(_, baseUrl) -> do
-      let getRespHeaders = getNth (Proxy :: Proxy 13) $ client api baseUrl manager
+      let getRespHeaders = getNth (Proxy :: Proxy 10) $ client api baseUrl manager
       res <- runExceptT getRespHeaders
       case res of
         Left e -> assertFailure $ show e
@@ -221,7 +219,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
-        let getMultiple = getNth (Proxy :: Proxy 12) $ client api baseUrl manager
+        let getMultiple = getNth (Proxy :: Proxy 9) $ client api baseUrl manager
         in property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
           ioProperty $ do
             result <- left show <$> runExceptT (getMultiple cap num flag body)
