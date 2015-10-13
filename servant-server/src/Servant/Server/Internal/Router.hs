@@ -1,25 +1,34 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module Servant.Server.Internal.Router where
 
 import           Data.Map                                   (Map)
 import qualified Data.Map                                   as M
 import           Data.Monoid                                ((<>))
 import           Data.Text                                  (Text)
-import           Network.Wai                                (Request, pathInfo)
+import           Network.Wai                                (Request, Response, pathInfo)
 import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.RoutingApplication
 
+type Router = Router' RoutingApplication
+
 -- | Internal representation of a router.
-data Router =
+data Router' a =
     WithRequest   (Request -> Router)
       -- ^ current request is passed to the router
   | StaticRouter  (Map Text Router)
       -- ^ first path component used for lookup and removed afterwards
   | DynamicRouter (Text -> Router)
       -- ^ first path component used for lookup and removed afterwards
-  | LeafRouter    RoutingApplication
+  | LeafRouter    a
       -- ^ to be used for routes that match an empty path
   | Choice        Router Router
       -- ^ left-biased choice between two routers
+  deriving Functor
+
+-- | Apply a transformation to the response of a `Router`.
+tweakResponse :: (RouteResult Response -> RouteResult Response) -> Router -> Router
+tweakResponse f = fmap (\a -> \req cont -> a req (cont . f))
 
 -- | Smart constructor for the choice between routers.
 -- We currently optimize the following cases:
@@ -69,4 +78,3 @@ runRouter (Choice r1 r2)       request respond =
       then runRouter r2 request $ \ mResponse2 ->
              respond (mResponse1 <> mResponse2)
       else respond mResponse1
-

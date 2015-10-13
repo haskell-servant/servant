@@ -33,7 +33,7 @@ module Servant.Server
   , embedNat
   , squashNat
   , generalizeNat
-
+  , tweakResponse
 
     -- * Default error type
   , ServantErr(..)
