@@ -36,29 +36,16 @@ import           Network.Wai.Test           (defaultRequest, request,
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Get, Header (..), Headers,
                                              HttpVersion, IsSecure (..), JSON,
-                                             MatrixFlag, MatrixParam,
-                                             MatrixParams, Patch, PlainText,
-                                             Post, Put, QueryFlag, QueryParam,
-                                             QueryParams, Raw, RemoteHost,
-                                             ReqBody, addHeader)
-import           Servant.Server             (ServantErr (..), Server, err404,
-                                             serve)
-import           Test.Hspec                 (Spec, describe, it, shouldBe)
-import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
-                                             matchStatus, post, request,
-                                             shouldRespondWith, with, (<:>))
-<<<<<<< HEAD
-import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
-                                             Get, Header (..), Headers,
-                                             HttpVersion, IsSecure (..), JSON,
                                              Patch, PlainText, Post, Put,
                                              QueryFlag, QueryParam, QueryParams,
                                              Raw, RemoteHost, ReqBody,
                                              addHeader)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
-=======
+import           Test.Hspec                 (Spec, describe, it, shouldBe)
+import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
+                                             matchStatus, post, request,
+                                             shouldRespondWith, with, (<:>))
 import           Servant.Server.Internal.RoutingApplication (toApplication, RouteResult(..))
->>>>>>> Rebase cleanup and test fixes.
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))

@@ -7,9 +7,7 @@ HEAD
 * Remove matrix params.
 * Remove `RouteMismatch`.
 * Redefined constructors of `RouteResult`.
-* Add `failFatallyWith`.
-* Make all (framework-generated) HTTP errors except 404 and 405 not try other
-  handlers.
+* Added `Delayed` and related functions (`addMethodCheck`, `addAcceptCheck`, `addBodyCheck`, `runDelayed`)
 
 0.4.1
 -----

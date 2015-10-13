@@ -6,7 +6,6 @@ import           Data.Map                                   (Map)
 import qualified Data.Map                                   as M
 import           Data.Text                                  (Text)
 import           Network.Wai                                (Request, Response, pathInfo)
-import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 

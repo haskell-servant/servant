@@ -95,6 +95,7 @@ test-suite spec
       Servant.Server.Internal.EnterSpec
       Servant.ServerSpec
       Servant.Utils.StaticFilesSpec
+      Servant.Server.ErrorSpec
   build-depends:
       base == 4.*
     , aeson

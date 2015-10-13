@@ -8,9 +8,7 @@
 module Servant.Server.Internal.RoutingApplication where
 
 #if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative                (Applicative, (<$>))
-import           Data.Monoid                        (Monoid, mappend, mempty,
-                                                     (<>))
+import           Control.Applicative                ((<$>))
 #endif
 import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
 import qualified Data.ByteString                    as B
@@ -69,8 +67,6 @@ toApplication ra request respond = do
   routingRespond (FailFatal err) = respond $ responseServantErr err
   routingRespond (Route v)       = respond v
 
--- TODO: The above may not be quite right yet.
---
 -- We currently mix up the order in which we perform checks
 -- and the priority with which errors are reported.
 --
@@ -162,7 +158,8 @@ data Delayed :: * -> * where
           -> (a -> b -> RouteResult c)
           -> Delayed c
 
-deriving instance Functor Delayed
+instance Functor Delayed where
+   fmap f (Delayed a b c g) = Delayed a b c ((fmap.fmap.fmap) f g)
 
 -- | Add a capture to the end of the capture block.
 addCapture :: Delayed (a -> b)
