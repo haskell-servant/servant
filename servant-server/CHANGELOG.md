@@ -4,6 +4,7 @@ HEAD
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Drop `EitherT` in favor of `ExceptT`
 * Use `http-api-data` instead of `Servant.Common.Text`
+* Remove matrix params.
 
 0.4.1
 -----
