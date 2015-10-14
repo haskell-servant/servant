@@ -14,7 +14,6 @@
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
-  , module Servant.Server.Internal.PathInfo
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
   , module Servant.Server.Internal.ServantErr
@@ -31,8 +30,6 @@ import           Data.Maybe                  (mapMaybe, fromMaybe)
 import           Data.String                 (fromString)
 import           Data.String.Conversions     (cs, (<>), ConvertibleStrings)
 import           Data.Text                   (Text)
-import qualified Data.Text                   as T
-import           Data.Text.Encoding          (encodeUtf8)
 import           Data.Typeable
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
@@ -41,11 +38,10 @@ import           Network.Wai                 (Application, lazyRequestBody,
                                               rawQueryString, requestHeaders,
                                               requestMethod, responseLBS, remoteHost,
                                               isSecure, vault, httpVersion, Response,
-                                              Request)
+                                              Request, pathInfo)
 import           Servant.API                 ((:<|>) (..), (:>), Capture,
                                               Delete, Get, Header,
-                                              IsSecure(..), MatrixFlag, MatrixParam,
-                                              MatrixParams, Patch, Post, Put,
+                                              IsSecure(..), Patch, Post, Put,
                                               QueryFlag, QueryParam, QueryParams,
                                               Raw, RemoteHost, ReqBody, Vault)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
@@ -54,7 +50,6 @@ import           Servant.API.ContentTypes    (AcceptHeader (..),
 import           Servant.API.ResponseHeaders (Headers, getResponse, GetHeaders,
                                               getHeaders)
 
-import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
@@ -548,123 +543,6 @@ instance (KnownSymbol sym, HasServer sublayout)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
 
-parseMatrixText :: B.ByteString -> QueryText
-parseMatrixText = parseQueryText
-
--- | If you use @'MatrixParam' "author" Text@ in one of the endpoints for your API,
--- this automatically requires your server-side handler to be a function
--- that takes an argument of type @'Maybe' 'Text'@.
---
--- This lets servant worry about looking it up in the query string
--- and turning it into a value of the type you specify, enclosed
--- in 'Maybe', because it may not be there and servant would then
--- hand you 'Nothing'.
---
--- You can control how it'll be converted from 'Text' to your type
--- by simply providing an instance of 'FromHttpApiData' for your type.
---
--- Example:
---
--- > type MyApi = "books" :> MatrixParam "author" Text :> Get [Book]
--- >
--- > server :: Server MyApi
--- > server = getBooksBy
--- >   where getBooksBy :: Maybe Text -> ExceptT ServantErr IO [Book]
--- >         getBooksBy Nothing       = ...return all books...
--- >         getBooksBy (Just author) = ...return books by the given author...
-instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
-      => HasServer (MatrixParam sym a :> sublayout) where
-
-  type ServerT (MatrixParam sym a :> sublayout) m =
-    Maybe a -> ServerT sublayout m
-
-  route Proxy subserver = WithRequest $ \ request ->
-    case parsePathInfo request of
-      (first : _)
-        -> do let querytext = parseMatrixText . encodeUtf8 $ T.tail first
-                  param = case lookup paramname querytext of
-                    Nothing       -> Nothing -- param absent from the query string
-                    Just Nothing  -> Nothing -- param present with no value -> Nothing
-                    Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
-                                          -- the right type
-              route (Proxy :: Proxy sublayout) (feedTo subserver param)
-      _   -> route (Proxy :: Proxy sublayout) (feedTo subserver Nothing)
-
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
-
--- | If you use @'MatrixParams' "authors" Text@ in one of the endpoints for your API,
--- this automatically requires your server-side handler to be a function
--- that takes an argument of type @['Text']@.
---
--- This lets servant worry about looking up 0 or more values in the query string
--- associated to @authors@ and turning each of them into a value of
--- the type you specify.
---
--- You can control how the individual values are converted from 'Text' to your type
--- by simply providing an instance of 'FromHttpApiData' for your type.
---
--- Example:
---
--- > type MyApi = "books" :> MatrixParams "authors" Text :> Get [Book]
--- >
--- > server :: Server MyApi
--- > server = getBooksBy
--- >   where getBooksBy :: [Text] -> ExceptT ServantErr IO [Book]
--- >         getBooksBy authors = ...return all books by these authors...
-instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
-      => HasServer (MatrixParams sym a :> sublayout) where
-
-  type ServerT (MatrixParams sym a :> sublayout) m =
-    [a] -> ServerT sublayout m
-
-  route Proxy subserver = WithRequest $ \ request ->
-    case parsePathInfo request of
-      (first : _)
-        -> do let matrixtext = parseMatrixText . encodeUtf8 $ T.tail first
-                  -- if sym is "foo", we look for matrix parameters
-                  -- named "foo" or "foo[]" and call parseQueryParam on the
-                  -- corresponding values
-                  parameters = filter looksLikeParam matrixtext
-                  values = mapMaybe (convert . snd) parameters
-              route (Proxy :: Proxy sublayout) (feedTo subserver values)
-      _ -> route (Proxy :: Proxy sublayout) (feedTo subserver [])
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
-          looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
-          convert Nothing = Nothing
-          convert (Just v) = parseQueryParamMaybe v
-
--- | If you use @'MatrixFlag' "published"@ in one of the endpoints for your API,
--- this automatically requires your server-side handler to be a function
--- that takes an argument of type 'Bool'.
---
--- Example:
---
--- > type MyApi = "books" :> MatrixFlag "published" :> Get [Book]
--- >
--- > server :: Server MyApi
--- > server = getBooks
--- >   where getBooks :: Bool -> ExceptT ServantErr IO [Book]
--- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
-instance (KnownSymbol sym, HasServer sublayout)
-      => HasServer (MatrixFlag sym :> sublayout) where
-
-  type ServerT (MatrixFlag sym :> sublayout) m =
-    Bool -> ServerT sublayout m
-
-  route Proxy subserver = WithRequest $ \ request ->
-    case parsePathInfo request of
-      (first : _)
-        -> do let matrixtext = parseMatrixText . encodeUtf8 $ T.tail first
-                  param = case lookup paramname matrixtext of
-                    Just Nothing  -> True  -- param is there, with no value
-                    Just (Just v) -> examine v -- param with a value
-                    Nothing       -> False -- param not in the query string
-              route (Proxy :: Proxy sublayout) (feedTo subserver param)
-      _ -> route (Proxy :: Proxy sublayout) (feedTo subserver False)
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
-          examine v | v == "true" || v == "1" || v == "" = True
-                    | otherwise = False
-
 -- | Just pass the request to the underlying application and serve its response.
 --
 -- Example:
@@ -761,6 +639,12 @@ instance HasServer api => HasServer (HttpVersion :> api) where
 
   route Proxy subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) (feedTo subserver $ httpVersion req)
+
+pathIsEmpty :: Request -> Bool
+pathIsEmpty = go . pathInfo
+  where go []   = True
+        go [""] = True
+        go _    = False
 
 ct_wildcard :: B.ByteString
 ct_wildcard = "*" <> "/" <> "*" -- Because CPP

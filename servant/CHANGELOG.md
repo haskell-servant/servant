@@ -5,6 +5,7 @@ HEAD
 * Fix safeLink, so Header is not in fact required.
 * Add more instances for (:<|>)
 * Use `http-api-data` instead of `Servant.Common.Text`
+* Remove matrix params.
 
 0.4.2
 -----

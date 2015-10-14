@@ -136,17 +136,6 @@ instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
 instance (KnownSymbol s, HasMock rest) => HasMock (QueryFlag s :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
-instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
-      => HasMock (MatrixParam s a :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
-
-instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
-      => HasMock (MatrixParams s a :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
-
-instance (KnownSymbol s, HasMock rest) => HasMock (MatrixFlag s :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
-
 instance (KnownSymbol h, FromHttpApiData a, HasMock rest) => HasMock (Header h a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 

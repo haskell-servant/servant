@@ -46,13 +46,6 @@ instance ToParam (QueryParam "capital" Bool) where
                   \Default is false."
                   Normal
 
-instance ToParam (MatrixParam "lang" String) where
-  toParam _ =
-    DocQueryParam "lang"
-                  ["en", "sv", "fr"]
-                  "Get the greeting message selected language. Default is en."
-                  Normal
-
 instance ToSample Greet where
   toSamples _ =
     [ ("If you use ?capital=true", Greet "HELLO, HASKELLER")
@@ -81,7 +74,7 @@ intro2 = DocIntro "This title is below the last"
 -- API specification
 type TestApi =
        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON or PlainText
-       "hello" :> MatrixParam "lang" String :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON, PlainText] Greet
+       "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON, PlainText] Greet
 
        -- POST /greet with a Greet as JSON in the request body,
        --             returns a Greet as JSON

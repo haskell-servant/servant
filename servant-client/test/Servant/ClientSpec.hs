@@ -18,6 +18,7 @@
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -fcontext-stack=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 module Servant.ClientSpec where
 
@@ -25,22 +26,23 @@ module Servant.ClientSpec where
 import           Control.Applicative        ((<$>))
 #endif
 import           Control.Arrow              (left)
-import           Control.Concurrent
-import           Control.Exception
-import           Control.Monad.Trans.Except
+import           Control.Concurrent         (forkIO, killThread, ThreadId)
+import           Control.Exception          (bracket)
+import           Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import           Data.Aeson
-import           Data.Char
+import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
 import qualified Data.Text                  as T
-import           GHC.Generics
+import           GHC.Generics               (Generic)
 import           GHC.TypeLits
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
-import           Network.HTTP.Types         hiding (Header)
+import           Network.HTTP.Types         (Status (..), badRequest400,
+                                             methodGet, ok200, status400)
 import           Network.Socket
-import           Network.Wai                hiding (Response)
+import           Network.Wai                (Application, responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.Hspec
@@ -96,9 +98,6 @@ type Api =
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
-  :<|> "matrixparam" :> MatrixParam "name" String :> Get '[JSON] Person
-  :<|> "matrixparams" :> MatrixParams "name" String :> Get '[JSON] [Person]
-  :<|> "matrixflag" :> MatrixFlag "flag" :> Get '[JSON] Bool
   :<|> "rawSuccess" :> Raw
   :<|> "rawFailure" :> Raw
   :<|> "multiple" :>
@@ -120,13 +119,7 @@ server = serve api (
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
-                   Just name -> throwE $ ServantErr 400 (name ++ " not found") "" []
-                   Nothing -> throwE $ ServantErr 400 "missing parameter" "" [])
-  :<|> (\ names -> return (zipWith Person names [0..]))
-  :<|> return
-  :<|> (\ name -> case name of
-                   Just "alice" -> return alice
-                   Just name -> throwE $ ServantErr 400 (name ++ " not found") "" []
+                   Just n -> throwE $ ServantErr 400 (n ++ " not found") "" []
                    Nothing -> throwE $ ServantErr 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
@@ -198,26 +191,8 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         let getQueryFlag = getNth (Proxy :: Proxy 6) $ client api baseUrl manager
         (left show <$> runExceptT (getQueryFlag flag)) `shouldReturn` Right flag
 
-    it "Servant.API.MatrixParam" $ \(_, baseUrl) -> do
-      let getMatrixParam = getNth (Proxy :: Proxy 7) $ client api baseUrl manager
-      left show <$> runExceptT (getMatrixParam (Just "alice")) `shouldReturn` Right alice
-      Left FailureResponse{..} <- runExceptT (getMatrixParam (Just "bob"))
-      responseStatus `shouldBe` Status 400 "bob not found"
-
-    it "Servant.API.MatrixParam.MatrixParams" $ \(_, baseUrl) -> do
-      let getMatrixParams = getNth (Proxy :: Proxy 8) $ client api baseUrl manager
-      left show <$> runExceptT (getMatrixParams []) `shouldReturn` Right []
-      left show <$> runExceptT (getMatrixParams ["alice", "bob"])
-        `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
-
-    context "Servant.API.MatrixParam.MatrixFlag" $
-      forM_ [False, True] $ \ flag ->
-      it (show flag) $ \(_, baseUrl) -> do
-        let getMatrixFlag = getNth (Proxy :: Proxy 9) $ client api baseUrl manager
-        left show <$> runExceptT (getMatrixFlag flag) `shouldReturn` Right flag
-
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
-      let getRawSuccess = getNth (Proxy :: Proxy 10) $ client api baseUrl manager
+      let getRawSuccess = getNth (Proxy :: Proxy 7) $ client api baseUrl manager
       res <- runExceptT (getRawSuccess methodGet)
       case res of
         Left e -> assertFailure $ show e
@@ -227,7 +202,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           C.responseStatus response `shouldBe` ok200
 
     it "Servant.API.Raw should return a Left in case of failure" $ \(_, baseUrl) -> do
-      let getRawFailure = getNth (Proxy :: Proxy 11) $ client api baseUrl manager
+      let getRawFailure = getNth (Proxy :: Proxy 8) $ client api baseUrl manager
       res <- runExceptT (getRawFailure methodGet)
       case res of
         Right _ -> assertFailure "expected Left, but got Right"
@@ -236,7 +211,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           Servant.Client.responseBody e `shouldBe` "rawFailure"
 
     it "Returns headers appropriately" $ \(_, baseUrl) -> do
-      let getRespHeaders = getNth (Proxy :: Proxy 13) $ client api baseUrl manager
+      let getRespHeaders = getNth (Proxy :: Proxy 10) $ client api baseUrl manager
       res <- runExceptT getRespHeaders
       case res of
         Left e -> assertFailure $ show e
@@ -244,7 +219,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
-        let getMultiple = getNth (Proxy :: Proxy 12) $ client api baseUrl manager
+        let getMultiple = getNth (Proxy :: Proxy 9) $ client api baseUrl manager
         in property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
           ioProperty $ do
             result <- left show <$> runExceptT (getMultiple cap num flag body)

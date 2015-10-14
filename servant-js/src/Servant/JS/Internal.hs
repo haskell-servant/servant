@@ -9,7 +9,6 @@ module Servant.JS.Internal
   , segmentTypeToStr
   , jsParams
   , jsGParams
-  , jsMParams
   , paramToStr
   , toValidFunctionName
   , toJSHeader
@@ -92,7 +91,7 @@ toValidFunctionName :: Text -> Text
 toValidFunctionName t =
   case T.uncons t of
     Just (x,xs) ->
-      setFirstChar x `T.cons` T.filter remainder xs 
+      setFirstChar x `T.cons` T.filter remainder xs
     Nothing -> "_"
   where
     setFirstChar c = if firstChar c then c else '_'
@@ -105,7 +104,7 @@ toValidFunctionName t =
                       , Set.titlecaseLetter
                       , Set.modifierLetter
                       , Set.otherLetter
-                      , Set.letterNumber 
+                      , Set.letterNumber
                       ]
     remainderOK   = firstLetterOK
                <> mconcat
@@ -134,8 +133,8 @@ jsSegments [x] = "/" <> segmentToStr x False
 jsSegments (x:xs) = "/" <> segmentToStr x True <> jsSegments xs
 
 segmentToStr :: Segment -> Bool -> Text
-segmentToStr (Segment st ms) notTheEnd =
-  segmentTypeToStr st <> jsMParams ms <> if notTheEnd then "" else "'"
+segmentToStr (Segment st) notTheEnd =
+  segmentTypeToStr st <> if notTheEnd then "" else "'"
 
 segmentTypeToStr :: SegmentType -> Text
 segmentTypeToStr (Static s) = s
@@ -148,10 +147,6 @@ jsGParams s (x:xs) = paramToStr x True <> s <> jsGParams s xs
 
 jsParams :: [QueryArg] -> Text
 jsParams = jsGParams "&"
-
-jsMParams :: [MatrixArg] -> Text
-jsMParams [] = ""
-jsMParams xs = ";" <> jsGParams ";" xs
 
 paramToStr :: QueryArg -> Bool -> Text
 paramToStr qarg notTheEnd =
