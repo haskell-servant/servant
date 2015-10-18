@@ -10,6 +10,8 @@ import           Data.List
 import           GHC.Generics
 import           Network.Wai
 import           Servant
+import           Servant.Server.Internal.Authentication
+
 
 data Position = Position
   { x :: Int

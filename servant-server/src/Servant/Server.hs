@@ -71,12 +71,14 @@ module Servant.Server
   , err504
   , err505
 
+  , module Servant.Server.Internal.Authentication
   ) where
 
 import           Data.Proxy                    (Proxy)
 import           Network.Wai                   (Application)
 import           Servant.Server.Internal
 import           Servant.Server.Internal.Enter
+import           Servant.Server.Internal.Authentication
 
 
 -- * Implementing Servers

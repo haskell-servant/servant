@@ -9,7 +9,7 @@ module Servant.API.Authentication
 , AuthProtect (..)
 , AuthProtected (..)
 , BasicAuth (..)
-, JWTAuth
+, JWTAuth (..)
 ) where
 
 
@@ -38,4 +38,4 @@ data BasicAuth (realm :: Symbol) = BasicAuth { baUser :: ByteString
                                              , baPass :: ByteString
                                              } deriving (Eq, Show, Typeable)
 
-type JWTAuth = Text
+newtype JWTAuth = JWTAuth { unJWTAuth :: Text }

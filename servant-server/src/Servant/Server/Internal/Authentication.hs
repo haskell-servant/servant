@@ -14,7 +14,7 @@ module Servant.Server.Internal.Authentication
 , laxProtect
 , strictProtect
 , jwtAuthHandlers
-, jwtAuth
+, jwtAuthStrict
         ) where
 
 import           Control.Monad              (guard, (<=<))
@@ -37,10 +37,10 @@ import           Network.Wai                (Request, Response, requestHeaders,
 import           Servant.API.Authentication (AuthPolicy (Strict, Lax),
                                              AuthProtected,
                                              BasicAuth (BasicAuth),
-                                             JWTAuth)
+                                             JWTAuth (..))
 
 import            Web.JWT                    (JWT, UnverifiedJWT, VerifiedJWT, Secret, JSON)
-import qualified  Web.JWT as JWT             (decode, verify, secret)
+import qualified  Web.JWT as JWT             (decode, decodeAndVerifySignature, secret)
 
 -- | Class to represent the ability to extract authentication-related
 -- data from a 'Request' object.
@@ -122,21 +122,23 @@ instance AuthData JWTAuth where
     -- We might want to write a proper parser for this? but split works fine...
     hdr <- lookup "Authorization" . requestHeaders $ req
     ["Bearer", token] <- return . splitOn " " . decodeUtf8 $ hdr
-    _ <- JWT.decode token -- try decode it. otherwise it's not a proper token
-    return token
+    JWT.decode token -- try decode it. otherwise it's not a proper token
+    return . JWTAuth $ token
 
 
-jwtAuthHandlers :: AuthHandlers JSON
-jwtAuthHandlers =
-  let authFailure = responseBuilder status401 [] mempty
-  in AuthHandlers (return authFailure) ((const . return) authFailure)
+jwtAuthHandlers :: AuthHandlers JWTAuth
+jwtAuthHandlers = AuthHandlers (return missingData) ((const . return) authFailure)
+  where
+    withError e =
+      responseBuilder status401 [("WWW-Authenticate", "Bearer error=\""<>e<>"\"")] mempty
+    missingData = withError "invalid_request"
+    authFailure = withError "invalid_token"
 
 
 -- | A default implementation of an AuthProtected for JWT.
 -- Use this to quickly add jwt authentication to your project.
 -- One can use  strictProtect and laxProtect to make more complex authentication
--- and authorization schemes.  For an example of that, see our tutorial: @placeholder@
--- TODO more advanced one
-jwtAuth :: Text -> subserver -> AuthProtected JSON (JWT VerifiedJWT) subserver 'Strict
-jwtAuth secret subserver = strictProtect (return . (JWT.verify (JWT.secret secret) <=< JWT.decode)) jwtAuthHandlers subserver
+-- and authorization schemes.
+jwtAuthStrict :: Secret -> subserver -> AuthProtected JWTAuth (JWT VerifiedJWT) subserver 'Strict
+jwtAuthStrict secret subserver = strictProtect (return . JWT.decodeAndVerifySignature secret . unJWTAuth) jwtAuthHandlers subserver
 

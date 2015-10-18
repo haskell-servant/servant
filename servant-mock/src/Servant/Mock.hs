@@ -64,7 +64,7 @@ import           Network.Wai
 import           Servant
 import           Servant.API.Authentication
 import           Servant.API.ContentTypes
-import            Servant.Server.Internal.Authentication
+import           Web.JWT
 import           Test.QuickCheck.Arbitrary  (Arbitrary (..), vector)
 import           Test.QuickCheck.Gen        (Gen, generate)
 
@@ -156,9 +156,8 @@ instance (HasMock rest, Arbitrary usr, KnownSymbol realm)
 instance (HasMock rest, Arbitrary usr)
       => HasMock (AuthProtect JWTAuth (usr :: *) 'Strict :> rest) where
   mock _ = strictProtect (\_ -> do { a <- generate arbitrary; return (Just a)})
-                         (AuthHandlers (return authFailure) ((const . return) authFailure))
+                         jwtAuthHandlers
                          (\_ -> mock (Proxy :: Proxy rest))
-    where authFailure = responseBuilder status401 [] mempty
 
 instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Delete ctypes a) where
   mock _ = mockArbitrary
