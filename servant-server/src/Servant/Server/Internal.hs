@@ -54,8 +54,7 @@ import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 
-import           Web.HttpApiData          (FromHttpApiData)
-import           Web.HttpApiData.Internal (parseUrlPieceMaybe, parseHeaderMaybe, parseQueryParamMaybe)
+import           Web.HttpApiData (FromHttpApiData, parseUrlPieceMaybe, parseHeaderMaybe, parseQueryParamMaybe)
 
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
