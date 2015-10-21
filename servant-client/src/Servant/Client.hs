@@ -37,6 +37,7 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.API.Required
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
 
@@ -64,6 +65,21 @@ class HasClient layout where
   type Client layout :: *
   clientWithRoute :: Proxy layout -> Req -> BaseUrl -> Manager -> Client layout
 
+-- | The second constraint makes sure that
+--
+-- @
+-- Client (a :> sub) = Maybe x -> Client sub
+-- @
+--
+-- for some @x@.
+instance
+  ( HasClient (a :> sub)
+  , Client (a :> sub) ~ (Maybe (RequiredParamType (Client (a :> sub))) -> Client sub))
+    => HasClient (Required a :> sub) where
+  type Client (Required a :> sub) =
+    RequiredParamType (Client (a :> sub)) -> Client sub
+  clientWithRoute _ req baseUrl manager x =
+    clientWithRoute (Proxy :: Proxy (a :> sub)) req baseUrl manager (Just x)
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
 --   one function for querying @a@ and another one for querying @b@,

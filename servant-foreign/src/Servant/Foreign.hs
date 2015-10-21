@@ -150,6 +150,10 @@ class HasForeign (layout :: *) where
   type Foreign layout :: *
   foreignFor :: Proxy layout -> Req -> Foreign layout
 
+instance HasForeign (a :> sub) => HasForeign (Required a :> sub) where
+  type Foreign (Required a :> sub) = Foreign (a :> sub)
+  foreignFor _ = foreignFor (Proxy :: Proxy (a :> sub))
+
 instance (HasForeign a, HasForeign b)
       => HasForeign (a :<|> b) where
   type Foreign (a :<|> b) = Foreign a :<|> Foreign b

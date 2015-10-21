@@ -5,6 +5,8 @@ module Servant.API (
   -- | Type-level combinator for expressing subrouting: @':>'@
   module Servant.API.Alternative,
   -- | Type-level combinator for alternative endpoints: @':<|>'@
+  module Servant.API.Required,
+  -- | Type-level combinator for required parameters: @'Required'@
 
   -- * Accessing information from the request
   module Servant.API.Capture,
@@ -77,6 +79,7 @@ import           Servant.API.QueryParam      (QueryFlag, QueryParam,
 import           Servant.API.Raw             (Raw)
 import           Servant.API.RemoteHost      (RemoteHost)
 import           Servant.API.ReqBody         (ReqBody)
+import           Servant.API.Required        (Required)
 import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               BuildHeadersTo (buildHeadersTo),
                                               GetHeaders (getHeaders),

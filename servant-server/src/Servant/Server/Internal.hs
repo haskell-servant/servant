@@ -8,7 +8,9 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 #if !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE DeriveDataTypeable   #-}
 {-# LANGUAGE OverlappingInstances #-}
 #endif
 
@@ -21,15 +23,19 @@ module Servant.Server.Internal
 
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
+import           Data.Traversable            (traverse)
 #endif
+import           Control.Arrow               (left)
 import           Control.Monad.Trans.Except  (ExceptT)
+import           Control.Exception           (Exception, throw, catch)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
-import           Data.Maybe                  (mapMaybe, fromMaybe)
-import           Data.String                 (fromString)
+import           Data.Maybe                  (fromMaybe)
+import           Data.String                 (IsString, fromString)
 import           Data.String.Conversions     (cs, (<>), ConvertibleStrings)
 import           Data.Text                   (Text)
+import qualified Data.Text.Encoding          as T
 import           Data.Typeable
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
@@ -49,13 +55,13 @@ import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTUnrender (..))
 import           Servant.API.ResponseHeaders (Headers, getResponse, GetHeaders,
                                               getHeaders)
+import           Servant.API.Required        (Required, RequiredParamType)
 
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 
-import           Web.HttpApiData          (FromHttpApiData)
-import           Web.HttpApiData.Internal (parseUrlPieceMaybe, parseHeaderMaybe, parseQueryParamMaybe)
+import           Web.HttpApiData (FromHttpApiData(..), parseUrlPieceMaybe)
 
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
@@ -65,6 +71,36 @@ class HasServer layout where
 type Server layout = ServerT layout (ExceptT ServantErr IO)
 
 -- * Instances
+
+-- | This exception is used locally to detect missing parameter.
+-- Used in @'HasServer'@ instance for @'Required'@ parameters.
+data MissingRequiredParameter = MissingRequiredParameter deriving (Show, Typeable)
+instance Exception MissingRequiredParameter
+
+-- | The second constraint makes sure that
+--
+-- @
+-- Server (a :> sub) = Maybe x -> Server sub
+-- @
+--
+-- for some @x@.
+instance
+  ( HasServer (a :> sub)
+  , Server (a :> sub) ~ (Maybe (RequiredParamType (Server (a :> sub))) -> Server sub))
+    => HasServer (Required a :> sub) where
+
+  type ServerT (Required a :> sub) m
+    = RequiredParamType (ServerT (a :> sub) m) -> ServerT sub m
+
+  route _ subserver =
+    route (Proxy :: Proxy (a :> sub))
+      (fmap (fmap withRequired) subserver
+       `catch` (\(_ :: MissingRequiredParameter) -> return $ failWith NotFound))
+    where
+      -- we don't know the type of f here,
+      -- so we throw exception in case of missing parameter
+      withRequired _ Nothing  = throw MissingRequiredParameter
+      withRequired f (Just x) = f x
 
 -- | A server for @a ':<|>' b@ first tries to match the request against the route
 --   represented by @a@ and if it fails tries @b@. You must provide a request
@@ -300,9 +336,14 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
     Maybe a -> ServerT sublayout m
 
   route Proxy subserver = WithRequest $ \ request ->
-    let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
-    in  route (Proxy :: Proxy sublayout) (feedTo subserver mheader)
-    where str = fromString $ symbolVal (Proxy :: Proxy sym)
+    route (Proxy :: Proxy sublayout) $ do
+      case traverse parseHeader (lookup str (requestHeaders request)) of
+        Left err      -> return $ failWith (HttpError status400 (Just (hdrParseError err)))
+        Right mheader -> feedTo subserver mheader
+    where
+      str :: IsString s => s
+      str = fromString $ symbolVal (Proxy :: Proxy sym)
+      hdrParseError err = "error parsing header `" <> str <> "': " <> BL.fromStrict (T.encodeUtf8 err)
 
 -- | When implementing the handler for a 'Post' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
@@ -466,15 +507,19 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
     Maybe a -> ServerT sublayout m
 
   route Proxy subserver = WithRequest $ \ request ->
-    let querytext = parseQueryText $ rawQueryString request
-        param =
-          case lookup paramname querytext of
-            Nothing       -> Nothing -- param absent from the query string
-            Just Nothing  -> Nothing -- param present with no value -> Nothing
-            Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
-                                        -- the right type
-    in route (Proxy :: Proxy sublayout) (feedTo subserver param)
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+    route (Proxy :: Proxy sublayout) $ do
+      let querytext = parseQueryText (rawQueryString request)
+      case traverse convert (lookup paramname querytext) of
+        Left err    -> return $ failWith (HttpError status400 (Just err))
+        Right param -> feedTo subserver param
+    where
+      paramname = cs $ symbolVal (Proxy :: Proxy sym)
+      paramnameBL = BL.fromStrict (T.encodeUtf8 paramname)
+
+      convert Nothing  = Left ("no value for query parameter `" <> paramnameBL <> "'")
+      convert (Just v) = left parseError (parseQueryParam v)
+
+      parseError err = "error parsing query parameter `" <> paramnameBL <> "': " <> BL.fromStrict (T.encodeUtf8 err)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -502,17 +547,26 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
     [a] -> ServerT sublayout m
 
   route Proxy subserver = WithRequest $ \ request ->
-    let querytext = parseQueryText $ rawQueryString request
-        -- if sym is "foo", we look for query string parameters
-        -- named "foo" or "foo[]" and call parseQueryParam on the
-        -- corresponding values
-        parameters = filter looksLikeParam querytext
-        values = mapMaybe (convert . snd) parameters
-    in  route (Proxy :: Proxy sublayout) (feedTo subserver values)
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
-          looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
-          convert Nothing = Nothing
-          convert (Just v) = parseQueryParamMaybe v
+    route (Proxy :: Proxy sublayout) $ do
+      let querytext = parseQueryText (rawQueryString request)
+          -- if sym is "foo", we look for query string parameters
+          -- named "foo" or "foo[]" and call parseQueryParam on the
+          -- corresponding values
+          parameters = map snd (filter looksLikeParam querytext)
+          values = traverse convert parameters
+      case values of
+        Left err -> return $ failWith (HttpError status400 (Just err))
+        Right vs -> feedTo subserver vs
+    where
+      paramname = cs $ symbolVal (Proxy :: Proxy sym)
+      paramnameBL = BL.fromStrict (T.encodeUtf8 paramname)
+
+      looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
+
+      convert Nothing  = Left ("no value for query parameter `" <> paramnameBL <> "'")
+      convert (Just v) = left parseError (parseQueryParam v)
+
+      parseError err = "error parsing query parameter `" <> paramnameBL <> "': " <> BL.fromStrict (T.encodeUtf8 err)
 
 -- | If you use @'QueryFlag' "published"@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
