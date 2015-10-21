@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 #if !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE DeriveDataTypeable   #-}
 {-# LANGUAGE OverlappingInstances #-}
 #endif
 
@@ -22,6 +23,7 @@ module Servant.Server.Internal
 
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
+import           Data.Traversable            (traverse)
 #endif
 import           Control.Arrow               (left)
 import           Control.Monad.Trans.Except  (ExceptT)
