@@ -1,7 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Required (
   Required,
@@ -9,9 +7,6 @@ module Servant.API.Required (
 ) where
 
 import Data.Typeable (Typeable)
-import GHC.Exts (Constraint)
-
-import Servant.API.Sub ((:>))
 
 -- | Make an othwise optional parameter required.
 --
