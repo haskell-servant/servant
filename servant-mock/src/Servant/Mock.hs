@@ -62,6 +62,7 @@ import           Network.HTTP.Types.Status
 import           Network.Wai
 import           Servant
 import           Servant.API.ContentTypes
+import           Servant.API.Required
 import           Test.QuickCheck.Arbitrary  (Arbitrary (..), vector)
 import           Test.QuickCheck.Gen        (Gen, generate)
 
@@ -100,6 +101,19 @@ class HasServer api => HasMock api where
   --   random values of type 'User' and 'Book' every time these
   --   endpoints are requested.
   mock :: Proxy api -> Server api
+
+-- | The second constraint makes sure that
+--
+-- @
+-- Server (a :> rest) = Maybe x -> Server rest
+-- @
+--
+-- for some @x@.
+instance
+  ( HasMock (a :> rest)
+  , Server (a :> rest) ~ (Maybe (RequiredParamType (Server (a :> rest))) -> Server rest) )
+  => HasMock (Required a :> rest) where
+  mock _ = mock (Proxy :: Proxy (a :> rest)) . Just
 
 instance (HasMock a, HasMock b) => HasMock (a :<|> b) where
   mock _ = mock (Proxy :: Proxy a) :<|> mock (Proxy :: Proxy b)

@@ -8,6 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 #if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE OverlappingInstances #-}
 #endif
@@ -23,6 +24,7 @@ module Servant.Server.Internal
 import           Control.Applicative         ((<$>))
 #endif
 import           Control.Monad.Trans.Except  (ExceptT)
+import           Control.Exception           (Exception, throw, catch)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
@@ -49,6 +51,7 @@ import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTUnrender (..))
 import           Servant.API.ResponseHeaders (Headers, getResponse, GetHeaders,
                                               getHeaders)
+import           Servant.API.Required        (Required, RequiredParamType)
 
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
@@ -64,6 +67,36 @@ class HasServer layout where
 type Server layout = ServerT layout (ExceptT ServantErr IO)
 
 -- * Instances
+
+-- | This exception is used locally to detect missing parameter.
+-- Used in @'HasServer'@ instance for @'Required'@ parameters.
+data MissingRequiredParameter = MissingRequiredParameter deriving (Show, Typeable)
+instance Exception MissingRequiredParameter
+
+-- | The second constraint makes sure that
+--
+-- @
+-- Server (a :> sub) = Maybe x -> Server sub
+-- @
+--
+-- for some @x@.
+instance
+  ( HasServer (a :> sub)
+  , Server (a :> sub) ~ (Maybe (RequiredParamType (Server (a :> sub))) -> Server sub))
+    => HasServer (Required a :> sub) where
+
+  type ServerT (Required a :> sub) m
+    = RequiredParamType (ServerT (a :> sub) m) -> ServerT sub m
+
+  route _ subserver =
+    route (Proxy :: Proxy (a :> sub))
+      (fmap (fmap withRequired) subserver
+       `catch` (\(e :: MissingRequiredParameter) -> return $ failWith NotFound))
+    where
+      -- we don't know the type of f here,
+      -- so we throw exception in case of missing parameter
+      withRequired f Nothing  = throw MissingRequiredParameter
+      withRequired f (Just x) = f x
 
 -- | A server for @a ':<|>' b@ first tries to match the request against the route
 --   represented by @a@ and if it fails tries @b@. You must provide a request

@@ -53,6 +53,7 @@ import           GHC.Exts     (Constraint)
 import           GHC.TypeLits
 import           Prelude      hiding (concat)
 import           Servant.API
+import           Servant.API.Required
 
 -- | Function name builder that simply concat each part together
 concatCase :: FunctionName -> Text
@@ -149,6 +150,10 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
 class HasForeign (layout :: *) where
   type Foreign layout :: *
   foreignFor :: Proxy layout -> Req -> Foreign layout
+
+instance HasForeign (a :> sub) => HasForeign (Required a :> sub) where
+  type Foreign (Required a :> sub) = Foreign (a :> sub)
+  foreignFor _ = foreignFor (Proxy :: Proxy (a :> sub))
 
 instance (HasForeign a, HasForeign b)
       => HasForeign (a :<|> b) where
