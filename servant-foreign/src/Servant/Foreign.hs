@@ -53,7 +53,6 @@ import           GHC.Exts     (Constraint)
 import           GHC.TypeLits
 import           Prelude      hiding (concat)
 import           Servant.API
-import           Servant.API.Required
 
 -- | Function name builder that simply concat each part together
 concatCase :: FunctionName -> Text
