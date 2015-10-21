@@ -29,7 +29,7 @@ import           Control.Exception           (Exception, throw, catch)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
-import           Data.Maybe                  (mapMaybe, fromMaybe)
+import           Data.Maybe                  (fromMaybe)
 import           Data.String                 (IsString, fromString)
 import           Data.String.Conversions     (cs, (<>), ConvertibleStrings)
 import           Data.Text                   (Text)
@@ -93,11 +93,11 @@ instance
   route _ subserver =
     route (Proxy :: Proxy (a :> sub))
       (fmap (fmap withRequired) subserver
-       `catch` (\(e :: MissingRequiredParameter) -> return $ failWith NotFound))
+       `catch` (\(_ :: MissingRequiredParameter) -> return $ failWith NotFound))
     where
       -- we don't know the type of f here,
       -- so we throw exception in case of missing parameter
-      withRequired f Nothing  = throw MissingRequiredParameter
+      withRequired _ Nothing  = throw MissingRequiredParameter
       withRequired f (Just x) = f x
 
 -- | A server for @a ':<|>' b@ first tries to match the request against the route
@@ -339,7 +339,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
         Left err      -> return $ failWith (HttpError status400 (Just (hdrParseError err)))
         Right mheader -> feedTo subserver mheader
     where
-      str :: forall a. IsString a => a
+      str :: IsString s => s
       str = fromString $ symbolVal (Proxy :: Proxy sym)
       hdrParseError err = "error parsing header `" <> str <> "': " <> BL.fromStrict (T.encodeUtf8 err)
 
