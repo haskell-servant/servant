@@ -5,6 +5,9 @@ HEAD
 * Drop `EitherT` in favor of `ExceptT`
 * Use `http-api-data` instead of `Servant.Common.Text`
 * Remove matrix params.
+* Remove `RouteMismatch`.
+* Redefined constructors of `RouteResult`.
+* Added `Delayed` and related functions (`addMethodCheck`, `addAcceptCheck`, `addBodyCheck`, `runDelayed`)
 
 0.4.1
 -----

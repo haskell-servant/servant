@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeOperators        #-}
@@ -17,7 +18,6 @@ import           Control.Monad.Trans.Except (ExceptT, throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
 import           Data.ByteString.Conversion ()
 import           Data.Char                  (toUpper)
-import           Data.Monoid                ((<>))
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs)
@@ -26,18 +26,13 @@ import           GHC.Generics               (Generic)
 import           Network.HTTP.Types         (hAccept, hContentType,
                                              methodDelete, methodGet, methodHead,
                                              methodPatch, methodPost, methodPut,
-                                             ok200, parseQuery, status409,
-                                             Status(..))
+                                             ok200, parseQuery, Status(..))
 import           Network.Wai                (Application, Request, pathInfo,
                                              queryString, rawQueryString,
                                              responseLBS, responseBuilder)
 import           Network.Wai.Internal       (Response(ResponseBuilder))
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody)
-import           Test.Hspec                 (Spec, describe, it, shouldBe)
-import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
-                                             matchStatus, post, request,
-                                             shouldRespondWith, with, (<:>))
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Get, Header (..), Headers,
                                              HttpVersion, IsSecure (..), JSON,
@@ -46,12 +41,14 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Raw, RemoteHost, ReqBody,
                                              addHeader)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
+import           Test.Hspec                 (Spec, describe, it, shouldBe)
+import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
+                                             matchStatus, post, request,
+                                             shouldRespondWith, with, (<:>))
+import           Servant.Server.Internal.RoutingApplication (toApplication, RouteResult(..))
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
-import           Servant.Server.Internal.RoutingApplication
-                                            (RouteResult(..), RouteMismatch(..),
-                                             toApplication)
 
 
 -- * test data types
@@ -98,8 +95,6 @@ spec = do
   headerSpec
   rawSpec
   unionSpec
-  prioErrorsSpec
-  errorsSpec
   routerSpec
   responseHeadersSpec
   miscReqCombinatorsSpec
@@ -158,9 +153,9 @@ getSpec = do
       it "returns 204 if the type is '()'" $ do
         get "/empty" `shouldRespondWith` ""{ matchStatus = 204 }
 
-      it "returns 415 if the Accept header is not supported" $ do
+      it "returns 406 if the Accept header is not supported" $ do
         Test.Hspec.Wai.request methodGet "" [(hAccept, "crazy/mime")] ""
-          `shouldRespondWith` 415
+          `shouldRespondWith` 406
 
 
 headSpec :: Spec
@@ -186,9 +181,9 @@ headSpec = do
         response <- Test.Hspec.Wai.request methodHead "/empty" [] ""
         return response `shouldRespondWith` ""{ matchStatus = 204 }
 
-      it "returns 415 if the Accept header is not supported" $ do
+      it "returns 406 if the Accept header is not supported" $ do
         Test.Hspec.Wai.request methodHead "" [(hAccept, "crazy/mime")] ""
-          `shouldRespondWith` 415
+          `shouldRespondWith` 406
 
 
 type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
@@ -264,13 +259,13 @@ queryParamSpec = do
              }
 
           let params3'' = "?unknown="
-          response3' <- Network.Wai.Test.request defaultRequest{
+          response3'' <- Network.Wai.Test.request defaultRequest{
             rawQueryString = params3'',
             queryString = parseQuery params3'',
             pathInfo = ["b"]
            }
           liftIO $
-            decode' (simpleBody response3') `shouldBe` Just alice{
+            decode' (simpleBody response3'') `shouldBe` Just alice{
               name = "Alice"
              }
 
@@ -311,7 +306,7 @@ postSpec = do
       it "returns 204 if the type is '()'" $ do
         post' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
 
-      it "responds with 415 if the requested media type is unsupported" $ do
+      it "responds with 415 if the request body media type is unsupported" $ do
         let post'' x = Test.Hspec.Wai.request methodPost x [(hContentType
                                                             , "application/nonsense")]
         post'' "/" "anything at all" `shouldRespondWith` 415
@@ -353,7 +348,7 @@ putSpec = do
       it "returns 204 if the type is '()'" $ do
         put' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
 
-      it "responds with 415 if the requested media type is unsupported" $ do
+      it "responds with 415 if the request body media type is unsupported" $ do
         let put'' x = Test.Hspec.Wai.request methodPut x [(hContentType
                                                             , "application/nonsense")]
         put'' "/" "anything at all" `shouldRespondWith` 415
@@ -395,7 +390,7 @@ patchSpec = do
       it "returns 204 if the type is '()'" $ do
         patch' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
 
-      it "responds with 415 if the requested media type is unsupported" $ do
+      it "responds with 415 if the request body media type is unsupported" $ do
         let patch'' x = Test.Hspec.Wai.request methodPatch x [(hContentType
                                                             , "application/nonsense")]
         patch'' "/" "anything at all" `shouldRespondWith` 415
@@ -524,104 +519,11 @@ responseHeadersSpec = describe "ResponseHeaders" $ do
         Test.Hspec.Wai.request method "blahblah" [] ""
           `shouldRespondWith` 404
 
-    it "returns 415 if the Accept header is not supported" $
+    it "returns 406 if the Accept header is not supported" $
       forM_ methods $ \(method,_) ->
         Test.Hspec.Wai.request method "" [(hAccept, "crazy/mime")] ""
-          `shouldRespondWith` 415
+          `shouldRespondWith` 406
 
-type PrioErrorsApi = ReqBody '[JSON] Person :> "foo" :> Get '[JSON] Integer
-
-prioErrorsApi :: Proxy PrioErrorsApi
-prioErrorsApi = Proxy
-
--- | Test the relative priority of error responses from the server.
---
--- In particular, we check whether matching continues even if a 'ReqBody'
--- or similar construct is encountered early in a path. We don't want to
--- see a complaint about the request body unless the path actually matches.
---
-prioErrorsSpec :: Spec
-prioErrorsSpec = describe "PrioErrors" $ do
-  let server = return . age
-  with (return $ serve prioErrorsApi server) $ do
-    let check (mdescr, method) path (cdescr, ctype, body) resp =
-          it fulldescr $
-            Test.Hspec.Wai.request method path [(hContentType, ctype)] body
-              `shouldRespondWith` resp
-          where
-            fulldescr = "returns " ++ show (matchStatus resp) ++ " on " ++ mdescr
-                     ++ " " ++ cs path ++ " (" ++ cdescr ++ ")"
-
-        get' = ("GET", methodGet)
-        put' = ("PUT", methodPut)
-
-        txt   = ("text"        , "text/plain;charset=utf8"      , "42"        )
-        ijson = ("invalid json", "application/json;charset=utf8", "invalid"   )
-        vjson = ("valid json"  , "application/json;charset=utf8", encode alice)
-
-    check get' "/"    txt   404
-    check get' "/bar" txt   404
-    check get' "/foo" txt   415
-    check put' "/"    txt   404
-    check put' "/bar" txt   404
-    check put' "/foo" txt   405
-    check get' "/"    ijson 404
-    check get' "/bar" ijson 404
-    check get' "/foo" ijson 400
-    check put' "/"    ijson 404
-    check put' "/bar" ijson 404
-    check put' "/foo" ijson 405
-    check get' "/"    vjson 404
-    check get' "/bar" vjson 404
-    check get' "/foo" vjson 200
-    check put' "/"    vjson 404
-    check put' "/bar" vjson 404
-    check put' "/foo" vjson 405
-
--- | Test server error functionality.
-errorsSpec :: Spec
-errorsSpec = do
-  let he = HttpError status409 (Just "A custom error")
-  let ib = InvalidBody "The body is invalid"
-  let wm = WrongMethod
-  let nf = NotFound
-
-  describe "Servant.Server.Internal.RouteMismatch" $ do
-    it "HttpError > *" $ do
-      ib <> he `shouldBe` he
-      wm <> he `shouldBe` he
-      nf <> he `shouldBe` he
-
-      he <> ib `shouldBe` he
-      he <> wm `shouldBe` he
-      he <> nf `shouldBe` he
-
-    it "HE > InvalidBody > (WM,NF)" $ do
-      he <> ib `shouldBe` he
-      wm <> ib `shouldBe` ib
-      nf <> ib `shouldBe` ib
-
-      ib <> he `shouldBe` he
-      ib <> wm `shouldBe` ib
-      ib <> nf `shouldBe` ib
-
-    it "HE > IB > WrongMethod > NF" $ do
-      he <> wm `shouldBe` he
-      ib <> wm `shouldBe` ib
-      nf <> wm `shouldBe` wm
-
-      wm <> he `shouldBe` he
-      wm <> ib `shouldBe` ib
-      wm <> nf `shouldBe` wm
-
-    it "* > NotFound" $ do
-      he <> nf `shouldBe` he
-      ib <> nf `shouldBe` ib
-      wm <> nf `shouldBe` wm
-
-      nf <> he `shouldBe` he
-      nf <> ib `shouldBe` ib
-      nf <> wm `shouldBe` wm
 
 routerSpec :: Spec
 routerSpec = do
@@ -631,7 +533,7 @@ routerSpec = do
 
         router', router :: Router
         router' = tweakResponse (twk <$>) router
-        router = LeafRouter $ \_ cont -> cont (RR . Right $ responseBuilder (Status 201 "") [] "")
+        router = LeafRouter $ \_ cont -> cont (Route $ responseBuilder (Status 201 "") [] "")
 
         twk :: Response -> Response
         twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b

@@ -57,12 +57,14 @@ module Servant.API.ContentTypes
     , AcceptHeader(..)
     , AllCTRender(..)
     , AllCTUnrender(..)
+    , AllMime(..)
     , AllMimeRender(..)
     , AllMimeUnrender(..)
     , FromFormUrlEncoded(..)
     , ToFormUrlEncoded(..)
     , IsNonEmpty
     , eitherDecodeLenient
+    , canHandleAcceptH
     ) where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -80,6 +82,8 @@ import qualified Data.ByteString                  as BS
 import           Data.ByteString.Lazy             (ByteString, fromStrict,
                                                    toStrict)
 import qualified Data.ByteString.Lazy             as B
+import qualified Data.ByteString.Lazy.Char8       as BC
+import           Data.Maybe                       (isJust)
 import           Data.Monoid
 import           Data.String.Conversions          (cs)
 import qualified Data.Text                        as TextS
@@ -155,14 +159,13 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 class Accept ctype => MimeRender ctype a where
     mimeRender  :: Proxy ctype -> a -> ByteString
 
-class AllCTRender (list :: [*]) a where
+class (AllMimeRender list a) => AllCTRender (list :: [*]) a where
     -- If the Accept header can be matched, returns (Just) a tuple of the
     -- Content-Type and response (serialization of @a@ into the appropriate
     -- mimetype).
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
-instance ( AllMimeRender ctyps a, IsNonEmpty ctyps
-         ) => AllCTRender ctyps a where
+instance (AllMimeRender ctyps a, IsNonEmpty ctyps) => AllCTRender ctyps a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy ctyps
             amrs = allMimeRender pctyps val
@@ -210,11 +213,24 @@ instance ( AllMimeUnrender ctyps a, IsNonEmpty ctyps
 --------------------------------------------------------------------------
 -- * Utils (Internal)
 
+class AllMime (list :: [*]) where
+    allMime :: Proxy list -> [M.MediaType]
+
+instance AllMime '[] where
+    allMime _ = []
+
+instance (Accept ctyp, AllMime ctyps) => AllMime (ctyp ': ctyps) where
+    allMime _ = (contentType pctyp):allMime pctyps
+      where pctyp  = Proxy :: Proxy ctyp
+            pctyps = Proxy :: Proxy ctyps
+
+canHandleAcceptH :: AllMime list => Proxy list -> AcceptHeader -> Bool
+canHandleAcceptH p (AcceptHeader h ) = isJust $ M.matchAccept (allMime p) h
 
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeRender
 --------------------------------------------------------------------------
-class AllMimeRender (list :: [*]) a where
+class (AllMime list) => AllMimeRender (list :: [*]) a where
     allMimeRender :: Proxy list
                   -> a                              -- value to serialize
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
@@ -238,7 +254,7 @@ instance AllMimeRender '[] a where
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
 --------------------------------------------------------------------------
-class AllMimeUnrender (list :: [*]) a where
+class (AllMime list) => AllMimeUnrender (list :: [*]) a where
     allMimeUnrender :: Proxy list
                     -> ByteString
                     -> [(M.MediaType, Either String a)]
@@ -278,6 +294,10 @@ instance MimeRender PlainText TextL.Text where
 -- | @fromStrict . TextS.encodeUtf8@
 instance MimeRender PlainText TextS.Text where
     mimeRender _ = fromStrict . TextS.encodeUtf8
+
+-- | @BC.pack@
+instance MimeRender PlainText String where
+    mimeRender _ = BC.pack
 
 -- | @id@
 instance MimeRender OctetStream ByteString where
@@ -327,6 +347,10 @@ instance MimeUnrender PlainText TextL.Text where
 -- | @left show . TextS.decodeUtf8' . toStrict@
 instance MimeUnrender PlainText TextS.Text where
     mimeUnrender _ = left show . TextS.decodeUtf8' . toStrict
+
+-- | @Right . BC.unpack@
+instance MimeUnrender PlainText String where
+    mimeUnrender _ = Right . BC.unpack
 
 -- | @Right . id@
 instance MimeUnrender OctetStream ByteString where

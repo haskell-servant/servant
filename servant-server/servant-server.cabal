@@ -95,6 +95,7 @@ test-suite spec
       Servant.Server.Internal.EnterSpec
       Servant.ServerSpec
       Servant.Utils.StaticFilesSpec
+      Servant.Server.ErrorSpec
   build-depends:
       base == 4.*
     , aeson
@@ -108,6 +109,7 @@ test-suite spec
     , network >= 2.6
     , QuickCheck
     , parsec
+    , safe
     , servant
     , servant-server
     , string-conversions
