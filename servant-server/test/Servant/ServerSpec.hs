@@ -67,6 +67,7 @@ import           Servant.API.Authentication
 import           Servant.Server.Internal.Authentication
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
 import           Servant.Server.Internal    (RouteMismatch (..))
+import           Web.JWT                    hiding (JSON)
 
 
 -- * test data types
@@ -116,7 +117,8 @@ spec = do
   routerSpec
   responseHeadersSpec
   miscReqCombinatorsSpec
-  authRequiredSpec
+  basicAuthRequiredSpec
+  jwtAuthRequiredSpec
 
 
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
@@ -714,7 +716,7 @@ miscReqCombinatorsSpec = with (return $ serve miscApi miscServ) $
 type AuthUser = ByteString
 type BasicAuthFooRealm = AuthProtect (BasicAuth "foo-realm") AuthUser 'Strict
 type BasicAuthBarRealm = AuthProtect (BasicAuth "bar-realm") AuthUser 'Strict
-type AuthRequiredAPI = BasicAuthFooRealm :> "foo" :> Get '[JSON] Person
+type BasicAuthRequiredAPI = BasicAuthFooRealm :> "foo" :> Get '[JSON] Person
                   :<|> "bar" :> BasicAuthBarRealm :> Get '[JSON] Animal
 
 basicAuthFooCheck :: BasicAuth "foo-realm" -> IO (Maybe AuthUser)
@@ -726,11 +728,11 @@ basicAuthBarCheck :: BasicAuth "bar-realm" -> IO (Maybe AuthUser)
 basicAuthBarCheck (BasicAuth usr pass) = if usr == "bar" && pass == "bar"
                                          then return (Just "bar")
                                          else return Nothing
-authRequiredApi :: Proxy AuthRequiredAPI
-authRequiredApi = Proxy
+basicBasicAuthRequiredApi :: Proxy BasicAuthRequiredAPI
+basicBasicAuthRequiredApi = Proxy
 
-authRequiredServer :: Server AuthRequiredAPI
-authRequiredServer = basicAuthStrict basicAuthFooCheck (const . return $ alice)
+basicAuthRequiredServer :: Server BasicAuthRequiredAPI
+basicAuthRequiredServer = basicAuthStrict basicAuthFooCheck (const . return $ alice)
                 :<|> basicAuthStrict basicAuthBarCheck (const . return $ jerry)
 
 -- base64-encoded "servant:server"
@@ -745,25 +747,25 @@ base64BarColonPassword = "YmFyOmJhcg=="
 base64UserColonPassword :: ByteString
 base64UserColonPassword = "dXNlcjpwYXNzd29yZA=="
 
-authGet :: ByteString -> ByteString -> WaiSession SResponse
-authGet path base64EncodedAuth = Test.Hspec.Wai.request methodGet path [("Authorization", "Basic " <> base64EncodedAuth)] ""
+basicAuthGet :: ByteString -> ByteString -> WaiSession SResponse
+basicAuthGet path base64EncodedAuth = Test.Hspec.Wai.request methodGet path [("Authorization", "Basic " <> base64EncodedAuth)] ""
 
-authRequiredSpec :: Spec
-authRequiredSpec = do
+basicAuthRequiredSpec :: Spec
+basicAuthRequiredSpec = do
     describe "Servant.API.Authentication" $ do
-        with (return $ serve authRequiredApi authRequiredServer) $ do
+        with (return $ serve basicBasicAuthRequiredApi basicAuthRequiredServer) $ do
             it "allows access with the correct username and password" $ do
-                response <- authGet "/foo" base64ServantColonServer
+                response <- basicAuthGet "/foo" base64ServantColonServer
                 liftIO $ do
                     decode' (simpleBody response) `shouldBe` Just alice
 
-                response <- authGet "/bar" base64BarColonPassword
+                response <- basicAuthGet "/bar" base64BarColonPassword
                 liftIO $ do
                     decode' (simpleBody response) `shouldBe` Just jerry
 
             it "rejects requests with the incorrect username and password" $ do
-                authGet "/foo" base64UserColonPassword `shouldRespondWith` 401
-                authGet "/bar" base64UserColonPassword `shouldRespondWith` 401
+                basicAuthGet "/foo" base64UserColonPassword `shouldRespondWith` 401
+                basicAuthGet "/bar" base64UserColonPassword `shouldRespondWith` 401
 
             it "does not respond to non-authenticated requests" $ do
                 get "/foo" `shouldRespondWith` 401
@@ -774,3 +776,42 @@ authRequiredSpec = do
                 bar401 <- get "/bar"
                 WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"foo-realm\"" foo401)
                 WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"bar-realm\"" bar401)
+
+
+
+type JWTAuthProtect = AuthProtect JWTAuth (JWT VerifiedJWT) 'Strict
+
+type JWTAuthRequiredAPI = JWTAuthProtect :> "foo" :> Get '[JSON] Person
+
+
+jwtAuthRequiredApi :: Proxy JWTAuthRequiredAPI
+jwtAuthRequiredApi = Proxy
+
+jwtAuthRequiredServer :: Server JWTAuthRequiredAPI
+jwtAuthRequiredServer = jwtAuthStrict (secret "secret") (const . return $ alice)
+
+correctToken = "blah"
+incorrectToken = "blah"
+
+jwtAuthGet :: ByteString -> ByteString -> WaiSession SResponse
+jwtAuthGet path token = Test.Hspec.Wai.request methodGet path [("Authorization", "Bearer " <> token)] ""
+
+jwtAuthRequiredSpec :: Spec
+jwtAuthRequiredSpec = do
+  describe "JWT Auth" $ do
+    with (return $ serve jwtAuthRequiredApi jwtAuthRequiredServer) $ do
+      it "allows access with the correct token" $ do
+        response <- jwtAuthGet "/foo" correctToken
+        liftIO $ do
+          decode' (simpleBody response) `shouldBe` Just alice
+      it "rejects requests with an incorrect token" $ do
+        jwtAuthGet "/foo" incorrectToken `shouldRespondWith` 401 
+      it "rejects requests without auth data" $ do
+        get "/foo" `shouldRespondWith` 401
+      it "responds correctly to requests without auth data" $ do
+        a <- jwtAuthGet "/foo" incorrectToken
+        WaiSession (assertHeader "WWW-Authenticate" "Bearer error=\"invalid_token\"" a)
+      it "respond correctly to requests with incorrect auth data" $ do
+        a <- get "/foo"
+        WaiSession (assertHeader "WWW-Authenticate" "Bearer error=\"invalid_request\"" a)
+

@@ -17,7 +17,7 @@ module Servant.Server.Internal.Authentication
 , jwtAuthStrict
         ) where
 
-import           Control.Monad              (guard, (<=<))
+import           Control.Monad              (guard)
 import qualified Data.ByteString            as B
 import           Data.ByteString.Base64     (decodeLenient)
 #if !MIN_VERSION_base(4,8,0)
@@ -30,7 +30,7 @@ import           Data.String                (fromString)
 import           Data.Word8                 (isSpace, toLower, _colon)
 import           GHC.TypeLits               (KnownSymbol, symbolVal)
 import           Data.Text.Encoding         (decodeUtf8)
-import           Data.Text                  (splitOn, Text)
+import           Data.Text                  (splitOn)
 import           Network.HTTP.Types.Status  (status401)
 import           Network.Wai                (Request, Response, requestHeaders,
                                              responseBuilder)
@@ -38,8 +38,10 @@ import           Servant.API.Authentication (AuthPolicy (Strict, Lax),
                                              AuthProtected,
                                              BasicAuth (BasicAuth),
                                              JWTAuth (..))
+                                             JWTAuth)
+import           Servant.Server.Internal.RoutingApplication (RouteResult(FailFatal))
 
-import            Web.JWT                    (JWT, UnverifiedJWT, VerifiedJWT, Secret, JSON)
+import            Web.JWT                    (JWT, VerifiedJWT, Secret)
 import qualified  Web.JWT as JWT             (decode, decodeAndVerifySignature, secret)
 
 -- | Class to represent the ability to extract authentication-related
@@ -50,10 +52,10 @@ class AuthData a where
 -- | handlers to deal with authentication failures.
 data AuthHandlers authData = AuthHandlers
     {   -- we couldn't find the right type of auth data (or any, for that matter)
-        onMissingAuthData :: IO Response
+        onMissingAuthData :: IO ServantError
     ,
         -- we found the right type of auth data in the request but the check failed
-        onUnauthenticated :: authData -> IO Response
+        onUnauthenticated :: authData -> IO ServantError
     }
 
 -- | concrete type to provide when in 'Strict' mode.
@@ -119,10 +121,9 @@ basicAuthLax = laxProtect
 
 instance AuthData JWTAuth where
   authData req = do
-    -- We might want to write a proper parser for this? but split works fine...
     hdr <- lookup "Authorization" . requestHeaders $ req
     ["Bearer", token] <- return . splitOn " " . decodeUtf8 $ hdr
-    JWT.decode token -- try decode it. otherwise it's not a proper token
+    _ <- JWT.decode token -- try decode it. otherwise it's not a proper token
     return . JWTAuth $ token
 
 

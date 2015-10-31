@@ -124,6 +124,7 @@ test-suite spec
     , wai
     , wai-extra
     , warp
+    , jwt
 
 test-suite doctests
  build-depends: base
