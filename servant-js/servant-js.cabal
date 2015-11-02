@@ -2,15 +2,15 @@ name:                servant-js
 version:             0.5
 synopsis:            Automatically derive javascript functions to query servant webservices.
 description:
-  Automatically derive jquery-based javascript functions to query servant webservices.
+  Automatically derive javascript functions to query servant webservices.
   .
-  Supports deriving functions using vanilla javascript AJAX requests, Angular or JQuery.
+  Supports deriving functions using vanilla javascript AJAX requests, Angulari, Axios or JQuery.
   .
-  You can find an example <https://github.com/haskell-servant/servant/blob/master/servant-jquery/examples/counter.hs here>
+  You can find an example <https://github.com/haskell-servant/servant/blob/master/servant-js/examples/counter.hs here>
   which serves the generated javascript to a webpage that allows you to trigger
   webservice calls.
   .
-  <https://github.com/haskell-servant/servant/blob/master/servant-jquery/CHANGELOG.md CHANGELOG>
+  <https://github.com/haskell-servant/servant/blob/master/servant-js/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
 author:              Alp Mestanogullari
