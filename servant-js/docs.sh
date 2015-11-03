@@ -1,4 +1,4 @@
-SERVANT_DIR=/tmp/servant-jquery-gh-pages
+SERVANT_DIR=/tmp/servant-js-gh-pages
 
 # Make a temporary clone
 
@@ -10,7 +10,7 @@ cd $SERVANT_DIR
 
 # Make sure to pull the latest
 
-git remote add haskell-servant git@github.com:haskell-servant/servant-jquery.git
+git remote add haskell-servant git@github.com:haskell-servant/servant-js.git
 
 git fetch haskell-servant
 
@@ -36,7 +36,7 @@ cd $SERVANT_DIR
 
 rm *
 rm -rf build
-mv doc/html/servant-jquery/* .
+mv doc/html/servant-js/* .
 rm -r doc/
 
 # Add everything
