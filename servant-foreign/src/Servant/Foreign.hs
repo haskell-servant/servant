@@ -47,6 +47,7 @@ module Servant.Foreign
   ) where
 
 import           Control.Lens (makeLenses, (%~), (&), (.~), (<>~))
+import qualified Data.Char    as C
 import           Data.Proxy
 import           Data.Text
 import           GHC.Exts     (Constraint)
@@ -66,10 +67,11 @@ snakeCase = intercalate "_"
 -- | Function name builder using the CamelCase convention.
 -- each part begins with an upper case character.
 camelCase :: FunctionName -> Text
-camelCase [] = ""
-camelCase (p:ps) = concat $ p : camelCase' ps
-   where camelCase' [] = []
-         camelCase' (r:rs) = toUpper r : camelCase' rs
+camelCase = camelCase' . Prelude.map (replace "-" "")
+  where camelCase' []     = ""
+        camelCase' (p:ps) = concat $ p : Prelude.map capitalize ps
+        capitalize ""   = ""
+        capitalize name = C.toUpper (Data.Text.head name) `cons` Data.Text.tail name
 
 type Arg = Text
 
