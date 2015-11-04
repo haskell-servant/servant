@@ -76,7 +76,7 @@ module Servant.JS
   , JavaScriptGenerator
 
   , -- * Options common to all generators
-    CommonGeneratorOptions
+    CommonGeneratorOptions(..)
   , defCommonGeneratorOptions
 
   , -- * Function renamers
