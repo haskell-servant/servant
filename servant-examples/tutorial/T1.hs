@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP           #-}
 {-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies  #-}
@@ -17,10 +18,12 @@ data User = User
   , registration_date :: Day
   } deriving (Eq, Show, Generic)
 
+#if !MIN_VERSION_aeson(0,10,0)
 -- orphan ToJSON instance for Day. necessary to derive one for User
 instance ToJSON Day where
   -- display a day in YYYY-mm-dd format
   toJSON d = toJSON (showGregorian d)
+#endif
 
 instance ToJSON User
 
