@@ -25,7 +25,7 @@ source-repository head
   location: http://github.com/haskell-servant/servant.git
 
 library
-  exposed-modules:     Servant.Foreign
+  exposed-modules:     Servant.Foreign, Servant.Foreign.Internal
   build-depends:       base    == 4.*
                      , lens    == 4.*
                      , servant == 0.5.*
