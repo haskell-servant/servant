@@ -38,7 +38,7 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              HttpVersion, IsSecure (..), JSON,
                                              Patch, PlainText, Post, Put,
                                              QueryFlag, QueryParam, QueryParams,
-                                             Raw, RemoteHost, ReqBody,
+                                             Raw(..), RemoteHost, ReqBody,
                                              addHeader)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
 import           Test.Hspec                 (Spec, describe, it, shouldBe)

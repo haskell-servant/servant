@@ -41,7 +41,7 @@ import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
 import           Network.HTTP.Types         (Status (..), badRequest400,
                                              methodGet, ok200, status400)
-import           Network.Socket
+import           Network.Socket             hiding (Raw)
 import           Network.Wai                (Application, responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
@@ -98,8 +98,8 @@ type Api =
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
-  :<|> "rawSuccess" :> Raw
-  :<|> "rawFailure" :> Raw
+  :<|> "rawSuccess" :> Raw IO Application
+  :<|> "rawFailure" :> Raw IO Application
   :<|> "multiple" :>
             Capture "first" String :>
             QueryParam "second" Int :>

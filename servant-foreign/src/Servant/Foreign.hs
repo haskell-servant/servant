@@ -239,8 +239,8 @@ instance (KnownSymbol sym, HasForeign sublayout)
 
     where str = pack . symbolVal $ (Proxy :: Proxy sym)
 
-instance HasForeign Raw where
-  type Foreign Raw = Method -> Req
+instance HasForeign (Raw m a) where
+  type Foreign (Raw m a) = Method -> Req
 
   foreignFor Proxy req method =
     req & funcName %~ ((toLower method) :)
