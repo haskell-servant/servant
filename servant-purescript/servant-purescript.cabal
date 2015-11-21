@@ -1,0 +1,57 @@
+name:                servant-purescript
+version:             0.1
+synopsis:            Automatically derive purescript functions to query servant webservices
+description:
+  Automatically derive purescript functions to query servant webservices.
+license:             BSD3
+license-file:        LICENSE
+author:              Anchor Engineering <engineering@anchor.com.au>
+maintainer:          Anchor Engineering <engineering@anchor.com.au>
+copyright:           2015 Anchor
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+Bug-reports:         http://github.com/anchor/servant-purescript/issues
+source-repository head
+  type: git
+  location: http://github.com/anchor/servant-purescript.git
+
+flag example
+  description: Build the example too
+  manual:      True
+  default:     False
+
+library
+  exposed-modules:     Servant.PureScript
+  build-depends:       base >=4.8.1.0 && <5
+                     , lens >=4
+                     , purescript >=0.7.5.3
+                     , servant >=0.5
+                     , servant-foreign >=0.5
+                     , servant-js >=0.5
+                     , string-conversions
+                     , text
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+test-suite spec
+  type:              exitcode-stdio-1.0
+  hs-source-dirs:    test
+  ghc-options:       -Wall
+  main-is:           Spec.hs
+  build-depends:
+      base >=4.8.1.0 && <5
+    , hspec >=2.0
+    , hspec-expectations
+    , language-ecmascript >=0.17
+    , lens >= 4
+    , parsec
+    , process
+    , purescript >=0.7.5.3
+    , servant >=0.5
+    , servant-foreign >=0.5
+    , servant-js >=0.5
+    , servant-purescript ==0.0.2
+    , string-conversions
+  default-language: Haskell2010
