@@ -13,12 +13,13 @@ addons:
     packages:
       - ghc-7.8.4
       - ghc-7.10.2
+      - alex-3.1.4
       - cabal-install-1.22
       - libgmp-dev
 
 install:
   - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
-  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/1.22/bin:$PATH
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/1.22/bin:/opt/alex/3.1.4/bin:$PATH
   - ghc --version
   - cabal --version
   - travis_retry cabal update

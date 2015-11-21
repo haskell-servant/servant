@@ -8,11 +8,9 @@
 module Main where
 
 import           Control.Monad
-import           Control.Monad.IO.Class
 import           Data.Either (isRight)
 import           Data.Proxy
 import           Data.String.Conversions
-import qualified Data.Text.IO as ST
 import qualified Language.PureScript as P
 import           Servant.API
 import           Servant.Foreign as F

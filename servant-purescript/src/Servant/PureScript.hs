@@ -14,7 +14,7 @@ module Servant.PureScript (
 import           Control.Arrow ((&&&))
 import           Control.Lens (makeLenses, (^.), (^..), view)
 import           Data.Char (toUpper, toLower)
-import           Data.Proxy (Proxy(Proxy))
+import           Data.Proxy (Proxy)
 import           Data.String.Conversions (ConvertibleStrings, ST, cs, (<>))
 import qualified Data.Text as T
 import qualified Servant.JS as JS
