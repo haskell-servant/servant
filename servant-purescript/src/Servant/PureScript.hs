@@ -57,7 +57,7 @@ generatePSModule'
     -> ST -- ^ Name of PureScript module
     -> [F.Req] -- ^ List of AJAX requests to render in module
     -> ST -- ^ Rendered PureScript module
-generatePSModule' settings mname reqs = T.unlines $
+generatePSModule' settings mname reqs = T.unlines
         [ "module " <> mname <> " where"
         , ""
         , "import Prelude"
@@ -84,7 +84,7 @@ generatePS settings req = ajaxRequest
     args = captures <> queryArgs <> body <> fmap (fst . snd) headerArgs
 
     captures :: [ST]
-    captures = fmap (F.captureArg) . filter F.isCapture $ req ^. F.reqUrl . F.path
+    captures = fmap F.captureArg . filter F.isCapture $ req ^. F.reqUrl . F.path
 
     queryArgs :: [ST]
     queryArgs  = fmap ((<>) "query" . view F.argName) queryParams
@@ -109,9 +109,9 @@ generatePS settings req = ajaxRequest
     wrapHeaders :: [(T.Text, T.Text)] -> [(T.Text, (T.Text, F.HeaderArg))] -> ST
     wrapHeaders ihs hs =
         "[" <>
-        (T.intercalate ", " (concat $
+        T.intercalate ", " (concat $
             [wrapImplicitHeader <$> ihs | not $ null ihs] ++
-            [wrapHeader <$> hs | not $ null hs])) <>
+            [wrapHeader <$> hs | not $ null hs]) <>
         "]"
 
     wrapHeader :: (T.Text, (T.Text, F.HeaderArg)) -> ST
@@ -134,8 +134,7 @@ generatePS settings req = ajaxRequest
         ("    , url = " <> urlString) :
         ("    , headers = " <> wrapHeaders implicitHeaderArgs headerArgs) :
         ["    , content = Just body" | req ^. F.reqBody] ++
-        "    }" :
-        []
+        ["    }"]
       where
         typeSig :: ST
         typeSig = T.concat

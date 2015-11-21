@@ -7,3 +7,4 @@ import           "hint" HLint.Dollar
 import           "hint" HLint.Generalise
 
 ignore "Redundant bracket" = Domains.Rest.Client
+ignore "Use mappend"
