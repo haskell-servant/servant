@@ -39,13 +39,13 @@ import Servant.API
 import Servant.Foreign.Internal
 import           Control.Lens (makeLenses, (%~), (&), (.~), (<>~))
 import qualified Data.Char    as C
+import           Data.Monoid ((<>))
 import           Data.Proxy
 import           Data.Text
 import           GHC.Exts     (Constraint)
 import           GHC.TypeLits
 import           Prelude      hiding (concat)
 import           Servant.API
-import Servant.API
 import Servant.API.Authentication
 
 -- | Function name builder that simply concat each part together
@@ -94,12 +94,11 @@ data HeaderArg = HeaderArg
   | ReplaceHeaderArg
     { headerArgName :: Text
     , headerPattern :: Text
-    } deriving (Eq, Show)
   | HeaderArgGen
-    { headerArgName    :: String
-    , headerArgGenBody :: (String -> String)
+    { headerArgName    :: Text
+    , headerArgGenBody :: (Text -> Text)
     }
-
+    deriving (Eq, Show)
 
 data Url = Url
   { _path     :: Path
@@ -198,10 +197,10 @@ instance (HasForeign sublayout)
 
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) (req & reqHeaders <>~
-      [HeaderArgGen "Authorization" $ \authdata ->
-        "(function("++authdata++"){" ++
-        "return \"Basic \" + btoa("++authdata++".username+\":\"+"++authdata ++ ".password)" ++
-        "})("++authdata++")"
+      [HeaderArgGen "Authorization" ( \authdata ->
+        "(function("<>authdata<>"){" <>
+        "return \"Basic \" + btoa("<>authdata<>".username+\":\"+"<>authdata <> ".password)" <>
+        "})("<>authdata<>")")
       ])
   
 instance (HasForeign sublayout)
@@ -211,9 +210,9 @@ instance (HasForeign sublayout)
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) (req & reqHeaders <>~
       [HeaderArgGen "Authorization" $ \authdata ->
-        "(function("++authdata++"){" ++
-        "return \"Bearer \" + "++authdata++";"++
-        "})("++authdata++")"
+        "(function(" <> authdata <> "){" <>
+        "return \"Bearer \" + "<> authdata <> ";" <>
+        "})(" <> authdata<>")"
       ])
 
 instance Elem JSON list => HasForeign (Post list a) where
