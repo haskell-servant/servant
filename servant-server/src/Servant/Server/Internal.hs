@@ -78,7 +78,6 @@ import           Servant.API.ResponseHeaders                (GetHeaders,
                                                              Headers,
                                                              getHeaders,
                                                              getResponse)
-import           Servant.Common.Text                        (FromText, fromText)
 import           Servant.Server.Internal.Authentication     (AuthData (authData),
                                                              AuthProtected (..),
                                                              checkAuthStrict,
