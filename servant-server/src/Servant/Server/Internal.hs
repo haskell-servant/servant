@@ -59,9 +59,6 @@ import           Network.Wai                                (Application,
 import           Servant.API                                ((:<|>) (..), (:>),
                                                              Capture, Delete,
                                                              Get, Header, IsSecure (Secure, NotSecure),
-                                                             MatrixFlag,
-                                                             MatrixParam,
-                                                             MatrixParams,
                                                              Patch, Post, Put,
                                                              QueryFlag,
                                                              QueryParam,
@@ -73,7 +70,9 @@ import           Servant.API.Authentication                 (AuthPolicy (Strict,
                                                              AuthProtected)
 import           Servant.API.ContentTypes                   (AcceptHeader (..),
                                                              AllCTRender (..),
-                                                             AllCTUnrender (..))
+                                                             AllCTUnrender (..),
+                                                             AllMime (..),
+                                                             canHandleAcceptH)
 import           Servant.API.ResponseHeaders                (GetHeaders,
                                                              Headers,
                                                              getHeaders,
@@ -83,7 +82,6 @@ import           Servant.Server.Internal.Authentication     (AuthData (authData)
                                                              checkAuthStrict,
                                                              AuthHandlers(onMissingAuthData,
                                                              onUnauthenticated))
-import           Servant.Server.Internal.PathInfo
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
@@ -280,38 +278,38 @@ instance
 
     type ServerT (AuthProtect authdata usr 'Strict :> sublayout) m = AuthProtected authdata usr (usr -> ServerT sublayout m) 'Strict
 
-    route _ subserver = WithRequest $ \req ->
-        route (Proxy :: Proxy sublayout) $ do
-            -- Note: this may perform IO for each attempt at matching.
+-- route :: Proxy (a :> s) -> Delayed (AuthProtected aData usr (usr -> servert) 'S) -> Router
+    route _ (Delayed _ _ _ m) = WithRequest $ \req ->
+        route (Proxy :: Proxy sublayout) $ addBodyCheck subserver $ case authData req of
+
+            Nothing -> do
+                -- we're in strict mode: don't let the request go
+                -- call the provided "on missing auth" handler
+                resp <- onMissingAuthData (authHandlers authProtectionStrict)
+                return $ FailFatal resp
+
+
+            -- succesfully pulled auth data out of the Request
+            Just authData' -> do
+                mUsr <- (checkAuthStrict authProtectionStrict) authData'
+                case mUsr of
+                    -- this user is not authenticated.
+                    Nothing -> do
+                        resp <- onUnauthenticated (authHandlers authProtectionStrict) authData'
+                        return $ FailFatal resp
+
+                    -- this user is authenticated.
+                    Just usr ->
+                        (return . Route . subServerStrict authProtectionStrict) usr
+
             rr <- routeResult <$> subserver
 
             case rr of
                 -- Successful route match, so we extract the author-provided
                 -- auth data.
                 Right authProtectionStrict ->
-                    case authData req of
-                        -- could not pull authenticate data out of the request
-                        Nothing -> do
-                            -- we're in strict mode: don't let the request go
-                            -- call the provided "on missing auth" handler
-                            resp <- onMissingAuthData (authHandlers authProtectionStrict)
-                            return $ failWith (RouteMismatch resp)
-
-                        -- succesfully pulled auth data out of the Request
-                        Just authData' -> do
-                            mUsr <- (checkAuthStrict authProtectionStrict) authData'
-                            case mUsr of
-                                -- this user is not authenticated.
-                                Nothing -> do
-                                    resp <- onUnauthenticated (authHandlers authProtectionStrict) authData'
-                                    return $ failWith (RouteMismatch resp)
-
-                                -- this user is authenticated.
-                                Just usr ->
-                                    (return . succeedWith . subServerStrict authProtectionStrict) usr
-                -- route did not match, propagate failure.
                 Left rMismatch ->
-                    return (failWith rMismatch)
+                    return (Fail rMismatch)
 
 -- | Authentication in Lax mode.
 instance
@@ -335,10 +333,10 @@ instance
                     -- authentication on it. In Lax mode, we just pass `Maybe usr`
                     -- to the autho.
                     musr <- maybe (pure Nothing) (checkAuthLax authProtectionLax) (authData req)
-                    (return . succeedWith . subServerLax authProtectionLax) musr
+                    (return . Route . subServerLax authProtectionLax) musr
                 -- route did not match, propagate failure
                 Left rMismatch ->
-                    return (failWith rMismatch)
+                    return (Fail rMismatch)
 
 -- | When implementing the handler for a 'Get' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Post.Post'

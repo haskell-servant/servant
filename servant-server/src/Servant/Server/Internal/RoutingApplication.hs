@@ -15,9 +15,6 @@ import qualified Data.ByteString                    as B
 import qualified Data.ByteString.Lazy               as BL
 import           Data.IORef                         (newIORef, readIORef,
                                                      writeIORef)
-import           Data.Maybe                         (fromMaybe)
-import           Data.String                        (fromString)
-import           Network.HTTP.Types                 hiding (ResponseHeaders)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived,
                                                      requestBody,
@@ -35,48 +32,6 @@ data RouteResult a =
   | FailFatal !ServantErr     -- ^ Don't try other paths.
   | Route !a
   deriving (Eq, Show, Read, Functor)
-
--- Note that the ordering of the constructors has great significance! It
--- determines the Ord instance and, consequently, the monoid instance.
-data RouteMismatch =
-    NotFound           -- ^ the usual "not found" error
-  | WrongMethod        -- ^ a more informative "you just got the HTTP method wrong" error
-  | UnsupportedMediaType -- ^ request body has unsupported media type
-  | InvalidBody String -- ^ an even more informative "your json request body wasn't valid" error
-  | HttpError Status [Header] (Maybe BL.ByteString)  -- ^ an even even more informative arbitrary HTTP response code error.
-  | RouteMismatch Response -- ^ an arbitrary mismatch with custom Response.
-
--- | specialized 'Less Than' for use with Monoid RouteMismatch
-(<=:) :: RouteMismatch -> RouteMismatch -> Bool
-{-# INLINE (<=:) #-}
-NotFound             <=: _   = True
-WrongMethod          <=: rmm = not (rmm <=: NotFound)
-UnsupportedMediaType <=: rmm = not (rmm <=: WrongMethod)
-InvalidBody _        <=: rmm = not (rmm <=: UnsupportedMediaType)
-HttpError _ _ _      <=: rmm = not (rmm <=: (InvalidBody ""))
-RouteMismatch _      <=: _   = False
-
-instance Monoid RouteMismatch where
-  mempty = NotFound
-  -- The following isn't great, since it picks @InvalidBody@ based on
-  -- alphabetical ordering, but any choice would be arbitrary.
-  --
-  -- "As one judge said to the other, 'Be just and if you can't be just, be
-  -- arbitrary'" -- William Burroughs
-  --
-  -- It used to be the case that `mappend = max` but getting rid of the `Eq`
-  -- and `Ord` instance meant we had to roll out our own max ;\
-  rmm                  `mappend` NotFound                           = rmm
-  NotFound             `mappend` rmm                                = rmm
-  WrongMethod          `mappend` rmm | rmm <=: WrongMethod          = WrongMethod
-  WrongMethod          `mappend` rmm                                = rmm
-  UnsupportedMediaType `mappend` rmm | rmm <=: UnsupportedMediaType = UnsupportedMediaType
-  UnsupportedMediaType `mappend` rmm                                = rmm
-  i@(InvalidBody _)    `mappend` rmm | rmm <=: i                    = i
-  InvalidBody _        `mappend` rmm                                = rmm
-  h@(HttpError _ _ _)  `mappend` rmm | rmm <=: h                    = h
-  HttpError _ _ _      `mappend` rmm                                = rmm
-  r@(RouteMismatch _)  `mappend` _                                  = r
 
 data ReqBodyState = Uncalled
                   | Called !B.ByteString
