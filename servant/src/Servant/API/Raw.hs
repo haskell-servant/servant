@@ -30,7 +30,10 @@ import Control.Applicative (liftA2)
 -- this can also be used with 'Servant.Utils.StaticFiles.serveDirectory' to serve
 -- static files stored in a particular directory on your filesystem
 --
--- The phantom type (@m@) is used internally, and can generally be ignored.
+-- The phantom type (@m@) is used to describe which monad your web handlers run
+-- in: IO for wai (the default server provided in servant-server), or another
+-- monad specific to your handler or application (e.g. @AppHandler@ in @Snap@).
+-- Non-server Servant interpretations generally don't look at (@m@).
 newtype Raw (m :: * -> *) a = Raw {
     unRaw :: a
     } deriving (Eq, Read, Show, Ord, Typeable, Ix, Bounded, Data, Generic, Generic1)
