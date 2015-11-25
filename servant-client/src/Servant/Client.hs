@@ -39,6 +39,7 @@ import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
+import           Servant.Client.PerformRequest (ServantError(..))
 
 -- * Accessing APIs as a Client
 

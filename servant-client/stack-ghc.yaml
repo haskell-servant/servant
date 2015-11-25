@@ -1,0 +1,23 @@
+# This file was added for being able to test ghcjs support
+
+packages:
+  - location: ./.
+  - location: ../
+    subdirs:
+      - servant
+      - servant-server
+    extra-dep: true
+  - location:
+      git: https://github.com/hspec/hspec
+      commit: bd06049
+    subdirs:
+      - ./
+      - hspec-core
+    extra-dep: true
+
+resolver: lts-3.10
+
+extra-deps:
+  - hspec-expectations-0.7.2
+  - hspec-discover-2.2.0
+  - http-api-data-0.1.1.1

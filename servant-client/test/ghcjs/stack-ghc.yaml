@@ -1,0 +1,15 @@
+# This file was added for being able to test ghcjs support
+
+packages:
+  - location: ./.
+  - location: ../../../
+    subdirs:
+      - servant
+      - servant-client
+      - servant-server
+    extra-dep: true
+
+resolver: nightly-2015-10-08
+
+extra-deps:
+  - http-api-data-0.1.1.1

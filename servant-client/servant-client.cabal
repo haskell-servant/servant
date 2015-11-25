@@ -28,6 +28,16 @@ library
     Servant.Client
     Servant.Common.BaseUrl
     Servant.Common.Req
+     -- fixme: shouldn't be part of the public API:
+    Servant.Client.PerformRequest.Base
+  other-modules:
+    Servant.Client.PerformRequest
+  if impl(ghcjs)
+    other-modules:
+      Servant.Client.PerformRequest.GHCJS
+  else
+    other-modules:
+      Servant.Client.PerformRequest.GHC
   build-depends:
       base >=4.7 && <5
     , aeson
@@ -46,9 +56,14 @@ library
     , text
     , transformers
     , transformers-compat
+    , case-insensitive
+  if impl(ghcjs)
+    build-depends:
+        ghcjs-base
+      , ghcjs-prim
   hs-source-dirs: src
   default-language: Haskell2010
-  ghc-options: -Wall
+  ghc-options: -Wall -Werror
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -59,7 +74,16 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Servant.ClientSpec
+    , Servant.Client.PerformRequest.BaseSpec
+    , Servant.Client.TestServer
     , Servant.Common.BaseUrlSpec
+    , Spec
+  if impl(ghcjs)
+    other-modules:
+      Servant.Client.TestServer.GHCJS
+  else
+    other-modules:
+      Servant.Client.TestServer.GHC
   build-depends:
       base == 4.*
     , transformers
@@ -67,7 +91,7 @@ test-suite spec
     , aeson
     , bytestring
     , deepseq
-    , hspec == 2.*
+    , hspec >= 2.2.1 && < 2.3
     , http-client
     , http-media
     , http-types
@@ -80,3 +104,6 @@ test-suite spec
     , text
     , wai
     , warp
+    , mockery
+    , safe
+    , process
