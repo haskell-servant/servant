@@ -29,14 +29,9 @@ library
     Servant.API.Alternative
     Servant.API.Capture
     Servant.API.ContentTypes
-    Servant.API.Delete
-    Servant.API.Get
     Servant.API.Header
     Servant.API.HttpVersion
     Servant.API.IsSecure
-    Servant.API.Patch
-    Servant.API.Post
-    Servant.API.Put
     Servant.API.QueryParam
     Servant.API.Raw
     Servant.API.RemoteHost
@@ -44,6 +39,7 @@ library
     Servant.API.ResponseHeaders
     Servant.API.Sub
     Servant.API.Vault
+    Servant.API.Verbs
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5

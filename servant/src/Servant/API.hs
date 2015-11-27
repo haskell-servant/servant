@@ -25,16 +25,7 @@ module Servant.API (
   -- | Access the location for arbitrary data to be shared by applications and middleware
 
   -- * Actual endpoints, distinguished by HTTP method
-  module Servant.API.Get,
-  -- | @GET@ requests
-  module Servant.API.Post,
-  -- | @POST@ requests
-  module Servant.API.Delete,
-  -- | @DELETE@ requests
-  module Servant.API.Put,
-  -- | @PUT@ requests
-  module Servant.API.Patch,
-  -- | @PATCH@ requests
+  module Servant.API.Verbs,
 
   -- * Content Types
   module Servant.API.ContentTypes,
@@ -64,14 +55,9 @@ import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               MimeRender (..),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
-import           Servant.API.Delete          (Delete)
-import           Servant.API.Get             (Get)
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
-import           Servant.API.Patch           (Patch)
-import           Servant.API.Post            (Post)
-import           Servant.API.Put             (Put)
 import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
@@ -84,7 +70,10 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
 import           Servant.API.Vault           (Vault)
-import           Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
+import           Servant.API.Verbs           (Delete, Get, Patch, Post, Put,
+                                              ReflectMethod (reflectMethod),
+                                              Verb)
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)
-
+import           Web.HttpApiData             (FromHttpApiData (..),
+                                              ToHttpApiData (..))

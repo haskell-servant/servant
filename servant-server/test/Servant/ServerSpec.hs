@@ -130,15 +130,21 @@ captureSpec = do
 
 
 type GetApi = Get '[JSON] Person
-        :<|> "empty" :> Get '[] ()
-        :<|> "post" :> Post '[] ()
+        :<|> "empty" :> Get '[JSON] ()
+        :<|> "emptyWithHeaders" :> Get '[JSON] (Headers '[Header "H" Int] ())
+        :<|> "post" :> Post '[JSON] ()
+
 getApi :: Proxy GetApi
 getApi = Proxy
 
 getSpec :: Spec
 getSpec = do
   describe "Servant.API.Get" $ do
-    let server = return alice :<|> return () :<|> return ()
+    let server = return alice
+            :<|> return ()
+            :<|> return (addHeader 5 ())
+            :<|> return ()
+
     with (return $ serve getApi server) $ do
 
       it "allows to GET a Person" $ do
@@ -150,8 +156,8 @@ getSpec = do
         post "/" "" `shouldRespondWith` 405
         post "/empty" "" `shouldRespondWith` 405
 
-      it "returns 204 if the type is '()'" $ do
-        get "/empty" `shouldRespondWith` ""{ matchStatus = 204 }
+      it "returns headers" $ do
+        get "/emptyWithHeaders" `shouldRespondWith` 204 { matchHeaders = [ "H" <:> "5" ] }
 
       it "returns 406 if the Accept header is not supported" $ do
         Test.Hspec.Wai.request methodGet "" [(hAccept, "crazy/mime")] ""
@@ -161,7 +167,10 @@ getSpec = do
 headSpec :: Spec
 headSpec = do
   describe "Servant.API.Head" $ do
-    let server = return alice :<|> return () :<|> return ()
+    let server = return alice
+            :<|> return ()
+            :<|> return (addHeader 5 ())
+            :<|> return ()
     with (return $ serve getApi server) $ do
 
       it "allows to GET a Person" $ do
@@ -176,10 +185,6 @@ headSpec = do
       it "throws 405 (wrong method) on POSTs" $ do
         post "/" "" `shouldRespondWith` 405
         post "/empty" "" `shouldRespondWith` 405
-
-      it "returns 204 if the type is '()'" $ do
-        response <- Test.Hspec.Wai.request methodHead "/empty" [] ""
-        return response `shouldRespondWith` ""{ matchStatus = 204 }
 
       it "returns 406 if the Accept header is not supported" $ do
         Test.Hspec.Wai.request methodHead "" [(hAccept, "crazy/mime")] ""
@@ -272,7 +277,7 @@ queryParamSpec = do
 type PostApi =
        ReqBody '[JSON] Person :> Post '[JSON] Integer
   :<|> "bla" :> ReqBody '[JSON] Person :> Post '[JSON] Integer
-  :<|> "empty" :> Post '[] ()
+  :<|> "empty" :> Post '[JSON] ()
 
 postApi :: Proxy PostApi
 postApi = Proxy
@@ -287,24 +292,21 @@ postSpec = do
 
       it "allows to POST a Person" $ do
         post' "/" (encode alice) `shouldRespondWith` "42"{
-          matchStatus = 201
+          matchStatus = 200
          }
 
       it "allows alternative routes if all have request bodies" $ do
         post' "/bla" (encode alice) `shouldRespondWith` "42"{
-          matchStatus = 201
+          matchStatus = 200
          }
 
       it "handles trailing '/' gracefully" $ do
         post' "/bla/" (encode alice) `shouldRespondWith` "42"{
-          matchStatus = 201
+          matchStatus = 200
          }
 
       it "correctly rejects invalid request bodies with status 400" $ do
         post' "/" "some invalid body" `shouldRespondWith` 400
-
-      it "returns 204 if the type is '()'" $ do
-        post' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
 
       it "responds with 415 if the request body media type is unsupported" $ do
         let post'' x = Test.Hspec.Wai.request methodPost x [(hContentType
@@ -314,7 +316,7 @@ postSpec = do
 type PutApi =
        ReqBody '[JSON] Person :> Put '[JSON] Integer
   :<|> "bla" :> ReqBody '[JSON] Person :> Put '[JSON] Integer
-  :<|> "empty" :> Put '[] ()
+  :<|> "empty" :> Put '[JSON] ()
 
 putApi :: Proxy PutApi
 putApi = Proxy
@@ -345,9 +347,6 @@ putSpec = do
       it "correctly rejects invalid request bodies with status 400" $ do
         put' "/" "some invalid body" `shouldRespondWith` 400
 
-      it "returns 204 if the type is '()'" $ do
-        put' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
-
       it "responds with 415 if the request body media type is unsupported" $ do
         let put'' x = Test.Hspec.Wai.request methodPut x [(hContentType
                                                             , "application/nonsense")]
@@ -356,7 +355,7 @@ putSpec = do
 type PatchApi =
        ReqBody '[JSON] Person :> Patch '[JSON] Integer
   :<|> "bla" :> ReqBody '[JSON] Person :> Patch '[JSON] Integer
-  :<|> "empty" :> Patch '[] ()
+  :<|> "empty" :> Patch '[JSON] ()
 
 patchApi :: Proxy PatchApi
 patchApi = Proxy
@@ -386,9 +385,6 @@ patchSpec = do
 
       it "correctly rejects invalid request bodies with status 400" $ do
         patch' "/" "some invalid body" `shouldRespondWith` 400
-
-      it "returns 204 if the type is '()'" $ do
-        patch' "empty" "" `shouldRespondWith` ""{ matchStatus = 204 }
 
       it "responds with 415 if the request body media type is unsupported" $ do
         let patch'' x = Test.Hspec.Wai.request methodPatch x [(hContentType
@@ -505,7 +501,7 @@ responseHeadersSpec :: Spec
 responseHeadersSpec = describe "ResponseHeaders" $ do
   with (return $ serve (Proxy :: Proxy ResponseHeadersApi) responseHeadersServer) $ do
 
-    let methods = [(methodGet, 200), (methodPost, 201), (methodPut, 200), (methodPatch, 200)]
+    let methods = [(methodGet, 200), (methodPost, 200), (methodPut, 200), (methodPatch, 200)]
 
     it "includes the headers in the response" $
       forM_ methods $ \(method, expected) ->

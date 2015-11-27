@@ -142,7 +142,7 @@ performRequest reqMethod req reqHost manager = do
     Right response -> do
       let status = Client.responseStatus response
           body = Client.responseBody response
-          hrds = Client.responseHeaders response
+          hdrs = Client.responseHeaders response
           status_code = statusCode status
       ct <- case lookup "Content-Type" $ Client.responseHeaders response of
                  Nothing -> pure $ "application"//"octet-stream"
@@ -151,23 +151,26 @@ performRequest reqMethod req reqHost manager = do
                    Just t' -> pure t'
       unless (status_code >= 200 && status_code < 300) $
         throwE $ FailureResponse status ct body
-      return (status_code, body, ct, hrds, response)
+      return (status_code, body, ct, hdrs, response)
 
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> BaseUrl -> Manager -> ExceptT ServantError IO ([HTTP.Header], result)
+  Proxy ct -> Method -> Req -> BaseUrl -> Manager
+  -> ExceptT ServantError IO ([HTTP.Header], result)
 performRequestCT ct reqMethod req reqHost manager = do
   let acceptCT = contentType ct
-  (_status, respBody, respCT, hrds, _response) <-
+  (_status, respBody, respCT, hdrs, _response) <-
     performRequest reqMethod (req { reqAccept = [acceptCT] }) reqHost manager
   unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
     Left err -> throwE $ DecodeFailure err respCT respBody
-    Right val -> return (hrds, val)
+    Right val -> return (hdrs, val)
 
-performRequestNoBody :: Method -> Req -> BaseUrl -> Manager -> ExceptT ServantError IO ()
-performRequestNoBody reqMethod req reqHost manager =
-  void $ performRequest reqMethod req reqHost manager
+performRequestNoBody :: Method -> Req -> BaseUrl -> Manager
+  -> ExceptT ServantError IO [HTTP.Header]
+performRequestNoBody reqMethod req reqHost manager = do
+  (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req reqHost manager
+  return hdrs
 
 catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =
