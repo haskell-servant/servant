@@ -90,7 +90,7 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
 type Api =
        "get" :> Get '[JSON] Person
-  :<|> "deleteEmpty" :> Delete '[] ()
+  :<|> "deleteEmpty" :> Delete '[JSON] ()
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
@@ -283,7 +283,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
-  WrappedApi :: (HasServer api, Server api ~ ExceptT ServantErr IO a,
+  WrappedApi :: (HasServer (api :: *), Server api ~ ExceptT ServantErr IO a,
                  HasClient api, Client api ~ ExceptT ServantError IO ()) =>
     Proxy api -> WrappedApi
 

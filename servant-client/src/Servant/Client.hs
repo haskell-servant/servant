@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE InstanceSigs         #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
@@ -44,7 +45,7 @@ import           Servant.Common.Req
 -- | 'client' allows you to produce operations to query an API from a client.
 --
 -- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
--- >         :<|> "books" :> ReqBody '[JSON] Book :> Post Book -- POST /books
+-- >         :<|> "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book -- POST /books
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
@@ -118,61 +119,47 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
 
     where p = unpack (toUrlPiece val)
 
--- | If you have a 'Delete' endpoint in your API, the client
--- side querying function that is created when calling 'client'
--- will just require an argument that specifies the scheme, host
--- and port to send the request to.
 instance OVERLAPPABLE_
-  (MimeUnrender ct a, cts' ~ (ct ': cts)) => HasClient (Delete cts' a) where
-  type Client (Delete cts' a) = ExceptT ServantError IO a
+  -- Note [Non-Empty Content Types]
+  (MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
+  ) => HasClient (Verb method status cts' a) where
+  type Client (Verb method status cts' a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req baseurl manager
+    snd <$> performRequestCT (Proxy :: Proxy ct) method req baseurl manager
+      where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
-  HasClient (Delete cts ()) where
-  type Client (Delete cts ()) = ExceptT ServantError IO ()
+  (ReflectMethod method) => HasClient (Verb method status cts ()) where
+  type Client (Verb method status cts ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody H.methodDelete req baseurl manager
+    void $ performRequestNoBody method req baseurl manager
+      where method = reflectMethod (Proxy :: Proxy method)
 
--- | If you have a 'Delete xs (Headers ls x)' endpoint, the client expects the
--- corresponding headers.
 instance OVERLAPPING_
-  ( MimeUnrender ct a, BuildHeadersTo ls, cts' ~ (ct ': cts)
-  ) => HasClient (Delete cts' (Headers ls a)) where
-  type Client (Delete cts' (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
+  -- Note [Non-Empty Content Types]
+  ( MimeUnrender ct a, BuildHeadersTo ls, ReflectMethod method, cts' ~ (ct ': cts)
+  ) => HasClient (Verb method status cts' (Headers ls a)) where
+  type Client (Verb method status cts' (Headers ls a))
+    = ExceptT ServantError IO (Headers ls a)
   clientWithRoute Proxy req baseurl manager = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodDelete req baseurl manager
+    let method = reflectMethod (Proxy :: Proxy method)
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) method req baseurl manager
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
 
--- | If you have a 'Get' endpoint in your API, the client
--- side querying function that is created when calling 'client'
--- will just require an argument that specifies the scheme, host
--- and port to send the request to.
-instance OVERLAPPABLE_
-  (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
-  type Client (Get (ct ': cts) result) = ExceptT ServantError IO result
-  clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req baseurl manager
-
 instance OVERLAPPING_
-  HasClient (Get (ct ': cts) ()) where
-  type Client (Get (ct ': cts) ()) = ExceptT ServantError IO ()
-  clientWithRoute Proxy req baseurl manager =
-    performRequestNoBody H.methodGet req baseurl manager
-
--- | If you have a 'Get xs (Headers ls x)' endpoint, the client expects the
--- corresponding headers.
-instance OVERLAPPING_
-  ( MimeUnrender ct a, BuildHeadersTo ls
-  ) => HasClient (Get (ct ': cts) (Headers ls a)) where
-  type Client (Get (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
+  ( BuildHeadersTo ls, ReflectMethod method
+  ) => HasClient (Verb method status cts (Headers ls ())) where
+  type Client (Verb method status cts (Headers ls ()))
+    = ExceptT ServantError IO (Headers ls ())
   clientWithRoute Proxy req baseurl manager = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodGet req baseurl manager
-    return $ Headers { getResponse = resp
+    let method = reflectMethod (Proxy :: Proxy method)
+    hdrs <- performRequestNoBody method req baseurl manager
+    return $ Headers { getResponse = ()
                      , getHeadersHList = buildHeadersTo hdrs
                      }
+
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -216,90 +203,6 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
                     manager
 
     where hname = symbolVal (Proxy :: Proxy sym)
-
--- | If you have a 'Post' endpoint in your API, the client
--- side querying function that is created when calling 'client'
--- will just require an argument that specifies the scheme, host
--- and port to send the request to.
-instance OVERLAPPABLE_
-  (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
-  type Client (Post (ct ': cts) a) = ExceptT ServantError IO a
-  clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req baseurl manager
-
-instance OVERLAPPING_
-  HasClient (Post (ct ': cts) ()) where
-  type Client (Post (ct ': cts) ()) = ExceptT ServantError IO ()
-  clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody H.methodPost req baseurl manager
-
--- | If you have a 'Post xs (Headers ls x)' endpoint, the client expects the
--- corresponding headers.
-instance OVERLAPPING_
-  ( MimeUnrender ct a, BuildHeadersTo ls
-  ) => HasClient (Post (ct ': cts) (Headers ls a)) where
-  type Client (Post (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
-  clientWithRoute Proxy req baseurl manager = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPost req baseurl manager
-    return $ Headers { getResponse = resp
-                     , getHeadersHList = buildHeadersTo hdrs
-                     }
-
--- | If you have a 'Put' endpoint in your API, the client
--- side querying function that is created when calling 'client'
--- will just require an argument that specifies the scheme, host
--- and port to send the request to.
-instance OVERLAPPABLE_
-  (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
-  type Client (Put (ct ': cts) a) = ExceptT ServantError IO a
-  clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req baseurl manager
-
-instance OVERLAPPING_
-  HasClient (Put (ct ': cts) ()) where
-  type Client (Put (ct ': cts) ()) = ExceptT ServantError IO ()
-  clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody H.methodPut req baseurl manager
-
--- | If you have a 'Put xs (Headers ls x)' endpoint, the client expects the
--- corresponding headers.
-instance OVERLAPPING_
-  ( MimeUnrender ct a, BuildHeadersTo ls
-  ) => HasClient (Put (ct ': cts) (Headers ls a)) where
-  type Client (Put (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
-  clientWithRoute Proxy req baseurl manager= do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPut req baseurl manager
-    return $ Headers { getResponse = resp
-                     , getHeadersHList = buildHeadersTo hdrs
-                     }
-
--- | If you have a 'Patch' endpoint in your API, the client
--- side querying function that is created when calling 'client'
--- will just require an argument that specifies the scheme, host
--- and port to send the request to.
-instance OVERLAPPABLE_
-  (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
-  type Client (Patch (ct ': cts) a) = ExceptT ServantError IO a
-  clientWithRoute Proxy req baseurl manager =
-    snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req baseurl manager
-
-instance OVERLAPPING_
-  HasClient (Patch (ct ': cts) ()) where
-  type Client (Patch (ct ': cts) ()) = ExceptT ServantError IO ()
-  clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody H.methodPatch req baseurl manager
-
--- | If you have a 'Patch xs (Headers ls x)' endpoint, the client expects the
--- corresponding headers.
-instance OVERLAPPING_
-  ( MimeUnrender ct a, BuildHeadersTo ls
-  ) => HasClient (Patch (ct ': cts) (Headers ls a)) where
-  type Client (Patch (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
-  clientWithRoute Proxy req baseurl manager = do
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) H.methodPatch req baseurl manager
-    return $ Headers { getResponse = resp
-                     , getHeadersHList = buildHeadersTo hdrs
-                     }
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -503,3 +406,20 @@ instance HasClient api => HasClient (IsSecure :> api) where
 
   clientWithRoute Proxy req baseurl manager =
     clientWithRoute (Proxy :: Proxy api) req baseurl manager
+
+
+{- Note [Non-Empty Content Types]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Rather than have
+
+   instance (..., cts' ~ (ct ': cts)) => ... cts' ...
+
+It may seem to make more sense to have:
+
+   instance (...) => ... (ct ': cts) ...
+
+But this means that if another instance exists that does *not* require
+non-empty lists, but is otherwise more specific, no instance will be overall
+more specific. This in turns generally means adding yet another instance (one
+for empty and one for non-empty lists).
+-}
