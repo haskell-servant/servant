@@ -2,6 +2,7 @@
 -- arbitrary programming languages.
 module Servant.Foreign
   ( HasForeign(..)
+  , HasForeignType(..)
   , Segment(..)
   , SegmentType(..)
   , FunctionName
@@ -24,6 +25,7 @@ module Servant.Foreign
   , reqBody
   , reqHeaders
   , reqMethod
+  , reqReturnType
   , segment
   , queryStr
   -- re-exports

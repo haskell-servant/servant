@@ -45,7 +45,8 @@ camelCase = camelCase' . Prelude.map (replace "-" "")
         capitalize ""   = ""
         capitalize name = C.toUpper (Data.Text.head name) `cons` Data.Text.tail name
 
-type Arg = Text
+type ForeignType = Text
+type Arg = (Text, ForeignType)
 
 newtype Segment = Segment { _segment :: SegmentType  }
   deriving (Eq, Show)
@@ -68,10 +69,10 @@ data QueryArg = QueryArg
   } deriving (Eq, Show)
 
 data HeaderArg = HeaderArg
-    { headerArgName :: Text
+    { headerArg :: Arg
     }
   | ReplaceHeaderArg
-    { headerArgName :: Text
+    { headerArg :: Arg
     , headerPattern :: Text
     } deriving (Eq, Show)
 
@@ -88,11 +89,12 @@ type FunctionName = [Text]
 type Method = Text
 
 data Req = Req
-  { _reqUrl     :: Url
-  , _reqMethod  :: Method
-  , _reqHeaders :: [HeaderArg]
-  , _reqBody    :: Bool
-  , _funcName   :: FunctionName
+  { _reqUrl        :: Url
+  , _reqMethod     :: Method
+  , _reqHeaders    :: [HeaderArg]
+  , _reqBody       :: Maybe ForeignType
+  , _reqReturnType :: ForeignType
+  , _funcName      :: FunctionName
   } deriving (Eq, Show)
 
 makeLenses ''QueryArg
@@ -109,7 +111,7 @@ captureArg (Segment (Cap s)) = s
 captureArg                 _ = error "captureArg called on non capture"
 
 defReq :: Req
-defReq = Req defUrl "GET" [] False []
+defReq = Req defUrl "GET" [] Nothing "" []
 
 -- | To be used exclusively as a "negative" return type/constraint
 -- by @'Elem`@ type family.
@@ -119,6 +121,9 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
   Elem a '[]         = NotFound
   Elem a (a ': list) = ()
   Elem a (b ': list) = Elem a list
+
+class HasForeignType a where
+    typeFor :: Proxy a -> ForeignType
 
 class HasForeign (layout :: *) where
   type Foreign layout :: *
@@ -132,84 +137,107 @@ instance (HasForeign a, HasForeign b)
          foreignFor (Proxy :: Proxy a) req
     :<|> foreignFor (Proxy :: Proxy b) req
 
-instance (KnownSymbol sym, HasForeign sublayout)
+instance (KnownSymbol sym, HasForeignType a, HasForeign sublayout)
       => HasForeign (Capture sym a :> sublayout) where
   type Foreign (Capture sym a :> sublayout) = Foreign sublayout
 
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Segment (Cap str)]
+      req & reqUrl.path <>~ [Segment (Cap arg)]
           & funcName %~ (++ ["by", str])
 
-    where str = pack . symbolVal $ (Proxy :: Proxy sym)
+    where
+    str = pack . symbolVal $ (Proxy :: Proxy sym)
+    arg = (str, typeFor (Proxy :: Proxy a))
 
-instance Elem JSON list => HasForeign (Delete list a) where
+instance (Elem JSON list, HasForeignType a) => HasForeign (Delete list a) where
   type Foreign (Delete list a) = Req
 
   foreignFor Proxy req =
-    req & funcName  %~ ("delete" :)
-        & reqMethod .~ "DELETE"
+    req & funcName      %~ ("delete" :)
+        & reqMethod     .~ "DELETE"
+        & reqReturnType .~ retType
+    where
+    retType = typeFor (Proxy :: Proxy a)
 
-instance Elem JSON list => HasForeign (Get list a) where
+instance (Elem JSON list, HasForeignType a) => HasForeign (Get list a) where
   type Foreign (Get list a) = Req
 
   foreignFor Proxy req =
     req & funcName  %~ ("get" :)
         & reqMethod .~ "GET"
+        & reqReturnType .~ retType
+    where
+    retType = typeFor (Proxy :: Proxy a)
 
-instance (KnownSymbol sym, HasForeign sublayout)
+instance (KnownSymbol sym, HasForeignType a, HasForeign sublayout)
       => HasForeign (Header sym a :> sublayout) where
   type Foreign (Header sym a :> sublayout) = Foreign sublayout
 
   foreignFor Proxy req =
-    foreignFor subP (req & reqHeaders <>~ [HeaderArg hname])
+    foreignFor subP $ req
+        & reqHeaders <>~ [HeaderArg arg]
 
-    where hname = pack . symbolVal $ (Proxy :: Proxy sym)
-          subP = Proxy :: Proxy sublayout
+    where
+    hname = pack . symbolVal $ (Proxy :: Proxy sym)
+    arg = (hname, typeFor (Proxy :: Proxy a))
+    subP = Proxy :: Proxy sublayout
 
-instance Elem JSON list => HasForeign (Post list a) where
+instance (Elem JSON list, HasForeignType a) => HasForeign (Post list a) where
   type Foreign (Post list a) = Req
 
   foreignFor Proxy req =
     req & funcName  %~ ("post" :)
         & reqMethod .~ "POST"
+        & reqReturnType .~ retType
+    where
+    retType = typeFor (Proxy :: Proxy a)
 
-instance Elem JSON list => HasForeign (Put list a) where
+instance (Elem JSON list, HasForeignType a) => HasForeign (Put list a) where
   type Foreign (Put list a) = Req
 
   foreignFor Proxy req =
     req & funcName  %~ ("put" :)
         & reqMethod .~ "PUT"
+        & reqReturnType .~ retType
+    where
+    retType = typeFor (Proxy :: Proxy a)
 
-instance (KnownSymbol sym, HasForeign sublayout)
+instance (KnownSymbol sym, HasForeignType a, HasForeign sublayout)
       => HasForeign (QueryParam sym a :> sublayout) where
   type Foreign (QueryParam sym a :> sublayout) = Foreign sublayout
 
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.queryStr <>~ [QueryArg str Normal]
+      req & reqUrl.queryStr <>~ [QueryArg arg Normal]
 
-    where str = pack . symbolVal $ (Proxy :: Proxy sym)
+    where
+    str = pack . symbolVal $ (Proxy :: Proxy sym)
+    arg = (str, typeFor (Proxy :: Proxy a))
 
-instance (KnownSymbol sym, HasForeign sublayout)
+instance (KnownSymbol sym, HasForeignType a, HasForeign sublayout)
       => HasForeign (QueryParams sym a :> sublayout) where
   type Foreign (QueryParams sym a :> sublayout) = Foreign sublayout
 
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.queryStr <>~ [QueryArg str List]
+      req & reqUrl.queryStr <>~ [QueryArg arg List]
 
-    where str = pack . symbolVal $ (Proxy :: Proxy sym)
+    where
+    str = pack . symbolVal $ (Proxy :: Proxy sym)
+    arg = (str, typeFor (Proxy :: Proxy a))
 
-instance (KnownSymbol sym, HasForeign sublayout)
+instance (KnownSymbol sym, HasForeignType a, a ~ Bool, HasForeign sublayout)
       => HasForeign (QueryFlag sym :> sublayout) where
   type Foreign (QueryFlag sym :> sublayout) = Foreign sublayout
 
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) $
-      req & reqUrl.queryStr <>~ [QueryArg str Flag]
+      req & reqUrl.queryStr <>~ [QueryArg arg Flag]
 
-    where str = pack . symbolVal $ (Proxy :: Proxy sym)
+    where
+    str = pack . symbolVal $ (Proxy :: Proxy sym)
+    arg = (str, typeFor (Proxy :: Proxy a))
 
 instance HasForeign Raw where
   type Foreign Raw = Method -> Req
@@ -218,12 +246,13 @@ instance HasForeign Raw where
     req & funcName %~ ((toLower method) :)
         & reqMethod .~ method
 
-instance (Elem JSON list, HasForeign sublayout) => HasForeign (ReqBody list a :> sublayout) where
+instance (Elem JSON list, HasForeignType a, HasForeign sublayout)
+      => HasForeign (ReqBody list a :> sublayout) where
   type Foreign (ReqBody list a :> sublayout) = Foreign sublayout
 
   foreignFor Proxy req =
     foreignFor (Proxy :: Proxy sublayout) $
-      req & reqBody .~ True
+      req & reqBody .~ (Just $ typeFor (Proxy :: Proxy a))
 
 instance (KnownSymbol path, HasForeign sublayout)
       => HasForeign (path :> sublayout) where
@@ -234,7 +263,9 @@ instance (KnownSymbol path, HasForeign sublayout)
       req & reqUrl.path <>~ [Segment (Static str)]
           & funcName %~ (++ [str])
 
-    where str = Data.Text.map (\c -> if c == '.' then '_' else c) . pack . symbolVal $ (Proxy :: Proxy path)
+    where
+    str = Data.Text.map (\c -> if c == '.' then '_' else c)
+        . pack . symbolVal $ (Proxy :: Proxy path)
 
 instance HasForeign sublayout => HasForeign (RemoteHost :> sublayout) where
   type Foreign (RemoteHost :> sublayout) = Foreign sublayout
