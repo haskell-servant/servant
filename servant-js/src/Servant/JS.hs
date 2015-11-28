@@ -147,6 +147,10 @@ writeJSForAPI :: (HasForeign api, GenerateList (Foreign api))
               -> IO ()
 writeJSForAPI p gen fp = writeFile fp (jsForAPI p gen)
 
+-- A catch all instance since JavaScript has no types.
+instance HasForeignType a where
+    typeFor _ = empty
+
 -- | Utility class used by 'jsForAPI' which computes
 --   the data needed to generate a function for each endpoint
 --   and hands it all back in a list.

@@ -18,6 +18,7 @@ module Servant.JS.Internal
   , defReq
   , reqHeaders
   , HasForeign(..)
+  , HasForeignType(..)
   , HeaderArg(..)
   , concatCase
   , snakeCase
@@ -31,7 +32,7 @@ module Servant.JS.Internal
   , Header
   ) where
 
-import           Control.Lens                  ((^.))
+import           Control.Lens                  ((^.), _1)
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import           Data.Monoid
@@ -115,7 +116,7 @@ toValidFunctionName t =
                     ]
 
 toJSHeader :: HeaderArg -> Text
-toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> n)
+toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> fst n)
 toJSHeader (ReplaceHeaderArg n p)
   | pn `T.isPrefixOf` p = pv <> " + \"" <> rp <> "\""
   | pn `T.isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
@@ -123,8 +124,8 @@ toJSHeader (ReplaceHeaderArg n p)
                              <> "\""
   | otherwise         = p
   where
-    pv = toValidFunctionName ("header" <> n)
-    pn = "{" <> n <> "}"
+    pv = toValidFunctionName ("header" <> fst n)
+    pn = "{" <> fst n <> "}"
     rp = T.replace pn "" p
 
 jsSegments :: [Segment] -> Text
@@ -138,7 +139,7 @@ segmentToStr (Segment st) notTheEnd =
 
 segmentTypeToStr :: SegmentType -> Text
 segmentTypeToStr (Static s) = s
-segmentTypeToStr (Cap s)    = "' + encodeURIComponent(" <> s <> ") + '"
+segmentTypeToStr (Cap s)    = "' + encodeURIComponent(" <> fst s <> ") + '"
 
 jsGParams :: Text -> [QueryArg] -> Text
 jsGParams _ []     = ""
@@ -160,4 +161,4 @@ paramToStr qarg notTheEnd =
            <> "[]=' + encodeURIComponent("
            <> name
            <> if notTheEnd then ") + '" else ")"
-  where name = qarg ^. argName
+  where name = qarg ^. argName . _1
