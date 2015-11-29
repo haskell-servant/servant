@@ -122,144 +122,148 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
   Elem a (a ': list) = ()
   Elem a (b ': list) = Elem a list
 
-class HasForeignType a where
-    typeFor :: Proxy a -> ForeignType
+class HasForeignType lang a where
+    typeFor :: Proxy lang -> Proxy a -> ForeignType
 
-class HasForeign (layout :: *) where
+class HasForeign lang (layout :: *) where
   type Foreign layout :: *
-  foreignFor :: Proxy layout -> Req -> Foreign layout
+  foreignFor :: Proxy lang -> Proxy layout -> Req -> Foreign layout
 
-instance (HasForeign a, HasForeign b)
-      => HasForeign (a :<|> b) where
+instance (HasForeign lang a, HasForeign lang b)
+      => HasForeign lang (a :<|> b) where
   type Foreign (a :<|> b) = Foreign a :<|> Foreign b
 
-  foreignFor Proxy req =
-         foreignFor (Proxy :: Proxy a) req
-    :<|> foreignFor (Proxy :: Proxy b) req
+  foreignFor lang Proxy req =
+         foreignFor lang (Proxy :: Proxy a) req
+    :<|> foreignFor lang (Proxy :: Proxy b) req
 
-instance (KnownSymbol sym, HasForeignType a, HasForeign sublayout)
-      => HasForeign (Capture sym a :> sublayout) where
+instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
+      => HasForeign lang (Capture sym a :> sublayout) where
   type Foreign (Capture sym a :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) $
       req & reqUrl.path <>~ [Segment (Cap arg)]
           & funcName %~ (++ ["by", str])
 
     where
     str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor (Proxy :: Proxy a))
+    arg = (str, typeFor lang (Proxy :: Proxy a))
 
-instance (Elem JSON list, HasForeignType a) => HasForeign (Delete list a) where
+instance (Elem JSON list, HasForeignType lang a)
+      => HasForeign lang (Delete list a) where
   type Foreign (Delete list a) = Req
 
-  foreignFor Proxy req =
+  foreignFor lang Proxy req =
     req & funcName      %~ ("delete" :)
         & reqMethod     .~ "DELETE"
         & reqReturnType .~ retType
     where
-    retType = typeFor (Proxy :: Proxy a)
+    retType = typeFor lang (Proxy :: Proxy a)
 
-instance (Elem JSON list, HasForeignType a) => HasForeign (Get list a) where
+instance (Elem JSON list, HasForeignType lang a)
+      => HasForeign lang (Get list a) where
   type Foreign (Get list a) = Req
 
-  foreignFor Proxy req =
+  foreignFor lang Proxy req =
     req & funcName  %~ ("get" :)
         & reqMethod .~ "GET"
         & reqReturnType .~ retType
     where
-    retType = typeFor (Proxy :: Proxy a)
+    retType = typeFor lang (Proxy :: Proxy a)
 
-instance (KnownSymbol sym, HasForeignType a, HasForeign sublayout)
-      => HasForeign (Header sym a :> sublayout) where
+instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
+      => HasForeign lang (Header sym a :> sublayout) where
   type Foreign (Header sym a :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor subP $ req
+  foreignFor lang Proxy req =
+    foreignFor lang subP $ req
         & reqHeaders <>~ [HeaderArg arg]
 
     where
     hname = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (hname, typeFor (Proxy :: Proxy a))
+    arg = (hname, typeFor lang (Proxy :: Proxy a))
     subP = Proxy :: Proxy sublayout
 
-instance (Elem JSON list, HasForeignType a) => HasForeign (Post list a) where
+instance (Elem JSON list, HasForeignType lang a)
+      => HasForeign lang (Post list a) where
   type Foreign (Post list a) = Req
 
-  foreignFor Proxy req =
+  foreignFor lang Proxy req =
     req & funcName  %~ ("post" :)
         & reqMethod .~ "POST"
         & reqReturnType .~ retType
     where
-    retType = typeFor (Proxy :: Proxy a)
+    retType = typeFor lang (Proxy :: Proxy a)
 
-instance (Elem JSON list, HasForeignType a) => HasForeign (Put list a) where
+instance (Elem JSON list, HasForeignType lang a)
+      => HasForeign lang (Put list a) where
   type Foreign (Put list a) = Req
 
-  foreignFor Proxy req =
+  foreignFor lang Proxy req =
     req & funcName  %~ ("put" :)
         & reqMethod .~ "PUT"
         & reqReturnType .~ retType
     where
-    retType = typeFor (Proxy :: Proxy a)
+    retType = typeFor lang (Proxy :: Proxy a)
 
-instance (KnownSymbol sym, HasForeignType a, HasForeign sublayout)
-      => HasForeign (QueryParam sym a :> sublayout) where
+instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
+      => HasForeign lang (QueryParam sym a :> sublayout) where
   type Foreign (QueryParam sym a :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg arg Normal]
 
     where
     str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor (Proxy :: Proxy a))
+    arg = (str, typeFor lang (Proxy :: Proxy a))
 
-instance (KnownSymbol sym, HasForeignType a, HasForeign sublayout)
-      => HasForeign (QueryParams sym a :> sublayout) where
+instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
+      => HasForeign lang (QueryParams sym a :> sublayout) where
   type Foreign (QueryParams sym a :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg arg List]
 
     where
     str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor (Proxy :: Proxy a))
+    arg = (str, typeFor lang (Proxy :: Proxy a))
 
-instance (KnownSymbol sym, HasForeignType a, a ~ Bool, HasForeign sublayout)
-      => HasForeign (QueryFlag sym :> sublayout) where
+instance (KnownSymbol sym, HasForeignType lang a, a ~ Bool, HasForeign lang sublayout)
+      => HasForeign lang (QueryFlag sym :> sublayout) where
   type Foreign (QueryFlag sym :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg arg Flag]
 
     where
     str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor (Proxy :: Proxy a))
+    arg = (str, typeFor lang (Proxy :: Proxy a))
 
-instance HasForeign Raw where
+instance HasForeign lang Raw where
   type Foreign Raw = Method -> Req
 
-  foreignFor Proxy req method =
+  foreignFor _ Proxy req method =
     req & funcName %~ ((toLower method) :)
         & reqMethod .~ method
 
-instance (Elem JSON list, HasForeignType a, HasForeign sublayout)
-      => HasForeign (ReqBody list a :> sublayout) where
+instance (Elem JSON list, HasForeignType lang a, HasForeign lang sublayout)
+      => HasForeign lang (ReqBody list a :> sublayout) where
   type Foreign (ReqBody list a :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
-      req & reqBody .~ (Just $ typeFor (Proxy :: Proxy a))
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) $
+      req & reqBody .~ (Just $ typeFor lang (Proxy :: Proxy a))
 
-instance (KnownSymbol path, HasForeign sublayout)
-      => HasForeign (path :> sublayout) where
+instance (KnownSymbol path, HasForeign lang sublayout)
+      => HasForeign lang (path :> sublayout) where
   type Foreign (path :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) $
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) $
       req & reqUrl.path <>~ [Segment (Static str)]
           & funcName %~ (++ [str])
 
@@ -267,26 +271,26 @@ instance (KnownSymbol path, HasForeign sublayout)
     str = Data.Text.map (\c -> if c == '.' then '_' else c)
         . pack . symbolVal $ (Proxy :: Proxy path)
 
-instance HasForeign sublayout => HasForeign (RemoteHost :> sublayout) where
+instance HasForeign lang sublayout => HasForeign lang (RemoteHost :> sublayout) where
   type Foreign (RemoteHost :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) req
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) req
 
-instance HasForeign sublayout => HasForeign (IsSecure :> sublayout) where
+instance HasForeign lang sublayout => HasForeign lang (IsSecure :> sublayout) where
   type Foreign (IsSecure :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) req
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) req
 
-instance HasForeign sublayout => HasForeign (Vault :> sublayout) where
+instance HasForeign lang sublayout => HasForeign lang (Vault :> sublayout) where
   type Foreign (Vault :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) req
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) req
 
-instance HasForeign sublayout => HasForeign (HttpVersion :> sublayout) where
+instance HasForeign lang sublayout => HasForeign lang (HttpVersion :> sublayout) where
   type Foreign (HttpVersion :> sublayout) = Foreign sublayout
 
-  foreignFor Proxy req =
-    foreignFor (Proxy :: Proxy sublayout) req
+  foreignFor lang Proxy req =
+    foreignFor lang (Proxy :: Proxy sublayout) req
