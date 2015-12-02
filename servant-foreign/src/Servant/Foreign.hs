@@ -30,6 +30,7 @@ module Servant.Foreign
   , queryStr
   , listFromAPI
   , GenerateList(..)
+  , NoTypes
   -- re-exports
   , module Servant.API
   ) where

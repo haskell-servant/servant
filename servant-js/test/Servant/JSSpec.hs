@@ -98,7 +98,7 @@ a `shouldNotContain` b  = shouldNotSatisfy a (T.isInfixOf b)
 
 axiosSpec :: Spec
 axiosSpec = describe specLabel $ do
-    let reqList = listFromAPI (Proxy :: Proxy LangJS) (Proxy :: Proxy TestAPI)
+    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy TestAPI)
     it "should add withCredentials when needed" $ do
         let jsText = genJS withCredOpts $ reqList
         output jsText
@@ -122,7 +122,7 @@ axiosSpec = describe specLabel $ do
 
 angularSpec :: TestNames -> Spec
 angularSpec test = describe specLabel $ do
-    let reqList = listFromAPI (Proxy :: Proxy LangJS) (Proxy :: Proxy TestAPI)
+    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy TestAPI)
     it "should implement a service globally" $ do
         let jsText = genJS reqList
         output jsText

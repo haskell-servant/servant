@@ -130,11 +130,6 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
 -- > -- instances.
 -- > data LangX
 -- >
--- > -- If the language __X__ is dynamically typed then you only need
--- > -- a catch all instance of a form
--- > instance HasForeignType LangX a where
--- >    typeFor _ _ = empty
--- >
 -- > -- Otherwise you define instances for the types you need
 -- > instance HasForeignType LangX Int where
 -- >    typeFor _ _ = "intX"
@@ -150,8 +145,20 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
 -- >              => Proxy api -> [Req]
 -- > getEndpoints api = listFromAPI (Proxy :: Proxy LangX) api
 --
+-- > -- If language __X__ is dynamically typed then you can use
+-- > -- a predefined NoTypes parameter
+-- > getEndpoints :: (HasForeign NoTypes api, GenerateList (Foreign api))
+-- >              => Proxy api -> [Req]
+-- > getEndpoints api = listFromAPI (Proxy :: Proxy NoTypes) api
+-- >
+--
 class HasForeignType lang a where
     typeFor :: Proxy lang -> Proxy a -> ForeignType
+
+data NoTypes
+
+instance HasForeignType NoTypes a where
+    typeFor _ _ = empty
 
 class HasForeign lang (layout :: *) where
   type Foreign layout :: *
