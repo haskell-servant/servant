@@ -65,6 +65,7 @@ library
       , wai                >= 3.0  && < 3.1
       , wai-app-static     >= 3.0  && < 3.2
       , warp               >= 3.0  && < 3.2
+      , time               >= 1.5  && < 1.6
 
   hs-source-dirs: src
   default-language: Haskell2010
@@ -121,6 +122,7 @@ test-suite spec
     , wai
     , wai-extra
     , warp
+    , time
 
 test-suite doctests
  build-depends: base
