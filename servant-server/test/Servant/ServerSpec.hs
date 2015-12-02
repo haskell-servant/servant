@@ -34,6 +34,7 @@ import           Network.Wai.Internal       (Response(ResponseBuilder))
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody)
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
+                                             CaptureTime,
                                              Get, Header (..), Headers,
                                              HttpVersion, IsSecure (..), JSON,
                                              Patch, PlainText, Post, Put,
@@ -50,7 +51,8 @@ import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
 
-
+import           Data.Time.Calendar
+import           Data.ByteString.Lazy       (ByteString)
 -- * test data types
 
 data Person = Person {
@@ -86,6 +88,7 @@ tweety = Animal "Bird" 2
 spec :: Spec
 spec = do
   captureSpec
+  captureDateSpec
   getSpec
   headSpec
   postSpec
@@ -127,6 +130,33 @@ captureSpec = do
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
+
+type CaptureTimeApi = CaptureTime "date" "%Y-%m-%d" Day :> Get '[PlainText] String
+captureTimeApi :: Proxy CaptureTimeApi
+captureTimeApi = Proxy
+captureTimesServer :: Day -> ExceptT ServantErr IO String
+captureTimesServer = return . show
+
+
+captureDateSpec :: Spec
+captureDateSpec = do
+  describe "Servant.API.Times(CaptureTime)" $ do
+    with (return (serve captureTimeApi captureTimesServer)) $ do
+
+      it "can capture parts of the 'pathInfo'" $ do
+        response <- get "/2015-12-02"
+        liftIO $ simpleBody response `shouldBe` (fromString . show $ fromGregorian 2015 12 2 :: ByteString)
+
+      it "returns 404 if the decoding fails" $ do
+        get "/notAnInt" `shouldRespondWith` 404
+
+    with (return (serve
+        (Proxy :: Proxy (CaptureTime "date" "%Y-%m-%d" Day :> Raw))
+        (\ day request_ respond ->
+            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+      it "strips the captured path snippet from pathInfo" $ do
+        get "/2015-12-02/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
+
 
 
 type GetApi = Get '[JSON] Person
