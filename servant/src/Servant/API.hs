@@ -23,6 +23,10 @@ module Servant.API (
   -- | Is the request made through HTTPS?
   module Servant.API.Vault,
   -- | Access the location for arbitrary data to be shared by applications and middleware
+  module Servant.API.Times,
+  -- | Capturing dates and times in URLs and params with specified formats.
+
+
 
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Get,
@@ -83,6 +87,7 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               HList (..), Headers (..),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
+import           Servant.API.Times           (CaptureTime, QueryParamTime, QueryParamTimes)
 import           Servant.API.Vault           (Vault)
 import           Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',

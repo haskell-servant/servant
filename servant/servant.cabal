@@ -42,6 +42,7 @@ library
     Servant.API.ReqBody
     Servant.API.ResponseHeaders
     Servant.API.Sub
+    Servant.API.Times
     Servant.API.Vault
     Servant.Utils.Links
   build-depends:
