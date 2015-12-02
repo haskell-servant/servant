@@ -6,6 +6,10 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE CPP                   #-}
+#if __GLASGOW_HASKELL__ < 710
+{-# LANGUAGE OverlappingInstances  #-}
+#endif
 
 module Servant.ForeignSpec where
 
@@ -39,7 +43,7 @@ instance HasForeignType LangX Bool where
     typeFor _ _ = "boolX"
 instance {-# Overlapping #-} HasForeignType LangX String where
     typeFor _ _ = "stringX"
-instance {-# Overlapable #-} HasForeignType LangX a => HasForeignType LangX [a] where
+instance {-# Overlappable #-} HasForeignType LangX a => HasForeignType LangX [a] where
     typeFor lang _ = "listX of " <> typeFor lang (Proxy :: Proxy a)
 
 type TestApi
