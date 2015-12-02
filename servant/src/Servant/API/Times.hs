@@ -12,11 +12,12 @@ import           Data.Typeable (Typeable)
 import           GHC.TypeLits  (Symbol)
 
 
--- | Capture a value from the request path under a certain type @a@.
+-- | Capture data/time value from a path in the `format', as understood
+-- by 'Data.Time.Format.
 --
 -- Example:
--- >>>            -- GET /books/:isbn
--- >>> type MyApi = "books" :> Capture "isbn" Text :> Get '[JSON] Book
+-- >>>            -- GET /events/:date
+-- >>> type MyApi = "events" :> CaptureTime "date" "%Y-%m-%d" Day :> Get '[JSON] Book
 data CaptureTime (sym :: Symbol) (format :: Symbol) a
     deriving (Typeable)
 
@@ -28,3 +29,10 @@ data QueryParamTime (sym :: Symbol) (format :: Symbol) a
 data QueryParamTimes (sym :: Symbol) (format :: Symbol) a
     deriving (Typeable)
 
+-- $setup
+-- >>> import Servant.API
+-- >>> import Data.Aeson
+-- >>> import Data.Text
+-- >>> import Data.Time.Calendar
+-- >>> data Book
+-- >>> instance ToJSON Book where { toJSON = undefined }
