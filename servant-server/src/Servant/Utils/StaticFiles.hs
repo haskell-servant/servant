@@ -7,12 +7,12 @@ module Servant.Utils.StaticFiles (
   serveDirectory,
  ) where
 
-import           Network.Wai.Application.Static (defaultFileServerSettings,
-                                                 staticApp)
-import           Servant.API.Raw                (Raw)
-import           Servant.Server                 (Server)
-import           System.FilePath                (addTrailingPathSeparator)
-import Servant.Server.Internal.RawServer (RawServer(..))
+import           Network.Wai.Application.Static    (defaultFileServerSettings,
+                                                    staticApp)
+import           Servant.API.Raw                   (Raw)
+import           Servant.Server                    (Server)
+import           System.FilePath                   (addTrailingPathSeparator)
+import           Servant.Server.Internal.RawServer (RawServer(..))
 #if !MIN_VERSION_wai_app_static(3,1,0)
 import           Filesystem.Path.CurrentOS      (decodeString)
 #endif
