@@ -47,7 +47,7 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
-import           Servant.Server             (Server, Handler, err401, err403,
+import           Servant.Server             (Server, Handler, Tagged (..), err401, err403,
                                              err404, serve, serveWithContext,
                                              Context((:.), EmptyContext))
 import           Test.Hspec                 (Spec, context, describe, it,
@@ -210,7 +210,7 @@ captureSpec = do
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))
-        (\ "captured" request_ respond ->
+        (\ "captured" -> Tagged $ \request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
@@ -262,7 +262,7 @@ captureAllSpec = do
 
     with (return (serve
         (Proxy :: Proxy (CaptureAll "segments" String :> Raw))
-        (\ _captured request_ respond ->
+        (\ _captured -> Tagged $ \request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "consumes everything from pathInfo" $ do
         get "/captured/foo/bar/baz" `shouldRespondWith` (fromString (show ([] :: [Int])))
@@ -494,9 +494,10 @@ type RawApi = "foo" :> Raw
 rawApi :: Proxy RawApi
 rawApi = Proxy
 
-rawApplication :: Show a => (Request -> a) -> Application
-rawApplication f request_ respond = respond $ responseLBS ok200 []
-    (cs $ show $ f request_)
+rawApplication :: Show a => (Request -> a) -> Tagged m Application
+rawApplication f = Tagged $ \request_ respond ->
+    respond $ responseLBS ok200 []
+        (cs $ show $ f request_)
 
 rawSpec :: Spec
 rawSpec = do
@@ -651,7 +652,7 @@ basicAuthApi = Proxy
 basicAuthServer :: Server BasicAuthAPI
 basicAuthServer =
   const (return jerry) :<|>
-  (\ _ respond -> respond $ responseLBS imATeaPot418 [] "")
+  (Tagged $ \ _ respond -> respond $ responseLBS imATeaPot418 [] "")
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
@@ -696,7 +697,7 @@ genAuthApi = Proxy
 
 genAuthServer :: Server GenAuthAPI
 genAuthServer = const (return tweety)
-           :<|> (\ _ respond -> respond $ responseLBS imATeaPot418 [] "")
+           :<|> (Tagged $ \ _ respond -> respond $ responseLBS imATeaPot418 [] "")
 
 type instance AuthServerData (AuthProtect "auth") = ()
 

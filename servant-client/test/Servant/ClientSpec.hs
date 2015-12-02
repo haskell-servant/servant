@@ -157,8 +157,8 @@ server = serve api (
                    Nothing -> throwError $ ServantErr 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
-  :<|> (\ _request respond -> respond $ responseLBS HTTP.ok200 [] "rawSuccess")
-  :<|> (\ _request respond -> respond $ responseLBS HTTP.badRequest400 [] "rawFailure")
+  :<|> (Tagged $ \ _request respond -> respond $ responseLBS HTTP.ok200 [] "rawSuccess")
+  :<|> (Tagged $ \ _request respond -> respond $ responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
@@ -174,9 +174,9 @@ failApi = Proxy
 
 failServer :: Application
 failServer = serve failApi (
-       (\ _request respond -> respond $ responseLBS HTTP.ok200 [] "")
-  :<|> (\ _capture _request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "application/json")] "")
-  :<|> (\_request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
+       (Tagged $ \ _request respond -> respond $ responseLBS HTTP.ok200 [] "")
+  :<|> (\ _capture -> Tagged $ \_request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "application/json")] "")
+  :<|> (Tagged $ \_request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
  )
 
 -- * basic auth stuff

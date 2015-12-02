@@ -15,8 +15,8 @@
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
-  , module Servant.Server.Internal.Context
   , module Servant.Server.Internal.BasicAuth
+  , module Servant.Server.Internal.Context
   , module Servant.Server.Internal.Handler
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
@@ -32,6 +32,7 @@ import           Data.Maybe                 (fromMaybe, mapMaybe)
 import           Data.Either                (partitionEithers)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
+import           Data.Tagged                (Tagged, untag)
 import qualified Data.Text                  as T
 import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
@@ -429,7 +430,7 @@ instance (KnownSymbol sym, HasServer api context)
 -- > server = serveDirectory "/var/www/images"
 instance HasServer Raw context where
 
-  type ServerT Raw m = Application
+  type ServerT Raw m = Tagged m Application
 
   route Proxy _ rawApplication = RawRouter $ \ env request respond -> runResourceT $ do
     -- note: a Raw application doesn't register any cleanup
@@ -439,7 +440,7 @@ instance HasServer Raw context where
     liftIO $ go r request respond
 
     where go r request respond = case r of
-            Route app   -> app request (respond . Route)
+            Route app   -> untag app request (respond . Route)
             Fail a      -> respond $ Fail a
             FailFatal e -> respond $ FailFatal e
 

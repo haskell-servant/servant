@@ -18,7 +18,7 @@ module Servant.Utils.StaticFiles
 import           Data.ByteString                (ByteString)
 import           Network.Wai.Application.Static
 import           Servant.API.Raw                (Raw)
-import           Servant.Server                 (Server)
+import           Servant.Server                 (Server, Tagged (..))
 import           System.FilePath                (addTrailingPathSeparator)
 #if !MIN_VERSION_wai_app_static(3,1,0)
 import           Filesystem.Path.CurrentOS      (decodeString)
@@ -48,27 +48,27 @@ import WaiAppStatic.Storage.Filesystem          (ETagLookup)
 --
 -- Corresponds to the `defaultWebAppSettings` `StaticSettings` value.
 serveDirectoryWebApp :: FilePath -> Server Raw
-serveDirectoryWebApp = staticApp . defaultWebAppSettings . fixPath
+serveDirectoryWebApp = serveDirectoryWith . defaultWebAppSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses `defaultFileServerSettings`.
 serveDirectoryFileServer :: FilePath -> Server Raw
-serveDirectoryFileServer = staticApp . defaultFileServerSettings . fixPath
+serveDirectoryFileServer = serveDirectoryWith . defaultFileServerSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses 'webAppSettingsWithLookup'.
 serveDirectoryWebAppLookup :: ETagLookup -> FilePath -> Server Raw
 serveDirectoryWebAppLookup etag =
-  staticApp . flip webAppSettingsWithLookup etag . fixPath
+  serveDirectoryWith . flip webAppSettingsWithLookup etag . fixPath
 
 -- | Uses 'embeddedSettings'.
 serveDirectoryEmbedded :: [(FilePath, ByteString)] -> Server Raw
-serveDirectoryEmbedded files = staticApp (embeddedSettings files)
+serveDirectoryEmbedded files = serveDirectoryWith (embeddedSettings files)
 
 -- | Alias for 'staticApp'. Lets you serve a directory
 --   with arbitrary 'StaticSettings'. Useful when you want
 --   particular settings not covered by the four other
 --   variants. This is the most flexible method.
 serveDirectoryWith :: StaticSettings -> Server Raw
-serveDirectoryWith = staticApp
+serveDirectoryWith = Tagged . staticApp
 
 -- | Same as 'serveDirectoryFileServer'. It used to be the only
 --   file serving function in servant pre-0.10 and will be kept

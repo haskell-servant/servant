@@ -100,10 +100,12 @@ module Servant.Server
 
   -- * Re-exports
   , Application
+  , Tagged (..)
 
   ) where
 
 import           Data.Proxy                    (Proxy)
+import           Data.Tagged                   (Tagged (..))
 import           Data.Text                     (Text)
 import           Network.Wai                   (Application)
 import           Servant.Server.Internal
@@ -213,10 +215,12 @@ layoutWithContext p context =
 -- newtype, to convert any number of endpoints from one type constructor to
 -- another. For example
 --
+-- /Note:/ 'Server' 'Raw' can also be entered. It will be retagged.
+--
 -- >>> import Control.Monad.Reader
 -- >>> import qualified Control.Category as C
--- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String
--- >>> let readerServer = return 1797 :<|> ask :: ServerT ReaderAPI (Reader String)
+-- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String :<|> Raw
+-- >>> let readerServer = return 1797 :<|> ask :<|> Tagged (error "raw server") :: ServerT ReaderAPI (Reader String)
 -- >>> let nt = generalizeNat C.. (runReaderTNat "hi") :: Reader String :~> Handler
 -- >>> let mainServer = enter nt readerServer :: Server ReaderAPI
 --

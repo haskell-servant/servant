@@ -220,12 +220,10 @@ api :: Proxy DocsAPI
 api = Proxy
 
 server :: Server DocsAPI
-server = Server.server3 :<|> serveDocs
-
-  where serveDocs _ respond =
-          respond $ responseLBS ok200 [plain] docsBS
-
-        plain = ("Content-Type", "text/plain")
+server = Server.server3 :<|> Tagged serveDocs where
+    serveDocs _ respond =
+        respond $ responseLBS ok200 [plain] docsBS
+    plain = ("Content-Type", "text/plain")
 
 app :: Application
 app = serve api server
