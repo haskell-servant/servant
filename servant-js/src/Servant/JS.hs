@@ -122,6 +122,7 @@ import           Servant.JS.Axios
 import           Servant.JS.Internal
 import           Servant.JS.JQuery
 import           Servant.JS.Vanilla
+import           Servant.Foreign (GenerateList(..), listFromAPI)
 
 -- Dummy type specifying target language
 data LangJS
@@ -139,7 +140,7 @@ jsForAPI :: (HasForeign LangJS api, GenerateList (Foreign api))
          => Proxy api -- ^ proxy for your API type
          -> JavaScriptGenerator -- ^ js code generator to use (angular, vanilla js, jquery, others)
          -> Text                -- ^ a text that you can embed in your pages or write to a file
-jsForAPI p gen = gen (listFromAPI p)
+jsForAPI p gen = gen (listFromAPI (Proxy :: Proxy LangJS) p)
 
 -- | Directly generate all the javascript functions for your API
 --   from a 'Proxy' for your API type using the given generator
@@ -154,21 +155,4 @@ writeJSForAPI p gen fp = writeFile fp (jsForAPI p gen)
 -- A catch all instance since JavaScript has no types.
 instance HasForeignType LangJS a where
     typeFor _ _ = empty
-
--- | Utility class used by 'jsForAPI' which computes
---   the data needed to generate a function for each endpoint
---   and hands it all back in a list.
-class GenerateList reqs where
-  generateList :: reqs -> [AjaxReq]
-
-instance GenerateList AjaxReq where
-  generateList r = [r]
-
-instance (GenerateList start, GenerateList rest) => GenerateList (start :<|> rest) where
-  generateList (start :<|> rest) = (generateList start) ++ (generateList rest)
-
--- | Generate the necessary data for JS codegen as a list, each 'AjaxReq'
---   describing one endpoint from your API type.
-listFromAPI :: (HasForeign LangJS api, GenerateList (Foreign api)) => Proxy api -> [AjaxReq]
-listFromAPI p = generateList (javascript p)
 

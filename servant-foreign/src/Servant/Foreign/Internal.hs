@@ -294,3 +294,21 @@ instance HasForeign lang sublayout => HasForeign lang (HttpVersion :> sublayout)
 
   foreignFor lang Proxy req =
     foreignFor lang (Proxy :: Proxy sublayout) req
+
+-- | Utility class used by 'listFromAPI' which computes
+--   the data needed to generate a function for each endpoint
+--   and hands it all back in a list.
+class GenerateList reqs where
+  generateList :: reqs -> [Req]
+
+instance GenerateList Req where
+  generateList r = [r]
+
+instance (GenerateList start, GenerateList rest) => GenerateList (start :<|> rest) where
+  generateList (start :<|> rest) = (generateList start) ++ (generateList rest)
+
+-- | Generate the necessary data for codegen as a list, each 'Req'
+--   describing one endpoint from your API type.
+listFromAPI :: (HasForeign lang api, GenerateList (Foreign api)) => Proxy lang -> Proxy api -> [Req]
+listFromAPI lang p = generateList (foreignFor lang p defReq)
+

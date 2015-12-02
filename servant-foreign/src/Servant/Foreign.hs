@@ -28,6 +28,8 @@ module Servant.Foreign
   , reqReturnType
   , segment
   , queryStr
+  , listFromAPI
+  , GenerateList(..)
   -- re-exports
   , module Servant.API
   ) where
