@@ -11,7 +11,7 @@ description:
   <https://github.com/haskell-servant/servant/blob/master/servant-foreign/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
-author:              Denis Redozubov
+author:              Denis Redozubov, Maksymilian Owsianny
 maintainer:          denis.redozubov@gmail.com
 copyright:           2015 Denis Redozubov, Alp Mestanogullari
 category:            Web

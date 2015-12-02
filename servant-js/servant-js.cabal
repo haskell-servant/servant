@@ -13,7 +13,7 @@ description:
   <https://github.com/haskell-servant/servant/blob/master/servant-js/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
-author:              Alp Mestanogullari
+author:              Alp Mestanogullari, Maksymilian Owsianny
 maintainer:          alpmestan@gmail.com
 copyright:           2014 Alp Mestanogullari
 category:            Web
