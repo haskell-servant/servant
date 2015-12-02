@@ -219,7 +219,7 @@ instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
     str = pack . symbolVal $ (Proxy :: Proxy sym)
     arg = (str, typeFor lang (Proxy :: Proxy a))
 
-instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
+instance (KnownSymbol sym, HasForeignType lang [a], HasForeign lang sublayout)
       => HasForeign lang (QueryParams sym a :> sublayout) where
   type Foreign (QueryParams sym a :> sublayout) = Foreign sublayout
 
@@ -229,7 +229,7 @@ instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
 
     where
     str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor lang (Proxy :: Proxy a))
+    arg = (str, typeFor lang (Proxy :: Proxy [a]))
 
 instance (KnownSymbol sym, HasForeignType lang a, a ~ Bool, HasForeign lang sublayout)
       => HasForeign lang (QueryFlag sym :> sublayout) where
