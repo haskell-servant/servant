@@ -2,6 +2,7 @@
 -- arbitrary programming languages.
 module Servant.Foreign
   ( HasForeign(..)
+  , HasForeignType(..)
   , Segment(..)
   , SegmentType(..)
   , FunctionName
@@ -24,8 +25,12 @@ module Servant.Foreign
   , reqBody
   , reqHeaders
   , reqMethod
+  , reqReturnType
   , segment
   , queryStr
+  , listFromAPI
+  , GenerateList(..)
+  , NoTypes
   -- re-exports
   , module Servant.API
   ) where

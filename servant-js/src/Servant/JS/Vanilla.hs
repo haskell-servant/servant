@@ -2,6 +2,7 @@
 module Servant.JS.Vanilla where
 
 import           Control.Lens
+import           Data.Maybe (isJust)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Monoid
@@ -47,12 +48,12 @@ generateVanillaJSWith opts req = "\n" <>
 
   where argsStr = T.intercalate ", " args
         args = captures
-            ++ map (view argName) queryparams
+            ++ map (view $ argName._1) queryparams
             ++ body
-            ++ map (toValidFunctionName . (<>) "header" . headerArgName) hs
+            ++ map (toValidFunctionName . (<>) "header" . fst . headerArg) hs
             ++ [onSuccess, onError]
 
-        captures = map captureArg
+        captures = map (fst . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl.path
 
@@ -60,7 +61,7 @@ generateVanillaJSWith opts req = "\n" <>
 
         queryparams = req ^.. reqUrl.queryStr.traverse
 
-        body = if req ^. reqBody
+        body = if isJust(req ^. reqBody)
                  then [requestBody opts]
                  else []
 
@@ -68,7 +69,7 @@ generateVanillaJSWith opts req = "\n" <>
         onError = errorCallback opts
 
         dataBody =
-          if req ^. reqBody
+          if isJust (req ^. reqBody)
             then "JSON.stringify(body)\n"
             else "null"
 
@@ -80,7 +81,7 @@ generateVanillaJSWith opts req = "\n" <>
 
           where headersStr = T.intercalate "\n" $ map headerStr hs
                 headerStr header = "  xhr.setRequestHeader(\"" <>
-                  headerArgName header <>
+                  fst (headerArg header) <>
                   "\", " <> toJSHeader header <> ");"
 
         namespace = if moduleName opts == ""
