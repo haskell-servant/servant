@@ -25,7 +25,9 @@ import qualified Control.Monad.State.Strict  as SState
 import qualified Control.Monad.Writer.Lazy   as LWriter
 import qualified Control.Monad.Writer.Strict as SWriter
 import           Data.Typeable
+import           Data.Coerce
 import           Servant.API
+import           Servant.Server.Internal.RawServer (RawServer)
 
 class Enter typ arg ret | typ arg -> ret, typ ret -> arg where
     enter :: arg -> typ -> ret
@@ -38,6 +40,9 @@ instance ( Enter typ1 arg1 ret1, Enter typ2 arg2 ret2
 
 instance (Enter b arg ret) => Enter (a -> b) arg (a -> ret) where
     enter arg f a = enter arg (f a)
+
+instance Enter (RawServer m) (m :~> n) (RawServer n) where
+    enter _ = coerce
 
 -- ** Useful instances
 

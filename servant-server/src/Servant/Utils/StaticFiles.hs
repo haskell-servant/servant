@@ -12,6 +12,7 @@ import           Network.Wai.Application.Static (defaultFileServerSettings,
 import           Servant.API.Raw                (Raw)
 import           Servant.Server                 (Server)
 import           System.FilePath                (addTrailingPathSeparator)
+import Servant.Server.Internal.RawServer (RawServer(..))
 #if !MIN_VERSION_wai_app_static(3,1,0)
 import           Filesystem.Path.CurrentOS      (decodeString)
 #endif
@@ -37,7 +38,7 @@ import           Filesystem.Path.CurrentOS      (decodeString)
 -- handler in the last position, because /servant/ will try to match the handlers
 -- in order.
 serveDirectory :: FilePath -> Server Raw
-serveDirectory =
+serveDirectory = RawServer .
 #if MIN_VERSION_wai_app_static(3,1,0)
     staticApp . defaultFileServerSettings . addTrailingPathSeparator
 #else

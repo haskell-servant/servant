@@ -55,6 +55,7 @@ import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
+import           Servant.Server.Internal.RawServer
 
 import           Web.HttpApiData          (FromHttpApiData)
 import           Web.HttpApiData.Internal (parseUrlPieceMaybe, parseHeaderMaybe, parseQueryParamMaybe)
@@ -565,12 +566,12 @@ instance (KnownSymbol sym, HasServer sublayout)
 -- > server = serveDirectory "/var/www/images"
 instance HasServer Raw where
 
-  type ServerT Raw m = Application
+  type ServerT Raw m = RawServer m
 
   route Proxy rawApplication = LeafRouter $ \ request respond -> do
     r <- runDelayed rawApplication
     case r of
-      Route app   -> app request (respond . Route)
+      Route app   -> (getRawServer app) request (respond . Route)
       Fail a      -> respond $ Fail a
       FailFatal e -> respond $ FailFatal e
 
