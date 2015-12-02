@@ -122,6 +122,34 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
   Elem a (a ': list) = ()
   Elem a (b ': list) = Elem a list
 
+-- | 'HasForeignType' maps Haskell types with types in the target
+-- language of your backend. For example, let's say you're
+-- implementing a backend to some language __X__:
+--
+-- > -- First you need to create a dummy type to parametrize your
+-- > -- instances.
+-- > data LangX
+-- >
+-- > -- If the language __X__ is dynamically typed then you only need
+-- > -- a catch all instance of a form
+-- > instance HasForeignType LangX a where
+-- >    typeFor _ _ = empty
+-- >
+-- > -- Otherwise you define instances for the types you need
+-- > instance HasForeignType LangX Int where
+-- >    typeFor _ _ = "intX"
+-- >
+-- > -- Or for example in case of lists
+-- > instance HasForeignType LangX a => HasForeignType LangX [a] where
+-- >    typeFor lang _ = "listX of " <> typeFor lang (Proxy :: Proxy a)
+--
+-- Finally to generate list of information about all the endpoints for
+-- an API you create a function of a form:
+--
+-- > getEndpoints :: (HasForeign LangX api, GenerateList (Foreign api))
+-- >              => Proxy api -> [Req]
+-- > getEndpoints api = listFromAPI (Proxy :: Proxy LangX) api
+--
 class HasForeignType lang a where
     typeFor :: Proxy lang -> Proxy a -> ForeignType
 
