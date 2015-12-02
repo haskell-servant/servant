@@ -110,6 +110,7 @@ module Servant.JS
   , -- * Misc.
     listFromAPI
   , javascript
+  , LangJS
   , GenerateList(..)
   ) where
 

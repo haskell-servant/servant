@@ -98,16 +98,17 @@ a `shouldNotContain` b  = shouldNotSatisfy a (T.isInfixOf b)
 
 axiosSpec :: Spec
 axiosSpec = describe specLabel $ do
+    let reqList = listFromAPI (Proxy :: Proxy LangJS) (Proxy :: Proxy TestAPI)
     it "should add withCredentials when needed" $ do
-        let jsText = genJS withCredOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        let jsText = genJS withCredOpts $ reqList
         output jsText
         jsText `shouldContain` "withCredentials: true"
     it "should add xsrfCookieName when needed" $ do
-        let jsText = genJS cookieOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        let jsText = genJS cookieOpts $ reqList
         output jsText
         jsText `shouldContain` ("xsrfCookieName: 'MyXSRFcookie'")
     it "should add withCredentials when needed" $ do
-        let jsText = genJS headerOpts $ listFromAPI (Proxy :: Proxy TestAPI)
+        let jsText = genJS headerOpts $ reqList
         output jsText
         jsText `shouldContain` ("xsrfHeaderName: 'MyXSRFheader'")
     where
@@ -121,18 +122,19 @@ axiosSpec = describe specLabel $ do
 
 angularSpec :: TestNames -> Spec
 angularSpec test = describe specLabel $ do
+    let reqList = listFromAPI (Proxy :: Proxy LangJS) (Proxy :: Proxy TestAPI)
     it "should implement a service globally" $ do
-        let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
+        let jsText = genJS reqList
         output jsText
         jsText `shouldContain` (".service('" <> testName <> "'")
 
     it "should depend on $http service globally" $ do
-        let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
+        let jsText = genJS reqList
         output jsText
         jsText `shouldContain` ("('" <> testName <> "', function($http) {")
 
     it "should not depend on $http service in handlers" $ do
-        let jsText = genJS $ listFromAPI (Proxy :: Proxy TestAPI)
+        let jsText = genJS reqList
         output jsText
         jsText `shouldNotContain` "getsomething($http, "
     where
