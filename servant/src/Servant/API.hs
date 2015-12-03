@@ -87,7 +87,7 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               HList (..), Headers (..),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
-import           Servant.API.Times           (CaptureTime, QueryParamTime, QueryParamTimes)
+import           Servant.API.Times           (FTime(..), toProxy, getFormat, renderTime, parseTime)
 import           Servant.API.Vault           (Vault)
 import           Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
