@@ -50,9 +50,9 @@ instance (KnownSymbol ext) => Read (Ext ext) where
 
 
 instance (KnownSymbol ext) => ToHttpApiData (Ext ext) where
-    toUrlPiece   = toUrlPiece   . show
-    toHeader     = toHeader     . show
-    toQueryParam = toQueryParam . show
+    toUrlPiece   = toUrlPiece   . renderExt
+    toHeader     = toHeader     . renderExt
+    toQueryParam = toQueryParam . renderExt
 
 
 instance (KnownSymbol ext) => FromHttpApiData (Ext ext) where
@@ -79,6 +79,8 @@ parseExt str = res
         toExtTy :: Either Text (Ext ext) -> Ext ext
         toExtTy _ = undefined
 
+renderExt :: KnownSymbol ext => Ext ext -> Text
+renderExt ee@(Ext t) = mappend t (pack $ '.':getExt ee)
 
 
 -- $setup
