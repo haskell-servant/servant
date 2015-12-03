@@ -34,7 +34,7 @@ import           Network.Wai.Internal       (Response(ResponseBuilder))
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody)
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
-                                             CaptureTime,
+                                             FTime(..),
                                              Get, Header (..), Headers,
                                              HttpVersion, IsSecure (..), JSON,
                                              Patch, PlainText, Post, Put,
@@ -50,8 +50,10 @@ import           Servant.Server.Internal.RoutingApplication (toApplication, Rout
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
-
-import           Data.Time.Calendar
+import           Data.Time.Calendar         (Day, fromGregorian)
+import           Data.Time.LocalTime        (LocalTime(..), hoursToTimeZone,
+                                             localTimeToUTC, makeTimeOfDayValid)
+import           Data.Time.Clock            (UTCTime)
 import           Data.ByteString.Lazy       (ByteString)
 -- * test data types
 
@@ -88,7 +90,7 @@ tweety = Animal "Bird" 2
 spec :: Spec
 spec = do
   captureSpec
-  captureDateSpec
+  captureTimeSpec
   getSpec
   headSpec
   postSpec
@@ -131,31 +133,47 @@ captureSpec = do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
-type CaptureTimeApi = CaptureTime "date" "%Y-%m-%d" Day :> Get '[PlainText] String
+type CaptureTimeApi = (Capture "date" (FTime "%Y-%m-%d" Day) :> Get '[PlainText] String)
+                      :<|>
+                      ("datetime" :> Capture "datetime" (FTime "%Y-%m-%d %H:%M:%S%Z" UTCTime) :> Get '[PlainText] String)
 captureTimeApi :: Proxy CaptureTimeApi
 captureTimeApi = Proxy
-captureTimesServer :: Day -> ExceptT ServantErr IO String
-captureTimesServer = return . show
+captureDateServer :: FTime "%Y-%m-%d" Day -> ExceptT ServantErr IO String
+captureDateServer = return . show
+captureDateTimeServer :: FTime "%Y-%m-%d %H:%M:%S%Z" UTCTime -> ExceptT ServantErr IO String
+captureDateTimeServer = return . show
 
 
-captureDateSpec :: Spec
-captureDateSpec = do
+
+captureTimeSpec :: Spec
+captureTimeSpec = do
   describe "Servant.API.Times(CaptureTime)" $ do
-    with (return (serve captureTimeApi captureTimesServer)) $ do
+    with (return (serve captureTimeApi (captureDateServer :<|> captureDateTimeServer))) $ do
 
-      it "can capture parts of the 'pathInfo'" $ do
+      it "can capture parts of the 'pathInfo' (date only)" $ do
         response <- get "/2015-12-02"
         liftIO $ simpleBody response `shouldBe` (fromString . show $ fromGregorian 2015 12 2 :: ByteString)
+
+      it "can capture parts of the 'pathInfo' (date and time with a space)" $ do
+        let day       =  fromGregorian 2015 12 2
+            Just time =  makeTimeOfDayValid 12 34 56
+            tz        =  hoursToTimeZone 10
+            utcT      =  localTimeToUTC tz (LocalTime day time)
+            ftime     :: FTime "%Y-%m-%d %H:%M:%S%Z" UTCTime
+            ftime     =  FTime utcT
+        response <- get "/datetime/2015-12-02%2012:34:56+1000"
+        liftIO $ simpleBody response `shouldBe` (fromString . show $ ftime)
+
 
       it "returns 404 if the decoding fails" $ do
         get "/notAnInt" `shouldRespondWith` 404
 
     with (return (serve
-        (Proxy :: Proxy (CaptureTime "date" "%Y-%m-%d" Day :> Raw))
-        (\ day request_ respond ->
+        (Proxy :: Proxy (Capture "datetime" (FTime "%Y-%m-%d %H:%M:%S%Z" UTCTime) :> Raw))
+        (\ (FTime day )request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
-        get "/2015-12-02/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
+        get "/2015-12-02%2012:34:56+1000/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
 
 

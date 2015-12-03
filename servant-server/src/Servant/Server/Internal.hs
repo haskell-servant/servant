@@ -30,7 +30,6 @@ import           Data.Maybe                  (fromMaybe, mapMaybe)
 import           Data.String                 (fromString)
 import           Data.String.Conversions     (ConvertibleStrings, cs, (<>))
 import           Data.Text                   (Text)
-import qualified Data.Text                   as T
 import           Data.Typeable
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
@@ -41,9 +40,6 @@ import           Network.Wai                 (Application, lazyRequestBody,
                                               isSecure, vault, httpVersion, Response,
                                               Request, pathInfo)
 import           Servant.API                 ((:<|>) (..), (:>), Capture,
-                                              CaptureTime,
-                                              QueryParamTime,
-                                              QueryParamTimes,
                                               Delete, Get, Header,
                                               IsSecure(..), Patch, Post, Put,
                                               QueryFlag, QueryParam, QueryParams,
@@ -63,7 +59,6 @@ import           Servant.Server.Internal.ServantErr
 import           Web.HttpApiData          (FromHttpApiData)
 import           Web.HttpApiData.Internal (parseUrlPieceMaybe, parseHeaderMaybe, parseQueryParamMaybe)
 
-import           Data.Time.Format
 
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
@@ -129,42 +124,6 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
               )
     where
       captureProxy = Proxy :: Proxy (Capture capture a)
-
--- | If you use 'CaptureTime' in one of the endpoints for your API,
--- this automatically requires your server-side handler to be a function
--- that takes an argument of the type specified by the 'CaptureTime'.
--- This lets servant worry about getting it from the URL and turning
--- it into a value of the type you specify if the string matches the fiven format.
---
--- Example:
---
--- > type MyApi = "calevents" :> CaptureTime "date" "%Y-%m-%d" Day :> Get '[JSON] [Event]
--- >
--- > server :: Server MyApi
--- > server = getCalendarEvents
--- >   where getCalendarEvents :: Day -> ExceptT ServantErr IO [Event]
--- >         getCalendarEvents day = ...
-instance (KnownSymbol capture, KnownSymbol format, HasServer sublayout, ParseTime t)
-      => HasServer (CaptureTime capture format t :> sublayout) where
-
-  type ServerT (CaptureTime capture format t :> sublayout) m =
-     t -> ServerT sublayout m
-
-  route Proxy d =
-    DynamicRouter $ \ first ->
-        route (Proxy :: Proxy sublayout)
-              (addCapture d $ case captureDate formatProxy first of
-                 Nothing -> return $ Fail err404
-                 Just (t :: t) -> return $ Route t
-              )
-
-    where formatProxy = Proxy :: Proxy format
-
-captureDate :: (ParseTime t, KnownSymbol format)
-      => Proxy format -> Text -> Maybe t
-captureDate p t = parseTime defaultTimeLocale formatStr (T.unpack t)
-  where formatStr = symbolVal p
-
 
 
 allowedMethodHead :: Method -> Request -> Bool
@@ -531,40 +490,6 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
     in route (Proxy :: Proxy sublayout) (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
--- | 'QueryParamTime' allows you to accept dates and times in query params.
--- The format argument specifies the format understood by 'Data.Time.Format'.
---
--- Servant takes care of parsing the
---
--- Example:
---
--- > type MyApi = "timeseries"
--- >              :> QueryParamTime "start" "%Y-%m-%d" Day
--- >              :> QueryParamTime "end" "%Y-%m-%d" Day
--- >              :> Get '[JSON] [Double]
--- >
--- > server :: Server MyApi
--- > server = getDataBetween
--- >   where getDataBetween :: Maybe Day -> Maybe Day -> ExceptT ServantErr IO [Double]
--- >         getDataBetween mstart mend = ...return data between optional start and end dates...
-instance (KnownSymbol sym, KnownSymbol format, HasServer sublayout, ParseTime t)
-      => HasServer (QueryParamTime sym format t :> sublayout) where
-
-  type ServerT (QueryParamTime sym format t :> sublayout) m =
-    Maybe t -> ServerT sublayout m
-
-  route Proxy subserver = WithRequest $ \ request ->
-    let querytext = parseQueryText $ rawQueryString request
-        param =
-          case lookup paramname querytext of
-            Nothing       -> Nothing -- param absent from the query string
-            Just Nothing  -> Nothing -- param present with no value -> Nothing
-            Just (Just v) -> captureDate formatProxy v -- if present, we try to convert to
-                                        -- the right type
-    in route (Proxy :: Proxy sublayout) (passToServer subserver param)
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
-          formatProxy = Proxy :: Proxy format
-
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of type @['Text']@.
@@ -602,40 +527,6 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
           convert (Just v) = parseQueryParamMaybe v
-
--- | As with 'QueryParams', 'QueryParamTimes, this allows you to capture 0
--- or more dates/times matching a given format. The format must be one
--- which works with `Data.Time.Format'.
---
--- Example:
---
--- > type MyApi = "chckavailability"
--- >              :> QueryParamTimes "start" "%Y-%m-%d" Day
--- >              :> Get '[JSON] [Event]
--- >
--- > server :: Server MyApi
--- > server = getEventsForDays
--- >   where getEventsForDays :: [Day] -> ExceptT ServantErr IO [Event]
--- >         getEventsForDays days = ... return all the events on the specified days ...
-instance (KnownSymbol sym, KnownSymbol format, HasServer sublayout, ParseTime t)
-      => HasServer (QueryParamTimes sym format t :> sublayout) where
-
-  type ServerT (QueryParamTimes sym format t :> sublayout) m =
-    [t] -> ServerT sublayout m
-
-  route Proxy subserver = WithRequest $ \ request ->
-    let querytext = parseQueryText $ rawQueryString request
-        -- if sym is "foo", we look for query string parameters
-        -- named "foo" or "foo[]" and call parseQueryParam on the
-        -- corresponding values
-        parameters = filter looksLikeParam querytext
-        values = mapMaybe (convert . snd) parameters
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver values)
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
-          looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
-          convert Nothing = Nothing
-          convert (Just v) = captureDate formatProxy v
-          formatProxy = Proxy :: Proxy format
 
 -- | If you use @'QueryFlag' "published"@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
