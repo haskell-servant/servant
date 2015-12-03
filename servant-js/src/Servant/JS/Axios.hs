@@ -2,6 +2,7 @@
 module Servant.JS.Axios where
 
 import           Control.Lens
+import           Data.Maybe (isJust)
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -60,11 +61,11 @@ generateAxiosJSWith aopts opts req = "\n" <>
 
   where argsStr = T.intercalate ", " args
         args = captures
-            ++ map (view argName) queryparams
+            ++ map (view $ argName._1) queryparams
             ++ body
-            ++ map (toValidFunctionName . (<>) "header" . headerArgName) hs
+            ++ map (toValidFunctionName . (<>) "header" . fst . headerArg) hs
 
-        captures = map captureArg
+        captures = map (fst . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl.path
 
@@ -72,12 +73,12 @@ generateAxiosJSWith aopts opts req = "\n" <>
 
         queryparams = req ^.. reqUrl.queryStr.traverse
 
-        body = if req ^. reqBody
+        body = if isJust (req ^. reqBody)
                  then [requestBody opts]
                  else []
 
         dataBody =
-          if req ^. reqBody
+          if isJust (req ^. reqBody)
             then "    , data: body\n" <>
                  "    , responseType: 'json'\n"
             else ""
@@ -104,7 +105,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
 
           where headersStr = T.intercalate ", " $ map headerStr hs
                 headerStr header = "\"" <>
-                  headerArgName header <>
+                  fst (headerArg header) <>
                   "\": " <> toJSHeader header
 
         namespace =

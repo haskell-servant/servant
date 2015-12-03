@@ -2,6 +2,7 @@
 module Servant.JS.Angular where
 
 import           Control.Lens
+import           Data.Maybe (isJust)
 import           Data.Monoid
 import qualified Data.Text as T
 import           Data.Text (Text)
@@ -74,9 +75,9 @@ generateAngularJSWith ngOptions opts req = "\n" <>
   where argsStr = T.intercalate ", " args
         args = http
             ++ captures
-            ++ map (view argName) queryparams
+            ++ map (view $ argName._1) queryparams
             ++ body
-            ++ map (toValidFunctionName . (<>) "header" . headerArgName) hs
+            ++ map (toValidFunctionName . (<>) "header" . fst . headerArg) hs
 
         -- If we want to generate Top Level Function, they must depend on
         -- the $http service, if we generate a service, the functions will
@@ -85,7 +86,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
                   0 -> ["$http"]
                   _ -> []
 
-        captures = map captureArg
+        captures = map (fst . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl.path
 
@@ -93,12 +94,12 @@ generateAngularJSWith ngOptions opts req = "\n" <>
 
         queryparams = req ^.. reqUrl.queryStr.traverse
 
-        body = if req ^. reqBody
+        body = if isJust (req ^. reqBody)
                  then [requestBody opts]
                  else []
 
         dataBody =
-          if req ^. reqBody
+          if isJust (req ^. reqBody)
             then "    , data: JSON.stringify(body)\n" <>
                  "    , contentType: 'application/json'\n"
             else ""
@@ -110,7 +111,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
 
           where headersStr = T.intercalate ", " $ map headerStr hs
                 headerStr header = "\"" <>
-                  headerArgName header <>
+                  fst (headerArg header) <>
                   "\": " <> toJSHeader header
 
         namespace =
