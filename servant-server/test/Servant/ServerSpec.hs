@@ -133,14 +133,16 @@ captureSpec = do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
+type TimeFormatWSpace = "%Y-%m-%d %H:%M:%S%Z"
+
 type CaptureTimeApi = (Capture "date" (FTime "%Y-%m-%d" Day) :> Get '[PlainText] String)
                       :<|>
-                      ("datetime" :> Capture "datetime" (FTime "%Y-%m-%d %H:%M:%S%Z" UTCTime) :> Get '[PlainText] String)
+                      ("datetime" :> Capture "datetime" (FTime TimeFormatWSpace UTCTime) :> Get '[PlainText] String)
 captureTimeApi :: Proxy CaptureTimeApi
 captureTimeApi = Proxy
 captureDateServer :: FTime "%Y-%m-%d" Day -> ExceptT ServantErr IO String
 captureDateServer = return . show
-captureDateTimeServer :: FTime "%Y-%m-%d %H:%M:%S%Z" UTCTime -> ExceptT ServantErr IO String
+captureDateTimeServer :: FTime TimeFormatWSpace UTCTime -> ExceptT ServantErr IO String
 captureDateTimeServer = return . show
 
 
@@ -159,7 +161,7 @@ captureTimeSpec = do
             Just time =  makeTimeOfDayValid 12 34 56
             tz        =  hoursToTimeZone 10
             utcT      =  localTimeToUTC tz (LocalTime day time)
-            ftime     :: FTime "%Y-%m-%d %H:%M:%S%Z" UTCTime
+            ftime     :: FTime TimeFormatWSpace UTCTime
             ftime     =  FTime utcT
         response <- get "/datetime/2015-12-02%2012:34:56+1000"
         liftIO $ simpleBody response `shouldBe` (fromString . show $ ftime)
@@ -169,7 +171,7 @@ captureTimeSpec = do
         get "/notAnInt" `shouldRespondWith` 404
 
     with (return (serve
-        (Proxy :: Proxy (Capture "datetime" (FTime "%Y-%m-%d %H:%M:%S%Z" UTCTime) :> Raw))
+        (Proxy :: Proxy (Capture "datetime" (FTime TimeFormatWSpace UTCTime) :> Raw))
         (\ (FTime day )request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
