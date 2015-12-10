@@ -26,6 +26,8 @@ import           Control.Arrow              (second)
 import           Control.Lens               (makeLenses, over, traversed, (%~),
                                              (&), (.~), (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
+import           Data.Aeson                 (ToJSON(..))
+import           Data.Aeson.Encode.Pretty   (encodePretty)
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
@@ -366,6 +368,37 @@ docsWith opts intros (ExtraInfo endpoints) p =
 -- number of introduction(s)
 docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
 docsWithIntros intros = docsWith defaultDocOptions intros mempty
+
+-- | Prettify generated JSON documentation.
+--
+-- @
+-- 'docs' ('pretty' ('Proxy' :: 'Proxy' MyAPI))
+-- @
+pretty :: Proxy layout -> Proxy (Pretty layout)
+pretty Proxy = Proxy
+
+data PrettyJSON
+
+instance Accept PrettyJSON where
+    contentType _ = "application" M.// "json"
+
+instance ToJSON a => MimeRender PrettyJSON a where
+    mimeRender _ = encodePretty
+
+-- | Replace all JSON content types with PrettyJSON.
+-- Kind-polymorphic so it can operate on kinds * and [*].
+type family Pretty (layout :: k) :: k where
+    Pretty (x :<|> y)     = Pretty x :<|> Pretty y
+    Pretty (x :> y)       = Pretty x :> Pretty y
+    Pretty (Get cs r)     = Get     (Pretty cs) r
+    Pretty (Post cs r)    = Post    (Pretty cs) r
+    Pretty (Put cs r)     = Put     (Pretty cs) r
+    Pretty (Delete cs r)  = Delete  (Pretty cs) r
+    Pretty (Patch cs r)   = Patch   (Pretty cs) r
+    Pretty (ReqBody cs r) = ReqBody (Pretty cs) r
+    Pretty (JSON ': xs)   = PrettyJSON ': xs
+    Pretty (x ': xs)      = x ': Pretty xs
+    Pretty x              = x
 
 -- | The class that abstracts away the impact of API combinators
 --   on documentation generation.

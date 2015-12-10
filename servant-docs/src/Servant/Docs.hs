@@ -23,7 +23,7 @@
 -- See example/greet.hs for an example.
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, markdown
+    HasDocs(..), docs, pretty, markdown
     -- * Generating docs with extra information
   , docsWith, docsWithIntros, docsWithOptions
   , ExtraInfo(..), extraInfo

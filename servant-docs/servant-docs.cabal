@@ -31,6 +31,8 @@ library
     , Servant.Docs.Internal
   build-depends:
       base >=4.7 && <5
+    , aeson
+    , aeson-pretty
     , bytestring
     , bytestring-conversion
     , case-insensitive
