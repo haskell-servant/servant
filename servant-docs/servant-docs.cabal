@@ -29,6 +29,7 @@ library
   exposed-modules:
       Servant.Docs
     , Servant.Docs.Internal
+    , Servant.Docs.Internal.Pretty
   build-depends:
       base >=4.7 && <5
     , aeson
