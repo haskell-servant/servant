@@ -33,6 +33,8 @@ generateVanillaJSWith opts req = "\n" <>
  <> "  var xhr = new XMLHttpRequest();\n"
  <> "  xhr.open('" <> method <> "', " <> url <> ", true);\n"
  <>    reqheaders
+ <> "  xhr.setRequestHeader(\"Accept\",\"application/json\");\n"
+ <> (if isJust (req ^. reqBody) then "  xhr.setRequestHeader(\"Content-Type\",\"application/json\");\n" else "")
  <> "  xhr.onreadystatechange = function (e) {\n"
  <> "    if (xhr.readyState == 4) {\n"
  <> "        var value = JSON.parse(xhr.responseText);\n"
