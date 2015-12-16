@@ -101,7 +101,6 @@ test-suite spec
     , hspec == 2.*
     , QuickCheck
     , quickcheck-instances
-    , parsec
     , servant
     , string-conversions
     , text
