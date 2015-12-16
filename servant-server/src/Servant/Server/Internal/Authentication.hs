@@ -31,18 +31,14 @@ import           Data.Word8                 (isSpace, toLower, _colon)
 import           GHC.TypeLits               (KnownSymbol, symbolVal)
 import           Data.Text.Encoding         (decodeUtf8)
 import           Data.Text                  (splitOn)
-import           Network.HTTP.Types.Status  (status401)
-import           Network.Wai                (Request, Response, requestHeaders,
-                                             responseBuilder)
+import           Network.Wai                (Request, requestHeaders)
+import Servant.Server.Internal.ServantErr (err401, ServantErr(errHeaders))
 import           Servant.API.Authentication (AuthPolicy (Strict, Lax),
                                              AuthProtected,
                                              BasicAuth (BasicAuth),
-                                             JWTAuth (..))
-                                             JWTAuth)
-import           Servant.Server.Internal.RoutingApplication (RouteResult(FailFatal))
-
-import            Web.JWT                    (JWT, VerifiedJWT, Secret)
-import qualified  Web.JWT as JWT             (decode, decodeAndVerifySignature, secret)
+                                             JWTAuth(..))
+import            Web.JWT                    (decodeAndVerifySignature, JWT, VerifiedJWT, Secret)
+import qualified  Web.JWT as JWT             (decode)
 
 -- | Class to represent the ability to extract authentication-related
 -- data from a 'Request' object.
@@ -52,10 +48,10 @@ class AuthData a where
 -- | handlers to deal with authentication failures.
 data AuthHandlers authData = AuthHandlers
     {   -- we couldn't find the right type of auth data (or any, for that matter)
-        onMissingAuthData :: IO ServantError
+        onMissingAuthData :: IO ServantErr
     ,
         -- we found the right type of auth data in the request but the check failed
-        onUnauthenticated :: authData -> IO ServantError
+        onUnauthenticated :: authData -> IO ServantErr
     }
 
 -- | concrete type to provide when in 'Strict' mode.
@@ -100,7 +96,8 @@ basicAuthHandlers :: forall realm. KnownSymbol realm => AuthHandlers (BasicAuth 
 basicAuthHandlers =
     let realmBytes = (fromString . symbolVal) (Proxy :: Proxy realm)
         headerBytes = "Basic realm=\"" <> realmBytes <> "\""
-        authFailure = responseBuilder status401 [("WWW-Authenticate", headerBytes)] mempty in
+        authFailure = err401 { errHeaders = [("WWW-Authenticate", headerBytes)] }
+    in
         AuthHandlers (return authFailure)  ((const . return) authFailure)
 
 -- | Basic authentication combinator with strict failure.
@@ -130,8 +127,7 @@ instance AuthData JWTAuth where
 jwtAuthHandlers :: AuthHandlers JWTAuth
 jwtAuthHandlers = AuthHandlers (return missingData) ((const . return) authFailure)
   where
-    withError e =
-      responseBuilder status401 [("WWW-Authenticate", "Bearer error=\""<>e<>"\"")] mempty
+    withError e = err401 { errHeaders = [("WWW-Authenticate", "Bearer error=\""<>e<>"\"")] }
     missingData = withError "invalid_request"
     authFailure = withError "invalid_token"
 
@@ -141,5 +137,5 @@ jwtAuthHandlers = AuthHandlers (return missingData) ((const . return) authFailur
 -- One can use  strictProtect and laxProtect to make more complex authentication
 -- and authorization schemes.
 jwtAuthStrict :: Secret -> subserver -> AuthProtected JWTAuth (JWT VerifiedJWT) subserver 'Strict
-jwtAuthStrict secret subserver = strictProtect (return . JWT.decodeAndVerifySignature secret . unJWTAuth) jwtAuthHandlers subserver
+jwtAuthStrict secret subserver = strictProtect (return . decodeAndVerifySignature secret . unJWTAuth) jwtAuthHandlers subserver
 

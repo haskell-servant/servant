@@ -179,11 +179,13 @@ addMethodCheck :: Delayed a
 addMethodCheck (Delayed captures method auth body server) new =
   Delayed captures (combineRouteResults const method new) auth body server
 
+-- | Add a method to perform authorization in strict mode.
 addAuthStrictCheck :: Delayed (AuthProtected auth usr (usr -> a) 'Strict)
-                  -> IO (RouteResult (Maybe usr))
+                  -> IO (RouteResult (Maybe auth))
                   -> Delayed a
-addAuthStrictCheck delayed@(Delayed captures method _ body server) new =
-    let newAuth = runDelayed delayed `bindRouteResults` \ authProtectionStrict -> new `bindRouteResults` \ mAuthData -> case mAuthData of
+                  -- -> Delayed a
+addAuthStrictCheck delayed@(Delayed captures method _ body _) new =
+    let newAuth = runDelayed delayed `bindRouteResults` \authProtectionStrict -> new `bindRouteResults` \mAuthData -> case mAuthData of
 
             Nothing -> do
                 -- we're in strict mode: don't let the request go
@@ -192,26 +194,25 @@ addAuthStrictCheck delayed@(Delayed captures method _ body server) new =
                 return $ FailFatal resp
 
             -- successfully pulled auth data out of the request
-            Just authData -> do
-                mUsr <- (checkAuthStrict authProtectionStrict) authData
+            Just aData -> do
+                mUsr <- (checkAuthStrict authProtectionStrict) aData
                 case mUsr of
                     -- this user is not authenticated
                     Nothing -> do
-                        resp <- onUnauthenticated (authHandlers authProtectionStrict) authData
+                        resp <- onUnauthenticated (authHandlers authProtectionStrict) aData
                         return $ FailFatal resp
 
                     -- this user is authenticated
                     Just usr ->
                         (return . Route . subServerStrict authProtectionStrict) usr
-    in Delayed captures method newAuth body server
-
+    in Delayed captures method newAuth body (\_ y _ -> Route y)
 
 -- | Add a body check to the end of the body block.
 addBodyCheck :: Delayed (a -> b)
              -> IO (RouteResult a)
              -> Delayed b
 addBodyCheck (Delayed captures method auth body server) new =
-  Delayed captures method auth (combineRouteResults (,) body new) (\ x (y, v) z -> ($ v) <$> server x y z)
+  Delayed captures method auth (combineRouteResults (,) body new) (\ x y (z, v) -> ($ v) <$> server x y z)
 
 -- | Add an accept header check to the end of the body block.
 -- The accept header check should occur after the body check,
@@ -255,11 +256,12 @@ combineRouteResults f m1 m2 =
 -- blocks on to the actual handler.
 runDelayed :: Delayed a
            -> IO (RouteResult a)
-runDelayed (Delayed captures method body server) =
+runDelayed (Delayed captures method auth body server) =
   captures `bindRouteResults` \ c ->
   method   `bindRouteResults` \ _ ->
+  auth     `bindRouteResults` \ a ->
   body     `bindRouteResults` \ b ->
-  return (server c b)
+  return (server c a b)
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.
