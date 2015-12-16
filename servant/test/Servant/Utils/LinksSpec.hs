@@ -1,14 +1,14 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ConstraintKinds #-}
-
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE PolyKinds       #-}
+{-# LANGUAGE TypeOperators   #-}
 module Servant.Utils.LinksSpec where
 
-import Test.Hspec ( Spec, it, describe, shouldBe, Expectation )
-import Data.Proxy ( Proxy(..) )
+import           Data.Proxy              (Proxy (..))
+import           Test.Hspec              (Expectation, Spec, describe, it,
+                                          shouldBe)
 
-import Servant.API
+import           Servant.API
 
 type TestApi =
   -- Capture and query params
@@ -24,18 +24,6 @@ type TestApi =
   :<|> "delete" :> Header "ponies" String :> Delete '[JSON] ()
   :<|> "raw" :> Raw
 
-type TestLink = "hello" :> "hi" :> Get '[JSON] Bool
-type TestLink2 = "greet" :> ReqBody '[JSON] [Int] :> Post '[PlainText] Bool
-type TestLink3 = "parent" :> "child" :> Get '[JSON] String
-
-type BadTestLink = "hallo" :> "hi" :> Get '[JSON] Bool
-type BadTestLink2 = "greet" :> Get '[PlainText] Bool
-
-type BadTestLink' = "hello" :> "hi" :> Get '[OctetStream] Bool
-type BadTestLink'2 = "greet" :> Get '[OctetStream] Bool
-
-type NotALink = "hello" :> Capture "x" Bool :> Get '[JSON] Bool
-type NotALink2 = "hello" :> ReqBody '[JSON] 'True :> Get '[JSON] Bool
 
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
          => Proxy endpoint -> MkLink endpoint
@@ -49,7 +37,7 @@ shouldBeURI link expected =
 
 spec :: Spec
 spec = describe "Servant.Utils.Links" $ do
-    it "Generates correct links for capture query params" $ do
+    it "generates correct links for capture query params" $ do
         let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete '[JSON] ())
         apiLink l1 "hi" `shouldBeURI` "hello/hi"
 
@@ -59,15 +47,55 @@ spec = describe "Servant.Utils.Links" $ do
         apiLink l2 "bye" (Just True) `shouldBeURI` "hello/bye?capital=true"
 
 
-    it "Generates correct links for query flags" $ do
+    it "generates correct links for query flags" $ do
         let l1 = Proxy :: Proxy ("balls" :> QueryFlag "bouncy"
                                          :> QueryFlag "fast" :> Delete '[JSON] ())
         apiLink l1 True True `shouldBeURI` "balls?bouncy&fast"
         apiLink l1 False True `shouldBeURI` "balls?fast"
 
-    it "Generates correct links for all of the verbs" $ do
+    it "generates correct links for all of the verbs" $ do
         apiLink (Proxy :: Proxy ("get" :> Get '[JSON] ())) `shouldBeURI` "get"
         apiLink (Proxy :: Proxy ("put" :> Put '[JSON] ())) `shouldBeURI` "put"
         apiLink (Proxy :: Proxy ("post" :> Post '[JSON] ())) `shouldBeURI` "post"
         apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] ())) `shouldBeURI` "delete"
         apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeURI` "raw"
+
+
+-- |
+-- Before https://github.com/CRogers/should-not-typecheck/issues/5 is fixed,
+-- we'll just use doctest
+--
+-- >>> apiLink (Proxy :: Proxy WrongPath)
+-- ...
+--     Could not deduce ...
+-- ...
+--
+-- >>> apiLink (Proxy :: Proxy WrongReturnType)
+-- ...
+--     Could not deduce ...
+-- ...
+--
+-- >>> apiLink (Proxy :: Proxy WrongContentType)
+-- ...
+--     Could not deduce ...
+-- ...
+--
+-- >>> apiLink (Proxy :: Proxy WrongMethod)
+-- ...
+--     Could not deduce ...
+-- ...
+--
+-- >>> apiLink (Proxy :: Proxy NotALink)
+-- ...
+--     Could not deduce ...
+-- ...
+--
+-- sanity check
+-- >>> apiLink (Proxy :: Proxy AllGood)
+-- get
+type WrongPath = "getTypo" :> Get '[JSON] ()
+type WrongReturnType = "get" :> Get '[JSON] Bool
+type WrongContentType = "get" :> Get '[OctetStream] ()
+type WrongMethod = "get" :> Post '[JSON] ()
+type NotALink = "hello" :> ReqBody '[JSON] 'True :> Get '[JSON] Bool
+type AllGood = "get" :> Get '[JSON] ()

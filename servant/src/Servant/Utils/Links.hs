@@ -180,12 +180,13 @@ type family IsElem endpoint api :: Constraint where
     IsElem e e                              = ()
     IsElem e a                              = IsElem' e a
 
-
 type family IsSubList a b :: Constraint where
     IsSubList '[] b          = ()
-    IsSubList '[x] (x ': xs) = ()
-    IsSubList '[x] (y ': ys) = IsSubList '[x] ys
-    IsSubList (x ': xs) y    = IsSubList '[x] y `And` IsSubList xs y
+    IsSubList (x ': xs) y    = Elem x y `And` IsSubList xs y
+
+type family Elem e es :: Constraint where
+    Elem x (x ': xs) = ()
+    Elem y (x ': xs) = Elem y xs
 
 -- Phantom types for Param
 data Query
