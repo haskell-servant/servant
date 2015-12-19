@@ -183,7 +183,6 @@ addMethodCheck (Delayed captures method auth body server) new =
 addAuthStrictCheck :: Delayed (AuthProtected auth usr (usr -> a) 'Strict)
                   -> IO (RouteResult (Maybe auth))
                   -> Delayed a
-                  -- -> Delayed a
 addAuthStrictCheck delayed@(Delayed captures method _ body _) new =
     let newAuth = runDelayed delayed `bindRouteResults` \authProtectionStrict -> new `bindRouteResults` \mAuthData -> case mAuthData of
 
@@ -205,6 +204,17 @@ addAuthStrictCheck delayed@(Delayed captures method _ body _) new =
                     -- this user is authenticated
                     Just usr ->
                         (return . Route . subServerStrict authProtectionStrict) usr
+    in Delayed captures method newAuth body (\_ y _ -> Route y)
+
+-- | Add a method to perform authorization in strict mode.
+addAuthLaxCheck :: Delayed (AuthProtected auth usr (Maybe usr -> a) 'Lax)
+                  -> IO (RouteResult (Maybe auth))
+                  -> Delayed a
+addAuthLaxCheck delayed@(Delayed captures method _ body _) new =
+    let newAuth = runDelayed delayed `bindRouteResults` \authProtectionLax -> new `bindRouteResults` \mAuthData ->
+            fmap (Route . subServerLax authProtectionLax)
+                 (maybe (pure Nothing) (checkAuthLax authProtectionLax) mAuthData)
+
     in Delayed captures method newAuth body (\_ y _ -> Route y)
 
 -- | Add a body check to the end of the body block.
