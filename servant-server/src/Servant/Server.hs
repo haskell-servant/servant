@@ -107,7 +107,7 @@ import           Servant.Server.Internal.Authentication
 serve :: HasServer layout => Proxy layout -> Server layout -> Application
 serve p server = toApplication (runRouter (route p d))
   where
-    d = Delayed r r r (\ _ _ -> Route server)
+    d = Delayed r r r r (\ _ _ _ -> Route server)
     r = return (Route ())
 
 
