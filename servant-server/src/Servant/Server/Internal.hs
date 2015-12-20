@@ -16,7 +16,6 @@
 module Servant.Server.Internal
   ( module Servant.Server.Internal
   , module Servant.Server.Internal.Authentication
-  , module Servant.Server.Internal.PathInfo
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
   , module Servant.Server.Internal.ServantErr
@@ -29,16 +28,10 @@ import           Control.Monad.Trans.Except  (ExceptT)
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Lazy        as BL
 import qualified Data.Map                    as M
-import qualified Data.ByteString                            as B
-import qualified Data.ByteString.Lazy                       as BL
-import qualified Data.Map                                   as M
 import           Data.Maybe                  (mapMaybe, fromMaybe)
 import           Data.String                                (fromString)
 import           Data.String.Conversions                    (ConvertibleStrings, cs, (<>))
 import           Data.Text                                  (Text)
-import qualified Data.Text                                  as T
-import           Data.Text.Encoding                         (decodeUtf8,
-                                                             encodeUtf8)
 import           Data.Typeable
 import           GHC.TypeLits                               (KnownSymbol,
                                                              symbolVal)
@@ -49,6 +42,7 @@ import           Network.Wai                                (Application,
                                                              httpVersion,
                                                              isSecure,
                                                              lazyRequestBody,
+                                                             pathInfo,
                                                              rawQueryString,
                                                              remoteHost,
                                                              Response,
@@ -278,38 +272,10 @@ instance
 
     type ServerT (AuthProtect authdata usr 'Strict :> sublayout) m = AuthProtected authdata usr (usr -> ServerT sublayout m) 'Strict
 
--- route :: Proxy (a :> s) -> Delayed (AuthProtected aData usr (usr -> servert) 'S) -> Router
-    route _ (Delayed _ _ _ m) = WithRequest $ \req ->
-        route (Proxy :: Proxy sublayout) $ addBodyCheck subserver $ case authData req of
-
-            Nothing -> do
-                -- we're in strict mode: don't let the request go
-                -- call the provided "on missing auth" handler
-                resp <- onMissingAuthData (authHandlers authProtectionStrict)
-                return $ FailFatal resp
-
-
-            -- succesfully pulled auth data out of the Request
-            Just authData' -> do
-                mUsr <- (checkAuthStrict authProtectionStrict) authData'
-                case mUsr of
-                    -- this user is not authenticated.
-                    Nothing -> do
-                        resp <- onUnauthenticated (authHandlers authProtectionStrict) authData'
-                        return $ FailFatal resp
-
-                    -- this user is authenticated.
-                    Just usr ->
-                        (return . Route . subServerStrict authProtectionStrict) usr
-
-            rr <- routeResult <$> subserver
-
-            case rr of
-                -- Successful route match, so we extract the author-provided
-                -- auth data.
-                Right authProtectionStrict ->
-                Left rMismatch ->
-                    return (Fail rMismatch)
+    route _ subserver = WithRequest $ \request ->
+        route (Proxy :: Proxy sublayout) (addAuthStrictCheck subserver (authCheck request))
+            where
+                authCheck req = pure . Route $ authData req
 
 -- | Authentication in Lax mode.
 instance
@@ -320,23 +286,11 @@ instance
 
     type ServerT (AuthProtect authdata usr 'Lax :> sublayout) m = AuthProtected authdata usr (Maybe usr -> ServerT sublayout m) 'Lax
 
-    route _ subserver = WithRequest $ \req ->
-        route (Proxy :: Proxy sublayout) $ do
-            -- Note: this may perform IO for each attempt at matching.
-            rr <- routeResult <$> subserver
-                -- Successful route match, so we extract the author-provided
-                -- auth data.
-            case rr of
-                -- route matched, extract author-provided lax authentication data
-                Right authProtectionLax -> do
-                    -- extract a user from the request object and perform
-                    -- authentication on it. In Lax mode, we just pass `Maybe usr`
-                    -- to the autho.
-                    musr <- maybe (pure Nothing) (checkAuthLax authProtectionLax) (authData req)
-                    (return . Route . subServerLax authProtectionLax) musr
-                -- route did not match, propagate failure
-                Left rMismatch ->
-                    return (Fail rMismatch)
+    route _ subserver = WithRequest $ \request ->
+        route (Proxy :: Proxy sublayout) (addAuthLaxCheck subserver (authCheck request))
+            where
+                authCheck req = pure . Route $ authData req
+
 
 -- | When implementing the handler for a 'Get' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Post.Post'
