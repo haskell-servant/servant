@@ -174,39 +174,39 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     it "Servant.API.Get" $ \(_, baseUrl) -> do
       let getGet = getNth (Proxy :: Proxy 0) $ client api baseUrl manager
 
-  manager <- C.newManager C.defaultManagerSettings
-  let getGet :: ExceptT ServantError IO Person
-      getDeleteEmpty :: ExceptT ServantError IO ()
-      getCapture :: String -> ExceptT ServantError IO Person
-      getBody :: Person -> ExceptT ServantError IO Person
-      getQueryParam :: Maybe String -> ExceptT ServantError IO Person
-      getQueryParams :: [String] -> ExceptT ServantError IO [Person]
-      getQueryFlag :: Bool -> ExceptT ServantError IO Bool
-      getMatrixParam :: Maybe String -> ExceptT ServantError IO Person
-      getMatrixParams :: [String] -> ExceptT ServantError IO [Person]
-      getMatrixFlag :: Bool -> ExceptT ServantError IO Bool
-      getRawSuccess :: Method -> ExceptT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], C.Response ByteString)
-      getRawFailure :: Method -> ExceptT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], C.Response ByteString)
-      getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])] -> ExceptT ServantError IO (String, Maybe Int, Bool, [(String, [Rational])])
-      getRespHeaders :: ExceptT ServantError IO (Headers TestHeaders Bool)
-      getDeleteContentType :: ExceptT ServantError IO ()
-      (     getGet
-       :<|> getDeleteEmpty
-       :<|> getCapture
-       :<|> getBody
-       :<|> getQueryParam
-       :<|> getQueryParams
-       :<|> getQueryFlag
-       :<|> getMatrixParam
-       :<|> getMatrixParams
-       :<|> getMatrixFlag
-       :<|> getRawSuccess
-       :<|> getRawFailure
-       :<|> getMultiple
-       :<|> getRespHeaders
-       :<|> getDeleteContentType
-       :<|> getPrivatePerson)
-         = client api baseUrl manager
+    manager <- C.newManager C.defaultManagerSettings
+    let getGet :: ExceptT ServantError IO Person
+        getDeleteEmpty :: ExceptT ServantError IO ()
+        getCapture :: String -> ExceptT ServantError IO Person
+        getBody :: Person -> ExceptT ServantError IO Person
+        getQueryParam :: Maybe String -> ExceptT ServantError IO Person
+        getQueryParams :: [String] -> ExceptT ServantError IO [Person]
+        getQueryFlag :: Bool -> ExceptT ServantError IO Bool
+        getMatrixParam :: Maybe String -> ExceptT ServantError IO Person
+        getMatrixParams :: [String] -> ExceptT ServantError IO [Person]
+        getMatrixFlag :: Bool -> ExceptT ServantError IO Bool
+        getRawSuccess :: Method -> ExceptT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], C.Response ByteString)
+        getRawFailure :: Method -> ExceptT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], C.Response ByteString)
+        getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])] -> ExceptT ServantError IO (String, Maybe Int, Bool, [(String, [Rational])])
+        getRespHeaders :: ExceptT ServantError IO (Headers TestHeaders Bool)
+        getDeleteContentType :: ExceptT ServantError IO ()
+        (     getGet
+        :<|> getDeleteEmpty
+        :<|> getCapture
+        :<|> getBody
+        :<|> getQueryParam
+        :<|> getQueryParams
+        :<|> getQueryFlag
+        :<|> getMatrixParam
+        :<|> getMatrixParams
+        :<|> getMatrixFlag
+        :<|> getRawSuccess
+        :<|> getRawFailure
+        :<|> getMultiple
+        :<|> getRespHeaders
+        :<|> getDeleteContentType
+        :<|> getPrivatePerson)
+            = client api baseUrl manager
 
   hspec $ do
     it "Servant.API.Get" $ do
