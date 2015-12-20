@@ -32,13 +32,13 @@ import           GHC.Generics               (Generic)
 import           Network.HTTP.Types         (hAccept, hContentType,
                                              methodDelete, methodGet, methodHead,
                                              methodPatch, methodPost, methodPut,
-                                             ok200, parseQuery, Status(..))
+                                             ok200, parseQuery, ResponseHeaders, Status(..))
 import           Network.Wai                (Application, Request, pathInfo,
                                              queryString, rawQueryString,
                                              responseLBS, responseBuilder)
 import           Network.Wai.Internal       (Response(ResponseBuilder))
-import           Network.Wai.Test           (asertHeader, defaultRequest, request,
-                                             runSession, simpleBody, SResponse)
+import           Network.Wai.Test           (defaultRequest, request,
+                                             runSession, simpleBody, simpleHeaders, SResponse)
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Get, Header (..), Headers,
                                              HttpVersion, IsSecure (..), JSON,
@@ -47,26 +47,18 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Raw, RemoteHost, ReqBody,
                                              addHeader)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
-import           Test.Hspec                 (Spec, describe, it, shouldBe)
+import           Test.Hspec                 (Spec, describe, it, shouldBe, shouldContain)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, post, request,
                                              shouldRespondWith, with, (<:>))
-import           Test.Hspec.Wai.Internal     (WaiSession(WaiSession))
+import           Test.Hspec.Wai.Internal     (WaiSession)
 import           Servant.Server.Internal.RoutingApplication (toApplication)
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
-import           Servant.API                ((:<|>) (..), (:>),
-                                             addHeader, Capture,
-                                             Delete, Get, Header (..), Headers,
-                                             HttpVersion, IsSecure(..), JSON, MatrixFlag,
-                                             MatrixParam, MatrixParams, Patch, PlainText,
-                                             Post, Put, RemoteHost, QueryFlag, QueryParam,
-                                             QueryParams, Raw, ReqBody)
 import           Servant.API.Authentication
 import           Servant.Server.Internal.Authentication
-import           Servant.Server             (Server, serve, ServantErr(..), err404)
-import           Servant.Server.Internal    (RouteMismatch (..))
+import           Servant.Server.Internal.RoutingApplication (RouteResult(Route))
 import           Web.JWT                    hiding (JSON)
 
 
@@ -613,71 +605,6 @@ prioErrorsSpec = describe "PrioErrors" $ do
     check put' "/bar" vjson 404
     check put' "/foo" vjson 405
 
-
--- | fake equality to use for testing the RouteMismatch spec (errorSpec).
--- this is a hack around RouteMismatch not having an `Eq` instance.
-(=:=) :: RouteMismatch -> RouteMismatch -> Bool
-NotFound =:= NotFound = True
-WrongMethod =:= WrongMethod = True
-(InvalidBody ib1) =:= (InvalidBody ib2) = ib1 == ib2
-(HttpError s1 hs1 mb1) =:= (HttpError s2 hs2 mb2) = s1 == s2 && hs1 == hs2 && mb1 == mb2
-(RouteMismatch _) =:= (RouteMismatch _) = True
-_ =:= _ = False
-
--- | Test server error functionality.
-errorsSpec :: Spec
-errorsSpec = do
-  let he = HttpError status409 [] (Just "A custom error")
-  let ib = InvalidBody "The body is invalid"
-  let wm = WrongMethod
-  let nf = NotFound
-  let rm = RouteMismatch (responseBuilder status409 [] mempty)
-
-  describe "Servant.Server.Internal.RouteMismatch" $ do
-    it "RouteMismatch > *" $ do
-      (ib <> rm) =:= rm `shouldBe` True
-      (wm <> rm) =:= rm `shouldBe` True
-      (nf <> rm) =:= rm `shouldBe` True
-      (he <> rm) =:= rm `shouldBe` True
-
-      (rm <> ib) =:= rm `shouldBe` True
-      (rm <> wm) =:= rm `shouldBe` True
-      (rm <> nf) =:= rm `shouldBe` True
-      (rm <> he) =:= rm `shouldBe` True
-
-    it "RouteMismatch > HttpError > *" $ do
-      (ib <> he) =:= he `shouldBe` True
-      (wm <> he) =:= he `shouldBe` True
-      (nf <> he) =:= he `shouldBe` True
-
-      (he <> ib) =:= he `shouldBe` True
-      (he <> wm) =:= he `shouldBe` True
-      (he <> nf) =:= he `shouldBe` True
-
-    it "HE > InvalidBody > (WM,NF)" $ do
-      (wm <> ib) =:= ib `shouldBe` True
-      (nf <> ib) =:= ib `shouldBe` True
-
-      (ib <> wm) =:= ib `shouldBe` True
-      (ib <> nf) =:= ib `shouldBe` True
-
-    it "HE > IB > WrongMethod > NF" $ do
-      (nf <> wm) =:= wm `shouldBe` True
-
-      (wm <> nf) =:= wm `shouldBe` True
-
-    -- TODO: this is redundant, but maybe helpful for clarity.
-    it "* > NotFound" $ do
-      (he <> nf) =:= he `shouldBe` True
-      (ib <> nf) =:= ib `shouldBe` True
-      (wm <> nf) =:= wm `shouldBe` True
-      (rm <> nf) =:= rm `shouldBe` True
-
-      (nf <> he) =:= he `shouldBe` True
-      (nf <> ib) =:= ib `shouldBe` True
-      (nf <> wm) =:= wm `shouldBe` True
-      (nf <> rm) =:= rm `shouldBe` True
-
 type MiscCombinatorsAPI
   =    "version" :> HttpVersion :> Get '[JSON] String
   :<|> "secure"  :> IsSecure :> Get '[JSON] String
@@ -755,13 +682,13 @@ basicAuthRequiredSpec = do
     describe "Servant.API.Authentication" $ do
         with (return $ serve basicBasicAuthRequiredApi basicAuthRequiredServer) $ do
             it "allows access with the correct username and password" $ do
-                response <- basicAuthGet "/foo" base64ServantColonServer
+                response1 <- basicAuthGet "/foo" base64ServantColonServer
                 liftIO $ do
-                    decode' (simpleBody response) `shouldBe` Just alice
+                    decode' (simpleBody response1) `shouldBe` Just alice
 
-                response <- basicAuthGet "/bar" base64BarColonPassword
+                response2 <- basicAuthGet "/bar" base64BarColonPassword
                 liftIO $ do
-                    decode' (simpleBody response) `shouldBe` Just jerry
+                    decode' (simpleBody response2) `shouldBe` Just jerry
 
             it "rejects requests with the incorrect username and password" $ do
                 basicAuthGet "/foo" base64UserColonPassword `shouldRespondWith` 401
@@ -774,9 +701,11 @@ basicAuthRequiredSpec = do
             it "adds the appropriate header to rejected 401 requests" $ do
                 foo401 <- get "/foo"
                 bar401 <- get "/bar"
-                WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"foo-realm\"" foo401)
-                WaiSession (assertHeader "WWW-Authenticate" "Basic realm=\"bar-realm\"" bar401)
-
+                liftIO $ do
+                    let fooHeader = [("WWW-Authenticate", "Basic realm=\"foo-realm\"")] :: ResponseHeaders
+                    let barHeader = [("WWW-Authenticate", "Basic realm=\"bar-realm\"")] :: ResponseHeaders
+                    (simpleHeaders foo401) `shouldContain` fooHeader
+                    (simpleHeaders bar401) `shouldContain` barHeader
 
 
 type JWTAuthProtect = AuthProtect JWTAuth (JWT VerifiedJWT) 'Strict
@@ -810,8 +739,9 @@ jwtAuthRequiredSpec = do
         get "/foo" `shouldRespondWith` 401
       it "responds correctly to requests without auth data" $ do
         a <- jwtAuthGet "/foo" incorrectToken
-        WaiSession (assertHeader "WWW-Authenticate" "Bearer error=\"invalid_token\"" a)
+        let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_token\"")] :: ResponseHeaders
+        liftIO (simpleHeaders a `shouldContain` aHeader)
       it "respond correctly to requests with incorrect auth data" $ do
         a <- get "/foo"
-        WaiSession (assertHeader "WWW-Authenticate" "Bearer error=\"invalid_request\"" a)
-
+        let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_token\"")] :: ResponseHeaders
+        liftIO (simpleHeaders a `shouldContain` aHeader)
