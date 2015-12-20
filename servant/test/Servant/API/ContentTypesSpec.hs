@@ -195,7 +195,14 @@ newtype ZeroToOne = ZeroToOne Float
 
 instance FromJSON SomeData
 
+-- Aeson 0.10 causes spurious 'No explicit instance' warnings, and
+-- 'defaultOptions' moved around.
+#if MIN_VERSION_aeson(0,10,0)
+instance ToJSON SomeData where
+    toJSON = genericToJSON defaultOptions
+#else
 instance ToJSON SomeData
+#endif
 
 instance Arbitrary SomeData where
     arbitrary = SomeData <$> arbitrary <*> arbitrary

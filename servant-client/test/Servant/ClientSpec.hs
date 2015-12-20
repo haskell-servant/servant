@@ -68,7 +68,12 @@ data Person = Person {
  }
   deriving (Eq, Show, Generic)
 
+#if MIN_VERSION_aeson(0,10,0)
+instance ToJSON Person where
+    toJSON = genericToJSON defaultOptions
+#else
 instance ToJSON Person
+#endif
 instance FromJSON Person
 
 instance ToFormUrlEncoded Person where

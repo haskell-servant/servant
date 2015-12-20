@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -21,8 +22,13 @@ import           Servant
 newtype Greet = Greet { _msg :: Text }
   deriving (Generic, Show)
 
-instance FromJSON Greet
+#if MIN_VERSION_aeson(0,10,0)
+instance ToJSON Greet where
+    toJSON = genericToJSON defaultOptions
+#else
 instance ToJSON Greet
+#endif
+instance FromJSON Greet
 
 -- API specification
 type TestApi =
