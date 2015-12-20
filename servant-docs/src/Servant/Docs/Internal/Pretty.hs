@@ -14,8 +14,6 @@ import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Proxy               (Proxy(Proxy))
 import Network.HTTP.Media       ((//))
 import Servant.API
-import Servant.API.ContentTypes
-import Servant.Utils.Links
 
 -- | PrettyJSON content type.
 data PrettyJSON
