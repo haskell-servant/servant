@@ -25,10 +25,6 @@ import qualified Control.Monad.State.Lazy    as LState
 import qualified Control.Monad.State.Strict  as SState
 import qualified Control.Monad.Writer.Lazy   as LWriter
 import qualified Control.Monad.Writer.Strict as SWriter
-import qualified Control.Monad.State.Lazy               as LState
-import qualified Control.Monad.State.Strict             as SState
-import qualified Control.Monad.Writer.Lazy              as LWriter
-import qualified Control.Monad.Writer.Strict            as SWriter
 import           Data.Typeable
 import           Servant.API
 
