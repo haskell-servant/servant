@@ -26,7 +26,7 @@ spec = describe "Servant.Foreign" $ do
   listFromAPISpec
 
 camelCaseSpec :: Spec
-camelCaseSpec = describe "camelCase" $ do
+camelCaseSpec = describe "camelCase" $
   it "converts FunctionNames to camelCase" $ do
     camelCase ["post", "counter", "inc"] `shouldBe` "postCounterInc"
     camelCase ["get", "hyphen-ated", "counter"] `shouldBe` "getHyphenatedCounter"
@@ -57,58 +57,84 @@ testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy TestApi)
 
 listFromAPISpec :: Spec
 listFromAPISpec = describe "listFromAPI" $ do
-    it "generates 4 endpoints for TestApi" $ do
+    it "generates 4 endpoints for TestApi" $
         length testApi `shouldBe` 4
 
     let [getReq, postReq, putReq, deleteReq] = testApi
 
+    let reqEq req1 req2 = do
+            _reqUrl req1 `shouldBe` _reqUrl  req2
+            _reqMethod req1 `shouldBe` _reqMethod req2
+            _reqBody req1 `shouldBe` _reqBody req2
+            _reqReturnType req1 `shouldBe` _reqReturnType req2
+            _funcName req1 `shouldBe` _funcName req2
+
+            let h = case (_reqHeaders req1, _reqHeaders req2) of
+                    ([], []) -> True
+                    ([HeaderArg a], [HeaderArg b]) -> a == b
+                    _ -> False
+
+            h `shouldBe` True
+
     it "collects all info for get request" $ do
-        shouldBe getReq $ defReq
-            { _reqUrl        = Url
-                [ Segment $ Static "test" ]
-                [ QueryArg ("flag", "boolX") Flag ]
-            , _reqMethod     = "GET"
-            , _reqHeaders    = [HeaderArg ("header", "listX of stringX")]
-            , _reqBody       = Nothing
-            , _reqReturnType = "intX"
-            , _funcName      = ["get", "test"]
-            }
+        let req1 = getReq
+            req2 = defReq 
+                { _reqUrl        = Url
+                    [ Segment $ Static "test" ]
+                    [ QueryArg ("flag", "boolX") Flag ]
+                , _reqMethod     = "GET"
+                , _reqHeaders    = [HeaderArg ("header", "listX of stringX")]
+                , _reqBody       = Nothing
+                , _reqReturnType = "intX"
+                , _funcName      = ["get", "test"]
+                }
+
+        reqEq req1 req2
+
 
     it "collects all info for post request" $ do
-        shouldBe postReq $ defReq
-            { _reqUrl        = Url
-                [ Segment $ Static "test" ]
-                [ QueryArg ("param", "intX") Normal ]
-            , _reqMethod     = "POST"
-            , _reqHeaders    = []
-            , _reqBody       = Just "listX of stringX"
-            , _reqReturnType = "voidX"
-            , _funcName      = ["post", "test"]
-            }
+        let req1 = getReq
+            req2 = defReq
+                    { _reqUrl        = Url
+                        [ Segment $ Static "test" ]
+                        [ QueryArg ("param", "intX") Normal ]
+                    , _reqMethod     = "POST"
+                    , _reqHeaders    = []
+                    , _reqBody       = Just "listX of stringX"
+                    , _reqReturnType = "voidX"
+                    , _funcName      = ["post", "test"]
+                    }
+
+        reqEq req1 req2
 
     it "collects all info for put request" $ do
-        shouldBe putReq $ defReq
-            { _reqUrl        = Url
-                [ Segment $ Static "test" ]
-                -- Shoud this be |intX| or |listX of intX| ?
-                [ QueryArg ("params", "listX of intX") List ]
-            , _reqMethod     = "PUT"
-            , _reqHeaders    = []
-            , _reqBody       = Just "stringX"
-            , _reqReturnType = "voidX"
-            , _funcName      = ["put", "test"]
-            }
+        let req1 = getReq
+            req2 = defReq
+                    { _reqUrl        = Url
+                        [ Segment $ Static "test" ]
+                        -- Shoud this be |intX| or |listX of intX| ?
+                        [ QueryArg ("params", "listX of intX") List ]
+                    , _reqMethod     = "PUT"
+                    , _reqHeaders    = []
+                    , _reqBody       = Just "stringX"
+                    , _reqReturnType = "voidX"
+                    , _funcName      = ["put", "test"]
+                    }
+
+        reqEq req1 req2
 
     it "collects all info for delete request" $ do
-        shouldBe deleteReq $ defReq
-            { _reqUrl        = Url
-                [ Segment $ Static "test"
-                , Segment $ Cap ("id", "intX") ]
-                []
-            , _reqMethod     = "DELETE"
-            , _reqHeaders    = []
-            , _reqBody       = Nothing
-            , _reqReturnType = "voidX"
-            , _funcName      = ["delete", "test", "by", "id"]
-            }
+        let req1 = getReq
+            req2 = defReq
+                    { _reqUrl        = Url
+                        [ Segment $ Static "test"
+                        , Segment $ Cap ("id", "intX") ]
+                        []
+                    , _reqMethod     = "DELETE"
+                    , _reqHeaders    = []
+                    , _reqBody       = Nothing
+                    , _reqReturnType = "voidX"
+                    , _funcName      = ["delete", "test", "by", "id"]
+                    }
 
+        reqEq req1 req2
