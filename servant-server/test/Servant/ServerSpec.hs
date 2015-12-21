@@ -28,6 +28,7 @@ import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs)
 import qualified Data.Text                  as T
+import           Data.Text.Encoding         (encodeUtf8)
 import           GHC.Generics               (Generic)
 import           Network.HTTP.Types         (hAccept, hContentType,
                                              methodDelete, methodGet, methodHead,
@@ -716,11 +717,13 @@ type JWTAuthRequiredAPI = JWTAuthProtect :> "foo" :> Get '[JSON] Person
 jwtAuthRequiredApi :: Proxy JWTAuthRequiredAPI
 jwtAuthRequiredApi = Proxy
 
+jwtSecret = secret "secret"
 jwtAuthRequiredServer :: Server JWTAuthRequiredAPI
-jwtAuthRequiredServer = jwtAuthStrict (secret "secret") (const . return $ alice)
+jwtAuthRequiredServer = jwtAuthStrict jwtSecret (const . return $ alice)
 
-correctToken = "blah"
-incorrectToken = "blah"
+correctToken = encodeUtf8 $ encodeSigned HS256 jwtSecret def
+corruptToken = "blah"
+incorrectToken = encodeUtf8 $ encodeSigned HS256 (secret "nope") def
 
 jwtAuthGet :: ByteString -> ByteString -> WaiSession SResponse
 jwtAuthGet path token = Test.Hspec.Wai.request methodGet path [("Authorization", "Bearer " <> token)] ""
@@ -738,10 +741,14 @@ jwtAuthRequiredSpec = do
       it "rejects requests without auth data" $ do
         get "/foo" `shouldRespondWith` 401
       it "responds correctly to requests without auth data" $ do
-        a <- jwtAuthGet "/foo" incorrectToken
-        let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_token\"")] :: ResponseHeaders
-        liftIO (simpleHeaders a `shouldContain` aHeader)
-      it "respond correctly to requests with incorrect auth data" $ do
         a <- get "/foo"
+        let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_request\"")] :: ResponseHeaders
+        liftIO (simpleHeaders a `shouldContain` aHeader)
+      it "responds correctly to requests with corrupted auth data" $ do
+        a <- jwtAuthGet "/foo" corruptToken
+        let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_request\"")] :: ResponseHeaders
+        liftIO (simpleHeaders a `shouldContain` aHeader)
+      it "responds correctly to requests with incorrect auth data" $ do
+        a <- jwtAuthGet "/foo" incorrectToken
         let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_token\"")] :: ResponseHeaders
         liftIO (simpleHeaders a `shouldContain` aHeader)
