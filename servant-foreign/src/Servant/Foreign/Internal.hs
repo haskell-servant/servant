@@ -20,12 +20,14 @@ module Servant.Foreign.Internal where
 
 import           Control.Lens (makeLenses, (%~), (&), (.~), (<>~))
 import qualified Data.Char    as C
+import           Data.Monoid ((<>))
 import           Data.Proxy
 import           Data.Text
 import           GHC.Exts     (Constraint)
 import           GHC.TypeLits
 import           Prelude      hiding (concat)
 import           Servant.API
+import           Servant.API.Authentication
 
 -- | Function name builder that simply concat each part together
 concatCase :: FunctionName -> Text
@@ -74,7 +76,11 @@ data HeaderArg = HeaderArg
   | ReplaceHeaderArg
     { headerArg :: Arg
     , headerPattern :: Text
-    } deriving (Eq, Show)
+    }
+  | HeaderArgGen
+    { headerArgName    :: Text
+    , headerArgGenBody :: (Text -> Text)
+    }
 
 
 data Url = Url
@@ -95,7 +101,7 @@ data Req = Req
   , _reqBody       :: Maybe ForeignType
   , _reqReturnType :: ForeignType
   , _funcName      :: FunctionName
-  } deriving (Eq, Show)
+  }
 
 makeLenses ''QueryArg
 makeLenses ''Segment
@@ -347,3 +353,26 @@ instance (GenerateList start, GenerateList rest) => GenerateList (start :<|> res
 listFromAPI :: (HasForeign lang api, GenerateList (Foreign api)) => Proxy lang -> Proxy api -> [Req]
 listFromAPI lang p = generateList (foreignFor lang p defReq)
 
+instance (HasForeign lang sublayout)
+      => HasForeign lang ((AuthProtect (BasicAuth realm) (usr :: *) (policy :: AuthPolicy) :> sublayout)) where
+  type Foreign (AuthProtect (BasicAuth realm) (usr :: *) (policy :: AuthPolicy) :> sublayout) = Foreign sublayout
+
+  foreignFor _ Proxy req =
+    foreignFor (Proxy :: Proxy lang) (Proxy :: Proxy sublayout) (req & reqHeaders <>~
+      [HeaderArgGen "Authorization" ( \authdata ->
+        "(function("<>authdata<>"){" <>
+        "return \"Basic \" + btoa("<>authdata<>".username+\":\"+"<>authdata <> ".password)" <>
+        "})("<>authdata<>")")
+      ])
+  
+instance (HasForeign lang sublayout)
+      => HasForeign lang ((AuthProtect Text (usr :: *) (policy :: AuthPolicy) :> sublayout)) where
+  type Foreign (AuthProtect Text (usr :: *) (policy :: AuthPolicy) :> sublayout) = Foreign sublayout
+
+  foreignFor _ Proxy req =
+    foreignFor (Proxy :: Proxy lang) (Proxy :: Proxy sublayout) (req & reqHeaders <>~
+      [HeaderArgGen "Authorization" $ \authdata ->
+        "(function(" <> authdata <> "){" <>
+        "return \"Bearer \" + "<> authdata <> ";" <>
+        "})(" <> authdata<>")"
+      ])
