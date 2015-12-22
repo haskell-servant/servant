@@ -273,7 +273,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
-    it "Handles Authentication appropriatley" $ withServer $ \ _ -> do
+    it "handles Authentication appropriately" $ withServer $ \ _ -> do
       (Control.Arrow.left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
 
     it "returns 401 when not properly authenticated" $ do
