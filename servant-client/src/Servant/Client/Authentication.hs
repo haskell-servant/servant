@@ -18,14 +18,13 @@ import Servant.Common.Req (addHeader, Req)
 -- object. For example, we may add special headers to the 'Request'.
 class AuthenticateRequest a where
     authReq :: a -> Req -> Req
-     
 
 instance AuthenticateRequest (BasicAuth realm) where
     authReq (BasicAuth user pass) req =
-        let authText = decodeUtf8 ("Basic " <> encode (user <> ":" <> pass)) in
-            addHeader "Authorization" authText req
+        let authText = decodeUtf8 ("Basic " <> encode (user <> ":" <> pass))
+        in addHeader "Authorization" authText req
 
 instance AuthenticateRequest JWTAuth where
-  authReq (JWTAuth token) req =
-    let authText = ("Bearer " <> token)
-    in addHeader "Authorization" authText req
+    authReq (JWTAuth token) req =
+        let authText = ("Bearer " <> token)
+        in addHeader "Authorization" authText req
