@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -16,6 +17,9 @@
 -- >>> type EgDefault = Get '[CSV] [(Int, String)]
 module Servant.CSV.Cassava where
 
+#if !MIN_VERSION_base(4,8,0)
+import           Control.Applicative        ((<$>))
+#endif
 import           Data.Csv
 import           Data.Proxy         (Proxy (..))
 import           Data.Typeable      (Typeable)
