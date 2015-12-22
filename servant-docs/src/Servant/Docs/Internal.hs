@@ -23,8 +23,8 @@ module Servant.Docs.Internal where
 
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, over, traversed, (%~),
-                                             (&), (.~), (<>~), (^.), (|>))
+import           Control.Lens               (makeLenses, mapped, over, traversed, (%~),
+                                             (&), (.~), (<>~), (^.), (|>), view)
 import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
@@ -252,7 +252,7 @@ data AuthenticationInfo = AuthenticationInfo
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _authInfo :: Maybe AuthenticationInfo    -- type collected + user supplied info
+  { _authInfo :: [AuthenticationInfo]        -- type collected + user supplied info
   , _captures :: [DocCapture]                -- type collected + user supplied info
   , _headers  :: [Text]                      -- type collected
   , _params   :: [DocQueryParam]             -- type collected + user supplied info
@@ -270,8 +270,8 @@ data Action = Action
 -- 'combineAction' to mush two together taking the response, body and content
 -- types from the very left.
 combineAction :: Action -> Action -> Action
-Action a c h p n m ts body resp `combineAction` Action _ c' h' p' n' m' _ _ _ =
-        Action a (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
+Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
+        Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -279,12 +279,12 @@ Action a c h p n m ts body resp `combineAction` Action _ c' h' p' n' m' _ _ _ =
 -- Tweakable with lenses.
 --
 -- > λ> defAction
--- > Action {_authentication = Nothing, _captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
+-- > Action {_authentication = [], _captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
 -- > λ> defAction & response.respStatus .~ 201
--- > Action {_authentication = Nothing, _captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
+-- > Action {_authentication = [], _captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
 defAction :: Action
 defAction =
-  Action Nothing
+  Action []
          []
          []
          []
@@ -578,18 +578,18 @@ markdown api = unlines $
             "" :
             []
 
-        authStr :: Maybe AuthenticationInfo -> [String]
-        authStr Nothing = []
-        authStr (Just auth) =
-            "#### Authentication" :
-            "" :
-            auth ^. authIntro :
-            "" :
-            "Clients must supply the following data" :
-            "" :
-            auth ^. authDataRequired :
-            "" :
-            []
+        authStr :: [AuthenticationInfo] -> [String]
+        authStr auths =
+            let authIntros = mapped %~ view authIntro $ auths
+                clientInfos = mapped %~ view authDataRequired $ auths
+            in "#### Authentication":
+                "":
+                unlines authIntros :
+                "":
+                "Clients must supply the following data" :
+                unlines clientInfos :
+                "" :
+                []
 
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
@@ -734,7 +734,8 @@ instance
               docsFor (Proxy :: Proxy sublayout) (endpoint, action')
 
                 where
-                  action' = action & authInfo .~ Just (toAuthInfo (Proxy :: Proxy (AuthProtect auth usr policy)))
+                    authProxy = Proxy :: Proxy (AuthProtect auth usr policy)
+                    action' = over authInfo (|> toAuthInfo authProxy) action
 
 instance
 #if MIN_VERSION_base(4,8,0)
