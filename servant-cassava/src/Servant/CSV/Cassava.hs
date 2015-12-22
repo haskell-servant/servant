@@ -19,7 +19,7 @@ module Servant.CSV.Cassava where
 import           Data.Csv
 import           Data.Proxy         (Proxy (..))
 import           Data.Typeable      (Typeable)
-import           Data.Vector        (Vector)
+import           Data.Vector        (Vector, toList)
 import           GHC.Generics       (Generic)
 import qualified Network.HTTP.Media as M
 import           Servant.API        (Accept (..), MimeRender (..),
@@ -50,6 +50,18 @@ instance ( DefaultOrdered a, ToNamedRecord a, EncodeOpts opt
     mimeRender _ = encodeDefaultOrderedByNameWith (encodeOpts p)
       where p = Proxy :: Proxy opt
 
+-- | Encode with 'encodeByNameWith'. The 'Header' param is used for determining
+-- the order of headers and fields.
+instance ( ToNamedRecord a, EncodeOpts opt
+         ) => MimeRender (CSV', opt) (Header, Vector a) where
+    mimeRender _ (hdr, vals) = encodeByNameWith (encodeOpts p) hdr (toList vals)
+      where p = Proxy :: Proxy opt
+
+-- | Encode with 'encodeDefaultOrderedByNameWith'
+instance ( DefaultOrdered a, ToNamedRecord a, EncodeOpts opt
+         ) => MimeRender (CSV', opt) (Vector a) where
+    mimeRender _ = encodeDefaultOrderedByNameWith (encodeOpts p) . toList
+      where p = Proxy :: Proxy opt
 
 -- ** Encode Options
 
@@ -66,6 +78,17 @@ instance EncodeOpts DefaultEncodeOpts where
 -- ** Instances
 
 -- | Decode with 'decodeByNameWith'
+instance ( FromNamedRecord a, DecodeOpts opt
+         ) => MimeUnrender (CSV', opt) (Header, [a]) where
+    mimeUnrender _ bs = fmap toList <$> decodeByNameWith (decodeOpts p) bs
+      where p = Proxy :: Proxy opt
+
+-- | Decode with 'decodeWith'. Assumes data has headers, which are stripped.
+instance ( FromRecord a, DecodeOpts opt
+         ) => MimeUnrender (CSV', opt) [a] where
+    mimeUnrender _ bs = toList <$> decodeWith (decodeOpts p) HasHeader bs
+      where p = Proxy :: Proxy opt
+
 instance ( FromNamedRecord a, DecodeOpts opt
          ) => MimeUnrender (CSV', opt) (Header, Vector a) where
     mimeUnrender _ = decodeByNameWith (decodeOpts p)
