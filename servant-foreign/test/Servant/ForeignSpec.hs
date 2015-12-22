@@ -62,6 +62,7 @@ listFromAPISpec = describe "listFromAPI" $ do
 
     let [getReq, postReq, putReq, deleteReq] = testApi
 
+    -- test if two requests are equal for testing purposes
     let reqEq req1 req2 = do
             _reqUrl req1 `shouldBe` _reqUrl  req2
             _reqMethod req1 `shouldBe` _reqMethod req2
@@ -72,6 +73,8 @@ listFromAPISpec = describe "listFromAPI" $ do
             let h = case (_reqHeaders req1, _reqHeaders req2) of
                     ([], []) -> True
                     ([HeaderArg a], [HeaderArg b]) -> a == b
+                    ([ReplaceHeaderArg a1 b1], [ReplaceHeaderArg a2 b2]) -> a1 == a2 && b1 == b2
+                    ([HeaderArgGen a1 f1], [HeaderArgGen a2 f2]) -> a1 == a2 && f1 "" == f2 ""
                     _ -> False
 
             h `shouldBe` True
@@ -93,7 +96,7 @@ listFromAPISpec = describe "listFromAPI" $ do
 
 
     it "collects all info for post request" $ do
-        let req1 = getReq
+        let req1 = postReq
             req2 = defReq
                     { _reqUrl        = Url
                         [ Segment $ Static "test" ]
@@ -108,7 +111,7 @@ listFromAPISpec = describe "listFromAPI" $ do
         reqEq req1 req2
 
     it "collects all info for put request" $ do
-        let req1 = getReq
+        let req1 = putReq
             req2 = defReq
                     { _reqUrl        = Url
                         [ Segment $ Static "test" ]
@@ -124,7 +127,7 @@ listFromAPISpec = describe "listFromAPI" $ do
         reqEq req1 req2
 
     it "collects all info for delete request" $ do
-        let req1 = getReq
+        let req1 = deleteReq
             req2 = defReq
                     { _reqUrl        = Url
                         [ Segment $ Static "test"
