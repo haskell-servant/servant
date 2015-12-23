@@ -31,10 +31,6 @@ data AuthPolicy = Strict | Lax
 -- | the combinator to be used in API types
 data AuthProtect authdata usr (policy :: AuthPolicy)
 
--- | what we'll ask user to provide at the server-level when we see a
--- 'AuthProtect' combinator in an API type
--- data family AuthProtected authdata usr subserver :: AuthPolicy -> *
-
 -- | A GADT indexed by policy strictness that encompasses the ways
 -- users will handle the case where authentication data is missing
 -- from a request. For example, suppose we have a Basic-Auth-protected
@@ -56,10 +52,12 @@ data OnMissing m e (policy :: AuthPolicy) where
 -- About the type parameters:
 -- m: the monad errors are returned in. For now just IO.
 -- e: an error type. For now just ServantErr.
+-- authData: the authentication data extracted from the request
+-- errorIndex: an index of error to give a user-provided, semantic meaning to the authentication failure.
 -- policy: the policy to handle OnUnauthenticated actions.
-data OnUnauthenticated m e authData (policy :: AuthPolicy) where
-    LaxUnauthenticated :: OnUnauthenticated m e authData 'Lax
-    StrictUnauthenticated :: (authData -> m e) -> OnUnauthenticated m e authData 'Strict
+data OnUnauthenticated m e (policy :: AuthPolicy) errorIndex authData where
+    LaxUnauthenticated :: OnUnauthenticated m e 'Lax errorIndex authData
+    StrictUnauthenticated :: (errorIndex -> authData -> m e) -> OnUnauthenticated m e 'Strict errorIndex authData
 
 -- | A GADT representing the data and functions required to protect a reasource for authentication.
 -- For an authenticated resource, we need to handle the scenario where authentication data is missing
@@ -69,10 +67,13 @@ data OnUnauthenticated m e authData (policy :: AuthPolicy) where
 -- missingPolicy: the policy to handle missing authentication data actions.
 -- unauthPolicy: the policy to handle rejected authentication attempts.
 -- authData: the type of authData present in a request (e.g. JWT token)
+-- errorIndex: an index of error to give a user-provided, semantic meaning to the authentication failure.
+-- usr: a data type extracted from the authenticated data. This data is likely fetched from a database.
 -- subserver: the rest of the servant API.
-data AuthProtected m e (missingPolicy :: AuthPolicy) (unauthPolicy :: AuthPolicy) authData subserver =
+data AuthProtected m e (missingPolicy :: AuthPolicy) (unauthPolicy :: AuthPolicy) errorIndex authData usr subserver =
     AuthProtected { onMissing :: OnMissing m e missingPolicy
-                  , onUnathenticated :: OnUnauthenticated m e authData unauthPolicy
+                  , onUnathenticated :: OnUnauthenticated m e unauthPolicy errorIndex authData
+                  , checkAuth :: authData -> m (Either errorIndex usr)
                   , subserver :: subserver
                   }
 
