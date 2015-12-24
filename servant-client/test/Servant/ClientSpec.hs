@@ -31,13 +31,12 @@ import           Control.Exception          (bracket)
 import           Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import           Data.Aeson
 import           Data.ByteString.Lazy       (ByteString)
+import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
 import qualified Data.Text                  as T
-import           GHC.Generics               (Generic)
 import           GHC.TypeLits
-import qualified Data.Text.Encoding         as TE
 import           GHC.Generics
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
@@ -57,11 +56,10 @@ import           Servant.API.Authentication
 import           Servant.Client
 import           Servant.Client.Authentication()
 import           Servant.Server
-import           Servant.Server.Internal.Authentication
 
 spec :: Spec
 spec = describe "Servant.Client" $ do
-    sucessSpec
+    successSpec
     failSpec
     wrappedApiSpec
 
@@ -112,8 +110,8 @@ type Api =
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
+  :<|> AuthProtect (BasicAuth "realm") Person 'Strict () 'Strict () :> Get '[JSON] Person
   :<|> "deleteContentType" :> Delete '[JSON] ()
-  :<|> AuthProtect (BasicAuth "realm") Person 'Strict :> Get '[JSON] Person
 
 -- base64-encoded "servant:server"
 base64ServantColonServer :: ByteString
@@ -145,8 +143,8 @@ server = serve api (
   :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
-  :<|> return ()
   :<|> basicAuthStrict basicAuthCheck (const . return $ alice)
+  :<|> return ()
  )
 
 
@@ -168,128 +166,93 @@ failServer = serve failApi (
 manager :: C.Manager
 manager = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
-sucessSpec :: Spec
-sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+successSpec :: Spec
+successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+
 
     it "Servant.API.Get" $ \(_, baseUrl) -> do
       let getGet = getNth (Proxy :: Proxy 0) $ client api baseUrl manager
-
-    manager <- C.newManager C.defaultManagerSettings
-    let getGet :: ExceptT ServantError IO Person
-        getDeleteEmpty :: ExceptT ServantError IO ()
-        getCapture :: String -> ExceptT ServantError IO Person
-        getBody :: Person -> ExceptT ServantError IO Person
-        getQueryParam :: Maybe String -> ExceptT ServantError IO Person
-        getQueryParams :: [String] -> ExceptT ServantError IO [Person]
-        getQueryFlag :: Bool -> ExceptT ServantError IO Bool
-        getMatrixParam :: Maybe String -> ExceptT ServantError IO Person
-        getMatrixParams :: [String] -> ExceptT ServantError IO [Person]
-        getMatrixFlag :: Bool -> ExceptT ServantError IO Bool
-        getRawSuccess :: Method -> ExceptT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], C.Response ByteString)
-        getRawFailure :: Method -> ExceptT ServantError IO (Int, ByteString, MediaType, [HTTP.Header], C.Response ByteString)
-        getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])] -> ExceptT ServantError IO (String, Maybe Int, Bool, [(String, [Rational])])
-        getRespHeaders :: ExceptT ServantError IO (Headers TestHeaders Bool)
-        getDeleteContentType :: ExceptT ServantError IO ()
-        (     getGet
-        :<|> getDeleteEmpty
-        :<|> getCapture
-        :<|> getBody
-        :<|> getQueryParam
-        :<|> getQueryParams
-        :<|> getQueryFlag
-        :<|> getMatrixParam
-        :<|> getMatrixParams
-        :<|> getMatrixFlag
-        :<|> getRawSuccess
-        :<|> getRawFailure
-        :<|> getMultiple
-        :<|> getRespHeaders
-        :<|> getDeleteContentType
-        :<|> getPrivatePerson)
-            = client api baseUrl manager
-
-  hspec $ do
-    it "Servant.API.Get" $ do
       (left show <$> runExceptT getGet) `shouldReturn` Right alice
 
     describe "Servant.API.Delete" $ do
-      it "allows empty content type" $ \(_, baseUrl) -> do
-        let getDeleteEmpty = getNth (Proxy :: Proxy 1) $ client api baseUrl manager
-        (left show <$> runExceptT getDeleteEmpty) `shouldReturn` Right ()
+        it "allows empty content type" $ \(_, baseUrl) -> do
+            let getDeleteEmpty = getNth (Proxy :: Proxy 1) $ client api baseUrl manager
+            (left show <$> runExceptT getDeleteEmpty) `shouldReturn` Right ()
 
-      it "allows content type" $ \(_, baseUrl) -> do
-        let getDeleteContentType = getLast $ client api baseUrl manager
-        (left show <$> runExceptT getDeleteContentType) `shouldReturn` Right ()
+        it "allows content type" $ \(_, baseUrl) -> do
+            let getDeleteContentType = getLast $ client api baseUrl manager
+            (left show <$> runExceptT getDeleteContentType) `shouldReturn` Right ()
 
-    it "Servant.API.Capture" $ \(_, baseUrl) -> do
-      let getCapture = getNth (Proxy :: Proxy 2) $ client api baseUrl manager
-      (left show <$> runExceptT (getCapture "Paula")) `shouldReturn` Right (Person "Paula" 0)
+        it "Servant.API.Capture" $ \(_, baseUrl) -> do
+            let getCapture = getNth (Proxy :: Proxy 2) $ client api baseUrl manager
+            (left show <$> runExceptT (getCapture "Paula")) `shouldReturn` Right (Person "Paula" 0)
 
-    it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
-      let p = Person "Clara" 42
-          getBody = getNth (Proxy :: Proxy 3) $ client api baseUrl manager
-      (left show <$> runExceptT (getBody p)) `shouldReturn` Right p
+        it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
+            let p = Person "Clara" 42
+                getBody = getNth (Proxy :: Proxy 3) $ client api baseUrl manager
+            (left show <$> runExceptT (getBody p)) `shouldReturn` Right p
 
-    it "Servant.API.QueryParam" $ \(_, baseUrl) -> do
-      let getQueryParam = getNth (Proxy :: Proxy 4) $ client api baseUrl manager
-      left show <$> runExceptT (getQueryParam (Just "alice")) `shouldReturn` Right alice
-      Left FailureResponse{..} <- runExceptT (getQueryParam (Just "bob"))
-      responseStatus `shouldBe` Status 400 "bob not found"
+        it "Servant.API.QueryParam" $ \(_, baseUrl) -> do
+            let getQueryParam = getNth (Proxy :: Proxy 4) $ client api baseUrl manager
+            left show <$> runExceptT (getQueryParam (Just "alice")) `shouldReturn` Right alice
+            Left FailureResponse{..} <- runExceptT (getQueryParam (Just "bob"))
+            responseStatus `shouldBe` Status 400 "bob not found"
 
-    it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
-      let getQueryParams = getNth (Proxy :: Proxy 5) $ client api baseUrl manager
-      (left show <$> runExceptT (getQueryParams [])) `shouldReturn` Right []
-      (left show <$> runExceptT (getQueryParams ["alice", "bob"]))
-        `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
+        it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
+            let getQueryParams = getNth (Proxy :: Proxy 5) $ client api baseUrl manager
+            (left show <$> runExceptT (getQueryParams [])) `shouldReturn` Right []
+            (left show <$> runExceptT (getQueryParams ["alice", "bob"]))
+                `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
     context "Servant.API.QueryParam.QueryFlag" $
-      forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
-        let getQueryFlag = getNth (Proxy :: Proxy 6) $ client api baseUrl manager
-        (left show <$> runExceptT (getQueryFlag flag)) `shouldReturn` Right flag
+        forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
+            let getQueryFlag = getNth (Proxy :: Proxy 6) $ client api baseUrl manager
+            (left show <$> runExceptT (getQueryFlag flag)) `shouldReturn` Right flag
 
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
-      let getRawSuccess = getNth (Proxy :: Proxy 7) $ client api baseUrl manager
-      res <- runExceptT (getRawSuccess methodGet)
-      case res of
-        Left e -> assertFailure $ show e
-        Right (code, body, ct, _, response) -> do
-          (code, body, ct) `shouldBe` (200, "rawSuccess", "application"//"octet-stream")
-          C.responseBody response `shouldBe` body
-          C.responseStatus response `shouldBe` ok200
+        let getRawSuccess = getNth (Proxy :: Proxy 7) $ client api baseUrl manager
+        res <- runExceptT (getRawSuccess methodGet)
+        case res of
+            Left e -> assertFailure $ show e
+            Right (code, body, ct, _, response) -> do
+                (code, body, ct) `shouldBe` (200, "rawSuccess", "application" // "octet-stream")
+                C.responseBody response `shouldBe` body
+                C.responseStatus response `shouldBe` ok200
 
     it "Servant.API.Raw should return a Left in case of failure" $ \(_, baseUrl) -> do
-      let getRawFailure = getNth (Proxy :: Proxy 8) $ client api baseUrl manager
-      res <- runExceptT (getRawFailure methodGet)
-      case res of
-        Right _ -> assertFailure "expected Left, but got Right"
-        Left e -> do
-          Servant.Client.responseStatus e `shouldBe` status400
-          Servant.Client.responseBody e `shouldBe` "rawFailure"
+        let getRawFailure = getNth (Proxy :: Proxy 8) $ client api baseUrl manager
+        res <- runExceptT (getRawFailure methodGet)
+        case res of
+            Right _ -> assertFailure "expected Left, but got Right"
+            Left e -> do
+                Servant.Client.responseStatus e `shouldBe` status400
+                Servant.Client.responseBody e `shouldBe` "rawFailure"
 
     it "Returns headers appropriately" $ \(_, baseUrl) -> do
-      let getRespHeaders = getNth (Proxy :: Proxy 10) $ client api baseUrl manager
-      res <- runExceptT getRespHeaders
-      case res of
-        Left e -> assertFailure $ show e
-        Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
+        let getRespHeaders = getNth (Proxy :: Proxy 10) $ client api baseUrl manager
+        res <- runExceptT getRespHeaders
+        case res of
+            Left e -> assertFailure $ show e
+            Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
-    it "handles Authentication appropriately" $ withServer $ \ _ -> do
-      (Control.Arrow.left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
+    it "handles Authentication appropriately" $ \(_, baseUrl) -> do
+        let getPrivatePerson = getNth (Proxy :: Proxy 11) $ client api baseUrl manager
+        (left show <$> runExceptT (getPrivatePerson (BasicAuth "servant" "server"))) `shouldReturn` Right alice
 
-    it "returns 401 when not properly authenticated" $ do
-      Left res <- runExceptT (getPrivatePerson (BasicAuth "xxx" "yyy"))
-      case res of
-        FailureResponse (Status 401 _) _ _ -> return ()
-        _ -> fail $ "expected 401 response, but got " <> show res
+    it "return 401 when not properly authenticated" $ \(_, baseUrl) -> do
+        let getPrivatePerson = getNth (Proxy :: Proxy 11) $ client api baseUrl manager
+        Left res <- runExceptT (getPrivatePerson (BasicAuth "xxx" "yyy"))
+        case res of
+            FailureResponse (Status 401 _) _ _ -> return ()
+            _ -> fail $ "expected 401 response, but go " <> show res
 
     modifyMaxSuccess (const 20) $ do
-      it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
-        let getMultiple = getNth (Proxy :: Proxy 9) $ client api baseUrl manager
-        in property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
-          ioProperty $ do
-            result <- left show <$> runExceptT (getMultiple cap num flag body)
-            return $
-              result === Right (cap, num, flag, body)
+        it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
+            let getMultiple = getNth (Proxy :: Proxy 9) $ client api baseUrl manager
+            in property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
+            ioProperty $ do
+                result <- left show <$> runExceptT (getMultiple cap num flag body)
+                return $ result === Right (cap, num, flag, body)
 
 wrappedApiSpec :: Spec
 wrappedApiSpec = describe "error status codes" $ do
