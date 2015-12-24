@@ -61,7 +61,8 @@ import           Servant.API                                ((:<|>) (..), (:>),
                                                              ReqBody, Vault)
 import           Servant.API.Authentication                 (AuthPolicy (Strict, Lax),
                                                              AuthProtect,
-                                                             AuthProtected)
+                                                             AuthProtected,
+                                                             SAuthPolicy(SLax,SStrict))
 import           Servant.API.ContentTypes                   (AcceptHeader (..),
                                                              AllCTRender (..),
                                                              AllCTUnrender (..),
@@ -71,11 +72,7 @@ import           Servant.API.ResponseHeaders                (GetHeaders,
                                                              Headers,
                                                              getHeaders,
                                                              getResponse)
-import           Servant.Server.Internal.Authentication     (AuthData (authData),
-                                                             AuthProtected (..),
-                                                             checkAuthStrict,
-                                                             AuthHandlers(onMissingAuthData,
-                                                             onUnauthenticated))
+import           Servant.Server.Internal.Authentication     (AuthData (authData))
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
@@ -263,34 +260,61 @@ instance
 
   route Proxy = methodRouterHeaders methodDelete (Proxy :: Proxy ctypes) ok200
 
--- | Authentication in Strict mode.
+-- | Authentication in Missing x Unauth = Strict x Strict mode
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-         (AuthData authdata , HasServer sublayout) => HasServer (AuthProtect authdata (usr :: *) 'Strict :> sublayout) where
+    (AuthData authData mError, HasServer sublayout) => HasServer (AuthProtect authData (usr :: *) 'Strict (mError :: *) 'Strict (uError :: *) :> sublayout) where
+    type ServerT (AuthProtect authData usr 'Strict mError 'Strict uError :> sublayout) m =
+        AuthProtected IO ServantErr 'Strict mError 'Strict uError authData usr (usr -> ServerT sublayout m)
 
-    type ServerT (AuthProtect authdata usr 'Strict :> sublayout) m = AuthProtected authdata usr (usr -> ServerT sublayout m) 'Strict
-
-    route _ subserver = WithRequest $ \request ->
-        route (Proxy :: Proxy sublayout) (addAuthStrictCheck subserver (authCheck request))
+    route _ subserver = WithRequest $ \ request ->
+        route (Proxy :: Proxy sublayout) (addAuthCheck SStrict SStrict subserver (authCheck request))
             where
                 authCheck req = pure . Route $ authData req
 
--- | Authentication in Lax mode.
+-- | Authentication in Missing x Unauth = Strict x Lax mode
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-         (AuthData authdata , HasServer sublayout) => HasServer (AuthProtect authdata (usr :: *) 'Lax :> sublayout) where
+    (AuthData authData mError, HasServer sublayout) => HasServer (AuthProtect authData (usr :: *) 'Strict (mError :: *) 'Lax (uError :: *) :> sublayout) where
+    type ServerT (AuthProtect authData usr 'Strict mError 'Lax uError :> sublayout) m =
+        AuthProtected IO ServantErr 'Strict mError 'Lax uError authData usr (Either uError usr -> ServerT sublayout m)
 
-    type ServerT (AuthProtect authdata usr 'Lax :> sublayout) m = AuthProtected authdata usr (Maybe usr -> ServerT sublayout m) 'Lax
-
-    route _ subserver = WithRequest $ \request ->
-        route (Proxy :: Proxy sublayout) (addAuthLaxCheck subserver (authCheck request))
+    route _ subserver = WithRequest $ \ request ->
+        route (Proxy :: Proxy sublayout) (addAuthCheck SStrict SLax subserver (authCheck request))
             where
                 authCheck req = pure . Route $ authData req
 
+-- | Authentication in Missing x Unauth = Lax x Strict mode
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+    (AuthData authData mError, HasServer sublayout) => HasServer (AuthProtect authData (usr :: *) 'Lax (mError :: *) 'Strict (uError :: *) :> sublayout) where
+    type ServerT (AuthProtect authData usr 'Lax mError 'Strict uError :> sublayout) m =
+        AuthProtected IO ServantErr 'Lax mError 'Strict uError authData usr (Either mError usr -> ServerT sublayout m)
+
+    route _ subserver = WithRequest $ \ request ->
+        route (Proxy :: Proxy sublayout) (addAuthCheck SLax SStrict subserver (authCheck request))
+            where
+                authCheck req = pure . Route $ authData req
+
+-- | Authentication in Missing x Unauth = Lax x Lax mode
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+    (AuthData authData mError, HasServer sublayout) => HasServer (AuthProtect authData (usr :: *) 'Lax (mError :: *) 'Lax (uError :: *) :> sublayout) where
+    type ServerT (AuthProtect authData usr 'Lax mError 'Lax uError :> sublayout) m =
+        AuthProtected IO ServantErr 'Lax mError 'Lax uError authData usr (Either (Either mError uError) usr -> ServerT sublayout m)
+
+    route _ subserver = WithRequest $ \ request ->
+        route (Proxy :: Proxy sublayout) (addAuthCheck SLax SLax subserver (authCheck request))
+            where
+                authCheck req = pure . Route $ authData req
 
 -- | When implementing the handler for a 'Get' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Post.Post'

@@ -29,7 +29,7 @@ import           Data.Typeable
 import           Servant.API
 
 import           Servant.API.Authentication
-import           Servant.Server.Internal.Authentication (AuthProtected (AuthProtectedStrict, AuthProtectedLax))
+-- import           Servant.Server.Internal.Authentication (AuthProtected (AuthProtectedStrict, AuthProtectedLax))
 
 class Enter typ arg ret | typ arg -> ret, typ ret -> arg where
     enter :: arg -> typ -> ret
@@ -100,11 +100,9 @@ squashNat = Nat squash
 generalizeNat :: Applicative m => Identity :~> m
 generalizeNat = Nat (pure . runIdentity)
 
--- | 'Enter' instance for AuthProtectedStrict
-instance Enter subserver arg ret => Enter (AuthProtected authData usr subserver 'Strict) arg (AuthProtected authData usr ret 'Strict) where
-    enter arg (AuthProtectedStrict check handlers subserver) = AuthProtectedStrict check handlers (enter arg subserver)
-
-
--- | 'Enter' instance for AuthProtectedLax
-instance Enter subserver arg ret => Enter (AuthProtected authData usr subserver 'Lax) arg (AuthProtected authData usr ret 'Lax) where
-    enter arg (AuthProtectedLax check subserver) = AuthProtectedLax check (enter arg subserver)
+-- | 'Enter' instance for AuthProtected
+instance Enter subserver arg ret => Enter (AuthProtected m e mP mE uP uE authData usr subserver)
+                                          arg
+                                          (AuthProtected m e mP mE uP uE authData usr ret)
+    where 
+    enter arg (AuthProtected mHandler uHandler check sub) = AuthProtected mHandler uHandler check (enter arg sub)
