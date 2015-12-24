@@ -9,7 +9,6 @@ module Servant.Client.Authentication (
 
 import Data.ByteString.Base64  (encode)
 import Data.Monoid ((<>))
-import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
 import Servant.API.Authentication (BasicAuth(BasicAuth), JWTAuth(..))
 import Servant.Common.Req (addHeader, Req)

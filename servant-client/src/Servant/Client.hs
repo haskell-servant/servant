@@ -122,8 +122,8 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
     where p = unpack (toUrlPiece val)
 
 -- | Authentication
-instance (AuthenticateRequest authdata, HasClient sublayout) => HasClient (AuthProtect authdata (usr :: *) policy :> sublayout) where
-    type Client (AuthProtect authdata usr policy :> sublayout) = authdata -> Client sublayout
+instance (AuthenticateRequest authdata, HasClient sublayout) => HasClient (AuthProtect authdata (usr :: *) mPolicy mError uPolicy uError :> sublayout) where
+    type Client (AuthProtect authdata usr mPolicy mError uPolicy uError :> sublayout) = authdata -> Client sublayout
 
     clientWithRoute Proxy req baseurl manager val =
         clientWithRoute (Proxy :: Proxy sublayout)
