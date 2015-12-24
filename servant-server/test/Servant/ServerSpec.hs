@@ -642,8 +642,8 @@ miscReqCombinatorsSpec = with (return $ serve miscApi miscServ) $
 -- | we include two endpoints /foo and /bar and we put the BasicAuth
 -- portion in two different places
 type AuthUser = ByteString
-type BasicAuthFooRealm = AuthProtect (BasicAuth "foo-realm") AuthUser 'Strict
-type BasicAuthBarRealm = AuthProtect (BasicAuth "bar-realm") AuthUser 'Strict
+type BasicAuthFooRealm = AuthProtect (BasicAuth "foo-realm") AuthUser 'Strict () 'Strict ()
+type BasicAuthBarRealm = AuthProtect (BasicAuth "bar-realm") AuthUser 'Strict () 'Strict ()
 type BasicAuthRequiredAPI = BasicAuthFooRealm :> "foo" :> Get '[JSON] Person
                   :<|> "bar" :> BasicAuthBarRealm :> Get '[JSON] Animal
 
@@ -709,7 +709,7 @@ basicAuthRequiredSpec = do
                     (simpleHeaders bar401) `shouldContain` barHeader
 
 
-type JWTAuthProtect = AuthProtect JWTAuth (JWT VerifiedJWT) 'Strict
+type JWTAuthProtect = AuthProtect JWTAuth (JWT VerifiedJWT) 'Strict () 'Strict ()
 
 type JWTAuthRequiredAPI = JWTAuthProtect :> "foo" :> Get '[JSON] Person
 
