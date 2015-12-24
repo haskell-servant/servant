@@ -27,7 +27,7 @@ import           GHC.Exts     (Constraint)
 import           GHC.TypeLits
 import           Prelude      hiding (concat)
 import           Servant.API
-import           Servant.API.Authentication
+import           Servant.API.Authentication (AuthProtect, AuthPolicy)
 
 -- | Function name builder that simply concat each part together
 concatCase :: FunctionName -> Text
@@ -354,8 +354,8 @@ listFromAPI :: (HasForeign lang api, GenerateList (Foreign api)) => Proxy lang -
 listFromAPI lang p = generateList (foreignFor lang p defReq)
 
 instance (HasForeign lang sublayout)
-      => HasForeign lang ((AuthProtect (BasicAuth realm) (usr :: *) (policy :: AuthPolicy) :> sublayout)) where
-  type Foreign (AuthProtect (BasicAuth realm) (usr :: *) (policy :: AuthPolicy) :> sublayout) = Foreign sublayout
+        => HasForeign lang ((AuthProtect (BasicAuth realm) (usr :: *) (mPolicy :: AuthPolicy) mError (uPolicy :: AuthPolicy) uError :> sublayout)) where
+  type Foreign (AuthProtect (BasicAuth realm) (usr :: *) (mPolicy :: AuthPolicy) mError (uPolicy :: AuthPolicy) uError :> sublayout) = Foreign sublayout
 
   foreignFor _ Proxy req =
     foreignFor (Proxy :: Proxy lang) (Proxy :: Proxy sublayout) (req & reqHeaders <>~
@@ -366,8 +366,8 @@ instance (HasForeign lang sublayout)
       ])
   
 instance (HasForeign lang sublayout)
-      => HasForeign lang ((AuthProtect Text (usr :: *) (policy :: AuthPolicy) :> sublayout)) where
-  type Foreign (AuthProtect Text (usr :: *) (policy :: AuthPolicy) :> sublayout) = Foreign sublayout
+        => HasForeign lang ((AuthProtect Text (usr :: *) (mP :: AuthPolicy) mE (uP :: AuthPolicy) uE  :> sublayout)) where
+  type Foreign (AuthProtect Text (usr :: *) (mP :: AuthPolicy) mE (uP :: AuthPolicy) uE :> sublayout) = Foreign sublayout
 
   foreignFor _ Proxy req =
     foreignFor (Proxy :: Proxy lang) (Proxy :: Proxy sublayout) (req & reqHeaders <>~
