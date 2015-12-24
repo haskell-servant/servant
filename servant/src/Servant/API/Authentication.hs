@@ -35,7 +35,7 @@ data SAuthPolicy (p :: AuthPolicy) where
     SLax    :: SAuthPolicy 'Lax
 
 -- | the combinator to be used in API types
-data AuthProtect authdata usr (policy :: AuthPolicy)
+data AuthProtect authData usr (missingPolicy :: AuthPolicy) missingError (unauthPolicy :: AuthPolicy) unauthError
 
 -- | A GADT indexed by policy strictness that encompasses the ways
 -- users will handle the case where authentication data is missing
