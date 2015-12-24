@@ -1,9 +1,11 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE CPP                     #-}
+{-# LANGUAGE DataKinds               #-}
+{-# LANGUAGE FlexibleInstances       #-}
+{-# LANGUAGE FunctionalDependencies  #-}
+{-# LANGUAGE MultiParamTypeClasses   #-}
+{-# LANGUAGE OverloadedStrings       #-}
+{-# LANGUAGE ScopedTypeVariables     #-}
+{-# LANGUAGE TypeFamilies            #-}
 
 module Servant.Server.Internal.Authentication
 ( AuthData (..)
@@ -11,6 +13,7 @@ module Servant.Server.Internal.Authentication
 , basicAuthLax
 , basicAuthStrict
 , jwtAuthStrict
+, SimpleAuthProtected
         ) where
 
 import           Control.Monad              (guard)
@@ -40,19 +43,20 @@ import qualified  Web.JWT as JWT             (decode)
 
 -- | Class to represent the ability to extract authentication-related
 -- data from a 'Request' object.
-class AuthData a where
-    authData :: Request -> Maybe a
+class AuthData a e | a -> e where
+    authData :: Request -> Either e a
 
-authProtect :: OnMissing IO ServantErr (missingPolicy :: AuthPolicy)
-            -> OnUnauthenticated IO ServantErr (unauthPolicy :: AuthPolicy) errorIndex authData
-            -> (authData -> IO (Either errorIndex usr))
+-- | combinator to create authentication protected servers.
+authProtect :: OnMissing IO ServantErr missingPolicy missingError
+            -> OnUnauthenticated IO ServantErr unauthPolicy unauthError authData
+            -> (authData -> IO (Either unauthError usr))
             -> subserver
-            -> AuthProtected IO ServantErr missingPolicy unauthPolicy errorIndex authData usr subserver
+            -> AuthProtected IO ServantErr missingPolicy missingError unauthPolicy unauthError authData usr subserver
 authProtect = AuthProtected
 
 -- | 'BasicAuth' instance for authData
-instance AuthData (BasicAuth realm) where
-    authData request = do
+instance AuthData (BasicAuth realm) () where
+    authData request = maybe (Left ()) Right $ do
         authBs <- lookup "Authorization" (requestHeaders request)
         let (x,y) = B.break isSpace authBs
         guard (B.map toLower x == "basic")
@@ -72,8 +76,8 @@ basicAuthFailure p = let realmBytes = (fromString . symbolVal) p
 -- | OnMisisng handler for Basic Authentication
 basicMissingHandler :: forall realm. KnownSymbol realm
                     => Proxy realm
-                    ->  OnMissing IO ServantErr 'Strict
-basicMissingHandler p = StrictMissing (return $ basicAuthFailure p)
+                    ->  OnMissing IO ServantErr 'Strict ()
+basicMissingHandler p = StrictMissing (const $ return (basicAuthFailure p))
 
 -- | OnUnauthenticated handler for Basic Authentication
 basicUnauthenticatedHandler :: forall realm. KnownSymbol realm
@@ -85,7 +89,7 @@ basicUnauthenticatedHandler p = StrictUnauthenticated (const . const (return $ b
 basicAuthStrict :: forall realm usr subserver. KnownSymbol realm
                 => (BasicAuth realm -> IO (Maybe usr))
                 -> subserver
-                -> AuthProtected IO ServantErr 'Strict 'Strict () (BasicAuth realm) usr subserver
+                -> AuthProtected IO ServantErr 'Strict () 'Strict () (BasicAuth realm) usr subserver
 basicAuthStrict check sub =
     let mHandler = basicMissingHandler (Proxy :: Proxy realm)
         unauthHandler = basicUnauthenticatedHandler (Proxy :: Proxy realm)
@@ -96,14 +100,14 @@ basicAuthStrict check sub =
 basicAuthLax :: KnownSymbol realm
              => (BasicAuth realm -> IO (Maybe usr))
              -> subserver
-             -> AuthProtected IO ServantErr 'Lax 'Lax () (BasicAuth realm) usr subserver
+             -> AuthProtected IO ServantErr 'Lax () 'Lax () (BasicAuth realm) usr subserver
 basicAuthLax check sub =
     let check' = \a -> maybe (Left ()) Right <$> check a
     in AuthProtected LaxMissing LaxUnauthenticated check' sub
 
 -- | Authentication data we extract from requests for JWT-based authentication.
-instance AuthData JWTAuth where
-  authData req = do
+instance AuthData JWTAuth () where
+  authData req = maybe (Left ()) Right $ do
     hdr <- lookup "Authorization" . requestHeaders $ req
     ["Bearer", token] <- return . splitOn " " . decodeUtf8 $ hdr
     _ <- JWT.decode token -- try decode it. otherwise it's not a proper token
@@ -116,9 +120,13 @@ jwtWithError e = err401 { errHeaders = [("WWW-Authenticate", "Bearer error=\""<>
 -- | OnMissing handler for Strict, JWT-based authentication
 jwtAuthStrict :: Secret
               -> subserver
-              -> AuthProtected IO ServantErr 'Strict 'Strict () JWTAuth (JWT VerifiedJWT) subserver
+              -> AuthProtected IO ServantErr 'Strict () 'Strict () JWTAuth (JWT VerifiedJWT) subserver
 jwtAuthStrict secret sub =
-    let missingHandler = StrictMissing (return $ jwtWithError "invalid_request")
+    let missingHandler = StrictMissing (const $ return (jwtWithError "invalid_request"))
         unauthHandler = StrictUnauthenticated (const . const (return $ jwtWithError "invalid_token"))
         check = return . maybe (Left ()) Right . decodeAndVerifySignature secret . unJWTAuth
     in AuthProtected missingHandler unauthHandler check sub
+
+-- | A type alias to make simple authentication endpoints
+type SimpleAuthProtected mPolicy uPolicy authData usr subserver =
+    AuthProtected IO ServantErr mPolicy () uPolicy () authData usr subserver
