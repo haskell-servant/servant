@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-import Control.Lens
+import Control.Lens ((&), (<>~))
 import Data.Aeson
 import Data.Proxy
 import Data.String.Conversions
