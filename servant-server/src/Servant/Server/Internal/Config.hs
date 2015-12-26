@@ -11,6 +11,7 @@
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 #if !MIN_VERSION_base(4,8,0)
@@ -18,6 +19,7 @@
 #endif
 module Servant.Server.Internal.Config where
 
+import Control.DeepSeq (NFData(rnf))
 import GHC.Generics (Generic)
 import Data.Typeable (Typeable)
 
@@ -25,7 +27,7 @@ import Data.Typeable (Typeable)
 -- is used to lookup a @ConfigEntry@ in a @Config@.
 newtype ConfigEntry tag a = ConfigEntry { unConfigEntry :: a }
   deriving ( Eq, Show, Read, Enum, Integral, Fractional, Generic, Typeable
-           , Num, Ord, Real, Functor, Foldable, Traversable)
+           , Num, Ord, Real, Functor, Foldable, Traversable, NFData)
 
 instance Applicative (ConfigEntry tag) where
     pure = ConfigEntry
@@ -40,11 +42,23 @@ data Config a where
     EmptyConfig :: Config '[]
     ConsConfig :: x -> Config xs -> Config (x ': xs)
 
+instance Eq (Config '[]) where
+    _ == _ = True
+instance (Eq a, Eq (Config as)) => Eq (Config (a ' : as)) where
+    ConsConfig x1 y1 == ConsConfig x2 y2 = x1 == x2 && y1 == y2
+
+instance NFData (Config '[]) where
+    rnf EmptyConfig = ()
+instance (NFData a, NFData (Config as)) => NFData (Config (a ': as)) where
+    rnf (x `ConsConfig` ys) = rnf x `seq` rnf ys
+
+
+
 (.:) :: x -> Config xs -> Config (ConfigEntry tag x ': xs)
 e .: cfg = ConsConfig (ConfigEntry e) cfg
 infixr 4 .:
 
-class HasConfigEntry (cfg :: [*]) a val | cfg a -> val where
+class HasConfigEntry (cfg :: [*]) (a :: k) (val :: *) | cfg a -> val where
     getConfigEntry :: proxy a -> Config cfg -> val
 
 instance
