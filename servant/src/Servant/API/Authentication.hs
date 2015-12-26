@@ -68,7 +68,7 @@ data OnUnauthenticated m responseError (policy :: AuthPolicy) errorIndex authDat
     StrictUnauthenticated :: (errorIndex -> authData -> m responseError)
                           -> OnUnauthenticated m responseError 'Strict errorIndex authData
 
--- | A GADT representing the data and functions required to protect a reasource for authentication.
+-- | An ADT representing the data and functions required to protect a reasource for authentication.
 -- For an authenticated resource, we need to handle the scenario where authentication data is missing
 -- and where authentication data is present but not valid (e.g. uesrname + password not valid).
 -- m: the monad errors are retrned in. For now just IO.
