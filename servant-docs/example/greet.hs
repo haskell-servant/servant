@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -22,7 +23,12 @@ newtype Greet = Greet Text
 
 -- | We can get JSON support automatically. This will be used to parse
 -- and encode a Greeting as 'JSON'.
+#if MIN_VERSION_aeson(0,10,0)
+instance ToJSON Greet where
+    toJSON = genericToJSON defaultOptions
+#else
 instance FromJSON Greet
+#endif
 instance ToJSON Greet
 
 -- | We can also implement 'MimeRender' for additional formats like 'PlainText'.
@@ -39,12 +45,9 @@ instance ToCapture (Capture "greetid" Text) where
   toCapture _ = DocCapture "greetid" "identifier of the greet msg to remove"
 
 instance ToParam (QueryParam "capital" Bool) where
-  toParam _ =
-    DocQueryParam "capital"
-                  ["true", "false"]
-                  "Get the greeting message in uppercase (true) or not (false).\
-                  \Default is false."
-                  Normal
+  toParam _ = DocQueryParam "capital" ["true", "false"]
+    "Get the greeting message in uppercase (true) or not (false). Default is false."
+    Normal
 
 instance ToSample Greet where
   toSamples _ =
