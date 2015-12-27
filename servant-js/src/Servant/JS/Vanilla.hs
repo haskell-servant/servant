@@ -37,7 +37,7 @@ generateVanillaJSWith opts req = "\n" <>
  <> (if isJust (req ^. reqBody) then "  xhr.setRequestHeader(\"Content-Type\",\"application/json\");\n" else "")
  <> "  xhr.onreadystatechange = function (e) {\n"
  <> "    if (xhr.readyState == 4) {\n"
- <> "      if (xhr.status == 204) {\n"
+ <> "      if (xhr.status == 204 || xhr.status == 205) {\n"
  <> "        onSuccess();\n"
  <> "      } else if (xhr.status >= 200 && xhr.status < 300) {\n"
  <> "        var value = JSON.parse(xhr.responseText);\n"
