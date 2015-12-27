@@ -7,6 +7,8 @@ HEAD
 * Use `http-api-data` instead of `Servant.Common.Text`
 * Remove matrix params.
 * Add PlainText String MimeRender and MimeUnrender instances.
+* Add new `Verbs` combinator, and make all existing and new verb combinators
+type synonyms of it.
 
 0.4.2
 -----
