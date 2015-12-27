@@ -59,7 +59,7 @@ server = helloH :<|> postGreetH :<|> deleteGreetH
 -- Turn the server into a WAI app. 'serve' is provided by servant,
 -- more precisely by the Servant.Server module.
 test :: Application
-test = serve testApi server
+test = serve testApi EmptyConfig server
 
 -- Run the server.
 --

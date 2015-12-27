@@ -23,8 +23,8 @@ module Servant.Docs.Internal where
 
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, over, traversed, (%~),
-                                             (&), (.~), (<>~), (^.), (|>))
+import           Control.Lens               (makeLenses, mapped, over, traversed, (%~),
+                                             (&), (.~), (<>~), (^.), (|>), view)
 import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
@@ -42,6 +42,7 @@ import           GHC.Exts                   (Constraint)
 import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API
+import           Servant.API.Authentication
 import           Servant.API.ContentTypes
 import           Servant.Utils.Links
 
@@ -80,8 +81,8 @@ instance Hashable Method
 -- POST /foo
 -- @
 data Endpoint = Endpoint
-  { _path   :: [String] -- type collected
-  , _method :: Method   -- type collected
+  { _path   :: [String]     -- type collected
+  , _method :: Method       -- type collected
   } deriving (Eq, Ord, Generic)
 
 instance Show Endpoint where
@@ -234,6 +235,12 @@ defResponse = Response
   , _respHeaders = []
   }
 
+-- | A type to represent Authentication information about an endpoint.
+data AuthenticationInfo = AuthenticationInfo
+  { _authIntro        :: String
+  , _authDataRequired :: String
+  } deriving (Eq, Ord, Show)
+
 -- | A datatype that represents everything that can happen
 -- at an endpoint, with its lenses:
 --
@@ -245,7 +252,8 @@ defResponse = Response
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _captures :: [DocCapture]                -- type collected + user supplied info
+  { _authInfo :: [AuthenticationInfo]        -- type collected + user supplied info
+  , _captures :: [DocCapture]                -- type collected + user supplied info
   , _headers  :: [Text]                      -- type collected
   , _params   :: [DocQueryParam]             -- type collected + user supplied info
   , _notes    :: [DocNote]                   -- user supplied
@@ -262,8 +270,8 @@ data Action = Action
 -- 'combineAction' to mush two together taking the response, body and content
 -- types from the very left.
 combineAction :: Action -> Action -> Action
-Action c h p n m ts body resp `combineAction` Action c' h' p' n' m' _ _ _ =
-        Action (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
+Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
+        Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -271,12 +279,13 @@ Action c h p n m ts body resp `combineAction` Action c' h' p' n' m' _ _ _ =
 -- Tweakable with lenses.
 --
 -- > λ> defAction
--- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
+-- > Action {_authentication = [], _captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
 -- > λ> defAction & response.respStatus .~ 201
--- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
+-- > Action {_authentication = [], _captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
 defAction :: Action
 defAction =
   Action []
+         []
          []
          []
          []
@@ -294,6 +303,7 @@ single e a = API mempty (HM.singleton e a)
 -- gimme some lenses
 makeLenses ''DocOptions
 makeLenses ''API
+makeLenses ''AuthenticationInfo
 makeLenses ''Endpoint
 makeLenses ''DocCapture
 makeLenses ''DocQueryParam
@@ -519,6 +529,10 @@ class ToParam t where
 class ToCapture c where
   toCapture :: Proxy c -> DocCapture
 
+-- | The class that helps us get documentation for authenticated endpoints
+class ToAuthInfo a where
+    toAuthInfo :: Proxy a -> AuthenticationInfo
+
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
@@ -531,6 +545,7 @@ markdown api = unlines $
           str :
           "" :
           notesStr (action ^. notes) ++
+          authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
@@ -562,6 +577,19 @@ markdown api = unlines $
             intersperse "" (nt ^. noteBody) ++
             "" :
             []
+
+        authStr :: [AuthenticationInfo] -> [String]
+        authStr auths =
+            let authIntros = mapped %~ view authIntro $ auths
+                clientInfos = mapped %~ view authDataRequired $ auths
+            in "#### Authentication":
+                "":
+                unlines authIntros :
+                "":
+                "Clients must supply the following data" :
+                unlines clientInfos :
+                "" :
+                []
 
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
@@ -691,6 +719,23 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
           endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
           symP = Proxy :: Proxy sym
 
+-- | authentication instance.
+instance
+#if MIN_VERSION_base(4,8,0)
+        {-# OVERLAPPABLE #-}
+#endif
+         ( HasDocs sublayout
+         , ToSample auth
+         , ToSample usr
+         , ToAuthInfo (AuthProtect tag auth usr mPolicy mError uPolicy uError)
+         )
+         => HasDocs (AuthProtect tag auth usr mPolicy mError uPolicy uError :> sublayout) where
+            docsFor Proxy (endpoint, action) =
+              docsFor (Proxy :: Proxy sublayout) (endpoint, action')
+
+                where
+                    authProxy = Proxy :: Proxy (AuthProtect tag auth usr mPolicy mError uPolicy uError)
+                    action' = over authInfo (|> toAuthInfo authProxy) action
 
 instance
 #if MIN_VERSION_base(4,8,0)

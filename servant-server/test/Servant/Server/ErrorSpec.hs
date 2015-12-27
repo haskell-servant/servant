@@ -42,7 +42,7 @@ errorOrderServer = \_ _ -> throwE err402
 
 errorOrderSpec :: Spec
 errorOrderSpec = describe "HTTP error order"
-           $ with (return $ serve errorOrderApi errorOrderServer) $ do
+           $ with (return $ serve errorOrderApi EmptyConfig errorOrderServer) $ do
   let badContentType  = (hContentType, "text/plain")
       badAccept       = (hAccept, "text/plain")
       badMethod       = methodGet
@@ -89,7 +89,7 @@ prioErrorsApi = Proxy
 prioErrorsSpec :: Spec
 prioErrorsSpec = describe "PrioErrors" $ do
   let server = return
-  with (return $ serve prioErrorsApi server) $ do
+  with (return $ serve prioErrorsApi EmptyConfig server) $ do
     let check (mdescr, method) path (cdescr, ctype, body) resp =
           it fulldescr $
             Test.Hspec.Wai.request method path [(hContentType, ctype)] body
@@ -154,7 +154,7 @@ errorRetryServer
 
 errorRetrySpec :: Spec
 errorRetrySpec = describe "Handler search"
-           $ with (return $ serve errorRetryApi errorRetryServer) $ do
+           $ with (return $ serve errorRetryApi EmptyConfig errorRetryServer) $ do
 
   let jsonCT      = (hContentType, "application/json")
       jsonAccept  = (hAccept, "application/json")
@@ -194,7 +194,7 @@ errorChoiceServer = return 0
 
 errorChoiceSpec :: Spec
 errorChoiceSpec = describe "Multiple handlers return errors"
-                $ with (return $ serve errorChoiceApi errorChoiceServer) $ do
+                $ with (return $ serve errorChoiceApi EmptyConfig errorChoiceServer) $ do
 
   it "should respond with 404 if no path matches" $ do
     request methodGet "" [] "" `shouldRespondWith` 404

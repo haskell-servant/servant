@@ -1,10 +1,12 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 module Servant.Server.Internal.RoutingApplication where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -155,32 +157,40 @@ data Delayed :: * -> * where
   Delayed :: IO (RouteResult a)
           -> IO (RouteResult ())
           -> IO (RouteResult b)
-          -> (a -> b -> RouteResult c)
-          -> Delayed c
+          -> IO (RouteResult c)
+          -> (a -> b -> c -> RouteResult d)
+          -> Delayed d
 
 instance Functor Delayed where
-   fmap f (Delayed a b c g) = Delayed a b c ((fmap.fmap.fmap) f g)
+   fmap f (Delayed a b c d g) = Delayed a b c d ((fmap.fmap.fmap.fmap) f g)
 
 -- | Add a capture to the end of the capture block.
 addCapture :: Delayed (a -> b)
            -> IO (RouteResult a)
            -> Delayed b
-addCapture (Delayed captures method body server) new =
-  Delayed (combineRouteResults (,) captures new) method body (\ (x, v) y -> ($ v) <$> server x y)
+addCapture (Delayed captures method auth body server) new =
+  Delayed (combineRouteResults (,) captures new) method auth body (\ (x, v) y z -> ($ v) <$> server x y z)
 
 -- | Add a method check to the end of the method block.
 addMethodCheck :: Delayed a
                -> IO (RouteResult ())
                -> Delayed a
-addMethodCheck (Delayed captures method body server) new =
-  Delayed captures (combineRouteResults const method new) body server
+addMethodCheck (Delayed captures method auth body server) new =
+  Delayed captures (combineRouteResults const method new) auth body server
+
+-- | Add authentication
+addAuth :: Delayed (a -> b)
+        -> IO (RouteResult a)
+        -> Delayed b
+addAuth (Delayed captures method auth body server) new =
+    Delayed captures method (combineRouteResults (,) auth new) body (\ x (y,v) z -> ($ v) <$> server x y z)
 
 -- | Add a body check to the end of the body block.
 addBodyCheck :: Delayed (a -> b)
              -> IO (RouteResult a)
              -> Delayed b
-addBodyCheck (Delayed captures method body server) new =
-  Delayed captures method (combineRouteResults (,) body new) (\ x (y, v) -> ($ v) <$> server x y)
+addBodyCheck (Delayed captures method auth body server) new =
+  Delayed captures method auth (combineRouteResults (,) body new) (\ x y (z, v) -> ($ v) <$> server x y z)
 
 -- | Add an accept header check to the end of the body block.
 -- The accept header check should occur after the body check,
@@ -189,8 +199,8 @@ addBodyCheck (Delayed captures method body server) new =
 addAcceptCheck :: Delayed a
                 -> IO (RouteResult ())
                 -> Delayed a
-addAcceptCheck (Delayed captures method body server) new =
-  Delayed captures method (combineRouteResults const body new) server
+addAcceptCheck (Delayed captures method auth body server) new =
+  Delayed captures method auth (combineRouteResults const body new) server
 
 -- | Many combinators extract information that is passed to
 -- the handler without the possibility of failure. In such a
@@ -224,11 +234,12 @@ combineRouteResults f m1 m2 =
 -- blocks on to the actual handler.
 runDelayed :: Delayed a
            -> IO (RouteResult a)
-runDelayed (Delayed captures method body server) =
+runDelayed (Delayed captures method auth body server) =
   captures `bindRouteResults` \ c ->
   method   `bindRouteResults` \ _ ->
+  auth     `bindRouteResults` \ a ->
   body     `bindRouteResults` \ b ->
-  return (server c b)
+  return (server c a b)
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.

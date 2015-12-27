@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                    #-}
+{-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveDataTypeable     #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -13,7 +14,7 @@ module Servant.Server.Internal.Enter where
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
 #endif
-import qualified Control.Category            as C
+import qualified Control.Category                       as C
 #if MIN_VERSION_mtl(2,2,1)
 import           Control.Monad.Except
 #endif
