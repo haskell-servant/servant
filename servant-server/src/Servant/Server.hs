@@ -71,12 +71,14 @@ module Servant.Server
   , err504
   , err505
 
+  , module Servant.Server.Internal.Authentication
   ) where
 
 import           Data.Proxy                    (Proxy)
 import           Network.Wai                   (Application)
 import           Servant.Server.Internal
 import           Servant.Server.Internal.Enter
+import           Servant.Server.Internal.Authentication
 
 
 -- * Implementing Servers
@@ -105,7 +107,7 @@ import           Servant.Server.Internal.Enter
 serve :: HasServer layout => Proxy layout -> Server layout -> Application
 serve p server = toApplication (runRouter (route p d))
   where
-    d = Delayed r r r (\ _ _ -> Route server)
+    d = Delayed r r r r (\ _ _ _ -> Route server)
     r = return (Route ())
 
 

@@ -16,23 +16,30 @@ import           Control.Applicative        ((<$>))
 import           Control.Monad              (forM_, when)
 import           Control.Monad.Trans.Except (ExceptT, throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
+import           Data.ByteString            (ByteString)
 import           Data.ByteString.Conversion ()
 import           Data.Char                  (toUpper)
+#if !MIN_VERSION_base(4,8,0)
+import           Data.Monoid                ((<>), mempty)
+#else
+import           Data.Monoid                ((<>))
+#endif
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs)
 import qualified Data.Text                  as T
+import           Data.Text.Encoding         (encodeUtf8)
 import           GHC.Generics               (Generic)
 import           Network.HTTP.Types         (hAccept, hContentType,
                                              methodDelete, methodGet, methodHead,
                                              methodPatch, methodPost, methodPut,
-                                             ok200, parseQuery, Status(..))
+                                             ok200, parseQuery, ResponseHeaders, Status(..))
 import           Network.Wai                (Application, Request, pathInfo,
                                              queryString, rawQueryString,
                                              responseLBS, responseBuilder)
 import           Network.Wai.Internal       (Response(ResponseBuilder))
 import           Network.Wai.Test           (defaultRequest, request,
-                                             runSession, simpleBody)
+                                             runSession, simpleBody, simpleHeaders, SResponse)
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Get, Header (..), Headers,
                                              HttpVersion, IsSecure (..), JSON,
@@ -41,14 +48,19 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Raw, RemoteHost, ReqBody,
                                              addHeader)
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
-import           Test.Hspec                 (Spec, describe, it, shouldBe)
+import           Test.Hspec                 (Spec, describe, it, shouldBe, shouldContain)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, post, request,
                                              shouldRespondWith, with, (<:>))
-import           Servant.Server.Internal.RoutingApplication (toApplication, RouteResult(..))
+import           Test.Hspec.Wai.Internal     (WaiSession)
+import           Servant.Server.Internal.RoutingApplication (toApplication)
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
+import           Servant.API.Authentication
+import           Servant.Server.Internal.Authentication
+import           Servant.Server.Internal.RoutingApplication (RouteResult(Route))
+import           Web.JWT                    hiding (JSON)
 
 
 -- * test data types
@@ -98,6 +110,8 @@ spec = do
   routerSpec
   responseHeadersSpec
   miscReqCombinatorsSpec
+  basicAuthRequiredSpec
+  jwtAuthRequiredSpec
 
 
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
@@ -543,6 +557,55 @@ routerSpec = do
       it "calls f on route result" $ do
         get "" `shouldRespondWith` 202
 
+type PrioErrorsApi = ReqBody '[JSON] Person :> "foo" :> Get '[JSON] Integer
+
+prioErrorsApi :: Proxy PrioErrorsApi
+prioErrorsApi = Proxy
+
+-- | Test the relative priority of error responses from the server.
+--
+-- In particular, we check whether matching continues even if a 'ReqBody'
+-- or similar construct is encountered early in a path. We don't want to
+-- see a complaint about the request body unless the path actually matches.
+--
+prioErrorsSpec :: Spec
+prioErrorsSpec = describe "PrioErrors" $ do
+  let server = return . age
+  with (return $ serve prioErrorsApi server) $ do
+    let check (mdescr, method) path (cdescr, ctype, body) resp =
+          it fulldescr $
+            Test.Hspec.Wai.request method path [(hContentType, ctype)] body
+              `shouldRespondWith` resp
+          where
+            fulldescr = "returns " ++ show (matchStatus resp) ++ " on " ++ mdescr
+                     ++ " " ++ cs path ++ " (" ++ cdescr ++ ")"
+
+        get' = ("GET", methodGet)
+        put' = ("PUT", methodPut)
+
+        txt   = ("text"        , "text/plain;charset=utf8"      , "42"        )
+        ijson = ("invalid json", "application/json;charset=utf8", "invalid"   )
+        vjson = ("valid json"  , "application/json;charset=utf8", encode alice)
+
+    check get' "/"    txt   404
+    check get' "/bar" txt   404
+    check get' "/foo" txt   415
+    check put' "/"    txt   404
+    check put' "/bar" txt   404
+    check put' "/foo" txt   405
+    check get' "/"    ijson 404
+    check get' "/bar" ijson 404
+    check get' "/foo" ijson 400
+    check put' "/"    ijson 404
+    check put' "/bar" ijson 404
+    check put' "/foo" ijson 405
+    check get' "/"    vjson 404
+    check get' "/bar" vjson 404
+    check get' "/foo" vjson 200
+    check put' "/"    vjson 404
+    check put' "/bar" vjson 404
+    check put' "/foo" vjson 405
+
 type MiscCombinatorsAPI
   =    "version" :> HttpVersion :> Get '[JSON] String
   :<|> "secure"  :> IsSecure :> Get '[JSON] String
@@ -574,3 +637,118 @@ miscReqCombinatorsSpec = with (return $ serve miscApi miscServ) $
       go "/host" "\"0.0.0.0:0\""
 
   where go path res = Test.Hspec.Wai.get path `shouldRespondWith` res
+
+
+-- | we include two endpoints /foo and /bar and we put the BasicAuth
+-- portion in two different places
+type AuthUser = ByteString
+type BasicAuthFooRealm = AuthProtect (BasicAuth "foo-realm") AuthUser 'Strict () 'Strict ()
+type BasicAuthBarRealm = AuthProtect (BasicAuth "bar-realm") AuthUser 'Strict () 'Strict ()
+type BasicAuthRequiredAPI = BasicAuthFooRealm :> "foo" :> Get '[JSON] Person
+                  :<|> "bar" :> BasicAuthBarRealm :> Get '[JSON] Animal
+
+basicAuthFooCheck :: BasicAuth "foo-realm" -> IO (Maybe AuthUser)
+basicAuthFooCheck (BasicAuth user pass) = if user == "servant" && pass == "server"
+                                          then return (Just "servant")
+                                          else return Nothing
+
+basicAuthBarCheck :: BasicAuth "bar-realm" -> IO (Maybe AuthUser)
+basicAuthBarCheck (BasicAuth usr pass) = if usr == "bar" && pass == "bar"
+                                         then return (Just "bar")
+                                         else return Nothing
+basicBasicAuthRequiredApi :: Proxy BasicAuthRequiredAPI
+basicBasicAuthRequiredApi = Proxy
+
+basicAuthRequiredServer :: Server BasicAuthRequiredAPI
+basicAuthRequiredServer = basicAuthStrict basicAuthFooCheck (const . return $ alice)
+                :<|> basicAuthStrict basicAuthBarCheck (const . return $ jerry)
+
+-- base64-encoded "servant:server"
+base64ServantColonServer :: ByteString
+base64ServantColonServer = "c2VydmFudDpzZXJ2ZXI="
+
+-- base64-encoded "bar:bar"
+base64BarColonPassword :: ByteString
+base64BarColonPassword = "YmFyOmJhcg=="
+
+-- base64-encoded "user:password"
+base64UserColonPassword :: ByteString
+base64UserColonPassword = "dXNlcjpwYXNzd29yZA=="
+
+basicAuthGet :: ByteString -> ByteString -> WaiSession SResponse
+basicAuthGet path base64EncodedAuth = Test.Hspec.Wai.request methodGet path [("Authorization", "Basic " <> base64EncodedAuth)] ""
+
+basicAuthRequiredSpec :: Spec
+basicAuthRequiredSpec = do
+    describe "Servant.API.Authentication" $ do
+        with (return $ serve basicBasicAuthRequiredApi basicAuthRequiredServer) $ do
+            it "allows access with the correct username and password" $ do
+                response1 <- basicAuthGet "/foo" base64ServantColonServer
+                liftIO $ do
+                    decode' (simpleBody response1) `shouldBe` Just alice
+
+                response2 <- basicAuthGet "/bar" base64BarColonPassword
+                liftIO $ do
+                    decode' (simpleBody response2) `shouldBe` Just jerry
+
+            it "rejects requests with the incorrect username and password" $ do
+                basicAuthGet "/foo" base64UserColonPassword `shouldRespondWith` 401
+                basicAuthGet "/bar" base64UserColonPassword `shouldRespondWith` 401
+
+            it "does not respond to non-authenticated requests" $ do
+                get "/foo" `shouldRespondWith` 401
+                get "/bar" `shouldRespondWith` 401
+
+            it "adds the appropriate header to rejected 401 requests" $ do
+                foo401 <- get "/foo"
+                bar401 <- get "/bar"
+                liftIO $ do
+                    let fooHeader = [("WWW-Authenticate", "Basic realm=\"foo-realm\"")] :: ResponseHeaders
+                    let barHeader = [("WWW-Authenticate", "Basic realm=\"bar-realm\"")] :: ResponseHeaders
+                    (simpleHeaders foo401) `shouldContain` fooHeader
+                    (simpleHeaders bar401) `shouldContain` barHeader
+
+
+type JWTAuthProtect = AuthProtect JWTAuth (JWT VerifiedJWT) 'Strict () 'Strict ()
+
+type JWTAuthRequiredAPI = JWTAuthProtect :> "foo" :> Get '[JSON] Person
+
+
+jwtAuthRequiredApi :: Proxy JWTAuthRequiredAPI
+jwtAuthRequiredApi = Proxy
+
+jwtSecret = secret "secret"
+jwtAuthRequiredServer :: Server JWTAuthRequiredAPI
+jwtAuthRequiredServer = jwtAuthStrict jwtSecret (const . return $ alice)
+
+correctToken = encodeUtf8 $ encodeSigned HS256 jwtSecret def
+corruptToken = "blah"
+incorrectToken = encodeUtf8 $ encodeSigned HS256 (secret "nope") def
+
+jwtAuthGet :: ByteString -> ByteString -> WaiSession SResponse
+jwtAuthGet path token = Test.Hspec.Wai.request methodGet path [("Authorization", "Bearer " <> token)] ""
+
+jwtAuthRequiredSpec :: Spec
+jwtAuthRequiredSpec = do
+  describe "JWT Auth" $ do
+    with (return $ serve jwtAuthRequiredApi jwtAuthRequiredServer) $ do
+      it "allows access with the correct token" $ do
+        response <- jwtAuthGet "/foo" correctToken
+        liftIO $ do
+          decode' (simpleBody response) `shouldBe` Just alice
+      it "rejects requests with an incorrect token" $ do
+        jwtAuthGet "/foo" incorrectToken `shouldRespondWith` 401 
+      it "rejects requests without auth data" $ do
+        get "/foo" `shouldRespondWith` 401
+      it "responds correctly to requests without auth data" $ do
+        a <- get "/foo"
+        let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_request\"")] :: ResponseHeaders
+        liftIO (simpleHeaders a `shouldContain` aHeader)
+      it "responds correctly to requests with corrupted auth data" $ do
+        a <- jwtAuthGet "/foo" corruptToken
+        let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_request\"")] :: ResponseHeaders
+        liftIO (simpleHeaders a `shouldContain` aHeader)
+      it "responds correctly to requests with incorrect auth data" $ do
+        a <- jwtAuthGet "/foo" incorrectToken
+        let aHeader = [("WWW-Authenticate", "Bearer error=\"invalid_token\"")] :: ResponseHeaders
+        liftIO (simpleHeaders a `shouldContain` aHeader)

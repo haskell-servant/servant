@@ -7,6 +7,13 @@ HEAD
 * Use `http-api-data` instead of `Servant.Common.Text`
 * Remove matrix params.
 * Add PlainText String MimeRender and MimeUnrender instances.
+* Added more instances for (:<|>)
+* Add combinators for the new authentication framework:
+  * `AuthPolicy` universe to parameterize authentication policy strictness.
+  * `AuthProtect` combinator used to protect sets of endpoints
+  * `AuthProtected` GADT that users will provide at the server/client-level.
+  * `BasicAuth` data type for `Basic` authentication.
+  * `JSON` data type for `JWT` authentication.
 
 0.4.2
 -----

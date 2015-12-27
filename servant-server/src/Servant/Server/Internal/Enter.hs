@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                    #-}
+{-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveDataTypeable     #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -13,7 +14,7 @@ module Servant.Server.Internal.Enter where
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative
 #endif
-import qualified Control.Category            as C
+import qualified Control.Category                       as C
 #if MIN_VERSION_mtl(2,2,1)
 import           Control.Monad.Except
 #endif
@@ -26,6 +27,9 @@ import qualified Control.Monad.Writer.Lazy   as LWriter
 import qualified Control.Monad.Writer.Strict as SWriter
 import           Data.Typeable
 import           Servant.API
+
+import           Servant.API.Authentication
+-- import           Servant.Server.Internal.Authentication (AuthProtected (AuthProtectedStrict, AuthProtectedLax))
 
 class Enter typ arg ret | typ arg -> ret, typ ret -> arg where
     enter :: arg -> typ -> ret
@@ -95,3 +99,10 @@ squashNat = Nat squash
 -- | Like @mmorph@'s `generalize`.
 generalizeNat :: Applicative m => Identity :~> m
 generalizeNat = Nat (pure . runIdentity)
+
+-- | 'Enter' instance for AuthProtected
+instance Enter subserver arg ret => Enter (AuthProtected m e mP mE uP uE authData usr subserver)
+                                          arg
+                                          (AuthProtected m e mP mE uP uE authData usr ret)
+    where 
+    enter arg (AuthProtected mHandler uHandler check sub) = AuthProtected mHandler uHandler check (enter arg sub)
