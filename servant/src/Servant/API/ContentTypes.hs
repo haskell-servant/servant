@@ -252,9 +252,6 @@ instance ( MimeRender ctyp a
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy (ctyp' ': ctyps)
 
-instance AllMimeRender '[] () where
-    allMimeRender _ _ = []
-
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
 --------------------------------------------------------------------------
