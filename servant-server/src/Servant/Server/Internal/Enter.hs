@@ -28,9 +28,6 @@ import qualified Control.Monad.Writer.Strict as SWriter
 import           Data.Typeable
 import           Servant.API
 
-import           Servant.API.Authentication
--- import           Servant.Server.Internal.Authentication (AuthProtected (AuthProtectedStrict, AuthProtectedLax))
-
 class Enter typ arg ret | typ arg -> ret, typ ret -> arg where
     enter :: arg -> typ -> ret
 
@@ -99,10 +96,3 @@ squashNat = Nat squash
 -- | Like @mmorph@'s `generalize`.
 generalizeNat :: Applicative m => Identity :~> m
 generalizeNat = Nat (pure . runIdentity)
-
--- | 'Enter' instance for AuthProtected
-instance Enter subserver arg ret => Enter (AuthProtected m e mP mE uP uE authData usr subserver)
-                                          arg
-                                          (AuthProtected m e mP mE uP uE authData usr ret)
-    where 
-    enter arg (AuthProtected mHandler uHandler check sub) = AuthProtected mHandler uHandler check (enter arg sub)

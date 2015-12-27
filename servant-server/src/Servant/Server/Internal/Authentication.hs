@@ -8,8 +8,14 @@
 {-# LANGUAGE TypeFamilies            #-}
 
 module Servant.Server.Internal.Authentication
-( AuthData (..)
+( addAuthCheck
+, addAuthCheckSS
+, addAuthCheckSL
+, addAuthCheckLS
+, addAuthCheckLL
+, AuthData (..)
 , authProtect
+, authProtectSimple
 , basicAuthLax
 , basicAuthStrict
 , jwtAuthStrict
@@ -33,10 +39,13 @@ import           Network.Wai                (Request, requestHeaders)
 import Servant.Server.Internal.ServantErr (err401, ServantErr(errHeaders))
 import           Servant.API.Authentication (AuthPolicy (Strict, Lax),
                                              AuthProtected(..),
+                                             AuthProtectedSimple (..),
                                              BasicAuth (BasicAuth),
                                              JWTAuth(..),
                                              OnMissing (..),
-                                             OnUnauthenticated (..))
+                                             OnUnauthenticated (..),
+                                             SAuthPolicy(..))
+import Servant.Server.Internal.RoutingApplication
 import            Web.JWT                    (decodeAndVerifySignature, JWT, VerifiedJWT, Secret)
 import qualified  Web.JWT as JWT             (decode)
 
@@ -49,9 +58,13 @@ class AuthData a e | a -> e where
 authProtect :: OnMissing IO ServantErr missingPolicy missingError
             -> OnUnauthenticated IO ServantErr unauthPolicy unauthError authData
             -> (authData -> IO (Either unauthError usr))
-            -> subserver
-            -> AuthProtected IO ServantErr missingPolicy missingError unauthPolicy unauthError authData usr subserver
+            -> AuthProtected IO ServantErr missingPolicy missingError unauthPolicy unauthError authData usr
 authProtect = AuthProtected
+
+-- | combinator to create authentication protected servers.
+authProtectSimple :: (Request -> IO (Either ServantErr u))
+                  -> AuthProtectedSimple Request ServantErr u
+authProtectSimple = AuthProtectedSimple
 
 -- | 'BasicAuth' instance for authData
 instance AuthData (BasicAuth realm) () where
@@ -85,24 +98,22 @@ basicUnauthenticatedHandler :: forall realm. KnownSymbol realm
 basicUnauthenticatedHandler p = StrictUnauthenticated (const . const (return $ basicAuthFailure p))
 
 -- | Basic authentication combinator with strict failure.
-basicAuthStrict :: forall realm usr subserver. KnownSymbol realm
+basicAuthStrict :: forall realm usr. KnownSymbol realm
                 => (BasicAuth realm -> IO (Maybe usr))
-                -> subserver
-                -> AuthProtected IO ServantErr 'Strict () 'Strict () (BasicAuth realm) usr subserver
-basicAuthStrict check sub =
+                -> AuthProtected IO ServantErr 'Strict () 'Strict () (BasicAuth realm) usr
+basicAuthStrict check =
     let mHandler = basicMissingHandler (Proxy :: Proxy realm)
         unauthHandler = basicUnauthenticatedHandler (Proxy :: Proxy realm)
         check' = \auth -> maybe (Left ()) Right <$> check auth
-    in AuthProtected mHandler unauthHandler check' sub
+    in AuthProtected mHandler unauthHandler check'
 
 -- | Basic authentication combinator with lax failure.
 basicAuthLax :: KnownSymbol realm
              => (BasicAuth realm -> IO (Maybe usr))
-             -> subserver
-             -> AuthProtected IO ServantErr 'Lax () 'Lax () (BasicAuth realm) usr subserver
-basicAuthLax check sub =
+             -> AuthProtected IO ServantErr 'Lax () 'Lax () (BasicAuth realm) usr
+basicAuthLax check =
     let check' = \a -> maybe (Left ()) Right <$> check a
-    in AuthProtected LaxMissing LaxUnauthenticated check' sub
+    in AuthProtected LaxMissing LaxUnauthenticated check'
 
 -- | Authentication data we extract from requests for JWT-based authentication.
 instance AuthData JWTAuth () where
@@ -118,14 +129,100 @@ jwtWithError e = err401 { errHeaders = [("WWW-Authenticate", "Bearer error=\""<>
 
 -- | OnMissing handler for Strict, JWT-based authentication
 jwtAuthStrict :: Secret
-              -> subserver
-              -> AuthProtected IO ServantErr 'Strict () 'Strict () JWTAuth (JWT VerifiedJWT) subserver
-jwtAuthStrict secret sub =
+              -> AuthProtected IO ServantErr 'Strict () 'Strict () JWTAuth (JWT VerifiedJWT)
+jwtAuthStrict secret =
     let missingHandler = StrictMissing (const $ return (jwtWithError "invalid_request"))
         unauthHandler = StrictUnauthenticated (const . const (return $ jwtWithError "invalid_token"))
         check = return . maybe (Left ()) Right . decodeAndVerifySignature secret . unJWTAuth
-    in AuthProtected missingHandler unauthHandler check sub
+    in AuthProtected missingHandler unauthHandler check
 
 -- | A type alias to make simple authentication endpoints
-type SimpleAuthProtected mPolicy uPolicy authData usr subserver =
-    AuthProtected IO ServantErr mPolicy () uPolicy () authData usr subserver
+type SimpleAuthProtected mPolicy uPolicy authData usr =
+    AuthProtected IO ServantErr mPolicy () uPolicy () authData usr
+
+-------------------------------------------------------------------------------
+-- Helpers
+-------------------------------------------------------------------------------
+
+-- | helper type family to capture server handled values for various policies
+type family AuthDelayedReturn (mP :: AuthPolicy) mE (uP :: AuthPolicy) uE usr :: * where
+    AuthDelayedReturn 'Strict mE 'Strict uE usr = usr
+    AuthDelayedReturn 'Strict mE 'Lax    uE usr = Either uE usr
+    AuthDelayedReturn 'Lax    mE 'Strict uE usr = Either mE usr
+    AuthDelayedReturn 'Lax    mE 'Lax    uE usr = Either (Either mE uE) usr
+
+-- | Internal method to generate auth checkers for various policies. Scary type signature
+-- but it does help with understanding the logic of how each policy works. See
+-- examples below.
+
+genAuthCheck :: (OnMissing IO ServantErr mP mE -> mE -> IO (RouteResult (AuthDelayedReturn mP mE uP uE usr)))
+             -> (OnUnauthenticated IO ServantErr uP uE auth -> uE -> auth -> IO (RouteResult (AuthDelayedReturn mP mE uP uE usr)))
+             -> (usr -> (AuthDelayedReturn mP mE uP uE usr))
+             -> AuthProtected IO ServantErr mP mE uP uE auth usr
+             -> Delayed (AuthDelayedReturn mP mE uP uE usr -> a)
+             -> IO (RouteResult (Either mE auth))
+             -> Delayed a
+genAuthCheck missingHandler unauthHandler returnHandler authProtection d new =
+    let newAuth =
+            new `bindRouteResults` \ eAuthData ->
+            case eAuthData of
+                -- we failed to extract authentication data from the request
+                Left mError -> missingHandler (onMissing authProtection) mError
+                -- auth data was succesfully extracted from the request
+                Right aData -> do
+                    eUsr <- checkAuth authProtection aData
+                    case eUsr of
+                        -- we failed to authenticate the user
+                        Left uError -> unauthHandler (onUnauthenticated authProtection) uError aData
+                        -- user was authenticated
+                        Right usr ->
+                            (return . Route . returnHandler) usr
+    in addAuth d newAuth
+
+-- | Delayed auth checker for Strict Missing and Strict Unauthentication
+addAuthCheckSS :: AuthProtected IO ServantErr 'Strict mError 'Strict uError auth usr
+               -> Delayed (usr -> a)
+               -> IO (RouteResult (Either mError auth))
+               -> Delayed a
+addAuthCheckSS = genAuthCheck (\(StrictMissing handler) e -> FailFatal <$> handler e)
+                              (\(StrictUnauthenticated handler) e a -> FailFatal <$> handler e a)
+                              id
+
+-- | Delayed auth checker for Strict Missing and Lax Unauthentication
+addAuthCheckSL :: AuthProtected IO ServantErr 'Strict mError 'Lax uError auth usr
+               -> Delayed (Either uError usr -> a)
+               -> IO (RouteResult (Either mError auth))
+               -> Delayed a
+addAuthCheckSL = genAuthCheck (\(StrictMissing handler) e -> FailFatal <$> handler e)
+                              (\(LaxUnauthenticated) e _ -> (return . Route . Left) e)
+                              Right
+
+-- | Delayed auth checker for Lax Missing and Strict Unauthentication
+addAuthCheckLS :: AuthProtected IO ServantErr 'Lax mError 'Strict uError auth usr
+               -> Delayed (Either mError usr -> a)
+               -> IO (RouteResult (Either mError auth))
+               -> Delayed a
+addAuthCheckLS = genAuthCheck (\(LaxMissing) e -> (return . Route . Left) e)
+                              (\(StrictUnauthenticated handler) e a -> FailFatal <$> handler e a)
+                              Right
+
+-- | Delayed auth checker for Lax Missing and Lax Unauthentication
+addAuthCheckLL :: AuthProtected IO ServantErr 'Lax mError 'Lax uError auth usr
+               -> Delayed (Either (Either mError uError) usr -> a)
+               -> IO (RouteResult (Either mError auth))
+               -> Delayed a
+addAuthCheckLL = genAuthCheck (\(LaxMissing) e -> (return . Route . Left . Left) e)
+                              (\(LaxUnauthenticated) e _ -> (return . Route . Left . Right) e)
+                              Right
+
+-- | Add an auth check by supplying OnMissing policies and OnUnauthenticated policies.
+addAuthCheck :: SAuthPolicy mPolicy
+             -> SAuthPolicy uPolicy
+             -> AuthProtected IO ServantErr mPolicy mError uPolicy uError auth usr
+             -> Delayed (AuthDelayedReturn mPolicy mError uPolicy uError usr -> a)
+             -> IO (RouteResult (Either mError auth))
+             -> Delayed a
+addAuthCheck SStrict SStrict = addAuthCheckSS
+addAuthCheck SStrict SLax    = addAuthCheckSL
+addAuthCheck SLax    SStrict = addAuthCheckLS
+addAuthCheck SLax    SLax    = addAuthCheckLL

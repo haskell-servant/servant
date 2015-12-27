@@ -727,14 +727,14 @@ instance
          ( HasDocs sublayout
          , ToSample auth
          , ToSample usr
-         , ToAuthInfo (AuthProtect auth usr mPolicy mError uPolicy uError)
+         , ToAuthInfo (AuthProtect tag auth usr mPolicy mError uPolicy uError)
          )
-         => HasDocs (AuthProtect auth usr mPolicy mError uPolicy uError :> sublayout) where
+         => HasDocs (AuthProtect tag auth usr mPolicy mError uPolicy uError :> sublayout) where
             docsFor Proxy (endpoint, action) =
               docsFor (Proxy :: Proxy sublayout) (endpoint, action')
 
                 where
-                    authProxy = Proxy :: Proxy (AuthProtect auth usr mPolicy mError uPolicy uError)
+                    authProxy = Proxy :: Proxy (AuthProtect tag auth usr mPolicy mError uPolicy uError)
                     action' = over authInfo (|> toAuthInfo authProxy) action
 
 instance

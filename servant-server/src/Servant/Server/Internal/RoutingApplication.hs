@@ -21,8 +21,6 @@ import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived,
                                                      requestBody,
                                                      strictRequestBody)
-import           Servant.API.Authentication (AuthProtected (..), AuthPolicy(Strict,Lax),
-                                             OnMissing (..), OnUnauthenticated (..), SAuthPolicy (..))
 import           Servant.Server.Internal.ServantErr
 
 type RoutingApplication =
@@ -180,83 +178,12 @@ addMethodCheck :: Delayed a
 addMethodCheck (Delayed captures method auth body server) new =
   Delayed captures (combineRouteResults const method new) auth body server
 
--- | helper type family to capture server handled values for various policies
-type family AuthDelayedReturn (mP :: AuthPolicy) mE (uP :: AuthPolicy) uE usr :: * where
-    AuthDelayedReturn 'Strict mE 'Strict uE usr = usr
-    AuthDelayedReturn 'Strict mE 'Lax    uE usr = Either uE usr
-    AuthDelayedReturn 'Lax    mE 'Strict uE usr = Either mE usr
-    AuthDelayedReturn 'Lax    mE 'Lax    uE usr = Either (Either mE uE) usr
-
--- | Internal method to generate auth checkers for various policies. Scary type signature
--- but it does help with understanding the logic of how each policy works. See
--- examples below.
-genAuthCheck :: (OnMissing IO ServantErr mPolicy mError -> (AuthDelayedReturn mPolicy mError uPolicy uError usr -> a) -> mError -> IO (RouteResult a))
-             -> (OnUnauthenticated IO ServantErr uPolicy uError auth -> (AuthDelayedReturn mPolicy mError uPolicy uError usr -> a) -> uError -> auth -> IO (RouteResult a))
-             -> (usr -> (AuthDelayedReturn mPolicy mError uPolicy uError usr))
-             -> Delayed (AuthProtected IO ServantErr mPolicy mError uPolicy uError auth usr (AuthDelayedReturn mPolicy mError uPolicy uError usr -> a))
-             -> IO (RouteResult (Either mError auth))
-             -> Delayed a
-genAuthCheck missingHandler unauthHandler returnHandler d@(Delayed captures method _ body _) new =
-    let newAuth =
-            runDelayed d `bindRouteResults` \ authProtection ->
-            new          `bindRouteResults` \ eAuthData ->
-            case eAuthData of
-                -- we failed to extract authentication data from the request
-                Left mError -> missingHandler (onMissing authProtection) (subserver authProtection) mError
-                -- auth data was succesfully extracted from the request
-                Right aData -> do
-                    eUsr <- checkAuth authProtection aData
-                    case eUsr of
-                        -- we failed to authenticate the user
-                        Left uError -> unauthHandler (onUnauthenticated authProtection) (subserver authProtection) uError aData
-                        -- user was authenticated
-                        Right usr ->
-                            (return . Route . subserver authProtection) (returnHandler usr)
-    in Delayed captures method newAuth body (\_ y _ -> Route y)
-
--- | Delayed auth checker for Strict Missing and Strict Unauthentication
-addAuthCheckSS :: Delayed (AuthProtected IO ServantErr 'Strict mError 'Strict uError auth usr (usr -> a))
-               -> IO (RouteResult (Either mError auth))
-               -> Delayed a
-addAuthCheckSS = genAuthCheck (\(StrictMissing handler) _ e -> FailFatal <$> handler e)
-                              (\(StrictUnauthenticated handler) _ e a -> FailFatal <$> handler e a)
-                              id
-
--- | Delayed auth checker for Strict Missing and Lax Unauthentication
-addAuthCheckSL :: Delayed (AuthProtected IO ServantErr 'Strict mError 'Lax uError auth usr (Either uError usr -> a))
-               -> IO (RouteResult (Either mError auth))
-               -> Delayed a
-addAuthCheckSL = genAuthCheck (\(StrictMissing handler) _ e -> FailFatal <$> handler e)
-                              (\(LaxUnauthenticated) cont e _ -> (return . Route . cont) (Left e))
-                              Right
-
-
--- | Delayed auth checker for Lax Missing and Strict Unauthentication
-addAuthCheckLS :: Delayed (AuthProtected IO ServantErr 'Lax mError 'Strict uError auth usr (Either mError usr -> a))
-               -> IO (RouteResult (Either mError auth))
-               -> Delayed a
-addAuthCheckLS = genAuthCheck (\(LaxMissing) cont e -> (return . Route . cont) (Left e))
-                              (\(StrictUnauthenticated handler) _ e a -> FailFatal <$> handler e a)
-                              Right
-
--- | Delayed auth checker for Lax Missing and Lax Unauthentication
-addAuthCheckLL :: Delayed (AuthProtected IO ServantErr 'Lax mError 'Lax uError auth usr (Either (Either mError uError) usr -> a))
-               -> IO (RouteResult (Either mError auth))
-               -> Delayed a
-addAuthCheckLL = genAuthCheck (\(LaxMissing) cont e -> (return . Route . cont) (Left (Left e)))
-                              (\(LaxUnauthenticated) cont e _ -> (return . Route . cont) (Left (Right e)))
-                              Right
-
--- | Add an auth check by supplying OnMissing policies and OnUnauthenticated policies.
-addAuthCheck :: SAuthPolicy mPolicy
-             -> SAuthPolicy uPolicy
-             -> Delayed (AuthProtected IO ServantErr mPolicy mError uPolicy uError auth usr (AuthDelayedReturn mPolicy mError uPolicy uError usr -> a))
-             -> IO (RouteResult (Either mError auth))
-             -> Delayed a
-addAuthCheck SStrict SStrict = addAuthCheckSS
-addAuthCheck SStrict SLax    = addAuthCheckSL
-addAuthCheck SLax    SStrict = addAuthCheckLS
-addAuthCheck SLax    SLax    = addAuthCheckLL
+-- | Add authentication
+addAuth :: Delayed (a -> b)
+        -> IO (RouteResult a)
+        -> Delayed b
+addAuth (Delayed captures method auth body server) new =
+    Delayed captures method (combineRouteResults (,) auth new) body (\ x (y,v) z -> ($ v) <$> server x y z)
 
 -- | Add a body check to the end of the body block.
 addBodyCheck :: Delayed (a -> b)

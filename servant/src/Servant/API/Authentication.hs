@@ -8,7 +8,9 @@
 module Servant.API.Authentication
 ( AuthPolicy (..)
 , AuthProtect
+, AuthProtectSimple
 , AuthProtected (..)
+, AuthProtectedSimple (..)
 , BasicAuth (..)
 , JWTAuth (..)
 , OnMissing (..)
@@ -35,7 +37,9 @@ data SAuthPolicy (p :: AuthPolicy) where
     SLax    :: SAuthPolicy 'Lax
 
 -- | the combinator to be used in API types
-data AuthProtect authData usr (missingPolicy :: AuthPolicy) missingError (unauthPolicy :: AuthPolicy) unauthError
+data AuthProtect (tag :: k) authData usr (missingPolicy :: AuthPolicy) missingError (unauthPolicy :: AuthPolicy) unauthError
+
+data AuthProtectSimple (tag :: k) (usr :: *)
 
 -- | A GADT indexed by policy strictness that encompasses the ways
 -- users will handle the case where authentication data is missing
@@ -80,12 +84,13 @@ data OnUnauthenticated m responseError (policy :: AuthPolicy) errorIndex authDat
 -- authData: the type of authData present in a request (e.g. JWT token)
 -- usr: a data type extracted from the authenticated data. This data is likely fetched from a database.
 -- subserver: the rest of the servant API.
-data AuthProtected m rError (mPolicy :: AuthPolicy) mError (uPolicy :: AuthPolicy) uError authData usr subserver =
+data AuthProtected m rError (mPolicy :: AuthPolicy) mError (uPolicy :: AuthPolicy) uError authData usr =
     AuthProtected { onMissing :: OnMissing m rError mPolicy mError
                   , onUnauthenticated :: OnUnauthenticated m rError uPolicy uError authData
                   , checkAuth :: authData -> m (Either uError usr)
-                  , subserver :: subserver
                   }
+
+newtype AuthProtectedSimple req e usr = AuthProtectedSimple { authHandler :: req -> IO (Either e usr) }
 
 -- | Basic Authentication with respect to a specified @realm@ and a @lookup@
 -- type to encapsulate authentication logic.

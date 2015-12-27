@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -36,8 +37,8 @@ import           Network.HTTP.Types         (hAccept, hContentType,
                                              ok200, parseQuery, ResponseHeaders, Status(..))
 import           Network.Wai                (Application, Request, pathInfo,
                                              queryString, rawQueryString,
-                                             responseLBS, responseBuilder)
-import           Network.Wai.Internal       (Response(ResponseBuilder))
+                                             responseBuilder, responseLBS)
+import           Network.Wai.Internal       (Response (ResponseBuilder))
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody, simpleHeaders, SResponse)
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
@@ -47,7 +48,7 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              QueryFlag, QueryParam, QueryParams,
                                              Raw, RemoteHost, ReqBody,
                                              addHeader)
-import           Servant.Server             (Server, serve, ServantErr(..), err404)
+import           Servant.Server             ((.:), ConfigEntry, Config(EmptyConfig), Server, serve, ServantErr(..), err404)
 import           Test.Hspec                 (Spec, describe, it, shouldBe, shouldContain)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, post, request,
@@ -61,7 +62,6 @@ import           Servant.API.Authentication
 import           Servant.Server.Internal.Authentication
 import           Servant.Server.Internal.RoutingApplication (RouteResult(Route))
 import           Web.JWT                    hiding (JSON)
-
 
 -- * test data types
 
@@ -126,7 +126,7 @@ captureServer legs = case legs of
 captureSpec :: Spec
 captureSpec = do
   describe "Servant.API.Capture" $ do
-    with (return (serve captureApi captureServer)) $ do
+    with (return (serve captureApi EmptyConfig captureServer)) $ do
 
       it "can capture parts of the 'pathInfo'" $ do
         response <- get "/2"
@@ -137,6 +137,7 @@ captureSpec = do
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))
+        EmptyConfig
         (\ "captured" request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
@@ -153,7 +154,7 @@ getSpec :: Spec
 getSpec = do
   describe "Servant.API.Get" $ do
     let server = return alice :<|> return () :<|> return ()
-    with (return $ serve getApi server) $ do
+    with (return $ serve getApi EmptyConfig server) $ do
 
       it "allows to GET a Person" $ do
         response <- get "/"
@@ -176,7 +177,7 @@ headSpec :: Spec
 headSpec = do
   describe "Servant.API.Head" $ do
     let server = return alice :<|> return () :<|> return ()
-    with (return $ serve getApi server) $ do
+    with (return $ serve getApi EmptyConfig server) $ do
 
       it "allows to GET a Person" $ do
         response <- Test.Hspec.Wai.request methodHead "/" [] ""
@@ -223,7 +224,7 @@ queryParamSpec :: Spec
 queryParamSpec = do
   describe "Servant.API.QueryParam" $ do
       it "allows to retrieve simple GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
+        (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params1 = "?name=bob"
           response1 <- Network.Wai.Test.request defaultRequest{
             rawQueryString = params1,
@@ -235,7 +236,7 @@ queryParamSpec = do
              }
 
       it "allows to retrieve lists in GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
+        (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params2 = "?names[]=bob&names[]=john"
           response2 <- Network.Wai.Test.request defaultRequest{
             rawQueryString = params2,
@@ -249,7 +250,7 @@ queryParamSpec = do
 
 
       it "allows to retrieve value-less GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
+        (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params3 = "?capitalize"
           response3 <- Network.Wai.Test.request defaultRequest{
             rawQueryString = params3,
@@ -295,7 +296,7 @@ postSpec :: Spec
 postSpec = do
   describe "Servant.API.Post and .ReqBody" $ do
     let server = return . age :<|> return . age :<|> return ()
-    with (return $ serve postApi server) $ do
+    with (return $ serve postApi EmptyConfig server) $ do
       let post' x = Test.Hspec.Wai.request methodPost x [(hContentType
                                                         , "application/json;charset=utf-8")]
 
@@ -337,7 +338,7 @@ putSpec :: Spec
 putSpec = do
   describe "Servant.API.Put and .ReqBody" $ do
     let server = return . age :<|> return . age :<|> return ()
-    with (return $ serve putApi server) $ do
+    with (return $ serve putApi EmptyConfig server) $ do
       let put' x = Test.Hspec.Wai.request methodPut x [(hContentType
                                                         , "application/json;charset=utf-8")]
 
@@ -379,7 +380,7 @@ patchSpec :: Spec
 patchSpec = do
   describe "Servant.API.Patch and .ReqBody" $ do
     let server = return . age :<|> return . age :<|> return ()
-    with (return $ serve patchApi server) $ do
+    with (return $ serve patchApi EmptyConfig server) $ do
       let patch' x = Test.Hspec.Wai.request methodPatch x [(hContentType
                                                         , "application/json;charset=utf-8")]
 
@@ -424,13 +425,13 @@ headerSpec = describe "Servant.API.Header" $ do
         expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
         expectsString Nothing  = error "Expected a string"
 
-    with (return (serve headerApi expectsInt)) $ do
+    with (return (serve headerApi EmptyConfig expectsInt)) $ do
         let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"5")]
 
         it "passes the header to the handler (Int)" $
             delete' "/" "" `shouldRespondWith` 204
 
-    with (return (serve headerApi expectsString)) $ do
+    with (return (serve headerApi EmptyConfig expectsString)) $ do
         let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"more from you")]
 
         it "passes the header to the handler (String)" $
@@ -447,7 +448,7 @@ rawSpec :: Spec
 rawSpec = do
   describe "Servant.API.Raw" $ do
     it "runs applications" $ do
-      (flip runSession) (serve rawApi (rawApplication (const (42 :: Integer)))) $ do
+      (flip runSession) (serve rawApi EmptyConfig (rawApplication (const (42 :: Integer)))) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo"]
          }
@@ -455,7 +456,7 @@ rawSpec = do
           simpleBody response `shouldBe` "42"
 
     it "gets the pathInfo modified" $ do
-      (flip runSession) (serve rawApi (rawApplication pathInfo)) $ do
+      (flip runSession) (serve rawApi EmptyConfig (rawApplication pathInfo)) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo", "bar"]
          }
@@ -485,7 +486,7 @@ unionServer =
 unionSpec :: Spec
 unionSpec = do
   describe "Servant.API.Alternative" $ do
-    with (return $ serve unionApi unionServer) $ do
+    with (return $ serve unionApi EmptyConfig unionServer) $ do
 
       it "unions endpoints" $ do
         response <- get "/foo"
@@ -517,7 +518,7 @@ responseHeadersServer = let h = return $ addHeader 5 $ addHeader "kilroy" "hi"
 
 responseHeadersSpec :: Spec
 responseHeadersSpec = describe "ResponseHeaders" $ do
-  with (return $ serve (Proxy :: Proxy ResponseHeadersApi) responseHeadersServer) $ do
+  with (return $ serve (Proxy :: Proxy ResponseHeadersApi) EmptyConfig responseHeadersServer) $ do
 
     let methods = [(methodGet, 200), (methodPost, 201), (methodPut, 200), (methodPatch, 200)]
 
@@ -571,7 +572,7 @@ prioErrorsApi = Proxy
 prioErrorsSpec :: Spec
 prioErrorsSpec = describe "PrioErrors" $ do
   let server = return . age
-  with (return $ serve prioErrorsApi server) $ do
+  with (return $ serve prioErrorsApi EmptyConfig server) $ do
     let check (mdescr, method) path (cdescr, ctype, body) resp =
           it fulldescr $
             Test.Hspec.Wai.request method path [(hContentType, ctype)] body
@@ -625,7 +626,7 @@ miscServ = versionHandler
         hostHandler = return . show
 
 miscReqCombinatorsSpec :: Spec
-miscReqCombinatorsSpec = with (return $ serve miscApi miscServ) $
+miscReqCombinatorsSpec = with (return $ serve miscApi EmptyConfig miscServ) $
   describe "Misc. combinators for request inspection" $ do
     it "Successfully gets the HTTP version specified in the request" $
       go "/version" "\"HTTP/1.0\""
@@ -642,8 +643,8 @@ miscReqCombinatorsSpec = with (return $ serve miscApi miscServ) $
 -- | we include two endpoints /foo and /bar and we put the BasicAuth
 -- portion in two different places
 type AuthUser = ByteString
-type BasicAuthFooRealm = AuthProtect (BasicAuth "foo-realm") AuthUser 'Strict () 'Strict ()
-type BasicAuthBarRealm = AuthProtect (BasicAuth "bar-realm") AuthUser 'Strict () 'Strict ()
+type BasicAuthFooRealm = AuthProtect "foo" (BasicAuth "foo-realm") AuthUser 'Strict () 'Strict ()
+type BasicAuthBarRealm = AuthProtect "bar" (BasicAuth "bar-realm") AuthUser 'Strict () 'Strict ()
 type BasicAuthRequiredAPI = BasicAuthFooRealm :> "foo" :> Get '[JSON] Person
                   :<|> "bar" :> BasicAuthBarRealm :> Get '[JSON] Animal
 
@@ -656,12 +657,13 @@ basicAuthBarCheck :: BasicAuth "bar-realm" -> IO (Maybe AuthUser)
 basicAuthBarCheck (BasicAuth usr pass) = if usr == "bar" && pass == "bar"
                                          then return (Just "bar")
                                          else return Nothing
+
 basicBasicAuthRequiredApi :: Proxy BasicAuthRequiredAPI
 basicBasicAuthRequiredApi = Proxy
 
 basicAuthRequiredServer :: Server BasicAuthRequiredAPI
-basicAuthRequiredServer = basicAuthStrict basicAuthFooCheck (const . return $ alice)
-                :<|> basicAuthStrict basicAuthBarCheck (const . return $ jerry)
+basicAuthRequiredServer = (const . return $ alice)
+                :<|> (const . return $ jerry)
 
 -- base64-encoded "servant:server"
 base64ServantColonServer :: ByteString
@@ -681,7 +683,11 @@ basicAuthGet path base64EncodedAuth = Test.Hspec.Wai.request methodGet path [("A
 basicAuthRequiredSpec :: Spec
 basicAuthRequiredSpec = do
     describe "Servant.API.Authentication" $ do
-        with (return $ serve basicBasicAuthRequiredApi basicAuthRequiredServer) $ do
+        let fooAuthProtect = basicAuthStrict basicAuthFooCheck
+            barAuthProtect = basicAuthStrict basicAuthBarCheck
+            config :: Config [ConfigEntry "foo" (AuthProtected IO ServantErr 'Strict () 'Strict () (BasicAuth "foo-realm") AuthUser), ConfigEntry "bar" (AuthProtected IO ServantErr 'Strict () 'Strict () (BasicAuth "bar-realm") AuthUser)]
+            config = fooAuthProtect .: barAuthProtect .: EmptyConfig
+        with (return $ serve basicBasicAuthRequiredApi config basicAuthRequiredServer) $ do
             it "allows access with the correct username and password" $ do
                 response1 <- basicAuthGet "/foo" base64ServantColonServer
                 liftIO $ do
@@ -709,7 +715,7 @@ basicAuthRequiredSpec = do
                     (simpleHeaders bar401) `shouldContain` barHeader
 
 
-type JWTAuthProtect = AuthProtect JWTAuth (JWT VerifiedJWT) 'Strict () 'Strict ()
+type JWTAuthProtect = AuthProtect "jwt" JWTAuth (JWT VerifiedJWT) 'Strict () 'Strict ()
 
 type JWTAuthRequiredAPI = JWTAuthProtect :> "foo" :> Get '[JSON] Person
 
@@ -718,8 +724,9 @@ jwtAuthRequiredApi :: Proxy JWTAuthRequiredAPI
 jwtAuthRequiredApi = Proxy
 
 jwtSecret = secret "secret"
+
 jwtAuthRequiredServer :: Server JWTAuthRequiredAPI
-jwtAuthRequiredServer = jwtAuthStrict jwtSecret (const . return $ alice)
+jwtAuthRequiredServer = const . return $ alice
 
 correctToken = encodeUtf8 $ encodeSigned HS256 jwtSecret def
 corruptToken = "blah"
@@ -731,7 +738,10 @@ jwtAuthGet path token = Test.Hspec.Wai.request methodGet path [("Authorization",
 jwtAuthRequiredSpec :: Spec
 jwtAuthRequiredSpec = do
   describe "JWT Auth" $ do
-    with (return $ serve jwtAuthRequiredApi jwtAuthRequiredServer) $ do
+    let jwtAuthProtect = jwtAuthStrict jwtSecret
+        config :: Config '[ConfigEntry "jwt" (AuthProtected IO ServantErr 'Strict () 'Strict () JWTAuth (JWT VerifiedJWT))]
+        config         = jwtAuthProtect .: EmptyConfig
+    with (return $ serve jwtAuthRequiredApi config jwtAuthRequiredServer) $ do
       it "allows access with the correct token" $ do
         response <- jwtAuthGet "/foo" correctToken
         liftIO $ do

@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -9,6 +10,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 #if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE OverlappingInstances       #-}
 #endif
@@ -16,6 +18,7 @@
 module Servant.Server.Internal
   ( module Servant.Server.Internal
   , module Servant.Server.Internal.Authentication
+  , module Servant.Server.Internal.Config
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
   , module Servant.Server.Internal.ServantErr
@@ -35,6 +38,7 @@ import           Data.Text                                  (Text)
 import           Data.Typeable
 import           GHC.TypeLits                               (KnownSymbol,
                                                              symbolVal)
+import           GHC.Exts (Constraint)
 import           Network.HTTP.Types                         hiding (Header,
                                                              ResponseHeaders)
 import           Network.Socket                             (SockAddr)
@@ -61,7 +65,9 @@ import           Servant.API                                ((:<|>) (..), (:>),
                                                              ReqBody, Vault)
 import           Servant.API.Authentication                 (AuthPolicy (Strict, Lax),
                                                              AuthProtect,
-                                                             AuthProtected,
+                                                             AuthProtectSimple,
+                                                             AuthProtected(..),
+                                                             AuthProtectedSimple(..),
                                                              SAuthPolicy(SLax,SStrict))
 import           Servant.API.ContentTypes                   (AcceptHeader (..),
                                                              AllCTRender (..),
@@ -72,7 +78,8 @@ import           Servant.API.ResponseHeaders                (GetHeaders,
                                                              Headers,
                                                              getHeaders,
                                                              getResponse)
-import           Servant.Server.Internal.Authentication     (AuthData (authData))
+import           Servant.Server.Internal.Authentication     (addAuthCheck, AuthData (authData))
+import           Servant.Server.Internal.Config
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
@@ -82,10 +89,12 @@ import           Web.HttpApiData.Internal (parseUrlPieceMaybe, parseHeaderMaybe,
 
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
+  type HasCfg layout (x :: [*]) :: Constraint
 
-  route :: Proxy layout -> Delayed (Server layout) -> Router
+  route :: HasCfg layout a => Proxy layout -> Config a -> Delayed (Server layout) -> Router
 
 type Server layout = ServerT layout (ExceptT ServantErr IO)
+
 
 -- * Instances
 
@@ -103,9 +112,10 @@ type Server layout = ServerT layout (ExceptT ServantErr IO)
 instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
 
   type ServerT (a :<|> b) m = ServerT a m :<|> ServerT b m
+  type HasCfg (a :<|> b) x = (HasCfg a x, HasCfg b x)
 
-  route Proxy server = choice (route pa ((\ (a :<|> _) -> a) <$> server))
-                              (route pb ((\ (_ :<|> b) -> b) <$> server))
+  route Proxy cfg server = choice (route pa cfg ((\ (a :<|> _) -> a) <$> server))
+                                  (route pb cfg ((\ (_ :<|> b) -> b) <$> server))
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b
 
@@ -135,9 +145,12 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
   type ServerT (Capture capture a :> sublayout) m =
      a -> ServerT sublayout m
 
-  route Proxy d =
+  type HasCfg (Capture capture a :> sublayout) x = HasCfg sublayout x
+
+  route Proxy cfg d =
     DynamicRouter $ \ first ->
         route (Proxy :: Proxy sublayout)
+              cfg
               (addCapture d $ case captured captureProxy first of
                  Nothing -> return $ Fail err404
                  Just v  -> return $ Route v
@@ -236,7 +249,9 @@ instance
 
   type ServerT (Delete ctypes a) m = m a
 
-  route Proxy = methodRouter methodDelete (Proxy :: Proxy ctypes) ok200
+  type HasCfg (Delete ctypes a) x = ()
+
+  route Proxy _ = methodRouter methodDelete (Proxy :: Proxy ctypes) ok200
 
 instance
 #if MIN_VERSION_base(4,8,0)
@@ -246,7 +261,9 @@ instance
 
   type ServerT (Delete ctypes ()) m = m ()
 
-  route Proxy = methodRouterEmpty methodDelete
+  type HasCfg (Delete ctypes ()) x = ()
+
+  route Proxy _ = methodRouterEmpty methodDelete
 
 -- Add response headers
 instance
@@ -258,63 +275,137 @@ instance
 
   type ServerT (Delete ctypes (Headers h v)) m = m (Headers h v)
 
-  route Proxy = methodRouterHeaders methodDelete (Proxy :: Proxy ctypes) ok200
+  type HasCfg (Delete ctypes (Headers h v)) x = ()
+
+  route Proxy _ = methodRouterHeaders methodDelete (Proxy :: Proxy ctypes) ok200
+
+-- | Simple Authentication instance
+instance
+#if MIN_VERSION_base(4,8,0)
+         {-# OVERLAPPABLE #-}
+#endif
+    ( HasServer sublayout
+    ) => HasServer (AuthProtectSimple tag usr :> sublayout) where
+
+    type ServerT (AuthProtectSimple tag usr :> sublayout) m =
+        usr -> ServerT sublayout m
+
+    type HasCfg (AuthProtectSimple tag usr :> sublayout) x =
+        ( HasConfigEntry x tag (AuthProtectedSimple Request ServantErr usr)
+        , HasCfg sublayout x
+        )
+
+    route _ cfg subserver =
+        let authProtection :: AuthProtectedSimple Request ServantErr usr
+            authProtection = getConfigEntry (Proxy :: Proxy tag) cfg
+            handler = fmap (either FailFatal Route) . authHandler authProtection
+        in WithRequest $ \ request ->
+            route (Proxy :: Proxy sublayout)
+                  cfg
+                  (addAuth subserver (handler request))
 
 -- | Authentication in Missing x Unauth = Strict x Strict mode
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-    (AuthData authData mError, HasServer sublayout) => HasServer (AuthProtect authData (usr :: *) 'Strict (mError :: *) 'Strict (uError :: *) :> sublayout) where
-    type ServerT (AuthProtect authData usr 'Strict mError 'Strict uError :> sublayout) m =
-        AuthProtected IO ServantErr 'Strict mError 'Strict uError authData usr (usr -> ServerT sublayout m)
+    ( AuthData authData mError
+    , HasServer sublayout
+    ) => HasServer (AuthProtect tag authData (usr :: *) 'Strict (mError :: *) 'Strict (uError :: *) :> sublayout) where
 
-    route _ subserver = WithRequest $ \ request ->
-        route (Proxy :: Proxy sublayout) (addAuthCheck SStrict SStrict subserver (authCheck request))
-            where
-                authCheck req = pure . Route $ authData req
+    type ServerT (AuthProtect tag authData usr 'Strict mError 'Strict uError :> sublayout) m =
+        usr -> ServerT sublayout m
+
+    type HasCfg (AuthProtect tag authData usr 'Strict mError 'Strict uError :> sublayout) a =
+        ( HasConfigEntry a tag (AuthProtected IO ServantErr 'Strict mError 'Strict uError authData usr)
+        , HasCfg sublayout a
+        )
+
+    route _ cfg subserver =
+        let authProtection :: (AuthProtected IO ServantErr 'Strict mError 'Strict uError authData usr )
+            authProtection = getConfigEntry (Proxy :: Proxy tag) cfg
+            extractAuthData req = pure . Route $ authData req
+        in WithRequest $ \ request ->
+            route (Proxy :: Proxy sublayout)
+                cfg
+                (addAuthCheck SStrict SStrict authProtection subserver (extractAuthData request))
 
 -- | Authentication in Missing x Unauth = Strict x Lax mode
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-    (AuthData authData mError, HasServer sublayout) => HasServer (AuthProtect authData (usr :: *) 'Strict (mError :: *) 'Lax (uError :: *) :> sublayout) where
-    type ServerT (AuthProtect authData usr 'Strict mError 'Lax uError :> sublayout) m =
-        AuthProtected IO ServantErr 'Strict mError 'Lax uError authData usr (Either uError usr -> ServerT sublayout m)
+    ( AuthData authData mError
+    , HasServer sublayout
+    ) => HasServer (AuthProtect tag authData (usr :: *) 'Strict (mError :: *) 'Lax (uError :: *) :> sublayout) where
 
-    route _ subserver = WithRequest $ \ request ->
-        route (Proxy :: Proxy sublayout) (addAuthCheck SStrict SLax subserver (authCheck request))
-            where
-                authCheck req = pure . Route $ authData req
+    type ServerT (AuthProtect tag authData usr 'Strict mError 'Lax uError :> sublayout) m =
+        Either uError usr -> ServerT sublayout m
+
+    type HasCfg (AuthProtect tag authData usr 'Strict mError 'Lax uError :> sublayout) a =
+        ( HasConfigEntry a tag (AuthProtected IO ServantErr 'Strict mError 'Lax uError authData usr)
+        , HasCfg sublayout a
+        )
+
+    route _ cfg subserver =
+        let authProtection :: (AuthProtected IO ServantErr 'Strict mError 'Lax uError authData usr )
+            authProtection = getConfigEntry (Proxy :: Proxy tag) cfg
+            extractAuthData req = pure . Route $ authData req
+        in WithRequest $ \ request ->
+            route (Proxy :: Proxy sublayout)
+                cfg
+                (addAuthCheck SStrict SLax authProtection subserver (extractAuthData request))
 
 -- | Authentication in Missing x Unauth = Lax x Strict mode
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-    (AuthData authData mError, HasServer sublayout) => HasServer (AuthProtect authData (usr :: *) 'Lax (mError :: *) 'Strict (uError :: *) :> sublayout) where
-    type ServerT (AuthProtect authData usr 'Lax mError 'Strict uError :> sublayout) m =
-        AuthProtected IO ServantErr 'Lax mError 'Strict uError authData usr (Either mError usr -> ServerT sublayout m)
+    ( AuthData authData mError
+    , HasServer sublayout
+    ) => HasServer (AuthProtect tag authData (usr :: *) 'Lax (mError :: *) 'Strict (uError :: *) :> sublayout) where
 
-    route _ subserver = WithRequest $ \ request ->
-        route (Proxy :: Proxy sublayout) (addAuthCheck SLax SStrict subserver (authCheck request))
-            where
-                authCheck req = pure . Route $ authData req
+    type ServerT (AuthProtect tag authData usr 'Lax mError 'Strict uError :> sublayout) m =
+        Either mError usr -> ServerT sublayout m
+
+    type HasCfg (AuthProtect tag authData usr 'Lax mError 'Strict uError :> sublayout) a =
+        ( HasConfigEntry a tag (AuthProtected IO ServantErr 'Lax mError 'Strict uError authData usr)
+        , HasCfg sublayout a
+        )
+
+    route _ cfg subserver =
+        let authProtection :: (AuthProtected IO ServantErr 'Lax mError 'Strict uError authData usr )
+            authProtection = getConfigEntry (Proxy :: Proxy tag) cfg
+            extractAuthData req = pure . Route $ authData req
+        in WithRequest $ \ request ->
+            route (Proxy :: Proxy sublayout)
+                cfg
+                (addAuthCheck SLax SStrict authProtection subserver (extractAuthData request))
 
 -- | Authentication in Missing x Unauth = Lax x Lax mode
 instance
 #if MIN_VERSION_base(4,8,0)
          {-# OVERLAPPABLE #-}
 #endif
-    (AuthData authData mError, HasServer sublayout) => HasServer (AuthProtect authData (usr :: *) 'Lax (mError :: *) 'Lax (uError :: *) :> sublayout) where
-    type ServerT (AuthProtect authData usr 'Lax mError 'Lax uError :> sublayout) m =
-        AuthProtected IO ServantErr 'Lax mError 'Lax uError authData usr (Either (Either mError uError) usr -> ServerT sublayout m)
+    ( AuthData authData mError
+    , HasServer sublayout
+    ) => HasServer (AuthProtect tag authData (usr :: *) 'Lax (mError :: *) 'Lax (uError :: *) :> sublayout) where
+    type ServerT (AuthProtect tag authData usr 'Lax mError 'Lax uError :> sublayout) m =
+        Either (Either mError uError) usr -> ServerT sublayout m
 
-    route _ subserver = WithRequest $ \ request ->
-        route (Proxy :: Proxy sublayout) (addAuthCheck SLax SLax subserver (authCheck request))
-            where
-                authCheck req = pure . Route $ authData req
+    type HasCfg (AuthProtect tag authData usr 'Lax mError 'Lax uError :> sublayout) a =
+        ( HasConfigEntry a tag (AuthProtected IO ServantErr 'Lax mError 'Lax uError authData usr)
+        , HasCfg sublayout a
+        )
+
+    route _ cfg subserver =
+        let authProtection :: (AuthProtected IO ServantErr 'Lax mError 'Lax uError authData usr )
+            authProtection = getConfigEntry (Proxy :: Proxy tag) cfg
+            extractAuthData req = pure . Route $ authData req
+        in WithRequest $ \ request ->
+            route (Proxy :: Proxy sublayout)
+                cfg
+                (addAuthCheck SLax SLax authProtection subserver (extractAuthData request))
 
 -- | When implementing the handler for a 'Get' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Post.Post'
@@ -337,7 +428,9 @@ instance
 
   type ServerT (Get ctypes a) m = m a
 
-  route Proxy = methodRouter methodGet (Proxy :: Proxy ctypes) ok200
+  type HasCfg (Get ctypes a) x = ()
+
+  route Proxy _ = methodRouter methodGet (Proxy :: Proxy ctypes) ok200
 
 -- '()' ==> 204 No Content
 instance
@@ -348,7 +441,9 @@ instance
 
   type ServerT (Get ctypes ()) m = m ()
 
-  route Proxy = methodRouterEmpty methodGet
+  type HasCfg (Get ctypes ()) a = ()
+
+  route Proxy _ = methodRouterEmpty methodGet
 
 -- Add response headers
 instance
@@ -360,7 +455,9 @@ instance
 
   type ServerT (Get ctypes (Headers h v)) m = m (Headers h v)
 
-  route Proxy = methodRouterHeaders methodGet (Proxy :: Proxy ctypes) ok200
+  type HasCfg (Get ctypes (Headers h v)) a = ()
+
+  route Proxy _ = methodRouterHeaders methodGet (Proxy :: Proxy ctypes) ok200
 
 -- | If you use 'Header' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -388,9 +485,11 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
   type ServerT (Header sym a :> sublayout) m =
     Maybe a -> ServerT sublayout m
 
-  route Proxy subserver = WithRequest $ \ request ->
+  type HasCfg (Header sym a :> sublayout) x = HasCfg sublayout x
+
+  route Proxy cfg subserver = WithRequest $ \ request ->
     let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver mheader)
+    in  route (Proxy :: Proxy sublayout) cfg (passToServer subserver mheader)
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | When implementing the handler for a 'Post' endpoint,
@@ -415,7 +514,9 @@ instance
 
   type ServerT (Post ctypes a) m = m a
 
-  route Proxy = methodRouter methodPost (Proxy :: Proxy ctypes) created201
+  type HasCfg (Post ctypes a) x = ()
+
+  route Proxy _ = methodRouter methodPost (Proxy :: Proxy ctypes) created201
 
 instance
 #if MIN_VERSION_base(4,8,0)
@@ -425,7 +526,9 @@ instance
 
   type ServerT (Post ctypes ()) m = m ()
 
-  route Proxy = methodRouterEmpty methodPost
+  type HasCfg (Post ctypes ()) x = ()
+
+  route Proxy _ = methodRouterEmpty methodPost
 
 -- Add response headers
 instance
@@ -437,7 +540,9 @@ instance
 
   type ServerT (Post ctypes (Headers h v)) m = m (Headers h v)
 
-  route Proxy = methodRouterHeaders methodPost (Proxy :: Proxy ctypes) created201
+  type HasCfg (Post ctypes (Headers h v)) x = ()
+
+  route Proxy _ = methodRouterHeaders methodPost (Proxy :: Proxy ctypes) created201
 
 -- | When implementing the handler for a 'Put' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
@@ -460,7 +565,9 @@ instance
 
   type ServerT (Put ctypes a) m = m a
 
-  route Proxy = methodRouter methodPut (Proxy :: Proxy ctypes) ok200
+  type HasCfg (Put ctypes a) x = ()
+
+  route Proxy _ = methodRouter methodPut (Proxy :: Proxy ctypes) ok200
 
 instance
 #if MIN_VERSION_base(4,8,0)
@@ -470,7 +577,9 @@ instance
 
   type ServerT (Put ctypes ()) m = m ()
 
-  route Proxy = methodRouterEmpty methodPut
+  type HasCfg (Put ctypes ()) x = ()
+
+  route Proxy _ = methodRouterEmpty methodPut
 
 -- Add response headers
 instance
@@ -482,7 +591,9 @@ instance
 
   type ServerT (Put ctypes (Headers h v)) m = m (Headers h v)
 
-  route Proxy = methodRouterHeaders methodPut (Proxy :: Proxy ctypes) ok200
+  type HasCfg (Put ctypes (Headers h v)) x = ()
+
+  route Proxy _ = methodRouterHeaders methodPut (Proxy :: Proxy ctypes) ok200
 
 -- | When implementing the handler for a 'Patch' endpoint,
 -- just like for 'Servant.API.Delete.Delete', 'Servant.API.Get.Get'
@@ -503,7 +614,9 @@ instance
 
   type ServerT (Patch ctypes a) m = m a
 
-  route Proxy = methodRouter methodPatch (Proxy :: Proxy ctypes) ok200
+  type HasCfg (Patch ctypes a) x = ()
+
+  route Proxy _ = methodRouter methodPatch (Proxy :: Proxy ctypes) ok200
 
 instance
 #if MIN_VERSION_base(4,8,0)
@@ -513,7 +626,9 @@ instance
 
   type ServerT (Patch ctypes ()) m = m ()
 
-  route Proxy = methodRouterEmpty methodPatch
+  type HasCfg (Patch ctypes ()) x = ()
+
+  route Proxy _ = methodRouterEmpty methodPatch
 
 -- Add response headers
 instance
@@ -525,7 +640,9 @@ instance
 
   type ServerT (Patch ctypes (Headers h v)) m = m (Headers h v)
 
-  route Proxy = methodRouterHeaders methodPatch (Proxy :: Proxy ctypes) ok200
+  type HasCfg (Patch ctypes (Headers h v)) x = ()
+
+  route Proxy _ = methodRouterHeaders methodPatch (Proxy :: Proxy ctypes) ok200
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -554,7 +671,9 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
   type ServerT (QueryParam sym a :> sublayout) m =
     Maybe a -> ServerT sublayout m
 
-  route Proxy subserver = WithRequest $ \ request ->
+  type HasCfg (QueryParam sym a :> sublayout) x = HasCfg sublayout x
+
+  route Proxy cfg subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
         param =
           case lookup paramname querytext of
@@ -562,7 +681,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
             Just Nothing  -> Nothing -- param present with no value -> Nothing
             Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                         -- the right type
-    in route (Proxy :: Proxy sublayout) (passToServer subserver param)
+    in route (Proxy :: Proxy sublayout) cfg (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -590,14 +709,17 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
   type ServerT (QueryParams sym a :> sublayout) m =
     [a] -> ServerT sublayout m
 
-  route Proxy subserver = WithRequest $ \ request ->
+  type HasCfg (QueryParams sym a :> sublayout) x =
+    HasCfg sublayout x
+
+  route Proxy cfg subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
         -- if sym is "foo", we look for query string parameters
         -- named "foo" or "foo[]" and call parseQueryParam on the
         -- corresponding values
         parameters = filter looksLikeParam querytext
         values = mapMaybe (convert . snd) parameters
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver values)
+    in  route (Proxy :: Proxy sublayout) cfg (passToServer subserver values)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
@@ -621,13 +743,16 @@ instance (KnownSymbol sym, HasServer sublayout)
   type ServerT (QueryFlag sym :> sublayout) m =
     Bool -> ServerT sublayout m
 
-  route Proxy subserver = WithRequest $ \ request ->
+  type HasCfg (QueryFlag sym :> sublayout) a =
+    HasCfg sublayout a
+
+  route Proxy cfg subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
         param = case lookup paramname querytext of
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value
           Nothing       -> False -- param not in the query string
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver param)
+    in  route (Proxy :: Proxy sublayout) cfg (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
@@ -644,7 +769,9 @@ instance HasServer Raw where
 
   type ServerT Raw m = Application
 
-  route Proxy rawApplication = LeafRouter $ \ request respond -> do
+  type HasCfg Raw x = ()
+
+  route Proxy _ rawApplication = LeafRouter $ \ request respond -> do
     r <- runDelayed rawApplication
     case r of
       Route app   -> app request (respond . Route)
@@ -678,8 +805,11 @@ instance ( AllCTUnrender list a, HasServer sublayout
   type ServerT (ReqBody list a :> sublayout) m =
     a -> ServerT sublayout m
 
-  route Proxy subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy sublayout) (addBodyCheck subserver (bodyCheck request))
+  type HasCfg (ReqBody list a :> sublayout) x =
+    HasCfg sublayout x
+
+  route Proxy cfg subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy sublayout) cfg (addBodyCheck subserver (bodyCheck request))
     where
       bodyCheck request = do
         -- See HTTP RFC 2616, section 7.2.1
@@ -701,36 +831,46 @@ instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout
 
   type ServerT (path :> sublayout) m = ServerT sublayout m
 
-  route Proxy subserver = StaticRouter $
+  type HasCfg (path :> sublayout) x = HasCfg sublayout x
+
+  route Proxy cfg subserver = StaticRouter $
     M.singleton (cs (symbolVal proxyPath))
-                (route (Proxy :: Proxy sublayout) subserver)
+                (route (Proxy :: Proxy sublayout) cfg subserver)
     where proxyPath = Proxy :: Proxy path
 
 instance HasServer api => HasServer (RemoteHost :> api) where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
 
-  route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ remoteHost req)
+  type HasCfg (RemoteHost :> api) a = HasCfg api a
+
+  route Proxy cfg subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) cfg (passToServer subserver $ remoteHost req)
 
 instance HasServer api => HasServer (IsSecure :> api) where
   type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
 
-  route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ secure req)
+  type HasCfg (IsSecure :> api) a = HasCfg api a
+
+  route Proxy cfg subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) cfg (passToServer subserver $ secure req)
 
     where secure req = if isSecure req then Secure else NotSecure
 
 instance HasServer api => HasServer (Vault :> api) where
   type ServerT (Vault :> api) m = Vault -> ServerT api m
 
-  route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ vault req)
+  type HasCfg (Vault :> api) a = HasCfg api a
+
+  route Proxy cfg subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) cfg (passToServer subserver $ vault req)
 
 instance HasServer api => HasServer (HttpVersion :> api) where
   type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
 
-  route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ httpVersion req)
+  type HasCfg (HttpVersion :> api) a = HasCfg api a
+
+  route Proxy cfg subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) cfg (passToServer subserver $ httpVersion req)
 
 pathIsEmpty :: Request -> Bool
 pathIsEmpty = go . pathInfo

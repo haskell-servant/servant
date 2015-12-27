@@ -75,9 +75,15 @@ instance ToSample Cookie where
 instance ToSample SecretData where
   toSamples _ = singleSample (SecretData "shhhhh!")
 
-instance ToAuthInfo (AuthProtect Cookie User mP mE uP uE) where
+instance ToAuthInfo (AuthProtect "cookie-auth-lax" Cookie User mP mE uP uE) where
     toAuthInfo _ = AuthenticationInfo "In this sentence we outline how authentication works."
-                                      "The following data is required on each request as a serialized header."
+                                      ("The following data is required on each request as a serialized header."
+                                        ++ "The API methods will handle authentication failures.")
+
+instance ToAuthInfo (AuthProtect "cookie-auth-strict" Cookie User mP mE uP uE) where
+    toAuthInfo _ = AuthenticationInfo "In this sentence we outline how authentication works."
+                                      ("The following data is required on each request as a serialized header."
+                                        ++ "The handlers will handle authentication failures.")
 
 -- We define some introductory sections, these will appear at the top of the
 -- documentation.
@@ -108,9 +114,9 @@ type TestApi =
   :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] ()
 
        -- GET /private
-  :<|> "private" :> AuthProtect Cookie User 'Strict () 'Strict () :> Get '[JSON] SecretData
+  :<|> "private" :> AuthProtect "cookie-auth-strict" Cookie User 'Strict () 'Strict () :> Get '[JSON] SecretData
        -- GET /private-lax
-  :<|> "private-lax" :> AuthProtect Cookie User 'Lax () 'Lax () :> Get '[JSON] SecretData
+  :<|> "private-lax" :> AuthProtect "cookie-auth-lax" Cookie User 'Lax () 'Lax () :> Get '[JSON] SecretData
 
 testApi :: Proxy TestApi
 testApi = Proxy

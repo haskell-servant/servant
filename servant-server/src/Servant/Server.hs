@@ -35,6 +35,11 @@ module Servant.Server
   , generalizeNat
   , tweakResponse
 
+  -- * Config
+  , ConfigEntry(..)
+  , Config(..)
+  , (.:)
+
     -- * Default error type
   , ServantErr(..)
     -- ** 3XX
@@ -98,14 +103,17 @@ import           Servant.Server.Internal.Authentication
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
+-- > cfg :: Config '[]
+-- > cfg = EmptyConfig
+-- >
 -- > app :: Application
--- > app = serve myApi server
+-- > app = serve myApi cfg server
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: HasServer layout => Proxy layout -> Server layout -> Application
-serve p server = toApplication (runRouter (route p d))
+serve :: (HasServer layout, HasCfg layout a) => Proxy layout -> Config a -> Server layout -> Application
+serve p cfg server = toApplication (runRouter (route p cfg d))
   where
     d = Delayed r r r r (\ _ _ _ -> Route server)
     r = return (Route ())
