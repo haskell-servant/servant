@@ -34,6 +34,7 @@ library
     wai >= 3.0 && <3.1
   hs-source-dirs:      src
   default-language:    Haskell2010
+  include-dirs: include
 
 executable mock-app
   main-is: main.hs

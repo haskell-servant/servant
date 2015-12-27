@@ -16,9 +16,8 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances   #-}
-#endif
+
+#include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
 import           Control.Applicative
@@ -661,10 +660,7 @@ markdown api = unlines $
 
 -- | The generated docs for @a ':<|>' b@ just appends the docs
 --   for @a@ with the docs for @b@.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          (HasDocs layout1, HasDocs layout2)
       => HasDocs (layout1 :<|> layout2) where
 
@@ -692,10 +688,7 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
           symP = Proxy :: Proxy sym
 
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLe #-}
-#endif
+instance OVERLAPPABLE_
         (ToSample a, IsNonEmpty cts, AllMimeRender cts a)
     => HasDocs (Delete cts a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
@@ -707,10 +700,7 @@ instance
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
         (ToSample a, IsNonEmpty cts, AllMimeRender cts a
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Delete cts (Headers ls a)) where
@@ -725,10 +715,7 @@ instance
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLe #-}
-#endif
+instance OVERLAPPABLE_
         (ToSample a, IsNonEmpty cts, AllMimeRender cts a)
     => HasDocs (Get cts a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
@@ -740,10 +727,7 @@ instance
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
         (ToSample a, IsNonEmpty cts, AllMimeRender cts a
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Get cts (Headers ls a)) where
@@ -767,10 +751,7 @@ instance (KnownSymbol sym, HasDocs sublayout)
           action' = over headers (|> headername) action
           headername = pack $ symbolVal (Proxy :: Proxy sym)
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
         (ToSample a, IsNonEmpty cts, AllMimeRender cts a)
     => HasDocs (Post cts a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
@@ -783,10 +764,7 @@ instance
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          (ToSample a, IsNonEmpty cts, AllMimeRender cts a
          , AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Post cts (Headers ls a)) where
@@ -802,10 +780,7 @@ instance
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
         (ToSample a, IsNonEmpty cts, AllMimeRender cts a)
     => HasDocs (Put cts a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
@@ -818,10 +793,7 @@ instance
           t = Proxy :: Proxy cts
           p = Proxy :: Proxy a
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
         ( ToSample a, IsNonEmpty cts, AllMimeRender cts a,
           AllHeaderSamples ls , GetHeaders (HList ls) )
     => HasDocs (Put cts (Headers ls a)) where

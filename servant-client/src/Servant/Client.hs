@@ -8,9 +8,8 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances #-}
-#endif
+
+#include "overlapping-compat.h"
 -- | This module provides 'client' which can automatically generate
 -- querying functions for each endpoint just from the type representing your
 -- API.
@@ -123,19 +122,13 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
   (MimeUnrender ct a, cts' ~ (ct ': cts)) => HasClient (Delete cts' a) where
   type Client (Delete cts' a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodDelete req baseurl manager
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   HasClient (Delete cts ()) where
   type Client (Delete cts ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
@@ -143,10 +136,7 @@ instance
 
 -- | If you have a 'Delete xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   ( MimeUnrender ct a, BuildHeadersTo ls, cts' ~ (ct ': cts)
   ) => HasClient (Delete cts' (Headers ls a)) where
   type Client (Delete cts' (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
@@ -160,19 +150,13 @@ instance
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
   (MimeUnrender ct result) => HasClient (Get (ct ': cts) result) where
   type Client (Get (ct ': cts) result) = ExceptT ServantError IO result
   clientWithRoute Proxy req baseurl manager =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodGet req baseurl manager
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   HasClient (Get (ct ': cts) ()) where
   type Client (Get (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
@@ -180,10 +164,7 @@ instance
 
 -- | If you have a 'Get xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Get (ct ': cts) (Headers ls a)) where
   type Client (Get (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
@@ -240,19 +221,13 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
   (MimeUnrender ct a) => HasClient (Post (ct ': cts) a) where
   type Client (Post (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPost req baseurl manager
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   HasClient (Post (ct ': cts) ()) where
   type Client (Post (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
@@ -260,10 +235,7 @@ instance
 
 -- | If you have a 'Post xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Post (ct ': cts) (Headers ls a)) where
   type Client (Post (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
@@ -277,19 +249,13 @@ instance
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
   (MimeUnrender ct a) => HasClient (Put (ct ': cts) a) where
   type Client (Put (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPut req baseurl manager
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   HasClient (Put (ct ': cts) ()) where
   type Client (Put (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
@@ -297,10 +263,7 @@ instance
 
 -- | If you have a 'Put xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Put (ct ': cts) (Headers ls a)) where
   type Client (Put (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)
@@ -314,19 +277,13 @@ instance
 -- side querying function that is created when calling 'client'
 -- will just require an argument that specifies the scheme, host
 -- and port to send the request to.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
   (MimeUnrender ct a) => HasClient (Patch (ct ': cts) a) where
   type Client (Patch (ct ': cts) a) = ExceptT ServantError IO a
   clientWithRoute Proxy req baseurl manager =
     snd <$> performRequestCT (Proxy :: Proxy ct) H.methodPatch req baseurl manager
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   HasClient (Patch (ct ': cts) ()) where
   type Client (Patch (ct ': cts) ()) = ExceptT ServantError IO ()
   clientWithRoute Proxy req baseurl manager =
@@ -334,10 +291,7 @@ instance
 
 -- | If you have a 'Patch xs (Headers ls x)' endpoint, the client expects the
 -- corresponding headers.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   ( MimeUnrender ct a, BuildHeadersTo ls
   ) => HasClient (Patch (ct ': cts) (Headers ls a)) where
   type Client (Patch (ct ': cts) (Headers ls a)) = ExceptT ServantError IO (Headers ls a)

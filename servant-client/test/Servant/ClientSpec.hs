@@ -6,9 +6,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances   #-}
-#endif
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE RecordWildCards        #-}
@@ -20,6 +17,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
+#include "overlapping-compat.h"
 module Servant.ClientSpec where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -323,33 +321,21 @@ pathGen = fmap NonEmpty path
 class GetNth (n :: Nat) a b | n a -> b where
     getNth :: Proxy n -> a -> b
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   GetNth 0 (x :<|> y) x where
       getNth _ (x :<|> _) = x
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   (GetNth (n - 1) x y) => GetNth n (a :<|> x) y where
       getNth _ (_ :<|> x) = getNth (Proxy :: Proxy (n - 1)) x
 
 class GetLast a b | a -> b where
     getLast :: a -> b
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   (GetLast b c) => GetLast (a :<|> b) c where
       getLast (_ :<|> b) = getLast b
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   GetLast a a where
       getLast a = a
