@@ -157,7 +157,7 @@ getSpec = do
         post "/empty" "" `shouldRespondWith` 405
 
       it "returns headers" $ do
-        get "/emptyWithHeaders" `shouldRespondWith` 204 { matchHeaders = [ "H" <:> "5" ] }
+        get "/emptyWithHeaders" `shouldRespondWith` 200 { matchHeaders = [ "H" <:> "5" ] }
 
       it "returns 406 if the Accept header is not supported" $ do
         Test.Hspec.Wai.request methodGet "" [(hAccept, "crazy/mime")] ""
@@ -407,16 +407,16 @@ headerSpec = describe "Servant.API.Header" $ do
         expectsString Nothing  = error "Expected a string"
 
     with (return (serve headerApi expectsInt)) $ do
-        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"5")]
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader", "5")]
 
         it "passes the header to the handler (Int)" $
-            delete' "/" "" `shouldRespondWith` 204
+            delete' "/" "" `shouldRespondWith` 200
 
     with (return (serve headerApi expectsString)) $ do
-        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"more from you")]
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader", "more from you")]
 
         it "passes the header to the handler (String)" $
-            delete' "/" "" `shouldRespondWith` 204
+            delete' "/" "" `shouldRespondWith` 200
 
 
 type RawApi = "foo" :> Raw
