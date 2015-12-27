@@ -11,7 +11,7 @@ main = do
     files <- find always (extension ==? ".hs") "src"
     tfiles <- find always (extension ==? ".hs") "test/Servant"
     mCabalMacrosFile <- getCabalMacrosFile
-    doctest $ "-isrc" :
+    doctest $ "-isrc" : "-Iinclude" :
               (maybe [] (\ f -> ["-optP-include", "-optP" ++ f]) mCabalMacrosFile) ++
               "-XOverloadedStrings" :
               "-XFlexibleInstances" :
