@@ -29,7 +29,7 @@ import           Control.Arrow              (left)
 import           Control.Concurrent         (forkIO, killThread, ThreadId)
 import           Control.Exception          (bracket)
 import           Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
-import           Data.Aeson
+import           Data.Aeson                 hiding ((.:))
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
@@ -56,6 +56,7 @@ import           Servant.API.Authentication
 import           Servant.Client
 import           Servant.Client.Authentication()
 import           Servant.Server
+import           Servant.Server.Internal.Config()
 
 spec :: Spec
 spec = describe "Servant.Client" $ do
@@ -110,7 +111,7 @@ type Api =
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
-  :<|> AuthProtect (BasicAuth "realm") Person 'Strict () 'Strict () :> Get '[JSON] Person
+  :<|> (AuthProtect "auth-tag" (BasicAuth "realm") Person 'Strict () 'Strict () :> Get '[JSON] Person)
   :<|> "deleteContentType" :> Delete '[JSON] ()
 
 -- base64-encoded "servant:server"
@@ -128,7 +129,11 @@ api :: Proxy Api
 api = Proxy
 
 server :: Application
-server = serve api (
+server =
+    let authProtection = basicAuthStrict basicAuthCheck
+        config :: Config '[ConfigEntry "auth-tag" (AuthProtected IO ServantErr 'Strict () 'Strict () (BasicAuth "realm") Person)]
+        config = authProtection .: EmptyConfig
+    in serve api config (
        return alice
   :<|> return ()
   :<|> (\ name -> return $ Person name 0)
@@ -143,7 +148,7 @@ server = serve api (
   :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
-  :<|> basicAuthStrict basicAuthCheck (const . return $ alice)
+  :<|> (const . return $ alice)
   :<|> return ()
  )
 
@@ -156,7 +161,7 @@ failApi :: Proxy FailApi
 failApi = Proxy
 
 failServer :: Application
-failServer = serve failApi (
+failServer = serve failApi EmptyConfig (
        (\ _request respond -> respond $ responseLBS ok200 [] "")
   :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
   :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
@@ -256,7 +261,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
 wrappedApiSpec :: Spec
 wrappedApiSpec = describe "error status codes" $ do
-  let serveW api = serve api $ throwE $ ServantErr 500 "error message" "" []
+  let serveW a = serve a EmptyConfig $ throwE $ ServantErr 500 "error message" "" []
   context "are correctly handled by the client" $
     let test :: (WrappedApi, String) -> Spec
         test (WrappedApi api, desc) =
@@ -313,10 +318,11 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
 
 
 data WrappedApi where
-  WrappedApi :: (HasServer api, Server api ~ ExceptT ServantErr IO a,
-                 HasClient api, Client api ~ ExceptT ServantError IO ()) =>
-    Proxy api -> WrappedApi
-
+  WrappedApi :: ( HasServer api, Server api ~ ExceptT ServantErr IO a
+                , HasClient api, Client api ~ ExceptT ServantError IO ()
+                , HasCfg api '[]
+                ) => Proxy (api :: *)
+                  -> WrappedApi
 
 -- * utils
 
