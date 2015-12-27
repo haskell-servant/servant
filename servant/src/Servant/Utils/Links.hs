@@ -103,7 +103,8 @@ module Servant.Utils.Links (
 
 import Data.List
 import Data.Proxy ( Proxy(..) )
-import Data.Text (Text, unpack)
+import qualified Data.Text as Text
+import qualified Data.ByteString.Char8 as BSC
 #if !MIN_VERSION_base(4,8,0)
 import Data.Monoid ( Monoid(..), (<>) )
 #else
@@ -134,6 +135,10 @@ data Link = Link
   { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
   , _queryParams :: [Param Query]
   } deriving Show
+
+instance ToHttpApiData Link where
+    toUrlPiece = Text.pack . show
+    toHeader   = BSC.pack . show
 
 -- | If either a or b produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
@@ -193,8 +198,8 @@ data Query
 
 -- | Query param
 data Param a
-    = SingleParam    String Text
-    | ArrayElemParam String Text
+    = SingleParam    String Text.Text
+    | ArrayElemParam String Text.Text
     | FlagParam      String
   deriving Show
 
@@ -218,8 +223,8 @@ linkURI (Link segments q_params) =
         "?" <> intercalate "&" (fmap makeQuery xs)
 
     makeQuery :: Param Query -> String
-    makeQuery (ArrayElemParam k v) = escape k <> "[]=" <> escape (unpack v)
-    makeQuery (SingleParam k v)    = escape k <> "=" <> escape (unpack v)
+    makeQuery (ArrayElemParam k v) = escape k <> "[]=" <> escape (Text.unpack v)
+    makeQuery (SingleParam k v)    = escape k <> "=" <> escape (Text.unpack v)
     makeQuery (FlagParam k)        = escape k
 
 escape :: String -> String
@@ -291,7 +296,7 @@ instance (ToHttpApiData v, HasLink sub)
     type MkLink (Capture sym v :> sub) = v -> MkLink sub
     toLink _ l v =
         toLink (Proxy :: Proxy sub) $
-            addSegment (escape . unpack $ toUrlPiece v) l
+            addSegment (escape . Text.unpack $ toUrlPiece v) l
 
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub
