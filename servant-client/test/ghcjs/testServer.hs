@@ -17,15 +17,11 @@ main = do
         setBeforeMainLoop (print port >> hFlush stdout) $
         defaultSettings
   runSettingsSocket settings socket $
-    serve testServerApi $
-      testServerApp server :<|>
-      testServerApp errorServer :<|>
-      testServerApp failServer
+    serve testServerApi $ \ testServerName ->
+      testServerApp $ lookupTestServer testServerName
 
 type TestServerApi =
-  "server" :> Raw :<|>
-  "errorServer" :> Raw :<|>
-  "failServer" :> Raw
+  Capture "testServerName" String :> Raw
 
 testServerApi :: Proxy TestServerApi
 testServerApi = Proxy

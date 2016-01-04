@@ -14,8 +14,8 @@ import           Servant.Client.TestServer.Types
 buildTestServer :: IO ()
 buildTestServer = return ()
 
-withTestServer :: TestServer -> (BaseUrl -> IO a) -> IO a
-withTestServer (TestServer _ app) action =
+withServer :: TestServer -> (BaseUrl -> IO a) -> IO a
+withServer (TestServer _ app) action =
   bracket (startWaiApp app) endWaiApp $ \ (_, url) ->
     action url
 

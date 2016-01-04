@@ -16,8 +16,8 @@ buildTestServer = do
   ExitSuccess <- waitForProcess process
   return ()
 
-withTestServer :: TestServer -> (BaseUrl -> IO a) -> IO a
-withTestServer (TestServer testServerName _) action = do
+withServer :: TestServer -> (BaseUrl -> IO a) -> IO a
+withServer (TestServer testServerName _) action = do
   bracket start stop $ \ (port, _) -> action (BaseUrl Http "localhost" port ("/" ++ testServerName))
   where
     start :: IO (Int, ProcessHandle)

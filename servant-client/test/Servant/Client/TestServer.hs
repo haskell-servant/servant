@@ -1,9 +1,12 @@
 {-# LANGUAGE CPP                    #-}
 
+-- | Testing works very differently under ghc and ghcjs. This module acts as a
+-- CPP switch and import different modules depending on the used compiler (ghc
+-- or ghcjs). Both imported modules provide the same API.
 module Servant.Client.TestServer (
   buildTestServer,
   TestServer(..),
-  withTestServer,
+  withServer,
 )where
 
 #ifdef __GHCJS__
