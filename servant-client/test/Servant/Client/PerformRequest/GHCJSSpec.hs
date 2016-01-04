@@ -1,10 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Servant.Client.PerformRequest.BaseSpec where
+module Servant.Client.PerformRequest.GHCJSSpec where
 
 import           Test.Hspec
 
-import           Servant.Client.PerformRequest.Base
+#ifdef __GHCJS__
+
+import           Servant.Client.PerformRequest.GHCJS
 
 spec :: Spec
 spec = do
@@ -18,3 +21,9 @@ spec = do
 
     it "handles colons in header values correctly" $ do
       parseHeaders "foo: bar:baz" `shouldBe` [("foo", "bar:baz")]
+
+#else
+
+spec :: Spec
+spec = return ()
+#endif

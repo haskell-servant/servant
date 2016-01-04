@@ -1,16 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
+
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 module Servant.Client.PerformRequest.GHCJS (
   ServantError(..),
   performHttpRequest,
+
+  -- exported for testing
+  parseHeaders,
   ) where
 
+import           Control.Arrow
 import           Control.Concurrent
 import           Control.Exception
 import           Control.Monad
+import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as LBS
 import           Data.CaseInsensitive
+import           Data.Char
 import           Data.String.Conversions
 import           GHCJS.Foreign.Callback
 import           GHCJS.Prim
@@ -149,3 +157,22 @@ getResponseText :: JSXMLHttpRequest -> IO String
 getResponseText xhr = fromJSString <$> js_responseText xhr
 foreign import javascript unsafe "$1.responseText"
   js_responseText :: JSXMLHttpRequest -> IO JSVal
+
+parseHeaders :: String -> ResponseHeaders
+parseHeaders s =
+  fmap (first mk) $
+  fmap (first strip . second strip) $
+  fmap parseHeader $
+  splitOn "\r\n" (cs s)
+  where
+    parseHeader :: BS.ByteString -> (BS.ByteString, BS.ByteString)
+    parseHeader h = case BS.breakSubstring ":" (cs h) of
+      (key, (BS.drop 1 -> value)) -> (key, value)
+
+    splitOn :: BS.ByteString -> BS.ByteString -> [BS.ByteString]
+    splitOn separator input = case BS.breakSubstring separator input of
+      (prefix, "") -> [prefix]
+      (prefix, rest) -> prefix : splitOn separator (BS.drop (BS.length separator) rest)
+
+    strip :: BS.ByteString -> BS.ByteString
+    strip = BS.dropWhile isSpace . BS.reverse . BS.dropWhile isSpace . BS.reverse
