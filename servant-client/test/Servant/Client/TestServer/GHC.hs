@@ -9,12 +9,13 @@ import           Network.Wai
 import           Network.Wai.Handler.Warp
 
 import           Servant.Common.BaseUrl
+import           Servant.Client.TestServer.Types
 
 buildTestServer :: IO ()
 buildTestServer = return ()
 
-withTestServer :: Application -> String -> (BaseUrl -> IO a) -> IO a
-withTestServer app _ action =
+withTestServer :: TestServer -> (BaseUrl -> IO a) -> IO a
+withTestServer (TestServer _ app) action =
   bracket (startWaiApp app) endWaiApp $ \ (_, url) ->
     action url
 

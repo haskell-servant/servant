@@ -6,6 +6,7 @@ import           Servant
 import           System.IO
 
 import           Servant.Client.TestServer.GHC
+import           Servant.Client.TestServer.Types
 import           Servant.ClientSpec
 
 main :: IO ()
@@ -16,7 +17,10 @@ main = do
         setBeforeMainLoop (print port >> hFlush stdout) $
         defaultSettings
   runSettingsSocket settings socket $
-    serve testServerApi (server :<|> errorServer :<|> failServer)
+    serve testServerApi $
+      testServerApp server :<|>
+      testServerApp errorServer :<|>
+      testServerApp failServer
 
 type TestServerApi =
   "server" :> Raw :<|>

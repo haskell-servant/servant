@@ -39,7 +39,7 @@ import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
 import           Network.HTTP.Types         (Status (..), badRequest400,
                                              methodGet, ok200, status400)
-import           Network.Wai                (Application, responseLBS)
+import           Network.Wai                (responseLBS)
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
@@ -110,8 +110,8 @@ type Api =
 api :: Proxy Api
 api = Proxy
 
-server :: Application
-server = serve api (
+server :: TestServer
+server = TestServer "server" $ serve api (
        return alice
   :<|> return ()
   :<|> (\ name -> return $ Person name 0)
@@ -137,8 +137,8 @@ type FailApi =
 failApi :: Proxy FailApi
 failApi = Proxy
 
-failServer :: Application
-failServer = serve failApi (
+failServer :: TestServer
+failServer = TestServer "failServer" $ serve failApi (
        (\ _request respond -> respond $ responseLBS ok200 [] "")
   :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
   :<|> (\ _request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
@@ -149,7 +149,7 @@ manager :: C.Manager
 manager = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
 sucessSpec :: Spec
-sucessSpec = around (withTestServer server "server") $ do
+sucessSpec = around (withTestServer server) $ do
 
     it "Servant.API.Get" $ \baseUrl -> do
       let getGet = getNth (Proxy :: Proxy 0) $ client api baseUrl manager
@@ -234,15 +234,15 @@ type ErrorApi =
 errorApi :: Proxy ErrorApi
 errorApi = Proxy
 
-errorServer :: Application
-errorServer = serve errorApi $
+errorServer :: TestServer
+errorServer = TestServer "errorServer" $ serve errorApi $
   err :<|> err :<|> err :<|> err
   where
     err = throwE $ ServantErr 500 "error message" "" []
 
 errorSpec :: Spec
 errorSpec =
-  around (withTestServer errorServer "errorServer") $ do
+  around (withTestServer errorServer) $ do
     describe "error status codes" $
       it "reports error statuses correctly" $ \baseUrl -> do
         let delete :<|> get :<|> post :<|> put =
@@ -253,7 +253,7 @@ errorSpec =
           responseStatus `shouldBe` Status 500 "error message"
 
 failSpec :: Spec
-failSpec = around (withTestServer failServer "failServer") $ do
+failSpec = around (withTestServer failServer) $ do
 
     context "client returns errors appropriately" $ do
       it "reports FailureResponse" $ \baseUrl -> do

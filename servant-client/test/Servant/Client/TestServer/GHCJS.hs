@@ -2,12 +2,12 @@
 module Servant.Client.TestServer.GHCJS where
 
 import           Control.Exception
-import           Network.Wai
 import           Safe
 import           System.Exit
 import           System.IO
 import           System.Process
 
+import           Servant.Client.TestServer.Types
 import           Servant.Common.BaseUrl
 
 buildTestServer :: IO ()
@@ -16,8 +16,8 @@ buildTestServer = do
   ExitSuccess <- waitForProcess process
   return ()
 
-withTestServer :: Application -> String -> (BaseUrl -> IO a) -> IO a
-withTestServer _ testServerName action = do
+withTestServer :: TestServer -> (BaseUrl -> IO a) -> IO a
+withTestServer (TestServer testServerName _) action = do
   bracket start stop $ \ (port, _) -> action (BaseUrl Http "localhost" port ("/" ++ testServerName))
   where
     start :: IO (Int, ProcessHandle)

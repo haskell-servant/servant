@@ -2,6 +2,7 @@
 
 module Servant.Client.TestServer (
   buildTestServer,
+  TestServer(..),
   withTestServer,
 )where
 
@@ -10,3 +11,5 @@ import           Servant.Client.TestServer.GHCJS
 #else
 import           Servant.Client.TestServer.GHC
 #endif
+
+import           Servant.Client.TestServer.Types
