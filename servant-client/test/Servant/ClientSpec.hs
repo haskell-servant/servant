@@ -59,6 +59,28 @@ spec = do
     failSpec
     errorSpec
 
+-- | Run a test-server (identified by name) while performing the given action.
+-- The provided 'BaseUrl' points to the running server.
+--
+-- Running the test-servers is done differently depending on the compiler
+-- (ghc or ghcjs).
+--
+-- With ghc it's somewhat straight-forward: a wai 'Application' is being started
+-- on a free port inside the same process using 'warp'.
+--
+-- When running the test-suite with ghcjs all the test-servers are compiled into
+-- a single external executable (with ghc and warp). This is done through
+-- 'buildTestServer' once at the start of the test-suite. This built executable
+-- will provide all the test-servers on a free port under a path that
+-- corresponds to the test-servers name, for example under
+-- 'http://localhost:82923/failServer'. 'withTestServer' will then
+-- start this executable as an external process while the given action is being
+-- executed and provide it with the correct BaseUrl.
+-- This rather cumbersome approach is taken because it's not easy to run a wai
+-- Application as a http server when using ghcjs.
+withTestServer :: String -> (BaseUrl -> IO a) -> IO a
+withTestServer = withServer . lookupTestServer
+
 lookupTestServer :: String -> TestServer
 lookupTestServer name = case lookup name mapping of
   Nothing -> error ("test server not found: " ++ name)
@@ -67,14 +89,13 @@ lookupTestServer name = case lookup name mapping of
     mapping :: [(String, TestServer)]
     mapping = map (\ server -> (testServerName server, server)) allTestServers
 
-    allTestServers =
-      server :
-      errorServer :
-      failServer :
-      []
-
-withTestServer :: String -> (BaseUrl -> IO a) -> IO a
-withTestServer = withServer . lookupTestServer
+-- | All test-servers must be registered here.
+allTestServers :: [TestServer]
+allTestServers =
+  server :
+  errorServer :
+  failServer :
+  []
 
 -- * test data types
 
