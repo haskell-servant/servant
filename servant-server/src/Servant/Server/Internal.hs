@@ -8,9 +8,8 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances       #-}
-#endif
+
+#include "overlapping-compat.h"
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
@@ -206,10 +205,7 @@ methodRouterEmpty method action = LeafRouter route'
 -- to be returned. You can use 'Control.Monad.Trans.Except.throwE' to
 -- painlessly error out if the conditions for a successful deletion
 -- are not met.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ( AllCTRender ctypes a
          ) => HasServer (Delete ctypes a) where
 
@@ -217,10 +213,7 @@ instance
 
   route Proxy = methodRouter methodDelete (Proxy :: Proxy ctypes) ok200
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          HasServer (Delete ctypes ()) where
 
   type ServerT (Delete ctypes ()) m = m ()
@@ -228,10 +221,7 @@ instance
   route Proxy = methodRouterEmpty methodDelete
 
 -- Add response headers
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          ( GetHeaders (Headers h v), AllCTRender ctypes v
          ) => HasServer (Delete ctypes (Headers h v)) where
 
@@ -252,10 +242,7 @@ instance
 -- (returning a status code of 200). If there was no @Accept@ header or it
 -- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ( AllCTRender ctypes a ) => HasServer (Get ctypes a) where
 
   type ServerT (Get ctypes a) m = m a
@@ -263,10 +250,7 @@ instance
   route Proxy = methodRouter methodGet (Proxy :: Proxy ctypes) ok200
 
 -- '()' ==> 204 No Content
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
           HasServer (Get ctypes ()) where
 
   type ServerT (Get ctypes ()) m = m ()
@@ -274,10 +258,7 @@ instance
   route Proxy = methodRouterEmpty methodGet
 
 -- Add response headers
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
           ( GetHeaders (Headers h v), AllCTRender ctypes v
           ) => HasServer (Get ctypes (Headers h v)) where
 
@@ -329,10 +310,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 -- (returning a status code of 201). If there was no @Accept@ header or it
 -- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ( AllCTRender ctypes a
          ) => HasServer (Post ctypes a) where
 
@@ -340,10 +318,7 @@ instance
 
   route Proxy = methodRouter methodPost (Proxy :: Proxy ctypes) created201
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          HasServer (Post ctypes ()) where
 
   type ServerT (Post ctypes ()) m = m ()
@@ -351,10 +326,7 @@ instance
   route Proxy = methodRouterEmpty methodPost
 
 -- Add response headers
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          ( GetHeaders (Headers h v), AllCTRender ctypes v
          ) => HasServer (Post ctypes (Headers h v)) where
 
@@ -375,20 +347,14 @@ instance
 -- (returning a status code of 200). If there was no @Accept@ header or it
 -- was @*\/\*@, we return encode using the first @Content-Type@ type on the
 -- list.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ( AllCTRender ctypes a) => HasServer (Put ctypes a) where
 
   type ServerT (Put ctypes a) m = m a
 
   route Proxy = methodRouter methodPut (Proxy :: Proxy ctypes) ok200
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          HasServer (Put ctypes ()) where
 
   type ServerT (Put ctypes ()) m = m ()
@@ -396,10 +362,7 @@ instance
   route Proxy = methodRouterEmpty methodPut
 
 -- Add response headers
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          ( GetHeaders (Headers h v), AllCTRender ctypes v
          ) => HasServer (Put ctypes (Headers h v)) where
 
@@ -418,20 +381,14 @@ instance
 -- If successfully returning a value, we just require that its type has
 -- a 'ToJSON' instance and servant takes care of encoding it for you,
 -- yielding status code 200 along the way.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ( AllCTRender ctypes a) => HasServer (Patch ctypes a) where
 
   type ServerT (Patch ctypes a) m = m a
 
   route Proxy = methodRouter methodPatch (Proxy :: Proxy ctypes) ok200
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
           HasServer (Patch ctypes ()) where
 
   type ServerT (Patch ctypes ()) m = m ()
@@ -439,10 +396,7 @@ instance
   route Proxy = methodRouterEmpty methodPatch
 
 -- Add response headers
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          ( GetHeaders (Headers h v), AllCTRender ctypes v
          ) => HasServer (Patch ctypes (Headers h v)) where
 

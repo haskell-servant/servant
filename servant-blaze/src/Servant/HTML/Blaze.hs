@@ -3,10 +3,8 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances  #-}
-#endif
 
+#include "overlapping-compat.h"
 -- | An @HTML@ empty data type with `MimeRender` instances for @blaze-html@'s
 -- `ToMarkup` class and `Html` datatype.
 -- You should only need to import this module for it's instances and the
@@ -29,17 +27,9 @@ data HTML deriving Typeable
 instance Accept HTML where
     contentType _ = "text" M.// "html" M./: ("charset", "utf-8")
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
-         ToMarkup a => MimeRender HTML a where
+instance OVERLAPPABLE_ ToMarkup a => MimeRender HTML a where
     mimeRender _ = renderHtml . toHtml
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-         MimeRender HTML Html where
+instance OVERLAPPING_ MimeRender HTML Html where
     mimeRender _ = renderHtml
 
