@@ -22,6 +22,7 @@ cabal-version:       >=1.10
 homepage:            http://haskell-servant.github.io/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
+  include/*.h
   CHANGELOG.md
   README.md
 source-repository head

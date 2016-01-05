@@ -13,7 +13,7 @@ maintainer:          jkarni@gmail.com
 -- copyright:
 category:            Web
 build-type:          Simple
--- extra-source-files:
+extra-source-files:  include/*.h
 cabal-version:       >=1.10
 bug-reports:         http://github.com/haskell-servant/servant/issues
 source-repository head

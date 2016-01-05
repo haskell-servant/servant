@@ -13,6 +13,7 @@ maintainer:          alpmestan@gmail.com
 copyright:           2015 Alp Mestanogullari
 category:            Web
 build-type:          Simple
+extra-source-files:  include/*.h
 cabal-version:       >=1.10
 
 flag example

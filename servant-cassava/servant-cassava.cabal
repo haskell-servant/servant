@@ -13,7 +13,7 @@ maintainer:          jkarni@gmail.com
 -- copyright:
 -- category:
 build-type:          Simple
--- extra-source-files:
+extra-source-files:  include/*.h
 cabal-version:       >=1.10
 
 library

@@ -18,6 +18,7 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:
+  include/*.h
   CHANGELOG.md
   README.md
 source-repository head
