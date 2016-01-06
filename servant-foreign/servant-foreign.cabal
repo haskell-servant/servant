@@ -27,10 +27,11 @@ source-repository head
 
 library
   exposed-modules:     Servant.Foreign, Servant.Foreign.Internal
-  build-depends:       base    == 4.*
-                     , lens    == 4.*
-                     , servant == 0.5.*
-                     , text    >= 1.2  && < 1.3
+  build-depends:       base       == 4.*
+                     , lens       == 4.*
+                     , servant    == 0.5.*
+                     , text       >= 1.2  && < 1.3
+                     , http-types
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
@@ -41,6 +42,7 @@ test-suite spec
   type:              exitcode-stdio-1.0
   hs-source-dirs:    test
   ghc-options:       -Wall
+  include-dirs:      include
   main-is:           Spec.hs
   other-modules:
       Servant.ForeignSpec
