@@ -41,8 +41,7 @@ module Servant.Docs
   , ToCapture(..)
 
   , -- * ADTs to represent an 'API'
-    Method(..)
-  , Endpoint, path, method, defEndpoint
+    Endpoint, path, method, defEndpoint
   , API, apiIntros, apiEndpoints, emptyAPI
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
