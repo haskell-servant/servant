@@ -71,7 +71,6 @@ spec = describe "Servant.Docs" $ do
 
     it "mentions status codes" $ do
       md `shouldContain` "Status code 200"
-      md `shouldContain` "Status code 201"
 
     it "mentions methods" $ do
       md `shouldContain` "POST"
