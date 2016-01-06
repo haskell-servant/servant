@@ -198,7 +198,6 @@ instance OVERLAPPABLE_
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
 instance OVERLAPPING_
-instance
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
          , GetHeaders (Headers h a)
          ) => HasServer (Verb method status ctypes (Headers h a)) where

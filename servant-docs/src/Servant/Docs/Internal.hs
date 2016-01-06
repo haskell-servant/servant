@@ -718,7 +718,6 @@ instance OVERLAPPING_
 instance OVERLAPPABLE_
         (ToSample a, AllMimeRender (ct ': cts) a)
     => HasDocs (Get (ct ': cts) a) where
->>>>>>> Simplify verb combinators.
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
