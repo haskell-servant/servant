@@ -5,6 +5,7 @@ import           Control.Lens
 import           Data.Maybe (isJust)
 import           Data.Monoid
 import           Data.Text (Text)
+import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Text as T
 import           Servant.Foreign
 import           Servant.JS.Internal
@@ -117,7 +118,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
 
         fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
 
-        method = T.toLower $ req ^. reqMethod
+        method = T.toLower . decodeUtf8 $ req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
         url' = "'"
            <> urlPrefix opts

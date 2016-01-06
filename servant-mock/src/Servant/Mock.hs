@@ -139,19 +139,8 @@ instance (KnownSymbol s, HasMock rest) => HasMock (QueryFlag s :> rest) where
 instance (KnownSymbol h, FromHttpApiData a, HasMock rest) => HasMock (Header h a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
-instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Delete ctypes a) where
-  mock _ = mockArbitrary
-
-instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Get ctypes a) where
-  mock _ = mockArbitrary
-
-instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Patch ctypes a) where
-  mock _ = mockArbitrary
-
-instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Post ctypes a) where
-  mock _ = mockArbitrary
-
-instance (Arbitrary a, AllCTRender ctypes a) => HasMock (Put ctypes a) where
+instance (Arbitrary a, KnownNat status, ReflectMethod method, AllCTRender ctypes a)
+    => HasMock (Verb method status ctypes a) where
   mock _ = mockArbitrary
 
 instance HasMock Raw where

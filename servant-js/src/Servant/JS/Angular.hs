@@ -6,6 +6,7 @@ import           Data.Maybe (isJust)
 import           Data.Monoid
 import qualified Data.Text as T
 import           Data.Text (Text)
+import           Data.Text.Encoding (decodeUtf8)
 import           Servant.Foreign
 import           Servant.JS.Internal
 
@@ -68,7 +69,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
  <> "    { url: " <> url <> "\n"
  <> dataBody
  <> reqheaders
- <> "    , method: '" <> method <> "'\n"
+ <> "    , method: '" <> decodeUtf8 method <> "'\n"
  <> "    });\n"
  <> "}\n"
 
