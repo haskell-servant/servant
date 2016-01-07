@@ -52,7 +52,7 @@ import           Servant.API.Alternative     ((:<|>) (..))
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
-                                              MimeRender (..),
+                                              MimeRender (..), NoContent (NoContent),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
 import           Servant.API.Header          (Header (..))
@@ -77,7 +77,7 @@ import           Servant.API.Verbs           (Created, Delete, DeleteAccepted,
                                               GetNonAuthoritative,
                                               GetPartialContent,
                                               GetResetContent,
-                                              NoContent (NoContent), Patch,
+                                              Patch,
                                               PatchAccepted, PatchNoContent,
                                               PatchNoContent,
                                               PatchNonAuthoritative, Post,

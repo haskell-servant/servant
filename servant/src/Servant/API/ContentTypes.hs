@@ -11,10 +11,9 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances  #-}
-#endif
 {-# OPTIONS_HADDOCK not-home       #-}
+
+#include "overlapping-compat.h"
 
 -- | A collection of basic Content-Types (also known as Internet Media
 -- Types, or MIME types). Additionally, this module provides classes that
@@ -57,6 +56,9 @@ module Servant.API.ContentTypes
     , MimeRender(..)
     , MimeUnrender(..)
 
+    -- * NoContent
+    , NoContent(..)
+
     -- * Internal
     , AcceptHeader(..)
     , AllCTRender(..)
@@ -75,8 +77,7 @@ import           Control.Applicative              ((*>), (<*))
 #endif
 import           Control.Arrow                    (left)
 import           Control.Monad
-import           Data.Aeson                       (FromJSON, ToJSON, encode,
-                                                   parseJSON)
+import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
 import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
@@ -168,10 +169,7 @@ class (AllMime list) => AllCTRender (list :: [*]) a where
     -- mimetype).
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          (AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy (ct ': cts)
@@ -275,20 +273,14 @@ instance ( MimeUnrender ctyp a
 -- * MimeRender Instances
 
 -- | `encode`
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ToJSON a => MimeRender JSON a where
     mimeRender _ = encode
 
 -- | @encodeFormUrlEncoded . toFormUrlEncoded@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ToFormUrlEncoded a => MimeRender FormUrlEncoded a where
     mimeRender _ = encodeFormUrlEncoded . toFormUrlEncoded
 
@@ -312,25 +304,27 @@ instance MimeRender OctetStream ByteString where
 instance MimeRender OctetStream BS.ByteString where
     mimeRender _ = fromStrict
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-         MimeRender JSON () where
+-- | A type for responses with content-body.
+data NoContent = NoContent
+  deriving (Show, Eq, Read)
+
+instance FromJSON NoContent where
+    parseJSON _ = return NoContent
+
+instance ToJSON NoContent where
+    toJSON _ = ""
+
+
+instance OVERLAPPING_
+         MimeRender JSON NoContent where
     mimeRender _ _ = ""
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-         MimeRender PlainText () where
+instance OVERLAPPING_
+         MimeRender PlainText NoContent where
     mimeRender _ _ = ""
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-         MimeRender OctetStream () where
+instance OVERLAPPING_
+         MimeRender OctetStream NoContent where
     mimeRender _ _ = ""
 
 --------------------------------------------------------------------------

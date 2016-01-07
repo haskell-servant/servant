@@ -38,8 +38,8 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              HttpVersion, IsSecure (..), JSON,
                                              Patch, PlainText, Post, Put,
                                              QueryFlag, QueryParam, QueryParams,
-                                             Raw, RemoteHost, ReqBody,
-                                             addHeader)
+                                             Raw, RemoteHost, ReqBody, GetNoContent,
+                                             PostNoContent, addHeader, NoContent(..))
 import           Servant.Server             (Server, serve, ServantErr(..), err404)
 import           Test.Hspec                 (Spec, describe, it, shouldBe)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
@@ -130,9 +130,9 @@ captureSpec = do
 
 
 type GetApi = Get '[JSON] Person
-        :<|> "empty" :> Get '[JSON] ()
-        :<|> "emptyWithHeaders" :> Get '[JSON] (Headers '[Header "H" Int] ())
-        :<|> "post" :> Post '[JSON] ()
+        :<|> "empty" :> GetNoContent '[JSON] NoContent
+        :<|> "emptyWithHeaders" :> GetNoContent '[JSON] (Headers '[Header "H" Int] NoContent)
+        :<|> "post" :> PostNoContent '[JSON] NoContent
 
 getApi :: Proxy GetApi
 getApi = Proxy
@@ -141,9 +141,9 @@ getSpec :: Spec
 getSpec = do
   describe "Servant.API.Get" $ do
     let server = return alice
-            :<|> return ()
-            :<|> return (addHeader 5 ())
-            :<|> return ()
+            :<|> return NoContent
+            :<|> return (addHeader 5 NoContent)
+            :<|> return NoContent
 
     with (return $ serve getApi server) $ do
 
@@ -157,7 +157,7 @@ getSpec = do
         post "/empty" "" `shouldRespondWith` 405
 
       it "returns headers" $ do
-        get "/emptyWithHeaders" `shouldRespondWith` 200 { matchHeaders = [ "H" <:> "5" ] }
+        get "/emptyWithHeaders" `shouldRespondWith` 204 { matchHeaders = [ "H" <:> "5" ] }
 
       it "returns 406 if the Accept header is not supported" $ do
         Test.Hspec.Wai.request methodGet "" [(hAccept, "crazy/mime")] ""
@@ -168,9 +168,9 @@ headSpec :: Spec
 headSpec = do
   describe "Servant.API.Head" $ do
     let server = return alice
-            :<|> return ()
-            :<|> return (addHeader 5 ())
-            :<|> return ()
+            :<|> return NoContent
+            :<|> return (addHeader 5 NoContent)
+            :<|> return NoContent
     with (return $ serve getApi server) $ do
 
       it "allows to GET a Person" $ do

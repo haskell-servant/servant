@@ -129,10 +129,10 @@ instance OVERLAPPABLE_
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
-  (ReflectMethod method) => HasClient (Verb method status cts ()) where
-  type Client (Verb method status cts ()) = ExceptT ServantError IO ()
+  (ReflectMethod method) => HasClient (Verb method status cts NoContent) where
+  type Client (Verb method status cts NoContent) = ExceptT ServantError IO NoContent
   clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody method req baseurl manager
+    performRequestNoBody method req baseurl manager >> return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
@@ -150,13 +150,13 @@ instance OVERLAPPING_
 
 instance OVERLAPPING_
   ( BuildHeadersTo ls, ReflectMethod method
-  ) => HasClient (Verb method status cts (Headers ls ())) where
-  type Client (Verb method status cts (Headers ls ()))
-    = ExceptT ServantError IO (Headers ls ())
+  ) => HasClient (Verb method status cts (Headers ls NoContent)) where
+  type Client (Verb method status cts (Headers ls NoContent))
+    = ExceptT ServantError IO (Headers ls NoContent)
   clientWithRoute Proxy req baseurl manager = do
     let method = reflectMethod (Proxy :: Proxy method)
     hdrs <- performRequestNoBody method req baseurl manager
-    return $ Headers { getResponse = ()
+    return $ Headers { getResponse = NoContent
                      , getHeadersHList = buildHeadersTo hdrs
                      }
 
