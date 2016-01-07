@@ -13,6 +13,7 @@
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -fcontext-stack=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -28,7 +29,7 @@ import           Control.Arrow              (left)
 import           Control.Concurrent         (forkIO, killThread, ThreadId)
 import           Control.Exception          (bracket)
 import           Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
-import           Data.Aeson
+import           Data.Aeson                 hiding ((.:))
 import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
@@ -41,7 +42,7 @@ import           Network.HTTP.Media
 import           Network.HTTP.Types         (Status (..), badRequest400,
                                              methodGet, ok200, status400)
 import           Network.Socket
-import           Network.Wai                (Application, responseLBS)
+import           Network.Wai                (Application, Request, requestHeaders, responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.Hspec
@@ -53,6 +54,7 @@ import           Servant.API
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
 import           Servant.Server
+import qualified Servant.Common.Req as SCR
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPI
@@ -62,6 +64,7 @@ spec = describe "Servant.Client" $ do
     sucessSpec
     failSpec
     wrappedApiSpec
+    authSpec
 
 -- * test data types
 
@@ -111,8 +114,10 @@ type Api =
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
   :<|> "deleteContentType" :> DeleteNoContent '[JSON] NoContent
+
 api :: Proxy Api
 api = Proxy
+
 
 server :: Application
 server = serve api EmptyConfig (
@@ -147,6 +152,46 @@ failServer = serve failApi EmptyConfig (
   :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
   :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
  )
+
+--  auth stuff
+type AuthAPI =
+       BasicAuth "foo-realm" :> "private" :> "basic" :> Get '[JSON] Person
+  :<|> AuthProtect "auth-tag" :> "private" :> "auth" :> Get '[JSON] Person
+
+authAPI :: Proxy AuthAPI
+authAPI = Proxy
+
+type instance AuthReturnType (BasicAuth "foo-realm")  = ()
+type instance AuthReturnType (AuthProtect "auth-tag") = ()
+type instance AuthClientData (AuthProtect "auth-tag") = ()
+
+basicAuthHandler :: BasicAuthCheck ()
+basicAuthHandler =
+  let check username password =
+        if username == "servant" && password == "server"
+        then return (Authorized ())
+        else return Unauthorized
+  in BasicAuthCheck check
+
+authHandler :: AuthHandler Request ()
+authHandler =
+  let handler req = case lookup "AuthHeader" (requestHeaders req) of
+        Nothing -> throwE (err401 { errBody = "Missing auth header"
+                                  , errReasonPhrase = "denied!"
+                                  })
+        Just _ -> return ()
+  in mkAuthHandler handler
+
+serverConfig :: Config '[ BasicAuthCheck ()
+                        , AuthHandler Request ()
+                        ]
+serverConfig = basicAuthHandler :. authHandler :. EmptyConfig
+
+authServer :: Application
+authServer = serve authAPI serverConfig (const (return alice) :<|> const (return alice))
+
+{-
+     -}
 
 {-# NOINLINE manager #-}
 manager :: C.Manager
@@ -287,13 +332,40 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           InvalidContentTypeHeader "fooooo" _ -> return ()
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
+authSpec :: Spec
+authSpec = beforeAll (startWaiApp authServer) $ afterAll endWaiApp $ do
+  context "Authentication works when requests are properly authenticated" $ do
+
+    it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
+      let (getBasic :<|> _) = client authAPI baseUrl manager
+      let authData = BasicAuthData "servant" "server"
+      (left show <$> runExceptT (getBasic authData)) `shouldReturn` Right alice
+
+    it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
+      let (_ :<|> getProtected) = client authAPI baseUrl manager
+      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
+      (left show <$> runExceptT (getProtected authRequest)) `shouldReturn` Right alice
+
+  context "Authentication is rejected when requests are not authenticated properly" $ do
+
+    it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
+      let (getBasic :<|> _) = client authAPI baseUrl manager
+      let authData = BasicAuthData "not" "password"
+      Left FailureResponse{..} <- runExceptT (getBasic authData)
+      responseStatus `shouldBe` Status 403 "Forbidden"
+
+    it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
+      let (_ :<|> getProtected) = client authAPI baseUrl manager
+      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
+      Left FailureResponse{..} <- runExceptT (getProtected authRequest)
+      responseStatus `shouldBe` (Status 401 "denied")
+
+-- * utils
+
 data WrappedApi where
   WrappedApi :: (HasServer (api :: *) '[], Server api ~ ExceptT ServantErr IO a,
                  HasClient api, Client api ~ ExceptT ServantError IO ()) =>
     Proxy api -> WrappedApi
-
-
--- * utils
 
 startWaiApp :: Application -> IO (ThreadId, BaseUrl)
 startWaiApp app = do

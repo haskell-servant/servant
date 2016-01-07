@@ -22,7 +22,7 @@ module Servant.Docs.Internal where
 
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, over, traversed, (%~),
+import           Control.Lens               (makeLenses, mapped, over, traversed, view, (%~),
                                              (&), (.~), (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
@@ -140,6 +140,12 @@ data DocIntro = DocIntro
   , _introBody  :: [String] -- ^ Each String is a paragraph.
   } deriving (Eq, Show)
 
+-- | A type to represent Authentication information about an endpoint.
+data DocAuthentication = DocAuthentication
+  { _authIntro        :: String
+  , _authDataRequired :: String
+  } deriving (Eq, Ord, Show)
+
 instance Ord DocIntro where
     compare = comparing _introTitle
 
@@ -230,7 +236,8 @@ defResponse = Response
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _captures :: [DocCapture]                -- type collected + user supplied info
+  { _authInfo :: [DocAuthentication]         -- user supplied info
+  , _captures :: [DocCapture]                -- type collected + user supplied info
   , _headers  :: [Text]                      -- type collected
   , _params   :: [DocQueryParam]             -- type collected + user supplied info
   , _notes    :: [DocNote]                   -- user supplied
@@ -247,8 +254,8 @@ data Action = Action
 -- 'combineAction' to mush two together taking the response, body and content
 -- types from the very left.
 combineAction :: Action -> Action -> Action
-Action c h p n m ts body resp `combineAction` Action c' h' p' n' m' _ _ _ =
-        Action (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
+Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
+        Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -268,6 +275,7 @@ defAction =
          []
          []
          []
+         []
          defResponse
 
 -- | Create an API that's comprised of a single endpoint.
@@ -277,6 +285,7 @@ single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
 -- gimme some lenses
+makeLenses ''DocAuthentication
 makeLenses ''DocOptions
 makeLenses ''API
 makeLenses ''Endpoint
@@ -454,7 +463,7 @@ instance AllHeaderSamples '[] where
 
 instance (ToByteString l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
     => AllHeaderSamples (Header h l ': ls) where
-    allHeaderToSample _ = (mkHeader (toSample (Proxy :: Proxy l))) :
+    allHeaderToSample _ = mkHeader (toSample (Proxy :: Proxy l)) :
                           allHeaderToSample (Proxy :: Proxy ls)
       where headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy h)
             mkHeader (Just x) = (headerName, cs $ toByteString x)
@@ -504,6 +513,10 @@ class ToParam t where
 class ToCapture c where
   toCapture :: Proxy c -> DocCapture
 
+-- | The class that helps us get documentation for authenticated endpoints
+class ToAuthInfo a where
+      toAuthInfo :: Proxy a -> DocAuthentication
+
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
@@ -516,6 +529,7 @@ markdown api = unlines $
           str :
           "" :
           notesStr (action ^. notes) ++
+          authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
@@ -547,6 +561,20 @@ markdown api = unlines $
             intersperse "" (nt ^. noteBody) ++
             "" :
             []
+
+
+        authStr :: [DocAuthentication] -> [String]
+        authStr auths =
+          let authIntros = mapped %~ view authIntro $ auths
+              clientInfos = mapped %~ view authDataRequired $ auths
+          in "#### Authentication":
+              "":
+              unlines authIntros :
+              "":
+              "Clients must supply the following data" :
+              unlines clientInfos :
+              "" :
+              []
 
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
@@ -796,6 +824,20 @@ instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
 
 instance HasDocs sublayout => HasDocs (WithNamedConfig name config sublayout) where
   docsFor Proxy = docsFor (Proxy :: Proxy sublayout)
+
+instance (ToAuthInfo (BasicAuth realm), HasDocs sublayout) => HasDocs (BasicAuth realm :> sublayout) where
+  docsFor Proxy (endpoint, action) =
+    docsFor (Proxy :: Proxy sublayout) (endpoint, action')
+      where
+        authProxy = Proxy :: Proxy (BasicAuth realm)
+        action' = over authInfo (|> toAuthInfo authProxy) action
+
+instance (ToAuthInfo (AuthProtect tag), HasDocs sublayout) => HasDocs (AuthProtect tag :> sublayout) where
+  docsFor Proxy (endpoint, action) =
+    docsFor (Proxy :: Proxy sublayout) (endpoint, action')
+      where
+        authProxy = Proxy :: Proxy (AuthProtect tag)
+        action' = over authInfo (|> toAuthInfo authProxy) action
 
 -- ToSample instances for simple types
 instance ToSample ()

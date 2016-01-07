@@ -100,9 +100,26 @@ executable auth-combinator
     , servant == 0.5.*
     , servant-server == 0.5.*
     , text
+    , transformers
     , wai
     , warp
   hs-source-dirs: auth-combinator
+  default-language: Haskell2010
+
+executable basic-auth
+  main-is: basic-auth.hs
+  ghc-options: -Wall -fno-warn-unused-binds -fno-warn-name-shadowing
+  build-depends:
+      aeson >= 0.8
+    , base >= 4.7 && < 5
+    , bytestring
+    , http-types
+    , servant == 0.5.*
+    , servant-server == 0.5.*
+    , text
+    , wai
+    , warp
+  hs-source-dirs: basic-auth
   default-language: Haskell2010
 
 executable socket-io-chat

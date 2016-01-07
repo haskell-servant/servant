@@ -10,11 +10,13 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 #include "overlapping-compat.h"
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
+  , module Servant.Server.Internal.Auth
   , module Servant.Server.Internal.Config
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
@@ -24,14 +26,16 @@ module Servant.Server.Internal
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
 #endif
-import           Control.Monad.Trans.Except (ExceptT)
-import qualified Data.ByteString            as B
-import qualified Data.ByteString.Lazy       as BL
-import qualified Data.Map                   as M
-import           Data.Maybe                 (fromMaybe, mapMaybe)
-import           Data.String                (fromString)
-import           Data.String.Conversions    (cs, (<>))
-import           Data.Text                  (Text)
+import           Control.Monad.Trans.Except                 (ExceptT, runExceptT)
+import qualified Data.ByteString                            as B
+import qualified Data.ByteString.Char8                      as BC8
+import qualified Data.ByteString.Lazy                       as BL
+import qualified Data.Map                                   as M
+import           Data.Maybe                                 (fromMaybe,
+                                                             mapMaybe)
+import           Data.String                                (fromString)
+import           Data.String.Conversions                    (cs, (<>))
+import           Data.Text                                  (Text)
 import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
@@ -48,7 +52,7 @@ import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
                                              parseUrlPieceMaybe)
 
-import           Servant.API                 ((:<|>) (..), (:>), Capture,
+import           Servant.API                 ((:<|>) (..), (:>), AuthProtect, BasicAuth, Capture,
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,
@@ -62,6 +66,7 @@ import           Servant.API.ContentTypes    (AcceptHeader (..),
 import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
                                               getResponse)
 
+import           Servant.Server.Internal.Auth
 import           Servant.Server.Internal.Config
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
@@ -449,6 +454,28 @@ instance HasServer api config => HasServer (HttpVersion :> api) config where
 
   route Proxy config subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) config (passToServer subserver $ httpVersion req)
+
+-- | Basic Authentication
+instance (KnownSymbol realm, HasServer api config, HasConfigEntry config (BasicAuthCheck (AuthReturnType (BasicAuth realm))))
+    => HasServer (BasicAuth realm :> api) config where
+  type ServerT (BasicAuth realm :> api) m = AuthReturnType (BasicAuth realm) -> ServerT api m
+
+  route Proxy config subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)
+    where
+       realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
+       basicAuthConfig = getConfigEntry config
+       authCheck req = runBasicAuth req realm basicAuthConfig
+
+-- | General Authentication
+instance (HasServer api config, HasConfigEntry config (AuthHandler Request (AuthReturnType (AuthProtect tag)))) => HasServer (AuthProtect tag :> api) config where
+  type ServerT (AuthProtect tag :> api) m = AuthReturnType (AuthProtect tag) -> ServerT api m
+
+  route Proxy config subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)
+      where
+        authHandler = unAuthHandler (getConfigEntry config)
+        authCheck = fmap (either FailFatal Route) . runExceptT . authHandler
 
 pathIsEmpty :: Request -> Bool
 pathIsEmpty = go . pathInfo

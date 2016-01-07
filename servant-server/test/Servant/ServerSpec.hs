@@ -3,7 +3,6 @@
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
@@ -31,14 +30,14 @@ import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
                                              methodHead, methodPatch,
                                              methodPost, methodPut, ok200,
                                              parseQuery)
-import           Network.Wai                (Application, Request, pathInfo,
+import           Network.Wai                (Application, Request, requestHeaders, pathInfo,
                                              queryString, rawQueryString,
                                              responseBuilder, responseLBS)
-import           Network.Wai.Internal       (Response (ResponseBuilder))
+import           Network.Wai.Internal       (Response (ResponseBuilder), requestHeaders)
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody,
                                              simpleHeaders, simpleStatus)
-import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
+import           Servant.API                ((:<|>) (..), (:>), AuthProtect, BasicAuth, Capture, Delete,
                                              Get, Header (..),
                                              Headers, HttpVersion,
                                              IsSecure (..), JSON,
@@ -48,14 +47,21 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
-import           Servant.Server             (ServantErr (..), Server, err404,
-                                             serve, Config(EmptyConfig))
+import           Servant.Server             (ServantErr (..), Server, err401, err404,
+                                             serve, Config((:.), EmptyConfig))
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
+import qualified Test.Hspec.Wai as THW
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, request,
                                              shouldRespondWith, with, (<:>))
+import qualified Test.Hspec.Wai as THW
 
+import           Servant.Server.Internal.Auth
+                                            (AuthHandler, AuthReturnType, BasicAuthCheck (BasicAuthCheck),
+                                               BasicAuthResult (Authorized, Unauthorized), mkAuthHandler)
+
+import           Servant.Server.Internal.Auth
 import           Servant.Server.Internal.RoutingApplication
                                             (toApplication, RouteResult(..))
 import           Servant.Server.Internal.Router
@@ -86,6 +92,7 @@ spec = do
   responseHeadersSpec
   routerSpec
   miscCombinatorSpec
+  authSpec
 
 ------------------------------------------------------------------------------
 -- * verbSpec {{{
@@ -528,6 +535,53 @@ miscCombinatorSpec = with (return $ serve miscApi EmptyConfig miscServ) $
       go "/host" "\"0.0.0.0:0\""
 
   where go path res = Test.Hspec.Wai.get path `shouldRespondWith` res
+
+-- }}}
+------------------------------------------------------------------------------
+-- * Authentication {{{
+------------------------------------------------------------------------------
+type AuthAPI = BasicAuth "foo" :> "basic" :> Get '[JSON] Animal
+          :<|> AuthProtect "auth" :> "auth" :> Get '[JSON] Animal
+authApi :: Proxy AuthAPI
+authApi = Proxy
+authServer :: Server AuthAPI
+authServer = const (return jerry) :<|> const (return tweety)
+
+type instance AuthReturnType (BasicAuth "foo") = ()
+type instance AuthReturnType (AuthProtect "auth") = ()
+
+authConfig :: Config '[ BasicAuthCheck ()
+                      , AuthHandler Request ()
+                      ]
+authConfig =
+  let basicHandler = BasicAuthCheck $ (\usr pass ->
+        if usr == "servant" && pass == "server"
+        then return (Authorized ())
+        else return Unauthorized
+        )
+      authHandler = (\req ->
+        if elem ("Auth", "secret") (requestHeaders req)
+        then return ()
+        else throwE err401
+        )
+  in basicHandler :. mkAuthHandler authHandler :. EmptyConfig
+
+authSpec :: Spec
+authSpec = do
+  describe "Servant.API.Auth" $ do
+    with (return (serve authApi authConfig authServer)) $ do
+
+      context "Basic Authentication" $ do
+        it "returns with 401 with bad password" $ do
+          get "/basic" `shouldRespondWith` 401
+        it "returns 200 with the right password" $ do
+          THW.request methodGet "/basic" [("Authorization","Basic c2VydmFudDpzZXJ2ZXI=")] "" `shouldRespondWith` 200
+
+      context "Custom Auth Protection" $ do
+        it "returns 401 when missing headers" $ do
+          get "/auth" `shouldRespondWith` 401
+        it "returns 200 with the right header" $ do
+          THW.request methodGet "/auth" [("Auth","secret")] "" `shouldRespondWith` 200
 -- }}}
 ------------------------------------------------------------------------------
 -- * Test data types {{{

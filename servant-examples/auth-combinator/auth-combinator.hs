@@ -9,56 +9,39 @@
 {-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-import           Data.Aeson
-import           Data.ByteString          (ByteString)
-import           Data.IORef
-import           Data.Text                (Text)
+import           Control.Monad.Trans.Except (ExceptT, throwE)
+import           Data.Aeson                 hiding ((.:))
+import           Data.ByteString            (ByteString)
+import           Data.Monoid                ((<>))
+import           Data.Text                  (Text)
 import           GHC.Generics
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Servant
-import           Servant.Server.Internal
 
--- Pretty much stolen/adapted from
--- https://github.com/haskell-servant/HaskellSGMeetup2015/blob/master/examples/authentication-combinator/AuthenticationCombinator.hs
+-- | A user type that we "fetch from the database" after
+-- performing authentication
+newtype User = User { unUser :: Text }
 
-type DBConnection = IORef [ByteString]
-type DBLookup = DBConnection -> ByteString -> IO Bool
 
-initDB :: IO DBConnection
-initDB = newIORef ["good password"]
+-- | A method that, when given a password, will return a User.
+-- This is our bespoke (and bad) authentication logic.
+lookupUser :: ByteString -> ExceptT ServantErr IO User
+lookupUser cookie =
+  if cookie == "good password"
+  then return (User "user")
+  else throwE (err403 { errBody = "Invalid Cookie" })
 
-isGoodCookie :: DBLookup
-isGoodCookie ref password = do
-  allowed <- readIORef ref
-  return (password `elem` allowed)
+-- | The auth handler wraps a function from Request -> ExceptT ServantErr IO User
+-- we look for a Cookie and pass the value of the cookie to `lookupUser`.
+authHandler :: AuthHandler Request User
+authHandler =
+  let handler req = case lookup "Cookie" (requestHeaders req) of
+        Nothing -> throwE (err401 { errBody = "Missing auth header" })
+        Just cookie -> lookupUser cookie
+  in mkAuthHandler handler
 
-data AuthProtected
-
-instance (HasConfigEntry config DBConnection, HasServer rest config)
-  => HasServer (AuthProtected :> rest) config where
-
-  type ServerT (AuthProtected :> rest) m = ServerT rest m
-
-  route Proxy config subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy rest) config $ addAcceptCheck subserver $ cookieCheck request
-      where
-        cookieCheck req = case lookup "Cookie" (requestHeaders req) of
-            Nothing -> return $ FailFatal err401 { errBody = "Missing auth header" }
-            Just v  -> do
-              let dbConnection = getConfigEntry config
-              authGranted <- isGoodCookie dbConnection v
-              if authGranted
-                then return $ Route ()
-                else return $ FailFatal err403 { errBody = "Invalid cookie" }
-
-type PrivateAPI = Get '[JSON] [PrivateData]
-
-type PublicAPI = Get '[JSON] [PublicData]
-
-type API = "private" :> AuthProtected :> PrivateAPI
-      :<|> PublicAPI
-
+-- | Data types that will be returned from various api endpoints
 newtype PrivateData = PrivateData { ssshhh :: Text }
   deriving (Eq, Show, Generic)
 
@@ -69,28 +52,54 @@ newtype PublicData = PublicData { somedata :: Text }
 
 instance ToJSON PublicData
 
+-- | Our private API that we want to be auth-protected.
+type PrivateAPI = Get '[JSON] [PrivateData]
+
+-- | Our public API that doesn't have any protection
+type PublicAPI = Get '[JSON] [PublicData]
+
+-- | Our API, with auth-protection
+type API = "private" :> AuthProtect "cookie-auth" :> PrivateAPI
+      :<|> "public"  :> PublicAPI
+
+-- | A value holding our type-level API
 api :: Proxy API
 api = Proxy
 
-server :: Server API
-server = return prvdata :<|> return pubdata
+-- | We need to specify the data returned after authentication
+type instance AuthReturnType (AuthProtect "cookie-auth") = User
 
-  where prvdata = [PrivateData "this is a secret"]
+-- | The configuration that will be made available to request handlers. We supply the 
+-- "cookie-auth"-tagged request handler defined above, so that the 'HasServer' instance
+-- of 'AuthProtect' can extract the handler and run it on the request.
+serverConfig :: Config (AuthHandler Request User ': '[])
+serverConfig = authHandler :. EmptyConfig
+
+-- | Our API, where we provide all the author-supplied handlers for each end point.
+-- note that 'prvdata' is a function that takes 'User' as an argument. We dont' worry
+-- about the authentication instrumentation here, that is taken care of by supplying
+-- configuration
+server :: Server API
+server = prvdata :<|> return pubdata
+
+  where prvdata (User name) = return [PrivateData ("this is a secret: " <> name)]
         pubdata = [PublicData "this is a public piece of data"]
 
+-- | run our server
 main :: IO ()
-main = do
-  dbConnection <- initDB
-  let config = dbConnection :. EmptyConfig
-  run 8080 (serve api config server)
+main = run 8080 (serve api serverConfig server)
 
-{- Sample session:
-$ curl http://localhost:8080/
+{- Sample Session:
+
+$ curl -XGET localhost:8080/private
+Missing auth header
+
+$ curl -XGET localhost:8080/private -H "Cookie: good password"
+[{"ssshhh":"this is a secret: user"}]
+
+$ curl -XGET localhost:8080/private -H "Cookie: bad password"
+Invalid Cookie
+
+$ curl -XGET localhost:8080/public
 [{"somedata":"this is a public piece of data"}]
-$ curl http://localhost:8080/private
-Missing auth header.
-$ curl -H "Cookie: good password" http://localhost:8080/private
-[{"ssshhh":"this is a secret"}]
-$ curl -H "Cookie: bad password" http://localhost:8080/private
-Invalid cookie.
 -}
