@@ -1,32 +1,47 @@
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds          #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 
 module Servant.API.FileExtension
     ( Ext(..)
     , getExt
     , parseExt
+    , renderExt
+    , toExtProxy
     ) where
 
-import           Data.Typeable (Typeable)
-import           GHC.TypeLits  -- (Symbol)
-import           Web.HttpApiData
-import           Data.Text (Text, pack, stripSuffix)
+import           Control.Monad   ((>=>))
+import           Data.Maybe      (catMaybes)
 import           Data.Proxy
-import           Data.Maybe (catMaybes)
-import           Control.Monad ((>=>))
+import           Data.Text       (Text, pack, stripSuffix)
+import           Data.Typeable   (Typeable)
+import           GHC.TypeLits
+import           Web.HttpApiData
+#if !MIN_VERSION_base(4,8,0)
+import           Data.Monoid     (mappend)
+#endif
 
--- | A wrapper around a time type which can be parsed/rendered to with `format',
--- as specified in 'Data.Time.Format'.
+-- | A wrapper around a `Text` value which must be suffixed by the extension `ext`.
+--
+-- Pattern matching on the `Ext` constructor will give you the `Text` value without
+-- the suffix, use `renderExt` to retrive the full string including '.' and extension.
 --
 -- Example:
+--
 -- >>>            -- GET /file/:filename.png
 -- >>> type MyApi = "file" :> Capture "filename" (Ext "png") :> Get '[JSON] Text
+--
+-- >>> x :: Ext "png"
+-- >>> x = Ext "mypic"
+-- >>> renderExt x
+-- "mypic.png"
+--
 newtype Ext (ext :: Symbol) = Ext {getFileName :: Text}
     deriving (Typeable, Eq, Ord)
 
