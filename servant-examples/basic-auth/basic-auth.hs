@@ -1,21 +1,22 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
 module Main where
 
-import           Data.Aeson               (ToJSON)
-import           Data.Proxy               (Proxy (Proxy))
-import           Data.Text                (Text)
-import           GHC.Generics             (Generic)
-import           Network.Wai.Handler.Warp (run)
-import           Servant.API              ((:<|>)((:<|>)), (:>), BasicAuth, Get, JSON)
-import Servant.Server.Internal.Auth (BasicAuthCheck(BasicAuthCheck), AuthResult(Authorized,Unauthorized))
-import           Servant.Server           (serve, (.:), Server, Config(EmptyConfig), ConfigEntry)
+import           Data.Aeson                   (ToJSON)
+import           Data.Proxy                   (Proxy (Proxy))
+import           Data.Text                    (Text)
+import           GHC.Generics                 (Generic)
+import           Network.Wai.Handler.Warp     (run)
+import           Servant.API                  ((:<|>) ((:<|>)), (:>), BasicAuth,
+                                               Get, JSON)
+import           Servant.Server               (Config (EmptyConfig),
+                                               ConfigEntry, Server, serve, (.:))
+import           Servant.Server.Internal.Auth (AuthResult (Authorized, Unauthorized),
+                                               BasicAuthCheck (BasicAuthCheck))
 
 -- | let's define some types that our API returns.
 
@@ -62,15 +63,24 @@ authCheck =
         else return Unauthorized
   in BasicAuthCheck check
 
+-- | We need to supply our handlers with the right configuration. In this case,
+-- Basic Authentication requires a Config Entry with the 'BasicAuthCheck' value
+-- tagged with the realm that BasicAuth protects (in this case "foo-realm").
+-- This config is then supplied to 'server' and threaded to the BasicAuth HasServer
+-- handlers.
 serverConfig :: Config (ConfigEntry "foo-realm" (BasicAuthCheck User) ': '[])
 serverConfig = authCheck .: EmptyConfig
 
+-- | an implementation of our server. Here is where we pass all the handlers to our endpoints.
+-- In particular, for the BasicAuth protected handler, we need to supply a function
+-- that takes 'User' as an argument.
 server :: Server API
 server =
   let publicAPIHandler = return [PublicData "foo", PublicData "bar"]
       privateAPIHandler (user :: User) = return (PrivateData (userName user))
   in publicAPIHandler :<|> privateAPIHandler
 
+-- | hello, server!
 main :: IO ()
 main = run 8080 (serve api serverConfig server)
 
