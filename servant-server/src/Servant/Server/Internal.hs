@@ -467,16 +467,16 @@ instance HasServer api => HasServer (HttpVersion :> api) where
     route (Proxy :: Proxy api) cfg (passToServer subserver $ httpVersion req)
 
 instance (KnownSymbol realm, HasServer api)
-    => HasServer (BasicAuth tag realm usr :> api) where
-  type ServerT (BasicAuth tag realm usr :> api) m = usr -> ServerT api m
-  type HasCfg (BasicAuth tag realm usr :> api) c
-    = (HasConfigEntry c tag (BasicAuthCheck usr), HasCfg api c)
+    => HasServer (BasicAuth realm usr :> api) where
+  type ServerT (BasicAuth realm usr :> api) m = usr -> ServerT api m
+  type HasCfg (BasicAuth realm usr :> api) c
+    = (HasConfigEntry c realm (BasicAuthCheck usr), HasCfg api c)
 
   route Proxy cfg subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy api) cfg (subserver `addAuthCheck` authCheck request)
     where
        realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
-       baCfg = getConfigEntry (Proxy :: Proxy tag) cfg
+       baCfg = getConfigEntry (Proxy :: Proxy realm) cfg
        authCheck req = runBasicAuth req realm baCfg
 
 
