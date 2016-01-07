@@ -35,6 +35,7 @@ import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody)
 import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Get, Header (..), Headers,
+                                             Ext(..),
                                              HttpVersion, IsSecure (..), JSON,
                                              Patch, PlainText, Post, Put,
                                              QueryFlag, QueryParam, QueryParams,
@@ -86,6 +87,7 @@ tweety = Animal "Bird" 2
 spec :: Spec
 spec = do
   captureSpec
+  captureFilenameSpec
   getSpec
   headSpec
   postSpec
@@ -127,6 +129,35 @@ captureSpec = do
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
+
+
+
+type CaptureFilenameApi = Capture "filename" (Ext "png") :> Get '[PlainText] String
+captureFilenameApi :: Proxy CaptureFilenameApi
+captureFilenameApi = Proxy
+captureFilenameServer :: Ext "png" -> ExceptT ServantErr IO String
+captureFilenameServer = return . show
+
+captureFilenameSpec :: Spec
+captureFilenameSpec = do
+  describe "Servant.API.FileExtension" $ do
+    with (return (serve captureFilenameApi captureFilenameServer)) $ do
+
+      it "can capture parts of the 'pathInfo'" $ do
+        response <- get "/foo%20bar.png"
+        liftIO $ simpleBody response `shouldBe` "\"foo bar.png\""
+
+      it "returns 404 when extension is not present" $ do
+        get "/noExt" `shouldRespondWith` 404
+
+    with (return (serve
+        (Proxy :: Proxy (Capture "captured" (Ext "png") :> Raw))
+        (\(Ext "foo") request_ respond ->
+            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+      it "strips the captured filename from pathInfo" $ do
+        get "/foo.png/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
+
+
 
 
 type GetApi = Get '[JSON] Person

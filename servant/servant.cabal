@@ -31,6 +31,7 @@ library
     Servant.API.ContentTypes
     Servant.API.Delete
     Servant.API.Get
+    Servant.API.FileExtension
     Servant.API.Header
     Servant.API.HttpVersion
     Servant.API.IsSecure

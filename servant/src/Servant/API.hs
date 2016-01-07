@@ -9,6 +9,8 @@ module Servant.API (
   -- * Accessing information from the request
   module Servant.API.Capture,
   -- | Capturing parts of the url path as parsed values: @'Capture'@
+  module Servant.API.FileExtension,
+  -- | Capture file names with a given extension
   module Servant.API.Header,
   -- | Retrieving specific headers from the request
   module Servant.API.HttpVersion,
@@ -66,6 +68,7 @@ import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               PlainText, ToFormUrlEncoded (..))
 import           Servant.API.Delete          (Delete)
 import           Servant.API.Get             (Get)
+import           Servant.API.FileExtension   (Ext(..))
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
