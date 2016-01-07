@@ -68,4 +68,4 @@ server = T3.server :<|> serveDocs
         plain = ("Content-Type", "text/plain")
 
 app :: Application
-app = serve api server
+app = serve api EmptyConfig server

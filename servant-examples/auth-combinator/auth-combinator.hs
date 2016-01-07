@@ -27,9 +27,10 @@ data AuthProtected
 
 instance HasServer rest => HasServer (AuthProtected :> rest) where
   type ServerT (AuthProtected :> rest) m = ServerT rest m
+  type HasCfg (AuthProtected :> rest) c = HasCfg rest c
 
-  route Proxy subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy rest) $ addAcceptCheck subserver $ cookieCheck request
+  route Proxy p subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy rest) p $ addAcceptCheck subserver $ cookieCheck request
       where
         cookieCheck req = case lookup "Cookie" (requestHeaders req) of
             Nothing -> return $ FailFatal err401 { errBody = "Missing auth header" }
@@ -66,7 +67,7 @@ server = return prvdata :<|> return pubdata
         pubdata = [PublicData "this is a public piece of data"]
 
 main :: IO ()
-main = run 8080 (serve api server)
+main = run 8080 (serve api EmptyConfig server)
 
 {- Sample session:
 $ curl http://localhost:8080/

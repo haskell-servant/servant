@@ -110,7 +110,7 @@ api :: Proxy Api
 api = Proxy
 
 server :: Application
-server = serve api (
+server = serve api EmptyConfig (
        return alice
   :<|> return NoContent
   :<|> (\ name -> return $ Person name 0)
@@ -137,7 +137,7 @@ failApi :: Proxy FailApi
 failApi = Proxy
 
 failServer :: Application
-failServer = serve failApi (
+failServer = serve failApi EmptyConfig (
        (\ _request respond -> respond $ responseLBS ok200 [] "")
   :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
   :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
@@ -227,7 +227,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
 wrappedApiSpec :: Spec
 wrappedApiSpec = describe "error status codes" $ do
-  let serveW api = serve api $ throwE $ ServantErr 500 "error message" "" []
+  let serveW api = serve api EmptyConfig $ throwE $ ServantErr 500 "error message" "" []
   context "are correctly handled by the client" $
     let test :: (WrappedApi, String) -> Spec
         test (WrappedApi api, desc) =
@@ -283,8 +283,9 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
-  WrappedApi :: (HasServer (api :: *), Server api ~ ExceptT ServantErr IO a,
-                 HasClient api, Client api ~ ExceptT ServantError IO ()) =>
+  WrappedApi :: (HasServer (api :: *), Server api ~ ExceptT ServantErr IO a
+                 , HasCfg api '[], HasClient api
+                 , Client api ~ ExceptT ServantError IO ()) =>
     Proxy api -> WrappedApi
 
 

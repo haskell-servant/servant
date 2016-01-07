@@ -110,7 +110,8 @@ import           Servant.Server.Internal.Enter
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: HasServer layout => Proxy layout -> Config a -> Server layout -> Application
+serve :: (HasCfg layout a, HasServer layout)
+    => Proxy layout -> Config a -> Server layout -> Application
 serve p cfg server = toApplication (runRouter (route p cfg d))
   where
     d = Delayed r r r (\ _ _ -> Route server)

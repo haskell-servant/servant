@@ -34,4 +34,4 @@ server = do
   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
 
 app :: Application
-app = serve ioAPI server
+app = serve ioAPI EmptyConfig server
