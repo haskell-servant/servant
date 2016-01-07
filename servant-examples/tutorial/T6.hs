@@ -15,4 +15,4 @@ server :: Server API
 server = serveDirectory "tutorial"
 
 app :: Application
-app = serve api server
+app = serve api EmptyConfig server

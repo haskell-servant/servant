@@ -31,6 +31,7 @@ import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
 import           Data.Text                  (Text)
 import           Data.Typeable
+import           GHC.Exts                   (Constraint)
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
 import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
@@ -67,8 +68,9 @@ import           Servant.Server.Internal.ServantErr
 
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
+  type HasCfg layout (c :: [*]) :: Constraint
 
-  route :: Proxy layout -> Config a -> Delayed (Server layout) -> Router
+  route :: HasCfg layout a => Proxy layout -> Config a -> Delayed (Server layout) -> Router
 
 type Server layout = ServerT layout (ExceptT ServantErr IO)
 
@@ -88,6 +90,7 @@ type Server layout = ServerT layout (ExceptT ServantErr IO)
 instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
 
   type ServerT (a :<|> b) m = ServerT a m :<|> ServerT b m
+  type HasCfg (a :<|> b) c = (HasCfg a c, HasCfg b c)
 
   route Proxy cfg server = choice (route pa cfg ((\ (a :<|> _) -> a) <$> server))
                                   (route pb cfg ((\ (_ :<|> b) -> b) <$> server))
@@ -119,6 +122,7 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
 
   type ServerT (Capture capture a :> sublayout) m =
      a -> ServerT sublayout m
+  type HasCfg (Capture capture a :> sublayout) c = (HasCfg sublayout c)
 
   route Proxy cfg d =
     DynamicRouter $ \ first ->
@@ -195,6 +199,7 @@ instance OVERLAPPABLE_
          ) => HasServer (Verb method status ctypes a) where
 
   type ServerT (Verb method status ctypes a) m = m a
+  type HasCfg (Verb method status ctypes a) c = ()
 
   route Proxy _ = methodRouter method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
@@ -206,6 +211,7 @@ instance OVERLAPPING_
          ) => HasServer (Verb method status ctypes (Headers h a)) where
 
   type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
+  type HasCfg (Verb method status ctypes (Headers h a)) c = ()
 
   route Proxy _ = methodRouterHeaders method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
@@ -236,6 +242,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   type ServerT (Header sym a :> sublayout) m =
     Maybe a -> ServerT sublayout m
+  type HasCfg (Header sym a :> sublayout) c = HasCfg sublayout c
 
   route Proxy cfg subserver = WithRequest $ \ request ->
     let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
@@ -268,6 +275,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   type ServerT (QueryParam sym a :> sublayout) m =
     Maybe a -> ServerT sublayout m
+  type HasCfg (QueryParam sym a :> sublayout) c = HasCfg sublayout c
 
   route Proxy cfg subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
@@ -304,6 +312,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   type ServerT (QueryParams sym a :> sublayout) m =
     [a] -> ServerT sublayout m
+  type HasCfg (QueryParams sym a :> sublayout) c = HasCfg sublayout c
 
   route Proxy cfg subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
@@ -335,6 +344,7 @@ instance (KnownSymbol sym, HasServer sublayout)
 
   type ServerT (QueryFlag sym :> sublayout) m =
     Bool -> ServerT sublayout m
+  type HasCfg (QueryFlag sym :> sublayout) c = HasCfg sublayout c
 
   route Proxy cfg subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
@@ -358,6 +368,7 @@ instance (KnownSymbol sym, HasServer sublayout)
 instance HasServer Raw where
 
   type ServerT Raw m = Application
+  type HasCfg Raw c = ()
 
   route Proxy _ rawApplication = LeafRouter $ \ request respond -> do
     r <- runDelayed rawApplication
@@ -392,6 +403,7 @@ instance ( AllCTUnrender list a, HasServer sublayout
 
   type ServerT (ReqBody list a :> sublayout) m =
     a -> ServerT sublayout m
+  type HasCfg (ReqBody list a :> sublayout) c = HasCfg sublayout c
 
   route Proxy cfg subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy sublayout) cfg (addBodyCheck subserver (bodyCheck request))
@@ -415,6 +427,7 @@ instance ( AllCTUnrender list a, HasServer sublayout
 instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout) where
 
   type ServerT (path :> sublayout) m = ServerT sublayout m
+  type HasCfg (path :> sublayout) c = HasCfg sublayout c
 
   route Proxy cfg subserver = StaticRouter $
     M.singleton (cs (symbolVal proxyPath))
@@ -423,12 +436,14 @@ instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout
 
 instance HasServer api => HasServer (RemoteHost :> api) where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
+  type HasCfg (RemoteHost :> api) c = HasCfg api c
 
   route Proxy cfg subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) cfg (passToServer subserver $ remoteHost req)
 
 instance HasServer api => HasServer (IsSecure :> api) where
   type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
+  type HasCfg (IsSecure :> api) c = HasCfg api c
 
   route Proxy cfg subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) cfg (passToServer subserver $ secure req)
@@ -437,12 +452,14 @@ instance HasServer api => HasServer (IsSecure :> api) where
 
 instance HasServer api => HasServer (Vault :> api) where
   type ServerT (Vault :> api) m = Vault -> ServerT api m
+  type HasCfg (Vault :> api) c = HasCfg api c
 
   route Proxy cfg subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) cfg (passToServer subserver $ vault req)
 
 instance HasServer api => HasServer (HttpVersion :> api) where
   type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
+  type HasCfg (HttpVersion :> api) c = HasCfg api c
 
   route Proxy cfg subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) cfg (passToServer subserver $ httpVersion req)
