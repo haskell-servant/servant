@@ -29,8 +29,8 @@ data AuthResult usr
 -- * Basic Auth
 
 newtype BasicAuthCheck usr = BasicAuthCheck
-  { unBasicAuthCheck :: BS.ByteString  -- ^ Username
-                     -> BS.ByteString  -- ^ Password
+  { unBasicAuthCheck :: BS.ByteString  -- Username
+                     -> BS.ByteString  -- Password
                      -> IO (AuthResult usr)
   }
   deriving (Generic, Typeable, Functor)
