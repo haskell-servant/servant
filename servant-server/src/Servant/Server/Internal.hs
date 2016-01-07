@@ -24,6 +24,7 @@ import           Control.Applicative         ((<$>))
 #endif
 import           Control.Monad.Trans.Except (ExceptT)
 import qualified Data.ByteString            as B
+import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
 import qualified Data.Map                   as M
 import           Data.Maybe                 (fromMaybe, mapMaybe)
@@ -47,7 +48,7 @@ import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
                                              parseUrlPieceMaybe)
 
-import           Servant.API                 ((:<|>) (..), (:>), Capture,
+import           Servant.API                 ((:<|>) (..), (:>), Capture, BasicAuth,
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,
@@ -60,6 +61,7 @@ import           Servant.API.ContentTypes    (AcceptHeader (..),
 import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
                                               getResponse)
 
+import           Servant.Server.Internal.Auth
 import           Servant.Server.Internal.Config
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
@@ -463,6 +465,20 @@ instance HasServer api => HasServer (HttpVersion :> api) where
 
   route Proxy cfg subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) cfg (passToServer subserver $ httpVersion req)
+
+instance (KnownSymbol realm, HasServer api)
+    => HasServer (BasicAuth tag realm usr :> api) where
+  type ServerT (BasicAuth tag realm usr :> api) m = usr -> ServerT api m
+  type HasCfg (BasicAuth tag realm usr :> api) c
+    = (HasConfigEntry c tag (BasicAuthCheck usr), HasCfg api c)
+
+  route Proxy cfg subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy api) cfg (subserver `addAuthCheck` authCheck request)
+    where
+       realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
+       baCfg = getConfigEntry (Proxy :: Proxy tag) cfg
+       authCheck req = runBasicAuth req realm baCfg
+
 
 pathIsEmpty :: Request -> Bool
 pathIsEmpty = go . pathInfo

@@ -35,6 +35,9 @@ module Servant.API (
   -- * Response Headers
   module Servant.API.ResponseHeaders,
 
+  -- * Authentication
+  module Servant.API.Auth,
+
   -- * Untyped endpoints
   module Servant.API.Raw,
   -- | Plugging in a wai 'Network.Wai.Application', serving directories
@@ -49,6 +52,7 @@ module Servant.API (
   ) where
 
 import           Servant.API.Alternative     ((:<|>) (..))
+import           Servant.API.Auth            (BasicAuth)
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,

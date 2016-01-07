@@ -114,7 +114,7 @@ serve :: (HasCfg layout a, HasServer layout)
     => Proxy layout -> Config a -> Server layout -> Application
 serve p cfg server = toApplication (runRouter (route p cfg d))
   where
-    d = Delayed r r r (\ _ _ -> Route server)
+    d = Delayed r r r r (\ _ _ _ -> Route server)
     r = return (Route ())
 
 
