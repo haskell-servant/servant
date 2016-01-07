@@ -37,8 +37,7 @@ import           Data.Monoid     (mappend)
 -- >>>            -- GET /file/:filename.png
 -- >>> type MyApi = "file" :> Capture "filename" (Ext "png") :> Get '[JSON] Text
 --
--- >>> x :: Ext "png"
--- >>> x = Ext "mypic"
+-- >>> let x = Ext "mypic" :: Ext "png"
 -- >>> renderExt x
 -- "mypic.png"
 --
