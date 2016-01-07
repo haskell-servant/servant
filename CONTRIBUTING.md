@@ -28,7 +28,7 @@ Some things we like:
 - Explicit imports
 - Upper and lower bounds for packages
 - Few dependencies
-- -Werror-compatible
+- -Werror-compatible (for both 7.8 and 7.10)
 
 Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
 files in the repository provide a good baseline for consistency.
@@ -37,6 +37,10 @@ Please include a description of the changes in your PR in the `CHANGELOG.md` of
 the packages you've changed. And of course, write tests!
 
 ## PR process
+
+We try to give timely reviews to PRs that pass CI. If CI for your PR fails, we
+may close the PR if it has been open for too long (though you should feel free
+to reopen when the issues have been fixed).
 
 We require two +1 from the maintainers of the repo. If you feel like there has
 not been a timely response to a PR, you can ping the Maintainers group (with
@@ -53,7 +57,7 @@ issue with the `news` tag (which we will close when we read it).
 As for adding them to the main repo: maintaining combinators can be expensive,
 since official combinators must have instances for all classes (and new classes
 come along fairly frequently). We therefore have to be quite selective about
-those that we accept. If you're considering writing a new combinator, open an
+those that we accept. If your considering writing a new combinator, open an
 issue to discuss it first!
 
 
@@ -72,5 +76,5 @@ the `news` label if you make a new package so we can know about it!
 We are currently moving to a more aggresive release policy, so that you can get
 what you contribute from Hackage fairly soon. However, note that prior to major
 releases it may take some time in between releases. If you think you're change
-is small enough that you should be backported to released major versions, say
+is small enough that it should be backported to released major versions, say
 so in the issue or PR.
