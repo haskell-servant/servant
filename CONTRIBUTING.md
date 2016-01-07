@@ -57,8 +57,9 @@ issue with the `news` tag (which we will close when we read it).
 As for adding them to the main repo: maintaining combinators can be expensive,
 since official combinators must have instances for all classes (and new classes
 come along fairly frequently). We therefore have to be quite selective about
-those that we accept. If your considering writing a new combinator, open an
-issue to discuss it first!
+those that we accept. If you're considering writing a new combinator, open an
+issue to discuss it first! (You could release your combinator as a separate
+package, of course.)
 
 
 ## New classes
@@ -75,6 +76,4 @@ the `news` label if you make a new package so we can know about it!
 
 We are currently moving to a more aggresive release policy, so that you can get
 what you contribute from Hackage fairly soon. However, note that prior to major
-releases it may take some time in between releases. If you think you're change
-is small enough that it should be backported to released major versions, say
-so in the issue or PR.
+releases it may take some time in between releases.
