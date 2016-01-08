@@ -13,10 +13,8 @@ import           GHC.Generics                 (Generic)
 import           Network.Wai.Handler.Warp     (run)
 import           Servant.API                  ((:<|>) ((:<|>)), (:>), BasicAuth,
                                                Get, JSON)
-import           Servant.Server               (Config (EmptyConfig),
-                                               ConfigEntry, Server, serve, (.:))
-import           Servant.Server.Internal.Auth (AuthResult (Authorized, Unauthorized),
-                                               BasicAuthCheck (BasicAuthCheck))
+import           Servant.Server               (BasicAuthResult (Authorized, Unauthorized), Config (EmptyConfig),
+                                               ConfigEntry, Server, serve, (.:), BasicAuthCheck(BasicAuthCheck))
 
 -- | let's define some types that our API returns.
 
