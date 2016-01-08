@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE PolyKinds          #-}
 module Servant.API.Auth where
 
 import           Data.Typeable (Typeable)
@@ -16,9 +17,9 @@ import           GHC.TypeLits  (Symbol)
 -- In Basic Auth, username and password are base64-encoded and transmitted via
 -- the @Authorization@ header. Handshakes are not required, making it
 -- relatively efficient.
-data BasicAuth (realm :: Symbol) usr
+data BasicAuth (realm :: Symbol) (usr :: *)
   deriving (Typeable)
 
 -- | A generalized Authentication combinator.
-data AuthProtect tag usr
+data AuthProtect (tag :: k) (usr :: *)
   deriving (Typeable)
