@@ -42,7 +42,7 @@ type PrivateAPI = Get '[JSON] PrivateData
 
 -- | our API
 type API = "public"  :> PublicAPI
-      :<|> "private" :> BasicAuth "foo-realm" User :> PrivateAPI
+      :<|> "private" :> BasicAuth "foo-tag" "foo-realm" User :> PrivateAPI
 
 -- | a value holding a proxy of our API type
 api :: Proxy API
@@ -63,10 +63,9 @@ authCheck =
 
 -- | We need to supply our handlers with the right configuration. In this case,
 -- Basic Authentication requires a Config Entry with the 'BasicAuthCheck' value
--- tagged with the realm that BasicAuth protects (in this case "foo-realm").
--- This config is then supplied to 'server' and threaded to the BasicAuth HasServer
--- handlers.
-serverConfig :: Config (ConfigEntry "foo-realm" (BasicAuthCheck User) ': '[])
+-- tagged with "foo-tag" This config is then supplied to 'server' and threaded 
+-- to the BasicAuth HasServer handlers.
+serverConfig :: Config (ConfigEntry "foo-tag" (BasicAuthCheck User) ': '[])
 serverConfig = authCheck .: EmptyConfig
 
 -- | an implementation of our server. Here is where we pass all the handlers to our endpoints.
