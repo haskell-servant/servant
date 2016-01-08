@@ -40,6 +40,14 @@ module Servant.Server
   , Config(..)
   , (.:)
 
+  -- * General Authentication
+  , AuthHandler(unAuthHandler)
+  , mkAuthHandler
+
+  -- * Basic Authentication
+  , BasicAuthCheck(unBasicAuthCheck)
+  , BasicAuthResult(..)
+
     -- * Default error type
   , ServantErr(..)
     -- ** 3XX
