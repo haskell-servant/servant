@@ -304,7 +304,7 @@ instance MimeRender OctetStream ByteString where
 instance MimeRender OctetStream BS.ByteString where
     mimeRender _ = fromStrict
 
--- | A type for responses with content-body.
+-- | A type for responses without content-body.
 data NoContent = NoContent
   deriving (Show, Eq, Read)
 
