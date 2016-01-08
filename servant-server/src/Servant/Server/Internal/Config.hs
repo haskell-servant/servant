@@ -14,9 +14,9 @@
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances       #-}
-#endif
+
+#include "overlapping-compat.h"
+
 module Servant.Server.Internal.Config where
 
 import Control.DeepSeq (NFData(rnf))
@@ -61,16 +61,10 @@ infixr 4 .:
 class HasConfigEntry (cfg :: [*]) (a :: k) (val :: *) | cfg a -> val where
     getConfigEntry :: proxy a -> Config cfg -> val
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          HasConfigEntry xs tag val => HasConfigEntry (notIt ': xs) tag val where
     getConfigEntry p (ConsConfig _ xs) = getConfigEntry p xs
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          HasConfigEntry (ConfigEntry tag val ': xs) tag val where
     getConfigEntry _ (ConsConfig x _) = unConfigEntry x
