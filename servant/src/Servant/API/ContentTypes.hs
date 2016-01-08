@@ -238,17 +238,31 @@ class (AllMime list) => AllMimeRender (list :: [*]) a where
                   -> a                              -- value to serialize
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
-instance ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
+instance OVERLAPPABLE_ ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
     allMimeRender _ a = [(contentType pctyp, mimeRender pctyp a)]
         where pctyp = Proxy :: Proxy ctyp
 
-instance ( MimeRender ctyp a
+instance OVERLAPPABLE_
+         ( MimeRender ctyp a
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
     allMimeRender _ a = (contentType pctyp, mimeRender pctyp a)
                        :(allMimeRender pctyps a)
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy (ctyp' ': ctyps)
+
+
+-- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
+-- then this would be taken care of. However there is no more specific instance
+-- between that and 'MimeRender JSON a', so we do this instead
+instance OVERLAPPING_ ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
+    allMimeRender _ _ = [(contentType pctyp, "")]
+      where pctyp = Proxy :: Proxy ctyp
+
+instance OVERLAPPING_
+         ( AllMime (ctyp ': ctyp' ': ctyps)
+         ) => AllMimeRender (ctyp ': ctyp' ': ctyps) NoContent where
+    allMimeRender p _ = zip (allMime p) (repeat "")
 
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
@@ -308,24 +322,6 @@ instance MimeRender OctetStream BS.ByteString where
 data NoContent = NoContent
   deriving (Show, Eq, Read)
 
-instance FromJSON NoContent where
-    parseJSON _ = return NoContent
-
-instance ToJSON NoContent where
-    toJSON _ = ""
-
-
-instance OVERLAPPING_
-         MimeRender JSON NoContent where
-    mimeRender _ _ = ""
-
-instance OVERLAPPING_
-         MimeRender PlainText NoContent where
-    mimeRender _ _ = ""
-
-instance OVERLAPPING_
-         MimeRender OctetStream NoContent where
-    mimeRender _ _ = ""
 
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances
