@@ -18,3 +18,7 @@ import           GHC.TypeLits  (Symbol)
 -- relatively efficient.
 data BasicAuth (realm :: Symbol) usr
   deriving (Typeable)
+
+-- | A generalized Authentication combinator.
+data AuthProtect tag usr
+  deriving (Typeable)

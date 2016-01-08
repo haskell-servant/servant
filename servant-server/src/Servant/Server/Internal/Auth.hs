@@ -4,6 +4,7 @@
 module Servant.Server.Internal.Auth where
 
 import           Control.Monad          (guard)
+import           Control.Monad.Trans.Except (ExceptT)
 import qualified Data.ByteString        as BS
 import           Data.ByteString.Base64 (decodeLenient)
 import           Data.Monoid            ((<>))
@@ -17,6 +18,13 @@ import Servant.Server.Internal.RoutingApplication
 import Servant.Server.Internal.ServantErr
 
 -- * General Auth
+
+-- | Handlers for AuthProtected resources
+newtype AuthHandler r usr = AuthHandler
+  { unAuthHandler :: r -> ExceptT ServantErr IO usr }
+
+mkAuthHandler :: (r -> ExceptT ServantErr IO usr) -> AuthHandler r usr
+mkAuthHandler = AuthHandler
 
 -- | The result of authentication/authorization
 data AuthResult usr

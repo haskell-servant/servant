@@ -52,7 +52,7 @@ module Servant.API (
   ) where
 
 import           Servant.API.Alternative     ((:<|>) (..))
-import           Servant.API.Auth            (BasicAuth)
+import           Servant.API.Auth            (BasicAuth, AuthProtect)
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
