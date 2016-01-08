@@ -100,6 +100,7 @@ executable auth-combinator
     , servant == 0.5.*
     , servant-server == 0.5.*
     , text
+    , transformers
     , wai
     , warp
   hs-source-dirs: auth-combinator
