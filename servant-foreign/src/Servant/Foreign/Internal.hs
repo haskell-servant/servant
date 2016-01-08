@@ -13,18 +13,21 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
 
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
-import           Control.Lens (makeLenses, (%~), (&), (.~), (<>~))
-import qualified Data.Char    as C
+import           Control.Lens          (makeLenses, (%~), (&), (.~), (<>~))
+import qualified Data.Char             as C
 import           Data.Proxy
 import           Data.Text
-import           GHC.Exts     (Constraint)
+import           Data.Text.Encoding    (decodeUtf8)
+import           GHC.Exts              (Constraint)
 import           GHC.TypeLits
-import           Prelude      hiding (concat)
+import qualified Network.HTTP.Types    as HTTP
+import           Prelude               hiding (concat)
 import           Servant.API
 
 -- | Function name builder that simply concat each part together
@@ -86,11 +89,10 @@ defUrl :: Url
 defUrl = Url [] []
 
 type FunctionName = [Text]
-type Method = Text
 
 data Req = Req
   { _reqUrl        :: Url
-  , _reqMethod     :: Method
+  , _reqMethod     :: HTTP.Method
   , _reqHeaders    :: [HeaderArg]
   , _reqBody       :: Maybe ForeignType
   , _reqReturnType :: ForeignType
@@ -185,27 +187,18 @@ instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
     str = pack . symbolVal $ (Proxy :: Proxy sym)
     arg = (str, typeFor lang (Proxy :: Proxy a))
 
-instance (Elem JSON list, HasForeignType lang a)
-      => HasForeign lang (Delete list a) where
-  type Foreign (Delete list a) = Req
+instance (Elem JSON list, HasForeignType lang a, ReflectMethod method)
+      => HasForeign lang (Verb method status list a) where
+  type Foreign (Verb method status list a) = Req
 
   foreignFor lang Proxy req =
-    req & funcName      %~ ("delete" :)
-        & reqMethod     .~ "DELETE"
+    req & funcName  %~ (methodLC :)
+        & reqMethod .~ method
         & reqReturnType .~ retType
     where
-    retType = typeFor lang (Proxy :: Proxy a)
-
-instance (Elem JSON list, HasForeignType lang a)
-      => HasForeign lang (Get list a) where
-  type Foreign (Get list a) = Req
-
-  foreignFor lang Proxy req =
-    req & funcName  %~ ("get" :)
-        & reqMethod .~ "GET"
-        & reqReturnType .~ retType
-    where
-    retType = typeFor lang (Proxy :: Proxy a)
+    retType  = typeFor lang (Proxy :: Proxy a)
+    method   = reflectMethod (Proxy :: Proxy method)
+    methodLC = toLower $ decodeUtf8 method
 
 instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
       => HasForeign lang (Header sym a :> sublayout) where
@@ -219,28 +212,6 @@ instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
     hname = pack . symbolVal $ (Proxy :: Proxy sym)
     arg = (hname, typeFor lang (Proxy :: Proxy a))
     subP = Proxy :: Proxy sublayout
-
-instance (Elem JSON list, HasForeignType lang a)
-      => HasForeign lang (Post list a) where
-  type Foreign (Post list a) = Req
-
-  foreignFor lang Proxy req =
-    req & funcName  %~ ("post" :)
-        & reqMethod .~ "POST"
-        & reqReturnType .~ retType
-    where
-    retType = typeFor lang (Proxy :: Proxy a)
-
-instance (Elem JSON list, HasForeignType lang a)
-      => HasForeign lang (Put list a) where
-  type Foreign (Put list a) = Req
-
-  foreignFor lang Proxy req =
-    req & funcName  %~ ("put" :)
-        & reqMethod .~ "PUT"
-        & reqReturnType .~ retType
-    where
-    retType = typeFor lang (Proxy :: Proxy a)
 
 instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
       => HasForeign lang (QueryParam sym a :> sublayout) where
@@ -279,10 +250,10 @@ instance (KnownSymbol sym, HasForeignType lang a, a ~ Bool, HasForeign lang subl
     arg = (str, typeFor lang (Proxy :: Proxy a))
 
 instance HasForeign lang Raw where
-  type Foreign Raw = Method -> Req
+  type Foreign Raw = HTTP.Method -> Req
 
   foreignFor _ Proxy req method =
-    req & funcName %~ ((toLower method) :)
+    req & funcName %~ ((toLower $ decodeUtf8 method) :)
         & reqMethod .~ method
 
 instance (Elem JSON list, HasForeignType lang a, HasForeign lang sublayout)
@@ -346,4 +317,3 @@ instance (GenerateList start, GenerateList rest) => GenerateList (start :<|> res
 --   describing one endpoint from your API type.
 listFromAPI :: (HasForeign lang api, GenerateList (Foreign api)) => Proxy lang -> Proxy api -> [Req]
 listFromAPI lang p = generateList (foreignFor lang p defReq)
-
