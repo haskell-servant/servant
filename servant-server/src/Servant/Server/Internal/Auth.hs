@@ -27,7 +27,7 @@ mkAuthHandler :: (r -> ExceptT ServantErr IO usr) -> AuthHandler r usr
 mkAuthHandler = AuthHandler
 
 -- | The result of authentication/authorization
-data AuthResult usr
+data BasicAuthResult usr
   = Unauthorized
   | BadPassword
   | NoSuchUser
@@ -39,7 +39,7 @@ data AuthResult usr
 newtype BasicAuthCheck usr = BasicAuthCheck
   { unBasicAuthCheck :: BS.ByteString  -- Username
                      -> BS.ByteString  -- Password
-                     -> IO (AuthResult usr)
+                     -> IO (BasicAuthResult usr)
   }
   deriving (Generic, Typeable, Functor)
 
