@@ -29,14 +29,6 @@ newtype ConfigEntry tag a = ConfigEntry { unConfigEntry :: a }
   deriving ( Eq, Show, Read, Enum, Integral, Fractional, Generic, Typeable
            , Num, Ord, Real, Functor, Foldable, Traversable, NFData)
 
-instance Applicative (ConfigEntry tag) where
-    pure = ConfigEntry
-    ConfigEntry f <*> ConfigEntry a = ConfigEntry $ f a
-
-instance Monad (ConfigEntry tag) where
-    return = ConfigEntry
-    ConfigEntry a >>= f = f a
-
 -- | The entire configuration.
 data Config a where
     EmptyConfig :: Config '[]
@@ -46,13 +38,6 @@ instance Eq (Config '[]) where
     _ == _ = True
 instance (Eq a, Eq (Config as)) => Eq (Config (a ' : as)) where
     ConsConfig x1 y1 == ConsConfig x2 y2 = x1 == x2 && y1 == y2
-
-instance NFData (Config '[]) where
-    rnf EmptyConfig = ()
-instance (NFData a, NFData (Config as)) => NFData (Config (a ': as)) where
-    rnf (x `ConsConfig` ys) = rnf x `seq` rnf ys
-
-
 
 (.:) :: x -> Config xs -> Config (ConfigEntry tag x ': xs)
 e .: cfg = ConsConfig (ConfigEntry e) cfg
