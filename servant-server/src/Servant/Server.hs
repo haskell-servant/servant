@@ -45,7 +45,7 @@ module Servant.Server
   , mkAuthHandler
 
   -- * Basic Authentication
-  , BasicAuthCheck(unBasicAuthCheck)
+  , BasicAuthCheck(BasicAuthCheck, unBasicAuthCheck)
   , BasicAuthResult(..)
 
     -- * Default error type
