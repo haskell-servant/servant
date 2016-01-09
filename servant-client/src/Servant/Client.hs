@@ -37,6 +37,7 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.Common.Auth
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req
 
@@ -406,6 +407,21 @@ instance HasClient api => HasClient (IsSecure :> api) where
 
   clientWithRoute Proxy req baseurl manager =
     clientWithRoute (Proxy :: Proxy api) req baseurl manager
+
+instance HasClient api => HasClient (BasicAuth tag realm usr :> api) where
+  type Client (BasicAuth tag realm usr :> api) = BasicAuthData -> Client api
+
+  clientWithRoute Proxy req baseurl manager val =
+    clientWithRoute (Proxy :: Proxy api) (basicAuthReq val req) baseurl manager
+
+instance ( HasClient api
+         , AuthenticateClientRequest (AuthProtect tag)
+         ) => HasClient (AuthProtect tag :> api) where
+  type Client (AuthProtect tag :> api)
+    = ClientAuthType (AuthProtect tag) -> Client api
+
+  clientWithRoute Proxy req baseurl manager val =
+    clientWithRoute (Proxy :: Proxy api) (authReq val req) baseurl manager
 
 
 {- Note [Non-Empty Content Types]
