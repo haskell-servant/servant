@@ -29,7 +29,6 @@ getConfigEntrySpec = describe "getConfigEntry" $ do
 
   it "allows to distinguish between different config entries with the same type by tag" $ do
     let cfg = 'a' .: 'b' .: EmptyConfig :: Config '[ConfigEntry 1 Char, ConfigEntry 2 Char]
-    print cfg
     getConfigEntry (Proxy :: Proxy 1) cfg `shouldBe` 'a'
 
   context "Show instance" $ do
