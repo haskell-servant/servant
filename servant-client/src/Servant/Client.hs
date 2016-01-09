@@ -15,8 +15,12 @@
 -- querying functions for each endpoint just from the type representing your
 -- API.
 module Servant.Client
-  ( client
+  ( AuthClientData
+  , AuthenticateReq(..)
+  , BasicAuthData(..)
+  , client
   , HasClient(..)
+  , mkAuthenticateReq
   , ServantError(..)
   , module Servant.Common.BaseUrl
   ) where
