@@ -24,7 +24,6 @@ module Servant.Client
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative        ((<$>))
 #endif
-import           Control.Monad
 import           Control.Monad.Trans.Except
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.List
@@ -420,6 +419,6 @@ It may seem to make more sense to have:
 
 But this means that if another instance exists that does *not* require
 non-empty lists, but is otherwise more specific, no instance will be overall
-more specific. This in turns generally means adding yet another instance (one
+more specific. This in turn generally means adding yet another instance (one
 for empty and one for non-empty lists).
 -}

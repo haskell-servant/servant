@@ -17,29 +17,4 @@ list](https://groups.google.com/forum/#!forum/haskell-servant).
 
 ## Contributing
 
-Contributions are very welcome! To hack on the github version, clone the
-repository. You can use `cabal`:
-
-```shell
-./scripts/start-sandbox.sh # Initialize the sandbox and add-source the packages
-./scripts/test-all.sh      # Run all the tests
-```
-
-`stack`:
-
-```shell
-stack build    # Install and build packages
-stack test     # Run all the tests
-```
-
-Or `nix`:
-```shell
-./scripts/generate-nix-files.sh   # Get up-to-date shell.nix files
-```
-
-Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
-files in the repository provide a good baseline for consistency.
-
-Please include a description of the changes in your PR in the `CHANGELOG.md` of
-the packages you've changed. And of course, write tests!
-
+See `CONTRIBUTING.md`

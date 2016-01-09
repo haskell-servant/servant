@@ -3,17 +3,20 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE KindSignatures     #-}
 {-# LANGUAGE PolyKinds          #-}
-module Servant.API.Verbs where
+module Servant.API.Verbs
+  ( module Servant.API.Verbs
+  , StdMethod(GET, POST, HEAD, PUT, DELETE, TRACE, CONNECT, OPTIONS, PATCH)
+  ) where
 
 import           Data.Typeable             (Typeable)
+import           Data.Proxy                (Proxy)
 import           GHC.Generics              (Generic)
 import           GHC.TypeLits              (Nat)
 import           Network.HTTP.Types.Method (Method, StdMethod (..),
                                             methodDelete, methodGet, methodHead,
                                             methodPatch, methodPost, methodPut)
-import           Servant.API.ContentTypes  (NoContent(..))
 
--- | @Verb@ is a general type for representing HTTP verbs/methods. For
+-- | @Verb@ is a general type for representing HTTP verbs (a.k.a. methods). For
 -- convenience, type synonyms for each verb with a 200 response code are
 -- provided, but you are free to define your own:
 --
@@ -55,7 +58,7 @@ type Patch  contentTypes a = Verb 'PATCH  200 contentTypes a
 
 -- | 'POST' with 201 status code.
 --
-type Created contentTypes a = Verb 'POST 201 contentTypes a
+type PostCreated contentTypes a = Verb 'POST 201 contentTypes a
 
 
 -- ** 202 Accepted
@@ -141,11 +144,11 @@ type PutResetContent contentTypes noContent = Verb 'PUT 205 contentTypes noConte
 -- RFC7233 Section 4.1>
 
 -- | 'GET' with 206 status code.
-type GetPartialContent contentTypes noContent = Verb 'GET 205 contentTypes noContent
+type GetPartialContent contentTypes noContent = Verb 'GET 206 contentTypes noContent
 
 
 class ReflectMethod a where
-    reflectMethod :: proxy a -> Method
+    reflectMethod :: Proxy a -> Method
 
 instance ReflectMethod 'GET where
     reflectMethod _ = methodGet

@@ -74,9 +74,7 @@
 -- >>> safeLink api bad_link
 -- ...
 --     Could not deduce (Or
---                         (IsElem'
---                            (Verb 'Network.HTTP.Types.Method.DELETE 200 '[JSON] ())
---                            (Verb 'Network.HTTP.Types.Method.GET 200 '[JSON] Int))
+--                         (IsElem' (Verb 'DELETE 200 '[JSON] ()) (Verb 'GET 200 '[JSON] Int))
 --                         (IsElem'
 --                            ("hello" :> Delete '[JSON] ())
 --                            ("bye" :> (QueryParam "name" String :> Delete '[JSON] ()))))

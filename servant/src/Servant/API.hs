@@ -70,7 +70,7 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
 import           Servant.API.Vault           (Vault)
-import           Servant.API.Verbs           (Created, Delete, DeleteAccepted,
+import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepted,
                                               DeleteNoContent,
                                               DeleteNonAuthoritative, Get,
                                               GetAccepted, GetNoContent,
@@ -87,7 +87,7 @@ import           Servant.API.Verbs           (Created, Delete, DeleteAccepted,
                                               PutAccepted, PutNoContent,
                                               PutNoContent, PutNonAuthoritative,
                                               ReflectMethod (reflectMethod),
-                                              Verb)
+                                              Verb, StdMethod(..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)
 import           Web.HttpApiData             (FromHttpApiData (..),
