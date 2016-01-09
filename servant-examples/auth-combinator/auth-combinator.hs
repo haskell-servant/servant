@@ -20,6 +20,7 @@ import           Servant
 -- performing authentication
 newtype User = User { unUser :: Text }
 
+
 -- | A method that, when given a password, will return a User.
 -- This is our bespoke (and bad) authentication logic.
 lookupUser :: ByteString -> ExceptT ServantErr IO User
@@ -55,12 +56,15 @@ type PrivateAPI = Get '[JSON] [PrivateData]
 type PublicAPI = Get '[JSON] [PublicData]
 
 -- | Our API, with auth-protection
-type API = "private" :> AuthProtect "cookie-auth" User :> PrivateAPI
+type API = "private" :> AuthProtect "cookie-auth" :> PrivateAPI
       :<|> "public"  :> PublicAPI
 
 -- | A value holding our type-level API
 api :: Proxy API
 api = Proxy
+
+-- | We need to specify the data returned after authentication
+type instance AuthReturnType (AuthProtect "cookie-auth") = User
 
 -- | The configuration that will be made available to request handlers. We supply the 
 -- "cookie-auth"-tagged request handler defined above, so that the 'HasServer' instance

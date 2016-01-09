@@ -21,5 +21,5 @@ data BasicAuth (tag :: k) (realm :: Symbol) (usr :: *)
   deriving (Typeable)
 
 -- | A generalized Authentication combinator.
-data AuthProtect (tag :: k) (usr :: *)
+data AuthProtect (tag :: k)
   deriving (Typeable)

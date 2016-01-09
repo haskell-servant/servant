@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+
 module Servant.Server.Internal.Auth where
 
 import           Control.Monad          (guard)
@@ -18,6 +20,10 @@ import Servant.Server.Internal.RoutingApplication
 import Servant.Server.Internal.ServantErr
 
 -- * General Auth
+
+-- | Specify the type of data returned after we've authenticated a request.
+-- quite often this is some `User` datatype.
+type family AuthReturnType a :: *
 
 -- | Handlers for AuthProtected resources
 newtype AuthHandler r usr = AuthHandler

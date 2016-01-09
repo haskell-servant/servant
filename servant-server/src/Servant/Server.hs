@@ -42,6 +42,7 @@ module Servant.Server
 
   -- * General Authentication
   , AuthHandler(unAuthHandler)
+  , AuthReturnType
   , mkAuthHandler
 
   -- * Basic Authentication

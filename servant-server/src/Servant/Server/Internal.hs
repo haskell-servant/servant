@@ -497,10 +497,10 @@ instance (KnownSymbol realm, HasServer api)
        authCheck req = runBasicAuth req realm baCfg
 
 -- | General Authentication
-instance HasServer api => HasServer (AuthProtect tag usr :> api) where
-  type ServerT (AuthProtect tag usr :> api) m = usr -> ServerT api m
-  type HasCfg (AuthProtect tag usr :> api) c
-    = (HasConfigEntry c tag (AuthHandler Request usr), HasCfg api c)
+instance HasServer api => HasServer (AuthProtect tag :> api) where
+  type ServerT (AuthProtect tag :> api) m = AuthReturnType (AuthProtect tag) -> ServerT api m
+  type HasCfg (AuthProtect tag :> api) c
+    = (HasConfigEntry c tag (AuthHandler Request (AuthReturnType (AuthProtect tag))), HasCfg api c)
 
   route Proxy cfg subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy api) cfg (subserver `addAuthCheck` authCheck request)
