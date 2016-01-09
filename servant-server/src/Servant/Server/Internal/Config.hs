@@ -50,8 +50,8 @@ instance (Eq a, Eq (Config as)) => Eq (Config (a ': as)) where
 e .:. cfg = ConsConfig (ConfigEntry e) cfg
 infixr 5 .:.
 
-class HasConfigEntry (cfg :: [*]) (a :: k) (val :: *) | cfg a -> val where
-    getConfigEntry :: proxy a -> Config cfg -> val
+class HasConfigEntry (cfg :: [*]) (tag :: k) (val :: *) | cfg tag -> val where
+    getConfigEntry :: proxy tag -> Config cfg -> val
 
 instance OVERLAPPABLE_
          HasConfigEntry xs tag val => HasConfigEntry (notIt ': xs) tag val where
