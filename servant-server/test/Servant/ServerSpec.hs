@@ -7,49 +7,80 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeFamilies         #-}
 
 module Servant.ServerSpec where
 
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative        ((<$>))
 #endif
-import           Control.Monad              (forM_, when)
-import           Control.Monad.Trans.Except (ExceptT, throwE)
-import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
-import           Data.ByteString.Conversion ()
-import           Data.Char                  (toUpper)
-import           Data.Proxy                 (Proxy (Proxy))
-import           Data.String                (fromString)
-import           Data.String.Conversions    (cs)
-import qualified Data.Text                  as T
-import           GHC.Generics               (Generic)
-import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
-                                             methodDelete, methodGet,
-                                             methodHead, methodPatch,
-                                             methodPost, methodPut, ok200,
-                                             parseQuery)
-import           Network.Wai                (Application, Request, pathInfo,
-                                             queryString, rawQueryString,
-                                             responseBuilder, responseLBS)
-import           Network.Wai.Internal       (Response (ResponseBuilder))
-import           Network.Wai.Test           (defaultRequest, request,
-                                             runSession, simpleBody)
-import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
-                                             Get, Header (..), Headers,
-                                             HttpVersion, IsSecure (..), JSON,
-                                             Patch, PlainText, Post, Put,
-                                             QueryFlag, QueryParam, QueryParams,
-                                             Raw, RemoteHost, ReqBody,
-                                             addHeader)
-import           Test.Hspec                 (Spec, describe, it, shouldBe)
-import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
-                                             matchStatus, post, request,
-                                             shouldRespondWith, with, (<:>))
+import           Control.Monad                              (forM_, when)
+import           Control.Monad.Trans.Except                 (ExceptT, throwE)
+import           Data.Aeson                                 (FromJSON, ToJSON,
+                                                             decode', encode)
+import           Data.ByteString.Conversion                 ()
+import           Data.Char                                  (toUpper)
+import           Data.Proxy                                 (Proxy (Proxy))
+import           Data.String                                (fromString)
+import           Data.String.Conversions                    (cs)
+import qualified Data.Text                                  as T
+import           GHC.Generics                               (Generic)
+import           Network.HTTP.Types                         (Status (..),
+                                                             hAccept,
+                                                             hContentType,
+                                                             methodDelete,
+                                                             methodGet,
+                                                             methodHead,
+                                                             methodPatch,
+                                                             methodPost,
+                                                             methodPut, ok200,
+                                                             parseQuery)
+import           Network.Wai                                (Application,
+                                                             Request, pathInfo,
+                                                             queryString,
+                                                             rawQueryString,
+                                                             requestHeaders,
+                                                             responseBuilder,
+                                                             responseLBS)
+import           Network.Wai.Internal                       (Response (ResponseBuilder))
+import           Network.Wai.Test                           (defaultRequest,
+                                                             request,
+                                                             runSession,
+                                                             simpleBody)
+import           Servant.API                                ((:<|>) (..), (:>),
+                                                             AuthProtect,
+                                                             BasicAuth, Capture,
+                                                             Delete, Get,
+                                                             Header (..),
+                                                             Headers,
+                                                             HttpVersion,
+                                                             IsSecure (..),
+                                                             JSON, Patch,
+                                                             PlainText, Post,
+                                                             Put, QueryFlag,
+                                                             QueryParam,
+                                                             QueryParams, Raw,
+                                                             RemoteHost,
+                                                             ReqBody, addHeader)
+import           Test.Hspec                                 (Spec, context,
+                                                             describe, it,
+                                                             shouldBe)
+import           Test.Hspec.Wai                             (get, liftIO,
+                                                             matchHeaders,
+                                                             matchStatus, post,
+                                                             request,
+                                                             shouldRespondWith,
+                                                             with, (<:>))
+import qualified Test.Hspec.Wai                          as THW
 
-import           Servant.Server                             (Config(EmptyConfig),
+import           Servant.Server                             (AuthHandler,
+                                                             AuthReturnType, BasicAuthCheck (BasicAuthCheck), BasicAuthResult (Authorized, Unauthorized), Config (EmptyConfig),
+                                                             ConfigEntry,
                                                              ServantErr (..),
-                                                             Server, err404,
-                                                             serve)
+                                                             Server, err401,
+                                                             err404,
+                                                             mkAuthHandler,
+                                                             serve, (.:))
 import           Servant.Server.Internal.Router             (Router, Router' (LeafRouter),
                                                              runRouter,
                                                              tweakResponse)
@@ -104,6 +135,7 @@ spec = do
   routerSpec
   responseHeadersSpec
   miscReqCombinatorsSpec
+  authSpec
 
 
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
@@ -577,3 +609,46 @@ miscReqCombinatorsSpec = with (return $ serve miscApi EmptyConfig miscServ) $
       go "/host" "\"0.0.0.0:0\""
 
   where go path res = Test.Hspec.Wai.get path `shouldRespondWith` res
+
+
+type AuthAPI = BasicAuth "basic" "foo" () :> "basic" :> Get '[JSON] Animal
+          :<|> AuthProtect "auth" :> "auth" :> Get '[JSON] Animal
+authApi :: Proxy AuthAPI
+authApi = Proxy
+authServer :: Server AuthAPI
+authServer = const (return jerry) :<|> const (return tweety)
+
+type instance AuthReturnType (AuthProtect "auth") = ()
+
+authConfig :: Config '[ ConfigEntry "basic" (BasicAuthCheck ())
+                      , ConfigEntry "auth"  (AuthHandler Request ())
+                      ]
+authConfig =
+  let basicHandler = BasicAuthCheck $ (\usr pass ->
+        if usr == "servant" && pass == "server"
+        then return (Authorized ())
+        else return Unauthorized
+        )
+      authHandler = (\req ->
+        if elem ("Auth", "secret") (requestHeaders req)
+        then return ()
+        else throwE err401
+        )
+  in basicHandler .: mkAuthHandler authHandler .: EmptyConfig
+
+authSpec :: Spec
+authSpec = do
+  describe "Servant.API.Auth" $ do
+    with (return (serve authApi authConfig authServer)) $ do
+
+      context "Basic Authentication" $ do
+        it "returns with 401 with bad password" $ do
+          get "/basic" `shouldRespondWith` 401
+        it "returns 200 with the right password" $ do
+          THW.request methodGet "/basic" [("Authorization","Basic c2VydmFudDpzZXJ2ZXI=")] "" `shouldRespondWith` 200
+
+      context "Custom Auth Protection" $ do
+        it "returns 401 when missing headers" $ do
+          get "/auth" `shouldRespondWith` 401
+        it "returns 200 with the right header" $ do
+          THW.request methodGet "/auth" [("Auth","secret")] "" `shouldRespondWith` 200
