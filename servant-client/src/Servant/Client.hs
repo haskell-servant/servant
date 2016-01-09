@@ -415,13 +415,12 @@ instance HasClient api => HasClient (BasicAuth tag realm usr :> api) where
     clientWithRoute (Proxy :: Proxy api) (basicAuthReq val req) baseurl manager
 
 instance ( HasClient api
-         , AuthenticateClientRequest (AuthProtect tag)
          ) => HasClient (AuthProtect tag :> api) where
   type Client (AuthProtect tag :> api)
-    = ClientAuthType (AuthProtect tag) -> Client api
+    = AuthenticateReq (AuthProtect tag) -> Client api
 
-  clientWithRoute Proxy req baseurl manager val =
-    clientWithRoute (Proxy :: Proxy api) (authReq val req) baseurl manager
+  clientWithRoute Proxy req baseurl manager (AuthenticateReq (val,func)) =
+    clientWithRoute (Proxy :: Proxy api) (func val req) baseurl manager
 
 
 {- Note [Non-Empty Content Types]
