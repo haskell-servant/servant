@@ -39,16 +39,16 @@ instance Show (Config '[]) where
 instance (Show a, Show (Config as)) => Show (Config (ConfigEntry tag a ': as)) where
   showsPrec outerPrecedence (ConsConfig (ConfigEntry a) as) =
     showParen (outerPrecedence > 5) $
-      shows a . showString " .: " . shows as
+      shows a . showString " .:. " . shows as
 
 instance Eq (Config '[]) where
     _ == _ = True
 instance (Eq a, Eq (Config as)) => Eq (Config (a ': as)) where
     ConsConfig x1 y1 == ConsConfig x2 y2 = x1 == x2 && y1 == y2
 
-(.:) :: x -> Config xs -> Config (ConfigEntry tag x ': xs)
-e .: cfg = ConsConfig (ConfigEntry e) cfg
-infixr 5 .:
+(.:.) :: x -> Config xs -> Config (ConfigEntry tag x ': xs)
+e .:. cfg = ConsConfig (ConfigEntry e) cfg
+infixr 5 .:.
 
 class HasConfigEntry (cfg :: [*]) (a :: k) (val :: *) | cfg a -> val where
     getConfigEntry :: proxy a -> Config cfg -> val
