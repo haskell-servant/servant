@@ -16,47 +16,47 @@ import           Servant.Server.UsingConfigSpec.CustomCombinator
 
 newtype Wrapped a = Wrap { unwrap :: a }
 
-instance ToCustomConfig (Wrapped CustomConfig) where
+instance ToCustomConfig (Wrapped String) where
   toCustomConfig = unwrap
 
 type OneEntryAPI =
-  CustomCombinator CustomConfig :> Get '[JSON] String
+  CustomCombinator String :> Get '[JSON] String
 
 testServer :: Server OneEntryAPI
-testServer (CustomConfig s) = return s
+testServer s = return s
 
 oneEntryApp :: Application
 oneEntryApp =
   serve (Proxy :: Proxy OneEntryAPI) config testServer
   where
-    config :: Config '[CustomConfig]
-    config = CustomConfig "configValue" .:. EmptyConfig
+    config :: Config '[String]
+    config = "configValue" :. EmptyConfig
 
 type OneEntryTwiceAPI =
-  "foo" :> CustomCombinator CustomConfig :> Get '[JSON] String :<|>
-  "bar" :> CustomCombinator CustomConfig :> Get '[JSON] String
+  "foo" :> CustomCombinator String :> Get '[JSON] String :<|>
+  "bar" :> CustomCombinator String :> Get '[JSON] String
 
 oneEntryTwiceApp :: Application
 oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[CustomConfig]
-    config = CustomConfig "configValueTwice" .:. EmptyConfig
+    config :: Config '[String]
+    config = "configValueTwice" :. EmptyConfig
 
 type TwoDifferentEntries =
-  "foo" :> CustomCombinator CustomConfig :> Get '[JSON] String :<|>
-  "bar" :> CustomCombinator (Wrapped CustomConfig) :> Get '[JSON] String
+  "foo" :> CustomCombinator String :> Get '[JSON] String :<|>
+  "bar" :> CustomCombinator (Wrapped String) :> Get '[JSON] String
 
 twoDifferentEntries :: Application
 twoDifferentEntries = serve (Proxy :: Proxy TwoDifferentEntries) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[CustomConfig, Wrapped CustomConfig]
+    config :: Config '[String, Wrapped String]
     config =
-      CustomConfig "firstConfigValue" .:.
-      Wrap (CustomConfig "secondConfigValue") .:.
+      "firstConfigValue" :.
+      Wrap "secondConfigValue" :.
       EmptyConfig
 
 -- * tests

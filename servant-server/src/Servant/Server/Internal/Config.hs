@@ -26,31 +26,28 @@ import Data.Typeable (Typeable)
 -- | The entire configuration.
 data Config a where
     EmptyConfig :: Config '[]
-    ConsConfig :: x -> Config xs -> Config (x ': xs)
+    (:.) :: x -> Config xs -> Config (x ': xs)
+infixr 5 :.
 
 instance Show (Config '[]) where
   show EmptyConfig = "EmptyConfig"
 instance (Show a, Show (Config as)) => Show (Config (a ': as)) where
-  showsPrec outerPrecedence (ConsConfig a as) =
+  showsPrec outerPrecedence (a :. as) =
     showParen (outerPrecedence > 5) $
-      shows a . showString " .:. " . shows as
+      shows a . showString " :. " . shows as
 
 instance Eq (Config '[]) where
     _ == _ = True
 instance (Eq a, Eq (Config as)) => Eq (Config (a ': as)) where
-    ConsConfig x1 y1 == ConsConfig x2 y2 = x1 == x2 && y1 == y2
-
-(.:.) :: x -> Config xs -> Config (x ': xs)
-e .:. cfg = ConsConfig e cfg
-infixr 5 .:.
+    x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
 
 class HasConfigEntry (cfg :: [*]) (val :: *) where
     getConfigEntry :: Config cfg -> val
 
 instance OVERLAPPABLE_
          HasConfigEntry xs val => HasConfigEntry (notIt ': xs) val where
-    getConfigEntry (ConsConfig _ xs) = getConfigEntry xs
+    getConfigEntry (_ :. xs) = getConfigEntry xs
 
 instance OVERLAPPABLE_
          HasConfigEntry (val ': xs) val where
-    getConfigEntry (ConsConfig x _) = x
+    getConfigEntry (x :. _) = x

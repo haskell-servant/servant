@@ -18,8 +18,8 @@ newtype Wrapped a = Wrap { unwrap :: a }
 getConfigEntrySpec :: Spec
 getConfigEntrySpec = describe "getConfigEntry" $ do
 
-  let cfg1 = 0 .:. EmptyConfig :: Config '[Int]
-      cfg2 = 1 .:. cfg1 :: Config '[Int, Int]
+  let cfg1 = 0 :. EmptyConfig :: Config '[Int]
+      cfg2 = 1 :. cfg1 :: Config '[Int, Int]
 
   it "gets the config if a matching one exists" $ do
 
@@ -30,20 +30,20 @@ getConfigEntrySpec = describe "getConfigEntry" $ do
     getConfigEntry cfg2 `shouldBe` (1 :: Int)
 
   it "allows to distinguish between different config entries with the same type by tag" $ do
-    let cfg = 'a' .:. Wrap 'b' .:. EmptyConfig :: Config '[Char, Wrapped Char]
+    let cfg = 'a' :. Wrap 'b' :. EmptyConfig :: Config '[Char, Wrapped Char]
     getConfigEntry cfg `shouldBe` 'a'
 
   context "Show instance" $ do
-    let cfg = 1 .:. 2 .:. EmptyConfig
+    let cfg = 1 :. 2 :. EmptyConfig
     it "has a Show instance" $ do
-      show cfg `shouldBe` "1 .:. 2 .:. EmptyConfig"
+      show cfg `shouldBe` "1 :. 2 :. EmptyConfig"
 
     it "bracketing works" $ do
-      show (Just cfg) `shouldBe` "Just (1 .:. 2 .:. EmptyConfig)"
+      show (Just cfg) `shouldBe` "Just (1 :. 2 :. EmptyConfig)"
 
     it "bracketing works with operators" $ do
-      let cfg = (1 .:. 'a' .:. EmptyConfig) :<|> ('b' .:. True .:. EmptyConfig)
-      show cfg `shouldBe` "(1 .:. 'a' .:. EmptyConfig) :<|> ('b' .:. True .:. EmptyConfig)"
+      let cfg = (1 :. 'a' :. EmptyConfig) :<|> ('b' :. True :. EmptyConfig)
+      show cfg `shouldBe` "(1 :. 'a' :. EmptyConfig) :<|> ('b' :. True :. EmptyConfig)"
 
   it "does not typecheck if type does not exist" $ do
 

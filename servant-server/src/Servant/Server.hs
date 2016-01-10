@@ -37,7 +37,6 @@ module Servant.Server
 
   -- * Config
   , Config(..)
-  , (.:.)
 
     -- * Default error type
   , ServantErr(..)

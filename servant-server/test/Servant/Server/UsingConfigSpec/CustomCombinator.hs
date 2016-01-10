@@ -19,12 +19,10 @@ import           Servant.Server.Internal.RoutingApplication
 
 data CustomCombinator (entryType :: *)
 
-data CustomConfig = CustomConfig String
-
 class ToCustomConfig entryType where
-  toCustomConfig :: entryType -> CustomConfig
+  toCustomConfig :: entryType -> String
 
-instance ToCustomConfig CustomConfig where
+instance ToCustomConfig String where
   toCustomConfig = id
 
 instance forall subApi (c :: [*]) entryType .
@@ -32,7 +30,7 @@ instance forall subApi (c :: [*]) entryType .
   HasServer (CustomCombinator entryType :> subApi) where
 
   type ServerT (CustomCombinator entryType :> subApi) m =
-    CustomConfig -> ServerT subApi m
+    String -> ServerT subApi m
   type HasCfg (CustomCombinator entryType :> subApi) c =
     (HasConfigEntry c entryType, HasCfg subApi c)
 
@@ -43,4 +41,3 @@ instance forall subApi (c :: [*]) entryType .
       subProxy = Proxy
 
       inject config f = f (toCustomConfig (getConfigEntry config :: entryType))
-
