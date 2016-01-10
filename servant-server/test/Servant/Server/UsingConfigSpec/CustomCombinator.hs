@@ -13,29 +13,22 @@
 -- the config.
 module Servant.Server.UsingConfigSpec.CustomCombinator where
 
--- import           Network.Wai
--- import           Test.Hspec (Spec, describe, it)
--- import           Test.Hspec.Wai
-
 import           Servant
 import           Servant.Server.Internal.Config
--- import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 
-data CustomCombinator
+data CustomCombinator (tag :: *)
 
 data CustomConfig = CustomConfig String
 
-data Tag
-
-instance forall subApi (c :: [*]) .
+instance forall subApi (c :: [*]) tag .
   (HasServer subApi) =>
-  HasServer (CustomCombinator :> subApi) where
+  HasServer (CustomCombinator tag :> subApi) where
 
-  type ServerT (CustomCombinator :> subApi) m =
+  type ServerT (CustomCombinator tag :> subApi) m =
     CustomConfig -> ServerT subApi m
-  type HasCfg (CustomCombinator :> subApi) c =
-    (HasConfigEntry c Tag CustomConfig, HasCfg subApi c)
+  type HasCfg (CustomCombinator tag :> subApi) c =
+    (HasConfigEntry c tag CustomConfig, HasCfg subApi c)
 
   route Proxy config delayed =
     route subProxy config (fmap (inject config) delayed :: Delayed (Server subApi))
@@ -43,5 +36,5 @@ instance forall subApi (c :: [*]) .
       subProxy :: Proxy subApi
       subProxy = Proxy
 
-      inject config f = f (getConfigEntry (Proxy :: Proxy Tag) config)
+      inject config f = f (getConfigEntry (Proxy :: Proxy tag) config)
 
