@@ -14,7 +14,7 @@ import           Network.Wai.Handler.Warp     (run)
 import           Servant.API                  ((:<|>) ((:<|>)), (:>), BasicAuth,
                                                Get, JSON)
 import           Servant.Server               (BasicAuthResult (Authorized, Unauthorized), Config (EmptyConfig),
-                                               ConfigEntry, Server, serve, (.:), BasicAuthCheck(BasicAuthCheck))
+                                               ConfigEntry, Server, serve, (.:.), BasicAuthCheck(BasicAuthCheck))
 
 -- | let's define some types that our API returns.
 
@@ -66,7 +66,7 @@ authCheck =
 -- tagged with "foo-tag" This config is then supplied to 'server' and threaded 
 -- to the BasicAuth HasServer handlers.
 serverConfig :: Config (ConfigEntry "foo-tag" (BasicAuthCheck User) ': '[])
-serverConfig = authCheck .: EmptyConfig
+serverConfig = authCheck .:. EmptyConfig
 
 -- | an implementation of our server. Here is where we pass all the handlers to our endpoints.
 -- In particular, for the BasicAuth protected handler, we need to supply a function

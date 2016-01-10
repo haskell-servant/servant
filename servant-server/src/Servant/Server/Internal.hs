@@ -23,9 +23,10 @@ module Servant.Server.Internal
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
 #endif
-import           Control.Monad.Trans.Except (ExceptT)
+import           Control.Monad.Trans.Except (ExceptT, runExceptT)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as BL
+import qualified Data.ByteString.Char8      as BC8
 import qualified Data.Map                   as M
 import           Data.Maybe                 (fromMaybe, mapMaybe)
 import           Data.String                (fromString)
@@ -48,7 +49,7 @@ import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
                                              parseUrlPieceMaybe)
 
-import           Servant.API                 ((:<|>) (..), (:>), Capture,
+import           Servant.API                 ((:<|>) (..), (:>), AuthProtect, BasicAuth, Capture,
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,

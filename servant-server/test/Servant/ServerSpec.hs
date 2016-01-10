@@ -33,13 +33,14 @@ import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
                                              parseQuery)
 import           Network.Wai                (Application, Request, pathInfo,
                                              queryString, rawQueryString,
-                                             responseBuilder, responseLBS)
+                                             responseBuilder, responseLBS,
+                                             requestHeaders)
 import           Network.Wai.Internal       (Response (ResponseBuilder))
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody,
                                              simpleHeaders, simpleStatus)
-import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
-                                             Get, Header (..),
+import           Servant.API                ((:<|>) (..), (:>), AuthProtect, BasicAuth,
+                                             Capture, Delete, Get, Header (..),
                                              Headers, HttpVersion,
                                              IsSecure (..), JSON,
                                              NoContent (..), Patch, PlainText,
@@ -50,10 +51,11 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
 import           Servant.Server             ((.:.), AuthHandler, AuthReturnType,
                                              BasicAuthCheck (BasicAuthCheck),
                                              BasicAuthResult (Authorized, Unauthorized),
-                                             Config (EmptyConfig), ServantErr (..), 
-                                             Server, err404, serve)
+                                             Config (EmptyConfig), ConfigEntry, ServantErr (..),
+                                             mkAuthHandler, Server, err401, err404, serve)
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
+import qualified Test.Hspec.Wai          as THW
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, request,
                                              shouldRespondWith, with, (<:>))
@@ -600,4 +602,3 @@ jerry = Animal "Mouse" 4
 tweety :: Animal
 tweety = Animal "Bird" 2
 -- }}}
->>>>>>> shahn/config

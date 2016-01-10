@@ -28,7 +28,7 @@ import           Control.Arrow              (left)
 import           Control.Concurrent         (forkIO, killThread, ThreadId)
 import           Control.Exception          (bracket)
 import           Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
-import           Data.Aeson                 hiding ((.:))
+import           Data.Aeson
 import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
@@ -178,7 +178,7 @@ authHandler =
 serverConfig :: Config '[ ConfigEntry "basic-tag" (BasicAuthCheck ())
                         , ConfigEntry "auth-tag" (AuthHandler Request ())
                         ]
-serverConfig = basicAuthHandler .: authHandler .: EmptyConfig
+serverConfig = basicAuthHandler .:. authHandler .:. EmptyConfig
 
 authServer :: Application
 authServer = serve authAPI serverConfig (const (return alice) :<|> const (return alice))

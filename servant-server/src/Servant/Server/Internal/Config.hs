@@ -19,7 +19,7 @@
 
 module Servant.Server.Internal.Config where
 
-import Control.DeepSeq (NFData(rnf))
+import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
 import Data.Typeable (Typeable)
 

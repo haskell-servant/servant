@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeOperators       #-}
 
 import           Control.Monad.Trans.Except (ExceptT, throwE)
-import           Data.Aeson                 hiding ((.:))
+import           Data.Aeson
 import           Data.ByteString            (ByteString)
 import           Data.Monoid                ((<>))
 import           Data.Text                  (Text)
@@ -70,7 +70,7 @@ type instance AuthReturnType (AuthProtect "cookie-auth") = User
 -- "cookie-auth"-tagged request handler defined above, so that the 'HasServer' instance
 -- of 'AuthProtect' can extract the handler and run it on the request.
 serverConfig :: Config (ConfigEntry "cookie-auth" (AuthHandler Request User) ': '[])
-serverConfig = authHandler .: EmptyConfig
+serverConfig = authHandler .:. EmptyConfig
 
 -- | Our API, where we provide all the author-supplied handlers for each end point.
 -- note that 'prvdata' is a function that takes 'User' as an argument. We dont' worry
