@@ -19,10 +19,6 @@
 
 module Servant.Server.Internal.Config where
 
-import Control.DeepSeq (NFData(rnf))
-import GHC.Generics (Generic)
-import Data.Typeable (Typeable)
-
 -- | The entire configuration.
 data Config a where
     EmptyConfig :: Config '[]
