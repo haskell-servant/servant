@@ -13,23 +13,25 @@ spec :: Spec
 spec = do
   getConfigEntrySpec
 
+newtype Wrapped a = Wrap { unwrap :: a }
+
 getConfigEntrySpec :: Spec
 getConfigEntrySpec = describe "getConfigEntry" $ do
 
-  let cfg1 = 0 .:. EmptyConfig :: Config '[ConfigEntry "a" Int]
-      cfg2 = 1 .:. cfg1 :: Config '[ConfigEntry "a" Int, ConfigEntry "a" Int]
+  let cfg1 = 0 .:. EmptyConfig :: Config '[Int]
+      cfg2 = 1 .:. cfg1 :: Config '[Int, Int]
 
   it "gets the config if a matching one exists" $ do
 
-    getConfigEntry (Proxy :: Proxy "a") cfg1 `shouldBe` 0
+    getConfigEntry cfg1 `shouldBe` (0 :: Int)
 
   it "gets the first matching config" $ do
 
-    getConfigEntry (Proxy :: Proxy "a") cfg2 `shouldBe` 1
+    getConfigEntry cfg2 `shouldBe` (1 :: Int)
 
   it "allows to distinguish between different config entries with the same type by tag" $ do
-    let cfg = 'a' .:. 'b' .:. EmptyConfig :: Config '[ConfigEntry 1 Char, ConfigEntry 2 Char]
-    getConfigEntry (Proxy :: Proxy 1) cfg `shouldBe` 'a'
+    let cfg = 'a' .:. Wrap 'b' .:. EmptyConfig :: Config '[Char, Wrapped Char]
+    getConfigEntry cfg `shouldBe` 'a'
 
   context "Show instance" $ do
     let cfg = 1 .:. 2 .:. EmptyConfig
@@ -43,12 +45,7 @@ getConfigEntrySpec = describe "getConfigEntry" $ do
       let cfg = (1 .:. 'a' .:. EmptyConfig) :<|> ('b' .:. True .:. EmptyConfig)
       show cfg `shouldBe` "(1 .:. 'a' .:. EmptyConfig) :<|> ('b' .:. True .:. EmptyConfig)"
 
-  it "does not typecheck if key does not exist" $ do
+  it "does not typecheck if type does not exist" $ do
 
-    let x = getConfigEntry (Proxy :: Proxy "b") cfg1 :: Int
-    shouldNotTypecheck x
-
-  it "does not typecheck if key maps to a different type" $ do
-
-    let x = getConfigEntry (Proxy :: Proxy "a") cfg1 :: String
+    let x = getConfigEntry cfg1 :: Bool
     shouldNotTypecheck x

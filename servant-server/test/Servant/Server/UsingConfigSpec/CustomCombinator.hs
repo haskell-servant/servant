@@ -17,18 +17,24 @@ import           Servant
 import           Servant.Server.Internal.Config
 import           Servant.Server.Internal.RoutingApplication
 
-data CustomCombinator (tag :: *)
+data CustomCombinator (entryType :: *)
 
 data CustomConfig = CustomConfig String
 
-instance forall subApi (c :: [*]) tag .
-  (HasServer subApi) =>
-  HasServer (CustomCombinator tag :> subApi) where
+class ToCustomConfig entryType where
+  toCustomConfig :: entryType -> CustomConfig
 
-  type ServerT (CustomCombinator tag :> subApi) m =
+instance ToCustomConfig CustomConfig where
+  toCustomConfig = id
+
+instance forall subApi (c :: [*]) entryType .
+  (HasServer subApi, ToCustomConfig entryType) =>
+  HasServer (CustomCombinator entryType :> subApi) where
+
+  type ServerT (CustomCombinator entryType :> subApi) m =
     CustomConfig -> ServerT subApi m
-  type HasCfg (CustomCombinator tag :> subApi) c =
-    (HasConfigEntry c tag CustomConfig, HasCfg subApi c)
+  type HasCfg (CustomCombinator entryType :> subApi) c =
+    (HasConfigEntry c entryType, HasCfg subApi c)
 
   route Proxy config delayed =
     route subProxy config (fmap (inject config) delayed :: Delayed (Server subApi))
@@ -36,5 +42,5 @@ instance forall subApi (c :: [*]) tag .
       subProxy :: Proxy subApi
       subProxy = Proxy
 
-      inject config f = f (getConfigEntry (Proxy :: Proxy tag) config)
+      inject config f = f (toCustomConfig (getConfigEntry config :: entryType))
 

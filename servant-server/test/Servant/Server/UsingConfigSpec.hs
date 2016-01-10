@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -13,11 +14,13 @@ import           Servant.Server.UsingConfigSpec.CustomCombinator
 
 -- * API
 
-data Tag1
-data Tag2
+newtype Wrapped a = Wrap { unwrap :: a }
+
+instance ToCustomConfig (Wrapped CustomConfig) where
+  toCustomConfig = unwrap
 
 type OneEntryAPI =
-  CustomCombinator Tag1 :> Get '[JSON] String
+  CustomCombinator CustomConfig :> Get '[JSON] String
 
 testServer :: Server OneEntryAPI
 testServer (CustomConfig s) = return s
@@ -26,34 +29,34 @@ oneEntryApp :: Application
 oneEntryApp =
   serve (Proxy :: Proxy OneEntryAPI) config testServer
   where
-    config :: Config '[ConfigEntry Tag1 CustomConfig]
+    config :: Config '[CustomConfig]
     config = CustomConfig "configValue" .:. EmptyConfig
 
 type OneEntryTwiceAPI =
-  "foo" :> CustomCombinator Tag1 :> Get '[JSON] String :<|>
-  "bar" :> CustomCombinator Tag1 :> Get '[JSON] String
+  "foo" :> CustomCombinator CustomConfig :> Get '[JSON] String :<|>
+  "bar" :> CustomCombinator CustomConfig :> Get '[JSON] String
 
 oneEntryTwiceApp :: Application
 oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[ConfigEntry Tag1 CustomConfig]
+    config :: Config '[CustomConfig]
     config = CustomConfig "configValueTwice" .:. EmptyConfig
 
 type TwoDifferentEntries =
-  "foo" :> CustomCombinator Tag1 :> Get '[JSON] String :<|>
-  "bar" :> CustomCombinator Tag2 :> Get '[JSON] String
+  "foo" :> CustomCombinator CustomConfig :> Get '[JSON] String :<|>
+  "bar" :> CustomCombinator (Wrapped CustomConfig) :> Get '[JSON] String
 
 twoDifferentEntries :: Application
 twoDifferentEntries = serve (Proxy :: Proxy TwoDifferentEntries) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[ConfigEntry Tag1 CustomConfig, ConfigEntry Tag2 CustomConfig]
+    config :: Config '[CustomConfig, Wrapped CustomConfig]
     config =
       CustomConfig "firstConfigValue" .:.
-      CustomConfig "secondConfigValue" .:.
+      Wrap (CustomConfig "secondConfigValue") .:.
       EmptyConfig
 
 -- * tests

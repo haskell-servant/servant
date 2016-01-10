@@ -36,7 +36,6 @@ module Servant.Server
   , tweakResponse
 
   -- * Config
-  , ConfigEntry(..)
   , Config(..)
   , (.:.)
 
