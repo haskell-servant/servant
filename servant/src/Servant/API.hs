@@ -56,7 +56,7 @@ import           Servant.API.Auth            (BasicAuth, AuthProtect)
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
-                                              MimeRender (..),
+                                              MimeRender (..), NoContent (NoContent),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
 import           Servant.API.Header          (Header (..))
@@ -74,9 +74,24 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
 import           Servant.API.Vault           (Vault)
-import           Servant.API.Verbs           (Delete, Get, Patch, Post, Put,
+import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepted,
+                                              DeleteNoContent,
+                                              DeleteNonAuthoritative, Get,
+                                              GetAccepted, GetNoContent,
+                                              GetNonAuthoritative,
+                                              GetPartialContent,
+                                              GetResetContent,
+                                              Patch,
+                                              PatchAccepted, PatchNoContent,
+                                              PatchNoContent,
+                                              PatchNonAuthoritative, Post,
+                                              PostAccepted, PostNoContent,
+                                              PostNonAuthoritative,
+                                              PostResetContent, Put,
+                                              PutAccepted, PutNoContent,
+                                              PutNoContent, PutNonAuthoritative,
                                               ReflectMethod (reflectMethod),
-                                              Verb)
+                                              Verb, StdMethod(..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)
 import           Web.HttpApiData             (FromHttpApiData (..),

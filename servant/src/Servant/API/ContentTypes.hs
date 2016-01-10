@@ -16,6 +16,8 @@
 #endif
 {-# OPTIONS_HADDOCK not-home       #-}
 
+#include "overlapping-compat.h"
+
 -- | A collection of basic Content-Types (also known as Internet Media
 -- Types, or MIME types). Additionally, this module provides classes that
 -- encapsulate how to serialize or deserialize values to or from
@@ -57,6 +59,9 @@ module Servant.API.ContentTypes
     , MimeRender(..)
     , MimeUnrender(..)
 
+    -- * NoContent
+    , NoContent(..)
+
     -- * Internal
     , AcceptHeader(..)
     , AllCTRender(..)
@@ -75,8 +80,7 @@ import           Control.Applicative              ((*>), (<*))
 #endif
 import           Control.Arrow                    (left)
 import           Control.Monad
-import           Data.Aeson                       (FromJSON, ToJSON, encode,
-                                                   parseJSON)
+import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
 import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
@@ -168,10 +172,7 @@ class (AllMime list) => AllCTRender (list :: [*]) a where
     -- mimetype).
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          (AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy (ct ': cts)
@@ -240,17 +241,30 @@ class (AllMime list) => AllMimeRender (list :: [*]) a where
                   -> a                              -- value to serialize
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
-instance ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
+instance OVERLAPPABLE_ ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
     allMimeRender _ a = [(contentType pctyp, mimeRender pctyp a)]
         where pctyp = Proxy :: Proxy ctyp
 
-instance ( MimeRender ctyp a
+instance OVERLAPPABLE_
+         ( MimeRender ctyp a
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
     allMimeRender _ a = (contentType pctyp, mimeRender pctyp a)
                        :(allMimeRender pctyps a)
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy (ctyp' ': ctyps)
+
+-- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
+-- then this would be taken care of. However there is no more specific instance
+-- between that and 'MimeRender JSON a', so we do this instead
+instance OVERLAPPING_ ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
+    allMimeRender _ _ = [(contentType pctyp, "")]
+      where pctyp = Proxy :: Proxy ctyp
+
+instance OVERLAPPING_
+         ( AllMime (ctyp ': ctyp' ': ctyps)
+         ) => AllMimeRender (ctyp ': ctyp' ': ctyps) NoContent where
+    allMimeRender p _ = zip (allMime p) (repeat "")
 
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
@@ -275,20 +289,14 @@ instance ( MimeUnrender ctyp a
 -- * MimeRender Instances
 
 -- | `encode`
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ToJSON a => MimeRender JSON a where
     mimeRender _ = encode
 
 -- | @encodeFormUrlEncoded . toFormUrlEncoded@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ToFormUrlEncoded a => MimeRender FormUrlEncoded a where
     mimeRender _ = encodeFormUrlEncoded . toFormUrlEncoded
 
@@ -312,26 +320,9 @@ instance MimeRender OctetStream ByteString where
 instance MimeRender OctetStream BS.ByteString where
     mimeRender _ = fromStrict
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-         MimeRender JSON () where
-    mimeRender _ _ = ""
-
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-         MimeRender PlainText () where
-    mimeRender _ _ = ""
-
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-         MimeRender OctetStream () where
-    mimeRender _ _ = ""
+-- | A type for responses without content-body.
+data NoContent = NoContent
+  deriving (Show, Eq, Read)
 
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances

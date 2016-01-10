@@ -156,7 +156,7 @@ performRequest reqMethod req reqHost manager = do
 
 performRequestCT :: MimeUnrender ct result =>
   Proxy ct -> Method -> Req -> BaseUrl -> Manager
-  -> ExceptT ServantError IO ([HTTP.Header], result)
+    -> ExceptT ServantError IO ([HTTP.Header], result)
 performRequestCT ct reqMethod req reqHost manager = do
   let acceptCT = contentType ct
   (_status, respBody, respCT, hdrs, _response) <-

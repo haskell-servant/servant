@@ -23,59 +23,43 @@ module Servant.Server.Internal
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
 #endif
-import           Control.Monad.Trans.Except                 (ExceptT, runExceptT)
-import qualified Data.ByteString                            as B
-import qualified Data.ByteString.Char8                      as BC8
-import qualified Data.ByteString.Lazy                       as BL
-import qualified Data.Map                                   as M
-import           Data.Maybe                                 (fromMaybe,
-                                                             mapMaybe)
-import           Data.String                                (fromString)
-import           Data.String.Conversions                    (cs, (<>))
-import           Data.Text                                  (Text)
+import           Control.Monad.Trans.Except (ExceptT)
+import qualified Data.ByteString            as B
+import qualified Data.ByteString.Lazy       as BL
+import qualified Data.Map                   as M
+import           Data.Maybe                 (fromMaybe, mapMaybe)
+import           Data.String                (fromString)
+import           Data.String.Conversions    (cs, (<>))
+import           Data.Text                  (Text)
 import           Data.Typeable
-import           GHC.Exts                                   (Constraint)
-import           GHC.TypeLits                               (KnownNat,
-                                                             KnownSymbol,
-                                                             natVal, symbolVal)
-import           Network.HTTP.Types                         hiding (Header,
-                                                             ResponseHeaders)
-import           Network.Socket                             (SockAddr)
-import           Network.Wai                                (Application,
-                                                             Request, Response,
-                                                             httpVersion,
-                                                             isSecure,
-                                                             lazyRequestBody,
-                                                             pathInfo,
-                                                             rawQueryString,
-                                                             remoteHost,
-                                                             requestHeaders,
-                                                             requestMethod,
-                                                             responseLBS, vault)
-import           Web.HttpApiData                            (FromHttpApiData)
-import           Web.HttpApiData.Internal                   (parseHeaderMaybe, parseQueryParamMaybe,
-                                                             parseUrlPieceMaybe)
+import           GHC.Exts                   (Constraint)
+import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
+                                             symbolVal)
+import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
+import           Network.Socket             (SockAddr)
+import           Network.Wai                (Application, Request, Response,
+                                             httpVersion, isSecure,
+                                             lazyRequestBody, pathInfo,
+                                             rawQueryString, remoteHost,
+                                             requestHeaders, requestMethod,
+                                             responseLBS, vault)
+import           Web.HttpApiData            (FromHttpApiData)
+import           Web.HttpApiData.Internal   (parseHeaderMaybe,
+                                             parseQueryParamMaybe,
+                                             parseUrlPieceMaybe)
 
-import           Servant.API                                ((:<|>) (..), (:>),
-                                                             AuthProtect,
-                                                             BasicAuth, Capture,
-                                                             Header,
-                                                             IsSecure (..),
-                                                             QueryFlag,
-                                                             QueryParam,
-                                                             QueryParams, Raw, ReflectMethod (reflectMethod),
-                                                             RemoteHost,
-                                                             ReqBody, Vault,
-                                                             Verb)
-import           Servant.API.ContentTypes                   (AcceptHeader (..),
-                                                             AllCTRender (..),
-                                                             AllCTUnrender (..),
-                                                             AllMime,
-                                                             canHandleAcceptH)
-import           Servant.API.ResponseHeaders                (GetHeaders,
-                                                             Headers,
-                                                             getHeaders,
-                                                             getResponse)
+import           Servant.API                 ((:<|>) (..), (:>), Capture,
+                                              Verb, ReflectMethod(reflectMethod),
+                                              IsSecure(..), Header,
+                                              QueryFlag, QueryParam, QueryParams,
+                                              Raw, RemoteHost, ReqBody, Vault)
+import           Servant.API.ContentTypes    (AcceptHeader (..),
+                                              AllCTRender (..),
+                                              AllCTUnrender (..),
+                                              AllMime,
+                                              canHandleAcceptH)
+import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
+                                              getResponse)
 
 import           Servant.Server.Internal.Auth
 import           Servant.Server.Internal.Config

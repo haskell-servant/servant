@@ -38,7 +38,7 @@ module Servant.Server
   -- * Config
   , ConfigEntry(..)
   , Config(..)
-  , (.:)
+  , (.:.)
 
   -- * General Authentication
   , AuthHandler(unAuthHandler)

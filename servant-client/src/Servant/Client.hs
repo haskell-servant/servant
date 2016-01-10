@@ -28,7 +28,6 @@ module Servant.Client
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative        ((<$>))
 #endif
-import           Control.Monad
 import           Control.Monad.Trans.Except
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.List
@@ -134,10 +133,10 @@ instance OVERLAPPABLE_
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
-  (ReflectMethod method) => HasClient (Verb method status cts ()) where
-  type Client (Verb method status cts ()) = ExceptT ServantError IO ()
+  (ReflectMethod method) => HasClient (Verb method status cts NoContent) where
+  type Client (Verb method status cts NoContent) = ExceptT ServantError IO NoContent
   clientWithRoute Proxy req baseurl manager =
-    void $ performRequestNoBody method req baseurl manager
+    performRequestNoBody method req baseurl manager >> return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
@@ -155,13 +154,13 @@ instance OVERLAPPING_
 
 instance OVERLAPPING_
   ( BuildHeadersTo ls, ReflectMethod method
-  ) => HasClient (Verb method status cts (Headers ls ())) where
-  type Client (Verb method status cts (Headers ls ()))
-    = ExceptT ServantError IO (Headers ls ())
+  ) => HasClient (Verb method status cts (Headers ls NoContent)) where
+  type Client (Verb method status cts (Headers ls NoContent))
+    = ExceptT ServantError IO (Headers ls NoContent)
   clientWithRoute Proxy req baseurl manager = do
     let method = reflectMethod (Proxy :: Proxy method)
     hdrs <- performRequestNoBody method req baseurl manager
-    return $ Headers { getResponse = ()
+    return $ Headers { getResponse = NoContent
                      , getHeadersHList = buildHeadersTo hdrs
                      }
 
@@ -426,7 +425,6 @@ instance ( HasClient api
   clientWithRoute Proxy req baseurl manager (AuthenticateReq (val,func)) =
     clientWithRoute (Proxy :: Proxy api) (func val req) baseurl manager
 
-
 {- Note [Non-Empty Content Types]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Rather than have
@@ -439,6 +437,6 @@ It may seem to make more sense to have:
 
 But this means that if another instance exists that does *not* require
 non-empty lists, but is otherwise more specific, no instance will be overall
-more specific. This in turns generally means adding yet another instance (one
+more specific. This in turn generally means adding yet another instance (one
 for empty and one for non-empty lists).
 -}

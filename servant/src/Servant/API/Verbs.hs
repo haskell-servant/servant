@@ -3,16 +3,20 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE KindSignatures     #-}
 {-# LANGUAGE PolyKinds          #-}
-module Servant.API.Verbs where
+module Servant.API.Verbs
+  ( module Servant.API.Verbs
+  , StdMethod(GET, POST, HEAD, PUT, DELETE, TRACE, CONNECT, OPTIONS, PATCH)
+  ) where
 
 import           Data.Typeable             (Typeable)
+import           Data.Proxy                (Proxy)
 import           GHC.Generics              (Generic)
 import           GHC.TypeLits              (Nat)
 import           Network.HTTP.Types.Method (Method, StdMethod (..),
                                             methodDelete, methodGet, methodHead,
                                             methodPatch, methodPost, methodPut)
 
--- | @Verb@ is a general type for representing HTTP verbs/methods. For
+-- | @Verb@ is a general type for representing HTTP verbs (a.k.a. methods). For
 -- convenience, type synonyms for each verb with a 200 response code are
 -- provided, but you are free to define your own:
 --
@@ -54,8 +58,7 @@ type Patch  contentTypes a = Verb 'PATCH  200 contentTypes a
 
 -- | 'POST' with 201 status code.
 --
-type Created contentTypes a = Verb 'POST 201 contentTypes a
-
+type PostCreated contentTypes a = Verb 'POST 201 contentTypes a
 
 -- ** 202 Accepted
 --
@@ -95,40 +98,39 @@ type PutNonAuthoritative contentTypes a = Verb 'PUT 203 contentTypes a
 
 -- ** 204 No Content
 --
--- Indicates that no response body is being returned. Handlers for these must
--- return 'NoContent'.
+-- Indicates that no response body is being returned. Handlers for these should
+-- return 'NoContent', possibly with headers.
 --
 -- If the document view should be reset, use @205 Reset Content@.
 
 -- | 'GET' with 204 status code.
-type GetNoContent contentTypes = Verb 'GET 204 contentTypes NoContent
+type GetNoContent contentTypes noContent = Verb 'GET 204 contentTypes noContent
 -- | 'POST' with 204 status code.
-type PostNoContent contentTypes = Verb 'POST 204 contentTypes NoContent
+type PostNoContent contentTypes noContent = Verb 'POST 204 contentTypes noContent
 -- | 'DELETE' with 204 status code.
-type DeleteNoContent contentTypes = Verb 'DELETE 204 contentTypes NoContent
+type DeleteNoContent contentTypes noContent = Verb 'DELETE 204 contentTypes noContent
 -- | 'PATCH' with 204 status code.
-type PatchNoContent contentTypes = Verb 'PATCH 204 contentTypes NoContent
+type PatchNoContent contentTypes noContent = Verb 'PATCH 204 contentTypes noContent
 -- | 'PUT' with 204 status code.
-type PutNoContent contentTypes = Verb 'PUT 204 contentTypes NoContent
-
+type PutNoContent contentTypes noContent = Verb 'PUT 204 contentTypes noContent
 
 -- ** 205 Reset Content
 --
--- Indicates that no response body is being returned. Handlers for these must
--- return 'NoContent'.
+-- Indicates that no response body is being returned. Handlers for these should
+-- return 'NoContent', possibly with Headers.
 --
 -- If the document view should not be reset, use @204 No Content@.
 
 -- | 'GET' with 205 status code.
-type GetResetContent contentTypes = Verb 'GET 205 contentTypes NoContent
+type GetResetContent contentTypes noContent = Verb 'GET 205 contentTypes noContent
 -- | 'POST' with 205 status code.
-type PostResetContent contentTypes = Verb 'POST 205 contentTypes NoContent
+type PostResetContent contentTypes noContent = Verb 'POST 205 contentTypes noContent
 -- | 'DELETE' with 205 status code.
-type DeleteResetContent contentTypes = Verb 'DELETE 205 contentTypes NoContent
+type DeleteResetContent contentTypes noContent = Verb 'DELETE 205 contentTypes noContent
 -- | 'PATCH' with 205 status code.
-type PatchResetContent contentTypes = Verb 'PATCH 205 contentTypes NoContent
+type PatchResetContent contentTypes noContent = Verb 'PATCH 205 contentTypes noContent
 -- | 'PUT' with 205 status code.
-type PutResetContent contentTypes = Verb 'PUT 205 contentTypes NoContent
+type PutResetContent contentTypes noContent = Verb 'PUT 205 contentTypes noContent
 
 
 -- ** 206 Partial Content
@@ -140,12 +142,10 @@ type PutResetContent contentTypes = Verb 'PUT 205 contentTypes NoContent
 -- RFC7233 Section 4.1>
 
 -- | 'GET' with 206 status code.
-type GetPartialContent contentTypes = Verb 'GET 205 contentTypes NoContent
-
-data NoContent = NoContent
+type GetPartialContent contentTypes noContent = Verb 'GET 206 contentTypes noContent
 
 class ReflectMethod a where
-    reflectMethod :: proxy a -> Method
+    reflectMethod :: Proxy a -> Method
 
 instance ReflectMethod 'GET where
     reflectMethod _ = methodGet
