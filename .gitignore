@@ -25,3 +25,6 @@ Setup
 .stack-work
 shell.nix
 default.nix
+tags
+TAGS
+codex.tags
