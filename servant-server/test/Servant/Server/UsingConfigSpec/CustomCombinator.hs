@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -15,22 +16,16 @@ import           Servant
 import           Servant.Server.Internal.Config
 import           Servant.Server.Internal.RoutingApplication
 
-data CustomCombinator (entryType :: *)
+data CustomCombinator (tag :: k)
 
-class ToCustomConfig entryType where
-  toCustomConfig :: entryType -> String
+instance forall subApi (c :: [*]) tag .
+  (HasServer subApi) =>
+  HasServer (CustomCombinator tag :> subApi) where
 
-instance ToCustomConfig String where
-  toCustomConfig = id
-
-instance forall subApi (c :: [*]) entryType .
-  (HasServer subApi, ToCustomConfig entryType) =>
-  HasServer (CustomCombinator entryType :> subApi) where
-
-  type ServerT (CustomCombinator entryType :> subApi) m =
+  type ServerT (CustomCombinator tag :> subApi) m =
     String -> ServerT subApi m
-  type HasCfg (CustomCombinator entryType :> subApi) c =
-    (HasConfigEntry c entryType, HasCfg subApi c)
+  type HasCfg (CustomCombinator tag :> subApi) c =
+    (HasConfigEntry c tag String, HasCfg subApi c)
 
   route Proxy config delayed =
     route subProxy config (fmap (inject config) delayed :: Delayed (Server subApi))
@@ -38,4 +33,4 @@ instance forall subApi (c :: [*]) entryType .
       subProxy :: Proxy subApi
       subProxy = Proxy
 
-      inject config f = f (toCustomConfig (getConfigEntry config :: entryType))
+      inject config f = f (getConfigEntry (Proxy :: Proxy tag) config)

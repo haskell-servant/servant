@@ -10,14 +10,17 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
 #include "overlapping-compat.h"
 
 module Servant.Server.Internal.Config where
+
+import           Data.Proxy
+import           GHC.TypeLits
 
 -- | The entire configuration.
 data Config a where
@@ -37,13 +40,20 @@ instance Eq (Config '[]) where
 instance (Eq a, Eq (Config as)) => Eq (Config (a ': as)) where
     x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
 
-class HasConfigEntry (cfg :: [*]) (val :: *) where
-    getConfigEntry :: Config cfg -> val
+newtype Tagged (tag :: Symbol) a = Tag a
+  deriving (Show, Eq)
+
+class HasConfigEntry (cfg :: [*]) tag (val :: *) where
+    getConfigEntry :: Proxy tag -> Config cfg -> val
 
 instance OVERLAPPABLE_
-         HasConfigEntry xs val => HasConfigEntry (notIt ': xs) val where
-    getConfigEntry (_ :. xs) = getConfigEntry xs
+         HasConfigEntry xs tag val => HasConfigEntry (notIt ': xs) tag val where
+    getConfigEntry proxy (_ :. xs) = getConfigEntry proxy xs
 
 instance OVERLAPPABLE_
-         HasConfigEntry (val ': xs) val where
-    getConfigEntry (x :. _) = x
+         HasConfigEntry (val ': xs) () val where
+    getConfigEntry proxy (x :. _) = x
+
+instance OVERLAPPABLE_
+         HasConfigEntry (Tagged tag val ': xs) tag val where
+    getConfigEntry proxy (Tag x :. _) = x

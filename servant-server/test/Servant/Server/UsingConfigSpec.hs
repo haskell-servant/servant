@@ -14,13 +14,8 @@ import           Servant.Server.UsingConfigSpec.CustomCombinator
 
 -- * API
 
-newtype Wrapped a = Wrap { unwrap :: a }
-
-instance ToCustomConfig (Wrapped String) where
-  toCustomConfig = unwrap
-
 type OneEntryAPI =
-  CustomCombinator String :> Get '[JSON] String
+  CustomCombinator () :> Get '[JSON] String
 
 testServer :: Server OneEntryAPI
 testServer s = return s
@@ -29,34 +24,31 @@ oneEntryApp :: Application
 oneEntryApp =
   serve (Proxy :: Proxy OneEntryAPI) config testServer
   where
-    config :: Config '[String]
-    config = "configValue" :. EmptyConfig
+    config = ("configValue" :: String) :. EmptyConfig
 
 type OneEntryTwiceAPI =
-  "foo" :> CustomCombinator String :> Get '[JSON] String :<|>
-  "bar" :> CustomCombinator String :> Get '[JSON] String
+  "foo" :> CustomCombinator () :> Get '[JSON] String :<|>
+  "bar" :> CustomCombinator () :> Get '[JSON] String
 
 oneEntryTwiceApp :: Application
 oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[String]
-    config = "configValueTwice" :. EmptyConfig
+    config = ("configValueTwice" :: String) :. EmptyConfig
 
 type TwoDifferentEntries =
-  "foo" :> CustomCombinator String :> Get '[JSON] String :<|>
-  "bar" :> CustomCombinator (Wrapped String) :> Get '[JSON] String
+  "foo" :> CustomCombinator "foo" :> Get '[JSON] String :<|>
+  "bar" :> CustomCombinator "bar" :> Get '[JSON] String
 
 twoDifferentEntries :: Application
 twoDifferentEntries = serve (Proxy :: Proxy TwoDifferentEntries) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[String, Wrapped String]
     config =
-      "firstConfigValue" :.
-      Wrap "secondConfigValue" :.
+      (Tag "firstConfigValue" :: Tagged "foo" String) :.
+      (Tag "secondConfigValue" :: Tagged "bar" String) :.
       EmptyConfig
 
 -- * tests
