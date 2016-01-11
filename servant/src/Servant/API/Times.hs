@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE PolyKinds          #-}
@@ -18,6 +19,9 @@ import           Data.Typeable (Typeable)
 import           GHC.TypeLits  -- (Symbol)
 import           Web.HttpApiData
 import qualified Data.Time.Format as T
+#if !MIN_VERSION_time(1,5,0)
+import           System.Locale as T
+#endif
 import           Data.Text (pack, Text)
 import           Data.Proxy
 import           Control.Monad ((>=>))
@@ -40,7 +44,11 @@ instance (KnownSymbol format, T.ParseTime t) => Read (FTime format t) where
         where
             res = fmap (first FTime)
                        (readParen (i > 1)
+#if !MIN_VERSION_time(1,5,0)
+                                  (T.readsTime T.defaultTimeLocale fmt)
+#else
                                   (T.readSTime False T.defaultTimeLocale fmt)
+#endif
                                   str
                         )
 
@@ -75,7 +83,11 @@ renderTime tt@(FTime t) = T.formatTime T.defaultTimeLocale (getFormat tt) t
 parseTime :: (KnownSymbol format, T.ParseTime t) => String -> Either Text (FTime format t)
 parseTime str = res
     where
+#if !MIN_VERSION_time(1,5,0)
+        res = case T.parseTime T.defaultTimeLocale fmt str of
+#else
         res = case T.parseTimeM False T.defaultTimeLocale fmt str of
+#endif
             Nothing -> Left . pack $ "Could not parse time string \"" ++ str ++ "\" with format \"" ++ fmt ++ "\""
             Just t -> Right (FTime t)
 
