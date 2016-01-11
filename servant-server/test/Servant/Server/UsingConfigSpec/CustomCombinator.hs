@@ -25,7 +25,7 @@ instance forall subApi (c :: [*]) tag .
   type ServerT (CustomCombinator tag :> subApi) m =
     String -> ServerT subApi m
   type HasCfg (CustomCombinator tag :> subApi) c =
-    (HasConfigEntry c tag String, HasCfg subApi c)
+    (HasConfigEntry c tag Char, HasCfg subApi c)
 
   route Proxy config delayed =
     route subProxy config (fmap (inject config) delayed :: Delayed (Server subApi))
@@ -33,4 +33,4 @@ instance forall subApi (c :: [*]) tag .
       subProxy :: Proxy subApi
       subProxy = Proxy
 
-      inject config f = f (getConfigEntry (Proxy :: Proxy tag) config)
+      inject config f = f [getConfigEntry (Proxy :: Proxy tag) config]

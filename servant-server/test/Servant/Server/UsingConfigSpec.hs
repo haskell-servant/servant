@@ -24,7 +24,7 @@ oneEntryApp :: Application
 oneEntryApp =
   serve (Proxy :: Proxy OneEntryAPI) config testServer
   where
-    config = ("configValue" :: String) :. EmptyConfig
+    config = 'a' :. EmptyConfig
 
 type OneEntryTwiceAPI =
   "foo" :> CustomCombinator () :> Get '[JSON] String :<|>
@@ -35,7 +35,7 @@ oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
-    config = ("configValueTwice" :: String) :. EmptyConfig
+    config = '2' :. EmptyConfig
 
 type TwoDifferentEntries =
   "foo" :> CustomCombinator "foo" :> Get '[JSON] String :<|>
@@ -47,8 +47,8 @@ twoDifferentEntries = serve (Proxy :: Proxy TwoDifferentEntries) config $
   testServer
   where
     config =
-      (Tag "firstConfigValue" :: Tagged "foo" String) :.
-      (Tag "secondConfigValue" :: Tagged "bar" String) :.
+      (Tag 'x' :: Tagged "foo" Char) :.
+      (Tag 'y' :: Tagged "bar" Char) :.
       EmptyConfig
 
 -- * tests
@@ -58,14 +58,14 @@ spec = do
   describe "using Config in a custom combinator" $ do
     with (return oneEntryApp) $ do
       it "allows to retrieve a ConfigEntry" $ do
-        get "/" `shouldRespondWith` "\"configValue\""
+        get "/" `shouldRespondWith` "\"a\""
 
     with (return oneEntryTwiceApp) $ do
       it "allows to retrieve the same ConfigEntry twice" $ do
-        get "/foo" `shouldRespondWith` "\"configValueTwice\""
-        get "/bar" `shouldRespondWith` "\"configValueTwice\""
+        get "/foo" `shouldRespondWith` "\"2\""
+        get "/bar" `shouldRespondWith` "\"2\""
 
     with (return twoDifferentEntries) $ do
       it "allows to retrieve different ConfigEntries for the same combinator" $ do
-        get "/foo" `shouldRespondWith` "\"firstConfigValue\""
-        get "/bar" `shouldRespondWith` "\"secondConfigValue\""
+        get "/foo" `shouldRespondWith` "\"x\""
+        get "/bar" `shouldRespondWith` "\"y\""
