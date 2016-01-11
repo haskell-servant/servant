@@ -2,6 +2,7 @@
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -12,6 +13,8 @@
 {-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_HADDOCK not-home       #-}
 
+#include "overlapping-compat.h"
+
 -- | A collection of basic Content-Types (also known as Internet Media
 -- Types, or MIME types). Additionally, this module provides classes that
 -- encapsulate how to serialize or deserialize values to or from
@@ -19,7 +22,7 @@
 --
 -- Content-Types are used in `ReqBody` and the method combinators:
 --
--- >>> type MyEndpoint = ReqBody '[JSON, PlainText] Book :> Get '[JSON, PlainText] :> Book
+-- >>> type MyEndpoint = ReqBody '[JSON, PlainText] Book :> Get '[JSON, PlainText] Book
 --
 -- Meaning the endpoint accepts requests of Content-Type @application/json@
 -- or @text/plain;charset-utf8@, and returns data in either one of those
@@ -53,6 +56,9 @@ module Servant.API.ContentTypes
     , MimeRender(..)
     , MimeUnrender(..)
 
+    -- * NoContent
+    , NoContent(..)
+
     -- * Internal
     , AcceptHeader(..)
     , AllCTRender(..)
@@ -62,7 +68,6 @@ module Servant.API.ContentTypes
     , AllMimeUnrender(..)
     , FromFormUrlEncoded(..)
     , ToFormUrlEncoded(..)
-    , IsNonEmpty
     , eitherDecodeLenient
     , canHandleAcceptH
     ) where
@@ -72,8 +77,7 @@ import           Control.Applicative              ((*>), (<*))
 #endif
 import           Control.Arrow                    (left)
 import           Control.Monad
-import           Data.Aeson                       (FromJSON, ToJSON, encode,
-                                                   parseJSON)
+import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
 import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
@@ -91,7 +95,7 @@ import qualified Data.Text.Encoding               as TextS
 import qualified Data.Text.Lazy                   as TextL
 import qualified Data.Text.Lazy.Encoding          as TextL
 import           Data.Typeable
-import           GHC.Exts                         (Constraint)
+import           GHC.Generics                     (Generic)
 import qualified Network.HTTP.Media               as M
 import           Network.URI                      (escapeURIString,
                                                    isUnreserved, unEscapeString)
@@ -137,7 +141,7 @@ instance Accept OctetStream where
     contentType _ = "application" M.// "octet-stream"
 
 newtype AcceptHeader = AcceptHeader BS.ByteString
-    deriving (Eq, Show)
+    deriving (Eq, Show, Read, Typeable, Generic)
 
 -- * Render (serializing)
 
@@ -159,18 +163,18 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 class Accept ctype => MimeRender ctype a where
     mimeRender  :: Proxy ctype -> a -> ByteString
 
-class (AllMimeRender list a) => AllCTRender (list :: [*]) a where
+class (AllMime list) => AllCTRender (list :: [*]) a where
     -- If the Accept header can be matched, returns (Just) a tuple of the
     -- Content-Type and response (serialization of @a@ into the appropriate
     -- mimetype).
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
-instance (AllMimeRender ctyps a, IsNonEmpty ctyps) => AllCTRender ctyps a where
+instance OVERLAPPABLE_
+         (AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
-      where pctyps = Proxy :: Proxy ctyps
+      where pctyps = Proxy :: Proxy (ct ': cts)
             amrs = allMimeRender pctyps val
             lkup = fmap (\(a,b) -> (a, (fromStrict $ M.renderHeader a, b))) amrs
-
 
 --------------------------------------------------------------------------
 -- * Unrender
@@ -199,14 +203,13 @@ instance (AllMimeRender ctyps a, IsNonEmpty ctyps) => AllCTRender ctyps a where
 class Accept ctype => MimeUnrender ctype a where
     mimeUnrender :: Proxy ctype -> ByteString -> Either String a
 
-class (IsNonEmpty list) => AllCTUnrender (list :: [*]) a where
+class AllCTUnrender (list :: [*]) a where
     handleCTypeH :: Proxy list
                  -> ByteString     -- Content-Type header
                  -> ByteString     -- Request body
                  -> Maybe (Either String a)
 
-instance ( AllMimeUnrender ctyps a, IsNonEmpty ctyps
-         ) => AllCTUnrender ctyps a where
+instance ( AllMimeUnrender ctyps a ) => AllCTUnrender ctyps a where
     handleCTypeH _ ctypeH body = M.mapContentMedia lkup (cs ctypeH)
       where lkup = allMimeUnrender (Proxy :: Proxy ctyps) body
 
@@ -235,11 +238,12 @@ class (AllMime list) => AllMimeRender (list :: [*]) a where
                   -> a                              -- value to serialize
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
-instance ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
+instance OVERLAPPABLE_ ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
     allMimeRender _ a = [(contentType pctyp, mimeRender pctyp a)]
         where pctyp = Proxy :: Proxy ctyp
 
-instance ( MimeRender ctyp a
+instance OVERLAPPABLE_
+         ( MimeRender ctyp a
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
     allMimeRender _ a = (contentType pctyp, mimeRender pctyp a)
@@ -248,8 +252,17 @@ instance ( MimeRender ctyp a
               pctyps = Proxy :: Proxy (ctyp' ': ctyps)
 
 
-instance AllMimeRender '[] a where
-    allMimeRender _ _ = []
+-- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
+-- then this would be taken care of. However there is no more specific instance
+-- between that and 'MimeRender JSON a', so we do this instead
+instance OVERLAPPING_ ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
+    allMimeRender _ _ = [(contentType pctyp, "")]
+      where pctyp = Proxy :: Proxy ctyp
+
+instance OVERLAPPING_
+         ( AllMime (ctyp ': ctyp' ': ctyps)
+         ) => AllMimeRender (ctyp ': ctyp' ': ctyps) NoContent where
+    allMimeRender p _ = zip (allMime p) (repeat "")
 
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
@@ -270,21 +283,19 @@ instance ( MimeUnrender ctyp a
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy ctyps
 
-type family IsNonEmpty (list :: [*]) :: Constraint where
-    IsNonEmpty (x ': xs)   = ()
-
-
 --------------------------------------------------------------------------
 -- * MimeRender Instances
 
 -- | `encode`
-instance ToJSON a => MimeRender JSON a where
+instance OVERLAPPABLE_
+         ToJSON a => MimeRender JSON a where
     mimeRender _ = encode
 
 -- | @encodeFormUrlEncoded . toFormUrlEncoded@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
-instance ToFormUrlEncoded a => MimeRender FormUrlEncoded a where
+instance OVERLAPPABLE_
+         ToFormUrlEncoded a => MimeRender FormUrlEncoded a where
     mimeRender _ = encodeFormUrlEncoded . toFormUrlEncoded
 
 -- | `TextL.encodeUtf8`
@@ -306,6 +317,10 @@ instance MimeRender OctetStream ByteString where
 -- | `fromStrict`
 instance MimeRender OctetStream BS.ByteString where
     mimeRender _ = fromStrict
+
+-- | A type for responses without content-body.
+data NoContent = NoContent
+  deriving (Show, Eq, Read)
 
 
 --------------------------------------------------------------------------

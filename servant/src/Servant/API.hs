@@ -29,16 +29,7 @@ module Servant.API (
 
 
   -- * Actual endpoints, distinguished by HTTP method
-  module Servant.API.Get,
-  -- | @GET@ requests
-  module Servant.API.Post,
-  -- | @POST@ requests
-  module Servant.API.Delete,
-  -- | @DELETE@ requests
-  module Servant.API.Put,
-  -- | @PUT@ requests
-  module Servant.API.Patch,
-  -- | @PATCH@ requests
+  module Servant.API.Verbs,
 
   -- * Content Types
   module Servant.API.ContentTypes,
@@ -65,17 +56,12 @@ import           Servant.API.Alternative     ((:<|>) (..))
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
-                                              MimeRender (..),
+                                              MimeRender (..), NoContent (NoContent),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
-import           Servant.API.Delete          (Delete)
-import           Servant.API.Get             (Get)
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
-import           Servant.API.Patch           (Patch)
-import           Servant.API.Post            (Post)
-import           Servant.API.Put             (Put)
 import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
@@ -89,7 +75,25 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
 import           Servant.API.Sub             ((:>))
 import           Servant.API.Times           (FTime(..), toProxy, getFormat, renderTime, parseTime)
 import           Servant.API.Vault           (Vault)
-import           Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
+import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepted,
+                                              DeleteNoContent,
+                                              DeleteNonAuthoritative, Get,
+                                              GetAccepted, GetNoContent,
+                                              GetNonAuthoritative,
+                                              GetPartialContent,
+                                              GetResetContent,
+                                              Patch,
+                                              PatchAccepted, PatchNoContent,
+                                              PatchNoContent,
+                                              PatchNonAuthoritative, Post,
+                                              PostAccepted, PostNoContent,
+                                              PostNonAuthoritative,
+                                              PostResetContent, Put,
+                                              PutAccepted, PutNoContent,
+                                              PutNoContent, PutNonAuthoritative,
+                                              ReflectMethod (reflectMethod),
+                                              Verb, StdMethod(..))
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)
-
+import           Web.HttpApiData             (FromHttpApiData (..),
+                                              ToHttpApiData (..))

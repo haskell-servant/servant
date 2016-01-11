@@ -16,6 +16,7 @@ maintainer:          alpmestan@gmail.com
 copyright:           2014 Zalora South East Asia Pte Ltd
 category:            Web
 build-type:          Simple
+extra-source-files:  include/*.h
 cabal-version:       >=1.10
 tested-with:         GHC >= 7.8
 source-repository head
@@ -28,14 +29,9 @@ library
     Servant.API.Alternative
     Servant.API.Capture
     Servant.API.ContentTypes
-    Servant.API.Delete
-    Servant.API.Get
     Servant.API.Header
     Servant.API.HttpVersion
     Servant.API.IsSecure
-    Servant.API.Patch
-    Servant.API.Post
-    Servant.API.Put
     Servant.API.QueryParam
     Servant.API.Raw
     Servant.API.RemoteHost
@@ -44,6 +40,7 @@ library
     Servant.API.Sub
     Servant.API.Times
     Servant.API.Vault
+    Servant.API.Verbs
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5
@@ -87,6 +84,7 @@ library
                   , TypeSynonymInstances
                   , UndecidableInstances
   ghc-options: -Wall
+  include-dirs: include
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -107,7 +105,6 @@ test-suite spec
     , hspec == 2.*
     , QuickCheck
     , quickcheck-instances
-    , parsec
     , servant
     , string-conversions
     , text
@@ -125,3 +122,4 @@ test-suite doctests
  buildable: True
  default-language: Haskell2010
  ghc-options: -threaded
+ include-dirs: include

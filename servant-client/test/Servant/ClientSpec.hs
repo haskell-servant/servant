@@ -6,9 +6,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances   #-}
-#endif
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE RecordWildCards        #-}
@@ -20,6 +17,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
+#include "overlapping-compat.h"
 module Servant.ClientSpec where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -92,7 +90,7 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
 type Api =
        "get" :> Get '[JSON] Person
-  :<|> "deleteEmpty" :> Delete '[] ()
+  :<|> "deleteEmpty" :> DeleteNoContent '[JSON] NoContent
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
@@ -107,14 +105,14 @@ type Api =
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
-  :<|> "deleteContentType" :> Delete '[JSON] ()
+  :<|> "deleteContentType" :> DeleteNoContent '[JSON] NoContent
 api :: Proxy Api
 api = Proxy
 
 server :: Application
 server = serve api (
        return alice
-  :<|> return ()
+  :<|> return NoContent
   :<|> (\ name -> return $ Person name 0)
   :<|> return
   :<|> (\ name -> case name of
@@ -127,7 +125,7 @@ server = serve api (
   :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
-  :<|> return ()
+  :<|> return NoContent
  )
 
 
@@ -159,11 +157,11 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     describe "Servant.API.Delete" $ do
       it "allows empty content type" $ \(_, baseUrl) -> do
         let getDeleteEmpty = getNth (Proxy :: Proxy 1) $ client api baseUrl manager
-        (left show <$> runExceptT getDeleteEmpty) `shouldReturn` Right ()
+        (left show <$> runExceptT getDeleteEmpty) `shouldReturn` Right NoContent
 
       it "allows content type" $ \(_, baseUrl) -> do
         let getDeleteContentType = getLast $ client api baseUrl manager
-        (left show <$> runExceptT getDeleteContentType) `shouldReturn` Right ()
+        (left show <$> runExceptT getDeleteContentType) `shouldReturn` Right NoContent
 
     it "Servant.API.Capture" $ \(_, baseUrl) -> do
       let getCapture = getNth (Proxy :: Proxy 2) $ client api baseUrl manager
@@ -285,7 +283,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
-  WrappedApi :: (HasServer api, Server api ~ ExceptT ServantErr IO a,
+  WrappedApi :: (HasServer (api :: *), Server api ~ ExceptT ServantErr IO a,
                  HasClient api, Client api ~ ExceptT ServantError IO ()) =>
     Proxy api -> WrappedApi
 
@@ -323,33 +321,21 @@ pathGen = fmap NonEmpty path
 class GetNth (n :: Nat) a b | n a -> b where
     getNth :: Proxy n -> a -> b
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   GetNth 0 (x :<|> y) x where
       getNth _ (x :<|> _) = x
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   (GetNth (n - 1) x y) => GetNth n (a :<|> x) y where
       getNth _ (_ :<|> x) = getNth (Proxy :: Proxy (n - 1)) x
 
 class GetLast a b | a -> b where
     getLast :: a -> b
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   (GetLast b c) => GetLast (a :<|> b) c where
       getLast (_ :<|> b) = getLast b
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
   GetLast a a where
       getLast a = a

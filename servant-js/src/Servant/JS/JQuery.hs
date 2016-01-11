@@ -6,6 +6,7 @@ import           Data.Maybe (isJust)
 import           Data.Monoid
 import qualified Data.Text as T
 import           Data.Text (Text)
+import           Data.Text.Encoding (decodeUtf8)
 import           Servant.Foreign
 import           Servant.JS.Internal
 
@@ -35,7 +36,7 @@ generateJQueryJSWith opts req = "\n" <>
  <> dataBody
  <> reqheaders
  <> "    , error: " <> onError <> "\n"
- <> "    , type: '" <> method <> "'\n"
+ <> "    , type: '" <> decodeUtf8 method <> "'\n"
  <> "    });\n"
  <> "}\n"
 

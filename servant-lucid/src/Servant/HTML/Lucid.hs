@@ -3,9 +3,8 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances  #-}
-#endif
+
+#include "overlapping-compat.h"
 
 -- | An @HTML@ empty data type with `MimeRender` instances for @lucid@'s
 -- `ToHtml` class and `Html` datatype.
@@ -28,16 +27,10 @@ data HTML deriving Typeable
 instance Accept HTML where
     contentType _ = "text" M.// "html" M./: ("charset", "utf-8")
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          ToHtml a => MimeRender HTML a where
     mimeRender _ = renderBS . toHtml
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
+instance OVERLAPPING_
          MimeRender HTML (Html a) where
     mimeRender _ = renderBS

@@ -6,7 +6,7 @@ Generate API docs for your *servant* webservice. Feel free to also take a look a
 
 ## Example
 
-See [here](https://github.com/haskell-servant/servant/tree/master/servant-docs/blob/master/example/greet.md) for the output of the following program.
+See [here](https://github.com/haskell-servant/servant/blob/master/servant-docs/example/greet.md) for the output of the following program.
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}

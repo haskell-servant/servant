@@ -23,7 +23,7 @@
 -- See example/greet.hs for an example.
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, markdown
+    HasDocs(..), docs, pretty, markdown
     -- * Generating docs with extra information
   , docsWith, docsWithIntros, docsWithOptions
   , ExtraInfo(..), extraInfo
@@ -41,8 +41,7 @@ module Servant.Docs
   , ToCapture(..)
 
   , -- * ADTs to represent an 'API'
-    Method(..)
-  , Endpoint, path, method, defEndpoint
+    Endpoint, path, method, defEndpoint
   , API, apiIntros, apiEndpoints, emptyAPI
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
@@ -53,4 +52,5 @@ module Servant.Docs
   , single
   ) where
 
-import           Servant.Docs.Internal
+import Servant.Docs.Internal
+import Servant.Docs.Internal.Pretty

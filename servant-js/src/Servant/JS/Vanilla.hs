@@ -4,6 +4,7 @@ module Servant.JS.Vanilla where
 import           Control.Lens
 import           Data.Maybe (isJust)
 import           Data.Text (Text)
+import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Text as T
 import           Data.Monoid
 import           Servant.Foreign
@@ -31,14 +32,19 @@ generateVanillaJSWith opts req = "\n" <>
     fname <> " = function(" <> argsStr <> ")\n"
  <> "{\n"
  <> "  var xhr = new XMLHttpRequest();\n"
- <> "  xhr.open('" <> method <> "', " <> url <> ", true);\n"
+ <> "  xhr.open('" <> decodeUtf8 method <> "', " <> url <> ", true);\n"
  <>    reqheaders
+ <> "  xhr.setRequestHeader(\"Accept\",\"application/json\");\n"
+ <> (if isJust (req ^. reqBody) then "  xhr.setRequestHeader(\"Content-Type\",\"application/json\");\n" else "")
  <> "  xhr.onreadystatechange = function (e) {\n"
  <> "    if (xhr.readyState == 4) {\n"
+ <> "      if (xhr.status == 204 || xhr.status == 205) {\n"
+ <> "        onSuccess();\n"
+ <> "      } else if (xhr.status >= 200 && xhr.status < 300) {\n"
  <> "        var value = JSON.parse(xhr.responseText);\n"
- <> "      if (xhr.status == 200 || xhr.status == 201) {\n"
  <> "        onSuccess(value);\n"
  <> "      } else {\n"
+ <> "        var value = JSON.parse(xhr.responseText);\n"
  <> "        onError(value);\n"
  <> "      }\n"
  <> "    }\n"

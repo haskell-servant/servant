@@ -74,7 +74,7 @@
 -- >>> safeLink api bad_link
 -- ...
 --     Could not deduce (Or
---                         (IsElem' (Delete '[JSON] ()) (Get '[JSON] Int))
+--                         (IsElem' (Verb 'DELETE 200 '[JSON] ()) (Verb 'GET 200 '[JSON] Int))
 --                         (IsElem'
 --                            ("hello" :> Delete '[JSON] ())
 --                            ("bye" :> (QueryParam "name" String :> Delete '[JSON] ()))))
@@ -103,7 +103,8 @@ module Servant.Utils.Links (
 
 import Data.List
 import Data.Proxy ( Proxy(..) )
-import Data.Text (Text, unpack)
+import qualified Data.Text as Text
+import qualified Data.ByteString.Char8 as BSC
 #if !MIN_VERSION_base(4,8,0)
 import Data.Monoid ( Monoid(..), (<>) )
 #else
@@ -118,11 +119,7 @@ import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.Header ( Header )
-import Servant.API.Get ( Get )
-import Servant.API.Post ( Post )
-import Servant.API.Put ( Put )
-import Servant.API.Patch ( Patch )
-import Servant.API.Delete ( Delete )
+import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
 import Servant.API.Alternative ( type (:<|>) )
@@ -134,6 +131,10 @@ data Link = Link
   { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
   , _queryParams :: [Param Query]
   } deriving Show
+
+instance ToHttpApiData Link where
+    toUrlPiece = Text.pack . show
+    toHeader   = BSC.pack . show
 
 -- | If either a or b produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
@@ -172,28 +173,26 @@ type family IsElem endpoint api :: Constraint where
     IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
     IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
-    IsElem (Get ct typ) (Get ct' typ)       = IsSubList ct ct'
-    IsElem (Post ct typ) (Post ct' typ)     = IsSubList ct ct'
-    IsElem (Put ct typ) (Put ct' typ)       = IsSubList ct ct'
-    IsElem (Patch ct typ) (Patch ct' typ)   = IsSubList ct ct'
-    IsElem (Delete ct typ) (Delete ct' typ) = IsSubList ct ct'
+    IsElem (Verb m s ct typ) (Verb m s ct' typ)
+                                            = IsSubList ct ct'
     IsElem e e                              = ()
     IsElem e a                              = IsElem' e a
 
-
 type family IsSubList a b :: Constraint where
     IsSubList '[] b          = ()
-    IsSubList '[x] (x ': xs) = ()
-    IsSubList '[x] (y ': ys) = IsSubList '[x] ys
-    IsSubList (x ': xs) y    = IsSubList '[x] y `And` IsSubList xs y
+    IsSubList (x ': xs) y    = Elem x y `And` IsSubList xs y
+
+type family Elem e es :: Constraint where
+    Elem x (x ': xs) = ()
+    Elem y (x ': xs) = Elem y xs
 
 -- Phantom types for Param
 data Query
 
 -- | Query param
 data Param a
-    = SingleParam    String Text
-    | ArrayElemParam String Text
+    = SingleParam    String Text.Text
+    | ArrayElemParam String Text.Text
     | FlagParam      String
   deriving Show
 
@@ -217,8 +216,8 @@ linkURI (Link segments q_params) =
         "?" <> intercalate "&" (fmap makeQuery xs)
 
     makeQuery :: Param Query -> String
-    makeQuery (ArrayElemParam k v) = escape k <> "[]=" <> escape (unpack v)
-    makeQuery (SingleParam k v)    = escape k <> "=" <> escape (unpack v)
+    makeQuery (ArrayElemParam k v) = escape k <> "[]=" <> escape (Text.unpack v)
+    makeQuery (SingleParam k v)    = escape k <> "=" <> escape (Text.unpack v)
     makeQuery (FlagParam k)        = escape k
 
 escape :: String -> String
@@ -290,31 +289,15 @@ instance (ToHttpApiData v, HasLink sub)
     type MkLink (Capture sym v :> sub) = v -> MkLink sub
     toLink _ l v =
         toLink (Proxy :: Proxy sub) $
-            addSegment (escape . unpack $ toUrlPiece v) l
+            addSegment (escape . Text.unpack $ toUrlPiece v) l
 
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
 -- Verb (terminal) instances
-instance HasLink (Get y r) where
-    type MkLink (Get y r) = URI
-    toLink _ = linkURI
-
-instance HasLink (Post y r) where
-    type MkLink (Post y r) = URI
-    toLink _ = linkURI
-
-instance HasLink (Put y r) where
-    type MkLink (Put y r) = URI
-    toLink _ = linkURI
-
-instance HasLink (Patch y r) where
-    type MkLink (Patch y r) = URI
-    toLink _ = linkURI
-
-instance HasLink (Delete y r) where
-    type MkLink (Delete y r) = URI
+instance HasLink (Verb m s ct a) where
+    type MkLink (Verb m s ct a) = URI
     toLink _ = linkURI
 
 instance HasLink Raw where

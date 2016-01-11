@@ -162,7 +162,7 @@ errorRetrySpec = describe "Handler search"
 
   it "should continue when URLs don't match" $ do
     request methodPost "" [jsonCT, jsonAccept] jsonBody
-     `shouldRespondWith` 201 { matchBody = Just $ encode (7 :: Int) }
+     `shouldRespondWith` 200 { matchBody = Just $ encode (7 :: Int) }
 
   it "should continue when methods don't match" $ do
     request methodGet "a" [jsonCT, jsonAccept] jsonBody
