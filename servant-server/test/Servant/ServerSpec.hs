@@ -333,13 +333,13 @@ headerSpec = describe "Servant.API.Header" $ do
         expectsString Nothing  = error "Expected a string"
 
     with (return (serve headerApi EmptyConfig expectsInt)) $ do
-        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"5")]
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader", "5")]
 
         it "passes the header to the handler (Int)" $
             delete' "/" "" `shouldRespondWith` 200
 
     with (return (serve headerApi EmptyConfig expectsString)) $ do
-        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"more from you")]
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader", "more from you")]
 
         it "passes the header to the handler (String)" $
             delete' "/" "" `shouldRespondWith` 200
