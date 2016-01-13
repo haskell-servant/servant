@@ -13,6 +13,12 @@ import           Test.Hspec.Wai
 import           Servant
 import           Servant.Server.UsingConfigSpec.TestCombinators
 
+spec :: Spec
+spec = do
+  spec1
+  spec2
+  spec3
+
 -- * API
 
 type OneEntryAPI =
@@ -42,8 +48,8 @@ oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
 
 -- * tests
 
-spec :: Spec
-spec = do
+spec1 :: Spec
+spec1 = do
   describe "accessing config entries from custom combinators" $ do
     with (return oneEntryApp) $ do
       it "allows retrieving a ConfigEntry" $ do
@@ -53,8 +59,6 @@ spec = do
       it "allows retrieving the same ConfigEntry twice" $ do
         get "/foo" `shouldRespondWith` "\"configEntryTwice\""
         get "/bar" `shouldRespondWith` "\"configEntryTwice\""
-
-  spec2
 
 type InjectAPI =
   InjectIntoConfig :> "untagged" :> ExtractFromConfig :>
@@ -78,8 +82,6 @@ spec2 = do
 
       it "allows to inject tagged config entries" $ do
         get "/tagged" `shouldRespondWith` "\"tagged: injected\""
-
-  spec3
 
 type SubConfigAPI =
   "foo" :> ExtractFromConfig :> Get '[JSON] String :<|>
