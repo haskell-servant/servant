@@ -21,13 +21,12 @@ import           Servant.Server.Internal.RoutingApplication
 
 data ExtractFromConfig
 
-instance forall subApi (c :: [*]) .
-  (HasServer subApi) =>
+instance (HasServer subApi) =>
   HasServer (ExtractFromConfig :> subApi) where
 
   type ServerT (ExtractFromConfig :> subApi) m =
     String -> ServerT subApi m
-  type HasCfg (ExtractFromConfig :> subApi) c =
+  type HasCfg (ExtractFromConfig :> subApi) (c :: [*]) =
     (HasConfigEntry c String, HasCfg subApi c)
 
   route Proxy config delayed =
