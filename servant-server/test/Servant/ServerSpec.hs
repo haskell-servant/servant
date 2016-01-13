@@ -220,7 +220,7 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize
 queryParamSpec :: Spec
 queryParamSpec = do
   describe "Servant.API.QueryParam" $ do
-      it "allows to retrieve simple GET parameters" $
+      it "allows retrieving simple GET parameters" $
         (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params1 = "?name=bob"
           response1 <- Network.Wai.Test.request defaultRequest{
@@ -232,7 +232,7 @@ queryParamSpec = do
               name = "bob"
              }
 
-      it "allows to retrieve lists in GET parameters" $
+      it "allows retrieving lists in GET parameters" $
         (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params2 = "?names[]=bob&names[]=john"
           response2 <- Network.Wai.Test.request defaultRequest{
@@ -246,7 +246,7 @@ queryParamSpec = do
              }
 
 
-      it "allows to retrieve value-less GET parameters" $
+      it "allows retrieving value-less GET parameters" $
         (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params3 = "?capitalize"
           response3 <- Network.Wai.Test.request defaultRequest{

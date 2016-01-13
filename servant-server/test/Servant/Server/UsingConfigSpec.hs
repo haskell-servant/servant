@@ -46,11 +46,11 @@ spec :: Spec
 spec = do
   describe "accessing config entries from custom combinators" $ do
     with (return oneEntryApp) $ do
-      it "allows to retrieve a ConfigEntry" $ do
+      it "allows retrieving a ConfigEntry" $ do
         get "/" `shouldRespondWith` "\"configEntry\""
 
     with (return oneEntryTwiceApp) $ do
-      it "allows to retrieve the same ConfigEntry twice" $ do
+      it "allows retrieving the same ConfigEntry twice" $ do
         get "/foo" `shouldRespondWith` "\"configEntryTwice\""
         get "/bar" `shouldRespondWith` "\"configEntryTwice\""
 
@@ -100,6 +100,6 @@ subConfigApp = serve (Proxy :: Proxy SubConfigAPI) config $
 spec3 :: Spec
 spec3 = do
   with (return subConfigApp) $ do
-    it "allows to retrieve different ConfigEntries for the same combinator" $ do
+    it "allows retrieving different ConfigEntries for the same combinator" $ do
       get "/foo" `shouldRespondWith` "\"firstEntry\""
       get "/bar" `shouldRespondWith` "\"secondEntry\""
