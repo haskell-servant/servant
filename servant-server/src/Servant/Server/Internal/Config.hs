@@ -4,6 +4,7 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
@@ -50,3 +51,15 @@ instance OVERLAPPABLE_
 instance OVERLAPPABLE_
          HasConfigEntry (val ': xs) val where
     getConfigEntry (x :. _) = x
+
+-- * support for subconfigs
+
+data SubConfig (name :: Symbol) (subConfig :: [*])
+  = SubConfig (Config subConfig)
+
+descendIntoSubConfig :: forall config name subConfig .
+  HasConfigEntry config (SubConfig name subConfig) =>
+  Proxy (name :: Symbol) -> Config config -> Config subConfig
+descendIntoSubConfig Proxy config =
+  let SubConfig subConfig = getConfigEntry config :: SubConfig name subConfig
+  in subConfig

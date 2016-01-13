@@ -473,3 +473,22 @@ pathIsEmpty = go . pathInfo
 
 ct_wildcard :: B.ByteString
 ct_wildcard = "*" <> "/" <> "*" -- Because CPP
+
+-- * configs
+
+instance (HasServer subApi) =>
+  HasServer (SubConfig name subConfig :> subApi) where
+
+  type ServerT (SubConfig name subConfig :> subApi) m =
+    ServerT subApi m
+  type HasCfg (SubConfig name subConfig :> subApi) config =
+    (HasConfigEntry config (SubConfig name subConfig), HasCfg subApi subConfig)
+
+  route Proxy config delayed =
+    route subProxy subConfig delayed
+    where
+      subProxy :: Proxy subApi
+      subProxy = Proxy
+
+      subConfig :: Config subConfig
+      subConfig = descendIntoSubConfig (Proxy :: Proxy name) config

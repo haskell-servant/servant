@@ -25,7 +25,8 @@ oneEntryApp :: Application
 oneEntryApp =
   serve (Proxy :: Proxy OneEntryAPI) config testServer
   where
-    config = ("configEntry" :: String) :. EmptyConfig
+    config :: Config '[String]
+    config = "configEntry" :. EmptyConfig
 
 type OneEntryTwiceAPI =
   "foo" :> ExtractFromConfig :> Get '[JSON] String :<|>
@@ -36,7 +37,8 @@ oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
-    config = ("configEntryTwice" :: String) :. EmptyConfig
+    config :: Config '[String]
+    config = "configEntryTwice" :. EmptyConfig
 
 -- * tests
 
@@ -89,10 +91,10 @@ subConfigApp = serve (Proxy :: Proxy SubConfigAPI) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[String, (Tagged "sub" (Config '[String]))]
+    config :: Config '[String, (SubConfig "sub" '[String])]
     config =
-      ("firstEntry" :: String) :.
-      (Tag (("secondEntry" :: String) :. EmptyConfig)) :.
+      "firstEntry" :.
+      (SubConfig ("secondEntry" :. EmptyConfig)) :.
       EmptyConfig
 
 spec3 :: Spec

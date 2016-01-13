@@ -25,11 +25,6 @@ spec = do
           x = getConfigEntry config :: Bool
       shouldNotTypecheck x
 
-    it "does not typecheck if tag does not exist" $ do
-      let config = (Tag 'a' :: Tagged "foo" Char) :. EmptyConfig
-          x = getConfigEntry (Proxy :: Proxy "bar") config :: Char
-      shouldNotTypecheck x
-
     context "Show instance" $ do
       let config = 'a' :. True :. EmptyConfig
       it "has a Show instance" $ do
@@ -42,3 +37,25 @@ spec = do
         it "works with operators" $ do
           let config = (1 :. 'a' :. EmptyConfig) :<|> ('b' :. True :. EmptyConfig)
           show config `shouldBe` "(1 :. 'a' :. EmptyConfig) :<|> ('b' :. True :. EmptyConfig)"
+
+  describe "descendIntoSubConfig" $ do
+    let config :: Config [Char, SubConfig "sub" '[Char]]
+        config =
+          'a' :.
+          (SubConfig subConfig :: SubConfig "sub" '[Char])
+          :. EmptyConfig
+        subConfig = 'b' :. EmptyConfig
+    it "allows to extract subconfigs" $ do
+      descendIntoSubConfig (Proxy :: Proxy "sub") config `shouldBe` subConfig
+
+    it "allows to extract entries from subconfigs" $ do
+      getConfigEntry (descendIntoSubConfig (Proxy :: Proxy "sub") config :: Config '[Char])
+        `shouldBe` 'b'
+
+    it "does not typecheck if subConfig has the wrong type" $ do
+      let x = descendIntoSubConfig (Proxy :: Proxy "sub") config :: Config '[Int]
+      shouldNotTypecheck (show x)
+
+    it "does not typecheck if subConfig with that name doesn't exist" $ do
+      let x = descendIntoSubConfig (Proxy :: Proxy "foo") config :: Config '[Char]
+      shouldNotTypecheck (show x)
