@@ -28,10 +28,6 @@ data Config a where
     (:.) :: x -> Config xs -> Config (x ': xs)
 infixr 5 :.
 
-(.:.) :: forall x xs . x -> Config xs -> Config (Tagged () x ': xs)
-x .:. xs = (Tag x :: Tagged () x) :. xs
-infixr 5 .:.
-
 instance Show (Config '[]) where
   show EmptyConfig = "EmptyConfig"
 instance (Show a, Show (Config as)) => Show (Config (a ': as)) where
@@ -44,16 +40,13 @@ instance Eq (Config '[]) where
 instance (Eq a, Eq (Config as)) => Eq (Config (a ': as)) where
     x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
 
-newtype Tagged tag a = Tag a
-  deriving (Show, Eq)
-
-class HasConfigEntry (cfg :: [*]) tag (val :: *) where
-    getConfigEntry :: Proxy tag -> Config cfg -> val
+class HasConfigEntry (cfg :: [*]) (val :: *) where
+    getConfigEntry :: Config cfg -> val
 
 instance OVERLAPPABLE_
-         HasConfigEntry xs tag val => HasConfigEntry (Tagged notItTag notIt ': xs) tag val where
-    getConfigEntry proxy (_ :. xs) = getConfigEntry proxy xs
+         HasConfigEntry xs val => HasConfigEntry (notIt ': xs) val where
+    getConfigEntry (_ :. xs) = getConfigEntry xs
 
 instance OVERLAPPABLE_
-         HasConfigEntry (Tagged tag val ': xs) tag val where
-    getConfigEntry Proxy (Tag x :. _) = x
+         HasConfigEntry (val ': xs) val where
+    getConfigEntry (x :. _) = x

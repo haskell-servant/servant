@@ -16,7 +16,7 @@ import           Servant.Server.UsingConfigSpec.TestCombinators
 -- * API
 
 type OneEntryAPI =
-  ExtractFromConfig () :> Get '[JSON] String
+  ExtractFromConfig :> Get '[JSON] String
 
 testServer :: String -> ExceptT ServantErr IO String
 testServer s = return s
@@ -25,32 +25,18 @@ oneEntryApp :: Application
 oneEntryApp =
   serve (Proxy :: Proxy OneEntryAPI) config testServer
   where
-    config = ("configEntry" :: String) .:. EmptyConfig
+    config = ("configEntry" :: String) :. EmptyConfig
 
 type OneEntryTwiceAPI =
-  "foo" :> ExtractFromConfig () :> Get '[JSON] String :<|>
-  "bar" :> ExtractFromConfig () :> Get '[JSON] String
+  "foo" :> ExtractFromConfig :> Get '[JSON] String :<|>
+  "bar" :> ExtractFromConfig :> Get '[JSON] String
 
 oneEntryTwiceApp :: Application
 oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
-    config = ("configEntryTwice" :: String) .:. EmptyConfig
-
-type TwoDifferentEntries =
-  "foo" :> ExtractFromConfig "foo" :> Get '[JSON] String :<|>
-  "bar" :> ExtractFromConfig "bar" :> Get '[JSON] String
-
-twoDifferentEntries :: Application
-twoDifferentEntries = serve (Proxy :: Proxy TwoDifferentEntries) config $
-  testServer :<|>
-  testServer
-  where
-    config =
-      (Tag "firstEntry" :: Tagged "foo" String) :.
-      (Tag "secondEntry" :: Tagged "bar" String) :.
-      EmptyConfig
+    config = ("configEntryTwice" :: String) :. EmptyConfig
 
 -- * tests
 
@@ -66,17 +52,12 @@ spec = do
         get "/foo" `shouldRespondWith` "\"configEntryTwice\""
         get "/bar" `shouldRespondWith` "\"configEntryTwice\""
 
-    with (return twoDifferentEntries) $ do
-      it "allows to retrieve different ConfigEntries for the same combinator" $ do
-        get "/foo" `shouldRespondWith` "\"firstEntry\""
-        get "/bar" `shouldRespondWith` "\"secondEntry\""
-
   spec2
 
 type InjectAPI =
-  InjectIntoConfig () :> "untagged" :> ExtractFromConfig () :>
+  InjectIntoConfig :> "untagged" :> ExtractFromConfig :>
     Get '[JSON] String :<|>
-  InjectIntoConfig "tag" :> "tagged" :> ExtractFromConfig "tag" :>
+  InjectIntoConfig :> "tagged" :> ExtractFromConfig :>
     Get '[JSON] String
 
 injectApp :: Application
@@ -99,21 +80,22 @@ spec2 = do
   spec3
 
 type SubConfigAPI =
-  "foo" :> ExtractFromConfig () :> Get '[JSON] String :<|>
-  SubConfig "sub" '[Tagged () String] :>
-    "bar" :> ExtractFromConfig () :> Get '[JSON] String
+  "foo" :> ExtractFromConfig :> Get '[JSON] String :<|>
+  SubConfig "sub" '[String] :>
+    "bar" :> ExtractFromConfig :> Get '[JSON] String
 
 subConfigApp :: Application
 subConfigApp = serve (Proxy :: Proxy SubConfigAPI) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[Tagged () String, Tagged () (Tagged "sub" (Config '[Tagged () String]))]
+    config :: Config '[String, (Tagged "sub" (Config '[String]))]
     config =
-      ("firstEntry" :: String) .:.
-      (Tag (("secondEntry") .:. EmptyConfig)) .:.
+      ("firstEntry" :: String) :.
+      (Tag (("secondEntry" :: String) :. EmptyConfig)) :.
       EmptyConfig
 
+spec3 :: Spec
 spec3 = do
   with (return subConfigApp) $ do
     it "allows to retrieve different ConfigEntries for the same combinator" $ do
