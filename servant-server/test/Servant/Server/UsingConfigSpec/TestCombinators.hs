@@ -55,3 +55,24 @@ instance (HasServer subApi) =>
       subProxy = Proxy
 
       newConfig = (Tag "injected" :: Tagged tag String) :. config
+
+data SubConfig (name :: Symbol) (subConfig :: [*])
+
+instance (HasServer subApi) =>
+  HasServer (SubConfig name subConfig :> subApi) where
+
+  type ServerT (SubConfig name subConfig :> subApi) m =
+    ServerT subApi m
+  type HasCfg (SubConfig name subConfig :> subApi) config =
+    (HasConfigEntry config () (Tagged name (Config subConfig)), HasCfg subApi subConfig)
+
+  route Proxy config delayed =
+    route subProxy subConfig delayed
+    where
+      subProxy :: Proxy subApi
+      subProxy = Proxy
+
+      subConfig :: Config subConfig
+      subConfig =
+        let Tag x = (getConfigEntry (Proxy :: Proxy ()) config) :: Tagged name (Config subConfig)
+        in x

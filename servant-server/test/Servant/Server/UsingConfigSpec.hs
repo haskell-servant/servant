@@ -5,6 +5,7 @@
 
 module Servant.Server.UsingConfigSpec where
 
+import           Control.Monad.Trans.Except
 import           Network.Wai
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.Wai
@@ -17,7 +18,7 @@ import           Servant.Server.UsingConfigSpec.TestCombinators
 type OneEntryAPI =
   ExtractFromConfig () :> Get '[JSON] String
 
-testServer :: Server OneEntryAPI
+testServer :: String -> ExceptT ServantErr IO String
 testServer s = return s
 
 oneEntryApp :: Application
@@ -94,3 +95,27 @@ spec2 = do
 
       it "allows to inject tagged config entries" $ do
         get "/tagged" `shouldRespondWith` "\"tagged: injected\""
+
+  spec3
+
+type SubConfigAPI =
+  "foo" :> ExtractFromConfig () :> Get '[JSON] String :<|>
+  SubConfig "sub" '[Tagged () String] :>
+    "bar" :> ExtractFromConfig () :> Get '[JSON] String
+
+subConfigApp :: Application
+subConfigApp = serve (Proxy :: Proxy SubConfigAPI) config $
+  testServer :<|>
+  testServer
+  where
+    config :: Config '[Tagged () String, Tagged () (Tagged "sub" (Config '[Tagged () String]))]
+    config =
+      ("firstEntry" :: String) .:.
+      (Tag (("secondEntry") .:. EmptyConfig)) .:.
+      EmptyConfig
+
+spec3 = do
+  with (return subConfigApp) $ do
+    it "allows to retrieve different ConfigEntries for the same combinator" $ do
+      get "/foo" `shouldRespondWith` "\"firstEntry\""
+      get "/bar" `shouldRespondWith` "\"secondEntry\""
