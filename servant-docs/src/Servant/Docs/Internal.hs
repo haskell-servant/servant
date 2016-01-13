@@ -707,6 +707,15 @@ instance OVERLAPPING_
           status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
+instance (KnownSymbol sym, HasDocs sublayout)
+      => HasDocs (Header sym a :> sublayout) where
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint, action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          action' = over headers (|> headername) action
+          headername = T.pack $ symbolVal (Proxy :: Proxy sym)
+
 instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sublayout)
       => HasDocs (QueryParam sym a :> sublayout) where
 
