@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- | This is a custom combinator for S.S.UsingConfigSpec. It's split up into
+-- | These are custom combinators for S.S.UsingConfigSpec. It's split up into
 -- its own module to be able to test how exactly module import work when using
 -- the config.
 module Servant.Server.UsingConfigSpec.TestCombinators where
