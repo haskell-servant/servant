@@ -18,6 +18,7 @@ spec = do
   spec1
   spec2
   spec3
+  spec4
 
 -- * API
 
@@ -105,3 +106,20 @@ spec3 = do
     it "allows retrieving different ConfigEntries for the same combinator" $ do
       get "/foo" `shouldRespondWith` "\"firstEntry\""
       get "/bar" `shouldRespondWith` "\"secondEntry\""
+
+type DescendAPI =
+  Descend "sub" '[String] (
+    ExtractFromConfig :> Get '[JSON] String)
+
+descendApp :: Application
+descendApp = serve (Proxy :: Proxy DescendAPI) config return
+  where
+    config :: Config '[SubConfig "sub" '[String]]
+    config = SubConfig ("descend" :. EmptyConfig) :. EmptyConfig
+
+spec4 :: Spec
+spec4 = do
+  with (return descendApp) $ do
+    describe "Descend" $ do
+      it "allows to descend into a subconfig for a given api" $ do
+        get "/" `shouldRespondWith` "\"descend\""
