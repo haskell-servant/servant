@@ -10,12 +10,12 @@ import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.Wai
 
 import           Servant
-import           Servant.Server.UsingConfigSpec.CustomCombinator
+import           Servant.Server.UsingConfigSpec.TestCombinators
 
 -- * API
 
 type OneEntryAPI =
-  CustomCombinator () :> Get '[JSON] String
+  ExtractFromConfig () :> Get '[JSON] String
 
 testServer :: Server OneEntryAPI
 testServer s = return s
@@ -24,22 +24,22 @@ oneEntryApp :: Application
 oneEntryApp =
   serve (Proxy :: Proxy OneEntryAPI) config testServer
   where
-    config = 'a' :. EmptyConfig
+    config = ("configEntry" :: String) :. EmptyConfig
 
 type OneEntryTwiceAPI =
-  "foo" :> CustomCombinator () :> Get '[JSON] String :<|>
-  "bar" :> CustomCombinator () :> Get '[JSON] String
+  "foo" :> ExtractFromConfig () :> Get '[JSON] String :<|>
+  "bar" :> ExtractFromConfig () :> Get '[JSON] String
 
 oneEntryTwiceApp :: Application
 oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
-    config = '2' :. EmptyConfig
+    config = ("configEntryTwice" :: String) :. EmptyConfig
 
 type TwoDifferentEntries =
-  "foo" :> CustomCombinator "foo" :> Get '[JSON] String :<|>
-  "bar" :> CustomCombinator "bar" :> Get '[JSON] String
+  "foo" :> ExtractFromConfig "foo" :> Get '[JSON] String :<|>
+  "bar" :> ExtractFromConfig "bar" :> Get '[JSON] String
 
 twoDifferentEntries :: Application
 twoDifferentEntries = serve (Proxy :: Proxy TwoDifferentEntries) config $
@@ -47,25 +47,44 @@ twoDifferentEntries = serve (Proxy :: Proxy TwoDifferentEntries) config $
   testServer
   where
     config =
-      (Tag 'x' :: Tagged "foo" Char) :.
-      (Tag 'y' :: Tagged "bar" Char) :.
+      (Tag "firstEntry" :: Tagged "foo" String) :.
+      (Tag "secondEntry" :: Tagged "bar" String) :.
       EmptyConfig
 
 -- * tests
 
 spec :: Spec
 spec = do
-  describe "using Config in a custom combinator" $ do
+  describe "accessing config entries from custom combinators" $ do
     with (return oneEntryApp) $ do
       it "allows to retrieve a ConfigEntry" $ do
-        get "/" `shouldRespondWith` "\"a\""
+        get "/" `shouldRespondWith` "\"configEntry\""
 
     with (return oneEntryTwiceApp) $ do
       it "allows to retrieve the same ConfigEntry twice" $ do
-        get "/foo" `shouldRespondWith` "\"2\""
-        get "/bar" `shouldRespondWith` "\"2\""
+        get "/foo" `shouldRespondWith` "\"configEntryTwice\""
+        get "/bar" `shouldRespondWith` "\"configEntryTwice\""
 
     with (return twoDifferentEntries) $ do
       it "allows to retrieve different ConfigEntries for the same combinator" $ do
-        get "/foo" `shouldRespondWith` "\"x\""
-        get "/bar" `shouldRespondWith` "\"y\""
+        get "/foo" `shouldRespondWith` "\"firstEntry\""
+        get "/bar" `shouldRespondWith` "\"secondEntry\""
+
+  spec2
+
+type InjectAPI =
+  InjectIntoConfig :> "somePath" :> ExtractFromConfig () :>
+    Get '[JSON] String
+
+injectApp :: Application
+injectApp = serve (Proxy :: Proxy InjectAPI) config $
+  \ s -> return s
+  where
+    config = EmptyConfig
+
+spec2 :: Spec
+spec2 = do
+  with (return injectApp) $ do
+    describe "inserting config entries with custom combinators" $ do
+      it "allows to inject config entries" $ do
+        get "/somePath" `shouldRespondWith` "\"injected\""
