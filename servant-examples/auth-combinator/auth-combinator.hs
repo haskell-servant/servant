@@ -34,8 +34,8 @@ data AuthProtected
 
 instance HasServer rest => HasServer (AuthProtected :> rest) where
   type ServerT (AuthProtected :> rest) m = ServerT rest m
-  type HasCfg (AuthProtected :> rest) config =
-    (HasConfigEntry config DBConnection, HasCfg rest config)
+  type HasConfig (AuthProtected :> rest) config =
+    (HasConfigEntry config DBConnection, HasConfig rest config)
 
   route Proxy config subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy rest) config $ addAcceptCheck subserver $ cookieCheck request

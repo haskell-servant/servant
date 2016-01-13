@@ -285,7 +285,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
 
 data WrappedApi where
   WrappedApi :: (HasServer (api :: *), Server api ~ ExceptT ServantErr IO a
-                 , HasCfg api '[], HasClient api
+                 , HasConfig api '[], HasClient api
                  , Client api ~ ExceptT ServantError IO ()) =>
     Proxy api -> WrappedApi
 

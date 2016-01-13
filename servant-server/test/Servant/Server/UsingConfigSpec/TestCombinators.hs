@@ -26,8 +26,8 @@ instance (HasServer subApi) =>
 
   type ServerT (ExtractFromConfig :> subApi) m =
     String -> ServerT subApi m
-  type HasCfg (ExtractFromConfig :> subApi) (c :: [*]) =
-    (HasConfigEntry c String, HasCfg subApi c)
+  type HasConfig (ExtractFromConfig :> subApi) (c :: [*]) =
+    (HasConfigEntry c String, HasConfig subApi c)
 
   route Proxy config delayed =
     route subProxy config (fmap (inject config) delayed :: Delayed (Server subApi))
@@ -44,8 +44,8 @@ instance (HasServer subApi) =>
 
   type ServerT (InjectIntoConfig :> subApi) m =
     ServerT subApi m
-  type HasCfg (InjectIntoConfig :> subApi) c =
-    (HasCfg subApi (String ': c))
+  type HasConfig (InjectIntoConfig :> subApi) c =
+    (HasConfig subApi (String ': c))
 
   route Proxy config delayed =
     route subProxy newConfig delayed
@@ -60,8 +60,8 @@ data Descend (name :: Symbol) (subConfig :: [*]) subApi
 instance HasServer subApi => HasServer (Descend name subConfig subApi) where
   type ServerT (Descend name subConfig subApi) m =
     ServerT subApi m
-  type HasCfg (Descend name subConfig subApi) config =
-    (HasConfigEntry config (SubConfig name subConfig), HasCfg subApi subConfig)
+  type HasConfig (Descend name subConfig subApi) config =
+    (HasConfigEntry config (SubConfig name subConfig), HasConfig subApi subConfig)
 
   route Proxy config delayed =
     route subProxy subConfig delayed

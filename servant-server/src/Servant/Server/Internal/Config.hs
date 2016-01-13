@@ -33,8 +33,8 @@ instance Eq (Config '[]) where
 instance (Eq a, Eq (Config as)) => Eq (Config (a ': as)) where
     x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
 
-class HasConfigEntry (cfg :: [*]) (val :: *) where
-    getConfigEntry :: Config cfg -> val
+class HasConfigEntry (config :: [*]) (val :: *) where
+    getConfigEntry :: Config config -> val
 
 instance OVERLAPPABLE_
          HasConfigEntry xs val => HasConfigEntry (notIt ': xs) val where

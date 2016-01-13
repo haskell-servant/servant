@@ -101,18 +101,18 @@ import           Servant.Server.Internal.Enter
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > cfg :: Config '[]
--- > cfg = EmptyConfig
+-- > config :: Config '[]
+-- > config = EmptyConfig
 -- >
 -- > app :: Application
--- > app = serve myApi cfg server
+-- > app = serve myApi config server
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: (HasCfg layout a, HasServer layout)
+serve :: (HasConfig layout a, HasServer layout)
     => Proxy layout -> Config a -> Server layout -> Application
-serve p cfg server = toApplication (runRouter (route p cfg d))
+serve p config server = toApplication (runRouter (route p config d))
   where
     d = Delayed r r r (\ _ _ -> Route server)
     r = return (Route ())
