@@ -73,12 +73,15 @@ spec = do
   spec2
 
 type InjectAPI =
-  InjectIntoConfig :> "somePath" :> ExtractFromConfig () :>
+  InjectIntoConfig () :> "untagged" :> ExtractFromConfig () :>
+    Get '[JSON] String :<|>
+  InjectIntoConfig "tag" :> "tagged" :> ExtractFromConfig "tag" :>
     Get '[JSON] String
 
 injectApp :: Application
 injectApp = serve (Proxy :: Proxy InjectAPI) config $
-  \ s -> return s
+  (\ s -> return s) :<|>
+  (\ s -> return ("tagged: " ++ s))
   where
     config = EmptyConfig
 
@@ -87,4 +90,7 @@ spec2 = do
   with (return injectApp) $ do
     describe "inserting config entries with custom combinators" $ do
       it "allows to inject config entries" $ do
-        get "/somePath" `shouldRespondWith` "\"injected\""
+        get "/untagged" `shouldRespondWith` "\"injected\""
+
+      it "allows to inject tagged config entries" $ do
+        get "/tagged" `shouldRespondWith` "\"tagged: injected\""

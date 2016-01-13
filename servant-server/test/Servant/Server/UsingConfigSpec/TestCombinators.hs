@@ -13,6 +13,8 @@
 -- the config.
 module Servant.Server.UsingConfigSpec.TestCombinators where
 
+import           GHC.TypeLits
+
 import           Servant
 import           Servant.Server.Internal.Config
 import           Servant.Server.Internal.RoutingApplication
@@ -36,14 +38,30 @@ instance forall subApi (c :: [*]) tag .
 
       inject config f = f (getConfigEntry (Proxy :: Proxy tag) config)
 
-data InjectIntoConfig
+data InjectIntoConfig (tag :: k)
 
 instance (HasServer subApi) =>
-  HasServer (InjectIntoConfig :> subApi) where
+  HasServer (InjectIntoConfig (tag :: Symbol) :> subApi) where
 
-  type ServerT (InjectIntoConfig :> subApi) m =
+  type ServerT (InjectIntoConfig tag :> subApi) m =
     ServerT subApi m
-  type HasCfg (InjectIntoConfig :> subApi) c =
+  type HasCfg (InjectIntoConfig tag :> subApi) c =
+    (HasCfg subApi (Tagged tag String ': c))
+
+  route Proxy config delayed =
+    route subProxy newConfig delayed
+    where
+      subProxy :: Proxy subApi
+      subProxy = Proxy
+
+      newConfig = (Tag "injected" :: Tagged tag String) :. config
+
+instance (HasServer subApi) =>
+  HasServer (InjectIntoConfig () :> subApi) where
+
+  type ServerT (InjectIntoConfig () :> subApi) m =
+    ServerT subApi m
+  type HasCfg (InjectIntoConfig () :> subApi) c =
     (HasCfg subApi (String ': c))
 
   route Proxy config delayed =
