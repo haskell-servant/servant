@@ -38,6 +38,7 @@ module Servant.Server
 
   -- * Config
   , Config(..)
+  , (.:.)
   , Tagged(..)
 
     -- * Default error type

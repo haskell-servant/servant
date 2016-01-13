@@ -24,7 +24,7 @@ oneEntryApp :: Application
 oneEntryApp =
   serve (Proxy :: Proxy OneEntryAPI) config testServer
   where
-    config = ("configEntry" :: String) :. EmptyConfig
+    config = ("configEntry" :: String) .:. EmptyConfig
 
 type OneEntryTwiceAPI =
   "foo" :> ExtractFromConfig () :> Get '[JSON] String :<|>
@@ -35,7 +35,7 @@ oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
-    config = ("configEntryTwice" :: String) :. EmptyConfig
+    config = ("configEntryTwice" :: String) .:. EmptyConfig
 
 type TwoDifferentEntries =
   "foo" :> ExtractFromConfig "foo" :> Get '[JSON] String :<|>

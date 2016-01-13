@@ -13,20 +13,20 @@ spec :: Spec
 spec = do
   describe "getConfigEntry" $ do
     it "gets the config if a matching one exists" $ do
-      let config = 'a' :. EmptyConfig
+      let config = 'a' .:. EmptyConfig
       getConfigEntry (Proxy :: Proxy ()) config `shouldBe` 'a'
 
     it "gets the first matching config" $ do
-      let config = 'a' :. 'b' :. EmptyConfig
+      let config = 'a' .:. 'b' .:. EmptyConfig
       getConfigEntry (Proxy :: Proxy ()) config `shouldBe` 'a'
 
     it "allows to distinguish between different config entries with the same type by tag" $ do
-      let config = 'a' :. (Tag 'b' :: Tagged "second" Char) :. EmptyConfig
+      let config = 'a' .:. (Tag 'b' :: Tagged "second" Char) :. EmptyConfig
       getConfigEntry (Proxy :: Proxy ()) config `shouldBe` 'a'
       getConfigEntry (Proxy :: Proxy "second") config `shouldBe` 'b'
 
     it "does not typecheck if type does not exist" $ do
-      let config = 'a' :. EmptyConfig
+      let config = 'a' .:. EmptyConfig
           x = getConfigEntry (Proxy :: Proxy ()) config :: Bool
       shouldNotTypecheck x
 

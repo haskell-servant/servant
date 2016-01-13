@@ -41,7 +41,7 @@ instance forall subApi (c :: [*]) tag .
 data InjectIntoConfig (tag :: k)
 
 instance (HasServer subApi) =>
-  HasServer (InjectIntoConfig (tag :: Symbol) :> subApi) where
+  HasServer (InjectIntoConfig (tag :: k) :> subApi) where
 
   type ServerT (InjectIntoConfig tag :> subApi) m =
     ServerT subApi m
@@ -55,19 +55,3 @@ instance (HasServer subApi) =>
       subProxy = Proxy
 
       newConfig = (Tag "injected" :: Tagged tag String) :. config
-
-instance (HasServer subApi) =>
-  HasServer (InjectIntoConfig () :> subApi) where
-
-  type ServerT (InjectIntoConfig () :> subApi) m =
-    ServerT subApi m
-  type HasCfg (InjectIntoConfig () :> subApi) c =
-    (HasCfg subApi (String ': c))
-
-  route Proxy config delayed =
-    route subProxy newConfig delayed
-    where
-      subProxy :: Proxy subApi
-      subProxy = Proxy
-
-      newConfig = "injected" :. config
