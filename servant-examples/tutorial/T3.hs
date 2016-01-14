@@ -81,4 +81,4 @@ server = position
         marketing clientinfo = return (emailForClient clientinfo)
 
 app :: Application
-app = serve api server
+app = serve api EmptyConfig server

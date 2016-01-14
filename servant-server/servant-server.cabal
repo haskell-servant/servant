@@ -37,6 +37,7 @@ library
     Servant
     Servant.Server
     Servant.Server.Internal
+    Servant.Server.Internal.Config
     Servant.Server.Internal.Enter
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
@@ -94,10 +95,13 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules:
+      Servant.Server.ErrorSpec
+      Servant.Server.Internal.ConfigSpec
       Servant.Server.Internal.EnterSpec
       Servant.ServerSpec
+      Servant.Server.UsingConfigSpec
+      Servant.Server.UsingConfigSpec.TestCombinators
       Servant.Utils.StaticFilesSpec
-      Servant.Server.ErrorSpec
   build-depends:
       base == 4.*
     , aeson
@@ -115,6 +119,7 @@ test-suite spec
     , servant
     , servant-server
     , string-conversions
+    , should-not-typecheck == 2.*
     , temporary
     , text
     , transformers

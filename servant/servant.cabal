@@ -41,6 +41,7 @@ library
     Servant.API.Sub
     Servant.API.Vault
     Servant.API.Verbs
+    Servant.API.WithNamedConfig
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5
