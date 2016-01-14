@@ -66,7 +66,7 @@ import           Servant.Server.Internal.ServantErr
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
 
-  route :: Proxy layout -> Delayed (Server layout) -> Router
+  route :: Proxy layout -> Delayed (ServerT layout (ExceptT ServantErr IO)) -> Router
 
 type Server layout = ServerT layout (ExceptT ServantErr IO)
 
