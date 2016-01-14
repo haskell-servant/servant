@@ -55,13 +55,15 @@ instance (HasServer subApi) =>
 
       newConfig = ("injected" :: String) :. config
 
-data Descend (name :: Symbol) (subConfig :: [*]) subApi
+data NamedConfigWithBirdface (name :: Symbol) (subConfig :: [*])
 
-instance HasServer subApi => HasServer (Descend name subConfig subApi) where
-  type ServerT (Descend name subConfig subApi) m =
+instance (HasServer subApi) =>
+  HasServer (NamedConfigWithBirdface name subConfig :> subApi) where
+
+  type ServerT (NamedConfigWithBirdface name subConfig :> subApi) m =
     ServerT subApi m
-  type HasConfig (Descend name subConfig subApi) config =
-    (HasConfigEntry config (SubConfig name subConfig), HasConfig subApi subConfig)
+  type HasConfig (NamedConfigWithBirdface name subConfig :> subApi) config =
+    (HasConfigEntry config (NamedConfig name subConfig), HasConfig subApi subConfig)
 
   route Proxy config delayed =
     route subProxy subConfig delayed
@@ -70,4 +72,4 @@ instance HasServer subApi => HasServer (Descend name subConfig subApi) where
       subProxy = Proxy
 
       subConfig :: Config subConfig
-      subConfig = descendIntoSubConfig (Proxy :: Proxy name) config
+      subConfig = descendIntoNamedConfig (Proxy :: Proxy name) config

@@ -84,42 +84,42 @@ spec2 = do
       it "allows to inject tagged config entries" $ do
         get "/tagged" `shouldRespondWith` "\"tagged: injected\""
 
-type SubConfigAPI =
+type WithBirdfaceAPI =
   "foo" :> ExtractFromConfig :> Get '[JSON] String :<|>
-  SubConfig "sub" '[String] :>
+  NamedConfigWithBirdface "sub" '[String] :>
     "bar" :> ExtractFromConfig :> Get '[JSON] String
 
-subConfigApp :: Application
-subConfigApp = serve (Proxy :: Proxy SubConfigAPI) config $
+withBirdfaceApp :: Application
+withBirdfaceApp = serve (Proxy :: Proxy WithBirdfaceAPI) config $
   testServer :<|>
   testServer
   where
-    config :: Config '[String, (SubConfig "sub" '[String])]
+    config :: Config '[String, (NamedConfig "sub" '[String])]
     config =
       "firstEntry" :.
-      (SubConfig ("secondEntry" :. EmptyConfig)) :.
+      (NamedConfig ("secondEntry" :. EmptyConfig)) :.
       EmptyConfig
 
 spec3 :: Spec
 spec3 = do
-  with (return subConfigApp) $ do
+  with (return withBirdfaceApp) $ do
     it "allows retrieving different ConfigEntries for the same combinator" $ do
       get "/foo" `shouldRespondWith` "\"firstEntry\""
       get "/bar" `shouldRespondWith` "\"secondEntry\""
 
-type DescendAPI =
-  Descend "sub" '[String] (
+type NamedConfigAPI =
+  WithNamedConfig "sub" '[String] (
     ExtractFromConfig :> Get '[JSON] String)
 
-descendApp :: Application
-descendApp = serve (Proxy :: Proxy DescendAPI) config return
+namedConfigApp :: Application
+namedConfigApp = serve (Proxy :: Proxy NamedConfigAPI) config return
   where
-    config :: Config '[SubConfig "sub" '[String]]
-    config = SubConfig ("descend" :. EmptyConfig) :. EmptyConfig
+    config :: Config '[NamedConfig "sub" '[String]]
+    config = NamedConfig ("descend" :. EmptyConfig) :. EmptyConfig
 
 spec4 :: Spec
 spec4 = do
-  with (return descendApp) $ do
-    describe "Descend" $ do
+  with (return namedConfigApp) $ do
+    describe "WithNamedConfig" $ do
       it "allows to descend into a subconfig for a given api" $ do
         get "/" `shouldRespondWith` "\"descend\""

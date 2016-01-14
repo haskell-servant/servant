@@ -38,7 +38,8 @@ module Servant.Server
 
   -- * Config
   , Config(..)
-  , SubConfig(..)
+  , NamedConfig(..)
+  , WithNamedConfig(..)
 
     -- * Default error type
   , ServantErr(..)

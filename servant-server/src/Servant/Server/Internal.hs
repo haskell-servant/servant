@@ -33,7 +33,7 @@ import           Data.String.Conversions    (cs, (<>))
 import           Data.Text                  (Text)
 import           Data.Typeable
 import           GHC.Exts                   (Constraint)
-import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
+import           GHC.TypeLits               (Symbol, KnownNat, KnownSymbol, natVal,
                                              symbolVal)
 import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
 import           Network.Socket             (SockAddr)
@@ -476,13 +476,13 @@ ct_wildcard = "*" <> "/" <> "*" -- Because CPP
 
 -- * configs
 
-instance (HasServer subApi) =>
-  HasServer (SubConfig name subConfig :> subApi) where
+data WithNamedConfig (name :: Symbol) (subConfig :: [*]) subApi
 
-  type ServerT (SubConfig name subConfig :> subApi) m =
+instance HasServer subApi => HasServer (WithNamedConfig name subConfig subApi) where
+  type ServerT (WithNamedConfig name subConfig subApi) m =
     ServerT subApi m
-  type HasConfig (SubConfig name subConfig :> subApi) config =
-    (HasConfigEntry config (SubConfig name subConfig), HasConfig subApi subConfig)
+  type HasConfig (WithNamedConfig name subConfig subApi) config =
+    (HasConfigEntry config (NamedConfig name subConfig), HasConfig subApi subConfig)
 
   route Proxy config delayed =
     route subProxy subConfig delayed
@@ -491,4 +491,4 @@ instance (HasServer subApi) =>
       subProxy = Proxy
 
       subConfig :: Config subConfig
-      subConfig = descendIntoSubConfig (Proxy :: Proxy name) config
+      subConfig = descendIntoNamedConfig (Proxy :: Proxy name) config

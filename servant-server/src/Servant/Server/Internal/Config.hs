@@ -44,14 +44,14 @@ instance OVERLAPPING_
          HasConfigEntry (val ': xs) val where
     getConfigEntry (x :. _) = x
 
--- * support for subconfigs
+-- * support for named subconfigs
 
-data SubConfig (name :: Symbol) (subConfig :: [*])
-  = SubConfig (Config subConfig)
+data NamedConfig (name :: Symbol) (subConfig :: [*])
+  = NamedConfig (Config subConfig)
 
-descendIntoSubConfig :: forall config name subConfig .
-  HasConfigEntry config (SubConfig name subConfig) =>
+descendIntoNamedConfig :: forall config name subConfig .
+  HasConfigEntry config (NamedConfig name subConfig) =>
   Proxy (name :: Symbol) -> Config config -> Config subConfig
-descendIntoSubConfig Proxy config =
-  let SubConfig subConfig = getConfigEntry config :: SubConfig name subConfig
+descendIntoNamedConfig Proxy config =
+  let NamedConfig subConfig = getConfigEntry config :: NamedConfig name subConfig
   in subConfig
