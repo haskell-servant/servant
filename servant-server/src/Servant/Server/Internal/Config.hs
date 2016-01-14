@@ -40,7 +40,7 @@ instance OVERLAPPABLE_
          HasConfigEntry xs val => HasConfigEntry (notIt ': xs) val where
     getConfigEntry (_ :. xs) = getConfigEntry xs
 
-instance OVERLAPPABLE_
+instance OVERLAPPING_
          HasConfigEntry (val ': xs) val where
     getConfigEntry (x :. _) = x
 
