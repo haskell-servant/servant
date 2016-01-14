@@ -18,8 +18,7 @@ cabal-version:       >=1.10
 
 flag example
   description: Build the example too
-  manual: True
-  default: False
+  default: True
 
 library
   exposed-modules:
