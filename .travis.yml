@@ -25,7 +25,7 @@ install:
   - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
 
 script:
-  - for package in $(cat sources.txt); do (cd $package && tinc && cabal configure --enable-tests --disable-optimization && cabal build && cabal test) || exit 1; done
+  - for package in $(cat sources.txt); do (echo testing $package && cd $package && tinc && cabal configure --enable-tests --disable-optimization && cabal build && cabal test) || exit 1; done
 
 cache:
   directories:

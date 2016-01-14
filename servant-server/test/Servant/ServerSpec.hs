@@ -47,7 +47,7 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.Server             (ServantErr (..), Server, err404,
-                                             serve)
+                                             serve, Config(EmptyConfig))
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
@@ -101,7 +101,7 @@ verbSpec = describe "Servant.API.Verb" $ do
       wrongMethod m = if m == methodPatch then methodPost else methodPatch
       test desc api method (status :: Int) = context desc $
 
-        with (return $ serve api server) $ do
+        with (return $ serve api EmptyConfig server) $ do
 
           -- HEAD and 214/215 need not return bodies
           unless (status `elem` [214, 215] || method == methodHead) $
@@ -176,7 +176,7 @@ captureServer legs = case legs of
 captureSpec :: Spec
 captureSpec = do
   describe "Servant.API.Capture" $ do
-    with (return (serve captureApi captureServer)) $ do
+    with (return (serve captureApi EmptyConfig captureServer)) $ do
 
       it "can capture parts of the 'pathInfo'" $ do
         response <- get "/2"
@@ -187,6 +187,7 @@ captureSpec = do
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))
+        EmptyConfig
         (\ "captured" request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
@@ -219,8 +220,8 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize
 queryParamSpec :: Spec
 queryParamSpec = do
   describe "Servant.API.QueryParam" $ do
-      it "allows to retrieve simple GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
+      it "allows retrieving simple GET parameters" $
+        (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params1 = "?name=bob"
           response1 <- Network.Wai.Test.request defaultRequest{
             rawQueryString = params1,
@@ -231,8 +232,8 @@ queryParamSpec = do
               name = "bob"
              }
 
-      it "allows to retrieve lists in GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
+      it "allows retrieving lists in GET parameters" $
+        (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params2 = "?names[]=bob&names[]=john"
           response2 <- Network.Wai.Test.request defaultRequest{
             rawQueryString = params2,
@@ -245,8 +246,8 @@ queryParamSpec = do
              }
 
 
-      it "allows to retrieve value-less GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
+      it "allows retrieving value-less GET parameters" $
+        (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params3 = "?capitalize"
           response3 <- Network.Wai.Test.request defaultRequest{
             rawQueryString = params3,
@@ -298,7 +299,7 @@ reqBodySpec = describe "Servant.API.ReqBody" $ do
       mkReq method x = Test.Hspec.Wai.request method x
          [(hContentType, "application/json;charset=utf-8")]
 
-  with (return $ serve reqBodyApi server) $ do
+  with (return $ serve reqBodyApi EmptyConfig server) $ do
 
     it "passes the argument to the handler" $ do
       response <- mkReq methodPost "" (encode alice)
@@ -331,13 +332,13 @@ headerSpec = describe "Servant.API.Header" $ do
         expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
         expectsString Nothing  = error "Expected a string"
 
-    with (return (serve headerApi expectsInt)) $ do
+    with (return (serve headerApi EmptyConfig expectsInt)) $ do
         let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader", "5")]
 
         it "passes the header to the handler (Int)" $
             delete' "/" "" `shouldRespondWith` 200
 
-    with (return (serve headerApi expectsString)) $ do
+    with (return (serve headerApi EmptyConfig expectsString)) $ do
         let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader", "more from you")]
 
         it "passes the header to the handler (String)" $
@@ -361,7 +362,7 @@ rawSpec :: Spec
 rawSpec = do
   describe "Servant.API.Raw" $ do
     it "runs applications" $ do
-      (flip runSession) (serve rawApi (rawApplication (const (42 :: Integer)))) $ do
+      (flip runSession) (serve rawApi EmptyConfig (rawApplication (const (42 :: Integer)))) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo"]
          }
@@ -369,7 +370,7 @@ rawSpec = do
           simpleBody response `shouldBe` "42"
 
     it "gets the pathInfo modified" $ do
-      (flip runSession) (serve rawApi (rawApplication pathInfo)) $ do
+      (flip runSession) (serve rawApi EmptyConfig (rawApplication pathInfo)) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo", "bar"]
          }
@@ -403,7 +404,7 @@ alternativeServer =
 alternativeSpec :: Spec
 alternativeSpec = do
   describe "Servant.API.Alternative" $ do
-    with (return $ serve alternativeApi alternativeServer) $ do
+    with (return $ serve alternativeApi EmptyConfig alternativeServer) $ do
 
       it "unions endpoints" $ do
         response <- get "/foo"
@@ -438,7 +439,7 @@ responseHeadersServer = let h = return $ addHeader 5 $ addHeader "kilroy" "hi"
 
 responseHeadersSpec :: Spec
 responseHeadersSpec = describe "ResponseHeaders" $ do
-  with (return $ serve (Proxy :: Proxy ResponseHeadersApi) responseHeadersServer) $ do
+  with (return $ serve (Proxy :: Proxy ResponseHeadersApi) EmptyConfig responseHeadersServer) $ do
 
     let methods = [methodGet, methodPost, methodPut, methodPatch]
 
@@ -504,7 +505,7 @@ miscServ = versionHandler
         hostHandler = return . show
 
 miscCombinatorSpec :: Spec
-miscCombinatorSpec = with (return $ serve miscApi miscServ) $
+miscCombinatorSpec = with (return $ serve miscApi EmptyConfig miscServ) $
   describe "Misc. combinators for request inspection" $ do
     it "Successfully gets the HTTP version specified in the request" $
       go "/version" "\"HTTP/1.0\""

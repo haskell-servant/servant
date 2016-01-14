@@ -102,4 +102,4 @@ writeJSFiles = do
   TIO.writeFile "tutorial/t9/jq.js" jq
 
 app :: Application
-app = serve api' server'
+app = serve api' EmptyConfig server'

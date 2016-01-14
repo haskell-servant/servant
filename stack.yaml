@@ -16,4 +16,5 @@ packages:
 extra-deps:
 - engine-io-wai-1.0.2
 - control-monad-omega-0.3.1
+- should-not-typecheck-2.0.1
 resolver: nightly-2015-10-08
