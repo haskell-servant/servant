@@ -73,9 +73,9 @@ spec = describe "Servant.Docs" $ do
     it "mentions status codes" $ do
       md `shouldContain` "Status code 200"
 
-    it "mentions methods" $ do
-      md `shouldContain` "POST"
-      md `shouldContain` "GET"
+    it "has methods as section headers" $ do
+      md `shouldContain` "## POST"
+      md `shouldContain` "## GET"
 
     it "mentions headers" $ do
       md `shouldContain` "- This endpoint is sensitive to the value of the **X-Test** HTTP header."

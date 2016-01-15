@@ -27,6 +27,7 @@ import           Control.Lens               (makeLenses, over, traversed, (%~),
 import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
+import qualified Data.ByteString.Char8      as BSC
 import qualified Data.CaseInsensitive       as CI
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
@@ -522,7 +523,7 @@ markdown api = unlines $
           responseStr (action ^. response) ++
           []
 
-          where str = "## " ++ show (endpoint^.method)
+          where str = "## " ++ BSC.unpack (endpoint^.method)
                     ++ " " ++ showPath (endpoint^.path)
 
         introsStr :: [DocIntro] -> [String]
