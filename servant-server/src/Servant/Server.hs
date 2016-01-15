@@ -63,7 +63,7 @@ module Servant.Server
   , err415
   , err416
   , err417
-   -- * 5XX
+   -- ** 5XX
   , err500
   , err501
   , err502
