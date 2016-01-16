@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                        #-}
+{-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -53,7 +54,8 @@ import           Servant.API                 ((:<|>) (..), (:>), AuthProtect, Ba
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,
-                                              Raw, RemoteHost, ReqBody, Vault)
+                                              Raw, RemoteHost, ReqBody, Vault,
+                                              WithNamedConfig)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..),
@@ -71,9 +73,9 @@ import           Servant.Server.Internal.ServantErr
 
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
-  type HasCfg layout (c :: [*]) :: Constraint
+  type HasConfig layout (c :: [*]) :: Constraint
 
-  route :: HasCfg layout a => Proxy layout -> Config a -> Delayed (Server layout) -> Router
+  route :: HasConfig layout a => Proxy layout -> Config a -> Delayed (Server layout) -> Router
 
 type Server layout = ServerT layout (ExceptT ServantErr IO)
 
@@ -93,10 +95,10 @@ type Server layout = ServerT layout (ExceptT ServantErr IO)
 instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
 
   type ServerT (a :<|> b) m = ServerT a m :<|> ServerT b m
-  type HasCfg (a :<|> b) c = (HasCfg a c, HasCfg b c)
+  type HasConfig (a :<|> b) c = (HasConfig a c, HasConfig b c)
 
-  route Proxy cfg server = choice (route pa cfg ((\ (a :<|> _) -> a) <$> server))
-                                  (route pb cfg ((\ (_ :<|> b) -> b) <$> server))
+  route Proxy config server = choice (route pa config ((\ (a :<|> _) -> a) <$> server))
+                                     (route pb config ((\ (_ :<|> b) -> b) <$> server))
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b
 
@@ -125,12 +127,12 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
 
   type ServerT (Capture capture a :> sublayout) m =
      a -> ServerT sublayout m
-  type HasCfg (Capture capture a :> sublayout) c = (HasCfg sublayout c)
+  type HasConfig (Capture capture a :> sublayout) c = (HasConfig sublayout c)
 
-  route Proxy cfg d =
+  route Proxy config d =
     DynamicRouter $ \ first ->
         route (Proxy :: Proxy sublayout)
-              cfg
+              config
               (addCapture d $ case captured captureProxy first of
                  Nothing -> return $ Fail err404
                  Just v  -> return $ Route v
@@ -202,7 +204,7 @@ instance OVERLAPPABLE_
          ) => HasServer (Verb method status ctypes a) where
 
   type ServerT (Verb method status ctypes a) m = m a
-  type HasCfg (Verb method status ctypes a) c = ()
+  type HasConfig (Verb method status ctypes a) c = ()
 
   route Proxy _ = methodRouter method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
@@ -214,7 +216,7 @@ instance OVERLAPPING_
          ) => HasServer (Verb method status ctypes (Headers h a)) where
 
   type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
-  type HasCfg (Verb method status ctypes (Headers h a)) c = ()
+  type HasConfig (Verb method status ctypes (Headers h a)) c = ()
 
   route Proxy _ = methodRouterHeaders method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
@@ -245,11 +247,11 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   type ServerT (Header sym a :> sublayout) m =
     Maybe a -> ServerT sublayout m
-  type HasCfg (Header sym a :> sublayout) c = HasCfg sublayout c
+  type HasConfig (Header sym a :> sublayout) c = HasConfig sublayout c
 
-  route Proxy cfg subserver = WithRequest $ \ request ->
+  route Proxy config subserver = WithRequest $ \ request ->
     let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
-    in  route (Proxy :: Proxy sublayout) cfg (passToServer subserver mheader)
+    in  route (Proxy :: Proxy sublayout) config (passToServer subserver mheader)
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
@@ -278,9 +280,9 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   type ServerT (QueryParam sym a :> sublayout) m =
     Maybe a -> ServerT sublayout m
-  type HasCfg (QueryParam sym a :> sublayout) c = HasCfg sublayout c
+  type HasConfig (QueryParam sym a :> sublayout) c = HasConfig sublayout c
 
-  route Proxy cfg subserver = WithRequest $ \ request ->
+  route Proxy config subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
         param =
           case lookup paramname querytext of
@@ -288,7 +290,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
             Just Nothing  -> Nothing -- param present with no value -> Nothing
             Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                         -- the right type
-    in route (Proxy :: Proxy sublayout) cfg (passToServer subserver param)
+    in route (Proxy :: Proxy sublayout) config (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -315,16 +317,16 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   type ServerT (QueryParams sym a :> sublayout) m =
     [a] -> ServerT sublayout m
-  type HasCfg (QueryParams sym a :> sublayout) c = HasCfg sublayout c
+  type HasConfig (QueryParams sym a :> sublayout) c = HasConfig sublayout c
 
-  route Proxy cfg subserver = WithRequest $ \ request ->
+  route Proxy config subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
         -- if sym is "foo", we look for query string parameters
         -- named "foo" or "foo[]" and call parseQueryParam on the
         -- corresponding values
         parameters = filter looksLikeParam querytext
         values = mapMaybe (convert . snd) parameters
-    in  route (Proxy :: Proxy sublayout) cfg (passToServer subserver values)
+    in  route (Proxy :: Proxy sublayout) config (passToServer subserver values)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
@@ -347,15 +349,15 @@ instance (KnownSymbol sym, HasServer sublayout)
 
   type ServerT (QueryFlag sym :> sublayout) m =
     Bool -> ServerT sublayout m
-  type HasCfg (QueryFlag sym :> sublayout) c = HasCfg sublayout c
+  type HasConfig (QueryFlag sym :> sublayout) c = HasConfig sublayout c
 
-  route Proxy cfg subserver = WithRequest $ \ request ->
+  route Proxy config subserver = WithRequest $ \ request ->
     let querytext = parseQueryText $ rawQueryString request
         param = case lookup paramname querytext of
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value
           Nothing       -> False -- param not in the query string
-    in  route (Proxy :: Proxy sublayout) cfg (passToServer subserver param)
+    in  route (Proxy :: Proxy sublayout) config (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
@@ -371,7 +373,7 @@ instance (KnownSymbol sym, HasServer sublayout)
 instance HasServer Raw where
 
   type ServerT Raw m = Application
-  type HasCfg Raw c = ()
+  type HasConfig Raw c = ()
 
   route Proxy _ rawApplication = LeafRouter $ \ request respond -> do
     r <- runDelayed rawApplication
@@ -406,10 +408,10 @@ instance ( AllCTUnrender list a, HasServer sublayout
 
   type ServerT (ReqBody list a :> sublayout) m =
     a -> ServerT sublayout m
-  type HasCfg (ReqBody list a :> sublayout) c = HasCfg sublayout c
+  type HasConfig (ReqBody list a :> sublayout) c = HasConfig sublayout c
 
-  route Proxy cfg subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy sublayout) cfg (addBodyCheck subserver (bodyCheck request))
+  route Proxy config subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy sublayout) config (addBodyCheck subserver (bodyCheck request))
     where
       bodyCheck request = do
         -- See HTTP RFC 2616, section 7.2.1
@@ -430,67 +432,67 @@ instance ( AllCTUnrender list a, HasServer sublayout
 instance (KnownSymbol path, HasServer sublayout) => HasServer (path :> sublayout) where
 
   type ServerT (path :> sublayout) m = ServerT sublayout m
-  type HasCfg (path :> sublayout) c = HasCfg sublayout c
+  type HasConfig (path :> sublayout) c = HasConfig sublayout c
 
-  route Proxy cfg subserver = StaticRouter $
+  route Proxy config subserver = StaticRouter $
     M.singleton (cs (symbolVal proxyPath))
-                (route (Proxy :: Proxy sublayout) cfg subserver)
+                (route (Proxy :: Proxy sublayout) config subserver)
     where proxyPath = Proxy :: Proxy path
 
 instance HasServer api => HasServer (RemoteHost :> api) where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
-  type HasCfg (RemoteHost :> api) c = HasCfg api c
+  type HasConfig (RemoteHost :> api) c = HasConfig api c
 
-  route Proxy cfg subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) cfg (passToServer subserver $ remoteHost req)
+  route Proxy config subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) config (passToServer subserver $ remoteHost req)
 
 instance HasServer api => HasServer (IsSecure :> api) where
   type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
-  type HasCfg (IsSecure :> api) c = HasCfg api c
+  type HasConfig (IsSecure :> api) c = HasConfig api c
 
-  route Proxy cfg subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) cfg (passToServer subserver $ secure req)
+  route Proxy config subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) config (passToServer subserver $ secure req)
 
     where secure req = if isSecure req then Secure else NotSecure
 
 instance HasServer api => HasServer (Vault :> api) where
   type ServerT (Vault :> api) m = Vault -> ServerT api m
-  type HasCfg (Vault :> api) c = HasCfg api c
+  type HasConfig (Vault :> api) c = HasConfig api c
 
-  route Proxy cfg subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) cfg (passToServer subserver $ vault req)
+  route Proxy config subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) config (passToServer subserver $ vault req)
 
 instance HasServer api => HasServer (HttpVersion :> api) where
   type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
-  type HasCfg (HttpVersion :> api) c = HasCfg api c
+  type HasConfig (HttpVersion :> api) c = HasConfig api c
 
-  route Proxy cfg subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) cfg (passToServer subserver $ httpVersion req)
+  route Proxy config subserver = WithRequest $ \req ->
+    route (Proxy :: Proxy api) config (passToServer subserver $ httpVersion req)
 
 -- | Basic Authentication
 instance (KnownSymbol realm, HasServer api)
     => HasServer (BasicAuth tag realm usr :> api) where
   type ServerT (BasicAuth tag realm usr :> api) m = usr -> ServerT api m
-  type HasCfg (BasicAuth tag realm usr :> api) c
-    = (HasConfigEntry c tag (BasicAuthCheck usr), HasCfg api c)
+  type HasConfig (BasicAuth tag realm usr :> api) c
+    = (HasConfigEntry c (BasicAuthCheck usr), HasConfig api c)
 
-  route Proxy cfg subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy api) cfg (subserver `addAuthCheck` authCheck request)
+  route Proxy config subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)
     where
        realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
-       baCfg = getConfigEntry (Proxy :: Proxy tag) cfg
-       authCheck req = runBasicAuth req realm baCfg
+       basicAuthConfig = getConfigEntry config
+       authCheck req = runBasicAuth req realm basicAuthConfig
 
 -- | General Authentication
 instance HasServer api => HasServer (AuthProtect tag :> api) where
   type ServerT (AuthProtect tag :> api) m = AuthReturnType (AuthProtect tag) -> ServerT api m
-  type HasCfg (AuthProtect tag :> api) c
-    = (HasConfigEntry c tag (AuthHandler Request (AuthReturnType (AuthProtect tag))), HasCfg api c)
+  type HasConfig (AuthProtect tag :> api) c
+    = (HasConfigEntry c (AuthHandler Request (AuthReturnType (AuthProtect tag))), HasConfig api c)
 
-  route Proxy cfg subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy api) cfg (subserver `addAuthCheck` authCheck request)
+  route Proxy config subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)
       where
-        authHandler = unAuthHandler (getConfigEntry (Proxy :: Proxy tag) cfg)
+        authHandler = unAuthHandler (getConfigEntry config)
         authCheck = fmap (either FailFatal Route) . runExceptT . authHandler
 
 pathIsEmpty :: Request -> Bool
@@ -501,3 +503,20 @@ pathIsEmpty = go . pathInfo
 
 ct_wildcard :: B.ByteString
 ct_wildcard = "*" <> "/" <> "*" -- Because CPP
+
+-- * configs
+
+instance HasServer subApi => HasServer (WithNamedConfig name subConfig subApi) where
+  type ServerT (WithNamedConfig name subConfig subApi) m =
+    ServerT subApi m
+  type HasConfig (WithNamedConfig name subConfig subApi) config =
+    (HasConfigEntry config (NamedConfig name subConfig), HasConfig subApi subConfig)
+
+  route Proxy config delayed =
+    route subProxy subConfig delayed
+    where
+      subProxy :: Proxy subApi
+      subProxy = Proxy
+
+      subConfig :: Config subConfig
+      subConfig = descendIntoNamedConfig (Proxy :: Proxy name) config

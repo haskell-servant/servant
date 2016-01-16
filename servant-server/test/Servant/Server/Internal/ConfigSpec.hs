@@ -11,42 +11,51 @@ import           Servant.Server.Internal.Config
 
 spec :: Spec
 spec = do
-  getConfigEntrySpec
+  describe "getConfigEntry" $ do
+    it "gets the config if a matching one exists" $ do
+      let config = 'a' :. EmptyConfig
+      getConfigEntry config `shouldBe` 'a'
 
-getConfigEntrySpec :: Spec
-getConfigEntrySpec = describe "getConfigEntry" $ do
+    it "gets the first matching config" $ do
+      let config = 'a' :. 'b' :. EmptyConfig
+      getConfigEntry config `shouldBe` 'a'
 
-  let cfg1 = 0 .:. EmptyConfig :: Config '[ConfigEntry "a" Int]
-      cfg2 = 1 .:. cfg1 :: Config '[ConfigEntry "a" Int, ConfigEntry "a" Int]
+    it "does not typecheck if type does not exist" $ do
+      let config = 'a' :. EmptyConfig
+          x = getConfigEntry config :: Bool
+      shouldNotTypecheck x
 
-  it "gets the config if a matching one exists" $ do
+    context "Show instance" $ do
+      let config = 'a' :. True :. EmptyConfig
+      it "has a Show instance" $ do
+        show config `shouldBe` "'a' :. True :. EmptyConfig"
 
-    getConfigEntry (Proxy :: Proxy "a") cfg1 `shouldBe` 0
+      context "bracketing" $ do
+        it "works" $ do
+          show (Just config) `shouldBe` "Just ('a' :. True :. EmptyConfig)"
 
-  it "gets the first matching config" $ do
+        it "works with operators" $ do
+          let config = (1 :. 'a' :. EmptyConfig) :<|> ('b' :. True :. EmptyConfig)
+          show config `shouldBe` "(1 :. 'a' :. EmptyConfig) :<|> ('b' :. True :. EmptyConfig)"
 
-    getConfigEntry (Proxy :: Proxy "a") cfg2 `shouldBe` 1
+  describe "descendIntoNamedConfig" $ do
+    let config :: Config [Char, NamedConfig "sub" '[Char]]
+        config =
+          'a' :.
+          (NamedConfig subConfig :: NamedConfig "sub" '[Char])
+          :. EmptyConfig
+        subConfig = 'b' :. EmptyConfig
+    it "allows extracting subconfigs" $ do
+      descendIntoNamedConfig (Proxy :: Proxy "sub") config `shouldBe` subConfig
 
-  it "allows to distinguish between different config entries with the same type by tag" $ do
-    let cfg = 'a' .:. 'b' .:. EmptyConfig :: Config '[ConfigEntry 1 Char, ConfigEntry 2 Char]
-    getConfigEntry (Proxy :: Proxy 1) cfg `shouldBe` 'a'
+    it "allows extracting entries from subconfigs" $ do
+      getConfigEntry (descendIntoNamedConfig (Proxy :: Proxy "sub") config :: Config '[Char])
+        `shouldBe` 'b'
 
-  context "Show instance" $ do
-    let cfg = 1 .:. 2 .:. EmptyConfig
-    it "has a Show instance" $ do
-      show cfg `shouldBe` "1 .:. 2 .:. EmptyConfig"
+    it "does not typecheck if subConfig has the wrong type" $ do
+      let x = descendIntoNamedConfig (Proxy :: Proxy "sub") config :: Config '[Int]
+      shouldNotTypecheck (show x)
 
-    it "bracketing works" $ do
-      show (Just cfg) `shouldBe` "Just (1 .:. 2 .:. EmptyConfig)"
-
-    it "bracketing works with operators" $ do
-      let cfg = (1 .:. 'a' .:. EmptyConfig) :<|> ('b' .:. True .:. EmptyConfig)
-      show cfg `shouldBe` "(1 .:. 'a' .:. EmptyConfig) :<|> ('b' .:. True .:. EmptyConfig)"
-
-  it "does not typecheck if key does not exist" $ do
-    let x = getConfigEntry (Proxy :: Proxy "b") cfg1 :: Int
-    shouldNotTypecheck x
-
-  it "does not typecheck if key maps to a different type" $ do
-    let x = getConfigEntry (Proxy :: Proxy "a") cfg1 :: String
-    shouldNotTypecheck x
+    it "does not typecheck if subConfig with that name doesn't exist" $ do
+      let x = descendIntoNamedConfig (Proxy :: Proxy "foo") config :: Config '[Char]
+      shouldNotTypecheck (show x)

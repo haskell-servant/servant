@@ -23,6 +23,8 @@ module Servant.API (
   -- | Is the request made through HTTPS?
   module Servant.API.Vault,
   -- | Access the location for arbitrary data to be shared by applications and middleware
+  module Servant.API.WithNamedConfig,
+  -- | Access config entries in combinators in servant-server
 
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Verbs,
@@ -92,6 +94,7 @@ import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepte
                                               PutNoContent, PutNonAuthoritative,
                                               ReflectMethod (reflectMethod),
                                               Verb, StdMethod(..))
+import           Servant.API.WithNamedConfig (WithNamedConfig)
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)
 import           Web.HttpApiData             (FromHttpApiData (..),

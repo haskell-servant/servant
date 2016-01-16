@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -35,11 +36,6 @@ module Servant.Server
   , generalizeNat
   , tweakResponse
 
-  -- * Config
-  , ConfigEntry(..)
-  , Config(..)
-  , (.:.)
-
   -- * General Authentication
   , AuthHandler(unAuthHandler)
   , AuthReturnType
@@ -48,6 +44,10 @@ module Servant.Server
   -- * Basic Authentication
   , BasicAuthCheck(BasicAuthCheck, unBasicAuthCheck)
   , BasicAuthResult(..)
+
+  -- * Config
+  , Config(..)
+  , NamedConfig(..)
 
     -- * Default error type
   , ServantErr(..)
@@ -77,7 +77,7 @@ module Servant.Server
   , err415
   , err416
   , err417
-   -- * 5XX
+   -- ** 5XX
   , err500
   , err501
   , err502
@@ -110,18 +110,18 @@ import           Servant.Server.Internal.Enter
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > cfg :: Config '[]
--- > cfg = EmptyConfig
+-- > config :: Config '[]
+-- > config = EmptyConfig
 -- >
 -- > app :: Application
--- > app = serve myApi cfg server
+-- > app = serve myApi config server
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: (HasCfg layout a, HasServer layout)
+serve :: (HasConfig layout a, HasServer layout)
     => Proxy layout -> Config a -> Server layout -> Application
-serve p cfg server = toApplication (runRouter (route p cfg d))
+serve p config server = toApplication (runRouter (route p config d))
   where
     d = Delayed r r r r (\ _ _ _ -> Route server)
     r = return (Route ())

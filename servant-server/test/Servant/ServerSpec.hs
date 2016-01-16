@@ -48,10 +48,10 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect, Bas
                                              QueryFlag, QueryParam, QueryParams,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
-import           Servant.Server             ((.:.), AuthHandler, AuthReturnType,
+import           Servant.Server             (AuthHandler, AuthReturnType,
                                              BasicAuthCheck (BasicAuthCheck),
                                              BasicAuthResult (Authorized, Unauthorized),
-                                             Config (EmptyConfig), ConfigEntry, ServantErr (..),
+                                             Config ((:.), EmptyConfig), ServantErr (..),
                                              mkAuthHandler, Server, err401, err404, serve)
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
@@ -226,7 +226,7 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize
 queryParamSpec :: Spec
 queryParamSpec = do
   describe "Servant.API.QueryParam" $ do
-      it "allows to retrieve simple GET parameters" $
+      it "allows retrieving simple GET parameters" $
         (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params1 = "?name=bob"
           response1 <- Network.Wai.Test.request defaultRequest{
@@ -238,7 +238,7 @@ queryParamSpec = do
               name = "bob"
              }
 
-      it "allows to retrieve lists in GET parameters" $
+      it "allows retrieving lists in GET parameters" $
         (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params2 = "?names[]=bob&names[]=john"
           response2 <- Network.Wai.Test.request defaultRequest{
@@ -252,7 +252,7 @@ queryParamSpec = do
              }
 
 
-      it "allows to retrieve value-less GET parameters" $
+      it "allows retrieving value-less GET parameters" $
         (flip runSession) (serve queryParamApi EmptyConfig qpServer) $ do
           let params3 = "?capitalize"
           response3 <- Network.Wai.Test.request defaultRequest{
@@ -339,13 +339,13 @@ headerSpec = describe "Servant.API.Header" $ do
         expectsString Nothing  = error "Expected a string"
 
     with (return (serve headerApi EmptyConfig expectsInt)) $ do
-        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"5")]
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader", "5")]
 
         it "passes the header to the handler (Int)" $
             delete' "/" "" `shouldRespondWith` 200
 
     with (return (serve headerApi EmptyConfig expectsString)) $ do
-        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader" ,"more from you")]
+        let delete' x = Test.Hspec.Wai.request methodDelete x [("MyHeader", "more from you")]
 
         it "passes the header to the handler (String)" $
             delete' "/" "" `shouldRespondWith` 200
@@ -537,8 +537,8 @@ authServer = const (return jerry) :<|> const (return tweety)
 
 type instance AuthReturnType (AuthProtect "auth") = ()
 
-authConfig :: Config '[ ConfigEntry "basic" (BasicAuthCheck ())
-                      , ConfigEntry "auth"  (AuthHandler Request ())
+authConfig :: Config '[ BasicAuthCheck ()
+                      , AuthHandler Request ()
                       ]
 authConfig =
   let basicHandler = BasicAuthCheck $ (\usr pass ->
@@ -551,7 +551,7 @@ authConfig =
         then return ()
         else throwE err401
         )
-  in basicHandler .:. mkAuthHandler authHandler .:. EmptyConfig
+  in basicHandler :. mkAuthHandler authHandler :. EmptyConfig
 
 authSpec :: Spec
 authSpec = do

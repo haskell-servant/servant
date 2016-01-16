@@ -63,6 +63,7 @@ spec = describe "Servant.Docs" $ do
          , ("zwei, kaks, kaks",(TT2,UT2,UT2))
          ]
 
+
  where
    tests md = do
     it "mentions supported content-types" $ do
@@ -76,10 +77,14 @@ spec = describe "Servant.Docs" $ do
       md `shouldContain` "POST"
       md `shouldContain` "GET"
 
+    it "mentions headers" $ do
+      md `shouldContain` "- This endpoint is sensitive to the value of the **X-Test** HTTP header."
+
     it "contains response samples" $
       md `shouldContain` "{\"dt1field1\":\"field 1\",\"dt1field2\":13}"
     it "contains request body samples" $
       md `shouldContain` "17"
+
 
 -- * APIs
 
@@ -103,6 +108,7 @@ instance MimeRender PlainText Int where
 
 type TestApi1 = Get '[JSON, PlainText] (Headers '[Header "Location" String] Int)
            :<|> ReqBody '[JSON] String :> Post '[JSON] Datatype1
+           :<|> Header "X-Test" Int :> Put '[JSON] Int
 
 data TT = TT1 | TT2 deriving (Show, Eq)
 data UT = UT1 | UT2 deriving (Show, Eq)
