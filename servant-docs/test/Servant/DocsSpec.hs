@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -18,7 +18,23 @@ import           GHC.Generics
 import           Test.Hspec
 
 import           Servant.API
+import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Docs.Internal
+
+-- * comprehensive api
+
+_ = docs comprehensiveAPI
+
+instance ToParam (QueryParam "foo" Int) where
+  toParam = error "unused"
+instance ToParam (QueryParams "foo" Int) where
+  toParam = error "unused"
+instance ToParam (QueryFlag "foo") where
+  toParam = error "unused"
+instance ToCapture (Capture "foo" Int) where
+  toCapture = error "unused"
+
+-- * specs
 
 spec :: Spec
 spec = describe "Servant.Docs" $ do

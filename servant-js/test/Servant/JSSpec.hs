@@ -21,6 +21,7 @@ import qualified Data.Text                    as T
 import           Language.ECMAScript3.Parser  (program, parse)
 import           Test.Hspec  hiding (shouldContain, shouldNotContain)
 
+import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.JS
 import           Servant.JS.Internal
 import qualified Servant.JS.Angular           as NG
@@ -28,6 +29,12 @@ import qualified Servant.JS.Axios             as AX
 import qualified Servant.JS.JQuery            as JQ
 import qualified Servant.JS.Vanilla           as JS
 import           Servant.JSSpec.CustomHeaders
+
+-- * comprehensive api
+
+_ = (jsForAPI comprehensiveAPI vanillaJS :: Text)
+
+-- * specs
 
 type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] Text :> Post '[JSON] Bool
           :<|> "has.extension" :> Get '[FormUrlEncoded,JSON] Bool

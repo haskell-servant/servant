@@ -46,6 +46,7 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              QueryFlag, QueryParam, QueryParams,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
+import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server             (ServantErr (..), Server, err404,
                                              serve)
 import           Test.Hspec                 (Spec, context, describe, it,
@@ -60,6 +61,9 @@ import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
 
+-- * comprehensive api test
+
+_ = serve comprehensiveAPI (error "unused") (error "unused")
 
 -- * Specs
 

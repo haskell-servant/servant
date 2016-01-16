@@ -49,8 +49,11 @@ import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
+import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
 import           Servant.Server
+
+_ = client comprehensiveAPI
 
 spec :: Spec
 spec = describe "Servant.Client" $ do

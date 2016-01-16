@@ -31,6 +31,7 @@ library
     Servant.API.ContentTypes
     Servant.API.Header
     Servant.API.HttpVersion
+    Servant.API.Internal.Test.ComprehensiveAPI
     Servant.API.IsSecure
     Servant.API.QueryParam
     Servant.API.Raw
