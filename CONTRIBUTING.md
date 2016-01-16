@@ -44,7 +44,7 @@ to reopen when the issues have been fixed).
 
 We require two +1 from the maintainers of the repo. If you feel like there has
 not been a timely response to a PR, you can ping the Maintainers group (with
-`@Maintainers`).
+`@haskell-servant/maintainers`).
 
 ## New combinators
 
