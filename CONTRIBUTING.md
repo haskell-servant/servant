@@ -77,3 +77,10 @@ the `news` label if you make a new package so we can know about it!
 We are currently moving to a more aggresive release policy, so that you can get
 what you contribute from Hackage fairly soon. However, note that prior to major
 releases it may take some time in between releases.
+
+## Reporting security issues
+
+Please email haskell-servant-maintainers AT googlegroups DOT com. This group is
+private, and accessible only to known maintainers. We will then discuss how to
+proceed. Please do not make the issue public before we inform you that we have
+a patch ready.
