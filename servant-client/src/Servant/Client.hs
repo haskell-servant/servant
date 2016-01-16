@@ -203,6 +203,17 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
 
     where hname = symbolVal (Proxy :: Proxy sym)
 
+-- | Using a 'HttpVersion' combinator in your API doesn't affect the client
+-- functions.
+instance HasClient sublayout
+  => HasClient (HttpVersion :> sublayout) where
+
+  type Client (HttpVersion :> sublayout) =
+    Client sublayout
+
+  clientWithRoute Proxy =
+    clientWithRoute (Proxy :: Proxy sublayout)
+
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
 -- an additional argument of the type specified by your 'QueryParam',

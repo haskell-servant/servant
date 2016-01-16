@@ -14,7 +14,7 @@ type ComprehensiveAPI =
   Get '[JSON] Int :<|>
   Capture "foo" Int :> GET :<|>
   Header "foo" Int :> GET :<|>
--- HttpVersion :> GET :<|>
+  HttpVersion :> GET :<|>
   IsSecure :> GET :<|>
   QueryParam "foo" Int :> GET :<|>
   QueryParams "foo" Int :> GET :<|>
