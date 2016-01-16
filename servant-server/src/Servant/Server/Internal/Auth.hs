@@ -1,7 +1,8 @@
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Servant.Server.Internal.Auth where
 
@@ -28,6 +29,7 @@ type family AuthReturnType a :: *
 -- | Handlers for AuthProtected resources
 newtype AuthHandler r usr = AuthHandler
   { unAuthHandler :: r -> ExceptT ServantErr IO usr }
+  deriving (Generic, Typeable)
 
 mkAuthHandler :: (r -> ExceptT ServantErr IO usr) -> AuthHandler r usr
 mkAuthHandler = AuthHandler
