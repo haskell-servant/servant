@@ -528,7 +528,7 @@ miscCombinatorSpec = with (return $ serve miscApi EmptyConfig miscServ) $
 ------------------------------------------------------------------------------
 -- * authspec {{{
 ------------------------------------------------------------------------------
-type AuthAPI = BasicAuth "basic" "foo" () :> "basic" :> Get '[JSON] Animal
+type AuthAPI = BasicAuth  "foo" () :> "basic" :> Get '[JSON] Animal
           :<|> AuthProtect "auth" :> "auth" :> Get '[JSON] Animal
 authApi :: Proxy AuthAPI
 authApi = Proxy

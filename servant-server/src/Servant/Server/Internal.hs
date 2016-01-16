@@ -471,9 +471,9 @@ instance HasServer api => HasServer (HttpVersion :> api) where
 
 -- | Basic Authentication
 instance (KnownSymbol realm, HasServer api)
-    => HasServer (BasicAuth tag realm usr :> api) where
-  type ServerT (BasicAuth tag realm usr :> api) m = usr -> ServerT api m
-  type HasConfig (BasicAuth tag realm usr :> api) c
+    => HasServer (BasicAuth realm usr :> api) where
+  type ServerT (BasicAuth realm usr :> api) m = usr -> ServerT api m
+  type HasConfig (BasicAuth realm usr :> api) c
     = (HasConfigEntry c (BasicAuthCheck usr), HasConfig api c)
 
   route Proxy config subserver = WithRequest $ \ request ->

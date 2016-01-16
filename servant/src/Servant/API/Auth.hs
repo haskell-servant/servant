@@ -17,7 +17,7 @@ import           GHC.TypeLits  (Symbol)
 -- In Basic Auth, username and password are base64-encoded and transmitted via
 -- the @Authorization@ header. Handshakes are not required, making it
 -- relatively efficient.
-data BasicAuth (tag :: k) (realm :: Symbol) (usr :: *)
+data BasicAuth (realm :: Symbol) (usr :: *)
   deriving (Typeable)
 
 -- | A generalized Authentication combinator.
