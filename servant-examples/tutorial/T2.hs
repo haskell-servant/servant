@@ -49,4 +49,4 @@ server = return users
     :<|> return isaac
 
 app :: Application
-app = serve userAPI server
+app = serve userAPI EmptyConfig server

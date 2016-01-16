@@ -60,7 +60,6 @@ type Patch  contentTypes a = Verb 'PATCH  200 contentTypes a
 --
 type PostCreated contentTypes a = Verb 'POST 201 contentTypes a
 
-
 -- ** 202 Accepted
 --
 -- Indicates that the request has been accepted for processing, but the
@@ -115,7 +114,6 @@ type PatchNoContent contentTypes noContent = Verb 'PATCH 204 contentTypes noCont
 -- | 'PUT' with 204 status code.
 type PutNoContent contentTypes noContent = Verb 'PUT 204 contentTypes noContent
 
-
 -- ** 205 Reset Content
 --
 -- Indicates that no response body is being returned. Handlers for these should
@@ -145,7 +143,6 @@ type PutResetContent contentTypes noContent = Verb 'PUT 205 contentTypes noConte
 
 -- | 'GET' with 206 status code.
 type GetPartialContent contentTypes noContent = Verb 'GET 206 contentTypes noContent
-
 
 class ReflectMethod a where
     reflectMethod :: Proxy a -> Method

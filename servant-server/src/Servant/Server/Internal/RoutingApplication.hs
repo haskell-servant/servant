@@ -1,9 +1,11 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 module Servant.Server.Internal.RoutingApplication where
 
@@ -84,6 +86,7 @@ toApplication ra request respond = do
 -- static routes (can cause 404)
 -- delayed captures (can cause 404)
 -- methods (can cause 405)
+-- authentication and authorization (can cause 401, 403)
 -- delayed body (can cause 415, 400)
 -- accept header (can cause 406)
 --
@@ -151,36 +154,71 @@ toApplication ra request respond = do
 -- The accept header check can be performed as the final
 -- computation in this block. It can cause a 406.
 --
-data Delayed :: * -> * where
-  Delayed :: IO (RouteResult a)
-          -> IO (RouteResult ())
-          -> IO (RouteResult b)
-          -> (a -> b -> RouteResult c)
-          -> Delayed c
+data Delayed c = forall captures auth body. Delayed
+  { capturesD :: IO (RouteResult captures)
+  , methodD   :: IO (RouteResult ())
+  , authD     :: IO (RouteResult auth)
+  , bodyD     :: IO (RouteResult body)
+  , serverD   :: (captures -> auth -> body -> RouteResult c)
+  }
 
 instance Functor Delayed where
-   fmap f (Delayed a b c g) = Delayed a b c ((fmap.fmap.fmap) f g)
+   fmap f Delayed{..}
+    = Delayed { capturesD = capturesD
+              , methodD   = methodD
+              , authD     = authD
+              , bodyD     = bodyD
+              , serverD   = (fmap.fmap.fmap.fmap) f serverD
+              } -- Note [Existential Record Update]
 
 -- | Add a capture to the end of the capture block.
 addCapture :: Delayed (a -> b)
            -> IO (RouteResult a)
            -> Delayed b
-addCapture (Delayed captures method body server) new =
-  Delayed (combineRouteResults (,) captures new) method body (\ (x, v) y -> ($ v) <$> server x y)
+addCapture Delayed{..} new
+    = Delayed { capturesD = combineRouteResults (,) capturesD new
+              , methodD   = methodD
+              , authD     = authD
+              , bodyD     = bodyD
+              , serverD   = \ (x, v) y z -> ($ v) <$> serverD x y z
+              } -- Note [Existential Record Update]
 
 -- | Add a method check to the end of the method block.
 addMethodCheck :: Delayed a
                -> IO (RouteResult ())
                -> Delayed a
-addMethodCheck (Delayed captures method body server) new =
-  Delayed captures (combineRouteResults const method new) body server
+addMethodCheck Delayed{..} new
+    = Delayed { capturesD = capturesD
+              , methodD   = combineRouteResults const methodD new
+              , authD     = authD
+              , bodyD     = bodyD
+              , serverD   = serverD
+              } -- Note [Existential Record Update]
+
+-- | Add an auth check to the end of the auth block.
+addAuthCheck :: Delayed (a -> b)
+             -> IO (RouteResult a)
+             -> Delayed b
+addAuthCheck Delayed{..} new
+    = Delayed { capturesD = capturesD
+              , methodD   = methodD
+              , authD     = combineRouteResults (,) authD new
+              , bodyD     = bodyD
+              , serverD   = \ x (y, v) z -> ($ v) <$> serverD x y z
+              } -- Note [Existential Record Update]
 
 -- | Add a body check to the end of the body block.
 addBodyCheck :: Delayed (a -> b)
              -> IO (RouteResult a)
              -> Delayed b
-addBodyCheck (Delayed captures method body server) new =
-  Delayed captures method (combineRouteResults (,) body new) (\ x (y, v) -> ($ v) <$> server x y)
+addBodyCheck Delayed{..} new
+    = Delayed { capturesD = capturesD
+              , methodD   = methodD
+              , authD     = authD
+              , bodyD     = combineRouteResults (,) bodyD new
+              , serverD   = \ x y (z, v) -> ($ v) <$> serverD x y z
+              } -- Note [Existential Record Update]
+
 
 -- | Add an accept header check to the end of the body block.
 -- The accept header check should occur after the body check,
@@ -189,8 +227,13 @@ addBodyCheck (Delayed captures method body server) new =
 addAcceptCheck :: Delayed a
                 -> IO (RouteResult ())
                 -> Delayed a
-addAcceptCheck (Delayed captures method body server) new =
-  Delayed captures method (combineRouteResults const body new) server
+addAcceptCheck Delayed{..} new
+    = Delayed { capturesD = capturesD
+              , methodD   = methodD
+              , authD     = authD
+              , bodyD     = combineRouteResults const bodyD new
+              , serverD   = serverD
+              } -- Note [Existential Record Update]
 
 -- | Many combinators extract information that is passed to
 -- the handler without the possibility of failure. In such a
@@ -222,13 +265,17 @@ combineRouteResults f m1 m2 =
 -- | Run a delayed server. Performs all scheduled operations
 -- in order, and passes the results from the capture and body
 -- blocks on to the actual handler.
+--
+-- This should only be called once per request; otherwise the guarantees about
+-- effect and HTTP error ordering break down.
 runDelayed :: Delayed a
            -> IO (RouteResult a)
-runDelayed (Delayed captures method body server) =
-  captures `bindRouteResults` \ c ->
-  method   `bindRouteResults` \ _ ->
-  body     `bindRouteResults` \ b ->
-  return (server c b)
+runDelayed Delayed{..} =
+  capturesD `bindRouteResults` \ c ->
+  methodD   `bindRouteResults` \ _ ->
+  authD     `bindRouteResults` \ a ->
+  bodyD     `bindRouteResults` \ b ->
+  return (serverD c a b)
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.
@@ -247,3 +294,11 @@ runAction action respond k = runDelayed action >>= go >>= respond
       case e of
         Left err -> return . Route $ responseServantErr err
         Right x  -> return $! k x
+
+
+{- Note [Existential Record Update]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Due to GHC issue <https://ghc.haskell.org/trac/ghc/ticket/2595 2595>, we cannot
+do the more succint thing - just update the records we actually change.
+-}

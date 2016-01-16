@@ -37,6 +37,8 @@ library
     Servant
     Servant.Server
     Servant.Server.Internal
+    Servant.Server.Internal.Auth
+    Servant.Server.Internal.Config
     Servant.Server.Internal.Enter
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
@@ -46,6 +48,7 @@ library
         base               >= 4.7  && < 5
       , aeson              >= 0.7  && < 0.11
       , attoparsec         >= 0.12 && < 0.14
+      , base64-bytestring  == 1.0.*
       , bytestring         >= 0.10 && < 0.11
       , containers         >= 0.5  && < 0.6
       , http-api-data      >= 0.1  && < 0.3
@@ -66,6 +69,7 @@ library
       , wai                >= 3.0  && < 3.3
       , wai-app-static     >= 3.0  && < 3.2
       , warp               >= 3.0  && < 3.3
+      , word8              == 0.1.*
 
   hs-source-dirs: src
   default-language: Haskell2010
@@ -94,10 +98,13 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules:
+      Servant.Server.ErrorSpec
+      Servant.Server.Internal.ConfigSpec
       Servant.Server.Internal.EnterSpec
       Servant.ServerSpec
+      Servant.Server.UsingConfigSpec
+      Servant.Server.UsingConfigSpec.TestCombinators
       Servant.Utils.StaticFilesSpec
-      Servant.Server.ErrorSpec
   build-depends:
       base == 4.*
     , aeson
@@ -115,6 +122,7 @@ test-suite spec
     , servant
     , servant-server
     , string-conversions
+    , should-not-typecheck == 2.*
     , temporary
     , text
     , transformers

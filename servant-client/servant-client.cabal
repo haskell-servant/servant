@@ -27,6 +27,7 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
+    Servant.Common.Auth
     Servant.Common.BaseUrl
     Servant.Common.Req
   build-depends:
@@ -34,6 +35,7 @@ library
     , aeson
     , attoparsec
     , bytestring
+    , base64-bytestring
     , exceptions
     , http-api-data >= 0.1  && < 0.3
     , http-client
@@ -68,6 +70,7 @@ test-suite spec
     , transformers-compat
     , aeson
     , bytestring
+    , base64-bytestring
     , deepseq
     , hspec == 2.*
     , http-client

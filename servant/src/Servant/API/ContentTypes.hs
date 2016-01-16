@@ -11,6 +11,9 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+#if !MIN_VERSION_base(4,8,0)
+{-# LANGUAGE OverlappingInstances  #-}
+#endif
 {-# OPTIONS_HADDOCK not-home       #-}
 
 #include "overlapping-compat.h"
@@ -251,7 +254,6 @@ instance OVERLAPPABLE_
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy (ctyp' ': ctyps)
 
-
 -- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
 -- then this would be taken care of. However there is no more specific instance
 -- between that and 'MimeRender JSON a', so we do this instead
@@ -321,7 +323,6 @@ instance MimeRender OctetStream BS.ByteString where
 -- | A type for responses without content-body.
 data NoContent = NoContent
   deriving (Show, Eq, Read)
-
 
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances

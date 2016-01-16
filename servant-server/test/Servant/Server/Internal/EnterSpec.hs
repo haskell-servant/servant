@@ -48,12 +48,12 @@ combinedReaderServer = enter fReader combinedReaderServer'
 
 enterSpec :: Spec
 enterSpec = describe "Enter" $ do
-  with (return (serve readerAPI readerServer)) $ do
+  with (return (serve readerAPI EmptyConfig readerServer)) $ do
 
     it "allows running arbitrary monads" $ do
       get "int" `shouldRespondWith` "1797"
       post "string" "3" `shouldRespondWith` "\"hi\""{ matchStatus = 200 }
 
-  with (return (serve combinedAPI combinedReaderServer)) $ do
+  with (return (serve combinedAPI EmptyConfig combinedReaderServer)) $ do
     it "allows combnation of enters" $ do
       get "bool" `shouldRespondWith` "true"
