@@ -69,8 +69,8 @@ type instance AuthReturnType (AuthProtect "cookie-auth") = User
 -- | The configuration that will be made available to request handlers. We supply the 
 -- "cookie-auth"-tagged request handler defined above, so that the 'HasServer' instance
 -- of 'AuthProtect' can extract the handler and run it on the request.
-serverConfig :: Config (ConfigEntry "cookie-auth" (AuthHandler Request User) ': '[])
-serverConfig = authHandler .:. EmptyConfig
+serverConfig :: Config (AuthHandler Request User ': '[])
+serverConfig = authHandler :. EmptyConfig
 
 -- | Our API, where we provide all the author-supplied handlers for each end point.
 -- note that 'prvdata' is a function that takes 'User' as an argument. We dont' worry

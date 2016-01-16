@@ -821,11 +821,11 @@ instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
   docsFor Proxy ep =
     docsFor (Proxy :: Proxy sublayout) ep
 
-instance (ToAuthInfo (BasicAuth tag realm usr), HasDocs sublayout) => HasDocs (BasicAuth tag realm usr :> sublayout) where
+instance (ToAuthInfo (BasicAuth realm), HasDocs sublayout) => HasDocs (BasicAuth realm :> sublayout) where
   docsFor Proxy (endpoint, action) =
     docsFor (Proxy :: Proxy sublayout) (endpoint, action')
       where
-        authProxy = Proxy :: Proxy (BasicAuth tag realm usr)
+        authProxy = Proxy :: Proxy (BasicAuth realm)
         action' = over authInfo (|> toAuthInfo authProxy) action
 
 instance (ToAuthInfo (AuthProtect tag), HasDocs sublayout) => HasDocs (AuthProtect tag :> sublayout) where

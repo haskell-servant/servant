@@ -150,12 +150,13 @@ failServer = serve failApi EmptyConfig (
 
 --  auth stuff
 type AuthAPI =
-       BasicAuth "basic-tag" "foo-realm" () :> "private" :> "basic" :> Get '[JSON] Person
+       BasicAuth "foo-realm" :> "private" :> "basic" :> Get '[JSON] Person
   :<|> AuthProtect "auth-tag" :> "private" :> "auth" :> Get '[JSON] Person
 
 authAPI :: Proxy AuthAPI
 authAPI = Proxy
 
+type instance AuthReturnType (BasicAuth "foo-realm")  = ()
 type instance AuthReturnType (AuthProtect "auth-tag") = ()
 type instance AuthClientData (AuthProtect "auth-tag") = ()
 
@@ -176,10 +177,10 @@ authHandler =
         Just _ -> return ()
   in mkAuthHandler handler
 
-serverConfig :: Config '[ ConfigEntry "basic-tag" (BasicAuthCheck ())
-                        , ConfigEntry "auth-tag" (AuthHandler Request ())
+serverConfig :: Config '[ BasicAuthCheck ()
+                        , AuthHandler Request ()
                         ]
-serverConfig = basicAuthHandler .:. authHandler .:. EmptyConfig
+serverConfig = basicAuthHandler :. authHandler :. EmptyConfig
 
 authServer :: Application
 authServer = serve authAPI serverConfig (const (return alice) :<|> const (return alice))
@@ -358,7 +359,7 @@ authSpec = beforeAll (startWaiApp authServer) $ afterAll endWaiApp $ do
 
 data WrappedApi where
   WrappedApi :: (HasServer (api :: *), Server api ~ ExceptT ServantErr IO a
-                 , HasCfg api '[], HasClient api
+                 , HasConfig api '[], HasClient api
                  , Client api ~ ExceptT ServantError IO ()) =>
     Proxy api -> WrappedApi
 

@@ -471,10 +471,10 @@ instance HasServer api => HasServer (HttpVersion :> api) where
 
 -- | Basic Authentication
 instance (KnownSymbol realm, HasServer api)
-    => HasServer (BasicAuth realm usr :> api) where
-  type ServerT (BasicAuth realm usr :> api) m = usr -> ServerT api m
-  type HasConfig (BasicAuth realm usr :> api) c
-    = (HasConfigEntry c (BasicAuthCheck usr), HasConfig api c)
+    => HasServer (BasicAuth realm :> api) where
+  type ServerT (BasicAuth realm :> api) m = AuthReturnType (BasicAuth realm) -> ServerT api m
+  type HasConfig (BasicAuth realm :> api) c
+    = (HasConfigEntry c (BasicAuthCheck (AuthReturnType (BasicAuth realm))), HasConfig api c)
 
   route Proxy config subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)

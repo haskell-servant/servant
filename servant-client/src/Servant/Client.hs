@@ -411,8 +411,8 @@ instance HasClient api => HasClient (IsSecure :> api) where
   clientWithRoute Proxy req baseurl manager =
     clientWithRoute (Proxy :: Proxy api) req baseurl manager
 
-instance HasClient api => HasClient (BasicAuth tag realm usr :> api) where
-  type Client (BasicAuth tag realm usr :> api) = BasicAuthData -> Client api
+instance HasClient api => HasClient (BasicAuth realm :> api) where
+  type Client (BasicAuth realm :> api) = BasicAuthData -> Client api
 
   clientWithRoute Proxy req baseurl manager val =
     clientWithRoute (Proxy :: Proxy api) (basicAuthReq val req) baseurl manager

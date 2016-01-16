@@ -528,13 +528,14 @@ miscCombinatorSpec = with (return $ serve miscApi EmptyConfig miscServ) $
 ------------------------------------------------------------------------------
 -- * authspec {{{
 ------------------------------------------------------------------------------
-type AuthAPI = BasicAuth  "foo" () :> "basic" :> Get '[JSON] Animal
+type AuthAPI = BasicAuth "foo" :> "basic" :> Get '[JSON] Animal
           :<|> AuthProtect "auth" :> "auth" :> Get '[JSON] Animal
 authApi :: Proxy AuthAPI
 authApi = Proxy
 authServer :: Server AuthAPI
 authServer = const (return jerry) :<|> const (return tweety)
 
+type instance AuthReturnType (BasicAuth "foo") = ()
 type instance AuthReturnType (AuthProtect "auth") = ()
 
 authConfig :: Config '[ BasicAuthCheck ()
