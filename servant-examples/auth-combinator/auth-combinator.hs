@@ -8,6 +8,7 @@
 
 import           Data.Aeson
 import           Data.ByteString          (ByteString)
+import           Data.IORef
 import           Data.Text                (Text)
 import           GHC.Generics
 import           Network.Wai
@@ -18,23 +19,32 @@ import           Servant.Server.Internal
 -- Pretty much stolen/adapted from
 -- https://github.com/haskell-servant/HaskellSGMeetup2015/blob/master/examples/authentication-combinator/AuthenticationCombinator.hs
 
-type DBLookup = ByteString -> IO Bool
+type DBConnection = IORef [ByteString]
+type DBLookup = DBConnection -> ByteString -> IO Bool
+
+initDB :: IO DBConnection
+initDB = newIORef ["good password"]
 
 isGoodCookie :: DBLookup
-isGoodCookie = return . (== "good password")
+isGoodCookie ref password = do
+  allowed <- readIORef ref
+  return (password `elem` allowed)
 
 data AuthProtected
 
 instance HasServer rest => HasServer (AuthProtected :> rest) where
   type ServerT (AuthProtected :> rest) m = ServerT rest m
+  type HasConfig (AuthProtected :> rest) config =
+    (HasConfigEntry config DBConnection, HasConfig rest config)
 
-  route Proxy subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy rest) $ addAcceptCheck subserver $ cookieCheck request
+  route Proxy config subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy rest) config $ addAcceptCheck subserver $ cookieCheck request
       where
         cookieCheck req = case lookup "Cookie" (requestHeaders req) of
             Nothing -> return $ FailFatal err401 { errBody = "Missing auth header" }
             Just v  -> do
-              authGranted <- isGoodCookie v
+              let dbConnection = getConfigEntry config
+              authGranted <- isGoodCookie dbConnection v
               if authGranted
                 then return $ Route ()
                 else return $ FailFatal err403 { errBody = "Invalid cookie" }
@@ -66,7 +76,10 @@ server = return prvdata :<|> return pubdata
         pubdata = [PublicData "this is a public piece of data"]
 
 main :: IO ()
-main = run 8080 (serve api server)
+main = do
+  dbConnection <- initDB
+  let config = dbConnection :. EmptyConfig
+  run 8080 (serve api config server)
 
 {- Sample session:
 $ curl http://localhost:8080/

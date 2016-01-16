@@ -38,7 +38,7 @@ server sHandler = socketIOHandler
 
 
 app :: WaiMonad () -> Application
-app sHandler = serve api $ server sHandler
+app sHandler = serve api EmptyConfig $ server sHandler
 
 port :: Int
 port = 3001

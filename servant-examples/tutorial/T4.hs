@@ -60,4 +60,4 @@ server :: Server PersonAPI
 server = return persons
 
 app :: Application
-app = serve personAPI server
+app = serve personAPI EmptyConfig server

@@ -16,7 +16,7 @@ import           Test.Hspec                (Spec, around_, describe, it)
 import           Test.Hspec.Wai            (get, shouldRespondWith, with)
 
 import           Servant.API               ((:<|>) ((:<|>)), Capture, Get, Raw, (:>), JSON)
-import           Servant.Server            (Server, serve)
+import           Servant.Server            (Server, serve, Config(EmptyConfig))
 import           Servant.ServerSpec        (Person (Person))
 import           Servant.Utils.StaticFiles (serveDirectory)
 
@@ -29,7 +29,7 @@ api :: Proxy Api
 api = Proxy
 
 app :: Application
-app = serve api server
+app = serve api EmptyConfig server
 
 server :: Server Api
 server =

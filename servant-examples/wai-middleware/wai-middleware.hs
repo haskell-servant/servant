@@ -41,11 +41,11 @@ server = return products
 
 -- logStdout :: Middleware
 -- i.e, logStdout :: Application -> Application
--- serve :: Proxy api -> Server api -> Application
+-- serve :: Proxy api -> Config a -> Server api -> Application
 -- so applying a middleware is really as simple as
 -- applying a function to the result of 'serve'
 app :: Application
-app = logStdout (serve simpleAPI server)
+app = logStdout (serve simpleAPI EmptyConfig server)
 
 main :: IO ()
 main = run 8080 app
