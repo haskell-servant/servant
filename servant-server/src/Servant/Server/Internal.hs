@@ -63,6 +63,7 @@ import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 
 
+
 class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
 
@@ -127,6 +128,7 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
               )
     where
       captureProxy = Proxy :: Proxy (Capture capture a)
+
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
