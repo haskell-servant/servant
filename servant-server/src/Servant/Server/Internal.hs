@@ -72,7 +72,7 @@ class HasServer layout where
   type ServerT layout (m :: * -> *) :: *
   type HasConfig layout (c :: [*]) :: Constraint
 
-  route :: HasConfig layout a => Proxy layout -> Config a -> Delayed (Server layout) -> Router
+  route :: HasConfig layout config => Proxy layout -> Config config -> Delayed (Server layout) -> Router
 
 type Server layout = ServerT layout (ExceptT ServantErr IO)
 
