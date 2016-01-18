@@ -1,6 +1,7 @@
 HEAD
 ----
 
+* Add `WithNamedConfig` combinator.
 * Add `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Fix safeLink, so Header is not in fact required.
 * Add more instances for (:<|>)
