@@ -160,6 +160,9 @@ instance HasMock Raw where
 
     where genBody = pack <$> generate (vector 100 :: Gen [Char])
 
+instance HasMock rest => HasMock (WithNamedConfig name config rest) where
+  mock _ = mock (Proxy :: Proxy rest)
+
 mockArbitrary :: (MonadIO m, Arbitrary a) => m a
 mockArbitrary = liftIO (generate arbitrary)
 

@@ -794,6 +794,9 @@ instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
   docsFor Proxy ep =
     docsFor (Proxy :: Proxy sublayout) ep
 
+instance HasDocs sublayout => HasDocs (WithNamedConfig name config sublayout) where
+  docsFor Proxy = docsFor (Proxy :: Proxy sublayout)
+
 -- ToSample instances for simple types
 instance ToSample ()
 instance ToSample Bool

@@ -417,6 +417,12 @@ instance HasClient api => HasClient (IsSecure :> api) where
   clientWithRoute Proxy req baseurl manager =
     clientWithRoute (Proxy :: Proxy api) req baseurl manager
 
+instance HasClient subapi =>
+  HasClient (WithNamedConfig name config subapi) where
+
+  type Client (WithNamedConfig name config subapi) = Client subapi
+  clientWithRoute Proxy = clientWithRoute (Proxy :: Proxy subapi)
+
 
 {- Note [Non-Empty Content Types]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -60,11 +60,16 @@ import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
+import           Servant.Server.Internal.Config
+                                            (Config(..), NamedConfig(..))
 
 -- * comprehensive api test
 
 -- This declaration simply checks that all instances are in place.
-_ = serve comprehensiveAPI
+_ = serve comprehensiveAPI comprehensiveApiConfig
+
+comprehensiveApiConfig :: Config '[NamedConfig "foo" '[]]
+comprehensiveApiConfig = NamedConfig EmptyConfig :. EmptyConfig
 
 -- * Specs
 
