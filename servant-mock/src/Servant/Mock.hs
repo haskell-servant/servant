@@ -2,8 +2,9 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -66,6 +67,7 @@ import           Network.HTTP.Types.Status
 import           Network.Wai
 import           Servant
 import           Servant.API.ContentTypes
+import           Servant.Server.Internal.Config
 import           Test.QuickCheck.Arbitrary  (Arbitrary (..), vector)
 import           Test.QuickCheck.Gen        (Gen, generate)
 
@@ -73,7 +75,7 @@ import           Test.QuickCheck.Gen        (Gen, generate)
 --   than turns them into random-response-generating
 --   request handlers, hence providing an instance for
 --   all the combinators of the core /servant/ library.
-class HasServer api => HasMock api where
+class HasServer api config => HasMock api config where
   -- | Calling this method creates request handlers of
   --   the right type to implement the API described by
   --   @api@ that just generate random response values of
@@ -103,65 +105,67 @@ class HasServer api => HasMock api where
   --   So under the hood, 'mock' uses the 'IO' bit to generate
   --   random values of type 'User' and 'Book' every time these
   --   endpoints are requested.
-  mock :: Proxy api -> Server api
+  mock :: Proxy api -> Proxy config -> Server api
 
-instance (HasMock a, HasMock b) => HasMock (a :<|> b) where
-  mock _ = mock (Proxy :: Proxy a) :<|> mock (Proxy :: Proxy b)
+instance (HasMock a config, HasMock b config) => HasMock (a :<|> b) config where
+  mock _ config = mock (Proxy :: Proxy a) config :<|> mock (Proxy :: Proxy b) config
 
-instance (KnownSymbol path, HasMock rest) => HasMock (path :> rest) where
+instance (KnownSymbol path, HasMock rest config) => HasMock (path :> rest) config where
   mock _ = mock (Proxy :: Proxy rest)
 
-instance (KnownSymbol s, FromHttpApiData a, HasMock rest) => HasMock (Capture s a :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance (KnownSymbol s, FromHttpApiData a, HasMock rest config) => HasMock (Capture s a :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance (AllCTUnrender ctypes a, HasMock rest) => HasMock (ReqBody ctypes a :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance (AllCTUnrender ctypes a, HasMock rest config) => HasMock (ReqBody ctypes a :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance HasMock rest => HasMock (RemoteHost :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance HasMock rest config => HasMock (RemoteHost :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance HasMock rest => HasMock (IsSecure :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance HasMock rest config => HasMock (IsSecure :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance HasMock rest => HasMock (Vault :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance HasMock rest config => HasMock (Vault :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance HasMock rest => HasMock (HttpVersion :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance HasMock rest config => HasMock (HttpVersion :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
-      => HasMock (QueryParam s a :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance (KnownSymbol s, FromHttpApiData a, HasMock rest config)
+      => HasMock (QueryParam s a :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance (KnownSymbol s, FromHttpApiData a, HasMock rest)
-      => HasMock (QueryParams s a :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance (KnownSymbol s, FromHttpApiData a, HasMock rest config)
+      => HasMock (QueryParams s a :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance (KnownSymbol s, HasMock rest) => HasMock (QueryFlag s :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance (KnownSymbol s, HasMock rest config) => HasMock (QueryFlag s :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
-instance (KnownSymbol h, FromHttpApiData a, HasMock rest) => HasMock (Header h a :> rest) where
-  mock _ = \_ -> mock (Proxy :: Proxy rest)
+instance (KnownSymbol h, FromHttpApiData a, HasMock rest config) => HasMock (Header h a :> rest) config where
+  mock _ config = \_ -> mock (Proxy :: Proxy rest) config
 
 instance (Arbitrary a, KnownNat status, ReflectMethod method, AllCTRender ctypes a)
-    => HasMock (Verb method status ctypes a) where
-  mock _ = mockArbitrary
+    => HasMock (Verb method status ctypes a) config where
+  mock _ _ = mockArbitrary
 
 instance OVERLAPPING_
     (GetHeaders (Headers headerTypes a), Arbitrary (HList headerTypes),
      Arbitrary a, KnownNat status, ReflectMethod method, AllCTRender ctypes a)
-    => HasMock (Verb method status ctypes (Headers headerTypes a)) where
-  mock _ = mockArbitrary
+    => HasMock (Verb method status ctypes (Headers headerTypes a)) config where
+  mock _ _ = mockArbitrary
 
-instance HasMock Raw where
-  mock _ = \_req respond -> do
+instance HasMock Raw config where
+  mock _ _ = \_req respond -> do
     bdy <- genBody
     respond $ responseLBS status200 [] bdy
 
     where genBody = pack <$> generate (vector 100 :: Gen [Char])
 
-instance HasMock rest => HasMock (WithNamedConfig name config rest) where
-  mock _ = mock (Proxy :: Proxy rest)
+instance (HasConfigEntry config (NamedConfig name subConfig), HasMock rest subConfig) =>
+  HasMock (WithNamedConfig name subConfig rest) config where
+
+  mock _ _ = mock (Proxy :: Proxy rest) (Proxy :: Proxy subConfig)
 
 mockArbitrary :: (MonadIO m, Arbitrary a) => m a
 mockArbitrary = liftIO (generate arbitrary)

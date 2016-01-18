@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -24,13 +25,11 @@ import           Servant.Server.Internal.RoutingApplication
 
 data ExtractFromConfig
 
-instance (HasServer subApi) =>
-  HasServer (ExtractFromConfig :> subApi) where
+instance (HasConfigEntry config String, HasServer subApi config) =>
+  HasServer (ExtractFromConfig :> subApi) config where
 
   type ServerT (ExtractFromConfig :> subApi) m =
     String -> ServerT subApi m
-  type HasConfig (ExtractFromConfig :> subApi) (c :: [*]) =
-    (HasConfigEntry c String, HasConfig subApi c)
 
   route Proxy config delayed =
     route subProxy config (fmap (inject config) delayed :: Delayed (Server subApi))
@@ -42,13 +41,11 @@ instance (HasServer subApi) =>
 
 data InjectIntoConfig
 
-instance (HasServer subApi) =>
-  HasServer (InjectIntoConfig :> subApi) where
+instance (HasServer subApi (String ': config)) =>
+  HasServer (InjectIntoConfig :> subApi) config where
 
   type ServerT (InjectIntoConfig :> subApi) m =
     ServerT subApi m
-  type HasConfig (InjectIntoConfig :> subApi) c =
-    (HasConfig subApi (String ': c))
 
   route Proxy config delayed =
     route subProxy newConfig delayed
@@ -60,13 +57,11 @@ instance (HasServer subApi) =>
 
 data NamedConfigWithBirdface (name :: Symbol) (subConfig :: [*])
 
-instance (HasServer subApi) =>
-  HasServer (NamedConfigWithBirdface name subConfig :> subApi) where
+instance (HasConfigEntry config (NamedConfig name subConfig), HasServer subApi subConfig) =>
+  HasServer (NamedConfigWithBirdface name subConfig :> subApi) config where
 
   type ServerT (NamedConfigWithBirdface name subConfig :> subApi) m =
     ServerT subApi m
-  type HasConfig (NamedConfigWithBirdface name subConfig :> subApi) config =
-    (HasConfigEntry config (NamedConfig name subConfig), HasConfig subApi subConfig)
 
   route Proxy config delayed =
     route subProxy subConfig delayed

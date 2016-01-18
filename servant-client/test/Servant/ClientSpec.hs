@@ -288,9 +288,8 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
-  WrappedApi :: (HasServer (api :: *), Server api ~ ExceptT ServantErr IO a
-                 , HasConfig api '[], HasClient api
-                 , Client api ~ ExceptT ServantError IO ()) =>
+  WrappedApi :: (HasServer (api :: *) '[], Server api ~ ExceptT ServantErr IO a,
+                 HasClient api, Client api ~ ExceptT ServantError IO ()) =>
     Proxy api -> WrappedApi
 
 

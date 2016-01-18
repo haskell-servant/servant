@@ -1,5 +1,7 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -21,7 +23,7 @@ import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Mock
 
 -- This declaration simply checks that all instances are in place.
-_ = mock comprehensiveAPI
+_ = mock comprehensiveAPI (Proxy :: Proxy '[NamedConfig "foo" '[]])
 
 data Body
   = Body
@@ -50,7 +52,7 @@ spec = do
     context "Get" $ do
       let api :: Proxy (Get '[JSON] Body)
           api = Proxy
-          app = serve api (mock api)
+          app = serve api EmptyConfig (mock api Proxy)
       with (return app) $ do
         it "serves arbitrary response bodies" $ do
           get "/" `shouldRespondWith` 200{
@@ -62,8 +64,8 @@ spec = do
           withHeader = Proxy
           withoutHeader :: Proxy (Get '[JSON] (Headers '[] Body))
           withoutHeader = Proxy
-          toApp :: HasMock api => Proxy api -> IO Application
-          toApp api = return $ serve api (mock api)
+          toApp :: (HasMock api '[]) => Proxy api -> IO Application
+          toApp api = return $ serve api EmptyConfig (mock api (Proxy :: Proxy '[]))
       with (toApp withHeader) $ do
         it "serves arbitrary response bodies" $ do
           get "/" `shouldRespondWith` 200{

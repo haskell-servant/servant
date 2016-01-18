@@ -1,10 +1,13 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 import           Data.Aeson
 import           Data.ByteString          (ByteString)
@@ -32,10 +35,10 @@ isGoodCookie ref password = do
 
 data AuthProtected
 
-instance HasServer rest => HasServer (AuthProtected :> rest) where
+instance (HasConfigEntry config DBConnection, HasServer rest config)
+  => HasServer (AuthProtected :> rest) config where
+
   type ServerT (AuthProtected :> rest) m = ServerT rest m
-  type HasConfig (AuthProtected :> rest) config =
-    (HasConfigEntry config DBConnection, HasConfig rest config)
 
   route Proxy config subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy rest) config $ addAcceptCheck subserver $ cookieCheck request
