@@ -1,14 +1,15 @@
 flags: {}
 packages:
-- servant-examples/
-- servant-docs/
+- servant/
 - servant-blaze/
+- servant-cassava/
 - servant-client/
-- servant-lucid/
-- servant-mock/
+- servant-docs/
+- servant-examples/
 - servant-foreign/
 - servant-js/
-- servant/
+- servant-lucid/
+- servant-mock/
 - servant-server/
 extra-deps:
 - hspec-2.2.0
@@ -22,4 +23,5 @@ extra-deps:
 - stm-delay-0.1.1.1
 - control-monad-omega-0.3.1
 - http-api-data-0.1.1.1
+- should-not-typecheck-2.0.1
 resolver: lts-2.22
