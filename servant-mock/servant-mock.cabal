@@ -58,5 +58,9 @@ test-suite spec
   build-depends:
     base,
     hspec,
+    hspec-wai,
+    QuickCheck,
     servant,
-    servant-mock
+    servant-server,
+    servant-mock,
+    aeson
