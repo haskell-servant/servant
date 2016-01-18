@@ -20,7 +20,7 @@ type ComprehensiveAPI =
   QueryParams "foo" Int :> GET :<|>
   QueryFlag "foo" :> GET :<|>
 -- Raw :<|>
--- RemoteHost :<|>
+  RemoteHost :> GET :<|>
   ReqBody '[JSON] Int :> GET :<|>
 -- Get '[JSON] (Headers '[Header "foo" Int] ()) :<|>
   "foo" :> GET :<|>
