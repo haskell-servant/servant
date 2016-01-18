@@ -1,6 +1,9 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- | This is a module containing an API with all `Servant.API` combinators. It
+-- is used for testing only (in particular, checking that instances exist for
+-- the core servant classes for each combinator), and should not be imported.
 module Servant.API.Internal.Test.ComprehensiveAPI where
 
 import           Data.Proxy

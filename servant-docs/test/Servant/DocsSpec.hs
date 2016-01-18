@@ -23,6 +23,7 @@ import           Servant.Docs.Internal
 
 -- * comprehensive api
 
+-- This declaration simply checks that all instances are in place.
 _ = docs comprehensiveAPI
 
 instance ToParam (QueryParam "foo" Int) where

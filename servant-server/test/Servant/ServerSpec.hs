@@ -63,7 +63,8 @@ import           Servant.Server.Internal.Router
 
 -- * comprehensive api test
 
-_ = serve comprehensiveAPI (error "unused") (error "unused")
+-- This declaration simply checks that all instances are in place.
+_ = serve comprehensiveAPI
 
 -- * Specs
 
