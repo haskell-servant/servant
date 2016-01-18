@@ -22,7 +22,7 @@ type ComprehensiveAPI =
 -- Raw :<|>
   RemoteHost :> GET :<|>
   ReqBody '[JSON] Int :> GET :<|>
--- Get '[JSON] (Headers '[Header "foo" Int] ()) :<|>
+  Get '[JSON] (Headers '[Header "foo" Int] ()) :<|>
   "foo" :> GET :<|>
   Vault :> GET :<|>
   Verb 'POST 204 '[JSON] () :<|>

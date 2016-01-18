@@ -7,6 +7,9 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
+#include "overlapping-compat.h"
+
 -- |
 -- Module     : Servant.Mock
 -- Copyright  : 2015 Alp Mestanogullari
@@ -144,6 +147,12 @@ instance (Arbitrary a, KnownNat status, ReflectMethod method, AllCTRender ctypes
     => HasMock (Verb method status ctypes a) where
   mock _ = mockArbitrary
 
+instance OVERLAPPING_
+    (GetHeaders (Headers headerTypes a), Arbitrary (HList headerTypes),
+     Arbitrary a, KnownNat status, ReflectMethod method, AllCTRender ctypes a)
+    => HasMock (Verb method status ctypes (Headers headerTypes a)) where
+  mock _ = mockArbitrary
+
 instance HasMock Raw where
   mock _ = \_req respond -> do
     bdy <- genBody
@@ -165,5 +174,3 @@ instance Arbitrary (HList '[]) where
 instance (Arbitrary a, Arbitrary (HList hs))
       => Arbitrary (HList (Header h a ': hs)) where
   arbitrary = HCons <$> fmap Header arbitrary <*> arbitrary
-
-
