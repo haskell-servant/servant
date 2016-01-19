@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PackageImports        #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.API.ContentTypesSpec where
@@ -12,6 +13,9 @@ import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Arrow
+import           Control.Monad             (when)
+import           Control.Monad.Except      (runExceptT)
+import           Control.Monad.Trans       (liftIO)
 import           Data.Aeson
 import           Data.ByteString.Char8     (ByteString, append, pack)
 import qualified Data.ByteString.Lazy      as BSL
@@ -28,9 +32,39 @@ import           GHC.Generics
 import           Network.URL               (exportParams, importParams)
 import           Test.Hspec
 import           Test.QuickCheck
+import           Test.QuickCheck.Monadic
 import "quickcheck-instances" Test.QuickCheck.Instances ()
 
 import           Servant.API.ContentTypes
+
+shouldUnrenderTo :: (MimeUnrender ct a, Eq a, Show a) => (Proxy ct, BSL.ByteString) -> a -> IO ()
+shouldUnrenderTo (p, bs) x = do
+  res <- runExceptT (mimeUnrender p bs)
+  res `shouldBe` Right x
+
+shouldNotUnrenderTo :: forall ct a. (MimeUnrender ct a, Show a) =>
+  (Proxy ct, BSL.ByteString) -> Proxy a -> IO ()
+shouldNotUnrenderTo (p, bs) _ = do
+  res <- runExceptT (mimeUnrender p bs)
+  res `shouldSatisfy` (isLeft :: Either e a -> Bool)
+
+shouldHandleCTypeH :: (AllCTUnrender cts a, Eq a, Show a) =>
+  (Proxy cts, BSL.ByteString, BSL.ByteString) -> a -> IO ()
+shouldHandleCTypeH (p, ct, bs) x = do
+  res <- traverse runExceptT (handleCTypeH p ct bs)
+  res `shouldBe` Just (Right x)
+
+shouldNotFindCTypeH :: forall cts a. (AllCTUnrender cts a, Eq a, Show a) =>
+  (Proxy cts, BSL.ByteString, BSL.ByteString) -> Proxy a -> IO ()
+shouldNotFindCTypeH (p, ct, bs) _ = do
+  res <- traverse runExceptT (handleCTypeH p ct bs)
+  res `shouldBe` (Nothing :: Maybe (Either String a))
+
+shouldHandleCTypeHSatisfy :: forall cts a. (AllCTUnrender cts a, Show a) =>
+  (Proxy cts, BSL.ByteString, BSL.ByteString) -> (Maybe (Either String a) -> Bool) -> IO ()
+shouldHandleCTypeHSatisfy (p, ct, bs) f = do
+  res <- traverse runExceptT (handleCTypeH p ct bs)
+  res `shouldSatisfy` f
 
 spec :: Spec
 spec = describe "Servant.API.ContentTypes" $ do
@@ -53,31 +87,37 @@ spec = describe "Servant.API.ContentTypes" $ do
         let p = Proxy :: Proxy JSON
 
         it "handles whitespace at end of input" $ do
-            mimeUnrender p "[1] " `shouldBe` Right [1 :: Int]
+            (p, "[1] ") `shouldUnrenderTo` [1 :: Int]
 
         it "handles whitespace at beginning of input" $ do
-            mimeUnrender p " [1] " `shouldBe` Right [1 :: Int]
+            (p, " [1]") `shouldUnrenderTo` [1 :: Int]
 
         it "does not like junk at end of input" $ do
-            mimeUnrender p "[1] this probably shouldn't work"
-              `shouldSatisfy` (isLeft :: Either a [Int] -> Bool)
+            (p, "[1] this probably shouldn't work")
+              `shouldNotUnrenderTo` (Proxy :: Proxy [Int])
 
         it "has mimeUnrender reverse mimeRender for valid top-level json ([Int]) " $ do
-            property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::[Int])
+            property $ \x -> monadicIO $ do
+              res <- liftIO $ runExceptT (mimeUnrender p (mimeRender p x))
+              assert (res == Right (x::[Int]))
 
         it "has mimeUnrender reverse mimeRender for valid top-level json " $ do
-            property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::SomeData)
+            property $ \x -> monadicIO $ do
+              res <- liftIO $ runExceptT (mimeUnrender p (mimeRender p x))
+              assert (res == Right (x::[SomeData]))
 
     describe "The FormUrlEncoded Content-Type type" $ do
         let p = Proxy :: Proxy FormUrlEncoded
 
         it "has mimeUnrender reverse mimeRender" $ do
-            property $ \x -> mempty `notElem` x
-                ==> mimeUnrender p (mimeRender p x) == Right (x::[(TextS.Text,TextS.Text)])
+            property $ \x -> monadicIO $ when (mempty `notElem` x) $ do
+              res <- liftIO . runExceptT $ mimeUnrender p (mimeRender p x)
+              assert (res == Right (x::[(TextS.Text,TextS.Text)]))
 
         it "has mimeUnrender reverse exportParams (Network.URL)" $ do
-            property $ \x -> mempty `notElem` x
-                ==> (mimeUnrender p . cs . exportParams . map (cs *** cs) $ x) == Right (x::[(TextS.Text,TextS.Text)])
+            property $ \x -> monadicIO $ when (mempty `notElem` x) $ do
+              res <- liftIO . runExceptT $ mimeUnrender p . cs . exportParams . map (cs *** cs) $ x
+              assert (res == Right (x::[(TextS.Text,TextS.Text)]))
 
         it "has importParams (Network.URL) reverse mimeRender" $ do
             property $ \x -> mempty `notElem` x
@@ -87,21 +127,29 @@ spec = describe "Servant.API.ContentTypes" $ do
         let p = Proxy :: Proxy PlainText
 
         it "has mimeUnrender reverse mimeRender (lazy Text)" $ do
-            property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::TextL.Text)
+            property $ \x -> monadicIO $ do
+              res <- liftIO . runExceptT $ mimeUnrender p (mimeRender p x)
+              assert (res == Right (x::TextL.Text))
 
         it "has mimeUnrender reverse mimeRender (strict Text)" $ do
-            property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::TextS.Text)
+            property $ \x -> monadicIO $ do
+              res <- liftIO . runExceptT $ mimeUnrender p (mimeRender p x)
+              assert (res == Right (x::TextS.Text))
 
     describe "The OctetStream Content-Type type" $ do
         let p = Proxy :: Proxy OctetStream
 
         it "is id (Lazy ByteString)" $ do
-            property $ \x -> mimeRender p x == (x :: BSL.ByteString)
-                && mimeUnrender p x == Right x
+            property $ \x -> monadicIO $ do
+              assert (mimeRender p x == (x :: BSL.ByteString))
+              res <- liftIO . runExceptT $ mimeUnrender p x
+              assert (res == Right x)
 
         it "is fromStrict/toStrict (Strict ByteString)" $ do
-            property $ \x -> mimeRender p x == BSL.fromStrict (x :: ByteString)
-                && mimeUnrender p (BSL.fromStrict x) == Right x
+            property $ \x -> monadicIO $ do
+              assert (mimeRender p x == BSL.fromStrict (x :: ByteString))
+              res <- liftIO . runExceptT $ mimeUnrender p (BSL.fromStrict x)
+              assert (res == Right x)
 
     describe "handleAcceptH" $ do
 
@@ -147,33 +195,29 @@ spec = describe "Servant.API.ContentTypes" $ do
     describe "handleCTypeH" $ do
 
         it "returns Nothing if the 'Content-Type' header doesn't match" $ do
-            handleCTypeH (Proxy :: Proxy '[JSON]) "text/plain" "𝓽𝓱𝓮 𝓽𝓲𝓶𝓮 𝓱𝓪𝓼 𝓬𝓸𝓶𝓮, 𝓽𝓱𝓮 𝔀𝓪𝓵𝓻𝓾𝓼 𝓼𝓪𝓲𝓭 "
-                `shouldBe` (Nothing :: Maybe (Either String Value))
+            (Proxy :: Proxy '[JSON], "text/plain", "𝓽𝓱𝓮 𝓽𝓲𝓶𝓮 𝓱𝓪𝓼 𝓬𝓸𝓶𝓮, 𝓽𝓱𝓮 𝔀𝓪𝓵𝓻𝓾𝓼 𝓼𝓪𝓲𝓭 ")
+              `shouldNotFindCTypeH` (Proxy :: Proxy Value)
 
         context "the 'Content-Type' header matches" $ do
             it "returns Just if the parameter matches" $ do
-                handleCTypeH (Proxy :: Proxy '[JSON]) "application/json"
-                    "𝕥𝕠 𝕥𝕒𝕝𝕜 𝕠𝕗 𝕞𝕒𝕟𝕪 𝕥𝕙𝕚𝕟𝕘𝕤 "
-                    `shouldSatisfy` (isJust :: Maybe (Either String Value) -> Bool)
+                (Proxy :: Proxy '[JSON], "application/json", "𝕥𝕠 𝕥𝕒𝕝𝕜 𝕠𝕗 𝕞𝕒𝕟𝕪 𝕥𝕙𝕚𝕟𝕘𝕤 ")
+                  `shouldHandleCTypeHSatisfy` (isJust :: Maybe (Either String Value) -> Bool)
 
             it "returns Just if there is no parameter" $ do
-                handleCTypeH (Proxy :: Proxy '[JSON]) "application/json"
-                    "𝕥𝕠 𝕥𝕒𝕝𝕜 𝕠𝕗 𝕞𝕒𝕟𝕪 𝕥𝕙𝕚𝕟𝕘𝕤 "
-                    `shouldSatisfy` (isJust :: Maybe (Either String Value) -> Bool)
+                (Proxy :: Proxy '[JSON], "application/json", "𝕥𝕠 𝕥𝕒𝕝𝕜 𝕠𝕗 𝕞𝕒𝕟𝕪 𝕥𝕙𝕚𝕟𝕘𝕤 ")
+                  `shouldHandleCTypeHSatisfy` (isJust :: Maybe (Either String Value) -> Bool)
 
             it "returns Just Left if the decoding fails" $ do
                 let isJustLeft :: Maybe (Either String Value) -> Bool
                     isJustLeft (Just (Left _)) = True
                     isJustLeft _ = False
-                handleCTypeH (Proxy :: Proxy '[JSON]) "application/json"
-                    "𝕺𝖋 𝖘𝖍𝖔𝖊𝖘--𝖆𝖓𝖉 𝖘𝖍𝖎𝖕𝖘--𝖆𝖓𝖉 𝖘𝖊𝖆𝖑𝖎𝖓𝖌-𝖜𝖆𝖝-- "
-                    `shouldSatisfy` isJustLeft
+                (Proxy :: Proxy '[JSON], "application/json", "𝕺𝖋 𝖘𝖍𝖔𝖊𝖘--𝖆𝖓𝖉 𝖘𝖍𝖎𝖕𝖘--𝖆𝖓𝖉 𝖘𝖊𝖆𝖑𝖎𝖓𝖌-𝖜𝖆𝖝-- ")
+                  `shouldHandleCTypeHSatisfy` isJustLeft
 
             it "returns Just (Right val) if the decoding succeeds" $ do
                 let val = SomeData "Of cabbages--and kings" 12
-                handleCTypeH (Proxy :: Proxy '[JSON]) "application/json"
-                    (encode val)
-                    `shouldBe` Just (Right val)
+                (Proxy :: Proxy '[JSON], "application/json", encode val)
+                  `shouldHandleCTypeH` val
 
 #if MIN_VERSION_aeson(0,9,0)
     -- aeson >= 0.9 decodes top-level strings
