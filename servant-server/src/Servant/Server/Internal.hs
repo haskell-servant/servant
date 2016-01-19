@@ -22,6 +22,7 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
+import           Control.Monad.Trans.Except (ExceptT, runExceptT)
 import           Control.Monad.Trans        (liftIO)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
@@ -42,6 +43,7 @@ import           Network.Wai                (Application, Request, Response,
                                              responseLBS, vault)
 import           Prelude                    ()
 import           Prelude.Compat
+import           System.IO.Unsafe           (unsafeInterleaveIO)
 import           Web.HttpApiData            (FromHttpApiData)
 import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
@@ -443,8 +445,9 @@ instance ( AllCTUnrender list a, HasServer api context
         -- http://www.w3.org/2001/tag/2002/0129-mime
         let contentTypeH = fromMaybe "application/octet-stream"
                          $ lookup hContentType $ requestHeaders request
-        mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
-               <$> liftIO (lazyRequestBody request)
+        lbody <- lazyRequestBody request
+        mrqbody <- traverse (liftIO . unsafeInterleaveIO . runExceptT) $
+          handleCTypeH (Proxy :: Proxy list) (cs contentTypeH) lbody
         case mrqbody of
           Nothing        -> delayedFailFatal err415
           Just (Left e)  -> delayedFailFatal err400 { errBody = cs e }
