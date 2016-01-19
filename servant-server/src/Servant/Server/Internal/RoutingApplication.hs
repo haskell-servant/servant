@@ -77,7 +77,7 @@ toApplication ra request respond = do
 -- now, and therefore get 415 before 405, which is wrong.
 --
 -- If we delay Captures, but perform method checks eagerly, we
--- end up potentially preferring 405 over 404, whcih is also bad.
+-- end up potentially preferring 405 over 404, which is also bad.
 --
 -- So in principle, we'd like:
 --
