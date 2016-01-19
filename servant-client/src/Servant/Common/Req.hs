@@ -186,7 +186,8 @@ performRequestCT ct reqMethod req manager reqHost = do
   (_status, respBody, respCT, hdrs, _response) <-
     performRequest reqMethod (req { reqAccept = [acceptCT] }) manager reqHost
   unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
-  case mimeUnrender ct respBody of
+  unrenderResult <- liftIO . runExceptT $ mimeUnrender ct respBody
+  case unrenderResult of
     Left err -> throwE $ DecodeFailure err respCT respBody
     Right val -> return (hdrs, val)
 
