@@ -1,0 +1,14 @@
+dist/
+cabal.sandbox.config
+.cabal-sandbox
+*/**/*.swp
+*/**/*.swo
+examples/*/bower_components/**/*
+examples/*/output/**/*
+
+# Auto-generated
+examples/counter/temp/api.purs
+examples/counter/www/api.js
+examples/todo/src/App/App.Ajax.purs
+examples/todo/www/app.js
+

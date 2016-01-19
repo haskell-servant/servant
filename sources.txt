@@ -9,3 +9,4 @@ servant-examples
 servant-blaze
 servant-lucid
 servant-mock
+servant-purescript
