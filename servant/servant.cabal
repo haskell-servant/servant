@@ -47,6 +47,7 @@ library
     Servant.API.ReqBody
     Servant.API.ResponseHeaders
     Servant.API.Sub
+    Servant.API.TypeLevel
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext

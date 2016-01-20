@@ -10,6 +10,7 @@ import           Test.Hspec              (Expectation, Spec, describe, it,
 import           Data.String             (fromString)
 
 import           Servant.API
+import           Servant.API.TypeLevel
 
 type TestApi =
   -- Capture and query params
