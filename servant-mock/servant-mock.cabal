@@ -8,9 +8,9 @@ description:
 homepage:            http://github.com/haskell-servant/servant
 license:             BSD3
 license-file:        LICENSE
-author:              Alp Mestanogullari
-maintainer:          alpmestan@gmail.com
-copyright:           2015 Alp Mestanogullari
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2015-2016 Servant Contributors
 category:            Web
 build-type:          Simple
 extra-source-files:  include/*.h

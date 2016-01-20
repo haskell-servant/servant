@@ -13,9 +13,9 @@ description:
   <https://github.com/haskell-servant/servant/blob/master/servant-js/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
-author:              Alp Mestanogullari, Maksymilian Owsianny
-maintainer:          alpmestan@gmail.com
-copyright:           2014 Alp Mestanogullari
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2015-2016 Servant Contributors
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10

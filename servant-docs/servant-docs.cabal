@@ -9,9 +9,9 @@ description:
   <https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
-author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
-maintainer:          alpmestan@gmail.com
-copyright:           2014-2015 Zalora South East Asia Pte Ltd
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
