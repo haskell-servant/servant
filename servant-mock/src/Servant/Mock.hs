@@ -114,6 +114,9 @@ instance (KnownSymbol path, HasMock rest) => HasMock (path :> rest) where
 instance (KnownSymbol s, FromHttpApiData a, HasMock rest) => HasMock (Capture s a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
+instance (FromHttpApiData a, HasMock rest) => HasMock (CaptureAll a :> rest) where
+  mock _ = \_ -> mock (Proxy :: Proxy rest)
+
 instance (AllCTUnrender ctypes a, HasMock rest) => HasMock (ReqBody ctypes a :> rest) where
   mock _ = \_ -> mock (Proxy :: Proxy rest)
 
