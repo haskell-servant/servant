@@ -13,8 +13,8 @@ type Router = Router' RoutingApplication
 
 -- | Internal representation of a router.
 data Router' a =
-    WithRequest   (Request -> Router)
-      -- ^ current request is passed to the router
+    WithRequest   (Request -> (Request, Router))
+      -- ^ current request is passed to the router and can be changed
   | StaticRouter  (Map Text Router)
       -- ^ first path component used for lookup and removed afterwards
   | DynamicRouter (Text -> Router)
@@ -34,29 +34,20 @@ tweakResponse f = fmap (\a -> \req cont -> a req (cont . f))
 --
 --   * Two static routers can be joined by joining their maps.
 --   * Two dynamic routers can be joined by joining their codomains.
---   * Two 'WithRequest' routers can be joined by passing them
---     the same request and joining their codomains.
---   * A 'WithRequest' router can be joined with anything else by
---     passing the same request to both but ignoring it in the
---     component that does not need it.
 --
 choice :: Router -> Router -> Router
 choice (StaticRouter table1) (StaticRouter table2) =
   StaticRouter (M.unionWith choice table1 table2)
 choice (DynamicRouter fun1)  (DynamicRouter fun2)  =
   DynamicRouter (\ first -> choice (fun1 first) (fun2 first))
-choice (WithRequest router1) (WithRequest router2) =
-  WithRequest (\ request -> choice (router1 request) (router2 request))
-choice (WithRequest router1) router2 =
-  WithRequest (\ request -> choice (router1 request) router2)
-choice router1 (WithRequest router2) =
-  WithRequest (\ request -> choice router1 (router2 request))
 choice router1 router2 = Choice router1 router2
 
 -- | Interpret a router as an application.
 runRouter :: Router -> RoutingApplication
 runRouter (WithRequest router) request respond =
-  runRouter (router request) request respond
+  runRouter subRouter subRequest respond
+  where
+    (subRequest, subRouter) = router request
 runRouter (StaticRouter table) request respond =
   case pathInfo request of
     first : rest

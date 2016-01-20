@@ -118,6 +118,20 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
 
     where p = unpack (toUrlPiece val)
 
+instance (ToHttpApiData a, HasClient sublayout)
+      => HasClient (CaptureAll a :> sublayout) where
+
+  type Client (CaptureAll a :> sublayout) =
+    [a] -> Client sublayout
+
+  clientWithRoute Proxy req baseurl manager vals =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (foldl' (flip appendToPath) req ps)
+                    baseurl
+                    manager
+
+    where ps = map (unpack . toUrlPiece) vals
+
 instance OVERLAPPABLE_
   -- Note [Non-Empty Content Types]
   (MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)

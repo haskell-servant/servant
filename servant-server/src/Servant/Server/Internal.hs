@@ -43,9 +43,10 @@ import           Network.Wai                (Application, Request, Response,
 import           Web.HttpApiData            (FromHttpApiData)
 import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
-                                             parseUrlPieceMaybe)
+                                             parseUrlPieceMaybe,
+                                             parseUrlPieces)
 
-import           Servant.API                 ((:<|>) (..), (:>), Capture,
+import           Servant.API                 ((:<|>) (..), (:>), Capture, CaptureAll,
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,
@@ -95,6 +96,9 @@ instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
 captured :: FromHttpApiData a => proxy (Capture sym a) -> Text -> Maybe a
 captured _ = parseUrlPieceMaybe
 
+capturedAll :: FromHttpApiData a => proxy (CaptureAll a) -> [Text] -> Maybe [a]
+capturedAll _ = either (const Nothing) Just . parseUrlPieces
+
 -- | If you use 'Capture' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by the 'Capture'.
@@ -127,6 +131,20 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
               )
     where
       captureProxy = Proxy :: Proxy (Capture capture a)
+
+instance (FromHttpApiData a, HasServer sublayout)
+  => HasServer (CaptureAll a :> sublayout) where
+
+  type ServerT (CaptureAll a :> sublayout) m = [a] -> ServerT sublayout m
+
+  route _ d = WithRequest $ \request ->
+    let
+      subRequest = request { pathInfo = [] }
+      subRoute = route (Proxy :: Proxy sublayout) (addCapture d (return xs))
+      xs = case capturedAll (Proxy :: Proxy (CaptureAll a)) (pathInfo request) of
+              Nothing -> Fail err404
+              Just vs -> Route vs
+    in (subRequest, subRoute)
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
@@ -236,7 +254,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   route Proxy subserver = WithRequest $ \ request ->
     let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver mheader)
+    in  (request, route (Proxy :: Proxy sublayout) (passToServer subserver mheader))
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
@@ -274,7 +292,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
             Just Nothing  -> Nothing -- param present with no value -> Nothing
             Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                         -- the right type
-    in route (Proxy :: Proxy sublayout) (passToServer subserver param)
+    in (request, route (Proxy :: Proxy sublayout) (passToServer subserver param))
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -309,7 +327,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
         -- corresponding values
         parameters = filter looksLikeParam querytext
         values = mapMaybe (convert . snd) parameters
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver values)
+    in  (request, route (Proxy :: Proxy sublayout) (passToServer subserver values))
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
@@ -339,7 +357,7 @@ instance (KnownSymbol sym, HasServer sublayout)
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value
           Nothing       -> False -- param not in the query string
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver param)
+    in  (request, route (Proxy :: Proxy sublayout) (passToServer subserver param))
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
@@ -391,7 +409,7 @@ instance ( AllCTUnrender list a, HasServer sublayout
     a -> ServerT sublayout m
 
   route Proxy subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy sublayout) (addBodyCheck subserver (bodyCheck request))
+    (request, route (Proxy :: Proxy sublayout) (addBodyCheck subserver (bodyCheck request)))
     where
       bodyCheck request = do
         -- See HTTP RFC 2616, section 7.2.1
@@ -422,13 +440,13 @@ instance HasServer api => HasServer (RemoteHost :> api) where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ remoteHost req)
+    (req, route (Proxy :: Proxy api) (passToServer subserver $ remoteHost req))
 
 instance HasServer api => HasServer (IsSecure :> api) where
   type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ secure req)
+    (req, route (Proxy :: Proxy api) (passToServer subserver $ secure req))
 
     where secure req = if isSecure req then Secure else NotSecure
 
@@ -436,13 +454,13 @@ instance HasServer api => HasServer (Vault :> api) where
   type ServerT (Vault :> api) m = Vault -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ vault req)
+    (req, route (Proxy :: Proxy api) (passToServer subserver $ vault req))
 
 instance HasServer api => HasServer (HttpVersion :> api) where
   type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ httpVersion req)
+    (req, route (Proxy :: Proxy api) (passToServer subserver $ httpVersion req))
 
 pathIsEmpty :: Request -> Bool
 pathIsEmpty = go . pathInfo

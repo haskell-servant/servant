@@ -115,7 +115,7 @@ import GHC.TypeLits ( KnownSymbol, symbolVal )
 import GHC.Exts(Constraint)
 
 import Web.HttpApiData
-import Servant.API.Capture ( Capture )
+import Servant.API.Capture ( Capture, CaptureAll )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.Header ( Header )
@@ -290,6 +290,13 @@ instance (ToHttpApiData v, HasLink sub)
     toLink _ l v =
         toLink (Proxy :: Proxy sub) $
             addSegment (escape . Text.unpack $ toUrlPiece v) l
+
+instance (ToHttpApiData v, HasLink sub)
+    => HasLink (CaptureAll v :> sub) where
+    type MkLink (CaptureAll v :> sub) = [v] -> MkLink sub
+    toLink _ l vs =
+      toLink (Proxy :: Proxy sub) $
+        foldl' (flip $ addSegment . escape . Text.unpack . toUrlPiece) l vs
 
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub
