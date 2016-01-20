@@ -29,7 +29,7 @@ instance HasServer rest => HasServer (AuthProtected :> rest) where
   type ServerT (AuthProtected :> rest) m = ServerT rest m
 
   route Proxy subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy rest) $ addAcceptCheck subserver $ cookieCheck request
+    (request, route (Proxy :: Proxy rest) $ addAcceptCheck subserver $ cookieCheck request)
       where
         cookieCheck req = case lookup "Cookie" (requestHeaders req) of
             Nothing -> return $ FailFatal err401 { errBody = "Missing auth header" }
