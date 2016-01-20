@@ -8,9 +8,9 @@ synopsis:            Blaze-html support for servant
 homepage:            http://haskell-servant.github.io/
 license:             BSD3
 license-file:        LICENSE
-author:              Julian K. Arni
-maintainer:          jkarni@gmail.com
--- copyright:
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2015-2016 Servant Contributors
 category:            Web
 build-type:          Simple
 extra-source-files:  include/*.h
