@@ -43,9 +43,10 @@ import           Network.Wai                (Application, Request, Response,
 import           Web.HttpApiData            (FromHttpApiData)
 import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
-                                             parseUrlPieceMaybe)
+                                             parseUrlPieceMaybe,
+                                             parseUrlPieces)
 
-import           Servant.API                 ((:<|>) (..), (:>), Capture,
+import           Servant.API                 ((:<|>) (..), (:>), Capture, CaptureAll,
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,
@@ -95,6 +96,9 @@ instance (HasServer a, HasServer b) => HasServer (a :<|> b) where
 captured :: FromHttpApiData a => proxy (Capture sym a) -> Text -> Maybe a
 captured _ = parseUrlPieceMaybe
 
+capturedAll :: FromHttpApiData a => proxy (CaptureAll a) -> [Text] -> Maybe [a]
+capturedAll _ = either (const Nothing) Just . parseUrlPieces
+
 -- | If you use 'Capture' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by the 'Capture'.
@@ -127,6 +131,20 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout)
               )
     where
       captureProxy = Proxy :: Proxy (Capture capture a)
+
+instance (FromHttpApiData a, HasServer sublayout)
+  => HasServer (CaptureAll a :> sublayout) where
+
+  type ServerT (CaptureAll a :> sublayout) m = [a] -> ServerT sublayout m
+
+  route _ d = WithRequest $ \request ->
+    let
+      subRequest = request { pathInfo = [] }
+      subRoute = route (Proxy :: Proxy sublayout) (addCapture d (return xs))
+      xs = case capturedAll (Proxy :: Proxy (CaptureAll a)) (pathInfo request) of
+              Nothing -> Fail err404
+              Just vs -> Route vs
+    in (subRequest, subRoute)
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
