@@ -236,7 +236,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
 
   route Proxy subserver = WithRequest $ \ request ->
     let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver mheader)
+    in  (request, route (Proxy :: Proxy sublayout) (passToServer subserver mheader))
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
@@ -274,7 +274,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
             Just Nothing  -> Nothing -- param present with no value -> Nothing
             Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                         -- the right type
-    in route (Proxy :: Proxy sublayout) (passToServer subserver param)
+    in (request, route (Proxy :: Proxy sublayout) (passToServer subserver param))
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -309,7 +309,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout)
         -- corresponding values
         parameters = filter looksLikeParam querytext
         values = mapMaybe (convert . snd) parameters
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver values)
+    in  (request, route (Proxy :: Proxy sublayout) (passToServer subserver values))
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
@@ -339,7 +339,7 @@ instance (KnownSymbol sym, HasServer sublayout)
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value
           Nothing       -> False -- param not in the query string
-    in  route (Proxy :: Proxy sublayout) (passToServer subserver param)
+    in  (request, route (Proxy :: Proxy sublayout) (passToServer subserver param))
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
@@ -391,7 +391,7 @@ instance ( AllCTUnrender list a, HasServer sublayout
     a -> ServerT sublayout m
 
   route Proxy subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy sublayout) (addBodyCheck subserver (bodyCheck request))
+    (request, route (Proxy :: Proxy sublayout) (addBodyCheck subserver (bodyCheck request)))
     where
       bodyCheck request = do
         -- See HTTP RFC 2616, section 7.2.1
@@ -422,13 +422,13 @@ instance HasServer api => HasServer (RemoteHost :> api) where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ remoteHost req)
+    (req, route (Proxy :: Proxy api) (passToServer subserver $ remoteHost req))
 
 instance HasServer api => HasServer (IsSecure :> api) where
   type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ secure req)
+    (req, route (Proxy :: Proxy api) (passToServer subserver $ secure req))
 
     where secure req = if isSecure req then Secure else NotSecure
 
@@ -436,13 +436,13 @@ instance HasServer api => HasServer (Vault :> api) where
   type ServerT (Vault :> api) m = Vault -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ vault req)
+    (req, route (Proxy :: Proxy api) (passToServer subserver $ vault req))
 
 instance HasServer api => HasServer (HttpVersion :> api) where
   type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
 
   route Proxy subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) (passToServer subserver $ httpVersion req)
+    (req, route (Proxy :: Proxy api) (passToServer subserver $ httpVersion req))
 
 pathIsEmpty :: Request -> Bool
 pathIsEmpty = go . pathInfo
