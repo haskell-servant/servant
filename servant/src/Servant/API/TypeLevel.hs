@@ -7,7 +7,7 @@
 module Servant.API.TypeLevel where
 
 import GHC.Exts(Constraint)
-import Servant.API.Capture ( Capture )
+import Servant.API.Capture ( Capture, CaptureAll )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.Header ( Header )

@@ -21,6 +21,7 @@ import           GHC.TypeLits
 import qualified Network.HTTP.Types as HTTP
 import           Prelude hiding (concat)
 import           Servant.API
+import           Servant.API.TypeLevel
 
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
@@ -134,15 +135,6 @@ makeLenses ''Req
 
 defReq :: Req ftype
 defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName [])
-
--- | To be used exclusively as a "negative" return type/constraint
--- by @'Elem`@ type family.
-class NotFound
-
-type family Elem (a :: *) (ls::[*]) :: Constraint where
-  Elem a '[]         = NotFound
-  Elem a (a ': list) = ()
-  Elem a (b ': list) = Elem a list
 
 -- | 'HasForeignType' maps Haskell types with types in the target
 -- language of your backend. For example, let's say you're
