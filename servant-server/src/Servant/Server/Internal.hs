@@ -33,7 +33,6 @@ import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
 import           Data.Text                  (Text)
 import           Data.Typeable
-import           GHC.Exts                   (Constraint)
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
 import           Network.HTTP.Types         hiding (Header, ResponseHeaders)

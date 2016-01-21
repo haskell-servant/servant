@@ -41,7 +41,7 @@ server = return products
 
 -- logStdout :: Middleware
 -- i.e, logStdout :: Application -> Application
--- serve :: Proxy api -> Config a -> Server api -> Application
+-- serve :: Proxy api -> Config config -> Server api -> Application
 -- so applying a middleware is really as simple as
 -- applying a function to the result of 'serve'
 app :: Application
