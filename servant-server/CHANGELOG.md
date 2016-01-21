@@ -2,8 +2,8 @@ HEAD
 ----
 
 * Add `Config` machinery (https://github.com/haskell-servant/servant/pull/327).
-  This is a breaking change, as the signatures of both `route` and `serve` now
-  take an extra parameter.
+  This is a breaking change, as the signatures of both `route`, `serve` and the
+  typeclass `HasServer` now take an additional parameter.
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Drop `EitherT` in favor of `ExceptT`
 * Use `http-api-data` instead of `Servant.Common.Text`
