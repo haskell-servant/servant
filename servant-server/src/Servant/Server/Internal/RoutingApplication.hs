@@ -1,12 +1,7 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE ExistentialQuantification  #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 module Servant.Server.Internal.RoutingApplication where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -154,13 +149,13 @@ toApplication ra request respond = do
 -- The accept header check can be performed as the final
 -- computation in this block. It can cause a 406.
 --
-data Delayed c = forall captures auth body. Delayed
-  { capturesD :: IO (RouteResult captures)
-  , methodD   :: IO (RouteResult ())
-  , authD     :: IO (RouteResult auth)
-  , bodyD     :: IO (RouteResult body)
-  , serverD   :: (captures -> auth -> body -> RouteResult c)
-  }
+data Delayed c where
+  Delayed :: { capturesD :: IO (RouteResult captures)
+             , methodD   :: IO (RouteResult ())
+             , authD     :: IO (RouteResult auth)
+             , bodyD     :: IO (RouteResult body)
+             , serverD   :: (captures -> auth -> body -> RouteResult c)
+             } -> Delayed c
 
 instance Functor Delayed where
    fmap f Delayed{..}
