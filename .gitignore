@@ -26,3 +26,4 @@ Setup
 shell.nix
 default.nix
 doc/_build
+doc/venv
