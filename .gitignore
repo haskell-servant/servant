@@ -25,3 +25,4 @@ Setup
 .stack-work
 shell.nix
 default.nix
+tutorial/_build
