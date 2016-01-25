@@ -37,7 +37,7 @@ templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-source_suffix = ['.md', '.rst']
+source_suffix = ['.md', '.rst', '.lhs']
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
@@ -47,8 +47,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'servant'
-copyright = u'2015-2016, Servant contributors'
-author = u'Servant contributors'
+copyright = u'2016, Servant Contributors'
+author = u'Servant Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -74,7 +74,7 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', 'venv']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -108,7 +108,7 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-# html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -222,8 +222,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'servant.tex', u'servant Documentation',
-   u'Servant contributors', 'manual'),
+    (master_doc, 'servant.tex', u'servant Documentation',
+     u'Servant Contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -285,4 +285,5 @@ texinfo_documents = [
 
 source_parsers = {
     '.md': CommonMarkParser,
+    '.lhs': CommonMarkParser,
 }
