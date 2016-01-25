@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# generics-eot documentation build configuration file, created by
+# servant documentation build configuration file, created by
 # sphinx-quickstart on Fri Jan 22 12:22:48 2016.
 #
 # This file is execfile()d with the current directory set to its
@@ -36,7 +36,7 @@ templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-source_suffix = ['.md', '.rst']
+source_suffix = ['.md', '.rst', '.lhs']
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
@@ -45,9 +45,9 @@ source_suffix = ['.md', '.rst']
 master_doc = 'index'
 
 # General information about the project.
-project = u'generics-eot'
-copyright = u'2016, Sönke Hahn'
-author = u'Sönke Hahn'
+project = u'servant'
+copyright = u'2016, Servant Contributors'
+author = u'Servant Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -199,7 +199,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'generics-eotdoc'
+htmlhelp_basename = 'servantdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -221,8 +221,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'generics-eot.tex', u'generics-eot Documentation',
-     u'Sönke Hahn', 'manual'),
+    (master_doc, 'servant.tex', u'servant Documentation',
+     u'Servant Contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -251,7 +251,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'generics-eot', u'generics-eot Documentation',
+    (master_doc, 'servant', u'servant Documentation',
      [author], 1)
 ]
 
@@ -265,8 +265,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'generics-eot', u'generics-eot Documentation',
-     author, 'generics-eot', 'One line description of project.',
+    (master_doc, 'servant', u'servant Documentation',
+     author, 'servant', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -284,4 +284,5 @@ texinfo_documents = [
 
 source_parsers = {
     '.md': CommonMarkParser,
+    '.lhs': CommonMarkParser,
 }
