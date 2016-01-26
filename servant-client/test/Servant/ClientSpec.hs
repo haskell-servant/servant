@@ -51,6 +51,7 @@ import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
+import           Servant.API.Auth (BasicAuthData(BasicAuthData))
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
 import           Servant.Server
@@ -167,7 +168,7 @@ type instance AuthClientData (AuthProtect "auth-tag") = ()
 
 basicAuthHandler :: BasicAuthCheck ()
 basicAuthHandler =
-  let check username password =
+  let check (BasicAuthData username password) =
         if username == "servant" && password == "server"
         then return (Authorized ())
         else return Unauthorized

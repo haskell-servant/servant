@@ -17,6 +17,7 @@ import           GHC.Generics
 import           Network.HTTP.Types     (Header)
 import           Network.Wai            (Request, requestHeaders)
 
+import Servant.API.Auth (BasicAuthData(BasicAuthData))
 import Servant.Server.Internal.RoutingApplication
 import Servant.Server.Internal.ServantErr
 
@@ -34,6 +35,8 @@ newtype AuthHandler r usr = AuthHandler
 mkAuthHandler :: (r -> ExceptT ServantErr IO usr) -> AuthHandler r usr
 mkAuthHandler = AuthHandler
 
+-- * Basic Auth
+
 -- | The result of authentication/authorization
 data BasicAuthResult usr
   = Unauthorized
@@ -42,11 +45,9 @@ data BasicAuthResult usr
   | Authorized usr
   deriving (Eq, Show, Read, Generic, Typeable, Functor)
 
--- * Basic Auth
 
 newtype BasicAuthCheck usr = BasicAuthCheck
-  { unBasicAuthCheck :: BS.ByteString  -- Username
-                     -> BS.ByteString  -- Password
+  { unBasicAuthCheck :: BasicAuthData
                      -> IO (BasicAuthResult usr)
   }
   deriving (Generic, Typeable, Functor)
@@ -55,7 +56,7 @@ mkBAChallengerHdr :: BS.ByteString -> Header
 mkBAChallengerHdr realm = ("WWW-Authenticate", "Basic realm=\"" <> realm <> "\"")
 
 -- | Find and decode an 'Authorization' header from the request as Basic Auth
-decodeBAHdr :: Request -> Maybe (BS.ByteString, BS.ByteString)
+decodeBAHdr :: Request -> Maybe BasicAuthData
 decodeBAHdr req = do
     ah <- lookup "Authorization" $ requestHeaders req
     let (b, rest) = BS.break isSpace ah
@@ -63,13 +64,13 @@ decodeBAHdr req = do
     let decoded = decodeLenient (BS.dropWhile isSpace rest)
     let (username, passWithColonAtHead) = BS.break (== _colon) decoded
     (_, password) <- BS.uncons passWithColonAtHead
-    return (username, password)
+    return (BasicAuthData username password)
 
 runBasicAuth :: Request -> BS.ByteString -> BasicAuthCheck usr -> IO (RouteResult usr)
 runBasicAuth req realm (BasicAuthCheck ba) =
   case decodeBAHdr req of
      Nothing -> plzAuthenticate
-     Just e  -> uncurry ba e >>= \res -> case res of
+     Just e  -> ba e >>= \res -> case res of
        BadPassword    -> plzAuthenticate
        NoSuchUser     -> plzAuthenticate
        Unauthorized   -> return $ Fail err403

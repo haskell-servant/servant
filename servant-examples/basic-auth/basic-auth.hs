@@ -14,6 +14,7 @@ import           GHC.Generics                 (Generic)
 import           Network.Wai.Handler.Warp     (run)
 import           Servant.API                  ((:<|>) ((:<|>)), (:>), BasicAuth,
                                                Get, JSON)
+import           Servant.API.Auth             (BasicAuthData(BasicAuthData))
 import           Servant.Server               (AuthReturnType, BasicAuthResult (Authorized, Unauthorized), Config ((:.), EmptyConfig),
                                                Server, serve, BasicAuthCheck(BasicAuthCheck))
 
@@ -59,7 +60,7 @@ type instance AuthReturnType (BasicAuth "foo-realm") = User
 -- | 'BasicAuthCheck' holds the handler we'll use to verify a username and password.
 authCheck :: BasicAuthCheck User
 authCheck =
-  let check username password =
+  let check (BasicAuthData username password) =
         if username == "servant" && password == "server"
         then return (Authorized (User "servant"))
         else return Unauthorized

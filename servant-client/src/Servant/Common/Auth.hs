@@ -7,22 +7,15 @@
 module Servant.Common.Auth (
     AuthenticateReq(AuthenticateReq, unAuthReq)
   , AuthClientData
-  , BasicAuthData (BasicAuthData, username, password)
   , basicAuthReq
   , mkAuthenticateReq
   ) where
 
-import Data.ByteString (ByteString)
 import Data.ByteString.Base64  (encode)
 import Data.Monoid ((<>))
 import Data.Text.Encoding (decodeUtf8)
 import Servant.Common.Req (addHeader, Req)
-
-
--- | A simple datatype to hold data required to decorate a request
-data BasicAuthData = BasicAuthData { username :: ByteString
-                                   , password :: ByteString
-                                   }
+import Servant.API.Auth (BasicAuthData(BasicAuthData))
 
 -- | Authenticate a request using Basic Authentication
 basicAuthReq :: BasicAuthData -> Req -> Req

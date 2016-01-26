@@ -17,7 +17,6 @@
 module Servant.Client
   ( AuthClientData
   , AuthenticateReq(..)
-  , BasicAuthData(..)
   , client
   , HasClient(..)
   , mkAuthenticateReq
@@ -40,6 +39,7 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.API.Auth           (BasicAuthData)
 import           Servant.Common.Auth
 import           Servant.Common.BaseUrl
 import           Servant.Common.Req

@@ -33,7 +33,7 @@ import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
 import           Network.Wai                (Application, Request, requestHeaders, pathInfo,
                                              queryString, rawQueryString,
                                              responseBuilder, responseLBS)
-import           Network.Wai.Internal       (Response (ResponseBuilder), requestHeaders)
+import           Network.Wai.Internal       (Response (ResponseBuilder))
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody,
                                              simpleHeaders, simpleStatus)
@@ -55,20 +55,18 @@ import qualified Test.Hspec.Wai as THW
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, request,
                                              shouldRespondWith, with, (<:>))
-import qualified Test.Hspec.Wai as THW
 
+import           Servant.API.Auth (BasicAuthData(BasicAuthData))
 import           Servant.Server.Internal.Auth
                                             (AuthHandler, AuthReturnType, BasicAuthCheck (BasicAuthCheck),
                                                BasicAuthResult (Authorized, Unauthorized), mkAuthHandler)
-
-import           Servant.Server.Internal.Auth
 import           Servant.Server.Internal.RoutingApplication
                                             (toApplication, RouteResult(..))
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
 import           Servant.Server.Internal.Config
-                                            (Config(..), NamedConfig(..))
+                                            (NamedConfig(NamedConfig))
 
 -- * comprehensive api test
 
@@ -554,7 +552,7 @@ authConfig :: Config '[ BasicAuthCheck ()
                       , AuthHandler Request ()
                       ]
 authConfig =
-  let basicHandler = BasicAuthCheck $ (\usr pass ->
+  let basicHandler = BasicAuthCheck $ (\(BasicAuthData usr pass) ->
         if usr == "servant" && pass == "server"
         then return (Authorized ())
         else return Unauthorized

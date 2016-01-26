@@ -4,6 +4,7 @@
 {-# LANGUAGE PolyKinds          #-}
 module Servant.API.Auth where
 
+import           Data.ByteString (ByteString)
 import           Data.Typeable (Typeable)
 import           GHC.TypeLits  (Symbol)
 
@@ -19,6 +20,11 @@ import           GHC.TypeLits  (Symbol)
 -- relatively efficient.
 data BasicAuth (realm :: Symbol)
   deriving (Typeable)
+
+-- | A simple datatype to hold data required to decorate a request
+data BasicAuthData = BasicAuthData { basicAuthUsername :: !ByteString
+                                   , basicAuthPassword :: !ByteString
+                                   }
 
 -- | A generalized Authentication combinator.
 data AuthProtect (tag :: k)
