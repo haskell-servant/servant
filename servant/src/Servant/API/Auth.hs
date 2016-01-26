@@ -13,7 +13,9 @@ import           GHC.TypeLits  (Symbol)
 --
 -- *IMPORTANT*: Only use Basic Auth over HTTPS! Credentials are not hashed or
 -- encrypted. Note also that because the same credentials are sent on every
--- request, Basic Auth is not as secure as some alternatives.
+-- request, Basic Auth is not as secure as some alternatives. Further, the
+-- implementation in servant-server does not protect against some types of
+-- timing attacks.
 --
 -- In Basic Auth, username and password are base64-encoded and transmitted via
 -- the @Authorization@ header. Handshakes are not required, making it
@@ -26,6 +28,7 @@ data BasicAuthData = BasicAuthData { basicAuthUsername :: !ByteString
                                    , basicAuthPassword :: !ByteString
                                    }
 
--- | A generalized Authentication combinator.
+-- | A generalized Authentication combinator. Use this if you have a
+-- non-standard authentication technique.
 data AuthProtect (tag :: k)
   deriving (Typeable)
