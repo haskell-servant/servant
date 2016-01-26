@@ -168,6 +168,10 @@ errorRetrySpec = describe "Handler search"
     request methodGet "a" [jsonCT, jsonAccept] jsonBody
      `shouldRespondWith` 200 { matchBody = Just $ encode (4 :: Int) }
 
+  it "should not continue when body cannot be decoded" $ do
+    request methodPost "a" [jsonCT, jsonAccept] "a string"
+     `shouldRespondWith` 400
+
 -- }}}
 ------------------------------------------------------------------------------
 -- * Error Choice {{{
