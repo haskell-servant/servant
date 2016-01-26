@@ -37,6 +37,10 @@ mkAuthHandler = AuthHandler
 
 -- * Basic Auth
 
+-- | servant-server's current implementation of basic authentication is not
+-- immune to certian kinds of timing attacks. Decoding payloads does not take
+-- a fixed amount of time.
+
 -- | The result of authentication/authorization
 data BasicAuthResult usr
   = Unauthorized
