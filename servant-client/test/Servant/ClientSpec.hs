@@ -177,9 +177,7 @@ basicAuthHandler =
 authHandler :: AuthHandler Request ()
 authHandler =
   let handler req = case lookup "AuthHeader" (requestHeaders req) of
-        Nothing -> throwE (err401 { errBody = "Missing auth header"
-                                  , errReasonPhrase = "denied!"
-                                  })
+        Nothing -> throwE (err401 { errBody = "Missing auth header" })
         Just _ -> return ()
   in mkAuthHandler handler
 
@@ -190,9 +188,6 @@ serverConfig = basicAuthHandler :. authHandler :. EmptyConfig
 
 authServer :: Application
 authServer = serve authAPI serverConfig (const (return alice) :<|> const (return alice))
-
-{-
-     -}
 
 {-# NOINLINE manager #-}
 manager :: C.Manager
@@ -359,7 +354,7 @@ authSpec = beforeAll (startWaiApp authServer) $ afterAll endWaiApp $ do
       let (_ :<|> getProtected) = client authAPI baseUrl manager
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
       Left FailureResponse{..} <- runExceptT (getProtected authRequest)
-      responseStatus `shouldBe` (Status 401 "denied")
+      responseStatus `shouldBe` (Status 401 "Unauthorized")
 
 -- * utils
 
