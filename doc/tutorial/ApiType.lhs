@@ -142,7 +142,7 @@ type UserAPI5 = "user" :> Capture "userid" Integer :> Get '[JSON] User
                 -- equivalent to 'DELETE /user/:userid'
 ```
 
-### `QueryParam`, `QueryParams`, `QueryFlag`, `MatrixParam`, `MatrixParams` and `MatrixFlag`
+### `QueryParam`, `QueryParams`, `QueryFlag`
 
 `QueryParam`, `QueryParams` and `QueryFlag` are about query string
 parameters, i.e., those parameters that come after the question mark
@@ -165,32 +165,12 @@ data QueryParams (sym :: Symbol) a
 data QueryFlag (sym :: Symbol)
 ```
 
-[Matrix parameters](http://www.w3.org/DesignIssues/MatrixURIs.html)
-are similar to query string parameters, but they can appear anywhere
-in the paths (click the link for more details). A URL with matrix
-parameters in it looks like `/users;sortby=age`, as opposed to
-`/users?sortby=age` with query string parameters. The big advantage is
-that they are not necessarily at the end of the URL. You could have
-`/users;active=true;registered_after=2005-01-01/locations` to get
-geolocation data about users whom are still active and registered
-after *January 1st, 2005*.
-
-Corresponding data type declarations below.
-
-``` haskell ignore
-data MatrixParam (sym :: Symbol) a
-data MatrixParams (sym :: Symbol) a
-data MatrixFlag (sym :: Symbol)
-```
-
 Examples:
 
 ``` haskell
 type UserAPI6 = "users" :> QueryParam "sortby" SortBy :> Get '[JSON] [User]
                 -- equivalent to 'GET /users?sortby={age, name}'
 
-           :<|> "users" :> MatrixParam "sortby" SortBy :> Get '[JSON] [User]
-                -- equivalent to 'GET /users;sortby={age, name}'
 ```
 
 Again, your handlers don't have to deserialize these things (into, for example,
