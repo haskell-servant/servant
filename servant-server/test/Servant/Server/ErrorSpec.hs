@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.Server.ErrorSpec (spec) where
@@ -10,13 +11,15 @@ import           Data.Aeson                 (encode)
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.ByteString.Lazy.Char8 as BCL
 import           Data.Proxy
-import           Network.HTTP.Types         (hAccept, hContentType, methodGet,
+import           Network.HTTP.Types         (hAccept, hAuthorization,
+                                             hContentType, methodGet,
                                              methodPost, methodPut)
 import           Safe                       (readMay)
 import           Test.Hspec
 import           Test.Hspec.Wai
 
 import           Servant
+import           Servant.API.Auth
 
 spec :: Spec
 spec = describe "HTTP Errors" $ do
@@ -29,53 +32,75 @@ spec = describe "HTTP Errors" $ do
 -- * Error Order {{{
 
 type ErrorOrderApi = "home"
+                  :> BasicAuth "error-realm"
                   :> ReqBody '[JSON] Int
                   :> Capture "t" Int
                   :> Post '[JSON] Int
 
+type instance AuthReturnType (BasicAuth "error-realm") = ()
+
+-- | 'BasicAuthCheck' holds the handler we'll use to verify a username and password.
+errorOrderAuthCheck :: BasicAuthCheck ()
+errorOrderAuthCheck =
+  let check (BasicAuthData username password) =
+        if username == "servant" && password == "server"
+        then return (Authorized ())
+        else return Unauthorized
+  in BasicAuthCheck check
 
 errorOrderApi :: Proxy ErrorOrderApi
 errorOrderApi = Proxy
 
 errorOrderServer :: Server ErrorOrderApi
-errorOrderServer = \_ _ -> throwE err402
+errorOrderServer = \_ _ _ -> throwE err402
 
 errorOrderSpec :: Spec
-errorOrderSpec = describe "HTTP error order"
-           $ with (return $ serve errorOrderApi EmptyConfig errorOrderServer) $ do
+errorOrderSpec =
+  describe "HTTP error order" $
+    with (return $ serve errorOrderApi
+                   (errorOrderAuthCheck :. EmptyConfig)
+                   errorOrderServer
+         ) $ do
   let badContentType  = (hContentType, "text/plain")
       badAccept       = (hAccept, "text/plain")
       badMethod       = methodGet
       badUrl          = "home/nonexistent"
       badBody         = "nonsense"
+      badAuth         = (hAuthorization, "Basic foofoofoo")
       goodContentType = (hContentType, "application/json")
       goodAccept      = (hAccept, "application/json")
       goodMethod      = methodPost
       goodUrl         = "home/2"
       goodBody        = encode (5 :: Int)
+      -- username:password = servant:server
+      goodAuth        = (hAuthorization, "Basic c2VydmFudDpzZXJ2ZXI=")
 
   it "has 404 as its highest priority error" $ do
-    request badMethod badUrl [badContentType, badAccept] badBody
+    request badMethod badUrl [badAuth, badContentType, badAccept] badBody
       `shouldRespondWith` 404
 
   it "has 405 as its second highest priority error" $ do
-    request badMethod goodUrl [badContentType, badAccept] badBody
+    request badMethod goodUrl [badAuth, badContentType, badAccept] badBody
       `shouldRespondWith` 405
 
-  it "has 415 as its third highest priority error" $ do
-    request goodMethod goodUrl [badContentType, badAccept] badBody
+  it "has 401 as its third highest priority error (auth)" $ do
+    request goodMethod goodUrl [badAuth, badContentType, badAccept] badBody
+      `shouldRespondWith` 401
+
+  it "has 415 as its fourth highest priority error" $ do
+    request goodMethod goodUrl [goodAuth, badContentType, badAccept] badBody
       `shouldRespondWith` 415
 
-  it "has 400 as its fourth highest priority error" $ do
-    request goodMethod goodUrl [goodContentType, badAccept] badBody
+  it "has 400 as its fifth highest priority error" $ do
+    request goodMethod goodUrl [goodAuth, goodContentType, badAccept] badBody
       `shouldRespondWith` 400
 
-  it "has 406 as its fifth highest priority error" $ do
-    request goodMethod goodUrl [goodContentType, badAccept] goodBody
+  it "has 406 as its sixth highest priority error" $ do
+    request goodMethod goodUrl [goodAuth, goodContentType, badAccept] goodBody
       `shouldRespondWith` 406
 
   it "has handler-level errors as last priority" $ do
-    request goodMethod goodUrl [goodContentType, goodAccept] goodBody
+    request goodMethod goodUrl [goodAuth, goodContentType, goodAccept] goodBody
       `shouldRespondWith` 402
 
 type PrioErrorsApi = ReqBody '[JSON] Integer :> "foo" :> Get '[JSON] Integer
