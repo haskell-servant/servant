@@ -52,7 +52,8 @@ import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
                                              parseUrlPieceMaybe)
 
-import           Servant.API                 ((:<|>) (..), (:>), AuthProtect, BasicAuth, Capture,
+import           Servant.API                 ((:<|>) (..), (:>), AuthProtect,
+                                              BasicAuth, Capture,
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,
@@ -420,7 +421,10 @@ instance ( AllCTUnrender list a, HasServer sublayout config
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @sublayout@.
-instance (KnownSymbol path, HasServer sublayout config) => HasServer (path :> sublayout) config where
+instance ( KnownSymbol path
+         , HasServer sublayout config
+         )
+    => HasServer (path :> sublayout) config where
 
   type ServerT (path :> sublayout) m = ServerT sublayout m
 
@@ -456,9 +460,14 @@ instance HasServer api config => HasServer (HttpVersion :> api) config where
     route (Proxy :: Proxy api) config (passToServer subserver $ httpVersion req)
 
 -- | Basic Authentication
-instance (KnownSymbol realm, HasServer api config, HasConfigEntry config (BasicAuthCheck (AuthReturnType (BasicAuth realm))))
+instance ( KnownSymbol realm
+         , HasServer api config
+         , HasConfigEntry config (BasicAuthCheck (AuthReturnType (BasicAuth realm)))
+         )
     => HasServer (BasicAuth realm :> api) config where
-  type ServerT (BasicAuth realm :> api) m = AuthReturnType (BasicAuth realm) -> ServerT api m
+
+  type ServerT (BasicAuth realm :> api) m =
+    AuthReturnType (BasicAuth realm) -> ServerT api m
 
   route Proxy config subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)
@@ -468,8 +477,13 @@ instance (KnownSymbol realm, HasServer api config, HasConfigEntry config (BasicA
        authCheck req = runBasicAuth req realm basicAuthConfig
 
 -- | General Authentication
-instance (HasServer api config, HasConfigEntry config (AuthHandler Request (AuthReturnType (AuthProtect tag)))) => HasServer (AuthProtect tag :> api) config where
-  type ServerT (AuthProtect tag :> api) m = AuthReturnType (AuthProtect tag) -> ServerT api m
+instance ( HasServer api config
+         , HasConfigEntry config (AuthHandler Request (AuthReturnType (AuthProtect tag)))
+         )
+    => HasServer (AuthProtect tag :> api) config where
+
+  type ServerT (AuthProtect tag :> api) m =
+    AuthReturnType (AuthProtect tag) -> ServerT api m
 
   route Proxy config subserver = WithRequest $ \ request ->
     route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)
