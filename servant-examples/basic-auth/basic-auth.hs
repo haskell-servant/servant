@@ -7,16 +7,21 @@
 
 module Main where
 
-import           Data.Aeson                   (ToJSON)
-import           Data.Proxy                   (Proxy (Proxy))
-import           Data.Text                    (Text)
-import           GHC.Generics                 (Generic)
-import           Network.Wai.Handler.Warp     (run)
-import           Servant.API                  ((:<|>) ((:<|>)), (:>), BasicAuth,
-                                               Get, JSON)
-import           Servant.API.Auth             (BasicAuthData(BasicAuthData))
-import           Servant.Server               (AuthReturnType, BasicAuthResult (Authorized, Unauthorized), Config ((:.), EmptyConfig),
-                                               Server, serve, BasicAuthCheck(BasicAuthCheck))
+import           Data.Aeson               (ToJSON)
+import           Data.Proxy               (Proxy (Proxy))
+import           Data.Text                (Text)
+import           GHC.Generics             (Generic)
+import           Network.Wai.Handler.Warp (run)
+import           Servant.API              ((:<|>) ((:<|>)), (:>), BasicAuth,
+                                           Get, JSON)
+import           Servant.API.Auth         (BasicAuthData (BasicAuthData))
+import           Servant.Server           (AuthReturnType,
+                                           BasicAuthCheck (BasicAuthCheck),
+                                           BasicAuthResult( Authorized
+                                                          , Unauthorized
+                                                          ),
+                                           Config ((:.), EmptyConfig), Server,
+                                           serve)
 
 -- | let's define some types that our API returns.
 
@@ -49,10 +54,6 @@ type API = "public"  :> PublicAPI
 -- | a value holding a proxy of our API type
 api :: Proxy API
 api = Proxy
-
--- | a value holding a proxy of our basic auth realm.
-authRealm :: Proxy "foo-realm"
-authRealm = Proxy
 
 -- | Specify the data type returned after performing basic authentication
 type instance AuthReturnType (BasicAuth "foo-realm") = User
