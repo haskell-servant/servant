@@ -94,7 +94,7 @@ With all of this, we can derive docs for our API.
 
 *servant*'s markdown pretty printer is a function named `markdown`.
 
-``` haskell
+``` haskell ignore
 markdown :: API -> String
 ```
 

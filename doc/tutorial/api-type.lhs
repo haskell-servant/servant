@@ -88,7 +88,7 @@ them amounts to `/`-separating them in a URL.
 These 5 combinators are very similar except that they each describe a
 different HTTP method. This is how they're declared
 
-``` haskell
+``` haskell ignore
 data Delete (contentTypes :: [*]) a
 data Get (contentTypes :: [*]) a
 data Patch (contentTypes :: [*]) a
@@ -116,7 +116,7 @@ The `Capture` combinator in servant takes a (type-level) string representing
 the "name of the variable" and a type, which indicates the type we want to
 decode the "captured value" to.
 
-``` haskell
+``` haskell ignore
 data Capture (s :: Symbol) a
 -- s :: Symbol just says that 's' must be a type-level string.
 ```
@@ -153,7 +153,7 @@ active users whereas `/users` would list them all.
 
 Here are the corresponding data type declarations:
 
-``` haskell
+``` haskell ignore
 data QueryParam (sym :: Symbol) a
 data QueryParams (sym :: Symbol) a
 data QueryFlag (sym :: Symbol)
@@ -171,7 +171,7 @@ after *January 1st, 2005*.
 
 Corresponding data type declarations below.
 
-``` haskell
+``` haskell ignore
 data MatrixParam (sym :: Symbol) a
 data MatrixParams (sym :: Symbol) a
 data MatrixFlag (sym :: Symbol)
@@ -206,7 +206,7 @@ Request` or `Unsupported Content Type` as appropriate.
 
 Here's the data type declaration for it:
 
-``` haskell
+``` haskell ignore
 data ReqBody (contentTypes :: [*]) a
 ```
 
@@ -235,7 +235,7 @@ The `Header` combinator in servant takes a type-level string for the header
 name and the type to which we want to decode the header's value (from some
 textual representation), as illustrated below:
 
-``` haskell
+``` haskell ignore
 data Header (sym :: Symbol) a
 ```
 
@@ -274,7 +274,7 @@ headers too. *servant* provides a `Headers` combinator that carries a list of
 `Header` and can be used by simply wrapping the "return type" of an endpoint
 with it.
 
-``` haskell
+``` haskell ignore
 data Headers (ls :: [*]) a
 ```
 

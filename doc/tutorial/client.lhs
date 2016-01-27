@@ -83,7 +83,7 @@ Each function makes available as an argument any value that the response may dep
 
 As you can see in the code above, we just "pattern match our way" to these functions. If we try to derive less or more functions than there are endpoints in the API, we obviously get an error. The `BaseUrl` value there is just:
 
-``` haskell
+``` haskell ignore
 -- | URI scheme to use
 data Scheme =
     Http  -- ^ http://
