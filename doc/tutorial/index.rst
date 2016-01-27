@@ -61,8 +61,8 @@ Tutorial
 .. toctree::
   :maxdepth: 1
 
-  api-type.lhs
-  server.lhs
-  client.lhs
-  javascript.lhs
-  docs.lhs
+  ApiType.lhs
+  Server.lhs
+  Client.lhs
+  Javascript.lhs
+  Docs.lhs

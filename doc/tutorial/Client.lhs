@@ -1,7 +1,4 @@
----
-title: Deriving Haskell functions to query an API
-toc: true
----
+# Deriving Haskell functions to query an API
 
 While defining handlers that serve an API has a lot to it, querying an API is simpler: we do not care about what happens inside the webserver, we just need to know how to talk to it and get a response back. Except that we usually have to write the querying functions by hand because the structure of the API isn't a first class citizen and can't be inspected to generate a bunch of client-side functions.
 
