@@ -15,15 +15,35 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     ApiType
-                     , Client
-                     , Docs
-                     , Javascript
-                     , Server
+  --                 , Client
+  --                 , Docs
+  --                 , Javascript
+  --                 , Server
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
                      , text
-                     , servant
+                     , aeson
+                     , blaze-html
+                     , directory
+                     , blaze-markup
+                     , servant == 0.5.*
+                     , servant-server == 0.5.*
+                     , servant-client == 0.5.*
+                     , servant-docs == 0.5.*
+                     , warp
+                     , http-media
+                     , lucid
+                     , time
+                     , string-conversions
+                     , bytestring
+                     , attoparsec
+                     , mtl
+                     , random
+                     , js-jquery
+                     , wai
+                     , http-types
+                     , transformers
   -- hs-source-dirs:
   default-language:    Haskell2010
-  ghc-options:         -Wall -Werror -c -pgmL markdown-unlit
+  ghc-options:         -Wall -Werror -pgmL markdown-unlit
