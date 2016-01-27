@@ -28,16 +28,10 @@ spec = describe "HTTP Errors" $ do
     errorRetrySpec
     errorChoiceSpec
 
-------------------------------------------------------------------------------
--- * Error Order {{{
-
-type ErrorOrderApi = "home"
-                  :> BasicAuth "error-realm"
-                  :> ReqBody '[JSON] Int
-                  :> Capture "t" Int
-                  :> Post '[JSON] Int
+-- * Auth machinery (reused throughout)
 
 type instance AuthReturnType (BasicAuth "error-realm") = ()
+type instance AuthReturnType (BasicAuth "bar-realm") = ()
 
 -- | 'BasicAuthCheck' holds the handler we'll use to verify a username and password.
 errorOrderAuthCheck :: BasicAuthCheck ()
@@ -47,6 +41,15 @@ errorOrderAuthCheck =
         then return (Authorized ())
         else return Unauthorized
   in BasicAuthCheck check
+
+------------------------------------------------------------------------------
+-- * Error Order {{{
+
+type ErrorOrderApi = "home"
+                  :> BasicAuth "error-realm"
+                  :> ReqBody '[JSON] Int
+                  :> Capture "t" Int
+                  :> Post '[JSON] Int
 
 errorOrderApi :: Proxy ErrorOrderApi
 errorOrderApi = Proxy
@@ -159,9 +162,12 @@ type ErrorRetryApi
   :<|> "a" :> ReqBody '[JSON] Int      :> Post '[PlainText] Int           -- 2
   :<|> "a" :> ReqBody '[JSON] String   :> Post '[JSON] Int                -- 3
   :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 4
-  :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[PlainText] Int           -- 5
-  :<|>        ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 6
-  :<|>        ReqBody '[JSON] Int      :> Post '[JSON] Int                -- 7
+  :<|> "a" :> BasicAuth "bar-realm"
+           :> ReqBody '[JSON] Int      :> Get  '[PlainText] Int           -- 5
+  :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[PlainText] Int           -- 6
+
+  :<|>        ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 7
+  :<|>        ReqBody '[JSON] Int      :> Post '[JSON] Int                -- 8
 
 errorRetryApi :: Proxy ErrorRetryApi
 errorRetryApi = Proxy
@@ -173,13 +179,18 @@ errorRetryServer
   :<|> (\_ -> return 2)
   :<|> (\_ -> return 3)
   :<|> (\_ -> return 4)
-  :<|> (\_ -> return 5)
+  :<|> (\_ _ -> return 5)
   :<|> (\_ -> return 6)
   :<|> (\_ -> return 7)
+  :<|> (\_ -> return 8)
 
 errorRetrySpec :: Spec
-errorRetrySpec = describe "Handler search"
-           $ with (return $ serve errorRetryApi EmptyConfig errorRetryServer) $ do
+errorRetrySpec =
+  describe "Handler search" $
+    with (return $ serve errorRetryApi
+                         (errorOrderAuthCheck :. EmptyConfig)
+                         errorRetryServer
+         ) $ do
 
   let jsonCT      = (hContentType, "application/json")
       jsonAccept  = (hAccept, "application/json")
@@ -187,7 +198,7 @@ errorRetrySpec = describe "Handler search"
 
   it "should continue when URLs don't match" $ do
     request methodPost "" [jsonCT, jsonAccept] jsonBody
-     `shouldRespondWith` 200 { matchBody = Just $ encode (7 :: Int) }
+     `shouldRespondWith` 200 { matchBody = Just $ encode (8 :: Int) }
 
   it "should continue when methods don't match" $ do
     request methodGet "a" [jsonCT, jsonAccept] jsonBody
