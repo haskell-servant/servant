@@ -11,75 +11,85 @@ and friends. By *derive*, we mean that there's no code generation involved, the 
 The source for this tutorial section is a literate haskell file, so first we
 need to have some language extensions and imports:
 
-> {-# LANGUAGE DataKinds #-}
-> {-# LANGUAGE DeriveGeneric #-}
-> {-# LANGUAGE TypeOperators #-}
->
-> module Client where
->
-> import Control.Monad.Trans.Either
-> import Data.Aeson
-> import Data.Proxy
-> import GHC.Generics
-> import Servant.API
-> import Servant.Client
+``` haskell
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+
+module Client where
+
+import Control.Monad.Trans.Either
+import Data.Aeson
+import Data.Proxy
+import GHC.Generics
+import Servant.API
+import Servant.Client
+```
 
 Also, we need examples for some domain specific data types:
 
-> data Position = Position
->   { x :: Int
->   , y :: Int
->   } deriving (Show, Generic)
->
-> instance FromJSON Position
->
-> newtype HelloMessage = HelloMessage { msg :: String }
->   deriving (Show, Generic)
->
-> instance FromJSON HelloMessage
->
-> data ClientInfo = ClientInfo
->   { clientName :: String
->   , clientEmail :: String
->   , clientAge :: Int
->   , clientInterestedIn :: [String]
->   } deriving Generic
->
-> instance ToJSON ClientInfo
->
-> data Email = Email
->   { from :: String
->   , to :: String
->   , subject :: String
->   , body :: String
->   } deriving (Show, Generic)
->
-> instance FromJSON Email
+``` haskell
+data Position = Position
+  { x :: Int
+  , y :: Int
+  } deriving (Show, Generic)
+
+instance FromJSON Position
+
+newtype HelloMessage = HelloMessage { msg :: String }
+  deriving (Show, Generic)
+
+instance FromJSON HelloMessage
+
+data ClientInfo = ClientInfo
+  { clientName :: String
+  , clientEmail :: String
+  , clientAge :: Int
+  , clientInterestedIn :: [String]
+  } deriving Generic
+
+instance ToJSON ClientInfo
+
+data Email = Email
+  { from :: String
+  , to :: String
+  , subject :: String
+  , body :: String
+  } deriving (Show, Generic)
+
+instance FromJSON Email
+```
 
 Enough chitchat, let's see an example. Consider the following API type from the previous section:
 
-> type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
->       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
->       :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
+``` haskell
+type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
+      :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
+      :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
+```
 
 What we are going to get with *servant-client* here is 3 functions, one to query each endpoint:
 
-> position :: Int -- ^ value for "x"
->          -> Int -- ^ value for "y"
->          -> EitherT ServantError IO Position
->
-> hello :: Maybe String -- ^ an optional value for "name"
->       -> EitherT ServantError IO HelloMessage
->
-> marketing :: ClientInfo -- ^ value for the request body
->           -> EitherT ServantError IO Email
+``` haskell
+position :: Int -- ^ value for "x"
+         -> Int -- ^ value for "y"
+         -> EitherT ServantError IO Position
+
+hello :: Maybe String -- ^ an optional value for "name"
+      -> EitherT ServantError IO HelloMessage
+
+marketing :: ClientInfo -- ^ value for the request body
+          -> EitherT ServantError IO Email
+```
 
 Each function makes available as an argument any value that the response may depend on, as evidenced in the API type. How do we get these functions? Just give a `Proxy` to your API and a host to make the requests to:
 
-> api :: Proxy API
-> api = Proxy
->
-> position :<|> hello :<|> marketing = client api (BaseUrl Http "localhost" 8081)
+``` haskell
+api :: Proxy API
+api = Proxy
+
+position :<|> hello :<|> marketing = client api (BaseUrl Http "localhost" 8081)
+```
 
 As you can see in the code above, we just "pattern match our way" to these functions. If we try to derive less or more functions than there are endpoints in the API, we obviously get an error. The `BaseUrl` value there is just:
 
@@ -101,22 +111,24 @@ data BaseUrl = BaseUrl
 
 That's it. Let's now write some code that uses our client functions.
 
-> queries :: EitherT ServantError IO (Position, HelloMessage, Email)
-> queries = do
->   pos <- position 10 10
->   msg <- hello (Just "servant")
->   em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"])
->   return (pos, msg, em)
->
-> run :: IO ()
-> run = do
->   res <- runEitherT queries
->   case res of
->     Left err -> putStrLn $ "Error: " ++ show err
->     Right (pos, msg, em) -> do
->       print pos
->       print msg
->       print em
+``` haskell
+queries :: EitherT ServantError IO (Position, HelloMessage, Email)
+queries = do
+  pos <- position 10 10
+  msg <- hello (Just "servant")
+  em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"])
+  return (pos, msg, em)
+
+run :: IO ()
+run = do
+  res <- runEitherT queries
+  case res of
+    Left err -> putStrLn $ "Error: " ++ show err
+    Right (pos, msg, em) -> do
+      print pos
+      print msg
+      print em
+```
 
 You can now run `dist/build/tutorial/tutorial 8` (the server) and
 `dist/build/t8-main/t8-main` (the client) to see them both in action.

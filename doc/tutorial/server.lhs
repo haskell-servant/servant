@@ -34,39 +34,41 @@ Equipped with some basic knowledge about the way we represent API, let's now wri
 The source for this tutorial section is a literate haskell file, so first we
 need to have some language extensions and imports:
 
-> {-# LANGUAGE DataKinds #-}
-> {-# LANGUAGE DeriveGeneric #-}
-> {-# LANGUAGE FlexibleInstances #-}
-> {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-> {-# LANGUAGE MultiParamTypeClasses #-}
-> {-# LANGUAGE OverloadedStrings #-}
-> {-# LANGUAGE ScopedTypeVariables #-}
-> {-# LANGUAGE TypeOperators #-}
->
-> module Server where
->
-> import Control.Monad.IO.Class
-> import Control.Monad.Reader
-> import Control.Monad.Trans.Either
-> import Data.Aeson
-> import Data.Aeson.Types
-> import Data.Attoparsec.ByteString
-> import Data.ByteString (ByteString)
-> import Data.Int
-> import Data.List
-> import Data.String.Conversions
-> import Data.Time.Calendar
-> import GHC.Generics
-> import Lucid
-> import Network.HTTP.Media ((//), (/:))
-> import Network.Wai
-> import Network.Wai.Handler.Warp
-> import Servant
-> import System.Directory
-> import Text.Blaze
-> import Text.Blaze.Html.Renderer.Utf8
-> import qualified Data.Aeson.Parser
-> import qualified Text.Blaze.Html
+``` haskell
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+
+module Server where
+
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Control.Monad.Trans.Either
+import Data.Aeson
+import Data.Aeson.Types
+import Data.Attoparsec.ByteString
+import Data.ByteString (ByteString)
+import Data.Int
+import Data.List
+import Data.String.Conversions
+import Data.Time.Calendar
+import GHC.Generics
+import Lucid
+import Network.HTTP.Media ((//), (/:))
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Servant
+import System.Directory
+import Text.Blaze
+import Text.Blaze.Html.Renderer.Utf8
+import qualified Data.Aeson.Parser
+import qualified Text.Blaze.Html
+```
 
 ``` haskell ignore
 {-# LANGUAGE TypeFamilies #-}
@@ -76,7 +78,9 @@ need to have some language extensions and imports:
 
 We will write a server that will serve the following API.
 
-> type UserAPI1 = "users" :> Get '[JSON] [User]
+``` haskell
+type UserAPI1 = "users" :> Get '[JSON] [User]
+```
 
 Here's what we would like to see when making a GET request to `/users`.
 
@@ -88,22 +92,26 @@ Here's what we would like to see when making a GET request to `/users`.
 
 Now let's define our `User` data type and write some instances for it.
 
-> data User = User
->   { name :: String
->   , age :: Int
->   , email :: String
->   , registration_date :: Day
->   } deriving (Eq, Show, Generic)
->
-> instance ToJSON User
+``` haskell
+data User = User
+  { name :: String
+  , age :: Int
+  , email :: String
+  , registration_date :: Day
+  } deriving (Eq, Show, Generic)
+
+instance ToJSON User
+```
 
 Nothing funny going on here. But we now can define our list of two users.
 
-> users1 :: [User]
-> users1 =
->   [ User "Isaac Newton"    372 "isaac@newton.co.uk" (fromGregorian 1683  3 1)
->   , User "Albert Einstein" 136 "ae@mc2.org"         (fromGregorian 1905 12 1)
->   ]
+``` haskell
+users1 :: [User]
+users1 =
+  [ User "Isaac Newton"    372 "isaac@newton.co.uk" (fromGregorian 1683  3 1)
+  , User "Albert Einstein" 136 "ae@mc2.org"         (fromGregorian 1905 12 1)
+  ]
+```
 
 Let's also write our API type.
 
@@ -129,27 +137,33 @@ HTTP method combinator used for the corresponding endpoint. In our case, it
 means we must provide a handler of type `EitherT ServantErr IO [User]`. Well,
 we have a monad, let's just `return` our list:
 
-> server1 :: Server UserAPI1
-> server1 = return users1
+``` haskell
+server1 :: Server UserAPI1
+server1 = return users1
+```
 
 That's it. Now we can turn `server` into an actual webserver using [wai](http://hackage.haskell.org/package/wai) and [warp](http://hackage.haskell.org/package/warp):
 
-> userAPI :: Proxy UserAPI1
-> userAPI = Proxy
->
-> -- 'serve' comes from servant and hands you a WAI Application,
-> -- which you can think of as an "abstract" web application,
-> -- not yet a webserver.
-> app1 :: Application
-> app1 = serve userAPI server1
+``` haskell
+userAPI :: Proxy UserAPI1
+userAPI = Proxy
+
+-- 'serve' comes from servant and hands you a WAI Application,
+-- which you can think of as an "abstract" web application,
+-- not yet a webserver.
+app1 :: Application
+app1 = serve userAPI server1
+```
 
 The `userAPI` bit is, alas, boilerplate (we need it to guide type inference).
 But that's about as much boilerplate as you get.
 
 And we're done! Let's run our webservice on the port 8081.
 
-> main :: IO ()
-> main = run 8081 app1
+``` haskell
+main :: IO ()
+main = run 8081 app1
+```
 
 You can put this all into a file or just grab [servant's
 repo](http://github.com/haskell-servant/servant) and look at the
@@ -170,29 +184,35 @@ More endpoints
 
 What if we want more than one endpoint? Let's add `/albert` and `/isaac` to view the corresponding users encoded in JSON.
 
-> type UserAPI2 = "users" :> Get '[JSON] [User]
->            :<|> "albert" :> Get '[JSON] User
->            :<|> "isaac" :> Get '[JSON] User
+``` haskell
+type UserAPI2 = "users" :> Get '[JSON] [User]
+           :<|> "albert" :> Get '[JSON] User
+           :<|> "isaac" :> Get '[JSON] User
+```
 
 And let's adapt our code a bit.
 
-> isaac :: User
-> isaac = User "Isaac Newton" 372 "isaac@newton.co.uk" (fromGregorian 1683 3 1)
->
-> albert :: User
-> albert = User "Albert Einstein" 136 "ae@mc2.org" (fromGregorian 1905 12 1)
->
-> users2 :: [User]
-> users2 = [isaac, albert]
+``` haskell
+isaac :: User
+isaac = User "Isaac Newton" 372 "isaac@newton.co.uk" (fromGregorian 1683 3 1)
+
+albert :: User
+albert = User "Albert Einstein" 136 "ae@mc2.org" (fromGregorian 1905 12 1)
+
+users2 :: [User]
+users2 = [isaac, albert]
+```
 
 Now, just like we separate the various endpoints in `UserAPI` with `:<|>`, we
 are going to separate the handlers with `:<|>` too! They must be provided in
 the same order as the one they appear in in the API type.
 
-> server2 :: Server UserAPI2
-> server2 = return users2
->      :<|> return albert
->      :<|> return isaac
+``` haskell
+server2 :: Server UserAPI2
+server2 = return users2
+     :<|> return albert
+     :<|> return isaac
+```
 
 And that's it! You can run this example with
 `dist/build/tutorial/tutorial 2` and check out the data available
@@ -211,70 +231,74 @@ decoding/encoding data from/to JSON. Never.
 
 We are going to use the following data types and functions to implement a server for `API`.
 
-> type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
->       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
->       :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
->
-> data Position = Position
->   { x :: Int
->   , y :: Int
->   } deriving Generic
->
-> instance ToJSON Position
->
-> newtype HelloMessage = HelloMessage { msg :: String }
->   deriving Generic
->
-> instance ToJSON HelloMessage
->
-> data ClientInfo = ClientInfo
->   { clientName :: String
->   , clientEmail :: String
->   , clientAge :: Int
->   , clientInterestedIn :: [String]
->   } deriving Generic
->
-> instance FromJSON ClientInfo
-> instance ToJSON ClientInfo
->
-> data Email = Email
->   { from :: String
->   , to :: String
->   , subject :: String
->   , body :: String
->   } deriving Generic
->
-> instance ToJSON Email
->
-> emailForClient :: ClientInfo -> Email
-> emailForClient c = Email from' to' subject' body'
->
->   where from'    = "great@company.com"
->         to'      = clientEmail c
->         subject' = "Hey " ++ clientName c ++ ", we miss you!"
->         body'    = "Hi " ++ clientName c ++ ",\n\n"
->                 ++ "Since you've recently turned " ++ show (clientAge c)
->                 ++ ", have you checked out our latest "
->                 ++ intercalate ", " (clientInterestedIn c)
->                 ++ " products? Give us a visit!"
+``` haskell
+type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
+      :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
+      :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
+
+data Position = Position
+  { x :: Int
+  , y :: Int
+  } deriving Generic
+
+instance ToJSON Position
+
+newtype HelloMessage = HelloMessage { msg :: String }
+  deriving Generic
+
+instance ToJSON HelloMessage
+
+data ClientInfo = ClientInfo
+  { clientName :: String
+  , clientEmail :: String
+  , clientAge :: Int
+  , clientInterestedIn :: [String]
+  } deriving Generic
+
+instance FromJSON ClientInfo
+instance ToJSON ClientInfo
+
+data Email = Email
+  { from :: String
+  , to :: String
+  , subject :: String
+  , body :: String
+  } deriving Generic
+
+instance ToJSON Email
+
+emailForClient :: ClientInfo -> Email
+emailForClient c = Email from' to' subject' body'
+
+  where from'    = "great@company.com"
+        to'      = clientEmail c
+        subject' = "Hey " ++ clientName c ++ ", we miss you!"
+        body'    = "Hi " ++ clientName c ++ ",\n\n"
+                ++ "Since you've recently turned " ++ show (clientAge c)
+                ++ ", have you checked out our latest "
+                ++ intercalate ", " (clientInterestedIn c)
+                ++ " products? Give us a visit!"
+```
 
 We can implement handlers for the three endpoints:
 
-> server3 :: Server API
-> server3 = position
->      :<|> hello
->      :<|> marketing
->
->   where position :: Int -> Int -> EitherT ServantErr IO Position
->         position x y = return (Position x y)
->
->         hello :: Maybe String -> EitherT ServantErr IO HelloMessage
->         hello mname = return . HelloMessage $ case mname of
->           Nothing -> "Hello, anonymous coward"
->           Just n  -> "Hello, " ++ n
->
->         marketing :: ClientInfo -> EitherT ServantErr IO Email
->         marketing clientinfo = return (emailForClient clientinfo)
+``` haskell
+server3 :: Server API
+server3 = position
+     :<|> hello
+     :<|> marketing
+
+  where position :: Int -> Int -> EitherT ServantErr IO Position
+        position x y = return (Position x y)
+
+        hello :: Maybe String -> EitherT ServantErr IO HelloMessage
+        hello mname = return . HelloMessage $ case mname of
+          Nothing -> "Hello, anonymous coward"
+          Just n  -> "Hello, " ++ n
+
+        marketing :: ClientInfo -> EitherT ServantErr IO Email
+        marketing clientinfo = return (emailForClient clientinfo)
+```
 
 Did you see that? The types for your handlers changed to be just what we
 needed! In particular:
@@ -337,29 +361,31 @@ decoded to provides a `FromText` instance, it will Just Work. *servant*
 provides a decent number of instances, but here are some examples of defining
 your own.
 
-> -- A typical enumeration
-> data Direction
->   = Up
->   | Down
->   | Left
->   | Right
->
-> instance FromText Direction where
->   -- requires {-# LANGUAGE OverloadedStrings #-}
->   fromText "up"    = Just Up
->   fromText "down"  = Just Down
->   fromText "left"  = Just Server.Left
->   fromText "right" = Just Server.Right
->   fromText       _ = Nothing
->
-> instance ToText Direction where
->   toText Up           = "up"
->   toText Down         = "down"
->   toText Server.Left  = "left"
->   toText Server.Right = "right"
->
-> newtype UserId = UserId Int64
->   deriving (FromText, ToText)
+``` haskell
+-- A typical enumeration
+data Direction
+  = Up
+  | Down
+  | Left
+  | Right
+
+instance FromText Direction where
+  -- requires {-# LANGUAGE OverloadedStrings #-}
+  fromText "up"    = Just Up
+  fromText "down"  = Just Down
+  fromText "left"  = Just Server.Left
+  fromText "right" = Just Server.Right
+  fromText       _ = Nothing
+
+instance ToText Direction where
+  toText Up           = "up"
+  toText Down         = "down"
+  toText Server.Left  = "left"
+  toText Server.Right = "right"
+
+newtype UserId = UserId Int64
+  deriving (FromText, ToText)
+```
 
 or writing the instances by hand:
 
@@ -464,10 +490,12 @@ our own little function around *aeson* and *attoparsec* that allows any type of
 JSON value at the toplevel of a "JSON document". Here's the definition in case
 you are curious.
 
-> eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
-> eitherDecodeLenient input = do
->     v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
->     parseEither parseJSON v
+``` haskell
+eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
+eitherDecodeLenient input = do
+    v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
+    parseEither parseJSON v
+```
 
 This function is exactly what we need for our `MimeUnrender` instance.
 
@@ -492,7 +520,9 @@ or [lucid](http://hackage.haskell.org/package/lucid). The best option for
 *servant* is obviously to support both (and hopefully other templating
 solutions!).
 
-> data HTMLLucid
+``` haskell
+data HTMLLucid
+```
 
 Once again, the data type is just there as a symbol for the encoding/decoding
 functions, except that this time we will only worry about encoding since
@@ -500,8 +530,10 @@ functions, except that this time we will only worry about encoding since
 
 Both packages also have the same `Accept` instance for their `HTMLLucid` type.
 
-> instance Accept HTMLLucid where
->     contentType _ = "text" // "html" /: ("charset", "utf-8")
+``` haskell
+instance Accept HTMLLucid where
+    contentType _ = "text" // "html" /: ("charset", "utf-8")
+```
 
 Note that this instance uses the `(/:)` operator from *http-media* which lets
 us specify additional information about a content-type, like the charset here.
@@ -512,31 +544,35 @@ then write that to a `ByteString`.
 
 For *lucid*:
 
-> instance ToHtml a => MimeRender HTMLLucid a where
->     mimeRender _ = renderBS . toHtml
->
-> -- let's also provide an instance for lucid's
-> -- 'Html' wrapper.
-> instance MimeRender HTMLLucid (Html a) where
->     mimeRender _ = renderBS
+``` haskell
+instance ToHtml a => MimeRender HTMLLucid a where
+    mimeRender _ = renderBS . toHtml
+
+-- let's also provide an instance for lucid's
+-- 'Html' wrapper.
+instance MimeRender HTMLLucid (Html a) where
+    mimeRender _ = renderBS
+```
 
 For *blaze-html*:
 
-> -- For this tutorial to compile 'HTMLLucid' and 'HTMLBlaze' have to be
-> -- distinct. Usually you would stick to one html rendering library and then
-> -- you can go with one 'HTML' type.
-> data HTMLBlaze
->
-> instance Accept HTMLBlaze where
->     contentType _ = "text" // "html" /: ("charset", "utf-8")
->
-> instance ToMarkup a => MimeRender HTMLBlaze a where
->     mimeRender _ = renderHtml . Text.Blaze.Html.toHtml
->
-> -- while we're at it, just like for lucid we can
-> -- provide an instance for rendering blaze's 'Html' type
-> instance MimeRender HTMLBlaze Text.Blaze.Html.Html where
->     mimeRender _ = renderHtml
+``` haskell
+-- For this tutorial to compile 'HTMLLucid' and 'HTMLBlaze' have to be
+-- distinct. Usually you would stick to one html rendering library and then
+-- you can go with one 'HTML' type.
+data HTMLBlaze
+
+instance Accept HTMLBlaze where
+    contentType _ = "text" // "html" /: ("charset", "utf-8")
+
+instance ToMarkup a => MimeRender HTMLBlaze a where
+    mimeRender _ = renderHtml . Text.Blaze.Html.toHtml
+
+-- while we're at it, just like for lucid we can
+-- provide an instance for rendering blaze's 'Html' type
+instance MimeRender HTMLBlaze Text.Blaze.Html.Html where
+    mimeRender _ = renderHtml
+```
 
 Both [servant-blaze](http://hackage.haskell.org/package/servant-blaze) and
 [servant-lucid](http://hackage.haskell.org/package/servant-lucid) let you use
@@ -548,59 +584,67 @@ content type in action. First off, imports and pragmas as usual.
 
 We will be serving the following API:
 
-> type PersonAPI = "persons" :> Get '[JSON, HTMLLucid] [Person]
+``` haskell
+type PersonAPI = "persons" :> Get '[JSON, HTMLLucid] [Person]
+```
 
 where `Person` is defined as follows:
 
-> data Person = Person
->   { firstName :: String
->   , lastName  :: String
->   } deriving Generic -- for the JSON instance
->
-> instance ToJSON Person
+``` haskell
+data Person = Person
+  { firstName :: String
+  , lastName  :: String
+  } deriving Generic -- for the JSON instance
+
+instance ToJSON Person
+```
 
 Now, let's teach *lucid* how to render a `Person` as a row in a table, and then
 a list of `Person`s as a table with a row per person.
 
-> -- HTML serialization of a single person
-> instance ToHtml Person where
->   toHtml person =
->     tr_ $ do
->       td_ (toHtml $ firstName person)
->       td_ (toHtml $ lastName person)
->
->   -- do not worry too much about this
->   toHtmlRaw = toHtml
->
-> -- HTML serialization of a list of persons
-> instance ToHtml [Person] where
->   toHtml persons = table_ $ do
->     tr_ $ do
->       th_ "first name"
->       th_ "last name"
->
->     -- this just calls toHtml on each person of the list
->     -- and concatenates the resulting pieces of HTML together
->     foldMap toHtml persons
->
->   toHtmlRaw = toHtml
+``` haskell
+-- HTML serialization of a single person
+instance ToHtml Person where
+  toHtml person =
+    tr_ $ do
+      td_ (toHtml $ firstName person)
+      td_ (toHtml $ lastName person)
+
+  -- do not worry too much about this
+  toHtmlRaw = toHtml
+
+-- HTML serialization of a list of persons
+instance ToHtml [Person] where
+  toHtml persons = table_ $ do
+    tr_ $ do
+      th_ "first name"
+      th_ "last name"
+
+    -- this just calls toHtml on each person of the list
+    -- and concatenates the resulting pieces of HTML together
+    foldMap toHtml persons
+
+  toHtmlRaw = toHtml
+```
 
 We create some `Person` values and serve them as a list:
 
-> persons :: [Person]
-> persons =
->   [ Person "Isaac"  "Newton"
->   , Person "Albert" "Einstein"
->   ]
->
-> personAPI :: Proxy PersonAPI
-> personAPI = Proxy
->
-> server4 :: Server PersonAPI
-> server4 = return persons
->
-> app2 :: Application
-> app2 = serve personAPI server4
+``` haskell
+persons :: [Person]
+persons =
+  [ Person "Isaac"  "Newton"
+  , Person "Albert" "Einstein"
+  ]
+
+personAPI :: Proxy PersonAPI
+personAPI = Proxy
+
+server4 :: Server PersonAPI
+server4 = return persons
+
+app2 :: Application
+app2 = serve personAPI server4
+```
 
 And we're good to go. You can run this example with `dist/build/tutorial/tutorial 4`.
 
@@ -666,18 +710,20 @@ class Monad m => MonadIO m where
 
 Obviously, the `IO` monad provides a `MonadIO` instance. Hence for any type `e`, `EitherT e IO` has a `MonadIO` instance. So if you want to run any kind of IO computation in your handlers, just use `liftIO`:
 
-> type IOAPI1 = "myfile.txt" :> Get '[JSON] FileContent
->
-> newtype FileContent = FileContent
->   { content :: String }
->   deriving Generic
->
-> instance ToJSON FileContent
->
-> server5 :: Server IOAPI1
-> server5 = do
->   filecontent <- liftIO (readFile "myfile.txt")
->   return (FileContent filecontent)
+``` haskell
+type IOAPI1 = "myfile.txt" :> Get '[JSON] FileContent
+
+newtype FileContent = FileContent
+  { content :: String }
+  deriving Generic
+
+instance ToJSON FileContent
+
+server5 :: Server IOAPI1
+server5 = do
+  filecontent <- liftIO (readFile "myfile.txt")
+  return (FileContent filecontent)
+```
 
 Failing, through `ServantErr`
 -----------------------------
@@ -701,23 +747,27 @@ Many standard values are provided out of the box by the `Servant.Server`
 module.  If you want to use these values but add a body or some headers, just
 use record update syntax:
 
-> failingHandler :: EitherT ServantErr IO ()
-> failingHandler = left myerr
->
->   where myerr :: ServantErr
->         myerr = err503 { errBody = "Sorry dear user." }
+``` haskell
+failingHandler :: EitherT ServantErr IO ()
+failingHandler = left myerr
+
+  where myerr :: ServantErr
+        myerr = err503 { errBody = "Sorry dear user." }
+```
 
 Here's an example where we return a customised 404-Not-Found error message in
 the response body if "myfile.txt" isn't there:
 
-> server6 :: Server IOAPI1
-> server6 = do
->   exists <- liftIO (doesFileExist "myfile.txt")
->   if exists
->     then liftIO (readFile "myfile.txt") >>= return . FileContent
->     else left custom404Err
->
->   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
+``` haskell
+server6 :: Server IOAPI1
+server6 = do
+  exists <- liftIO (doesFileExist "myfile.txt")
+  if exists
+    then liftIO (readFile "myfile.txt") >>= return . FileContent
+    else left custom404Err
+
+  where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
+```
 
 Let's run this server (`dist/build/tutorial/tutorial 5`) and
 query it, first without the file and then with the file.
@@ -758,10 +808,12 @@ Response headers
 To add headers to your response, use [addHeader](http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html).
 Note that this changes the type of your API, as we can see in the following example:
 
-> type MyHandler = Get '[JSON] (Headers '[Header "X-An-Int" Int] User)
->
-> myHandler :: Server MyHandler
-> myHandler = return $ addHeader 1797 albert
+``` haskell
+type MyHandler = Get '[JSON] (Headers '[Header "X-An-Int" Int] User)
+
+myHandler :: Server MyHandler
+myHandler = return $ addHeader 1797 albert
+```
 
 
 Serving static files
@@ -786,18 +838,24 @@ getting-started.
 
 The API type will be the following.
 
-> type CodeAPI = "code" :> Raw
+``` haskell
+type CodeAPI = "code" :> Raw
+```
 
 And the server:
 
-> codeAPI :: Proxy CodeAPI
-> codeAPI = Proxy
+``` haskell
+codeAPI :: Proxy CodeAPI
+codeAPI = Proxy
+```
 
-> server7 :: Server CodeAPI
-> server7 = serveDirectory "tutorial"
->
-> app3 :: Application
-> app3 = serve codeAPI server7
+``` haskell
+server7 :: Server CodeAPI
+server7 = serveDirectory "tutorial"
+
+app3 :: Application
+app3 = serve codeAPI server7
+```
 
 This server will match any request whose path starts with `/code` and will look for a file at the path described by the rest of the request path, inside the *tutorial/* directory of the path you run the program from.
 
@@ -903,18 +961,22 @@ Nested APIs
 
 Let's see how you can define APIs in a modular way, while avoiding repetition. Consider this simple example:
 
-> type UserAPI3 = -- view the user with given userid, in JSON
->                 Capture "userid" Int :> Get '[JSON] User
->
->            :<|> -- delete the user with given userid. empty response
->                 Capture "userid" Int :> Delete '[] ()
+``` haskell
+type UserAPI3 = -- view the user with given userid, in JSON
+                Capture "userid" Int :> Get '[JSON] User
+
+           :<|> -- delete the user with given userid. empty response
+                Capture "userid" Int :> Delete '[] ()
+```
 
 We can instead factor out the `userid`:
 
-> type UserAPI4 = Capture "userid" Int :>
->   (    Get '[JSON] User
->   :<|> Delete '[] ()
->   )
+``` haskell
+type UserAPI4 = Capture "userid" Int :>
+  (    Get '[JSON] User
+  :<|> Delete '[] ()
+  )
+```
 
 However, you have to be aware that this has an effect on the type of the corresponding `Server`:
 
@@ -930,146 +992,158 @@ Server UserAPI4 = Int -> (    EitherT ServantErr IO User
 In the first case, each handler receives the *userid* argument. In the latter,
 the whole `Server` takes the *userid* and has handlers that are just computations in `EitherT`, with no arguments. In other words:
 
-> server8 :: Server UserAPI3
-> server8 = getUser :<|> deleteUser
->
->   where getUser :: Int -> EitherT ServantErr IO User
->         getUser _userid = error "..."
->
->         deleteUser :: Int -> EitherT ServantErr IO ()
->         deleteUser _userid = error "..."
->
-> -- notice how getUser and deleteUser
-> -- have a different type! no argument anymore,
-> -- the argument directly goes to the whole Server
-> server9 :: Server UserAPI4
-> server9 userid = getUser userid :<|> deleteUser userid
->
->   where getUser :: Int -> EitherT ServantErr IO User
->         getUser = error "..."
->
->         deleteUser :: Int -> EitherT ServantErr IO ()
->         deleteUser = error "..."
+``` haskell
+server8 :: Server UserAPI3
+server8 = getUser :<|> deleteUser
+
+  where getUser :: Int -> EitherT ServantErr IO User
+        getUser _userid = error "..."
+
+        deleteUser :: Int -> EitherT ServantErr IO ()
+        deleteUser _userid = error "..."
+
+-- notice how getUser and deleteUser
+-- have a different type! no argument anymore,
+-- the argument directly goes to the whole Server
+server9 :: Server UserAPI4
+server9 userid = getUser userid :<|> deleteUser userid
+
+  where getUser :: Int -> EitherT ServantErr IO User
+        getUser = error "..."
+
+        deleteUser :: Int -> EitherT ServantErr IO ()
+        deleteUser = error "..."
+```
 
 Note that there's nothing special about `Capture` that lets you "factor it out": this can be done with any combinator. Here are a few examples of APIs with a combinator factored out for which we can write a perfectly valid `Server`.
 
-> -- we just factor out the "users" path fragment
-> type API1 = "users" :>
->   (    Get '[JSON] [User] -- user listing
->   :<|> Capture "userid" Int :> Get '[JSON] User -- view a particular user
->   )
->
-> -- we factor out the Request Body
-> type API2 = ReqBody '[JSON] User :>
->   (    Get '[JSON] User -- just display the same user back, don't register it
->   :<|> Post '[JSON] ()  -- register the user. empty response
->   )
->
-> -- we factor out a Header
-> type API3 = Header "Authorization" Token :>
->   (    Get '[JSON] SecretData -- get some secret data, if authorized
->   :<|> ReqBody '[JSON] SecretData :> Post '[] () -- add some secret data, if authorized
->   )
->
-> newtype Token = Token ByteString
-> newtype SecretData = SecretData ByteString
+``` haskell
+-- we just factor out the "users" path fragment
+type API1 = "users" :>
+  (    Get '[JSON] [User] -- user listing
+  :<|> Capture "userid" Int :> Get '[JSON] User -- view a particular user
+  )
+
+-- we factor out the Request Body
+type API2 = ReqBody '[JSON] User :>
+  (    Get '[JSON] User -- just display the same user back, don't register it
+  :<|> Post '[JSON] ()  -- register the user. empty response
+  )
+
+-- we factor out a Header
+type API3 = Header "Authorization" Token :>
+  (    Get '[JSON] SecretData -- get some secret data, if authorized
+  :<|> ReqBody '[JSON] SecretData :> Post '[] () -- add some secret data, if authorized
+  )
+
+newtype Token = Token ByteString
+newtype SecretData = SecretData ByteString
+```
 
 This approach lets you define APIs modularly and assemble them all into one big API type only at the end.
 
-> type UsersAPI =
->        Get '[JSON] [User] -- list users
->   :<|> ReqBody '[JSON] User :> Post '[] () -- add a user
->   :<|> Capture "userid" Int :>
->          ( Get '[JSON] User -- view a user
->       :<|> ReqBody '[JSON] User :> Put '[] () -- update a user
->       :<|> Delete '[] () -- delete a user
->          )
->
-> usersServer :: Server UsersAPI
-> usersServer = getUsers :<|> newUser :<|> userOperations
->
->   where getUsers :: EitherT ServantErr IO [User]
->         getUsers = error "..."
->
->         newUser :: User -> EitherT ServantErr IO ()
->         newUser = error "..."
->
->         userOperations userid =
->           viewUser userid :<|> updateUser userid :<|> deleteUser userid
->
->           where
->             viewUser :: Int -> EitherT ServantErr IO User
->             viewUser = error "..."
->
->             updateUser :: Int -> User -> EitherT ServantErr IO ()
->             updateUser = error "..."
->
->             deleteUser :: Int -> EitherT ServantErr IO ()
->             deleteUser = error "..."
+``` haskell
+type UsersAPI =
+       Get '[JSON] [User] -- list users
+  :<|> ReqBody '[JSON] User :> Post '[] () -- add a user
+  :<|> Capture "userid" Int :>
+         ( Get '[JSON] User -- view a user
+      :<|> ReqBody '[JSON] User :> Put '[] () -- update a user
+      :<|> Delete '[] () -- delete a user
+         )
 
-> type ProductsAPI =
->        Get '[JSON] [Product] -- list products
->   :<|> ReqBody '[JSON] Product :> Post '[] () -- add a product
->   :<|> Capture "productid" Int :>
->          ( Get '[JSON] Product -- view a product
->       :<|> ReqBody '[JSON] Product :> Put '[] () -- update a product
->       :<|> Delete '[] () -- delete a product
->          )
->
-> data Product = Product { productId :: Int }
->
-> productsServer :: Server ProductsAPI
-> productsServer = getProducts :<|> newProduct :<|> productOperations
->
->   where getProducts :: EitherT ServantErr IO [Product]
->         getProducts = error "..."
->
->         newProduct :: Product -> EitherT ServantErr IO ()
->         newProduct = error "..."
->
->         productOperations productid =
->           viewProduct productid :<|> updateProduct productid :<|> deleteProduct productid
->
->           where
->             viewProduct :: Int -> EitherT ServantErr IO Product
->             viewProduct = error "..."
->
->             updateProduct :: Int -> Product -> EitherT ServantErr IO ()
->             updateProduct = error "..."
->
->             deleteProduct :: Int -> EitherT ServantErr IO ()
->             deleteProduct = error "..."
+usersServer :: Server UsersAPI
+usersServer = getUsers :<|> newUser :<|> userOperations
 
-> type CombinedAPI = "users" :> UsersAPI
->               :<|> "products" :> ProductsAPI
->
-> server10 :: Server CombinedAPI
-> server10 = usersServer :<|> productsServer
+  where getUsers :: EitherT ServantErr IO [User]
+        getUsers = error "..."
+
+        newUser :: User -> EitherT ServantErr IO ()
+        newUser = error "..."
+
+        userOperations userid =
+          viewUser userid :<|> updateUser userid :<|> deleteUser userid
+
+          where
+            viewUser :: Int -> EitherT ServantErr IO User
+            viewUser = error "..."
+
+            updateUser :: Int -> User -> EitherT ServantErr IO ()
+            updateUser = error "..."
+
+            deleteUser :: Int -> EitherT ServantErr IO ()
+            deleteUser = error "..."
+```
+
+``` haskell
+type ProductsAPI =
+       Get '[JSON] [Product] -- list products
+  :<|> ReqBody '[JSON] Product :> Post '[] () -- add a product
+  :<|> Capture "productid" Int :>
+         ( Get '[JSON] Product -- view a product
+      :<|> ReqBody '[JSON] Product :> Put '[] () -- update a product
+      :<|> Delete '[] () -- delete a product
+         )
+
+data Product = Product { productId :: Int }
+
+productsServer :: Server ProductsAPI
+productsServer = getProducts :<|> newProduct :<|> productOperations
+
+  where getProducts :: EitherT ServantErr IO [Product]
+        getProducts = error "..."
+
+        newProduct :: Product -> EitherT ServantErr IO ()
+        newProduct = error "..."
+
+        productOperations productid =
+          viewProduct productid :<|> updateProduct productid :<|> deleteProduct productid
+
+          where
+            viewProduct :: Int -> EitherT ServantErr IO Product
+            viewProduct = error "..."
+
+            updateProduct :: Int -> Product -> EitherT ServantErr IO ()
+            updateProduct = error "..."
+
+            deleteProduct :: Int -> EitherT ServantErr IO ()
+            deleteProduct = error "..."
+```
+
+``` haskell
+type CombinedAPI = "users" :> UsersAPI
+              :<|> "products" :> ProductsAPI
+
+server10 :: Server CombinedAPI
+server10 = usersServer :<|> productsServer
+```
 
 Finally, we can realize the user and product APIs are quite similar and abstract that away:
 
-> -- API for values of type 'a'
-> -- indexed by values of type 'i'
-> type APIFor a i =
->        Get '[JSON] [a] -- list 'a's
->   :<|> ReqBody '[JSON] a :> Post '[] () -- add an 'a'
->   :<|> Capture "id" i :>
->          ( Get '[JSON] a -- view an 'a' given its "identifier" of type 'i'
->       :<|> ReqBody '[JSON] a :> Put '[] () -- update an 'a'
->       :<|> Delete '[] () -- delete an 'a'
->          )
->
-> -- Build the appropriate 'Server'
-> -- given the handlers of the right type.
-> serverFor :: EitherT ServantErr IO [a] -- handler for listing of 'a's
->           -> (a -> EitherT ServantErr IO ()) -- handler for adding an 'a'
->           -> (i -> EitherT ServantErr IO a) -- handler for viewing an 'a' given its identifier of type 'i'
->           -> (i -> a -> EitherT ServantErr IO ()) -- updating an 'a' with given id
->           -> (i -> EitherT ServantErr IO ()) -- deleting an 'a' given its id
->           -> Server (APIFor a i)
-> serverFor = error "..."
-> -- implementation left as an exercise. contact us on IRC
-> -- or the mailing list if you get stuck!
+``` haskell
+-- API for values of type 'a'
+-- indexed by values of type 'i'
+type APIFor a i =
+       Get '[JSON] [a] -- list 'a's
+  :<|> ReqBody '[JSON] a :> Post '[] () -- add an 'a'
+  :<|> Capture "id" i :>
+         ( Get '[JSON] a -- view an 'a' given its "identifier" of type 'i'
+      :<|> ReqBody '[JSON] a :> Put '[] () -- update an 'a'
+      :<|> Delete '[] () -- delete an 'a'
+         )
+
+-- Build the appropriate 'Server'
+-- given the handlers of the right type.
+serverFor :: EitherT ServantErr IO [a] -- handler for listing of 'a's
+          -> (a -> EitherT ServantErr IO ()) -- handler for adding an 'a'
+          -> (i -> EitherT ServantErr IO a) -- handler for viewing an 'a' given its identifier of type 'i'
+          -> (i -> a -> EitherT ServantErr IO ()) -- updating an 'a' with given id
+          -> (i -> EitherT ServantErr IO ()) -- deleting an 'a' given its id
+          -> Server (APIFor a i)
+serverFor = error "..."
+-- implementation left as an exercise. contact us on IRC
+-- or the mailing list if you get stuck!
+```
 
 Using another monad for your handlers
 =====================================
@@ -1112,28 +1186,32 @@ computation by supplying it with a `String`, like `"hi"`. We get an `a` out
 from that and can then just `return` it into `EitherT`. We can then just wrap
 that function with the `Nat` constructor to make it have the fancier type.
 
-> readerToEither' :: forall a. Reader String a -> EitherT ServantErr IO a
-> readerToEither' r = return (runReader r "hi")
->
-> readerToEither :: Reader String :~> EitherT ServantErr IO
-> readerToEither = Nat readerToEither'
+``` haskell
+readerToEither' :: forall a. Reader String a -> EitherT ServantErr IO a
+readerToEither' r = return (runReader r "hi")
+
+readerToEither :: Reader String :~> EitherT ServantErr IO
+readerToEither = Nat readerToEither'
+```
 
 We can write some simple webservice with the handlers running in `Reader String`.
 
-> type ReaderAPI = "a" :> Get '[JSON] Int
->             :<|> "b" :> Get '[JSON] String
->
-> readerAPI :: Proxy ReaderAPI
-> readerAPI = Proxy
->
-> readerServerT :: ServerT ReaderAPI (Reader String)
-> readerServerT = a :<|> b
->
->   where a :: Reader String Int
->         a = return 1797
->
->         b :: Reader String String
->         b = ask
+``` haskell
+type ReaderAPI = "a" :> Get '[JSON] Int
+            :<|> "b" :> Get '[JSON] String
+
+readerAPI :: Proxy ReaderAPI
+readerAPI = Proxy
+
+readerServerT :: ServerT ReaderAPI (Reader String)
+readerServerT = a :<|> b
+
+  where a :: Reader String Int
+        a = return 1797
+
+        b :: Reader String String
+        b = ask
+```
 
 We unfortunately can't use `readerServerT` as an argument of `serve`, because
 `serve` wants a `Server ReaderAPI`, i.e., with handlers running in `EitherT
@@ -1150,11 +1228,13 @@ and `n` and a `ServerT someapi m`, and returns a `ServerT someapi n`.
 
 In our case, we can wrap up our little webservice by using `enter readerToEither` on our handlers.
 
-> readerServer :: Server ReaderAPI
-> readerServer = enter readerToEither readerServerT
->
-> app4 :: Application
-> app4 = serve readerAPI readerServer
+``` haskell
+readerServer :: Server ReaderAPI
+readerServer = enter readerToEither readerServerT
+
+app4 :: Application
+app4 = serve readerAPI readerServer
+```
 
 And we can indeed see this webservice in action by running `dist/build/tutorial/tutorial 7`.
 
