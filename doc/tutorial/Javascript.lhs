@@ -1,7 +1,4 @@
----
-title: Deriving Javascript functions to query an API
-toc: true
----
+# Deriving Javascript functions to query an API
 
 We will now see how *servant* lets you turn an API type into javascript
 functions that you can call to query a webservice. The derived code assumes you

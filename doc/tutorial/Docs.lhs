@@ -1,7 +1,4 @@
----
-title: Generating documentation from API types
-toc: true
----
+# Generating documentation from API types
 
 The source for this tutorial section is a literate haskell file, so first we
 need to have some language extensions and imports:
