@@ -56,10 +56,12 @@ import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
                                              matchStatus, request,
                                              shouldRespondWith, with, (<:>))
 
-import           Servant.API.Auth (BasicAuthData(BasicAuthData))
+import           Servant.API.Auth           (BasicAuthData(BasicAuthData))
 import           Servant.Server.Internal.Auth
-                                            (AuthHandler, AuthReturnType, BasicAuthCheck (BasicAuthCheck),
-                                               BasicAuthResult (Authorized, Unauthorized), mkAuthHandler)
+                                            (AuthHandler, AuthReturnType,
+                                             BasicAuthCheck (BasicAuthCheck),
+                                             BasicAuthResult (Authorized, Unauthorized),
+                                             mkAuthHandler)
 import           Servant.Server.Internal.RoutingApplication
                                             (toApplication, RouteResult(..))
 import           Servant.Server.Internal.Router
