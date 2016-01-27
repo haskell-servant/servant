@@ -68,7 +68,7 @@ need to have some language extensions and imports:
 > import qualified Data.Aeson.Parser
 > import qualified Text.Blaze.Html
 
-``` haskell
+``` haskell ignore
 {-# LANGUAGE TypeFamilies #-}
 ```
 
@@ -107,7 +107,7 @@ Nothing funny going on here. But we now can define our list of two users.
 
 Let's also write our API type.
 
-``` haskell
+``` haskell ignore
 type UserAPI1 = "users" :> Get '[JSON] [User]
 ```
 
@@ -324,7 +324,7 @@ decided to provide a pair of typeclasses, `FromText` and `ToText` which just
 let you say that you can respectively *extract* or *encode* values of some type
 *from*/*to* text. Here are the definitions:
 
-``` haskell
+``` haskell ignore
 class FromText a where
   fromText :: Text -> Maybe a
 
@@ -363,7 +363,7 @@ your own.
 
 or writing the instances by hand:
 
-``` haskell
+``` haskell ignore
 instance FromText UserId where
   fromText = fmap UserId fromText
 
@@ -394,7 +394,7 @@ The truth behind `JSON`
 What exactly is `JSON`? Like the 3 other content types provided out of the box
 by *servant*, it's a really dumb data type.
 
-``` haskell
+``` haskell ignore
 data JSON
 data PlainText
 data FormUrlEncoded
@@ -415,7 +415,7 @@ haddocks from this link, you can see that we just have to specify
 use `(//) :: ByteString -> ByteString -> MediaType`. The precise way to specify
 the `MediaType` is to write an instance for the `Accept` class:
 
-``` haskell
+``` haskell ignore
 -- for reference:
 class Accept ctype where
     contentType   :: Proxy ctype -> MediaType
@@ -428,7 +428,7 @@ The second step is centered around the `MimeRender` and `MimeUnrender` classes.
 These classes just let you specify a way to respectively encode and decode
 values respectively into or from your content-type's representation.
 
-``` haskell
+``` haskell ignore
 class Accept ctype => MimeRender ctype a where
     mimeRender  :: Proxy ctype -> a -> ByteString
     -- alternatively readable as:
@@ -442,7 +442,7 @@ In the case of `JSON`, this is easily dealt with! For any type `a` with a
 `ToJSON` instance, we can render values of that type to JSON using
 `Data.Aeson.encode`.
 
-``` haskell
+``` haskell ignore
 instance ToJSON a => MimeRender JSON a where
   mimeRender _ = encode
 ```
@@ -450,7 +450,7 @@ instance ToJSON a => MimeRender JSON a where
 And now the `MimeUnrender` class, which lets us extract values from lazy
 `ByteString`s, alternatively failing with an error string.
 
-``` haskell
+``` haskell ignore
 class Accept ctype => MimeUnrender ctype a where
     mimeUnrender :: Proxy ctype -> ByteString -> Either String a
     -- alternatively:
@@ -471,7 +471,7 @@ you are curious.
 
 This function is exactly what we need for our `MimeUnrender` instance.
 
-``` haskell
+``` haskell ignore
 instance FromJSON a => MimeUnrender JSON a where
     mimeUnrender _ = eitherDecodeLenient
 ```
@@ -627,7 +627,7 @@ as interfaces to databases that we interact with in `IO`;
 
 Let's recall some definitions.
 
-``` haskell
+``` haskell ignore
 -- from the Prelude
 data Either e a = Left e | Right a
 
@@ -644,7 +644,7 @@ action that either returns an error or a result.
 The aforementioned `either` package is worth taking a look at. Perhaps most
 importantly:
 
-``` haskell
+``` haskell ignore
 left :: Monad m => e -> EitherT e m a
 ```
 Allows you to return an error from your handler (whereas `return` is enough to
@@ -659,7 +659,7 @@ Performing IO
 
 Another important instance from the list above is `MonadIO m => MonadIO (EitherT e m)`. [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html) is a class from the *transformers* package defined as:
 
-``` haskell
+``` haskell ignore
 class Monad m => MonadIO m where
   liftIO :: IO a -> m a
 ```
@@ -688,7 +688,7 @@ error message, all you have to do is use the `left` function mentioned above
 and provide it with the appropriate value of type `ServantErr`, which is
 defined as:
 
-``` haskell
+``` haskell ignore
 data ServantErr = ServantErr
     { errHTTPCode     :: Int
     , errReasonPhrase :: String
@@ -773,7 +773,7 @@ under some path in your web API. As mentioned earlier in this document, the
 application". Well, servant-server provides a function to get a file and
 directory serving WAI application, namely:
 
-``` haskell
+``` haskell ignore
 -- exported by Servant and Servant.Server
 serveDirectory :: FilePath -> Server Raw
 ```
@@ -809,7 +809,7 @@ In other words:
 
 Here is our little server in action.
 
-``` haskell
+``` haskell ignore
 $ curl http://localhost:8081/code/T1.hs
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -918,7 +918,7 @@ We can instead factor out the `userid`:
 
 However, you have to be aware that this has an effect on the type of the corresponding `Server`:
 
-``` haskell
+``` haskell ignore
 Server UserAPI3 = (Int -> EitherT ServantErr IO User)
              :<|> (Int -> EitherT ServantErr IO ())
 
@@ -1076,7 +1076,7 @@ Using another monad for your handlers
 
 Remember how `Server` turns combinators for HTTP methods into `EitherT ServantErr IO`? Well, actually, there's more to that. `Server` is actually a simple type synonym.
 
-``` haskell
+``` haskell ignore
 type Server api = ServerT api (EitherT ServantErr IO)
 ```
 
@@ -1090,7 +1090,7 @@ Natural transformations
 If we have a function that gets us from an `m a` to an `n a`, for any `a`, what
 do we have?
 
-``` haskell
+``` haskell ignore
 newtype m :~> n = Nat { unNat :: forall a. m a -> n a}
 
 -- For example
@@ -1103,7 +1103,7 @@ So if you want to write handlers using another monad/type than `EitherT
 ServantErr IO`, say the `Reader String` monad, the first thing you have to
 prepare is a function:
 
-``` haskell
+``` haskell ignore
 readerToEither :: Reader String :~> EitherT ServantErr IO
 ```
 

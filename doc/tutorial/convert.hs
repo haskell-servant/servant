@@ -26,5 +26,5 @@ convert =
     go :: [String] -> [String]
     go (a : r)
       | ">" `isPrefixOf` a
-        = "``` haskell" : map (drop 2) (a : r) ++ "```" : []
+        = "``` haskell ignore" : map (drop 2) (a : r) ++ "```" : []
     go x = x
