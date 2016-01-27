@@ -1,5 +1,5 @@
 name:                tutorial
-version:             0.1.0.0
+version:             0.5
 synopsis:            The servant tutorial
 -- description:
 homepage:            http://haskell-servant.github.io/
@@ -14,9 +14,16 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     api-type.lhs
+  exposed-modules:     ApiType
+                     , Client
+                     , Docs
+                     , Javascript
+                     , Server
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
+                     , text
+                     , servant
   -- hs-source-dirs:
   default-language:    Haskell2010
+  ghc-options:         -Wall -Werror -c -pgmL markdown-unlit

@@ -1,7 +1,4 @@
----
-title: A web API as a type
-toc: true
----
+# A web API as a type
 
 The source for this tutorial section is a literate haskell file, so first we
 need to have some language extensions and imports:
@@ -25,8 +22,7 @@ Consider the following informal specification of an API:
 
 You *should* be able to formalize that. And then use the formalized version to
 get you much of the way towards writing a web app. And all the way towards
-getting some client libraries, and documentation (and in the future, who knows
-- tests, HATEOAS, ...).
+getting some client libraries, and documentation, and more.
 
 How would we describe it with servant? As mentioned earlier, an endpoint
 description is a good old Haskell **type**:
@@ -45,22 +41,22 @@ data User = User {
 Let's break that down:
 
 - `"users"` says that our endpoint will be accessible under `/users`;
-- `QueryParam "sortby" SortBy`, where `SortBy` is defined by `data SortBy = Age
-| Name`, says that the endpoint has a query string parameter named `sortby`
-whose value will be extracted as a value of type `SortBy`.
+- `QueryParam "sortby" SortBy`, where `SortBy` is defined by `data SortBy = Age | Name`,
+    says that the endpoint has a query string parameter named `sortby`
+    whose value will be extracted as a value of type `SortBy`.
 - `Get '[JSON] [User]` says that the endpoint will be accessible through HTTP
-GET requests, returning a list of users encoded as JSON. You will see
-later how you can make use of this to make your data available under different
-formats, the choice being made depending on the [Accept
-header](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html) specified in
-the client's request.
-- the `:>` operator that separates the various "combinators" just lets you
-sequence static path fragments, URL captures and other combinators. The
-ordering only matters for static path fragments and URL captures. `"users" :>
-"list-all" :> Get '[JSON] [User]`, equivalent to `/users/list-all`, is
-obviously not the same as `"list-all" :> "users" :> Get '[JSON] [User]`, which
-is equivalent to `/list-all/users`. This means that sometimes `:>` is somehow
-equivalent to `/`, but sometimes it just lets you chain another combinator.
+   GET requests, returning a list of users encoded as JSON. You will see
+   later how you can make use of this to make your data available under different
+   formats, the choice being made depending on the [Accept
+   header](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html) specified in
+   the client's request.
+- The `:>` operator that separates the various "combinators" just lets you
+  sequence static path fragments, URL captures and other combinators. The
+  ordering only matters for static path fragments and URL captures. `"users" :>
+  "list-all" :> Get '[JSON] [User]`, equivalent to `/users/list-all`, is
+  obviously not the same as `"list-all" :> "users" :> Get '[JSON] [User]`, which
+  is equivalent to `/list-all/users`. This means that sometimes `:>` is somehow
+  equivalent to `/`, but sometimes it just lets you chain another combinator.
 
 We can also describe APIs with multiple endpoints by using the `:<|>`
 combinators. Here's an example:
@@ -74,11 +70,10 @@ type UserAPI2 = "users" :> "list-all" :> Get '[JSON] [User]
 always write your own when you need it. Here's a quick overview of all the
 combinators that servant comes with.
 
-Combinators
-===========
+## Combinators
 
-Static strings
---------------
+### Static strings
+
 
 As you've already seen, you can use type-level strings (enabled with the
 `DataKinds` language extension) for static path fragments. Chaining
@@ -90,8 +85,8 @@ type UserAPI3 = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
               -- /users/list-all/now
 ```
 
-`Delete`, `Get`, `Patch`, `Post` and `Put`
-------------------------------------------
+### `Delete`, `Get`, `Patch`, `Post` and `Put`
+
 
 These 5 combinators are very similar except that they each describe a
 different HTTP method. This is how they're declared
@@ -112,8 +107,8 @@ type UserAPI4 = "users" :> Get '[JSON] [User]
            :<|> "admins" :> Get '[JSON] [User]
 ```
 
-`Capture`
----------
+### `Capture`
+
 
 URL captures are parts of the URL that are variable and whose actual value is
 captured and passed to the request handlers. In many web frameworks, you'll see
@@ -147,8 +142,7 @@ type UserAPI5 = "user" :> Capture "userid" Integer :> Get '[JSON] User
                 -- equivalent to 'DELETE /user/:userid'
 ```
 
-`QueryParam`, `QueryParams`, `QueryFlag`, `MatrixParam`, `MatrixParams` and `MatrixFlag`
-----------------------------------------------------------------------------------------
+### `QueryParam`, `QueryParams`, `QueryFlag`, `MatrixParam`, `MatrixParams` and `MatrixFlag`
 
 `QueryParam`, `QueryParams` and `QueryFlag` are about query string
 parameters, i.e., those parameters that come after the question mark
@@ -202,8 +196,7 @@ type UserAPI6 = "users" :> QueryParam "sortby" SortBy :> Get '[JSON] [User]
 Again, your handlers don't have to deserialize these things (into, for example,
 a `SortBy`). *servant* takes care of it.
 
-`ReqBody`
----------
+### `ReqBody`
 
 Each HTTP request can carry some additional data that the server can use in its
 *body*, and this data can be encoded in any format -- as long as the server
@@ -240,8 +233,8 @@ type UserAPI7 = "users" :> ReqBody '[JSON] User :> Post '[JSON] User
                 -- - returns a User encoded in JSON
 ```
 
-Request `Header`s
------------------
+### Request `Header`s
+
 
 Request headers are used for various purposes, from caching to carrying
 auth-related data. They consist of a header name and an associated value. An
@@ -263,8 +256,7 @@ the client to send the request.
 type UserAPI8 = "users" :> Header "User-Agent" Text :> Get '[JSON] [User]
 ```
 
-Content types
--------------
+### Content types
 
 So far, whenever we have used a combinator that carries a list of content
 types, we've always specified `'[JSON]`. However, *servant* lets you use several
@@ -286,8 +278,7 @@ that everyone uses, we decided to release 2 packages, *servant-lucid* and
 We will further explain how these content types and your data types can play
 together in the [section about serving an API](/tutorial/server.html).
 
-Response `Headers`
-------------------
+### Response `Headers`
 
 Just like an HTTP request, the response generated by a webserver can carry
 headers too. *servant* provides a `Headers` combinator that carries a list of
@@ -305,8 +296,7 @@ response, you could write it as below:
 type UserAPI10 = "users" :> Get '[JSON] (Headers '[Header "User-Count" Integer] [User])
 ```
 
-Interoperability with other WAI `Application`s: `Raw`
------------------------------------------------------
+### Interoperability with other WAI `Application`s: `Raw`
 
 Finally, we also include a combinator named `Raw` that can be used for two reasons:
 

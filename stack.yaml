@@ -7,12 +7,12 @@ packages:
 - servant-cassava/
 - servant-client/
 - servant-docs/
-- servant-examples/
 - servant-foreign/
 - servant-js/
 - servant-lucid/
 - servant-mock/
 - servant-server/
+- doc/tutorial
 extra-deps:
 - engine-io-wai-1.0.2
 - control-monad-omega-0.3.1
