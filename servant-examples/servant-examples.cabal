@@ -96,6 +96,7 @@ executable auth-combinator
       aeson >= 0.8
     , base >= 4.7 && < 5
     , bytestring
+    , containers
     , http-types
     , servant == 0.5.*
     , servant-server == 0.5.*
