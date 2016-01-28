@@ -88,19 +88,30 @@ type UserAPI3 = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
 ### `Delete`, `Get`, `Patch`, `Post` and `Put`
 
 
-These 5 combinators are very similar except that they each describe a
-different HTTP method. This is how they're declared
-
+The `Get` combinator is defined in terms of the more general `Verb`:
 ``` haskell ignore
-data Delete (contentTypes :: [*]) a
-data Get (contentTypes :: [*]) a
-data Patch (contentTypes :: [*]) a
-data Post (contentTypes :: [*]) a
-data Put (contentTypes :: [*]) a
+data Verb method (statusCode :: Nat) (contentType :: [*]) a
+type Get = Verb 'GET 200
 ```
 
-An endpoint ends with one of the 5 combinators above (unless you write your
-own). Examples:
+There are other predefined type synonyms for other common HTTP methods,
+such as e.g.:
+``` haskell ignore
+data Delete = Verb 'DELETE 200
+data Patch  = Verb 'PATCH 200
+data Post   = Verb 'POST 200
+data Put    = Verb 'PUT 200
+```
+
+There are also variants that do not return a 200 status code, such
+as for example:
+``` haskell ignore
+type PostCreated  = Verb 'POST 201
+type PostAccepted = Verb 'POST 202
+```
+
+An endpoint always ends with a variant of the `Verb` combinator
+(unless you write your own combinators). Examples:
 
 ``` haskell
 type UserAPI4 = "users" :> Get '[JSON] [User]
