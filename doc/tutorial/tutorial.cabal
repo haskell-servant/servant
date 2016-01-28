@@ -18,7 +18,7 @@ library
                      , Client
   --                 , Docs
   --                 , Javascript
-  --                 , Server
+                     , Server
   -- other-modules:
   -- other-extensions:
   build-depends:       base == 4.*
@@ -51,3 +51,4 @@ library
   ghc-options:         -Wall -Werror -pgmL markdown-unlit
   -- to silence aeson-0.10 warnings:
   ghc-options:         -fno-warn-missing-methods
+  ghc-options:         -fno-warn-name-shadowing

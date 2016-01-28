@@ -48,7 +48,7 @@ module Server where
 
 import Control.Monad.IO.Class
 import Control.Monad.Reader
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
@@ -130,11 +130,11 @@ corresponding API type.
 The first thing to know about the `Server` type family is that behind the
 scenes it will drive the routing, letting you focus only on the business
 logic. The second thing to know is that for each endpoint, your handlers will
-by default run in the `EitherT ServantErr IO` monad. This is overridable very
+by default run in the `ExceptT ServantErr IO` monad. This is overridable very
 easily, as explained near the end of this guide. Third thing, the type of the
 value returned in that monad must be the same as the second argument of the
 HTTP method combinator used for the corresponding endpoint. In our case, it
-means we must provide a handler of type `EitherT ServantErr IO [User]`. Well,
+means we must provide a handler of type `ExceptT ServantErr IO [User]`. Well,
 we have a monad, let's just `return` our list:
 
 ``` haskell
@@ -152,7 +152,7 @@ userAPI = Proxy
 -- which you can think of as an "abstract" web application,
 -- not yet a webserver.
 app1 :: Application
-app1 = serve userAPI server1
+app1 = serve userAPI EmptyConfig server1
 ```
 
 The `userAPI` bit is, alas, boilerplate (we need it to guide type inference).
@@ -288,15 +288,15 @@ server3 = position
      :<|> hello
      :<|> marketing
 
-  where position :: Int -> Int -> EitherT ServantErr IO Position
+  where position :: Int -> Int -> ExceptT ServantErr IO Position
         position x y = return (Position x y)
 
-        hello :: Maybe String -> EitherT ServantErr IO HelloMessage
+        hello :: Maybe String -> ExceptT ServantErr IO HelloMessage
         hello mname = return . HelloMessage $ case mname of
           Nothing -> "Hello, anonymous coward"
           Just n  -> "Hello, " ++ n
 
-        marketing :: ClientInfo -> EitherT ServantErr IO Email
+        marketing :: ClientInfo -> ExceptT ServantErr IO Email
         marketing clientinfo = return (emailForClient clientinfo)
 ```
 
@@ -327,7 +327,7 @@ $ curl -X POST -d '{"name":"Alp Mestanogullari", "email" : "alp@foo.com", "age":
 For reference, here's a list of some combinators from *servant* and for those
 that get turned into arguments to the handlers, the type of the argument.
 
- > - `Delete`, `Get`, `Patch`, `Post`, `Put`: these do not become arguments. They provide the return type of handlers, which usually is `EitherT ServantErr IO <something>`.
+ > - `Delete`, `Get`, `Patch`, `Post`, `Put`: these do not become arguments. They provide the return type of handlers, which usually is `ExceptT ServantErr IO <something>`.
  > - `Capture "something" a` becomes an argument of type `a`.
  > - `QueryParam "something" a`, `MatrixParam "something" a`, `Header "something" a` all become arguments of type `Maybe a`, because there might be no value at all specified by the client for these.
  > - `QueryFlag "something"` and `MatrixFlag "something"` get turned into arguments of type `Bool`.
@@ -369,22 +369,7 @@ data Direction
   | Left
   | Right
 
-instance FromText Direction where
-  -- requires {-# LANGUAGE OverloadedStrings #-}
-  fromText "up"    = Just Up
-  fromText "down"  = Just Down
-  fromText "left"  = Just Server.Left
-  fromText "right" = Just Server.Right
-  fromText       _ = Nothing
-
-instance ToText Direction where
-  toText Up           = "up"
-  toText Down         = "down"
-  toText Server.Left  = "left"
-  toText Server.Right = "right"
-
 newtype UserId = UserId Int64
-  deriving (FromText, ToText)
 ```
 
 or writing the instances by hand:
@@ -643,7 +628,7 @@ server4 :: Server PersonAPI
 server4 = return persons
 
 app2 :: Application
-app2 = serve personAPI server4
+app2 = serve personAPI EmptyConfig server4
 ```
 
 And we're good to go. You can run this example with `dist/build/tutorial/tutorial 4`.
@@ -656,10 +641,10 @@ And we're good to go. You can run this example with `dist/build/tutorial/tutoria
  # or just point your browser to http://localhost:8081/persons
 ```
 
-The `EitherT ServantErr IO` monad
+The `ExceptT ServantErr IO` monad
 =================================
 
-At the heart of the handlers is the monad they run in, namely `EitherT
+At the heart of the handlers is the monad they run in, namely `ExceptT
 ServantErr IO`. One might wonder: why this monad? The answer is that it is the
 simplest monad with the following properties:
 
@@ -677,11 +662,11 @@ data Either e a = Left e | Right a
 
 -- from the 'either' package at
 -- http://hackage.haskell.org/package/either-4.3.3.2/docs/Control-Monad-Trans-Either.html
-newtype EitherT e m a
-  = EitherT { runEitherT :: m (Either e a) }
+newtype ExceptT e m a
+  = ExceptT { runEitherT :: m (Either e a) }
 ```
 
-In short, this means that a handler of type `EitherT ServantErr IO a` is simply
+In short, this means that a handler of type `ExceptT ServantErr IO a` is simply
 equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO
 action that either returns an error or a result.
 
@@ -689,7 +674,7 @@ The aforementioned `either` package is worth taking a look at. Perhaps most
 importantly:
 
 ``` haskell ignore
-left :: Monad m => e -> EitherT e m a
+left :: Monad m => e -> ExceptT e m a
 ```
 Allows you to return an error from your handler (whereas `return` is enough to
 return a success).
@@ -701,14 +686,14 @@ kind and abort early. The next two sections cover how to do just that.
 Performing IO
 -------------
 
-Another important instance from the list above is `MonadIO m => MonadIO (EitherT e m)`. [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html) is a class from the *transformers* package defined as:
+Another important instance from the list above is `MonadIO m => MonadIO (ExceptT e m)`. [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html) is a class from the *transformers* package defined as:
 
 ``` haskell ignore
 class Monad m => MonadIO m where
   liftIO :: IO a -> m a
 ```
 
-Obviously, the `IO` monad provides a `MonadIO` instance. Hence for any type `e`, `EitherT e IO` has a `MonadIO` instance. So if you want to run any kind of IO computation in your handlers, just use `liftIO`:
+Obviously, the `IO` monad provides a `MonadIO` instance. Hence for any type `e`, `ExceptT e IO` has a `MonadIO` instance. So if you want to run any kind of IO computation in your handlers, just use `liftIO`:
 
 ``` haskell
 type IOAPI1 = "myfile.txt" :> Get '[JSON] FileContent
@@ -748,8 +733,8 @@ module.  If you want to use these values but add a body or some headers, just
 use record update syntax:
 
 ``` haskell
-failingHandler :: EitherT ServantErr IO ()
-failingHandler = left myerr
+failingHandler :: ExceptT ServantErr IO ()
+failingHandler = throwE myerr
 
   where myerr :: ServantErr
         myerr = err503 { errBody = "Sorry dear user." }
@@ -764,7 +749,7 @@ server6 = do
   exists <- liftIO (doesFileExist "myfile.txt")
   if exists
     then liftIO (readFile "myfile.txt") >>= return . FileContent
-    else left custom404Err
+    else throwE custom404Err
 
   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
 ```
@@ -854,7 +839,7 @@ server7 :: Server CodeAPI
 server7 = serveDirectory "tutorial"
 
 app3 :: Application
-app3 = serve codeAPI server7
+app3 = serve codeAPI EmptyConfig server7
 ```
 
 This server will match any request whose path starts with `/code` and will look for a file at the path described by the rest of the request path, inside the *tutorial/* directory of the path you run the program from.
@@ -981,25 +966,25 @@ type UserAPI4 = Capture "userid" Int :>
 However, you have to be aware that this has an effect on the type of the corresponding `Server`:
 
 ``` haskell ignore
-Server UserAPI3 = (Int -> EitherT ServantErr IO User)
-             :<|> (Int -> EitherT ServantErr IO ())
+Server UserAPI3 = (Int -> ExceptT ServantErr IO User)
+             :<|> (Int -> ExceptT ServantErr IO ())
 
-Server UserAPI4 = Int -> (    EitherT ServantErr IO User
-                         :<|> EitherT ServantErr IO ()
+Server UserAPI4 = Int -> (    ExceptT ServantErr IO User
+                         :<|> ExceptT ServantErr IO ()
                          )
 ```
 
 In the first case, each handler receives the *userid* argument. In the latter,
-the whole `Server` takes the *userid* and has handlers that are just computations in `EitherT`, with no arguments. In other words:
+the whole `Server` takes the *userid* and has handlers that are just computations in `ExceptT`, with no arguments. In other words:
 
 ``` haskell
 server8 :: Server UserAPI3
 server8 = getUser :<|> deleteUser
 
-  where getUser :: Int -> EitherT ServantErr IO User
+  where getUser :: Int -> ExceptT ServantErr IO User
         getUser _userid = error "..."
 
-        deleteUser :: Int -> EitherT ServantErr IO ()
+        deleteUser :: Int -> ExceptT ServantErr IO ()
         deleteUser _userid = error "..."
 
 -- notice how getUser and deleteUser
@@ -1008,10 +993,10 @@ server8 = getUser :<|> deleteUser
 server9 :: Server UserAPI4
 server9 userid = getUser userid :<|> deleteUser userid
 
-  where getUser :: Int -> EitherT ServantErr IO User
+  where getUser :: Int -> ExceptT ServantErr IO User
         getUser = error "..."
 
-        deleteUser :: Int -> EitherT ServantErr IO ()
+        deleteUser :: Int -> ExceptT ServantErr IO ()
         deleteUser = error "..."
 ```
 
@@ -1055,23 +1040,23 @@ type UsersAPI =
 usersServer :: Server UsersAPI
 usersServer = getUsers :<|> newUser :<|> userOperations
 
-  where getUsers :: EitherT ServantErr IO [User]
+  where getUsers :: ExceptT ServantErr IO [User]
         getUsers = error "..."
 
-        newUser :: User -> EitherT ServantErr IO ()
+        newUser :: User -> ExceptT ServantErr IO ()
         newUser = error "..."
 
         userOperations userid =
           viewUser userid :<|> updateUser userid :<|> deleteUser userid
 
           where
-            viewUser :: Int -> EitherT ServantErr IO User
+            viewUser :: Int -> ExceptT ServantErr IO User
             viewUser = error "..."
 
-            updateUser :: Int -> User -> EitherT ServantErr IO ()
+            updateUser :: Int -> User -> ExceptT ServantErr IO ()
             updateUser = error "..."
 
-            deleteUser :: Int -> EitherT ServantErr IO ()
+            deleteUser :: Int -> ExceptT ServantErr IO ()
             deleteUser = error "..."
 ```
 
@@ -1090,23 +1075,23 @@ data Product = Product { productId :: Int }
 productsServer :: Server ProductsAPI
 productsServer = getProducts :<|> newProduct :<|> productOperations
 
-  where getProducts :: EitherT ServantErr IO [Product]
+  where getProducts :: ExceptT ServantErr IO [Product]
         getProducts = error "..."
 
-        newProduct :: Product -> EitherT ServantErr IO ()
+        newProduct :: Product -> ExceptT ServantErr IO ()
         newProduct = error "..."
 
         productOperations productid =
           viewProduct productid :<|> updateProduct productid :<|> deleteProduct productid
 
           where
-            viewProduct :: Int -> EitherT ServantErr IO Product
+            viewProduct :: Int -> ExceptT ServantErr IO Product
             viewProduct = error "..."
 
-            updateProduct :: Int -> Product -> EitherT ServantErr IO ()
+            updateProduct :: Int -> Product -> ExceptT ServantErr IO ()
             updateProduct = error "..."
 
-            deleteProduct :: Int -> EitherT ServantErr IO ()
+            deleteProduct :: Int -> ExceptT ServantErr IO ()
             deleteProduct = error "..."
 ```
 
@@ -1134,11 +1119,11 @@ type APIFor a i =
 
 -- Build the appropriate 'Server'
 -- given the handlers of the right type.
-serverFor :: EitherT ServantErr IO [a] -- handler for listing of 'a's
-          -> (a -> EitherT ServantErr IO ()) -- handler for adding an 'a'
-          -> (i -> EitherT ServantErr IO a) -- handler for viewing an 'a' given its identifier of type 'i'
-          -> (i -> a -> EitherT ServantErr IO ()) -- updating an 'a' with given id
-          -> (i -> EitherT ServantErr IO ()) -- deleting an 'a' given its id
+serverFor :: ExceptT ServantErr IO [a] -- handler for listing of 'a's
+          -> (a -> ExceptT ServantErr IO ()) -- handler for adding an 'a'
+          -> (i -> ExceptT ServantErr IO a) -- handler for viewing an 'a' given its identifier of type 'i'
+          -> (i -> a -> ExceptT ServantErr IO ()) -- updating an 'a' with given id
+          -> (i -> ExceptT ServantErr IO ()) -- deleting an 'a' given its id
           -> Server (APIFor a i)
 serverFor = error "..."
 -- implementation left as an exercise. contact us on IRC
@@ -1148,10 +1133,10 @@ serverFor = error "..."
 Using another monad for your handlers
 =====================================
 
-Remember how `Server` turns combinators for HTTP methods into `EitherT ServantErr IO`? Well, actually, there's more to that. `Server` is actually a simple type synonym.
+Remember how `Server` turns combinators for HTTP methods into `ExceptT ServantErr IO`? Well, actually, there's more to that. `Server` is actually a simple type synonym.
 
 ``` haskell ignore
-type Server api = ServerT api (EitherT ServantErr IO)
+type Server api = ServerT api (ExceptT ServantErr IO)
 ```
 
 `ServerT` is the actual type family that computes the required types for the handlers that's part of the `HasServer` class. It's like `Server` except that it takes a third parameter which is the monad you want your handlers to run in, or more generally the return types of your handlers. This third parameter is used for specifying the return type of the handler for an endpoint, e.g when computing `ServerT (Get '[JSON] Person) SomeMonad`. The result would be `SomeMonad Person`.
@@ -1173,24 +1158,24 @@ newtype m :~> n = Nat { unNat :: forall a. m a -> n a}
 ```
 (`Nat` comes from "natural transformation", in case you're wondering.)
 
-So if you want to write handlers using another monad/type than `EitherT
+So if you want to write handlers using another monad/type than `ExceptT
 ServantErr IO`, say the `Reader String` monad, the first thing you have to
 prepare is a function:
 
 ``` haskell ignore
-readerToEither :: Reader String :~> EitherT ServantErr IO
+readerToEither :: Reader String :~> ExceptT ServantErr IO
 ```
 
 Let's start with `readerToEither'`. We obviously have to run the `Reader`
 computation by supplying it with a `String`, like `"hi"`. We get an `a` out
-from that and can then just `return` it into `EitherT`. We can then just wrap
+from that and can then just `return` it into `ExceptT`. We can then just wrap
 that function with the `Nat` constructor to make it have the fancier type.
 
 ``` haskell
-readerToEither' :: forall a. Reader String a -> EitherT ServantErr IO a
+readerToEither' :: forall a. Reader String a -> ExceptT ServantErr IO a
 readerToEither' r = return (runReader r "hi")
 
-readerToEither :: Reader String :~> EitherT ServantErr IO
+readerToEither :: Reader String :~> ExceptT ServantErr IO
 readerToEither = Nat readerToEither'
 ```
 
@@ -1214,7 +1199,7 @@ readerServerT = a :<|> b
 ```
 
 We unfortunately can't use `readerServerT` as an argument of `serve`, because
-`serve` wants a `Server ReaderAPI`, i.e., with handlers running in `EitherT
+`serve` wants a `Server ReaderAPI`, i.e., with handlers running in `ExceptT
 ServantErr IO`. But there's a simple solution to this.
 
 Enter `enter`
@@ -1233,7 +1218,7 @@ readerServer :: Server ReaderAPI
 readerServer = enter readerToEither readerServerT
 
 app4 :: Application
-app4 = serve readerAPI readerServer
+app4 = serve readerAPI EmptyConfig readerServer
 ```
 
 And we can indeed see this webservice in action by running `dist/build/tutorial/tutorial 7`.
