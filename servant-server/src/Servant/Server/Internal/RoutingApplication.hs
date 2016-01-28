@@ -159,7 +159,7 @@ data Delayed :: * -> * where
           -> Delayed c
 
 instance Functor Delayed where
-   fmap f (Delayed a b c g) = Delayed a b c ((fmap.fmap.fmap) f g)
+   fmap f (Delayed a b c g) = Delayed a b c ((fmap . fmap . fmap) f g)
 
 -- | Add a capture to the end of the capture block.
 addCapture :: Delayed (a -> b)
