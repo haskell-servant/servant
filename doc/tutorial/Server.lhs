@@ -46,6 +46,9 @@ need to have some language extensions and imports:
 
 module Server where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Control.Monad.Trans.Except

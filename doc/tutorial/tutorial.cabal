@@ -22,6 +22,7 @@ library
   -- other-modules:
   -- other-extensions:
   build-depends:       base == 4.*
+                     , base-compat
                      , text
                      , aeson
                      , blaze-html
