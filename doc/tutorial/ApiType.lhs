@@ -149,9 +149,14 @@ type UserAPI5 = "user" :> Capture "userid" Integer :> Get '[JSON] User
                 -- except that we explicitly say that "userid"
                 -- must be an integer
 
-           :<|> "user" :> Capture "userid" Integer :> Delete '[] ()
+           :<|> "user" :> Capture "userid" Integer :> DeleteNoContent '[JSON] NoContent
                 -- equivalent to 'DELETE /user/:userid'
 ```
+
+In the second case, `DeleteNoContent` specifies a 204 response code,
+`JSON` specifies the content types on which the handler will match,
+and `NoContent` is a Haskell type isomorphic to `()` used to represent
+a trivial piece of information.
 
 ### `QueryParam`, `QueryParams`, `QueryFlag`
 
