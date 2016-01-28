@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 library
   exposed-modules:     ApiType
                      , Client
-  --                 , Docs
+                     , Docs
   --                 , Javascript
                      , Server
   -- other-modules:
