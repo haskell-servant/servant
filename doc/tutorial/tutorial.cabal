@@ -44,6 +44,7 @@ library
                      , wai
                      , http-types
                      , transformers
+                     , markdown-unlit >= 0.4
   -- hs-source-dirs:
   default-language:    Haskell2010
   ghc-options:         -Wall -Werror -pgmL markdown-unlit
