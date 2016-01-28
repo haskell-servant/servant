@@ -240,9 +240,9 @@ runAction :: Delayed (ExceptT ServantErr IO a)
           -> IO r
 runAction action respond k = runDelayed action >>= go >>= respond
   where
-    go (Fail  e)   = return $ Fail e
+    go (Fail e)      = return $ Fail e
     go (FailFatal e) = return $ FailFatal e
-    go (Route a)   = do
+    go (Route a)     = do
       e <- runExceptT a
       case e of
         Left err -> return . Route $ responseServantErr err
