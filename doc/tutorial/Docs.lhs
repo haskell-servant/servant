@@ -61,8 +61,8 @@ instance ToCapture (Capture "y" Int) where
     DocCapture "y"                                -- name
                "(integer) position on the y axis" -- description
 
-instance ToSample Position Position where
-  toSample _ = Just (Position 3 14) -- example of output
+instance ToSample Position where
+  toSamples _ = singleSample (Position 3 14) -- example of output
 
 instance ToParam (QueryParam "name" String) where
   toParam _ =
@@ -71,7 +71,7 @@ instance ToParam (QueryParam "name" String) where
                   "Name of the person to say hello to." -- description
                   Normal -- Normal, List or Flag
 
-instance ToSample HelloMessage HelloMessage where
+instance ToSample HelloMessage where
   toSamples _ =
     [ ("When a value is provided for 'name'", HelloMessage "Hello, Alp")
     , ("When 'name' is not specified", HelloMessage "Hello, anonymous coward")
@@ -81,11 +81,11 @@ instance ToSample HelloMessage HelloMessage where
 ci :: ClientInfo
 ci = ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]
 
-instance ToSample ClientInfo ClientInfo where
-  toSample _ = Just ci
+instance ToSample ClientInfo where
+  toSamples _ = singleSample ci
 
-instance ToSample Email Email where
-  toSample _ = Just (emailForClient ci)
+instance ToSample Email where
+  toSamples _ = singleSample (emailForClient ci)
 ```
 
 Types that are used as request or response bodies have to instantiate the `ToSample` typeclass which lets you specify one or more examples of values. `Capture`s and `QueryParam`s have to instantiate their respective `ToCapture` and `ToParam` classes and provide a name and some information about the concrete meaning of that argument, as illustrated in the code above.
@@ -228,7 +228,7 @@ server = Server.server3 :<|> serveDocs
         plain = ("Content-Type", "text/plain")
 
 app :: Application
-app = serve api server
+app = serve api EmptyConfig server
 ```
 
 And if you spin up this server with `dist/build/tutorial/tutorial 10` and go to anywhere else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.
