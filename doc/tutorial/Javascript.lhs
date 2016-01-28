@@ -30,13 +30,14 @@ module Javascript where
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Proxy
-import Data.Text (Text)
+import Data.Text as T (Text)
+import Data.Text.IO as T (writeFile, readFile)
 import qualified Data.Text as T
 import GHC.Generics
 import Language.Javascript.JQuery
 import Network.Wai
 import Servant
-import Servant.JQuery
+import Servant.JS
 import System.Random
 ```
 
@@ -133,7 +134,7 @@ server' = server
      :<|> serveDirectory "tutorial/t9"
 
 app :: Application
-app = serve api' server'
+app = serve api' EmptyConfig server'
 ```
 
 Why two different API types, proxies and servers though? Simply because we don't want to generate javascript functions for the `Raw` part of our API type, so we need a `Proxy` for our API type `API'` without its `Raw` endpoint.
@@ -141,8 +142,8 @@ Why two different API types, proxies and servers though? Simply because we don't
 Very similarly to how one can derive haskell functions, we can derive the javascript with just a simple function call to `jsForAPI` from `Servant.JQuery`.
 
 ``` haskell
-apiJS :: String
-apiJS = jsForAPI api
+apiJS :: Text
+apiJS = jsForAPI api vanillaJS
 ```
 
 This `String` contains 2 Javascript functions:
@@ -175,9 +176,9 @@ Right before starting up our server, we will need to write this `String` to a fi
 ``` haskell
 writeJSFiles :: IO ()
 writeJSFiles = do
-  writeFile "getting-started/gs9/api.js" apiJS
-  jq <- readFile =<< Language.Javascript.JQuery.file
-  writeFile "getting-started/gs9/jq.js" jq
+  T.writeFile "getting-started/gs9/api.js" apiJS
+  jq <- T.readFile =<< Language.Javascript.JQuery.file
+  T.writeFile "getting-started/gs9/jq.js" jq
 ```
 
 And we're good to go. Start the server with `dist/build/tutorial/tutorial 9` and go to `http://localhost:8081/`. Start typing in the name of one of the authors in our database or part of a book title, and check out how long it takes to approximate &pi; using the method mentioned above.
