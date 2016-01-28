@@ -98,10 +98,10 @@ toApplication ra request respond = do
 --
 -- There are two reasons:
 --
--- 1. Currently, the order in which we perform checks coincides
--- with the error we will generate. This is because during checks,
--- once an error occurs, we do not perform any subsequent checks,
--- but rather return this error.
+-- 1. In a straight-forward implementation, the order in which we
+-- perform checks will determine the error we generate. This is
+-- because once an error occurs, we would abort and not perform
+-- any subsequent checks, but rather return the current error.
 --
 -- This is not a necessity: we could continue doing other checks,
 -- and choose the preferred error. However, that would in general
