@@ -15,12 +15,14 @@ need to have some language extensions and imports:
 
 module Client where
 
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 import Data.Aeson
 import Data.Proxy
 import GHC.Generics
+import Network.HTTP.Client (Manager, newManager, defaultManagerSettings)
 import Servant.API
 import Servant.Client
+import System.IO.Unsafe
 ```
 
 Also, we need examples for some domain specific data types:
@@ -70,13 +72,13 @@ What we are going to get with *servant-client* here is 3 functions, one to query
 ``` haskell
 position :: Int -- ^ value for "x"
          -> Int -- ^ value for "y"
-         -> EitherT ServantError IO Position
+         -> ExceptT ServantError IO Position
 
 hello :: Maybe String -- ^ an optional value for "name"
-      -> EitherT ServantError IO HelloMessage
+      -> ExceptT ServantError IO HelloMessage
 
 marketing :: ClientInfo -- ^ value for the request body
-          -> EitherT ServantError IO Email
+          -> ExceptT ServantError IO Email
 ```
 
 Each function makes available as an argument any value that the response may depend on, as evidenced in the API type. How do we get these functions? Just give a `Proxy` to your API and a host to make the requests to:
@@ -85,7 +87,12 @@ Each function makes available as an argument any value that the response may dep
 api :: Proxy API
 api = Proxy
 
-position :<|> hello :<|> marketing = client api (BaseUrl Http "localhost" 8081)
+{-# NOINLINE __manager #-}
+__manager :: Manager
+__manager = unsafePerformIO $ newManager defaultManagerSettings
+
+position :<|> hello :<|> marketing =
+  client api (BaseUrl Http "localhost" 8081 "") __manager
 ```
 
 As you can see in the code above, we just "pattern match our way" to these functions. If we try to derive less or more functions than there are endpoints in the API, we obviously get an error. The `BaseUrl` value there is just:
@@ -109,21 +116,21 @@ data BaseUrl = BaseUrl
 That's it. Let's now write some code that uses our client functions.
 
 ``` haskell
-queries :: EitherT ServantError IO (Position, HelloMessage, Email)
+queries :: ExceptT ServantError IO (Position, HelloMessage, Email)
 queries = do
   pos <- position 10 10
-  msg <- hello (Just "servant")
+  message <- hello (Just "servant")
   em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"])
-  return (pos, msg, em)
+  return (pos, message, em)
 
 run :: IO ()
 run = do
-  res <- runEitherT queries
+  res <- runExceptT queries
   case res of
     Left err -> putStrLn $ "Error: " ++ show err
-    Right (pos, msg, em) -> do
+    Right (pos, message, em) -> do
       print pos
-      print msg
+      print message
       print em
 ```
 
