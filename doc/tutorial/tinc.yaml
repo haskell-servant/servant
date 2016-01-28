@@ -7,8 +7,6 @@ dependencies:
     path: ../../servant-client
   - name: servant-js
     path: ../../servant-js
-  - name: servant-lucid
-    path: ../../servant-lucid
   - name: servant-docs
     path: ../../servant-docs
   - name: servant-foreign

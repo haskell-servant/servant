@@ -17,7 +17,7 @@ library
   exposed-modules:     ApiType
                      , Client
                      , Docs
-  --                 , Javascript
+                     , Javascript
                      , Server
   -- other-modules:
   -- other-extensions:
@@ -32,6 +32,7 @@ library
                      , servant-server == 0.5.*
                      , servant-client == 0.5.*
                      , servant-docs == 0.5.*
+                     , servant-js == 0.5.*
                      , warp
                      , http-media
                      , lucid
