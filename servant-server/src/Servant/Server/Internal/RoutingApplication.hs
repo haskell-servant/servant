@@ -33,34 +33,8 @@ data RouteResult a =
   | Route !a
   deriving (Eq, Show, Read, Functor)
 
-data ReqBodyState = Uncalled
-                  | Called !B.ByteString
-                  | Done !B.ByteString
-
 toApplication :: RoutingApplication -> Application
-toApplication ra request respond = do
-  reqBodyRef <- newIORef Uncalled
-  -- We may need to consume the requestBody more than once.  In order to
-  -- maintain the illusion that 'requestBody' works as expected,
-  -- 'ReqBodyState' is introduced, and the complete body is memoized and
-  -- returned as many times as requested with empty "Done" marker chunks in
-  -- between.
-  -- See https://github.com/haskell-servant/servant/issues/3
-  let memoReqBody = do
-          ior <- readIORef reqBodyRef
-          case ior of
-            Uncalled -> do
-                r <- BL.toStrict <$> strictRequestBody request
-                writeIORef reqBodyRef $ Done r
-                return r
-            Called bs -> do
-                writeIORef reqBodyRef $ Done bs
-                return bs
-            Done bs -> do
-                writeIORef reqBodyRef $ Called bs
-                return B.empty
-
-  ra request{ requestBody = memoReqBody } routingRespond
+toApplication ra request respond = ra request routingRespond
  where
   routingRespond :: RouteResult Response -> IO ResponseReceived
   routingRespond (Fail err)      = respond $ responseServantErr err
