@@ -1,13 +1,15 @@
 Servant tutorial
 ================
 
-This is an introductory tutorial to the current version of *servant*, which is **0.4**. Any comment or issue can be directed to [this website's issue tracker](http://github.com/haskell-servant/haskell-servant.github.io/issues).
+This is an introductory tutorial to the current version of *servant*, which is
+**0.4**. Any comment or issue can be directed to `this website's issue
+tracker <http://github.com/haskell-servant/haskell-servant.github.io/issues>`_.
 
 Github
 -------
 
-- the servant packages: [haskell-servant/servant](https://github.com/haskell-servant/servant)
-- the website (including this tutorial): [haskell-servant/haskell-servant.github.io](https://github.com/haskell-servant/haskell-servant.github.io/)
+- the servant packages: `haskell-servant/servant <https://github.com/haskell-servant/servant>`_
+- the website (including this tutorial): `haskell-servant/haskell-servant.github.io <https://github.com/haskell-servant/haskell-servant.github.io/>`_
 - Feel free to use the issue tracker (or to send PRs!) on the website's repository to give feedback and suggestions about this tutorial
 
 Introduction
