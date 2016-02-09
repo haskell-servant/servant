@@ -1,7 +1,4 @@
----
-title: Serving an API
-toc: true
----
+# Serving an API
 
 Enough chit-chat about type-level combinators and representing an API as a
 type. Can we have a webservice already?
