@@ -1,36 +1,49 @@
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
 module Servant.Foreign
-  ( HasForeign(..)
-  , HasForeignType(..)
+  ( ArgType(..)
+  , HeaderArg(..)
+  , QueryArg(..)
+  , Req(..)
   , Segment(..)
   , SegmentType(..)
+  , Url(..)
+    -- aliases
+  , Path
+  , ForeignType
+  , Arg
   , FunctionName
-  , QueryArg(..)
-  , HeaderArg(..)
-  , ArgType(..)
-  , Req
+    -- lenses
+  , reqUrl
+  , reqMethod
+  , reqHeaders
+  , reqBody
+  , reqReturnType
+  , reqFuncName
+  , path
+  , queryStr
+  , argName
+  , argType
+    -- prisms
+  , _HeaderArg
+  , _ReplaceHeaderArg
+  , _Static
+  , _Cap
+  , _Normal
+  , _Flag
+  , _List
+    -- rest of it
+  , HasForeign(..)
+  , HasForeignType(..)
+  , HasNoForeignType
+  , NoTypes
   , captureArg
-  , defReq
+  , isCapture
   , concatCase
   , snakeCase
   , camelCase
-  -- lenses
-  , argType
-  , argName
-  , isCapture
-  , funcName
-  , path
-  , reqUrl
-  , reqBody
-  , reqHeaders
-  , reqMethod
-  , reqReturnType
-  , segment
-  , queryStr
+  , defReq
   , listFromAPI
-  , GenerateList(..)
-  , NoTypes
   -- re-exports
   , module Servant.API
   ) where

@@ -15,7 +15,6 @@ module Servant.ForeignSpec where
 import Data.Monoid ((<>))
 import Data.Proxy
 import Servant.Foreign
-import Servant.Foreign.Internal
 
 import Test.Hspec
 
@@ -36,12 +35,16 @@ data LangX
 
 instance HasForeignType LangX () where
     typeFor _ _ = "voidX"
+
 instance HasForeignType LangX Int where
     typeFor _ _ = "intX"
+
 instance HasForeignType LangX Bool where
     typeFor _ _ = "boolX"
+
 instance OVERLAPPING_ HasForeignType LangX String where
     typeFor _ _ = "stringX"
+
 instance OVERLAPPABLE_ HasForeignType LangX a => HasForeignType LangX [a] where
     typeFor lang _ = "listX of " <> typeFor lang (Proxy :: Proxy a)
 
@@ -70,7 +73,7 @@ listFromAPISpec = describe "listFromAPI" $ do
             , _reqHeaders    = [HeaderArg ("header", "listX of stringX")]
             , _reqBody       = Nothing
             , _reqReturnType = "intX"
-            , _funcName      = ["get", "test"]
+            , _reqFuncName      = ["get", "test"]
             }
 
     it "collects all info for post request" $ do
@@ -82,7 +85,7 @@ listFromAPISpec = describe "listFromAPI" $ do
             , _reqHeaders    = []
             , _reqBody       = Just "listX of stringX"
             , _reqReturnType = "voidX"
-            , _funcName      = ["post", "test"]
+            , _reqFuncName      = ["post", "test"]
             }
 
     it "collects all info for put request" $ do
@@ -95,7 +98,7 @@ listFromAPISpec = describe "listFromAPI" $ do
             , _reqHeaders    = []
             , _reqBody       = Just "stringX"
             , _reqReturnType = "voidX"
-            , _funcName      = ["put", "test"]
+            , _reqFuncName      = ["put", "test"]
             }
 
     it "collects all info for delete request" $ do
@@ -108,6 +111,5 @@ listFromAPISpec = describe "listFromAPI" $ do
             , _reqHeaders    = []
             , _reqBody       = Nothing
             , _reqReturnType = "voidX"
-            , _funcName      = ["delete", "test", "by", "id"]
+            , _reqFuncName      = ["delete", "test", "by", "id"]
             }
-
