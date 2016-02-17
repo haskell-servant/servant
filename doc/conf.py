@@ -94,6 +94,11 @@ exclude_patterns = ['_build', 'venv']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+def setup(app):
+    from sphinx.highlighting import lexers
+    from pygments.lexers import HaskellLexer
+    lexers['haskell ignore'] = HaskellLexer(stripnl=False)
+
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
