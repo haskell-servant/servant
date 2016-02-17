@@ -26,7 +26,6 @@ source-repository head
 library
   exposed-modules:
     Servant.API
-    Servant.API.Auth
     Servant.API.Alternative
     Servant.API.BasicAuth
     Servant.API.Capture
@@ -44,6 +43,7 @@ library
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext
+    Servant.API.Experimental.Auth
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5
