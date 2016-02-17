@@ -38,6 +38,7 @@ library
     Servant.Server
     Servant.Server.Internal
     Servant.Server.Internal.Context
+    Servant.Server.Internal.Auth
     Servant.Server.Internal.BasicAuth
     Servant.Server.Internal.Enter
     Servant.Server.Internal.Router

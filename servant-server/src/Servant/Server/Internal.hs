@@ -10,11 +10,13 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 #include "overlapping-compat.h"
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
+  , module Servant.Server.Internal.Auth
   , module Servant.Server.Internal.Context
   , module Servant.Server.Internal.BasicAuth
   , module Servant.Server.Internal.Router
@@ -25,7 +27,7 @@ module Servant.Server.Internal
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative         ((<$>))
 #endif
-import           Control.Monad.Trans.Except (ExceptT)
+import           Control.Monad.Trans.Except (ExceptT, runExceptT)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
@@ -50,7 +52,7 @@ import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
                                              parseUrlPieceMaybe)
 
-import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
+import           Servant.API                 ((:<|>) (..), (:>), AuthProtect, BasicAuth, Capture,
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,
@@ -64,6 +66,7 @@ import           Servant.API.ContentTypes    (AcceptHeader (..),
 import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
                                               getResponse)
 
+import           Servant.Server.Internal.Auth
 import           Servant.Server.Internal.Context
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Router
@@ -481,6 +484,22 @@ pathIsEmpty = go . pathInfo
 
 ct_wildcard :: B.ByteString
 ct_wildcard = "*" <> "/" <> "*" -- Because CPP
+
+-- * General Authentication
+
+instance ( HasServer api context
+         , HasContextEntry context (AuthHandler Request (AuthServerData (AuthProtect tag)))
+         )
+  => HasServer (AuthProtect tag :> api) context where
+
+  type ServerT (AuthProtect tag :> api) m =
+    AuthServerData (AuthProtect tag) -> ServerT api m
+
+  route Proxy context subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy api) context (subserver `addAuthCheck` authCheck request)
+      where
+        authHandler = unAuthHandler (getContextEntry context)
+        authCheck = fmap (either FailFatal Route) . runExceptT . authHandler
 
 -- * contexts
 
