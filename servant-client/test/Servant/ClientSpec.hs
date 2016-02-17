@@ -62,6 +62,7 @@ spec = describe "Servant.Client" $ do
     sucessSpec
     failSpec
     wrappedApiSpec
+    basicAuthSpec
 
 -- * test data types
 
@@ -147,6 +148,29 @@ failServer = serve failApi (
   :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
   :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
  )
+
+
+-- * auth stuff
+
+type BasicAuthAPI =
+       BasicAuth "foo-realm" () :> "private" :> "basic" :> Get '[JSON] Person
+
+basicAuthAPI :: Proxy BasicAuthAPI
+basicAuthAPI = Proxy
+
+basicAuthHandler :: BasicAuthCheck ()
+basicAuthHandler =
+  let check (BasicAuthData username password) =
+        if username == "servant" && password == "server"
+        then return (Authorized ())
+        else return Unauthorized
+  in BasicAuthCheck check
+
+serverConfig :: Config '[ BasicAuthCheck () ]
+serverConfig = basicAuthHandler :. EmptyConfig
+
+basicAuthServer :: Application
+basicAuthServer = serve basicAuthAPI serverConfig (const (return alice))
 
 {-# NOINLINE manager #-}
 manager :: C.Manager
@@ -292,6 +316,22 @@ data WrappedApi where
                  HasClient api, Client api ~ ExceptT ServantError IO ()) =>
     Proxy api -> WrappedApi
 
+basicAuthSpec :: Spec
+basicAuthSpec = beforeAll (startWaiApp basicAuthServer) $ afterAll endWaiApp $ do
+  context "Authentication works when requests are properly authenticated" $ do
+
+    it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
+      let getBasic = client basicAuthAPI baseUrl manager
+      let basicAuthData = BasicAuthData "servant" "server"
+      (left show <$> runExceptT (getBasic basicAuthData)) `shouldReturn` Right alice
+
+  context "Authentication is rejected when requests are not authenticated properly" $ do
+
+    it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
+      let getBasic = client basicAuthAPI baseUrl manager
+      let basicAuthData = BasicAuthData "not" "password"
+      Left FailureResponse{..} <- runExceptT (getBasic basicAuthData)
+      responseStatus `shouldBe` Status 403 "Forbidden"
 
 -- * utils
 

@@ -37,6 +37,7 @@ import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
 import           Servant.Common.BaseUrl
+import           Servant.Common.BasicAuth
 import           Servant.Common.Req
 
 -- * Accessing APIs as a Client
@@ -422,6 +423,15 @@ instance HasClient subapi =>
 
   type Client (WithNamedContext name context subapi) = Client subapi
   clientWithRoute Proxy = clientWithRoute (Proxy :: Proxy subapi)
+
+
+-- * Basic Authentication
+
+instance HasClient api => HasClient (BasicAuth realm usr :> api) where
+  type Client (BasicAuth realm usr :> api) = BasicAuthData -> Client api
+
+  clientWithRoute Proxy req baseurl manager val =
+    clientWithRoute (Proxy :: Proxy api) (basicAuthReq val req) baseurl manager
 
 
 {- Note [Non-Empty Content Types]

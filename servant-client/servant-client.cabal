@@ -28,11 +28,13 @@ library
   exposed-modules:
     Servant.Client
     Servant.Common.BaseUrl
+    Servant.Common.BasicAuth
     Servant.Common.Req
   build-depends:
       base >=4.7 && <5
     , aeson
     , attoparsec
+    , base64-bytestring
     , bytestring
     , exceptions
     , http-api-data >= 0.1  && < 0.3
