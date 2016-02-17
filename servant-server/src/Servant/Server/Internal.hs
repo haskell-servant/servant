@@ -16,6 +16,7 @@
 module Servant.Server.Internal
   ( module Servant.Server.Internal
   , module Servant.Server.Internal.Context
+  , module Servant.Server.Internal.BasicAuth
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
   , module Servant.Server.Internal.ServantErr
@@ -26,6 +27,7 @@ import           Control.Applicative         ((<$>))
 #endif
 import           Control.Monad.Trans.Except (ExceptT)
 import qualified Data.ByteString            as B
+import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
 import qualified Data.Map                   as M
 import           Data.Maybe                 (fromMaybe, mapMaybe)
@@ -48,7 +50,7 @@ import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
                                              parseUrlPieceMaybe)
 
-import           Servant.API                 ((:<|>) (..), (:>), Capture,
+import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
                                               Verb, ReflectMethod(reflectMethod),
                                               IsSecure(..), Header,
                                               QueryFlag, QueryParam, QueryParams,
@@ -63,6 +65,7 @@ import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
                                               getResponse)
 
 import           Servant.Server.Internal.Context
+import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
@@ -449,6 +452,26 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
 
   route Proxy context subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) context (passToServer subserver $ httpVersion req)
+
+-- * Basic Authentication
+
+-- | Basic Authentication
+instance ( KnownSymbol realm
+         , HasServer api config
+         , HasConfigEntry config (BasicAuthCheck usr)
+         )
+    => HasServer (BasicAuth realm usr :> api) config where
+
+  type ServerT (BasicAuth realm usr :> api) m = usr -> ServerT api m
+
+  route Proxy config subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)
+    where
+       realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
+       basicAuthConfig = getConfigEntry config
+       authCheck req = runBasicAuth req realm basicAuthConfig
+
+-- * helpers
 
 pathIsEmpty :: Request -> Bool
 pathIsEmpty = go . pathInfo

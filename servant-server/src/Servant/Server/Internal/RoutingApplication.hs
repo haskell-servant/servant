@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 module Servant.Server.Internal.RoutingApplication where
 
