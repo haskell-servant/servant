@@ -3,29 +3,10 @@
 Enough chit-chat about type-level combinators and representing an API as a
 type. Can we have a webservice already?
 
-If you want to follow along with the code and run the examples while you read this guide:
-
-``` bash
-cabal get servant-examples
-cd servant-examples-<VERSION>
-cabal sandbox init
-cabal install --dependencies-only
-cabal configure && cabal build
-```
-
-This will produce a `tutorial` executable in the
-`dist/build/tutorial` directory that just runs the example corresponding
-to the number specified as a command line argument:
-
-``` bash
-$ dist/build/tutorial/tutorial
-Usage:   tutorial N
-        where N is the number of the example you want to run.
-```
-
 ## A first example
 
-Equipped with some basic knowledge about the way we represent API, let's now write our first webservice.
+Equipped with some basic knowledge about the way we represent API, let's now
+write our first webservice.
 
 The source for this tutorial section is a literate haskell file, so first we
 need to have some language extensions and imports:
@@ -72,7 +53,13 @@ import qualified Text.Blaze.Html
 {-# LANGUAGE TypeFamilies #-}
 ```
 
-**Important**: the `Servant` module comes from the *servant-server* package, the one that lets us run webservers that implement a particular API type. It reexports all the types from the *servant* package that let you declare API types as well as everything you need to turn your request handlers into a fully-fledged webserver. This means that in your applications, you can just add *servant-server* as a dependency, import `Servant` and not worry about anything else.
+**Important**: the `Servant` module comes from the *servant-server* package,
+the one that lets us run webservers that implement a particular API type.  It
+reexports all the types from the *servant* package that let you declare API
+types as well as everything you need to turn your request handlers into a
+fully-fledged webserver. This means that in your applications, you can just add
+*servant-server* as a dependency, import `Servant` and not worry about anything
+else.
 
 We will write a server that will serve the following API.
 
@@ -95,7 +82,7 @@ data User = User
   { name :: String
   , age :: Int
   , email :: String
-  , registrationDate :: Day
+  , registration_date :: Day
   } deriving (Eq, Show, Generic)
 
 instance ToJSON User
@@ -140,7 +127,9 @@ server1 :: Server UserAPI1
 server1 = return users1
 ```
 
-That's it. Now we can turn `server` into an actual webserver using [wai](http://hackage.haskell.org/package/wai) and [warp](http://hackage.haskell.org/package/warp):
+That's it. Now we can turn `server` into an actual webserver using
+[wai](http://hackage.haskell.org/package/wai) and
+[warp](http://hackage.haskell.org/package/warp):
 
 ``` haskell
 userAPI :: Proxy UserAPI1
@@ -179,7 +168,8 @@ $ curl http://localhost:8081/users
 
 ## More endpoints
 
-What if we want more than one endpoint? Let's add `/albert` and `/isaac` to view the corresponding users encoded in JSON.
+What if we want more than one endpoint? Let's add `/albert` and `/isaac` to
+view the corresponding users encoded in JSON.
 
 ``` haskell
 type UserAPI2 = "users" :> Get '[JSON] [User]
@@ -225,7 +215,8 @@ argument of the appropriate type automatically. You don't have to worry about
 manually looking up URL captures or query string parameters, or
 decoding/encoding data from/to JSON. Never.
 
-We are going to use the following data types and functions to implement a server for `API`.
+We are going to use the following data types and functions to implement a
+server for `API`.
 
 ``` haskell
 type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
@@ -307,7 +298,8 @@ parameter might not always be there);
 
   - a `ReqBody contentTypeList a` becomes an argument of type `a`;
 
-And that's it. You can see this example in action by running `dist/build/tutorial/tutorial 3`.
+And that's it. You can see this example in action by running
+`dist/build/tutorial/tutorial 3`.
 
 ``` bash
 $ curl http://localhost:8081/position/1/2
@@ -474,8 +466,8 @@ And this is all the code that lets you use `JSON` for with `ReqBody`, `Get`,
 `Post` and friends. We can check our understanding by implementing support
 for an `HTML` content type, so that users of your webservice can access an
 HTML representation of the data they want, ready to be included in any HTML
-document, e.g. using [jQuery's `load` function](https://api.jquery.com/load/), simply by adding `Accept:
-text/html` to their request headers.
+document, e.g. using [jQuery's `load` function](https://api.jquery.com/load/),
+simply by adding `Accept: text/html` to their request headers.
 
 ### Case-studies: *servant-blaze* and *servant-lucid*
 
@@ -766,7 +758,8 @@ query it, first without the file and then with the file.
 
 ## Response headers
 
-To add headers to your response, use [addHeader](http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html).
+To add headers to your response, use
+[addHeader](http://hackage.haskell.org/package/servant/docs/Servant-API-ResponseHeaders.html).
 Note that this changes the type of your API, as we can see in the following example:
 
 ``` haskell
@@ -824,9 +817,12 @@ for a file at the path described by the rest of the request path, inside the
 
 In other words:
 
-- If a client requests `/code/foo.txt`, the server will look for a file at `./tutorial/foo.txt` (and fail)
-- If a client requests `/code/T1.hs`, the server will look for a file at `./tutorial/T1.hs` (and succeed)
-- If a client requests `/code/foo/bar/baz/movie.mp4`, the server will look for a file at `./tutorial/foo/bar/baz/movie.mp4` (and fail)
+- If a client requests `/code/foo.txt`, the server will look for a file at
+  `./tutorial/foo.txt` (and fail)
+- If a client requests `/code/T1.hs`, the server will look for a file at
+  `./tutorial/T1.hs` (and succeed)
+- If a client requests `/code/foo/bar/baz/movie.mp4`, the server will look for
+  a file at `./tutorial/foo/bar/baz/movie.mp4` (and fail)
 
 Here is our little server in action.
 
@@ -921,7 +917,8 @@ not found
 
 ## Nested APIs
 
-Let's see how you can define APIs in a modular way, while avoiding repetition. Consider this simple example:
+Let's see how you can define APIs in a modular way, while avoiding repetition.
+Consider this simple example:
 
 ``` haskell
 type UserAPI3 = -- view the user with given userid, in JSON
@@ -940,7 +937,8 @@ type UserAPI4 = Capture "userid" Int :>
   )
 ```
 
-However, you have to be aware that this has an effect on the type of the corresponding `Server`:
+However, you have to be aware that this has an effect on the type of the
+corresponding `Server`:
 
 ``` haskell ignore
 Server UserAPI3 = (Int -> ExceptT ServantErr IO User)
@@ -952,7 +950,8 @@ Server UserAPI4 = Int -> (    ExceptT ServantErr IO User
 ```
 
 In the first case, each handler receives the *userid* argument. In the latter,
-the whole `Server` takes the *userid* and has handlers that are just computations in `ExceptT`, with no arguments. In other words:
+the whole `Server` takes the *userid* and has handlers that are just
+computations in `ExceptT`, with no arguments. In other words:
 
 ``` haskell
 server8 :: Server UserAPI3
@@ -977,7 +976,10 @@ server9 userid = getUser userid :<|> deleteUser userid
         deleteUser = error "..."
 ```
 
-Note that there's nothing special about `Capture` that lets you "factor it out": this can be done with any combinator. Here are a few examples of APIs with a combinator factored out for which we can write a perfectly valid `Server`.
+Note that there's nothing special about `Capture` that lets you "factor it
+out": this can be done with any combinator. Here are a few examples of APIs
+with a combinator factored out for which we can write a perfectly valid
+`Server`.
 
 ``` haskell
 -- we just factor out the "users" path fragment
@@ -1002,7 +1004,8 @@ newtype Token = Token ByteString
 newtype SecretData = SecretData ByteString
 ```
 
-This approach lets you define APIs modularly and assemble them all into one big API type only at the end.
+This approach lets you define APIs modularly and assemble them all into one big
+API type only at the end.
 
 ``` haskell
 type UsersAPI =
@@ -1080,7 +1083,8 @@ server10 :: Server CombinedAPI
 server10 = usersServer :<|> productsServer
 ```
 
-Finally, we can realize the user and product APIs are quite similar and abstract that away:
+Finally, we can realize the user and product APIs are quite similar and
+abstract that away:
 
 ``` haskell
 -- API for values of type 'a'
@@ -1109,15 +1113,25 @@ serverFor = error "..."
 
 ## Using another monad for your handlers
 
-Remember how `Server` turns combinators for HTTP methods into `ExceptT ServantErr IO`? Well, actually, there's more to that. `Server` is actually a simple type synonym.
+Remember how `Server` turns combinators for HTTP methods into `ExceptT
+ServantErr IO`? Well, actually, there's more to that. `Server` is actually a
+simple type synonym.
 
 ``` haskell ignore
 type Server api = ServerT api (ExceptT ServantErr IO)
 ```
 
-`ServerT` is the actual type family that computes the required types for the handlers that's part of the `HasServer` class. It's like `Server` except that it takes a third parameter which is the monad you want your handlers to run in, or more generally the return types of your handlers. This third parameter is used for specifying the return type of the handler for an endpoint, e.g when computing `ServerT (Get '[JSON] Person) SomeMonad`. The result would be `SomeMonad Person`.
+`ServerT` is the actual type family that computes the required types for the
+handlers that's part of the `HasServer` class. It's like `Server` except that
+it takes a third parameter which is the monad you want your handlers to run in,
+or more generally the return types of your handlers. This third parameter is
+used for specifying the return type of the handler for an endpoint, e.g when
+computing `ServerT (Get '[JSON] Person) SomeMonad`. The result would be
+`SomeMonad Person`.
 
-The first and main question one might have then is: how do we write handlers that run in another monad? How can we "bring back" the value from a given monad into something *servant* can understand?
+The first and main question one might have then is: how do we write handlers
+that run in another monad? How can we "bring back" the value from a given monad
+into something *servant* can understand?
 
 ### Natural transformations
 
@@ -1185,7 +1199,8 @@ right type for `serve`. Being cumbersome to do by hand, we provide a function
 `enter` which takes a natural transformation between two parametrized types `m`
 and `n` and a `ServerT someapi m`, and returns a `ServerT someapi n`.
 
-In our case, we can wrap up our little webservice by using `enter readerToEither` on our handlers.
+In our case, we can wrap up our little webservice by using `enter
+readerToEither` on our handlers.
 
 ``` haskell
 readerServer :: Server ReaderAPI
@@ -1195,7 +1210,8 @@ app4 :: Application
 app4 = serve readerAPI EmptyConfig readerServer
 ```
 
-And we can indeed see this webservice in action by running `dist/build/tutorial/tutorial 7`.
+And we can indeed see this webservice in action by running
+`dist/build/tutorial/tutorial 7`.
 
 ``` bash
 $ curl http://localhost:8081/a
@@ -1206,9 +1222,7 @@ $ curl http://localhost:8081/b
 
 ## Conclusion
 
-You're now equipped to write any kind of webservice/web-application using *servant*. One thing not covered here is how to incorporate your own combinators and will be the topic of a page on the website. The rest of this document focuses on *servant-client*, *servant-jquery* and *servant-docs*.
-
-<div style="text-align: center;">
-  <p><a href="/tutorial/api-type.html">Previous page: A web API as a type</a></p>
-  <p><a href="/tutorial/client.html">Next page: Deriving Haskell functions to query an API</a></p>
-</div>
+You're now equipped to write any kind of webservice/web-application using
+*servant*. One thing not covered here is how to incorporate your own
+combinators and will be the topic of a page on the website. The rest of this
+document focuses on *servant-client*, *servant-jquery* and *servant-docs*.
