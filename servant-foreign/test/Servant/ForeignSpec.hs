@@ -1,13 +1,4 @@
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE CPP                   #-}
-
+{-# LANGUAGE CPP               #-}
 #include "overlapping-compat.h"
 
 module Servant.ForeignSpec where
@@ -26,15 +17,17 @@ spec = describe "Servant.Foreign" $ do
 camelCaseSpec :: Spec
 camelCaseSpec = describe "camelCase" $ do
   it "converts FunctionNames to camelCase" $ do
-    camelCase ["post", "counter", "inc"] `shouldBe` "postCounterInc"
-    camelCase ["get", "hyphen-ated", "counter"] `shouldBe` "getHyphenatedCounter"
+    camelCase (FunctionName ["post", "counter", "inc"])
+      `shouldBe` "postCounterInc"
+    camelCase (FunctionName ["get", "hyphen-ated", "counter"])
+      `shouldBe` "getHyphenatedCounter"
 
 ----------------------------------------------------------------------
 
 data LangX
 
 instance HasForeignType LangX () where
-  typeFor _ _ = "voidX"
+  typeFor _ _ = ForeignType "voidX"
 
 instance HasForeignType LangX Int where
   typeFor _ _ = "intX"
@@ -68,24 +61,24 @@ listFromAPISpec = describe "listFromAPI" $ do
     shouldBe getReq $ defReq
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
-          [ QueryArg ("flag", "boolX") Flag ]
+          [ QueryArg (Arg "flag" "boolX") Flag ]
       , _reqMethod     = "GET"
-      , _reqHeaders    = [HeaderArg ("header", "listX of stringX")]
+      , _reqHeaders    = [HeaderArg $ Arg "header" "listX of stringX"]
       , _reqBody       = Nothing
       , _reqReturnType = "intX"
-      , _reqFuncName      = ["get", "test"]
+      , _reqFuncName   = FunctionName ["get", "test"]
       }
 
   it "collects all info for post request" $ do
     shouldBe postReq $ defReq
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
-          [ QueryArg ("param", "intX") Normal ]
+          [ QueryArg (Arg "param" "intX") Normal ]
       , _reqMethod     = "POST"
       , _reqHeaders    = []
       , _reqBody       = Just "listX of stringX"
       , _reqReturnType = "voidX"
-      , _reqFuncName      = ["post", "test"]
+      , _reqFuncName   = FunctionName ["post", "test"]
       }
 
   it "collects all info for put request" $ do
@@ -93,23 +86,23 @@ listFromAPISpec = describe "listFromAPI" $ do
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
           -- Shoud this be |intX| or |listX of intX| ?
-          [ QueryArg ("params", "listX of intX") List ]
+          [ QueryArg (Arg "params" "listX of intX") List ]
       , _reqMethod     = "PUT"
       , _reqHeaders    = []
       , _reqBody       = Just "stringX"
       , _reqReturnType = "voidX"
-      , _reqFuncName      = ["put", "test"]
+      , _reqFuncName   = FunctionName ["put", "test"]
       }
 
   it "collects all info for delete request" $ do
     shouldBe deleteReq $ defReq
       { _reqUrl        = Url
           [ Segment $ Static "test"
-          , Segment $ Cap ("id", "intX") ]
+          , Segment $ Cap (Arg "id" "intX") ]
           []
       , _reqMethod     = "DELETE"
       , _reqHeaders    = []
       , _reqBody       = Nothing
       , _reqReturnType = "voidX"
-      , _reqFuncName      = ["delete", "test", "by", "id"]
+      , _reqFuncName   = FunctionName ["delete", "test", "by", "id"]
       }
