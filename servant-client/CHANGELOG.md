@@ -9,6 +9,8 @@ HEAD
 * Client functions now consider any 2xx successful.
 * Remove matrix params.
 * Added support for Basic authentication
+* Add generalized authentication support via the `AuthClientData` type family and
+  `AuthenticateReq` data type
 
 0.4.1
 -----

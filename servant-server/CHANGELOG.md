@@ -12,6 +12,7 @@ HEAD
 * Redefined constructors of `RouteResult`.
 * Added `Delayed` and related functions (`addMethodCheck`, `addAcceptCheck`, `addBodyCheck`, `runDelayed`)
 * Added support for Basic Authentication
+* Add generalized authentication support via the `AuthServerData` type family and `AuthHandler` handler
 
 0.4.1
 -----
