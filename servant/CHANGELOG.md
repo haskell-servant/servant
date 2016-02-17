@@ -10,6 +10,7 @@ HEAD
 * Add PlainText String MimeRender and MimeUnrender instances.
 * Add new `Verbs` combinator, and make all existing and new verb combinators
 type synonyms of it.
+* Add `BasicAuth` combinator to support Basic authentication
 
 0.4.2
 -----

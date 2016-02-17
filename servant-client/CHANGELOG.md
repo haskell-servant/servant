@@ -8,6 +8,7 @@ HEAD
 * Use `http-api-data` instead of `Servant.Common.Text`
 * Client functions now consider any 2xx successful.
 * Remove matrix params.
+* Added support for Basic authentication
 
 0.4.1
 -----

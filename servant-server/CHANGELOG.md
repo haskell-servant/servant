@@ -11,6 +11,7 @@ HEAD
 * Remove `RouteMismatch`.
 * Redefined constructors of `RouteResult`.
 * Added `Delayed` and related functions (`addMethodCheck`, `addAcceptCheck`, `addBodyCheck`, `runDelayed`)
+* Added support for Basic Authentication
 
 0.4.1
 -----
