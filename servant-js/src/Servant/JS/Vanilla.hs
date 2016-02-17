@@ -54,12 +54,15 @@ generateVanillaJSWith opts req = "\n" <>
 
   where argsStr = T.intercalate ", " args
         args = captures
-            ++ map (view $ argName._1) queryparams
+            ++ map (view $ argName . aPath) queryparams
             ++ body
-            ++ map (toValidFunctionName . (<>) "header" . fst . headerArg) hs
+            ++ map ( toValidFunctionName
+                   . (<>) "header"
+                   . view (headerArg . aPath)
+                   ) hs
             ++ [onSuccess, onError]
 
-        captures = map (fst . captureArg)
+        captures = map (view aPath . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl.path
 
@@ -85,10 +88,11 @@ generateVanillaJSWith opts req = "\n" <>
             then ""
             else headersStr <> "\n"
 
-          where headersStr = T.intercalate "\n" $ map headerStr hs
-                headerStr header = "  xhr.setRequestHeader(\"" <>
-                  fst (headerArg header) <>
-                  "\", " <> toJSHeader header <> ");"
+          where
+            headersStr = T.intercalate "\n" $ map headerStr hs
+            headerStr header = "  xhr.setRequestHeader(\"" <>
+              header ^. headerArg . aPath <>
+              "\", " <> toJSHeader header <> ");"
 
         namespace = if moduleName opts == ""
                        then "var "

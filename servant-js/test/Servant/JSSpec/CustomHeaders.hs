@@ -27,8 +27,9 @@ instance (KnownSymbol sym, HasForeign lang sublayout)
     type Foreign (Authorization sym a :> sublayout) = Foreign sublayout
 
     foreignFor lang Proxy req = foreignFor lang (Proxy :: Proxy sublayout) $
-        req & reqHeaders <>~ [ ReplaceHeaderArg ("Authorization", "") $
-                               tokenType (pack . symbolVal $ (Proxy :: Proxy sym)) ]
+        req & reqHeaders <>~
+          [ ReplaceHeaderArg (Arg "Authorization" "")
+          $ tokenType (pack . symbolVal $ (Proxy :: Proxy sym)) ]
       where
         tokenType t = t <> " {Authorization}"
 
@@ -40,7 +41,7 @@ instance (HasForeign lang sublayout)
     type Foreign (MyLovelyHorse a :> sublayout) = Foreign sublayout
 
     foreignFor lang Proxy req = foreignFor lang (Proxy :: Proxy sublayout) $
-        req & reqHeaders <>~ [ ReplaceHeaderArg ("X-MyLovelyHorse", "") tpl ]
+        req & reqHeaders <>~ [ ReplaceHeaderArg (Arg "X-MyLovelyHorse" "") tpl ]
       where
         tpl = "I am good friends with {X-MyLovelyHorse}"
 
@@ -52,6 +53,6 @@ instance (HasForeign lang sublayout)
     type Foreign (WhatsForDinner a :> sublayout) = Foreign sublayout
 
     foreignFor lang Proxy req = foreignFor lang (Proxy :: Proxy sublayout) $
-        req & reqHeaders <>~ [ ReplaceHeaderArg ("X-WhatsForDinner", "") tpl ]
+        req & reqHeaders <>~ [ ReplaceHeaderArg (Arg "X-WhatsForDinner" "") tpl ]
       where
         tpl = "I would like {X-WhatsForDinner} with a cherry on top."

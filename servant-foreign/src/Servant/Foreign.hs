@@ -10,10 +10,14 @@ module Servant.Foreign
   , Url(..)
     -- aliases
   , Path
-  , ForeignType
-  , Arg
-  , FunctionName
+  , ForeignType(..)
+  , Arg(..)
+  , FunctionName(..)
+  , PathSegment(..)
     -- lenses
+  , aName
+  , aType
+  , aPath
   , reqUrl
   , reqMethod
   , reqHeaders
@@ -24,7 +28,10 @@ module Servant.Foreign
   , queryStr
   , argName
   , argType
+  , headerArg
     -- prisms
+  , _PathSegment
+  , _ForeignType
   , _HeaderArg
   , _ReplaceHeaderArg
   , _Static
@@ -40,14 +47,13 @@ module Servant.Foreign
   , NoTypes
   , captureArg
   , isCapture
-  , concatCase
-  , snakeCase
-  , camelCase
   , defReq
   , listFromAPI
-  -- re-exports
+    -- re-exports
   , module Servant.API
+  , module Servant.Foreign.Inflections
   ) where
 
 import Servant.API
 import Servant.Foreign.Internal
+import Servant.Foreign.Inflections
