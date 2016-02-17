@@ -232,7 +232,3 @@ app = serve api EmptyConfig server
 ```
 
 And if you spin up this server with `dist/build/tutorial/tutorial 10` and go to anywhere else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.
-
-<div style="text-align: center;">
-  <a href="/tutorial/javascript.html">Previous page: Generating javascript functions to query an API</a>
-</div>
