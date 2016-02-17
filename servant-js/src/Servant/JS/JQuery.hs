@@ -81,7 +81,7 @@ generateJQueryJSWith opts req = "\n" <>
         namespace = if (moduleName opts) == ""
                        then "var "
                        else (moduleName opts) <> "."
-        fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
+        fname = namespace <> (functionNameBuilder opts $ req ^. reqFuncName)
 
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
