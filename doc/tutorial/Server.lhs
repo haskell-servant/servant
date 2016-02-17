@@ -23,8 +23,7 @@ Usage:   tutorial N
         where N is the number of the example you want to run.
 ```
 
-A first example
-===============
+## A first example
 
 Equipped with some basic knowledge about the way we represent API, let's now write our first webservice.
 
@@ -53,7 +52,6 @@ import Data.Aeson
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
 import Data.ByteString (ByteString)
-import Data.Int
 import Data.List
 import Data.String.Conversions
 import Data.Time.Calendar
@@ -97,7 +95,7 @@ data User = User
   { name :: String
   , age :: Int
   , email :: String
-  , registration_date :: Day
+  , registrationDate :: Day
   } deriving (Eq, Show, Generic)
 
 instance ToJSON User
@@ -179,8 +177,7 @@ $ curl http://localhost:8081/users
 [{"email":"isaac@newton.co.uk","registration_date":"1683-03-01","age":372,"name":"Isaac Newton"},{"email":"ae@mc2.org","registration_date":"1905-12-01","age":136,"name":"Albert Einstein"}]
 ```
 
-More endpoints
-==============
+## More endpoints
 
 What if we want more than one endpoint? Let's add `/albert` and `/isaac` to view the corresponding users encoded in JSON.
 
@@ -218,8 +215,7 @@ And that's it! You can run this example with
 `dist/build/tutorial/tutorial 2` and check out the data available
 at `/users`, `/albert` and `/isaac`.
 
-From combinators to handler arguments
-=====================================
+## From combinators to handler arguments
 
 Fine, we can write trivial webservices easily, but none of the two above use
 any "fancy" combinator from servant. Let's address this and use `QueryParam`,
@@ -237,8 +233,8 @@ type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Posit
       :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
 
 data Position = Position
-  { x :: Int
-  , y :: Int
+  { xCoord :: Int
+  , yCoord :: Int
   } deriving Generic
 
 instance ToJSON Position
@@ -334,8 +330,7 @@ that get turned into arguments to the handlers, the type of the argument.
  > - `QueryParams "something" a` and `MatrixParams "something" a` get turned into arguments of type `[a]`.
  > - `ReqBody contentTypes a` gets turned into an argument of type `a`.
 
-The `FromText`/`ToText` classes
-===============================
+## The `FromHttpApiData`/`ToHttpApiData` classes
 
 Wait... How does *servant* know how to decode the `Int`s from the URL? Or how
 to decode a `ClientInfo` value from the request body? This is what this and the
@@ -343,54 +338,42 @@ following two sections address.
 
 `Capture`s and `QueryParam`s are represented by some textual value in URLs.
 `Header`s are similarly represented by a pair of a header name and a
-corresponding (textual) value in the request's "metadata". This is why we
-decided to provide a pair of typeclasses, `FromText` and `ToText` which just
-let you say that you can respectively *extract* or *encode* values of some type
-*from*/*to* text. Here are the definitions:
+corresponding (textual) value in the request's "metadata". How types are
+decoded from headers, captures, and query params is expressed in a class
+`FromHttpApiData` (from the package
+[*http-api-data*](http://hackage.haskell.org/package/http-api-data)):
 
 ``` haskell ignore
-class FromText a where
-  fromText :: Text -> Maybe a
+class FromHttpApiData a where
+  {-# MINIMAL parseUrlPiece | parseQueryParam #-}
+  -- | Parse URL path piece.
+  parseUrlPiece :: Text -> Either Text a
+  parseUrlPiece = parseQueryParam
 
-class ToText a where
-  toText :: a -> Text
+  -- | Parse HTTP header value.
+  parseHeader :: ByteString -> Either Text a
+  parseHeader = parseUrlPiece . decodeUtf8
+
+  -- | Parse query param value.
+  parseQueryParam :: Text -> Either Text a
+  parseQueryParam = parseUrlPiece
 ```
 
-And as long as the type that a `Capture`/`QueryParam`/`Header`/etc will be
-decoded to provides a `FromText` instance, it will Just Work. *servant*
-provides a decent number of instances, but here are some examples of defining
-your own.
+As you can see, as long as you provide either `parseUrlPiece` (for `Capture`s)
+or `parseQueryParam` (for `QueryParam`s), the other methods will be defined in
+terms of this.
 
-``` haskell
--- A typical enumeration
-data Direction
-  = Up
-  | Down
-  | Left
-  | Right
-
-newtype UserId = UserId Int64
-```
-
-or writing the instances by hand:
-
-``` haskell ignore
-instance FromText UserId where
-  fromText = fmap UserId fromText
-
-instance ToText UserId where
-  toText (UserId i) = toText i
-```
+*http-api-data* provides a decent number of instances, helpers for defining new
+ones, and wonderful documentation.
 
 There's not much else to say about these classes. You will need instances for
-them when using `Capture`, `QueryParam`, `QueryParams`, `MatrixParam`,
-`MatrixParams` and `Header` with your types. You will need `FromText` instances
-for server-side request handlers and `ToText` instances only when using
+them when using `Capture`, `QueryParam`, `QueryParams`, and `Header` with your
+types. You will need `FromHttpApiData` instances for server-side request
+handlers and `ToHttpApiData` instances only when using
 *servant-client*, as described in the [section about deriving haskell
 functions to query an API](/tutorial/client.html).
 
-Using content-types with your data types
-========================================
+## Using content-types with your data types
 
 The same principle was operating when decoding request bodies from JSON, and
 responses *into* JSON. (JSON is just the running example - you can do this with
@@ -399,8 +382,8 @@ any content-type.)
 This section introduces a couple of typeclasses provided by *servant* that make
 all of this work.
 
-The truth behind `JSON`
------------------------
+### The truth behind `JSON`
+
 
 What exactly is `JSON`? Like the 3 other content types provided out of the box
 by *servant*, it's a really dumb data type.
@@ -464,8 +447,6 @@ And now the `MimeUnrender` class, which lets us extract values from lazy
 ``` haskell ignore
 class Accept ctype => MimeUnrender ctype a where
     mimeUnrender :: Proxy ctype -> ByteString -> Either String a
-    -- alternatively:
-    mimeUnrender :: Proxy ctype -> (ByteString -> Either String a)
 ```
 
 We don't have much work to do there either, `Data.Aeson.eitherDecode` is
@@ -496,8 +477,7 @@ HTML representation of the data they want, ready to be included in any HTML
 document, e.g. using [jQuery's `load` function](https://api.jquery.com/load/), simply by adding `Accept:
 text/html` to their request headers.
 
-Case-studies: *servant-blaze* and *servant-lucid*
--------------------------------------------------
+### Case-studies: *servant-blaze* and *servant-lucid*
 
 These days, most of the haskellers who write their HTML UIs directly from
 Haskell use either [blaze-html](http://hackage.haskell.org/package/blaze-html)
@@ -615,8 +595,8 @@ instance ToHtml [Person] where
 We create some `Person` values and serve them as a list:
 
 ``` haskell
-persons :: [Person]
-persons =
+people :: [Person]
+people =
   [ Person "Isaac"  "Newton"
   , Person "Albert" "Einstein"
   ]
@@ -625,7 +605,7 @@ personAPI :: Proxy PersonAPI
 personAPI = Proxy
 
 server4 :: Server PersonAPI
-server4 = return persons
+server4 = return people
 
 app2 :: Application
 app2 = serve personAPI EmptyConfig server4
@@ -641,8 +621,7 @@ And we're good to go. You can run this example with `dist/build/tutorial/tutoria
  # or just point your browser to http://localhost:8081/persons
 ```
 
-The `ExceptT ServantErr IO` monad
-=================================
+## The `ExceptT ServantErr IO` monad
 
 At the heart of the handlers is the monad they run in, namely `ExceptT
 ServantErr IO`. One might wonder: why this monad? The answer is that it is the
@@ -660,40 +639,39 @@ Let's recall some definitions.
 -- from the Prelude
 data Either e a = Left e | Right a
 
--- from the 'either' package at
--- http://hackage.haskell.org/package/either-4.3.3.2/docs/Control-Monad-Trans-Either.html
-newtype ExceptT e m a
-  = ExceptT { runEitherT :: m (Either e a) }
+-- from the 'mtl' package at
+newtype ExceptT e m a = ExceptT ( m (Either e a) )
 ```
 
 In short, this means that a handler of type `ExceptT ServantErr IO a` is simply
 equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO
 action that either returns an error or a result.
 
-The aforementioned `either` package is worth taking a look at. Perhaps most
-importantly:
-
-``` haskell ignore
-left :: Monad m => e -> ExceptT e m a
-```
-Allows you to return an error from your handler (whereas `return` is enough to
-return a success).
+The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)
+from which `ExceptT` comes is worth looking at.
+Perhaps most importantly, `ExceptT` is an instance of `MonadError`, so
+`throwError` can be used to return an error from your handler (whereas `return`
+        is enough to return a success).
 
 Most of what you'll be doing in your handlers is running some IO and,
 depending on the result, you might sometimes want to throw an error of some
 kind and abort early. The next two sections cover how to do just that.
 
-Performing IO
--------------
+### Performing IO
 
-Another important instance from the list above is `MonadIO m => MonadIO (ExceptT e m)`. [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html) is a class from the *transformers* package defined as:
+Another important instance from the list above is `MonadIO m => MonadIO
+(ExceptT e m)`.
+[`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html)
+is a class from the *transformers* package defined as:
 
 ``` haskell ignore
 class Monad m => MonadIO m where
   liftIO :: IO a -> m a
 ```
 
-Obviously, the `IO` monad provides a `MonadIO` instance. Hence for any type `e`, `ExceptT e IO` has a `MonadIO` instance. So if you want to run any kind of IO computation in your handlers, just use `liftIO`:
+Obviously, the `IO` monad provides a `MonadIO` instance. Hence for any type
+`e`, `ExceptT e IO` has a `MonadIO` instance. So if you want to run any kind of
+IO computation in your handlers, just use `liftIO`:
 
 ``` haskell
 type IOAPI1 = "myfile.txt" :> Get '[JSON] FileContent
@@ -710,8 +688,7 @@ server5 = do
   return (FileContent filecontent)
 ```
 
-Failing, through `ServantErr`
------------------------------
+### Failing, through `ServantErr`
 
 If you want to explicitly fail at providing the result promised by an endpoint
 using the appropriate HTTP status code (not found, unauthorized, etc) and some
@@ -787,8 +764,7 @@ query it, first without the file and then with the file.
  {"content":"Hello\n"}
 ```
 
-Response headers
-================
+## Response headers
 
 To add headers to your response, use [addHeader](http://hackage.haskell.org/package/servant-0.4.4/docs/Servant-API-ResponseHeaders.html).
 Note that this changes the type of your API, as we can see in the following example:
@@ -800,9 +776,9 @@ myHandler :: Server MyHandler
 myHandler = return $ addHeader 1797 albert
 ```
 
+Note that the type of `addHeader x` is different than the type of `x`!
 
-Serving static files
-====================
+## Serving static files
 
 *servant-server* also provides a way to just serve the content of a directory
 under some path in your web API. As mentioned earlier in this document, the
@@ -842,7 +818,9 @@ app3 :: Application
 app3 = serve codeAPI EmptyConfig server7
 ```
 
-This server will match any request whose path starts with `/code` and will look for a file at the path described by the rest of the request path, inside the *tutorial/* directory of the path you run the program from.
+This server will match any request whose path starts with `/code` and will look
+for a file at the path described by the rest of the request path, inside the
+ *tutorial/* directory of the path you run the program from.
 
 In other words:
 
@@ -941,8 +919,7 @@ $ curl http://localhost:8081/foo
 not found
 ```
 
-Nested APIs
-===========
+## Nested APIs
 
 Let's see how you can define APIs in a modular way, while avoiding repetition. Consider this simple example:
 
@@ -1130,8 +1107,7 @@ serverFor = error "..."
 -- or the mailing list if you get stuck!
 ```
 
-Using another monad for your handlers
-=====================================
+## Using another monad for your handlers
 
 Remember how `Server` turns combinators for HTTP methods into `ExceptT ServantErr IO`? Well, actually, there's more to that. `Server` is actually a simple type synonym.
 
@@ -1143,8 +1119,7 @@ type Server api = ServerT api (ExceptT ServantErr IO)
 
 The first and main question one might have then is: how do we write handlers that run in another monad? How can we "bring back" the value from a given monad into something *servant* can understand?
 
-Natural transformations
------------------------
+### Natural transformations
 
 If we have a function that gets us from an `m a` to an `n a`, for any `a`, what
 do we have?
@@ -1202,8 +1177,7 @@ We unfortunately can't use `readerServerT` as an argument of `serve`, because
 `serve` wants a `Server ReaderAPI`, i.e., with handlers running in `ExceptT
 ServantErr IO`. But there's a simple solution to this.
 
-Enter `enter`
--------------
+### Enter `enter`
 
 That's right. We have just written `readerToEither`, which is exactly what we
 would need to apply to the results of all handlers to make the handlers have the
@@ -1230,8 +1204,7 @@ $ curl http://localhost:8081/b
 "hi"
 ```
 
-Conclusion
-==========
+## Conclusion
 
 You're now equipped to write any kind of webservice/web-application using *servant*. One thing not covered here is how to incorporate your own combinators and will be the topic of a page on the website. The rest of this document focuses on *servant-client*, *servant-jquery* and *servant-docs*.
 
