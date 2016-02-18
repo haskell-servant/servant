@@ -63,7 +63,7 @@ executable counter
     buildable: False
 
   build-depends:    base             >= 4.7 && < 5
-                  , aeson            >= 0.7  && < 0.11
+                  , aeson            >= 0.7  && < 0.12
                   , filepath         >= 1
                   , lens             >= 4
                   , servant          == 0.5.*
