@@ -1,4 +1,4 @@
-# Generating documentation from API types
+# Documenting an API
 
 The source for this tutorial section is a literate haskell file, so first we
 need to have some language extensions and imports:
