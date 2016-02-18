@@ -1,12 +1,14 @@
-servant – Type-Level Web DSL
-============================
+servant – A Type-Level Web DSL
+==============================
+
+.. image:: https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png
 
 Documentation table of contents
 -------------------------------
 
 .. toctree::
-   :maxdepth: 2
+  :maxdepth: 2
 
-   README.md
-   tutorial/index.rst
-   CONTRIBUTING.md
+  introduction.rst
+  tutorial/index.rst
+  links.rst
