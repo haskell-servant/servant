@@ -1,7 +1,7 @@
 Introduction
 ------------
 
-*servant* has the following guiding principles:
+**servant** has the following guiding principles:
 
 - concision
 
@@ -23,9 +23,9 @@ Introduction
 - separation of concerns
 
    Your handlers and your HTTP logic should be separate. True to the philosphy
-   at the core of HTTP and REST, with *servant* your handlers return normal
+   at the core of HTTP and REST, with **servant** your handlers return normal
    Haskell datatypes - that's the resource. And then from a description of your
-   API, *servant* handles the *presentation* (i.e., the Content-Types). But
+   API, **servant** handles the *presentation* (i.e., the Content-Types). But
    that's just one example.
 
 - type safety
@@ -38,7 +38,3 @@ might expect. The core idea is *reifying the description of your API*. Once
 reified, everything follows. We think we might be the first web framework to
 reify API descriptions in an extensible way. We're pretty sure we're the first
 to reify it as *types*.
-
-To be able to write a webservice you only need to read the first two sections,
-but the goal of this document being to get you started with servant, we also
-cover the couple of ways you can extend servant for a great good.

@@ -1,9 +1,11 @@
 Tutorial
 ========
 
-This is an introductory tutorial to the current version of *servant*, which is
-**0.4**. Any comment or issue can be directed to `this website's issue
-tracker <http://github.com/haskell-servant/haskell-servant.github.io/issues>`_.
+This is an introductory tutorial to **servant**.
+
+(Any comments, issues or feedback about the tutorial can be handled
+through
+`servant's issue tracker <http://github.com/haskell-servant/servant/issues>`_.)
 
 
 .. toctree::
