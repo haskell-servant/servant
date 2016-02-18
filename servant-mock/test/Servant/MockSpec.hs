@@ -52,7 +52,7 @@ spec = do
     context "Get" $ do
       let api :: Proxy (Get '[JSON] Body)
           api = Proxy
-          app = serve api EmptyConfig (mock api Proxy)
+          app = serve api (mock api Proxy)
       with (return app) $ do
         it "serves arbitrary response bodies" $ do
           get "/" `shouldRespondWith` 200{
@@ -65,7 +65,7 @@ spec = do
           withoutHeader :: Proxy (Get '[JSON] (Headers '[] Body))
           withoutHeader = Proxy
           toApp :: (HasMock api '[]) => Proxy api -> IO Application
-          toApp api = return $ serve api EmptyConfig (mock api (Proxy :: Proxy '[]))
+          toApp api = return $ serve api (mock api (Proxy :: Proxy '[]))
       with (toApp withHeader) $ do
         it "serves arbitrary response bodies" $ do
           get "/" `shouldRespondWith` 200{

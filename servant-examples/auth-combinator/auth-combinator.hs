@@ -82,7 +82,7 @@ main :: IO ()
 main = do
   dbConnection <- initDB
   let config = dbConnection :. EmptyConfig
-  run 8080 (serve api config server)
+  run 8080 (serveWithConfig api config server)
 
 {- Sample session:
 $ curl http://localhost:8080/

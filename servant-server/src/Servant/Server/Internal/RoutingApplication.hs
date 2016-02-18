@@ -11,14 +11,8 @@ module Servant.Server.Internal.RoutingApplication where
 import           Control.Applicative                ((<$>))
 #endif
 import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
-import qualified Data.ByteString                    as B
-import qualified Data.ByteString.Lazy               as BL
-import           Data.IORef                         (newIORef, readIORef,
-                                                     writeIORef)
 import           Network.Wai                        (Application, Request,
-                                                     Response, ResponseReceived,
-                                                     requestBody,
-                                                     strictRequestBody)
+                                                     Response, ResponseReceived)
 import           Servant.Server.Internal.ServantErr
 
 type RoutingApplication =

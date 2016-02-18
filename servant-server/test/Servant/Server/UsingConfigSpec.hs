@@ -30,7 +30,7 @@ testServer s = return s
 
 oneEntryApp :: Application
 oneEntryApp =
-  serve (Proxy :: Proxy OneEntryAPI) config testServer
+  serveWithConfig (Proxy :: Proxy OneEntryAPI) config testServer
   where
     config :: Config '[String]
     config = "configEntry" :. EmptyConfig
@@ -40,7 +40,7 @@ type OneEntryTwiceAPI =
   "bar" :> ExtractFromConfig :> Get '[JSON] String
 
 oneEntryTwiceApp :: Application
-oneEntryTwiceApp = serve (Proxy :: Proxy OneEntryTwiceAPI) config $
+oneEntryTwiceApp = serveWithConfig (Proxy :: Proxy OneEntryTwiceAPI) config $
   testServer :<|>
   testServer
   where
@@ -68,7 +68,7 @@ type InjectAPI =
     Get '[JSON] String
 
 injectApp :: Application
-injectApp = serve (Proxy :: Proxy InjectAPI) config $
+injectApp = serveWithConfig (Proxy :: Proxy InjectAPI) config $
   (\ s -> return s) :<|>
   (\ s -> return ("tagged: " ++ s))
   where
@@ -90,7 +90,7 @@ type WithBirdfaceAPI =
     "bar" :> ExtractFromConfig :> Get '[JSON] String
 
 withBirdfaceApp :: Application
-withBirdfaceApp = serve (Proxy :: Proxy WithBirdfaceAPI) config $
+withBirdfaceApp = serveWithConfig (Proxy :: Proxy WithBirdfaceAPI) config $
   testServer :<|>
   testServer
   where
@@ -112,7 +112,7 @@ type NamedConfigAPI =
     ExtractFromConfig :> Get '[JSON] String)
 
 namedConfigApp :: Application
-namedConfigApp = serve (Proxy :: Proxy NamedConfigAPI) config return
+namedConfigApp = serveWithConfig (Proxy :: Proxy NamedConfigAPI) config return
   where
     config :: Config '[NamedConfig "sub" '[String]]
     config = NamedConfig ("descend" :. EmptyConfig) :. EmptyConfig

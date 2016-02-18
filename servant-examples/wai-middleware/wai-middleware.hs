@@ -45,7 +45,7 @@ server = return products
 -- so applying a middleware is really as simple as
 -- applying a function to the result of 'serve'
 app :: Application
-app = logStdout (serve simpleAPI EmptyConfig server)
+app = logStdout (serve simpleAPI server)
 
 main :: IO ()
 main = run 8080 app
