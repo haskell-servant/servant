@@ -3,11 +3,11 @@ servant – A Type-Level Web DSL
 
 .. image:: https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png
 
-``servant`` is a set of packages for writing web applications and tools around them.
-It allows to
+``servant`` is a set of packages for declaring web APIs at the type-level and
+then using those API specifications to:
 
-- write servers,
-- obtain clients (in haskell),
+- write servers (this part of ``servant`` can be considered a web framework),
+- obtain client functions (in haskell),
 - generate client functions for other programming languages and
 - generate documentation for your web applications.
 
