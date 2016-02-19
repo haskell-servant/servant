@@ -42,4 +42,4 @@ server :: Server UserAPI
 server = return users
 
 app :: Application
-app = serve userAPI EmptyConfig server
+app = serve userAPI server

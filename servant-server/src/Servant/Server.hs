@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds   #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -8,6 +9,7 @@
 module Servant.Server
   ( -- * Run a wai application from an API
     serve
+  , serveWithConfig
 
   , -- * Construct a wai Application from an API
     toApplication
@@ -104,18 +106,18 @@ import           Servant.Server.Internal.Enter
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > config :: Config '[]
--- > config = EmptyConfig
--- >
 -- > app :: Application
--- > app = serve myApi config server
+-- > app = serve myApi server
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: (HasServer layout config)
+serve :: (HasServer layout '[]) => Proxy layout -> Server layout -> Application
+serve p = serveWithConfig p EmptyConfig
+
+serveWithConfig :: (HasServer layout config)
     => Proxy layout -> Config config -> Server layout -> Application
-serve p config server = toApplication (runRouter (route p config d))
+serveWithConfig p config server = toApplication (runRouter (route p config d))
   where
     d = Delayed r r r (\ _ _ -> Route server)
     r = return (Route ())

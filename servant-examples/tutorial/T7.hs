@@ -30,4 +30,4 @@ readerServer = enter readerToEither readerServerT
         readerToEither = Nat $ \r -> return (runReader r "hi")
 
 app :: Application
-app = serve readerAPI EmptyConfig readerServer
+app = serve readerAPI readerServer
