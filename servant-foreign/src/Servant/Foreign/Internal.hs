@@ -261,8 +261,8 @@ instance
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = (str, typeFor lang (Proxy :: Proxy Bool))
 
-instance HasForeign lang Raw where
-  type Foreign Raw = HTTP.Method -> Req
+instance HasForeign lang (Raw m a) where
+  type Foreign (Raw m a) = HTTP.Method -> Req
 
   foreignFor _ Proxy req method =
     req & reqFuncName %~ ((toLower $ decodeUtf8 method) :)

@@ -68,6 +68,7 @@ import           Network.Wai
 import           Servant
 import           Servant.API.ContentTypes
 import           Servant.Server.Internal.Config
+import           Servant.Server.Internal    (ToRawApplication)
 import           Test.QuickCheck.Arbitrary  (Arbitrary (..), vector)
 import           Test.QuickCheck.Gen        (Gen, generate)
 
@@ -155,10 +156,10 @@ instance OVERLAPPING_
     => HasMock (Verb method status ctypes (Headers headerTypes a)) config where
   mock _ _ = mockArbitrary
 
-instance HasMock Raw config where
-  mock _ _ = \_req respond -> do
+instance HasMock (Raw m Application) config where
+  mock _ _ = Raw (\_req respond -> do
     bdy <- genBody
-    respond $ responseLBS status200 [] bdy
+    respond $ responseLBS status200 [] bdy)
 
     where genBody = pack <$> generate (vector 100 :: Gen [Char])
 

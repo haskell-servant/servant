@@ -21,8 +21,8 @@ import qualified Network.SocketIO         as SocketIO
 import           Chat                     (ServerState (..), eioServer)
 
 
-type API = "socket.io" :> Raw
-    :<|> Raw
+type API = "socket.io" :> Raw IO Application
+    :<|> Raw IO Application
 
 
 api :: Proxy API
@@ -34,7 +34,7 @@ server sHandler = socketIOHandler
     :<|> serveDirectory "socket-io-chat/resources"
 
     where
-        socketIOHandler req respond = toWaiApplication sHandler req respond
+        socketIOHandler = Raw $ toWaiApplication sHandler
 
 
 app :: WaiMonad () -> Application

@@ -1,6 +1,6 @@
 HEAD
 ----
-
+* Change Raw from `data Raw ...` to `newtype Raw (m :: * -> *) a = Raw ... a`
 * Add `WithNamedConfig` combinator.
 * Add `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Fix safeLink, so Header is not in fact required.

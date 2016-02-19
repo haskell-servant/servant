@@ -1,6 +1,6 @@
 HEAD
 ----
-
+* Update `instance HasDocs Raw` for servant Raw changes
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Support maximum samples setting with new `DocOptions` type (used by `docsWithOptions` and `docsWith`)
 * Remove redundant second parameter of ToSample

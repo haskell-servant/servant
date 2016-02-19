@@ -1,9 +1,13 @@
 HEAD
 ----
-
+  typeclass `HasServer` now take an additional parameter.
+* Add `serveDirectoryWith` user can supply custom `StaticSettings`
+* Update `serveDirectory` for servant Raw changes
+* Add `class ToRawApplication` for servant Raw changes
+* Update `instance Server Raw` for servant Raw changes
+* Add `instance Enter Raw` for servant Raw changes
 * Add `Config` machinery (https://github.com/haskell-servant/servant/pull/327).
   This is a breaking change, as the signatures of both `route`, `serve` and the
-  typeclass `HasServer` now take an additional parameter.
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Drop `EitherT` in favor of `ExceptT`
 * Use `http-api-data` instead of `Servant.Common.Text`
