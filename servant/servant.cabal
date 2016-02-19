@@ -43,7 +43,7 @@ library
     Servant.Common.Text
     Servant.Utils.Links
   build-depends:
-      base >=4.7 && <5
+      base >=4.7 && <4.9
     , aeson >= 0.7
     , attoparsec >= 0.12
     , bytestring == 0.10.*
