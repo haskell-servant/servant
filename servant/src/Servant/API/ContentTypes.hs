@@ -170,7 +170,7 @@ class (AllMime list) => AllCTRender (list :: [*]) a where
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
 instance OVERLAPPABLE_
-         (AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
+         (Accept ct, AllMime cts, AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy (ct ': cts)
             amrs = allMimeRender pctyps val
