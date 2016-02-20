@@ -37,6 +37,7 @@ library
     Servant
     Servant.Server
     Servant.Server.Internal
+    Servant.Server.Internal.Before
     Servant.Server.Internal.Config
     Servant.Server.Internal.Enter
     Servant.Server.Internal.Router
