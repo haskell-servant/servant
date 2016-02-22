@@ -18,6 +18,9 @@ module Servant.Server
     HasServer(..)
   , Server
 
+  , -- * Before hook for all standard combinators (except Raw)
+    HasBefore(..)
+
     -- * Enter
     -- $enterDoc
 
@@ -86,6 +89,7 @@ module Servant.Server
 import           Data.Proxy                    (Proxy)
 import           Network.Wai                   (Application)
 import           Servant.Server.Internal
+import           Servant.Server.Internal.Before
 import           Servant.Server.Internal.Enter
 
 
