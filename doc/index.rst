@@ -8,8 +8,9 @@ then using those API specifications to:
 
 - write servers (this part of **servant** can be considered a web framework),
 - obtain client functions (in haskell),
-- generate client functions for other programming languages and
-- generate documentation for your web applications.
+- generate client functions for other programming languages,
+- generate documentation for your web applications
+- and more...
 
 All in a type-safe manner.
 
