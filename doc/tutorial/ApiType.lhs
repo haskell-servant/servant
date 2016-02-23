@@ -24,8 +24,8 @@ You *should* be able to formalize that. And then use the formalized version to
 get you much of the way towards writing a web app. And all the way towards
 getting some client libraries, and documentation, and more.
 
-How would we describe it with servant? As mentioned earlier, an endpoint
-description is a good old Haskell **type**:
+How would we describe it with **servant**? An endpoint description is a good old
+Haskell **type**:
 
 ``` haskell
 type UserAPI = "users" :> QueryParam "sortby" SortBy :> Get '[JSON] [User]
@@ -66,14 +66,13 @@ type UserAPI2 = "users" :> "list-all" :> Get '[JSON] [User]
            :<|> "list-all" :> "users" :> Get '[JSON] [User]
 ```
 
-*servant* provides a fair amount of combinators out-of-the-box, but you can
-always write your own when you need it. Here's a quick overview of all the
-combinators that servant comes with.
+**servant** provides a fair amount of combinators out-of-the-box, but you can
+always write your own when you need it. Here's a quick overview of the most
+often needed the combinators that **servant** comes with.
 
 ## Combinators
 
 ### Static strings
-
 
 As you've already seen, you can use type-level strings (enabled with the
 `DataKinds` language extension) for static path fragments. Chaining
@@ -86,7 +85,6 @@ type UserAPI3 = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
 ```
 
 ### `Delete`, `Get`, `Patch`, `Post` and `Put`
-
 
 The `Get` combinator is defined in terms of the more general `Verb`:
 ``` haskell ignore
@@ -120,15 +118,14 @@ type UserAPI4 = "users" :> Get '[JSON] [User]
 
 ### `Capture`
 
-
-URL captures are parts of the URL that are variable and whose actual value is
+URL captures are segments of the path of a URL that are variable and whose actual value is
 captured and passed to the request handlers. In many web frameworks, you'll see
 it written as in `/users/:userid`, with that leading `:` denoting that `userid`
 is just some kind of variable name or placeholder. For instance, if `userid` is
 supposed to range over all integers greater or equal to 1, our endpoint will
 match requests made to `/users/1`, `/users/143` and so on.
 
-The `Capture` combinator in servant takes a (type-level) string representing
+The `Capture` combinator in **servant** takes a (type-level) string representing
 the "name of the variable" and a type, which indicates the type we want to
 decode the "captured value" to.
 
@@ -155,17 +152,16 @@ type UserAPI5 = "user" :> Capture "userid" Integer :> Get '[JSON] User
 
 In the second case, `DeleteNoContent` specifies a 204 response code,
 `JSON` specifies the content types on which the handler will match,
-and `NoContent` is a Haskell type isomorphic to `()` used to represent
-a trivial piece of information.
+and `NoContent` says that the response will always be empty.
 
 ### `QueryParam`, `QueryParams`, `QueryFlag`
 
-`QueryParam`, `QueryParams` and `QueryFlag` are about query string
-parameters, i.e., those parameters that come after the question mark
+`QueryParam`, `QueryParams` and `QueryFlag` are about parameters in the query string,
+i.e., those parameters that come after the question mark
 (`?`) in URLs, like `sortby` in `/users?sortby=age`, whose value is
 set to `age`. `QueryParams` lets you specify that the query parameter
 is actually a list of values, which can be specified using
-`?param[]=value1&param[]=value2`. This represents a list of values
+`?param=value1&param=value2`. This represents a list of values
 composed of `value1` and `value2`. `QueryFlag` lets you specify a
 boolean-like query parameter where a client isn't forced to specify a
 value. The absence or presence of the parameter's name in the query
@@ -190,7 +186,7 @@ type UserAPI6 = "users" :> QueryParam "sortby" SortBy :> Get '[JSON] [User]
 ```
 
 Again, your handlers don't have to deserialize these things (into, for example,
-a `SortBy`). *servant* takes care of it.
+a `SortBy`). **servant** takes care of it.
 
 ### `ReqBody`
 
@@ -201,9 +197,9 @@ users: instead of passing each field of the user as a separate query string
 parameter or something dirty like that, we can group all the data into a JSON
 object. This has the advantage of supporting nested objects.
 
-*servant*'s `ReqBody` combinator takes a list of content types in which the
+**servant**'s `ReqBody` combinator takes a list of content types in which the
 data encoded in the request body can be represented and the type of that data.
-And, as you might have guessed, you don't have to check the content-type
+And, as you might have guessed, you don't have to check the content type
 header, and do the deserialization yourself. We do it for you. And return `Bad
 Request` or `Unsupported Content Type` as appropriate.
 
@@ -231,12 +227,11 @@ type UserAPI7 = "users" :> ReqBody '[JSON] User :> Post '[JSON] User
 
 ### Request `Header`s
 
-
 Request headers are used for various purposes, from caching to carrying
 auth-related data. They consist of a header name and an associated value. An
 example would be `Accept: application/json`.
 
-The `Header` combinator in servant takes a type-level string for the header
+The `Header` combinator in **servant** takes a type-level string for the header
 name and the type to which we want to decode the header's value (from some
 textual representation), as illustrated below:
 
@@ -255,10 +250,10 @@ type UserAPI8 = "users" :> Header "User-Agent" Text :> Get '[JSON] [User]
 ### Content types
 
 So far, whenever we have used a combinator that carries a list of content
-types, we've always specified `'[JSON]`. However, *servant* lets you use several
+types, we've always specified `'[JSON]`. However, **servant** lets you use several
 content types, and also lets you define your own content types.
 
-Four content-types are provided out-of-the-box by the core *servant* package:
+Four content types are provided out-of-the-box by the core **servant** package:
 `JSON`, `PlainText`, `FormUrlEncoded` and `OctetStream`. If for some obscure
 reason you wanted one of your endpoints to make your user data available under
 those 4 formats, you would write the API type as below:
@@ -267,18 +262,18 @@ those 4 formats, you would write the API type as below:
 type UserAPI9 = "users" :> Get '[JSON, PlainText, FormUrlEncoded, OctetStream] [User]
 ```
 
-We also provide an HTML content-type, but since there's no single library
-that everyone uses, we decided to release 2 packages, *servant-lucid* and
-*servant-blaze*, to provide HTML encoding of your data.
+(There are other packages that provide other content types. For example
+**servant-lucid** and **servant-blaze** allow to generate html pages (using
+**lucid** and **blaze-html**) and both come with a content type for html.)
 
 We will further explain how these content types and your data types can play
-together in the [section about serving an API](/tutorial/server.html).
+together in the [section about serving an API](Server.html).
 
 ### Response `Headers`
 
 Just like an HTTP request, the response generated by a webserver can carry
-headers too. *servant* provides a `Headers` combinator that carries a list of
-`Header` and can be used by simply wrapping the "return type" of an endpoint
+headers too. **servant** provides a `Headers` combinator that carries a list of
+`Header` types and can be used by simply wrapping the "return type" of an endpoint
 with it.
 
 ``` haskell ignore
@@ -292,11 +287,12 @@ response, you could write it as below:
 type UserAPI10 = "users" :> Get '[JSON] (Headers '[Header "User-Count" Integer] [User])
 ```
 
-### Interoperability with other WAI `Application`s: `Raw`
+### Interoperability with `wai`: `Raw`
 
-Finally, we also include a combinator named `Raw` that can be used for two reasons:
-
-- You want to serve static files from a given directory. In that case you can just say:
+Finally, we also include a combinator named `Raw` that provides an escape hatch
+to the underlying low-level web library `wai`. It can be used when
+you want to plug a [wai `Application`](http://hackage.haskell.org/package/wai)
+into your webservice:
 
 ``` haskell
 type UserAPI11 = "users" :> Get '[JSON] [User]
@@ -309,11 +305,7 @@ type UserAPI11 = "users" :> Get '[JSON] [User]
                  -- at the right path
 ```
 
-- You more generally want to plug a [WAI `Application`](http://hackage.haskell.org/package/wai)
-into your webservice. Static file serving is a specific example of that. The API type would look the
-same as above though. (You can even combine *servant* with other web frameworks
-this way!)
-
-<div style="text-align: center;">
-  <a href="/tutorial/server.html">Next page: Serving an API</a>
-</div>
+One example for this is if you want to serve a directory of static files along
+with the rest of your API. But you can plug in everything that is an
+`Application`, e.g. a whole web application written in any of the web
+frameworks that support `wai`.
