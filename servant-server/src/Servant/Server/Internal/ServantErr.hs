@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Servant.Server.Internal.ServantErr where
 
 import           Control.Exception (Exception)
