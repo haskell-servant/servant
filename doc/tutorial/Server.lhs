@@ -29,7 +29,7 @@ import Prelude.Compat
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
-import Data.Aeson
+import Data.Aeson.Compat
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
 import Data.ByteString (ByteString)
@@ -139,7 +139,7 @@ userAPI = Proxy
 -- which you can think of as an "abstract" web application,
 -- not yet a webserver.
 app1 :: Application
-app1 = serve userAPI EmptyConfig server1
+app1 = serve userAPI server1
 ```
 
 The `userAPI` bit is, alas, boilerplate (we need it to guide type inference).
