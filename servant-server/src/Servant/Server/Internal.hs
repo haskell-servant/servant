@@ -158,7 +158,7 @@ methodCheck method request
 acceptCheck :: (AllMime list) => Proxy list -> B.ByteString -> IO (RouteResult ())
 acceptCheck proxy accH
   | canHandleAcceptH proxy (AcceptHeader accH) = return $ Route ()
-  | otherwise                                  = return $ Fail err406
+  | otherwise                                  = return $ FailFatal err406
 
 methodRouter :: (AllCTRender ctypes a)
              => Method -> Proxy ctypes -> Status
