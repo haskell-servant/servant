@@ -134,7 +134,7 @@ server' = server
      :<|> serveDirectory "tutorial/t9"
 
 app :: Application
-app = serve api' EmptyConfig server'
+app = serve api' server'
 ```
 
 Why two different API types, proxies and servers though? Simply because we don't want to generate javascript functions for the `Raw` part of our API type, so we need a `Proxy` for our API type `API'` without its `Raw` endpoint.

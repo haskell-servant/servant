@@ -228,7 +228,7 @@ server = Server.server3 :<|> serveDocs
         plain = ("Content-Type", "text/plain")
 
 app :: Application
-app = serve api EmptyConfig server
+app = serve api server
 ```
 
 And if you spin up this server with `dist/build/tutorial/tutorial 10` and go to anywhere else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.
