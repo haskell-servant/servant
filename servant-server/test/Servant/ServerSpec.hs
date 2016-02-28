@@ -49,7 +49,7 @@ import           Servant.API                ((:<|>) (..), (:>), Capture, Delete,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server             (ServantErr (..), Server, err404,
-                                             serve, serveWithConfig, Config(EmptyConfig))
+                                             serve, serveWithContext, Context(EmptyContext))
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
 import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
@@ -61,16 +61,16 @@ import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
-import           Servant.Server.Internal.Config
-                                            (Config(..), NamedConfig(..))
+import           Servant.Server.Internal.Context
+                                            (Context(..), NamedContext(..))
 
 -- * comprehensive api test
 
 -- This declaration simply checks that all instances are in place.
-_ = serveWithConfig comprehensiveAPI comprehensiveApiConfig
+_ = serveWithContext comprehensiveAPI comprehensiveApiContext
 
-comprehensiveApiConfig :: Config '[NamedConfig "foo" '[]]
-comprehensiveApiConfig = NamedConfig EmptyConfig :. EmptyConfig
+comprehensiveApiContext :: Context '[NamedContext "foo" '[]]
+comprehensiveApiContext = NamedContext EmptyContext :. EmptyContext
 
 -- * Specs
 

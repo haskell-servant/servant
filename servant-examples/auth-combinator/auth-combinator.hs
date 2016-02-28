@@ -35,18 +35,18 @@ isGoodCookie ref password = do
 
 data AuthProtected
 
-instance (HasConfigEntry config DBConnection, HasServer rest config)
-  => HasServer (AuthProtected :> rest) config where
+instance (HasContextEntry context DBConnection, HasServer rest context)
+  => HasServer (AuthProtected :> rest) context where
 
   type ServerT (AuthProtected :> rest) m = ServerT rest m
 
-  route Proxy config subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy rest) config $ addAcceptCheck subserver $ cookieCheck request
+  route Proxy context subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy rest) context $ addAcceptCheck subserver $ cookieCheck request
       where
         cookieCheck req = case lookup "Cookie" (requestHeaders req) of
             Nothing -> return $ FailFatal err401 { errBody = "Missing auth header" }
             Just v  -> do
-              let dbConnection = getConfigEntry config
+              let dbConnection = getContextEntry context
               authGranted <- isGoodCookie dbConnection v
               if authGranted
                 then return $ Route ()
@@ -81,8 +81,8 @@ server = return prvdata :<|> return pubdata
 main :: IO ()
 main = do
   dbConnection <- initDB
-  let config = dbConnection :. EmptyConfig
-  run 8080 (serveWithConfig api config server)
+  let context = dbConnection :. EmptyContext
+  run 8080 (serveWithContext api context server)
 
 {- Sample session:
 $ curl http://localhost:8080/

@@ -310,9 +310,9 @@ instance HasForeign lang sublayout => HasForeign lang (Vault :> sublayout) where
     foreignFor lang (Proxy :: Proxy sublayout) req
 
 instance HasForeign lang sublayout =>
-  HasForeign lang (WithNamedConfig name config sublayout) where
+  HasForeign lang (WithNamedContext name context sublayout) where
 
-  type Foreign (WithNamedConfig name config sublayout) = Foreign sublayout
+  type Foreign (WithNamedContext name context sublayout) = Foreign sublayout
 
   foreignFor lang Proxy = foreignFor lang (Proxy :: Proxy sublayout)
 

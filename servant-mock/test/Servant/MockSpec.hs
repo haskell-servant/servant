@@ -23,7 +23,7 @@ import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Mock
 
 -- This declaration simply checks that all instances are in place.
-_ = mock comprehensiveAPI (Proxy :: Proxy '[NamedConfig "foo" '[]])
+_ = mock comprehensiveAPI (Proxy :: Proxy '[NamedContext "foo" '[]])
 
 data Body
   = Body

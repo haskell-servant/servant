@@ -37,7 +37,7 @@ library
     Servant
     Servant.Server
     Servant.Server.Internal
-    Servant.Server.Internal.Config
+    Servant.Server.Internal.Context
     Servant.Server.Internal.Enter
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
@@ -96,11 +96,11 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Servant.Server.ErrorSpec
-      Servant.Server.Internal.ConfigSpec
+      Servant.Server.Internal.ContextSpec
       Servant.Server.Internal.EnterSpec
       Servant.ServerSpec
-      Servant.Server.UsingConfigSpec
-      Servant.Server.UsingConfigSpec.TestCombinators
+      Servant.Server.UsingContextSpec
+      Servant.Server.UsingContextSpec.TestCombinators
       Servant.Utils.StaticFilesSpec
   build-depends:
       base == 4.*

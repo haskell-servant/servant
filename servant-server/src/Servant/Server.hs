@@ -9,7 +9,7 @@
 module Servant.Server
   ( -- * Run a wai application from an API
     serve
-  , serveWithConfig
+  , serveWithContext
 
   , -- * Construct a wai Application from an API
     toApplication
@@ -38,12 +38,12 @@ module Servant.Server
   , generalizeNat
   , tweakResponse
 
-  -- * Config
-  , Config(..)
-  , HasConfigEntry(getConfigEntry)
-  -- ** NamedConfig
-  , NamedConfig(..)
-  , descendIntoNamedConfig
+  -- * Context
+  , Context(..)
+  , HasContextEntry(getContextEntry)
+  -- ** NamedContext
+  , NamedContext(..)
+  , descendIntoNamedContext
 
     -- * Default error type
   , ServantErr(..)
@@ -113,11 +113,11 @@ import           Servant.Server.Internal.Enter
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
 serve :: (HasServer layout '[]) => Proxy layout -> Server layout -> Application
-serve p = serveWithConfig p EmptyConfig
+serve p = serveWithContext p EmptyContext
 
-serveWithConfig :: (HasServer layout config)
-    => Proxy layout -> Config config -> Server layout -> Application
-serveWithConfig p config server = toApplication (runRouter (route p config d))
+serveWithContext :: (HasServer layout context)
+    => Proxy layout -> Context context -> Server layout -> Application
+serveWithContext p context server = toApplication (runRouter (route p context d))
   where
     d = Delayed r r r (\ _ _ -> Route server)
     r = return (Route ())
