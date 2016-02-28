@@ -594,11 +594,11 @@ app2 = serve personAPI server4
 And we're good to go:
 
 ``` bash
- $ curl http://localhost:8081/persons
- [{"lastName":"Newton","firstName":"Isaac"},{"lastName":"Einstein","firstName":"Albert"}]
- $ curl -H 'Accept: text/html' http://localhost:8081/persons
- <table><tr><td>first name</td><td>last name</td></tr><tr><td>Isaac</td><td>Newton</td></tr><tr><td>Albert</td><td>Einstein</td></tr></table>
- # or just point your browser to http://localhost:8081/persons
+$ curl http://localhost:8081/persons
+[{"lastName":"Newton","firstName":"Isaac"},{"lastName":"Einstein","firstName":"Albert"}]
+$ curl -H 'Accept: text/html' http://localhost:8081/persons
+<table><tr><td>first name</td><td>last name</td></tr><tr><td>Isaac</td><td>Newton</td></tr><tr><td>Albert</td><td>Einstein</td></tr></table>
+# or just point your browser to http://localhost:8081/persons
 ```
 
 ## The `ExceptT ServantErr IO` monad
@@ -712,33 +712,33 @@ server6 = do
 Here's how that server looks in action:
 
 ``` bash
- $ curl --verbose http://localhost:8081/myfile.txt
- [snip]
- * Connected to localhost (127.0.0.1) port 8081 (#0)
- > GET /myfile.txt HTTP/1.1
- > User-Agent: curl/7.30.0
- > Host: localhost:8081
- > Accept: */*
- >
- < HTTP/1.1 404 Not Found
- [snip]
- myfile.txt just isnt there, please leave this server alone.
+$ curl --verbose http://localhost:8081/myfile.txt
+[snip]
+* Connected to localhost (127.0.0.1) port 8081 (#0)
+> GET /myfile.txt HTTP/1.1
+> User-Agent: curl/7.30.0
+> Host: localhost:8081
+> Accept: */*
+>
+< HTTP/1.1 404 Not Found
+[snip]
+myfile.txt just isnt there, please leave this server alone.
 
- $ echo Hello > myfile.txt
+$ echo Hello > myfile.txt
 
- $ curl --verbose http://localhost:8081/myfile.txt
- [snip]
- * Connected to localhost (127.0.0.1) port 8081 (#0)
- > GET /myfile.txt HTTP/1.1
- > User-Agent: curl/7.30.0
- > Host: localhost:8081
- > Accept: */*
- >
- < HTTP/1.1 200 OK
- [snip]
- < Content-Type: application/json
- [snip]
- {"content":"Hello\n"}
+$ curl --verbose http://localhost:8081/myfile.txt
+[snip]
+* Connected to localhost (127.0.0.1) port 8081 (#0)
+> GET /myfile.txt HTTP/1.1
+> User-Agent: curl/7.30.0
+> Host: localhost:8081
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+[snip]
+< Content-Type: application/json
+[snip]
+{"content":"Hello\n"}
 ```
 
 ## Response headers
