@@ -9,12 +9,9 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Alternative ((:<|>)(..)) where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Data.Monoid      (Monoid (..))
-import           Data.Traversable (Traversable)
-import           Data.Foldable    (Foldable)
-#endif
 import           Data.Typeable    (Typeable)
+import           Prelude.Compat (Monoid(..), Traversable, Foldable)
+
 -- | Union of two APIs, first takes precedence in case of overlap.
 --
 -- Example:
