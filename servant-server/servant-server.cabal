@@ -45,6 +45,7 @@ library
     Servant.Utils.StaticFiles
   build-depends:
         base               >= 4.7  && < 5
+      , base-compat        >= 0.9
       , aeson              >= 0.7  && < 0.12
       , attoparsec         >= 0.12 && < 0.14
       , bytestring         >= 0.10 && < 0.11

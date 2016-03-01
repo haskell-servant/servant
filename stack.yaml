@@ -14,6 +14,7 @@ packages:
 - servant-mock/
 - servant-server/
 extra-deps:
+- base-compat-0.9.0
 - engine-io-wai-1.0.2
 - control-monad-omega-0.3.1
 - should-not-typecheck-2.0.1
