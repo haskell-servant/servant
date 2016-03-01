@@ -24,7 +24,8 @@ library
   build-depends:       base == 4.*
                      , base-compat
                      , text
-                     , aeson >= 0.11
+                     , aeson
+                     , aeson-compat 
                      , blaze-html
                      , directory
                      , blaze-markup
