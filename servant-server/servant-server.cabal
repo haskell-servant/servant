@@ -109,6 +109,7 @@ test-suite spec
       Servant.Utils.StaticFilesSpec
   build-depends:
       base == 4.*
+    , base-compat
     , aeson
     , bytestring
     , bytestring-conversion
