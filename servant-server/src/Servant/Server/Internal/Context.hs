@@ -15,14 +15,19 @@ module Servant.Server.Internal.Context where
 import           Data.Proxy
 import           GHC.TypeLits
 
--- | When calling 'Servant.Server.serve' you have to supply a context
--- value of type @'Context' contextTypes@. This parameter is used to pass values
--- to combinators. (It shouldn't be confused with general configuration
--- parameters for your web app, like the port, etc.). If you don't use
--- combinators that require any context entries, you can just use `serve` (or
--- pass 'EmptyContext'). To create a context with entries, use the operator
--- @(':.')@. The parameter of the type 'Context' is a type-level list reflecting
--- the types of the contained context entries:
+-- | 'Context's are used to pass values to combinators. (They are __not__ meant
+-- to be used to pass parameters to your handlers, i.e. they should not replace
+-- any custom 'Control.Monad.Trans.Reader.ReaderT'-monad-stack that you're using
+-- with 'Servant.Server.Internal.Enter.enter'.) If you don't use combinators that
+-- require any context entries, you can just use 'Servant.Server.serve' as always.
+--
+-- If you are using combinators that require a non-empty 'Context' you have to
+-- use 'Servant.Server.serveWithContext' and pass it a 'Context' that contains all
+-- the values your combinators need. A 'Context' is essentially a heterogenous
+-- list and accessing the elements is being done by type (see 'getContextEntry').
+-- The parameter of the type 'Context' is a type-level list reflecting the types
+-- of the contained context entries. To create a 'Context' with entries, use the
+-- operator @(':.')@:
 --
 -- >>> :type True :. () :. EmptyContext
 -- True :. () :. EmptyContext :: Context '[Bool, ()]
