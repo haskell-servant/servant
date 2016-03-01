@@ -42,6 +42,7 @@ import           Network.Wai                (Application, Request, Response,
                                              rawQueryString, remoteHost,
                                              requestHeaders, requestMethod,
                                              responseLBS, vault)
+import           Prelude                    ()
 import           Prelude.Compat
 import           Web.HttpApiData            (FromHttpApiData)
 import           Web.HttpApiData.Internal   (parseHeaderMaybe,

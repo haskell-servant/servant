@@ -10,7 +10,8 @@
 module Servant.API.Alternative ((:<|>)(..)) where
 
 import           Data.Typeable    (Typeable)
-import           Prelude.Compat (Monoid(..), Traversable, Foldable)
+import           Prelude ()
+import           Prelude.Compat
 
 -- | Union of two APIs, first takes precedence in case of overlap.
 --

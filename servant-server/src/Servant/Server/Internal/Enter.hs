@@ -22,6 +22,7 @@ import qualified Control.Monad.State.Strict  as SState
 import qualified Control.Monad.Writer.Lazy   as LWriter
 import qualified Control.Monad.Writer.Strict as SWriter
 import           Data.Typeable
+import           Prelude                     ()
 import           Prelude.Compat
 
 import           Servant.API

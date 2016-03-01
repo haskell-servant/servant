@@ -11,6 +11,7 @@ module Servant.Server.Internal.RoutingApplication where
 import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived)
+import           Prelude                            ()
 import           Prelude.Compat
 import           Servant.Server.Internal.ServantErr
 

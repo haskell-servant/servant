@@ -39,6 +39,7 @@ import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types.Header   as HTTP
 
 import           Servant.API.Header          (Header (..))
+import           Prelude                     ()
 import           Prelude.Compat
 
 -- | Response Header objects. You should never need to construct one directly.

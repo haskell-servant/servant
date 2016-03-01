@@ -73,7 +73,7 @@ module Servant.API.ContentTypes
     ) where
 
 import           Control.Arrow                    (left)
-import           Control.Monad.Compat             hiding (mapM)
+import           Control.Monad.Compat
 import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
@@ -96,7 +96,8 @@ import           GHC.Generics                     (Generic)
 import qualified Network.HTTP.Media               as M
 import           Network.URI                      (escapeURIString,
                                                    isUnreserved, unEscapeString)
-import           Prelude.Compat                   ((<*), (*>))
+import           Prelude                          ()
+import           Prelude.Compat
 
 -- * Provided content types
 data JSON deriving Typeable
