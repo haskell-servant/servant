@@ -12,6 +12,7 @@ packages:
 - servant-mock/
 - servant-server/
 extra-deps:
+- base-compat-0.9.0
 - hspec-2.2.0
 - hspec-core-2.2.0
 - hspec-discover-2.2.0

@@ -45,6 +45,7 @@ library
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5
+    , base-compat >= 0.8
     , aeson >= 0.7
     , attoparsec >= 0.12
     , bytestring == 0.10.*

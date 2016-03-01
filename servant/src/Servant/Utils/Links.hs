@@ -105,11 +105,7 @@ import Data.List
 import Data.Proxy ( Proxy(..) )
 import qualified Data.Text as Text
 import qualified Data.ByteString.Char8 as BSC
-#if !MIN_VERSION_base(4,8,0)
-import Data.Monoid ( Monoid(..), (<>) )
-#else
-import Data.Monoid ( (<>) )
-#endif
+import Data.Monoid.Compat ( Monoid(..), (<>) )
 import Network.URI ( URI(..), escapeURIString, isUnreserved )
 import GHC.TypeLits ( KnownSymbol, symbolVal )
 import GHC.Exts(Constraint)
