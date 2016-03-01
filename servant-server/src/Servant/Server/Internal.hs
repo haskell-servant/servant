@@ -22,9 +22,6 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative         ((<$>))
-#endif
 import           Control.Monad.Trans.Except (ExceptT)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
@@ -45,6 +42,7 @@ import           Network.Wai                (Application, Request, Response,
                                              rawQueryString, remoteHost,
                                              requestHeaders, requestMethod,
                                              responseLBS, vault)
+import           Prelude.Compat
 import           Web.HttpApiData            (FromHttpApiData)
 import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
