@@ -297,12 +297,12 @@ And that's it. Here's the example in action:
 
 ``` bash
 $ curl http://localhost:8081/position/1/2
-{"x":1,"y":2}
+{"xCoord":1,"yCoord":2}
 $ curl http://localhost:8081/hello
 {"msg":"Hello, anonymous coward"}
 $ curl http://localhost:8081/hello?name=Alp
 {"msg":"Hello, Alp"}
-$ curl -X POST -d '{"name":"Alp Mestanogullari", "email" : "alp@foo.com", "age": 25, "interested_in": ["haskell", "mathematics"]}' -H 'Accept: application/json' -H 'Content-type: application/json' http://localhost:8081/marketing
+$ curl -X POST -d '{"clientName":"Alp Mestanogullari", "clientEmail" : "alp@foo.com", "clientAge": 25, "clientInterestedIn": ["haskell", "mathematics"]}' -H 'Accept: application/json' -H 'Content-type: application/json' http://localhost:8081/marketing
 {"subject":"Hey Alp Mestanogullari, we miss you!","body":"Hi Alp Mestanogullari,\n\nSince you've recently turned 25, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
 ```
 
