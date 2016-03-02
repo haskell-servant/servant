@@ -27,7 +27,6 @@ import Prelude ()
 import Prelude.Compat
 import Control.Monad.Except
 import Control.Monad.Reader
-import Control.Monad.Trans.Except
 import Data.Aeson.Compat
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
