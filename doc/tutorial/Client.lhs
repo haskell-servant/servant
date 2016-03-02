@@ -2,7 +2,7 @@
 
 While defining handlers that serve an API has a lot to it, querying an API is simpler: we do not care about what happens inside the webserver, we just need to know how to talk to it and get a response back. Except that we usually have to write the querying functions by hand because the structure of the API isn't a first class citizen and can't be inspected to generate a bunch of client-side functions.
 
-*servant* however has a way to inspect API, because APIs are just Haskell types and (GHC) Haskell lets us do quite a few things with types. In the same way that we look at an API type to deduce the types the handlers should have, we can inspect the structure of the API to *derive* Haskell functions that take one argument for each occurence of `Capture`, `ReqBody`, `QueryParam`
+**servant** however has a way to inspect APIs, because APIs are just Haskell types and (GHC) Haskell lets us do quite a few things with types. In the same way that we look at an API type to deduce the types the handlers should have, we can inspect the structure of the API to *derive* Haskell functions that take one argument for each occurence of `Capture`, `ReqBody`, `QueryParam`
 and friends. By *derive*, we mean that there's no code generation involved, the functions are defined just by the structure of the API type.
 
 The source for this tutorial section is a literate haskell file, so first we
@@ -67,7 +67,7 @@ type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Posit
       :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
 ```
 
-What we are going to get with *servant-client* here is 3 functions, one to query each endpoint:
+What we are going to get with **servant-client** here is 3 functions, one to query each endpoint:
 
 ``` haskell
 position :: Int -- ^ value for "x"
@@ -81,7 +81,15 @@ marketing :: ClientInfo -- ^ value for the request body
           -> ExceptT ServantError IO Email
 ```
 
-Each function makes available as an argument any value that the response may depend on, as evidenced in the API type. How do we get these functions? Just give a `Proxy` to your API and a host to make the requests to:
+Each function makes available as an argument any value that the response may
+depend on, as evidenced in the API type. How do we get these functions? By calling
+the function `client`. It takes three arguments:
+
+- a `Proxy` to your API,
+- a `BaseUrl`, consisting of the protocol, the host, the port and an optional subpath --
+  this basically tells `client` where the service that you want to query is hosted,
+- a `Manager`, (from [http-client](http://hackage.haskell.org/package/http-client))
+which manages http connections.
 
 ``` haskell
 api :: Proxy API
@@ -94,6 +102,9 @@ __manager = unsafePerformIO $ newManager defaultManagerSettings
 position :<|> hello :<|> marketing =
   client api (BaseUrl Http "localhost" 8081 "") __manager
 ```
+
+(Yes, the usage of `unsafePerformIO` is very ugly, we know. Hopefully soon it'll
+be possible to do without.)
 
 As you can see in the code above, we just "pattern match our way" to these functions. If we try to derive less or more functions than there are endpoints in the API, we obviously get an error. The `BaseUrl` value there is just:
 
@@ -134,16 +145,12 @@ run = do
       print em
 ```
 
-You can now run `dist/build/tutorial/tutorial 8` (the server) and
-`dist/build/t8-main/t8-main` (the client) to see them both in action.
+Here's the output of the above code running against the appropriate server:
 
 ``` bash
- $ dist/build/tutorial/tutorial 8
- # and in another terminal:
- $ dist/build/t8-main/t8-main
- Position {x = 10, y = 10}
- HelloMessage {msg = "Hello, servant"}
- Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we miss you!", body = "Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!"}
+Position {x = 10, y = 10}
+HelloMessage {msg = "Hello, servant"}
+Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we miss you!", body = "Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!"}
 ```
 
-The types of the arguments for the functions are the same as for (server-side) request handlers. You now know how to use *servant-client*!
+The types of the arguments for the functions are the same as for (server-side) request handlers. You now know how to use **servant-client**!

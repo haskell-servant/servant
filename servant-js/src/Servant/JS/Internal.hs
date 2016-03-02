@@ -51,12 +51,19 @@ type JavaScriptGenerator = [Req] -> Text
 -- customize the output
 data CommonGeneratorOptions = CommonGeneratorOptions
   {
-    functionNameBuilder :: FunctionName -> Text  -- ^ function generating function names
-  , requestBody :: Text                -- ^ name used when a user want to send the request body (to let you redefine it)
-  , successCallback :: Text            -- ^ name of the callback parameter when the request was successful
-  , errorCallback :: Text              -- ^ name of the callback parameter when the request reported an error
-  , moduleName :: Text                 -- ^ namespace on which we define the foreign function (empty mean local var)
-  , urlPrefix :: Text                  -- ^ a prefix we should add to the Url in the codegen
+    functionNameBuilder :: FunctionName -> Text
+    -- ^ function generating function names
+  , requestBody :: Text
+    -- ^ name used when a user want to send the request body
+    -- (to let you redefine it)
+  , successCallback :: Text
+    -- ^ name of the callback parameter when the request was successful
+  , errorCallback :: Text
+    -- ^ name of the callback parameter when the request reported an error
+  , moduleName :: Text
+    -- ^ namespace on which we define the foreign function (empty mean local var)
+  , urlPrefix :: Text
+    -- ^ a prefix we should add to the Url in the codegen
   }
 
 -- | Default options.

@@ -26,7 +26,7 @@ import Servant.Server
 ```
 
 And we'll import some things from one of our earlier modules
-([Serving an API](/tutorial/server.html)):
+([Serving an API](Server.html)):
 
 ``` haskell
 import Server (Email(..), ClientInfo(..), Position(..), HelloMessage(..),
@@ -35,7 +35,7 @@ import Server (Email(..), ClientInfo(..), Position(..), HelloMessage(..),
 
 Like client function generation, documentation generation amounts to inspecting the API type and extracting all the data we need to then present it in some format to users of your API.
 
-This time however, we have to assist *servant*. While it is able to deduce a lot of things about our API, it can't magically come up with descriptions of the various pieces of our APIs that are human-friendly and explain what's going on "at the business-logic level". A good example to study for documentation generation is our webservice with the `/position`, `/hello` and `/marketing` endpoints from earlier:
+This time however, we have to assist **servant**. While it is able to deduce a lot of things about our API, it can't magically come up with descriptions of the various pieces of our APIs that are human-friendly and explain what's going on "at the business-logic level". A good example to study for documentation generation is our webservice with the `/position`, `/hello` and `/marketing` endpoints from earlier:
 
 ``` haskell
 type ExampleAPI = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
@@ -46,7 +46,7 @@ exampleAPI :: Proxy ExampleAPI
 exampleAPI = Proxy
 ```
 
-While *servant* can see e.g. that there are 3 endpoints and that the response bodies will be in JSON, it doesn't know what influence the captures, parameters, request bodies and other combinators have on the webservice. This is where some manual work is required.
+While **servant** can see e.g. that there are 3 endpoints and that the response bodies will be in JSON, it doesn't know what influence the captures, parameters, request bodies and other combinators have on the webservice. This is where some manual work is required.
 
 For every capture, request body, response body, query param, we have to give some explanations about how it influences the response, what values are possible and the likes. Here's how it looks like for the parameters we have above.
 
@@ -97,9 +97,9 @@ apiDocs :: API
 apiDocs = docs exampleAPI
 ```
 
-`API` is a type provided by *servant-docs* that stores all the information one needs about a web API in order to generate documentation in some format. Out of the box, *servant-docs* only provides a pretty documentation printer that outputs [Markdown](http://en.wikipedia.org/wiki/Markdown), but the [servant-pandoc](http://hackage.haskell.org/package/servant-pandoc) package can be used to target many useful formats.
+`API` is a type provided by **servant-docs** that stores all the information one needs about a web API in order to generate documentation in some format. Out of the box, **servant-docs** only provides a pretty documentation printer that outputs [Markdown](http://en.wikipedia.org/wiki/Markdown), but the [**servant-pandoc**](http://hackage.haskell.org/package/servant-pandoc) package can be used to target many useful formats.
 
-*servant*'s markdown pretty printer is a function named `markdown`.
+**servant**'s markdown pretty printer is a function named `markdown`.
 
 ``` haskell ignore
 markdown :: API -> String
@@ -107,97 +107,97 @@ markdown :: API -> String
 
 That lets us see what our API docs look down in markdown, by looking at `markdown apiDocs`.
 
-``` text
- ## Welcome
+````````` text
+## Welcome
 
- This is our super webservice's API.
+This is our super webservice's API.
 
- Enjoy!
+Enjoy!
 
- ## GET /hello
+## GET /hello
 
- #### GET Parameters:
+#### GET Parameters:
 
- - name
-      - **Values**: *Alp, John Doe, ...*
-      - **Description**: Name of the person to say hello to.
+- name
+     - **Values**: *Alp, John Doe, ...*
+     - **Description**: Name of the person to say hello to.
 
 
- #### Response:
+#### Response:
 
- - Status code 200
- - Headers: []
+- Status code 200
+- Headers: []
 
- - Supported content types are:
+- Supported content types are:
 
-     - `application/json`
+    - `application/json`
 
- - When a value is provided for 'name'
+- When a value is provided for 'name'
 
-   ```javascript
-   {"msg":"Hello, Alp"}
-   ```
+  ```javascript
+  {"msg":"Hello, Alp"}
+  ```
 
- - When 'name' is not specified
+- When 'name' is not specified
 
-   ```javascript
-   {"msg":"Hello, anonymous coward"}
-   ```
+  ```javascript
+  {"msg":"Hello, anonymous coward"}
+  ```
 
- ## POST /marketing
+## POST /marketing
 
- #### Request:
+#### Request:
 
- - Supported content types are:
+- Supported content types are:
 
-     - `application/json`
+    - `application/json`
 
- - Example: `application/json`
+- Example: `application/json`
 
-   ```javascript
-   {"email":"alp@foo.com","interested_in":["haskell","mathematics"],"age":26,"name":"Alp"}
-   ```
+  ```javascript
+  {"email":"alp@foo.com","interested_in":["haskell","mathematics"],"age":26,"name":"Alp"}
+  ```
 
- #### Response:
+#### Response:
 
- - Status code 201
- - Headers: []
+- Status code 201
+- Headers: []
 
- - Supported content types are:
+- Supported content types are:
 
-     - `application/json`
+    - `application/json`
 
- - Response body as below.
+- Response body as below.
 
-   ```javascript
-   {"subject":"Hey Alp, we miss you!","body":"Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
-   ```
+  ```javascript
+  {"subject":"Hey Alp, we miss you!","body":"Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
+  ```
 
- ## GET /position/:x/:y
+## GET /position/:x/:y
 
- #### Captures:
+#### Captures:
 
- - *x*: (integer) position on the x axis
- - *y*: (integer) position on the y axis
+- *x*: (integer) position on the x axis
+- *y*: (integer) position on the y axis
 
- #### Response:
+#### Response:
 
- - Status code 200
- - Headers: []
+- Status code 200
+- Headers: []
 
- - Supported content types are:
+- Supported content types are:
 
-     - `application/json`
+    - `application/json`
 
- - Response body as below.
+- Response body as below.
 
-   ```javascript
-   {"x":3,"y":14}
-   ```
+  ```javascript
+  {"x":3,"y":14}
+  ```
 
-```
+`````````
 
-However, we can also add one or more introduction sections to the document. We just need to tweak the way we generate `apiDocs`. We will also convert the content to a lazy `ByteString` since this is what *wai* expects for `Raw` endpoints.
+However, we can also add one or more introduction sections to the document. We just need to tweak the way we generate `apiDocs`. We will also convert the content to a lazy `ByteString` since this is what **wai** expects for `Raw` endpoints.
 
 ``` haskell
 docsBS :: ByteString
@@ -228,7 +228,7 @@ server = Server.server3 :<|> serveDocs
         plain = ("Content-Type", "text/plain")
 
 app :: Application
-app = serve api EmptyConfig server
+app = serve api server
 ```
 
-And if you spin up this server with `dist/build/tutorial/tutorial 10` and go to anywhere else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.
+And if you spin up this server and request anything else than `/position`, `/hello` and `/marketing`, you will see the API docs in markdown. This is because `serveDocs` is attempted if the 3 other endpoints don't match and systematically succeeds since its definition is to just return some fixed bytestring with the `text/plain` content type.

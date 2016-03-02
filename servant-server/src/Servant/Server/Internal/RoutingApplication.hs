@@ -11,14 +11,8 @@ module Servant.Server.Internal.RoutingApplication where
 import           Control.Applicative                ((<$>))
 #endif
 import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
-import qualified Data.ByteString                    as B
-import qualified Data.ByteString.Lazy               as BL
-import           Data.IORef                         (newIORef, readIORef,
-                                                     writeIORef)
 import           Network.Wai                        (Application, Request,
-                                                     Response, ResponseReceived,
-                                                     requestBody,
-                                                     strictRequestBody)
+                                                     Response, ResponseReceived)
 import           Servant.Server.Internal.ServantErr
 
 type RoutingApplication =
@@ -33,34 +27,8 @@ data RouteResult a =
   | Route !a
   deriving (Eq, Show, Read, Functor)
 
-data ReqBodyState = Uncalled
-                  | Called !B.ByteString
-                  | Done !B.ByteString
-
 toApplication :: RoutingApplication -> Application
-toApplication ra request respond = do
-  reqBodyRef <- newIORef Uncalled
-  -- We may need to consume the requestBody more than once.  In order to
-  -- maintain the illusion that 'requestBody' works as expected,
-  -- 'ReqBodyState' is introduced, and the complete body is memoized and
-  -- returned as many times as requested with empty "Done" marker chunks in
-  -- between.
-  -- See https://github.com/haskell-servant/servant/issues/3
-  let memoReqBody = do
-          ior <- readIORef reqBodyRef
-          case ior of
-            Uncalled -> do
-                r <- BL.toStrict <$> strictRequestBody request
-                writeIORef reqBodyRef $ Done r
-                return r
-            Called bs -> do
-                writeIORef reqBodyRef $ Done bs
-                return bs
-            Done bs -> do
-                writeIORef reqBodyRef $ Called bs
-                return B.empty
-
-  ra request{ requestBody = memoReqBody } routingRespond
+toApplication ra request respond = ra request routingRespond
  where
   routingRespond :: RouteResult Response -> IO ResponseReceived
   routingRespond (Fail err)      = respond $ responseServantErr err
@@ -98,10 +66,10 @@ toApplication ra request respond = do
 --
 -- There are two reasons:
 --
--- 1. Currently, the order in which we perform checks coincides
--- with the error we will generate. This is because during checks,
--- once an error occurs, we do not perform any subsequent checks,
--- but rather return this error.
+-- 1. In a straight-forward implementation, the order in which we
+-- perform checks will determine the error we generate. This is
+-- because once an error occurs, we would abort and not perform
+-- any subsequent checks, but rather return the current error.
 --
 -- This is not a necessity: we could continue doing other checks,
 -- and choose the preferred error. However, that would in general
@@ -159,7 +127,7 @@ data Delayed :: * -> * where
           -> Delayed c
 
 instance Functor Delayed where
-   fmap f (Delayed a b c g) = Delayed a b c ((fmap.fmap.fmap) f g)
+   fmap f (Delayed a b c g) = Delayed a b c ((fmap . fmap . fmap) f g)
 
 -- | Add a capture to the end of the capture block.
 addCapture :: Delayed (a -> b)
@@ -240,9 +208,9 @@ runAction :: Delayed (ExceptT ServantErr IO a)
           -> IO r
 runAction action respond k = runDelayed action >>= go >>= respond
   where
-    go (Fail  e)   = return $ Fail e
+    go (Fail e)      = return $ Fail e
     go (FailFatal e) = return $ FailFatal e
-    go (Route a)   = do
+    go (Route a)     = do
       e <- runExceptT a
       case e of
         Left err -> return . Route $ responseServantErr err
