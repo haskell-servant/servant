@@ -16,7 +16,6 @@ data ServantErr = ServantErr { errHTTPCode     :: Int
                              , errHeaders      :: [HTTP.Header]
                              } deriving (Show, Eq, Read, Typeable)
 
--- Make ServantErr throwable:
 instance Exception ServantErr
 
 responseServantErr :: ServantErr -> Response
