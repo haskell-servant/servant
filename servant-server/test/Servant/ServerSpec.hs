@@ -49,7 +49,7 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
-import           Servant.Server             (ServantErr (..), Server, err404,
+import           Servant.Server             (ServantErr (..), Server, err401, err404,
                                              serve, serveWithContext, Context((:.), EmptyContext))
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
@@ -60,7 +60,7 @@ import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
 
 import           Servant.Server.Internal.BasicAuth (BasicAuthCheck(BasicAuthCheck),
                                                     BasicAuthResult(Authorized,Unauthorized))
-import           Servant.Server.Internal.Auth
+import           Servant.Server.Experimental.Auth
                                             (AuthHandler, AuthServerData,
                                              mkAuthHandler)
 import           Servant.Server.Internal.RoutingApplication

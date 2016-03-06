@@ -27,7 +27,7 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
-    Servant.Common.Auth
+    Servant.Client.Experimental.Auth
     Servant.Common.BaseUrl
     Servant.Common.BasicAuth
     Servant.Common.Req

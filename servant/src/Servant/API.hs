@@ -40,9 +40,6 @@ module Servant.API (
   -- * Response Headers
   module Servant.API.ResponseHeaders,
 
-  -- * General Authentication
-  module Servant.API.Auth,
-
   -- * Untyped endpoints
   module Servant.API.Raw,
   -- | Plugging in a wai 'Network.Wai.Application', serving directories
@@ -51,6 +48,11 @@ module Servant.API (
   module Web.HttpApiData,
   -- | Classes and instances for types that can be converted to and from HTTP API data.
 
+
+  -- * Experimental modules
+  module Servant.API.Experimental.Auth,
+  -- | General Authentication
+
   -- * Utilities
   module Servant.Utils.Links,
   -- | Type-safe internal URIs
@@ -58,13 +60,13 @@ module Servant.API (
 
 import           Servant.API.Alternative     ((:<|>) (..))
 import           Servant.API.BasicAuth       (BasicAuth,BasicAuthData(..))
-import           Servant.API.Auth            (AuthProtect)
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
                                               MimeRender (..), NoContent (NoContent),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
+import           Servant.API.Experimental.Auth (AuthProtect)
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))

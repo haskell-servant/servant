@@ -30,6 +30,7 @@ library
     Servant.API.BasicAuth
     Servant.API.Capture
     Servant.API.ContentTypes
+    Servant.API.Experimental.Auth
     Servant.API.Header
     Servant.API.HttpVersion
     Servant.API.Internal.Test.ComprehensiveAPI
@@ -43,7 +44,6 @@ library
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext
-    Servant.API.Experimental.Auth
     Servant.Utils.Links
   build-depends:
       base >=4.7 && <5

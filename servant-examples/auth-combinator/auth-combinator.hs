@@ -20,6 +20,7 @@ import           GHC.Generics
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Servant
+import           Servant.Server.Experimental.Auth
 
 -- | This file contains an authenticated server using servant's generalized
 -- authentication support. Our basic authentication scheme is trivial: we

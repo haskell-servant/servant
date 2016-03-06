@@ -4,7 +4,7 @@
 
 -- | Authentication for clients
 
-module Servant.Common.Auth (
+module Servant.Client.Experimental.Auth (
     AuthenticateReq(AuthenticateReq, unAuthReq)
   , AuthClientData
   , mkAuthenticateReq

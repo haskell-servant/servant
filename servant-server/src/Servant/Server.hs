@@ -50,9 +50,9 @@ module Servant.Server
   , BasicAuthResult(..)
 
   -- * General Authentication
-  , AuthHandler(unAuthHandler)
-  , AuthServerData
-  , mkAuthHandler
+  -- , AuthHandler(unAuthHandler)
+  -- , AuthServerData
+  -- , mkAuthHandler
 
     -- * Default error type
   , ServantErr(..)

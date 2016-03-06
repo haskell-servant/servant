@@ -55,6 +55,7 @@ import           Servant.API
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
 import           Servant.Server
+import           Servant.Server.Experimental.Auth
 import qualified Servant.Common.Req         as SCR
 
 -- This declaration simply checks that all instances are in place.
@@ -169,11 +170,11 @@ basicAuthHandler =
         else return Unauthorized
   in BasicAuthCheck check
 
-serverContext :: Context '[ BasicAuthCheck () ]
-serverContext = basicAuthHandler :. EmptyContext
+basicServerContext :: Context '[ BasicAuthCheck () ]
+basicServerContext = basicAuthHandler :. EmptyContext
 
 basicAuthServer :: Application
-basicAuthServer = serveWithContext basicAuthAPI serverContext (const (return alice))
+basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (return alice))
 
 -- * general auth stuff
 
@@ -193,11 +194,11 @@ genAuthHandler =
         Just _ -> return ()
   in mkAuthHandler handler
 
-serverConfig :: Config '[ AuthHandler Request () ]
-serverConfig = genAuthHandler :. EmptyConfig
+genAuthServerContext :: Context '[ AuthHandler Request () ]
+genAuthServerContext = genAuthHandler :. EmptyContext
 
 genAuthServer :: Application
-genAuthServer = serve genAuthAPI serverConfig (const (return alice))
+genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
 
 {-# NOINLINE manager #-}
 manager :: C.Manager

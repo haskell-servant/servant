@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE KindSignatures     #-}
 {-# LANGUAGE PolyKinds          #-}
-module Servant.API.Auth where
+module Servant.API.Experimental.Auth where
 
 import           Data.Typeable (Typeable)
 
