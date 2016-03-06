@@ -56,7 +56,7 @@ errorOrderServer = \_ _ _ -> throwE err402
 errorOrderSpec :: Spec
 errorOrderSpec =
   describe "HTTP error order" $
-    with (return $ serve errorOrderApi
+    with (return $ serveWithConfig errorOrderApi
                    (errorOrderAuthCheck :. EmptyConfig)
                    errorOrderServer
          ) $ do
@@ -183,7 +183,7 @@ errorRetryServer
 errorRetrySpec :: Spec
 errorRetrySpec =
   describe "Handler search" $
-    with (return $ serve errorRetryApi
+    with (return $ serveWithConfig errorRetryApi
                          (errorOrderAuthCheck :. EmptyConfig)
                          errorRetryServer
          ) $ do

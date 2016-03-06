@@ -170,7 +170,7 @@ serverConfig :: Config '[ BasicAuthCheck () ]
 serverConfig = basicAuthHandler :. EmptyConfig
 
 basicAuthServer :: Application
-basicAuthServer = serve basicAuthAPI serverConfig (const (return alice))
+basicAuthServer = serveWithConfig basicAuthAPI serverConfig (const (return alice))
 
 {-# NOINLINE manager #-}
 manager :: C.Manager

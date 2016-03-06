@@ -19,7 +19,7 @@ import           Servant.Server           (BasicAuthCheck (BasicAuthCheck),
                                                           , Unauthorized
                                                           ),
                                            Config ((:.), EmptyConfig), Server,
-                                           serve)
+                                           serveWithConfig)
 
 -- | let's define some types that our API returns.
 
@@ -80,7 +80,7 @@ server =
 
 -- | hello, server!
 main :: IO ()
-main = run 8080 (serve api serverConfig server)
+main = run 8080 (serveWithConfig api serverConfig server)
 
 {- Sample session
 
