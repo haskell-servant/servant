@@ -56,8 +56,8 @@ errorOrderServer = \_ _ _ -> throwE err402
 errorOrderSpec :: Spec
 errorOrderSpec =
   describe "HTTP error order" $
-    with (return $ serveWithConfig errorOrderApi
-                   (errorOrderAuthCheck :. EmptyConfig)
+    with (return $ serveWithContext errorOrderApi
+                   (errorOrderAuthCheck :. EmptyContext)
                    errorOrderServer
          ) $ do
   let badContentType  = (hContentType, "text/plain")
@@ -183,8 +183,8 @@ errorRetryServer
 errorRetrySpec :: Spec
 errorRetrySpec =
   describe "Handler search" $
-    with (return $ serveWithConfig errorRetryApi
-                         (errorOrderAuthCheck :. EmptyConfig)
+    with (return $ serveWithContext errorRetryApi
+                         (errorOrderAuthCheck :. EmptyContext)
                          errorRetryServer
          ) $ do
 

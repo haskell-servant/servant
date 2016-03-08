@@ -457,19 +457,19 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
 
 -- | Basic Authentication
 instance ( KnownSymbol realm
-         , HasServer api config
-         , HasConfigEntry config (BasicAuthCheck usr)
+         , HasServer api context
+         , HasContextEntry context (BasicAuthCheck usr)
          )
-    => HasServer (BasicAuth realm usr :> api) config where
+    => HasServer (BasicAuth realm usr :> api) context where
 
   type ServerT (BasicAuth realm usr :> api) m = usr -> ServerT api m
 
-  route Proxy config subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy api) config (subserver `addAuthCheck` authCheck request)
+  route Proxy context subserver = WithRequest $ \ request ->
+    route (Proxy :: Proxy api) context (subserver `addAuthCheck` authCheck request)
     where
        realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
-       basicAuthConfig = getConfigEntry config
-       authCheck req = runBasicAuth req realm basicAuthConfig
+       basicAuthContext = getContextEntry context
+       authCheck req = runBasicAuth req realm basicAuthContext
 
 -- * helpers
 

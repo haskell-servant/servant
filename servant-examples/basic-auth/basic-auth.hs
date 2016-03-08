@@ -18,8 +18,8 @@ import           Servant.Server           (BasicAuthCheck (BasicAuthCheck),
                                            BasicAuthResult( Authorized
                                                           , Unauthorized
                                                           ),
-                                           Config ((:.), EmptyConfig), Server,
-                                           serveWithConfig)
+                                           Context ((:.), EmptyContext), Server,
+                                           serveWithContext)
 
 -- | let's define some types that our API returns.
 
@@ -62,12 +62,12 @@ authCheck =
         else return Unauthorized
   in BasicAuthCheck check
 
--- | We need to supply our handlers with the right configuration. In this case,
--- Basic Authentication requires a Config Entry with the 'BasicAuthCheck' value
--- tagged with "foo-tag" This config is then supplied to 'server' and threaded 
+-- | We need to supply our handlers with the right Context. In this case,
+-- Basic Authentication requires a Context Entry with the 'BasicAuthCheck' value
+-- tagged with "foo-tag" This context is then supplied to 'server' and threaded 
 -- to the BasicAuth HasServer handlers.
-serverConfig :: Config (BasicAuthCheck User ': '[])
-serverConfig = authCheck :. EmptyConfig
+serverContext :: Context (BasicAuthCheck User ': '[])
+serverContext = authCheck :. EmptyContext
 
 -- | an implementation of our server. Here is where we pass all the handlers to our endpoints.
 -- In particular, for the BasicAuth protected handler, we need to supply a function
@@ -80,7 +80,7 @@ server =
 
 -- | hello, server!
 main :: IO ()
-main = run 8080 (serveWithConfig api serverConfig server)
+main = run 8080 (serveWithContext api serverContext server)
 
 {- Sample session
 

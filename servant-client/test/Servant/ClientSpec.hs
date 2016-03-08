@@ -166,11 +166,11 @@ basicAuthHandler =
         else return Unauthorized
   in BasicAuthCheck check
 
-serverConfig :: Config '[ BasicAuthCheck () ]
-serverConfig = basicAuthHandler :. EmptyConfig
+serverContext :: Context '[ BasicAuthCheck () ]
+serverContext = basicAuthHandler :. EmptyContext
 
 basicAuthServer :: Application
-basicAuthServer = serveWithConfig basicAuthAPI serverConfig (const (return alice))
+basicAuthServer = serveWithContext basicAuthAPI serverContext (const (return alice))
 
 {-# NOINLINE manager #-}
 manager :: C.Manager

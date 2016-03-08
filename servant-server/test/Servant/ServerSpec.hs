@@ -65,7 +65,7 @@ import           Servant.Server.Internal.Router
                                             (tweakResponse, runRouter,
                                              Router, Router'(LeafRouter))
 import           Servant.Server.Internal.Context
-                                            (Context(..), NamedContext(..))
+                                            (NamedContext(..))
 
 -- * comprehensive api test
 
