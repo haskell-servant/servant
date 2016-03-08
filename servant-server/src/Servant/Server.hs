@@ -45,6 +45,11 @@ module Servant.Server
   , NamedContext(..)
   , descendIntoNamedContext
 
+
+  -- * Basic Authentication
+  , BasicAuthCheck(BasicAuthCheck, unBasicAuthCheck)
+  , BasicAuthResult(..)
+
     -- * Default error type
   , ServantErr(..)
     -- ** 3XX
@@ -119,7 +124,7 @@ serveWithContext :: (HasServer layout context)
     => Proxy layout -> Context context -> Server layout -> Application
 serveWithContext p context server = toApplication (runRouter (route p context d))
   where
-    d = Delayed r r r (\ _ _ -> Route server)
+    d = Delayed r r r r (\ _ _ _ -> Route server)
     r = return (Route ())
 
 

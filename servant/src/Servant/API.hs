@@ -29,6 +29,9 @@ module Servant.API (
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Verbs,
 
+  -- * Authentication
+  module Servant.API.BasicAuth,
+
   -- * Content Types
   module Servant.API.ContentTypes,
   -- | Serializing and deserializing types based on @Accept@ and
@@ -51,6 +54,7 @@ module Servant.API (
   ) where
 
 import           Servant.API.Alternative     ((:<|>) (..))
+import           Servant.API.BasicAuth       (BasicAuth,BasicAuthData(..))
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,

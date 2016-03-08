@@ -27,6 +27,7 @@ library
   exposed-modules:
     Servant.API
     Servant.API.Alternative
+    Servant.API.BasicAuth
     Servant.API.Capture
     Servant.API.ContentTypes
     Servant.API.Header

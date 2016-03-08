@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.Server.ErrorSpec (spec) where
@@ -10,7 +11,8 @@ import           Data.Aeson                 (encode)
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.ByteString.Lazy.Char8 as BCL
 import           Data.Proxy
-import           Network.HTTP.Types         (hAccept, hContentType, methodGet,
+import           Network.HTTP.Types         (hAccept, hAuthorization,
+                                             hContentType, methodGet,
                                              methodPost, methodPut)
 import           Safe                       (readMay)
 import           Test.Hspec
@@ -25,57 +27,79 @@ spec = describe "HTTP Errors" $ do
     errorRetrySpec
     errorChoiceSpec
 
+-- * Auth machinery (reused throughout)
+
+-- | 'BasicAuthCheck' holds the handler we'll use to verify a username and password.
+errorOrderAuthCheck :: BasicAuthCheck ()
+errorOrderAuthCheck =
+  let check (BasicAuthData username password) =
+        if username == "servant" && password == "server"
+        then return (Authorized ())
+        else return Unauthorized
+  in BasicAuthCheck check
+
 ------------------------------------------------------------------------------
 -- * Error Order {{{
 
 type ErrorOrderApi = "home"
+                  :> BasicAuth "error-realm" ()
                   :> ReqBody '[JSON] Int
                   :> Capture "t" Int
                   :> Post '[JSON] Int
-
 
 errorOrderApi :: Proxy ErrorOrderApi
 errorOrderApi = Proxy
 
 errorOrderServer :: Server ErrorOrderApi
-errorOrderServer = \_ _ -> throwE err402
+errorOrderServer = \_ _ _ -> throwE err402
 
 errorOrderSpec :: Spec
-errorOrderSpec = describe "HTTP error order"
-           $ with (return $ serve errorOrderApi errorOrderServer) $ do
+errorOrderSpec =
+  describe "HTTP error order" $
+    with (return $ serveWithContext errorOrderApi
+                   (errorOrderAuthCheck :. EmptyContext)
+                   errorOrderServer
+         ) $ do
   let badContentType  = (hContentType, "text/plain")
       badAccept       = (hAccept, "text/plain")
       badMethod       = methodGet
       badUrl          = "home/nonexistent"
       badBody         = "nonsense"
+      badAuth         = (hAuthorization, "Basic foofoofoo")
       goodContentType = (hContentType, "application/json")
       goodAccept      = (hAccept, "application/json")
       goodMethod      = methodPost
       goodUrl         = "home/2"
       goodBody        = encode (5 :: Int)
+      -- username:password = servant:server
+      goodAuth        = (hAuthorization, "Basic c2VydmFudDpzZXJ2ZXI=")
 
   it "has 404 as its highest priority error" $ do
-    request badMethod badUrl [badContentType, badAccept] badBody
+    request badMethod badUrl [badAuth, badContentType, badAccept] badBody
       `shouldRespondWith` 404
 
   it "has 405 as its second highest priority error" $ do
-    request badMethod goodUrl [badContentType, badAccept] badBody
+    request badMethod goodUrl [badAuth, badContentType, badAccept] badBody
       `shouldRespondWith` 405
 
-  it "has 415 as its third highest priority error" $ do
-    request goodMethod goodUrl [badContentType, badAccept] badBody
+  it "has 401 as its third highest priority error (auth)" $ do
+    request goodMethod goodUrl [badAuth, badContentType, badAccept] badBody
+      `shouldRespondWith` 401
+
+  it "has 415 as its fourth highest priority error" $ do
+    request goodMethod goodUrl [goodAuth, badContentType, badAccept] badBody
       `shouldRespondWith` 415
 
-  it "has 400 as its fourth highest priority error" $ do
-    request goodMethod goodUrl [goodContentType, badAccept] badBody
+  it "has 400 as its fifth highest priority error" $ do
+    request goodMethod goodUrl [goodAuth, goodContentType, badAccept] badBody
       `shouldRespondWith` 400
 
-  it "has 406 as its fifth highest priority error" $ do
-    request goodMethod goodUrl [goodContentType, badAccept] goodBody
+  it "has 406 as its sixth highest priority error" $ do
+    request goodMethod goodUrl [goodAuth, goodContentType, badAccept] goodBody
       `shouldRespondWith` 406
 
   it "has handler-level errors as last priority" $ do
-    request goodMethod goodUrl [goodContentType, goodAccept] goodBody
+    request goodMethod goodUrl [goodAuth, goodContentType, goodAccept] goodBody
       `shouldRespondWith` 402
 
 type PrioErrorsApi = ReqBody '[JSON] Integer :> "foo" :> Get '[JSON] Integer
@@ -134,9 +158,12 @@ type ErrorRetryApi
   :<|> "a" :> ReqBody '[JSON] Int      :> Post '[PlainText] Int           -- 2
   :<|> "a" :> ReqBody '[JSON] String   :> Post '[JSON] Int                -- 3
   :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 4
-  :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[PlainText] Int           -- 5
-  :<|>        ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 6
-  :<|>        ReqBody '[JSON] Int      :> Post '[JSON] Int                -- 7
+  :<|> "a" :> BasicAuth "bar-realm" ()
+           :> ReqBody '[JSON] Int      :> Get  '[PlainText] Int           -- 5
+  :<|> "a" :> ReqBody '[JSON] Int      :> Get  '[PlainText] Int           -- 6
+
+  :<|>        ReqBody '[JSON] Int      :> Get  '[JSON] Int                -- 7
+  :<|>        ReqBody '[JSON] Int      :> Post '[JSON] Int                -- 8
 
 errorRetryApi :: Proxy ErrorRetryApi
 errorRetryApi = Proxy
@@ -148,13 +175,18 @@ errorRetryServer
   :<|> (\_ -> return 2)
   :<|> (\_ -> return 3)
   :<|> (\_ -> return 4)
-  :<|> (\_ -> return 5)
+  :<|> (\_ _ -> return 5)
   :<|> (\_ -> return 6)
   :<|> (\_ -> return 7)
+  :<|> (\_ -> return 8)
 
 errorRetrySpec :: Spec
-errorRetrySpec = describe "Handler search"
-           $ with (return $ serve errorRetryApi errorRetryServer) $ do
+errorRetrySpec =
+  describe "Handler search" $
+    with (return $ serveWithContext errorRetryApi
+                         (errorOrderAuthCheck :. EmptyContext)
+                         errorRetryServer
+         ) $ do
 
   let jsonCT      = (hContentType, "application/json")
       jsonAccept  = (hAccept, "application/json")
@@ -162,15 +194,11 @@ errorRetrySpec = describe "Handler search"
 
   it "should continue when URLs don't match" $ do
     request methodPost "" [jsonCT, jsonAccept] jsonBody
-     `shouldRespondWith` 200 { matchBody = Just $ encode (7 :: Int) }
+     `shouldRespondWith` 200 { matchBody = Just $ encode (8 :: Int) }
 
   it "should continue when methods don't match" $ do
     request methodGet "a" [jsonCT, jsonAccept] jsonBody
      `shouldRespondWith` 200 { matchBody = Just $ encode (4 :: Int) }
-
-  it "should not continue when body cannot be decoded" $ do
-    request methodPost "a" [jsonCT, jsonAccept] "a string"
-     `shouldRespondWith` 400
 
 -- }}}
 ------------------------------------------------------------------------------
