@@ -36,9 +36,10 @@ library
   exposed-modules:
     Servant
     Servant.Server
+    Servant.Server.Experimental.Auth
     Servant.Server.Internal
-    Servant.Server.Internal.Context
     Servant.Server.Internal.BasicAuth
+    Servant.Server.Internal.Context
     Servant.Server.Internal.Enter
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication

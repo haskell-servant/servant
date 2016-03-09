@@ -30,6 +30,7 @@ library
     Servant.API.BasicAuth
     Servant.API.Capture
     Servant.API.ContentTypes
+    Servant.API.Experimental.Auth
     Servant.API.Header
     Servant.API.HttpVersion
     Servant.API.Internal.Test.ComprehensiveAPI

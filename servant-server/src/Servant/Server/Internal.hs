@@ -453,8 +453,6 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
   route Proxy context subserver = WithRequest $ \req ->
     route (Proxy :: Proxy api) context (passToServer subserver $ httpVersion req)
 
--- * Basic Authentication
-
 -- | Basic Authentication
 instance ( KnownSymbol realm
          , HasServer api context
@@ -481,6 +479,9 @@ pathIsEmpty = go . pathInfo
 
 ct_wildcard :: B.ByteString
 ct_wildcard = "*" <> "/" <> "*" -- Because CPP
+
+-- * General Authentication
+
 
 -- * contexts
 

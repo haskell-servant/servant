@@ -48,6 +48,11 @@ module Servant.API (
   module Web.HttpApiData,
   -- | Classes and instances for types that can be converted to and from HTTP API data.
 
+
+  -- * Experimental modules
+  module Servant.API.Experimental.Auth,
+  -- | General Authentication
+
   -- * Utilities
   module Servant.Utils.Links,
   -- | Type-safe internal URIs
@@ -61,6 +66,7 @@ import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               MimeRender (..), NoContent (NoContent),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
+import           Servant.API.Experimental.Auth (AuthProtect)
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))

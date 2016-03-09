@@ -15,8 +15,11 @@
 -- querying functions for each endpoint just from the type representing your
 -- API.
 module Servant.Client
-  ( client
+  ( AuthClientData
+  , AuthenticateReq(..)
+  , client
   , HasClient(..)
+  , mkAuthenticateReq
   , ServantError(..)
   , module Servant.Common.BaseUrl
   ) where
@@ -36,6 +39,7 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.Client.Experimental.Auth
 import           Servant.Common.BaseUrl
 import           Servant.Common.BasicAuth
 import           Servant.Common.Req
@@ -424,6 +428,13 @@ instance HasClient subapi =>
   type Client (WithNamedContext name context subapi) = Client subapi
   clientWithRoute Proxy = clientWithRoute (Proxy :: Proxy subapi)
 
+instance ( HasClient api
+         ) => HasClient (AuthProtect tag :> api) where
+  type Client (AuthProtect tag :> api)
+    = AuthenticateReq (AuthProtect tag) -> Client api
+
+  clientWithRoute Proxy req baseurl manager (AuthenticateReq (val,func)) =
+    clientWithRoute (Proxy :: Proxy api) (func val req) baseurl manager
 
 -- * Basic Authentication
 

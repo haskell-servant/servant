@@ -12,6 +12,7 @@
 {-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -fcontext-stack=100 #-}
@@ -41,7 +42,8 @@ import           Network.HTTP.Media
 import           Network.HTTP.Types         (Status (..), badRequest400,
                                              methodGet, ok200, status400)
 import           Network.Socket
-import           Network.Wai                (Application, responseLBS)
+import           Network.Wai                (Application, Request,
+                                             requestHeaders, responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.Hspec
@@ -53,6 +55,8 @@ import           Servant.API
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
 import           Servant.Server
+import           Servant.Server.Experimental.Auth
+import qualified Servant.Common.Req         as SCR
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPI
@@ -63,6 +67,7 @@ spec = describe "Servant.Client" $ do
     failSpec
     wrappedApiSpec
     basicAuthSpec
+    genAuthSpec
 
 -- * test data types
 
@@ -149,8 +154,7 @@ failServer = serve failApi (
   :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
  )
 
-
--- * auth stuff
+-- * basic auth stuff
 
 type BasicAuthAPI =
        BasicAuth "foo-realm" () :> "private" :> "basic" :> Get '[JSON] Person
@@ -166,11 +170,35 @@ basicAuthHandler =
         else return Unauthorized
   in BasicAuthCheck check
 
-serverContext :: Context '[ BasicAuthCheck () ]
-serverContext = basicAuthHandler :. EmptyContext
+basicServerContext :: Context '[ BasicAuthCheck () ]
+basicServerContext = basicAuthHandler :. EmptyContext
 
 basicAuthServer :: Application
-basicAuthServer = serveWithContext basicAuthAPI serverContext (const (return alice))
+basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (return alice))
+
+-- * general auth stuff
+
+type GenAuthAPI =
+  AuthProtect "auth-tag" :> "private" :> "auth" :> Get '[JSON] Person
+
+genAuthAPI :: Proxy GenAuthAPI
+genAuthAPI = Proxy
+
+type instance AuthServerData (AuthProtect "auth-tag") = ()
+type instance AuthClientData (AuthProtect "auth-tag") = ()
+
+genAuthHandler :: AuthHandler Request ()
+genAuthHandler =
+  let handler req = case lookup "AuthHeader" (requestHeaders req) of
+        Nothing -> throwE (err401 { errBody = "Missing auth header" })
+        Just _ -> return ()
+  in mkAuthHandler handler
+
+genAuthServerContext :: Context '[ AuthHandler Request () ]
+genAuthServerContext = genAuthHandler :. EmptyContext
+
+genAuthServer :: Application
+genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
 
 {-# NOINLINE manager #-}
 manager :: C.Manager
@@ -332,6 +360,23 @@ basicAuthSpec = beforeAll (startWaiApp basicAuthServer) $ afterAll endWaiApp $ d
       let basicAuthData = BasicAuthData "not" "password"
       Left FailureResponse{..} <- runExceptT (getBasic basicAuthData)
       responseStatus `shouldBe` Status 403 "Forbidden"
+
+genAuthSpec :: Spec
+genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
+  context "Authentication works when requests are properly authenticated" $ do
+
+    it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
+      let getProtected = client genAuthAPI baseUrl manager
+      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
+      (left show <$> runExceptT (getProtected authRequest)) `shouldReturn` Right alice
+
+  context "Authentication is rejected when requests are not authenticated properly" $ do
+
+    it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
+      let getProtected = client genAuthAPI baseUrl manager
+      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
+      Left FailureResponse{..} <- runExceptT (getProtected authRequest)
+      responseStatus `shouldBe` (Status 401 "Unauthorized")
 
 -- * utils
 
