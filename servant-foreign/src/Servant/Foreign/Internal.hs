@@ -1,27 +1,18 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE CPP #-}
 #if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE NullaryTypeClasses    #-}
+{-# LANGUAGE NullaryTypeClasses #-}
 #endif
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE PolyKinds             #-}
 
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
-import           Control.Lens (makeLenses, makePrisms, (%~), (&), (.~), (<>~))
-import qualified Data.Char as C
+import           Control.Lens hiding (cons, List)
+#if !MIN_VERSION_base(4,8,0)
+import           Data.Monoid
+#endif
 import           Data.Proxy
+import           Data.String
 import           Data.Text
 import           Data.Text.Encoding (decodeUtf8)
 import           GHC.Exts (Constraint)
@@ -30,36 +21,38 @@ import qualified Network.HTTP.Types as HTTP
 import           Prelude hiding (concat)
 import           Servant.API
 
-type FunctionName = [Text]
 
--- | Function name builder that simply concat each part together
-concatCase :: FunctionName -> Text
-concatCase = concat
+newtype FunctionName = FunctionName { unFunctionName :: [Text] }
+  deriving (Show, Eq, Monoid)
 
--- | Function name builder using the snake_case convention.
--- each part is separated by a single underscore character.
-snakeCase :: FunctionName -> Text
-snakeCase = intercalate "_"
+makePrisms ''FunctionName
 
--- | Function name builder using the CamelCase convention.
--- each part begins with an upper case character.
-camelCase :: FunctionName -> Text
-camelCase = camelCase' . Prelude.map (replace "-" "")
-  where camelCase' []     = ""
-        camelCase' (p:ps) = concat $ p : Prelude.map capitalize ps
-        capitalize ""   = ""
-        capitalize name = C.toUpper (Data.Text.head name) `cons` Data.Text.tail name
+newtype ForeignType = ForeignType { unForeignType :: Text }
+  deriving (Show, Eq, IsString, Monoid)
 
-type ForeignType = Text
+makePrisms ''ForeignType
 
-type Arg = (Text, ForeignType)
+newtype PathSegment = PathSegment { unPathSegment :: Text }
+  deriving (Show, Eq, IsString, Monoid)
+
+makePrisms ''PathSegment
+
+data Arg = Arg
+  { _aName :: PathSegment
+  , _aType :: ForeignType }
+  deriving (Show, Eq)
+
+makeLenses ''Arg
+
+aPath :: Getter Arg Text
+aPath = aName . _PathSegment
 
 data SegmentType
-  = Static Text
+  = Static PathSegment
     -- ^ a static path segment. like "/foo"
   | Cap Arg
     -- ^ a capture. like "/:userid"
-  deriving (Eq, Show)
+  deriving (Show, Eq)
 
 makePrisms ''SegmentType
 
@@ -67,6 +60,14 @@ newtype Segment = Segment { unSegment :: SegmentType  }
   deriving (Eq, Show)
 
 makePrisms ''Segment
+
+isCapture :: Segment -> Bool
+isCapture (Segment (Cap _)) = True
+isCapture                _  = False
+
+captureArg :: Segment -> Arg
+captureArg (Segment (Cap s)) = s
+captureArg                 _ = error "captureArg called on non capture"
 
 type Path = [Segment]
 
@@ -86,10 +87,10 @@ data QueryArg = QueryArg
 makeLenses ''QueryArg
 
 data HeaderArg = HeaderArg
-  { headerArg :: Arg }
+  { _headerArg :: Arg }
   | ReplaceHeaderArg
-  { headerArg :: Arg
-  , headerPattern :: Text
+  { _headerArg     :: Arg
+  , _headerPattern :: Text
   } deriving (Eq, Show)
 
 makeLenses ''HeaderArg
@@ -117,16 +118,8 @@ data Req = Req
 
 makeLenses ''Req
 
-isCapture :: Segment -> Bool
-isCapture (Segment (Cap _)) = True
-isCapture                _  = False
-
-captureArg :: Segment -> Arg
-captureArg (Segment (Cap s)) = s
-captureArg                 _ = error "captureArg called on non capture"
-
 defReq :: Req
-defReq = Req defUrl "GET" [] Nothing "" []
+defReq = Req defUrl "GET" [] Nothing (ForeignType "") (FunctionName [])
 
 -- | To be used exclusively as a "negative" return type/constraint
 -- by @'Elem`@ type family.
@@ -173,7 +166,7 @@ class HasForeignType lang a where
 data NoTypes
 
 instance HasForeignType NoTypes ftype where
-  typeFor _ _ = empty
+  typeFor _ _ = ForeignType empty
 
 type HasNoForeignType = HasForeignType NoTypes
 
@@ -195,18 +188,21 @@ instance (KnownSymbol sym, HasForeignType lang ftype, HasForeign lang sublayout)
 
   foreignFor lang Proxy req =
     foreignFor lang (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Segment (Cap arg)]
-          & reqFuncName %~ (++ ["by", str])
+      req & reqUrl . path <>~ [Segment (Cap arg)]
+          & reqFuncName . _FunctionName %~ (++ ["by", str])
     where
-      str = pack . symbolVal $ (Proxy :: Proxy sym)
-      arg = (str, typeFor lang (Proxy :: Proxy ftype))
+      str   = pack . symbolVal $ (Proxy :: Proxy sym)
+      ftype = typeFor lang (Proxy :: Proxy ftype)
+      arg   = Arg
+        { _aName = PathSegment str
+        , _aType = ftype }
 
 instance (Elem JSON list, HasForeignType lang a, ReflectMethod method)
   => HasForeign lang (Verb method status list a) where
   type Foreign (Verb method status list a) = Req
 
   foreignFor lang Proxy req =
-    req & reqFuncName  %~ (methodLC :)
+    req & reqFuncName . _FunctionName %~ (methodLC :)
         & reqMethod .~ method
         & reqReturnType .~ retType
     where
@@ -219,12 +215,13 @@ instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
   type Foreign (Header sym a :> sublayout) = Foreign sublayout
 
   foreignFor lang Proxy req =
-    foreignFor lang subP $ req
-        & reqHeaders <>~ [HeaderArg arg]
+    foreignFor lang subP $ req & reqHeaders <>~ [HeaderArg arg]
     where
       hname = pack . symbolVal $ (Proxy :: Proxy sym)
-      arg = (hname, typeFor lang (Proxy :: Proxy a))
-      subP = Proxy :: Proxy sublayout
+      arg   = Arg
+        { _aName = PathSegment hname
+        , _aType  = typeFor lang (Proxy :: Proxy a) }
+      subP  = Proxy :: Proxy sublayout
 
 instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
   => HasForeign lang (QueryParam sym a :> sublayout) where
@@ -233,10 +230,11 @@ instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
   foreignFor lang Proxy req =
     foreignFor lang (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg arg Normal]
-
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
-      arg = (str, typeFor lang (Proxy :: Proxy a))
+      arg = Arg
+        { _aName = PathSegment str
+        , _aType = typeFor lang (Proxy :: Proxy a) }
 
 instance
   (KnownSymbol sym, HasForeignType lang [a], HasForeign lang sublayout)
@@ -247,7 +245,9 @@ instance
       req & reqUrl.queryStr <>~ [QueryArg arg List]
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
-      arg = (str, typeFor lang (Proxy :: Proxy [a]))
+      arg = Arg
+        { _aName = PathSegment str
+        , _aType = typeFor lang (Proxy :: Proxy [a]) }
 
 instance
   (KnownSymbol sym, HasForeignType lang Bool, HasForeign lang sublayout)
@@ -259,13 +259,15 @@ instance
       req & reqUrl.queryStr <>~ [QueryArg arg Flag]
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
-      arg = (str, typeFor lang (Proxy :: Proxy Bool))
+      arg = Arg
+        { _aName = PathSegment str
+        , _aType = typeFor lang (Proxy :: Proxy Bool) }
 
 instance HasForeign lang Raw where
   type Foreign Raw = HTTP.Method -> Req
 
   foreignFor _ Proxy req method =
-    req & reqFuncName %~ ((toLower $ decodeUtf8 method) :)
+    req & reqFuncName . _FunctionName %~ ((toLower $ decodeUtf8 method) :)
         & reqMethod .~ method
 
 instance (Elem JSON list, HasForeignType lang a, HasForeign lang sublayout)
@@ -282,8 +284,8 @@ instance (KnownSymbol path, HasForeign lang sublayout)
 
   foreignFor lang Proxy req =
     foreignFor lang (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Segment (Static str)]
-          & reqFuncName %~ (++ [str])
+      req & reqUrl . path <>~ [Segment (Static (PathSegment str))]
+          & reqFuncName . _FunctionName %~ (++ [str])
     where
       str =
         Data.Text.map (\c -> if c == '.' then '_' else c)

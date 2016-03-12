@@ -62,11 +62,14 @@ generateAxiosJSWith aopts opts req = "\n" <>
 
   where argsStr = T.intercalate ", " args
         args = captures
-            ++ map (view $ argName._1) queryparams
+            ++ map (view $ argName . aPath) queryparams
             ++ body
-            ++ map (toValidFunctionName . (<>) "header" . fst . headerArg) hs
+            ++ map ( toValidFunctionName
+                   . (<>) "header"
+                   . view (headerArg . aPath)
+                   ) hs
 
-        captures = map (fst . captureArg)
+        captures = map (view aPath . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl.path
 
@@ -104,10 +107,11 @@ generateAxiosJSWith aopts opts req = "\n" <>
             then ""
             else "    , headers: { " <> headersStr <> " }\n"
 
-          where headersStr = T.intercalate ", " $ map headerStr hs
-                headerStr header = "\"" <>
-                  fst (headerArg header) <>
-                  "\": " <> toJSHeader header
+          where
+            headersStr = T.intercalate ", " $ map headerStr hs
+            headerStr header = "\"" <>
+              header ^. headerArg . aPath <>
+              "\": " <> toJSHeader header
 
         namespace =
                if hasNoModule

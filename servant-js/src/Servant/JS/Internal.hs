@@ -1,4 +1,6 @@
-{-#LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
+
 module Servant.JS.Internal
   ( JavaScriptGenerator
   , CommonGeneratorOptions(..)
@@ -19,7 +21,22 @@ module Servant.JS.Internal
   , reqHeaders
   , HasForeign(..)
   , HasForeignType(..)
+  , HasNoForeignType
+  , GenerateList(..)
+  , NoTypes
+  , HeaderArg
+  , ArgType(..)
   , HeaderArg(..)
+  , QueryArg(..)
+  , Req(..)
+  , Segment(..)
+  , SegmentType(..)
+  , Url(..)
+  , Path
+  , ForeignType(..)
+  , Arg(..)
+  , FunctionName(..)
+  , PathSegment(..)
   , concatCase
   , snakeCase
   , camelCase
@@ -32,7 +49,7 @@ module Servant.JS.Internal
   , Header
   ) where
 
-import           Control.Lens                  ((^.), _1)
+import           Control.Lens hiding (List)
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import           Data.Monoid
@@ -123,7 +140,8 @@ toValidFunctionName t =
                     ]
 
 toJSHeader :: HeaderArg -> Text
-toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> fst n)
+toJSHeader (HeaderArg n)
+  = toValidFunctionName ("header" <> n ^. aName . _PathSegment)
 toJSHeader (ReplaceHeaderArg n p)
   | pn `T.isPrefixOf` p = pv <> " + \"" <> rp <> "\""
   | pn `T.isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
@@ -131,8 +149,8 @@ toJSHeader (ReplaceHeaderArg n p)
                              <> "\""
   | otherwise         = p
   where
-    pv = toValidFunctionName ("header" <> fst n)
-    pn = "{" <> fst n <> "}"
+    pv = toValidFunctionName ("header" <> n ^. aName . _PathSegment)
+    pn = "{" <> n ^. aName . _PathSegment <> "}"
     rp = T.replace pn "" p
 
 jsSegments :: [Segment] -> Text
@@ -145,8 +163,9 @@ segmentToStr (Segment st) notTheEnd =
   segmentTypeToStr st <> if notTheEnd then "" else "'"
 
 segmentTypeToStr :: SegmentType -> Text
-segmentTypeToStr (Static s) = s
-segmentTypeToStr (Cap s)    = "' + encodeURIComponent(" <> fst s <> ") + '"
+segmentTypeToStr (Static s) = s ^. _PathSegment
+segmentTypeToStr (Cap s)    =
+  "' + encodeURIComponent(" <> s ^. aName . _PathSegment <> ") + '"
 
 jsGParams :: Text -> [QueryArg] -> Text
 jsGParams _ []     = ""
@@ -168,4 +187,4 @@ paramToStr qarg notTheEnd =
            <> "[]=' + encodeURIComponent("
            <> name
            <> if notTheEnd then ") + '" else ")"
-  where name = qarg ^. argName . _1
+  where name = qarg ^. argName . aName . _PathSegment

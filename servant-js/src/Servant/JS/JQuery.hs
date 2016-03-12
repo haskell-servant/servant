@@ -10,6 +10,7 @@ import           Data.Text.Encoding (decodeUtf8)
 import           Servant.Foreign
 import           Servant.JS.Internal
 
+
 -- | Generate javascript functions that use the /jQuery/ library
 --   to make the AJAX calls. Uses 'defCommonGeneratorOptions'
 --   for the generator options.
@@ -42,12 +43,15 @@ generateJQueryJSWith opts req = "\n" <>
 
   where argsStr = T.intercalate ", " args
         args = captures
-            ++ map (view $ argName._1) queryparams
+            ++ map (view $ argName . aPath) queryparams
             ++ body
-            ++ map (toValidFunctionName . (<>) "header" . fst . headerArg) hs
+            ++ map (toValidFunctionName
+                   . (<>) "header"
+                   . view (headerArg . aPath)
+                   ) hs
             ++ [onSuccess, onError]
 
-        captures = map (fst . captureArg)
+        captures = map (view aPath . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl.path
 
@@ -73,10 +77,11 @@ generateJQueryJSWith opts req = "\n" <>
             then ""
             else "    , headers: { " <> headersStr <> " }\n"
 
-          where headersStr = T.intercalate ", " $ map headerStr hs
-                headerStr header = "\"" <>
-                  fst (headerArg header) <>
-                  "\": " <> toJSHeader header
+          where
+            headersStr = T.intercalate ", " $ map headerStr hs
+            headerStr header = "\"" <>
+              header ^. headerArg . aPath <>
+              "\": " <> toJSHeader header
 
         namespace = if (moduleName opts) == ""
                        then "var "
