@@ -7,6 +7,7 @@
 module Servant.API.Internal.Test.ComprehensiveAPI where
 
 import           Data.Proxy
+
 import           Servant.API
 
 type GET = Get '[JSON] ()
