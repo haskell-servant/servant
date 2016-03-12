@@ -1,9 +1,7 @@
 # Generating Javascript functions to query an API
 
-We will now see how *servant* lets you turn an API type into javascript
-functions that you can call to query a webservice. The derived code assumes you
-use *jQuery* but you could very easily adapt the code to generate ajax requests
-based on vanilla javascript or another library than *jQuery*.
+We will now see how **servant** lets you turn an API type into javascript
+functions that you can call to query a webservice.
 
 For this, we will consider a simple page divided in two parts. At the top, we
 will have a search box that lets us search in a list of Haskell books by
@@ -32,10 +30,11 @@ import Data.Aeson
 import Data.Proxy
 import Data.Text as T (Text)
 import Data.Text.IO as T (writeFile, readFile)
-import qualified Data.Text as T
 import GHC.Generics
 import Language.Javascript.JQuery
 import Network.Wai
+import Network.Wai.Handler.Warp
+import qualified Data.Text as T
 import Servant
 import Servant.JS
 import System.Random
@@ -78,7 +77,8 @@ book :: Text -> Text -> Int -> Book
 book = Book
 ```
 
-We need a "book database". For the purpose of this guide, let's restrict ourselves to the following books.
+We need a "book database". For the purpose of this guide, let's restrict
+ourselves to the following books.
 
 ``` haskell
 books :: [Book]
@@ -92,7 +92,10 @@ books =
   ]
 ```
 
-Now, given an optional search string `q`, we want to perform a case insensitive search in that list of books. We're obviously not going to try and implement the best possible algorithm, this is out of scope for this tutorial. The following simple linear scan will do, given how small our list is.
+Now, given an optional search string `q`, we want to perform a case insensitive
+search in that list of books. We're obviously not going to try and implement
+the best possible algorithm, this is out of scope for this tutorial. The
+following simple linear scan will do, given how small our list is.
 
 ``` haskell
 searchBook :: Monad m => Maybe Text -> m (Search Book)
@@ -106,7 +109,9 @@ searchBook (Just q) = return (mkSearch q books')
         q' = T.toLower q
 ```
 
-We also need an endpoint that generates random points `(x, y)` with `-1 <= x,y <= 1`. The code below uses [random](http://hackage.haskell.org/package/random)'s `System.Random`.
+We also need an endpoint that generates random points `(x, y)` with `-1 <= x,y
+<= 1`. The code below uses
+[random](http://hackage.haskell.org/package/random)'s `System.Random`.
 
 ``` haskell
 randomPoint :: MonadIO m => m Point
@@ -131,54 +136,93 @@ server = randomPoint
 
 server' :: Server API'
 server' = server
-     :<|> serveDirectory "tutorial/t9"
+     :<|> serveDirectory "static"
 
 app :: Application
 app = serve api' server'
+
+main :: IO ()
+main = run 8000 app
 ```
 
-Why two different API types, proxies and servers though? Simply because we don't want to generate javascript functions for the `Raw` part of our API type, so we need a `Proxy` for our API type `API'` without its `Raw` endpoint.
+Why two different API types, proxies and servers though? Simply because we
+don't want to generate javascript functions for the `Raw` part of our API type,
+so we need a `Proxy` for our API type `API'` without its `Raw` endpoint.
 
-Very similarly to how one can derive haskell functions, we can derive the javascript with just a simple function call to `jsForAPI` from `Servant.JQuery`.
+Very similarly to how one can derive haskell functions, we can derive the
+javascript with just a simple function call to `jsForAPI` from
+`Servant.JQuery`.
 
 ``` haskell
 apiJS :: Text
 apiJS = jsForAPI api vanillaJS
 ```
 
-This `String` contains 2 Javascript functions:
+This `Text` contains 2 Javascript functions, 'getPoint' and 'getBooks':
 
 ``` javascript
-
-function getpoint(onSuccess, onError)
+var getPoint = function(onSuccess, onError)
 {
-  $.ajax(
-    { url: '/point'
-    , success: onSuccess
-    , error: onError
-    , method: 'GET'
-    });
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/point', true);
+  xhr.setRequestHeader("Accept","application/json");
+  xhr.onreadystatechange = function (e) {
+    if (xhr.readyState == 4) {
+      if (xhr.status == 204 || xhr.status == 205) {
+        onSuccess();
+      } else if (xhr.status >= 200 && xhr.status < 300) {
+        var value = JSON.parse(xhr.responseText);
+        onSuccess(value);
+      } else {
+        var value = JSON.parse(xhr.responseText);
+        onError(value);
+      }
+    }
+  }
+  xhr.send(null);
 }
 
-function getbooks(q, onSuccess, onError)
+var getBooks = function(q, onSuccess, onError)
 {
-  $.ajax(
-    { url: '/books' + '?q=' + encodeURIComponent(q)
-    , success: onSuccess
-    , error: onError
-    , method: 'GET'
-    });
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/books' + '?q=' + encodeURIComponent(q), true);
+  xhr.setRequestHeader("Accept","application/json");
+  xhr.onreadystatechange = function (e) {
+    if (xhr.readyState == 4) {
+      if (xhr.status == 204 || xhr.status == 205) {
+        onSuccess();
+      } else if (xhr.status >= 200 && xhr.status < 300) {
+        var value = JSON.parse(xhr.responseText);
+        onSuccess(value);
+      } else {
+        var value = JSON.parse(xhr.responseText);
+        onError(value);
+      }
+    }
+  }
+  xhr.send(null);
 }
 ```
 
-Right before starting up our server, we will need to write this `String` to a file, say `api.js`, along with a copy of the *jQuery* library, as provided by the [js-jquery](http://hackage.haskell.org/package/js-jquery) package.
+We created a directory `static` that contains two static files: `index.html`,
+which is the entrypoint to our little web application; and `ui.js`, which
+contains some hand-written javascript. This javascript code assumes the two
+generated functions `getPoint` and `getBooks` in scope. Therefore we need to
+write the generated javascript into a file:
 
 ``` haskell
 writeJSFiles :: IO ()
 writeJSFiles = do
-  T.writeFile "getting-started/gs9/api.js" apiJS
+  T.writeFile "static/api.js" apiJS
   jq <- T.readFile =<< Language.Javascript.JQuery.file
-  T.writeFile "getting-started/gs9/jq.js" jq
+  T.writeFile "static/jq.js" jq
 ```
 
-And we're good to go. Start the server with `dist/build/tutorial/tutorial 9` and go to `http://localhost:8081/`. Start typing in the name of one of the authors in our database or part of a book title, and check out how long it takes to approximate &pi; using the method mentioned above.
+(We're also writing the jquery library into a file, as it's also used by
+`ui.js`.) `static/api.js` will be included in `index.html` and the two
+generated functions will therefore be available in `ui.js`.
+
+And we're good to go. You can start the `main` function of this file and go to
+`http://localhost:8000/`. Start typing in the name of one of the authors in our
+database or part of a book title, and check out how long it takes to
+approximate pi using the method mentioned above.
