@@ -46,6 +46,7 @@ library
                      , GeneralizedNewtypeDeriving
                      , MultiParamTypeClasses
                      , ScopedTypeVariables
+                     , StandaloneDeriving
                      , TemplateHaskell
                      , TypeFamilies
                      , TypeOperators
@@ -64,6 +65,7 @@ test-suite spec
   build-depends:     base
                    , hspec >= 2.1.8
                    , servant-foreign
+                   , text       >= 1.2  && < 1.3
   default-language:  Haskell2010
   default-extensions:  ConstraintKinds
                      , DataKinds

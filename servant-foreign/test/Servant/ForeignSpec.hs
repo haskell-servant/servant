@@ -6,6 +6,7 @@ module Servant.ForeignSpec where
 import Data.Monoid ((<>))
 import Data.Proxy
 import Servant.Foreign
+import Data.Text (Text(..))
 
 import Test.Hspec
 
@@ -47,7 +48,7 @@ type TestApi
  :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] ()
  :<|> "test" :> Capture "id" Int :> Delete '[JSON] ()
 
-testApi :: [Req]
+testApi :: [Req Text]
 testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy TestApi)
 
 listFromAPISpec :: Spec

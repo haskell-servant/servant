@@ -27,8 +27,12 @@ newtype FunctionName = FunctionName { unFunctionName :: [Text] }
 
 makePrisms ''FunctionName
 
-newtype ForeignType = ForeignType { unForeignType :: Text }
-  deriving (Show, Eq, IsString, Monoid)
+newtype ForeignType f = ForeignType { unForeignType :: f }
+
+deriving instance Show f => Show (ForeignType f)
+deriving instance Eq f => Eq (ForeignType f)
+deriving instance IsString f => IsString (ForeignType f)
+deriving instance Monoid f => Monoid (ForeignType f)
 
 makePrisms ''ForeignType
 
@@ -37,39 +41,45 @@ newtype PathSegment = PathSegment { unPathSegment :: Text }
 
 makePrisms ''PathSegment
 
-data Arg = Arg
+data Arg f = Arg
   { _argName :: PathSegment
-  , _argType :: ForeignType }
-  deriving (Show, Eq)
+  , _argType :: ForeignType f }
+
+deriving instance Eq f => Eq (Arg f)
+deriving instance Show f => Show (Arg f)
 
 makeLenses ''Arg
 
-argPath :: Getter Arg Text
+argPath :: Getter (Arg f) Text
 argPath = argName . _PathSegment
 
-data SegmentType
+data SegmentType f
   = Static PathSegment
     -- ^ a static path segment. like "/foo"
-  | Cap Arg
+  | Cap (Arg f)
     -- ^ a capture. like "/:userid"
-  deriving (Show, Eq)
+
+deriving instance Eq f => Eq (SegmentType f)
+deriving instance Show f => Show (SegmentType f)
 
 makePrisms ''SegmentType
 
-newtype Segment = Segment { unSegment :: SegmentType  }
-  deriving (Eq, Show)
+newtype Segment f = Segment { unSegment :: SegmentType f }
+
+deriving instance Eq f => Eq (Segment f)
+deriving instance Show f => Show (Segment f)
 
 makePrisms ''Segment
 
-isCapture :: Segment -> Bool
+isCapture :: Segment f -> Bool
 isCapture (Segment (Cap _)) = True
 isCapture                _  = False
 
-captureArg :: Segment -> Arg
+captureArg :: Segment f -> Arg f
 captureArg (Segment (Cap s)) = s
 captureArg                 _ = error "captureArg called on non capture"
 
-type Path = [Segment]
+type Path f = [Segment f]
 
 data ArgType
   = Normal
@@ -79,46 +89,58 @@ data ArgType
 
 makePrisms ''ArgType
 
-data QueryArg = QueryArg
-  { _queryArgName :: Arg
+data QueryArg f = QueryArg
+  { _queryArgName :: Arg f
   , _queryArgType :: ArgType
-  } deriving (Eq, Show)
+  }
+
+deriving instance Eq f => Eq (QueryArg f)
+deriving instance Show f => Show (QueryArg f)
 
 makeLenses ''QueryArg
 
-data HeaderArg = HeaderArg
-  { _headerArg :: Arg }
+data HeaderArg f = HeaderArg
+  { _headerArg :: Arg f }
   | ReplaceHeaderArg
-  { _headerArg     :: Arg
+  { _headerArg     :: Arg f
   , _headerPattern :: Text
-  } deriving (Eq, Show)
+  }
+
+deriving instance Eq f => Eq (HeaderArg f)
+deriving instance Show f => Show (HeaderArg f)
 
 makeLenses ''HeaderArg
 
 makePrisms ''HeaderArg
 
-data Url = Url
-  { _path     :: Path
-  , _queryStr :: [QueryArg]
-  } deriving (Eq, Show)
+data Url f = Url
+  { _path     :: Path f
+  , _queryStr :: [QueryArg f]
+  }
 
-defUrl :: Url
+deriving instance Eq f => Eq (Url f)
+deriving instance Show f => Show (Url f)
+
+defUrl :: Url f
 defUrl = Url [] []
 
 makeLenses ''Url
 
-data Req = Req
-  { _reqUrl        :: Url
+data Req f = Req
+  { _reqUrl        :: Url f
   , _reqMethod     :: HTTP.Method
-  , _reqHeaders    :: [HeaderArg]
-  , _reqBody       :: Maybe ForeignType
-  , _reqReturnType :: ForeignType
+  , _reqHeaders    :: [HeaderArg f]
+  , _reqBody       :: Maybe (ForeignType f)
+  , _reqReturnType :: ForeignType f
   , _reqFuncName   :: FunctionName
-  } deriving (Eq, Show)
+  }
+
+deriving instance Eq f => Eq (Req f)
+deriving instance Show f => Show (Req f)
 
 makeLenses ''Req
 
-defReq :: Req
+defReq :: Req Text
 defReq = Req defUrl "GET" [] Nothing (ForeignType "") (FunctionName [])
 
 -- | To be used exclusively as a "negative" return type/constraint
@@ -161,7 +183,7 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
 -- >
 --
 class HasForeignType lang a where
-  typeFor :: Proxy lang -> Proxy a -> ForeignType
+  typeFor :: Proxy lang -> Proxy a -> ForeignType Text
 
 data NoTypes
 
@@ -172,7 +194,7 @@ type HasNoForeignType = HasForeignType NoTypes
 
 class HasForeign lang (layout :: *) where
   type Foreign layout :: *
-  foreignFor :: Proxy lang -> Proxy layout -> Req -> Foreign layout
+  foreignFor :: Proxy lang -> Proxy layout -> Req Text -> Foreign layout
 
 instance (HasForeign lang a, HasForeign lang b)
   => HasForeign lang (a :<|> b) where
@@ -199,7 +221,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype, HasForeign lang sublayout)
 
 instance (Elem JSON list, HasForeignType lang a, ReflectMethod method)
   => HasForeign lang (Verb method status list a) where
-  type Foreign (Verb method status list a) = Req
+  type Foreign (Verb method status list a) = Req Text
 
   foreignFor lang Proxy req =
     req & reqFuncName . _FunctionName %~ (methodLC :)
@@ -264,7 +286,7 @@ instance
         , _argType = typeFor lang (Proxy :: Proxy Bool) }
 
 instance HasForeign lang Raw where
-  type Foreign Raw = HTTP.Method -> Req
+  type Foreign Raw = HTTP.Method -> Req Text
 
   foreignFor _ Proxy req method =
     req & reqFuncName . _FunctionName %~ ((toLower $ decodeUtf8 method) :)
@@ -329,9 +351,9 @@ instance HasForeign lang sublayout
 --   the data needed to generate a function for each endpoint
 --   and hands it all back in a list.
 class GenerateList reqs where
-  generateList :: reqs -> [Req]
+  generateList :: reqs -> [Req Text]
 
-instance GenerateList Req where
+instance GenerateList (Req Text) where
   generateList r = [r]
 
 instance (GenerateList start, GenerateList rest)
@@ -344,5 +366,5 @@ listFromAPI
   :: (HasForeign lang api, GenerateList (Foreign api))
   => Proxy lang
   -> Proxy api
-  -> [Req]
+  -> [Req Text]
 listFromAPI lang p = generateList (foreignFor lang p defReq)

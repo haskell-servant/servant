@@ -57,12 +57,12 @@ import qualified Data.Text as T
 import           Data.Text (Text)
 import           Servant.Foreign
 
-type AjaxReq = Req
+type AjaxReq = Req Text
 
 -- A 'JavascriptGenerator' just takes the data found in the API type
 -- for each endpoint and generates Javascript code in a Text. Several
 -- generators are available in this package.
-type JavaScriptGenerator = [Req] -> Text
+type JavaScriptGenerator = [Req Text] -> Text
 
 -- | This structure is used by specific implementations to let you
 -- customize the output
@@ -139,7 +139,7 @@ toValidFunctionName t =
                     , Set.connectorPunctuation
                     ]
 
-toJSHeader :: HeaderArg -> Text
+toJSHeader :: HeaderArg f -> Text
 toJSHeader (HeaderArg n)
   = toValidFunctionName ("header" <> n ^. argName . _PathSegment)
 toJSHeader (ReplaceHeaderArg n p)
@@ -153,29 +153,29 @@ toJSHeader (ReplaceHeaderArg n p)
     pn = "{" <> n ^. argName . _PathSegment <> "}"
     rp = T.replace pn "" p
 
-jsSegments :: [Segment] -> Text
+jsSegments :: [Segment f] -> Text
 jsSegments []  = ""
 jsSegments [x] = "/" <> segmentToStr x False
 jsSegments (x:xs) = "/" <> segmentToStr x True <> jsSegments xs
 
-segmentToStr :: Segment -> Bool -> Text
+segmentToStr :: Segment f -> Bool -> Text
 segmentToStr (Segment st) notTheEnd =
   segmentTypeToStr st <> if notTheEnd then "" else "'"
 
-segmentTypeToStr :: SegmentType -> Text
+segmentTypeToStr :: SegmentType f -> Text
 segmentTypeToStr (Static s) = s ^. _PathSegment
 segmentTypeToStr (Cap s)    =
   "' + encodeURIComponent(" <> s ^. argName . _PathSegment <> ") + '"
 
-jsGParams :: Text -> [QueryArg] -> Text
+jsGParams :: Text -> [QueryArg f] -> Text
 jsGParams _ []     = ""
 jsGParams _ [x]    = paramToStr x False
 jsGParams s (x:xs) = paramToStr x True <> s <> jsGParams s xs
 
-jsParams :: [QueryArg] -> Text
+jsParams :: [QueryArg f] -> Text
 jsParams = jsGParams "&"
 
-paramToStr :: QueryArg -> Bool -> Text
+paramToStr :: QueryArg f -> Bool -> Text
 paramToStr qarg notTheEnd =
   case qarg ^. queryArgType of
     Normal -> name
