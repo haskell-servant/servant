@@ -10,7 +10,6 @@ module Servant.Foreign
   , Url(..)
     -- aliases
   , Path
-  , ForeignType(..)
   , Arg(..)
   , FunctionName(..)
   , PathSegment(..)
@@ -31,7 +30,6 @@ module Servant.Foreign
   , headerArg
     -- prisms
   , _PathSegment
-  , _ForeignType
   , _HeaderArg
   , _ReplaceHeaderArg
   , _Static
@@ -42,7 +40,6 @@ module Servant.Foreign
     -- rest of it
   , HasForeign(..)
   , HasForeignType(..)
-  , HasNoForeignType
   , GenerateList(..)
   , NoTypes
   , captureArg
