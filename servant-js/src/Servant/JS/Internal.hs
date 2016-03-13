@@ -141,7 +141,7 @@ toValidFunctionName t =
 
 toJSHeader :: HeaderArg -> Text
 toJSHeader (HeaderArg n)
-  = toValidFunctionName ("header" <> n ^. aName . _PathSegment)
+  = toValidFunctionName ("header" <> n ^. argName . _PathSegment)
 toJSHeader (ReplaceHeaderArg n p)
   | pn `T.isPrefixOf` p = pv <> " + \"" <> rp <> "\""
   | pn `T.isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
@@ -149,8 +149,8 @@ toJSHeader (ReplaceHeaderArg n p)
                              <> "\""
   | otherwise         = p
   where
-    pv = toValidFunctionName ("header" <> n ^. aName . _PathSegment)
-    pn = "{" <> n ^. aName . _PathSegment <> "}"
+    pv = toValidFunctionName ("header" <> n ^. argName . _PathSegment)
+    pn = "{" <> n ^. argName . _PathSegment <> "}"
     rp = T.replace pn "" p
 
 jsSegments :: [Segment] -> Text
@@ -165,7 +165,7 @@ segmentToStr (Segment st) notTheEnd =
 segmentTypeToStr :: SegmentType -> Text
 segmentTypeToStr (Static s) = s ^. _PathSegment
 segmentTypeToStr (Cap s)    =
-  "' + encodeURIComponent(" <> s ^. aName . _PathSegment <> ") + '"
+  "' + encodeURIComponent(" <> s ^. argName . _PathSegment <> ") + '"
 
 jsGParams :: Text -> [QueryArg] -> Text
 jsGParams _ []     = ""
@@ -177,7 +177,7 @@ jsParams = jsGParams "&"
 
 paramToStr :: QueryArg -> Bool -> Text
 paramToStr qarg notTheEnd =
-  case qarg ^. argType of
+  case qarg ^. queryArgType of
     Normal -> name
            <> "=' + encodeURIComponent("
            <> name
@@ -187,4 +187,4 @@ paramToStr qarg notTheEnd =
            <> "[]=' + encodeURIComponent("
            <> name
            <> if notTheEnd then ") + '" else ")"
-  where name = qarg ^. argName . aName . _PathSegment
+  where name = qarg ^. queryArgName . argName . _PathSegment

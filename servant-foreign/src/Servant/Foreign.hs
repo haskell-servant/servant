@@ -15,9 +15,9 @@ module Servant.Foreign
   , FunctionName(..)
   , PathSegment(..)
     -- lenses
-  , aName
-  , aType
-  , aPath
+  , argName
+  , argType
+  , argPath
   , reqUrl
   , reqMethod
   , reqHeaders
@@ -26,8 +26,8 @@ module Servant.Foreign
   , reqFuncName
   , path
   , queryStr
-  , argName
-  , argType
+  , queryArgName
+  , queryArgType
   , headerArg
     -- prisms
   , _PathSegment

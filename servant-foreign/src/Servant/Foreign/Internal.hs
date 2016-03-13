@@ -38,14 +38,14 @@ newtype PathSegment = PathSegment { unPathSegment :: Text }
 makePrisms ''PathSegment
 
 data Arg = Arg
-  { _aName :: PathSegment
-  , _aType :: ForeignType }
+  { _argName :: PathSegment
+  , _argType :: ForeignType }
   deriving (Show, Eq)
 
 makeLenses ''Arg
 
-aPath :: Getter Arg Text
-aPath = aName . _PathSegment
+argPath :: Getter Arg Text
+argPath = argName . _PathSegment
 
 data SegmentType
   = Static PathSegment
@@ -80,8 +80,8 @@ data ArgType
 makePrisms ''ArgType
 
 data QueryArg = QueryArg
-  { _argName :: Arg
-  , _argType :: ArgType
+  { _queryArgName :: Arg
+  , _queryArgType :: ArgType
   } deriving (Eq, Show)
 
 makeLenses ''QueryArg
@@ -194,8 +194,8 @@ instance (KnownSymbol sym, HasForeignType lang ftype, HasForeign lang sublayout)
       str   = pack . symbolVal $ (Proxy :: Proxy sym)
       ftype = typeFor lang (Proxy :: Proxy ftype)
       arg   = Arg
-        { _aName = PathSegment str
-        , _aType = ftype }
+        { _argName = PathSegment str
+        , _argType = ftype }
 
 instance (Elem JSON list, HasForeignType lang a, ReflectMethod method)
   => HasForeign lang (Verb method status list a) where
@@ -219,8 +219,8 @@ instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
     where
       hname = pack . symbolVal $ (Proxy :: Proxy sym)
       arg   = Arg
-        { _aName = PathSegment hname
-        , _aType  = typeFor lang (Proxy :: Proxy a) }
+        { _argName = PathSegment hname
+        , _argType  = typeFor lang (Proxy :: Proxy a) }
       subP  = Proxy :: Proxy sublayout
 
 instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
@@ -233,8 +233,8 @@ instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
-        { _aName = PathSegment str
-        , _aType = typeFor lang (Proxy :: Proxy a) }
+        { _argName = PathSegment str
+        , _argType = typeFor lang (Proxy :: Proxy a) }
 
 instance
   (KnownSymbol sym, HasForeignType lang [a], HasForeign lang sublayout)
@@ -246,8 +246,8 @@ instance
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
-        { _aName = PathSegment str
-        , _aType = typeFor lang (Proxy :: Proxy [a]) }
+        { _argName = PathSegment str
+        , _argType = typeFor lang (Proxy :: Proxy [a]) }
 
 instance
   (KnownSymbol sym, HasForeignType lang Bool, HasForeign lang sublayout)
@@ -260,8 +260,8 @@ instance
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
-        { _aName = PathSegment str
-        , _aType = typeFor lang (Proxy :: Proxy Bool) }
+        { _argName = PathSegment str
+        , _argType = typeFor lang (Proxy :: Proxy Bool) }
 
 instance HasForeign lang Raw where
   type Foreign Raw = HTTP.Method -> Req

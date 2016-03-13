@@ -43,15 +43,15 @@ generateJQueryJSWith opts req = "\n" <>
 
   where argsStr = T.intercalate ", " args
         args = captures
-            ++ map (view $ argName . aPath) queryparams
+            ++ map (view $ queryArgName . argPath) queryparams
             ++ body
             ++ map (toValidFunctionName
                    . (<>) "header"
-                   . view (headerArg . aPath)
+                   . view (headerArg . argPath)
                    ) hs
             ++ [onSuccess, onError]
 
-        captures = map (view aPath . captureArg)
+        captures = map (view argPath . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl.path
 
@@ -80,7 +80,7 @@ generateJQueryJSWith opts req = "\n" <>
           where
             headersStr = T.intercalate ", " $ map headerStr hs
             headerStr header = "\"" <>
-              header ^. headerArg . aPath <>
+              header ^. headerArg . argPath <>
               "\": " <> toJSHeader header
 
         namespace = if (moduleName opts) == ""
