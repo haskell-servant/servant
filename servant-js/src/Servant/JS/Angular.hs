@@ -76,11 +76,11 @@ generateAngularJSWith ngOptions opts req = "\n" <>
   where argsStr = T.intercalate ", " args
         args = http
             ++ captures
-            ++ map (view $ argName . aPath) queryparams
+            ++ map (view $ queryArgName . argPath) queryparams
             ++ body
             ++ map ( toValidFunctionName
                    . (<>) "header"
-                   . view (headerArg . aPath)
+                   . view (headerArg . argPath)
                    ) hs
 
         -- If we want to generate Top Level Function, they must depend on
@@ -90,7 +90,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
                   0 -> ["$http"]
                   _ -> []
 
-        captures = map (view aPath . captureArg)
+        captures = map (view argPath . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl . path
 
@@ -116,7 +116,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
           where
             headersStr = T.intercalate ", " $ map headerStr hs
             headerStr header = "\"" <>
-              header ^. headerArg . aPath <>
+              header ^. headerArg . argPath <>
               "\": " <> toJSHeader header
 
         namespace =

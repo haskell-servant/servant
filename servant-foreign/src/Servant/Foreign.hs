@@ -10,14 +10,13 @@ module Servant.Foreign
   , Url(..)
     -- aliases
   , Path
-  , ForeignType(..)
   , Arg(..)
   , FunctionName(..)
   , PathSegment(..)
     -- lenses
-  , aName
-  , aType
-  , aPath
+  , argName
+  , argType
+  , argPath
   , reqUrl
   , reqMethod
   , reqHeaders
@@ -26,12 +25,11 @@ module Servant.Foreign
   , reqFuncName
   , path
   , queryStr
-  , argName
-  , argType
+  , queryArgName
+  , queryArgType
   , headerArg
     -- prisms
   , _PathSegment
-  , _ForeignType
   , _HeaderArg
   , _ReplaceHeaderArg
   , _Static
@@ -42,7 +40,6 @@ module Servant.Foreign
     -- rest of it
   , HasForeign(..)
   , HasForeignType(..)
-  , HasNoForeignType
   , GenerateList(..)
   , NoTypes
   , captureArg

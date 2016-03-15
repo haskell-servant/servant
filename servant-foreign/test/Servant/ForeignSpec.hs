@@ -26,20 +26,20 @@ camelCaseSpec = describe "camelCase" $ do
 
 data LangX
 
-instance HasForeignType LangX () where
-  typeFor _ _ = ForeignType "voidX"
+instance HasForeignType LangX String () where
+  typeFor _ _ _ = "voidX"
 
-instance HasForeignType LangX Int where
-  typeFor _ _ = "intX"
+instance HasForeignType LangX String Int where
+  typeFor _ _ _ = "intX"
 
-instance HasForeignType LangX Bool where
-  typeFor _ _ = "boolX"
+instance HasForeignType LangX String Bool where
+  typeFor _ _ _ = "boolX"
 
-instance OVERLAPPING_ HasForeignType LangX String where
-  typeFor _ _ = "stringX"
+instance OVERLAPPING_ HasForeignType LangX String String where
+  typeFor _ _ _ = "stringX"
 
-instance OVERLAPPABLE_ HasForeignType LangX a => HasForeignType LangX [a] where
-  typeFor lang _ = "listX of " <> typeFor lang (Proxy :: Proxy a)
+instance OVERLAPPABLE_ HasForeignType LangX String a => HasForeignType LangX String [a] where
+  typeFor lang ftype _ = "listX of " <> typeFor lang ftype (Proxy :: Proxy a)
 
 type TestApi
     = "test" :> Header "header" [String] :> QueryFlag "flag" :> Get '[JSON] Int
@@ -47,8 +47,8 @@ type TestApi
  :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] ()
  :<|> "test" :> Capture "id" Int :> Delete '[JSON] ()
 
-testApi :: [Req]
-testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy TestApi)
+testApi :: [Req String]
+testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: Proxy TestApi)
 
 listFromAPISpec :: Spec
 listFromAPISpec = describe "listFromAPI" $ do
@@ -65,7 +65,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "GET"
       , _reqHeaders    = [HeaderArg $ Arg "header" "listX of stringX"]
       , _reqBody       = Nothing
-      , _reqReturnType = "intX"
+      , _reqReturnType = Just "intX"
       , _reqFuncName   = FunctionName ["get", "test"]
       }
 
@@ -77,7 +77,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "POST"
       , _reqHeaders    = []
       , _reqBody       = Just "listX of stringX"
-      , _reqReturnType = "voidX"
+      , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["post", "test"]
       }
 
@@ -90,7 +90,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "PUT"
       , _reqHeaders    = []
       , _reqBody       = Just "stringX"
-      , _reqReturnType = "voidX"
+      , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["put", "test"]
       }
 
@@ -103,6 +103,6 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "DELETE"
       , _reqHeaders    = []
       , _reqBody       = Nothing
-      , _reqReturnType = "voidX"
+      , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["delete", "test", "by", "id"]
       }

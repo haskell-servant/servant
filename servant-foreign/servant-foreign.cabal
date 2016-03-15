@@ -46,6 +46,7 @@ library
                      , GeneralizedNewtypeDeriving
                      , MultiParamTypeClasses
                      , ScopedTypeVariables
+                     , StandaloneDeriving
                      , TemplateHaskell
                      , TypeFamilies
                      , TypeOperators
