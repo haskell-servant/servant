@@ -69,6 +69,7 @@ import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
+import           Servant.Server.Internal.RawServer
 
 
 class HasServer layout context where
@@ -363,12 +364,12 @@ instance (KnownSymbol sym, HasServer sublayout context)
 -- > server = serveDirectory "/var/www/images"
 instance HasServer Raw context where
 
-  type ServerT Raw m = Application
+  type ServerT Raw m = RawServer m
 
   route Proxy _ rawApplication = LeafRouter $ \ request respond -> do
     r <- runDelayed rawApplication
     case r of
-      Route app   -> app request (respond . Route)
+      Route app   -> (getRawServer app) request (respond . Route)
       Fail a      -> respond $ Fail a
       FailFatal e -> respond $ FailFatal e
 
