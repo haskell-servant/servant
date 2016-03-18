@@ -1107,8 +1107,6 @@ $ curl http://localhost:8081/b
 "hi"
 ```
 
-## Conclusion
-
 You're now equipped to write webservices/web-applications using
 **servant**. The rest of this document focuses on **servant-client**,
 **servant-js** and **servant-docs**.
