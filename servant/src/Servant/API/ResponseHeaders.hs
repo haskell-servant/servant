@@ -30,9 +30,6 @@ module Servant.API.ResponseHeaders
     , HList(..)
     ) where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative         ((<$>))
-#endif
 import           Data.ByteString.Char8       as BS (pack, unlines, init)
 import           Data.ByteString.Conversion  (ToByteString, toByteString',
                                               FromByteString, fromByteString)
@@ -42,6 +39,8 @@ import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types.Header   as HTTP
 
 import           Servant.API.Header          (Header (..))
+import           Prelude                     ()
+import           Prelude.Compat
 
 -- | Response Header objects. You should never need to construct one directly.
 -- Instead, use 'addHeader'.

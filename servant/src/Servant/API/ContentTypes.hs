@@ -72,11 +72,8 @@ module Servant.API.ContentTypes
     , canHandleAcceptH
     ) where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative              ((*>), (<*))
-#endif
 import           Control.Arrow                    (left)
-import           Control.Monad
+import           Control.Monad.Compat
 import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
@@ -88,7 +85,7 @@ import           Data.ByteString.Lazy             (ByteString, fromStrict,
 import qualified Data.ByteString.Lazy             as B
 import qualified Data.ByteString.Lazy.Char8       as BC
 import           Data.Maybe                       (isJust)
-import           Data.Monoid
+import           Data.Monoid.Compat
 import           Data.String.Conversions          (cs)
 import qualified Data.Text                        as TextS
 import qualified Data.Text.Encoding               as TextS
@@ -99,6 +96,8 @@ import           GHC.Generics                     (Generic)
 import qualified Network.HTTP.Media               as M
 import           Network.URI                      (escapeURIString,
                                                    isUnreserved, unEscapeString)
+import           Prelude                          ()
+import           Prelude.Compat
 
 -- * Provided content types
 data JSON deriving Typeable

@@ -10,9 +10,6 @@
 {-# LANGUAGE UndecidableInstances   #-}
 module Servant.Server.Internal.Enter where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative
-#endif
 import qualified Control.Category            as C
 #if MIN_VERSION_mtl(2,2,1)
 import           Control.Monad.Except
@@ -25,6 +22,9 @@ import qualified Control.Monad.State.Strict  as SState
 import qualified Control.Monad.Writer.Lazy   as LWriter
 import qualified Control.Monad.Writer.Strict as SWriter
 import           Data.Typeable
+import           Prelude                     ()
+import           Prelude.Compat
+
 import           Servant.API
 
 class Enter typ arg ret | typ arg -> ret, typ ret -> arg where

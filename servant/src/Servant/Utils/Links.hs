@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -101,18 +100,16 @@ module Servant.Utils.Links (
   , Or
 ) where
 
-import Data.List
-import Data.Proxy ( Proxy(..) )
-import qualified Data.Text as Text
 import qualified Data.ByteString.Char8 as BSC
-#if !MIN_VERSION_base(4,8,0)
-import Data.Monoid ( Monoid(..), (<>) )
-#else
-import Data.Monoid ( (<>) )
-#endif
-import Network.URI ( URI(..), escapeURIString, isUnreserved )
-import GHC.TypeLits ( KnownSymbol, symbolVal )
-import GHC.Exts(Constraint)
+import           Data.List
+import           Data.Monoid.Compat    ( (<>) )
+import           Data.Proxy            ( Proxy(..) )
+import qualified Data.Text             as Text
+import           GHC.Exts              (Constraint)
+import           GHC.TypeLits          ( KnownSymbol, symbolVal )
+import           Network.URI           ( URI(..), escapeURIString, isUnreserved )
+import           Prelude               ()
+import           Prelude.Compat
 
 import Web.HttpApiData
 import Servant.API.Capture ( Capture )

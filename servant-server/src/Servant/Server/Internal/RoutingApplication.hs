@@ -8,12 +8,11 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 module Servant.Server.Internal.RoutingApplication where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative                ((<$>))
-#endif
 import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived)
+import           Prelude                            ()
+import           Prelude.Compat
 import           Servant.Server.Internal.ServantErr
 
 type RoutingApplication =
