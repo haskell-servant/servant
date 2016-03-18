@@ -1,0 +1,23 @@
+resolver: nightly-2015-10-08
+
+packages:
+  - .
+  - location: ../../servant
+    extra-dep: true
+  - location: ../../servant-server
+    extra-dep: true
+  - location: ../../servant-client
+    extra-dep: true
+  - location: ../../servant-js
+    extra-dep: true
+  - location: ../../servant-docs
+    extra-dep: true
+  - location: ../../servant-foreign
+    extra-dep: true
+
+extra-deps:
+  - control-monad-omega-0.3.1
+  - markdown-unlit-0.4.0
+  - aeson-0.11.0.0
+  - fail-4.9.0.0
+  - aeson-compat-0.3.1.0
