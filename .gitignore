@@ -27,3 +27,5 @@ shell.nix
 default.nix
 doc/_build
 doc/venv
+doc/tutorial/static/api.js
+doc/tutorial/static/jq.js
