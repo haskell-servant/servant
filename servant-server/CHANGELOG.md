@@ -1,4 +1,4 @@
-HEAD
+0.5
 ----
 
 * Add `Config` machinery (https://github.com/haskell-servant/servant/pull/327).

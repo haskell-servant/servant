@@ -1,4 +1,4 @@
-HEAD
+0.5
 ----
 
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators

@@ -1,4 +1,4 @@
-HEAD
+0.5
 ----
 
 * Add `WithNamedConfig` combinator.

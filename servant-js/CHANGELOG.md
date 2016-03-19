@@ -1,4 +1,4 @@
-HEAD
+0.5
 ----
 
 * Provide new targets for code generation along with the old jQuery one: vanilla Javascript and Angular.js

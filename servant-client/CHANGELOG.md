@@ -1,4 +1,4 @@
-HEAD
+0.5
 ----
 
 * Use the `text` package instead of `String`.
