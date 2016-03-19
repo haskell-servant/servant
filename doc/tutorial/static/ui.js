@@ -58,4 +58,3 @@ function refresh()
 }
 
 window.setInterval(refresh, 200);
-

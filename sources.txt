@@ -5,7 +5,7 @@ servant-docs
 servant-foreign
 servant-js
 servant-server
-servant-examples
 servant-blaze
 servant-lucid
 servant-mock
+doc/tutorial
