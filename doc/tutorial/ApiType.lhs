@@ -287,6 +287,34 @@ response, you could write it as below:
 type UserAPI10 = "users" :> Get '[JSON] (Headers '[Header "User-Count" Integer] [User])
 ```
 
+### Basic Authentication
+
+Once you've established the basic routes and semantics of your API, it's time
+to consider protecting parts of it. Authentication and authorization are broad
+and nuanced topics; as servant began to explore this space we started small
+with one of HTTP's earliest authentication schemes: [Basic
+Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
+
+When protecting endpoints with basic authentication, we need to specify two items:
+
+1. The **realm** of authentication as per the Basic Authentictaion spec.
+2. The datatype returned by the server after authentication is verified. This
+    is usually a `User` or `Customer` type datatype.
+
+With those two items in mind, *servant* provides the following combinator:
+
+``` haskell ignore
+data BasicAuth (realm :: Symbol) (userData :: *)
+```
+
+Which is used like so:
+
+``` haskell
+type ProtectedAPI12
+     = UserAPI                             -- this is public
+ :<|> BasicAuth "my-real" User :> UserAPI2 -- this is protected by auth
+```
+
 ### Interoperability with `wai`: `Raw`
 
 Finally, we also include a combinator named `Raw` that provides an escape hatch
@@ -309,50 +337,3 @@ One example for this is if you want to serve a directory of static files along
 with the rest of your API. But you can plug in everything that is an
 `Application`, e.g. a whole web application written in any of the web
 frameworks that support `wai`.
-
-### Basic Authentication
-
-Once you've established the basic routes and semantics of your API, it's time to consider protecting parts of it. Authentication and authorization are broad and nuanced topics; as servant began to explore this space we started small with one of HTTP's earliest authentication schemes: [Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
-
-When protecting endpoints with basic authentication, we need to specify two items:
-
-1. The **realm** of authentication as per the Basic Authentictaion spec.
-2. The datatype returned by the server after authentication is verified. This is usually a `User` or `Customer` type datatype.
-
-With those two items in mind, *servant* provides the following combinator:
-
-``` haskell ignore
-data BasicAuth (realm :: Symbol) (userData :: *)
-```
-
-You can use this combinator to protect an API as follows:
-
-``` haskell
--- | Simple data type for our weather api
-data WeatherData =
-  WeatherData { temp :: Double
-              , wind :: Int
-              } deriving (Eq, FromJSON, Generic, Ord, ToJSON)
-
--- | The user data returned after basic authentication
-data User =
-  User { username :: String
-       , city     :: String
-       , state    :: String
-       , country  :: String
-       } deriving (Eq, FromJSON, Generic, Ord, ToJSON)
-
--- | parts of the API open to the public (no authentication required)
-type PublicAPI12  = "public"  :> "weather" :> Get '[JSON] WeatherData
-
--- | parts of the API protected by basic authentication
-type PrivatePAI12 = "private" :> "weather"
-                              :> Capture "city" String
-                              :> ReqBody '[JSON] WeatherData
-                              :> Post '[JSON] ()
-               :<|> "private" :> "account"
-                              :> Get '[PlainText] String
-
--- | Our full Weather API, private API protected by basic authentication.
-type ProtectedAPI12 = PublicAPI12
-                 :<|> BasicAuth "weather" User :> PrivateAPI12
