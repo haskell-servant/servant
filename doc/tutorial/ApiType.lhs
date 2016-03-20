@@ -95,10 +95,10 @@ type Get = Verb 'GET 200
 There are other predefined type synonyms for other common HTTP methods,
 such as e.g.:
 ``` haskell ignore
-data Delete = Verb 'DELETE 200
-data Patch  = Verb 'PATCH 200
-data Post   = Verb 'POST 200
-data Put    = Verb 'PUT 200
+type Delete = Verb 'DELETE 200
+type Patch  = Verb 'PATCH 200
+type Post   = Verb 'POST 200
+type Put    = Verb 'PUT 200
 ```
 
 There are also variants that do not return a 200 status code, such
