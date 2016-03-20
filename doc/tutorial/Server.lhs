@@ -60,6 +60,15 @@ executable servant-tutorial
   default-language:    Haskell2010
 ```
 
+If you're using Stack, then in your `stack.yaml` you may want to specify:
+
+```yaml
+extra-deps:
+  - aeson-0.11.1.1
+  - servant-0.5
+  - servant-server-0.5
+```
+
 Then the `app/Main.hs` file, so you can produce a binary for running locally:
 
 ```haskell
