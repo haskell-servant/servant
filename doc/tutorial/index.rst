@@ -12,7 +12,7 @@ through
   :maxdepth: 1
 
   ApiType.lhs
-  Server.lhs
+  Server.md
   Client.lhs
   Javascript.lhs
   Docs.lhs
