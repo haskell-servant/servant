@@ -287,6 +287,34 @@ response, you could write it as below:
 type UserAPI10 = "users" :> Get '[JSON] (Headers '[Header "User-Count" Integer] [User])
 ```
 
+### Basic Authentication
+
+Once you've established the basic routes and semantics of your API, it's time
+to consider protecting parts of it. Authentication and authorization are broad
+and nuanced topics; as servant began to explore this space we started small
+with one of HTTP's earliest authentication schemes: [Basic
+Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
+
+When protecting endpoints with basic authentication, we need to specify two items:
+
+1. The **realm** of authentication as per the Basic Authentictaion spec.
+2. The datatype returned by the server after authentication is verified. This
+    is usually a `User` or `Customer` type datatype.
+
+With those two items in mind, *servant* provides the following combinator:
+
+``` haskell ignore
+data BasicAuth (realm :: Symbol) (userData :: *)
+```
+
+Which is used like so:
+
+``` haskell
+type ProtectedAPI12
+     = UserAPI                             -- this is public
+ :<|> BasicAuth "my-real" User :> UserAPI2 -- this is protected by auth
+```
+
 ### Interoperability with `wai`: `Raw`
 
 Finally, we also include a combinator named `Raw` that provides an escape hatch
