@@ -8,7 +8,76 @@ type. Can we have a webservice already?
 Equipped with some basic knowledge about the way we represent APIs, let's now
 write our first webservice.
 
-The source for this tutorial section is a literate haskell file, so first we
+## Setting up our project
+
+So that you don't have to guess too much on the Cabal file, here's a minimal example file. You can run the main function provided in the following examples within the `Server` module without using the separate executable, but these are provided if you wanted to split that out. You can get a layout that is most of the way to what you want with `stack new servant-tutorial new-template`. Here's the Cabal file first:
+
+```
+-- servant-tutorial.cabal
+name:                servant-tutorial
+version:             0.1.0.0
+synopsis:            Initial project template from stack
+description:         Please see README.md
+license:             BSD3
+license-file:        LICENSE
+author:              You!
+maintainer:          allyou@yourplace.com
+copyright:           2016, Still You!
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Server
+  build-depends:       base >= 4.7 && < 5
+                     , base-compat
+                     , aeson
+                     , attoparsec
+                     , blaze-html
+                     , blaze-markup
+                     , bytestring
+                     , directory
+                     , http-media
+                     , lucid
+                     , mtl
+                     , servant >= 0.5
+                     , servant-server
+                     , string-conversions
+                     , text
+                     , time
+                     , wai
+                     , warp
+  default-language:    Haskell2010
+
+executable servant-tutorial
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , servant-tutorial
+                     , warp
+  default-language:    Haskell2010
+```
+
+Then the `app/Main.hs` file, so you can produce a binary for running locally:
+
+```haskell
+-- app/Main.hs
+module Main where
+
+import Server (app)
+import Network.Wai.Handler.Warp (run)
+
+main :: IO ()
+main = run 8081 app
+```
+
+Note that this will run whatever app is named `app`. The final result of constructing a Servant server is a WAI app which can be run directly with Warp's runner.
+
+## Writing our Server
+
+The source for this tutorial section is a literate haskell file. To start our Server module, we
 need to have some language extensions and imports:
 
 ``` haskell
