@@ -8,7 +8,15 @@ type. Can we have a webservice already?
 Equipped with some basic knowledge about the way we represent APIs, let's now
 write our first webservice.
 
-The source for this tutorial section is a literate haskell file, so first we
+## Setting up our project
+
+Don't forget to look at the [cabal file included with this example project](tutorial.cabal). You can run the main function provided in the following examples within the `Server` module without using a separate executable.
+
+If you're using Stack, then in your `stack.yaml` you may want to specify version 0.11.1.1 for `aeson`, and version 0.5 for `servant` and `servant-server` in your `extra-deps`.
+
+## Writing our Server
+
+The source for this tutorial section is a literate haskell file. To start our Server module, we
 need to have some language extensions and imports:
 
 ``` haskell
@@ -151,7 +159,7 @@ main = run 8081 app1
 You can put this all into a file or just grab [servant's
 repo](http://github.com/haskell-servant/servant) and look at the
 *doc/tutorial* directory. This code (the source of this web page) is in
-*doc/tutorial/Server.lhs*.
+*doc/tutorial/Server.md*.
 
 If you run it, you can go to `http://localhost:8081/users` in your browser or
 query it with curl and you see:
