@@ -10,7 +10,7 @@ write our first webservice.
 
 ## Setting up our project
 
-Don't forget to look at the [cabal file included with this example project](tutorial.cabal). You can run the main function provided in the following examples within the `Server` module without using a separate executable.
+Don't forget to look at the [cabal file included with this example project](doc/tutorial/tutorial.cabal). You can run the main function provided in the following examples within the `Server` module without using a separate executable.
 
 If you're using Stack, then in your `stack.yaml` you may want to specify version 0.11.1.1 for `aeson`, and version 0.5 for `servant` and `servant-server` in your `extra-deps`.
 
@@ -159,7 +159,7 @@ main = run 8081 app1
 You can put this all into a file or just grab [servant's
 repo](http://github.com/haskell-servant/servant) and look at the
 *doc/tutorial* directory. This code (the source of this web page) is in
-*doc/tutorial/Server.md*.
+*doc/tutorial/Server.lhs*.
 
 If you run it, you can go to `http://localhost:8081/users` in your browser or
 query it with curl and you see:
