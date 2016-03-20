@@ -62,7 +62,7 @@ executable servant-tutorial
 
 If you're using Stack, then in your `stack.yaml` you may want to specify:
 
-```yaml
+``` yaml
 extra-deps:
   - aeson-0.11.1.1
   - servant-0.5
@@ -71,7 +71,7 @@ extra-deps:
 
 Then the `app/Main.hs` file, so you can produce a binary for running locally:
 
-```haskell
+``` haskell
 -- app/Main.hs
 module Main where
 
@@ -229,7 +229,7 @@ main = run 8081 app1
 You can put this all into a file or just grab [servant's
 repo](http://github.com/haskell-servant/servant) and look at the
 *doc/tutorial* directory. This code (the source of this web page) is in
-*doc/tutorial/Server.lhs*.
+*doc/tutorial/Server.md*.
 
 If you run it, you can go to `http://localhost:8081/users` in your browser or
 query it with curl and you see:
