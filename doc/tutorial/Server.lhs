@@ -32,7 +32,7 @@ library
   exposed-modules:     Server
   build-depends:       base >= 4.7 && < 5
                      , base-compat
-                     , aeson
+                     , aeson >= 0.11 && < 0.12
                      , attoparsec
                      , blaze-html
                      , blaze-markup
@@ -41,7 +41,7 @@ library
                      , http-media
                      , lucid
                      , mtl
-                     , servant >= 0.5
+                     , servant >= 0.5 && 0.6
                      , servant-server
                      , string-conversions
                      , text
