@@ -202,8 +202,8 @@ captureSpec = do
         response <- get "/2"
         liftIO $ decode' (simpleBody response) `shouldBe` Just tweety
 
-      it "returns 404 if the decoding fails" $ do
-        get "/notAnInt" `shouldRespondWith` 404
+      it "returns 400 if the decoding fails" $ do
+        get "/notAnInt" `shouldRespondWith` 400
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))

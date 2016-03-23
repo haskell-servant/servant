@@ -127,7 +127,7 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout context)
         route (Proxy :: Proxy sublayout)
               context
               (addCapture d $ case parseUrlPieceMaybe first :: Maybe a of
-                 Nothing -> return $ Fail err404
+                 Nothing -> return $ Fail err400
                  Just v  -> return $ Route v
               )
 
