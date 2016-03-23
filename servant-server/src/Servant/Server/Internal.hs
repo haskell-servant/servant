@@ -99,9 +99,6 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b
 
-captured :: FromHttpApiData a => proxy (Capture sym a) -> Text -> Maybe a
-captured _ = parseUrlPieceMaybe
-
 -- | If you use 'Capture' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by the 'Capture'.
@@ -129,12 +126,10 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout context)
     DynamicRouter $ \ first ->
         route (Proxy :: Proxy sublayout)
               context
-              (addCapture d $ case captured captureProxy first of
+              (addCapture d $ case parseUrlPieceMaybe first :: Maybe a of
                  Nothing -> return $ Fail err404
                  Just v  -> return $ Route v
               )
-    where
-      captureProxy = Proxy :: Proxy (Capture capture a)
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
