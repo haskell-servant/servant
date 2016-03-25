@@ -112,7 +112,7 @@ err305 = ServantErr { errHTTPCode = 305
 -- Example:
 --
 -- > failingHandler :: ExceptT ServantErr IO ()
--- > failingHandler = throwErr $ err307
+-- > failingHandler = throwErr err307
 --
 err307 :: ServantErr
 err307 = ServantErr { errHTTPCode = 307
@@ -210,7 +210,7 @@ err405 = ServantErr { errHTTPCode = 405
 -- Example:
 --
 -- > failingHandler :: ExceptT ServantErr IO ()
--- > failingHandler = throwErr $ err406
+-- > failingHandler = throwErr err406
 --
 err406 :: ServantErr
 err406 = ServantErr { errHTTPCode = 406
@@ -224,7 +224,7 @@ err406 = ServantErr { errHTTPCode = 406
 -- Example:
 --
 -- > failingHandler :: ExceptT ServantErr IO ()
--- > failingHandler = throwErr $ err407
+-- > failingHandler = throwErr err407
 --
 err407 :: ServantErr
 err407 = ServantErr { errHTTPCode = 407
@@ -266,7 +266,7 @@ err410 = ServantErr { errHTTPCode = 410
 -- Example:
 --
 -- > failingHandler :: ExceptT ServantErr IO ()
--- > failingHandler = throwErr $ err411
+-- > failingHandler = throwErr err411
 --
 err411 :: ServantErr
 err411 = ServantErr { errHTTPCode = 411
@@ -308,7 +308,7 @@ err413 = ServantErr { errHTTPCode = 413
 -- Example:
 --
 -- > failingHandler :: ExceptT ServantErr IO ()
--- > failingHandler = throwErr $ err414 { errBody = "Maxiumu length is 64." }
+-- > failingHandler = throwErr $ err414 { errBody = "Maximum length is 64." }
 --
 err414 :: ServantErr
 err414 = ServantErr { errHTTPCode = 414
@@ -364,7 +364,7 @@ err417 = ServantErr { errHTTPCode = 417
 -- Example:
 --
 -- > failingHandler :: ExceptT ServantErr IO ()
--- > failingHandler = throwErr $ err300 { errBody = "Exception in module A.B.C:55.  Have a great day!" }
+-- > failingHandler = throwErr $ err500 { errBody = "Exception in module A.B.C:55.  Have a great day!" }
 --
 err500 :: ServantErr
 err500 = ServantErr { errHTTPCode = 500
