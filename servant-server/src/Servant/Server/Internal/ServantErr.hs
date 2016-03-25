@@ -23,6 +23,13 @@ responseServantErr ServantErr{..} = responseLBS status errHeaders errBody
   where
     status = HTTP.mkStatus errHTTPCode (BS.pack errReasonPhrase)
 
+-- | 'err300' Multiple Choices
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err300 { errBody = "I can't choose." }
+--
 err300 :: ServantErr
 err300 = ServantErr { errHTTPCode = 300
                     , errReasonPhrase = "Multiple Choices"
@@ -30,6 +37,13 @@ err300 = ServantErr { errHTTPCode = 300
                     , errHeaders = []
                     }
 
+-- | 'err301' Moved Permanently
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr err301
+--
 err301 :: ServantErr
 err301 = ServantErr { errHTTPCode = 301
                     , errReasonPhrase = "Moved Permanently"
@@ -37,6 +51,13 @@ err301 = ServantErr { errHTTPCode = 301
                     , errHeaders = []
                     }
 
+-- | 'err302' Found
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr err302
+--
 err302 :: ServantErr
 err302 = ServantErr { errHTTPCode = 302
                     , errReasonPhrase = "Found"
@@ -44,6 +65,13 @@ err302 = ServantErr { errHTTPCode = 302
                     , errHeaders = []
                     }
 
+-- | 'err303' See Other
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr err303
+--
 err303 :: ServantErr
 err303 = ServantErr { errHTTPCode = 303
                     , errReasonPhrase = "See Other"
@@ -51,6 +79,13 @@ err303 = ServantErr { errHTTPCode = 303
                     , errHeaders = []
                     }
 
+-- | 'err304' Not Modified
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr err304
+--
 err304 :: ServantErr
 err304 = ServantErr { errHTTPCode = 304
                     , errReasonPhrase = "Not Modified"
@@ -58,6 +93,13 @@ err304 = ServantErr { errHTTPCode = 304
                     , errHeaders = []
                     }
 
+-- | 'err305' Use Proxy
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr err305
+--
 err305 :: ServantErr
 err305 = ServantErr { errHTTPCode = 305
                     , errReasonPhrase = "Use Proxy"
@@ -65,6 +107,13 @@ err305 = ServantErr { errHTTPCode = 305
                     , errHeaders = []
                     }
 
+-- | 'err307' Temporary Redirect
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err307
+--
 err307 :: ServantErr
 err307 = ServantErr { errHTTPCode = 307
                     , errReasonPhrase = "Temporary Redirect"
@@ -72,6 +121,13 @@ err307 = ServantErr { errHTTPCode = 307
                     , errHeaders = []
                     }
 
+-- | 'err400' Bad Request
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err400 { errBody = "Your request makes no sense to me." }
+--
 err400 :: ServantErr
 err400 = ServantErr { errHTTPCode = 400
                     , errReasonPhrase = "Bad Request"
@@ -79,6 +135,13 @@ err400 = ServantErr { errHTTPCode = 400
                     , errHeaders = []
                     }
 
+-- | 'err401' Unauthorized
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err401 { errBody = "Your credentials are invalid." }
+--
 err401 :: ServantErr
 err401 = ServantErr { errHTTPCode = 401
                     , errReasonPhrase = "Unauthorized"
@@ -86,6 +149,13 @@ err401 = ServantErr { errHTTPCode = 401
                     , errHeaders = []
                     }
 
+-- | 'err402' Payment Required
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err402 { errBody = "You have 0 credits. Please give me $$$." }
+--
 err402 :: ServantErr
 err402 = ServantErr { errHTTPCode = 402
                     , errReasonPhrase = "Payment Required"
@@ -93,6 +163,13 @@ err402 = ServantErr { errHTTPCode = 402
                     , errHeaders = []
                     }
 
+-- | 'err403' Forbidden
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err403 { errBody = "Please login first." }
+--
 err403 :: ServantErr
 err403 = ServantErr { errHTTPCode = 403
                     , errReasonPhrase = "Forbidden"
@@ -100,6 +177,13 @@ err403 = ServantErr { errHTTPCode = 403
                     , errHeaders = []
                     }
 
+-- | 'err404' Not Found
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err404 { errBody = "(╯°□°）╯︵ ┻━┻)." }
+--
 err404 :: ServantErr
 err404 = ServantErr { errHTTPCode = 404
                     , errReasonPhrase = "Not Found"
@@ -107,6 +191,13 @@ err404 = ServantErr { errHTTPCode = 404
                     , errHeaders = []
                     }
 
+-- | 'err405' Method Not Allowed
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err405 { errBody = "Your account privileges does not allow for this.  Please pay $$$." }
+--
 err405 :: ServantErr
 err405 = ServantErr { errHTTPCode = 405
                     , errReasonPhrase = "Method Not Allowed"
@@ -114,6 +205,13 @@ err405 = ServantErr { errHTTPCode = 405
                     , errHeaders = []
                     }
 
+-- | 'err406' Not Acceptable
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err406
+--
 err406 :: ServantErr
 err406 = ServantErr { errHTTPCode = 406
                     , errReasonPhrase = "Not Acceptable"
@@ -121,6 +219,13 @@ err406 = ServantErr { errHTTPCode = 406
                     , errHeaders = []
                     }
 
+-- | 'err407' Proxy Authentication Required
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err407
+--
 err407 :: ServantErr
 err407 = ServantErr { errHTTPCode = 407
                     , errReasonPhrase = "Proxy Authentication Required"
@@ -128,6 +233,13 @@ err407 = ServantErr { errHTTPCode = 407
                     , errHeaders = []
                     }
 
+-- | 'err409' Conflict
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err409 { errBody = "Transaction conflicts with 59879cb56c7c159231eeacdd503d755f7e835f74" }
+--
 err409 :: ServantErr
 err409 = ServantErr { errHTTPCode = 409
                     , errReasonPhrase = "Conflict"
@@ -135,6 +247,13 @@ err409 = ServantErr { errHTTPCode = 409
                     , errHeaders = []
                     }
 
+-- | 'err410' Gone
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err410 { errBody = "I know it was here at some point, but.. I blame bad luck." }
+--
 err410 :: ServantErr
 err410 = ServantErr { errHTTPCode = 410
                     , errReasonPhrase = "Gone"
@@ -142,6 +261,13 @@ err410 = ServantErr { errHTTPCode = 410
                     , errHeaders = []
                     }
 
+-- | 'err411' Length Required
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err411
+--
 err411 :: ServantErr
 err411 = ServantErr { errHTTPCode = 411
                     , errReasonPhrase = "Length Required"
@@ -149,6 +275,13 @@ err411 = ServantErr { errHTTPCode = 411
                     , errHeaders = []
                     }
 
+-- | 'err412' Precondition Failed
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err412 { errBody = "Precondition fail: x < 42 && y > 57" }
+--
 err412 :: ServantErr
 err412 = ServantErr { errHTTPCode = 412
                     , errReasonPhrase = "Precondition Failed"
@@ -156,6 +289,13 @@ err412 = ServantErr { errHTTPCode = 412
                     , errHeaders = []
                     }
 
+-- | 'err413' Request Entity Too Large
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err413 { errBody = "Request exceeded 64k." }
+--
 err413 :: ServantErr
 err413 = ServantErr { errHTTPCode = 413
                     , errReasonPhrase = "Request Entity Too Large"
@@ -163,6 +303,13 @@ err413 = ServantErr { errHTTPCode = 413
                     , errHeaders = []
                     }
 
+-- | 'err414' Request-URI Too Large
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err414 { errBody = "Maxiumu length is 64." }
+--
 err414 :: ServantErr
 err414 = ServantErr { errHTTPCode = 414
                     , errReasonPhrase = "Request-URI Too Large"
@@ -170,6 +317,13 @@ err414 = ServantErr { errHTTPCode = 414
                     , errHeaders = []
                     }
 
+-- | 'err415' Unsupported Media Type
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err415 { errBody = "Supported media types:  gif, png" }
+--
 err415 :: ServantErr
 err415 = ServantErr { errHTTPCode = 415
                     , errReasonPhrase = "Unsupported Media Type"
@@ -177,6 +331,13 @@ err415 = ServantErr { errHTTPCode = 415
                     , errHeaders = []
                     }
 
+-- | 'err416' Request range not satisfiable
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err416 { errBody = "Valid range is [0, 424242]." }
+--
 err416 :: ServantErr
 err416 = ServantErr { errHTTPCode = 416
                     , errReasonPhrase = "Request range not satisfiable"
@@ -184,6 +345,13 @@ err416 = ServantErr { errHTTPCode = 416
                     , errHeaders = []
                     }
 
+-- | 'err417' Expectation Failed
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err417 { errBody = "I found a quux in the request.  This isn't going to work." }
+--
 err417 :: ServantErr
 err417 = ServantErr { errHTTPCode = 417
                     , errReasonPhrase = "Expectation Failed"
@@ -191,6 +359,13 @@ err417 = ServantErr { errHTTPCode = 417
                     , errHeaders = []
                     }
 
+-- | 'err500' Internal Server Error
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err300 { errBody = "Exception in module A.B.C:55.  Have a great day!" }
+--
 err500 :: ServantErr
 err500 = ServantErr { errHTTPCode = 500
                     , errReasonPhrase = "Internal Server Error"
@@ -198,6 +373,13 @@ err500 = ServantErr { errHTTPCode = 500
                     , errHeaders = []
                     }
 
+-- | 'err501' Not Implemented
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err501 { errBody = "/v1/foo is not supported with quux in the request." }
+--
 err501 :: ServantErr
 err501 = ServantErr { errHTTPCode = 501
                     , errReasonPhrase = "Not Implemented"
@@ -205,6 +387,13 @@ err501 = ServantErr { errHTTPCode = 501
                     , errHeaders = []
                     }
 
+-- | 'err502' Bad Gateway
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err502 { errBody = "Tried gateway foo, bar, and baz.  None responded." }
+--
 err502 :: ServantErr
 err502 = ServantErr { errHTTPCode = 502
                     , errReasonPhrase = "Bad Gateway"
@@ -212,6 +401,13 @@ err502 = ServantErr { errHTTPCode = 502
                     , errHeaders = []
                     }
 
+-- | 'err503' Service Unavailable
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err503 { errBody = "We're rewriting in PHP." }
+--
 err503 :: ServantErr
 err503 = ServantErr { errHTTPCode = 503
                     , errReasonPhrase = "Service Unavailable"
@@ -219,6 +415,13 @@ err503 = ServantErr { errHTTPCode = 503
                     , errHeaders = []
                     }
 
+-- | 'err504' Gateway Time-out
+--
+-- Example:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err504 { errBody = "Backend foobar did not respond in 5 seconds." }
+--
 err504 :: ServantErr
 err504 = ServantErr { errHTTPCode = 504
                     , errReasonPhrase = "Gateway Time-out"
@@ -226,6 +429,13 @@ err504 = ServantErr { errHTTPCode = 504
                     , errHeaders = []
                     }
 
+-- | 'err505' HTTP Version not supported
+--
+-- Example usage:
+--
+-- > failingHandler :: ExceptT ServantErr IO ()
+-- > failingHandler = throwErr $ err505 { errBody = "I support HTTP/4.0 only." }
+--
 err505 :: ServantErr
 err505 = ServantErr { errHTTPCode = 505
                     , errReasonPhrase = "HTTP Version not supported"
