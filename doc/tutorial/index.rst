@@ -21,3 +21,4 @@ through
   Client.lhs
   Javascript.lhs
   Docs.lhs
+  Authentication.lhs
