@@ -11,6 +11,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     ApiType
+                     , Authentication
                      , Client
                      , Docs
                      , Javascript
@@ -23,6 +24,7 @@ library
                      , blaze-html
                      , directory
                      , blaze-markup
+                     , containers
                      , servant == 0.5.*
                      , servant-server == 0.5.*
                      , servant-client == 0.5.*

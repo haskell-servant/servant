@@ -44,26 +44,33 @@ You can use this combinator to protect an API as follows:
 
 module Authentication where
 
+import Control.Monad.Trans.Except       (ExceptT, throwE)
 import Data.Aeson                       (ToJSON)
+import Data.ByteString                  (ByteString)
+import Data.Map                         (Map, fromList)
+import Data.Monoid                      ((<>))
+import qualified Data.Map            as Map
 import Data.Proxy                       (Proxy (Proxy))
 import Data.Text                        (Text)
 import GHC.Generics                     (Generic)
+import Network.Wai                      (Request, requestHeaders)
 import Network.Wai.Handler.Warp         (run)
 import Servant.API                      ((:<|>) ((:<|>)), (:>), BasicAuth,
                                           Get, JSON)
 import Servant.API.BasicAuth            (BasicAuthData (BasicAuthData))
-import Servant.API.Experimental         (AuthProtect)
+import Servant.API.Experimental.Auth    (AuthProtect)
 import Servant.Server                   (BasicAuthCheck (BasicAuthCheck),
                                          BasicAuthResult( Authorized
                                                         , Unauthorized
                                                         ),
-                                         Context ((:.), EmptyContext), Server,
-                                         serveWithContext)
+                                         Context ((:.), EmptyContext),
+                                         err401, err403, errBody, Server,
+                                         ServantErr, serveWithContext)
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
                                          mkAuthHandler)
-import Servant.Server.Experimenta.Auth()
+import Servant.Server.Experimental.Auth()
 
-- | private data that needs protection
+-- | private data that needs protection
 newtype PrivateData = PrivateData { ssshhh :: Text }
   deriving (Eq, Show, Generic)
 
@@ -168,8 +175,8 @@ And now we create the `Context` used by servant to find `BasicAuthCheck`:
 -- Basic Authentication requires a Context Entry with the 'BasicAuthCheck' value
 -- tagged with "foo-tag" This context is then supplied to 'server' and threaded 
 -- to the BasicAuth HasServer handlers.
-serverContext :: Context (BasicAuthCheck User ': '[])
-serverContext = authCheck :. EmptyContext
+basicAuthServerContext :: Context (BasicAuthCheck User ': '[])
+basicAuthServerContext = authCheck :. EmptyContext
 ```
 
 We're now ready to write our `server` method that will tie everything together:
@@ -178,8 +185,8 @@ We're now ready to write our `server` method that will tie everything together:
 -- | an implementation of our server. Here is where we pass all the handlers to our endpoints.
 -- In particular, for the BasicAuth protected handler, we need to supply a function
 -- that takes 'User' as an argument.
-server :: Server BasicAPI
-server =
+basicAuthServer :: Server BasicAPI
+basicAuthServer =
   let publicAPIHandler = return [PublicData "foo", PublicData "bar"]
       privateAPIHandler (user :: User) = return (PrivateData (userName user))
   in publicAPIHandler :<|> privateAPIHandler
@@ -190,7 +197,10 @@ Finally, our main method and a sample session working with our server:
 ```haskell
 -- | hello, server!
 basicAuthMain :: IO ()
-basicAuthMain = run 8080 (serveWithContext basicAuthApi serverContext server)
+basicAuthMain = run 8080 (serveWithContext basicAuthApi
+                                           basicAuthServerContext
+                                           basicAuthServer
+                         )
 
 {- Sample session
 
@@ -251,36 +261,36 @@ contain a key from which we can lookup a `User`.
 ```haskell
 -- | A user type that we "fetch from the database" after
 -- performing authentication
-newtype User = User { unUser :: Text }
+newtype Account = Account { unAccount :: Text }
 
 -- | A (pure) database mapping keys to users.
-database :: Map ByteString User
-database = fromList [ ("key1", User "Anne Briggs")
-                    , ("key2", User "Bruce Cockburn")
-                    , ("key3", User "Ghédalia Tazartès")
+database :: Map ByteString Account
+database = fromList [ ("key1", Account "Anne Briggs")
+                    , ("key2", Account "Bruce Cockburn")
+                    , ("key3", Account "Ghédalia Tazartès")
                     ]
 
--- | A method that, when given a password, will return a User.
+-- | A method that, when given a password, will return a Account.
 -- This is our bespoke (and bad) authentication logic.
-lookupUser :: ByteString -> ExceptT ServantErr IO User
-lookupUser key = case Map.lookup key database of
+lookupAccount :: ByteString -> ExceptT ServantErr IO Account
+lookupAccount key = case Map.lookup key database of
   Nothing -> throwE (err403 { errBody = "Invalid Cookie" })
   Just usr -> return usr
 ```
 
 For generalized authentication, servant exposes the `AuthHandler` type,
 which is used to wrap the `Request -> ExceptT IO ServantErr user` logic. Let's
-create a value of type `AuthHandler Request User` using the above `lookupUser`
+create a value of type `AuthHandler Request Account` using the above `lookupAccount`
 method:
 
 ```haskell
--- | The auth handler wraps a function from Request -> ExceptT ServantErr IO User
--- we look for a Cookie and pass the value of the cookie to `lookupUser`.
-authHandler :: AuthHandler Request User
+-- | The auth handler wraps a function from Request -> ExceptT ServantErr IO Account
+-- we look for a Cookie and pass the value of the cookie to `lookupAccount`.
+authHandler :: AuthHandler Request Account
 authHandler =
   let handler req = case lookup "servant-auth-cookie" (requestHeaders req) of
         Nothing -> throwE (err401 { errBody = "Missing auth header" })
-        Just authCookieKey -> lookupUser authCookieKey
+        Just authCookieKey -> lookupAccount authCookieKey
   in mkAuthHandler handler
 ```
 
@@ -293,22 +303,22 @@ type AuthGenAPI = "private" :> AuthProtect "cookie-auth" :> PrivateAPI
              :<|> "public"  :> PublicAPI
 
 -- | A value holding our type-level API
-genAuthApi :: Proxy AuthGenAPI
-genAuthApi = Proxy
+genAuthAPI :: Proxy AuthGenAPI
+genAuthAPI = Proxy
 ```
 
 Now we need to bring everything together for the server. We have the
-`AuthHandler Request User` value and an `AuthProtected` endpoint. To bind these
+`AuthHandler Request Account` value and an `AuthProtected` endpoint. To bind these
 together, we need to provide a [Type Family](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/type-families.html)
 instance that tells the `HasServer` instance that our `Context` will supply a
-`User` (via `AuthHandler Request User`) and that downstream combinators will
-have access to this `User` value (or an error will be thrown if authentication
+`Account` (via `AuthHandler Request Account`) and that downstream combinators will
+have access to this `Account` value (or an error will be thrown if authentication
 fails).
 
 ```haskell
 
 -- | We need to specify the data returned after authentication
-type instance AuthServerData (AuthProtect "cookie-auth") = User
+type instance AuthServerData (AuthProtect "cookie-auth") = Account
 ```
 
 Note that we specify the type-level tag `"cookie-auth"` when defining the type
@@ -322,19 +332,19 @@ value of type `Server AuthGenAPI`, in addition to the server value:
 -- | The context that will be made available to request handlers. We supply the 
 -- "cookie-auth"-tagged request handler defined above, so that the 'HasServer' instance
 -- of 'AuthProtect' can extract the handler and run it on the request.
-serverContext :: Context (AuthHandler Request User ': '[])
-serverContext = authHandler :. EmptyContext
+genAuthServerContext :: Context (AuthHandler Request Account ': '[])
+genAuthServerContext = authHandler :. EmptyContext
 
 -- | Our API, where we provide all the author-supplied handlers for each end
--- point. Note that 'privateDataFunc' is a function that takes 'User' as an
+-- point. Note that 'privateDataFunc' is a function that takes 'Account' as an
 -- argument. We dont' worry about the authentication instrumentation here,
 -- that is taken care of by supplying context
-server :: Server AuthGenAPI
-server =
-  let privateDataFunc (User name) =
-          return [PrivateData ("this is a secret: " <> name)]
-      publicData = [PublicData "this is a public piece of data"]
-  in  privateDataFunc :<|> return publicData
+genAuthServer :: Server AuthGenAPI
+genAuthServer =
+  let privateDataFunc (Account name) =
+          return (PrivateData ("this is a secret: " <> name))
+      publicData = return [PublicData "this is a public piece of data"]
+  in  privateDataFunc :<|> publicData
 ```
 
 We're now ready to start our server (and provide a sample session)!
@@ -342,7 +352,7 @@ We're now ready to start our server (and provide a sample session)!
 ```haskell
 -- | run our server
 genAuthMain :: IO ()
-genAuthMain = run 8080 (serveWithContext api serverContext server)
+genAuthMain = run 8080 (serveWithContext genAuthAPI genAuthServerContext genAuthServer)
 
 {- Sample Session:
 
