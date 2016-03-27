@@ -46,7 +46,7 @@ library
     Servant.API.WithNamedContext
     Servant.Utils.Links
   build-depends:
-      base >=4.7 && <5
+      base >= 4.7 && < 4.9
     , base-compat >= 0.9
     , aeson >= 0.7
     , attoparsec >= 0.12
