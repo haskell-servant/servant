@@ -1,5 +1,10 @@
+on master
+---------
+
+* Query parameters that can't be parsed result in a `400` (was `404`).
+
 0.5
-----
+---
 
 * Add `Config` machinery (https://github.com/haskell-servant/servant/pull/327).
   This is a breaking change, as the signatures of both `route`, `serve` and the
