@@ -53,10 +53,9 @@ import           Servant.Common.Req
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getAllBooks :: ExceptT String IO [Book]
--- > postNewBook :: Book -> ExceptT String IO Book
--- > (getAllBooks :<|> postNewBook) = client myApi host manager
--- >   where host = BaseUrl Http "localhost" 8080
+-- > getAllBooks :: ClientM [Book]
+-- > postNewBook :: Book -> ClientM Book
+-- > (getAllBooks :<|> postNewBook) = client myApi
 client :: HasClient layout => Proxy layout -> Client layout
 client p = clientWithRoute p defReq
 
@@ -78,10 +77,9 @@ class HasClient layout where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getAllBooks :: ExceptT String IO [Book]
--- > postNewBook :: Book -> ExceptT String IO Book
--- > (getAllBooks :<|> postNewBook) = client myApi host manager
--- >   where host = BaseUrl Http "localhost" 8080
+-- > getAllBooks :: ClientM [Book]
+-- > postNewBook :: Book -> ClientM Book
+-- > (getAllBooks :<|> postNewBook) = client myApi
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
   type Client (a :<|> b) = Client a :<|> Client b
   clientWithRoute Proxy req =
@@ -104,9 +102,8 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBook :: Text -> ExceptT String IO Book
--- > getBook = client myApi host manager
--- >   where host = BaseUrl Http "localhost" 8080
+-- > getBook :: Text -> ClientM Book
+-- > getBook = client myApi
 -- > -- then you can just use "getBook" to query that endpoint
 instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
       => HasClient (Capture capture a :> sublayout) where
@@ -182,9 +179,8 @@ instance OVERLAPPING_
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > viewReferer :: Maybe Referer -> ExceptT String IO Book
--- > viewReferer = client myApi host
--- >   where host = BaseUrl Http "localhost" 8080
+-- > viewReferer :: Maybe Referer -> ClientM Book
+-- > viewReferer = client myApi
 -- > -- then you can just use "viewRefer" to query that endpoint
 -- > -- specifying Nothing or e.g Just "http://haskell.org/" as arguments
 instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
@@ -233,9 +229,8 @@ instance HasClient sublayout
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: Maybe Text -> ExceptT String IO [Book]
--- > getBooksBy = client myApi host
--- >   where host = BaseUrl Http "localhost" 8080
+-- > getBooksBy :: Maybe Text -> ClientM [Book]
+-- > getBooksBy = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
@@ -278,9 +273,8 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: [Text] -> ExceptT String IO [Book]
--- > getBooksBy = client myApi host
--- >   where host = BaseUrl Http "localhost" 8080
+-- > getBooksBy :: [Text] -> ClientM [Book]
+-- > getBooksBy = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy []' for all books
 -- > -- 'getBooksBy ["Isaac Asimov", "Robert A. Heinlein"]'
@@ -318,9 +312,8 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooks :: Bool -> ExceptT String IO [Book]
--- > getBooks = client myApi host
--- >   where host = BaseUrl Http "localhost" 8080
+-- > getBooks :: Bool -> ClientM [Book]
+-- > getBooks = client myApi
 -- > -- then you can just use "getBooks" to query that endpoint.
 -- > -- 'getBooksBy False' for all books
 -- > -- 'getBooksBy True' to only get _already published_ books
@@ -365,9 +358,8 @@ instance HasClient Raw where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > addBook :: Book -> ExceptT String IO Book
--- > addBook = client myApi host manager
--- >   where host = BaseUrl Http "localhost" 8080
+-- > addBook :: Book -> ClientM Book
+-- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
 instance (MimeRender ct a, HasClient sublayout)
       => HasClient (ReqBody (ct ': cts) a :> sublayout) where
