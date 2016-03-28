@@ -30,17 +30,16 @@ import           Control.Concurrent         (forkIO, killThread, ThreadId)
 import           Control.Exception          (bracket)
 import           Control.Monad.Trans.Except (ExceptT, throwE)
 import           Data.Aeson
+import qualified Data.ByteString.Lazy       as BS
 import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
 import qualified Data.Text                  as T
 import           GHC.Generics               (Generic)
-import           GHC.TypeLits
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
-import           Network.HTTP.Types         (Status (..), badRequest400,
-                                             methodGet, ok200, status400)
+import qualified Network.HTTP.Types         as HTTP
 import           Network.Socket
 import           Network.Wai                (Application, Request,
                                              requestHeaders, responseLBS)
@@ -120,6 +119,53 @@ type Api =
 api :: Proxy Api
 api = Proxy
 
+getGet               :: SCR.ClientM Person
+getDeleteEmpty       :: SCR.ClientM NoContent
+getCapture           :: String
+                     -> SCR.ClientM Person
+getBody              :: Person
+                     -> SCR.ClientM Person
+getQueryParam        :: Maybe String
+                     -> SCR.ClientM Person
+getQueryParams       :: [String]
+                     -> SCR.ClientM [Person]
+getQueryFlag         :: Bool
+                     -> SCR.ClientM Bool
+getRawSuccess        :: HTTP.Method
+                     -> SCR.ClientM ( Int
+                                    , BS.ByteString
+                                    , MediaType
+                                    , [HTTP.Header]
+                                    , C.Response BS.ByteString )
+getRawFailure        :: HTTP.Method
+                     -> SCR.ClientM ( Int
+                                    , BS.ByteString
+                                    , MediaType
+                                    , [HTTP.Header]
+                                    , C.Response BS.ByteString )
+getMultiple          :: String
+                     -> Maybe Int
+                     -> Bool
+                     -> [(String, [Rational])]
+                     -> SCR.ClientM ( String
+                                    , Maybe Int
+                                    , Bool
+                                    , [(String, [Rational])] )
+getRespHeaders       :: SCR.ClientM (Headers TestHeaders Bool)
+getDeleteContentType :: SCR.ClientM NoContent
+getGet
+    :<|> getDeleteEmpty
+    :<|> getCapture
+    :<|> getBody
+    :<|> getQueryParam
+    :<|> getQueryParams
+    :<|> getQueryFlag
+    :<|> getRawSuccess
+    :<|> getRawFailure
+    :<|> getMultiple
+    :<|> getRespHeaders
+    :<|> getDeleteContentType = client api
+
 server :: Application
 server = serve api (
        return alice
@@ -132,8 +178,8 @@ server = serve api (
                    Nothing -> throwE $ ServantErr 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
-  :<|> (\ _request respond -> respond $ responseLBS ok200 [] "rawSuccess")
-  :<|> (\ _request respond -> respond $ responseLBS badRequest400 [] "rawFailure")
+  :<|> (\ _request respond -> respond $ responseLBS HTTP.ok200 [] "rawSuccess")
+  :<|> (\ _request respond -> respond $ responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
@@ -149,9 +195,9 @@ failApi = Proxy
 
 failServer :: Application
 failServer = serve failApi (
-       (\ _request respond -> respond $ responseLBS ok200 [] "")
-  :<|> (\ _capture _request respond -> respond $ responseLBS ok200 [("content-type", "application/json")] "")
-  :<|> (\_request respond -> respond $ responseLBS ok200 [("content-type", "fooooo")] "")
+       (\ _request respond -> respond $ responseLBS HTTP.ok200 [] "")
+  :<|> (\ _capture _request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "application/json")] "")
+  :<|> (\_request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
  )
 
 -- * basic auth stuff
@@ -208,66 +254,54 @@ sucessSpec :: Spec
 sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     it "Servant.API.Get" $ \(_, baseUrl) -> do
-      let getGet = getNth (Proxy :: Proxy 0) $ client api
       (left show <$> SCR.runClientM getGet baseUrl manager) `shouldReturn` Right alice
 
     describe "Servant.API.Delete" $ do
       it "allows empty content type" $ \(_, baseUrl) -> do
-        let getDeleteEmpty = getNth (Proxy :: Proxy 1) $ client api
         (left show <$> SCR.runClientM getDeleteEmpty baseUrl manager) `shouldReturn` Right NoContent
 
       it "allows content type" $ \(_, baseUrl) -> do
-        let getDeleteContentType :: SCR.ClientM NoContent
-            getDeleteContentType = getLast $ client api
         (left show <$> SCR.runClientM getDeleteContentType baseUrl manager) `shouldReturn` Right NoContent
 
     it "Servant.API.Capture" $ \(_, baseUrl) -> do
-      let getCapture = getNth (Proxy :: Proxy 2) $ client api
       (left show <$> SCR.runClientM (getCapture "Paula") baseUrl manager) `shouldReturn` Right (Person "Paula" 0)
 
     it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
       let p = Person "Clara" 42
-          getBody = getNth (Proxy :: Proxy 3) $ client api
       (left show <$> SCR.runClientM (getBody p) baseUrl manager) `shouldReturn` Right p
 
     it "Servant.API.QueryParam" $ \(_, baseUrl) -> do
-      let getQueryParam = getNth (Proxy :: Proxy 4) $ client api
       left show <$> SCR.runClientM (getQueryParam (Just "alice")) baseUrl manager `shouldReturn` Right alice
       Left FailureResponse{..} <- SCR.runClientM (getQueryParam (Just "bob")) baseUrl manager
-      responseStatus `shouldBe` Status 400 "bob not found"
+      responseStatus `shouldBe` HTTP.Status 400 "bob not found"
 
     it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
-      let getQueryParams = getNth (Proxy :: Proxy 5) $ client api
       (left show <$> SCR.runClientM (getQueryParams []) baseUrl manager) `shouldReturn` Right []
       (left show <$> SCR.runClientM (getQueryParams ["alice", "bob"]) baseUrl manager)
         `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
     context "Servant.API.QueryParam.QueryFlag" $
       forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
-        let getQueryFlag = getNth (Proxy :: Proxy 6) $ client api
         (left show <$> SCR.runClientM (getQueryFlag flag) baseUrl manager) `shouldReturn` Right flag
 
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
-      let getRawSuccess = getNth (Proxy :: Proxy 7) $ client api
-      res <- SCR.runClientM (getRawSuccess methodGet) baseUrl manager
+      res <- SCR.runClientM (getRawSuccess HTTP.methodGet) baseUrl manager
       case res of
         Left e -> assertFailure $ show e
         Right (code, body, ct, _, response) -> do
           (code, body, ct) `shouldBe` (200, "rawSuccess", "application"//"octet-stream")
           C.responseBody response `shouldBe` body
-          C.responseStatus response `shouldBe` ok200
+          C.responseStatus response `shouldBe` HTTP.ok200
 
     it "Servant.API.Raw should return a Left in case of failure" $ \(_, baseUrl) -> do
-      let getRawFailure = getNth (Proxy :: Proxy 8) $ client api
-      res <- SCR.runClientM (getRawFailure methodGet) baseUrl manager
+      res <- SCR.runClientM (getRawFailure HTTP.methodGet) baseUrl manager
       case res of
         Right _ -> assertFailure "expected Left, but got Right"
         Left e -> do
-          Servant.Client.responseStatus e `shouldBe` status400
+          Servant.Client.responseStatus e `shouldBe` HTTP.status400
           Servant.Client.responseBody e `shouldBe` "rawFailure"
 
     it "Returns headers appropriately" $ \(_, baseUrl) -> do
-      let getRespHeaders = getNth (Proxy :: Proxy 10) $ client api
       res <- SCR.runClientM getRespHeaders baseUrl manager
       case res of
         Left e -> assertFailure $ show e
@@ -275,8 +309,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
-        let getMultiple = getNth (Proxy :: Proxy 9) $ client api
-        in property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
+        property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
           ioProperty $ do
             result <- left show <$> SCR.runClientM (getMultiple cap num flag body) baseUrl manager
             return $
@@ -293,7 +326,7 @@ wrappedApiSpec = describe "error status codes" $ do
             let getResponse :: SCR.ClientM ()
                 getResponse = client api
             Left FailureResponse{..} <- SCR.runClientM getResponse baseUrl manager
-            responseStatus `shouldBe` (Status 500 "error message")
+            responseStatus `shouldBe` (HTTP.Status 500 "error message")
     in mapM_ test $
         (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete") :
         (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get") :
@@ -309,7 +342,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
         let (_ :<|> getDeleteEmpty :<|> _) = client api
         Left res <- SCR.runClientM getDeleteEmpty baseUrl manager
         case res of
-          FailureResponse (Status 404 "Not Found") _ _ -> return ()
+          FailureResponse (HTTP.Status 404 "Not Found") _ _ -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \(_, baseUrl) -> do
@@ -360,7 +393,7 @@ basicAuthSpec = beforeAll (startWaiApp basicAuthServer) $ afterAll endWaiApp $ d
       let getBasic = client basicAuthAPI
       let basicAuthData = BasicAuthData "not" "password"
       Left FailureResponse{..} <- SCR.runClientM (getBasic basicAuthData) baseUrl manager
-      responseStatus `shouldBe` Status 403 "Forbidden"
+      responseStatus `shouldBe` HTTP.Status 403 "Forbidden"
 
 genAuthSpec :: Spec
 genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
@@ -377,7 +410,7 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
       let getProtected = client genAuthAPI
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
       Left FailureResponse{..} <- SCR.runClientM (getProtected authRequest) baseUrl manager
-      responseStatus `shouldBe` (Status 401 "Unauthorized")
+      responseStatus `shouldBe` (HTTP.Status 401 "Unauthorized")
 
 -- * utils
 
@@ -408,25 +441,3 @@ pathGen = fmap NonEmpty path
     filter (not . (`elem` ("?%[]/#;" :: String))) $
     filter isPrint $
     map chr [0..127]
-
-class GetNth (n :: Nat) a b | n a -> b where
-    getNth :: Proxy n -> a -> b
-
-instance OVERLAPPING_
-  GetNth 0 (x :<|> y) x where
-      getNth _ (x :<|> _) = x
-
-instance OVERLAPPING_
-  (GetNth (n - 1) x y) => GetNth n (a :<|> x) y where
-      getNth _ (_ :<|> x) = getNth (Proxy :: Proxy (n - 1)) x
-
-class GetLast a b | a -> b where
-    getLast :: a -> b
-
-instance OVERLAPPING_
-  (GetLast b c) => GetLast (a :<|> b) c where
-      getLast (_ :<|> b) = getLast b
-
-instance OVERLAPPING_
-  GetLast a a where
-      getLast a = a
