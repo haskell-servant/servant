@@ -15,14 +15,13 @@ need to have some language extensions and imports:
 
 module Client where
 
-import Control.Monad.Trans.Except
 import Data.Aeson
 import Data.Proxy
 import GHC.Generics
-import Network.HTTP.Client (Manager, newManager, defaultManagerSettings)
+import Network.HTTP.Client (newManager, defaultManagerSettings)
 import Servant.API
 import Servant.Client
-import System.IO.Unsafe
+import Servant.Common.Req (ClientM, runClientM)
 ```
 
 Also, we need examples for some domain specific data types:
@@ -72,39 +71,27 @@ What we are going to get with **servant-client** here is 3 functions, one to que
 ``` haskell
 position :: Int -- ^ value for "x"
          -> Int -- ^ value for "y"
-         -> ExceptT ServantError IO Position
+         -> ClientM Position
 
 hello :: Maybe String -- ^ an optional value for "name"
-      -> ExceptT ServantError IO HelloMessage
+      -> ClientM HelloMessage
 
 marketing :: ClientInfo -- ^ value for the request body
-          -> ExceptT ServantError IO Email
+          -> ClientM Email
 ```
 
 Each function makes available as an argument any value that the response may
 depend on, as evidenced in the API type. How do we get these functions? By calling
-the function `client`. It takes three arguments:
+the function `client`. It takes one argument:
 
 - a `Proxy` to your API,
-- a `BaseUrl`, consisting of the protocol, the host, the port and an optional subpath --
-  this basically tells `client` where the service that you want to query is hosted,
-- a `Manager`, (from [http-client](http://hackage.haskell.org/package/http-client))
-which manages http connections.
 
 ``` haskell
 api :: Proxy API
 api = Proxy
 
-{-# NOINLINE __manager #-}
-__manager :: Manager
-__manager = unsafePerformIO $ newManager defaultManagerSettings
-
-position :<|> hello :<|> marketing =
-  client api (BaseUrl Http "localhost" 8081 "") __manager
+position :<|> hello :<|> marketing = client api
 ```
-
-(Yes, the usage of `unsafePerformIO` is very ugly, we know. Hopefully soon it'll
-be possible to do without.)
 
 As you can see in the code above, we just "pattern match our way" to these functions. If we try to derive less or more functions than there are endpoints in the API, we obviously get an error. The `BaseUrl` value there is just:
 
@@ -127,7 +114,7 @@ data BaseUrl = BaseUrl
 That's it. Let's now write some code that uses our client functions.
 
 ``` haskell
-queries :: ExceptT ServantError IO (Position, HelloMessage, Email)
+queries :: ClientM (Position, HelloMessage, Email)
 queries = do
   pos <- position 10 10
   message <- hello (Just "servant")
@@ -136,7 +123,8 @@ queries = do
 
 run :: IO ()
 run = do
-  res <- runExceptT queries
+  manager <- newManager defaultManagerSettings
+  res <- runClientM queries (BaseUrl Http "localhost" 8081 "") manager
   case res of
     Left err -> putStrLn $ "Error: " ++ show err
     Right (pos, message, em) -> do
