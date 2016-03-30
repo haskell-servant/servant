@@ -15,13 +15,13 @@ need to have some language extensions and imports:
 
 module Client where
 
+import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import Data.Aeson
 import Data.Proxy
 import GHC.Generics
-import Network.HTTP.Client (newManager, defaultManagerSettings)
+import Network.HTTP.Client (Manager, newManager, defaultManagerSettings)
 import Servant.API
 import Servant.Client
-import Servant.Common.Req (ClientM, runClientM)
 ```
 
 Also, we need examples for some domain specific data types:
@@ -71,13 +71,19 @@ What we are going to get with **servant-client** here is 3 functions, one to que
 ``` haskell
 position :: Int -- ^ value for "x"
          -> Int -- ^ value for "y"
-         -> ClientM Position
+         -> Manager -- ^ the HTTP client to use
+         -> BaseUrl -- ^ the URL at which the API can be found
+         -> ExceptT ServantError IO Position
 
 hello :: Maybe String -- ^ an optional value for "name"
-      -> ClientM HelloMessage
+      -> Manager -- ^ the HTTP client to use
+      -> BaseUrl -- ^ the URL at which the API can be found
+      -> ExceptT ServantError IO HelloMessage
 
 marketing :: ClientInfo -- ^ value for the request body
-          -> ClientM Email
+          -> Manager -- ^ the HTTP client to use
+          -> BaseUrl -- ^ the URL at which the API can be found
+          -> ExceptT ServantError IO Email
 ```
 
 Each function makes available as an argument any value that the response may
@@ -114,17 +120,17 @@ data BaseUrl = BaseUrl
 That's it. Let's now write some code that uses our client functions.
 
 ``` haskell
-queries :: ClientM (Position, HelloMessage, Email)
-queries = do
-  pos <- position 10 10
-  message <- hello (Just "servant")
-  em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"])
+queries :: Manager -> BaseUrl -> ExceptT ServantError IO (Position, HelloMessage, Email)
+queries manager baseurl = do
+  pos <- position 10 10 manager baseurl
+  message <- hello (Just "servant") manager baseurl
+  em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]) manager baseurl
   return (pos, message, em)
 
 run :: IO ()
 run = do
   manager <- newManager defaultManagerSettings
-  res <- runClientM queries (BaseUrl Http "localhost" 8081 "") manager
+  res <- runExceptT (queries manager (BaseUrl Http "localhost" 8081 ""))
   case res of
     Left err -> putStrLn $ "Error: " ++ show err
     Right (pos, message, em) -> do
