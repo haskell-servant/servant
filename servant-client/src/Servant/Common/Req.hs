@@ -11,9 +11,7 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import Control.Monad.Trans.Reader
 import Data.ByteString.Lazy hiding (pack, filter, map, null, elem)
 import Data.String
 import Data.String.Conversions
@@ -125,21 +123,12 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
 displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
-type ClientM = ReaderT BaseUrl (ReaderT Manager (ExceptT ServantError IO))
+type ClientM = ExceptT ServantError IO
 
-runClientM :: ClientM a -> BaseUrl -> Manager -> IO (Either ServantError a)
-runClientM m baseUrl manager = runExceptT (runReaderT (runReaderT m baseUrl) manager)
-
--- to avoid adding a dependency on mtl
-throwError :: ServantError -> ClientM a
-throwError = lift . lift . throwE
-
-performRequest :: Method -> Req
+performRequest :: Method -> Req -> Manager -> BaseUrl
                -> ClientM ( Int, ByteString, MediaType
                           , [HTTP.Header], Response ByteString)
-performRequest reqMethod req = do
-  reqHost <- ask
-  manager <- lift ask
+performRequest reqMethod req manager reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
   let request = partialRequest { Client.method = reqMethod
@@ -149,7 +138,7 @@ performRequest reqMethod req = do
   eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
   case eResponse of
     Left err ->
-      throwError . ConnectionError $ SomeException err
+      throwE . ConnectionError $ SomeException err
 
     Right response -> do
       let status = Client.responseStatus response
@@ -159,29 +148,29 @@ performRequest reqMethod req = do
       ct <- case lookup "Content-Type" $ Client.responseHeaders response of
                  Nothing -> pure $ "application"//"octet-stream"
                  Just t -> case parseAccept t of
-                   Nothing -> throwError $ InvalidContentTypeHeader (cs t) body
+                   Nothing -> throwE $ InvalidContentTypeHeader (cs t) body
                    Just t' -> pure t'
       unless (status_code >= 200 && status_code < 300) $
-        throwError $ FailureResponse status ct body
+        throwE $ FailureResponse status ct body
       return (status_code, body, ct, hdrs, response)
 
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req
+  Proxy ct -> Method -> Req -> Manager -> BaseUrl
     -> ClientM ([HTTP.Header], result)
-performRequestCT ct reqMethod req = do
+performRequestCT ct reqMethod req manager reqHost = do
   let acceptCT = contentType ct
   (_status, respBody, respCT, hdrs, _response) <-
-    performRequest reqMethod (req { reqAccept = [acceptCT] })
-  unless (matches respCT (acceptCT)) $ throwError $ UnsupportedContentType respCT respBody
+    performRequest reqMethod (req { reqAccept = [acceptCT] }) manager reqHost
+  unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
-    Left err -> throwError $ DecodeFailure err respCT respBody
+    Left err -> throwE $ DecodeFailure err respCT respBody
     Right val -> return (hdrs, val)
 
-performRequestNoBody :: Method -> Req
+performRequestNoBody :: Method -> Req -> Manager -> BaseUrl
   -> ClientM [HTTP.Header]
-performRequestNoBody reqMethod req = do
-  (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req
+performRequestNoBody reqMethod req manager reqHost = do
+  (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req manager reqHost
   return hdrs
 
 catchConnectionError :: IO a -> IO (Either ServantError a)
