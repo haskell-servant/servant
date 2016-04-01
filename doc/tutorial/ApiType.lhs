@@ -135,7 +135,7 @@ data Capture (s :: Symbol) a
 ```
 
 In some web frameworks, you use regexes for captures. We use a
-[`FromText`](https://hackage.haskell.org/package/servant/docs/Servant-Common-Text.html#t:FromText)
+[`FromHttpApiData`](https://hackage.haskell.org/package/http-api-data/docs/Web-HttpApiData.html#t:FromHttpApiData)
 class, which the captured value must be an instance of.
 
 Examples:
