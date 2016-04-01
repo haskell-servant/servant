@@ -3,7 +3,7 @@
 module Servant.Server.Internal.ContextSpec (spec) where
 
 import           Data.Proxy                     (Proxy (..))
-import           Test.Hspec                     (Spec, describe, it, shouldBe, pending, context)
+import           Test.Hspec                     (Spec, describe, it, shouldBe, context)
 import           Test.ShouldNotTypecheck        (shouldNotTypecheck)
 
 import           Servant.API
@@ -35,8 +35,8 @@ spec = do
           show (Just cxt) `shouldBe` "Just ('a' :. True :. EmptyContext)"
 
         it "works with operators" $ do
-          let cxt = (1 :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)
-          show cxt `shouldBe` "(1 :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)"
+          let cxt' = ((1 :: Int) :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)
+          show cxt' `shouldBe` "(1 :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)"
 
   describe "descendIntoNamedContext" $ do
     let cxt :: Context [Char, NamedContext "sub" '[Char]]

@@ -36,7 +36,7 @@ instance (HasContextEntry context String, HasServer subApi context) =>
       subProxy :: Proxy subApi
       subProxy = Proxy
 
-      inject context f = f (getContextEntry context)
+      inject ctx f = f (getContextEntry ctx)
 
 data InjectIntoContext
 
