@@ -2,7 +2,7 @@
 
 set -o errexit
 
-for package in $(cat sources.txt) ; do
+for package in $(cat sources.txt) doc/tutorial ; do
   echo testing $package
   pushd $package
   tinc

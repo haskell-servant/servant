@@ -8,4 +8,3 @@ servant-server
 servant-blaze
 servant-lucid
 servant-mock
-doc/tutorial
