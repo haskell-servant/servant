@@ -1,3 +1,6 @@
+
+* `client` no longer takes `BaseUrl` and `Manager` arguments. Instead, each function returned by `client` requires these two arguments.
+
 0.5
 ----
 

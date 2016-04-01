@@ -123,11 +123,12 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
 displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
+type ClientM = ExceptT ServantError IO
 
-performRequest :: Method -> Req -> BaseUrl -> Manager
-               -> ExceptT ServantError IO ( Int, ByteString, MediaType
-                                          , [HTTP.Header], Response ByteString)
-performRequest reqMethod req reqHost manager = do
+performRequest :: Method -> Req -> Manager -> BaseUrl
+               -> ClientM ( Int, ByteString, MediaType
+                          , [HTTP.Header], Response ByteString)
+performRequest reqMethod req manager reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
   let request = partialRequest { Client.method = reqMethod
@@ -155,21 +156,21 @@ performRequest reqMethod req reqHost manager = do
 
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> BaseUrl -> Manager
-    -> ExceptT ServantError IO ([HTTP.Header], result)
-performRequestCT ct reqMethod req reqHost manager = do
+  Proxy ct -> Method -> Req -> Manager -> BaseUrl
+    -> ClientM ([HTTP.Header], result)
+performRequestCT ct reqMethod req manager reqHost = do
   let acceptCT = contentType ct
   (_status, respBody, respCT, hdrs, _response) <-
-    performRequest reqMethod (req { reqAccept = [acceptCT] }) reqHost manager
+    performRequest reqMethod (req { reqAccept = [acceptCT] }) manager reqHost
   unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
     Left err -> throwE $ DecodeFailure err respCT respBody
     Right val -> return (hdrs, val)
 
-performRequestNoBody :: Method -> Req -> BaseUrl -> Manager
-  -> ExceptT ServantError IO [HTTP.Header]
-performRequestNoBody reqMethod req reqHost manager = do
-  (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req reqHost manager
+performRequestNoBody :: Method -> Req -> Manager -> BaseUrl
+  -> ClientM [HTTP.Header]
+performRequestNoBody reqMethod req manager reqHost = do
+  (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req manager reqHost
   return hdrs
 
 catchConnectionError :: IO a -> IO (Either ServantError a)
