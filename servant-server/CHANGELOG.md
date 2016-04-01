@@ -1,5 +1,5 @@
-on master
----------
+0.6
+---
 
 * Query parameters that can't be parsed result in a `400` (was `404`).
 

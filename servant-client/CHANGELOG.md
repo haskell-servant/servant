@@ -1,8 +1,10 @@
+0.6
+---
 
 * `client` no longer takes `BaseUrl` and `Manager` arguments. Instead, each function returned by `client` requires these two arguments.
 
 0.5
-----
+---
 
 * Use the `text` package instead of `String`.
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
