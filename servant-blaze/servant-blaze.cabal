@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                servant-blaze
-version:             0.5
+version:             0.6
 synopsis:            Blaze-html support for servant
 -- description:
 homepage:            http://haskell-servant.github.io/
@@ -25,7 +25,7 @@ library
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.7 && <5
-                     , servant == 0.5.*
+                     , servant == 0.6.*
                      , http-media
                      , blaze-html
   hs-source-dirs:      src

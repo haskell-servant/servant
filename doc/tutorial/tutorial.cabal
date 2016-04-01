@@ -1,5 +1,5 @@
 name:                tutorial
-version:             0.5
+version:             0.6
 synopsis:            The servant tutorial
 homepage:            http://haskell-servant.github.io/
 license:             BSD3
@@ -25,11 +25,11 @@ library
                      , directory
                      , blaze-markup
                      , containers
-                     , servant == 0.5.*
-                     , servant-server == 0.5.*
-                     , servant-client == 0.5.*
-                     , servant-docs == 0.5.*
-                     , servant-js == 0.5.*
+                     , servant == 0.6.*
+                     , servant-server == 0.6.*
+                     , servant-client == 0.6.*
+                     , servant-docs == 0.6.*
+                     , servant-js == 0.6.*
                      , warp
                      , http-media
                      , lucid
