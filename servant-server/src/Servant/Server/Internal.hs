@@ -222,7 +222,7 @@ instance OVERLAPPING_
 -- Example:
 --
 -- > newtype Referer = Referer Text
--- >   deriving (Eq, Show, FromHttpApiData, ToText)
+-- >   deriving (Eq, Show, FromHttpApiData)
 -- >
 -- >            -- GET /view-my-referer
 -- > type MyApi = "view-my-referer" :> Header "Referer" Referer :> Get '[JSON] Referer
