@@ -1,10 +1,10 @@
 servant
-servant-cassava
+servant-server
 servant-client
+servant-cassava
 servant-docs
 servant-foreign
 servant-js
-servant-server
 servant-blaze
 servant-lucid
 servant-mock
