@@ -1,39 +1,56 @@
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
 module Servant.Foreign
-  ( HasForeign(..)
-  , HasForeignType(..)
+  ( ArgType(..)
+  , HeaderArg(..)
+  , QueryArg(..)
+  , Req(..)
   , Segment(..)
   , SegmentType(..)
-  , FunctionName
-  , QueryArg(..)
-  , HeaderArg(..)
-  , ArgType(..)
-  , Req
-  , captureArg
-  , defReq
-  , concatCase
-  , snakeCase
-  , camelCase
-  -- lenses
-  , argType
+  , Url(..)
+    -- aliases
+  , Path
+  , Arg(..)
+  , FunctionName(..)
+  , PathSegment(..)
+    -- lenses
   , argName
-  , isCapture
-  , funcName
-  , path
+  , argType
+  , argPath
   , reqUrl
-  , reqBody
-  , reqHeaders
   , reqMethod
+  , reqHeaders
+  , reqBody
   , reqReturnType
-  , segment
+  , reqFuncName
+  , path
   , queryStr
-  , listFromAPI
+  , queryArgName
+  , queryArgType
+  , headerArg
+    -- prisms
+  , _PathSegment
+  , _HeaderArg
+  , _ReplaceHeaderArg
+  , _Static
+  , _Cap
+  , _Normal
+  , _Flag
+  , _List
+    -- rest of it
+  , HasForeign(..)
+  , HasForeignType(..)
   , GenerateList(..)
   , NoTypes
-  -- re-exports
+  , captureArg
+  , isCapture
+  , defReq
+  , listFromAPI
+    -- re-exports
   , module Servant.API
+  , module Servant.Foreign.Inflections
   ) where
 
 import Servant.API
 import Servant.Foreign.Internal
+import Servant.Foreign.Inflections

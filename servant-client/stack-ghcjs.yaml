@@ -7,15 +7,15 @@ packages:
   - location: ../servant-server
     extra-dep: true
 
-resolver: lts-3.10
+resolver: lts-5.11
 
-compiler: ghcjs-0.2.0.20151029_ghc-7.10.2
+compiler: ghcjs-0.2.0.20160315_ghc-7.10.2
 compiler-check: match-exact
 setup-info:
- ghcjs:
-  source:
-   ghcjs-0.2.0.20151029_ghc-7.10.2:
-    url: "https://github.com/nrolland/ghcjs/releases/download/v0.2.0.20151029/ghcjs-0.2.0.20151029.tar.gz"
+  ghcjs:
+    source:
+      ghcjs-0.2.0.20160315_ghc-7.10.2:
+        url: "https://github.com/nrolland/ghcjs/releases/download/v.0.2.0.20160315/ghcjs-0.2.0.20160315.tar.gz"
 
 extra-deps:
   - hspec-expectations-0.7.2

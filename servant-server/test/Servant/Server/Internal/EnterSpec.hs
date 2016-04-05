@@ -52,7 +52,7 @@ enterSpec = describe "Enter" $ do
 
     it "allows running arbitrary monads" $ do
       get "int" `shouldRespondWith` "1797"
-      post "string" "3" `shouldRespondWith` "\"hi\""{ matchStatus = 201 }
+      post "string" "3" `shouldRespondWith` "\"hi\""{ matchStatus = 200 }
 
   with (return (serve combinedAPI combinedReaderServer)) $ do
     it "allows combnation of enters" $ do

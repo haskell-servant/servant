@@ -16,18 +16,18 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE OverlappingInstances   #-}
-#endif
+
+#include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, over, traversed, (%~),
+import           Control.Lens               (makeLenses, mapped, over, traversed, view, (%~),
                                              (&), (.~), (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
+import qualified Data.ByteString.Char8      as BSC
 import qualified Data.CaseInsensitive       as CI
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
@@ -37,7 +37,7 @@ import           Data.Monoid
 import           Data.Ord                   (comparing)
 import           Data.Proxy                 (Proxy(Proxy))
 import           Data.String.Conversions    (cs)
-import           Data.Text                  (Text, pack, unpack)
+import           Data.Text                  (Text, unpack)
 import           GHC.Exts                   (Constraint)
 import           GHC.Generics
 import           GHC.TypeLits
@@ -50,21 +50,6 @@ import qualified Data.Text                  as T
 import qualified Network.HTTP.Media         as M
 import qualified Network.HTTP.Types         as HTTP
 
--- | Supported HTTP request methods
-data Method = DocDELETE -- ^ the DELETE method
-            | DocGET    -- ^ the GET method
-            | DocPOST   -- ^ the POST method
-            | DocPUT    -- ^ the PUT method
-  deriving (Eq, Ord, Generic)
-
-instance Show Method where
-  show DocGET = "GET"
-  show DocPOST = "POST"
-  show DocDELETE = "DELETE"
-  show DocPUT = "PUT"
-
-instance Hashable Method
-
 -- | An 'Endpoint' type that holds the 'path' and the 'method'.
 --
 -- Gets used as the key in the 'API' hashmap. Modify 'defEndpoint'
@@ -76,12 +61,12 @@ instance Hashable Method
 -- GET /
 -- λ> 'defEndpoint' & 'path' '<>~' ["foo"]
 -- GET /foo
--- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'DocPOST'
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'HTTP.methodPost'
 -- POST /foo
 -- @
 data Endpoint = Endpoint
-  { _path   :: [String] -- type collected
-  , _method :: Method   -- type collected
+  { _path   :: [String]      -- type collected
+  , _method :: HTTP.Method   -- type collected
   } deriving (Eq, Ord, Generic)
 
 instance Show Endpoint where
@@ -95,7 +80,7 @@ showPath :: [String] -> String
 showPath [] = "/"
 showPath ps = concatMap ('/' :) ps
 
--- | An 'Endpoint' whose path is `"/"` and whose method is 'DocGET'
+-- | An 'Endpoint' whose path is `"/"` and whose method is @GET@
 --
 -- Here's how you can modify it:
 --
@@ -104,11 +89,11 @@ showPath ps = concatMap ('/' :) ps
 -- GET /
 -- λ> 'defEndpoint' & 'path' '<>~' ["foo"]
 -- GET /foo
--- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'DocPOST'
+-- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'HTTP.methodPost'
 -- POST /foo
 -- @
 defEndpoint :: Endpoint
-defEndpoint = Endpoint [] DocGET
+defEndpoint = Endpoint [] HTTP.methodGet
 
 instance Hashable Endpoint
 
@@ -154,6 +139,12 @@ data DocIntro = DocIntro
   { _introTitle :: String   -- ^ Appears above the intro blob
   , _introBody  :: [String] -- ^ Each String is a paragraph.
   } deriving (Eq, Show)
+
+-- | A type to represent Authentication information about an endpoint.
+data DocAuthentication = DocAuthentication
+  { _authIntro        :: String
+  , _authDataRequired :: String
+  } deriving (Eq, Ord, Show)
 
 instance Ord DocIntro where
     compare = comparing _introTitle
@@ -245,7 +236,8 @@ defResponse = Response
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _captures :: [DocCapture]                -- type collected + user supplied info
+  { _authInfo :: [DocAuthentication]         -- user supplied info
+  , _captures :: [DocCapture]                -- type collected + user supplied info
   , _headers  :: [Text]                      -- type collected
   , _params   :: [DocQueryParam]             -- type collected + user supplied info
   , _notes    :: [DocNote]                   -- user supplied
@@ -262,8 +254,8 @@ data Action = Action
 -- 'combineAction' to mush two together taking the response, body and content
 -- types from the very left.
 combineAction :: Action -> Action -> Action
-Action c h p n m ts body resp `combineAction` Action c' h' p' n' m' _ _ _ =
-        Action (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
+Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
+        Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -283,6 +275,7 @@ defAction =
          []
          []
          []
+         []
          defResponse
 
 -- | Create an API that's comprised of a single endpoint.
@@ -292,6 +285,7 @@ single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
 -- gimme some lenses
+makeLenses ''DocAuthentication
 makeLenses ''DocOptions
 makeLenses ''API
 makeLenses ''Endpoint
@@ -469,7 +463,7 @@ instance AllHeaderSamples '[] where
 
 instance (ToByteString l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
     => AllHeaderSamples (Header h l ': ls) where
-    allHeaderToSample _ = (mkHeader (toSample (Proxy :: Proxy l))) :
+    allHeaderToSample _ = mkHeader (toSample (Proxy :: Proxy l)) :
                           allHeaderToSample (Proxy :: Proxy ls)
       where headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy h)
             mkHeader (Just x) = (headerName, cs $ toByteString x)
@@ -477,8 +471,8 @@ instance (ToByteString l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
 
 -- | Synthesise a sample value of a type, encoded in the specified media types.
 sampleByteString
-    :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
-    => Proxy ctypes
+    :: forall ct cts a. (ToSample a, AllMimeRender (ct ': cts) a)
+    => Proxy (ct ': cts)
     -> Proxy a
     -> [(M.MediaType, ByteString)]
 sampleByteString ctypes@Proxy Proxy =
@@ -487,8 +481,8 @@ sampleByteString ctypes@Proxy Proxy =
 -- | Synthesise a list of sample values of a particular type, encoded in the
 -- specified media types.
 sampleByteStrings
-    :: forall ctypes a. (ToSample a, IsNonEmpty ctypes, AllMimeRender ctypes a)
-    => Proxy ctypes
+    :: forall ct cts a. (ToSample a, AllMimeRender (ct ': cts) a)
+    => Proxy (ct ': cts)
     -> Proxy a
     -> [(Text, M.MediaType, ByteString)]
 sampleByteStrings ctypes@Proxy Proxy =
@@ -519,6 +513,10 @@ class ToParam t where
 class ToCapture c where
   toCapture :: Proxy c -> DocCapture
 
+-- | The class that helps us get documentation for authenticated endpoints
+class ToAuthInfo a where
+      toAuthInfo :: Proxy a -> DocAuthentication
+
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
@@ -531,6 +529,7 @@ markdown api = unlines $
           str :
           "" :
           notesStr (action ^. notes) ++
+          authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
@@ -538,7 +537,7 @@ markdown api = unlines $
           responseStr (action ^. response) ++
           []
 
-          where str = "## " ++ show (endpoint^.method)
+          where str = "## " ++ BSC.unpack (endpoint^.method)
                     ++ " " ++ showPath (endpoint^.path)
 
         introsStr :: [DocIntro] -> [String]
@@ -562,6 +561,20 @@ markdown api = unlines $
             intersperse "" (nt ^. noteBody) ++
             "" :
             []
+
+
+        authStr :: [DocAuthentication] -> [String]
+        authStr auths =
+          let authIntros = mapped %~ view authIntro $ auths
+              clientInfos = mapped %~ view authDataRequired $ auths
+          in "#### Authentication":
+              "":
+              unlines authIntros :
+              "":
+              "Clients must supply the following data" :
+              unlines clientInfos :
+              "" :
+              []
 
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
@@ -661,10 +674,7 @@ markdown api = unlines $
 
 -- | The generated docs for @a ':<|>' b@ just appends the docs
 --   for @a@ with the docs for @b@.
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
+instance OVERLAPPABLE_
          (HasDocs layout1, HasDocs layout2)
       => HasDocs (layout1 :<|> layout2) where
 
@@ -692,70 +702,38 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
           symP = Proxy :: Proxy sym
 
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLe #-}
-#endif
-        (ToSample a, IsNonEmpty cts, AllMimeRender cts a)
-    => HasDocs (Delete cts a) where
+instance OVERLAPPABLE_
+        (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
+        , ReflectMethod method)
+    => HasDocs (Verb method status (ct ': cts) a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
-    where endpoint' = endpoint & method .~ DocDELETE
+    where endpoint' = endpoint & method .~ method'
           action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ allMime t
-          t = Proxy :: Proxy cts
+                           & response.respStatus .~ status
+          t = Proxy :: Proxy (ct ': cts)
+          method' = reflectMethod (Proxy :: Proxy method)
+          status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-        (ToSample a, IsNonEmpty cts, AllMimeRender cts a
-         , AllHeaderSamples ls , GetHeaders (HList ls) )
-    => HasDocs (Delete cts (Headers ls a)) where
+instance OVERLAPPING_
+        (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
+        , ReflectMethod method, AllHeaderSamples ls, GetHeaders (HList ls))
+    => HasDocs (Verb method status (ct ': cts) (Headers ls a)) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
 
-    where hdrs = allHeaderToSample (Proxy :: Proxy ls)
-          endpoint' = endpoint & method .~ DocDELETE
+    where endpoint' = endpoint & method .~ method'
           action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
                            & response.respTypes .~ allMime t
+                           & response.respStatus .~ status
                            & response.respHeaders .~ hdrs
-          t = Proxy :: Proxy cts
-          p = Proxy :: Proxy a
-
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLe #-}
-#endif
-        (ToSample a, IsNonEmpty cts, AllMimeRender cts a)
-    => HasDocs (Get cts a) where
-  docsFor Proxy (endpoint, action) DocOptions{..} =
-    single endpoint' action'
-
-    where endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
-                           & response.respTypes .~ allMime t
-          t = Proxy :: Proxy cts
-          p = Proxy :: Proxy a
-
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-        (ToSample a, IsNonEmpty cts, AllMimeRender cts a
-         , AllHeaderSamples ls , GetHeaders (HList ls) )
-    => HasDocs (Get cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) DocOptions{..} =
-    single endpoint' action'
-
-    where hdrs = allHeaderToSample (Proxy :: Proxy ls)
-          endpoint' = endpoint & method .~ DocGET
-          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
-                           & response.respTypes .~ allMime t
-                           & response.respHeaders .~ hdrs
-          t = Proxy :: Proxy cts
+          t = Proxy :: Proxy (ct ': cts)
+          hdrs = allHeaderToSample (Proxy :: Proxy ls)
+          method' = reflectMethod (Proxy :: Proxy method)
+          status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
 instance (KnownSymbol sym, HasDocs sublayout)
@@ -765,77 +743,7 @@ instance (KnownSymbol sym, HasDocs sublayout)
 
     where sublayoutP = Proxy :: Proxy sublayout
           action' = over headers (|> headername) action
-          headername = pack $ symbolVal (Proxy :: Proxy sym)
-
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
-        (ToSample a, IsNonEmpty cts, AllMimeRender cts a)
-    => HasDocs (Post cts a) where
-  docsFor Proxy (endpoint, action) DocOptions{..} =
-    single endpoint' action'
-
-    where endpoint' = endpoint & method .~ DocPOST
-          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
-                           & response.respTypes .~ allMime t
-                           & response.respStatus .~ 201
-          t = Proxy :: Proxy cts
-          p = Proxy :: Proxy a
-
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-         (ToSample a, IsNonEmpty cts, AllMimeRender cts a
-         , AllHeaderSamples ls , GetHeaders (HList ls) )
-    => HasDocs (Post cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) DocOptions{..} =
-    single endpoint' action'
-
-    where hdrs = allHeaderToSample (Proxy :: Proxy ls)
-          endpoint' = endpoint & method .~ DocPOST
-          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
-                           & response.respTypes .~ allMime t
-                           & response.respStatus .~ 201
-                           & response.respHeaders .~ hdrs
-          t = Proxy :: Proxy cts
-          p = Proxy :: Proxy a
-
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPABLE #-}
-#endif
-        (ToSample a, IsNonEmpty cts, AllMimeRender cts a)
-    => HasDocs (Put cts a) where
-  docsFor Proxy (endpoint, action) DocOptions{..} =
-    single endpoint' action'
-
-    where endpoint' = endpoint & method .~ DocPUT
-          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
-                           & response.respTypes .~ allMime t
-                           & response.respStatus .~ 200
-          t = Proxy :: Proxy cts
-          p = Proxy :: Proxy a
-
-instance
-#if MIN_VERSION_base(4,8,0)
-         {-# OVERLAPPING #-}
-#endif
-        ( ToSample a, IsNonEmpty cts, AllMimeRender cts a,
-          AllHeaderSamples ls , GetHeaders (HList ls) )
-    => HasDocs (Put cts (Headers ls a)) where
-  docsFor Proxy (endpoint, action) DocOptions{..} =
-    single endpoint' action'
-
-    where hdrs = allHeaderToSample (Proxy :: Proxy ls)
-          endpoint' = endpoint & method .~ DocPUT
-          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
-                           & response.respTypes .~ allMime t
-                           & response.respStatus .~ 200
-                           & response.respHeaders .~ hdrs
-          t = Proxy :: Proxy cts
-          p = Proxy :: Proxy a
+          headername = T.pack $ symbolVal (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sublayout)
       => HasDocs (QueryParam sym a :> sublayout) where
@@ -877,8 +785,8 @@ instance HasDocs Raw where
 -- example data. However, there's no reason to believe that the instances of
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
 -- both are even defined) for any particular type.
-instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, HasDocs sublayout)
-      => HasDocs (ReqBody cts a :> sublayout) where
+instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs sublayout)
+      => HasDocs (ReqBody (ct ': cts) a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =
     docsFor sublayoutP (endpoint, action')
@@ -886,7 +794,7 @@ instance (ToSample a, IsNonEmpty cts, AllMimeRender cts a, HasDocs sublayout)
     where sublayoutP = Proxy :: Proxy sublayout
           action' = action & rqbody .~ sampleByteString t p
                            & rqtypes .~ allMime t
-          t = Proxy :: Proxy cts
+          t = Proxy :: Proxy (ct ': cts)
           p = Proxy :: Proxy a
 
 instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) where
@@ -913,6 +821,16 @@ instance HasDocs sublayout => HasDocs (HttpVersion :> sublayout) where
 instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
   docsFor Proxy ep =
     docsFor (Proxy :: Proxy sublayout) ep
+
+instance HasDocs sublayout => HasDocs (WithNamedContext name context sublayout) where
+  docsFor Proxy = docsFor (Proxy :: Proxy sublayout)
+
+instance (ToAuthInfo (BasicAuth realm usr), HasDocs sublayout) => HasDocs (BasicAuth realm usr :> sublayout) where
+  docsFor Proxy (endpoint, action) =
+    docsFor (Proxy :: Proxy sublayout) (endpoint, action')
+      where
+        authProxy = Proxy :: Proxy (BasicAuth realm usr)
+        action' = over authInfo (|> toAuthInfo authProxy) action
 
 -- ToSample instances for simple types
 instance ToSample ()

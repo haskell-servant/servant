@@ -1,0 +1,13 @@
+dependencies:
+  - name: servant
+    path: ../../servant
+  - name: servant-server
+    path: ../../servant-server
+  - name: servant-client
+    path: ../../servant-client
+  - name: servant-js
+    path: ../../servant-js
+  - name: servant-docs
+    path: ../../servant-docs
+  - name: servant-foreign
+    path: ../../servant-foreign

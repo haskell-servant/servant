@@ -4,7 +4,7 @@ module Servant.Client.TestServer (
   buildTestServer,
   TestServer(..),
   withServer,
-)where
+) where
 
 #ifdef __GHCJS__
 import           Servant.Client.TestServer.GHCJS

@@ -6,6 +6,7 @@ import           Data.Maybe (isJust)
 import           Data.Monoid
 import qualified Data.Text as T
 import           Data.Text (Text)
+import           Data.Text.Encoding (decodeUtf8)
 import           Servant.Foreign
 import           Servant.JS.Internal
 
@@ -68,16 +69,19 @@ generateAngularJSWith ngOptions opts req = "\n" <>
  <> "    { url: " <> url <> "\n"
  <> dataBody
  <> reqheaders
- <> "    , method: '" <> method <> "'\n"
+ <> "    , method: '" <> decodeUtf8 method <> "'\n"
  <> "    });\n"
  <> "}\n"
 
   where argsStr = T.intercalate ", " args
         args = http
             ++ captures
-            ++ map (view $ argName._1) queryparams
+            ++ map (view $ queryArgName . argPath) queryparams
             ++ body
-            ++ map (toValidFunctionName . (<>) "header" . fst . headerArg) hs
+            ++ map ( toValidFunctionName
+                   . (<>) "header"
+                   . view (headerArg . argPath)
+                   ) hs
 
         -- If we want to generate Top Level Function, they must depend on
         -- the $http service, if we generate a service, the functions will
@@ -86,9 +90,9 @@ generateAngularJSWith ngOptions opts req = "\n" <>
                   0 -> ["$http"]
                   _ -> []
 
-        captures = map (fst . captureArg)
+        captures = map (view argPath . captureArg)
                  . filter isCapture
-                 $ req ^. reqUrl.path
+                 $ req ^. reqUrl . path
 
         hs = req ^. reqHeaders
 
@@ -109,10 +113,11 @@ generateAngularJSWith ngOptions opts req = "\n" <>
             then ""
             else "    , headers: { " <> headersStr <> " }\n"
 
-          where headersStr = T.intercalate ", " $ map headerStr hs
-                headerStr header = "\"" <>
-                  fst (headerArg header) <>
-                  "\": " <> toJSHeader header
+          where
+            headersStr = T.intercalate ", " $ map headerStr hs
+            headerStr header = "\"" <>
+              header ^. headerArg . argPath <>
+              "\": " <> toJSHeader header
 
         namespace =
             if hasService
@@ -127,7 +132,7 @@ generateAngularJSWith ngOptions opts req = "\n" <>
 
         fsep = if hasService then ":" else " ="
 
-        fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
+        fname = namespace <> (functionNameBuilder opts $ req ^. reqFuncName)
 
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'

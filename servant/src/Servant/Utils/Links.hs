@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -74,7 +73,7 @@
 -- >>> safeLink api bad_link
 -- ...
 --     Could not deduce (Or
---                         (IsElem' (Delete '[JSON] ()) (Get '[JSON] Int))
+--                         (IsElem' (Verb 'DELETE 200 '[JSON] ()) (Verb 'GET 200 '[JSON] Int))
 --                         (IsElem'
 --                            ("hello" :> Delete '[JSON] ())
 --                            ("bye" :> (QueryParam "name" String :> Delete '[JSON] ()))))
@@ -101,29 +100,23 @@ module Servant.Utils.Links (
   , Or
 ) where
 
-import Data.List
-import Data.Proxy ( Proxy(..) )
-import qualified Data.Text as Text
 import qualified Data.ByteString.Char8 as BSC
-#if !MIN_VERSION_base(4,8,0)
-import Data.Monoid ( Monoid(..), (<>) )
-#else
-import Data.Monoid ( (<>) )
-#endif
-import Network.URI ( URI(..), escapeURIString, isUnreserved )
-import GHC.TypeLits ( KnownSymbol, symbolVal )
-import GHC.Exts(Constraint)
+import           Data.List
+import           Data.Monoid.Compat    ( (<>) )
+import           Data.Proxy            ( Proxy(..) )
+import qualified Data.Text             as Text
+import           GHC.Exts              (Constraint)
+import           GHC.TypeLits          ( KnownSymbol, symbolVal )
+import           Network.URI           ( URI(..), escapeURIString, isUnreserved )
+import           Prelude               ()
+import           Prelude.Compat
 
 import Web.HttpApiData
 import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.Header ( Header )
-import Servant.API.Get ( Get )
-import Servant.API.Post ( Post )
-import Servant.API.Put ( Put )
-import Servant.API.Patch ( Patch )
-import Servant.API.Delete ( Delete )
+import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
 import Servant.API.Alternative ( type (:<|>) )
@@ -177,11 +170,8 @@ type family IsElem endpoint api :: Constraint where
     IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
     IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
-    IsElem (Get ct typ) (Get ct' typ)       = IsSubList ct ct'
-    IsElem (Post ct typ) (Post ct' typ)     = IsSubList ct ct'
-    IsElem (Put ct typ) (Put ct' typ)       = IsSubList ct ct'
-    IsElem (Patch ct typ) (Patch ct' typ)   = IsSubList ct ct'
-    IsElem (Delete ct typ) (Delete ct' typ) = IsSubList ct ct'
+    IsElem (Verb m s ct typ) (Verb m s ct' typ)
+                                            = IsSubList ct ct'
     IsElem e e                              = ()
     IsElem e a                              = IsElem' e a
 
@@ -303,24 +293,8 @@ instance HasLink sub => HasLink (Header sym a :> sub) where
     toLink _ = toLink (Proxy :: Proxy sub)
 
 -- Verb (terminal) instances
-instance HasLink (Get y r) where
-    type MkLink (Get y r) = URI
-    toLink _ = linkURI
-
-instance HasLink (Post y r) where
-    type MkLink (Post y r) = URI
-    toLink _ = linkURI
-
-instance HasLink (Put y r) where
-    type MkLink (Put y r) = URI
-    toLink _ = linkURI
-
-instance HasLink (Patch y r) where
-    type MkLink (Patch y r) = URI
-    toLink _ = linkURI
-
-instance HasLink (Delete y r) where
-    type MkLink (Delete y r) = URI
+instance HasLink (Verb m s ct a) where
+    type MkLink (Verb m s ct a) = URI
     toLink _ = linkURI
 
 instance HasLink Raw where

@@ -1,4 +1,6 @@
-{-#LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
+
 module Servant.JS.Internal
   ( JavaScriptGenerator
   , CommonGeneratorOptions(..)
@@ -19,7 +21,20 @@ module Servant.JS.Internal
   , reqHeaders
   , HasForeign(..)
   , HasForeignType(..)
+  , GenerateList(..)
+  , NoTypes
+  , HeaderArg
+  , ArgType(..)
   , HeaderArg(..)
+  , QueryArg(..)
+  , Req(..)
+  , Segment(..)
+  , SegmentType(..)
+  , Url(..)
+  , Path
+  , Arg(..)
+  , FunctionName(..)
+  , PathSegment(..)
   , concatCase
   , snakeCase
   , camelCase
@@ -32,7 +47,7 @@ module Servant.JS.Internal
   , Header
   ) where
 
-import           Control.Lens                  ((^.), _1)
+import           Control.Lens hiding (List)
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import           Data.Monoid
@@ -40,23 +55,30 @@ import qualified Data.Text as T
 import           Data.Text (Text)
 import           Servant.Foreign
 
-type AjaxReq = Req
+type AjaxReq = Req ()
 
 -- A 'JavascriptGenerator' just takes the data found in the API type
 -- for each endpoint and generates Javascript code in a Text. Several
 -- generators are available in this package.
-type JavaScriptGenerator = [Req] -> Text
+type JavaScriptGenerator = [Req ()] -> Text
 
 -- | This structure is used by specific implementations to let you
 -- customize the output
 data CommonGeneratorOptions = CommonGeneratorOptions
   {
-    functionNameBuilder :: FunctionName -> Text  -- ^ function generating function names
-  , requestBody :: Text                -- ^ name used when a user want to send the request body (to let you redefine it)
-  , successCallback :: Text            -- ^ name of the callback parameter when the request was successful
-  , errorCallback :: Text              -- ^ name of the callback parameter when the request reported an error
-  , moduleName :: Text                 -- ^ namespace on which we define the foreign function (empty mean local var)
-  , urlPrefix :: Text                  -- ^ a prefix we should add to the Url in the codegen
+    functionNameBuilder :: FunctionName -> Text
+    -- ^ function generating function names
+  , requestBody :: Text
+    -- ^ name used when a user want to send the request body
+    -- (to let you redefine it)
+  , successCallback :: Text
+    -- ^ name of the callback parameter when the request was successful
+  , errorCallback :: Text
+    -- ^ name of the callback parameter when the request reported an error
+  , moduleName :: Text
+    -- ^ namespace on which we define the foreign function (empty mean local var)
+  , urlPrefix :: Text
+    -- ^ a prefix we should add to the Url in the codegen
   }
 
 -- | Default options.
@@ -115,8 +137,9 @@ toValidFunctionName t =
                     , Set.connectorPunctuation
                     ]
 
-toJSHeader :: HeaderArg -> Text
-toJSHeader (HeaderArg n)          = toValidFunctionName ("header" <> fst n)
+toJSHeader :: HeaderArg f -> Text
+toJSHeader (HeaderArg n)
+  = toValidFunctionName ("header" <> n ^. argName . _PathSegment)
 toJSHeader (ReplaceHeaderArg n p)
   | pn `T.isPrefixOf` p = pv <> " + \"" <> rp <> "\""
   | pn `T.isSuffixOf` p = "\"" <> rp <> "\" + " <> pv
@@ -124,34 +147,35 @@ toJSHeader (ReplaceHeaderArg n p)
                              <> "\""
   | otherwise         = p
   where
-    pv = toValidFunctionName ("header" <> fst n)
-    pn = "{" <> fst n <> "}"
+    pv = toValidFunctionName ("header" <> n ^. argName . _PathSegment)
+    pn = "{" <> n ^. argName . _PathSegment <> "}"
     rp = T.replace pn "" p
 
-jsSegments :: [Segment] -> Text
+jsSegments :: [Segment f] -> Text
 jsSegments []  = ""
 jsSegments [x] = "/" <> segmentToStr x False
 jsSegments (x:xs) = "/" <> segmentToStr x True <> jsSegments xs
 
-segmentToStr :: Segment -> Bool -> Text
+segmentToStr :: Segment f -> Bool -> Text
 segmentToStr (Segment st) notTheEnd =
   segmentTypeToStr st <> if notTheEnd then "" else "'"
 
-segmentTypeToStr :: SegmentType -> Text
-segmentTypeToStr (Static s) = s
-segmentTypeToStr (Cap s)    = "' + encodeURIComponent(" <> fst s <> ") + '"
+segmentTypeToStr :: SegmentType f -> Text
+segmentTypeToStr (Static s) = s ^. _PathSegment
+segmentTypeToStr (Cap s)    =
+  "' + encodeURIComponent(" <> s ^. argName . _PathSegment <> ") + '"
 
-jsGParams :: Text -> [QueryArg] -> Text
+jsGParams :: Text -> [QueryArg f] -> Text
 jsGParams _ []     = ""
 jsGParams _ [x]    = paramToStr x False
 jsGParams s (x:xs) = paramToStr x True <> s <> jsGParams s xs
 
-jsParams :: [QueryArg] -> Text
+jsParams :: [QueryArg f] -> Text
 jsParams = jsGParams "&"
 
-paramToStr :: QueryArg -> Bool -> Text
+paramToStr :: QueryArg f -> Bool -> Text
 paramToStr qarg notTheEnd =
-  case qarg ^. argType of
+  case qarg ^. queryArgType of
     Normal -> name
            <> "=' + encodeURIComponent("
            <> name
@@ -161,4 +185,4 @@ paramToStr qarg notTheEnd =
            <> "[]=' + encodeURIComponent("
            <> name
            <> if notTheEnd then ") + '" else ")"
-  where name = qarg ^. argName . _1
+  where name = qarg ^. queryArgName . argName . _PathSegment

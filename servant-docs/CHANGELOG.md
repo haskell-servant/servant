@@ -1,4 +1,4 @@
-HEAD
+0.5
 ----
 
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
@@ -9,6 +9,7 @@ HEAD
 * Move `toSample` out of `ToSample` class
 * Add a few helper functions to define `toSamples`
 * Remove matrix params.
+* Added support for Basic authentication
 
 0.4
 ---

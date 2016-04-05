@@ -1,3 +1,5 @@
+{-# LANGUAGE ConstraintKinds   #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -7,6 +9,7 @@
 module Servant.Server
   ( -- * Run a wai application from an API
     serve
+  , serveWithContext
 
   , -- * Construct a wai Application from an API
     toApplication
@@ -34,6 +37,22 @@ module Servant.Server
   , squashNat
   , generalizeNat
   , tweakResponse
+
+  -- * Context
+  , Context(..)
+  , HasContextEntry(getContextEntry)
+  -- ** NamedContext
+  , NamedContext(..)
+  , descendIntoNamedContext
+
+  -- * Basic Authentication
+  , BasicAuthCheck(BasicAuthCheck, unBasicAuthCheck)
+  , BasicAuthResult(..)
+
+  -- * General Authentication
+  -- , AuthHandler(unAuthHandler)
+  -- , AuthServerData
+  -- , mkAuthHandler
 
     -- * Default error type
   , ServantErr(..)
@@ -63,7 +82,7 @@ module Servant.Server
   , err415
   , err416
   , err417
-   -- * 5XX
+   -- ** 5XX
   , err500
   , err501
   , err502
@@ -102,10 +121,14 @@ import           Servant.Server.Internal.Enter
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: HasServer layout => Proxy layout -> Server layout -> Application
-serve p server = toApplication (runRouter (route p d))
+serve :: (HasServer layout '[]) => Proxy layout -> Server layout -> Application
+serve p = serveWithContext p EmptyContext
+
+serveWithContext :: (HasServer layout context)
+    => Proxy layout -> Context context -> Server layout -> Application
+serveWithContext p context server = toApplication (runRouter (route p context d))
   where
-    d = Delayed r r r (\ _ _ -> Route server)
+    d = Delayed r r r r (\ _ _ _ -> Route server)
     r = return (Route ())
 
 

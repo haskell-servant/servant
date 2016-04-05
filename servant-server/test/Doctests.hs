@@ -10,7 +10,7 @@ main :: IO ()
 main = do
     files <- find always (extension ==? ".hs") "src"
     mCabalMacrosFile <- getCabalMacrosFile
-    doctest $ "-isrc" :
+    doctest $ "-isrc" : "-Iinclude" :
               (maybe [] (\ f -> ["-optP-include", "-optP" ++ f]) mCabalMacrosFile) ++
               "-XOverloadedStrings" :
               "-XFlexibleInstances" :

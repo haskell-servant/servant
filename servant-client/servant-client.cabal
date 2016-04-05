@@ -1,5 +1,5 @@
 name:                servant-client
-version:             0.5
+version:             0.6
 synopsis: automatical derivation of querying functions for servant webservices
 description:
   This library lets you derive automatically Haskell functions that
@@ -10,11 +10,12 @@ description:
   <https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
-author:              Alp Mestanogullari, Sönke Hahn, Julian K. Arni
-maintainer:          alpmestan@gmail.com
-copyright:           2014 Zalora South East Asia Pte Ltd
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
 category:            Web
 build-type:          Simple
+extra-source-files:  include/*.h
 cabal-version:       >=1.10
 tested-with:         GHC >= 7.8
 homepage:            http://haskell-servant.github.io/
@@ -26,7 +27,9 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
+    Servant.Client.Experimental.Auth
     Servant.Common.BaseUrl
+    Servant.Common.BasicAuth
     Servant.Common.Req
   other-modules:
     Servant.Client.PerformRequest
@@ -41,7 +44,9 @@ library
       base >=4.7 && <5
     , aeson
     , attoparsec
+    , base64-bytestring
     , bytestring
+    , case-insensitive
     , exceptions
     , http-api-data >= 0.1  && < 0.3
     , http-client
@@ -50,7 +55,7 @@ library
     , http-types
     , network-uri >= 2.6
     , safe
-    , servant == 0.5.*
+    , servant == 0.6.*
     , string-conversions
     , text
     , transformers
@@ -59,10 +64,10 @@ library
     build-depends:
         ghcjs-base
       , ghcjs-prim
-      , case-insensitive
   hs-source-dirs: src
   default-language: Haskell2010
   ghc-options: -Wall
+  include-dirs: include
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -88,6 +93,7 @@ test-suite spec
     , transformers
     , transformers-compat
     , aeson
+    , base64-bytestring
     , bytestring
     , deepseq
     , hspec >= 2.2.1 && < 2.3
@@ -97,8 +103,8 @@ test-suite spec
     , HUnit
     , network >= 2.6
     , QuickCheck >= 2.7
-    , servant == 0.5.*
-    , servant-server == 0.5.*
+    , servant == 0.6.*
+    , servant-server == 0.6.*
     , text
     , wai
     , warp
@@ -114,3 +120,4 @@ test-suite spec
         ghcjs-base
       , ghcjs-prim
       , case-insensitive
+  include-dirs: include

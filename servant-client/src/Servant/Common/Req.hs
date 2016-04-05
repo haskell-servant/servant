@@ -18,6 +18,7 @@ import Data.String.Conversions
 import Data.Proxy
 import Data.Text (Text)
 import Data.Text.Encoding
+import Data.Typeable
 import Network.HTTP.Client hiding (Proxy, path)
 import Network.HTTP.Media
 import Network.HTTP.Types
@@ -29,6 +30,8 @@ import Servant.Common.BaseUrl
 import Web.HttpApiData
 
 import qualified Network.HTTP.Client as Client
+
+import Web.HttpApiData
 
 data Req = Req
   { reqPath   :: String
@@ -96,18 +99,19 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
 displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
+type ClientM = ExceptT ServantError IO
 
-performRequest :: Method -> Req -> BaseUrl -> Manager
-               -> ExceptT ServantError IO ( Int, ByteString, MediaType
-                                          , [HTTP.Header], Response ByteString)
-performRequest reqMethod req reqHost manager = do
+performRequest :: Method -> Req -> Manager -> BaseUrl
+               -> ClientM ( Int, ByteString, MediaType
+                          , [HTTP.Header], Response ByteString)
+performRequest reqMethod req manager reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
   let request = partialRequest { Client.method = reqMethod
                                , checkStatus = \ _status _headers _cookies -> Nothing
                                }
 
-  eResponse <- liftIO $ performHttpRequest manager request
+  eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
   case eResponse of
     Left err ->
       throwE . ConnectionError $ SomeException err
@@ -115,7 +119,7 @@ performRequest reqMethod req reqHost manager = do
     Right response -> do
       let status = Client.responseStatus response
           body = Client.responseBody response
-          hrds = Client.responseHeaders response
+          hdrs = Client.responseHeaders response
           status_code = statusCode status
       ct <- case lookup "Content-Type" $ Client.responseHeaders response of
                  Nothing -> pure $ "application"//"octet-stream"
@@ -124,20 +128,28 @@ performRequest reqMethod req reqHost manager = do
                    Just t' -> pure t'
       unless (status_code >= 200 && status_code < 300) $
         throwE $ FailureResponse status ct body
-      return (status_code, body, ct, hrds, response)
+      return (status_code, body, ct, hdrs, response)
 
 
 performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> BaseUrl -> Manager -> ExceptT ServantError IO ([HTTP.Header], result)
-performRequestCT ct reqMethod req reqHost manager = do
+  Proxy ct -> Method -> Req -> Manager -> BaseUrl
+    -> ClientM ([HTTP.Header], result)
+performRequestCT ct reqMethod req manager reqHost = do
   let acceptCT = contentType ct
-  (_status, respBody, respCT, hrds, _response) <-
-    performRequest reqMethod (req { reqAccept = [acceptCT] }) reqHost manager
+  (_status, respBody, respCT, hdrs, _response) <-
+    performRequest reqMethod (req { reqAccept = [acceptCT] }) manager reqHost
   unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
     Left err -> throwE $ DecodeFailure err respCT respBody
-    Right val -> return (hrds, val)
+    Right val -> return (hdrs, val)
 
-performRequestNoBody :: Method -> Req -> BaseUrl -> Manager -> ExceptT ServantError IO ()
-performRequestNoBody reqMethod req reqHost manager =
-  void $ performRequest reqMethod req reqHost manager
+performRequestNoBody :: Method -> Req -> Manager -> BaseUrl
+  -> ClientM [HTTP.Header]
+performRequestNoBody reqMethod req manager reqHost = do
+  (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req manager reqHost
+  return hdrs
+
+catchConnectionError :: IO a -> IO (Either ServantError a)
+catchConnectionError action =
+  catch (Right <$> action) $ \e ->
+    pure . Left . ConnectionError $ SomeException (e :: HttpException)

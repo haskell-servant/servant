@@ -34,7 +34,7 @@ install:
 script:
   - if [ "$GHCJS" = "true" ];
       then ./.travis-ghcjs.sh ;
-      else ./.travis-ghc.sh ;
+      else ./travis.sh ;
     fi
   - export CASHER_TIME_OUT=500
 

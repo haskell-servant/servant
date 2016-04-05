@@ -1,6 +1,14 @@
-HEAD
-----
+0.6
+---
 
+* Query parameters that can't be parsed result in a `400` (was `404`).
+
+0.5
+---
+
+* Add `Config` machinery (https://github.com/haskell-servant/servant/pull/327).
+  This is a breaking change, as the signatures of both `route`, `serve` and the
+  typeclass `HasServer` now take an additional parameter.
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Drop `EitherT` in favor of `ExceptT`
 * Use `http-api-data` instead of `Servant.Common.Text`
@@ -8,6 +16,8 @@ HEAD
 * Remove `RouteMismatch`.
 * Redefined constructors of `RouteResult`.
 * Added `Delayed` and related functions (`addMethodCheck`, `addAcceptCheck`, `addBodyCheck`, `runDelayed`)
+* Added support for Basic Authentication
+* Add generalized authentication support via the `AuthServerData` type family and `AuthHandler` handler
 
 0.4.1
 -----

@@ -2,18 +2,18 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                servant-cassava
-version:             0.4.4.2
+version:             0.6
 synopsis:            Servant CSV content-type for cassava
 -- description:
 homepage:            http://haskell-servant.github.io/
 license:             BSD3
 license-file:        LICENSE
-author:              Julian K. Arni
-maintainer:          jkarni@gmail.com
--- copyright:
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2015-2016 Servant Contributors
 -- category:
 build-type:          Simple
--- extra-source-files:
+extra-source-files:  include/*.h
 cabal-version:       >=1.10
 
 library
@@ -22,8 +22,9 @@ library
   -- other-extensions:
   build-depends:       base >=4.6 && <5
                      , cassava >0.4 && <0.5
-                     , servant ==0.5.*
+                     , servant == 0.6.*
                      , http-media
                      , vector
   hs-source-dirs:      src
   default-language:    Haskell2010
+  include-dirs: include

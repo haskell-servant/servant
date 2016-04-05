@@ -1,13 +1,21 @@
-HEAD
-----
+0.6
+---
+
+* `client` no longer takes `BaseUrl` and `Manager` arguments. Instead, each function returned by `client` requires these two arguments.
+
+0.5
+---
 
 * Use the `text` package instead of `String`.
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Added support for `path` on `BaseUrl`.
 * `client` now takes an explicit `Manager` argument.
 * Use `http-api-data` instead of `Servant.Common.Text`
-* Client functions now consider any 2xx succesful.
+* Client functions now consider any 2xx successful.
 * Remove matrix params.
+* Added support for Basic authentication
+* Add generalized authentication support via the `AuthClientData` type family and
+  `AuthenticateReq` data type
 
 0.4.1
 -----

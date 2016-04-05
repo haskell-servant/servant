@@ -23,18 +23,14 @@ module Servant.API (
   -- | Is the request made through HTTPS?
   module Servant.API.Vault,
   -- | Access the location for arbitrary data to be shared by applications and middleware
+  module Servant.API.WithNamedContext,
+  -- | Access context entries in combinators in servant-server
 
   -- * Actual endpoints, distinguished by HTTP method
-  module Servant.API.Get,
-  -- | @GET@ requests
-  module Servant.API.Post,
-  -- | @POST@ requests
-  module Servant.API.Delete,
-  -- | @DELETE@ requests
-  module Servant.API.Put,
-  -- | @PUT@ requests
-  module Servant.API.Patch,
-  -- | @PATCH@ requests
+  module Servant.API.Verbs,
+
+  -- * Authentication
+  module Servant.API.BasicAuth,
 
   -- * Content Types
   module Servant.API.ContentTypes,
@@ -52,26 +48,28 @@ module Servant.API (
   module Web.HttpApiData,
   -- | Classes and instances for types that can be converted to and from HTTP API data.
 
+
+  -- * Experimental modules
+  module Servant.API.Experimental.Auth,
+  -- | General Authentication
+
   -- * Utilities
   module Servant.Utils.Links,
   -- | Type-safe internal URIs
   ) where
 
 import           Servant.API.Alternative     ((:<|>) (..))
+import           Servant.API.BasicAuth       (BasicAuth,BasicAuthData(..))
 import           Servant.API.Capture         (Capture)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
-                                              MimeRender (..),
+                                              MimeRender (..), NoContent (NoContent),
                                               MimeUnrender (..), OctetStream,
                                               PlainText, ToFormUrlEncoded (..))
-import           Servant.API.Delete          (Delete)
-import           Servant.API.Get             (Get)
+import           Servant.API.Experimental.Auth (AuthProtect)
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
-import           Servant.API.Patch           (Patch)
-import           Servant.API.Post            (Post)
-import           Servant.API.Put             (Put)
 import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
@@ -84,7 +82,26 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
 import           Servant.API.Vault           (Vault)
-import           Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
+import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepted,
+                                              DeleteNoContent,
+                                              DeleteNonAuthoritative, Get,
+                                              GetAccepted, GetNoContent,
+                                              GetNonAuthoritative,
+                                              GetPartialContent,
+                                              GetResetContent,
+                                              Patch,
+                                              PatchAccepted, PatchNoContent,
+                                              PatchNoContent,
+                                              PatchNonAuthoritative, Post,
+                                              PostAccepted, PostNoContent,
+                                              PostNonAuthoritative,
+                                              PostResetContent, Put,
+                                              PutAccepted, PutNoContent,
+                                              PutNoContent, PutNonAuthoritative,
+                                              ReflectMethod (reflectMethod),
+                                              Verb, StdMethod(..))
+import           Servant.API.WithNamedContext (WithNamedContext)
 import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
                                               URI (..), safeLink)
-
+import           Web.HttpApiData             (FromHttpApiData (..),
+                                              ToHttpApiData (..))
