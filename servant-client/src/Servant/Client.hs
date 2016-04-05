@@ -19,6 +19,7 @@ module Servant.Client
   , AuthenticateReq(..)
   , client
   , HasClient(..)
+  , ClientM
   , mkAuthenticateReq
   , ServantError(..)
   , module Servant.Common.BaseUrl
