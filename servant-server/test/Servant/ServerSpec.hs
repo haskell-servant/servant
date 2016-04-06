@@ -19,8 +19,10 @@ import           Control.Applicative        ((<$>))
 import           Control.Monad              (forM_, when, unless)
 import           Control.Monad.Trans.Except (ExceptT, throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
+import qualified Data.ByteString.Base64     as Base64
 import           Data.ByteString.Conversion ()
 import           Data.Char                  (toUpper)
+import           Data.Monoid
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs)
@@ -569,17 +571,17 @@ basicAuthSpec = do
     with (return (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ do
 
       context "Basic Authentication" $ do
+        let basicAuthHeaders user password =
+              [("Authorization", "Basic " <> Base64.encode (user <> ":" <> password))]
         it "returns 401 when no credentials given" $ do
           get "/basic" `shouldRespondWith` 401
 
         it "returns 403 when invalid credentials given" $ do
-          let invalid = [("Authorization", "Basic bbbbbbbbbDpzZXJ2ZXI=")] -- fixme: how do I create basic auth tokens?
-          THW.request methodGet "/basic" invalid ""
+          THW.request methodGet "/basic" (basicAuthHeaders "servant" "wrong") ""
             `shouldRespondWith` 403
 
         it "returns 200 with the right password" $ do
-          let validCredentials = [("Authorization", "Basic c2VydmFudDpzZXJ2ZXI=")]
-          THW.request methodGet "/basic" validCredentials ""
+          THW.request methodGet "/basic" (basicAuthHeaders "servant" "server") ""
             `shouldRespondWith` 200
 
         it "plays nice with subsequent Raw endpoints" $ do
