@@ -62,7 +62,9 @@ performXhr xhr request = do
   callback <- onReadyStateChange xhr $ do
     state <- readyState xhr
     case state of
-      4 -> putMVar waiter ()
+      4 -> do
+          toPut <- isEmptyMVar waiter
+          when toPut (putMVar waiter ())
       _ -> return ()
   openXhr xhr (cs $ method request) (toUrl request) True
   setHeaders xhr (requestHeaders request)
