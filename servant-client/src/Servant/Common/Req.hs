@@ -21,7 +21,7 @@ import Data.Text.Encoding
 import Network.HTTP.Client hiding (Proxy, path)
 import Network.HTTP.Media
 import Network.HTTP.Types
-import qualified Network.HTTP.Types.Header   as HTTP
+import qualified Network.HTTP.Types.Header as HTTP
 import Network.URI hiding (path)
 import Servant.API.ContentTypes
 import Servant.Client.PerformRequest
@@ -108,7 +108,7 @@ performRequest reqMethod req manager reqHost = do
                                , checkStatus = \ _status _headers _cookies -> Nothing
                                }
 
-  eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
+  eResponse <- liftIO $ performHttpRequest manager request
   case eResponse of
     Left err ->
       throwE . ConnectionError $ SomeException err
@@ -145,8 +145,3 @@ performRequestNoBody :: Method -> Req -> Manager -> BaseUrl
 performRequestNoBody reqMethod req manager reqHost = do
   (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req manager reqHost
   return hdrs
-
-catchConnectionError :: IO a -> IO (Either ServantError a)
-catchConnectionError action =
-  catch (Right <$> action) $ \e ->
-    pure . Left . ConnectionError $ SomeException (e :: HttpException)
