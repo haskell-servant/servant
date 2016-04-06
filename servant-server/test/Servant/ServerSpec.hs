@@ -593,12 +593,14 @@ basicAuthSpec = do
 ------------------------------------------------------------------------------
 
 type GenAuthAPI = AuthProtect "auth" :> "auth" :> Get '[JSON] Animal
+             :<|> Raw
 
-authApi :: Proxy GenAuthAPI
-authApi = Proxy
+genAuthApi :: Proxy GenAuthAPI
+genAuthApi = Proxy
 
-authServer :: Server GenAuthAPI
-authServer = const (return tweety)
+genAuthServer :: Server GenAuthAPI
+genAuthServer = const (return tweety)
+           :<|> (\ _ respond -> respond $ responseLBS imATeaPot418 [] "")
 
 type instance AuthServerData (AuthProtect "auth") = ()
 
@@ -614,7 +616,7 @@ genAuthContext =
 genAuthSpec :: Spec
 genAuthSpec = do
   describe "Servant.API.Auth" $ do
-    with (return (serveWithContext authApi genAuthContext authServer)) $ do
+    with (return (serveWithContext genAuthApi genAuthContext genAuthServer)) $ do
 
       context "Custom Auth Protection" $ do
         it "returns 401 when missing headers" $ do
@@ -622,6 +624,9 @@ genAuthSpec = do
 
         it "returns 200 with the right header" $ do
           THW.request methodGet "/auth" [("Auth","secret")] "" `shouldRespondWith` 200
+
+        it "plays nice with subsequent Raw endpoints" $ do
+          get "/foo" `shouldRespondWith` 418
 
 -- }}}
 ------------------------------------------------------------------------------
