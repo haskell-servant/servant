@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveFunctor      #-}
-{-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Servant.Server.Internal.BasicAuth where
 
@@ -15,9 +15,9 @@ import           GHC.Generics
 import           Network.HTTP.Types     (Header)
 import           Network.Wai            (Request, requestHeaders)
 
-import Servant.API.BasicAuth (BasicAuthData(BasicAuthData))
-import Servant.Server.Internal.RoutingApplication
-import Servant.Server.Internal.ServantErr
+import           Servant.API.BasicAuth (BasicAuthData(BasicAuthData))
+import           Servant.Server.Internal.RoutingApplication
+import           Servant.Server.Internal.ServantErr
 
 -- * Basic Auth
 

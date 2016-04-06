@@ -546,16 +546,16 @@ type BasicAuthAPI = BasicAuth "foo" () :> "basic" :> Get '[JSON] Animal
 
 basicAuthApi :: Proxy BasicAuthAPI
 basicAuthApi = Proxy
+
 basicAuthServer :: Server BasicAuthAPI
 basicAuthServer = const (return jerry)
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
-  let basicHandler = BasicAuthCheck $ (\(BasicAuthData usr pass) ->
+  let basicHandler = BasicAuthCheck $ \(BasicAuthData usr pass) ->
         if usr == "servant" && pass == "server"
-        then return (Authorized ())
-        else return Unauthorized
-        )
+          then return (Authorized ())
+          else return Unauthorized
   in basicHandler :. EmptyContext
 
 basicAuthSpec :: Spec
@@ -564,10 +564,13 @@ basicAuthSpec = do
     with (return (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ do
 
       context "Basic Authentication" $ do
-        it "returns with 401 with bad password" $ do
+        it "returns 401 with bad password" $ do
           get "/basic" `shouldRespondWith` 401
+
         it "returns 200 with the right password" $ do
-          THW.request methodGet "/basic" [("Authorization","Basic c2VydmFudDpzZXJ2ZXI=")] "" `shouldRespondWith` 200
+          let validCredentials = [("Authorization", "Basic c2VydmFudDpzZXJ2ZXI=")]
+          THW.request methodGet "/basic" validCredentials ""
+            `shouldRespondWith` 200
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -575,14 +578,16 @@ basicAuthSpec = do
 ------------------------------------------------------------------------------
 
 type GenAuthAPI = AuthProtect "auth" :> "auth" :> Get '[JSON] Animal
+
 authApi :: Proxy GenAuthAPI
 authApi = Proxy
+
 authServer :: Server GenAuthAPI
 authServer = const (return tweety)
 
 type instance AuthServerData (AuthProtect "auth") = ()
 
-genAuthContext :: Context '[ AuthHandler Request () ]
+genAuthContext :: Context '[AuthHandler Request ()]
 genAuthContext =
   let authHandler = (\req ->
         if elem ("Auth", "secret") (requestHeaders req)
@@ -599,6 +604,7 @@ genAuthSpec = do
       context "Custom Auth Protection" $ do
         it "returns 401 when missing headers" $ do
           get "/auth" `shouldRespondWith` 401
+
         it "returns 200 with the right header" $ do
           THW.request methodGet "/auth" [("Auth","secret")] "" `shouldRespondWith` 200
 
