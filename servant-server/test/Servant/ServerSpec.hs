@@ -30,6 +30,7 @@ import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
                                              methodDelete, methodGet,
                                              methodHead, methodPatch,
                                              methodPost, methodPut, ok200,
+                                             imATeaPot418,
                                              parseQuery)
 import           Network.Wai                (Application, Request, requestHeaders, pathInfo,
                                              queryString, rawQueryString,
@@ -542,13 +543,17 @@ miscCombinatorSpec = with (return $ serve miscApi miscServ) $
 -- * Basic Authentication {{{
 ------------------------------------------------------------------------------
 
-type BasicAuthAPI = BasicAuth "foo" () :> "basic" :> Get '[JSON] Animal
+type BasicAuthAPI =
+       BasicAuth "foo" () :> "basic" :> Get '[JSON] Animal
+  :<|> Raw
 
 basicAuthApi :: Proxy BasicAuthAPI
 basicAuthApi = Proxy
 
 basicAuthServer :: Server BasicAuthAPI
-basicAuthServer = const (return jerry)
+basicAuthServer =
+  const (return jerry) :<|>
+  (\ _ respond -> respond $ responseLBS imATeaPot418 [] "")
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
@@ -564,13 +569,21 @@ basicAuthSpec = do
     with (return (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ do
 
       context "Basic Authentication" $ do
-        it "returns 401 with bad password" $ do
+        it "returns 401 when no credentials given" $ do
           get "/basic" `shouldRespondWith` 401
+
+        it "returns 403 when invalid credentials given" $ do
+          let invalid = [("Authorization", "Basic bbbbbbbbbDpzZXJ2ZXI=")] -- fixme: how do I create basic auth tokens?
+          THW.request methodGet "/basic" invalid ""
+            `shouldRespondWith` 403
 
         it "returns 200 with the right password" $ do
           let validCredentials = [("Authorization", "Basic c2VydmFudDpzZXJ2ZXI=")]
           THW.request methodGet "/basic" validCredentials ""
             `shouldRespondWith` 200
+
+        it "plays nice with subsequent Raw endpoints" $ do
+          get "/foo" `shouldRespondWith` 418
 
 -- }}}
 ------------------------------------------------------------------------------

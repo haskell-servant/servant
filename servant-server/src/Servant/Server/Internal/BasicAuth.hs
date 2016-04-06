@@ -64,6 +64,6 @@ runBasicAuth req realm (BasicAuthCheck ba) =
      Just e  -> ba e >>= \res -> case res of
        BadPassword    -> plzAuthenticate
        NoSuchUser     -> plzAuthenticate
-       Unauthorized   -> return $ Fail err403
+       Unauthorized   -> return $ FailFatal err403
        Authorized usr -> return $ Route usr
-  where plzAuthenticate = return $ Fail err401 { errHeaders = [mkBAChallengerHdr realm] }
+  where plzAuthenticate = return $ FailFatal err401 { errHeaders = [mkBAChallengerHdr realm] }
