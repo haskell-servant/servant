@@ -3,7 +3,9 @@ set -ev
 
 # tinc
 #cabal exec which hspec-discover
-#barf
+barf
+
+
 cabal install hspec-discover --prefix $HOME/.local
 # export PATH=$HOME/huhu/bin:$PATH
 which hspec-discover

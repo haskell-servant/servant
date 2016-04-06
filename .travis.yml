@@ -27,19 +27,12 @@ install:
   - travis_retry cabal update
   - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
 
-  # set up stack (for ghcjs in servant-client)
-  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-  - stack --version
-
 script:
   - if [ "$GHCJS" = "true" ];
-      then ./.travis-ghcjs.sh ;
+      then ./travis-ghcjs.sh ;
       else ./travis.sh ;
     fi
-  - export CASHER_TIME_OUT=500
 
 cache:
   directories:
     - $HOME/.tinc/cache
-    - $HOME/.stack
-    - $HOME/.ghcjs
