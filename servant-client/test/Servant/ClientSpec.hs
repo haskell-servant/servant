@@ -34,8 +34,9 @@ import           GHC.Generics               (Generic)
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
 import qualified Network.HTTP.Types as HTTP
-import           Network.Wai                (Application, responseLBS)
+import           Network.Wai                (responseLBS)
 import qualified Network.Wai as Wai
+import           System.Exit
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.HUnit
 import           Test.Hspec
@@ -77,12 +78,14 @@ spec = describe "Servant.Client" $ do
 -- This rather cumbersome approach is taken because it's not easy to run a wai
 -- Application as a http server when using ghcjs.
 withTestServer :: String -> (BaseUrl -> IO a) -> IO a
-withTestServer = withServer . lookupTestServer
+withTestServer name action = do
+  server <- lookupTestServer name
+  withServer server action
 
-lookupTestServer :: String -> TestServer
+lookupTestServer :: String -> IO TestServer
 lookupTestServer name = case lookup name mapping of
-  Nothing -> error ("test server not found: " ++ name)
-  Just testServer -> testServer
+  Nothing -> die ("test server not found: " ++ name)
+  Just testServer -> return testServer
   where
     mapping :: [(String, TestServer)]
     mapping = map (\ server -> (testServerName server, server)) allTestServers
@@ -93,6 +96,8 @@ allTestServers =
   server :
   errorServer :
   failServer :
+  basicAuthServer :
+  genAuthServer :
   []
 
 -- * test data types
@@ -227,8 +232,9 @@ basicAuthHandler =
 basicServerContext :: Context '[ BasicAuthCheck () ]
 basicServerContext = basicAuthHandler :. EmptyContext
 
-basicAuthServer :: Application
-basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (return alice))
+basicAuthServer :: TestServer
+basicAuthServer = TestServer "basicAuthServer" $
+  serveWithContext basicAuthAPI basicServerContext (const (return alice))
 
 -- * general auth stuff
 
@@ -251,8 +257,9 @@ genAuthHandler =
 genAuthServerContext :: Context '[ AuthHandler Wai.Request () ]
 genAuthServerContext = genAuthHandler :. EmptyContext
 
-genAuthServer :: Application
-genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
+genAuthServer :: TestServer
+genAuthServer = TestServer "genAuthServer" $
+  serveWithContext genAuthAPI genAuthServerContext (const (return alice))
 
 {-# NOINLINE manager #-}
 manager :: C.Manager

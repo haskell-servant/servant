@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.8.0.
+-- This file has been generated from package.yaml by hpack version 0.10.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -29,6 +29,7 @@ executable testServer
     , wai
     , transformers
     , network
+    , bytestring
   other-modules:
       Servant.Client.PerformRequest.GHCJSSpec
       Servant.Client.TestServer

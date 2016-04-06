@@ -27,7 +27,7 @@ withServer (TestServer testServerName _) action = do
       }
       line <- hGetLine stdout
       case readMay line :: Maybe Int of
-        Nothing -> error ("unparseable port: " ++ show line)
+        Nothing -> die ("unparseable port: " ++ show line)
         Just port -> return (port, process)
     stop (_, process) = do
       terminateProcess process

@@ -18,7 +18,6 @@ import Data.String.Conversions
 import Data.Proxy
 import Data.Text (Text)
 import Data.Text.Encoding
-import Data.Typeable
 import Network.HTTP.Client hiding (Proxy, path)
 import Network.HTTP.Media
 import Network.HTTP.Types
@@ -30,8 +29,6 @@ import Servant.Common.BaseUrl
 import Web.HttpApiData
 
 import qualified Network.HTTP.Client as Client
-
-import Web.HttpApiData
 
 data Req = Req
   { reqPath   :: String

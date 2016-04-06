@@ -80,6 +80,8 @@ test-suite spec
       Servant.ClientSpec
     , Servant.Client.PerformRequest.GHCJSSpec
     , Servant.Client.TestServer
+    , Servant.Client.TestServer.Types
+    , Servant.Common.BaseUrl
     , Servant.Common.BaseUrlSpec
     , Spec
   if impl(ghcjs)

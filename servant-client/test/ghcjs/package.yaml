@@ -20,6 +20,7 @@ executables:
       - wai
       - transformers
       - network
+      - bytestring
     source-dirs:
       - ./
       - ../

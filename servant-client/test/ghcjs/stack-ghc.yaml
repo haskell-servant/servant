@@ -9,7 +9,4 @@ packages:
       - servant-server
     extra-dep: true
 
-resolver: nightly-2015-10-08
-
-extra-deps:
-  - http-api-data-0.1.1.1
+resolver: nightly-2016-04-01
