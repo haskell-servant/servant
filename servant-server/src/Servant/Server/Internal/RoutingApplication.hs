@@ -35,31 +35,6 @@ toApplication ra request respond = ra request routingRespond
   routingRespond (FailFatal err) = respond $ responseServantErr err
   routingRespond (Route v)       = respond v
 
--- We currently mix up the order in which we perform checks
--- and the priority with which errors are reported.
---
--- For example, we perform Capture checks prior to method checks,
--- and therefore get 404 before 405.
---
--- However, we also perform body checks prior to method checks
--- now, and therefore get 415 before 405, which is wrong.
---
--- If we delay Captures, but perform method checks eagerly, we
--- end up potentially preferring 405 over 404, which is also bad.
---
--- So in principle, we'd like:
---
--- static routes (can cause 404)
--- delayed captures (can cause 404)
--- methods (can cause 405)
--- authentication and authorization (can cause 401, 403)
--- delayed body (can cause 415, 400)
--- accept header (can cause 406)
---
--- According to the HTTP decision diagram, the priority order
--- between HTTP status codes is as follows:
---
-
 -- | A 'Delayed' is a representation of a handler with scheduled
 -- delayed checks that can trigger errors.
 --
