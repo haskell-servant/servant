@@ -63,4 +63,3 @@ instance ( HasServer api context
       where
         authHandler = unAuthHandler (getContextEntry context)
         authCheck = fmap (either FailFatal Route) . runExceptT . authHandler
-

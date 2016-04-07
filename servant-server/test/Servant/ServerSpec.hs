@@ -52,7 +52,7 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
-import           Servant.Server             (ServantErr (..), Server, err401, err404,
+import           Servant.Server             (ServantErr (..), Server, err401, err403, err404,
                                              serve, serveWithContext, Context((:.), EmptyContext))
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
@@ -606,11 +606,10 @@ type instance AuthServerData (AuthProtect "auth") = ()
 
 genAuthContext :: Context '[AuthHandler Request ()]
 genAuthContext =
-  let authHandler = (\req ->
-        if elem ("Auth", "secret") (requestHeaders req)
-        then return ()
-        else throwE err401
-        )
+  let authHandler = \req -> case lookup "Auth" (requestHeaders req) of
+        Just "secret" -> return ()
+        Just _ -> throwE err403
+        Nothing -> throwE err401
   in mkAuthHandler authHandler :. EmptyContext
 
 genAuthSpec :: Spec
@@ -621,6 +620,9 @@ genAuthSpec = do
       context "Custom Auth Protection" $ do
         it "returns 401 when missing headers" $ do
           get "/auth" `shouldRespondWith` 401
+
+        it "returns 403 on wrong passwords" $ do
+          THW.request methodGet "/auth" [("Auth","wrong")] "" `shouldRespondWith` 403
 
         it "returns 200 with the right header" $ do
           THW.request methodGet "/auth" [("Auth","secret")] "" `shouldRespondWith` 200
