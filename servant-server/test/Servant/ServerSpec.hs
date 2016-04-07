@@ -14,7 +14,7 @@
 module Servant.ServerSpec where
 
 import           Control.Monad              (forM_, when, unless)
-import           Control.Monad.Trans.Except (ExceptT, throwE)
+import           Control.Monad.Trans.Except (throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
 import qualified Data.ByteString.Base64     as Base64
 import           Data.ByteString.Conversion ()
@@ -48,8 +48,9 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
-import           Servant.Server             (ServantErr (..), Server, err401, err403, err404,
-                                             serve, serveWithContext, Context((:.), EmptyContext))
+import           Servant.Server             (ServantErr (..), Server, Handler, err401, err403,
+                                             err404, serve, serveWithContext,
+                                             Context((:.), EmptyContext))
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
 import qualified Test.Hspec.Wai             as THW
@@ -180,7 +181,7 @@ verbSpec = describe "Servant.API.Verb" $ do
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
 captureApi :: Proxy CaptureApi
 captureApi = Proxy
-captureServer :: Integer -> ExceptT ServantErr IO Animal
+captureServer :: Integer -> Handler Animal
 captureServer legs = case legs of
   4 -> return jerry
   2 -> return tweety
@@ -336,11 +337,11 @@ headerApi = Proxy
 headerSpec :: Spec
 headerSpec = describe "Servant.API.Header" $ do
 
-    let expectsInt :: Maybe Int -> ExceptT ServantErr IO ()
+    let expectsInt :: Maybe Int -> Handler ()
         expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
         expectsInt Nothing  = error "Expected an int"
 
-    let expectsString :: Maybe String -> ExceptT ServantErr IO ()
+    let expectsString :: Maybe String -> Handler ()
         expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
         expectsString Nothing  = error "Expected a string"
 

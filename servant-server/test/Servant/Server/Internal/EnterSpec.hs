@@ -34,7 +34,7 @@ combinedAPI = Proxy
 readerServer' :: ServerT ReaderAPI (Reader String)
 readerServer' = return 1797 :<|> ask
 
-fReader :: Reader String :~> ExceptT ServantErr IO
+fReader :: Reader String :~> Handler
 fReader = generalizeNat C.. (runReaderTNat "hi")
 
 readerServer :: Server ReaderAPI

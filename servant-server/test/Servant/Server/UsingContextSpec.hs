@@ -25,7 +25,7 @@ spec = do
 type OneEntryAPI =
   ExtractFromContext :> Get '[JSON] String
 
-testServer :: String -> ExceptT ServantErr IO String
+testServer :: String -> Handler String
 testServer s = return s
 
 oneEntryApp :: Application

@@ -12,8 +12,7 @@
 
 module Servant.Server.Experimental.Auth where
 
-import           Control.Monad.Trans.Except                 (ExceptT,
-                                                             runExceptT)
+import           Control.Monad.Trans.Except                 (runExceptT)
 import           Data.Proxy                                 (Proxy (Proxy))
 import           Data.Typeable                              (Typeable)
 import           GHC.Generics                               (Generic)
@@ -28,7 +27,7 @@ import           Servant.Server.Internal                    (HasContextEntry,
 import           Servant.Server.Internal.Router             (Router' (WithRequest))
 import           Servant.Server.Internal.RoutingApplication (RouteResult (FailFatal, Route),
                                                              addAuthCheck)
-import           Servant.Server.Internal.ServantErr         (ServantErr)
+import           Servant.Server.Internal.ServantErr         (ServantErr, Handler)
 
 -- * General Auth
 
@@ -42,11 +41,11 @@ type family AuthServerData a :: *
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
 newtype AuthHandler r usr = AuthHandler
-  { unAuthHandler :: r -> ExceptT ServantErr IO usr }
+  { unAuthHandler :: r -> Handler usr }
   deriving (Generic, Typeable)
 
 -- | NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-mkAuthHandler :: (r -> ExceptT ServantErr IO usr) -> AuthHandler r usr
+mkAuthHandler :: (r -> Handler usr) -> AuthHandler r usr
 mkAuthHandler = AuthHandler
 
 -- | Known orphan instance.

@@ -111,11 +111,11 @@ corresponding API type.
 The first thing to know about the `Server` type family is that behind the
 scenes it will drive the routing, letting you focus only on the business
 logic. The second thing to know is that for each endpoint, your handlers will
-by default run in the `ExceptT ServantErr IO` monad. This is overridable very
+by default run in the `Handler` monad. This is overridable very
 easily, as explained near the end of this guide. Third thing, the type of the
 value returned in that monad must be the same as the second argument of the
 HTTP method combinator used for the corresponding endpoint. In our case, it
-means we must provide a handler of type `ExceptT ServantErr IO [User]`. Well,
+means we must provide a handler of type `Handler [User]`. Well,
 we have a monad, let's just `return` our list:
 
 ``` haskell
@@ -269,15 +269,15 @@ server3 = position
      :<|> hello
      :<|> marketing
 
-  where position :: Int -> Int -> ExceptT ServantErr IO Position
+  where position :: Int -> Int -> Handler Position
         position x y = return (Position x y)
 
-        hello :: Maybe String -> ExceptT ServantErr IO HelloMessage
+        hello :: Maybe String -> Handler HelloMessage
         hello mname = return . HelloMessage $ case mname of
           Nothing -> "Hello, anonymous coward"
           Just n  -> "Hello, " ++ n
 
-        marketing :: ClientInfo -> ExceptT ServantErr IO Email
+        marketing :: ClientInfo -> Handler Email
         marketing clientinfo = return (emailForClient clientinfo)
 ```
 
@@ -307,7 +307,7 @@ $ curl -X POST -d '{"clientName":"Alp Mestanogullari", "clientEmail" : "alp@foo.
 
 For reference, here's a list of some combinators from **servant**:
 
- > - `Delete`, `Get`, `Patch`, `Post`, `Put`: these do not become arguments. They provide the return type of handlers, which usually is `ExceptT ServantErr IO <something>`.
+ > - `Delete`, `Get`, `Patch`, `Post`, `Put`: these do not become arguments. They provide the return type of handlers, which usually is `Handler <something>`.
  > - `Capture "something" a` becomes an argument of type `a`.
  > - `QueryParam "something" a`, `Header "something" a` all become arguments of type `Maybe a`, because there might be no value at all specified by the client for these.
  > - `QueryFlag "something"` gets turned into an argument of type `Bool`.
@@ -601,11 +601,10 @@ $ curl -H 'Accept: text/html' http://localhost:8081/persons
 # or just point your browser to http://localhost:8081/persons
 ```
 
-## The `ExceptT ServantErr IO` monad
+## The `Handler` monad
 
-At the heart of the handlers is the monad they run in, namely `ExceptT
-ServantErr IO`
-([haddock documentation for `ExceptT`](http://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)).
+At the heart of the handlers is the monad they run in, namely `ExceptT ServantErr IO`
+([haddock documentation for `ExceptT`](http://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)), which is aliased as `Handler`.
 One might wonder: why this monad? The answer is that it is the
 simplest monad with the following properties:
 
@@ -621,7 +620,7 @@ Let's recall some definitions.
 newtype ExceptT e m a = ExceptT (m (Either e a))
 ```
 
-In short, this means that a handler of type `ExceptT ServantErr IO a` is simply
+In short, this means that a handler of type `Handler a` is simply
 equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO
 action that either returns an error or a result.
 
@@ -688,7 +687,7 @@ module.  If you want to use these values but add a body or some headers, just
 use record update syntax:
 
 ``` haskell
-failingHandler :: ExceptT ServantErr IO ()
+failingHandler :: Handler ()
 failingHandler = throwError myerr
 
   where myerr :: ServantErr
@@ -826,11 +825,11 @@ However, you have to be aware that this has an effect on the type of the
 corresponding `Server`:
 
 ``` haskell ignore
-Server UserAPI3 = (Int -> ExceptT ServantErr IO User)
-             :<|> (Int -> ExceptT ServantErr IO ())
+Server UserAPI3 = (Int -> Handler User)
+             :<|> (Int -> Handler ())
 
-Server UserAPI4 = Int -> (    ExceptT ServantErr IO User
-                         :<|> ExceptT ServantErr IO ()
+Server UserAPI4 = Int -> (    Handler User
+                         :<|> Handler ()
                          )
 ```
 
@@ -842,10 +841,10 @@ computations in `ExceptT`, with no arguments. In other words:
 server8 :: Server UserAPI3
 server8 = getUser :<|> deleteUser
 
-  where getUser :: Int -> ExceptT ServantErr IO User
+  where getUser :: Int -> Handler User
         getUser _userid = error "..."
 
-        deleteUser :: Int -> ExceptT ServantErr IO ()
+        deleteUser :: Int -> Handler ()
         deleteUser _userid = error "..."
 
 -- notice how getUser and deleteUser
@@ -854,10 +853,10 @@ server8 = getUser :<|> deleteUser
 server9 :: Server UserAPI4
 server9 userid = getUser userid :<|> deleteUser userid
 
-  where getUser :: Int -> ExceptT ServantErr IO User
+  where getUser :: Int -> Handler User
         getUser = error "..."
 
-        deleteUser :: Int -> ExceptT ServantErr IO ()
+        deleteUser :: Int -> Handler ()
         deleteUser = error "..."
 ```
 
@@ -905,23 +904,23 @@ type UsersAPI =
 usersServer :: Server UsersAPI
 usersServer = getUsers :<|> newUser :<|> userOperations
 
-  where getUsers :: ExceptT ServantErr IO [User]
+  where getUsers :: Handler [User]
         getUsers = error "..."
 
-        newUser :: User -> ExceptT ServantErr IO ()
+        newUser :: User -> Handler ()
         newUser = error "..."
 
         userOperations userid =
           viewUser userid :<|> updateUser userid :<|> deleteUser userid
 
           where
-            viewUser :: Int -> ExceptT ServantErr IO User
+            viewUser :: Int -> Handler User
             viewUser = error "..."
 
-            updateUser :: Int -> User -> ExceptT ServantErr IO ()
+            updateUser :: Int -> User -> Handler ()
             updateUser = error "..."
 
-            deleteUser :: Int -> ExceptT ServantErr IO ()
+            deleteUser :: Int -> Handler ()
             deleteUser = error "..."
 ```
 
@@ -940,23 +939,23 @@ data Product = Product { productId :: Int }
 productsServer :: Server ProductsAPI
 productsServer = getProducts :<|> newProduct :<|> productOperations
 
-  where getProducts :: ExceptT ServantErr IO [Product]
+  where getProducts :: Handler [Product]
         getProducts = error "..."
 
-        newProduct :: Product -> ExceptT ServantErr IO ()
+        newProduct :: Product -> Handler ()
         newProduct = error "..."
 
         productOperations productid =
           viewProduct productid :<|> updateProduct productid :<|> deleteProduct productid
 
           where
-            viewProduct :: Int -> ExceptT ServantErr IO Product
+            viewProduct :: Int -> Handler Product
             viewProduct = error "..."
 
-            updateProduct :: Int -> Product -> ExceptT ServantErr IO ()
+            updateProduct :: Int -> Product -> Handler ()
             updateProduct = error "..."
 
-            deleteProduct :: Int -> ExceptT ServantErr IO ()
+            deleteProduct :: Int -> Handler ()
             deleteProduct = error "..."
 ```
 
@@ -985,11 +984,11 @@ type APIFor a i =
 
 -- Build the appropriate 'Server'
 -- given the handlers of the right type.
-serverFor :: ExceptT ServantErr IO [a] -- handler for listing of 'a's
-          -> (a -> ExceptT ServantErr IO ()) -- handler for adding an 'a'
-          -> (i -> ExceptT ServantErr IO a) -- handler for viewing an 'a' given its identifier of type 'i'
-          -> (i -> a -> ExceptT ServantErr IO ()) -- updating an 'a' with given id
-          -> (i -> ExceptT ServantErr IO ()) -- deleting an 'a' given its id
+serverFor :: Handler [a] -- handler for listing of 'a's
+          -> (a -> Handler ()) -- handler for adding an 'a'
+          -> (i -> Handler a) -- handler for viewing an 'a' given its identifier of type 'i'
+          -> (i -> a -> Handler ()) -- updating an 'a' with given id
+          -> (i -> Handler ()) -- deleting an 'a' given its id
           -> Server (APIFor a i)
 serverFor = error "..."
 -- implementation left as an exercise. contact us on IRC
@@ -998,12 +997,11 @@ serverFor = error "..."
 
 ## Using another monad for your handlers
 
-Remember how `Server` turns combinators for HTTP methods into `ExceptT
-ServantErr IO`? Well, actually, there's more to that. `Server` is actually a
+Remember how `Server` turns combinators for HTTP methods into `Handler`? Well, actually, there's more to that. `Server` is actually a
 simple type synonym.
 
 ``` haskell ignore
-type Server api = ServerT api (ExceptT ServantErr IO)
+type Server api = ServerT api Handler
 ```
 
 `ServerT` is the actual type family that computes the required types for the
@@ -1036,12 +1034,11 @@ listToMaybeNat = Nat listToMaybe  -- from Data.Maybe
 
 (`Nat` comes from "natural transformation", in case you're wondering.)
 
-So if you want to write handlers using another monad/type than `ExceptT
-ServantErr IO`, say the `Reader String` monad, the first thing you have to
+So if you want to write handlers using another monad/type than `Handler`, say the `Reader String` monad, the first thing you have to
 prepare is a function:
 
 ``` haskell ignore
-readerToHandler :: Reader String :~> ExceptT ServantErr IO
+readerToHandler :: Reader String :~> Handler
 ```
 
 Let's start with `readerToHandler'`. We obviously have to run the `Reader`
@@ -1050,10 +1047,10 @@ from that and can then just `return` it into `ExceptT`. We can then just wrap
 that function with the `Nat` constructor to make it have the fancier type.
 
 ``` haskell
-readerToHandler' :: forall a. Reader String a -> ExceptT ServantErr IO a
+readerToHandler' :: forall a. Reader String a -> Handler a
 readerToHandler' r = return (runReader r "hi")
 
-readerToHandler :: Reader String :~> ExceptT ServantErr IO
+readerToHandler :: Reader String :~> Handler
 readerToHandler = Nat readerToHandler'
 ```
 
@@ -1077,8 +1074,7 @@ readerServerT = a :<|> b
 ```
 
 We unfortunately can't use `readerServerT` as an argument of `serve`, because
-`serve` wants a `Server ReaderAPI`, i.e., with handlers running in `ExceptT
-ServantErr IO`. But there's a simple solution to this.
+`serve` wants a `Server ReaderAPI`, i.e., with handlers running in `Handler`. But there's a simple solution to this.
 
 ### Enter `enter`
 

@@ -22,7 +22,6 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
-import           Control.Monad.Trans.Except (ExceptT)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
@@ -73,7 +72,7 @@ class HasServer layout context where
 
   route :: Proxy layout -> Context context -> Delayed (Server layout) -> Router
 
-type Server layout = ServerT layout (ExceptT ServantErr IO)
+type Server layout = ServerT layout Handler
 
 -- * Instances
 
@@ -112,7 +111,7 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
 -- >
 -- > server :: Server MyApi
 -- > server = getBook
--- >   where getBook :: Text -> ExceptT ServantErr IO Book
+-- >   where getBook :: Text -> Handler Book
 -- >         getBook isbn = ...
 instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout context)
       => HasServer (Capture capture a :> sublayout) context where
@@ -157,7 +156,7 @@ acceptCheck proxy accH
 
 methodRouter :: (AllCTRender ctypes a)
              => Method -> Proxy ctypes -> Status
-             -> Delayed (ExceptT ServantErr IO a)
+             -> Delayed (Handler a)
              -> Router
 methodRouter method proxy status action = leafRouter route'
   where
@@ -171,7 +170,7 @@ methodRouter method proxy status action = leafRouter route'
 
 methodRouterHeaders :: (GetHeaders (Headers h v), AllCTRender ctypes v)
                     => Method -> Proxy ctypes -> Status
-                    -> Delayed (ExceptT ServantErr IO (Headers h v))
+                    -> Delayed (Handler (Headers h v))
                     -> Router
 methodRouterHeaders method proxy status action = leafRouter route'
   where
@@ -223,7 +222,7 @@ instance OVERLAPPING_
 -- >
 -- > server :: Server MyApi
 -- > server = viewReferer
--- >   where viewReferer :: Referer -> ExceptT ServantErr IO referer
+-- >   where viewReferer :: Referer -> Handler referer
 -- >         viewReferer referer = return referer
 instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
       => HasServer (Header sym a :> sublayout) context where
@@ -254,7 +253,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: Maybe Text -> ExceptT ServantErr IO [Book]
+-- >   where getBooksBy :: Maybe Text -> Handler [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
 instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
@@ -291,7 +290,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: [Text] -> ExceptT ServantErr IO [Book]
+-- >   where getBooksBy :: [Text] -> Handler [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
 instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
       => HasServer (QueryParams sym a :> sublayout) context where
@@ -322,7 +321,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooks
--- >   where getBooks :: Bool -> ExceptT ServantErr IO [Book]
+-- >   where getBooks :: Bool -> Handler [Book]
 -- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
 instance (KnownSymbol sym, HasServer sublayout context)
       => HasServer (QueryFlag sym :> sublayout) context where
@@ -379,7 +378,7 @@ instance HasServer Raw context where
 -- >
 -- > server :: Server MyApi
 -- > server = postBook
--- >   where postBook :: Book -> ExceptT ServantErr IO Book
+-- >   where postBook :: Book -> Handler Book
 -- >         postBook book = ...insert into your db...
 instance ( AllCTUnrender list a, HasServer sublayout context
          ) => HasServer (ReqBody list a :> sublayout) context where

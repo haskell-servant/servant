@@ -44,7 +44,6 @@ You can use this combinator to protect an API as follows:
 
 module Authentication where
 
-import Control.Monad.Trans.Except       (ExceptT)
 import Data.Aeson                       (ToJSON)
 import Data.ByteString                  (ByteString)
 import Data.Map                         (Map, fromList)
@@ -66,7 +65,7 @@ import Servant.Server                   (BasicAuthCheck (BasicAuthCheck),
                                                         ),
                                          Context ((:.), EmptyContext),
                                          err401, err403, errBody, Server,
-                                         ServantErr, serveWithContext)
+                                         serveWithContext, Handler)
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
                                          mkAuthHandler)
 import Servant.Server.Experimental.Auth()
@@ -118,22 +117,22 @@ or dictated the structure of a response (e.g. a `Capture` param is pulled from
 the request path). Now consider an API resource protected by basic
 authentication. Once the required `WWW-Authenticate` header is checked, we need
 to verify the username and password. But how? One solution would be to force an
-API author to provide a function of type `BasicAuthData -> ExceptT ServantErr IO User`
+API author to provide a function of type `BasicAuthData -> Handler User`
 and servant should use this function to authenticate a request. Unfortunately
 this didn't work prior to `0.5` because all of servant's machinery was
 engineered around the idea that each combinator can extract information from
 only the request. We cannot extract the function
-`BasicAuthData -> ExceptT ServantErr IO User` from a request! Are we doomed?
+`BasicAuthData -> Handler User` from a request! Are we doomed?
 
 Servant `0.5` introduced `Context` to handle this. The type machinery is beyond
 the scope of this tutorial, but the idea is simple: provide some data to the
 `serve` function, and that data is propagated to the functions that handle each
 combinator. Using `Context`, we can supply a function of type
-`BasicAuthData -> ExceptT ServantErr IO User` to the `BasicAuth` combinator
+`BasicAuthData -> Handler User` to the `BasicAuth` combinator
 handler. This will allow the handler to check authentication and return a `User`
 to downstream handlers if successful.
 
-In practice we wrap `BasicAuthData -> ExceptT ServantErr IO` into a slightly
+In practice we wrap `BasicAuthData -> Handler` into a slightly
 different function to better capture the semantics of basic authentication:
 
 ``` haskell ignore
@@ -247,7 +246,7 @@ your feedback!
 ### What is Generalized Authentication?
 
 **TL;DR**: you throw a tagged `AuthProtect` combinator in front of the endpoints
-you want protected and then supply a function `Request -> ExceptT IO ServantErr user`
+you want protected and then supply a function `Request -> Handler user`
 which we run anytime a request matches a protected endpoint. It precisely solves
 the "I just need to protect these endpoints with a function that does some
 complicated business logic" and nothing more. Behind the scenes we use a type
@@ -273,19 +272,19 @@ database = fromList [ ("key1", Account "Anne Briggs")
 
 -- | A method that, when given a password, will return a Account.
 -- This is our bespoke (and bad) authentication logic.
-lookupAccount :: ByteString -> ExceptT ServantErr IO Account
+lookupAccount :: ByteString -> Handler Account
 lookupAccount key = case Map.lookup key database of
   Nothing -> throwError (err403 { errBody = "Invalid Cookie" })
   Just usr -> return usr
 ```
 
 For generalized authentication, servant exposes the `AuthHandler` type,
-which is used to wrap the `Request -> ExceptT IO ServantErr user` logic. Let's
+which is used to wrap the `Request -> Handler user` logic. Let's
 create a value of type `AuthHandler Request Account` using the above `lookupAccount`
 method:
 
 ```haskell
--- | The auth handler wraps a function from Request -> ExceptT ServantErr IO Account
+-- | The auth handler wraps a function from Request -> Handler Account
 -- we look for a Cookie and pass the value of the cookie to `lookupAccount`.
 authHandler :: AuthHandler Request Account
 authHandler =
@@ -380,7 +379,7 @@ forward:
 2. choose a application-specific data type used by your server when
 authentication is successful (in our case this was `User`).
 3. Create a value of `AuthHandler Request User` which encapsulates the
-authentication logic (`Request -> ExceptT IO ServantErr User`). This function
+authentication logic (`Request -> Handler User`). This function
 will be executed everytime a request matches a protected route.
 4. Provide an instance of the `AuthServerData` type family, specifying your
 application-specific data type returned when authentication is successful (in

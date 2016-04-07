@@ -9,7 +9,7 @@
 module Servant.Server.StreamingSpec where
 
 import           Control.Concurrent
-import           Control.Exception
+import           Control.Exception hiding (Handler)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
 import qualified Data.ByteString as Strict
@@ -66,7 +66,7 @@ spec = do
     -- - receives the first chunk
     -- - notifies serverReceivedFirstChunk
     -- - receives the rest of the request
-    let handler :: Lazy.ByteString -> ExceptT ServantErr IO NoContent
+    let handler :: Lazy.ByteString -> Handler NoContent
         handler input = liftIO $ do
           let prefix = Lazy.take 3 input
           prefix `shouldBe` "foo"

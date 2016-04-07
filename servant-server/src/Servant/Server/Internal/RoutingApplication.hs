@@ -8,7 +8,7 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 module Servant.Server.Internal.RoutingApplication where
 
-import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
+import           Control.Monad.Trans.Except         (runExceptT)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived)
 import           Prelude                            ()
@@ -222,7 +222,7 @@ runDelayed Delayed{..} =
 -- Takes a continuation that lets us send a response.
 -- Also takes a continuation for how to turn the
 -- result of the delayed server into a response.
-runAction :: Delayed (ExceptT ServantErr IO a)
+runAction :: Delayed (Handler a)
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
