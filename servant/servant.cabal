@@ -96,6 +96,7 @@ test-suite spec
       Servant.API.ContentTypesSpec
       Servant.API.ResponseHeadersSpec
       Servant.Utils.LinksSpec
+      Servant.Utils.MapSpec
   build-depends:
       base == 4.*
     , aeson
