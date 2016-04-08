@@ -1,3 +1,11 @@
+0.6.1
+-----
+
+* If servers use the `BasicAuth` combinator and receive requests with missing or
+  invalid credentials, the resulting error responses (401 and 403) could be
+  overwritten by subsequent alternative routes. Now `BasicAuth` uses `FailFatal`
+  and the error responses can't be overwritten anymore.
+
 0.6
 ---
 
