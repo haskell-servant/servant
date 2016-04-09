@@ -20,7 +20,6 @@ module Servant.Server.UsingContextSpec.TestCombinators where
 import           GHC.TypeLits
 
 import           Servant
-import           Servant.Server.Internal.RoutingApplication
 
 data ExtractFromContext
 
@@ -31,7 +30,7 @@ instance (HasContextEntry context String, HasServer subApi context) =>
     String -> ServerT subApi m
 
   route Proxy context delayed =
-    route subProxy context (fmap (inject context) delayed :: Delayed (Server subApi))
+    route subProxy context (fmap (inject context) delayed)
     where
       subProxy :: Proxy subApi
       subProxy = Proxy

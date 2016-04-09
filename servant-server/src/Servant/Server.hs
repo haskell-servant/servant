@@ -132,20 +132,12 @@ serve p = serveWithContext p EmptyContext
 
 serveWithContext :: (HasServer layout context)
     => Proxy layout -> Context context -> Server layout -> Application
-serveWithContext p context server = toApplication (runRouter (route p context d))
-  where
-    d = Delayed r r r r (\ _ _ _ -> Route server)
-    r = return (Route ())
+serveWithContext p context server =
+  toApplication (runRouter (route p context (emptyDelayed (Route server))))
 
 -- | The function 'layout' produces a textual description of the internal
 -- router layout for debugging purposes. Note that the router layout is
 -- determined just by the API, not by the handlers.
---
--- This function makes certain assumptions about the well-behavedness of
--- the 'HasServer' instances of the combinators which should be ok for the
--- core servant constructions, but might not be satisfied for some other
--- combinators provided elsewhere. It is possible that the function may
--- crash for these.
 --
 -- Example:
 --
@@ -168,7 +160,7 @@ serveWithContext p context server = toApplication (runRouter (route p context d)
 -- > │  └─ e/
 -- > │     └─•
 -- > ├─ b/
--- > │  └─ <dyn>/
+-- > │  └─ <capture>/
 -- > │     ├─•
 -- > │     ┆
 -- > │     └─•
@@ -185,7 +177,7 @@ serveWithContext p context server = toApplication (runRouter (route p context d)
 --
 -- [@─•@] Leaves reflect endpoints.
 --
--- [@\<dyn\>/@] This is a delayed capture of a path component.
+-- [@\<capture\>/@] This is a delayed capture of a path component.
 --
 -- [@\<raw\>@] This is a part of the API we do not know anything about.
 --
@@ -200,10 +192,8 @@ layout p = layoutWithContext p EmptyContext
 -- | Variant of 'layout' that takes an additional 'Context'.
 layoutWithContext :: (HasServer layout context)
     => Proxy layout -> Context context -> Text
-layoutWithContext p context = routerLayout (route p context d)
-  where
-    d = Delayed r r r r (\ _ _ _ -> FailFatal err501)
-    r = return (Route ())
+layoutWithContext p context =
+  routerLayout (route p context (emptyDelayed (FailFatal err501)))
 
 -- Documentation
 

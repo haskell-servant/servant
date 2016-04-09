@@ -1,10 +1,11 @@
 0.7
 ---
 
-* The `Router` type has been changed. There are now more situations where
-  servers will make use of static lookups to efficiently route the request
-  to the correct endpoint. Functions `layout` and `layoutWithContext` have
-  been added to visualize the router layout for debugging purposes. Test
+* The `Router` type has been changed. Static router tables should now
+  be properly shared between requests, drastically increasing the
+  number of situations where servers will be able to route requests
+  efficiently. Functions `layout` and `layoutWithContext` have been
+  added to visualize the router layout for debugging purposes. Test
   cases for expected router layouts have been added.
 * Export `throwError` from module `Servant`
 * Add `Handler` type synonym

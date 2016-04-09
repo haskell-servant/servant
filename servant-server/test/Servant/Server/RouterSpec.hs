@@ -25,9 +25,9 @@ routerSpec = do
   let app' :: Application
       app' = toApplication $ runRouter router'
 
-      router', router :: Router
+      router', router :: Router ()
       router' = tweakResponse (fmap twk) router
-      router = leafRouter $ \_ cont -> cont (Route $ responseBuilder (Status 201 "") [] "")
+      router = leafRouter $ \_ _ cont -> cont (Route $ responseBuilder (Status 201 "") [] "")
 
       twk :: Response -> Response
       twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b
@@ -69,11 +69,9 @@ shouldHaveSameStructureAs p1 p2 =
   unless (sameStructure (makeTrivialRouter p1) (makeTrivialRouter p2)) $
     expectationFailure ("expected:\n" ++ unpack (layout p2) ++ "\nbut got:\n" ++ unpack (layout p1))
 
-makeTrivialRouter :: (HasServer layout '[]) => Proxy layout -> Router
-makeTrivialRouter p = route p EmptyContext d
-  where
-    d = Delayed r r r r (\ _ _ _ -> FailFatal err501)
-    r = return (Route ())
+makeTrivialRouter :: (HasServer layout '[]) => Proxy layout -> Router ()
+makeTrivialRouter p =
+  route p EmptyContext (emptyDelayed (FailFatal err501))
 
 type End = Get '[JSON] ()
 
