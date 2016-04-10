@@ -52,7 +52,7 @@
 -- @
 -- main :: IO ()
 -- main = Network.Wai.Handler.Warp.run 8080 $
---   'serve' myAPI ('mock' myAPI)
+--   'serve' myAPI ('mock' myAPI Proxy)
 -- @
 module Servant.Mock ( HasMock(..) ) where
 
@@ -90,7 +90,7 @@ class HasServer api context => HasMock api context where
   --   -- let's say we will start with the frontend,
   --   -- and hence need a placeholder server
   --   server :: Server API
-  --   server = mock api
+  --   server = mock api Proxy
   --   @
   --
   --   What happens here is that @'Server' API@
