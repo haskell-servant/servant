@@ -1,3 +1,12 @@
+0.7
+---
+
+* The `Router` type has been changed. There are now more situations where
+  servers will make use of static lookups to efficiently route the request
+  to the correct endpoint. Functions `layout` and `layoutWithContext` have
+  been added to visualize the router layout for debugging purposes. Test
+  cases for expected router layouts have been added.
+
 0.6.1
 -----
 

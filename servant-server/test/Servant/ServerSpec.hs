@@ -13,9 +13,6 @@
 
 module Servant.ServerSpec where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative        ((<$>))
-#endif
 import           Control.Monad              (forM_, when, unless)
 import           Control.Monad.Trans.Except (ExceptT, throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
@@ -36,8 +33,7 @@ import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
                                              parseQuery)
 import           Network.Wai                (Application, Request, requestHeaders, pathInfo,
                                              queryString, rawQueryString,
-                                             responseBuilder, responseLBS)
-import           Network.Wai.Internal       (Response (ResponseBuilder))
+                                             responseLBS)
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody,
                                              simpleHeaders, simpleStatus)
@@ -66,11 +62,6 @@ import           Servant.Server.Internal.BasicAuth (BasicAuthCheck(BasicAuthChec
 import           Servant.Server.Experimental.Auth
                                             (AuthHandler, AuthServerData,
                                              mkAuthHandler)
-import           Servant.Server.Internal.RoutingApplication
-                                            (toApplication, RouteResult(..))
-import           Servant.Server.Internal.Router
-                                            (tweakResponse, runRouter,
-                                             Router, Router'(LeafRouter))
 import           Servant.Server.Internal.Context
                                             (NamedContext(..))
 
@@ -94,7 +85,6 @@ spec = do
   rawSpec
   alternativeSpec
   responseHeadersSpec
-  routerSpec
   miscCombinatorSpec
   basicAuthSpec
   genAuthSpec
@@ -481,28 +471,6 @@ responseHeadersSpec = describe "ResponseHeaders" $ do
       forM_ methods $ \method ->
         THW.request method "" [(hAccept, "crazy/mime")] ""
           `shouldRespondWith` 406
-
--- }}}
-------------------------------------------------------------------------------
--- * routerSpec {{{
-------------------------------------------------------------------------------
-routerSpec :: Spec
-routerSpec = do
-  describe "Servant.Server.Internal.Router" $ do
-    let app' :: Application
-        app' = toApplication $ runRouter router'
-
-        router', router :: Router
-        router' = tweakResponse (twk <$>) router
-        router = LeafRouter $ \_ cont -> cont (Route $ responseBuilder (Status 201 "") [] "")
-
-        twk :: Response -> Response
-        twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b
-        twk b = b
-
-    describe "tweakResponse" . with (return app') $ do
-      it "calls f on route result" $ do
-        get "" `shouldRespondWith` 202
 
 -- }}}
 ------------------------------------------------------------------------------

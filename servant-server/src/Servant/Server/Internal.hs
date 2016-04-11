@@ -26,11 +26,9 @@ import           Control.Monad.Trans.Except (ExceptT)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
-import qualified Data.Map                   as M
 import           Data.Maybe                 (fromMaybe, mapMaybe)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
-import           Data.Text                  (Text)
 import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
@@ -38,7 +36,7 @@ import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
 import           Network.Socket             (SockAddr)
 import           Network.Wai                (Application, Request, Response,
                                              httpVersion, isSecure,
-                                             lazyRequestBody, pathInfo,
+                                             lazyRequestBody,
                                              rawQueryString, remoteHost,
                                              requestHeaders, requestMethod,
                                              responseLBS, vault)
@@ -161,26 +159,23 @@ methodRouter :: (AllCTRender ctypes a)
              => Method -> Proxy ctypes -> Status
              -> Delayed (ExceptT ServantErr IO a)
              -> Router
-methodRouter method proxy status action = LeafRouter route'
+methodRouter method proxy status action = leafRouter route'
   where
-    route' request respond
-      | pathIsEmpty request =
+    route' request respond =
           let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
           in runAction (action `addMethodCheck` methodCheck method request
                                `addAcceptCheck` acceptCheck proxy accH
                        ) respond $ \ output -> do
                let handleA = handleAcceptH proxy (AcceptHeader accH) output
                processMethodRouter handleA status method Nothing request
-      | otherwise = respond $ Fail err404
 
 methodRouterHeaders :: (GetHeaders (Headers h v), AllCTRender ctypes v)
                     => Method -> Proxy ctypes -> Status
                     -> Delayed (ExceptT ServantErr IO (Headers h v))
                     -> Router
-methodRouterHeaders method proxy status action = LeafRouter route'
+methodRouterHeaders method proxy status action = leafRouter route'
   where
-    route' request respond
-      | pathIsEmpty request =
+    route' request respond =
           let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
           in runAction (action `addMethodCheck` methodCheck method request
                                `addAcceptCheck` acceptCheck proxy accH
@@ -188,7 +183,6 @@ methodRouterHeaders method proxy status action = LeafRouter route'
                 let headers = getHeaders output
                     handleA = handleAcceptH proxy (AcceptHeader accH) (getResponse output)
                 processMethodRouter handleA status method (Just headers) request
-      | otherwise = respond $ Fail err404
 
 instance OVERLAPPABLE_
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
@@ -359,7 +353,7 @@ instance HasServer Raw context where
 
   type ServerT Raw m = Application
 
-  route Proxy _ rawApplication = LeafRouter $ \ request respond -> do
+  route Proxy _ rawApplication = RawRouter $ \ request respond -> do
     r <- runDelayed rawApplication
     case r of
       Route app   -> app request (respond . Route)
@@ -416,9 +410,10 @@ instance (KnownSymbol path, HasServer sublayout context) => HasServer (path :> s
 
   type ServerT (path :> sublayout) m = ServerT sublayout m
 
-  route Proxy context subserver = StaticRouter $
-    M.singleton (cs (symbolVal proxyPath))
-                (route (Proxy :: Proxy sublayout) context subserver)
+  route Proxy context subserver =
+    pathRouter
+      (cs (symbolVal proxyPath))
+      (route (Proxy :: Proxy sublayout) context subserver)
     where proxyPath = Proxy :: Proxy path
 
 instance HasServer api context => HasServer (RemoteHost :> api) context where
@@ -464,12 +459,6 @@ instance ( KnownSymbol realm
        authCheck req = runBasicAuth req realm basicAuthContext
 
 -- * helpers
-
-pathIsEmpty :: Request -> Bool
-pathIsEmpty = go . pathInfo
-  where go []   = True
-        go [""] = True
-        go _    = False
 
 ct_wildcard :: B.ByteString
 ct_wildcard = "*" <> "/" <> "*" -- Because CPP

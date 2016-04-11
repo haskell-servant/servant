@@ -18,6 +18,10 @@ module Servant.Server
     HasServer(..)
   , Server
 
+    -- * Debugging the server layout
+  , layout
+  , layoutWithContext
+
     -- * Enter
     -- $enterDoc
 
@@ -93,6 +97,7 @@ module Servant.Server
   ) where
 
 import           Data.Proxy                    (Proxy)
+import           Data.Text                     (Text)
 import           Network.Wai                   (Application)
 import           Servant.Server.Internal
 import           Servant.Server.Internal.Enter
@@ -131,6 +136,73 @@ serveWithContext p context server = toApplication (runRouter (route p context d)
     d = Delayed r r r r (\ _ _ _ -> Route server)
     r = return (Route ())
 
+-- | The function 'layout' produces a textual description of the internal
+-- router layout for debugging purposes. Note that the router layout is
+-- determined just by the API, not by the handlers.
+--
+-- This function makes certain assumptions about the well-behavedness of
+-- the 'HasServer' instances of the combinators which should be ok for the
+-- core servant constructions, but might not be satisfied for some other
+-- combinators provided elsewhere. It is possible that the function may
+-- crash for these.
+--
+-- Example:
+--
+-- For the following API
+--
+-- > type API =
+-- >        "a" :> "d" :> Get '[JSON] ()
+-- >   :<|> "b" :> Capture "x" Int :> Get '[JSON] Bool
+-- >   :<|> "c" :> Put '[JSON] Bool
+-- >   :<|> "a" :> "e" :> Get '[JSON] Int
+-- >   :<|> "b" :> Capture "x" Int :> Put '[JSON] Bool
+-- >   :<|> Raw
+--
+-- we get the following output:
+--
+-- > /
+-- > ├─ a/
+-- > │  ├─ d/
+-- > │  │  └─•
+-- > │  └─ e/
+-- > │     └─•
+-- > ├─ b/
+-- > │  └─ <dyn>/
+-- > │     ├─•
+-- > │     ┆
+-- > │     └─•
+-- > ├─ c/
+-- > │  └─•
+-- > ┆
+-- > └─ <raw>
+--
+-- Explanation of symbols:
+--
+-- [@├@] Normal lines reflect static branching via a table.
+--
+-- [@a/@] Nodes reflect static path components.
+--
+-- [@─•@] Leaves reflect endpoints.
+--
+-- [@\<dyn\>/@] This is a delayed capture of a path component.
+--
+-- [@\<raw\>@] This is a part of the API we do not know anything about.
+--
+-- [@┆@] Dashed lines suggest a dynamic choice between the part above
+-- and below. If there is a success for fatal failure in the first part,
+-- that one takes precedence. If both parts fail, the \"better\" error
+-- code will be returned.
+--
+layout :: (HasServer layout '[]) => Proxy layout -> Text
+layout p = layoutWithContext p EmptyContext
+
+-- | Variant of 'layout' that takes an additional 'Context'.
+layoutWithContext :: (HasServer layout context)
+    => Proxy layout -> Context context -> Text
+layoutWithContext p context = routerLayout (route p context d)
+  where
+    d = Delayed r r r r (\ _ _ _ -> FailFatal err501)
+    r = return (Route ())
 
 -- Documentation
 
