@@ -1,0 +1,42 @@
+-- This file has been generated from package.yaml by hpack version 0.10.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           testServer
+version:        0.0.0
+build-type:     Simple
+cabal-version:  >= 1.10
+
+executable testServer
+  main-is: testServer.hs
+  hs-source-dirs:
+      ./
+    , ../
+  build-depends:
+      base
+    , servant
+    , servant-client
+    , servant-server
+    , warp
+    , QuickCheck
+    , hspec
+    , HUnit
+    , http-types
+    , http-media
+    , http-client
+    , text
+    , aeson
+    , wai
+    , transformers
+    , network
+    , bytestring
+  other-modules:
+      Servant.Client.PerformRequest.GHCJSSpec
+      Servant.Client.TestServer
+      Servant.Client.TestServer.GHC
+      Servant.Client.TestServer.GHCJS
+      Servant.Client.TestServer.Types
+      Servant.ClientSpec
+      Servant.Common.BaseUrlSpec
+      Spec
+  default-language: Haskell2010

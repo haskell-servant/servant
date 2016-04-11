@@ -31,12 +31,22 @@ library
     Servant.Common.BaseUrl
     Servant.Common.BasicAuth
     Servant.Common.Req
+  other-modules:
+    Servant.Client.PerformRequest
+    Servant.Client.PerformRequest.Base
+  if impl(ghcjs)
+    other-modules:
+      Servant.Client.PerformRequest.GHCJS
+  else
+    other-modules:
+      Servant.Client.PerformRequest.GHC
   build-depends:
       base >=4.7 && <5
     , aeson
     , attoparsec
     , base64-bytestring
     , bytestring
+    , case-insensitive
     , exceptions
     , http-api-data >= 0.1  && < 0.3
     , http-client
@@ -50,6 +60,10 @@ library
     , text
     , transformers
     , transformers-compat
+  if impl(ghcjs)
+    build-depends:
+        ghcjs-base
+      , ghcjs-prim
   hs-source-dirs: src
   default-language: Haskell2010
   ghc-options: -Wall
@@ -60,19 +74,31 @@ test-suite spec
   ghc-options:
     -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures
   default-language: Haskell2010
-  hs-source-dirs: test
+  hs-source-dirs: test, src
   main-is: Spec.hs
   other-modules:
       Servant.ClientSpec
+    , Servant.Client.PerformRequest.GHCJSSpec
+    , Servant.Client.TestServer
+    , Servant.Client.TestServer.Types
+    , Servant.Common.BaseUrl
     , Servant.Common.BaseUrlSpec
+    , Spec
+  if impl(ghcjs)
+    other-modules:
+      Servant.Client.TestServer.GHCJS
+  else
+    other-modules:
+      Servant.Client.TestServer.GHC
   build-depends:
       base == 4.*
     , transformers
     , transformers-compat
     , aeson
+    , base64-bytestring
     , bytestring
     , deepseq
-    , hspec == 2.*
+    , hspec >= 2.2.1 && < 2.3
     , http-client
     , http-media
     , http-types
@@ -80,8 +106,20 @@ test-suite spec
     , network >= 2.6
     , QuickCheck >= 2.7
     , servant == 0.6.*
-    , servant-client
     , servant-server == 0.6.*
     , text
     , wai
     , warp
+    , mockery
+    , safe
+    , process
+    , http-api-data
+    , network-uri
+    , exceptions
+    , string-conversions
+  if impl(ghcjs)
+    build-depends:
+        ghcjs-base
+      , ghcjs-prim
+      , case-insensitive
+  include-dirs: include

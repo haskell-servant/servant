@@ -1,0 +1,26 @@
+name: testServer
+
+executables:
+  testServer:
+    main: testServer.hs
+    dependencies:
+      - base
+      - servant
+      - servant-client
+      - servant-server
+      - warp
+      - QuickCheck
+      - hspec
+      - HUnit
+      - http-types
+      - http-media
+      - http-client
+      - text
+      - aeson
+      - wai
+      - transformers
+      - network
+      - bytestring
+    source-dirs:
+      - ./
+      - ../

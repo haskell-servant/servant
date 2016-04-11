@@ -43,6 +43,7 @@ import           Servant.Client.Experimental.Auth
 import           Servant.Common.BaseUrl
 import           Servant.Common.BasicAuth
 import           Servant.Common.Req
+import           Servant.Client.PerformRequest (ServantError(..))
 
 -- * Accessing APIs as a Client
 

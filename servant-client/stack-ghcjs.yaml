@@ -1,0 +1,25 @@
+# This file was added for being able to test ghcjs support
+
+packages:
+  - location: ./.
+  - location: ../servant
+    extra-dep: true
+  - location: ../servant-server
+    extra-dep: true
+
+resolver: lts-5.11
+
+compiler: ghcjs-0.2.0.20160315_ghc-7.10.2
+compiler-check: match-exact
+setup-info:
+  ghcjs:
+    source:
+      ghcjs-0.2.0.20160315_ghc-7.10.2:
+        url: "https://github.com/nrolland/ghcjs/releases/download/v.0.2.0.20160315/ghcjs-0.2.0.20160315.tar.gz"
+
+extra-deps:
+  - hspec-expectations-0.7.2
+  - hspec-discover-2.2.1
+  - http-api-data-0.1.1.1
+  - hspec-2.2.1
+  - hspec-core-2.2.1

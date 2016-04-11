@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP                    #-}
-{-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
@@ -11,24 +10,19 @@
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE StandaloneDeriving     #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -fcontext-stack=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
-#include "overlapping-compat.h"
 module Servant.ClientSpec where
 
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative        ((<$>))
 #endif
 import           Control.Arrow              (left)
-import           Control.Concurrent         (forkIO, killThread, ThreadId)
-import           Control.Exception          (bracket)
-import           Control.Monad.Trans.Except (ExceptT, throwE, runExceptT)
+import           Control.Monad.Trans.Except (runExceptT, throwE)
 import           Data.Aeson
 import qualified Data.ByteString.Lazy       as BS
 import           Data.Char                  (chr, isPrint)
@@ -39,34 +33,72 @@ import qualified Data.Text                  as T
 import           GHC.Generics               (Generic)
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
-import qualified Network.HTTP.Types         as HTTP
-import           Network.Socket
-import           Network.Wai                (Application, Request,
-                                             requestHeaders, responseLBS)
-import           Network.Wai.Handler.Warp
+import qualified Network.HTTP.Types as HTTP
+import           Network.Wai                (responseLBS)
+import qualified Network.Wai as Wai
+import           System.Exit
 import           System.IO.Unsafe           (unsafePerformIO)
+import           Test.HUnit
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
-import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
-import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
+import           Servant.Client.TestServer
+import qualified Servant.Common.Req as SCR
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
-import qualified Servant.Common.Req         as SCR
-
--- This declaration simply checks that all instances are in place.
-_ = client comprehensiveAPI
 
 spec :: Spec
 spec = describe "Servant.Client" $ do
     sucessSpec
     failSpec
-    wrappedApiSpec
     basicAuthSpec
     genAuthSpec
+    errorSpec
+
+-- | Run a test-server (identified by name) while performing the given action.
+-- The provided 'BaseUrl' points to the running server.
+--
+-- Running the test-servers is done differently depending on the compiler
+-- (ghc or ghcjs).
+--
+-- With ghc it's somewhat straight-forward: a wai 'Application' is being started
+-- on a free port inside the same process using 'warp'.
+--
+-- When running the test-suite with ghcjs all the test-servers are compiled into
+-- a single external executable (with ghc and warp). This is done through
+-- 'buildTestServer' once at the start of the test-suite. This built executable
+-- will provide all the test-servers on a free port under a path that
+-- corresponds to the test-servers name, for example under
+-- 'http://localhost:82923/failServer'. 'withTestServer' will then
+-- start this executable as an external process while the given action is being
+-- executed and provide it with the correct BaseUrl.
+-- This rather cumbersome approach is taken because it's not easy to run a wai
+-- Application as a http server when using ghcjs.
+withTestServer :: String -> (BaseUrl -> IO a) -> IO a
+withTestServer name action = do
+  server <- lookupTestServer name
+  withServer server action
+
+lookupTestServer :: String -> IO TestServer
+lookupTestServer name = case lookup name mapping of
+  Nothing -> die ("test server not found: " ++ name)
+  Just testServer -> return testServer
+  where
+    mapping :: [(String, TestServer)]
+    mapping = map (\ server -> (testServerName server, server)) allTestServers
+
+-- | All test-servers must be registered here.
+allTestServers :: [TestServer]
+allTestServers =
+  server :
+  errorServer :
+  failServer :
+  basicAuthServer :
+  genAuthServer :
+  []
 
 -- * test data types
 
@@ -147,8 +179,8 @@ getGet
   :<|> getRespHeaders
   :<|> getDeleteContentType = client api
 
-server :: Application
-server = serve api (
+server :: TestServer
+server = TestServer "server" $ serve api (
        return alice
   :<|> return NoContent
   :<|> (\ name -> return $ Person name 0)
@@ -166,19 +198,19 @@ server = serve api (
   :<|> return NoContent
  )
 
-
 type FailApi =
        "get" :> Raw
   :<|> "capture" :> Capture "name" String :> Raw
   :<|> "body" :> Raw
+
 failApi :: Proxy FailApi
 failApi = Proxy
 
-failServer :: Application
-failServer = serve failApi (
+failServer :: TestServer
+failServer = TestServer "failServer" $ serve failApi (
        (\ _request respond -> respond $ responseLBS HTTP.ok200 [] "")
   :<|> (\ _capture _request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "application/json")] "")
-  :<|> (\_request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
+  :<|> (\ _request respond -> respond $ responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
  )
 
 -- * basic auth stuff
@@ -200,8 +232,9 @@ basicAuthHandler =
 basicServerContext :: Context '[ BasicAuthCheck () ]
 basicServerContext = basicAuthHandler :. EmptyContext
 
-basicAuthServer :: Application
-basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (return alice))
+basicAuthServer :: TestServer
+basicAuthServer = TestServer "basicAuthServer" $
+  serveWithContext basicAuthAPI basicServerContext (const (return alice))
 
 -- * general auth stuff
 
@@ -214,58 +247,59 @@ genAuthAPI = Proxy
 type instance AuthServerData (AuthProtect "auth-tag") = ()
 type instance AuthClientData (AuthProtect "auth-tag") = ()
 
-genAuthHandler :: AuthHandler Request ()
+genAuthHandler :: AuthHandler Wai.Request ()
 genAuthHandler =
-  let handler req = case lookup "AuthHeader" (requestHeaders req) of
+  let handler req = case lookup "AuthHeader" (Wai.requestHeaders req) of
         Nothing -> throwE (err401 { errBody = "Missing auth header" })
         Just _ -> return ()
   in mkAuthHandler handler
 
-genAuthServerContext :: Context '[ AuthHandler Request () ]
+genAuthServerContext :: Context '[ AuthHandler Wai.Request () ]
 genAuthServerContext = genAuthHandler :. EmptyContext
 
-genAuthServer :: Application
-genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
+genAuthServer :: TestServer
+genAuthServer = TestServer "genAuthServer" $
+  serveWithContext genAuthAPI genAuthServerContext (const (return alice))
 
 {-# NOINLINE manager #-}
 manager :: C.Manager
 manager = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
 sucessSpec :: Spec
-sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+sucessSpec = around (withTestServer "server") $ do
 
-    it "Servant.API.Get" $ \(_, baseUrl) -> do
+    it "Servant.API.Get" $ \baseUrl -> do
       (left show <$> runExceptT (getGet manager baseUrl)) `shouldReturn` Right alice
 
     describe "Servant.API.Delete" $ do
-      it "allows empty content type" $ \(_, baseUrl) -> do
+      it "allows empty content type" $ \baseUrl -> do
         (left show <$> runExceptT (getDeleteEmpty manager baseUrl)) `shouldReturn` Right NoContent
 
-      it "allows content type" $ \(_, baseUrl) -> do
+      it "allows content type" $ \baseUrl -> do
         (left show <$> runExceptT (getDeleteContentType manager baseUrl)) `shouldReturn` Right NoContent
 
-    it "Servant.API.Capture" $ \(_, baseUrl) -> do
+    it "Servant.API.Capture" $ \baseUrl -> do
       (left show <$> runExceptT (getCapture "Paula" manager baseUrl)) `shouldReturn` Right (Person "Paula" 0)
 
-    it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
+    it "Servant.API.ReqBody" $ \baseUrl -> do
       let p = Person "Clara" 42
       (left show <$> runExceptT (getBody p manager baseUrl)) `shouldReturn` Right p
 
-    it "Servant.API.QueryParam" $ \(_, baseUrl) -> do
+    it "Servant.API.QueryParam" $ \baseUrl -> do
       left show <$> runExceptT (getQueryParam (Just "alice") manager baseUrl) `shouldReturn` Right alice
       Left FailureResponse{..} <- runExceptT (getQueryParam (Just "bob") manager baseUrl)
       responseStatus `shouldBe` HTTP.Status 400 "bob not found"
 
-    it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
+    it "Servant.API.QueryParam.QueryParams" $ \baseUrl -> do
       (left show <$> runExceptT (getQueryParams [] manager baseUrl)) `shouldReturn` Right []
       (left show <$> runExceptT (getQueryParams ["alice", "bob"] manager baseUrl))
         `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
     context "Servant.API.QueryParam.QueryFlag" $
-      forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
+      forM_ [False, True] $ \ flag -> it (show flag) $ \baseUrl -> do
         (left show <$> runExceptT (getQueryFlag flag manager baseUrl)) `shouldReturn` Right flag
 
-    it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
+    it "Servant.API.Raw on success" $ \baseUrl -> do
       res <- runExceptT (getRawSuccess HTTP.methodGet manager baseUrl)
       case res of
         Left e -> assertFailure $ show e
@@ -274,7 +308,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           C.responseBody response `shouldBe` body
           C.responseStatus response `shouldBe` HTTP.ok200
 
-    it "Servant.API.Raw should return a Left in case of failure" $ \(_, baseUrl) -> do
+    it "Servant.API.Raw should return a Left in case of failure" $ \baseUrl -> do
       res <- runExceptT (getRawFailure HTTP.methodGet manager baseUrl)
       case res of
         Right _ -> assertFailure "expected Left, but got Right"
@@ -282,51 +316,93 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           Servant.Client.responseStatus e `shouldBe` HTTP.status400
           Servant.Client.responseBody e `shouldBe` "rawFailure"
 
-    it "Returns headers appropriately" $ \(_, baseUrl) -> do
+    it "Returns headers appropriately" $ \baseUrl -> do
       res <- runExceptT (getRespHeaders manager baseUrl)
       case res of
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
     modifyMaxSuccess (const 20) $ do
-      it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
+      it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \baseUrl ->
         property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
           ioProperty $ do
             result <- left show <$> runExceptT (getMultiple cap num flag body manager baseUrl)
             return $
               result === Right (cap, num, flag, body)
 
+type ErrorApi =
+  Delete '[JSON] () :<|>
+  Get '[JSON] () :<|>
+  Post '[JSON] () :<|>
+  Put '[JSON] ()
 
-wrappedApiSpec :: Spec
-wrappedApiSpec = describe "error status codes" $ do
-  let serveW api = serve api $ throwE $ ServantErr 500 "error message" "" []
-  context "are correctly handled by the client" $
-    let test :: (WrappedApi, String) -> Spec
-        test (WrappedApi api, desc) =
-          it desc $ bracket (startWaiApp $ serveW api) endWaiApp $ \(_, baseUrl) -> do
-            let getResponse :: C.Manager -> BaseUrl -> SCR.ClientM ()
-                getResponse = client api
-            Left FailureResponse{..} <- runExceptT (getResponse manager baseUrl)
-            responseStatus `shouldBe` (HTTP.Status 500 "error message")
-    in mapM_ test $
-        (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete") :
-        (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get") :
-        (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post") :
-        (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put") :
-        []
+errorApi :: Proxy ErrorApi
+errorApi = Proxy
+
+errorServer :: TestServer
+errorServer = TestServer "errorServer" $ serve errorApi $
+  err :<|> err :<|> err :<|> err
+  where
+    err = throwE $ ServantErr 500 "error message" "" []
+
+errorSpec :: Spec
+errorSpec =
+  around (withTestServer "errorServer") $ do
+    describe "error status codes" $
+      it "reports error statuses correctly" $ \baseUrl -> do
+        let delete :<|> get :<|> post :<|> put =
+              client errorApi
+            actions = map (\ f -> f manager baseUrl) [delete, get, post, put]
+        forM_ actions $ \ clientAction -> do
+          Left FailureResponse{..} <- runExceptT clientAction
+          responseStatus `shouldBe` HTTP.Status 500 "error message"
+
+basicAuthSpec :: Spec
+basicAuthSpec = around (withTestServer "basicAuthServer") $ do
+  context "Authentication works when requests are properly authenticated" $ do
+
+    it "Authenticates a BasicAuth protected server appropriately" $ \baseUrl -> do
+      let getBasic = client basicAuthAPI
+      let basicAuthData = BasicAuthData "servant" "server"
+      (left show <$> runExceptT (getBasic basicAuthData manager baseUrl)) `shouldReturn` Right alice
+
+  context "Authentication is rejected when requests are not authenticated properly" $ do
+
+    it "Authenticates a BasicAuth protected server appropriately" $ \baseUrl -> do
+      let getBasic = client basicAuthAPI
+      let basicAuthData = BasicAuthData "not" "password"
+      Left FailureResponse{..} <- runExceptT (getBasic basicAuthData manager baseUrl)
+      responseStatus `shouldBe` HTTP.Status 403 "Forbidden"
+
+genAuthSpec :: Spec
+genAuthSpec = around (withTestServer "genAuthServer") $ do
+  context "Authentication works when requests are properly authenticated" $ do
+
+    it "Authenticates a AuthProtect protected server appropriately" $ \baseUrl -> do
+      let getProtected = client genAuthAPI
+      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
+      (left show <$> runExceptT (getProtected authRequest manager baseUrl)) `shouldReturn` Right alice
+
+  context "Authentication is rejected when requests are not authenticated properly" $ do
+
+    it "Authenticates a AuthProtect protected server appropriately" $ \baseUrl -> do
+      let getProtected = client genAuthAPI
+      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
+      Left FailureResponse{..} <- runExceptT (getProtected authRequest manager baseUrl)
+      responseStatus `shouldBe` (HTTP.Status 401 "Unauthorized")
 
 failSpec :: Spec
-failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
+failSpec = around (withTestServer "failServer") $ do
 
     context "client returns errors appropriately" $ do
-      it "reports FailureResponse" $ \(_, baseUrl) -> do
+      it "reports FailureResponse" $ \baseUrl -> do
         let (_ :<|> getDeleteEmpty :<|> _) = client api
         Left res <- runExceptT (getDeleteEmpty manager baseUrl)
         case res of
           FailureResponse (HTTP.Status 404 "Not Found") _ _ -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
-      it "reports DecodeFailure" $ \(_, baseUrl) -> do
+      it "reports DecodeFailure" $ \baseUrl -> do
         let (_ :<|> _ :<|> getCapture :<|> _) = client api
         Left res <- runExceptT (getCapture "foo" manager baseUrl)
         case res of
@@ -340,80 +416,22 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           ConnectionError _ -> return ()
           _ -> fail $ "expected ConnectionError, but got " <> show res
 
-      it "reports UnsupportedContentType" $ \(_, baseUrl) -> do
+      it "reports UnsupportedContentType" $ \baseUrl -> do
         let (getGet :<|> _ ) = client api
         Left res <- runExceptT (getGet manager baseUrl)
         case res of
           UnsupportedContentType ("application/octet-stream") _ -> return ()
           _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
-      it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
+      it "reports InvalidContentTypeHeader" $ \baseUrl -> do
         let (_ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
         Left res <- runExceptT (getBody alice manager baseUrl)
         case res of
           InvalidContentTypeHeader "fooooo" _ -> return ()
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
-data WrappedApi where
-  WrappedApi :: (HasServer (api :: *) '[], Server api ~ ExceptT ServantErr IO a,
-                 HasClient api, Client api ~ (C.Manager -> BaseUrl -> SCR.ClientM ())) =>
-    Proxy api -> WrappedApi
-
-basicAuthSpec :: Spec
-basicAuthSpec = beforeAll (startWaiApp basicAuthServer) $ afterAll endWaiApp $ do
-  context "Authentication works when requests are properly authenticated" $ do
-
-    it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
-      let getBasic = client basicAuthAPI
-      let basicAuthData = BasicAuthData "servant" "server"
-      (left show <$> runExceptT (getBasic basicAuthData manager baseUrl)) `shouldReturn` Right alice
-
-  context "Authentication is rejected when requests are not authenticated properly" $ do
-
-    it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
-      let getBasic = client basicAuthAPI
-      let basicAuthData = BasicAuthData "not" "password"
-      Left FailureResponse{..} <- runExceptT (getBasic basicAuthData manager baseUrl)
-      responseStatus `shouldBe` HTTP.Status 403 "Forbidden"
-
-genAuthSpec :: Spec
-genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
-  context "Authentication works when requests are properly authenticated" $ do
-
-    it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
-      let getProtected = client genAuthAPI
-      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
-      (left show <$> runExceptT (getProtected authRequest manager baseUrl)) `shouldReturn` Right alice
-
-  context "Authentication is rejected when requests are not authenticated properly" $ do
-
-    it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
-      let getProtected = client genAuthAPI
-      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
-      Left FailureResponse{..} <- runExceptT (getProtected authRequest manager baseUrl)
-      responseStatus `shouldBe` (HTTP.Status 401 "Unauthorized")
 
 -- * utils
-
-startWaiApp :: Application -> IO (ThreadId, BaseUrl)
-startWaiApp app = do
-    (port, socket) <- openTestSocket
-    let settings = setPort port $ defaultSettings
-    thread <- forkIO $ runSettingsSocket settings socket app
-    return (thread, BaseUrl Http "localhost" port "")
-
-
-endWaiApp :: (ThreadId, BaseUrl) -> IO ()
-endWaiApp (thread, _) = killThread thread
-
-openTestSocket :: IO (Port, Socket)
-openTestSocket = do
-  s <- socket AF_INET Stream defaultProtocol
-  localhost <- inet_addr "127.0.0.1"
-  bind s (SockAddrInet aNY_PORT localhost)
-  listen s 1
-  port <- socketPort s
-  return (fromIntegral port, s)
 
 pathGen :: Gen (NonEmptyList Char)
 pathGen = fmap NonEmpty path

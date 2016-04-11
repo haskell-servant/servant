@@ -5,6 +5,8 @@ language: c
 env:
   - GHCVER=7.8.4
   - GHCVER=7.10.2
+  - GHCVER=7.10.2
+    GHCJS=true
 
 addons:
   apt:
@@ -17,6 +19,7 @@ addons:
       - libgmp-dev
 
 install:
+  # set up tinc
   - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
   - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/1.22/bin:$PATH
   - ghc --version
@@ -25,7 +28,10 @@ install:
   - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
 
 script:
-  - ./travis.sh
+  - if [ "$GHCJS" = "true" ];
+      then ./travis-ghcjs.sh ;
+      else ./travis.sh ;
+    fi
 
 cache:
   directories:
