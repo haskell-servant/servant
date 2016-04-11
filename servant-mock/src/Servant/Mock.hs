@@ -36,7 +36,7 @@
 -- and call 'mock', which has the following type:
 --
 -- @
--- 'mock' :: 'HasMock' api => 'Proxy' api -> 'Server' api
+-- 'mock' :: 'HasMock' api context => 'Proxy' api -> 'Proxy' context -> 'Server' api
 -- @
 --
 -- What this says is, given some API type @api@ that it knows it can
