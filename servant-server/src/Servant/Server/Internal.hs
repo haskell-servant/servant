@@ -154,10 +154,17 @@ methodCheck method request
   | allowedMethod method request = return ()
   | otherwise                    = delayedFail err405
 
+-- This has switched between using 'Fail' and 'FailFatal' a number of
+-- times. If the 'acceptCheck' is run after the body check (which would
+-- be morally right), then we have to set this to 'FailFatal', because
+-- the body check is not reversible, and therefore backtracking after the
+-- body check is no longer an option. However, we now run the accept
+-- check before the body check and can therefore afford to make it
+-- recoverable.
 acceptCheck :: (AllMime list) => Proxy list -> B.ByteString -> DelayedIO ()
 acceptCheck proxy accH
   | canHandleAcceptH proxy (AcceptHeader accH) = return ()
-  | otherwise                                  = delayedFailFatal err406
+  | otherwise                                  = delayedFail err406
 
 methodRouter :: (AllCTRender ctypes a)
              => Method -> Proxy ctypes -> Status

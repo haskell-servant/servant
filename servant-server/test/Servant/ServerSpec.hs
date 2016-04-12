@@ -99,6 +99,9 @@ type VerbApi method status
  :<|> "noContent" :> Verb method status '[JSON] NoContent
  :<|> "header"    :> Verb method status '[JSON] (Headers '[Header "H" Int] Person)
  :<|> "headerNC"  :> Verb method status '[JSON] (Headers '[Header "H" Int] NoContent)
+ :<|> "accept"    :> (    Verb method status '[JSON] Person
+                     :<|> Verb method status '[PlainText] String
+                     )
 
 verbSpec :: Spec
 verbSpec = describe "Servant.API.Verb" $ do
@@ -107,6 +110,7 @@ verbSpec = describe "Servant.API.Verb" $ do
           :<|> return NoContent
           :<|> return (addHeader 5 alice)
           :<|> return (addHeader 10 NoContent)
+          :<|> (return alice :<|> return "B")
       get200     = Proxy :: Proxy (VerbApi 'GET 200)
       post210    = Proxy :: Proxy (VerbApi 'POST 210)
       put203     = Proxy :: Proxy (VerbApi 'PUT 203)
@@ -160,6 +164,12 @@ verbSpec = describe "Servant.API.Verb" $ do
             response <- THW.request method ""
                [(hAccept, "application/json")] ""
             liftIO $ statusCode (simpleStatus response) `shouldBe` status
+
+          unless (status `elem` [214, 215] || method == methodHead) $
+            it "allows modular specification of supported content types" $ do
+              response <- THW.request method "/accept" [(hAccept, "text/plain")] ""
+              liftIO $ statusCode (simpleStatus response) `shouldBe` status
+              liftIO $ simpleBody response `shouldBe` "B"
 
           it "sets the Content-Type header" $ do
             response <- THW.request method "" [] ""
