@@ -48,7 +48,7 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
-import           Servant.Server             (ServantErr (..), Server, Handler, err401, err403,
+import           Servant.Server             (Server, Handler, err401, err403,
                                              err404, serve, serveWithContext,
                                              Context((:.), EmptyContext))
 import           Test.Hspec                 (Spec, context, describe, it,

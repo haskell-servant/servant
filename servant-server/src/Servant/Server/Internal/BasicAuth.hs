@@ -6,6 +6,7 @@
 module Servant.Server.Internal.BasicAuth where
 
 import           Control.Monad          (guard)
+import           Control.Monad.Trans    (liftIO)
 import qualified Data.ByteString        as BS
 import           Data.ByteString.Base64 (decodeLenient)
 import           Data.Monoid            ((<>))
@@ -57,13 +58,13 @@ decodeBAHdr req = do
 
 -- | Run and check basic authentication, returning the appropriate http error per
 -- the spec.
-runBasicAuth :: Request -> BS.ByteString -> BasicAuthCheck usr -> IO (RouteResult usr)
+runBasicAuth :: Request -> BS.ByteString -> BasicAuthCheck usr -> DelayedIO usr
 runBasicAuth req realm (BasicAuthCheck ba) =
   case decodeBAHdr req of
      Nothing -> plzAuthenticate
-     Just e  -> ba e >>= \res -> case res of
+     Just e  -> liftIO (ba e) >>= \res -> case res of
        BadPassword    -> plzAuthenticate
        NoSuchUser     -> plzAuthenticate
-       Unauthorized   -> return $ FailFatal err403
-       Authorized usr -> return $ Route usr
-  where plzAuthenticate = return $ FailFatal err401 { errHeaders = [mkBAChallengerHdr realm] }
+       Unauthorized   -> delayedFailFatal err403
+       Authorized usr -> return usr
+  where plzAuthenticate = delayedFailFatal err401 { errHeaders = [mkBAChallengerHdr realm] }
