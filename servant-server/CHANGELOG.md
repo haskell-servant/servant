@@ -6,6 +6,7 @@
   to the correct endpoint. Functions `layout` and `layoutWithContext` have
   been added to visualize the router layout for debugging purposes. Test
   cases for expected router layouts have been added.
+* Export `throwError` from module `Servant`
 
 0.6.1
 -----

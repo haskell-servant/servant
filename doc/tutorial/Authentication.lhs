@@ -44,7 +44,7 @@ You can use this combinator to protect an API as follows:
 
 module Authentication where
 
-import Control.Monad.Trans.Except       (ExceptT, throwE)
+import Control.Monad.Trans.Except       (ExceptT)
 import Data.Aeson                       (ToJSON)
 import Data.ByteString                  (ByteString)
 import Data.Map                         (Map, fromList)
@@ -59,6 +59,7 @@ import Servant.API                      ((:<|>) ((:<|>)), (:>), BasicAuth,
                                           Get, JSON)
 import Servant.API.BasicAuth            (BasicAuthData (BasicAuthData))
 import Servant.API.Experimental.Auth    (AuthProtect)
+import Servant                          (throwError)
 import Servant.Server                   (BasicAuthCheck (BasicAuthCheck),
                                          BasicAuthResult( Authorized
                                                         , Unauthorized
@@ -173,7 +174,7 @@ And now we create the `Context` used by servant to find `BasicAuthCheck`:
 ```haskell
 -- | We need to supply our handlers with the right Context. In this case,
 -- Basic Authentication requires a Context Entry with the 'BasicAuthCheck' value
--- tagged with "foo-tag" This context is then supplied to 'server' and threaded 
+-- tagged with "foo-tag" This context is then supplied to 'server' and threaded
 -- to the BasicAuth HasServer handlers.
 basicAuthServerContext :: Context (BasicAuthCheck User ': '[])
 basicAuthServerContext = authCheck :. EmptyContext
@@ -274,7 +275,7 @@ database = fromList [ ("key1", Account "Anne Briggs")
 -- This is our bespoke (and bad) authentication logic.
 lookupAccount :: ByteString -> ExceptT ServantErr IO Account
 lookupAccount key = case Map.lookup key database of
-  Nothing -> throwE (err403 { errBody = "Invalid Cookie" })
+  Nothing -> throwError (err403 { errBody = "Invalid Cookie" })
   Just usr -> return usr
 ```
 
@@ -289,7 +290,7 @@ method:
 authHandler :: AuthHandler Request Account
 authHandler =
   let handler req = case lookup "servant-auth-cookie" (requestHeaders req) of
-        Nothing -> throwE (err401 { errBody = "Missing auth header" })
+        Nothing -> throwError (err401 { errBody = "Missing auth header" })
         Just authCookieKey -> lookupAccount authCookieKey
   in mkAuthHandler handler
 ```
@@ -329,7 +330,7 @@ We now construct the `Context` for our server, allowing us to instantiate a
 value of type `Server AuthGenAPI`, in addition to the server value:
 
 ```haskell
--- | The context that will be made available to request handlers. We supply the 
+-- | The context that will be made available to request handlers. We supply the
 -- "cookie-auth"-tagged request handler defined above, so that the 'HasServer' instance
 -- of 'AuthProtect' can extract the handler and run it on the request.
 genAuthServerContext :: Context (AuthHandler Request Account ': '[])

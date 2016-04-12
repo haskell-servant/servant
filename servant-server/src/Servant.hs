@@ -10,8 +10,10 @@ module Servant (
   module Servant.Utils.StaticFiles,
   -- | Useful re-exports
   Proxy(..),
+  throwError
   ) where
 
+import           Control.Monad.Error.Class (throwError)
 import           Data.Proxy
 import           Servant.API
 import           Servant.Server
