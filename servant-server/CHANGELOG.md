@@ -7,6 +7,7 @@
   been added to visualize the router layout for debugging purposes. Test
   cases for expected router layouts have been added.
 * Export `throwError` from module `Servant`
+* Add `Handler` type synonym
 
 0.6.1
 -----
