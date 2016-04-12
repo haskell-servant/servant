@@ -1,7 +1,7 @@
 HEAD
 ----
 
-* Export `throwError` from module `Servant`
+* Use `throwError` instead of `throwE` in documentation
 
 0.5
 ----

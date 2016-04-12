@@ -1,8 +1,3 @@
-HEAD
-----
-
-* Export `throwError` from module `Servant`
-
 0.5
 ----
 
