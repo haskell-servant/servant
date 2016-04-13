@@ -23,7 +23,6 @@ module Servant.JS.Internal
   , HasForeignType(..)
   , GenerateList(..)
   , NoTypes
-  , HeaderArg
   , ArgType(..)
   , HeaderArg(..)
   , QueryArg(..)
