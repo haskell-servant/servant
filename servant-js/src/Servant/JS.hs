@@ -123,7 +123,7 @@ import           Servant.JS.Axios
 import           Servant.JS.Internal
 import           Servant.JS.JQuery
 import           Servant.JS.Vanilla
-import           Servant.Foreign (GenerateList(..), listFromAPI, NoTypes)
+import           Servant.Foreign (listFromAPI)
 
 -- | Generate the data necessary to generate javascript code
 --   for all the endpoints of an API, as ':<|>'-separated values
