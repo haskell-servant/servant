@@ -1,14 +1,16 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE InstanceSigs         #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE PolyKinds            #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE CPP                    #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE InstanceSigs           #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 #include "overlapping-compat.h"
 -- | This module provides 'client' which can automatically generate
@@ -18,6 +20,7 @@ module Servant.Client
   ( AuthClientData
   , AuthenticateReq(..)
   , client
+  , staticClient
   , HasClient(..)
   , ClientM
   , mkAuthenticateReq
@@ -59,6 +62,36 @@ import           Servant.Common.Req
 -- > (getAllBooks :<|> postNewBook) = client myApi
 client :: HasClient layout => Proxy layout -> Client layout
 client p = clientWithRoute p defReq
+
+
+class Foo layout where
+  type StaticClient layout :: *
+  staticClient :: Proxy layout -> BaseUrl -> StaticClient layout
+
+instance (Foo left, Foo right) => Foo (left :<|> right) where
+  type StaticClient (left :<|> right) = StaticClient left :<|> StaticClient right
+  staticClient p url =
+    staticClient pleft url :<|>
+    staticClient pright url
+    where pleft = Proxy :: Proxy left
+          pright = Proxy :: Proxy right
+
+instance OVERLAPPABLE_ (Client (combinator :> api) ~ Client api, Foo api) => Foo (combinator :> api) where
+  type StaticClient (combinator :> api) = StaticClient api
+  staticClient p url = staticClient (Proxy :: Proxy api) url
+
+instance OVERLAPPING_ (MimeRender ct a, Client (ReqBody (ct ': cts) a :> sublayout) ~ (a -> Client sublayout), Foo sublayout)
+      => Foo (ReqBody (ct ': cts) a :> sublayout) where
+  type StaticClient (ReqBody (ct ': cts) a :> sublayout) = a -> Client sublayout
+  staticClient p url = _
+
+instance (Client (Verb method status ctypes result) ~ (Manager -> BaseUrl -> ClientM result), ctypes ~ (c ': ct), MimeUnrender c result, ReflectMethod method) => Foo (Verb method status ctypes result) where
+  type StaticClient (Verb method status ctypes result) = Manager -> ClientM result
+  staticClient p url = \ mgr -> (client p) mgr url
+
+instance Foo Raw where
+  type StaticClient Raw = H.Method -> Manager -> ClientM (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
+  staticClient p url = \h m -> (client p) h m url
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly

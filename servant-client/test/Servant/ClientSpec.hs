@@ -296,6 +296,11 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             return $
               result === Right (cap, num, flag, body)
 
+    describe "staticClient" $ do
+      it "allows to pass in the BaseUrl to staticClient" $ \(_, baseUrl) -> do
+        let getGet' :: C.Manager -> ClientM Person
+            getGet' :<|> _ = staticClient api baseUrl
+        (left show <$> runExceptT (getGet' manager)) `shouldReturn` Right alice
 
 wrappedApiSpec :: Spec
 wrappedApiSpec = describe "error status codes" $ do
