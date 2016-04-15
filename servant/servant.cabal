@@ -49,7 +49,7 @@ library
     Servant.Utils.Links
     Servant.Utils.Enter
   build-depends:
-      base >= 4.7 && < 4.9
+      base >= 4.7 && < 4.10
     , base-compat >= 0.9
     , aeson >= 0.7
     , attoparsec >= 0.12

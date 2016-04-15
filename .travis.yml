@@ -3,8 +3,9 @@ sudo: false
 language: c
 
 env:
-  - GHCVER=7.8.4
-  - GHCVER=7.10.2
+  - GHCVER=7.8.4 CABALVER=1.22
+  - GHCVER=7.10.3 CABALVER=1.22
+  - GHCVER=8.0.1 CABALVER=1.24
 
 addons:
   apt:
@@ -12,13 +13,15 @@ addons:
       - hvr-ghc
     packages:
       - ghc-7.8.4
-      - ghc-7.10.2
+      - ghc-7.10.3
+      - ghc-8.0.1
       - cabal-install-1.22
+      - cabal-install-1.24
       - libgmp-dev
 
 install:
   - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
-  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/1.22/bin:$PATH
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
   - ghc --version
   - cabal --version
   - travis_retry cabal update
