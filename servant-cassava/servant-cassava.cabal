@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                servant-cassava
-version:             0.6.1
+version:             0.7
 synopsis:            Servant CSV content-type for cassava
 -- description:
 homepage:            http://haskell-servant.github.io/
@@ -22,7 +22,7 @@ library
   -- other-extensions:
   build-depends:       base >=4.6 && <5
                      , cassava >0.4 && <0.5
-                     , servant == 0.6.*
+                     , servant == 0.7.*
                      , http-media
                      , vector
   hs-source-dirs:      src
