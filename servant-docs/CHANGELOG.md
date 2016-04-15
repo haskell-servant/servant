@@ -1,5 +1,5 @@
-HEAD
-----
+0.7
+---
 
 * Use `throwError` instead of `throwE` in documentation
 
