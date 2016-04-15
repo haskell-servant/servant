@@ -7,6 +7,10 @@
   efficiently. Functions `layout` and `layoutWithContext` have been
   added to visualize the router layout for debugging purposes. Test
   cases for expected router layouts have been added.
+* If an endpoint is discovered to have a non-matching "accept header",
+  this is now a recoverable rather than a fatal failure, allowing
+  different endpoints for the same route, but with different content
+  types to be specified modularly.
 * Export `throwError` from module `Servant`
 * Add `Handler` type synonym
 

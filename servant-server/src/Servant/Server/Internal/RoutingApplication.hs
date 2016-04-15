@@ -203,16 +203,22 @@ addBodyCheck Delayed{..} new =
     } -- Note [Existential Record Update]
 
 
--- | Add an accept header check to the end of the body block.
--- The accept header check should occur after the body check,
--- but this will be the case, because the accept header check
--- is only scheduled by the method combinators.
+-- | Add an accept header check to the beginning of the body
+-- block. There is a tradeoff here. In principle, we'd like
+-- to take a bad body (400) response take precedence over a
+-- failed accept check (406). BUT to allow streaming the body,
+-- we cannot run the body check and then still backtrack.
+-- We therefore do the accept check before the body check,
+-- when we can still backtrack. There are other solutions to
+-- this, but they'd be more complicated (such as delaying the
+-- body check further so that it can still be run in a situation
+-- where we'd otherwise report 406).
 addAcceptCheck :: Delayed env a
                -> DelayedIO ()
                -> Delayed env a
 addAcceptCheck Delayed{..} new =
   Delayed
-    { bodyD = bodyD <* new
+    { bodyD = new *> bodyD
     , ..
     } -- Note [Existential Record Update]
 
