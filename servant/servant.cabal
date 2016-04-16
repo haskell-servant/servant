@@ -16,9 +16,11 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
 category:            Web
 build-type:          Simple
-extra-source-files:  include/*.h
 cabal-version:       >=1.10
 tested-with:         GHC >= 7.8
+extra-source-files:
+  include/*.h
+  CHANGELOG.md
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git
