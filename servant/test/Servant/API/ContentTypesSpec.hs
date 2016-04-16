@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PackageImports        #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.API.ContentTypesSpec where
@@ -28,7 +29,7 @@ import           GHC.Generics
 import           Network.URL               (exportParams, importParams)
 import           Test.Hspec
 import           Test.QuickCheck
-import           Test.QuickCheck.Instances ()
+import "quickcheck-instances" Test.QuickCheck.Instances ()
 
 import           Servant.API.ContentTypes
 
