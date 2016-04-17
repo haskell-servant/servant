@@ -72,14 +72,8 @@
 -- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] ())
 -- >>> safeLink api bad_link
 -- ...
---     Could not deduce (Or
---                         (IsElem' (Verb 'DELETE 200 '[JSON] ()) (Verb 'GET 200 '[JSON] Int))
---                         (IsElem'
---                            ("hello" :> Delete '[JSON] ())
---                            ("bye" :> (QueryParam "name" String :> Delete '[JSON] ()))))
---       arising from a use of ‘safeLink’
---     In the expression: safeLink api bad_link
---     In an equation for ‘it’: it = safeLink api bad_link
+-- ...Could not deduce...
+-- ...
 --
 --  This error is essentially saying that the type family couldn't find
 --  bad_link under api after trying the open (but empty) type family

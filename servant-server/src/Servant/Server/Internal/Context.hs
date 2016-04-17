@@ -59,7 +59,7 @@ instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
 --
 -- >>> getContextEntry (True :. False :. EmptyContext) :: String
 -- ...
---     No instance for (HasContextEntry '[] [Char])
+-- ...No instance for (HasContextEntry '[] [Char])
 -- ...
 class HasContextEntry (context :: [*]) (val :: *) where
     getContextEntry :: Context context -> val

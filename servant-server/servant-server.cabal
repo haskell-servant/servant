@@ -122,7 +122,7 @@ test-suite spec
     , servant
     , servant-server
     , string-conversions
-    , should-not-typecheck == 2.*
+    , should-not-typecheck == 2.1.*
     , temporary
     , text
     , transformers
