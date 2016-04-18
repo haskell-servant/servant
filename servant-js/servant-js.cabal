@@ -55,7 +55,7 @@ library
 
 executable counter
   main-is: counter.hs
-  ghc-options: -O2 -Wall
+  ghc-options: -Wall
   hs-source-dirs: examples
 
   if flag(example)

@@ -11,7 +11,6 @@ module Servant.Server.StreamingSpec where
 import           Control.Concurrent
 import           Control.Exception hiding (Handler)
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Except
 import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Lazy as Lazy
 import           Network.HTTP.Types

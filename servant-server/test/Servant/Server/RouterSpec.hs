@@ -16,6 +16,7 @@ import           Servant.API
 import           Servant.Server
 import           Servant.Server.Internal
 
+spec :: Spec
 spec = describe "Servant.Server.Internal.Router" $ do
   routerSpec
   distributivitySpec

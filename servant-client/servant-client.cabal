@@ -60,8 +60,7 @@ library
 
 test-suite spec
   type: exitcode-stdio-1.0
-  ghc-options:
-    -Wall -fno-warn-name-shadowing -fno-warn-missing-signatures
+  ghc-options: -Wall
   default-language: Haskell2010
   hs-source-dirs: test
   main-is: Spec.hs

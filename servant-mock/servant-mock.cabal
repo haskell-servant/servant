@@ -35,6 +35,7 @@ library
   hs-source-dirs:      src
   default-language:    Haskell2010
   include-dirs: include
+  ghc-options: -Wall
 
 executable mock-app
   main-is: main.hs
@@ -45,11 +46,11 @@ executable mock-app
     buildable: True
   else
     buildable: False
+  ghc-options: -Wall
 
 test-suite spec
   type: exitcode-stdio-1.0
-  ghc-options:
-    -Wall -fno-warn-name-shadowing
+  ghc-options: -Wall
   default-language: Haskell2010
   hs-source-dirs: test
   main-is: Spec.hs

@@ -46,7 +46,7 @@ module Servant.JS.Internal
   , Header
   ) where
 
-import           Control.Lens hiding (List)
+import           Control.Lens ((^.))
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import           Data.Monoid

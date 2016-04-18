@@ -82,4 +82,3 @@ test-suite spec
     , servant-docs
     , string-conversions
   default-language: Haskell2010
-

@@ -7,7 +7,8 @@
 -- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
-import           Control.Lens hiding (cons, List)
+import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
+                               (.~))
 #if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid
 #endif

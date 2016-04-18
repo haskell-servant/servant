@@ -28,7 +28,7 @@ import           Control.Applicative        ((<$>))
 import           Control.Arrow              (left)
 import           Control.Concurrent         (forkIO, killThread, ThreadId)
 import           Control.Exception          (bracket)
-import           Control.Monad.Trans.Except (ExceptT, throwE, runExceptT)
+import           Control.Monad.Trans.Except (throwE, runExceptT)
 import           Data.Aeson
 import qualified Data.ByteString.Lazy       as BS
 import           Data.Char                  (chr, isPrint)

@@ -5,7 +5,6 @@
 
 module Servant.Server.UsingContextSpec where
 
-import           Control.Monad.Trans.Except
 import           Network.Wai
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.Wai
