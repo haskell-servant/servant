@@ -15,5 +15,5 @@
 - **[custom-monad](https://github.com/themoritz/diener)**:
 
         A custom monad that can replace `IO` in servant applications. It adds among
-        other things logging functionality and a reader (for database conncetions).
+        other things logging functionality and a reader monad (for database connections).
         A full usage example of servant/diener is also provided.
