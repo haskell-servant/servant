@@ -27,9 +27,9 @@ library
     base >=4.7 && <5,
     bytestring >= 0.10 && <0.11,
     http-types >= 0.8 && <0.10,
-    servant >= 0.4,
-    servant-server >= 0.4,
-    transformers >= 0.3 && <0.5,
+    servant == 0.5.*,
+    servant-server == 0.5.*,
+    transformers >= 0.3 && <0.6,
     QuickCheck >= 2.7 && <2.9,
     wai >= 3.0 && <3.3
   hs-source-dirs:      src
