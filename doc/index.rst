@@ -19,4 +19,5 @@ All in a type-safe manner.
 
   introduction.rst
   tutorial/index.rst
+  examples.md
   links.rst
