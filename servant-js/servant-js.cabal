@@ -19,7 +19,7 @@ copyright:           2015-2016 Servant Contributors
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-homepage:            http://haskell-servant.github.io/
+homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
   include/*.h

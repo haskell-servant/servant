@@ -4,10 +4,10 @@ synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
   .
-  You can learn about the basics in the <http://haskell-servant.github.io/tutorial tutorial>.
+  You can learn about the basics in the <http://haskell-servant.readthedocs.org/en/stable/tutorial/index.html tutorial>.
   .
   <https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md CHANGELOG>
-homepage:            http://haskell-servant.github.io/
+homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE

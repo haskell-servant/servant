@@ -5,7 +5,7 @@ name:                servant-cassava
 version:             0.7
 synopsis:            Servant CSV content-type for cassava
 -- description:
-homepage:            http://haskell-servant.github.io/
+homepage:            http://haskell-servant.readthedocs.org/
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors

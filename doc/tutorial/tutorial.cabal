@@ -1,7 +1,7 @@
 name:                tutorial
 version:             0.7
 synopsis:            The servant tutorial
-homepage:            http://haskell-servant.github.io/
+homepage:            http://haskell-servant.readthedocs.org/
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors

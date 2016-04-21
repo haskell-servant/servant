@@ -4,11 +4,12 @@
 
 ## Getting Started
 
-We have a [tutorial](http://haskell-servant.github.io/tutorial) that
+We have a [tutorial](http://haskell-servant.readthedocs.org/en/stable/tutorial/index.html) that
 introduces the core features of servant. After this article, you should be able
 to write your first servant webservices, learning the rest from the haddocks'
 examples.
 
+The central documentation can be found [here](http://haskell-servant.readthedocs.org/).
 Other blog posts, videos and slides can be found on the
 [website](http://haskell-servant.github.io/).
 

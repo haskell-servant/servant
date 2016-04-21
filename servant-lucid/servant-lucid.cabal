@@ -5,7 +5,7 @@ name:                servant-lucid
 version:             0.7
 synopsis:            Servant support for lucid
 -- description:
-homepage:            http://haskell-servant.github.io/
+homepage:            http://haskell-servant.readthedocs.org/
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
