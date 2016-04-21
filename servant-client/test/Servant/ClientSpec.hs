@@ -211,6 +211,15 @@ type GenAuthAPI =
 genAuthAPI :: Proxy GenAuthAPI
 genAuthAPI = Proxy
 
+type GenAuthAPI2 =
+  AuthProtect "auth-tag" :> ("private" :> "auth" :> Get '[JSON] Person
+                             :<|> ("private2" :> "auth" :> Get '[JSON] Person))
+
+
+genAuthAPI2 :: Proxy GenAuthAPI2
+genAuthAPI2 = Proxy
+
+
 type instance AuthServerData (AuthProtect "auth-tag") = ()
 type instance AuthClientData (AuthProtect "auth-tag") = ()
 
@@ -384,6 +393,13 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
       let getProtected = client genAuthAPI
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
       (left show <$> runExceptT (getProtected authRequest manager baseUrl)) `shouldReturn` Right alice
+
+    it "Also works for more complicated apis" $  \(_, baseUrl) -> do
+      let (getProtected :<|> getOtherProtected) = client genAuthAPI2
+      let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
+      (left show <$> runExceptT (getProtected authRequest manager baseUrl)) `shouldReturn` Right alice
+
+
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
 
