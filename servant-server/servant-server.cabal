@@ -40,7 +40,6 @@ library
     Servant.Server.Internal
     Servant.Server.Internal.BasicAuth
     Servant.Server.Internal.Context
-    Servant.Server.Internal.Enter
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServantErr
@@ -101,7 +100,6 @@ test-suite spec
   other-modules:
       Servant.Server.ErrorSpec
       Servant.Server.Internal.ContextSpec
-      Servant.Server.Internal.EnterSpec
       Servant.ServerSpec
       Servant.Server.UsingContextSpec
       Servant.Server.UsingContextSpec.TestCombinators

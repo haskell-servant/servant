@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
-module Servant.Server.Internal.EnterSpec where
+module Servant.ArbitraryMonadServerSpec where
 
 import qualified Control.Category           as C
 import           Control.Monad.Reader

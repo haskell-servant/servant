@@ -47,6 +47,7 @@ library
     Servant.API.Verbs
     Servant.API.WithNamedContext
     Servant.Utils.Links
+    Servant.Utils.Enter
   build-depends:
       base >= 4.7 && < 4.9
     , base-compat >= 0.9
@@ -58,6 +59,8 @@ library
     , http-api-data >= 0.1  && < 0.3
     , http-media >= 0.4 && < 0.7
     , http-types >= 0.8 && < 0.10
+    , mtl >= 2 && < 3
+    , mmorph >= 1
     , text >= 1 && < 2
     , string-conversions >= 0.3 && < 0.5
     , network-uri >= 2.6
