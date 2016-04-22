@@ -27,7 +27,8 @@ data ShouldMatch a = ShouldMatch
   , smBaseUrls :: (BaseUrl, BaseUrl)
   } deriving (Functor, Generic)
 
-instance (Show a, Eq a) => Testable (ShouldMatch (FinalClient a)) where
+instance {-# OVERLAPPING #-} (Show a, Eq a)
+    => Testable (ShouldMatch (FinalClient a)) where
     property sm = ioProperty $ do
         let (burl1, burl2) = smBaseUrls sm
         e1' <- runExceptT $ smClient sm (smManager sm) burl1
@@ -44,7 +45,7 @@ instance (Show a, Eq a) => Testable (ShouldMatch (FinalClient a)) where
                                ++ "\nLHS:\n" ++ show err1
                                ++ "\nRHS:\n" ++ show err2
 
-instance (Arbitrary a, Show a, Testable (ShouldMatch b))
+instance {-# OVERLAPPABLE #-} (Arbitrary a, Show a, Testable (ShouldMatch b))
       => Testable (ShouldMatch (a -> b)) where
     property sm = forAllShrink arbitrary shrink go
       where go x = ($ x) <$> sm
@@ -63,7 +64,8 @@ data ShouldSatisfy filter expect a = ShouldSatisfy
   , ssBaseUrl :: BaseUrl
   } deriving (Functor)
 
-instance (Show a, Eq a, HasPredicate expect (Either ServantError a))
+instance {-# OVERLAPPING #-}
+     (Show a, Eq a, HasPredicate expect (Either ServantError a))
       => Testable (ShouldSatisfy filter expect (FinalClient a)) where
     property ss = ioProperty $ do
         a' <- runExceptT $ ssVal ss (ssManager ss) (ssBaseUrl ss)
@@ -72,8 +74,9 @@ instance (Show a, Eq a, HasPredicate expect (Either ServantError a))
           Just (x', _) -> return $ Just (x', show a')
         return $ getPredicate (ssExpect ss) a'
 
-instance ( Arbitrary a, Show a, Testable (ShouldSatisfy filter expect b)
-         , HasPredicate filter a)
+instance {-# OVERLAPPABLE #-}
+        ( Arbitrary a, Show a, Testable (ShouldSatisfy filter expect b)
+        , HasPredicate filter a)
       => Testable (ShouldSatisfy filter expect (a -> b)) where
     property ss = forAllShrink arbitrary shrink go
         where go x | getPredicate (ssFilter ss) x = ($ x) <$> ss
