@@ -1,0 +1,34 @@
+sudo: false
+
+language: c
+
+env:
+  - GHCVER=7.8.4
+  - GHCVER=7.10.2
+
+addons:
+  apt:
+    sources:
+      - hvr-ghc
+    packages:
+      - ghc-7.8.4
+      - ghc-7.10.2
+      - cabal-install-1.22
+      - libgmp-dev
+      - wrk
+
+install:
+  - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/1.22/bin:$PATH
+  - ghc --version
+  - cabal --version
+  - travis_retry cabal update
+  - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+
+script:
+  - tinc && cabal configure --enable-tests && cabal build && cabal test
+  - (cd doc && tinc cabal configure --enable-tests && cabal build && cabal test)
+
+cache:
+  directories:
+    - $HOME/.tinc/cache
