@@ -2,12 +2,12 @@
 module Servant.QuickCheck.Internal.Testable where
 
 import           Control.Concurrent.MVar  (MVar, modifyMVar_, newMVar, readMVar)
-import           Control.Monad.Except     (runExceptT, ExceptT)
+import           Control.Monad.Except     (runExceptT)
 import           GHC.Generics             (Generic)
 import           Network.HTTP.Client      (Request, RequestBody (..),
-                                           requestBody, Manager)
+                                           requestBody)
 import           Servant.API              ((:<|>)(..))
-import           Servant.Client           (ServantError (..), BaseUrl)
+import           Servant.Client           (ServantError (..), ClientM)
 import           System.IO.Unsafe         (unsafePerformIO)
 import           Test.QuickCheck          (Arbitrary (..), discard)
 import           Test.QuickCheck.Property (Testable (..), forAllShrink,
@@ -16,22 +16,16 @@ import           Test.QuickCheck.Property (Testable (..), forAllShrink,
 import Servant.QuickCheck.Internal.Predicates
 
 
-type FinalClient a = Manager -> BaseUrl -> ExceptT ServantError IO a
-
 -- * ShouldMatch
 
 -- | Two corresponding client functions. Used for checking that APIs match.
-data ShouldMatch a = ShouldMatch
-  { smClient :: a
-  , smManager :: Manager
-  , smBaseUrls :: (BaseUrl, BaseUrl)
-  } deriving (Functor, Generic)
+data ShouldMatch a = ShouldMatch a a
+  deriving (Eq, Show, Read, Generic)
 
-instance (Show a, Eq a) => Testable (ShouldMatch (FinalClient a)) where
-    property sm = ioProperty $ do
-        let (burl1, burl2) = smBaseUrls sm
-        e1' <- runExceptT $ smClient sm (smManager sm) burl1
-        e2' <- runExceptT $ smClient sm (smManager sm) burl2
+instance (Show a, Eq a) => Testable (ShouldMatch (ClientM a)) where
+    property (ShouldMatch e1 e2) = ioProperty $ do
+        e1' <- runExceptT e1
+        e2' <- runExceptT e2
         modifyMVar_ currentReq $ \x -> case x of
           Nothing      -> error "impossible"
           Just (x', _) -> return $ Just (x', "LHS:\n" ++ show e1'
@@ -46,12 +40,13 @@ instance (Show a, Eq a) => Testable (ShouldMatch (FinalClient a)) where
 
 instance (Arbitrary a, Show a, Testable (ShouldMatch b))
       => Testable (ShouldMatch (a -> b)) where
-    property sm = forAllShrink arbitrary shrink go
-      where go x = ($ x) <$> sm
+    property (ShouldMatch f1 f2) = forAllShrink arbitrary shrink go
+      where go x = ShouldMatch (f1 x) (f2 x)
 
 instance (Testable (ShouldMatch a), Testable (ShouldMatch b))
       => Testable (ShouldMatch (a :<|> b)) where
-    property sm = property (fstAlt <$> sm) .&. property (sndAlt <$> sm)
+    property (ShouldMatch (a1 :<|> b1) (a2 :<|> b2))
+      = property (ShouldMatch a1 a2) .&. property (ShouldMatch b1 b2)
 
 -- * ShouldSatisfy
 
@@ -59,38 +54,31 @@ data ShouldSatisfy filter expect a = ShouldSatisfy
   { ssVal :: a
   , ssFilter :: Predicates filter
   , ssExpect :: Predicates expect
-  , ssManager :: Manager
-  , ssBaseUrl :: BaseUrl
   } deriving (Functor)
 
 instance (Show a, Eq a, HasPredicate expect (Either ServantError a))
-      => Testable (ShouldSatisfy filter expect (FinalClient a)) where
-    property ss = ioProperty $ do
-        a' <- runExceptT $ ssVal ss (ssManager ss) (ssBaseUrl ss)
+      => Testable (ShouldSatisfy filter expect (ClientM a)) where
+    property (ShouldSatisfy a _ e) = ioProperty $ do
+        a' <- runExceptT a
         modifyMVar_ currentReq $ \x -> case x of
           Nothing      -> error "impossible"
           Just (x', _) -> return $ Just (x', show a')
-        return $ getPredicate (ssExpect ss) a'
+        return $ getPredicate e a'
 
 instance ( Arbitrary a, Show a, Testable (ShouldSatisfy filter expect b)
          , HasPredicate filter a)
       => Testable (ShouldSatisfy filter expect (a -> b)) where
-    property ss = forAllShrink arbitrary shrink go
-        where go x | getPredicate (ssFilter ss) x = ($ x) <$> ss
-                   | otherwise                    = discard
+    property (ShouldSatisfy g f e) = forAllShrink arbitrary shrink go
+        where go x | getPredicate f x = ShouldSatisfy (g x) f e
+                   | otherwise        = discard
 
 instance ( Testable (ShouldSatisfy filter expect a)
          , Testable (ShouldSatisfy filter expect b))
       => Testable (ShouldSatisfy filter expect (a :<|> b)) where
-    property ss = property (fstAlt <$> ss) .&. property (sndAlt <$> ss)
+    property (ShouldSatisfy (a :<|> b) f e)
+      = property (ShouldSatisfy a f e) .&. property (ShouldSatisfy b f e)
 
 -- * Utils
-
-fstAlt :: (a :<|> b) -> a
-fstAlt (a :<|> _) = a
-
-sndAlt :: (a :<|> b) -> b
-sndAlt (_ :<|> b) = b
 
 -- Used to store the current request and response so that in case of failure we
 -- have the failing test in a user-friendly form.

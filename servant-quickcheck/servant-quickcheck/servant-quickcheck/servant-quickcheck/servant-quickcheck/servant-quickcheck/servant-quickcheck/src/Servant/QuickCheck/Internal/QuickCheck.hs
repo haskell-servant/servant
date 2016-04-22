@@ -49,12 +49,9 @@ withServantServer api server t
 -- @serversEqual@ or @servantServersEqual@.
 serversEqualProperty :: (HasClient a, Testable (ShouldMatch (Client a)))
     => Proxy a -> Manager -> BaseUrl -> BaseUrl -> Property
-serversEqualProperty api mgr burl1 burl2
-  = property $ ShouldMatch
-      { smClient = client api
-      , smManager = mgr
-      , smBaseUrls = (burl1, burl2)
-      }
+serversEqualProperty api mgr burl1 burl2 = property $ ShouldMatch c1 c2
+  where c1 = client api burl1 mgr
+        c2 = client api burl2 mgr
 
 -- | Check that the two servers running under the provided @BaseUrl@s behave
 -- identically by randomly generating arguments (captures, query params, request bodies,
@@ -81,13 +78,7 @@ serversEqual api burl1 burl2 tries = do
 serverSatisfiesProperty :: (HasClient a, Testable (ShouldSatisfy filt exp (Client a)))
     => Proxy a -> Manager -> BaseUrl -> Predicates filt -> Predicates exp -> Property
 serverSatisfiesProperty api mgr burl filters expect = do
-    property $ ShouldSatisfy
-      { ssVal = client api
-      , ssFilter = filters
-      , ssExpect = expect
-      , ssManager = mgr
-      , ssBaseUrl = burl
-      }
+    property $ ShouldSatisfy (client api burl mgr) filters expect
 
 -- | Check that a server's responses satisfies certain properties.
 serverSatisfies :: (HasClient a, Testable (ShouldSatisfy filt exp (Client a)))
