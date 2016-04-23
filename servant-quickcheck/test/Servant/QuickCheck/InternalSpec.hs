@@ -8,13 +8,17 @@ import Data.Proxy
 import Servant
 import Test.Hspec
 import Test.QuickCheck
+import Servant.API.Internal.Test.ComprehensiveAPI
 
 import Servant.QuickCheck
+
+import Servant.QuickCheck.Internal (genRequest)
 
 spec :: Spec
 spec = do
   serversEqualSpec
   serverSatisfiesSpec
+  isComprehensiveSpec
 
 serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
@@ -31,6 +35,17 @@ serverSatisfiesSpec = describe "serverSatisfies" $ do
   it "succeeds for true predicates" $ do
     withServantServer api server $ \burl ->
       serverSatisfies api burl args (not500 <%> mempty)
+
+  it "fails for false predicates" $ do
+    withServantServer api server $ \burl ->
+      serverSatisfies api burl args (onlyJsonObjects <%> mempty)
+
+isComprehensiveSpec :: Spec
+isComprehensiveSpec = describe "HasGenRequest" $ do
+
+  it "has instances for all 'servant' combinators" $ do
+    let _g = genRequest comprehensiveAPI
+    True `shouldBe` True -- This is a type-level check
 
 
 ------------------------------------------------------------------------------

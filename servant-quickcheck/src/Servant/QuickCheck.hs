@@ -36,6 +36,7 @@ module Servant.QuickCheck
   , (<%>)
   , Predicates
   , not500
+  , onlyJsonObjects
 
   -- ** Re-exports
   , BaseUrl(..)

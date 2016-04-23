@@ -41,6 +41,7 @@ library
                      , warp >= 3.2.4 && < 3.3
                      , process == 1.2.*
                      , temporary == 1.2.*
+                     , case-insensitive
                      , hspec
                      , text == 1.*
   hs-source-dirs:      src
@@ -74,6 +75,7 @@ test-suite spec
                      , warp
                      , servant-server
                      , servant-client
+                     , servant
                      , transformers
                      , QuickCheck
                      , quickcheck-io

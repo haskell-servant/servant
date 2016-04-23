@@ -82,6 +82,31 @@ instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
         param = cs $ symbolVal (Proxy :: Proxy x)
         new = arbitrary :: Gen c
 
+instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
+    => HasGenRequest (QueryParams x c :> b) where
+    genRequest _ = do
+      new' <- new
+      old' <- old
+      return $ \burl -> let r = old' burl in r {
+          queryString = queryString r
+                     <> if length new' > 0 then fold (toParam <$> new') else ""}
+      where
+        old = genRequest (Proxy :: Proxy b)
+        param = cs $ symbolVal (Proxy :: Proxy x)
+        new = arbitrary :: Gen [c]
+        toParam c = param <> "[]=" <> cs (toQueryParam c)
+        fold = foldr1 (\a b -> a <> "&" <> b)
+
+instance (KnownSymbol x, HasGenRequest b)
+    => HasGenRequest (QueryFlag x :> b) where
+    genRequest _ = do
+      old' <- old
+      return $ \burl -> let r = old' burl in r {
+          queryString = queryString r <> param <> "=" }
+      where
+        old = genRequest (Proxy :: Proxy b)
+        param = cs $ symbolVal (Proxy :: Proxy x)
+
 instance (ReflectMethod method)
     => HasGenRequest (Verb (method :: k) (status :: Nat) (cts :: [*]) a) where
     genRequest _ = return $ \burl -> def
@@ -91,3 +116,17 @@ instance (ReflectMethod method)
        , method = reflectMethod (Proxy :: Proxy method)
        }
 
+instance (HasGenRequest a) => HasGenRequest (RemoteHost :> a) where
+    genRequest _ = genRequest (Proxy :: Proxy a)
+
+instance (HasGenRequest a) => HasGenRequest (IsSecure :> a) where
+    genRequest _ = genRequest (Proxy :: Proxy a)
+
+instance (HasGenRequest a) => HasGenRequest (HttpVersion :> a) where
+    genRequest _ = genRequest (Proxy :: Proxy a)
+
+instance (HasGenRequest a) => HasGenRequest (Vault :> a) where
+    genRequest _ = genRequest (Proxy :: Proxy a)
+
+instance (HasGenRequest a) => HasGenRequest (WithNamedContext x y a) where
+    genRequest _ = genRequest (Proxy :: Proxy a)

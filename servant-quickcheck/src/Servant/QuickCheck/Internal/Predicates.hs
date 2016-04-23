@@ -1,13 +1,17 @@
 module Servant.QuickCheck.Internal.Predicates where
 
-import Data.Monoid ((<>))
-import GHC.Generics (Generic)
-import Control.Monad
-import Network.HTTP.Client (Request, Response, responseStatus, Manager, httpLbs)
-import Network.HTTP.Types (status500)
+import           Control.Monad
+import           Data.Aeson           (Object, decode)
+import           Data.Bifunctor       (Bifunctor (..))
 import qualified Data.ByteString.Lazy as LBS
-import Data.Bifunctor (Bifunctor(..))
-import Data.Text (Text)
+import qualified Data.ByteString      as SBS
+import           Data.CaseInsensitive (mk)
+import           Data.Monoid          ((<>))
+import           Data.Text            (Text)
+import           GHC.Generics         (Generic)
+import           Network.HTTP.Client  (Manager, Request, Response, httpLbs,
+                                       responseBody, responseStatus, responseHeaders)
+import           Network.HTTP.Types   (status500)
 
 -- | @500 Internal Server Error@ should be avoided - it may represent some
 -- issue with the application code, and it moreover gives the client little
@@ -17,7 +21,6 @@ import Data.Text (Text)
 not500 :: ResponsePredicate Text Bool
 not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == status500)
 
-{-
 -- | Returning anything other than an object when returning JSON is considered
 -- bad practice, as:
 --
@@ -30,10 +33,13 @@ not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == statu
 --
 -- This function checks that any @application/json@ responses only return JSON
 -- objects (and not arrays, strings, numbers, or booleans) at the top level.
-onlyJsonObjects :: Response b -> IO Bool
+onlyJsonObjects :: ResponsePredicate Text Bool
 onlyJsonObjects
-  = ResponsePredicate "onlyJsonObjects" _
+  = ResponsePredicate "onlyJsonObjects" (\resp -> case decode (responseBody resp) of
+      Nothing -> False
+      Just (_ :: Object) -> True)
 
+{-
 -- | When creating a new resource, it is good practice to provide a @Location@
 -- header with a link to the created resource.
 --
@@ -42,9 +48,9 @@ onlyJsonObjects
 -- requests.
 --
 -- References: <RFC 7231, Section 6.3.2 https://tools.ietf.org/html/rfc7231#section-6.3.2>
-createContainsValidLocation :: Response b -> IO Bool
+createContainsValidLocation :: ResponsePredicate Text Bool
 createContainsValidLocation
-  = ResponsePredicate "createContainsValidLocation" _
+  = ResponsePredicate "createContainsValidLocation" (\resp ->
 
 getsHaveLastModifiedHeader :: Response b -> IO Bool
 getsHaveLastModifiedHeader
@@ -221,3 +227,8 @@ finishPredicates p req mgr = do
   resps <- reqResps (reqPreds p) req mgr
   let preds = reqPred (reqPreds p) <> respPreds p
   return $ mconcat [respPred preds r | r <- resps ]
+
+-- * helpers
+
+hasHeader :: SBS.ByteString -> Response b -> Bool
+hasHeader hdr r = mk hdr `elem` (fst <$> responseHeaders r)
