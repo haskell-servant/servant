@@ -5,13 +5,16 @@ import           Data.Aeson           (Object, decode)
 import           Data.Bifunctor       (Bifunctor (..))
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString      as SBS
+import qualified Data.ByteString.Char8 as SBSC
 import           Data.CaseInsensitive (mk)
+import           Data.Either          (isRight)
+import           Data.List.Split      (wordsBy)
 import           Data.Monoid          ((<>))
 import           Data.Text            (Text)
 import           GHC.Generics         (Generic)
 import           Network.HTTP.Client  (Manager, Request, Response, httpLbs,
                                        responseBody, responseStatus, responseHeaders)
-import           Network.HTTP.Types   (status500)
+import           Network.HTTP.Types   (status500, status405, parseMethod)
 
 -- | @500 Internal Server Error@ should be avoided - it may represent some
 -- issue with the application code, and it moreover gives the client little
@@ -52,20 +55,28 @@ createContainsValidLocation :: ResponsePredicate Text Bool
 createContainsValidLocation
   = ResponsePredicate "createContainsValidLocation" (\resp ->
 
-getsHaveLastModifiedHeader :: Response b -> IO Bool
+getsHaveLastModifiedHeader :: ResponsePredicate Text Bool
 getsHaveLastModifiedHeader
-  = ResponsePredicate "getsHaveLastModifiedHeader" _
+  = ResponsePredicate "getsHaveLastModifiedHeader" (\resp ->
 
+-}
 -- | When an HTTP request has a method that is not allowed, a 405 response
 -- should be returned. Additionally, it is good practice to return an @Allow@
 -- header with the list of allowed methods.
 --
 -- This function checks that every @405 Method Not Allowed@ response contains
 -- an @Allow@ header with a list of standard HTTP methods.
-notAllowedContainsAllowHeader :: Response b -> IO Bool
+notAllowedContainsAllowHeader :: ResponsePredicate Text Bool
 notAllowedContainsAllowHeader
-  = ResponsePredicate "notAllowedContainsAllowHeader" _
+  = ResponsePredicate "notAllowedContainsAllowHeader" (\resp ->
+      if responseStatus resp == status405
+        then hasValidHeader "Allow" go resp
+        else True)
+      where
+        go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
+             $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
 
+  {-
 -- | When a request contains an @Accept@ header, the server must either return
 -- content in one of the requested representations, or respond with @406 Not
 -- Acceptable@.
@@ -230,5 +241,7 @@ finishPredicates p req mgr = do
 
 -- * helpers
 
-hasHeader :: SBS.ByteString -> Response b -> Bool
-hasHeader hdr r = mk hdr `elem` (fst <$> responseHeaders r)
+hasValidHeader :: SBS.ByteString -> (SBS.ByteString -> Bool) -> Response b -> Bool
+hasValidHeader hdr p r = case lookup (mk hdr) (responseHeaders r) of
+  Nothing -> False
+  Just v  -> p v

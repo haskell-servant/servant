@@ -41,6 +41,7 @@ library
                      , warp >= 3.2.4 && < 3.3
                      , process == 1.2.*
                      , temporary == 1.2.*
+                     , split == 0.2.*
                      , case-insensitive
                      , hspec
                      , text == 1.*
