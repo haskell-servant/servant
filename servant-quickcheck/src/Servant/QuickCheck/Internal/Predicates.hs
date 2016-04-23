@@ -36,6 +36,11 @@ not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == statu
 --
 -- This function checks that any @application/json@ responses only return JSON
 -- objects (and not arrays, strings, numbers, or booleans) at the top level.
+--
+-- __References__:
+--
+--   * JSON Grammar: <https://tools.ietf.org/html/rfc7159#section-2 RFC 7159 Section 2>
+--   * JSON Grammar: <https://tools.ietf.org/html/rfc4627#section-2 RFC 4627 Section 2>
 onlyJsonObjects :: ResponsePredicate Text Bool
 onlyJsonObjects
   = ResponsePredicate "onlyJsonObjects" (\resp -> case decode (responseBody resp) of
@@ -66,6 +71,10 @@ getsHaveLastModifiedHeader
 --
 -- This function checks that every @405 Method Not Allowed@ response contains
 -- an @Allow@ header with a list of standard HTTP methods.
+--
+-- __References__:
+--
+--   * @Allow@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.7>
 notAllowedContainsAllowHeader :: ResponsePredicate Text Bool
 notAllowedContainsAllowHeader
   = ResponsePredicate "notAllowedContainsAllowHeader" (\resp ->
