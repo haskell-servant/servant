@@ -1,19 +1,20 @@
 -- | This module contains wrappers around lower-level functionality.
 module Servant.QuickCheck.Internal.QuickCheck where
 
+import qualified Data.ByteString.Lazy     as LBS
 import           Data.Proxy               (Proxy)
-import           Network.HTTP.Client      (Manager, defaultManagerSettings,
-                                           newManager, httpLbs, checkStatus, Request)
+import           Data.Text                (Text)
+import           Network.HTTP.Client      (Manager, Request, checkStatus,
+                                           defaultManagerSettings, httpLbs,
+                                           newManager)
 import           Network.Wai.Handler.Warp (withApplication)
 import           Servant                  (HasServer, Server, serve)
-import           Servant.Client           (BaseUrl (..), Scheme (..) )
+import           Servant.Client           (BaseUrl (..), Scheme (..))
+import           System.IO.Unsafe         (unsafePerformIO)
 import           Test.Hspec               (Expectation, expectationFailure)
 import           Test.QuickCheck          (Args (..), Result (..),
                                            quickCheckWithResult)
-import System.IO.Unsafe (unsafePerformIO)
-import Test.QuickCheck.Monadic
-import qualified Data.ByteString.Lazy as LBS
-import Data.Text (Text)
+import           Test.QuickCheck.Monadic
 
 import Servant.QuickCheck.Internal.HasGenRequest
 import Servant.QuickCheck.Internal.Predicates
@@ -54,13 +55,29 @@ serversEqual api burl1 burl2 args req = do
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
+-- | Check that a server satisfies the set of properties specified.
+--
+-- Note that, rather than having separate tests for each property you'd like to
+-- test, you should generally prefer to combine all properties into a single
+-- test. This enables a more parsimonious generation of requests and responses
+-- with the same testing depth.
+--
+-- Example usage:
+--
+-- > goodAPISpec = describe "my server" $ do
+-- >
+-- >   it "follows best practices" $ do
+-- >     withServantServer api server $ \burl ->
+-- >       serverSatisfies api burl stdArgs (not500
+-- >                                     <%> onlyJsonObjects
+-- >                                     <%> notAllowedContainsAllowHeader
+-- >                                     <%> mempty)
 serverSatisfies :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates [Text] [Text] -> Expectation
 serverSatisfies api burl args preds = do
   let reqs = ($ burl) <$> genRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
      v <- run $ finishPredicates preds (noCheckStatus req) defManager
-     {-run $ print v-}
      assert $ null v
   case r of
     Success {} -> return ()

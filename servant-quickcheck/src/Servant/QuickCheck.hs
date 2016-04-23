@@ -6,16 +6,6 @@
 -- tested itself need not be implemented with @servant-server@ (or indeed,
 -- written in Haskell).
 --
--- /N.B./ The examples given here assume the following setup:
---
--- > import Servant
--- > import Servant.QuickCheck
--- > import Test.Hspec
--- >
--- > type API = ReqBody '[JSON] Int :> Post '[JSON] String
--- >
--- > api :: Proxy API
--- > api = Proxy
 module Servant.QuickCheck
   (
 
@@ -24,19 +14,32 @@ module Servant.QuickCheck
   -- | Helpers to setup and teardown @servant@ servers during tests.
     withServantServer
 
-  , serversEqual
-  , serverSatisfies
 
-  -- * Response equality
+  -- * Equality testing
+  , serversEqual
+  -- ** Response equality
+  -- | Often the normal equality of responses is not what we want. For example,
+  -- if responses contain a @Date@ header with the time of the response,
+  -- responses will fail to be equal even though they morally are. This datatype
+  -- represents other means of checking equality
+  -- *** Useful @ResponseEquality@s
   , bodyEquality
   , allEquality
-  , ResponseEquality(getResponseEquality)
+  -- ** Response equality type
+  , ResponseEquality(..)
 
-  -- * Predicates
-  , (<%>)
-  , Predicates
+  -- * Property testing
+  , serverSatisfies
+  -- ** Predicates
+  -- *** Useful predicates
   , not500
   , onlyJsonObjects
+  , notAllowedContainsAllowHeader
+  -- *** Predicate utilities and types
+  , (<%>)
+  , Predicates
+  , ResponsePredicate(..)
+  , RequestPredicate(..)
 
   -- ** Re-exports
   , BaseUrl(..)

@@ -229,9 +229,14 @@ instance JoinPreds (ResponsePredicate Text Bool) where
     where go = let p' = first return p
                in fmap (\z -> if z then [] else respPredName p') p'
 
-infixr 6 <%>
+
+-- | Adds a new predicate (either `ResponsePredicate` or `RequestPredicate`) to
+-- the existing predicates.
+--
+-- > not500 <%> onlyJsonObjects <%> empty
 (<%>) :: JoinPreds a => a -> Predicates [Text] [Text] -> Predicates [Text] [Text]
 (<%>) = joinPreds
+infixr 6 <%>
 
 finishPredicates :: Predicates [Text] [Text] -> Request -> Manager -> IO [Text]
 finishPredicates p req mgr = do
