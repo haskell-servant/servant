@@ -23,11 +23,9 @@ serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
 
   it "considers equal servers equal" $ do
-    mgr <- newManager defaultManagerSettings
     withServantServer api server $ \burl1 ->
       withServantServer api server $ \burl2 -> do
-        return $ serversEqual api burl1 burl2 mgr
-
+        serversEqual api burl1 burl2 stdArgs { maxSuccess = 10000 }
 
 
 
@@ -44,7 +42,7 @@ api = Proxy
 server :: IO (Server API)
 server = do
     mvar <- newMVar ""
-    return $ (\x -> liftIO $ print 'a' >>  swapMVar mvar x)
+    return $ (\x -> liftIO $ swapMVar mvar x)
         :<|> (liftIO $ readMVar mvar >>= return . length)
 
 

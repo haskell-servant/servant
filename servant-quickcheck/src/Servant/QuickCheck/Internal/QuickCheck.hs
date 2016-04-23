@@ -17,10 +17,12 @@ import           System.IO                (hPutStrLn, hFlush)
 import           System.IO.Temp           (withSystemTempFile)
 import           System.Mem               (performGC)
 import           System.Process           (callCommand)
-import           Test.Hspec               (Expectation, expectationFailure)
+import           Test.Hspec               (Expectation, expectationFailure, shouldBe)
 import           Test.QuickCheck          (Args (..), Property, forAll, Result (..),
                                            Testable, property, ioProperty,
                                            quickCheckWithResult, stdArgs)
+import System.IO.Unsafe (unsafePerformIO)
+import Test.QuickCheck.Monadic
 
 import Servant.QuickCheck.Internal.HasGenRequest
 import Servant.QuickCheck.Internal.Predicates
@@ -47,12 +49,21 @@ withServantServer api server t
 -- Evidently, if the behaviour of the server is expected to be
 -- non-deterministic,  this function may produce spurious failures
 serversEqual :: HasGenRequest a =>
-  Proxy a -> BaseUrl -> BaseUrl -> Manager -> Property
-serversEqual api burl1 burl2 mgr =
+  Proxy a -> BaseUrl -> BaseUrl -> Args -> Expectation
+serversEqual api burl1 burl2 args = do
   let reqs = (\f -> (f burl1, f burl2)) <$> genRequest api
-  in forAll reqs $ \(req1, req2) -> ioProperty $ do
-    resp1 <- httpLbs req1 mgr
-    resp2 <- httpLbs req2 mgr
-    return $ resp1 == resp2
+  r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
+    resp1 <- run $ httpLbs req1 defManager
+    resp2 <- run $ httpLbs req2 defManager
+    assert $ resp1 == resp2
+  case r of
+    Success {} -> return ()
+    GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
+    Failure { output = m } -> expectationFailure $ "Failed:\n" ++ show m
+    NoExpectedFailure {} -> expectationFailure $ "No expected failure"
+    InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
+defManager :: Manager
+defManager = unsafePerformIO $ newManager defaultManagerSettings
+{-# NOINLINE defManager #-}
 
