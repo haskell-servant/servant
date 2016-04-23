@@ -57,6 +57,7 @@ library
                      , DeriveGeneric
                      , ScopedTypeVariables
                      , OverloadedStrings
+                     , FunctionalDependencies
   default-language:    Haskell2010
 
 test-suite spec

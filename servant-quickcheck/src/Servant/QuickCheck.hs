@@ -19,15 +19,23 @@
 module Servant.QuickCheck
   (
 
-   serversEqual
+
   -- * Test setup helpers
   -- | Helpers to setup and teardown @servant@ servers during tests.
-  , withServantServer
+    withServantServer
+
+  , serversEqual
+  , serverSatisfies
 
   -- * Response equality
   , bodyEquality
   , allEquality
   , ResponseEquality(getResponseEquality)
+
+  -- * Predicates
+  , (<%>)
+  , Predicates
+  , not500
 
   -- ** Re-exports
   , BaseUrl(..)

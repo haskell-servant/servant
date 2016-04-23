@@ -5,6 +5,7 @@ import GHC.Generics (Generic)
 import Control.Monad
 import Network.HTTP.Client (Request, Response, responseStatus)
 import Network.HTTP.Types (status500)
+import qualified Data.ByteString.Lazy as LBS
 import Data.Text (Text)
 
 -- | @500 Internal Server Error@ should be avoided - it may represent some
@@ -12,8 +13,9 @@ import Data.Text (Text)
 -- indication of how to proceed or what went wrong.
 --
 -- This function checks that the response code is not 500.
-not500 :: ResponsePredicate Text b Bool
-not500 = ResponsePredicate "not500" (\resp -> responseStatus resp == status500)
+not500 :: ResponsePredicate Text [Text]
+not500 = ResponsePredicate "not500" (\resp ->
+        if responseStatus resp == status500 then ["not500"] else [])
 
 {-
 -- | Returning anything other than an object when returning JSON is considered
@@ -143,52 +145,66 @@ unauthorizedContainsWWWAuthenticate :: Predicate b Bool
 unauthorizedContainsWWWAuthenticate
   = ResponsePredicate "unauthorizedContainsWWWAuthenticate" _
 -}
+-- * Predicate logic
 
-data ResponsePredicate n b r = ResponsePredicate
+-- The idea with all this footwork is to not waste any requests. Rather than
+-- generating new requests and only applying one predicate to the response, we
+-- apply as many predicates as possible.
+--
+-- Still, this is all kind of ugly.
+
+data ResponsePredicate n r = ResponsePredicate
   { respPredName :: n
-  , respPred :: Response b -> r
+  , respPred :: Response LBS.ByteString -> r
   } deriving (Functor, Generic)
 
-instance (Monoid n, Monoid r) => Monoid (ResponsePredicate n b r) where
+instance (Monoid n, Monoid r) => Monoid (ResponsePredicate n r) where
   mempty = ResponsePredicate mempty mempty
   a `mappend` b = ResponsePredicate
     { respPredName = respPredName a <> respPredName b
     , respPred = respPred a <> respPred b
     }
 
-data RequestPredicate n b r = RequestPredicate
+data RequestPredicate n r = RequestPredicate
   { reqPredName :: n
-  , reqPred :: Request -> ResponsePredicate n b r -> IO r
-  } deriving (Generic)
+  , reqResps    :: Request -> IO [Response LBS.ByteString]
+  , reqPred     :: ResponsePredicate n r
+  } deriving (Generic, Functor)
 
-instance (Monoid n, Monoid r) => Monoid (RequestPredicate n b r) where
-  mempty = RequestPredicate mempty (\_ _ -> return mempty)
+instance (Monoid n, Monoid r) => Monoid (RequestPredicate n r) where
+  mempty = RequestPredicate mempty (\_ -> return mempty) mempty
   a `mappend` b = RequestPredicate
     { reqPredName = reqPredName a <> reqPredName b
-    , reqPred = \x y -> liftM2 (<>) (reqPred a x y) (reqPred b x y)
+    , reqResps = \x -> liftM2 (<>) (reqResps a x) (reqResps b x)
+    , reqPred = reqPred a <> reqPred b
     }
 
-data Predicates n b r = Predicates
-  { reqPreds :: RequestPredicate n b r
-  , respPreds :: ResponsePredicate n b r
-  } deriving (Generic)
+data Predicates n r = Predicates
+  { reqPreds :: RequestPredicate n r
+  , respPreds :: ResponsePredicate n r
+  } deriving (Generic, Functor)
 
-instance (Monoid n, Monoid r) => Monoid (Predicates n b r) where
+instance (Monoid n, Monoid r) => Monoid (Predicates n r) where
   mempty = Predicates mempty mempty
   a `mappend` b = Predicates (reqPreds a <> reqPreds b) (respPreds a <> respPreds b)
 
-class JoinPreds a n b r where
-  joinPreds :: a -> Predicates n b r -> Predicates n b r
 
-instance (Monoid n, Monoid r) => JoinPreds (RequestPredicate n b r) n b r where
+
+class JoinPreds a where
+  joinPreds :: a -> Predicates [Text] [Text] -> Predicates [Text] [Text]
+
+instance JoinPreds (RequestPredicate Text Bool) where
   joinPreds p (Predicates x y) = Predicates (p <> x) y
 
-instance (Monoid n, Monoid r) => JoinPreds (ResponsePredicate n b r) n b r where
+instance JoinPreds (ResponsePredicate Text Bool) where
   joinPreds p (Predicates x y) = Predicates x (p <> y)
 
 infixr 6 <%>
 (<%>) :: JoinPreds a n b r => a -> Predicates n b r -> Predicates n b r
 (<%>) = joinPreds
 
-finishPredicates :: (Monoid r) => Predicates n b r -> Request -> IO r
-finishPredicates p req = (reqPred $ reqPreds p) req (respPreds p)
+finishPredicates :: Predicates [Text] [Text] -> Request -> IO [Text]
+finishPredicates p req = do
+  resps <- reqResps (reqPreds p) req
+  let preds = reqPred (reqPreds p) <> respPreds p
+  return $ mconcat [respPred preds r | r <- resps ]

@@ -14,6 +14,7 @@ import Servant.QuickCheck
 spec :: Spec
 spec = do
   serversEqualSpec
+  serverSatisfiesSpec
 
 serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
@@ -21,8 +22,15 @@ serversEqualSpec = describe "serversEqual" $ do
   it "considers equal servers equal" $ do
     withServantServer api server $ \burl1 ->
       withServantServer api server $ \burl2 -> do
-        serversEqual api burl1 burl2 stdArgs { maxSuccess = noOfTestCases } bodyEquality
+        serversEqual api burl1 burl2 args bodyEquality
 
+
+serverSatisfiesSpec :: Spec
+serverSatisfiesSpec = describe "serverSatisfies" $ do
+
+  it "succeeds for true predicates" $ do
+    withServantServer api server $ \burl ->
+      serverSatisfies api burl args (not500 <%> mempty)
 
 
 ------------------------------------------------------------------------------
@@ -45,6 +53,9 @@ server = do
 ------------------------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------------------------
+
+args :: Args
+args = stdArgs { maxSuccess = noOfTestCases }
 
 noOfTestCases :: Int
 #if LONG_TESTS

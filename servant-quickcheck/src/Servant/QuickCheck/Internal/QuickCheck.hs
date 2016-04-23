@@ -8,16 +8,15 @@ import           Network.Wai.Handler.Warp (withApplication)
 import           Servant                  (HasServer, Server, serve)
 import           Servant.Client           (BaseUrl (..), Scheme (..) )
 import           Test.Hspec               (Expectation, expectationFailure)
-import           Test.QuickCheck          (Args (..), Property, forAll, Result (..),
-                                           Testable, property, ioProperty,
-                                           quickCheckWithResult, stdArgs)
+import           Test.QuickCheck          (Args (..), Result (..),
+                                           quickCheckWithResult)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.QuickCheck.Monadic
-import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Lazy as LBS
+import Data.Text (Text)
 
 import Servant.QuickCheck.Internal.HasGenRequest
 import Servant.QuickCheck.Internal.Predicates
-import Servant.QuickCheck.Internal.Benchmarking
 import Servant.QuickCheck.Internal.Equality
 
 
@@ -41,7 +40,7 @@ withServantServer api server t
 -- Evidently, if the behaviour of the server is expected to be
 -- non-deterministic,  this function may produce spurious failures
 serversEqual :: HasGenRequest a =>
-  Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality BSL.ByteString -> Expectation
+  Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality LBS.ByteString -> Expectation
 serversEqual api burl1 burl2 args req = do
   let reqs = (\f -> (f burl1, f burl2)) <$> genRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
@@ -55,13 +54,13 @@ serversEqual api burl1 burl2 args req = do
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
-serverSatisfies :: HasGenRequest a =>
-  Proxy a -> BaseUrl -> Args -> Predicates n b Bool -> Expectation
+serverSatisfies :: (HasGenRequest a) =>
+  Proxy a -> BaseUrl -> Args -> Predicates Text [Text] -> Expectation
 serverSatisfies api burl args preds = do
   let reqs = ($ burl) <$> genRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
      v <- run $ finishPredicates preds req
-     assert v
+     assert $ null v
   case r of
     Success {} -> return ()
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
