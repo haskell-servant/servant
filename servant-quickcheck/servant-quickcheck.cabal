@@ -24,6 +24,7 @@ library
                      , Servant.QuickCheck.Internal.Predicates
                      , Servant.QuickCheck.Internal.HasGenRequest
                      , Servant.QuickCheck.Internal.QuickCheck
+                     , Servant.QuickCheck.Internal.Equality
   build-depends:       base >=4.8 && <4.9
                      , QuickCheck == 2.8.*
                      , bytestring == 0.10.*

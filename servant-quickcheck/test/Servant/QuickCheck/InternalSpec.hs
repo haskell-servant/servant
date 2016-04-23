@@ -25,7 +25,7 @@ serversEqualSpec = describe "serversEqual" $ do
   it "considers equal servers equal" $ do
     withServantServer api server $ \burl1 ->
       withServantServer api server $ \burl2 -> do
-        serversEqual api burl1 burl2 stdArgs { maxSuccess = 10000 }
+        serversEqual api burl1 burl2 stdArgs { maxSuccess = 10000 } bodyEquality
 
 
 

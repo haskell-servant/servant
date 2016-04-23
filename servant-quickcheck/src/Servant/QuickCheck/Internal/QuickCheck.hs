@@ -23,10 +23,12 @@ import           Test.QuickCheck          (Args (..), Property, forAll, Result (
                                            quickCheckWithResult, stdArgs)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.QuickCheck.Monadic
+import qualified Data.ByteString.Lazy as BSL
 
 import Servant.QuickCheck.Internal.HasGenRequest
 import Servant.QuickCheck.Internal.Predicates
 import Servant.QuickCheck.Internal.Benchmarking
+import Servant.QuickCheck.Internal.Equality
 
 
 -- | Start a servant application on an open port, run the provided function,
@@ -49,13 +51,13 @@ withServantServer api server t
 -- Evidently, if the behaviour of the server is expected to be
 -- non-deterministic,  this function may produce spurious failures
 serversEqual :: HasGenRequest a =>
-  Proxy a -> BaseUrl -> BaseUrl -> Args -> Expectation
-serversEqual api burl1 burl2 args = do
+  Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality BSL.ByteString -> Expectation
+serversEqual api burl1 burl2 args req = do
   let reqs = (\f -> (f burl1, f burl2)) <$> genRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
     resp1 <- run $ httpLbs req1 defManager
     resp2 <- run $ httpLbs req2 defManager
-    assert $ resp1 == resp2
+    assert $ getResponseEquality req resp1 resp2
   case r of
     Success {} -> return ()
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
