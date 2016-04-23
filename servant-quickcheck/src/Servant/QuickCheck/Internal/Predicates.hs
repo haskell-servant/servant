@@ -3,9 +3,10 @@ module Servant.QuickCheck.Internal.Predicates where
 import Data.Monoid ((<>))
 import GHC.Generics (Generic)
 import Control.Monad
-import Network.HTTP.Client (Request, Response, responseStatus)
+import Network.HTTP.Client (Request, Response, responseStatus, Manager, httpLbs)
 import Network.HTTP.Types (status500)
 import qualified Data.ByteString.Lazy as LBS
+import Data.Bifunctor (Bifunctor(..))
 import Data.Text (Text)
 
 -- | @500 Internal Server Error@ should be avoided - it may represent some
@@ -13,9 +14,8 @@ import Data.Text (Text)
 -- indication of how to proceed or what went wrong.
 --
 -- This function checks that the response code is not 500.
-not500 :: ResponsePredicate Text [Text]
-not500 = ResponsePredicate "not500" (\resp ->
-        if responseStatus resp == status500 then ["not500"] else [])
+not500 :: ResponsePredicate Text Bool
+not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == status500)
 
 {-
 -- | Returning anything other than an object when returning JSON is considered
@@ -158,6 +158,10 @@ data ResponsePredicate n r = ResponsePredicate
   , respPred :: Response LBS.ByteString -> r
   } deriving (Functor, Generic)
 
+instance Bifunctor ResponsePredicate where
+  first f (ResponsePredicate a b) = ResponsePredicate (f a) b
+  second = fmap
+
 instance (Monoid n, Monoid r) => Monoid (ResponsePredicate n r) where
   mempty = ResponsePredicate mempty mempty
   a `mappend` b = ResponsePredicate
@@ -167,15 +171,20 @@ instance (Monoid n, Monoid r) => Monoid (ResponsePredicate n r) where
 
 data RequestPredicate n r = RequestPredicate
   { reqPredName :: n
-  , reqResps    :: Request -> IO [Response LBS.ByteString]
+  , reqResps    :: Request -> Manager -> IO [Response LBS.ByteString]
   , reqPred     :: ResponsePredicate n r
   } deriving (Generic, Functor)
 
+instance Bifunctor RequestPredicate where
+  first f (RequestPredicate a b c) = RequestPredicate (f a) b (first f c)
+  second = fmap
+
+-- TODO: This isn't actually a monoid
 instance (Monoid n, Monoid r) => Monoid (RequestPredicate n r) where
-  mempty = RequestPredicate mempty (\_ -> return mempty) mempty
+  mempty = RequestPredicate mempty (\r m -> return <$> httpLbs r m) mempty
   a `mappend` b = RequestPredicate
     { reqPredName = reqPredName a <> reqPredName b
-    , reqResps = \x -> liftM2 (<>) (reqResps a x) (reqResps b x)
+    , reqResps = \x m -> liftM2 (<>) (reqResps a x m) (reqResps b x m)
     , reqPred = reqPred a <> reqPred b
     }
 
@@ -194,17 +203,21 @@ class JoinPreds a where
   joinPreds :: a -> Predicates [Text] [Text] -> Predicates [Text] [Text]
 
 instance JoinPreds (RequestPredicate Text Bool) where
-  joinPreds p (Predicates x y) = Predicates (p <> x) y
+  joinPreds p (Predicates x y) = Predicates (go <> x) y
+    where go = let p' = first return p
+               in fmap (\z -> if z then [] else reqPredName p') p'
 
 instance JoinPreds (ResponsePredicate Text Bool) where
-  joinPreds p (Predicates x y) = Predicates x (p <> y)
+  joinPreds p (Predicates x y) = Predicates x (go <> y)
+    where go = let p' = first return p
+               in fmap (\z -> if z then [] else respPredName p') p'
 
 infixr 6 <%>
-(<%>) :: JoinPreds a n b r => a -> Predicates n b r -> Predicates n b r
+(<%>) :: JoinPreds a => a -> Predicates [Text] [Text] -> Predicates [Text] [Text]
 (<%>) = joinPreds
 
-finishPredicates :: Predicates [Text] [Text] -> Request -> IO [Text]
-finishPredicates p req = do
-  resps <- reqResps (reqPreds p) req
+finishPredicates :: Predicates [Text] [Text] -> Request -> Manager -> IO [Text]
+finishPredicates p req mgr = do
+  resps <- reqResps (reqPreds p) req mgr
   let preds = reqPred (reqPreds p) <> respPreds p
   return $ mconcat [respPred preds r | r <- resps ]

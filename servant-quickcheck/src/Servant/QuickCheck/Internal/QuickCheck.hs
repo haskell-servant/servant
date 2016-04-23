@@ -3,7 +3,7 @@ module Servant.QuickCheck.Internal.QuickCheck where
 
 import           Data.Proxy               (Proxy)
 import           Network.HTTP.Client      (Manager, defaultManagerSettings,
-                                           newManager, httpLbs)
+                                           newManager, httpLbs, checkStatus, Request)
 import           Network.Wai.Handler.Warp (withApplication)
 import           Servant                  (HasServer, Server, serve)
 import           Servant.Client           (BaseUrl (..), Scheme (..) )
@@ -44,8 +44,8 @@ serversEqual :: HasGenRequest a =>
 serversEqual api burl1 burl2 args req = do
   let reqs = (\f -> (f burl1, f burl2)) <$> genRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
-    resp1 <- run $ httpLbs req1 defManager
-    resp2 <- run $ httpLbs req2 defManager
+    resp1 <- run $ httpLbs (noCheckStatus req1) defManager
+    resp2 <- run $ httpLbs (noCheckStatus req2) defManager
     assert $ getResponseEquality req resp1 resp2
   case r of
     Success {} -> return ()
@@ -55,11 +55,12 @@ serversEqual api burl1 burl2 args req = do
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
 serverSatisfies :: (HasGenRequest a) =>
-  Proxy a -> BaseUrl -> Args -> Predicates Text [Text] -> Expectation
+  Proxy a -> BaseUrl -> Args -> Predicates [Text] [Text] -> Expectation
 serverSatisfies api burl args preds = do
   let reqs = ($ burl) <$> genRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
-     v <- run $ finishPredicates preds req
+     v <- run $ finishPredicates preds (noCheckStatus req) defManager
+     {-run $ print v-}
      assert $ null v
   case r of
     Success {} -> return ()
@@ -68,6 +69,9 @@ serverSatisfies api burl args preds = do
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
+
+noCheckStatus :: Request -> Request
+noCheckStatus r = r { checkStatus = \_ _ _ -> Nothing}
 
 defManager :: Manager
 defManager = unsafePerformIO $ newManager defaultManagerSettings
