@@ -14,7 +14,7 @@ import           Data.Text            (Text)
 import           GHC.Generics         (Generic)
 import           Network.HTTP.Client  (Manager, Request, Response, httpLbs,
                                        responseBody, responseStatus, responseHeaders)
-import           Network.HTTP.Types   (status500, status405, parseMethod)
+import           Network.HTTP.Types   (status500, status405, status401, parseMethod)
 
 -- | @500 Internal Server Error@ should be avoided - it may represent some
 -- issue with the application code, and it moreover gives the client little
@@ -65,6 +65,7 @@ getsHaveLastModifiedHeader
   = ResponsePredicate "getsHaveLastModifiedHeader" (\resp ->
 
 -}
+
 -- | When an HTTP request has a method that is not allowed, a 405 response
 -- should be returned. Additionally, it is good practice to return an @Allow@
 -- header with the list of allowed methods.
@@ -154,23 +155,29 @@ optionsContainsValidAllow
 -- This function checks that any @Link@ headers have values in the correct
 -- format.
 --
--- References: RFC 5988 Section 5
--- https://tools.ietf.org/html/rfc5988
+-- __References__:
+--
+--   * <https://tools.ietf.org/html/rfc5988 RFC 5988 Section 5>
 linkHeadersAreValid :: Predicate b Bool
 linkHeadersAreValid
   = ResponsePredicate "linkHeadersAreValid" _
 
+-}
 -- | Any @401 Unauthorized@ response must include a @WWW-Authenticate@ header.
 --
 -- This function checks that, if a response has status code 401, it contains a
 -- @WWW-Authenticate@ header.
 --
--- References: RFC 7235 Section 4.1
--- https://tools.ietf.org/html/rfc7235#section-4.1
-unauthorizedContainsWWWAuthenticate :: Predicate b Bool
+-- __References__:
+--
+--   * @WWW-Authenticate@ header: <https://tools.ietf.org/html/rfc7235#section-4.1 RFC 7235 Section 4.1>
+unauthorizedContainsWWWAuthenticate :: ResponsePredicate Text Bool
 unauthorizedContainsWWWAuthenticate
-  = ResponsePredicate "unauthorizedContainsWWWAuthenticate" _
--}
+  = ResponsePredicate "unauthorizedContainsWWWAuthenticate" (\resp ->
+      if responseStatus resp == status401
+        then hasValidHeader "WWW-Authenticate" (const True) resp
+        else True)
+
 -- * Predicate logic
 
 -- The idea with all this footwork is to not waste any requests. Rather than

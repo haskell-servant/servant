@@ -35,6 +35,7 @@ module Servant.QuickCheck
   , not500
   , onlyJsonObjects
   , notAllowedContainsAllowHeader
+  , unauthorizedContainsWWWAuthenticate
   -- *** Predicate utilities and types
   , (<%>)
   , Predicates
