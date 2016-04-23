@@ -4,16 +4,12 @@ module Servant.QuickCheck.InternalSpec (spec) where
 
 import Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad (void)
-import Network.HTTP.Client (newManager, defaultManagerSettings)
 import Data.Proxy
 import Servant
 import Test.Hspec
 import Test.QuickCheck
-import Test.QuickCheck.IO
-import Test.QuickCheck.Monadic
 
-import Servant.QuickCheck.Internal
+import Servant.QuickCheck
 
 spec :: Spec
 spec = do
@@ -25,7 +21,7 @@ serversEqualSpec = describe "serversEqual" $ do
   it "considers equal servers equal" $ do
     withServantServer api server $ \burl1 ->
       withServantServer api server $ \burl2 -> do
-        serversEqual api burl1 burl2 stdArgs { maxSuccess = 10000 } bodyEquality
+        serversEqual api burl1 burl2 stdArgs { maxSuccess = noOfTestCases } bodyEquality
 
 
 

@@ -1,23 +1,13 @@
 -- | This module contains wrappers around lower-level functionality.
 module Servant.QuickCheck.Internal.QuickCheck where
 
-import           Control.Concurrent       (threadDelay)
-import           Control.Concurrent.MVar  (modifyMVar_, readMVar)
-import           Control.Monad            (replicateM_)
 import           Data.Proxy               (Proxy)
-import           Data.Void                (Void)
 import           Network.HTTP.Client      (Manager, defaultManagerSettings,
                                            newManager, httpLbs)
-import           Network.HTTP.Client      (managerModifyRequest, getUri)
 import           Network.Wai.Handler.Warp (withApplication)
 import           Servant                  (HasServer, Server, serve)
-import           Servant.Client           (BaseUrl (..), Client, HasClient,
-                                           Scheme (..), ServantError, client)
-import           System.IO                (hPutStrLn, hFlush)
-import           System.IO.Temp           (withSystemTempFile)
-import           System.Mem               (performGC)
-import           System.Process           (callCommand)
-import           Test.Hspec               (Expectation, expectationFailure, shouldBe)
+import           Servant.Client           (BaseUrl (..), Scheme (..) )
+import           Test.Hspec               (Expectation, expectationFailure)
 import           Test.QuickCheck          (Args (..), Property, forAll, Result (..),
                                            Testable, property, ioProperty,
                                            quickCheckWithResult, stdArgs)
@@ -65,7 +55,21 @@ serversEqual api burl1 burl2 args req = do
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
+serverSatisfies :: HasGenRequest a =>
+  Proxy a -> BaseUrl -> Args -> Predicates n b Bool -> Expectation
+serverSatisfies api burl args preds = do
+  let reqs = ($ burl) <$> genRequest api
+  r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
+     v <- run $ finishPredicates preds req
+     assert v
+  case r of
+    Success {} -> return ()
+    GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
+    Failure { output = m } -> expectationFailure $ "Failed:\n" ++ show m
+    NoExpectedFailure {} -> expectationFailure $ "No expected failure"
+    InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
+
+
 defManager :: Manager
 defManager = unsafePerformIO $ newManager defaultManagerSettings
 {-# NOINLINE defManager #-}
-

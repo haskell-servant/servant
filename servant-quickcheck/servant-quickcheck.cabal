@@ -42,6 +42,7 @@ library
                      , process == 1.2.*
                      , temporary == 1.2.*
                      , hspec
+                     , text == 1.*
   hs-source-dirs:      src
   default-extensions:  TypeOperators
                      , FlexibleInstances
