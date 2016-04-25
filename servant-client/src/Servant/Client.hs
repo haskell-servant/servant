@@ -63,7 +63,7 @@ import           Servant.Common.Req
 client :: HasClient layout => Proxy layout -> Client layout
 client p = clientWithRoute p defReq
 
-newtype InjectArg arg = InjectArg { getInjectedArg :: arg }
+newtype InjectArg arg = InjectArg arg
 
 class HasArgument s arg result | s arg -> result, s result -> arg where
   supplyArgument :: arg -> s -> result
