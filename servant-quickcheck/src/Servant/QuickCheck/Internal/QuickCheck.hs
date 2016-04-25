@@ -1,4 +1,3 @@
--- | This module contains wrappers around lower-level functionality.
 module Servant.QuickCheck.Internal.QuickCheck where
 
 import qualified Data.ByteString.Lazy     as LBS
@@ -8,13 +7,14 @@ import           Network.HTTP.Client      (Manager, Request, checkStatus,
                                            defaultManagerSettings, httpLbs,
                                            newManager)
 import           Network.Wai.Handler.Warp (withApplication)
-import           Servant                  (HasServer, Server, serve)
+import           Servant                  (Context (EmptyContext), HasServer,
+                                           Server, serveWithContext)
 import           Servant.Client           (BaseUrl (..), Scheme (..))
 import           System.IO.Unsafe         (unsafePerformIO)
 import           Test.Hspec               (Expectation, expectationFailure)
 import           Test.QuickCheck          (Args (..), Result (..),
                                            quickCheckWithResult)
-import           Test.QuickCheck.Monadic
+import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, run)
 
 import Servant.QuickCheck.Internal.HasGenRequest
 import Servant.QuickCheck.Internal.Predicates

@@ -1,22 +1,28 @@
+{-# LANGUAGE MultiWayIf #-}
 module Servant.QuickCheck.Internal.Predicates where
 
 import           Control.Monad
-import           Data.Aeson           (Object, decode)
-import           Data.Bifunctor       (Bifunctor (..))
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString      as SBS
+import           Data.Aeson            (Object, decode)
+import           Data.Bifunctor        (Bifunctor (..))
+import qualified Data.ByteString       as SBS
 import qualified Data.ByteString.Char8 as SBSC
-import           Data.CaseInsensitive (mk)
-import           Data.Either          (isRight)
-import           Data.List.Split      (wordsBy)
-import           Data.Monoid          ((<>))
-import           Data.Text            (Text)
-import           GHC.Generics         (Generic)
-import           Network.HTTP.Client  (Manager, Request, Response, httpLbs,
-                                       responseBody, responseStatus, responseHeaders)
-import           Network.HTTP.Types   (status500, status405, status401, parseMethod)
+import qualified Data.ByteString.Lazy  as LBS
+import           Data.CaseInsensitive  (mk)
+import           Data.Either           (isRight)
+import           Data.List.Split       (wordsBy)
+import           Data.Maybe            (isJust)
+import           Data.Monoid           ((<>))
+import           Data.Text             (Text)
+import           GHC.Generics          (Generic)
+import           Network.HTTP.Client   (Manager, Request, Response, httpLbs,
+                                        method, responseBody, responseHeaders,
+                                        responseStatus)
+import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
+                                        status401, renderStdMethod, status405, status500)
 
--- | @500 Internal Server Error@ should be avoided - it may represent some
+-- | [__Best Practice__]
+--
+-- @500 Internal Server Error@ should be avoided - it may represent some
 -- issue with the application code, and it moreover gives the client little
 -- indication of how to proceed or what went wrong.
 --
@@ -24,7 +30,9 @@ import           Network.HTTP.Types   (status500, status405, status401, parseMet
 not500 :: ResponsePredicate Text Bool
 not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == status500)
 
--- | Returning anything other than an object when returning JSON is considered
+-- | [__Best Practice__]
+--
+-- Returning anything other than an object when returning JSON is considered
 -- bad practice, as:
 --
 --   (1) it is hard to modify the returned value while maintaining backwards
@@ -66,8 +74,11 @@ getsHaveLastModifiedHeader
 
 -}
 
--- | When an HTTP request has a method that is not allowed, a 405 response
--- should be returned. Additionally, it is good practice to return an @Allow@
+-- | [__RFC Compliance__]
+--
+-- When an HTTP request has a method that is not allowed,
+-- a 405 response should be returned. Additionally, it is good practice to
+-- return an @Allow@
 -- header with the list of allowed methods.
 --
 -- This function checks that every @405 Method Not Allowed@ response contains
@@ -163,7 +174,9 @@ linkHeadersAreValid
   = ResponsePredicate "linkHeadersAreValid" _
 
 -}
--- | Any @401 Unauthorized@ response must include a @WWW-Authenticate@ header.
+-- | [__RFC Compliance__]
+--
+-- Any @401 Unauthorized@ response must include a @WWW-Authenticate@ header.
 --
 -- This function checks that, if a response has status code 401, it contains a
 -- @WWW-Authenticate@ header.

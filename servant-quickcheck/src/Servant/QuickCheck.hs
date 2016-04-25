@@ -6,14 +6,37 @@
 -- tested itself need not be implemented with @servant-server@ (or indeed,
 -- written in Haskell).
 --
+-- The documentation of the <#useful-preds Useful predicates> sections is
+-- meant to serve as a set of helpful pointers for learning more about best
+-- practices concerning REST APIs.
 module Servant.QuickCheck
   (
 
-
-  -- * Test setup helpers
-  -- | Helpers to setup and teardown @servant@ servers during tests.
-    withServantServer
-
+  -- * Property testing
+    serverSatisfies
+  -- ** Predicates
+  -- *** #useful-preds# Useful predicates
+  -- | The predicates below are often useful. Some check RFC compliance; some are
+  -- best practice, and some are useful to check that APIs follow in-house
+  -- best-practices. Included in the documentation for each is a list of
+  -- references to any relevant RFCs and other links, as well as what type of
+  -- predicate it is (__RFC Compliance__, __Best Practice__, __Optional__).
+  --
+  -- RFCs distinguish between the force of requirements (e.g. __MUST__ vs.
+  -- __SHOULD__). __RFC Compliance__ includes any absolute requirements present
+  -- in RFCs. The __Best Practices__ includes, in addition to RFC
+  -- recommendations, recommendations found elsewhere or generally accepted.
+  , not500
+  , onlyJsonObjects
+  , notAllowedContainsAllowHeader
+  , unauthorizedContainsWWWAuthenticate
+  , getsHaveCacheControlHeader
+  , headsHaveCacheControlHeader
+  -- *** Predicate utilities and types
+  , (<%>)
+  , Predicates
+  , ResponsePredicate(..)
+  , RequestPredicate(..)
 
   -- * Equality testing
   , serversEqual
@@ -28,19 +51,10 @@ module Servant.QuickCheck
   -- ** Response equality type
   , ResponseEquality(..)
 
-  -- * Property testing
-  , serverSatisfies
-  -- ** Predicates
-  -- *** Useful predicates
-  , not500
-  , onlyJsonObjects
-  , notAllowedContainsAllowHeader
-  , unauthorizedContainsWWWAuthenticate
-  -- *** Predicate utilities and types
-  , (<%>)
-  , Predicates
-  , ResponsePredicate(..)
-  , RequestPredicate(..)
+  -- * Test setup helpers
+  -- | Helpers to setup and teardown @servant@ servers during tests.
+  , withServantServer
+  , withServantServerAndContext
 
   -- ** Re-exports
   , BaseUrl(..)
