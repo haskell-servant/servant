@@ -87,15 +87,26 @@ getsHaveLastModifiedHeader
 -- __References__:
 --
 --   * @Allow@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.7>
-notAllowedContainsAllowHeader :: ResponsePredicate Text Bool
+--   * Status 405: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html RFC 2616 Section 10.4.6>
+notAllowedContainsAllowHeader :: RequestPredicate Text Bool
 notAllowedContainsAllowHeader
-  = ResponsePredicate "notAllowedContainsAllowHeader" (\resp ->
-      if responseStatus resp == status405
-        then hasValidHeader "Allow" go resp
-        else True)
-      where
-        go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
-             $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
+  = RequestPredicate
+    { reqPredName = name
+    , reqResps = \req mgr -> mapM (flip httpLbs mgr)
+        [ req { method = renderStdMethod m }
+             | m <- [minBound .. maxBound ]
+             , renderStdMethod m /= method req ]
+    , reqPred = pred'
+    }
+    where
+      name = "notAllowedContainsAllowHeader"
+      pred' = ResponsePredicate name (\resp ->
+        if responseStatus resp == status405
+          then hasValidHeader "Allow" go resp
+          else True)
+        where
+          go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
+               $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
 
   {-
 -- | When a request contains an @Accept@ header, the server must either return
@@ -104,28 +115,64 @@ notAllowedContainsAllowHeader
 --
 -- This function checks that every *successful* response has a @Content-Type@
 -- header that matches the @Accept@ header.
-honoursAcceptHeader :: Predicate b Bool
+--
+-- __References__:
+--
+--   * @Accept@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.1>
+honoursAcceptHeader :: RequestPredicate b Bool
 honoursAcceptHeader
-  = RequestPredicate "honoursAcceptHeader" _
+  = RequestPredicate name (ResponsePredicate name $ \req mgr -> do
 
--- | Whether or not a representation should be cached, it is good practice to
+      resp <- httpLbs req mgr
+      let scode = responseStatus resp
+          sctype = maybeToList $ lookup "Content-Type" $ responseHeaders resp
+          sacc  = fromMaybe "*/*" $ lookup "Accept" $ requestHeaders req
+      if 100 < scode && scode < 300
+        then isJust matchAccept sacc sctype
+        else True)
+  where name = "honoursAcceptHeader"
+
+-}
+-- | [__Best Practice__]
+--
+-- Whether or not a representation should be cached, it is good practice to
 -- have a @Cache-Control@ header for @GET@ requests. If the representation
 -- should not be cached, used @Cache-Control: no-cache@.
 --
--- This function checks that @GET@ responses have a valid @Cache-Control@
--- header.
+-- This function checks that @GET@ responses have @Cache-Control@ header.
+-- It does NOT currently check that the header is valid.
 --
--- References: RFC 7234 Section 5.2
--- https://tools.ietf.org/html/rfc7234#section-5.2
-getsHaveCacheControlHeader :: Predicate b Bool
+-- __References__:
+--
+--   * @Cache-Control@ header: <https://tools.ietf.org/html/rfc7234#section-5.2 RFC 7234 Section 5.2>
+getsHaveCacheControlHeader :: RequestPredicate Text Bool
 getsHaveCacheControlHeader
-  = ResponsePredicate "getsHaveCacheControlHeader" _
+  = RequestPredicate
+     { reqPredName = name
+     , reqResps = \req mgr -> if method req == methodGet
+        then return <$> httpLbs req mgr
+        else return []
+     , reqPred = ResponsePredicate name $ \resp ->
+          isJust $ lookup "Cache-Control" $ responseHeaders resp
+     }
+    where name = "getsHaveCacheControlHeader"
 
--- | Like 'getsHaveCacheControlHeader', but for @HEAD@ requests.
-headsHaveCacheControlHeader :: Predicate b Bool
+-- | [__Best Practice__]
+--
+-- Like 'getsHaveCacheControlHeader', but for @HEAD@ requests.
+headsHaveCacheControlHeader :: RequestPredicate Text Bool
 headsHaveCacheControlHeader
-  = ResponsePredicate "headsHaveCacheControlHeader" _
+  = RequestPredicate
+     { reqPredName = name
+     , reqResps = \req mgr -> if method req == methodHead
+        then return <$> httpLbs req mgr
+        else return []
+     , reqPred = ResponsePredicate name $ \resp ->
+          isJust $ lookup "Cache-Control" $ responseHeaders resp
+     }
+    where name = "headsHaveCacheControlHeader"
 
+{-
 -- |
 --
 -- If the original request modifies the resource, this function makes two

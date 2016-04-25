@@ -130,3 +130,7 @@ instance (HasGenRequest a) => HasGenRequest (Vault :> a) where
 
 instance (HasGenRequest a) => HasGenRequest (WithNamedContext x y a) where
     genRequest _ = genRequest (Proxy :: Proxy a)
+
+-- TODO: Try logging in
+instance (HasGenRequest a) => HasGenRequest (BasicAuth x y :> a) where
+    genRequest _ = genRequest (Proxy :: Proxy a)

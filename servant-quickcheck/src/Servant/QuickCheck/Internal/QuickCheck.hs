@@ -25,8 +25,14 @@ import Servant.QuickCheck.Internal.Equality
 -- then stop the application.
 withServantServer :: HasServer a '[] => Proxy a -> IO (Server a)
   -> (BaseUrl -> IO r) -> IO r
-withServantServer api server t
-  = withApplication (return . serve api =<< server) $ \port ->
+withServantServer api = withServantServerAndContext api EmptyContext
+
+-- | Like 'withServantServer', but allows passing in a 'Context' to the
+-- application.
+withServantServerAndContext :: HasServer a ctx
+  => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
+withServantServerAndContext api ctx server t
+  = withApplication (return . serveWithContext api ctx =<< server) $ \port ->
       t (BaseUrl Http "localhost" port "")
 
 -- | Check that the two servers running under the provided @BaseUrl@s behave

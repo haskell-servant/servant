@@ -24,8 +24,8 @@ serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
 
   it "considers equal servers equal" $ do
-    withServantServer api server $ \burl1 ->
-      withServantServer api server $ \burl2 -> do
+    withServantServerAndContext api ctx server $ \burl1 ->
+      withServantServerAndContext api ctx server $ \burl2 -> do
         serversEqual api burl1 burl2 args bodyEquality
 
 
@@ -33,12 +33,17 @@ serverSatisfiesSpec :: Spec
 serverSatisfiesSpec = describe "serverSatisfies" $ do
 
   it "succeeds for true predicates" $ do
-    withServantServer api server $ \burl ->
-      serverSatisfies api burl args (not500 <%> mempty)
+    withServantServerAndContext api ctx server $ \burl ->
+      serverSatisfies api burl args (unauthorizedContainsWWWAuthenticate
+                                 <%> not500
+                                 <%> mempty)
 
   it "fails for false predicates" $ do
-    withServantServer api server $ \burl ->
-      serverSatisfies api burl args (onlyJsonObjects <%> mempty)
+    withServantServerAndContext api ctx server $ \burl -> do
+      -- Since this is the negation, and we want to check that all of the
+      -- predicates fail rather than one or more, we need to separate them out
+      serverSatisfies api burl args ((not <$> onlyJsonObjects) <%> mempty)
+      serverSatisfies api burl args ((not <$> getsHaveCacheControlHeader) <%> mempty)
 
 isComprehensiveSpec :: Spec
 isComprehensiveSpec = describe "HasGenRequest" $ do
@@ -54,6 +59,7 @@ isComprehensiveSpec = describe "HasGenRequest" $ do
 
 type API = ReqBody '[JSON] String :> Post '[JSON] String
       :<|> Get '[JSON] Int
+      :<|> BasicAuth "some-realm" () :> Get '[JSON] ()
 
 api :: Proxy API
 api = Proxy
@@ -63,8 +69,10 @@ server = do
     mvar <- newMVar ""
     return $ (\x -> liftIO $ swapMVar mvar x)
         :<|> (liftIO $ readMVar mvar >>= return . length)
+        :<|> (const $ return ())
 
-
+ctx :: Context '[BasicAuthCheck ()]
+ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
 ------------------------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------------------------
