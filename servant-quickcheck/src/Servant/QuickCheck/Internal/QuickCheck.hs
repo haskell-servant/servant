@@ -93,6 +93,20 @@ serverSatisfies api burl args preds = do
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
 
+serverDoesntSatisfy :: (HasGenRequest a) =>
+  Proxy a -> BaseUrl -> Args -> Predicates [Text] [Text] -> Expectation
+serverDoesntSatisfy api burl args preds = do
+  let reqs = ($ burl) <$> genRequest api
+  r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
+     v <- run $ finishPredicates preds (noCheckStatus req) defManager
+     assert $ not $ null v
+  case r of
+    Success {} -> return ()
+    GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
+    Failure { output = m } -> expectationFailure $ "Failed:\n" ++ show m
+    NoExpectedFailure {} -> expectationFailure $ "No expected failure"
+    InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
+
 noCheckStatus :: Request -> Request
 noCheckStatus r = r { checkStatus = \_ _ _ -> Nothing}
 

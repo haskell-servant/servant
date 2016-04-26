@@ -12,7 +12,7 @@ import Servant.API.Internal.Test.ComprehensiveAPI
 
 import Servant.QuickCheck
 
-import Servant.QuickCheck.Internal (genRequest)
+import Servant.QuickCheck.Internal (genRequest, serverDoesntSatisfy)
 
 spec :: Spec
 spec = do
@@ -40,10 +40,11 @@ serverSatisfiesSpec = describe "serverSatisfies" $ do
 
   it "fails for false predicates" $ do
     withServantServerAndContext api ctx server $ \burl -> do
-      -- Since this is the negation, and we want to check that all of the
-      -- predicates fail rather than one or more, we need to separate them out
-      serverSatisfies api burl args ((not <$> onlyJsonObjects) <%> mempty)
-      serverSatisfies api burl args ((not <$> getsHaveCacheControlHeader) <%> mempty)
+      serverDoesntSatisfy api burl args (onlyJsonObjects
+                                     <%> getsHaveCacheControlHeader
+                                     <%> headsHaveCacheControlHeader
+                                     <%> notAllowedContainsAllowHeader
+                                     <%> mempty)
 
 isComprehensiveSpec :: Spec
 isComprehensiveSpec = describe "HasGenRequest" $ do
