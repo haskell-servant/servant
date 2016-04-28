@@ -14,7 +14,7 @@ import           Test.Hspec.Wai             (get, matchStatus, post,
                                              shouldRespondWith, with)
 
 spec :: Spec
-spec = describe "module Servant.Server.Enter" $ do
+spec = describe "Arbitrary monad server" $ do
     enterSpec
 
 type ReaderAPI = "int" :> Get '[JSON] Int
