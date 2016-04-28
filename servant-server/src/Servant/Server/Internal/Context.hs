@@ -18,7 +18,7 @@ import           GHC.TypeLits
 -- | 'Context's are used to pass values to combinators. (They are __not__ meant
 -- to be used to pass parameters to your handlers, i.e. they should not replace
 -- any custom 'Control.Monad.Trans.Reader.ReaderT'-monad-stack that you're using
--- with 'Servant.Server.Internal.Enter.enter'.) If you don't use combinators that
+-- with 'Servant.Utils.Enter'.) If you don't use combinators that
 -- require any context entries, you can just use 'Servant.Server.serve' as always.
 --
 -- If you are using combinators that require a non-empty 'Context' you have to
