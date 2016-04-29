@@ -11,3 +11,9 @@
 
 	Repository for templates for haskell projects, including some templates using
 	**servant**. These templates can be used with `stack new`.
+
+- **[custom-monad](https://github.com/themoritz/diener)**:
+
+        A custom monad that can replace `IO` in servant applications. It adds among
+        other things logging functionality and a reader monad (for database connections).
+        A full usage example of servant/diener is also provided.
