@@ -55,19 +55,35 @@ onlyJsonObjects
       Nothing -> False
       Just (_ :: Object) -> True)
 
-{-
--- | When creating a new resource, it is good practice to provide a @Location@
+-- | __Optional__
+--
+-- When creating a new resource, it is good practice to provide a @Location@
 -- header with a link to the created resource.
 --
 -- This function checks that every @201 Created@ response contains a @Location@
 -- header, and that the link in it responds with a 2XX response code to @GET@
 -- requests.
 --
--- References: <RFC 7231, Section 6.3.2 https://tools.ietf.org/html/rfc7231#section-6.3.2>
-createContainsValidLocation :: ResponsePredicate Text Bool
-createContainsValidLocation
-  = ResponsePredicate "createContainsValidLocation" (\resp ->
+-- This is considered optional because other means of linking to the resource
+-- (e.g. via the response body) are also acceptable; linking to the resource in
+-- some way is considered best practice.
+--
+-- __References__:
+--
+--   * 201 Created: <https://tools.ietf.org/html/rfc7231#section-6.3.2 RFC 7231 Section 6.3.2>
+--   * Location header: <https://tools.ietf.org/html/rfc7231#section-7.1.2 RFC 7231 Section 7.1.2>
+{-createContainsValidLocation :: RequestPredicate Text Bool-}
+{-createContainsValidLocation-}
+  {-= RequestPredicate-}
+    {-{ reqPredName = "createContainsValidLocation"-}
+    {-, reqResps = \req mg -> do-}
+        {-resp <- httpLbs mgr req-}
+        {-if responseStatus resp == status201-}
+            {-then case lookup "Location" $ responseHeaders resp of-}
+                {-Nothing -> return []-}
+                {-Just l  -> if-}
 
+{-
 getsHaveLastModifiedHeader :: ResponsePredicate Text Bool
 getsHaveLastModifiedHeader
   = ResponsePredicate "getsHaveLastModifiedHeader" (\resp ->
@@ -91,19 +107,15 @@ getsHaveLastModifiedHeader
 notAllowedContainsAllowHeader :: RequestPredicate Text Bool
 notAllowedContainsAllowHeader
   = RequestPredicate
-    { reqPredName = name
-    , reqResps = \req mgr -> mapM (flip httpLbs mgr)
-        [ req { method = renderStdMethod m }
-             | m <- [minBound .. maxBound ]
-             , renderStdMethod m /= method req ]
-    , reqPred = pred'
+    { reqPredName = "notAllowedContainsAllowHeader"
+    , reqResps = \req mgr -> do
+        resp <- mapM (flip httpLbs mgr) $ [ req { method = renderStdMethod m }
+                                          | m <- [minBound .. maxBound ]
+                                          , renderStdMethod m /= method req ]
+        return (all pred' resp, resp)
     }
     where
-      name = "notAllowedContainsAllowHeader"
-      pred' = ResponsePredicate name (\resp ->
-        if responseStatus resp == status405
-          then hasValidHeader "Allow" go resp
-          else True)
+      pred' resp = responseStatus resp /= status405 || hasValidHeader "Allow" go resp
         where
           go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
                $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
@@ -148,14 +160,14 @@ honoursAcceptHeader
 getsHaveCacheControlHeader :: RequestPredicate Text Bool
 getsHaveCacheControlHeader
   = RequestPredicate
-     { reqPredName = name
+     { reqPredName = "getsHaveCacheControlHeader"
      , reqResps = \req mgr -> if method req == methodGet
-        then return <$> httpLbs req mgr
-        else return []
-     , reqPred = ResponsePredicate name $ \resp ->
-          isJust $ lookup "Cache-Control" $ responseHeaders resp
+        then do
+          resp <- httpLbs req mgr
+          let good = isJust $ lookup "Cache-Control" $ responseHeaders resp
+          return (good, [resp])
+        else return (True, [])
      }
-    where name = "getsHaveCacheControlHeader"
 
 -- | [__Best Practice__]
 --
@@ -163,15 +175,14 @@ getsHaveCacheControlHeader
 headsHaveCacheControlHeader :: RequestPredicate Text Bool
 headsHaveCacheControlHeader
   = RequestPredicate
-     { reqPredName = name
+     { reqPredName = "headsHaveCacheControlHeader"
      , reqResps = \req mgr -> if method req == methodHead
-        then return <$> httpLbs req mgr
-        else return []
-     , reqPred = ResponsePredicate name $ \resp ->
-          isJust $ lookup "Cache-Control" $ responseHeaders resp
+        then do
+          resp <- httpLbs req mgr
+          let good = isJust $ lookup "Cache-Control" $ responseHeaders resp
+          return (good, [resp])
+        else return (True, [])
      }
-    where name = "headsHaveCacheControlHeader"
-
 {-
 -- |
 --
@@ -264,21 +275,19 @@ instance (Monoid n, Monoid r) => Monoid (ResponsePredicate n r) where
 
 data RequestPredicate n r = RequestPredicate
   { reqPredName :: n
-  , reqResps    :: Request -> Manager -> IO [Response LBS.ByteString]
-  , reqPred     :: ResponsePredicate n r
+  , reqResps    :: Request -> Manager -> IO (r, [Response LBS.ByteString])
   } deriving (Generic, Functor)
 
 instance Bifunctor RequestPredicate where
-  first f (RequestPredicate a b c) = RequestPredicate (f a) b (first f c)
+  first f (RequestPredicate a b) = RequestPredicate (f a) b
   second = fmap
 
 -- TODO: This isn't actually a monoid
 instance (Monoid n, Monoid r) => Monoid (RequestPredicate n r) where
-  mempty = RequestPredicate mempty (\r m -> return <$> httpLbs r m) mempty
+  mempty = RequestPredicate mempty (\r m -> httpLbs r m >>= \x -> return (mempty, [x]))
   a `mappend` b = RequestPredicate
     { reqPredName = reqPredName a <> reqPredName b
     , reqResps = \x m -> liftM2 (<>) (reqResps a x m) (reqResps b x m)
-    , reqPred = reqPred a <> reqPred b
     }
 
 data Predicates n r = Predicates
@@ -316,9 +325,8 @@ infixr 6 <%>
 
 finishPredicates :: Predicates [Text] [Text] -> Request -> Manager -> IO [Text]
 finishPredicates p req mgr = do
-  resps <- reqResps (reqPreds p) req mgr
-  let preds = reqPred (reqPreds p) <> respPreds p
-  return $ mconcat [respPred preds r | r <- resps ]
+  (soFar, resps) <- reqResps (reqPreds p) req mgr
+  return $ soFar <> mconcat [respPred (respPreds p) r | r <- resps]
 
 -- * helpers
 

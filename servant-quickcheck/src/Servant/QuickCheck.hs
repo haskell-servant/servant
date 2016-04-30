@@ -55,13 +55,19 @@ module Servant.QuickCheck
   -- | Helpers to setup and teardown @servant@ servers during tests.
   , withServantServer
   , withServantServerAndContext
+  , defaultArgs
 
   -- ** Re-exports
   , BaseUrl(..)
   , Scheme(..)
+  , Args(..)
 
 
   ) where
 
 import Servant.QuickCheck.Internal
 import Servant.Client (BaseUrl(..), Scheme(..))
+import Test.QuickCheck (Args(..), stdArgs)
+
+defaultArgs :: Args
+defaultArgs = stdArgs { maxSuccess = 1000 }
