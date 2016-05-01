@@ -20,7 +20,7 @@ flag long-tests
 library
   exposed-modules:     Servant.QuickCheck
                      , Servant.QuickCheck.Internal
-                     , Servant.QuickCheck.Internal.Benchmarking
+                     -- , Servant.QuickCheck.Internal.Benchmarking
                      , Servant.QuickCheck.Internal.Predicates
                      , Servant.QuickCheck.Internal.HasGenRequest
                      , Servant.QuickCheck.Internal.QuickCheck

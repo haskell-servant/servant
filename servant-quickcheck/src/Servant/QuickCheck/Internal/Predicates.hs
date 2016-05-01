@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
 module Servant.QuickCheck.Internal.Predicates where
 
 import           Control.Monad
@@ -10,15 +9,19 @@ import qualified Data.ByteString.Lazy  as LBS
 import           Data.CaseInsensitive  (mk)
 import           Data.Either           (isRight)
 import           Data.List.Split       (wordsBy)
-import           Data.Maybe            (isJust)
+import           Data.Maybe            (fromMaybe, isJust, maybeToList)
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text)
 import           GHC.Generics          (Generic)
 import           Network.HTTP.Client   (Manager, Request, Response, httpLbs,
-                                        method, responseBody, responseHeaders,
+                                        method, parseUrl, requestHeaders,
+                                        responseBody, responseHeaders,
                                         responseStatus)
+import           Network.HTTP.Media    (matchAccept)
 import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
-                                        status401, renderStdMethod, status405, status500)
+                                        renderStdMethod, status200, status201,
+                                        status300, status401, status405,
+                                        status500)
 
 -- | [__Best Practice__]
 --
@@ -72,16 +75,22 @@ onlyJsonObjects
 --
 --   * 201 Created: <https://tools.ietf.org/html/rfc7231#section-6.3.2 RFC 7231 Section 6.3.2>
 --   * Location header: <https://tools.ietf.org/html/rfc7231#section-7.1.2 RFC 7231 Section 7.1.2>
-{-createContainsValidLocation :: RequestPredicate Text Bool-}
-{-createContainsValidLocation-}
-  {-= RequestPredicate-}
-    {-{ reqPredName = "createContainsValidLocation"-}
-    {-, reqResps = \req mg -> do-}
-        {-resp <- httpLbs mgr req-}
-        {-if responseStatus resp == status201-}
-            {-then case lookup "Location" $ responseHeaders resp of-}
-                {-Nothing -> return []-}
-                {-Just l  -> if-}
+createContainsValidLocation :: RequestPredicate Text Bool
+createContainsValidLocation
+  = RequestPredicate
+    { reqPredName = "createContainsValidLocation"
+    , reqResps = \req mgr -> do
+        resp <- httpLbs req mgr
+        if responseStatus resp == status201
+            then case lookup "Location" $ responseHeaders resp of
+                Nothing -> return (False, [resp])
+                Just l  -> case parseUrl $ SBSC.unpack l of
+                  Nothing -> return (False, [resp])
+                  Just x  -> do
+                    resp2 <- httpLbs x mgr
+                    return (status2XX resp2, [resp, resp2])
+            else return (True, [resp])
+    }
 
 {-
 getsHaveLastModifiedHeader :: ResponsePredicate Text Bool
@@ -120,8 +129,9 @@ notAllowedContainsAllowHeader
           go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
                $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
 
-  {-
--- | When a request contains an @Accept@ header, the server must either return
+-- | [__RFC Compliance__]
+--
+-- When a request contains an @Accept@ header, the server must either return
 -- content in one of the requested representations, or respond with @406 Not
 -- Acceptable@.
 --
@@ -133,18 +143,18 @@ notAllowedContainsAllowHeader
 --   * @Accept@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.1>
 honoursAcceptHeader :: RequestPredicate b Bool
 honoursAcceptHeader
-  = RequestPredicate name (ResponsePredicate name $ \req mgr -> do
+  = RequestPredicate
+    { reqPredName = "honoursAcceptHeader"
+    , reqResps = \req mgr -> do
+        resp <- httpLbs req mgr
+        let scode = responseStatus resp
+            sctype = lookup "Content-Type" $ responseHeaders resp
+            sacc  = fromMaybe "*/*" $ lookup "Accept" (requestHeaders req)
+        if 100 < scode && scode < 300
+          then return (isJust $ sctype >>= \x -> matchAccept x sacc, [resp])
+          else return (True, [resp])
+    }
 
-      resp <- httpLbs req mgr
-      let scode = responseStatus resp
-          sctype = maybeToList $ lookup "Content-Type" $ responseHeaders resp
-          sacc  = fromMaybe "*/*" $ lookup "Accept" $ requestHeaders req
-      if 100 < scode && scode < 300
-        then isJust matchAccept sacc sctype
-        else True)
-  where name = "honoursAcceptHeader"
-
--}
 -- | [__Best Practice__]
 --
 -- Whether or not a representation should be cached, it is good practice to
@@ -179,7 +189,7 @@ headsHaveCacheControlHeader
      , reqResps = \req mgr -> if method req == methodHead
         then do
           resp <- httpLbs req mgr
-          let good = isJust $ lookup "Cache-Control" $ responseHeaders resp
+          let good = hasValidHeader "Cache-Control" (const True) resp
           return (good, [resp])
         else return (True, [])
      }
@@ -334,3 +344,6 @@ hasValidHeader :: SBS.ByteString -> (SBS.ByteString -> Bool) -> Response b -> Bo
 hasValidHeader hdr p r = case lookup (mk hdr) (responseHeaders r) of
   Nothing -> False
   Just v  -> p v
+
+status2XX :: Response b -> Bool
+status2XX r = status200 <= responseStatus r && responseStatus r < status300

@@ -1,0 +1,167 @@
+:loom anansi.markdown
+
+# Announcing servant-quickcheck
+
+Some time ago, we released `servant-mock`. The idea behind it is to use
+`QuickCheck` to create a mock server that accords with a servant API. Not long
+after, we started thinking about an analog that would, instead of mocking a
+server, mock a client instead - i.e., generate random requests that conform to
+an API description.
+
+This is much closer to the traditional use of `QuickCheck`. The most obvious
+use-case is checking that properties hold of an *entire* server rather than of
+individual endpoints.
+
+## `serverSatisfies`
+
+There are a variety of best practices in writing web APIs that aren't always
+obvious. As a running example, let's use a simple service that allows adding,
+removing, and querying biological species. Our SQL schema is:
+
+:d schema.sql
+
+CREATE TABLE genus (
+    genus_name     text  PRIMARY KEY,
+    genus_family   text  NOT NULL
+);
+
+CREATE TABLE species (
+    species_name    text  PRIMARY KEY,
+    species_genus   text  NOT NULL REFERENCES genus (genus_name)
+)
+:
+
+And our actual application:
+
+:d Main.hs
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+module Main where
+
+import Servant
+import Data.Aeson
+import Database.PostgreSQL.Simple
+import GHC.Generics (Generic)
+import Data.Text (Text)
+import Network.Wai.Handler.Warp
+import Control.Monad.IO.Class (liftIO)
+
+type API
+  = "species" :> (Capture "species-name" Text :> ( Get '[JSON] Species
+                                              :<|> Delete '[JSON] ())
+             :<|> ReqBody '[JSON] Species :> Post '[JSON] ())
+  -- The plural of 'species' is unfortunately also 'species'
+ :<|> "speciess" :> Get '[JSON] [Species]
+
+api :: Proxy API
+api = Proxy
+
+data Species = Species
+  { speciesName  :: Text
+  , speciesGenus :: Text
+  } deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
+
+data Genus = Genus
+  { genusName   :: Text
+  , genusFamily :: Text
+  } deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
+
+instance FromRow Genus
+instance FromRow Species
+
+server :: Connection -> Server API
+server conn = ((\sname -> liftIO (lookupSpecies conn sname)
+                     :<|> liftIO (deleteSpecies conn sname))
+         :<|> (\species -> liftIO $ insertSpecies conn species))
+         :<|> (liftIO $ allSpecies conn)
+
+lookupSpecies :: Connection -> Text -> IO Species
+lookupSpecies conn name = do
+  [s] <- query conn "SELECT * FROM species WHERE species_name = ?" (Only name)
+  return s
+
+deleteSpecies :: Connection -> Text -> IO ()
+deleteSpecies conn name = do
+  _ <- execute conn "DELETE FROM species WHERE species_name = ?" (Only name)
+  return ()
+
+insertSpecies :: Connection -> Species -> IO ()
+insertSpecies conn Species{..} = do
+  _ <- execute conn "INSERT INTO species (species_name, species_genus) VALUES (?)" (speciesName, speciesGenus)
+  return ()
+
+allSpecies :: Connection -> IO [Species]
+allSpecies conn = do
+  query_ conn "SELECT * FROM species"
+
+main :: IO ()
+main = do
+  conn <- connectPostgreSQL "dbname=servant-quickcheck"
+  run 8090 (serve api $ server conn)
+:
+
+(You'll also also need to run:
+
+```
+createdb servant-quickcheck
+psql --file schema.sql -d servant-quickcheck
+```
+
+If you want to run this example.)
+
+This is a plausible effort. You might want to spend a moment thinking about what
+could be improved.
+
+:d Spec.hs
+
+{-# LANGUAGE OverloadedStrings #-}
+module Spec (main) where
+
+import Main (server, api, Species(..))
+import Test.Hspec
+import Test.QuickCheck.Instances
+import Servant.QuickCheck
+import Test.QuickCheck (Arbitrary(..))
+import Database.PostgreSQL.Simple (connectPostgreSQL)
+
+spec :: Spec
+spec = describe "the species application" $ do
+  let pserver = do
+        conn <- connectPostgreSQL "dbname=servant-quickcheck"
+        return $ server conn
+
+  it "should not return 500s" $ do
+    withServantServer api pserver $ \url ->
+      serverSatisfies api url defaultArgs (not500 <%> mempty)
+
+  it "should not return top-level json" $ do
+    withServantServer api pserver $ \url ->
+      serverSatisfies api url defaultArgs (onlyJsonObjects <%> mempty)
+
+main :: IO ()
+main = do
+  hspec spec
+
+instance Arbitrary Species where
+  arbitrary = Species <$> arbitrary <*> arbitrary
+:
+
+
+**Note**: This post is an anansi literate file that generates multiple source
+files. They are:
+
+:f Main.hs
+|Main.hs|
+:
+
+:f schema.sql
+|schema.sql|
+:
+
+:f Spec.hs
+|Spec.hs|
+:

@@ -32,6 +32,7 @@ module Servant.QuickCheck
   , unauthorizedContainsWWWAuthenticate
   , getsHaveCacheControlHeader
   , headsHaveCacheControlHeader
+  , createContainsValidLocation
   -- *** Predicate utilities and types
   , (<%>)
   , Predicates
