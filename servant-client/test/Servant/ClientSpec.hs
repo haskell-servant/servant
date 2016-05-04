@@ -395,10 +395,9 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
       (left show <$> runExceptT (getProtected authRequest manager baseUrl)) `shouldReturn` Right alice
 
     it "Also works for more complicated apis" $  \(_, baseUrl) -> do
-      let (getProtected :<|> getOtherProtected) = client genAuthAPI2
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
-      (left show <$> runExceptT (getProtected authRequest manager baseUrl)) `shouldReturn` Right alice
-
+      let (getProtected :<|> getOtherProtected) = client genAuthAPI2 $ authRequest
+      (left show <$> runExceptT (getProtected  manager baseUrl)) `shouldReturn` Right alice
 
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
