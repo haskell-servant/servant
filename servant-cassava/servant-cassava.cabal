@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                servant-cassava
-version:             0.7
+version:             0.7.1
 synopsis:            Servant CSV content-type for cassava
 -- description:
 homepage:            http://haskell-servant.readthedocs.org/
