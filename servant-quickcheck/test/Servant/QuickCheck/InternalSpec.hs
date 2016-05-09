@@ -1,18 +1,18 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.QuickCheck.InternalSpec (spec) where
 
-import Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
-import Control.Monad.IO.Class (liftIO)
-import Data.Proxy
-import Servant
-import Test.Hspec
-import Test.QuickCheck
-import Servant.API.Internal.Test.ComprehensiveAPI
+import           Control.Concurrent.MVar                    (newMVar, readMVar,
+                                                             swapMVar)
+import           Control.Monad.IO.Class                     (liftIO)
+import           Prelude.Compat
+import           Servant
+import           Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPI)
+import           Test.Hspec                                 (Spec, describe, it,
+                                                             shouldBe)
 
-import Servant.QuickCheck
-
-import Servant.QuickCheck.Internal (genRequest, serverDoesntSatisfy)
+import           Servant.QuickCheck
+import           Servant.QuickCheck.Internal                (genRequest, serverDoesntSatisfy)
 
 spec :: Spec
 spec = do
@@ -79,7 +79,7 @@ ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
 ------------------------------------------------------------------------------
 
 args :: Args
-args = stdArgs { maxSuccess = noOfTestCases }
+args = defaultArgs { maxSuccess = noOfTestCases }
 
 noOfTestCases :: Int
 #if LONG_TESTS
