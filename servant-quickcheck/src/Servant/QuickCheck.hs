@@ -59,9 +59,12 @@ module Servant.QuickCheck
   , defaultArgs
 
   -- ** Re-exports
+  -- | Types and constructors from other packages that are generally needed for
+  -- using @servant-quickcheck@.
   , BaseUrl(..)
   , Scheme(..)
   , Args(..)
+  , Proxy(..)
 
 
   ) where
@@ -69,6 +72,10 @@ module Servant.QuickCheck
 import Servant.QuickCheck.Internal
 import Servant.Client (BaseUrl(..), Scheme(..))
 import Test.QuickCheck (Args(..), stdArgs)
+import Data.Proxy (Proxy(..))
 
+-- | QuickCheck @Args@ with 1000 rather than 100 test cases.
+--
+-- /Since 0.0.0.0/
 defaultArgs :: Args
 defaultArgs = stdArgs { maxSuccess = 1000 }

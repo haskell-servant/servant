@@ -25,7 +25,7 @@ import Servant.QuickCheck.Internal.Equality
 -- | Start a servant application on an open port, run the provided function,
 -- then stop the application.
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 withServantServer :: HasServer a '[] => Proxy a -> IO (Server a)
   -> (BaseUrl -> IO r) -> IO r
 withServantServer api = withServantServerAndContext api EmptyContext
@@ -33,7 +33,7 @@ withServantServer api = withServantServerAndContext api EmptyContext
 -- | Like 'withServantServer', but allows passing in a 'Context' to the
 -- application.
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 withServantServerAndContext :: HasServer a ctx
   => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
 withServantServerAndContext api ctx server t
@@ -52,7 +52,7 @@ withServantServerAndContext api ctx server t
 -- Evidently, if the behaviour of the server is expected to be
 -- non-deterministic,  this function may produce spurious failures
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 serversEqual :: HasGenRequest a =>
   Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality LBS.ByteString -> Expectation
 serversEqual api burl1 burl2 args req = do
@@ -86,7 +86,7 @@ serversEqual api burl1 burl2 args req = do
 -- >                                     <%> notAllowedContainsAllowHeader
 -- >                                     <%> mempty)
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 serverSatisfies :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates [Text] [Text] -> Expectation
 serverSatisfies api burl args preds = do

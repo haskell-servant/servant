@@ -14,12 +14,12 @@ instance Monoid (ResponseEquality b) where
 
 -- | Use `Eq` instance for `Response`
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 allEquality :: Eq b => ResponseEquality b
 allEquality = ResponseEquality (==)
 
 -- | ByteString `Eq` instance over the response body.
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 bodyEquality :: Eq b => ResponseEquality b
 bodyEquality = ResponseEquality ((==) `on` responseBody)

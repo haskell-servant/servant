@@ -31,6 +31,8 @@ import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
 -- indication of how to proceed or what went wrong.
 --
 -- This function checks that the response code is not 500.
+--
+-- /Since 0.0.0.0/
 not500 :: ResponsePredicate Text Bool
 not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == status500)
 
@@ -53,6 +55,8 @@ not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == statu
 --
 --   * JSON Grammar: <https://tools.ietf.org/html/rfc7159#section-2 RFC 7159 Section 2>
 --   * JSON Grammar: <https://tools.ietf.org/html/rfc4627#section-2 RFC 4627 Section 2>
+--
+-- /Since 0.0.0.0/
 onlyJsonObjects :: ResponsePredicate Text Bool
 onlyJsonObjects
   = ResponsePredicate "onlyJsonObjects" (\resp -> case decode (responseBody resp) of
@@ -76,6 +80,8 @@ onlyJsonObjects
 --
 --   * 201 Created: <https://tools.ietf.org/html/rfc7231#section-6.3.2 RFC 7231 Section 6.3.2>
 --   * Location header: <https://tools.ietf.org/html/rfc7231#section-7.1.2 RFC 7231 Section 7.1.2>
+--
+-- /Since 0.0.0.0/
 createContainsValidLocation :: RequestPredicate Text Bool
 createContainsValidLocation
   = RequestPredicate
@@ -114,6 +120,8 @@ getsHaveLastModifiedHeader
 --
 --   * @Allow@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.7>
 --   * Status 405: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html RFC 2616 Section 10.4.6>
+--
+-- /Since 0.0.0.0/
 notAllowedContainsAllowHeader :: RequestPredicate Text Bool
 notAllowedContainsAllowHeader
   = RequestPredicate
@@ -144,6 +152,8 @@ notAllowedContainsAllowHeader
 -- __References__:
 --
 --   * @Accept@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.1>
+--
+-- /Since 0.0.0.0/
 honoursAcceptHeader :: RequestPredicate Text Bool
 honoursAcceptHeader
   = RequestPredicate
@@ -171,7 +181,7 @@ honoursAcceptHeader
 --
 --   * @Cache-Control@ header: <https://tools.ietf.org/html/rfc7234#section-5.2 RFC 7234 Section 5.2>
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 getsHaveCacheControlHeader :: RequestPredicate Text Bool
 getsHaveCacheControlHeader
   = RequestPredicate
@@ -188,7 +198,7 @@ getsHaveCacheControlHeader
 --
 -- Like 'getsHaveCacheControlHeader', but for @HEAD@ requests.
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 headsHaveCacheControlHeader :: RequestPredicate Text Bool
 headsHaveCacheControlHeader
   = RequestPredicate
@@ -260,7 +270,7 @@ linkHeadersAreValid
 --
 --   * @WWW-Authenticate@ header: <https://tools.ietf.org/html/rfc7235#section-4.1 RFC 7235 Section 4.1>
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 unauthorizedContainsWWWAuthenticate :: ResponsePredicate Text Bool
 unauthorizedContainsWWWAuthenticate
   = ResponsePredicate "unauthorizedContainsWWWAuthenticate" (\resp ->
@@ -276,6 +286,9 @@ unauthorizedContainsWWWAuthenticate
 --
 -- Still, this is all kind of ugly.
 
+-- | A predicate that depends only on the response.
+--
+-- /Since 0.0.0.0/
 data ResponsePredicate n r = ResponsePredicate
   { respPredName :: n
   , respPred :: Response LBS.ByteString -> r
@@ -292,6 +305,9 @@ instance (Monoid n, Monoid r) => Monoid (ResponsePredicate n r) where
     , respPred = respPred a <> respPred b
     }
 
+-- | A predicate that depends on both the request and the response.
+--
+-- /Since 0.0.0.0/
 data RequestPredicate n r = RequestPredicate
   { reqPredName :: n
   , reqResps    :: Request -> Manager -> IO (r, [Response LBS.ByteString])
@@ -309,6 +325,7 @@ instance (Monoid n, Monoid r) => Monoid (RequestPredicate n r) where
     , reqResps = \x m -> liftM2 (<>) (reqResps a x m) (reqResps b x m)
     }
 
+-- | A set of predicates. Construct one with 'mempty' and '<%>'.
 data Predicates n r = Predicates
   { reqPreds :: RequestPredicate n r
   , respPreds :: ResponsePredicate n r
@@ -339,7 +356,7 @@ instance JoinPreds (ResponsePredicate Text Bool) where
 --
 -- > not500 <%> onlyJsonObjects <%> empty
 --
--- #SINCE#
+-- /Since 0.0.0.0/
 (<%>) :: JoinPreds a => a -> Predicates [Text] [Text] -> Predicates [Text] [Text]
 (<%>) = joinPreds
 infixr 6 <%>
