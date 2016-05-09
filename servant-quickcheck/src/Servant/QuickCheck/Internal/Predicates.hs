@@ -1,6 +1,6 @@
 module Servant.QuickCheck.Internal.Predicates where
 
-import           Control.Monad
+import           Control.Monad         (liftM2)
 import           Data.Aeson            (Object, decode)
 import           Data.Bifunctor        (Bifunctor (..))
 import qualified Data.ByteString       as SBS
@@ -9,7 +9,7 @@ import qualified Data.ByteString.Lazy  as LBS
 import           Data.CaseInsensitive  (mk)
 import           Data.Either           (isRight)
 import           Data.List.Split       (wordsBy)
-import           Data.Maybe            (fromMaybe, isJust, maybeToList)
+import           Data.Maybe            (fromMaybe, isJust)
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text)
 import           GHC.Generics          (Generic)
@@ -21,7 +21,7 @@ import           Network.HTTP.Media    (matchAccept)
 import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
                                         renderStdMethod, status200, status201,
                                         status300, status401, status405,
-                                        status500)
+                                        status500, status100)
 
 -- | [__Best Practice__]
 --
@@ -129,6 +129,7 @@ notAllowedContainsAllowHeader
           go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
                $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
 
+
 -- | [__RFC Compliance__]
 --
 -- When a request contains an @Accept@ header, the server must either return
@@ -136,12 +137,13 @@ notAllowedContainsAllowHeader
 -- Acceptable@.
 --
 -- This function checks that every *successful* response has a @Content-Type@
--- header that matches the @Accept@ header.
+-- header that matches the @Accept@ header. It does *not* check that the server
+-- matches the quality descriptions of the @Accept@ header correctly.
 --
 -- __References__:
 --
 --   * @Accept@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.1>
-honoursAcceptHeader :: RequestPredicate b Bool
+honoursAcceptHeader :: RequestPredicate Text Bool
 honoursAcceptHeader
   = RequestPredicate
     { reqPredName = "honoursAcceptHeader"
@@ -150,8 +152,8 @@ honoursAcceptHeader
         let scode = responseStatus resp
             sctype = lookup "Content-Type" $ responseHeaders resp
             sacc  = fromMaybe "*/*" $ lookup "Accept" (requestHeaders req)
-        if 100 < scode && scode < 300
-          then return (isJust $ sctype >>= \x -> matchAccept x sacc, [resp])
+        if status100 < scode && scode < status300
+          then return (isJust $ sctype >>= \x -> matchAccept [x] sacc, [resp])
           else return (True, [resp])
     }
 

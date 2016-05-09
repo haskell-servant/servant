@@ -32,7 +32,7 @@ library
                      , mtl == 2.2.*
                      , http-client == 0.4.*
                      , http-types == 0.9.*
-                     , http-media
+                     , http-media == 0.6.*
                      , servant-client == 0.7.*
                      , servant-server == 0.7.*
                      , string-conversions == 0.4.*
@@ -42,9 +42,12 @@ library
                      , process == 1.2.*
                      , temporary == 1.2.*
                      , split == 0.2.*
-                     , case-insensitive
-                     , hspec
+                     , case-insensitive == 1.2.*
+                     , hspec == 2.2.*
                      , text == 1.*
+  if impl(ghc < 7.10)
+    build-depends:     bifunctors == 5.*
+
   hs-source-dirs:      src
   default-extensions:  TypeOperators
                      , FlexibleInstances
