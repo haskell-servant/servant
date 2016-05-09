@@ -3,6 +3,7 @@ module Servant.QuickCheck.Internal.Predicates where
 import           Control.Monad         (liftM2)
 import           Data.Aeson            (Object, decode)
 import           Data.Bifunctor        (Bifunctor (..))
+import           Prelude.Compat
 import qualified Data.ByteString       as SBS
 import qualified Data.ByteString.Char8 as SBSC
 import qualified Data.ByteString.Lazy  as LBS
@@ -169,6 +170,8 @@ honoursAcceptHeader
 -- __References__:
 --
 --   * @Cache-Control@ header: <https://tools.ietf.org/html/rfc7234#section-5.2 RFC 7234 Section 5.2>
+--
+-- #SINCE#
 getsHaveCacheControlHeader :: RequestPredicate Text Bool
 getsHaveCacheControlHeader
   = RequestPredicate
@@ -184,6 +187,8 @@ getsHaveCacheControlHeader
 -- | [__Best Practice__]
 --
 -- Like 'getsHaveCacheControlHeader', but for @HEAD@ requests.
+--
+-- #SINCE#
 headsHaveCacheControlHeader :: RequestPredicate Text Bool
 headsHaveCacheControlHeader
   = RequestPredicate
@@ -254,6 +259,8 @@ linkHeadersAreValid
 -- __References__:
 --
 --   * @WWW-Authenticate@ header: <https://tools.ietf.org/html/rfc7235#section-4.1 RFC 7235 Section 4.1>
+--
+-- #SINCE#
 unauthorizedContainsWWWAuthenticate :: ResponsePredicate Text Bool
 unauthorizedContainsWWWAuthenticate
   = ResponsePredicate "unauthorizedContainsWWWAuthenticate" (\resp ->
@@ -331,6 +338,8 @@ instance JoinPreds (ResponsePredicate Text Bool) where
 -- the existing predicates.
 --
 -- > not500 <%> onlyJsonObjects <%> empty
+--
+-- #SINCE#
 (<%>) :: JoinPreds a => a -> Predicates [Text] [Text] -> Predicates [Text] [Text]
 (<%>) = joinPreds
 infixr 6 <%>

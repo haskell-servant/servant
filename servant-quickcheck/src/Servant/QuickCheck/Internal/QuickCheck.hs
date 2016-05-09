@@ -7,6 +7,7 @@ import           Network.HTTP.Client      (Manager, Request, checkStatus,
                                            defaultManagerSettings, httpLbs,
                                            newManager)
 import           Network.Wai.Handler.Warp (withApplication)
+import           Prelude.Compat
 import           Servant                  (Context (EmptyContext), HasServer,
                                            Server, serveWithContext)
 import           Servant.Client           (BaseUrl (..), Scheme (..))
@@ -23,12 +24,16 @@ import Servant.QuickCheck.Internal.Equality
 
 -- | Start a servant application on an open port, run the provided function,
 -- then stop the application.
+--
+-- #SINCE#
 withServantServer :: HasServer a '[] => Proxy a -> IO (Server a)
   -> (BaseUrl -> IO r) -> IO r
 withServantServer api = withServantServerAndContext api EmptyContext
 
 -- | Like 'withServantServer', but allows passing in a 'Context' to the
 -- application.
+--
+-- #SINCE#
 withServantServerAndContext :: HasServer a ctx
   => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
 withServantServerAndContext api ctx server t
@@ -46,6 +51,8 @@ withServantServerAndContext api ctx server t
 --
 -- Evidently, if the behaviour of the server is expected to be
 -- non-deterministic,  this function may produce spurious failures
+--
+-- #SINCE#
 serversEqual :: HasGenRequest a =>
   Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality LBS.ByteString -> Expectation
 serversEqual api burl1 burl2 args req = do
@@ -78,6 +85,8 @@ serversEqual api burl1 burl2 args req = do
 -- >                                     <%> onlyJsonObjects
 -- >                                     <%> notAllowedContainsAllowHeader
 -- >                                     <%> mempty)
+--
+-- #SINCE#
 serverSatisfies :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates [Text] [Text] -> Expectation
 serverSatisfies api burl args preds = do

@@ -5,15 +5,16 @@ import           Data.Default.Class       (def)
 import           Data.Monoid              ((<>))
 import           Data.String              (fromString)
 import           Data.String.Conversions  (cs)
-import           GHC.TypeLits
+import           GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
 import           Network.HTTP.Client      (Request, RequestBody (..), host,
-                                           method, path, port, requestBody,
-                                           requestHeaders, secure, queryString)
+                                           method, path, port, queryString,
+                                           requestBody, requestHeaders, secure)
 import           Network.HTTP.Media       (renderHeader)
+import           Prelude.Compat
 import           Servant
-import           Servant.API.ContentTypes
+import           Servant.API.ContentTypes (AllMimeRender (..))
 import           Servant.Client           (BaseUrl (..), Scheme (..))
-import           Test.QuickCheck
+import           Test.QuickCheck          (Arbitrary (..), Gen, elements, oneof)
 
 
 class HasGenRequest a where

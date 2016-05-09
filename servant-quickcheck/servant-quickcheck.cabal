@@ -1,5 +1,5 @@
 name:                servant-quickcheck
-version:             0.1.0.0
+version:             0.0.0.0
 synopsis:            QuickCheck entire APIs
 description:
  This packages provides QuickCheck properties that are tested across an entire
@@ -20,12 +20,12 @@ flag long-tests
 library
   exposed-modules:     Servant.QuickCheck
                      , Servant.QuickCheck.Internal
-                     -- , Servant.QuickCheck.Internal.Benchmarking
                      , Servant.QuickCheck.Internal.Predicates
                      , Servant.QuickCheck.Internal.HasGenRequest
                      , Servant.QuickCheck.Internal.QuickCheck
                      , Servant.QuickCheck.Internal.Equality
   build-depends:       base >=4.7 && <4.9
+                     , base-compat == 0.9.*
                      , QuickCheck == 2.8.*
                      , bytestring == 0.10.*
                      , aeson > 0.10 && < 0.12
@@ -63,6 +63,7 @@ library
                      , ScopedTypeVariables
                      , OverloadedStrings
                      , FunctionalDependencies
+                     , NoImplicitPrelude
   default-language:    Haskell2010
 
 test-suite spec
@@ -89,16 +90,3 @@ test-suite spec
                      , DataKinds
   if flag(long-tests)
       cpp-options: -DLONG_TESTS
-
--- test-suite doctests
---   default-language:    Haskell2010
---   type:                exitcode-stdio-1.0
---   ghc-options:         -threaded
---   main-is:             Doctest.hs
---   hs-source-dirs:      test
---   build-depends:       base >4 && <5
---                      , doctest
---                      , filemanip
---                      , directory
---                      , filepath
---   HS-Source-Dirs:      test
