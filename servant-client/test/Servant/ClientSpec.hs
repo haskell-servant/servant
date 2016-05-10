@@ -41,8 +41,7 @@ import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as HTTP
 import           Network.Socket
-import           Network.Wai                (Application, Request,
-                                             requestHeaders, responseLBS)
+import           Network.Wai                (Request, requestHeaders, responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.Hspec
