@@ -151,57 +151,36 @@ so we need a `Proxy` for our API type `API'` without its `Raw` endpoint.
 
 Very similarly to how one can derive haskell functions, we can derive the
 javascript with just a simple function call to `jsForAPI` from
-`Servant.JQuery`.
+`Servant.JS`.
 
 ``` haskell
 apiJS :: Text
-apiJS = jsForAPI api vanillaJS
+apiJS = jsForAPI api jquery
 ```
 
 This `Text` contains 2 Javascript functions, 'getPoint' and 'getBooks':
 
 ``` javascript
-var getPoint = function(onSuccess, onError)
-{
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/point', true);
-  xhr.setRequestHeader("Accept","application/json");
-  xhr.onreadystatechange = function (e) {
-    if (xhr.readyState == 4) {
-      if (xhr.status == 204 || xhr.status == 205) {
-        onSuccess();
-      } else if (xhr.status >= 200 && xhr.status < 300) {
-        var value = JSON.parse(xhr.responseText);
-        onSuccess(value);
-      } else {
-        var value = JSON.parse(xhr.responseText);
-        onError(value);
-      }
-    }
-  }
-  xhr.send(null);
-}
+var getPoint = function (onSuccess, onError)
+ {
+   $.ajax(
+     { url: '/point'
+     , success: onSuccess
+     , error: onError
+     , method: 'GET'
+     });
+};
 
-var getBooks = function(q, onSuccess, onError)
-{
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/books' + '?q=' + encodeURIComponent(q), true);
-  xhr.setRequestHeader("Accept","application/json");
-  xhr.onreadystatechange = function (e) {
-    if (xhr.readyState == 4) {
-      if (xhr.status == 204 || xhr.status == 205) {
-        onSuccess();
-      } else if (xhr.status >= 200 && xhr.status < 300) {
-        var value = JSON.parse(xhr.responseText);
-        onSuccess(value);
-      } else {
-        var value = JSON.parse(xhr.responseText);
-        onError(value);
-      }
-    }
-  }
-  xhr.send(null);
-}
+
+var getBooks = function (q, onSuccess, onError)
+ {
+   $.ajax(
+     { url: '/books' + '?q=' + encodeURIComponent(q)
+     , success: onSuccess
+     , error: onError
+     , method: 'GET'
+     });
+};
 ```
 
 We created a directory `static` that contains two static files: `index.html`,
@@ -226,3 +205,295 @@ And we're good to go. You can start the `main` function of this file and go to
 `http://localhost:8000/`. Start typing in the name of one of the authors in our
 database or part of a book title, and check out how long it takes to
 approximate pi using the method mentioned above.
+
+## Customizations
+
+Instead of calling `jquery`, you can call its variant `jqueryWith`.
+Here are the type definitions
+
+```haskell ignore
+jquery :: JavaScriptGenerator
+jqueryWith :: CommonGeneratorOptions -> JavaScriptGenerator
+```
+
+The `CommonGeneratorOptions` will let you define different behaviors to
+change how functions are generated. Here is the definition of currently
+available options:
+
+```haskell
+data CommonGeneratorOptions = CommonGeneratorOptions
+  {
+    -- | function generating function names
+    functionNameBuilder :: FunctionName -> String
+    -- | name used when a user want to send the request body (to let you redefine it)
+  , requestBody :: String
+    -- | name of the callback parameter when the request was successful
+  , successCallback :: String
+    -- | name of the callback parameter when the request reported an error
+  , errorCallback :: String
+    -- | namespace on which we define the js function (empty mean local var)
+  , moduleName :: String
+    -- | a prefix that should be prepended to the URL in the generated JS
+  , urlPrefix :: String
+  }
+```
+
+This pattern is available with all supported backends, and default values are provided.
+
+## Vanilla support
+
+If you don't use JQuery for your application, you can reduce your
+dependencies to simply use the `XMLHttpRequest` object from the standard API.
+
+Use the same code as before but simply replace the previous `apiJS` with
+the following one:
+
+``` haskell
+apiJS :: String
+apiJS = jsForAPI api vanillaJS
+```
+
+The rest is *completely* unchanged.
+
+The output file is a bit different, but it has the same parameters,
+
+``` javascript
+
+var getPoint = function (onSuccess, onError)
+{
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/point', true);
+
+    xhr.onreadystatechange = function (e) {
+    if (xhr.readyState == 4) {
+        var value = JSON.parse(xhr.responseText);
+        if (xhr.status == 200 || xhr.status == 201) {
+            onSuccess(value);
+        } else {
+            onError(value);
+        }
+        }
+    }
+    xhr.send(null);
+};
+
+var getBooks = function (q, onSuccess, onError)
+{
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/books' + '?q=' + encodeURIComponent(q), true);
+
+    xhr.onreadystatechange = function (e) {
+    if (xhr.readyState == 4) {
+        var value = JSON.parse(xhr.responseText);
+        if (xhr.status == 200 || xhr.status == 201) {
+            onSuccess(value);
+        } else {
+            onError(value);
+        }
+        }
+    }
+    xhr.send(null);
+};
+```
+
+And that's all, your web service can of course be accessible from those
+two clients at the same time!
+
+## Axios support
+
+### Simple usage
+
+If you use Axios library for your application, we support that too!
+
+Use the same code as before but simply replace the previous `apiJS` with
+the following one:
+
+``` haskell
+apiJS :: String
+apiJS = jsForAPI api $ axios defAxiosOptions
+```
+
+The rest is *completely* unchanged.
+
+The output file is a bit different,
+
+``` javascript
+
+var getPoint = function ()
+{
+    return axios({ url: '/point'
+      , method: 'get'
+      });
+};
+
+var getBooks = function (q)
+{
+    return axios({ url: '/books' + '?q=' + encodeURIComponent(q)
+      , method: 'get'
+      });
+};
+```
+
+**Caution:** In order to support the promise style of the API, there are no onSuccess
+nor onError callback functions.
+
+### Defining Axios configuration
+
+Axios lets you define a 'configuration' to determine the behavior of the
+program when the AJAX request is sent.
+
+We mapped this into a configuration
+
+``` haskell
+data AxiosOptions = AxiosOptions
+  { -- | indicates whether or not cross-site Access-Control requests
+    -- should be made using credentials
+    withCredentials :: !Bool
+    -- | the name of the cookie to use as a value for xsrf token
+  , xsrfCookieName :: !(Maybe String)
+    -- | the name of the header to use as a value for xsrf token
+  , xsrfHeaderName :: !(Maybe String)
+  }
+```
+
+## Angular support
+
+### Simple usage
+
+You can apply the same procedure as with `vanillaJS` and `jquery`, and
+generate top level functions.
+
+The difference is that `angular` Generator always takes an argument.
+
+``` haskell
+apiJS :: String
+apiJS = jsForAPI api $ angular defAngularOptions
+```
+
+The generated code will be a bit different than previous generators. An extra
+argument `$http` will be added to let Angular magical Dependency Injector
+operate.
+
+**Caution:** In order to support the promise style of the API, there are no onSuccess
+nor onError callback functions.
+
+``` javascript
+
+var getPoint = function($http)
+{
+  return $http(
+   { url: '/counter'
+   , method: 'GET'
+   });
+}
+
+var getBooks = function($http, q)
+{
+  return $http(
+    { url: '/books' + '?q=' + encodeURIComponent(q), true);
+    , method: 'GET'
+    });
+}
+```
+
+You can then build your controllers easily
+
+``` javascript
+
+app.controller("MyController", function($http) {
+  this.getPoint = getPoint($http)
+    .success(/* Do something */)
+    .error(/* Report error */);
+
+  this.getPoint = getBooks($http, q)
+    .success(/* Do something */)
+    .error(/* Report error */);
+});
+```
+
+### Service generator
+
+You can also generate automatically a service to wrap the whole API as
+a single Angular service:
+
+``` javascript
+app.service('MyService', function($http) {
+  return ({
+  postCounter: function()
+  {
+   return $http(
+     { url: '/counter'
+     , method: 'POST'
+      });
+  },
+  getCounter: function()
+  {
+   return $http(
+     { url: '/books' + '?q=' + encodeURIComponent(q), true);
+     , method: 'GET'
+      });
+  }
+  });
+});
+```
+
+To do so, you just have to use an alternate generator.
+
+``` haskell
+apiJS :: String
+apiJS = jsForAPI api $ angularService defAngularOptions
+```
+
+Again, it is possible to customize some portions with the options.
+
+``` haskell
+data AngularOptions = AngularOptions
+  { -- | When generating code with wrapInService, name of the service to generate, default is 'app'
+    serviceName :: String
+  , -- | beginning of the service definition
+    prologue :: String -> String -> String
+  , -- | end of the service definition
+    epilogue :: String
+  }
+```
+
+# Custom function name builder
+
+Servant comes with three name builders included:
+
+- camelCase (the default)
+- concatCase
+- snakeCase
+
+Keeping the JQuery as an example, let's see the impact:
+
+``` haskell
+apiJS :: String
+apiJS = jsForAPI api $ jqueryWith defCommonGeneratorOptions { functionNameBuilder: snakeCase }
+```
+
+This `String` contains 2 Javascript functions:
+
+``` javascript
+
+var getPoint = function (onSuccess, onError)
+{
+  $.ajax(
+    { url: '/point'
+    , success: onSuccess
+    , error: onError
+    , method: 'GET'
+    });
+};
+
+var getBooks = function (q, onSuccess, onError)
+{
+  $.ajax(
+    { url: '/books' + '?q=' + encodeURIComponent(q)
+    , success: onSuccess
+    , error: onError
+    , method: 'GET'
+    });
+};
+```
+
