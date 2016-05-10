@@ -40,7 +40,6 @@ library
     Servant.Server.Internal
     Servant.Server.Internal.BasicAuth
     Servant.Server.Internal.Context
-    Servant.Server.Internal.Enter
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServantErr
@@ -57,7 +56,6 @@ library
       , http-types         >= 0.8  && < 0.10
       , network-uri        >= 2.6  && < 2.7
       , mtl                >= 2    && < 3
-      , mmorph             >= 1
       , network            >= 2.6  && < 2.7
       , safe               >= 0.3  && < 0.4
       , servant            == 0.7.*
@@ -101,7 +99,6 @@ test-suite spec
   other-modules:
       Servant.Server.ErrorSpec
       Servant.Server.Internal.ContextSpec
-      Servant.Server.Internal.EnterSpec
       Servant.ServerSpec
       Servant.Server.UsingContextSpec
       Servant.Server.UsingContextSpec.TestCombinators

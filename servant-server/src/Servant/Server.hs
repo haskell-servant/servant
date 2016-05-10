@@ -101,7 +101,7 @@ import           Data.Proxy                    (Proxy)
 import           Data.Text                     (Text)
 import           Network.Wai                   (Application)
 import           Servant.Server.Internal
-import           Servant.Server.Internal.Enter
+import           Servant.Utils.Enter
 
 
 -- * Implementing Servers

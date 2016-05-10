@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
-module Servant.Server.Internal.EnterSpec where
+module Servant.ArbitraryMonadServerSpec where
 
 import qualified Control.Category           as C
 import           Control.Monad.Reader
@@ -14,7 +14,7 @@ import           Test.Hspec.Wai             (get, matchStatus, post,
                                              shouldRespondWith, with)
 
 spec :: Spec
-spec = describe "module Servant.Server.Enter" $ do
+spec = describe "Arbitrary monad server" $ do
     enterSpec
 
 type ReaderAPI = "int" :> Get '[JSON] Int
