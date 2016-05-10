@@ -5,7 +5,6 @@ packages:
 - servant-cassava/
 - servant-client/
 - servant-docs/
-- servant-examples/
 - servant-foreign/
 - servant-js/
 - servant-lucid/
@@ -24,5 +23,5 @@ extra-deps:
 - stm-delay-0.1.1.1
 - control-monad-omega-0.3.1
 - http-api-data-0.1.1.1
-- should-not-typecheck-2.0.1
+- should-not-typecheck-2.1.0
 resolver: lts-2.22

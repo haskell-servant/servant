@@ -29,7 +29,7 @@ library
     http-types >= 0.8 && <0.10,
     servant == 0.7.*,
     servant-server == 0.7.*,
-    transformers >= 0.3 && <0.5,
+    transformers >= 0.3 && <0.6,
     QuickCheck >= 2.7 && <2.9,
     wai >= 3.0 && <3.3
   hs-source-dirs:      src
