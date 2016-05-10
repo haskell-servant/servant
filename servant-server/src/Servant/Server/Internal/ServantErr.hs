@@ -31,7 +31,7 @@ responseServantErr ServantErr{..} = responseLBS status errHeaders errBody
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err300 { errBody = "I can't choose." }
+-- > failingHandler = throwError $ err300 { errBody = "I can't choose." }
 --
 err300 :: ServantErr
 err300 = ServantErr { errHTTPCode = 300
@@ -45,7 +45,7 @@ err300 = ServantErr { errHTTPCode = 300
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err301
+-- > failingHandler = throwError err301
 --
 err301 :: ServantErr
 err301 = ServantErr { errHTTPCode = 301
@@ -59,7 +59,7 @@ err301 = ServantErr { errHTTPCode = 301
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err302
+-- > failingHandler = throwError err302
 --
 err302 :: ServantErr
 err302 = ServantErr { errHTTPCode = 302
@@ -73,7 +73,7 @@ err302 = ServantErr { errHTTPCode = 302
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err303
+-- > failingHandler = throwError err303
 --
 err303 :: ServantErr
 err303 = ServantErr { errHTTPCode = 303
@@ -87,7 +87,7 @@ err303 = ServantErr { errHTTPCode = 303
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err304
+-- > failingHandler = throwError err304
 --
 err304 :: ServantErr
 err304 = ServantErr { errHTTPCode = 304
@@ -101,7 +101,7 @@ err304 = ServantErr { errHTTPCode = 304
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err305
+-- > failingHandler = throwError err305
 --
 err305 :: ServantErr
 err305 = ServantErr { errHTTPCode = 305
@@ -115,7 +115,7 @@ err305 = ServantErr { errHTTPCode = 305
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err307
+-- > failingHandler = throwError err307
 --
 err307 :: ServantErr
 err307 = ServantErr { errHTTPCode = 307
@@ -129,7 +129,7 @@ err307 = ServantErr { errHTTPCode = 307
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err400 { errBody = "Your request makes no sense to me." }
+-- > failingHandler = throwError $ err400 { errBody = "Your request makes no sense to me." }
 --
 err400 :: ServantErr
 err400 = ServantErr { errHTTPCode = 400
@@ -143,7 +143,7 @@ err400 = ServantErr { errHTTPCode = 400
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err401 { errBody = "Your credentials are invalid." }
+-- > failingHandler = throwError $ err401 { errBody = "Your credentials are invalid." }
 --
 err401 :: ServantErr
 err401 = ServantErr { errHTTPCode = 401
@@ -157,7 +157,7 @@ err401 = ServantErr { errHTTPCode = 401
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err402 { errBody = "You have 0 credits. Please give me $$$." }
+-- > failingHandler = throwError $ err402 { errBody = "You have 0 credits. Please give me $$$." }
 --
 err402 :: ServantErr
 err402 = ServantErr { errHTTPCode = 402
@@ -171,7 +171,7 @@ err402 = ServantErr { errHTTPCode = 402
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err403 { errBody = "Please login first." }
+-- > failingHandler = throwError $ err403 { errBody = "Please login first." }
 --
 err403 :: ServantErr
 err403 = ServantErr { errHTTPCode = 403
@@ -185,7 +185,7 @@ err403 = ServantErr { errHTTPCode = 403
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err404 { errBody = "(╯°□°）╯︵ ┻━┻)." }
+-- > failingHandler = throwError $ err404 { errBody = "(╯°□°）╯︵ ┻━┻)." }
 --
 err404 :: ServantErr
 err404 = ServantErr { errHTTPCode = 404
@@ -199,7 +199,7 @@ err404 = ServantErr { errHTTPCode = 404
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err405 { errBody = "Your account privileges does not allow for this.  Please pay $$$." }
+-- > failingHandler = throwError $ err405 { errBody = "Your account privileges does not allow for this.  Please pay $$$." }
 --
 err405 :: ServantErr
 err405 = ServantErr { errHTTPCode = 405
@@ -213,7 +213,7 @@ err405 = ServantErr { errHTTPCode = 405
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err406
+-- > failingHandler = throwError err406
 --
 err406 :: ServantErr
 err406 = ServantErr { errHTTPCode = 406
@@ -227,7 +227,7 @@ err406 = ServantErr { errHTTPCode = 406
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err407
+-- > failingHandler = throwError err407
 --
 err407 :: ServantErr
 err407 = ServantErr { errHTTPCode = 407
@@ -241,7 +241,7 @@ err407 = ServantErr { errHTTPCode = 407
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err409 { errBody = "Transaction conflicts with 59879cb56c7c159231eeacdd503d755f7e835f74" }
+-- > failingHandler = throwError $ err409 { errBody = "Transaction conflicts with 59879cb56c7c159231eeacdd503d755f7e835f74" }
 --
 err409 :: ServantErr
 err409 = ServantErr { errHTTPCode = 409
@@ -255,7 +255,7 @@ err409 = ServantErr { errHTTPCode = 409
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err410 { errBody = "I know it was here at some point, but.. I blame bad luck." }
+-- > failingHandler = throwError $ err410 { errBody = "I know it was here at some point, but.. I blame bad luck." }
 --
 err410 :: ServantErr
 err410 = ServantErr { errHTTPCode = 410
@@ -269,7 +269,7 @@ err410 = ServantErr { errHTTPCode = 410
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr err411
+-- > failingHandler = throwError err411
 --
 err411 :: ServantErr
 err411 = ServantErr { errHTTPCode = 411
@@ -283,7 +283,7 @@ err411 = ServantErr { errHTTPCode = 411
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err412 { errBody = "Precondition fail: x < 42 && y > 57" }
+-- > failingHandler = throwError $ err412 { errBody = "Precondition fail: x < 42 && y > 57" }
 --
 err412 :: ServantErr
 err412 = ServantErr { errHTTPCode = 412
@@ -297,7 +297,7 @@ err412 = ServantErr { errHTTPCode = 412
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err413 { errBody = "Request exceeded 64k." }
+-- > failingHandler = throwError $ err413 { errBody = "Request exceeded 64k." }
 --
 err413 :: ServantErr
 err413 = ServantErr { errHTTPCode = 413
@@ -311,7 +311,7 @@ err413 = ServantErr { errHTTPCode = 413
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err414 { errBody = "Maximum length is 64." }
+-- > failingHandler = throwError $ err414 { errBody = "Maximum length is 64." }
 --
 err414 :: ServantErr
 err414 = ServantErr { errHTTPCode = 414
@@ -325,7 +325,7 @@ err414 = ServantErr { errHTTPCode = 414
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err415 { errBody = "Supported media types:  gif, png" }
+-- > failingHandler = throwError $ err415 { errBody = "Supported media types:  gif, png" }
 --
 err415 :: ServantErr
 err415 = ServantErr { errHTTPCode = 415
@@ -339,7 +339,7 @@ err415 = ServantErr { errHTTPCode = 415
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err416 { errBody = "Valid range is [0, 424242]." }
+-- > failingHandler = throwError $ err416 { errBody = "Valid range is [0, 424242]." }
 --
 err416 :: ServantErr
 err416 = ServantErr { errHTTPCode = 416
@@ -353,7 +353,7 @@ err416 = ServantErr { errHTTPCode = 416
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err417 { errBody = "I found a quux in the request.  This isn't going to work." }
+-- > failingHandler = throwError $ err417 { errBody = "I found a quux in the request.  This isn't going to work." }
 --
 err417 :: ServantErr
 err417 = ServantErr { errHTTPCode = 417
@@ -367,7 +367,7 @@ err417 = ServantErr { errHTTPCode = 417
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err500 { errBody = "Exception in module A.B.C:55.  Have a great day!" }
+-- > failingHandler = throwError $ err500 { errBody = "Exception in module A.B.C:55.  Have a great day!" }
 --
 err500 :: ServantErr
 err500 = ServantErr { errHTTPCode = 500
@@ -381,7 +381,7 @@ err500 = ServantErr { errHTTPCode = 500
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err501 { errBody = "/v1/foo is not supported with quux in the request." }
+-- > failingHandler = throwError $ err501 { errBody = "/v1/foo is not supported with quux in the request." }
 --
 err501 :: ServantErr
 err501 = ServantErr { errHTTPCode = 501
@@ -395,7 +395,7 @@ err501 = ServantErr { errHTTPCode = 501
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err502 { errBody = "Tried gateway foo, bar, and baz.  None responded." }
+-- > failingHandler = throwError $ err502 { errBody = "Tried gateway foo, bar, and baz.  None responded." }
 --
 err502 :: ServantErr
 err502 = ServantErr { errHTTPCode = 502
@@ -409,7 +409,7 @@ err502 = ServantErr { errHTTPCode = 502
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err503 { errBody = "We're rewriting in PHP." }
+-- > failingHandler = throwError $ err503 { errBody = "We're rewriting in PHP." }
 --
 err503 :: ServantErr
 err503 = ServantErr { errHTTPCode = 503
@@ -423,7 +423,7 @@ err503 = ServantErr { errHTTPCode = 503
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err504 { errBody = "Backend foobar did not respond in 5 seconds." }
+-- > failingHandler = throwError $ err504 { errBody = "Backend foobar did not respond in 5 seconds." }
 --
 err504 :: ServantErr
 err504 = ServantErr { errHTTPCode = 504
@@ -437,7 +437,7 @@ err504 = ServantErr { errHTTPCode = 504
 -- Example usage:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwErr $ err505 { errBody = "I support HTTP/4.0 only." }
+-- > failingHandler = throwError $ err505 { errBody = "I support HTTP/4.0 only." }
 --
 err505 :: ServantErr
 err505 = ServantErr { errHTTPCode = 505
