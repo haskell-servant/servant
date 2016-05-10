@@ -809,7 +809,7 @@ type UserAPI3 = -- view the user with given userid, in JSON
                 Capture "userid" Int :> Get '[JSON] User
 
            :<|> -- delete the user with given userid. empty response
-                Capture "userid" Int :> Delete '[] ()
+                Capture "userid" Int :> DeleteNoContent '[JSON] NoContent
 ```
 
 We can instead factor out the `userid`:
@@ -817,7 +817,7 @@ We can instead factor out the `userid`:
 ``` haskell
 type UserAPI4 = Capture "userid" Int :>
   (    Get '[JSON] User
-  :<|> Delete '[] ()
+  :<|> DeleteNoContent '[JSON] NoContent
   )
 ```
 
@@ -826,10 +826,10 @@ corresponding `Server`:
 
 ``` haskell ignore
 Server UserAPI3 = (Int -> Handler User)
-             :<|> (Int -> Handler ())
+             :<|> (Int -> Handler NoContent)
 
 Server UserAPI4 = Int -> (    Handler User
-                         :<|> Handler ()
+                         :<|> Handler NoContent
                          )
 ```
 
@@ -844,7 +844,7 @@ server8 = getUser :<|> deleteUser
   where getUser :: Int -> Handler User
         getUser _userid = error "..."
 
-        deleteUser :: Int -> Handler ()
+        deleteUser :: Int -> Handler NoContent
         deleteUser _userid = error "..."
 
 -- notice how getUser and deleteUser
@@ -856,7 +856,7 @@ server9 userid = getUser userid :<|> deleteUser userid
   where getUser :: Int -> Handler User
         getUser = error "..."
 
-        deleteUser :: Int -> Handler ()
+        deleteUser :: Int -> Handler NoContent
         deleteUser = error "..."
 ```
 
@@ -875,13 +875,13 @@ type API1 = "users" :>
 -- we factor out the Request Body
 type API2 = ReqBody '[JSON] User :>
   (    Get '[JSON] User -- just display the same user back, don't register it
-  :<|> Post '[JSON] ()  -- register the user. empty response
+  :<|> PostNoContent '[JSON] NoContent  -- register the user. empty response
   )
 
 -- we factor out a Header
 type API3 = Header "Authorization" Token :>
   (    Get '[JSON] SecretData -- get some secret data, if authorized
-  :<|> ReqBody '[JSON] SecretData :> Post '[] () -- add some secret data, if authorized
+  :<|> ReqBody '[JSON] SecretData :> PostNoContent '[JSON] NoContent -- add some secret data, if authorized
   )
 
 newtype Token = Token ByteString
@@ -894,11 +894,11 @@ API type only at the end.
 ``` haskell
 type UsersAPI =
        Get '[JSON] [User] -- list users
-  :<|> ReqBody '[JSON] User :> Post '[] () -- add a user
+  :<|> ReqBody '[JSON] User :> PostNoContent '[JSON] NoContent -- add a user
   :<|> Capture "userid" Int :>
          ( Get '[JSON] User -- view a user
-      :<|> ReqBody '[JSON] User :> Put '[] () -- update a user
-      :<|> Delete '[] () -- delete a user
+      :<|> ReqBody '[JSON] User :> PutNoContent '[JSON] NoContent -- update a user
+      :<|> DeleteNoContent '[JSON] NoContent -- delete a user
          )
 
 usersServer :: Server UsersAPI
@@ -907,7 +907,7 @@ usersServer = getUsers :<|> newUser :<|> userOperations
   where getUsers :: Handler [User]
         getUsers = error "..."
 
-        newUser :: User -> Handler ()
+        newUser :: User -> Handler NoContent
         newUser = error "..."
 
         userOperations userid =
@@ -917,21 +917,21 @@ usersServer = getUsers :<|> newUser :<|> userOperations
             viewUser :: Int -> Handler User
             viewUser = error "..."
 
-            updateUser :: Int -> User -> Handler ()
+            updateUser :: Int -> User -> Handler NoContent
             updateUser = error "..."
 
-            deleteUser :: Int -> Handler ()
+            deleteUser :: Int -> Handler NoContent
             deleteUser = error "..."
 ```
 
 ``` haskell
 type ProductsAPI =
        Get '[JSON] [Product] -- list products
-  :<|> ReqBody '[JSON] Product :> Post '[] () -- add a product
+  :<|> ReqBody '[JSON] Product :> PostNoContent '[JSON] NoContent -- add a product
   :<|> Capture "productid" Int :>
          ( Get '[JSON] Product -- view a product
-      :<|> ReqBody '[JSON] Product :> Put '[] () -- update a product
-      :<|> Delete '[] () -- delete a product
+      :<|> ReqBody '[JSON] Product :> PutNoContent '[JSON] NoContent -- update a product
+      :<|> DeleteNoContent '[JSON] NoContent -- delete a product
          )
 
 data Product = Product { productId :: Int }
@@ -942,7 +942,7 @@ productsServer = getProducts :<|> newProduct :<|> productOperations
   where getProducts :: Handler [Product]
         getProducts = error "..."
 
-        newProduct :: Product -> Handler ()
+        newProduct :: Product -> Handler NoContent
         newProduct = error "..."
 
         productOperations productid =
@@ -952,10 +952,10 @@ productsServer = getProducts :<|> newProduct :<|> productOperations
             viewProduct :: Int -> Handler Product
             viewProduct = error "..."
 
-            updateProduct :: Int -> Product -> Handler ()
+            updateProduct :: Int -> Product -> Handler NoContent
             updateProduct = error "..."
 
-            deleteProduct :: Int -> Handler ()
+            deleteProduct :: Int -> Handler NoContent
             deleteProduct = error "..."
 ```
 
@@ -975,20 +975,20 @@ abstract that away:
 -- indexed by values of type 'i'
 type APIFor a i =
        Get '[JSON] [a] -- list 'a's
-  :<|> ReqBody '[JSON] a :> Post '[] () -- add an 'a'
+  :<|> ReqBody '[JSON] a :> PostNoContent '[JSON] NoContent -- add an 'a'
   :<|> Capture "id" i :>
          ( Get '[JSON] a -- view an 'a' given its "identifier" of type 'i'
-      :<|> ReqBody '[JSON] a :> Put '[] () -- update an 'a'
-      :<|> Delete '[] () -- delete an 'a'
+      :<|> ReqBody '[JSON] a :> PutNoContent '[JSON] NoContent -- update an 'a'
+      :<|> DeleteNoContent '[JSON] NoContent -- delete an 'a'
          )
 
 -- Build the appropriate 'Server'
 -- given the handlers of the right type.
 serverFor :: Handler [a] -- handler for listing of 'a's
-          -> (a -> Handler ()) -- handler for adding an 'a'
+          -> (a -> Handler NoContent) -- handler for adding an 'a'
           -> (i -> Handler a) -- handler for viewing an 'a' given its identifier of type 'i'
-          -> (i -> a -> Handler ()) -- updating an 'a' with given id
-          -> (i -> Handler ()) -- deleting an 'a' given its id
+          -> (i -> a -> Handler NoContent) -- updating an 'a' with given id
+          -> (i -> Handler NoContent) -- deleting an 'a' given its id
           -> Server (APIFor a i)
 serverFor = error "..."
 -- implementation left as an exercise. contact us on IRC
