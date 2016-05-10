@@ -101,9 +101,11 @@ test-suite spec
   other-modules:
       Servant.Server.ErrorSpec
       Servant.Server.Internal.ContextSpec
-      Servant.ServerSpec
+      Servant.Server.RouterSpec
+      Servant.Server.StreamingSpec
       Servant.Server.UsingContextSpec
       Servant.Server.UsingContextSpec.TestCombinators
+      Servant.ServerSpec
       Servant.Utils.StaticFilesSpec
   build-depends:
       base == 4.*
