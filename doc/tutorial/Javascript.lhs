@@ -469,7 +469,7 @@ Keeping the JQuery as an example, let's see the impact:
 
 ``` haskell
 apiJS :: String
-apiJS = jsForAPI api $ jqueryWith defCommonGeneratorOptions { functionNameBuilder: snakeCase }
+apiJS = jsForAPI api $ jqueryWith defCommonGeneratorOptions { functionNameBuilder= snakeCase }
 ```
 
 This `String` contains 2 Javascript functions:
