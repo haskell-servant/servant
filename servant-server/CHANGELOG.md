@@ -2,6 +2,7 @@
 ------
 
 * Remove module `Servant.Server.Internal.Enter` (https://github.com/haskell-servant/servant/pull/478)
+* Support GHC 8.0
 
 0.7
 ---
