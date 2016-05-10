@@ -116,6 +116,7 @@ import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.Header ( Header )
+import Servant.API.RemoteHost ( RemoteHost )
 import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
@@ -290,6 +291,10 @@ instance (ToHttpApiData v, HasLink sub)
 
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (RemoteHost :> sub) where
+    type MkLink (RemoteHost :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
 -- Verb (terminal) instances
