@@ -1,3 +1,8 @@
+0.7.1
+------
+
+* Remove module `Servant.Server.Internal.Enter` (https://github.com/haskell-servant/servant/pull/478)
+
 0.7
 ---
 

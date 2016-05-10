@@ -1,3 +1,8 @@
+0.7.1
+------
+
+* Add module `Servant.Utils.Enter` (https://github.com/haskell-servant/servant/pull/478)
+
 0.5
 ----
 
