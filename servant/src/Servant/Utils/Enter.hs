@@ -11,9 +11,6 @@
 module Servant.Utils.Enter where
 
 import qualified Control.Category            as C
-#if MIN_VERSION_mtl(2,2,1)
-import           Control.Monad.Except
-#endif
 import           Control.Monad.Identity
 import           Control.Monad.Morph
 import           Control.Monad.Reader

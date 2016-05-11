@@ -1,6 +1,4 @@
-flags:
-  servant-js:
-    example: false
+flags: {}
 packages:
 - servant/
 - servant-client/
