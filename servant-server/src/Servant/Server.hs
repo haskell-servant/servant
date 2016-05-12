@@ -95,6 +95,9 @@ module Servant.Server
   , err504
   , err505
 
+  -- * Re-exports
+  , Application
+
   ) where
 
 import           Data.Proxy                    (Proxy)

@@ -8,7 +8,7 @@ import           Control.Monad                  (unless)
 import           Data.Proxy                     (Proxy(..))
 import           Data.Text                      (unpack)
 import           Network.HTTP.Types             (Status (..))
-import           Network.Wai                    (Application, responseBuilder)
+import           Network.Wai                    (responseBuilder)
 import           Network.Wai.Internal           (Response (ResponseBuilder))
 import           Test.Hspec
 import           Test.Hspec.Wai                 (get, shouldRespondWith, with)
