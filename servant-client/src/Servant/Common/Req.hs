@@ -18,44 +18,17 @@ import Data.String.Conversions
 import Data.Proxy
 import Data.Text (Text)
 import Data.Text.Encoding
-import Data.Typeable
 import Network.HTTP.Client hiding (Proxy, path)
 import Network.HTTP.Media
 import Network.HTTP.Types
-import qualified Network.HTTP.Types.Header   as HTTP
+import qualified Network.HTTP.Types.Header as HTTP
 import Network.URI hiding (path)
 import Servant.API.ContentTypes
+import Servant.Client.PerformRequest
 import Servant.Common.BaseUrl
-
-import qualified Network.HTTP.Client as Client
-
 import Web.HttpApiData
 
-data ServantError
-  = FailureResponse
-    { responseStatus            :: Status
-    , responseContentType       :: MediaType
-    , responseBody              :: ByteString
-    }
-  | DecodeFailure
-    { decodeError               :: String
-    , responseContentType       :: MediaType
-    , responseBody              :: ByteString
-    }
-  | UnsupportedContentType
-    { responseContentType       :: MediaType
-    , responseBody              :: ByteString
-    }
-  | InvalidContentTypeHeader
-    { responseContentTypeHeader :: ByteString
-    , responseBody              :: ByteString
-    }
-  | ConnectionError
-    { connectionError           :: SomeException
-    }
-  deriving (Show, Typeable)
-
-instance Exception ServantError
+import qualified Network.HTTP.Client as Client
 
 data Req = Req
   { reqPath   :: String
@@ -135,7 +108,7 @@ performRequest reqMethod req manager reqHost = do
                                , checkStatus = \ _status _headers _cookies -> Nothing
                                }
 
-  eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
+  eResponse <- liftIO $ performHttpRequest manager request
   case eResponse of
     Left err ->
       throwE . ConnectionError $ SomeException err
@@ -172,8 +145,3 @@ performRequestNoBody :: Method -> Req -> Manager -> BaseUrl
 performRequestNoBody reqMethod req manager reqHost = do
   (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req manager reqHost
   return hdrs
-
-catchConnectionError :: IO a -> IO (Either ServantError a)
-catchConnectionError action =
-  catch (Right <$> action) $ \e ->
-    pure . Left . ConnectionError $ SomeException (e :: HttpException)

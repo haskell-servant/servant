@@ -29,3 +29,5 @@ doc/_build
 doc/venv
 doc/tutorial/static/api.js
 doc/tutorial/static/jq.js
+servant-client/node_modules/
+servant-client/test/ghcjs/testServer/testServer

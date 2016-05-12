@@ -1,0 +1,10 @@
+flags: {}
+packages:
+- location: ./.
+- location: ../../../../
+  subdirs:
+  - servant
+  - servant-client
+  - servant-server
+  extra-dep: true
+resolver: lts-5.15

@@ -1,0 +1,35 @@
+name: testServer
+
+executables:
+  testServer:
+    main: testServer.hs
+    other-modules: []
+    dependencies:
+      - base
+      - aeson
+      - base64-bytestring
+      - bytestring
+      - exceptions
+      - hspec
+      - http-api-data
+      - http-client
+      - http-media
+      - http-types
+      - HUnit
+      - network
+      - network-uri
+      - QuickCheck
+      - safe
+      - servant
+      - servant-server
+      - string-conversions
+      - text
+      - transformers
+      - wai
+      - warp
+    source-dirs:
+      - ./
+      - ../../../test
+      - ../../../src
+    include-dirs:
+      - ../../../include
