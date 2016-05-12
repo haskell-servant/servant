@@ -154,33 +154,33 @@ javascript with just a simple function call to `jsForAPI` from
 `Servant.JS`.
 
 ``` haskell
-apiJS :: Text
-apiJS = jsForAPI api jquery
+apiJS1 :: Text
+apiJS1 = jsForAPI api jquery
 ```
 
 This `Text` contains 2 Javascript functions, 'getPoint' and 'getBooks':
 
 ``` javascript
-var getPoint = function (onSuccess, onError)
- {
-   $.ajax(
-     { url: '/point'
-     , success: onSuccess
-     , error: onError
-     , method: 'GET'
-     });
-};
 
+var getPoint = function(onSuccess, onError)
+{
+  $.ajax(
+    { url: '/point'
+    , success: onSuccess
+    , error: onError
+    , type: 'GET'
+    });
+}
 
-var getBooks = function (q, onSuccess, onError)
- {
-   $.ajax(
-     { url: '/books' + '?q=' + encodeURIComponent(q)
-     , success: onSuccess
-     , error: onError
-     , method: 'GET'
-     });
-};
+var getBooks = function(q, onSuccess, onError)
+{
+  $.ajax(
+    { url: '/books' + '?q=' + encodeURIComponent(q)
+    , success: onSuccess
+    , error: onError
+    , type: 'GET'
+    });
+}
 ```
 
 We created a directory `static` that contains two static files: `index.html`,
@@ -192,7 +192,7 @@ write the generated javascript into a file:
 ``` haskell
 writeJSFiles :: IO ()
 writeJSFiles = do
-  T.writeFile "static/api.js" apiJS
+  T.writeFile "static/api.js" apiJS1
   jq <- T.readFile =<< Language.Javascript.JQuery.file
   T.writeFile "static/jq.js" jq
 ```
@@ -220,7 +220,7 @@ The `CommonGeneratorOptions` will let you define different behaviors to
 change how functions are generated. Here is the definition of currently
 available options:
 
-```haskell
+```haskell ignore
 data CommonGeneratorOptions = CommonGeneratorOptions
   {
     -- | function generating function names
@@ -249,8 +249,8 @@ Use the same code as before but simply replace the previous `apiJS` with
 the following one:
 
 ``` haskell
-apiJS :: String
-apiJS = jsForAPI api vanillaJS
+apiJS2 :: Text
+apiJS2 = jsForAPI api vanillaJS
 ```
 
 The rest is *completely* unchanged.
@@ -259,41 +259,50 @@ The output file is a bit different, but it has the same parameters,
 
 ``` javascript
 
-var getPoint = function (onSuccess, onError)
+
+var getPoint = function(onSuccess, onError)
 {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/point', true);
-
-    xhr.onreadystatechange = function (e) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/point', true);
+  xhr.setRequestHeader(\"Accept\",\"application/json\");
+  xhr.onreadystatechange = function (e) {
     if (xhr.readyState == 4) {
+      if (xhr.status == 204 || xhr.status == 205) {
+        onSuccess();
+      } else if (xhr.status >= 200 && xhr.status < 300) {
         var value = JSON.parse(xhr.responseText);
-        if (xhr.status == 200 || xhr.status == 201) {
-            onSuccess(value);
-        } else {
-            onError(value);
-        }
-        }
+        onSuccess(value);
+      } else {
+        var value = JSON.parse(xhr.responseText);
+        onError(value);
+      }
     }
-    xhr.send(null);
-};
+  }
+  xhr.send(null);
+}
 
-var getBooks = function (q, onSuccess, onError)
+var getBooks = function(q, onSuccess, onError)
 {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/books' + '?q=' + encodeURIComponent(q), true);
-
-    xhr.onreadystatechange = function (e) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/books' + '?q=' + encodeURIComponent(q), true);
+  xhr.setRequestHeader(\"Accept\",\"application/json\");
+  xhr.onreadystatechange = function (e) {
     if (xhr.readyState == 4) {
+      if (xhr.status == 204 || xhr.status == 205) {
+        onSuccess();
+      } else if (xhr.status >= 200 && xhr.status < 300) {
         var value = JSON.parse(xhr.responseText);
-        if (xhr.status == 200 || xhr.status == 201) {
-            onSuccess(value);
-        } else {
-            onError(value);
-        }
-        }
+        onSuccess(value);
+      } else {
+        var value = JSON.parse(xhr.responseText);
+        onError(value);
+      }
     }
-    xhr.send(null);
-};
+  }
+  xhr.send(null);
+}
+
+
 ```
 
 And that's all, your web service can of course be accessible from those
@@ -309,8 +318,8 @@ Use the same code as before but simply replace the previous `apiJS` with
 the following one:
 
 ``` haskell
-apiJS :: String
-apiJS = jsForAPI api $ axios defAxiosOptions
+apiJS3 :: Text
+apiJS3 = jsForAPI api $ axios defAxiosOptions
 ```
 
 The rest is *completely* unchanged.
@@ -319,19 +328,23 @@ The output file is a bit different,
 
 ``` javascript
 
-var getPoint = function ()
-{
-    return axios({ url: '/point'
-      , method: 'get'
-      });
-};
 
-var getBooks = function (q)
+var getPoint = function()
 {
-    return axios({ url: '/books' + '?q=' + encodeURIComponent(q)
-      , method: 'get'
-      });
-};
+  return axios({ url: '/point'
+    , method: 'get'
+    });
+}
+
+
+
+var getBooks = function(q)
+{
+  return axios({ url: '/books' + '?q=' + encodeURIComponent(q)
+    , method: 'get'
+    });
+}
+
 ```
 
 **Caution:** In order to support the promise style of the API, there are no onSuccess
@@ -366,8 +379,8 @@ generate top level functions.
 The difference is that `angular` Generator always takes an argument.
 
 ``` haskell
-apiJS :: String
-apiJS = jsForAPI api $ angular defAngularOptions
+apiJS4 :: Text
+apiJS4 = jsForAPI api $ angular defAngularOptions
 ```
 
 The generated code will be a bit different than previous generators. An extra
@@ -379,21 +392,25 @@ nor onError callback functions.
 
 ``` javascript
 
+
 var getPoint = function($http)
 {
   return $http(
-   { url: '/counter'
-   , method: 'GET'
-   });
+    { url: '/point'
+    , method: 'GET'
+    });
 }
+
+
 
 var getBooks = function($http, q)
 {
   return $http(
-    { url: '/books' + '?q=' + encodeURIComponent(q), true);
+    { url: '/books' + '?q=' + encodeURIComponent(q)
     , method: 'GET'
     });
 }
+
 ```
 
 You can then build your controllers easily
@@ -440,8 +457,8 @@ app.service('MyService', function($http) {
 To do so, you just have to use an alternate generator.
 
 ``` haskell
-apiJS :: String
-apiJS = jsForAPI api $ angularService defAngularOptions
+apiJS5 :: Text
+apiJS5 = jsForAPI api $ angularService defAngularOptions
 ```
 
 Again, it is possible to customize some portions with the options.
@@ -468,32 +485,34 @@ Servant comes with three name builders included:
 Keeping the JQuery as an example, let's see the impact:
 
 ``` haskell
-apiJS :: String
-apiJS = jsForAPI api $ jqueryWith defCommonGeneratorOptions { functionNameBuilder= snakeCase }
+apiJS6 :: Text
+apiJS6 = jsForAPI api $ jqueryWith defCommonGeneratorOptions { functionNameBuilder= snakeCase }
 ```
 
-This `String` contains 2 Javascript functions:
+This `Text` contains 2 Javascript functions:
 
 ``` javascript
 
-var getPoint = function (onSuccess, onError)
+
+var get_point = function(onSuccess, onError)
 {
   $.ajax(
     { url: '/point'
     , success: onSuccess
     , error: onError
-    , method: 'GET'
+    , type: 'GET'
     });
-};
+}
 
-var getBooks = function (q, onSuccess, onError)
+var get_books = function(q, onSuccess, onError)
 {
   $.ajax(
     { url: '/books' + '?q=' + encodeURIComponent(q)
     , success: onSuccess
     , error: onError
-    , method: 'GET'
+    , type: 'GET'
     });
-};
+}
+
 ```
 
