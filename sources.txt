@@ -1,7 +1,6 @@
 servant
 servant-server
 servant-client
-servant-cassava
 servant-docs
 servant-foreign
 servant-js
