@@ -15,6 +15,10 @@ category:            Web
 build-type:          Simple
 extra-source-files:  include/*.h
 cabal-version:       >=1.10
+bug-reports:         http://github.com/haskell-servant/servant/issues
+source-repository head
+  type: git
+  location: http://github.com/haskell-servant/servant.git
 
 flag example
   description: Build the example too
