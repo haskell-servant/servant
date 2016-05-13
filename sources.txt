@@ -4,6 +4,4 @@ servant-client
 servant-docs
 servant-foreign
 servant-js
-servant-blaze
-servant-lucid
 servant-mock

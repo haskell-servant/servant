@@ -1,12 +1,10 @@
 flags: {}
 packages:
 - servant/
-- servant-blaze/
 - servant-client/
 - servant-docs/
 - servant-foreign/
 - servant-js/
-- servant-lucid/
 - servant-mock/
 - servant-server/
 extra-deps:

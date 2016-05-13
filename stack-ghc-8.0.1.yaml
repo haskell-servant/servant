@@ -3,12 +3,10 @@ flags:
     old-locale: false
 packages:
 - servant/
-- servant-blaze/
 - servant-client/
 - servant-docs/
 - servant-foreign/
 - servant-js/
-- servant-lucid/
 - servant-mock/
 - servant-server/
 setup-info:
@@ -48,7 +46,6 @@ extra-deps:
 - bytestring-builder-0.10.6.0.0
 - bytestring-conversion-0.3.1
 - case-insensitive-1.2.0.6
-- cassava-0.4.5.0
 - cereal-0.5.1.0
 - charset-0.3.7.1
 - cmdargs-0.10.14
@@ -91,7 +88,6 @@ extra-deps:
 - language-ecmascript-0.17.1.0
 - lens-4.14
 - lifted-base-0.2.3.6
-- lucid-2.9.5
 - memory-0.12
 - mime-types-0.1.0.7
 - mmorph-1.0.6

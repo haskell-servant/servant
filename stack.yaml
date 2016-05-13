@@ -3,12 +3,10 @@ flags:
     example: false
 packages:
 - servant/
-- servant-blaze/
 - servant-client/
 - servant-docs/
 - servant-foreign/
 - servant-js/
-- servant-lucid/
 - servant-mock/
 - servant-server/
 - doc/tutorial
