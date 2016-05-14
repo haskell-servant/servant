@@ -45,15 +45,15 @@ endpoints is that there are no tests *for* tests - tests that check that new
 behaviour and tests conforms to higher-level, more general best practices.
 
 `servant-quickcheck` aims to solve that. It allows describing properties that
-*all* endpoints myst satisfy. If a new endpoint comes along, it too will be
+*all* endpoints must satisfy. If a new endpoint comes along, it too will be
 tested for that property, without any further work.
 
 Why isn't this idea already popular? Well, most web frameworks don't have a
-reified description of APIs. When you don't know what the endpoints of an
-application are, and what request body they expect, trying to generate arbitrary
-requests is almost entirely going to result in 404s (not found) and 400s (bad
-request). Maybe one in a thousand requests will actually test a handler. Not
-very useful.
+reified description of APIs (beyond perhaps the routes). When you don't know
+what the endpoints of an application are, and what request body they expect,
+trying to generate arbitrary requests is almost entirely going to result in
+404s (not found) and 400s (bad request). Maybe one in a thousand requests will
+actually test a handler. Not very useful.
 
 `servant` applications, on the other hand, have a machine-readable API description
 already available. And they already associate "correct" requests with particular
@@ -178,10 +178,13 @@ import Test.QuickCheck (Arbitrary(..))
 import Database.PostgreSQL.Simple (connectPostgreSQL)
 
 spec :: Spec
-spec = describe "the species application" $ do
+spec = describe "the species application" $ beforeAll check $ do
   let pserver = do
         conn <- connectPostgreSQL "dbname=servant-quickcheck"
         return $ server conn
+
+
+  it "should not return 500s" $ do
 
   it "should not return 500s" $ do
     withServantServer api pserver $ \url ->
@@ -190,6 +193,12 @@ spec = describe "the species application" $ do
   it "should not return top-level json" $ do
     withServantServer api pserver $ \url ->
       serverSatisfies api url defaultArgs (onlyJsonObjects <%> mempty)
+
+  where
+    check = do
+      mvar  <- newMVar []
+      withServantServer api pserver $ \url ->
+         serverSatisfies api url defaultArgs (onlyJsonObjects <%> mempty)
 
 main :: IO ()
 main = do
@@ -201,30 +210,51 @@ instance Arbitrary Species where
 
 But this fails in quite a few ways.
 
+
+<<TODO>>
+
+This was an example created with the knowledge of what it was supposed to
+exemplify. To try to get a more accurate assessment of the practical usefulness
+of `servant-quickcheck`, I tried running `serverSatisfies` with a few
+predicates over some of the open-source `servant` servers I could find, and
+results were also promising.
+
+There are probably a lot of other interesting properties that one might to add
+besides those I've included. As an example, we could have a property that
+all HTML is checked against, which is sometimes tricky for HTML that's
+generated dynamically. Or check that every page has a Portuguese translation.
+
 ### Why best practices are good
 
 As a side note: you might have wondered "why bother with API best practices?".
-It is, it would be said, a lot of extra (as in not only getting the feature done)
+It is, it has to be said, a lot of extra (as in not only getting the feature done)
 work to do, for dubious benefit. And indeed, the relevance of discoverability, for
-example, unclear, since not that many tools use it.
+example, unclear, since not that many tools use it as perhaps was anticipated.
 
 But `servant-quickcheck` both makes it *easier* to conform to best practices,
-and exemplifies their advantage. If we pick 201 (Success, the 'resource' was
-created), rather than the more generic 200 (Success), `servant-quickcheck` knows
-this means there should be some representation of the rec°as a response
+and exemplifies their advantage in enabling better tooling. If we pick 201 (Success, the 'resource' was
+created), rather than the more generic 200 (Success), and do a *little* more work
+by knowing to make this decision, `servant-quickcheck` knows this means there
+should be some representation of the resource created. So it knows to ask you
+for a link to it (the RFC creators thought to ask for this). And if you do (again,
+a little more work), `servant-quickcheck` will know to try to look at that
+resource by following the link, checking that it's not broken, and maybe even
+returns a response that equivalent to the original POST request). And then it
+finds a real bug - your application allows species with '/' in their name to
+be created, but not queried with a 'GET' for! This, I think, is already a win.
 
 
 ## `serversEqual`
 
 There's another very appealing application of the ability to generate "sensible"
-arbitrary requests. It's testing that two applications are equal. Generate arbitrary
+arbitrary requests. It's for testing that two applications are equal. We can generate arbitrary
 requests, send them to both servers (in the same order), and check that the responses
-are equivalent.  (This was, in fact, one of the first applications of
+are equivalent.  (This was, incidentally, one of the first applications of
 `servant-client`, albeit in a much more manual way, when we rewrote a microservice
 originally in Python in Haskell.) Generally with rewrites, even if there's some
-behaviour that isn't optimal, if a lot of things already depend on that service,
-it makes sense to first mimick *exactly* the original behaviour, and only then
-aim for improvements.
+behaviour that isn't optimal, perhaps a lot of things already depend on that service
+and make interace poorly with "improvements", so it makes sense to first mimick
+*exactly* the original behaviour, and only then aim for improvements.
 
 `servant-quickcheck` provides a single function, `serversEqual`, that attempts
 to verify the equivalence of servers. Since some aspects of responses might not
@@ -243,16 +273,23 @@ One area is extensive automatic benchmarking. Currently we use tools such as
 we are interested in, and write a request that gets made thousands of times.
 But now we can have a multiplicity of requests to benchmark with! This allows
 *finding* slow endpoints, as well as (I would imagine, though I haven't actually
-tried this yet) synchronization issues that make threads wait for too long (such
-as waiting on an MVar that's not really needed), bad asymptotics with respect
-to some other type of request.
+tried this yet) finding synchronization issues that make threads wait for too
+long (such as waiting on an MVar that's not really needed), bad asymptotics
+with respect to some other type of request.
 
 (On this last point, imagine not having an index in a database for "people",
  and having a tool that discovers that the latency on a search by first name
  grows linearly with the number of POST requests to a *different* endpoint! We'd
- need to do some to do this well, possibly involving some machine learning, but
- it's an interesting and probably useful idea.)
+ need to do some work to do this well, possibly involving some machine
+ learning, but it's an interesting and probably useful idea.)
 
+
+# Conclusion
+
+I hope this library presents some useful functionality already, but I hope
+you'll also think how it could be improved!
+
+There'll be a few more packages in the comings weeks - check back soon!
 
 **Note**: This post is an anansi literate file that generates multiple source
 files. They are:
