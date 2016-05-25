@@ -297,7 +297,7 @@ Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
 
 When protecting endpoints with basic authentication, we need to specify two items:
 
-1. The **realm** of authentication as per the Basic Authentictaion spec.
+1. The **realm** of authentication as per the Basic Authentication spec.
 2. The datatype returned by the server after authentication is verified. This
     is usually a `User` or `Customer` type datatype.
 
