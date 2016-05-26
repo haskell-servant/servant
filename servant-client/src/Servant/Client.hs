@@ -118,6 +118,38 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient api)
 
     where p = unpack (toUrlPiece val)
 
+-- | If you use a 'CaptureAll' in one of your endpoints in your API,
+-- the corresponding querying function will automatically take an
+-- additional argument of a list of the type specified by your
+-- 'CaptureAll'. That function will take care of inserting a textual
+-- representation of this value at the right place in the request
+-- path.
+--
+-- You can control how these values are turned into text by specifying
+-- a 'ToHttpApiData' instance of your type.
+--
+-- Example:
+--
+-- > type MyAPI = "src" :> CaptureAll Text -> Get '[JSON] SourceFile
+-- >
+-- > myApi :: Proxy
+-- > myApi = Proxy
+--
+-- > getSourceFile :: [Text] -> Manager -> BaseUrl -> ClientM SourceFile
+-- > getSourceFile = client myApi
+-- > -- then you can use "getSourceFile" to query that endpoint
+instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
+      => HasClient (CaptureAll capture a :> sublayout) where
+
+  type Client (CaptureAll capture a :> sublayout) =
+    [a] -> Client sublayout
+
+  clientWithRoute Proxy req vals =
+    clientWithRoute (Proxy :: Proxy sublayout)
+                    (foldl' (flip appendToPath) req ps)
+
+    where ps = map (unpack . toUrlPiece) vals
+
 instance OVERLAPPABLE_
   -- Note [Non-Empty Content Types]
   (MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
