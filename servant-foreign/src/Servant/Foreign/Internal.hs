@@ -211,6 +211,21 @@ instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype ap
         { _argName = PathSegment str
         , _argType = ftype }
 
+instance (KnownSymbol sym, HasForeignType lang ftype [t], HasForeign lang ftype sublayout)
+  => HasForeign lang ftype (CaptureAll sym t :> sublayout) where
+  type Foreign ftype (CaptureAll sym t :> sublayout) = Foreign ftype sublayout
+
+  foreignFor lang Proxy Proxy req =
+    foreignFor lang Proxy (Proxy :: Proxy sublayout) $
+      req & reqUrl . path <>~ [Segment (Cap arg)]
+          & reqFuncName . _FunctionName %~ (++ ["by", str])
+    where
+      str   = pack . symbolVal $ (Proxy :: Proxy sym)
+      ftype = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy [t])
+      arg   = Arg
+        { _argName = PathSegment str
+        , _argType = ftype }
+
 instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
   => HasForeign lang ftype (Verb method status list a) where
   type Foreign ftype (Verb method status list a) = Req ftype
