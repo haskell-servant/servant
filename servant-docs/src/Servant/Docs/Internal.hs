@@ -702,6 +702,22 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)
           symP = Proxy :: Proxy sym
 
 
+-- | @"books" :> 'CaptureAll' "isbn" Text@ will appear as
+-- @/books/:isbn@ in the docs.
+instance (KnownSymbol sym, ToCapture (CaptureAll sym a), HasDocs sublayout)
+      => HasDocs (CaptureAll sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          captureP = Proxy :: Proxy (CaptureAll sym a)
+
+          action' = over captures (|> toCapture captureP) action
+          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
+          symP = Proxy :: Proxy sym
+
+
 instance OVERLAPPABLE_
         (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
         , ReflectMethod method)
