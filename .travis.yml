@@ -3,8 +3,8 @@ sudo: false
 language: c
 
 env:
-  - GHCVER=7.8.4 CABALVER=1.22
-  - GHCVER=7.10.3 CABALVER=1.22
+  - GHCVER=7.8.4 CABALVER=1.22 STACK_YAML=stack-ghc-7.8.4.yaml
+  - GHCVER=7.10.3 CABALVER=1.22 STACK_YAML=stack.yaml
   - GHCVER=8.0.1 CABALVER=1.24
 
 addons:
@@ -20,10 +20,13 @@ addons:
       - libgmp-dev
 
 install:
-  - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
+  - mkdir -p $HOME/.local/bin
+  - (cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
+  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
   - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
   - ghc --version
   - cabal --version
+  - stack --version
   - travis_retry cabal update
   - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
 
