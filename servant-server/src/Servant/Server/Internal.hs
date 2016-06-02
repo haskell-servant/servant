@@ -68,16 +68,16 @@ import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 
 
-class HasServer layout context where
-  type ServerT layout (m :: * -> *) :: *
+class HasServer api context where
+  type ServerT api (m :: * -> *) :: *
 
   route ::
-       Proxy layout
+       Proxy api
     -> Context context
-    -> Delayed env (Server layout)
+    -> Delayed env (Server api)
     -> Router env
 
-type Server layout = ServerT layout Handler
+type Server api = ServerT api Handler
 
 -- * Instances
 
@@ -118,15 +118,15 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
 -- > server = getBook
 -- >   where getBook :: Text -> Handler Book
 -- >         getBook isbn = ...
-instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (Capture capture a :> sublayout) context where
+instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
+      => HasServer (Capture capture a :> api) context where
 
-  type ServerT (Capture capture a :> sublayout) m =
-     a -> ServerT sublayout m
+  type ServerT (Capture capture a :> api) m =
+     a -> ServerT api m
 
   route Proxy context d =
     CaptureRouter $
-        route (Proxy :: Proxy sublayout)
+        route (Proxy :: Proxy api)
               context
               (addCapture d $ \ txt -> case parseUrlPieceMaybe txt :: Maybe a of
                  Nothing -> delayedFail err400
@@ -236,15 +236,15 @@ instance OVERLAPPING_
 -- > server = viewReferer
 -- >   where viewReferer :: Referer -> Handler referer
 -- >         viewReferer referer = return referer
-instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (Header sym a :> sublayout) context where
+instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
+      => HasServer (Header sym a :> api) context where
 
-  type ServerT (Header sym a :> sublayout) m =
-    Maybe a -> ServerT sublayout m
+  type ServerT (Header sym a :> api) m =
+    Maybe a -> ServerT api m
 
   route Proxy context subserver =
     let mheader req = parseHeaderMaybe =<< lookup str (requestHeaders req)
-    in  route (Proxy :: Proxy sublayout) context (passToServer subserver mheader)
+    in  route (Proxy :: Proxy api) context (passToServer subserver mheader)
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
@@ -268,11 +268,11 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- >   where getBooksBy :: Maybe Text -> Handler [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
-instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (QueryParam sym a :> sublayout) context where
+instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
+      => HasServer (QueryParam sym a :> api) context where
 
-  type ServerT (QueryParam sym a :> sublayout) m =
-    Maybe a -> ServerT sublayout m
+  type ServerT (QueryParam sym a :> api) m =
+    Maybe a -> ServerT api m
 
   route Proxy context subserver =
     let querytext r = parseQueryText $ rawQueryString r
@@ -282,7 +282,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
             Just Nothing  -> Nothing -- param present with no value -> Nothing
             Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                         -- the right type
-    in route (Proxy :: Proxy sublayout) context (passToServer subserver param)
+    in route (Proxy :: Proxy api) context (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -304,11 +304,11 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- > server = getBooksBy
 -- >   where getBooksBy :: [Text] -> Handler [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
-instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (QueryParams sym a :> sublayout) context where
+instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
+      => HasServer (QueryParams sym a :> api) context where
 
-  type ServerT (QueryParams sym a :> sublayout) m =
-    [a] -> ServerT sublayout m
+  type ServerT (QueryParams sym a :> api) m =
+    [a] -> ServerT api m
 
   route Proxy context subserver =
     let querytext r = parseQueryText $ rawQueryString r
@@ -317,7 +317,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
         -- corresponding values
         parameters r = filter looksLikeParam (querytext r)
         values r = mapMaybe (convert . snd) (parameters r)
-    in  route (Proxy :: Proxy sublayout) context (passToServer subserver values)
+    in  route (Proxy :: Proxy api) context (passToServer subserver values)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
@@ -335,11 +335,11 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- > server = getBooks
 -- >   where getBooks :: Bool -> Handler [Book]
 -- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
-instance (KnownSymbol sym, HasServer sublayout context)
-      => HasServer (QueryFlag sym :> sublayout) context where
+instance (KnownSymbol sym, HasServer api context)
+      => HasServer (QueryFlag sym :> api) context where
 
-  type ServerT (QueryFlag sym :> sublayout) m =
-    Bool -> ServerT sublayout m
+  type ServerT (QueryFlag sym :> api) m =
+    Bool -> ServerT api m
 
   route Proxy context subserver =
     let querytext r = parseQueryText $ rawQueryString r
@@ -347,7 +347,7 @@ instance (KnownSymbol sym, HasServer sublayout context)
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value
           Nothing       -> False -- param not in the query string
-    in  route (Proxy :: Proxy sublayout) context (passToServer subserver param)
+    in  route (Proxy :: Proxy api) context (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
@@ -392,14 +392,14 @@ instance HasServer Raw context where
 -- > server = postBook
 -- >   where postBook :: Book -> Handler Book
 -- >         postBook book = ...insert into your db...
-instance ( AllCTUnrender list a, HasServer sublayout context
-         ) => HasServer (ReqBody list a :> sublayout) context where
+instance ( AllCTUnrender list a, HasServer api context
+         ) => HasServer (ReqBody list a :> api) context where
 
-  type ServerT (ReqBody list a :> sublayout) m =
-    a -> ServerT sublayout m
+  type ServerT (ReqBody list a :> api) m =
+    a -> ServerT api m
 
   route Proxy context subserver =
-    route (Proxy :: Proxy sublayout) context (addBodyCheck subserver bodyCheck)
+    route (Proxy :: Proxy api) context (addBodyCheck subserver bodyCheck)
     where
       bodyCheck = withRequest $ \ request -> do
         -- See HTTP RFC 2616, section 7.2.1
@@ -416,15 +416,15 @@ instance ( AllCTUnrender list a, HasServer sublayout context
           Just (Right v) -> return v
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
--- pass the rest of the request path to @sublayout@.
-instance (KnownSymbol path, HasServer sublayout context) => HasServer (path :> sublayout) context where
+-- pass the rest of the request path to @api@.
+instance (KnownSymbol path, HasServer api context) => HasServer (path :> api) context where
 
-  type ServerT (path :> sublayout) m = ServerT sublayout m
+  type ServerT (path :> api) m = ServerT api m
 
   route Proxy context subserver =
     pathRouter
       (cs (symbolVal proxyPath))
-      (route (Proxy :: Proxy sublayout) context subserver)
+      (route (Proxy :: Proxy api) context subserver)
     where proxyPath = Proxy :: Proxy path
 
 instance HasServer api context => HasServer (RemoteHost :> api) context where

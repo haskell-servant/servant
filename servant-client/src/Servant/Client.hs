@@ -57,15 +57,15 @@ import           Servant.Common.Req
 -- > getAllBooks :: Manager -> BaseUrl -> ClientM [Book]
 -- > postNewBook :: Book -> Manager -> BaseUrl -> ClientM Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
-client :: HasClient layout => Proxy layout -> Client layout
+client :: HasClient api => Proxy api -> Client api
 client p = clientWithRoute p defReq
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
 -- an internal class, you can just use 'client'.
-class HasClient layout where
-  type Client layout :: *
-  clientWithRoute :: Proxy layout -> Req -> Client layout
+class HasClient api where
+  type Client api :: *
+  clientWithRoute :: Proxy api -> Req -> Client api
 
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
@@ -106,14 +106,14 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
 -- > getBook :: Text -> Manager -> BaseUrl -> ClientM Book
 -- > getBook = client myApi
 -- > -- then you can just use "getBook" to query that endpoint
-instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
-      => HasClient (Capture capture a :> sublayout) where
+instance (KnownSymbol capture, ToHttpApiData a, HasClient api)
+      => HasClient (Capture capture a :> api) where
 
-  type Client (Capture capture a :> sublayout) =
-    a -> Client sublayout
+  type Client (Capture capture a :> api) =
+    a -> Client api
 
   clientWithRoute Proxy req val =
-    clientWithRoute (Proxy :: Proxy sublayout)
+    clientWithRoute (Proxy :: Proxy api)
                     (appendToPath p req)
 
     where p = unpack (toUrlPiece val)
@@ -186,14 +186,14 @@ instance OVERLAPPING_
 -- > viewReferer = client myApi
 -- > -- then you can just use "viewRefer" to query that endpoint
 -- > -- specifying Nothing or e.g Just "http://haskell.org/" as arguments
-instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
-      => HasClient (Header sym a :> sublayout) where
+instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
+      => HasClient (Header sym a :> api) where
 
-  type Client (Header sym a :> sublayout) =
-    Maybe a -> Client sublayout
+  type Client (Header sym a :> api) =
+    Maybe a -> Client api
 
   clientWithRoute Proxy req mval =
-    clientWithRoute (Proxy :: Proxy sublayout)
+    clientWithRoute (Proxy :: Proxy api)
                     (maybe req
                            (\value -> Servant.Common.Req.addHeader hname value req)
                            mval
@@ -203,14 +203,14 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
 
 -- | Using a 'HttpVersion' combinator in your API doesn't affect the client
 -- functions.
-instance HasClient sublayout
-  => HasClient (HttpVersion :> sublayout) where
+instance HasClient api
+  => HasClient (HttpVersion :> api) where
 
-  type Client (HttpVersion :> sublayout) =
-    Client sublayout
+  type Client (HttpVersion :> api) =
+    Client api
 
   clientWithRoute Proxy =
-    clientWithRoute (Proxy :: Proxy sublayout)
+    clientWithRoute (Proxy :: Proxy api)
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -237,15 +237,15 @@ instance HasClient sublayout
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
-instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
-      => HasClient (QueryParam sym a :> sublayout) where
+instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
+      => HasClient (QueryParam sym a :> api) where
 
-  type Client (QueryParam sym a :> sublayout) =
-    Maybe a -> Client sublayout
+  type Client (QueryParam sym a :> api) =
+    Maybe a -> Client api
 
   -- if mparam = Nothing, we don't add it to the query string
   clientWithRoute Proxy req mparam =
-    clientWithRoute (Proxy :: Proxy sublayout)
+    clientWithRoute (Proxy :: Proxy api)
                     (maybe req
                            (flip (appendToQueryString pname) req . Just)
                            mparamText
@@ -282,14 +282,14 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
 -- > -- 'getBooksBy []' for all books
 -- > -- 'getBooksBy ["Isaac Asimov", "Robert A. Heinlein"]'
 -- > --   to get all books by Asimov and Heinlein
-instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
-      => HasClient (QueryParams sym a :> sublayout) where
+instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
+      => HasClient (QueryParams sym a :> api) where
 
-  type Client (QueryParams sym a :> sublayout) =
-    [a] -> Client sublayout
+  type Client (QueryParams sym a :> api) =
+    [a] -> Client api
 
   clientWithRoute Proxy req paramlist =
-    clientWithRoute (Proxy :: Proxy sublayout)
+    clientWithRoute (Proxy :: Proxy api)
                     (foldl' (\ req' -> maybe req' (flip (appendToQueryString pname) req' . Just))
                             req
                             paramlist'
@@ -320,14 +320,14 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient sublayout)
 -- > -- then you can just use "getBooks" to query that endpoint.
 -- > -- 'getBooksBy False' for all books
 -- > -- 'getBooksBy True' to only get _already published_ books
-instance (KnownSymbol sym, HasClient sublayout)
-      => HasClient (QueryFlag sym :> sublayout) where
+instance (KnownSymbol sym, HasClient api)
+      => HasClient (QueryFlag sym :> api) where
 
-  type Client (QueryFlag sym :> sublayout) =
-    Bool -> Client sublayout
+  type Client (QueryFlag sym :> api) =
+    Bool -> Client api
 
   clientWithRoute Proxy req flag =
-    clientWithRoute (Proxy :: Proxy sublayout)
+    clientWithRoute (Proxy :: Proxy api)
                     (if flag
                        then appendToQueryString paramname Nothing req
                        else req
@@ -364,14 +364,14 @@ instance HasClient Raw where
 -- > addBook :: Book -> Manager -> BaseUrl -> ClientM Book
 -- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
-instance (MimeRender ct a, HasClient sublayout)
-      => HasClient (ReqBody (ct ': cts) a :> sublayout) where
+instance (MimeRender ct a, HasClient api)
+      => HasClient (ReqBody (ct ': cts) a :> api) where
 
-  type Client (ReqBody (ct ': cts) a :> sublayout) =
-    a -> Client sublayout
+  type Client (ReqBody (ct ': cts) a :> api) =
+    a -> Client api
 
   clientWithRoute Proxy req body =
-    clientWithRoute (Proxy :: Proxy sublayout)
+    clientWithRoute (Proxy :: Proxy api)
                     (let ctProxy = Proxy :: Proxy ct
                      in setRQBody (mimeRender ctProxy body)
                                   (contentType ctProxy)
@@ -379,11 +379,11 @@ instance (MimeRender ct a, HasClient sublayout)
                     )
 
 -- | Make the querying function append @path@ to the request path.
-instance (KnownSymbol path, HasClient sublayout) => HasClient (path :> sublayout) where
-  type Client (path :> sublayout) = Client sublayout
+instance (KnownSymbol path, HasClient api) => HasClient (path :> api) where
+  type Client (path :> api) = Client api
 
   clientWithRoute Proxy req =
-     clientWithRoute (Proxy :: Proxy sublayout)
+     clientWithRoute (Proxy :: Proxy api)
                      (appendToPath p req)
 
     where p = symbolVal (Proxy :: Proxy path)

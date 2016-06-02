@@ -128,7 +128,7 @@ import           Servant.Foreign (listFromAPI)
 -- | Generate the data necessary to generate javascript code
 --   for all the endpoints of an API, as ':<|>'-separated values
 --   of type 'AjaxReq'.
-javascript :: HasForeign NoTypes () layout => Proxy layout -> Foreign () layout
+javascript :: HasForeign NoTypes () api => Proxy api -> Foreign () api
 javascript p = foreignFor (Proxy :: Proxy NoTypes) (Proxy :: Proxy ()) p defReq
 
 -- | Directly generate all the javascript functions for your API

@@ -29,12 +29,12 @@ instance ToJSON a => MimeRender PrettyJSON a where
 -- @
 -- 'docs' ('pretty' ('Proxy' :: 'Proxy' MyAPI))
 -- @
-pretty :: Proxy layout -> Proxy (Pretty layout)
+pretty :: Proxy api -> Proxy (Pretty api)
 pretty Proxy = Proxy
 
 -- | Replace all JSON content types with PrettyJSON.
 -- Kind-polymorphic so it can operate on kinds @*@ and @[*]@.
-type family Pretty (layout :: k) :: k where
+type family Pretty (api :: k) :: k where
     Pretty (x :<|> y)     = Pretty x :<|> Pretty y
     Pretty (x :> y)       = Pretty x :> Pretty y
     Pretty (Get cs r)     = Get     (Pretty cs) r

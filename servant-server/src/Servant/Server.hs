@@ -130,11 +130,11 @@ import           Servant.Utils.Enter
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: (HasServer layout '[]) => Proxy layout -> Server layout -> Application
+serve :: (HasServer api '[]) => Proxy api -> Server api -> Application
 serve p = serveWithContext p EmptyContext
 
-serveWithContext :: (HasServer layout context)
-    => Proxy layout -> Context context -> Server layout -> Application
+serveWithContext :: (HasServer api context)
+    => Proxy api -> Context context -> Server api -> Application
 serveWithContext p context server =
   toApplication (runRouter (route p context (emptyDelayed (Route server))))
 
@@ -189,12 +189,12 @@ serveWithContext p context server =
 -- that one takes precedence. If both parts fail, the \"better\" error
 -- code will be returned.
 --
-layout :: (HasServer layout '[]) => Proxy layout -> Text
+layout :: (HasServer api '[]) => Proxy api -> Text
 layout p = layoutWithContext p EmptyContext
 
 -- | Variant of 'layout' that takes an additional 'Context'.
-layoutWithContext :: (HasServer layout context)
-    => Proxy layout -> Context context -> Text
+layoutWithContext :: (HasServer api context)
+    => Proxy api -> Context context -> Text
 layoutWithContext p context =
   routerLayout (route p context (emptyDelayed (FailFatal err501)))
 
