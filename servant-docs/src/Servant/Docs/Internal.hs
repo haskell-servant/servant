@@ -517,6 +517,10 @@ class ToCapture c where
 class ToAuthInfo a where
       toAuthInfo :: Proxy a -> DocAuthentication
 
+instance ToAuthInfo (BasicAuth "foo-realm" ()) where
+  toAuthInfo _ = DocAuthentication "herp" "derp"
+
+
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String

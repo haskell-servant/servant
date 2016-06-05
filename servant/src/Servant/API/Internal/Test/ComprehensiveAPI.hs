@@ -22,6 +22,7 @@ type ComprehensiveAPI =
   QueryParam "foo" Int :> GET :<|>
   QueryParams "foo" Int :> GET :<|>
   QueryFlag "foo" :> GET :<|>
+  "private" :> BasicAuth "foo-realm" () :> GET :<|>
 -- Raw :<|>
   RemoteHost :> GET :<|>
   ReqBody '[JSON] Int :> GET :<|>
