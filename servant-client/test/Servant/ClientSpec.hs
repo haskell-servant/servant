@@ -105,7 +105,7 @@ type Api =
        "get" :> Get '[JSON] Person
   :<|> "deleteEmpty" :> DeleteNoContent '[JSON] NoContent
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
-  :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] Person
+  :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
@@ -126,7 +126,7 @@ api = Proxy
 getGet :: C.Manager -> BaseUrl -> SCR.ClientM Person
 getDeleteEmpty :: C.Manager -> BaseUrl -> SCR.ClientM NoContent
 getCapture :: String -> C.Manager -> BaseUrl -> SCR.ClientM Person
-getCaptureAll :: [String] -> C.Manager -> BaseUrl -> SCR.ClientM Person
+getCaptureAll :: [String] -> C.Manager -> BaseUrl -> SCR.ClientM [Person]
 getBody :: Person -> C.Manager -> BaseUrl -> SCR.ClientM Person
 getQueryParam :: Maybe String -> C.Manager -> BaseUrl -> SCR.ClientM Person
 getQueryParams :: [String] -> C.Manager -> BaseUrl -> SCR.ClientM [Person]
@@ -158,7 +158,7 @@ server = serve api (
        return alice
   :<|> return NoContent
   :<|> (\ name -> return $ Person name 0)
-  :<|> (\ (name : _) -> return $ Person name 0)
+  :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
@@ -255,7 +255,8 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       (left show <$> runExceptT (getCapture "Paula" manager baseUrl)) `shouldReturn` Right (Person "Paula" 0)
 
     it "Servant.API.CaptureAll" $ \(_, baseUrl) -> do
-      (left show <$> runExceptT (getCaptureAll ["Paula", "Peta"] manager baseUrl)) `shouldReturn` Right (Person "Paula" 0)
+      let expected = [(Person "Paula" 0), (Person "Peta" 1)]
+      (left show <$> runExceptT (getCaptureAll ["Paula", "Peta"] manager baseUrl)) `shouldReturn` Right expected
 
     it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
       let p = Person "Clara" 42
