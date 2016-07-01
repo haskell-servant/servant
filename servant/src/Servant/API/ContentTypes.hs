@@ -154,7 +154,7 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 -- > instance Accept MyContentType where
 -- >    contentType _ = "example" // "prs.me.mine" /: ("charset", "utf-8")
 -- >
--- > instance Show a => MimeRender MyContentType where
+-- > instance Show a => MimeRender MyContentType a where
 -- >    mimeRender _ val = pack ("This is MINE! " ++ show val)
 -- >
 -- > type MyAPI = "path" :> Get '[MyContentType] Int
