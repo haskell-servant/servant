@@ -103,7 +103,7 @@ setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
-    setheaders . setAccept . setrqb . setQS <$> parseUrl url
+    setheaders . setAccept . setrqb . setQS <$> parseUrlThrow url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"
@@ -129,6 +129,9 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
                                               | not . null . reqAccept $ req] }
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)
+#if !MIN_VERSION_http_client(0,4,30)
+        parseUrlThrow = parseUrl
+#endif
 
 
 -- * performing requests
