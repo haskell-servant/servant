@@ -1,11 +1,11 @@
 resolver: nightly-2016-05-27
 packages:
-- servant/
 - servant-client/
 - servant-docs/
 - servant-foreign/
 - servant-js/
 - servant-mock/
 - servant-server/
+- servant/
 extra-deps: []
 flags: {}

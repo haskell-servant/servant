@@ -1,12 +1,12 @@
-flags: {}
+resolver: lts-6.0
 packages:
-- servant/
+- doc/tutorial
 - servant-client/
 - servant-docs/
 - servant-foreign/
 - servant-js/
 - servant-mock/
 - servant-server/
-- doc/tutorial
-extra-deps:
-resolver: lts-6.0
+- servant/
+extra-deps: null
+flags: {}
