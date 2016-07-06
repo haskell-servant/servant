@@ -42,7 +42,7 @@ library
     , bytestring
     , exceptions
     , http-api-data >= 0.1  && < 0.3
-    , http-client
+    , http-client <0.5
     , http-client-tls
     , http-media
     , http-types
