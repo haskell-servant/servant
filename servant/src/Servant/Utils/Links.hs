@@ -106,6 +106,7 @@ import           Prelude               ()
 import           Prelude.Compat
 
 import Web.HttpApiData
+import Servant.API.BasicAuth ( BasicAuth )
 import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
@@ -289,6 +290,10 @@ instance HasLink sub => HasLink (Header sym a :> sub) where
 
 instance HasLink sub => HasLink (RemoteHost :> sub) where
     type MkLink (RemoteHost :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (BasicAuth realm a :> sub) where
+    type MkLink (BasicAuth realm a :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
 -- Verb (terminal) instances
