@@ -180,3 +180,6 @@ instance Arbitrary (HList '[]) where
 instance (Arbitrary a, Arbitrary (HList hs))
       => Arbitrary (HList (Header h a ': hs)) where
   arbitrary = HCons <$> fmap Header arbitrary <*> arbitrary
+
+instance Arbitrary NoContent where
+  arbitrary = pure NoContent

@@ -54,12 +54,12 @@ import qualified Data.Text as T
 import           Data.Text (Text)
 import           Servant.Foreign
 
-type AjaxReq = Req ()
+type AjaxReq = Req NoContent
 
 -- A 'JavascriptGenerator' just takes the data found in the API type
 -- for each endpoint and generates Javascript code in a Text. Several
 -- generators are available in this package.
-type JavaScriptGenerator = [Req ()] -> Text
+type JavaScriptGenerator = [Req NoContent] -> Text
 
 -- | This structure is used by specific implementations to let you
 -- customize the output

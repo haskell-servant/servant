@@ -46,6 +46,7 @@ library
                      , charset         >= 0.3
                      , lens            >= 4
                      , servant-foreign == 0.7.*
+                     , servant         == 0.7.*
                      , text            >= 1.2  && < 1.3
 
   hs-source-dirs:      src

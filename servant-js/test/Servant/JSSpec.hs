@@ -21,6 +21,7 @@ import           Prelude.Compat
 import           Test.Hspec  hiding (shouldContain, shouldNotContain)
 
 import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.API.ContentTypes
 import           Servant.JS
 import           Servant.JS.Internal
 import qualified Servant.JS.Angular           as NG
@@ -105,7 +106,7 @@ a `shouldNotContain` b  = shouldNotSatisfy a (T.isInfixOf b)
 
 axiosSpec :: Spec
 axiosSpec = describe specLabel $ do
-    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy ()) (Proxy :: Proxy TestAPI)
+    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy NoContent) (Proxy :: Proxy TestAPI)
     it "should add withCredentials when needed" $ do
         let jsText = genJS withCredOpts $ reqList
         output jsText
@@ -129,7 +130,7 @@ axiosSpec = describe specLabel $ do
 
 angularSpec :: TestNames -> Spec
 angularSpec test = describe specLabel $ do
-    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy ()) (Proxy :: Proxy TestAPI)
+    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy NoContent) (Proxy :: Proxy TestAPI)
     it "should implement a service globally" $ do
         let jsText = genJS reqList
         output jsText

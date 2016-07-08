@@ -26,7 +26,7 @@ camelCaseSpec = describe "camelCase" $ do
 
 data LangX
 
-instance HasForeignType LangX String () where
+instance HasForeignType LangX String NoContent where
   typeFor _ _ _ = "voidX"
 
 instance HasForeignType LangX String Int where
@@ -43,9 +43,9 @@ instance OVERLAPPABLE_ HasForeignType LangX String a => HasForeignType LangX Str
 
 type TestApi
     = "test" :> Header "header" [String] :> QueryFlag "flag" :> Get '[JSON] Int
- :<|> "test" :> QueryParam "param" Int :> ReqBody '[JSON] [String] :> Post '[JSON] ()
- :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] ()
- :<|> "test" :> Capture "id" Int :> Delete '[JSON] ()
+ :<|> "test" :> QueryParam "param" Int :> ReqBody '[JSON] [String] :> Post '[JSON] NoContent
+ :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] NoContent
+ :<|> "test" :> Capture "id" Int :> Delete '[JSON] NoContent
 
 testApi :: [Req String]
 testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: Proxy TestApi)

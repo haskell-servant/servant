@@ -74,7 +74,7 @@ makeTrivialRouter :: (HasServer layout '[]) => Proxy layout -> Router ()
 makeTrivialRouter p =
   route p EmptyContext (emptyDelayed (FailFatal err501))
 
-type End = Get '[JSON] ()
+type End = Get '[JSON] NoContent
 
 -- The latter version looks more efficient,
 -- but the former should be compiled to the

@@ -147,7 +147,7 @@ serveWithContext p context server =
 -- For the following API
 --
 -- > type API =
--- >        "a" :> "d" :> Get '[JSON] ()
+-- >        "a" :> "d" :> Get '[JSON] NoContent
 -- >   :<|> "b" :> Capture "x" Int :> Get '[JSON] Bool
 -- >   :<|> "c" :> Put '[JSON] Bool
 -- >   :<|> "a" :> "e" :> Get '[JSON] Int
