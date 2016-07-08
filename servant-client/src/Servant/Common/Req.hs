@@ -148,7 +148,11 @@ performRequest reqMethod req manager reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
   let request = partialRequest { Client.method = reqMethod
+#if MIN_VERSION_http_client(0,5,0)
+                               , checkResponse = \ _req _res -> return ()
+#else
                                , checkStatus = \ _status _headers _cookies -> Nothing
+#endif
                                }
 
   eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
