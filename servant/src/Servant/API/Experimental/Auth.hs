@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE KindSignatures     #-}
-{-# LANGUAGE PolyKinds          #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
 module Servant.API.Experimental.Auth where
 
 import           Data.Typeable (Typeable)
@@ -11,4 +11,3 @@ import           Data.Typeable (Typeable)
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE.
 data AuthProtect (tag :: k) deriving (Typeable)
-

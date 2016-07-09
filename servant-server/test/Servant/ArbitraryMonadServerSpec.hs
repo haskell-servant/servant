@@ -1,11 +1,10 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
-module Servant.Server.Internal.EnterSpec where
+module Servant.ArbitraryMonadServerSpec where
 
 import qualified Control.Category           as C
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Except
 import           Data.Proxy
 import           Servant.API
 import           Servant.Server
@@ -15,7 +14,7 @@ import           Test.Hspec.Wai             (get, matchStatus, post,
                                              shouldRespondWith, with)
 
 spec :: Spec
-spec = describe "module Servant.Server.Enter" $ do
+spec = describe "Arbitrary monad server" $ do
     enterSpec
 
 type ReaderAPI = "int" :> Get '[JSON] Int
@@ -34,7 +33,7 @@ combinedAPI = Proxy
 readerServer' :: ServerT ReaderAPI (Reader String)
 readerServer' = return 1797 :<|> ask
 
-fReader :: Reader String :~> ExceptT ServantErr IO
+fReader :: Reader String :~> Handler
 fReader = generalizeNat C.. (runReaderTNat "hi")
 
 readerServer :: Server ReaderAPI

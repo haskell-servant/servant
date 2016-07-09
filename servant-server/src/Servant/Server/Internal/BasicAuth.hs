@@ -1,11 +1,12 @@
-{-# LANGUAGE DeriveFunctor      #-}
-{-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Servant.Server.Internal.BasicAuth where
 
 import           Control.Monad          (guard)
+import           Control.Monad.Trans    (liftIO)
 import qualified Data.ByteString        as BS
 import           Data.ByteString.Base64 (decodeLenient)
 import           Data.Monoid            ((<>))
@@ -15,9 +16,9 @@ import           GHC.Generics
 import           Network.HTTP.Types     (Header)
 import           Network.Wai            (Request, requestHeaders)
 
-import Servant.API.BasicAuth (BasicAuthData(BasicAuthData))
-import Servant.Server.Internal.RoutingApplication
-import Servant.Server.Internal.ServantErr
+import           Servant.API.BasicAuth (BasicAuthData(BasicAuthData))
+import           Servant.Server.Internal.RoutingApplication
+import           Servant.Server.Internal.ServantErr
 
 -- * Basic Auth
 
@@ -57,13 +58,13 @@ decodeBAHdr req = do
 
 -- | Run and check basic authentication, returning the appropriate http error per
 -- the spec.
-runBasicAuth :: Request -> BS.ByteString -> BasicAuthCheck usr -> IO (RouteResult usr)
+runBasicAuth :: Request -> BS.ByteString -> BasicAuthCheck usr -> DelayedIO usr
 runBasicAuth req realm (BasicAuthCheck ba) =
   case decodeBAHdr req of
      Nothing -> plzAuthenticate
-     Just e  -> ba e >>= \res -> case res of
+     Just e  -> liftIO (ba e) >>= \res -> case res of
        BadPassword    -> plzAuthenticate
        NoSuchUser     -> plzAuthenticate
-       Unauthorized   -> return $ Fail err403
-       Authorized usr -> return $ Route usr
-  where plzAuthenticate = return $ Fail err401 { errHeaders = [mkBAChallengerHdr realm] }
+       Unauthorized   -> delayedFailFatal err403
+       Authorized usr -> return usr
+  where plzAuthenticate = delayedFailFatal err401 { errHeaders = [mkBAChallengerHdr realm] }

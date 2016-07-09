@@ -1,3 +1,9 @@
+0.7.1
+-----
+
+* Support GHC 8.0
+* `ServantError` has an `Eq` instance now.
+
 0.6
 ---
 

@@ -53,6 +53,23 @@ errorOrderApi = Proxy
 errorOrderServer :: Server ErrorOrderApi
 errorOrderServer = \_ _ _ -> throwE err402
 
+-- On error priorities:
+--
+-- We originally had
+--
+-- 404, 405, 401, 415, 400, 406, 402
+--
+-- but we changed this to
+--
+-- 404, 405, 401, 406, 415, 400, 402
+--
+-- for servant-0.7.
+--
+-- This change is due to the body check being irreversible (to support
+-- streaming). Any check done after the body check has to be made fatal,
+-- breaking modularity. We've therefore moved the accept check before
+-- the body check, to allow it being recoverable and modular, and this
+-- goes along with promoting the error priority of 406.
 errorOrderSpec :: Spec
 errorOrderSpec =
   describe "HTTP error order" $
@@ -86,17 +103,17 @@ errorOrderSpec =
     request goodMethod goodUrl [badAuth, badContentType, badAccept] badBody
       `shouldRespondWith` 401
 
-  it "has 415 as its fourth highest priority error" $ do
+  it "has 406 as its fourth highest priority error" $ do
     request goodMethod goodUrl [goodAuth, badContentType, badAccept] badBody
+      `shouldRespondWith` 406
+
+  it "has 415 as its fifth highest priority error" $ do
+    request goodMethod goodUrl [goodAuth, badContentType, goodAccept] badBody
       `shouldRespondWith` 415
 
-  it "has 400 as its fifth highest priority error" $ do
-    request goodMethod goodUrl [goodAuth, goodContentType, badAccept] badBody
+  it "has 400 as its sixth highest priority error" $ do
+    request goodMethod goodUrl [goodAuth, goodContentType, goodAccept] badBody
       `shouldRespondWith` 400
-
-  it "has 406 as its sixth highest priority error" $ do
-    request goodMethod goodUrl [goodAuth, goodContentType, badAccept] goodBody
-      `shouldRespondWith` 406
 
   it "has handler-level errors as last priority" $ do
     request goodMethod goodUrl [goodAuth, goodContentType, goodAccept] goodBody

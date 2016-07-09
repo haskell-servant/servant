@@ -3,7 +3,9 @@
 {-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE PolyKinds          #-}
 {-# OPTIONS_HADDOCK not-home    #-}
-module Servant.API.Header where
+module Servant.API.Header (
+  Header(..),
+) where
 
 import           Data.ByteString (ByteString)
 import           Data.Typeable   (Typeable)
@@ -25,5 +27,3 @@ data Header (sym :: Symbol) a = Header a
 -- >>> import Servant.API
 -- >>> import Data.Aeson
 -- >>> import Data.Text
--- >>> data Book
--- >>> instance ToJSON Book where { toJSON = undefined }

@@ -3,14 +3,14 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PackageImports        #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.API.ContentTypesSpec where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative
-import           Data.Monoid
-#endif
+import           Prelude ()
+import           Prelude.Compat
+
 import           Control.Arrow
 import           Data.Aeson
 import           Data.ByteString.Char8     (ByteString, append, pack)
@@ -28,7 +28,7 @@ import           GHC.Generics
 import           Network.URL               (exportParams, importParams)
 import           Test.Hspec
 import           Test.QuickCheck
-import           Test.QuickCheck.Instances ()
+import "quickcheck-instances" Test.QuickCheck.Instances ()
 
 import           Servant.API.ContentTypes
 

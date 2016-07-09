@@ -36,7 +36,7 @@
 -- and call 'mock', which has the following type:
 --
 -- @
--- 'mock' :: 'HasMock' api => 'Proxy' api -> 'Server' api
+-- 'mock' :: 'HasMock' api context => 'Proxy' api -> 'Proxy' context -> 'Server' api
 -- @
 --
 -- What this says is, given some API type @api@ that it knows it can
@@ -52,7 +52,7 @@
 -- @
 -- main :: IO ()
 -- main = Network.Wai.Handler.Warp.run 8080 $
---   'serve' myAPI ('mock' myAPI)
+--   'serve' myAPI ('mock' myAPI Proxy)
 -- @
 module Servant.Mock ( HasMock(..) ) where
 
@@ -90,15 +90,15 @@ class HasServer api context => HasMock api context where
   --   -- let's say we will start with the frontend,
   --   -- and hence need a placeholder server
   --   server :: Server API
-  --   server = mock api
+  --   server = mock api Proxy
   --   @
   --
   --   What happens here is that @'Server' API@
   --   actually "means" 2 request handlers, of the following types:
   --
   --   @
-  --   getUser :: ExceptT ServantErr IO User
-  --   getBook :: ExceptT ServantErr IO Book
+  --   getUser :: Handler User
+  --   getBook :: Handler Book
   --   @
   --
   --   So under the hood, 'mock' uses the 'IO' bit to generate

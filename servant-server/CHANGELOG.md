@@ -1,3 +1,33 @@
+0.7.1
+------
+
+* Remove module `Servant.Server.Internal.Enter` (https://github.com/haskell-servant/servant/pull/478)
+* Support GHC 8.0
+
+0.7
+---
+
+* The `Router` type has been changed. Static router tables should now
+  be properly shared between requests, drastically increasing the
+  number of situations where servers will be able to route requests
+  efficiently. Functions `layout` and `layoutWithContext` have been
+  added to visualize the router layout for debugging purposes. Test
+  cases for expected router layouts have been added.
+* If an endpoint is discovered to have a non-matching "accept header",
+  this is now a recoverable rather than a fatal failure, allowing
+  different endpoints for the same route, but with different content
+  types to be specified modularly.
+* Export `throwError` from module `Servant`
+* Add `Handler` type synonym
+
+0.6.1
+-----
+
+* If servers use the `BasicAuth` combinator and receive requests with missing or
+  invalid credentials, the resulting error responses (401 and 403) could be
+  overwritten by subsequent alternative routes. Now `BasicAuth` uses `FailFatal`
+  and the error responses can't be overwritten anymore.
+
 0.6
 ---
 

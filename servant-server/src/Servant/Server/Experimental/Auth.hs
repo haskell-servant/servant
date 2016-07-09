@@ -12,8 +12,8 @@
 
 module Servant.Server.Experimental.Auth where
 
-import           Control.Monad.Trans.Except                 (ExceptT,
-                                                             runExceptT)
+import           Control.Monad.Trans                        (liftIO)
+import           Control.Monad.Trans.Except                 (runExceptT)
 import           Data.Proxy                                 (Proxy (Proxy))
 import           Data.Typeable                              (Typeable)
 import           GHC.Generics                               (Generic)
@@ -25,10 +25,11 @@ import           Servant.Server.Internal                    (HasContextEntry,
                                                              HasServer, ServerT,
                                                              getContextEntry,
                                                              route)
-import           Servant.Server.Internal.Router             (Router' (WithRequest))
-import           Servant.Server.Internal.RoutingApplication (RouteResult (FailFatal, Route),
-                                                             addAuthCheck)
-import           Servant.Server.Internal.ServantErr         (ServantErr)
+import           Servant.Server.Internal.RoutingApplication (addAuthCheck,
+                                                             delayedFailFatal,
+                                                             DelayedIO,
+                                                             withRequest)
+import           Servant.Server.Internal.ServantErr         (Handler)
 
 -- * General Auth
 
@@ -42,11 +43,11 @@ type family AuthServerData a :: *
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
 newtype AuthHandler r usr = AuthHandler
-  { unAuthHandler :: r -> ExceptT ServantErr IO usr }
+  { unAuthHandler :: r -> Handler usr }
   deriving (Generic, Typeable)
 
 -- | NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-mkAuthHandler :: (r -> ExceptT ServantErr IO usr) -> AuthHandler r usr
+mkAuthHandler :: (r -> Handler usr) -> AuthHandler r usr
 mkAuthHandler = AuthHandler
 
 -- | Known orphan instance.
@@ -58,9 +59,10 @@ instance ( HasServer api context
   type ServerT (AuthProtect tag :> api) m =
     AuthServerData (AuthProtect tag) -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy api) context (subserver `addAuthCheck` authCheck request)
+  route Proxy context subserver =
+    route (Proxy :: Proxy api) context (subserver `addAuthCheck` withRequest authCheck)
       where
+        authHandler :: Request -> Handler (AuthServerData (AuthProtect tag))
         authHandler = unAuthHandler (getContextEntry context)
-        authCheck = fmap (either FailFatal Route) . runExceptT . authHandler
-
+        authCheck :: Request -> DelayedIO (AuthServerData (AuthProtect tag))
+        authCheck = (>>= either delayedFailFatal return) . liftIO . runExceptT . authHandler

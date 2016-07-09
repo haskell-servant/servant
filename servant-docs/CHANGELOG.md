@@ -1,3 +1,13 @@
+0.7.1
+-----
+
+* Support GHC 8.0
+
+0.7
+---
+
+* Use `throwError` instead of `throwE` in documentation
+
 0.5
 ----
 

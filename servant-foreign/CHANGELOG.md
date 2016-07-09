@@ -1,3 +1,8 @@
+0.7.1
+-----
+
+* Support GHC 8.0
+
 0.5
 -----
 * Use the `text` package instead of `String`.
