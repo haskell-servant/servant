@@ -147,9 +147,8 @@ performRequest :: Method -> Req -> Manager -> BaseUrl
 performRequest reqMethod req manager reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
-  let request = partialRequest { Client.method = reqMethod
-                               , checkStatus = \ _status _headers _cookies -> Nothing
-                               }
+  let request = disableStatusCheck $
+        partialRequest { Client.method = reqMethod }
 
   eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
   case eResponse of
@@ -170,6 +169,12 @@ performRequest reqMethod req manager reqHost = do
         throwE $ FailureResponse status ct body
       return (status_code, body, ct, hdrs, response)
 
+disableStatusCheck :: Request -> Request
+#if MIN_VERSION_http_client(0,5,0)
+disableStatusCheck req = req { checkResponse = \ _req _res -> return () }
+#else
+disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }
+#endif
 
 performRequestCT :: MimeUnrender ct result =>
   Proxy ct -> Method -> Req -> Manager -> BaseUrl
