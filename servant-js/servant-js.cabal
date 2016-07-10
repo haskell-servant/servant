@@ -1,5 +1,5 @@
 name:                servant-js
-version:             0.7.1
+version:             0.8
 synopsis:            Automatically derive javascript functions to query servant webservices.
 description:
   Automatically derive javascript functions to query servant webservices.
@@ -45,8 +45,8 @@ library
                      , base-compat     >= 0.9
                      , charset         >= 0.3
                      , lens            >= 4
-                     , servant-foreign == 0.7.*
-                     , servant         == 0.7.*
+                     , servant-foreign == 0.8.*
+                     , servant         == 0.8.*
                      , text            >= 1.2  && < 1.3
 
   hs-source-dirs:      src
@@ -68,8 +68,8 @@ executable counter
                   , aeson            >= 0.7  && < 0.12
                   , filepath         >= 1
                   , lens             >= 4
-                  , servant          == 0.7.*
-                  , servant-server   == 0.7.*
+                  , servant          == 0.8.*
+                  , servant-server   == 0.8.*
                   , servant-js
                   , stm
                   , transformers
