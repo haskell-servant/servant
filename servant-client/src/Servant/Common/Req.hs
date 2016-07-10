@@ -103,7 +103,7 @@ setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
-    setheaders . setAccept . setrqb . setQS <$> parseUrlThrow url
+    setheaders . setAccept . setrqb . setQS <$> parseRequest url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"
@@ -129,8 +129,18 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
                                               | not . null . reqAccept $ req] }
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)
+
 #if !MIN_VERSION_http_client(0,4,30)
-        parseUrlThrow = parseUrl
+-- 'parseRequest' is introduced in http-client-0.4.30
+-- it differs from 'parseUrl', by not throwing exceptions on non-2xx http statuses
+--
+-- See for implementations:
+-- http://hackage.haskell.org/package/http-client-0.4.30/docs/src/Network-HTTP-Client-Request.html#parseRequest
+-- http://hackage.haskell.org/package/http-client-0.5.0/docs/src/Network-HTTP-Client-Request.html#parseRequest
+parseRequest :: MonadThrow m => String -> m Request
+parseRequest url = disableStatusCheck <$> parseUrl url
+  where
+    disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }
 #endif
 
 
@@ -147,8 +157,7 @@ performRequest :: Method -> Req -> Manager -> BaseUrl
 performRequest reqMethod req manager reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
-  let request = disableStatusCheck $
-        partialRequest { Client.method = reqMethod }
+  let request = partialRequest { Client.method = reqMethod }
 
   eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
   case eResponse of
@@ -168,13 +177,6 @@ performRequest reqMethod req manager reqHost = do
       unless (status_code >= 200 && status_code < 300) $
         throwE $ FailureResponse status ct body
       return (status_code, body, ct, hdrs, response)
-
-disableStatusCheck :: Request -> Request
-#if MIN_VERSION_http_client(0,5,0)
-disableStatusCheck req = req { checkResponse = \ _req _res -> return () }
-#else
-disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }
-#endif
 
 performRequestCT :: MimeUnrender ct result =>
   Proxy ct -> Method -> Req -> Manager -> BaseUrl
