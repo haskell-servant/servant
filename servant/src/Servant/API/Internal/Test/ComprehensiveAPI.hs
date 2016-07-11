@@ -30,7 +30,8 @@ type ComprehensiveAPI =
   Vault :> GET :<|>
   Verb 'POST 204 '[JSON] NoContent :<|>
   Verb 'POST 204 '[JSON] Int :<|>
-  WithNamedContext "foo" '[] GET
+  WithNamedContext "foo" '[] GET :<|>
+  CaptureAll "foo" Int :> GET
 
 comprehensiveAPI :: Proxy ComprehensiveAPI
 comprehensiveAPI = Proxy

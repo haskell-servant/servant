@@ -39,7 +39,7 @@ import           Network.Wai.Test           (defaultRequest, request,
                                              simpleHeaders, simpleStatus)
 import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              BasicAuth, BasicAuthData(BasicAuthData),
-                                             Capture, Delete, Get, Header (..),
+                                             Capture, CaptureAll, Delete, Get, Header (..),
                                              Headers, HttpVersion,
                                              IsSecure (..), JSON,
                                              NoContent (..), Patch, PlainText,
@@ -215,6 +215,58 @@ captureSpec = do
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
+
+-- }}}
+------------------------------------------------------------------------------
+-- * captureAllSpec {{{
+------------------------------------------------------------------------------
+
+type CaptureAllApi = CaptureAll "legs" Integer :> Get '[JSON] Animal
+captureAllApi :: Proxy CaptureAllApi
+captureAllApi = Proxy
+captureAllServer :: [Integer] -> Handler Animal
+captureAllServer legs = case sum legs of
+  4 -> return jerry
+  2 -> return tweety
+  0 -> return beholder
+  _ -> throwE err404
+
+captureAllSpec :: Spec
+captureAllSpec = do
+  describe "Servant.API.CaptureAll" $ do
+    with (return (serve captureAllApi captureAllServer)) $ do
+
+      it "can capture a single element of the 'pathInfo'" $ do
+        response <- get "/2"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just tweety
+
+      it "can capture multiple elements of the 'pathInfo'" $ do
+        response <- get "/2/2"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just jerry
+
+      it "can capture arbitrarily many elements of the 'pathInfo'" $ do
+        response <- get "/1/1/0/1/0/1"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just jerry
+
+      it "can capture when there are no elements in 'pathInfo'" $ do
+        response <- get "/"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just beholder
+
+      it "returns 400 if the decoding fails" $ do
+        get "/notAnInt" `shouldRespondWith` 400
+
+      it "returns 400 if the decoding fails, regardless of which element" $ do
+        get "/1/0/0/notAnInt/3/" `shouldRespondWith` 400
+
+      it "returns 400 if the decoding fails, even when it's multiple elements" $ do
+        get "/1/0/0/notAnInt/3/orange/" `shouldRespondWith` 400
+
+    with (return (serve
+        (Proxy :: Proxy (CaptureAll "segments" String :> Raw))
+        (\ _captured request_ respond ->
+            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+      it "consumes everything from pathInfo" $ do
+        get "/captured/foo/bar/baz" `shouldRespondWith` (fromString (show ([] :: [Int])))
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -644,4 +696,7 @@ jerry = Animal "Mouse" 4
 
 tweety :: Animal
 tweety = Animal "Bird" 2
+
+beholder :: Animal
+beholder = Animal "Beholder" 0
 -- }}}

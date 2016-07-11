@@ -34,6 +34,8 @@ instance ToParam (QueryFlag "foo") where
   toParam = error "unused"
 instance ToCapture (Capture "foo" Int) where
   toCapture = error "unused"
+instance ToCapture (CaptureAll "foo" Int) where
+  toCapture = error "unused"
 
 -- * specs
 

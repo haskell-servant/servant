@@ -8,7 +8,7 @@ module Servant.API (
 
   -- * Accessing information from the request
   module Servant.API.Capture,
-  -- | Capturing parts of the url path as parsed values: @'Capture'@
+  -- | Capturing parts of the url path as parsed values: @'Capture'@ and @'CaptureAll'@
   module Servant.API.Header,
   -- | Retrieving specific headers from the request
   module Servant.API.HttpVersion,
@@ -60,7 +60,7 @@ module Servant.API (
 
 import           Servant.API.Alternative     ((:<|>) (..))
 import           Servant.API.BasicAuth       (BasicAuth,BasicAuthData(..))
-import           Servant.API.Capture         (Capture)
+import           Servant.API.Capture         (Capture, CaptureAll)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               FromFormUrlEncoded (..), JSON,
                                               MimeRender (..), NoContent (NoContent),
