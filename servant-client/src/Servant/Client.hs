@@ -39,6 +39,7 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.API.ContentTypes
 import           Servant.Client.Experimental.Auth
 import           Servant.Common.BaseUrl
 import           Servant.Common.BasicAuth
@@ -152,11 +153,11 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
 
 instance OVERLAPPABLE_
   -- Note [Non-Empty Content Types]
-  (MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
-  ) => HasClient (Verb method status cts' a) where
-  type Client (Verb method status cts' a) = Manager -> BaseUrl -> ClientM a
+  ( AllMime cts, AllMimeUnrender cts a, ReflectMethod method
+  ) => HasClient (Verb method status cts a) where
+  type Client (Verb method status cts a) = Manager -> BaseUrl -> ClientM a
   clientWithRoute Proxy req manager baseurl =
-    snd <$> performRequestCT (Proxy :: Proxy ct) method req manager baseurl
+    snd <$> performRequestCT (Proxy :: Proxy cts) method req manager baseurl
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
@@ -169,13 +170,13 @@ instance OVERLAPPING_
 
 instance OVERLAPPING_
   -- Note [Non-Empty Content Types]
-  ( MimeUnrender ct a, BuildHeadersTo ls, ReflectMethod method, cts' ~ (ct ': cts)
-  ) => HasClient (Verb method status cts' (Headers ls a)) where
-  type Client (Verb method status cts' (Headers ls a))
+  ( AllMime cts, AllMimeUnrender cts a, BuildHeadersTo ls, ReflectMethod method
+  ) => HasClient (Verb method status cts (Headers ls a)) where
+  type Client (Verb method status cts (Headers ls a))
     = Manager -> BaseUrl -> ClientM (Headers ls a)
   clientWithRoute Proxy req manager baseurl = do
     let method = reflectMethod (Proxy :: Proxy method)
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) method req manager baseurl
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy cts) method req manager baseurl
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
