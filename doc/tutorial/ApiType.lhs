@@ -58,6 +58,14 @@ Let's break that down:
   is equivalent to `/list-all/users`. This means that sometimes `:>` is somehow
   equivalent to `/`, but sometimes it just lets you chain another combinator.
 
+Tip: If your endpoint responds to `/` (the root path), just omit any combinators
+that introduce path segments. E.g. the following api has only one endpoint on `/`:
+
+``` haskell
+type RootEndpoint =
+  Get '[JSON] User
+```
+
 We can also describe APIs with multiple endpoints by using the `:<|>`
 combinators. Here's an example:
 
