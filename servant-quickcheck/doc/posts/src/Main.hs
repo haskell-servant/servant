@@ -1,6 +1,6 @@
-#line 158 "Announcement.anansi"
+#line 296 "Announcement.anansi"
 
-#line 37 "Announcement.anansi"
+#line 86 "Announcement.anansi"
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}

@@ -102,9 +102,8 @@ import Control.Monad.IO.Class (liftIO)
 type API
   = "species" :> (Capture "species-name" Text :> ( Get '[JSON] Species
                                               :<|> Delete '[JSON] ())
-             :<|> ReqBody '[JSON] Species :> Post '[JSON] ())
-  -- The plural of 'species' is unfortunately also 'species'
- :<|> "speciess" :> Get '[JSON] [Species]
+             :<|> ReqBody '[JSON] Species :> Post '[JSON] ()
+             :<|> Get '[JSON] [Species])
 
 api :: Proxy API
 api = Proxy
@@ -165,6 +164,8 @@ If you want to run this example.)
 This is a plausible effort. You might want to spend a moment thinking about what
 could be improved.
 
+Here are some `servant-quickcheck`-based tests for this API:
+
 :d Spec.hs
 
 {-# LANGUAGE OverloadedStrings #-}
@@ -185,8 +186,6 @@ spec = describe "the species application" $ beforeAll check $ do
 
 
   it "should not return 500s" $ do
-
-  it "should not return 500s" $ do
     withServantServer api pserver $ \url ->
       serverSatisfies api url defaultArgs (not500 <%> mempty)
 
@@ -194,11 +193,29 @@ spec = describe "the species application" $ beforeAll check $ do
     withServantServer api pserver $ \url ->
       serverSatisfies api url defaultArgs (onlyJsonObjects <%> mempty)
 
-  where
-    check = do
-      mvar  <- newMVar []
-      withServantServer api pserver $ \url ->
-         serverSatisfies api url defaultArgs (onlyJsonObjects <%> mempty)
+  it "should return valid locations for 201" $ do
+    withServantServer api pserver $ \url ->
+      serverSatisfies api url defaultArgs (createContainsValidLocation <%> mempty)
+
+  it "honours Accept header" $ do
+    withServantServer api pserver $ \url ->
+      serverSatisfies api url defaultArgs (honoursAcceptHeader <%> mempty)
+
+  it "405s contain Allow header" $ do
+    withServantServer api pserver $ \url ->
+      serverSatisfies api url defaultArgs (notAllowedContainsValidAllow <%> mempty)
+
+  it "should contain WWW-Authenticate header when returning 401s" $ do
+    withServantServer api pserver $ \url ->
+      serverSatisfies api url defaultArgs (unauthorizedContainsWWWAuthenticate <%> mempty)
+
+  it "GETs should have Cache-Control header" $ do
+    withServantServer api pserver $ \url ->
+      serverSatisfies api url defaultArgs (getsHaveCacheControlHeader <%> mempty)
+
+  it "HEADs should have Cache-Control header" $ do
+    withServantServer api pserver $ \url ->
+      serverSatisfies api url defaultArgs (headsHaveCacheControlHeader <%> mempty)
 
 main :: IO ()
 main = do
@@ -208,10 +225,16 @@ instance Arbitrary Species where
   arbitrary = Species <$> arbitrary <*> arbitrary
 :
 
-But this fails in quite a few ways.
 
+I won't go through all of the failures; as this is a literate haskell file, you
+can go through them yourself if you're interested. But worth mentioning:
 
-<<TODO>>
+    - The possible pattern match failure in `lookupSpecies` is caught.
+    - Returning a top-level list is caught.
+    - Not having a link for the `PostCreated` is caught.
+
+This last test failure illustrates an important point.
+
 
 This was an example created with the knowledge of what it was supposed to
 exemplify. To try to get a more accurate assessment of the practical usefulness

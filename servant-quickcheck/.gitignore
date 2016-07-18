@@ -1,2 +1,5 @@
 doc/_build/
 scripts/
+samples/
+test-servers/
+/doc/
