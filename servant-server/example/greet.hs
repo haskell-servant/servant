@@ -34,7 +34,7 @@ type TestApi =
   :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
 
        -- DELETE /greet/:greetid
-  :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] ()
+  :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent
 
 testApi :: Proxy TestApi
 testApi = Proxy
@@ -54,7 +54,7 @@ server = helloH :<|> postGreetH :<|> deleteGreetH
 
         postGreetH greet = return greet
 
-        deleteGreetH _ = return ()
+        deleteGreetH _ = return NoContent
 
 -- Turn the server into a WAI app. 'serve' is provided by servant,
 -- more precisely by the Servant.Server module.

@@ -21,7 +21,7 @@
 -- >>>
 -- >>>
 -- >>> type Hello = "hello" :> Get '[JSON] Int
--- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] ()
+-- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] NoContent
 -- >>> type API   = Hello :<|> Bye
 -- >>> let api = Proxy :: Proxy API
 --
@@ -47,11 +47,11 @@
 -- If the API has an endpoint with parameters then we can generate links with
 -- or without those:
 --
--- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] ())
+-- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] NoContent)
 -- >>> print $ safeLink api with (Just "Hubert")
 -- bye?name=Hubert
 --
--- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] ())
+-- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] NoContent)
 -- >>> print $ safeLink api without
 -- bye
 --
@@ -69,7 +69,7 @@
 -- Attempting to construct a link to an endpoint that does not exist in api
 -- will result in a type error like this:
 --
--- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] ())
+-- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] NoContent)
 -- >>> safeLink api bad_link
 -- ...
 -- ...Could not deduce...

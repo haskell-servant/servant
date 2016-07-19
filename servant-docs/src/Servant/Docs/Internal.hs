@@ -833,7 +833,7 @@ instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth r
         action' = over authInfo (|> toAuthInfo authProxy) action
 
 -- ToSample instances for simple types
-instance ToSample ()
+instance ToSample NoContent
 instance ToSample Bool
 instance ToSample Ordering
 

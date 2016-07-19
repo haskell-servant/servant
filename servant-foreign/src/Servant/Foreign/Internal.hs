@@ -169,11 +169,11 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
 -- > getEndpoints api = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy Text) api
 --
 -- > -- If language __X__ is dynamically typed then you can use
--- > -- a predefined NoTypes parameter with the () output type:
+-- > -- a predefined NoTypes parameter with the NoContent output type:
 --
--- > getEndpoints :: (HasForeign NoTypes () api, GenerateList Text (Foreign () api))
--- >              => Proxy api -> [Req ()]
--- > getEndpoints api = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy ()) api
+-- > getEndpoints :: (HasForeign NoTypes NoContent api, GenerateList Text (Foreign NoContent api))
+-- >              => Proxy api -> [Req NoContent]
+-- > getEndpoints api = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy NoContent) api
 -- >
 --
 class HasForeignType lang ftype a where
@@ -181,8 +181,8 @@ class HasForeignType lang ftype a where
 
 data NoTypes
 
-instance HasForeignType NoTypes () ftype where
-  typeFor _ _ _ = ()
+instance HasForeignType NoTypes NoContent ftype where
+  typeFor _ _ _ = NoContent
 
 class HasForeign lang ftype (api :: *) where
   type Foreign ftype api :: *

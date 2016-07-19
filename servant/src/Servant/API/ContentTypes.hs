@@ -319,7 +319,7 @@ instance MimeRender OctetStream BS.ByteString where
 
 -- | A type for responses without content-body.
 data NoContent = NoContent
-  deriving (Show, Eq, Read)
+  deriving (Show, Eq, Read, Generic)
 
 
 --------------------------------------------------------------------------

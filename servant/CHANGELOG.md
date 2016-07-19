@@ -1,3 +1,8 @@
+0.8
+---
+
+* Minor fixes, documentation changes and cabal tweaks
+
 0.7.1
 -----
 

@@ -10,7 +10,7 @@ import           Data.Proxy
 
 import           Servant.API
 
-type GET = Get '[JSON] ()
+type GET = Get '[JSON] NoContent
 
 type ComprehensiveAPI =
   GET :<|>
@@ -25,10 +25,10 @@ type ComprehensiveAPI =
 -- Raw :<|>
   RemoteHost :> GET :<|>
   ReqBody '[JSON] Int :> GET :<|>
-  Get '[JSON] (Headers '[Header "foo" Int] ()) :<|>
+  Get '[JSON] (Headers '[Header "foo" Int] NoContent) :<|>
   "foo" :> GET :<|>
   Vault :> GET :<|>
-  Verb 'POST 204 '[JSON] () :<|>
+  Verb 'POST 204 '[JSON] NoContent :<|>
   Verb 'POST 204 '[JSON] Int :<|>
   WithNamedContext "foo" '[] GET
 

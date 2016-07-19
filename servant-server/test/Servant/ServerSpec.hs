@@ -340,19 +340,23 @@ reqBodySpec = describe "Servant.API.ReqBody" $ do
 -- * headerSpec {{{
 ------------------------------------------------------------------------------
 
-type HeaderApi a = Header "MyHeader" a :> Delete '[JSON] ()
+type HeaderApi a = Header "MyHeader" a :> Delete '[JSON] NoContent
 headerApi :: Proxy (HeaderApi a)
 headerApi = Proxy
 
 headerSpec :: Spec
 headerSpec = describe "Servant.API.Header" $ do
 
-    let expectsInt :: Maybe Int -> Handler ()
-        expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
+    let expectsInt :: Maybe Int -> Handler NoContent
+        expectsInt (Just x) = do
+          when (x /= 5) $ error "Expected 5"
+          return NoContent
         expectsInt Nothing  = error "Expected an int"
 
-    let expectsString :: Maybe String -> Handler ()
-        expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
+    let expectsString :: Maybe String -> Handler NoContent
+        expectsString (Just x) = do
+          when (x /= "more from you") $ error "Expected more from you"
+          return NoContent
         expectsString Nothing  = error "Expected a string"
 
     with (return (serve headerApi expectsInt)) $ do
@@ -410,7 +414,7 @@ type AlternativeApi =
   :<|> "foo" :> Get '[PlainText] T.Text
   :<|> "bar" :> Post '[JSON] Animal
   :<|> "bar" :> Put '[JSON] Animal
-  :<|> "bar" :> Delete '[JSON] ()
+  :<|> "bar" :> Delete '[JSON] NoContent
 
 alternativeApi :: Proxy AlternativeApi
 alternativeApi = Proxy
@@ -422,7 +426,7 @@ alternativeServer =
   :<|> return "a string"
   :<|> return jerry
   :<|> return jerry
-  :<|> return ()
+  :<|> return NoContent
 
 alternativeSpec :: Spec
 alternativeSpec = do
