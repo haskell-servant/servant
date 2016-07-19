@@ -5,7 +5,6 @@
 
 module Servant.Server.UsingContextSpec where
 
-import           Control.Monad.Trans.Except
 import           Network.Wai
 import           Test.Hspec (Spec, describe, it)
 import           Test.Hspec.Wai
@@ -25,7 +24,7 @@ spec = do
 type OneEntryAPI =
   ExtractFromContext :> Get '[JSON] String
 
-testServer :: String -> ExceptT ServantErr IO String
+testServer :: String -> Handler String
 testServer s = return s
 
 oneEntryApp :: Application

@@ -2,6 +2,11 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
+#if MIN_VERSION_base(4,9,0)
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
+#endif
+
 module Servant.Common.Req where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -63,7 +68,7 @@ setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
-    setheaders . setAccept . setrqb . setQS <$> parseUrl url
+    setheaders . setAccept . setrqb . setQS <$> parseUrlThrow url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"
@@ -89,6 +94,9 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
                                               | not . null . reqAccept $ req] }
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)
+#if !MIN_VERSION_http_client(0,4,30)
+        parseUrlThrow = parseUrl
+#endif
 
 
 -- * performing requests
@@ -104,9 +112,8 @@ performRequest :: Method -> Req -> Manager -> BaseUrl
 performRequest reqMethod req manager reqHost = do
   partialRequest <- liftIO $ reqToRequest req reqHost
 
-  let request = partialRequest { Client.method = reqMethod
-                               , checkStatus = \ _status _headers _cookies -> Nothing
-                               }
+  let request = disableStatusCheck $
+        partialRequest { Client.method = reqMethod }
 
   eResponse <- liftIO $ performHttpRequest manager request
   case eResponse of
@@ -127,6 +134,12 @@ performRequest reqMethod req manager reqHost = do
         throwE $ FailureResponse status ct body
       return (status_code, body, ct, hdrs, response)
 
+disableStatusCheck :: Request -> Request
+#if MIN_VERSION_http_client(0,5,0)
+disableStatusCheck req = req { checkResponse = \ _req _res -> return () }
+#else
+disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }
+#endif
 
 performRequestCT :: MimeUnrender ct result =>
   Proxy ct -> Method -> Req -> Manager -> BaseUrl

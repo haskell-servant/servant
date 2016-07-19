@@ -22,15 +22,13 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
-import           Control.Monad.Trans.Except (ExceptT)
+import           Control.Monad.Trans        (liftIO)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
-import qualified Data.Map                   as M
 import           Data.Maybe                 (fromMaybe, mapMaybe)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
-import           Data.Text                  (Text)
 import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
@@ -38,7 +36,7 @@ import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
 import           Network.Socket             (SockAddr)
 import           Network.Wai                (Application, Request, Response,
                                              httpVersion, isSecure,
-                                             lazyRequestBody, pathInfo,
+                                             lazyRequestBody,
                                              rawQueryString, remoteHost,
                                              requestHeaders, requestMethod,
                                              responseLBS, vault)
@@ -70,12 +68,16 @@ import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 
 
-class HasServer layout context where
-  type ServerT layout (m :: * -> *) :: *
+class HasServer api context where
+  type ServerT api (m :: * -> *) :: *
 
-  route :: Proxy layout -> Context context -> Delayed (Server layout) -> Router
+  route ::
+       Proxy api
+    -> Context context
+    -> Delayed env (Server api)
+    -> Router env
 
-type Server layout = ServerT layout (ExceptT ServantErr IO)
+type Server api = ServerT api Handler
 
 -- * Instances
 
@@ -95,7 +97,7 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
   type ServerT (a :<|> b) m = ServerT a m :<|> ServerT b m
 
   route Proxy context server = choice (route pa context ((\ (a :<|> _) -> a) <$> server))
-                                     (route pb context ((\ (_ :<|> b) -> b) <$> server))
+                                      (route pb context ((\ (_ :<|> b) -> b) <$> server))
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b
 
@@ -114,21 +116,21 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
 -- >
 -- > server :: Server MyApi
 -- > server = getBook
--- >   where getBook :: Text -> ExceptT ServantErr IO Book
+-- >   where getBook :: Text -> Handler Book
 -- >         getBook isbn = ...
-instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (Capture capture a :> sublayout) context where
+instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
+      => HasServer (Capture capture a :> api) context where
 
-  type ServerT (Capture capture a :> sublayout) m =
-     a -> ServerT sublayout m
+  type ServerT (Capture capture a :> api) m =
+     a -> ServerT api m
 
   route Proxy context d =
-    DynamicRouter $ \ first ->
-        route (Proxy :: Proxy sublayout)
+    CaptureRouter $
+        route (Proxy :: Proxy api)
               context
-              (addCapture d $ case parseUrlPieceMaybe first :: Maybe a of
-                 Nothing -> return $ Fail err400
-                 Just v  -> return $ Route v
+              (addCapture d $ \ txt -> case parseUrlPieceMaybe txt :: Maybe a of
+                 Nothing -> delayedFail err400
+                 Just v  -> return v
               )
 
 allowedMethodHead :: Method -> Request -> Bool
@@ -147,48 +149,51 @@ processMethodRouter handleA status method headers request = case handleA of
       bdy = if allowedMethodHead method request then "" else body
       hdrs = (hContentType, cs contentT) : (fromMaybe [] headers)
 
-methodCheck :: Method -> Request -> IO (RouteResult ())
+methodCheck :: Method -> Request -> DelayedIO ()
 methodCheck method request
-  | allowedMethod method request = return $ Route ()
-  | otherwise                    = return $ Fail err405
+  | allowedMethod method request = return ()
+  | otherwise                    = delayedFail err405
 
-acceptCheck :: (AllMime list) => Proxy list -> B.ByteString -> IO (RouteResult ())
+-- This has switched between using 'Fail' and 'FailFatal' a number of
+-- times. If the 'acceptCheck' is run after the body check (which would
+-- be morally right), then we have to set this to 'FailFatal', because
+-- the body check is not reversible, and therefore backtracking after the
+-- body check is no longer an option. However, we now run the accept
+-- check before the body check and can therefore afford to make it
+-- recoverable.
+acceptCheck :: (AllMime list) => Proxy list -> B.ByteString -> DelayedIO ()
 acceptCheck proxy accH
-  | canHandleAcceptH proxy (AcceptHeader accH) = return $ Route ()
-  | otherwise                                  = return $ FailFatal err406
+  | canHandleAcceptH proxy (AcceptHeader accH) = return ()
+  | otherwise                                  = delayedFail err406
 
 methodRouter :: (AllCTRender ctypes a)
              => Method -> Proxy ctypes -> Status
-             -> Delayed (ExceptT ServantErr IO a)
-             -> Router
-methodRouter method proxy status action = LeafRouter route'
+             -> Delayed env (Handler a)
+             -> Router env
+methodRouter method proxy status action = leafRouter route'
   where
-    route' request respond
-      | pathIsEmpty request =
+    route' env request respond =
           let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
           in runAction (action `addMethodCheck` methodCheck method request
                                `addAcceptCheck` acceptCheck proxy accH
-                       ) respond $ \ output -> do
+                       ) env request respond $ \ output -> do
                let handleA = handleAcceptH proxy (AcceptHeader accH) output
                processMethodRouter handleA status method Nothing request
-      | otherwise = respond $ Fail err404
 
 methodRouterHeaders :: (GetHeaders (Headers h v), AllCTRender ctypes v)
                     => Method -> Proxy ctypes -> Status
-                    -> Delayed (ExceptT ServantErr IO (Headers h v))
-                    -> Router
-methodRouterHeaders method proxy status action = LeafRouter route'
+                    -> Delayed env (Handler (Headers h v))
+                    -> Router env
+methodRouterHeaders method proxy status action = leafRouter route'
   where
-    route' request respond
-      | pathIsEmpty request =
+    route' env request respond =
           let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
           in runAction (action `addMethodCheck` methodCheck method request
                                `addAcceptCheck` acceptCheck proxy accH
-                       ) respond $ \ output -> do
+                       ) env request respond $ \ output -> do
                 let headers = getHeaders output
                     handleA = handleAcceptH proxy (AcceptHeader accH) (getResponse output)
                 processMethodRouter handleA status method (Just headers) request
-      | otherwise = respond $ Fail err404
 
 instance OVERLAPPABLE_
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
@@ -229,17 +234,17 @@ instance OVERLAPPING_
 -- >
 -- > server :: Server MyApi
 -- > server = viewReferer
--- >   where viewReferer :: Referer -> ExceptT ServantErr IO referer
+-- >   where viewReferer :: Referer -> Handler referer
 -- >         viewReferer referer = return referer
-instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (Header sym a :> sublayout) context where
+instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
+      => HasServer (Header sym a :> api) context where
 
-  type ServerT (Header sym a :> sublayout) m =
-    Maybe a -> ServerT sublayout m
+  type ServerT (Header sym a :> api) m =
+    Maybe a -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \ request ->
-    let mheader = parseHeaderMaybe =<< lookup str (requestHeaders request)
-    in  route (Proxy :: Proxy sublayout) context (passToServer subserver mheader)
+  route Proxy context subserver =
+    let mheader req = parseHeaderMaybe =<< lookup str (requestHeaders req)
+    in  route (Proxy :: Proxy api) context (passToServer subserver mheader)
     where str = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
@@ -260,24 +265,24 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: Maybe Text -> ExceptT ServantErr IO [Book]
+-- >   where getBooksBy :: Maybe Text -> Handler [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
-instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (QueryParam sym a :> sublayout) context where
+instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
+      => HasServer (QueryParam sym a :> api) context where
 
-  type ServerT (QueryParam sym a :> sublayout) m =
-    Maybe a -> ServerT sublayout m
+  type ServerT (QueryParam sym a :> api) m =
+    Maybe a -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \ request ->
-    let querytext = parseQueryText $ rawQueryString request
-        param =
-          case lookup paramname querytext of
+  route Proxy context subserver =
+    let querytext r = parseQueryText $ rawQueryString r
+        param r =
+          case lookup paramname (querytext r) of
             Nothing       -> Nothing -- param absent from the query string
             Just Nothing  -> Nothing -- param present with no value -> Nothing
             Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
                                         -- the right type
-    in route (Proxy :: Proxy sublayout) context (passToServer subserver param)
+    in route (Proxy :: Proxy api) context (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -297,22 +302,22 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: [Text] -> ExceptT ServantErr IO [Book]
+-- >   where getBooksBy :: [Text] -> Handler [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
-instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (QueryParams sym a :> sublayout) context where
+instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
+      => HasServer (QueryParams sym a :> api) context where
 
-  type ServerT (QueryParams sym a :> sublayout) m =
-    [a] -> ServerT sublayout m
+  type ServerT (QueryParams sym a :> api) m =
+    [a] -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \ request ->
-    let querytext = parseQueryText $ rawQueryString request
+  route Proxy context subserver =
+    let querytext r = parseQueryText $ rawQueryString r
         -- if sym is "foo", we look for query string parameters
         -- named "foo" or "foo[]" and call parseQueryParam on the
         -- corresponding values
-        parameters = filter looksLikeParam querytext
-        values = mapMaybe (convert . snd) parameters
-    in  route (Proxy :: Proxy sublayout) context (passToServer subserver values)
+        parameters r = filter looksLikeParam (querytext r)
+        values r = mapMaybe (convert . snd) (parameters r)
+    in  route (Proxy :: Proxy api) context (passToServer subserver values)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
           convert Nothing = Nothing
@@ -328,21 +333,21 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer sublayout context)
 -- >
 -- > server :: Server MyApi
 -- > server = getBooks
--- >   where getBooks :: Bool -> ExceptT ServantErr IO [Book]
+-- >   where getBooks :: Bool -> Handler [Book]
 -- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
-instance (KnownSymbol sym, HasServer sublayout context)
-      => HasServer (QueryFlag sym :> sublayout) context where
+instance (KnownSymbol sym, HasServer api context)
+      => HasServer (QueryFlag sym :> api) context where
 
-  type ServerT (QueryFlag sym :> sublayout) m =
-    Bool -> ServerT sublayout m
+  type ServerT (QueryFlag sym :> api) m =
+    Bool -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \ request ->
-    let querytext = parseQueryText $ rawQueryString request
-        param = case lookup paramname querytext of
+  route Proxy context subserver =
+    let querytext r = parseQueryText $ rawQueryString r
+        param r = case lookup paramname (querytext r) of
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value
           Nothing       -> False -- param not in the query string
-    in  route (Proxy :: Proxy sublayout) context (passToServer subserver param)
+    in  route (Proxy :: Proxy api) context (passToServer subserver param)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
@@ -359,8 +364,8 @@ instance HasServer Raw context where
 
   type ServerT Raw m = Application
 
-  route Proxy _ rawApplication = LeafRouter $ \ request respond -> do
-    r <- runDelayed rawApplication
+  route Proxy _ rawApplication = RawRouter $ \ env request respond -> do
+    r <- runDelayed rawApplication env request
     case r of
       Route app   -> app request (respond . Route)
       Fail a      -> respond $ Fail a
@@ -385,18 +390,18 @@ instance HasServer Raw context where
 -- >
 -- > server :: Server MyApi
 -- > server = postBook
--- >   where postBook :: Book -> ExceptT ServantErr IO Book
+-- >   where postBook :: Book -> Handler Book
 -- >         postBook book = ...insert into your db...
-instance ( AllCTUnrender list a, HasServer sublayout context
-         ) => HasServer (ReqBody list a :> sublayout) context where
+instance ( AllCTUnrender list a, HasServer api context
+         ) => HasServer (ReqBody list a :> api) context where
 
-  type ServerT (ReqBody list a :> sublayout) m =
-    a -> ServerT sublayout m
+  type ServerT (ReqBody list a :> api) m =
+    a -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy sublayout) context (addBodyCheck subserver (bodyCheck request))
+  route Proxy context subserver =
+    route (Proxy :: Proxy api) context (addBodyCheck subserver bodyCheck)
     where
-      bodyCheck request = do
+      bodyCheck = withRequest $ \ request -> do
         -- See HTTP RFC 2616, section 7.2.1
         -- http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
         -- See also "W3C Internet Media Type registration, consistency of use"
@@ -404,48 +409,49 @@ instance ( AllCTUnrender list a, HasServer sublayout context
         let contentTypeH = fromMaybe "application/octet-stream"
                          $ lookup hContentType $ requestHeaders request
         mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
-               <$> lazyRequestBody request
+               <$> liftIO (lazyRequestBody request)
         case mrqbody of
-          Nothing        -> return $ FailFatal err415
-          Just (Left e)  -> return $ FailFatal err400 { errBody = cs e }
-          Just (Right v) -> return $ Route v
+          Nothing        -> delayedFailFatal err415
+          Just (Left e)  -> delayedFailFatal err400 { errBody = cs e }
+          Just (Right v) -> return v
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
--- pass the rest of the request path to @sublayout@.
-instance (KnownSymbol path, HasServer sublayout context) => HasServer (path :> sublayout) context where
+-- pass the rest of the request path to @api@.
+instance (KnownSymbol path, HasServer api context) => HasServer (path :> api) context where
 
-  type ServerT (path :> sublayout) m = ServerT sublayout m
+  type ServerT (path :> api) m = ServerT api m
 
-  route Proxy context subserver = StaticRouter $
-    M.singleton (cs (symbolVal proxyPath))
-                (route (Proxy :: Proxy sublayout) context subserver)
+  route Proxy context subserver =
+    pathRouter
+      (cs (symbolVal proxyPath))
+      (route (Proxy :: Proxy api) context subserver)
     where proxyPath = Proxy :: Proxy path
 
 instance HasServer api context => HasServer (RemoteHost :> api) context where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) context (passToServer subserver $ remoteHost req)
+  route Proxy context subserver =
+    route (Proxy :: Proxy api) context (passToServer subserver remoteHost)
 
 instance HasServer api context => HasServer (IsSecure :> api) context where
   type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) context (passToServer subserver $ secure req)
+  route Proxy context subserver =
+    route (Proxy :: Proxy api) context (passToServer subserver secure)
 
     where secure req = if isSecure req then Secure else NotSecure
 
 instance HasServer api context => HasServer (Vault :> api) context where
   type ServerT (Vault :> api) m = Vault -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) context (passToServer subserver $ vault req)
+  route Proxy context subserver =
+    route (Proxy :: Proxy api) context (passToServer subserver vault)
 
 instance HasServer api context => HasServer (HttpVersion :> api) context where
   type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \req ->
-    route (Proxy :: Proxy api) context (passToServer subserver $ httpVersion req)
+  route Proxy context subserver =
+    route (Proxy :: Proxy api) context (passToServer subserver httpVersion)
 
 -- | Basic Authentication
 instance ( KnownSymbol realm
@@ -456,20 +462,14 @@ instance ( KnownSymbol realm
 
   type ServerT (BasicAuth realm usr :> api) m = usr -> ServerT api m
 
-  route Proxy context subserver = WithRequest $ \ request ->
-    route (Proxy :: Proxy api) context (subserver `addAuthCheck` authCheck request)
+  route Proxy context subserver =
+    route (Proxy :: Proxy api) context (subserver `addAuthCheck` authCheck)
     where
        realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
        basicAuthContext = getContextEntry context
-       authCheck req = runBasicAuth req realm basicAuthContext
+       authCheck = withRequest $ \ req -> runBasicAuth req realm basicAuthContext
 
 -- * helpers
-
-pathIsEmpty :: Request -> Bool
-pathIsEmpty = go . pathInfo
-  where go []   = True
-        go [""] = True
-        go _    = False
 
 ct_wildcard :: B.ByteString
 ct_wildcard = "*" <> "/" <> "*" -- Because CPP

@@ -2,6 +2,9 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeOperators              #-}
+
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
+
 import           Data.Aeson
 import           GHC.Generics
 import           Network.Wai.Handler.Warp

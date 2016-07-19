@@ -81,7 +81,7 @@ type TestApi =
   :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] (Headers '[Header "X-Example" Int] Greet)
 
        -- DELETE /greet/:greetid
-  :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] ()
+  :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent
 
 testApi :: Proxy TestApi
 testApi = Proxy
@@ -91,7 +91,7 @@ testApi = Proxy
 -- notes.
 extra :: ExtraInfo TestApi
 extra =
-    extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete '[JSON] ())) $
+    extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent)) $
              defAction & headers <>~ ["unicorns"]
                        & notes   <>~ [ DocNote "Title" ["This is some text"]
                                      , DocNote "Second secton" ["And some more"]

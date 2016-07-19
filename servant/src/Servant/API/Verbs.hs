@@ -14,7 +14,9 @@ import           GHC.Generics              (Generic)
 import           GHC.TypeLits              (Nat)
 import           Network.HTTP.Types.Method (Method, StdMethod (..),
                                             methodDelete, methodGet, methodHead,
-                                            methodPatch, methodPost, methodPut)
+                                            methodPatch, methodPost, methodPut,
+                                            methodTrace, methodConnect,
+                                            methodOptions)
 
 -- | @Verb@ is a general type for representing HTTP verbs (a.k.a. methods). For
 -- convenience, type synonyms for each verb with a 200 response code are
@@ -167,3 +169,12 @@ instance ReflectMethod 'PATCH where
 
 instance ReflectMethod 'HEAD where
     reflectMethod _ = methodHead
+
+instance ReflectMethod 'OPTIONS where
+    reflectMethod _ = methodOptions
+
+instance ReflectMethod 'TRACE where
+    reflectMethod _ = methodTrace
+
+instance ReflectMethod 'CONNECT where
+    reflectMethod _ = methodConnect

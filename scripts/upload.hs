@@ -11,4 +11,4 @@ main :: IO ()
 main = do
   sources <- words <$> readFile "sources.txt"
   forM_ sources $ \ source -> do
-    callCommand ("stack upload " ++ source)
+    callCommand ("stack upload --no-signature " ++ source)

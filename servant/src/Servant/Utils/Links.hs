@@ -21,7 +21,7 @@
 -- >>>
 -- >>>
 -- >>> type Hello = "hello" :> Get '[JSON] Int
--- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] ()
+-- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] NoContent
 -- >>> type API   = Hello :<|> Bye
 -- >>> let api = Proxy :: Proxy API
 --
@@ -47,11 +47,11 @@
 -- If the API has an endpoint with parameters then we can generate links with
 -- or without those:
 --
--- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] ())
+-- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] NoContent)
 -- >>> print $ safeLink api with (Just "Hubert")
 -- bye?name=Hubert
 --
--- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] ())
+-- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] NoContent)
 -- >>> print $ safeLink api without
 -- bye
 --
@@ -69,17 +69,11 @@
 -- Attempting to construct a link to an endpoint that does not exist in api
 -- will result in a type error like this:
 --
--- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] ())
+-- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] NoContent)
 -- >>> safeLink api bad_link
 -- ...
---     Could not deduce (Or
---                         (IsElem' (Verb 'DELETE 200 '[JSON] ()) (Verb 'GET 200 '[JSON] Int))
---                         (IsElem'
---                            ("hello" :> Delete '[JSON] ())
---                            ("bye" :> (QueryParam "name" String :> Delete '[JSON] ()))))
---       arising from a use of ‘safeLink’
---     In the expression: safeLink api bad_link
---     In an equation for ‘it’: it = safeLink api bad_link
+-- ...Could not deduce...
+-- ...
 --
 --  This error is essentially saying that the type family couldn't find
 --  bad_link under api after trying the open (but empty) type family
@@ -112,10 +106,12 @@ import           Prelude               ()
 import           Prelude.Compat
 
 import Web.HttpApiData
+import Servant.API.BasicAuth ( BasicAuth )
 import Servant.API.Capture ( Capture )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.Header ( Header )
+import Servant.API.RemoteHost ( RemoteHost )
 import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
@@ -290,6 +286,14 @@ instance (ToHttpApiData v, HasLink sub)
 
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (RemoteHost :> sub) where
+    type MkLink (RemoteHost :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (BasicAuth realm a :> sub) where
+    type MkLink (BasicAuth realm a :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
 -- Verb (terminal) instances

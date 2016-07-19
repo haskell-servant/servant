@@ -1,5 +1,16 @@
+0.8
+---
+
+* Minor fixes, documentation changes and cabal tweaks
+
+0.7.1
+-----
+
+* Add module `Servant.Utils.Enter` (https://github.com/haskell-servant/servant/pull/478)
+* Allow to set the same header multiple times in responses.
+
 0.5
-----
+---
 
 * Add `WithNamedConfig` combinator.
 * Add `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators

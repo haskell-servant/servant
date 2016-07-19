@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds #-}
-{-# OPTIONS_GHC -fdefer-type-errors #-}
+{-# OPTIONS_GHC -fdefer-type-errors -Wwarn #-}
 module Servant.Server.Internal.ContextSpec (spec) where
 
 import           Data.Proxy                     (Proxy (..))
-import           Test.Hspec                     (Spec, describe, it, shouldBe, pending, context)
+import           Test.Hspec                     (Spec, describe, it, shouldBe, context)
 import           Test.ShouldNotTypecheck        (shouldNotTypecheck)
 
 import           Servant.API
@@ -26,16 +26,17 @@ spec = do
       shouldNotTypecheck x
 
     context "Show instance" $ do
-      let cxt = 'a' :. True :. EmptyContext
       it "has a Show instance" $ do
+        let cxt = 'a' :. True :. EmptyContext
         show cxt `shouldBe` "'a' :. True :. EmptyContext"
 
       context "bracketing" $ do
         it "works" $ do
+          let cxt = 'a' :. True :. EmptyContext
           show (Just cxt) `shouldBe` "Just ('a' :. True :. EmptyContext)"
 
         it "works with operators" $ do
-          let cxt = (1 :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)
+          let cxt = ((1 :: Integer) :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)
           show cxt `shouldBe` "(1 :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)"
 
   describe "descendIntoNamedContext" $ do

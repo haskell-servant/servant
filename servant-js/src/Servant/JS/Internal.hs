@@ -23,7 +23,6 @@ module Servant.JS.Internal
   , HasForeignType(..)
   , GenerateList(..)
   , NoTypes
-  , HeaderArg
   , ArgType(..)
   , HeaderArg(..)
   , QueryArg(..)
@@ -47,7 +46,7 @@ module Servant.JS.Internal
   , Header
   ) where
 
-import           Control.Lens hiding (List)
+import           Control.Lens ((^.))
 import qualified Data.CharSet as Set
 import qualified Data.CharSet.Unicode.Category as Set
 import           Data.Monoid
@@ -55,12 +54,12 @@ import qualified Data.Text as T
 import           Data.Text (Text)
 import           Servant.Foreign
 
-type AjaxReq = Req ()
+type AjaxReq = Req NoContent
 
 -- A 'JavascriptGenerator' just takes the data found in the API type
 -- for each endpoint and generates Javascript code in a Text. Several
 -- generators are available in this package.
-type JavaScriptGenerator = [Req ()] -> Text
+type JavaScriptGenerator = [Req NoContent] -> Text
 
 -- | This structure is used by specific implementations to let you
 -- customize the output

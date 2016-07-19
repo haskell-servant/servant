@@ -154,7 +154,7 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 -- > instance Accept MyContentType where
 -- >    contentType _ = "example" // "prs.me.mine" /: ("charset", "utf-8")
 -- >
--- > instance Show a => MimeRender MyContentType where
+-- > instance Show a => MimeRender MyContentType a where
 -- >    mimeRender _ val = pack ("This is MINE! " ++ show val)
 -- >
 -- > type MyAPI = "path" :> Get '[MyContentType] Int
@@ -169,7 +169,7 @@ class (AllMime list) => AllCTRender (list :: [*]) a where
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
 instance OVERLAPPABLE_
-         (AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
+         (Accept ct, AllMime cts, AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy (ct ': cts)
             amrs = allMimeRender pctyps val
@@ -319,7 +319,7 @@ instance MimeRender OctetStream BS.ByteString where
 
 -- | A type for responses without content-body.
 data NoContent = NoContent
-  deriving (Show, Eq, Read)
+  deriving (Show, Eq, Read, Generic)
 
 
 --------------------------------------------------------------------------

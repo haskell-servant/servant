@@ -16,6 +16,7 @@ import           Data.Monoid
 import           Data.Proxy
 import           Data.Text (pack)
 import           GHC.TypeLits
+import           Servant.API.ContentTypes
 import           Servant.JS.Internal
 
 -- | This is a hypothetical combinator that fetches an Authorization header.
@@ -23,13 +24,13 @@ import           Servant.JS.Internal
 -- using -- Basic, Digest, whatever.
 data Authorization (sym :: Symbol) a
 
-instance (KnownSymbol sym, HasForeign lang () sublayout)
-    => HasForeign lang () (Authorization sym a :> sublayout) where
-    type Foreign () (Authorization sym a :> sublayout) = Foreign () sublayout
+instance (KnownSymbol sym, HasForeign lang NoContent api)
+    => HasForeign lang NoContent (Authorization sym a :> api) where
+    type Foreign NoContent (Authorization sym a :> api) = Foreign NoContent api
 
-    foreignFor lang ftype Proxy req = foreignFor lang ftype (Proxy :: Proxy sublayout) $
+    foreignFor lang ftype Proxy req = foreignFor lang ftype (Proxy :: Proxy api) $
         req & reqHeaders <>~
-          [ ReplaceHeaderArg (Arg "Authorization" ())
+          [ ReplaceHeaderArg (Arg "Authorization" NoContent)
           $ tokenType (pack . symbolVal $ (Proxy :: Proxy sym)) ]
       where
         tokenType t = t <> " {Authorization}"
@@ -37,23 +38,23 @@ instance (KnownSymbol sym, HasForeign lang () sublayout)
 -- | This is a combinator that fetches an X-MyLovelyHorse header.
 data MyLovelyHorse a
 
-instance (HasForeign lang () sublayout)
-    => HasForeign lang () (MyLovelyHorse a :> sublayout) where
-    type Foreign () (MyLovelyHorse a :> sublayout) = Foreign () sublayout
+instance (HasForeign lang NoContent api)
+    => HasForeign lang NoContent (MyLovelyHorse a :> api) where
+    type Foreign NoContent (MyLovelyHorse a :> api) = Foreign NoContent api
 
-    foreignFor lang ftype Proxy req = foreignFor lang ftype (Proxy :: Proxy sublayout) $
-        req & reqHeaders <>~ [ ReplaceHeaderArg (Arg "X-MyLovelyHorse" ()) tpl ]
+    foreignFor lang ftype Proxy req = foreignFor lang ftype (Proxy :: Proxy api) $
+        req & reqHeaders <>~ [ ReplaceHeaderArg (Arg "X-MyLovelyHorse" NoContent) tpl ]
       where
         tpl = "I am good friends with {X-MyLovelyHorse}"
 
 -- | This is a combinator that fetches an X-WhatsForDinner header.
 data WhatsForDinner a
 
-instance (HasForeign lang () sublayout)
-    => HasForeign lang () (WhatsForDinner a :> sublayout) where
-    type Foreign () (WhatsForDinner a :> sublayout) = Foreign () sublayout
+instance (HasForeign lang NoContent api)
+    => HasForeign lang NoContent (WhatsForDinner a :> api) where
+    type Foreign NoContent (WhatsForDinner a :> api) = Foreign NoContent api
 
-    foreignFor lang ftype Proxy req = foreignFor lang ftype (Proxy :: Proxy sublayout) $
-        req & reqHeaders <>~ [ ReplaceHeaderArg (Arg "X-WhatsForDinner" ()) tpl ]
+    foreignFor lang ftype Proxy req = foreignFor lang ftype (Proxy :: Proxy api) $
+        req & reqHeaders <>~ [ ReplaceHeaderArg (Arg "X-WhatsForDinner" NoContent) tpl ]
       where
         tpl = "I would like {X-WhatsForDinner} with a cherry on top."

@@ -17,6 +17,11 @@ module Servant.Server
   , -- * Handlers for all standard combinators
     HasServer(..)
   , Server
+  , Handler
+
+    -- * Debugging the server layout
+  , layout
+  , layoutWithContext
 
     -- * Enter
     -- $enterDoc
@@ -90,12 +95,16 @@ module Servant.Server
   , err504
   , err505
 
+  -- * Re-exports
+  , Application
+
   ) where
 
 import           Data.Proxy                    (Proxy)
+import           Data.Text                     (Text)
 import           Network.Wai                   (Application)
 import           Servant.Server.Internal
-import           Servant.Server.Internal.Enter
+import           Servant.Utils.Enter
 
 
 -- * Implementing Servers
@@ -121,16 +130,73 @@ import           Servant.Server.Internal.Enter
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: (HasServer layout '[]) => Proxy layout -> Server layout -> Application
+serve :: (HasServer api '[]) => Proxy api -> Server api -> Application
 serve p = serveWithContext p EmptyContext
 
-serveWithContext :: (HasServer layout context)
-    => Proxy layout -> Context context -> Server layout -> Application
-serveWithContext p context server = toApplication (runRouter (route p context d))
-  where
-    d = Delayed r r r r (\ _ _ _ -> Route server)
-    r = return (Route ())
+serveWithContext :: (HasServer api context)
+    => Proxy api -> Context context -> Server api -> Application
+serveWithContext p context server =
+  toApplication (runRouter (route p context (emptyDelayed (Route server))))
 
+-- | The function 'layout' produces a textual description of the internal
+-- router layout for debugging purposes. Note that the router layout is
+-- determined just by the API, not by the handlers.
+--
+-- Example:
+--
+-- For the following API
+--
+-- > type API =
+-- >        "a" :> "d" :> Get '[JSON] NoContent
+-- >   :<|> "b" :> Capture "x" Int :> Get '[JSON] Bool
+-- >   :<|> "c" :> Put '[JSON] Bool
+-- >   :<|> "a" :> "e" :> Get '[JSON] Int
+-- >   :<|> "b" :> Capture "x" Int :> Put '[JSON] Bool
+-- >   :<|> Raw
+--
+-- we get the following output:
+--
+-- > /
+-- > ├─ a/
+-- > │  ├─ d/
+-- > │  │  └─•
+-- > │  └─ e/
+-- > │     └─•
+-- > ├─ b/
+-- > │  └─ <capture>/
+-- > │     ├─•
+-- > │     ┆
+-- > │     └─•
+-- > ├─ c/
+-- > │  └─•
+-- > ┆
+-- > └─ <raw>
+--
+-- Explanation of symbols:
+--
+-- [@├@] Normal lines reflect static branching via a table.
+--
+-- [@a/@] Nodes reflect static path components.
+--
+-- [@─•@] Leaves reflect endpoints.
+--
+-- [@\<capture\>/@] This is a delayed capture of a path component.
+--
+-- [@\<raw\>@] This is a part of the API we do not know anything about.
+--
+-- [@┆@] Dashed lines suggest a dynamic choice between the part above
+-- and below. If there is a success for fatal failure in the first part,
+-- that one takes precedence. If both parts fail, the \"better\" error
+-- code will be returned.
+--
+layout :: (HasServer api '[]) => Proxy api -> Text
+layout p = layoutWithContext p EmptyContext
+
+-- | Variant of 'layout' that takes an additional 'Context'.
+layoutWithContext :: (HasServer api context)
+    => Proxy api -> Context context -> Text
+layoutWithContext p context =
+  routerLayout (route p context (emptyDelayed (FailFatal err501)))
 
 -- Documentation
 

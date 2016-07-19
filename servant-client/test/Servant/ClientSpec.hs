@@ -13,14 +13,18 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -freduction-depth=100 #-}
+#else
 {-# OPTIONS_GHC -fcontext-stack=100 #-}
+#endif
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Servant.ClientSpec where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative        ((<$>))
-#endif
+import           Prelude ()
+import           Prelude.Compat
+
 import           Control.Arrow              (left)
 import           Control.Monad.Trans.Except (runExceptT, throwE)
 import           Data.Aeson
@@ -36,7 +40,7 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types as HTTP
 import           Network.Wai                (responseLBS)
 import qualified Network.Wai as Wai
-import           System.Exit
+import           System.Exit.Compat
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.HUnit
 import           Test.Hspec
@@ -431,7 +435,6 @@ failSpec = around (withTestServer "failServer") $ do
         case res of
           InvalidContentTypeHeader "fooooo" _ -> return ()
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
-
 
 -- * utils
 

@@ -118,32 +118,33 @@ import           Prelude hiding (writeFile)
 import           Data.Proxy
 import           Data.Text
 import           Data.Text.IO        (writeFile)
+import           Servant.API.ContentTypes
 import           Servant.JS.Angular
 import           Servant.JS.Axios
 import           Servant.JS.Internal
 import           Servant.JS.JQuery
 import           Servant.JS.Vanilla
-import           Servant.Foreign (GenerateList(..), listFromAPI, NoTypes)
+import           Servant.Foreign (listFromAPI)
 
 -- | Generate the data necessary to generate javascript code
 --   for all the endpoints of an API, as ':<|>'-separated values
 --   of type 'AjaxReq'.
-javascript :: HasForeign NoTypes () layout => Proxy layout -> Foreign () layout
-javascript p = foreignFor (Proxy :: Proxy NoTypes) (Proxy :: Proxy ()) p defReq
+javascript :: HasForeign NoTypes NoContent api => Proxy api -> Foreign NoContent api
+javascript p = foreignFor (Proxy :: Proxy NoTypes) (Proxy :: Proxy NoContent) p defReq
 
 -- | Directly generate all the javascript functions for your API
 --   from a 'Proxy' for your API type. You can then write it to
 --   a file or integrate it in a page, for example.
-jsForAPI :: (HasForeign NoTypes () api, GenerateList () (Foreign () api))
+jsForAPI :: (HasForeign NoTypes NoContent api, GenerateList NoContent (Foreign NoContent api))
          => Proxy api -- ^ proxy for your API type
          -> JavaScriptGenerator -- ^ js code generator to use (angular, vanilla js, jquery, others)
          -> Text                -- ^ a text that you can embed in your pages or write to a file
-jsForAPI p gen = gen (listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy ()) p)
+jsForAPI p gen = gen (listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy NoContent) p)
 
 -- | Directly generate all the javascript functions for your API
 --   from a 'Proxy' for your API type using the given generator
 --   and write the resulting code to a file at the given path.
-writeJSForAPI :: (HasForeign NoTypes () api, GenerateList () (Foreign () api))
+writeJSForAPI :: (HasForeign NoTypes NoContent api, GenerateList NoContent (Foreign NoContent api))
               => Proxy api -- ^ proxy for your API type
               -> JavaScriptGenerator -- ^ js code generator to use (angular, vanilla js, jquery, others)
               -> FilePath -- ^ path to the file you want to write the resulting javascript code into

@@ -12,16 +12,16 @@ import           Servant.API
 
 type TestApi =
   -- Capture and query params
-       "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete '[JSON] ()
+       "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete '[JSON] NoContent
 
   -- Flags
-  :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete '[JSON] ()
+  :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete '[JSON] NoContent
 
   -- All of the verbs
-  :<|> "get" :> Get '[JSON] ()
-  :<|> "put" :> Put '[JSON] ()
-  :<|> "post" :> ReqBody '[JSON] 'True :> Post '[JSON] ()
-  :<|> "delete" :> Header "ponies" String :> Delete '[JSON] ()
+  :<|> "get" :> Get '[JSON] NoContent
+  :<|> "put" :> Put '[JSON] NoContent
+  :<|> "post" :> ReqBody '[JSON] 'True :> Post '[JSON] NoContent
+  :<|> "delete" :> Header "ponies" String :> Delete '[JSON] NoContent
   :<|> "raw" :> Raw
 
 
@@ -38,26 +38,26 @@ shouldBeURI link expected =
 spec :: Spec
 spec = describe "Servant.Utils.Links" $ do
     it "generates correct links for capture query params" $ do
-        let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete '[JSON] ())
+        let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete '[JSON] NoContent)
         apiLink l1 "hi" `shouldBeURI` "hello/hi"
 
         let l2 = Proxy :: Proxy ("hello" :> Capture "name" String
                                          :> QueryParam "capital" Bool
-                                         :> Delete '[JSON] ())
+                                         :> Delete '[JSON] NoContent)
         apiLink l2 "bye" (Just True) `shouldBeURI` "hello/bye?capital=true"
 
 
     it "generates correct links for query flags" $ do
         let l1 = Proxy :: Proxy ("balls" :> QueryFlag "bouncy"
-                                         :> QueryFlag "fast" :> Delete '[JSON] ())
+                                         :> QueryFlag "fast" :> Delete '[JSON] NoContent)
         apiLink l1 True True `shouldBeURI` "balls?bouncy&fast"
         apiLink l1 False True `shouldBeURI` "balls?fast"
 
     it "generates correct links for all of the verbs" $ do
-        apiLink (Proxy :: Proxy ("get" :> Get '[JSON] ())) `shouldBeURI` "get"
-        apiLink (Proxy :: Proxy ("put" :> Put '[JSON] ())) `shouldBeURI` "put"
-        apiLink (Proxy :: Proxy ("post" :> Post '[JSON] ())) `shouldBeURI` "post"
-        apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] ())) `shouldBeURI` "delete"
+        apiLink (Proxy :: Proxy ("get" :> Get '[JSON] NoContent)) `shouldBeURI` "get"
+        apiLink (Proxy :: Proxy ("put" :> Put '[JSON] NoContent)) `shouldBeURI` "put"
+        apiLink (Proxy :: Proxy ("post" :> Post '[JSON] NoContent)) `shouldBeURI` "post"
+        apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] NoContent)) `shouldBeURI` "delete"
         apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeURI` "raw"
 
 
@@ -67,35 +67,35 @@ spec = describe "Servant.Utils.Links" $ do
 --
 -- >>> apiLink (Proxy :: Proxy WrongPath)
 -- ...
---     Could not deduce ...
+-- ...Could not deduce...
 -- ...
 --
 -- >>> apiLink (Proxy :: Proxy WrongReturnType)
 -- ...
---     Could not deduce ...
+-- ...Could not deduce...
 -- ...
 --
 -- >>> apiLink (Proxy :: Proxy WrongContentType)
 -- ...
---     Could not deduce ...
+-- ...Could not deduce...
 -- ...
 --
 -- >>> apiLink (Proxy :: Proxy WrongMethod)
 -- ...
---     Could not deduce ...
+-- ...Could not deduce...
 -- ...
 --
 -- >>> apiLink (Proxy :: Proxy NotALink)
 -- ...
---     Could not deduce ...
+-- ...Could not deduce...
 -- ...
 --
 -- sanity check
 -- >>> apiLink (Proxy :: Proxy AllGood)
 -- get
-type WrongPath = "getTypo" :> Get '[JSON] ()
+type WrongPath = "getTypo" :> Get '[JSON] NoContent
 type WrongReturnType = "get" :> Get '[JSON] Bool
-type WrongContentType = "get" :> Get '[OctetStream] ()
-type WrongMethod = "get" :> Post '[JSON] ()
+type WrongContentType = "get" :> Get '[OctetStream] NoContent
+type WrongMethod = "get" :> Post '[JSON] NoContent
 type NotALink = "hello" :> ReqBody '[JSON] 'True :> Get '[JSON] Bool
-type AllGood = "get" :> Get '[JSON] ()
+type AllGood = "get" :> Get '[JSON] NoContent

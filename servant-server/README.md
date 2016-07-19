@@ -6,5 +6,4 @@ This library lets you *implement* an HTTP server with handlers for each endpoint
 
 ## Getting started
 
-We've written a [tutorial](http://haskell-servant.github.io/tutorial/) guide that introduces the core types and features of servant. After this article, you should be able to write your first servant webservices, learning the rest from the haddocks' examples.
-
+We've written a [tutorial](http://haskell-servant.readthedocs.org/en/stable/tutorial/index.html) guide that introduces the core types and features of servant. After this article, you should be able to write your first servant webservices, learning the rest from the haddocks' examples.

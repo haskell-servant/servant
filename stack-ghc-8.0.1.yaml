@@ -1,4 +1,4 @@
-flags: {}
+resolver: nightly-2016-05-27
 packages:
 - servant/
 - servant-client/
@@ -7,6 +7,5 @@ packages:
 - servant-js/
 - servant-mock/
 - servant-server/
-- doc/tutorial
-extra-deps:
-resolver: lts-6.0
+extra-deps: []
+flags: {}

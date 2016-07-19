@@ -13,14 +13,13 @@
 
 module Servant.ServerSpec where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative        ((<$>))
-#endif
 import           Control.Monad              (forM_, when, unless)
-import           Control.Monad.Trans.Except (ExceptT, throwE)
+import           Control.Monad.Trans.Except (throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
+import qualified Data.ByteString.Base64     as Base64
 import           Data.ByteString.Conversion ()
 import           Data.Char                  (toUpper)
+import           Data.Monoid
 import           Data.Proxy                 (Proxy (Proxy))
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs)
@@ -30,11 +29,11 @@ import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
                                              methodDelete, methodGet,
                                              methodHead, methodPatch,
                                              methodPost, methodPut, ok200,
+                                             imATeaPot418,
                                              parseQuery)
 import           Network.Wai                (Application, Request, requestHeaders, pathInfo,
                                              queryString, rawQueryString,
-                                             responseBuilder, responseLBS)
-import           Network.Wai.Internal       (Response (ResponseBuilder))
+                                             responseLBS)
 import           Network.Wai.Test           (defaultRequest, request,
                                              runSession, simpleBody,
                                              simpleHeaders, simpleStatus)
@@ -49,8 +48,9 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
-import           Servant.Server             (ServantErr (..), Server, err401, err404,
-                                             serve, serveWithContext, Context((:.), EmptyContext))
+import           Servant.Server             (Server, Handler, err401, err403,
+                                             err404, serve, serveWithContext,
+                                             Context((:.), EmptyContext))
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
 import qualified Test.Hspec.Wai             as THW
@@ -63,11 +63,6 @@ import           Servant.Server.Internal.BasicAuth (BasicAuthCheck(BasicAuthChec
 import           Servant.Server.Experimental.Auth
                                             (AuthHandler, AuthServerData,
                                              mkAuthHandler)
-import           Servant.Server.Internal.RoutingApplication
-                                            (toApplication, RouteResult(..))
-import           Servant.Server.Internal.Router
-                                            (tweakResponse, runRouter,
-                                             Router, Router'(LeafRouter))
 import           Servant.Server.Internal.Context
                                             (NamedContext(..))
 
@@ -91,7 +86,6 @@ spec = do
   rawSpec
   alternativeSpec
   responseHeadersSpec
-  routerSpec
   miscCombinatorSpec
   basicAuthSpec
   genAuthSpec
@@ -105,6 +99,9 @@ type VerbApi method status
  :<|> "noContent" :> Verb method status '[JSON] NoContent
  :<|> "header"    :> Verb method status '[JSON] (Headers '[Header "H" Int] Person)
  :<|> "headerNC"  :> Verb method status '[JSON] (Headers '[Header "H" Int] NoContent)
+ :<|> "accept"    :> (    Verb method status '[JSON] Person
+                     :<|> Verb method status '[PlainText] String
+                     )
 
 verbSpec :: Spec
 verbSpec = describe "Servant.API.Verb" $ do
@@ -113,6 +110,7 @@ verbSpec = describe "Servant.API.Verb" $ do
           :<|> return NoContent
           :<|> return (addHeader 5 alice)
           :<|> return (addHeader 10 NoContent)
+          :<|> (return alice :<|> return "B")
       get200     = Proxy :: Proxy (VerbApi 'GET 200)
       post210    = Proxy :: Proxy (VerbApi 'POST 210)
       put203     = Proxy :: Proxy (VerbApi 'PUT 203)
@@ -167,6 +165,12 @@ verbSpec = describe "Servant.API.Verb" $ do
                [(hAccept, "application/json")] ""
             liftIO $ statusCode (simpleStatus response) `shouldBe` status
 
+          unless (status `elem` [214, 215] || method == methodHead) $
+            it "allows modular specification of supported content types" $ do
+              response <- THW.request method "/accept" [(hAccept, "text/plain")] ""
+              liftIO $ statusCode (simpleStatus response) `shouldBe` status
+              liftIO $ simpleBody response `shouldBe` "B"
+
           it "sets the Content-Type header" $ do
             response <- THW.request method "" [] ""
             liftIO $ simpleHeaders response `shouldContain`
@@ -187,7 +191,7 @@ verbSpec = describe "Servant.API.Verb" $ do
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
 captureApi :: Proxy CaptureApi
 captureApi = Proxy
-captureServer :: Integer -> ExceptT ServantErr IO Animal
+captureServer :: Integer -> Handler Animal
 captureServer legs = case legs of
   4 -> return jerry
   2 -> return tweety
@@ -336,19 +340,23 @@ reqBodySpec = describe "Servant.API.ReqBody" $ do
 -- * headerSpec {{{
 ------------------------------------------------------------------------------
 
-type HeaderApi a = Header "MyHeader" a :> Delete '[JSON] ()
+type HeaderApi a = Header "MyHeader" a :> Delete '[JSON] NoContent
 headerApi :: Proxy (HeaderApi a)
 headerApi = Proxy
 
 headerSpec :: Spec
 headerSpec = describe "Servant.API.Header" $ do
 
-    let expectsInt :: Maybe Int -> ExceptT ServantErr IO ()
-        expectsInt (Just x) = when (x /= 5) $ error "Expected 5"
+    let expectsInt :: Maybe Int -> Handler NoContent
+        expectsInt (Just x) = do
+          when (x /= 5) $ error "Expected 5"
+          return NoContent
         expectsInt Nothing  = error "Expected an int"
 
-    let expectsString :: Maybe String -> ExceptT ServantErr IO ()
-        expectsString (Just x) = when (x /= "more from you") $ error "Expected more from you"
+    let expectsString :: Maybe String -> Handler NoContent
+        expectsString (Just x) = do
+          when (x /= "more from you") $ error "Expected more from you"
+          return NoContent
         expectsString Nothing  = error "Expected a string"
 
     with (return (serve headerApi expectsInt)) $ do
@@ -406,7 +414,7 @@ type AlternativeApi =
   :<|> "foo" :> Get '[PlainText] T.Text
   :<|> "bar" :> Post '[JSON] Animal
   :<|> "bar" :> Put '[JSON] Animal
-  :<|> "bar" :> Delete '[JSON] ()
+  :<|> "bar" :> Delete '[JSON] NoContent
 
 alternativeApi :: Proxy AlternativeApi
 alternativeApi = Proxy
@@ -418,7 +426,7 @@ alternativeServer =
   :<|> return "a string"
   :<|> return jerry
   :<|> return jerry
-  :<|> return ()
+  :<|> return NoContent
 
 alternativeSpec :: Spec
 alternativeSpec = do
@@ -481,28 +489,6 @@ responseHeadersSpec = describe "ResponseHeaders" $ do
 
 -- }}}
 ------------------------------------------------------------------------------
--- * routerSpec {{{
-------------------------------------------------------------------------------
-routerSpec :: Spec
-routerSpec = do
-  describe "Servant.Server.Internal.Router" $ do
-    let app' :: Application
-        app' = toApplication $ runRouter router'
-
-        router', router :: Router
-        router' = tweakResponse (twk <$>) router
-        router = LeafRouter $ \_ cont -> cont (Route $ responseBuilder (Status 201 "") [] "")
-
-        twk :: Response -> Response
-        twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b
-        twk b = b
-
-    describe "tweakResponse" . with (return app') $ do
-      it "calls f on route result" $ do
-        get "" `shouldRespondWith` 202
-
--- }}}
-------------------------------------------------------------------------------
 -- * miscCombinatorSpec {{{
 ------------------------------------------------------------------------------
 type MiscCombinatorsAPI
@@ -542,20 +528,24 @@ miscCombinatorSpec = with (return $ serve miscApi miscServ) $
 -- * Basic Authentication {{{
 ------------------------------------------------------------------------------
 
-type BasicAuthAPI = BasicAuth "foo" () :> "basic" :> Get '[JSON] Animal
+type BasicAuthAPI =
+       BasicAuth "foo" () :> "basic" :> Get '[JSON] Animal
+  :<|> Raw
 
 basicAuthApi :: Proxy BasicAuthAPI
 basicAuthApi = Proxy
+
 basicAuthServer :: Server BasicAuthAPI
-basicAuthServer = const (return jerry)
+basicAuthServer =
+  const (return jerry) :<|>
+  (\ _ respond -> respond $ responseLBS imATeaPot418 [] "")
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
-  let basicHandler = BasicAuthCheck $ (\(BasicAuthData usr pass) ->
+  let basicHandler = BasicAuthCheck $ \(BasicAuthData usr pass) ->
         if usr == "servant" && pass == "server"
-        then return (Authorized ())
-        else return Unauthorized
-        )
+          then return (Authorized ())
+          else return Unauthorized
   in basicHandler :. EmptyContext
 
 basicAuthSpec :: Spec
@@ -564,10 +554,21 @@ basicAuthSpec = do
     with (return (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ do
 
       context "Basic Authentication" $ do
-        it "returns with 401 with bad password" $ do
+        let basicAuthHeaders user password =
+              [("Authorization", "Basic " <> Base64.encode (user <> ":" <> password))]
+        it "returns 401 when no credentials given" $ do
           get "/basic" `shouldRespondWith` 401
+
+        it "returns 403 when invalid credentials given" $ do
+          THW.request methodGet "/basic" (basicAuthHeaders "servant" "wrong") ""
+            `shouldRespondWith` 403
+
         it "returns 200 with the right password" $ do
-          THW.request methodGet "/basic" [("Authorization","Basic c2VydmFudDpzZXJ2ZXI=")] "" `shouldRespondWith` 200
+          THW.request methodGet "/basic" (basicAuthHeaders "servant" "server") ""
+            `shouldRespondWith` 200
+
+        it "plays nice with subsequent Raw endpoints" $ do
+          get "/foo" `shouldRespondWith` 418
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -575,32 +576,42 @@ basicAuthSpec = do
 ------------------------------------------------------------------------------
 
 type GenAuthAPI = AuthProtect "auth" :> "auth" :> Get '[JSON] Animal
-authApi :: Proxy GenAuthAPI
-authApi = Proxy
-authServer :: Server GenAuthAPI
-authServer = const (return tweety)
+             :<|> Raw
+
+genAuthApi :: Proxy GenAuthAPI
+genAuthApi = Proxy
+
+genAuthServer :: Server GenAuthAPI
+genAuthServer = const (return tweety)
+           :<|> (\ _ respond -> respond $ responseLBS imATeaPot418 [] "")
 
 type instance AuthServerData (AuthProtect "auth") = ()
 
-genAuthContext :: Context '[ AuthHandler Request () ]
+genAuthContext :: Context '[AuthHandler Request ()]
 genAuthContext =
-  let authHandler = (\req ->
-        if elem ("Auth", "secret") (requestHeaders req)
-        then return ()
-        else throwE err401
-        )
+  let authHandler = \req -> case lookup "Auth" (requestHeaders req) of
+        Just "secret" -> return ()
+        Just _ -> throwE err403
+        Nothing -> throwE err401
   in mkAuthHandler authHandler :. EmptyContext
 
 genAuthSpec :: Spec
 genAuthSpec = do
   describe "Servant.API.Auth" $ do
-    with (return (serveWithContext authApi genAuthContext authServer)) $ do
+    with (return (serveWithContext genAuthApi genAuthContext genAuthServer)) $ do
 
       context "Custom Auth Protection" $ do
         it "returns 401 when missing headers" $ do
           get "/auth" `shouldRespondWith` 401
+
+        it "returns 403 on wrong passwords" $ do
+          THW.request methodGet "/auth" [("Auth","wrong")] "" `shouldRespondWith` 403
+
         it "returns 200 with the right header" $ do
           THW.request methodGet "/auth" [("Auth","secret")] "" `shouldRespondWith` 200
+
+        it "plays nice with subsequent Raw endpoints" $ do
+          get "/foo" `shouldRespondWith` 418
 
 -- }}}
 ------------------------------------------------------------------------------
