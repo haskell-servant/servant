@@ -32,7 +32,7 @@ snakeCase :: FunctionName -> Text
 snakeCase = view snakeCaseL
 
 camelCaseL :: Getter FunctionName Text
-camelCaseL = _FunctionName . to (convert . map (replace "-" ""))
+camelCaseL = _FunctionName . to convert
   where
     convert []     = ""
     convert (p:ps) = mconcat $ p : map capitalize ps

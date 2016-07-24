@@ -19,8 +19,6 @@ camelCaseSpec = describe "camelCase" $ do
   it "converts FunctionNames to camelCase" $ do
     camelCase (FunctionName ["post", "counter", "inc"])
       `shouldBe` "postCounterInc"
-    camelCase (FunctionName ["get", "hyphen-ated", "counter"])
-      `shouldBe` "getHyphenatedCounter"
 
 ----------------------------------------------------------------------
 

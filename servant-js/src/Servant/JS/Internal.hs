@@ -120,21 +120,27 @@ toValidFunctionName t =
     firstChar c = prefixOK c || Set.member c firstLetterOK
     remainder c = prefixOK c || Set.member c remainderOK
     prefixOK c = c `elem` ['$','_']
-    firstLetterOK = mconcat
+    firstLetterOK = (filterBmpChars $ mconcat
                       [ Set.lowercaseLetter
                       , Set.uppercaseLetter
                       , Set.titlecaseLetter
                       , Set.modifierLetter
                       , Set.otherLetter
                       , Set.letterNumber
-                      ]
+                      ])
     remainderOK   = firstLetterOK
-               <> mconcat
+               <> (filterBmpChars $ mconcat
                     [ Set.nonSpacingMark
                     , Set.spacingCombiningMark
                     , Set.decimalNumber
                     , Set.connectorPunctuation
-                    ]
+                    ])
+
+-- Javascript identifiers can only contain codepoints in the Basic Multilingual Plane
+-- that is, codepoints that can be encoded in UTF-16 without a surrogate pair (UCS-2)
+-- that is, codepoints that can fit in 16-bits, up to 0xffff (65535)
+filterBmpChars :: Set.CharSet -> Set.CharSet
+filterBmpChars = Set.filter (< '\65536')
 
 toJSHeader :: HeaderArg f -> Text
 toJSHeader (HeaderArg n)

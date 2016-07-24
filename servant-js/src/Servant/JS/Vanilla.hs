@@ -97,7 +97,7 @@ generateVanillaJSWith opts req = "\n" <>
         namespace = if moduleName opts == ""
                        then "var "
                        else (moduleName opts) <> "."
-        fname = namespace <> (functionNameBuilder opts $ req ^. reqFuncName)
+        fname = namespace <> (toValidFunctionName (functionNameBuilder opts $ req ^. reqFuncName))
 
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'

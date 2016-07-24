@@ -120,7 +120,7 @@ generateAxiosJSWith aopts opts req = "\n" <>
                where
                   hasNoModule = moduleName opts == ""
 
-        fname = namespace <> (functionNameBuilder opts $ req ^. reqFuncName)
+        fname = namespace <> (toValidFunctionName (functionNameBuilder opts $ req ^. reqFuncName))
 
         method = T.toLower . decodeUtf8 $ req ^. reqMethod
         url = if url' == "'" then "'/'" else url'
