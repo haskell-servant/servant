@@ -2,10 +2,10 @@ module Servant.QuickCheck.Internal.QuickCheck where
 
 import qualified Data.ByteString.Lazy     as LBS
 import           Data.Proxy               (Proxy)
+import           Data.String              (IsString (..))
 import           Data.Text                (Text)
-import           Network.HTTP.Client      (Manager, Request, checkStatus,
-                                           defaultManagerSettings, httpLbs,
-                                           newManager)
+import           GHC.Generics             (Generic)
+import qualified Network.HTTP.Client      as C
 import           Network.Wai.Handler.Warp (withApplication)
 import           Prelude.Compat
 import           Servant                  (Context (EmptyContext), HasServer,
@@ -17,9 +17,10 @@ import           Test.QuickCheck          (Args (..), Result (..),
                                            quickCheckWithResult)
 import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, run)
 
+import Servant.QuickCheck.Internal.Equality
 import Servant.QuickCheck.Internal.HasGenRequest
 import Servant.QuickCheck.Internal.Predicates
-import Servant.QuickCheck.Internal.Equality
+import Servant.QuickCheck.Internal.ErrorTypes
 
 
 -- | Start a servant application on an open port, run the provided function,
@@ -58,8 +59,8 @@ serversEqual :: HasGenRequest a =>
 serversEqual api burl1 burl2 args req = do
   let reqs = (\f -> (f burl1, f burl2)) <$> genRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
-    resp1 <- run $ httpLbs (noCheckStatus req1) defManager
-    resp2 <- run $ httpLbs (noCheckStatus req2) defManager
+    resp1 <- run $ C.httpLbs (noCheckStatus req1) defManager
+    resp2 <- run $ C.httpLbs (noCheckStatus req2) defManager
     assert $ getResponseEquality req resp1 resp2
   case r of
     Success {} -> return ()
@@ -116,9 +117,9 @@ serverDoesntSatisfy api burl args preds = do
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
-noCheckStatus :: Request -> Request
-noCheckStatus r = r { checkStatus = \_ _ _ -> Nothing}
+noCheckStatus :: C.Request -> C.Request
+noCheckStatus r = r { C.checkStatus = \_ _ _ -> Nothing}
 
-defManager :: Manager
-defManager = unsafePerformIO $ newManager defaultManagerSettings
+defManager :: C.Manager
+defManager = unsafePerformIO $ C.newManager C.defaultManagerSettings
 {-# NOINLINE defManager #-}

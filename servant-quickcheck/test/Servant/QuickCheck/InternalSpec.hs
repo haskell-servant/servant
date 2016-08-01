@@ -1,5 +1,4 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 module Servant.QuickCheck.InternalSpec (spec) where
 
 import           Control.Concurrent.MVar                    (newMVar, readMVar,
@@ -8,11 +7,16 @@ import           Control.Monad.IO.Class                     (liftIO)
 import           Prelude.Compat
 import           Servant
 import           Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPI)
-import           Test.Hspec                                 (Spec, describe, it,
-                                                             shouldBe)
+import           Test.Hspec                                 (Spec, context,
+                                                             describe, it,
+                                                             pending, shouldBe)
+import           Test.Hspec.Core.Spec                       (Arg, Example,
+                                                             Result (..),
+                                                             defaultParams,
+                                                             evaluateExample)
 
 import           Servant.QuickCheck
-import           Servant.QuickCheck.Internal                (genRequest, serverDoesntSatisfy)
+import           Servant.QuickCheck.Internal                (genRequest, Failure(..), serverDoesntSatisfy)
 
 spec :: Spec
 spec = do
@@ -27,6 +31,23 @@ serversEqualSpec = describe "serversEqual" $ do
     withServantServerAndContext api ctx server $ \burl1 ->
       withServantServerAndContext api ctx server $ \burl2 -> do
         serversEqual api burl1 burl2 args bodyEquality
+
+  context "when servers are not equal" $ do
+
+    it "provides the failing requests in the error message" $ do
+      Fail _ err <- withServantServer api2 server2 $ \burl1 ->
+        withServantServer api2 server3 $ \burl2 -> do
+          evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
+      let ServerEqualityFailure req _ _ = read err
+      req `shouldBe` "failplz"
+
+    it "provides the failing responses in the error message" $ do
+      Fail _ err <- withServantServer api2 server2 $ \burl1 ->
+        withServantServer api2 server3 $ \burl2 -> do
+          evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
+      let ServerEqualityFailure _ r1 r2 = read err
+      r1 `shouldBe` "1"
+      r2 `shouldBe` "2"
 
 
 serverSatisfiesSpec :: Spec
@@ -45,6 +66,9 @@ serverSatisfiesSpec = describe "serverSatisfies" $ do
                                      <%> headsHaveCacheControlHeader
                                      <%> notAllowedContainsAllowHeader
                                      <%> mempty)
+
+  context "when predicates are false" $
+    it "fails with informative error messages" $ pending
 
 isComprehensiveSpec :: Spec
 isComprehensiveSpec = describe "HasGenRequest" $ do
@@ -72,11 +96,28 @@ server = do
         :<|> (liftIO $ readMVar mvar >>= return . length)
         :<|> (const $ return ())
 
+
+type API2 = "failplz" :> Get '[JSON] Int
+
+api2 :: Proxy API2
+api2 = Proxy
+
+server2 :: IO (Server API2)
+server2 = return $ return 1
+
+server3 :: IO (Server API2)
+server3 = return $ return 2
+
 ctx :: Context '[BasicAuthCheck ()]
 ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
 ------------------------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------------------------
+
+evalExample :: (Example e, Arg e ~ ()) => e -> IO Result
+evalExample e = evaluateExample e defaultParams ($ ()) progCallback
+  where
+    progCallback _ = return ()
 
 args :: Args
 args = defaultArgs { maxSuccess = noOfTestCases }

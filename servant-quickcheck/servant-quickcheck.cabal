@@ -45,6 +45,7 @@ library
                      , case-insensitive == 1.2.*
                      , hspec == 2.2.*
                      , text == 1.*
+                     , pretty == 1.1.*
   if impl(ghc < 7.10)
     build-depends:     bifunctors == 5.*
 
@@ -77,6 +78,7 @@ test-suite spec
                      , base-compat
                      , servant-quickcheck
                      , hspec
+                     , hspec-core
                      , http-client
                      , warp
                      , servant-server
@@ -88,7 +90,10 @@ test-suite spec
   default-extensions:  TypeOperators
                      , FlexibleInstances
                      , FlexibleContexts
+                     , GADTs
                      , DataKinds
                      , NoImplicitPrelude
+                     , OverloadedStrings
+                     , ScopedTypeVariables
   if flag(long-tests)
       cpp-options: -DLONG_TESTS
