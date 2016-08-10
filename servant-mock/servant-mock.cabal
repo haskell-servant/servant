@@ -34,7 +34,7 @@ library
     servant == 0.8.*,
     servant-server == 0.8.*,
     transformers >= 0.3 && <0.6,
-    QuickCheck >= 2.7 && <2.9,
+    QuickCheck >= 2.7 && <2.10,
     wai >= 3.0 && <3.3
   hs-source-dirs:      src
   default-language:    Haskell2010
