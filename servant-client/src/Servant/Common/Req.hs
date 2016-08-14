@@ -138,7 +138,7 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
 -- http://hackage.haskell.org/package/http-client-0.4.30/docs/src/Network-HTTP-Client-Request.html#parseRequest
 -- http://hackage.haskell.org/package/http-client-0.5.0/docs/src/Network-HTTP-Client-Request.html#parseRequest
 parseRequest :: MonadThrow m => String -> m Request
-parseRequest url = disableStatusCheck <$> parseUrl url
+parseRequest url = liftM disableStatusCheck (parseUrl url)
   where
     disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }
 #endif
