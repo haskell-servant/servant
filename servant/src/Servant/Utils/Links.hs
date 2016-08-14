@@ -307,8 +307,8 @@ instance HasLink sub => HasLink (BasicAuth realm a :> sub) where
 
 -- Verb (terminal) instances
 instance HasLink (Verb m s ct a) where
-    type MkLink (Verb m s ct a) = URI
-    toLink _ = linkURI
+    type MkLink (Verb m s ct a) = Link
+    toLink _ = id 
 
 instance HasLink Raw where
     type MkLink Raw = URI
