@@ -99,6 +99,7 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules:
+      Servant.ArbitraryMonadServerSpec
       Servant.Server.ErrorSpec
       Servant.Server.Internal.ContextSpec
       Servant.Server.RouterSpec
