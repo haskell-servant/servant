@@ -224,17 +224,17 @@ available options:
 data CommonGeneratorOptions = CommonGeneratorOptions
   {
     -- | function generating function names
-    functionNameBuilder :: FunctionName -> String
+    functionNameBuilder :: FunctionName -> Text
     -- | name used when a user want to send the request body (to let you redefine it)
-  , requestBody :: String
+  , requestBody :: Text
     -- | name of the callback parameter when the request was successful
-  , successCallback :: String
+  , successCallback :: Text
     -- | name of the callback parameter when the request reported an error
-  , errorCallback :: String
+  , errorCallback :: Text
     -- | namespace on which we define the js function (empty mean local var)
-  , moduleName :: String
+  , moduleName :: Text
     -- | a prefix that should be prepended to the URL in the generated JS
-  , urlPrefix :: String
+  , urlPrefix :: Text
   }
 ```
 
@@ -363,9 +363,9 @@ data AxiosOptions = AxiosOptions
     -- should be made using credentials
     withCredentials :: !Bool
     -- | the name of the cookie to use as a value for xsrf token
-  , xsrfCookieName :: !(Maybe String)
+  , xsrfCookieName :: !(Maybe Text)
     -- | the name of the header to use as a value for xsrf token
-  , xsrfHeaderName :: !(Maybe String)
+  , xsrfHeaderName :: !(Maybe Text)
   }
 ```
 
@@ -466,11 +466,11 @@ Again, it is possible to customize some portions with the options.
 ``` haskell
 data AngularOptions = AngularOptions
   { -- | When generating code with wrapInService, name of the service to generate, default is 'app'
-    serviceName :: String
+    serviceName :: Text
   , -- | beginning of the service definition
-    prologue :: String -> String -> String
+    prologue :: Text -> Text -> Text
   , -- | end of the service definition
-    epilogue :: String
+    epilogue :: Text
   }
 ```
 
