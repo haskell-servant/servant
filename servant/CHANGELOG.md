@@ -1,3 +1,8 @@
+next
+----
+
+* Add `CaptureAll` combinator. Captures all of the remaining segments in a URL.
+
 0.8
 ---
 
