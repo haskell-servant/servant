@@ -13,6 +13,13 @@ import           Servant.API
 type GET = Get '[JSON] NoContent
 
 type ComprehensiveAPI =
+  ComprehensiveAPIWithoutRaw :<|>
+  Raw
+
+comprehensiveAPI :: Proxy ComprehensiveAPI
+comprehensiveAPI = Proxy
+
+type ComprehensiveAPIWithoutRaw =
   GET :<|>
   Get '[JSON] Int :<|>
   Capture "foo" Int :> GET :<|>
@@ -22,7 +29,6 @@ type ComprehensiveAPI =
   QueryParam "foo" Int :> GET :<|>
   QueryParams "foo" Int :> GET :<|>
   QueryFlag "foo" :> GET :<|>
--- Raw :<|>
   RemoteHost :> GET :<|>
   ReqBody '[JSON] Int :> GET :<|>
   Get '[JSON] (Headers '[Header "foo" Int] NoContent) :<|>
@@ -33,5 +39,5 @@ type ComprehensiveAPI =
   WithNamedContext "foo" '[] GET :<|>
   CaptureAll "foo" Int :> GET
 
-comprehensiveAPI :: Proxy ComprehensiveAPI
-comprehensiveAPI = Proxy
+comprehensiveAPIWithoutRaw :: Proxy ComprehensiveAPIWithoutRaw
+comprehensiveAPIWithoutRaw = Proxy
