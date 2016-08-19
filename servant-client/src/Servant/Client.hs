@@ -45,6 +45,16 @@ import           Servant.Common.BaseUrl
 import           Servant.Common.BasicAuth
 import           Servant.Common.Req
 
+type family FirstCT cts :: [*] where
+    FirstCT '[] = '[]
+    FirstCT (ct ': cts) = '[ct]
+
+type family FirstCTVerb x :: * where
+    FirstCTVerb (Verb method statusCode cts r) = (Verb method statusCode (FirstCT cts) r)
+    FirstCTVerb (a :> b) = (a :> FirstCTVerb b)
+    FirstCTVerb (a :<|> b) = (FirstCTVerb a :<|> FirstCTVerb b)
+    FirstCTVerb a = a
+
 -- * Accessing APIs as a Client
 
 -- | 'client' allows you to produce operations to query an API from a client.
@@ -58,8 +68,28 @@ import           Servant.Common.Req
 -- > getAllBooks :: Manager -> BaseUrl -> ClientM [Book]
 -- > postNewBook :: Book -> Manager -> BaseUrl -> ClientM Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
-client :: HasClient api => Proxy api -> Client api
-client p = clientWithRoute p defReq
+
+client
+    :: forall api . HasClient (FirstCTVerb api)
+    => Proxy api -> Client (FirstCTVerb api)
+client _ = clientWithRoute apiWithOnlyFirstCT defReq
+  where
+    apiWithOnlyFirstCT :: Proxy (FirstCTVerb api)
+    apiWithOnlyFirstCT = Proxy
+
+type family ReplaceCTs api (newCTs :: [*]) :: * where
+    ReplaceCTs (Verb method statusCode oldCTs r) newCTs = (Verb method statusCode newCTs r)
+    ReplaceCTs (a :> b) newCTs = (a :> ReplaceCTs b newCTs)
+    ReplaceCTs (a :<|> b) newCTs = (ReplaceCTs a newCTs :<|> ReplaceCTs b newCTs)
+    ReplaceCTs a newCTs = a
+
+clientWithCTs
+    :: forall api cts . (HasClient (ReplaceCTs api cts))
+    => Proxy cts -> Proxy api -> Client (ReplaceCTs api cts)
+clientWithCTs _ _ = clientWithRoute replacedCTs defReq
+  where
+    replacedCTs :: Proxy (ReplaceCTs api cts)
+    replacedCTs = Proxy
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
