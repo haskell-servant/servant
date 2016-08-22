@@ -16,7 +16,6 @@ import           Data.Proxy
 import           Data.String
 import           Data.Text
 import           Data.Text.Encoding (decodeUtf8)
-import           GHC.Exts (Constraint)
 import           GHC.TypeLits
 import qualified Network.HTTP.Types as HTTP
 import           Prelude hiding (concat)

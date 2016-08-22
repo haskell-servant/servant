@@ -37,13 +37,11 @@ import           Data.Ord                   (comparing)
 import           Data.Proxy                 (Proxy(Proxy))
 import           Data.String.Conversions    (cs)
 import           Data.Text                  (Text, unpack)
-import           GHC.Exts                   (Constraint)
 import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
 import           Servant.API.TypeLevel
-import           Servant.Utils.Links
 
 import qualified Data.HashMap.Strict        as HM
 import qualified Data.Text                  as T

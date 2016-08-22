@@ -1,8 +1,11 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Servant.API.TypeLevel where
 
@@ -14,6 +17,9 @@ import Servant.API.Header ( Header )
 import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Alternative ( type (:<|>) )
+#if MIN_VERSION_base(4,9,0)
+import GHC.TypeLits (TypeError, ErrorMessage(..))
+#endif
 
 -- * API predicates
 
@@ -104,9 +110,24 @@ type family IsSubList a b :: Constraint where
     IsSubList '[] b          = ()
     IsSubList (x ': xs) y    = Elem x y `And` IsSubList xs y
 
-type family Elem e es :: Constraint where
-    Elem x (x ': xs) = ()
-    Elem y (x ': xs) = Elem y xs
+-- | Check that an eleme is an element of a list:
+--
+-- >>> ok (Proxy :: Proxy (Elem Bool '[Int, Bool]))
+-- OK
+--
+-- >>> ok (Proxy  :: Proxy (Elem String '[Int, Bool]))
+-- ...
+--     No instance for (ElemNotFoundIn [Char] '[Int, Bool])
+--       arising from a use of ‘ok’
+-- ...
+type Elem e es = ElemGo e es es
+
+-- 'orig' is used to store original list for better error messages
+type family ElemGo e es orig :: Constraint where
+    ElemGo x (x ': xs) orig = ()
+    ElemGo y (x ': xs) orig = ElemGo y xs orig
+    ElemGo x '[] orig       = ElemNotFoundIn x orig
+
 
 -- ** Logic
 
@@ -121,3 +142,33 @@ type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
 type family And (a :: Constraint) (b :: Constraint) :: Constraint where
     And () ()     = ()
 
+-- * Custom type errors
+
+#if MIN_VERSION_base(4,9,0)
+-- GHC >= 8
+
+
+type ElemNotFoundIn val list = TypeError
+  (ShowType val :<>: Text " expected in list " :<>: ShowList list)
+
+
+-- Utilities
+
+type family ShowListGo ls :: ErrorMessage where
+  ShowListGo '[] = Text ""
+  ShowListGo (x ': xs) = ShowType x :<>: Text ", " :<>: ShowListGo xs
+
+type ShowList ls = Text "[" :<>: ShowListGo ls :<>: Text "]"
+
+
+#else
+
+-- GHC < 8
+class ElemNotFoundIn val list
+
+#endif
+
+-- $setup
+-- >>> import Data.Proxy
+-- >>> data OK = OK deriving (Show)
+-- >>> let ok :: ctx => Proxy ctx -> OK; ok _ = OK
