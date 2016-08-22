@@ -24,6 +24,8 @@
 ----
 
 * Add `CaptureAll` combinator. Captures all of the remaining segments in a URL.
+* Add `Servant.API.TypeLevel` module, with frequently used type-level
+functionaliy.
 
 0.8
 ---
