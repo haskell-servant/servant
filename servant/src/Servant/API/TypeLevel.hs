@@ -110,7 +110,8 @@ type family IsSubList a b :: Constraint where
     IsSubList '[] b          = ()
     IsSubList (x ': xs) y    = Elem x y `And` IsSubList xs y
 
--- | Check that an eleme is an element of a list:
+#if !MIN_VERSION_base(4,9,0)
+-- | Check that a value is an element of a list:
 --
 -- >>> ok (Proxy :: Proxy (Elem Bool '[Int, Bool]))
 -- OK
@@ -121,13 +122,31 @@ type family IsSubList a b :: Constraint where
 --       arising from a use of ‘ok’
 -- ...
 type Elem e es = ElemGo e es es
+#else
+-- | Check that a value is an element of a list:
+--
+-- >>> ok (Proxy :: Proxy (Elem Bool '[Int, Bool]))
+-- OK
+--
+-- >>> ok (Proxy  :: Proxy (Elem String '[Int, Bool]))
+-- ...
+-- ... [Char] expected in list '[Int, Bool]
+-- ...
+type Elem e es = ElemGo e es es
+#endif
 
 -- 'orig' is used to store original list for better error messages
 type family ElemGo e es orig :: Constraint where
     ElemGo x (x ': xs) orig = ()
     ElemGo y (x ': xs) orig = ElemGo y xs orig
+#if MIN_VERSION_base(4,9,0)
+    -- Note [Custom Errors]
+    ElemGo x '[] orig       = TypeError ('ShowType x
+                                    ':<>: 'Text " expected in list "
+                                    ':<>: 'ShowType orig)
+#else
     ElemGo x '[] orig       = ElemNotFoundIn x orig
-
+#endif
 
 -- ** Logic
 
@@ -144,29 +163,15 @@ type family And (a :: Constraint) (b :: Constraint) :: Constraint where
 
 -- * Custom type errors
 
-#if MIN_VERSION_base(4,9,0)
--- GHC >= 8
-
-
-type ElemNotFoundIn val list = TypeError
-  (ShowType val :<>: Text " expected in list " :<>: ShowList list)
-
-
--- Utilities
-
-type family ShowListGo ls :: ErrorMessage where
-  ShowListGo '[] = Text ""
-  ShowListGo (x ': xs) = ShowType x :<>: Text ", " :<>: ShowListGo xs
-
-type ShowList ls = Text "[" :<>: ShowListGo ls :<>: Text "]"
-
-
-#else
-
--- GHC < 8
+#if !MIN_VERSION_base(4,9,0)
 class ElemNotFoundIn val list
-
 #endif
+
+{- Note [Custom Errors]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We might try to factor these our more cleanly, but the type synonyms and type
+families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
+-}
 
 -- $setup
 -- >>> import Data.Proxy
