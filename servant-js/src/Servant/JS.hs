@@ -112,6 +112,7 @@ module Servant.JS
   , javascript
   , NoTypes
   , GenerateList(..)
+  , FunctionName(..)
   ) where
 
 import           Prelude hiding (writeFile)
