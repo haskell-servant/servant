@@ -1,29 +1,51 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
+
+{-|
+This module collects utilities for manipulating @servant@ API types. The
+functionality in this module is for advanced usage.
+
+The code samples in this module use the following type synonym:
+
+> type SampleAPI = "hello" :> Get '[JSON] Int
+>             :<|> "bye" :> Capture "name" String :> Post '[JSON, PlainText] Bool
+
+-}
 module Servant.API.TypeLevel where
 
-import GHC.Exts(Constraint)
-import Servant.API.Capture ( Capture, CaptureAll )
-import Servant.API.ReqBody ( ReqBody )
-import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
-import Servant.API.Header ( Header )
-import Servant.API.Verbs ( Verb )
-import Servant.API.Sub ( type (:>) )
-import Servant.API.Alternative ( type (:<|>) )
+
+import           GHC.Exts                (Constraint)
+import           Servant.API.Alternative (type (:<|>))
+import           Servant.API.Capture     (Capture, CaptureAll)
+import           Servant.API.Header      (Header)
+import           Servant.API.QueryParam  (QueryFlag, QueryParam, QueryParams)
+import           Servant.API.ReqBody     (ReqBody)
+import           Servant.API.Sub         (type (:>))
+import           Servant.API.Verbs       (Verb)
 #if MIN_VERSION_base(4,9,0)
-import GHC.TypeLits (TypeError, ErrorMessage(..))
+import           GHC.TypeLits            (TypeError, ErrorMessage(..))
 #endif
+
+
 
 -- * API predicates
 
 -- | Flatten API into a list of endpoints.
+--
+-- >>> :t showType @(Endpoints SampleAPI)
+-- ...
+-- ... :: Proxy
+-- ...  '["hello" :> Verb 'GET 200 '[JSON] Int,
+-- ...    "bye"
+-- ...    :> (Capture "name" String
+-- ...        :> Verb 'POST 200 '[JSON, PlainText] Bool)]
 type family Endpoints api where
   Endpoints (a :<|> b) = AppendList (Endpoints a) (Endpoints b)
   Endpoints (e :> a)   = MapSub e (Endpoints a)
@@ -47,24 +69,56 @@ type family IsElem' a s :: Constraint
 
 -- | Closed type family, check if @endpoint@ is within @api@.
 -- Uses @'IsElem''@ if it exhausts all other options.
+--
+-- >>> ok @(IsElem ("hello" :> Get '[JSON] Int) SampleAPI)
+-- OK
+--
+-- >>> ok @(IsElem ("bye" :> Get '[JSON] Int) SampleAPI)
+-- ...
+-- ... Could not deduce: ...
+-- ...
+--
+-- An endpoint is considered within an api even if it is missing combinators
+-- that don't affect the URL:
+--
+-- >>> ok @(IsElem (Get '[JSON] Int) (Header "h" Bool :> Get '[JSON] Int))
+-- OK
+--
+-- >>> ok @(IsElem (Get '[JSON] Int) (ReqBody '[JSON] Bool :> Get '[JSON] Int))
+-- OK
+--
+-- *N.B.:* @IsElem a b@ can be seen as capturing the notion of whether the URL
+-- represented by @a@ would match the URL represented by @b@, *not* whether a
+-- request represented by @a@ matches the endpoints serving @b@ (for the
+-- latter, use 'IsIn').
 type family IsElem endpoint api :: Constraint where
-    IsElem e (sa :<|> sb)                   = Or (IsElem e sa) (IsElem e sb)
-    IsElem (e :> sa) (e :> sb)              = IsElem sa sb
-    IsElem sa (Header sym x :> sb)          = IsElem sa sb
-    IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
-    IsElem (CaptureAll z y :> sa) (CaptureAll x y :> sb)
-                                            = IsElem sa sb
-    IsElem (Capture z y :> sa) (Capture x y :> sb)
-                                            = IsElem sa sb
-    IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
-    IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
-    IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
-    IsElem (Verb m s ct typ) (Verb m s ct' typ)
-                                            = IsSubList ct ct'
-    IsElem e e                              = ()
-    IsElem e a                              = IsElem' e a
+  IsElem e (sa :<|> sb)                   = Or (IsElem e sa) (IsElem e sb)
+  IsElem (e :> sa) (e :> sb)              = IsElem sa sb
+  IsElem sa (Header sym x :> sb)          = IsElem sa sb
+  IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
+  IsElem (CaptureAll z y :> sa) (CaptureAll x y :> sb)
+                                          = IsElem sa sb
+  IsElem (Capture z y :> sa) (Capture x y :> sb)
+                                          = IsElem sa sb
+  IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
+  IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
+  IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
+  IsElem (Verb m s ct typ) (Verb m s ct' typ)
+                                          = IsSubList ct ct'
+  IsElem e e                              = ()
+  IsElem e a                              = IsElem' e a
 
--- | Check whether @sub@ is a sub API of @api@.
+-- | Check whether @sub@ is a sub-API of @api@.
+--
+-- >>> ok @(IsSubAPI SampleAPI (SampleAPI :<|> Get '[JSON] Int))
+-- OK
+--
+-- >>> ok @(IsSubAPI (SampleAPI :<|> Get '[JSON] Int) SampleAPI)
+-- ...
+-- ... Could not deduce: ...
+-- ...
+--
+-- This uses @IsElem@ for checking; thus the note there applies here.
 type family IsSubAPI sub api :: Constraint where
   IsSubAPI sub api = AllIsElem (Endpoints sub) api
 
@@ -76,18 +130,31 @@ type family AllIsElem xs api :: Constraint where
 -- ** Strict inclusion
 
 -- | Closed type family, check if @endpoint@ is exactly within @api@.
--- We aren't sure what affects how an endpoint is built up, so we require an
--- exact match.
+--
+-- >>> ok @(IsIn ("hello" :> Get '[JSON] Int) SampleAPI)
+-- OK
+--
+-- Unlike 'IsElem', this requires an *exact* match.
+--
+-- >>> ok @(IsIn (Get '[JSON] Int) (Header "h" Bool :> Get '[JSON] Int))
+-- ...
+-- ... Could not deduce: ...
+-- ...
 type family IsIn (endpoint :: *) (api :: *) :: Constraint where
-    IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
-    IsIn (e :> sa) (e :> sb)           = IsIn sa sb
-    IsIn e e                           = ()
+  IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
+  IsIn (e :> sa) (e :> sb)           = IsIn sa sb
+  IsIn e e                           = ()
 
 -- | Check whether @sub@ is a sub API of @api@.
+--
+-- Like 'IsSubAPI', but uses 'IsIn' rather than 'IsElem'.
 type family IsStrictSubAPI sub api :: Constraint where
   IsStrictSubAPI sub api = AllIsIn (Endpoints sub) api
 
 -- | Check that every element of @xs@ is an endpoint of @api@ (using @'IsIn'@).
+--
+-- OK @(AllIsIn (Endpoints SampleAPI) SampleAPI)
+-- OK
 type family AllIsIn xs api :: Constraint where
   AllIsIn '[] api = ()
   AllIsIn (x ': xs) api = (IsIn x api, AllIsIn xs api)
@@ -107,45 +174,31 @@ type family AppendList xs ys where
   AppendList (x ': xs) ys = x ': AppendList xs ys
 
 type family IsSubList a b :: Constraint where
-    IsSubList '[] b          = ()
-    IsSubList (x ': xs) y    = Elem x y `And` IsSubList xs y
+  IsSubList '[] b          = ()
+  IsSubList (x ': xs) y    = Elem x y `And` IsSubList xs y
 
-#if !MIN_VERSION_base(4,9,0)
 -- | Check that a value is an element of a list:
 --
--- >>> ok (Proxy :: Proxy (Elem Bool '[Int, Bool]))
+-- >>> ok @(Elem Bool '[Int, Bool])
 -- OK
 --
--- >>> ok (Proxy  :: Proxy (Elem String '[Int, Bool]))
--- ...
---     No instance for (ElemNotFoundIn [Char] '[Int, Bool])
---       arising from a use of ‘ok’
--- ...
-type Elem e es = ElemGo e es es
-#else
--- | Check that a value is an element of a list:
---
--- >>> ok (Proxy :: Proxy (Elem Bool '[Int, Bool]))
--- OK
---
--- >>> ok (Proxy  :: Proxy (Elem String '[Int, Bool]))
+-- >>> ok @(Elem String '[Int, Bool])
 -- ...
 -- ... [Char] expected in list '[Int, Bool]
 -- ...
 type Elem e es = ElemGo e es es
-#endif
 
 -- 'orig' is used to store original list for better error messages
 type family ElemGo e es orig :: Constraint where
-    ElemGo x (x ': xs) orig = ()
-    ElemGo y (x ': xs) orig = ElemGo y xs orig
+  ElemGo x (x ': xs) orig = ()
+  ElemGo y (x ': xs) orig = ElemGo y xs orig
 #if MIN_VERSION_base(4,9,0)
-    -- Note [Custom Errors]
-    ElemGo x '[] orig       = TypeError ('ShowType x
-                                    ':<>: 'Text " expected in list "
-                                    ':<>: 'ShowType orig)
+  -- Note [Custom Errors]
+  ElemGo x '[] orig       = TypeError ('ShowType x
+                                 ':<>: 'Text " expected in list "
+                                 ':<>: 'ShowType orig)
 #else
-    ElemGo x '[] orig       = ElemNotFoundIn x orig
+  ElemGo x '[] orig       = ElemNotFoundIn x orig
 #endif
 
 -- ** Logic
@@ -154,12 +207,12 @@ type family ElemGo e es orig :: Constraint where
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
     -- This works because of:
     -- https://ghc.haskell.org/trac/ghc/wiki/NewAxioms/CoincidentOverlap
-    Or () b       = ()
-    Or a ()       = ()
+  Or () b       = ()
+  Or a ()       = ()
 
 -- | If both a or b produce an empty constraint, produce an empty constraint.
 type family And (a :: Constraint) (b :: Constraint) :: Constraint where
-    And () ()     = ()
+  And () ()     = ()
 
 -- * Custom type errors
 
@@ -173,7 +226,14 @@ We might try to factor these our more cleanly, but the type synonyms and type
 families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 -}
 
+
 -- $setup
+-- >>> :set -XTypeApplications
+-- >>> :set -XPolyKinds
 -- >>> import Data.Proxy
--- >>> data OK = OK deriving (Show)
--- >>> let ok :: ctx => Proxy ctx -> OK; ok _ = OK
+-- >>> import Servant.API
+-- >>> data OK ctx = OK deriving (Show)
+-- >>> let ok :: ctx => OK ctx; ok = OK
+-- >>> let showType :: Proxy a ; showType = Proxy
+-- >>> type SampleAPI = "hello" :> Get '[JSON] Int :<|> "bye" :> Capture "name" String :> Post '[JSON, PlainText] Bool
+-- >>> let sampleAPI = Proxy :: Proxy SampleAPI
