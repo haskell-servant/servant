@@ -5,9 +5,6 @@ import           Control.Concurrent       (modifyMVar_, newMVar, readMVar)
 import           Control.Monad            (unless)
 import qualified Data.ByteString.Lazy     as LBS
 import           Data.Proxy               (Proxy)
-import           Data.String              (IsString (..))
-import           Data.Text                (Text)
-import           GHC.Generics             (Generic)
 import qualified Network.HTTP.Client      as C
 import           Network.Wai.Handler.Warp (withApplication)
 import           Prelude.Compat
@@ -87,7 +84,7 @@ serversEqual api burl1 burl2 args req = do
       assert False
   case r of
     Success {} -> return ()
-    f@Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $
+    Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $
       "Failed:\n" ++ show x
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
@@ -121,11 +118,11 @@ serverSatisfies api burl args preds = do
      v <- run $ finishPredicates preds (noCheckStatus req) defManager
      run $ modifyMVar_ deetsMVar $ const $ return v
      case v of
-       Just x -> assert False
+       Just _ -> assert False
        _ -> return ()
   case r of
     Success {} -> return ()
-    f@Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $
+    Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $
       "Failed:\n" ++ show x
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"

@@ -1,10 +1,8 @@
 module Servant.QuickCheck.Internal.Predicates where
 
-import           Control.Exception     (SomeException, catch, throw)
-import           Control.Monad         (ap, guard, liftM2)
+import           Control.Exception     (catch, throw)
 import           Control.Monad.Reader
 import           Data.Aeson            (Object, decode)
-import           Data.Bifunctor        (Bifunctor (..))
 import qualified Data.ByteString       as SBS
 import qualified Data.ByteString.Char8 as SBSC
 import qualified Data.ByteString.Lazy  as LBS
@@ -13,12 +11,10 @@ import           Data.Either           (isRight)
 import           Data.List.Split       (wordsBy)
 import           Data.Maybe            (fromMaybe, isJust)
 import           Data.Monoid           ((<>))
-import           Data.Text             (Text)
 import           GHC.Generics          (Generic)
 import           Network.HTTP.Client   (Manager, Request, Response, httpLbs,
-                                        method, parseUrl, requestHeaders,
-                                        responseBody, responseHeaders,
-                                        responseStatus)
+                                        method, requestHeaders, responseBody,
+                                        responseHeaders, parseUrl, responseStatus)
 import           Network.HTTP.Media    (matchAccept)
 import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
                                         renderStdMethod, status100, status200,
@@ -134,7 +130,7 @@ notAllowedContainsAllowHeader
                                         | m <- [minBound .. maxBound ]
                                         , renderStdMethod m /= method req ]
       case filter pred' resp of
-        (x:xs) -> throw $ PredicateFailure "notAllowedContainsAllowHeader" (Just req) x
+        (x:_) -> throw $ PredicateFailure "notAllowedContainsAllowHeader" (Just req) x
         []     -> return resp
     where
       pred' resp = responseStatus resp == status405 && not (hasValidHeader "Allow" go resp)

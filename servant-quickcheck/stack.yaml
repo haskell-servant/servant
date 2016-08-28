@@ -7,9 +7,9 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
-- servant-0.7
-- servant-client-0.7
-- servant-server-0.7
+- servant-0.8
+- servant-client-0.8
+- servant-server-0.8
 
 # Override default flag values for local packages and extra-deps
 flags: {}
