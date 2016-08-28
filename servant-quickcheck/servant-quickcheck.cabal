@@ -27,30 +27,28 @@ library
                      , Servant.QuickCheck.Internal.QuickCheck
                      , Servant.QuickCheck.Internal.Equality
                      , Servant.QuickCheck.Internal.ErrorTypes
-  build-depends:       base >=4.7 && <4.9
+  build-depends:       base >=4.8 && <4.9
                      , base-compat == 0.9.*
-                     , QuickCheck == 2.8.*
+                     , aeson > 0.8 && < 0.12
                      , bytestring == 0.10.*
-                     , aeson > 0.10 && < 0.12
-                     , mtl == 2.2.*
+                     , case-insensitive == 1.2.*
+                     , data-default-class == 0.0.*
+                     , hspec == 2.2.*
                      , http-client == 0.4.*
-                     , http-types == 0.9.*
                      , http-media == 0.6.*
+                     , http-types > 0.8 && < 0.10
+                     , mtl > 2.1 && < 2.3
+                     , pretty == 1.1.*
+                     , process == 1.2.*
+                     , QuickCheck > 2.7 && < 2.9
+                     , servant > 0.6 && < 0.9
                      , servant-client > 0.6 && < 0.9
                      , servant-server > 0.6 && < 0.9
-                     , string-conversions == 0.4.*
-                     , data-default-class == 0.0.*
-                     , servant > 0.6 && < 0.9
-                     , warp >= 3.2.4 && < 3.3
-                     , process == 1.2.*
-                     , temporary == 1.2.*
                      , split == 0.2.*
-                     , case-insensitive == 1.2.*
-                     , hspec == 2.2.*
+                     , string-conversions > 0.3 && < 0.5
+                     , temporary == 1.2.*
                      , text == 1.*
-                     , pretty == 1.1.*
-  if impl(ghc < 7.10)
-    build-depends:     bifunctors == 5.*
+                     , warp >= 3.2.4 && < 3.3
 
   hs-source-dirs:      src
   default-extensions:  TypeOperators
@@ -68,7 +66,7 @@ library
                      , OverloadedStrings
                      , FunctionalDependencies
                      , NoImplicitPrelude
-                     , AutoDeriveTypeable
+                     , DeriveDataTypeable
   default-language:    Haskell2010
 
 test-suite spec

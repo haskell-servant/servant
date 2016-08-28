@@ -4,6 +4,7 @@ import           Control.Exception       (Exception (..))
 import qualified Data.ByteString.Lazy    as LBS
 import           Data.String.Conversions (cs)
 import qualified Data.Text               as T
+import           Data.Typeable           (Typeable)
 import           GHC.Generics            (Generic)
 import qualified Network.HTTP.Client     as C
 import           Network.HTTP.Types      (Header, statusCode)
@@ -12,7 +13,7 @@ import           Text.PrettyPrint
 
 data PredicateFailure
   = PredicateFailure T.Text (Maybe C.Request) (C.Response LBS.ByteString)
-  deriving (Generic)
+  deriving (Typeable, Generic)
 
 instance Exception ServerEqualityFailure where
 
@@ -22,7 +23,7 @@ instance Show PredicateFailure where
 
 data ServerEqualityFailure
   = ServerEqualityFailure C.Request (C.Response LBS.ByteString) (C.Response LBS.ByteString)
-  deriving (Generic)
+  deriving (Typeable, Generic)
 
 instance Show ServerEqualityFailure where
   show = render . prettyServerEqualityFailure

@@ -3,7 +3,6 @@ sudo: false
 language: c
 
 env:
-  - GHCVER=7.8.4
   - GHCVER=7.10.2
 
 addons:
@@ -11,7 +10,6 @@ addons:
     sources:
       - hvr-ghc
     packages:
-      - ghc-7.8.4
       - ghc-7.10.2
       - cabal-install-1.22
       - libgmp-dev

@@ -1,7 +1,7 @@
 module Servant.QuickCheck.Internal.Predicates where
 
 import           Control.Exception     (catch, throw)
-import           Control.Monad.Reader
+import           Control.Monad         (when, unless, liftM2)
 import           Data.Aeson            (Object, decode)
 import qualified Data.ByteString       as SBS
 import qualified Data.ByteString.Char8 as SBSC
