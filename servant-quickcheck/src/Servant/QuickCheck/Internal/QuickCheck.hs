@@ -15,7 +15,9 @@ import           System.IO.Unsafe         (unsafePerformIO)
 import           Test.Hspec               (Expectation, expectationFailure)
 import           Test.QuickCheck          (Args (..), Result (..),
                                            quickCheckWithResult)
-import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, run)
+import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, run, monitor)
+import           Test.QuickCheck.Property (counterexample)
+import Control.Monad (unless)
 
 import Servant.QuickCheck.Internal.Equality
 import Servant.QuickCheck.Internal.HasGenRequest
@@ -61,7 +63,10 @@ serversEqual api burl1 burl2 args req = do
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
     resp1 <- run $ C.httpLbs (noCheckStatus req1) defManager
     resp2 <- run $ C.httpLbs (noCheckStatus req2) defManager
-    assert $ getResponseEquality req resp1 resp2
+    unless (getResponseEquality req resp1 resp2) $ do
+      monitor (counterexample "hi" )
+      assert False
+
   case r of
     Success {} -> return ()
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"

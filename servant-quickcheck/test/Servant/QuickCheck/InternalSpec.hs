@@ -35,19 +35,26 @@ serversEqualSpec = describe "serversEqual" $ do
   context "when servers are not equal" $ do
 
     it "provides the failing requests in the error message" $ do
+      e <- withServantServer api2 server2 $ \burl1 ->
+        withServantServer api2 server3 $ \burl2 -> do
+          evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
+      e `shouldBe` e
+
+    it "provides the failing requests in the error message" $ do
       Fail _ err <- withServantServer api2 server2 $ \burl1 ->
         withServantServer api2 server3 $ \burl2 -> do
           evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
+      print err
       let ServerEqualityFailure req _ _ = read err
       req `shouldBe` "failplz"
 
-    it "provides the failing responses in the error message" $ do
-      Fail _ err <- withServantServer api2 server2 $ \burl1 ->
-        withServantServer api2 server3 $ \burl2 -> do
-          evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
-      let ServerEqualityFailure _ r1 r2 = read err
-      r1 `shouldBe` "1"
-      r2 `shouldBe` "2"
+    {-it "provides the failing responses in the error message" $ do-}
+      {-Fail _ err <- withServantServer api2 server2 $ \burl1 ->-}
+        {-withServantServer api2 server3 $ \burl2 -> do-}
+          {-evalExample $ serversEqual api2 burl1 burl2 args bodyEquality-}
+      {-let ServerEqualityFailure _ r1 r2 = read err-}
+      {-r1 `shouldBe` "1"-}
+      {-r2 `shouldBe` "2"-}
 
 
 serverSatisfiesSpec :: Spec

@@ -29,7 +29,7 @@ instance (HasGenRequest a, HasGenRequest b) => HasGenRequest (a :<|> b) where
 instance (KnownSymbol path, HasGenRequest b) => HasGenRequest (path :> b) where
     genRequest _ = do
       old' <- old
-      return $ \burl -> let r = old' burl in r { path = new <> "/" <> path r }
+      return $ \burl -> let r = old' burl in r { path = new <> path r }
       where
         old = genRequest (Proxy :: Proxy b)
         new = cs $ symbolVal (Proxy :: Proxy path)
@@ -39,7 +39,7 @@ instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
     genRequest _ = do
       old' <- old
       new' <- toUrlPiece <$> new
-      return $ \burl -> let r = old' burl in r { path = cs new' <> "/" <> path r }
+      return $ \burl -> let r = old' burl in r { path = cs new' <> path r }
       where
         old = genRequest (Proxy :: Proxy b)
         new = arbitrary :: Gen c

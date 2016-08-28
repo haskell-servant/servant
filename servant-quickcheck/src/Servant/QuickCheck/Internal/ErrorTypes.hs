@@ -1,6 +1,9 @@
 module Servant.QuickCheck.Internal.ErrorTypes where
 
 import Text.PrettyPrint
+import Prelude.Compat
+import Data.String (IsString(fromString))
+import GHC.Generics (Generic)
 
 data Request = Request
   { requestBody    :: String
@@ -8,12 +11,12 @@ data Request = Request
   , requestUrl     :: String
   } deriving (Eq, Show, Read, Generic)
 
-prettyReq :: Doc
+prettyReq :: Request -> Doc
 prettyReq r =
-  text "Request:" $ nest 5 $
-     text "URL:"      <+> text (nest 5 $ requestUrl r)
-  $$ text "Headers:"  <+>
-  $$ text "Body:"     <+> text (nest 5 $ requestBody r)
+  text "Request:" $$ (nest 5 $
+     text "URL:"      <+> (nest 5 $ text $ requestUrl r)
+  $$ text "Headers:"  <+> (nest 5 $ hsep $ text <$> requestHeaders r)
+  $$ text "Body:"     <+> (nest 5 $ text $ requestBody r))
 
 instance IsString Request where
   fromString url = Request "" [] url
@@ -30,8 +33,8 @@ instance IsString Response where
 data Failure
   = PredicateFailure String Request Response
   | ServerEqualityFailure Request Response Response
-  deriving (Eq, Show, Read, Generic)
+  deriving (Eq, Read, Generic)
 
 instance Show Failure where
   show (PredicateFailure pred req resp)
-    = "Predicate failed for " <> pred <> "
+    = "Predicate failed for " ++ pred

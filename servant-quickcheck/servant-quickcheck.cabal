@@ -24,6 +24,7 @@ library
                      , Servant.QuickCheck.Internal.HasGenRequest
                      , Servant.QuickCheck.Internal.QuickCheck
                      , Servant.QuickCheck.Internal.Equality
+                     , Servant.QuickCheck.Internal.ErrorTypes
   build-depends:       base >=4.7 && <4.9
                      , base-compat == 0.9.*
                      , QuickCheck == 2.8.*
