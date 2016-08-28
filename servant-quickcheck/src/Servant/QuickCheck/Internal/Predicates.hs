@@ -1,6 +1,8 @@
 module Servant.QuickCheck.Internal.Predicates where
 
-import           Control.Monad         (liftM2)
+import Control.Exception (catch, SomeException, throw)
+import           Control.Monad         (liftM2, guard, ap)
+import           Control.Monad.Reader
 import           Data.Aeson            (Object, decode)
 import           Data.Bifunctor        (Bifunctor (..))
 import           Prelude.Compat
@@ -24,6 +26,9 @@ import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
                                         status300, status401, status405,
                                         status500, status100)
 
+import Servant.QuickCheck.Internal.ErrorTypes
+
+
 -- | [__Best Practice__]
 --
 -- @500 Internal Server Error@ should be avoided - it may represent some
@@ -33,8 +38,9 @@ import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
 -- This function checks that the response code is not 500.
 --
 -- /Since 0.0.0.0/
-not500 :: ResponsePredicate Text Bool
-not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == status500)
+not500 :: ResponsePredicate
+not500 = ResponsePredicate $ \resp ->
+  when (responseStatus resp == status500) $ fail "not500"
 
 -- | [__Best Practice__]
 --
@@ -57,11 +63,11 @@ not500 = ResponsePredicate "not500" (\resp -> not $ responseStatus resp == statu
 --   * JSON Grammar: <https://tools.ietf.org/html/rfc4627#section-2 RFC 4627 Section 2>
 --
 -- /Since 0.0.0.0/
-onlyJsonObjects :: ResponsePredicate Text Bool
+onlyJsonObjects :: ResponsePredicate
 onlyJsonObjects
-  = ResponsePredicate "onlyJsonObjects" (\resp -> case decode (responseBody resp) of
-      Nothing -> False
-      Just (_ :: Object) -> True)
+  = ResponsePredicate (\resp -> case decode (responseBody resp) of
+      Nothing -> throw $ PredicateFailure "onlyJsonObjects" Nothing resp
+      Just (_ :: Object) -> return ())
 
 -- | __Optional__
 --
@@ -82,25 +88,24 @@ onlyJsonObjects
 --   * Location header: <https://tools.ietf.org/html/rfc7231#section-7.1.2 RFC 7231 Section 7.1.2>
 --
 -- /Since 0.0.0.0/
-createContainsValidLocation :: RequestPredicate Text Bool
+createContainsValidLocation :: RequestPredicate
 createContainsValidLocation
-  = RequestPredicate
-    { reqPredName = "createContainsValidLocation"
-    , reqResps = \req mgr -> do
-        resp <- httpLbs req mgr
-        if responseStatus resp == status201
-            then case lookup "Location" $ responseHeaders resp of
-                Nothing -> return (False, [resp])
-                Just l  -> case parseUrl $ SBSC.unpack l of
-                  Nothing -> return (False, [resp])
-                  Just x  -> do
-                    resp2 <- httpLbs x mgr
-                    return (status2XX resp2, [resp, resp2])
-            else return (True, [resp])
-    }
+  = RequestPredicate $ \req mgr -> do
+     let n = "createContainsValidLocation"
+     resp <- httpLbs req mgr
+     if responseStatus resp == status201
+         then case lookup "Location" $ responseHeaders resp of
+             Nothing -> fail n
+             Just l  -> case parseUrl $ SBSC.unpack l of
+               Nothing -> fail n
+               Just x  -> do
+                 resp2 <- httpLbs x mgr
+                 status2XX resp2 n
+                 return [resp, resp2]
+         else return [resp]
 
 {-
-getsHaveLastModifiedHeader :: ResponsePredicate Text Bool
+getsHaveLastModifiedHeader :: ResponsePredicate
 getsHaveLastModifiedHeader
   = ResponsePredicate "getsHaveLastModifiedHeader" (\resp ->
 
@@ -122,18 +127,17 @@ getsHaveLastModifiedHeader
 --   * Status 405: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html RFC 2616 Section 10.4.6>
 --
 -- /Since 0.0.0.0/
-notAllowedContainsAllowHeader :: RequestPredicate Text Bool
+notAllowedContainsAllowHeader :: RequestPredicate
 notAllowedContainsAllowHeader
-  = RequestPredicate
-    { reqPredName = "notAllowedContainsAllowHeader"
-    , reqResps = \req mgr -> do
-        resp <- mapM (flip httpLbs mgr) $ [ req { method = renderStdMethod m }
-                                          | m <- [minBound .. maxBound ]
-                                          , renderStdMethod m /= method req ]
-        return (all pred' resp, resp)
-    }
+  = RequestPredicate $ \req mgr -> do
+      resp <- mapM (flip httpLbs mgr) $ [ req { method = renderStdMethod m }
+                                        | m <- [minBound .. maxBound ]
+                                        , renderStdMethod m /= method req ]
+      case filter pred' resp of
+        (x:xs) -> throw $ PredicateFailure "notAllowedContainsAllowHeader" (Just req) x
+        []     -> return resp
     where
-      pred' resp = responseStatus resp /= status405 || hasValidHeader "Allow" go resp
+      pred' resp = responseStatus resp == status405 && not (hasValidHeader "Allow" go resp)
         where
           go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
                $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
@@ -154,19 +158,19 @@ notAllowedContainsAllowHeader
 --   * @Accept@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.1>
 --
 -- /Since 0.0.0.0/
-honoursAcceptHeader :: RequestPredicate Text Bool
+honoursAcceptHeader :: RequestPredicate
 honoursAcceptHeader
-  = RequestPredicate
-    { reqPredName = "honoursAcceptHeader"
-    , reqResps = \req mgr -> do
-        resp <- httpLbs req mgr
-        let scode = responseStatus resp
-            sctype = lookup "Content-Type" $ responseHeaders resp
-            sacc  = fromMaybe "*/*" $ lookup "Accept" (requestHeaders req)
-        if status100 < scode && scode < status300
-          then return (isJust $ sctype >>= \x -> matchAccept [x] sacc, [resp])
-          else return (True, [resp])
-    }
+  = RequestPredicate $ \req mgr -> do
+      resp <- httpLbs req mgr
+      let scode = responseStatus resp
+          sctype = lookup "Content-Type" $ responseHeaders resp
+          sacc  = fromMaybe "*/*" $ lookup "Accept" (requestHeaders req)
+      if status100 < scode && scode < status300
+        then if isJust $ sctype >>= \x -> matchAccept [x] sacc
+          then fail "honoursAcceptHeader"
+          else return [resp]
+        else return [resp]
+
 
 -- | [__Best Practice__]
 --
@@ -182,34 +186,32 @@ honoursAcceptHeader
 --   * @Cache-Control@ header: <https://tools.ietf.org/html/rfc7234#section-5.2 RFC 7234 Section 5.2>
 --
 -- /Since 0.0.0.0/
-getsHaveCacheControlHeader :: RequestPredicate Text Bool
+getsHaveCacheControlHeader :: RequestPredicate
 getsHaveCacheControlHeader
-  = RequestPredicate
-     { reqPredName = "getsHaveCacheControlHeader"
-     , reqResps = \req mgr -> if method req == methodGet
-        then do
-          resp <- httpLbs req mgr
-          let good = isJust $ lookup "Cache-Control" $ responseHeaders resp
-          return (good, [resp])
-        else return (True, [])
-     }
+  = RequestPredicate $ \req mgr ->
+     if (method req == methodGet)
+      then do
+        resp <- httpLbs req mgr
+        unless (hasValidHeader "Cache-Control" (const True) resp) $ do
+          throw $ PredicateFailure "getsHaveCacheControlHeader" (Just req) resp
+        return [resp]
+      else return []
 
 -- | [__Best Practice__]
 --
 -- Like 'getsHaveCacheControlHeader', but for @HEAD@ requests.
 --
 -- /Since 0.0.0.0/
-headsHaveCacheControlHeader :: RequestPredicate Text Bool
+headsHaveCacheControlHeader :: RequestPredicate
 headsHaveCacheControlHeader
-  = RequestPredicate
-     { reqPredName = "headsHaveCacheControlHeader"
-     , reqResps = \req mgr -> if method req == methodHead
-        then do
-          resp <- httpLbs req mgr
-          let good = hasValidHeader "Cache-Control" (const True) resp
-          return (good, [resp])
-        else return (True, [])
-     }
+  = RequestPredicate $ \req mgr ->
+     if (method req == methodHead)
+       then do
+         resp <- httpLbs req mgr
+         unless (hasValidHeader "Cache-Control" (const True) resp) $
+           throw $ PredicateFailure "headsHaveCacheControlHeader" (Just req) resp
+         return [resp]
+       else return []
 {-
 -- |
 --
@@ -271,12 +273,13 @@ linkHeadersAreValid
 --   * @WWW-Authenticate@ header: <https://tools.ietf.org/html/rfc7235#section-4.1 RFC 7235 Section 4.1>
 --
 -- /Since 0.0.0.0/
-unauthorizedContainsWWWAuthenticate :: ResponsePredicate Text Bool
+unauthorizedContainsWWWAuthenticate :: ResponsePredicate
 unauthorizedContainsWWWAuthenticate
-  = ResponsePredicate "unauthorizedContainsWWWAuthenticate" (\resp ->
+  = ResponsePredicate $ \resp ->
       if responseStatus resp == status401
-        then hasValidHeader "WWW-Authenticate" (const True) resp
-        else True)
+        then unless (hasValidHeader "WWW-Authenticate" (const True) resp) $
+          fail "unauthorizedContainsWWWAuthenticate"
+        else return ()
 
 -- * Predicate logic
 
@@ -289,67 +292,46 @@ unauthorizedContainsWWWAuthenticate
 -- | A predicate that depends only on the response.
 --
 -- /Since 0.0.0.0/
-data ResponsePredicate n r = ResponsePredicate
-  { respPredName :: n
-  , respPred :: Response LBS.ByteString -> r
-  } deriving (Functor, Generic)
+data ResponsePredicate = ResponsePredicate
+  { getResponsePredicate :: Response LBS.ByteString -> IO ()
+  } deriving (Generic)
 
-instance Bifunctor ResponsePredicate where
-  first f (ResponsePredicate a b) = ResponsePredicate (f a) b
-  second = fmap
-
-instance (Monoid n, Monoid r) => Monoid (ResponsePredicate n r) where
-  mempty = ResponsePredicate mempty mempty
-  a `mappend` b = ResponsePredicate
-    { respPredName = respPredName a <> respPredName b
-    , respPred = respPred a <> respPred b
-    }
+instance Monoid ResponsePredicate where
+  mempty = ResponsePredicate $ const $ return ()
+  ResponsePredicate a `mappend` ResponsePredicate b = ResponsePredicate $ \x -> a x >> b x
 
 -- | A predicate that depends on both the request and the response.
 --
 -- /Since 0.0.0.0/
-data RequestPredicate n r = RequestPredicate
-  { reqPredName :: n
-  , reqResps    :: Request -> Manager -> IO (r, [Response LBS.ByteString])
-  } deriving (Generic, Functor)
-
-instance Bifunctor RequestPredicate where
-  first f (RequestPredicate a b) = RequestPredicate (f a) b
-  second = fmap
+data RequestPredicate = RequestPredicate
+  { getRequestPredicate    :: Request -> Manager -> IO [Response LBS.ByteString]
+  } deriving (Generic)
 
 -- TODO: This isn't actually a monoid
-instance (Monoid n, Monoid r) => Monoid (RequestPredicate n r) where
-  mempty = RequestPredicate mempty (\r m -> httpLbs r m >>= \x -> return (mempty, [x]))
-  a `mappend` b = RequestPredicate
-    { reqPredName = reqPredName a <> reqPredName b
-    , reqResps = \x m -> liftM2 (<>) (reqResps a x m) (reqResps b x m)
-    }
+instance Monoid RequestPredicate where
+  mempty = RequestPredicate (\r m -> httpLbs r m >>= \x -> return ([x]))
+  RequestPredicate a `mappend` RequestPredicate b = RequestPredicate $ \r mgr ->
+    liftM2 (<>) (a r mgr) (b r mgr)
 
 -- | A set of predicates. Construct one with 'mempty' and '<%>'.
-data Predicates n r = Predicates
-  { reqPreds :: RequestPredicate n r
-  , respPreds :: ResponsePredicate n r
-  } deriving (Generic, Functor)
+data Predicates = Predicates
+  { requestPredicates :: RequestPredicate
+  , responsePredicates :: ResponsePredicate
+  } deriving (Generic)
 
-instance (Monoid n, Monoid r) => Monoid (Predicates n r) where
+instance Monoid Predicates where
   mempty = Predicates mempty mempty
-  a `mappend` b = Predicates (reqPreds a <> reqPreds b) (respPreds a <> respPreds b)
-
-
+  a `mappend` b = Predicates (requestPredicates a <> requestPredicates b)
+                             (responsePredicates a <> responsePredicates b)
 
 class JoinPreds a where
-  joinPreds :: a -> Predicates [Text] [Text] -> Predicates [Text] [Text]
+  joinPreds :: a -> Predicates -> Predicates
 
-instance JoinPreds (RequestPredicate Text Bool) where
-  joinPreds p (Predicates x y) = Predicates (go <> x) y
-    where go = let p' = first return p
-               in fmap (\z -> if z then [] else reqPredName p') p'
+instance JoinPreds (RequestPredicate ) where
+  joinPreds p (Predicates x y) = Predicates (p <> x) y
 
-instance JoinPreds (ResponsePredicate Text Bool) where
-  joinPreds p (Predicates x y) = Predicates x (go <> y)
-    where go = let p' = first return p
-               in fmap (\z -> if z then [] else respPredName p') p'
-
+instance JoinPreds (ResponsePredicate ) where
+  joinPreds p (Predicates x y) = Predicates x (p <> y)
 
 -- | Adds a new predicate (either `ResponsePredicate` or `RequestPredicate`) to
 -- the existing predicates.
@@ -357,14 +339,17 @@ instance JoinPreds (ResponsePredicate Text Bool) where
 -- > not500 <%> onlyJsonObjects <%> empty
 --
 -- /Since 0.0.0.0/
-(<%>) :: JoinPreds a => a -> Predicates [Text] [Text] -> Predicates [Text] [Text]
+(<%>) :: JoinPreds a => a -> Predicates -> Predicates
 (<%>) = joinPreds
 infixr 6 <%>
 
-finishPredicates :: Predicates [Text] [Text] -> Request -> Manager -> IO [Text]
-finishPredicates p req mgr = do
-  (soFar, resps) <- reqResps (reqPreds p) req mgr
-  return $ soFar <> mconcat [respPred (respPreds p) r | r <- resps]
+finishPredicates :: Predicates -> Request -> Manager -> IO (Maybe PredicateFailure)
+finishPredicates p req mgr = go `catch` \(e :: PredicateFailure) -> return $ Just e
+  where
+    go = do
+     resps <- getRequestPredicate (requestPredicates p) req mgr
+     mapM_  (getResponsePredicate $ responsePredicates p) resps
+     return Nothing
 
 -- * helpers
 
@@ -373,5 +358,8 @@ hasValidHeader hdr p r = case lookup (mk hdr) (responseHeaders r) of
   Nothing -> False
   Just v  -> p v
 
-status2XX :: Response b -> Bool
-status2XX r = status200 <= responseStatus r && responseStatus r < status300
+status2XX :: Monad m => Response b -> String -> m ()
+status2XX r t
+  | status200 <= responseStatus r && responseStatus r < status300
+  = return ()
+  | otherwise = fail t

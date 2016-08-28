@@ -1,40 +1,72 @@
 module Servant.QuickCheck.Internal.ErrorTypes where
 
-import Text.PrettyPrint
-import Prelude.Compat
-import Data.String (IsString(fromString))
-import GHC.Generics (Generic)
+import           Control.Exception       (Exception (..))
+import qualified Data.ByteString.Lazy    as LBS
+import           Data.String.Conversions (cs)
+import qualified Data.Text               as T
+import           GHC.Generics            (Generic)
+import qualified Network.HTTP.Client     as C
+import           Network.HTTP.Types      (Header, statusCode)
+import           Prelude.Compat
+import           Text.PrettyPrint
 
-data Request = Request
-  { requestBody    :: String
-  , requestHeaders :: [String]
-  , requestUrl     :: String
-  } deriving (Eq, Show, Read, Generic)
+prettyHeaders :: [Header] -> Doc
+prettyHeaders hdrs = vcat $ prettyHdr <$> hdrs
+  where
+    prettyHdr (hn, h) = text (show hn) <> colon <+>  text (show h)
 
-prettyReq :: Request -> Doc
+prettyReq :: C.Request -> Doc
 prettyReq r =
   text "Request:" $$ (nest 5 $
-     text "URL:"      <+> (nest 5 $ text $ requestUrl r)
-  $$ text "Headers:"  <+> (nest 5 $ hsep $ text <$> requestHeaders r)
-  $$ text "Body:"     <+> (nest 5 $ text $ requestBody r))
+     text "Method:"   <+> (nest 5 $ text . show $ C.method r)
+  $$ text "Path:"     <+> (nest 5 $ text . cs $ C.path r)
+  $$ text "Headers:"  <+> (nest 5 $ prettyHeaders $ C.requestHeaders r)
+  $$ text "Body:"     <+> (nest 5 $ text . getReqBody $ C.requestBody r))
+  where
+    getReqBody (C.RequestBodyLBS lbs ) = cs lbs
+    getReqBody (C.RequestBodyBS bs ) = cs bs
+    getReqBody _ = error "expected bytestring body"
 
-instance IsString Request where
-  fromString url = Request "" [] url
+prettyResp :: C.Response LBS.ByteString -> Doc
+prettyResp r =
+  text "Response:" $$ (nest 5 $
+     text "Status code:" <+> (nest 5 $ text . show . statusCode $ C.responseStatus r)
+  $$ text "Headers:"  $$ (nest 10 $ prettyHeaders $ C.responseHeaders r)
+  $$ text "Body:"     <+> (nest 5 $ text . cs $ C.responseBody r))
 
-data Response = Response
-  { responseBody    :: String
-  , responseHeaders :: [String]
-  } deriving (Eq, Show, Read, Generic)
-
-instance IsString Response where
-  fromString body = Response body []
 
 -- The error that occurred.
-data Failure
-  = PredicateFailure String Request Response
-  | ServerEqualityFailure Request Response Response
-  deriving (Eq, Read, Generic)
+data PredicateFailure = PredicateFailure T.Text (Maybe C.Request) (C.Response LBS.ByteString)
+  deriving (Generic)
 
-instance Show Failure where
-  show (PredicateFailure pred req resp)
-    = "Predicate failed for " ++ pred
+data ServerEqualityFailure = ServerEqualityFailure C.Request (C.Response LBS.ByteString) (C.Response LBS.ByteString)
+  deriving (Generic)
+
+prettyServerEqualityFailure :: ServerEqualityFailure -> Doc
+prettyServerEqualityFailure (ServerEqualityFailure req resp1 resp2) =
+  text "Server equality failed" $$ (nest 5 $
+     prettyReq req
+  $$ prettyResp resp1
+  $$ prettyResp resp2)
+
+
+prettyPredicateFailure :: PredicateFailure -> Doc
+prettyPredicateFailure (PredicateFailure predicate req resp) =
+  text "Predicate failed" $$ (nest 5 $
+     text "Predicate:" <+> (text $ T.unpack predicate)
+  $$ r
+  $$ prettyResp resp)
+  where
+    r = case req of
+      Nothing -> text ""
+      Just v  -> prettyReq v
+
+instance Show ServerEqualityFailure where
+  show = render . prettyServerEqualityFailure
+
+instance Exception ServerEqualityFailure where
+
+instance Show PredicateFailure where
+  show = render . prettyPredicateFailure
+
+instance Exception PredicateFailure where

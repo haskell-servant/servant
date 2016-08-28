@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Servant.QuickCheck.Internal.QuickCheck where
 
 import qualified Data.ByteString.Lazy     as LBS
@@ -18,6 +19,7 @@ import           Test.QuickCheck          (Args (..), Result (..),
 import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, run, monitor)
 import           Test.QuickCheck.Property (counterexample)
 import Control.Monad (unless)
+import Control.Concurrent (newMVar, modifyMVar_, readMVar)
 
 import Servant.QuickCheck.Internal.Equality
 import Servant.QuickCheck.Internal.HasGenRequest
@@ -60,17 +62,22 @@ serversEqual :: HasGenRequest a =>
   Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality LBS.ByteString -> Expectation
 serversEqual api burl1 burl2 args req = do
   let reqs = (\f -> (f burl1, f burl2)) <$> genRequest api
-  r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
+  -- This MVar stuff is clunky! But there doesn't seem to be an easy way to
+  -- return results when a test fails, since an exception is throw.
+  deetsMVar <- newMVar $ error "should not be called"
+  r <- quickCheckWithResult args { chatty = False } $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
     resp1 <- run $ C.httpLbs (noCheckStatus req1) defManager
     resp2 <- run $ C.httpLbs (noCheckStatus req2) defManager
     unless (getResponseEquality req resp1 resp2) $ do
       monitor (counterexample "hi" )
+      run $ modifyMVar_ deetsMVar $ const $ return $
+        ServerEqualityFailure req1 resp1 resp2
       assert False
-
   case r of
     Success {} -> return ()
+    f@Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $
+      "Failed:\n" ++ show x
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
-    Failure { output = m } -> expectationFailure $ "Failed:\n" ++ show m
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
@@ -94,22 +101,27 @@ serversEqual api burl1 burl2 args req = do
 --
 -- /Since 0.0.0.0/
 serverSatisfies :: (HasGenRequest a) =>
-  Proxy a -> BaseUrl -> Args -> Predicates [Text] [Text] -> Expectation
+  Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
 serverSatisfies api burl args preds = do
   let reqs = ($ burl) <$> genRequest api
-  r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
+  deetsMVar <- newMVar $ error "should not be called"
+  r <- quickCheckWithResult args { chatty = False } $ monadicIO $ forAllM reqs $ \req -> do
      v <- run $ finishPredicates preds (noCheckStatus req) defManager
-     assert $ null v
+     run $ modifyMVar_ deetsMVar $ const $ return v
+     case v of
+       Just x -> assert False
+       _ -> return ()
   case r of
     Success {} -> return ()
+    f@Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $
+      "Failed:\n" ++ show x
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
-    Failure { output = m } -> expectationFailure $ "Failed:\n" ++ show m
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
 
 serverDoesntSatisfy :: (HasGenRequest a) =>
-  Proxy a -> BaseUrl -> Args -> Predicates [Text] [Text] -> Expectation
+  Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
 serverDoesntSatisfy api burl args preds = do
   let reqs = ($ burl) <$> genRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do

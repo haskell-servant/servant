@@ -1,28 +1,27 @@
 {-# LANGUAGE CPP #-}
 module Servant.QuickCheck.InternalSpec (spec) where
 
-import           Control.Concurrent.MVar                    (newMVar, readMVar,
-                                                             swapMVar)
-import           Control.Monad.IO.Class                     (liftIO)
-import           Prelude.Compat
-import           Servant
-import           Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPI)
-import           Test.Hspec                                 (Spec, context,
-                                                             describe, it,
-                                                             pending, shouldBe)
-import           Test.Hspec.Core.Spec                       (Arg, Example,
-                                                             Result (..),
-                                                             defaultParams,
-                                                             evaluateExample)
+import Control.Concurrent.MVar                    (newMVar, readMVar, swapMVar)
+import Control.Monad.IO.Class                     (liftIO)
+import Prelude.Compat
+import Servant
+import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPI)
+import Test.Hspec                                 (Spec, context, describe, it,
+                                                   pending, shouldBe,
+                                                   shouldContain)
+import Test.Hspec.Core.Spec                       (Arg, Example, Result (..),
+                                                   defaultParams,
+                                                   evaluateExample)
 
-import           Servant.QuickCheck
-import           Servant.QuickCheck.Internal                (genRequest, Failure(..), serverDoesntSatisfy)
+import Servant.QuickCheck
+import Servant.QuickCheck.Internal (genRequest, serverDoesntSatisfy)
 
 spec :: Spec
 spec = do
   serversEqualSpec
   serverSatisfiesSpec
   isComprehensiveSpec
+  onlyJsonObjectSpec
 
 serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
@@ -34,28 +33,14 @@ serversEqualSpec = describe "serversEqual" $ do
 
   context "when servers are not equal" $ do
 
-    it "provides the failing requests in the error message" $ do
-      e <- withServantServer api2 server2 $ \burl1 ->
-        withServantServer api2 server3 $ \burl2 -> do
-          evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
-      e `shouldBe` e
 
-    it "provides the failing requests in the error message" $ do
+    it "provides the failing responses in the error message" $ do
       Fail _ err <- withServantServer api2 server2 $ \burl1 ->
         withServantServer api2 server3 $ \burl2 -> do
           evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
-      print err
-      let ServerEqualityFailure req _ _ = read err
-      req `shouldBe` "failplz"
-
-    {-it "provides the failing responses in the error message" $ do-}
-      {-Fail _ err <- withServantServer api2 server2 $ \burl1 ->-}
-        {-withServantServer api2 server3 $ \burl2 -> do-}
-          {-evalExample $ serversEqual api2 burl1 burl2 args bodyEquality-}
-      {-let ServerEqualityFailure _ r1 r2 = read err-}
-      {-r1 `shouldBe` "1"-}
-      {-r2 `shouldBe` "2"-}
-
+      show err `shouldContain` "Body: 1"
+      show err `shouldContain` "Body: 2"
+      show err `shouldContain` "Path: failplz/"
 
 serverSatisfiesSpec :: Spec
 serverSatisfiesSpec = describe "serverSatisfies" $ do
@@ -74,8 +59,24 @@ serverSatisfiesSpec = describe "serverSatisfies" $ do
                                      <%> notAllowedContainsAllowHeader
                                      <%> mempty)
 
-  context "when predicates are false" $
-    it "fails with informative error messages" $ pending
+  context "when predicates are false" $ do
+
+    it "fails with informative error messages" $ do
+      Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
+        evalExample $ serverSatisfies api burl args (getsHaveCacheControlHeader <%> mempty)
+      err `shouldContain` "getsHaveCacheControlHeader"
+      err `shouldContain` "Headers"
+      err `shouldContain` "Body"
+
+onlyJsonObjectSpec :: Spec
+onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
+
+  it "fails correctly" $ do
+    Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
+      evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
+        (onlyJsonObjects <%> mempty)
+    err `shouldContain` "onlyJsonObjects"
+
 
 isComprehensiveSpec :: Spec
 isComprehensiveSpec = describe "HasGenRequest" $ do
@@ -133,5 +134,5 @@ noOfTestCases :: Int
 #if LONG_TESTS
 noOfTestCases = 20000
 #else
-noOfTestCases = 500
+noOfTestCases = 1000
 #endif
