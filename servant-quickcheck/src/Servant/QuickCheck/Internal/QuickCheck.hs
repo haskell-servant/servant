@@ -57,6 +57,17 @@ withServantServerAndContext api ctx server t
 -- Evidently, if the behaviour of the server is expected to be
 -- non-deterministic,  this function may produce spurious failures
 --
+-- Note that only valid requests are generated and tested. As an example of why
+-- this matters, let's say your API specifies that a particular endpoint can
+-- only generate @JSON@. @serversEqual@ will then not generate any requests
+-- with an @Accept@ header _other_ than @application/json@. It may therefore
+-- fail to notice that one application, when the request has @Accept:
+-- text/html@, returns a @406 Not Acceptable@ HTTP response, and another
+-- returns a @200 Success@, but with @application/json@ as the content-type.
+--
+-- The fact that only valid requests are tested also means that no endpoints
+-- not listed in the API type are tested.
+--
 -- /Since 0.0.0.0/
 serversEqual :: HasGenRequest a =>
   Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality LBS.ByteString -> Expectation
