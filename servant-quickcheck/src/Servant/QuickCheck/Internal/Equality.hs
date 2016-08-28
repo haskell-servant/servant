@@ -1,8 +1,8 @@
 module Servant.QuickCheck.Internal.Equality where
 
-import           Data.Function       (on)
-import           Network.HTTP.Client (Response, responseBody)
-import           Prelude.Compat
+import Data.Function       (on)
+import Network.HTTP.Client (Response, responseBody)
+import Prelude.Compat
 
 newtype ResponseEquality b
   = ResponseEquality { getResponseEquality :: Response b -> Response b -> Bool }

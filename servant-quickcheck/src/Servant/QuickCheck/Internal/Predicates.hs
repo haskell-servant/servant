@@ -1,11 +1,10 @@
 module Servant.QuickCheck.Internal.Predicates where
 
-import Control.Exception (catch, SomeException, throw)
-import           Control.Monad         (liftM2, guard, ap)
+import           Control.Exception     (SomeException, catch, throw)
+import           Control.Monad         (ap, guard, liftM2)
 import           Control.Monad.Reader
 import           Data.Aeson            (Object, decode)
 import           Data.Bifunctor        (Bifunctor (..))
-import           Prelude.Compat
 import qualified Data.ByteString       as SBS
 import qualified Data.ByteString.Char8 as SBSC
 import qualified Data.ByteString.Lazy  as LBS
@@ -22,9 +21,10 @@ import           Network.HTTP.Client   (Manager, Request, Response, httpLbs,
                                         responseStatus)
 import           Network.HTTP.Media    (matchAccept)
 import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
-                                        renderStdMethod, status200, status201,
-                                        status300, status401, status405,
-                                        status500, status100)
+                                        renderStdMethod, status100, status200,
+                                        status201, status300, status401,
+                                        status405, status500)
+import           Prelude.Compat
 
 import Servant.QuickCheck.Internal.ErrorTypes
 

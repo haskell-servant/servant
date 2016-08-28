@@ -69,10 +69,10 @@ module Servant.QuickCheck
 
   ) where
 
+import Data.Proxy                  (Proxy (..))
+import Servant.Client              (BaseUrl (..), Scheme (..))
 import Servant.QuickCheck.Internal
-import Servant.Client (BaseUrl(..), Scheme(..))
-import Test.QuickCheck (Args(..), stdArgs)
-import Data.Proxy (Proxy(..))
+import Test.QuickCheck             (Args (..), stdArgs)
 
 -- | QuickCheck @Args@ with 1000 rather than 100 test cases.
 --

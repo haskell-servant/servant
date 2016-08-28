@@ -7,8 +7,7 @@ import Prelude.Compat
 import Servant
 import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPI)
 import Test.Hspec                                 (Spec, context, describe, it,
-                                                   pending, shouldBe,
-                                                   shouldContain)
+                                                   shouldBe, shouldContain)
 import Test.Hspec.Core.Spec                       (Arg, Example, Result (..),
                                                    defaultParams,
                                                    evaluateExample)

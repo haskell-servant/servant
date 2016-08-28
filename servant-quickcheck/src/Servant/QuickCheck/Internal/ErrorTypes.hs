@@ -10,6 +10,28 @@ import           Network.HTTP.Types      (Header, statusCode)
 import           Prelude.Compat
 import           Text.PrettyPrint
 
+data PredicateFailure
+  = PredicateFailure T.Text (Maybe C.Request) (C.Response LBS.ByteString)
+  deriving (Generic)
+
+instance Exception ServerEqualityFailure where
+
+instance Show PredicateFailure where
+  show = render . prettyPredicateFailure
+
+
+data ServerEqualityFailure
+  = ServerEqualityFailure C.Request (C.Response LBS.ByteString) (C.Response LBS.ByteString)
+  deriving (Generic)
+
+instance Show ServerEqualityFailure where
+  show = render . prettyServerEqualityFailure
+
+
+instance Exception PredicateFailure where
+
+-- * Pretty printing
+
 prettyHeaders :: [Header] -> Doc
 prettyHeaders hdrs = vcat $ prettyHdr <$> hdrs
   where
@@ -35,12 +57,6 @@ prettyResp r =
   $$ text "Body:"     <+> (nest 5 $ text . cs $ C.responseBody r))
 
 
--- The error that occurred.
-data PredicateFailure = PredicateFailure T.Text (Maybe C.Request) (C.Response LBS.ByteString)
-  deriving (Generic)
-
-data ServerEqualityFailure = ServerEqualityFailure C.Request (C.Response LBS.ByteString) (C.Response LBS.ByteString)
-  deriving (Generic)
 
 prettyServerEqualityFailure :: ServerEqualityFailure -> Doc
 prettyServerEqualityFailure (ServerEqualityFailure req resp1 resp2) =
@@ -61,12 +77,3 @@ prettyPredicateFailure (PredicateFailure predicate req resp) =
       Nothing -> text ""
       Just v  -> prettyReq v
 
-instance Show ServerEqualityFailure where
-  show = render . prettyServerEqualityFailure
-
-instance Exception ServerEqualityFailure where
-
-instance Show PredicateFailure where
-  show = render . prettyPredicateFailure
-
-instance Exception PredicateFailure where

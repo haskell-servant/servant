@@ -1,20 +1,20 @@
 {-# LANGUAGE PolyKinds #-}
 module Servant.QuickCheck.Internal.HasGenRequest where
 
-import           Data.Default.Class       (def)
-import           Data.Monoid              ((<>))
-import           Data.String              (fromString)
-import           Data.String.Conversions  (cs)
-import           GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
-import           Network.HTTP.Client      (Request, RequestBody (..), host,
-                                           method, path, port, queryString,
-                                           requestBody, requestHeaders, secure)
-import           Network.HTTP.Media       (renderHeader)
-import           Prelude.Compat
-import           Servant
-import           Servant.API.ContentTypes (AllMimeRender (..))
-import           Servant.Client           (BaseUrl (..), Scheme (..))
-import           Test.QuickCheck          (Arbitrary (..), Gen, elements, oneof)
+import Data.Default.Class       (def)
+import Data.Monoid              ((<>))
+import Data.String              (fromString)
+import Data.String.Conversions  (cs)
+import GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
+import Network.HTTP.Client      (Request, RequestBody (..), host, method, path,
+                                 port, queryString, requestBody, requestHeaders,
+                                 secure)
+import Network.HTTP.Media       (renderHeader)
+import Prelude.Compat
+import Servant
+import Servant.API.ContentTypes (AllMimeRender (..))
+import Servant.Client           (BaseUrl (..), Scheme (..))
+import Test.QuickCheck          (Arbitrary (..), Gen, elements, oneof)
 
 
 class HasGenRequest a where

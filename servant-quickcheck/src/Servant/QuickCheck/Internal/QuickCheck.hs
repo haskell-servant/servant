@@ -1,6 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 module Servant.QuickCheck.Internal.QuickCheck where
 
+import           Control.Concurrent       (modifyMVar_, newMVar, readMVar)
+import           Control.Monad            (unless)
 import qualified Data.ByteString.Lazy     as LBS
 import           Data.Proxy               (Proxy)
 import           Data.String              (IsString (..))
@@ -16,15 +18,14 @@ import           System.IO.Unsafe         (unsafePerformIO)
 import           Test.Hspec               (Expectation, expectationFailure)
 import           Test.QuickCheck          (Args (..), Result (..),
                                            quickCheckWithResult)
-import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, run, monitor)
+import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, monitor,
+                                           run)
 import           Test.QuickCheck.Property (counterexample)
-import Control.Monad (unless)
-import Control.Concurrent (newMVar, modifyMVar_, readMVar)
 
 import Servant.QuickCheck.Internal.Equality
+import Servant.QuickCheck.Internal.ErrorTypes
 import Servant.QuickCheck.Internal.HasGenRequest
 import Servant.QuickCheck.Internal.Predicates
-import Servant.QuickCheck.Internal.ErrorTypes
 
 
 -- | Start a servant application on an open port, run the provided function,
