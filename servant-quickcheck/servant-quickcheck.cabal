@@ -12,6 +12,8 @@ maintainer:          jkarni@gmail.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
+extra-source-files:
+  CHANGELOG.md
 
 flag long-tests
   description: Run more QuickCheck tests
