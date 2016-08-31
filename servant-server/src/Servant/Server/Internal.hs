@@ -43,10 +43,17 @@ import           Network.Wai                (Application, Request, Response,
 import           Prelude                    ()
 import           Prelude.Compat
 import           Web.HttpApiData            (FromHttpApiData)
+#if MIN_VERSION_http_api_data(0,3,0)
+import           Web.Internal.HttpApiData   (parseHeaderMaybe,
+                                             parseQueryParamMaybe,
+                                             parseUrlPieceMaybe,
+                                             parseUrlPieces)
+#else
 import           Web.HttpApiData.Internal   (parseHeaderMaybe,
                                              parseQueryParamMaybe,
                                              parseUrlPieceMaybe,
                                              parseUrlPieces)
+#endif
 
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
                                               CaptureAll, Verb,
