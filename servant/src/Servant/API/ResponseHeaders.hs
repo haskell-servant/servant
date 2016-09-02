@@ -31,8 +31,8 @@ module Servant.API.ResponseHeaders
     ) where
 
 import           Data.ByteString.Char8       as BS (pack, unlines, init)
-import           Web.HttpApiData             (ToHttpApiData, toHeader
-                                             ,FromHttpApiData, parseHeader)
+import           Web.HttpApiData             (ToHttpApiData, toHeader,
+                                             FromHttpApiData, parseHeader)
 import qualified Data.CaseInsensitive        as CI
 import           Data.Proxy
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
