@@ -1,10 +1,10 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds          #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Servant.API.Times
@@ -18,17 +18,17 @@ module Servant.API.Times
     , ISO8601DateTimeZ
     ) where
 
-import           Data.Typeable (Typeable)
-import           GHC.TypeLits  -- (Symbol)
+import           Data.Typeable    (Typeable)
+import           GHC.TypeLits     (Symbol,KnownSymbol,symbolVal)
 import           Web.HttpApiData
 import qualified Data.Time.Format as T
 #if !MIN_VERSION_time(1,5,0)
-import           System.Locale as T
+import qualified System.Locale    as T
 #endif
-import           Data.Text (pack, Text)
+import           Data.Text        (pack, Text)
 import           Data.Proxy
-import           Control.Monad ((>=>))
-import           Control.Arrow (first)
+import           Control.Monad    ((>=>))
+import           Control.Arrow    (first)
 
 
 type ISO8601Date      = "%Y-%m-%d"
@@ -49,7 +49,7 @@ newtype FTime (format :: Symbol) t = FTime {getFTime :: t}
     deriving (Typeable, Eq, Ord)
 
 instance (KnownSymbol format, T.FormatTime t) => Show (FTime format t) where
-    showsPrec i t = showParen (i > 1) (\str -> renderTime t ++ str)
+    showsPrec i t = showParen (i > 1) (renderTime t ++)
 
 instance (KnownSymbol format, T.ParseTime t) => Read (FTime format t) where
     readsPrec i str = res

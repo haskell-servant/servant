@@ -318,7 +318,7 @@ captureTimeSpec = do
 
     with (return (serve
         (Proxy :: Proxy (Capture "datetime" (FTime TimeFormatWSpace UTCTime) :> Raw))
-        (\ (FTime day )request_ respond ->
+        (\ (FTime _day) request_ respond ->
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/2015-12-02%2012:34:56+1000/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
