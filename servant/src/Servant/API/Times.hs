@@ -54,6 +54,7 @@ instance (KnownSymbol format, T.FormatTime t) => Show (FTime format t) where
 instance (KnownSymbol format, T.ParseTime t) => Read (FTime format t) where
     readsPrec i str = res
         where
+            fmt = symbolVal (Proxy :: Proxy format)
             res = fmap (first FTime)
                        (readParen (i > 1)
 #if !MIN_VERSION_time(1,5,0)
@@ -63,12 +64,6 @@ instance (KnownSymbol format, T.ParseTime t) => Read (FTime format t) where
 #endif
                                   str
                         )
-
-            toFTimeTy :: [(FTime format t, String)] -> FTime format t
-            toFTimeTy _ = undefined
-
-            fmt = getFormat (toFTimeTy res)
-
 
 
 instance (KnownSymbol format, T.FormatTime t) => ToHttpApiData (FTime format t) where
