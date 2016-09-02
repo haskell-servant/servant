@@ -1,5 +1,5 @@
 name:                servant-foreign
-version:             0.5
+version:             0.8
 synopsis:            Helpers for generating clients for servant APIs in any programming language
 description:
   Helper types and functions for generating client functions for servant APIs in any programming language
@@ -11,9 +11,9 @@ description:
   <https://github.com/haskell-servant/servant/blob/master/servant-foreign/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
-author:              Denis Redozubov, Maksymilian Owsianny
-maintainer:          denis.redozubov@gmail.com
-copyright:           2015 Denis Redozubov, Alp Mestanogullari
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2015-2016 Servant Contributors
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
@@ -21,21 +21,41 @@ extra-source-files:
   include/*.h
   CHANGELOG.md
   README.md
+bug-reports:         http://github.com/haskell-servant/servant/issues
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git
 
 library
-  exposed-modules:     Servant.Foreign, Servant.Foreign.Internal
+  exposed-modules:     Servant.Foreign
+                     , Servant.Foreign.Internal
+                     , Servant.Foreign.Inflections
   build-depends:       base       == 4.*
                      , lens       == 4.*
-                     , servant    == 0.5.*
+                     , servant    == 0.8.*
                      , text       >= 1.2  && < 1.3
                      , http-types
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
+  if impl(ghc >= 8.0)
+    ghc-options: -Wno-redundant-constraints
   include-dirs: include
+  default-extensions:  CPP
+                     , ConstraintKinds
+                     , DataKinds
+                     , FlexibleContexts
+                     , FlexibleInstances
+                     , GeneralizedNewtypeDeriving
+                     , MultiParamTypeClasses
+                     , ScopedTypeVariables
+                     , StandaloneDeriving
+                     , TemplateHaskell
+                     , TypeFamilies
+                     , TypeOperators
+                     , UndecidableInstances
+                     , OverloadedStrings
+                     , PolyKinds
 
 
 test-suite spec
@@ -44,9 +64,20 @@ test-suite spec
   ghc-options:       -Wall
   include-dirs:      include
   main-is:           Spec.hs
-  other-modules:
-      Servant.ForeignSpec
+  other-modules:     Servant.ForeignSpec
   build-depends:     base
                    , hspec >= 2.1.8
                    , servant-foreign
   default-language:  Haskell2010
+  default-extensions:  ConstraintKinds
+                     , DataKinds
+                     , FlexibleContexts
+                     , FlexibleInstances
+                     , GeneralizedNewtypeDeriving
+                     , MultiParamTypeClasses
+                     , ScopedTypeVariables
+                     , TypeFamilies
+                     , TypeOperators
+                     , UndecidableInstances
+                     , OverloadedStrings
+                     , PolyKinds

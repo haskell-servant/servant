@@ -9,8 +9,8 @@ import           Data.Vault.Lazy (Vault)
 --
 -- | Use 'Vault' in your API types to provide access to the 'Vault'
 --   of the request, which is a location shared by middlewares and applications
---   to store arbitrary data. See 'Vault' for more details on how to actually
---   use the vault in your handlers
+--   to store arbitrary data. See <https://hackage.haskell.org/package/vault vault>
+--   for more details on how to actually use the vault in your handlers
 --
 -- Example:
 --

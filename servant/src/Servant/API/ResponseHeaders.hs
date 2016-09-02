@@ -30,9 +30,6 @@ module Servant.API.ResponseHeaders
     , HList(..)
     ) where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative         ((<$>))
-#endif
 import           Data.ByteString.Char8       as BS (pack, unlines, init)
 import           Data.ByteString.Conversion  (ToByteString, toByteString',
                                               FromByteString, fromByteString)
@@ -42,6 +39,8 @@ import           GHC.TypeLits                (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types.Header   as HTTP
 
 import           Servant.API.Header          (Header (..))
+import           Prelude                     ()
+import           Prelude.Compat
 
 -- | Response Header objects. You should never need to construct one directly.
 -- Instead, use 'addHeader'.
@@ -69,8 +68,7 @@ class BuildHeadersTo hs where
 instance OVERLAPPING_ BuildHeadersTo '[] where
     buildHeadersTo _ = HNil
 
-instance OVERLAPPABLE_ ( FromByteString v, BuildHeadersTo xs, KnownSymbol h
-                       , Contains h xs ~ 'False)
+instance OVERLAPPABLE_ ( FromByteString v, BuildHeadersTo xs, KnownSymbol h )
          => BuildHeadersTo ((Header h v) ': xs) where
     buildHeadersTo headers =
       let wantedHeader = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
@@ -90,7 +88,7 @@ class GetHeaders ls where
 instance OVERLAPPING_ GetHeaders (HList '[]) where
     getHeaders _ = []
 
-instance OVERLAPPABLE_ ( KnownSymbol h, ToByteString x, GetHeaders (HList xs))
+instance OVERLAPPABLE_ ( KnownSymbol h, ToByteString x, GetHeaders (HList xs) )
          => GetHeaders (HList (Header h x ': xs)) where
     getHeaders hdrs = case hdrs of
         Header val `HCons` rest -> (headerName , toByteString' val):getHeaders rest
@@ -101,7 +99,7 @@ instance OVERLAPPABLE_ ( KnownSymbol h, ToByteString x, GetHeaders (HList xs))
 instance OVERLAPPING_ GetHeaders (Headers '[] a) where
     getHeaders _ = []
 
-instance OVERLAPPABLE_ ( KnownSymbol h, GetHeaders (HList rest), ToByteString v)
+instance OVERLAPPABLE_ ( KnownSymbol h, GetHeaders (HList rest), ToByteString v )
          => GetHeaders (Headers (Header h v ': rest) a) where
     getHeaders hs = getHeaders $ getHeadersHList hs
 
@@ -113,19 +111,14 @@ class AddHeader h v orig new
   addHeader :: v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
 
 
-instance OVERLAPPING_ ( KnownSymbol h, ToByteString v, Contains h (fst ': rest) ~ 'False)
+instance OVERLAPPING_ ( KnownSymbol h, ToByteString v )
          => AddHeader h v (Headers (fst ': rest)  a) (Headers (Header h v  ': fst ': rest) a) where
     addHeader a (Headers resp heads) = Headers resp (HCons (Header a) heads)
 
 instance OVERLAPPABLE_ ( KnownSymbol h, ToByteString v
-                       , new ~ (Headers '[Header h v] a))
+                       , new ~ (Headers '[Header h v] a) )
          => AddHeader h v a new where
     addHeader a resp = Headers resp (HCons (Header a) HNil)
-
-type family Contains x xs where
-    Contains x ((Header x a) ': xs) = 'True
-    Contains x ((Header y a) ': xs) = Contains x xs
-    Contains x '[]                  = 'False
 
 -- $setup
 -- >>> import Servant.API

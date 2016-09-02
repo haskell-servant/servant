@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -22,7 +21,7 @@
 -- >>>
 -- >>>
 -- >>> type Hello = "hello" :> Get '[JSON] Int
--- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] ()
+-- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] NoContent
 -- >>> type API   = Hello :<|> Bye
 -- >>> let api = Proxy :: Proxy API
 --
@@ -48,11 +47,11 @@
 -- If the API has an endpoint with parameters then we can generate links with
 -- or without those:
 --
--- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] ())
+-- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] NoContent)
 -- >>> print $ safeLink api with (Just "Hubert")
 -- bye?name=Hubert
 --
--- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] ())
+-- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] NoContent)
 -- >>> print $ safeLink api without
 -- bye
 --
@@ -70,17 +69,11 @@
 -- Attempting to construct a link to an endpoint that does not exist in api
 -- will result in a type error like this:
 --
--- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] ())
+-- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] NoContent)
 -- >>> safeLink api bad_link
 -- ...
---     Could not deduce (Or
---                         (IsElem' (Verb 'DELETE 200 '[JSON] ()) (Verb 'GET 200 '[JSON] Int))
---                         (IsElem'
---                            ("hello" :> Delete '[JSON] ())
---                            ("bye" :> (QueryParam "name" String :> Delete '[JSON] ()))))
---       arising from a use of ‘safeLink’
---     In the expression: safeLink api bad_link
---     In an equation for ‘it’: it = safeLink api bad_link
+-- ...Could not deduce...
+-- ...
 --
 --  This error is essentially saying that the type family couldn't find
 --  bad_link under api after trying the open (but empty) type family
@@ -101,24 +94,24 @@ module Servant.Utils.Links (
   , Or
 ) where
 
-import Data.List
-import Data.Proxy ( Proxy(..) )
-import qualified Data.Text as Text
 import qualified Data.ByteString.Char8 as BSC
-#if !MIN_VERSION_base(4,8,0)
-import Data.Monoid ( Monoid(..), (<>) )
-#else
-import Data.Monoid ( (<>) )
-#endif
-import Network.URI ( URI(..), escapeURIString, isUnreserved )
-import GHC.TypeLits ( KnownSymbol, symbolVal )
-import GHC.Exts(Constraint)
+import           Data.List
+import           Data.Monoid.Compat    ( (<>) )
+import           Data.Proxy            ( Proxy(..) )
+import qualified Data.Text             as Text
+import           GHC.Exts              (Constraint)
+import           GHC.TypeLits          ( KnownSymbol, symbolVal )
+import           Network.URI           ( URI(..), escapeURIString, isUnreserved )
+import           Prelude               ()
+import           Prelude.Compat
 
 import Web.HttpApiData
-import Servant.API.Capture ( Capture )
+import Servant.API.BasicAuth ( BasicAuth )
+import Servant.API.Capture ( Capture, CaptureAll )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.Header ( Header )
+import Servant.API.RemoteHost ( RemoteHost )
 import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
@@ -169,6 +162,8 @@ type family IsElem endpoint api :: Constraint where
     IsElem sa (Header sym x :> sb)          = IsElem sa sb
     IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
     IsElem (Capture z y :> sa) (Capture x y :> sb)
+                                            = IsElem sa sb
+    IsElem (CaptureAll z y :> sa) (CaptureAll x y :> sb)
                                             = IsElem sa sb
     IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
@@ -291,8 +286,23 @@ instance (ToHttpApiData v, HasLink sub)
         toLink (Proxy :: Proxy sub) $
             addSegment (escape . Text.unpack $ toUrlPiece v) l
 
+instance (ToHttpApiData v, HasLink sub)
+    => HasLink (CaptureAll sym v :> sub) where
+    type MkLink (CaptureAll sym v :> sub) = [v] -> MkLink sub
+    toLink _ l vs =
+        toLink (Proxy :: Proxy sub) $
+            foldl' (flip $ addSegment . escape . Text.unpack . toUrlPiece) l vs
+
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (RemoteHost :> sub) where
+    type MkLink (RemoteHost :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (BasicAuth realm a :> sub) where
+    type MkLink (BasicAuth realm a :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
 -- Verb (terminal) instances

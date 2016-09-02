@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeOperators              #-}
 
 import           Control.Concurrent.STM
@@ -92,7 +93,7 @@ main = do
 
   writeJSForAPI testApi (angular defAngularOptions) (www </> "angular" </> "api.js")
 
-  writeJSForAPI testApi axios (www </> "axios" </> "api.js")
+  writeJSForAPI testApi (axios defAxiosOptions) (www </> "axios" </> "api.js")
 
   writeServiceJS (www </> "angular" </> "api.service.js")
 

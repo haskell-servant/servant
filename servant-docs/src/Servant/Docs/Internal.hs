@@ -22,11 +22,12 @@ module Servant.Docs.Internal where
 
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, over, traversed, (%~),
+import           Control.Lens               (makeLenses, mapped, over, traversed, view, (%~),
                                              (&), (.~), (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
 import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
+import qualified Data.ByteString.Char8      as BSC
 import qualified Data.CaseInsensitive       as CI
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
@@ -139,6 +140,12 @@ data DocIntro = DocIntro
   , _introBody  :: [String] -- ^ Each String is a paragraph.
   } deriving (Eq, Show)
 
+-- | A type to represent Authentication information about an endpoint.
+data DocAuthentication = DocAuthentication
+  { _authIntro        :: String
+  , _authDataRequired :: String
+  } deriving (Eq, Ord, Show)
+
 instance Ord DocIntro where
     compare = comparing _introTitle
 
@@ -156,7 +163,7 @@ data DocNote = DocNote
 --
 -- These are intended to be built using extraInfo.
 -- Multiple ExtraInfo may be combined with the monoid instance.
-newtype ExtraInfo layout = ExtraInfo (HashMap Endpoint Action)
+newtype ExtraInfo api = ExtraInfo (HashMap Endpoint Action)
 instance Monoid (ExtraInfo a) where
     mempty = ExtraInfo mempty
     ExtraInfo a `mappend` ExtraInfo b =
@@ -229,7 +236,8 @@ defResponse = Response
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _captures :: [DocCapture]                -- type collected + user supplied info
+  { _authInfo :: [DocAuthentication]         -- user supplied info
+  , _captures :: [DocCapture]                -- type collected + user supplied info
   , _headers  :: [Text]                      -- type collected
   , _params   :: [DocQueryParam]             -- type collected + user supplied info
   , _notes    :: [DocNote]                   -- user supplied
@@ -246,8 +254,8 @@ data Action = Action
 -- 'combineAction' to mush two together taking the response, body and content
 -- types from the very left.
 combineAction :: Action -> Action -> Action
-Action c h p n m ts body resp `combineAction` Action c' h' p' n' m' _ _ _ =
-        Action (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
+Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
+        Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
 -- Default 'Action'. Has no 'captures', no GET 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -267,6 +275,7 @@ defAction =
          []
          []
          []
+         []
          defResponse
 
 -- | Create an API that's comprised of a single endpoint.
@@ -276,6 +285,7 @@ single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
 -- gimme some lenses
+makeLenses ''DocAuthentication
 makeLenses ''DocOptions
 makeLenses ''API
 makeLenses ''Endpoint
@@ -290,11 +300,11 @@ makeLenses ''Action
 -- default way to create documentation.
 --
 -- prop> docs == docsWithOptions defaultDocOptions
-docs :: HasDocs layout => Proxy layout -> API
+docs :: HasDocs api => Proxy api -> API
 docs p = docsWithOptions p defaultDocOptions
 
 -- | Generate the docs for a given API that implements 'HasDocs'.
-docsWithOptions :: HasDocs layout => Proxy layout -> DocOptions -> API
+docsWithOptions :: HasDocs api => Proxy api -> DocOptions -> API
 docsWithOptions p = docsFor p (defEndpoint, defAction)
 
 -- | Closed type family, check if endpoint is exactly within API.
@@ -306,7 +316,7 @@ type family IsIn (endpoint :: *) (api :: *) :: Constraint where
     IsIn (e :> sa) (e :> sb)           = IsIn sa sb
     IsIn e e                           = ()
 
--- | Create an 'ExtraInfo' that is garunteed to be within the given API layout.
+-- | Create an 'ExtraInfo' that is guaranteed to be within the given API layout.
 --
 -- The safety here is to ensure that you only add custom documentation to an
 -- endpoint that actually exists within your API.
@@ -319,8 +329,8 @@ type family IsIn (endpoint :: *) (api :: *) :: Constraint where
 -- >                                      , DocNote "Second secton" ["And some more"]
 -- >                                      ]
 
-extraInfo :: (IsIn endpoint layout, HasLink endpoint, HasDocs endpoint)
-          => Proxy endpoint -> Action -> ExtraInfo layout
+extraInfo :: (IsIn endpoint api, HasLink endpoint, HasDocs endpoint)
+          => Proxy endpoint -> Action -> ExtraInfo api
 extraInfo p action =
     let api = docsFor p (defEndpoint, defAction) defaultDocOptions
     -- Assume one endpoint, HasLink constraint means that we should only ever
@@ -339,7 +349,7 @@ extraInfo p action =
 -- 'extraInfo'.
 --
 -- If you only want to add an introduction, use 'docsWithIntros'.
-docsWith :: HasDocs layout => DocOptions -> [DocIntro] -> ExtraInfo layout -> Proxy layout -> API
+docsWith :: HasDocs api => DocOptions -> [DocIntro] -> ExtraInfo api -> Proxy api -> API
 docsWith opts intros (ExtraInfo endpoints) p =
     docsWithOptions p opts
       & apiIntros <>~ intros
@@ -348,13 +358,13 @@ docsWith opts intros (ExtraInfo endpoints) p =
 
 -- | Generate the docs for a given API that implements 'HasDocs' with with any
 -- number of introduction(s)
-docsWithIntros :: HasDocs layout => [DocIntro] -> Proxy layout -> API
+docsWithIntros :: HasDocs api => [DocIntro] -> Proxy api -> API
 docsWithIntros intros = docsWith defaultDocOptions intros mempty
 
 -- | The class that abstracts away the impact of API combinators
 --   on documentation generation.
-class HasDocs layout where
-  docsFor :: Proxy layout -> (Endpoint, Action) -> DocOptions -> API
+class HasDocs api where
+  docsFor :: Proxy api -> (Endpoint, Action) -> DocOptions -> API
 
 -- | The class that lets us display a sample input or output in the supported
 -- content-types when generating documentation for endpoints that either:
@@ -453,7 +463,7 @@ instance AllHeaderSamples '[] where
 
 instance (ToByteString l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
     => AllHeaderSamples (Header h l ': ls) where
-    allHeaderToSample _ = (mkHeader (toSample (Proxy :: Proxy l))) :
+    allHeaderToSample _ = mkHeader (toSample (Proxy :: Proxy l)) :
                           allHeaderToSample (Proxy :: Proxy ls)
       where headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy h)
             mkHeader (Just x) = (headerName, cs $ toByteString x)
@@ -503,6 +513,10 @@ class ToParam t where
 class ToCapture c where
   toCapture :: Proxy c -> DocCapture
 
+-- | The class that helps us get documentation for authenticated endpoints
+class ToAuthInfo a where
+      toAuthInfo :: Proxy a -> DocAuthentication
+
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
@@ -515,6 +529,7 @@ markdown api = unlines $
           str :
           "" :
           notesStr (action ^. notes) ++
+          authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
           headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
@@ -522,7 +537,7 @@ markdown api = unlines $
           responseStr (action ^. response) ++
           []
 
-          where str = "## " ++ show (endpoint^.method)
+          where str = "## " ++ BSC.unpack (endpoint^.method)
                     ++ " " ++ showPath (endpoint^.path)
 
         introsStr :: [DocIntro] -> [String]
@@ -546,6 +561,20 @@ markdown api = unlines $
             intersperse "" (nt ^. noteBody) ++
             "" :
             []
+
+
+        authStr :: [DocAuthentication] -> [String]
+        authStr auths =
+          let authIntros = mapped %~ view authIntro $ auths
+              clientInfos = mapped %~ view authDataRequired $ auths
+          in "#### Authentication":
+              "":
+              unlines authIntros :
+              "":
+              "Clients must supply the following data" :
+              unlines clientInfos :
+              "" :
+              []
 
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
@@ -646,27 +675,43 @@ markdown api = unlines $
 -- | The generated docs for @a ':<|>' b@ just appends the docs
 --   for @a@ with the docs for @b@.
 instance OVERLAPPABLE_
-         (HasDocs layout1, HasDocs layout2)
-      => HasDocs (layout1 :<|> layout2) where
+         (HasDocs a, HasDocs b)
+      => HasDocs (a :<|> b) where
 
   docsFor Proxy (ep, action) = docsFor p1 (ep, action) <> docsFor p2 (ep, action)
 
-    where p1 :: Proxy layout1
+    where p1 :: Proxy a
           p1 = Proxy
 
-          p2 :: Proxy layout2
+          p2 :: Proxy b
           p2 = Proxy
 
 -- | @"books" :> 'Capture' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
-instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs sublayout)
-      => HasDocs (Capture sym a :> sublayout) where
+instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)
+      => HasDocs (Capture sym a :> api) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint', action')
+
+    where subApiP = Proxy :: Proxy api
+          captureP = Proxy :: Proxy (Capture sym a)
+
+          action' = over captures (|> toCapture captureP) action
+          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
+          symP = Proxy :: Proxy sym
+
+
+-- | @"books" :> 'CaptureAll' "isbn" Text@ will appear as
+-- @/books/:isbn@ in the docs.
+instance (KnownSymbol sym, ToCapture (CaptureAll sym a), HasDocs sublayout)
+      => HasDocs (CaptureAll sym a :> sublayout) where
 
   docsFor Proxy (endpoint, action) =
     docsFor sublayoutP (endpoint', action')
 
     where sublayoutP = Proxy :: Proxy sublayout
-          captureP = Proxy :: Proxy (Capture sym a)
+          captureP = Proxy :: Proxy (CaptureAll sym a)
 
           action' = over captures (|> toCapture captureP) action
           endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
@@ -707,34 +752,43 @@ instance OVERLAPPING_
           status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
-instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs sublayout)
-      => HasDocs (QueryParam sym a :> sublayout) where
+instance (KnownSymbol sym, HasDocs api)
+      => HasDocs (Header sym a :> api) where
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          action' = over headers (|> headername) action
+          headername = T.pack $ symbolVal (Proxy :: Proxy sym)
+
+instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs api)
+      => HasDocs (QueryParam sym a :> api) where
 
   docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint, action')
+    docsFor subApiP (endpoint, action')
 
-    where sublayoutP = Proxy :: Proxy sublayout
+    where subApiP = Proxy :: Proxy api
           paramP = Proxy :: Proxy (QueryParam sym a)
           action' = over params (|> toParam paramP) action
 
-instance (KnownSymbol sym, ToParam (QueryParams sym a), HasDocs sublayout)
-      => HasDocs (QueryParams sym a :> sublayout) where
+instance (KnownSymbol sym, ToParam (QueryParams sym a), HasDocs api)
+      => HasDocs (QueryParams sym a :> api) where
 
   docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint, action')
+    docsFor subApiP (endpoint, action')
 
-    where sublayoutP = Proxy :: Proxy sublayout
+    where subApiP = Proxy :: Proxy api
           paramP = Proxy :: Proxy (QueryParams sym a)
           action' = over params (|> toParam paramP) action
 
 
-instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs sublayout)
-      => HasDocs (QueryFlag sym :> sublayout) where
+instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs api)
+      => HasDocs (QueryFlag sym :> api) where
 
   docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint, action')
+    docsFor subApiP (endpoint, action')
 
-    where sublayoutP = Proxy :: Proxy sublayout
+    where subApiP = Proxy :: Proxy api
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
 
@@ -747,45 +801,55 @@ instance HasDocs Raw where
 -- example data. However, there's no reason to believe that the instances of
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
 -- both are even defined) for any particular type.
-instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs sublayout)
-      => HasDocs (ReqBody (ct ': cts) a :> sublayout) where
+instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
+      => HasDocs (ReqBody (ct ': cts) a :> api) where
 
   docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint, action')
+    docsFor subApiP (endpoint, action')
 
-    where sublayoutP = Proxy :: Proxy sublayout
+    where subApiP = Proxy :: Proxy api
           action' = action & rqbody .~ sampleByteString t p
                            & rqtypes .~ allMime t
           t = Proxy :: Proxy (ct ': cts)
           p = Proxy :: Proxy a
 
-instance (KnownSymbol path, HasDocs sublayout) => HasDocs (path :> sublayout) where
+instance (KnownSymbol path, HasDocs api) => HasDocs (path :> api) where
 
   docsFor Proxy (endpoint, action) =
-    docsFor sublayoutP (endpoint', action)
+    docsFor subApiP (endpoint', action)
 
-    where sublayoutP = Proxy :: Proxy sublayout
+    where subApiP = Proxy :: Proxy api
           endpoint' = endpoint & path <>~ [symbolVal pa]
           pa = Proxy :: Proxy path
 
-instance HasDocs sublayout => HasDocs (RemoteHost :> sublayout) where
+instance HasDocs api => HasDocs (RemoteHost :> api) where
   docsFor Proxy ep =
-    docsFor (Proxy :: Proxy sublayout) ep
+    docsFor (Proxy :: Proxy api) ep
 
-instance HasDocs sublayout => HasDocs (IsSecure :> sublayout) where
+instance HasDocs api => HasDocs (IsSecure :> api) where
   docsFor Proxy ep =
-    docsFor (Proxy :: Proxy sublayout) ep
+    docsFor (Proxy :: Proxy api) ep
 
-instance HasDocs sublayout => HasDocs (HttpVersion :> sublayout) where
+instance HasDocs api => HasDocs (HttpVersion :> api) where
   docsFor Proxy ep =
-    docsFor (Proxy :: Proxy sublayout) ep
+    docsFor (Proxy :: Proxy api) ep
 
-instance HasDocs sublayout => HasDocs (Vault :> sublayout) where
+instance HasDocs api => HasDocs (Vault :> api) where
   docsFor Proxy ep =
-    docsFor (Proxy :: Proxy sublayout) ep
+    docsFor (Proxy :: Proxy api) ep
+
+instance HasDocs api => HasDocs (WithNamedContext name context api) where
+  docsFor Proxy = docsFor (Proxy :: Proxy api)
+
+instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth realm usr :> api) where
+  docsFor Proxy (endpoint, action) =
+    docsFor (Proxy :: Proxy api) (endpoint, action')
+      where
+        authProxy = Proxy :: Proxy (BasicAuth realm usr)
+        action' = over authInfo (|> toAuthInfo authProxy) action
 
 -- ToSample instances for simple types
-instance ToSample ()
+instance ToSample NoContent
 instance ToSample Bool
 instance ToSample Ordering
 

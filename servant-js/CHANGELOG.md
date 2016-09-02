@@ -1,6 +1,8 @@
-HEAD
+0.5
 ----
 
+* Extract javascript-obvlious types and helpers to *servant-foreign*
+* Use `text` package instead of `String`
 * Provide new targets for code generation along with the old jQuery one: vanilla Javascript and Angular.js
 * Greatly simplify usage of this library by reducing down the API to just 2 functions: `jsForAPI` and `writeJSForAPI` + the choice of a code generator
 * Support for the `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators

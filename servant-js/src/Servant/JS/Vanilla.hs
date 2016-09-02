@@ -54,12 +54,15 @@ generateVanillaJSWith opts req = "\n" <>
 
   where argsStr = T.intercalate ", " args
         args = captures
-            ++ map (view $ argName._1) queryparams
+            ++ map (view $ queryArgName . argPath) queryparams
             ++ body
-            ++ map (toValidFunctionName . (<>) "header" . fst . headerArg) hs
+            ++ map ( toValidFunctionName
+                   . (<>) "header"
+                   . view (headerArg . argPath)
+                   ) hs
             ++ [onSuccess, onError]
 
-        captures = map (fst . captureArg)
+        captures = map (view argPath . captureArg)
                  . filter isCapture
                  $ req ^. reqUrl.path
 
@@ -85,15 +88,16 @@ generateVanillaJSWith opts req = "\n" <>
             then ""
             else headersStr <> "\n"
 
-          where headersStr = T.intercalate "\n" $ map headerStr hs
-                headerStr header = "  xhr.setRequestHeader(\"" <>
-                  fst (headerArg header) <>
-                  "\", " <> toJSHeader header <> ");"
+          where
+            headersStr = T.intercalate "\n" $ map headerStr hs
+            headerStr header = "  xhr.setRequestHeader(\"" <>
+              header ^. headerArg . argPath <>
+              "\", " <> toJSHeader header <> ");"
 
         namespace = if moduleName opts == ""
                        then "var "
                        else (moduleName opts) <> "."
-        fname = namespace <> (functionNameBuilder opts $ req ^. funcName)
+        fname = namespace <> (functionNameBuilder opts $ req ^. reqFuncName)
 
         method = req ^. reqMethod
         url = if url' == "'" then "'/'" else url'

@@ -56,10 +56,7 @@ done
 
 if $DRY_RUN ; then
    echo "Would have bumped position ${POSITION} on these packages:"
-   ( cd "$ROOT" && bumper --dry-run -"$POSITION" $(join , "${SOURCES[@]}") )
+   ( cd "$ROOT" && bumper --dry-run -"$POSITION" $(join , $SOURCES tutorial) )
 else
-   ( cd "$ROOT" && bumper -"$POSITION" $(join , "${SOURCES[@]}") )
+   ( cd "$ROOT" && bumper -"$POSITION" $(join , $SOURCES tutorial) )
 fi
-
-# Trailing newline, bumper does not ship with its own.
-echo

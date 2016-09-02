@@ -34,7 +34,7 @@ type TestApi =
   :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
 
        -- DELETE /greet/:greetid
-  :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] ()
+  :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent
 
 testApi :: Proxy TestApi
 testApi = Proxy
@@ -44,7 +44,7 @@ testApi = Proxy
 -- There's one handler per endpoint, which, just like in the type
 -- that represents the API, are glued together using :<|>.
 --
--- Each handler runs in the 'ExceptT ServantErr IO' monad.
+-- Each handler runs in the 'Handler' monad.
 server :: Server TestApi
 server = helloH :<|> postGreetH :<|> deleteGreetH
 
@@ -54,7 +54,7 @@ server = helloH :<|> postGreetH :<|> deleteGreetH
 
         postGreetH greet = return greet
 
-        deleteGreetH _ = return ()
+        deleteGreetH _ = return NoContent
 
 -- Turn the server into a WAI app. 'serve' is provided by servant,
 -- more precisely by the Servant.Server module.

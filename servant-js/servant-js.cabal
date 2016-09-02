@@ -1,5 +1,5 @@
 name:                servant-js
-version:             0.5
+version:             0.8
 synopsis:            Automatically derive javascript functions to query servant webservices.
 description:
   Automatically derive javascript functions to query servant webservices.
@@ -13,13 +13,13 @@ description:
   <https://github.com/haskell-servant/servant/blob/master/servant-js/CHANGELOG.md CHANGELOG>
 license:             BSD3
 license-file:        LICENSE
-author:              Alp Mestanogullari, Maksymilian Owsianny
-maintainer:          alpmestan@gmail.com
-copyright:           2014 Alp Mestanogullari
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2015-2016 Servant Contributors
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-homepage:            http://haskell-servant.github.io/
+homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
   include/*.h
@@ -42,9 +42,11 @@ library
                        Servant.JS.JQuery
                        Servant.JS.Vanilla
   build-depends:       base            >= 4.5 && <5
+                     , base-compat     >= 0.9
                      , charset         >= 0.3
                      , lens            >= 4
-                     , servant-foreign == 0.5.*
+                     , servant-foreign == 0.8.*
+                     , servant         == 0.8.*
                      , text            >= 1.2  && < 1.3
 
   hs-source-dirs:      src
@@ -54,7 +56,7 @@ library
 
 executable counter
   main-is: counter.hs
-  ghc-options: -O2 -Wall
+  ghc-options: -Wall
   hs-source-dirs: examples
 
   if flag(example)
@@ -63,11 +65,11 @@ executable counter
     buildable: False
 
   build-depends:    base             >= 4.7 && < 5
-                  , aeson            >= 0.7  && < 0.11
+                  , aeson            >= 0.7  && < 1.1
                   , filepath         >= 1
                   , lens             >= 4
-                  , servant          == 0.5.*
-                  , servant-server   == 0.5.*
+                  , servant          == 0.8.*
+                  , servant-server   == 0.8.*
                   , servant-js
                   , stm
                   , transformers
@@ -83,6 +85,7 @@ test-suite spec
       Servant.JSSpec
       Servant.JSSpec.CustomHeaders
   build-depends:     base
+                   , base-compat
                    , hspec >= 2.1.8
                    , hspec-expectations
                    , language-ecmascript >= 0.16

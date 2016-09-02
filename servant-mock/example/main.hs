@@ -2,6 +2,9 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeOperators              #-}
+
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
+
 import           Data.Aeson
 import           GHC.Generics
 import           Network.Wai.Handler.Warp
@@ -20,4 +23,4 @@ api :: Proxy API
 api = Proxy
 
 main :: IO ()
-main = run 8080 (serve api $ mock api)
+main = run 8080 (serve api $ mock api Proxy)

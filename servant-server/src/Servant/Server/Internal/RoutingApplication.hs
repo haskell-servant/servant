@@ -4,21 +4,17 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 module Servant.Server.Internal.RoutingApplication where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative                ((<$>))
-#endif
-import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
-import qualified Data.ByteString                    as B
-import qualified Data.ByteString.Lazy               as BL
-import           Data.IORef                         (newIORef, readIORef,
-                                                     writeIORef)
+import           Control.Monad                      (ap, liftM)
+import           Control.Monad.Trans                (MonadIO(..))
+import           Control.Monad.Trans.Except         (runExceptT)
 import           Network.Wai                        (Application, Request,
-                                                     Response, ResponseReceived,
-                                                     requestBody,
-                                                     strictRequestBody)
+                                                     Response, ResponseReceived)
+import           Prelude                            ()
+import           Prelude.Compat
 import           Servant.Server.Internal.ServantErr
 
 type RoutingApplication =
@@ -33,63 +29,13 @@ data RouteResult a =
   | Route !a
   deriving (Eq, Show, Read, Functor)
 
-data ReqBodyState = Uncalled
-                  | Called !B.ByteString
-                  | Done !B.ByteString
-
 toApplication :: RoutingApplication -> Application
-toApplication ra request respond = do
-  reqBodyRef <- newIORef Uncalled
-  -- We may need to consume the requestBody more than once.  In order to
-  -- maintain the illusion that 'requestBody' works as expected,
-  -- 'ReqBodyState' is introduced, and the complete body is memoized and
-  -- returned as many times as requested with empty "Done" marker chunks in
-  -- between.
-  -- See https://github.com/haskell-servant/servant/issues/3
-  let memoReqBody = do
-          ior <- readIORef reqBodyRef
-          case ior of
-            Uncalled -> do
-                r <- BL.toStrict <$> strictRequestBody request
-                writeIORef reqBodyRef $ Done r
-                return r
-            Called bs -> do
-                writeIORef reqBodyRef $ Done bs
-                return bs
-            Done bs -> do
-                writeIORef reqBodyRef $ Called bs
-                return B.empty
-
-  ra request{ requestBody = memoReqBody } routingRespond
+toApplication ra request respond = ra request routingRespond
  where
   routingRespond :: RouteResult Response -> IO ResponseReceived
   routingRespond (Fail err)      = respond $ responseServantErr err
   routingRespond (FailFatal err) = respond $ responseServantErr err
   routingRespond (Route v)       = respond v
-
--- We currently mix up the order in which we perform checks
--- and the priority with which errors are reported.
---
--- For example, we perform Capture checks prior to method checks,
--- and therefore get 404 before 405.
---
--- However, we also perform body checks prior to method checks
--- now, and therefore get 415 before 405, which is wrong.
---
--- If we delay Captures, but perform method checks eagerly, we
--- end up potentially preferring 405 over 404, whcih is also bad.
---
--- So in principle, we'd like:
---
--- static routes (can cause 404)
--- delayed captures (can cause 404)
--- methods (can cause 405)
--- delayed body (can cause 415, 400)
--- accept header (can cause 406)
---
--- According to the HTTP decision diagram, the priority order
--- between HTTP status codes is as follows:
---
 
 -- | A 'Delayed' is a representation of a handler with scheduled
 -- delayed checks that can trigger errors.
@@ -98,10 +44,10 @@ toApplication ra request respond = do
 --
 -- There are two reasons:
 --
--- 1. Currently, the order in which we perform checks coincides
--- with the error we will generate. This is because during checks,
--- once an error occurs, we do not perform any subsequent checks,
--- but rather return this error.
+-- 1. In a straight-forward implementation, the order in which we
+-- perform checks will determine the error we generate. This is
+-- because once an error occurs, we would abort and not perform
+-- any subsequent checks, but rather return the current error.
 --
 -- This is not a necessity: we could continue doing other checks,
 -- and choose the preferred error. However, that would in general
@@ -151,99 +97,181 @@ toApplication ra request respond = do
 -- The accept header check can be performed as the final
 -- computation in this block. It can cause a 406.
 --
-data Delayed :: * -> * where
-  Delayed :: IO (RouteResult a)
-          -> IO (RouteResult ())
-          -> IO (RouteResult b)
-          -> (a -> b -> RouteResult c)
-          -> Delayed c
+data Delayed env c where
+  Delayed :: { capturesD :: env -> DelayedIO captures
+             , methodD   :: DelayedIO ()
+             , authD     :: DelayedIO auth
+             , bodyD     :: DelayedIO body
+             , serverD   :: captures -> auth -> body -> Request -> RouteResult c
+             } -> Delayed env c
 
-instance Functor Delayed where
-   fmap f (Delayed a b c g) = Delayed a b c ((fmap.fmap.fmap) f g)
+instance Functor (Delayed env) where
+  fmap f Delayed{..} =
+    Delayed
+      { serverD = \ c a b req -> f <$> serverD c a b req
+      , ..
+      } -- Note [Existential Record Update]
+
+-- | Computations used in a 'Delayed' can depend on the
+-- incoming 'Request', may perform 'IO, and result in a
+-- 'RouteResult, meaning they can either suceed, fail
+-- (with the possibility to recover), or fail fatally.
+--
+newtype DelayedIO a = DelayedIO { runDelayedIO :: Request -> IO (RouteResult a) }
+
+instance Functor DelayedIO where
+  fmap = liftM
+
+instance Applicative DelayedIO where
+  pure = return
+  (<*>) = ap
+
+instance Monad DelayedIO where
+  return x = DelayedIO (const $ return (Route x))
+  DelayedIO m >>= f =
+    DelayedIO $ \ req -> do
+      r <- m req
+      case r of
+        Fail      e -> return $ Fail e
+        FailFatal e -> return $ FailFatal e
+        Route     a -> runDelayedIO (f a) req
+
+instance MonadIO DelayedIO where
+  liftIO m = DelayedIO (const $ Route <$> m)
+
+-- | A 'Delayed' without any stored checks.
+emptyDelayed :: RouteResult a -> Delayed env a
+emptyDelayed result =
+  Delayed (const r) r r r (\ _ _ _ _ -> result)
+  where
+    r = return ()
+
+-- | Fail with the option to recover.
+delayedFail :: ServantErr -> DelayedIO a
+delayedFail err = DelayedIO (const $ return $ Fail err)
+
+-- | Fail fatally, i.e., without any option to recover.
+delayedFailFatal :: ServantErr -> DelayedIO a
+delayedFailFatal err = DelayedIO (const $ return $ FailFatal err)
+
+-- | Gain access to the incoming request.
+withRequest :: (Request -> DelayedIO a) -> DelayedIO a
+withRequest f = DelayedIO (\ req -> runDelayedIO (f req) req)
 
 -- | Add a capture to the end of the capture block.
-addCapture :: Delayed (a -> b)
-           -> IO (RouteResult a)
-           -> Delayed b
-addCapture (Delayed captures method body server) new =
-  Delayed (combineRouteResults (,) captures new) method body (\ (x, v) y -> ($ v) <$> server x y)
+addCapture :: Delayed env (a -> b)
+           -> (captured -> DelayedIO a)
+           -> Delayed (captured, env) b
+addCapture Delayed{..} new =
+  Delayed
+    { capturesD = \ (txt, env) -> (,) <$> capturesD env <*> new txt
+    , serverD   = \ (x, v) a b req -> ($ v) <$> serverD x a b req
+    , ..
+    } -- Note [Existential Record Update]
 
 -- | Add a method check to the end of the method block.
-addMethodCheck :: Delayed a
-               -> IO (RouteResult ())
-               -> Delayed a
-addMethodCheck (Delayed captures method body server) new =
-  Delayed captures (combineRouteResults const method new) body server
+addMethodCheck :: Delayed env a
+               -> DelayedIO ()
+               -> Delayed env a
+addMethodCheck Delayed{..} new =
+  Delayed
+    { methodD = methodD <* new
+    , ..
+    } -- Note [Existential Record Update]
+
+-- | Add an auth check to the end of the auth block.
+addAuthCheck :: Delayed env (a -> b)
+             -> DelayedIO a
+             -> Delayed env b
+addAuthCheck Delayed{..} new =
+  Delayed
+    { authD   = (,) <$> authD <*> new
+    , serverD = \ c (y, v) b req -> ($ v) <$> serverD c y b req
+    , ..
+    } -- Note [Existential Record Update]
 
 -- | Add a body check to the end of the body block.
-addBodyCheck :: Delayed (a -> b)
-             -> IO (RouteResult a)
-             -> Delayed b
-addBodyCheck (Delayed captures method body server) new =
-  Delayed captures method (combineRouteResults (,) body new) (\ x (y, v) -> ($ v) <$> server x y)
+addBodyCheck :: Delayed env (a -> b)
+             -> DelayedIO a
+             -> Delayed env b
+addBodyCheck Delayed{..} new =
+  Delayed
+    { bodyD   = (,) <$> bodyD <*> new
+    , serverD = \ c a (z, v) req -> ($ v) <$> serverD c a z req
+    , ..
+    } -- Note [Existential Record Update]
 
--- | Add an accept header check to the end of the body block.
--- The accept header check should occur after the body check,
--- but this will be the case, because the accept header check
--- is only scheduled by the method combinators.
-addAcceptCheck :: Delayed a
-                -> IO (RouteResult ())
-                -> Delayed a
-addAcceptCheck (Delayed captures method body server) new =
-  Delayed captures method (combineRouteResults const body new) server
+
+-- | Add an accept header check to the beginning of the body
+-- block. There is a tradeoff here. In principle, we'd like
+-- to take a bad body (400) response take precedence over a
+-- failed accept check (406). BUT to allow streaming the body,
+-- we cannot run the body check and then still backtrack.
+-- We therefore do the accept check before the body check,
+-- when we can still backtrack. There are other solutions to
+-- this, but they'd be more complicated (such as delaying the
+-- body check further so that it can still be run in a situation
+-- where we'd otherwise report 406).
+addAcceptCheck :: Delayed env a
+               -> DelayedIO ()
+               -> Delayed env a
+addAcceptCheck Delayed{..} new =
+  Delayed
+    { bodyD = new *> bodyD
+    , ..
+    } -- Note [Existential Record Update]
 
 -- | Many combinators extract information that is passed to
 -- the handler without the possibility of failure. In such a
 -- case, 'passToServer' can be used.
-passToServer :: Delayed (a -> b) -> a -> Delayed b
-passToServer d x = ($ x) <$> d
-
--- | The combination 'IO . RouteResult' is a monad, but we
--- don't explicitly wrap it in a newtype in order to make it
--- an instance. This is the '>>=' of that monad.
---
--- We stop on the first error.
-bindRouteResults :: IO (RouteResult a) -> (a -> IO (RouteResult b)) -> IO (RouteResult b)
-bindRouteResults m f = do
-  r <- m
-  case r of
-    Fail      e -> return $ Fail e
-    FailFatal e -> return $ FailFatal e
-    Route     a -> f a
-
--- | Common special case of 'bindRouteResults', corresponding
--- to 'liftM2'.
-combineRouteResults :: (a -> b -> c) -> IO (RouteResult a) -> IO (RouteResult b) -> IO (RouteResult c)
-combineRouteResults f m1 m2 =
-  m1 `bindRouteResults` \ a ->
-  m2 `bindRouteResults` \ b ->
-  return (Route (f a b))
+passToServer :: Delayed env (a -> b) -> (Request -> a) -> Delayed env b
+passToServer Delayed{..} x =
+  Delayed
+    { serverD = \ c a b req -> ($ x req) <$> serverD c a b req
+    , ..
+    } -- Note [Existential Record Update]
 
 -- | Run a delayed server. Performs all scheduled operations
 -- in order, and passes the results from the capture and body
 -- blocks on to the actual handler.
-runDelayed :: Delayed a
+--
+-- This should only be called once per request; otherwise the guarantees about
+-- effect and HTTP error ordering break down.
+runDelayed :: Delayed env a
+           -> env
+           -> Request
            -> IO (RouteResult a)
-runDelayed (Delayed captures method body server) =
-  captures `bindRouteResults` \ c ->
-  method   `bindRouteResults` \ _ ->
-  body     `bindRouteResults` \ b ->
-  return (server c b)
+runDelayed Delayed{..} env = runDelayedIO $ do
+  c <- capturesD env
+  methodD
+  a <- authD
+  b <- bodyD
+  DelayedIO (\ req -> return $ serverD c a b req)
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.
 -- Also takes a continuation for how to turn the
 -- result of the delayed server into a response.
-runAction :: Delayed (ExceptT ServantErr IO a)
+runAction :: Delayed env (Handler a)
+          -> env
+          -> Request
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
-runAction action respond k = runDelayed action >>= go >>= respond
+runAction action env req respond k =
+  runDelayed action env req >>= go >>= respond
   where
-    go (Fail  e)   = return $ Fail e
+    go (Fail e)      = return $ Fail e
     go (FailFatal e) = return $ FailFatal e
-    go (Route a)   = do
+    go (Route a)     = do
       e <- runExceptT a
       case e of
         Left err -> return . Route $ responseServantErr err
         Right x  -> return $! k x
+
+{- Note [Existential Record Update]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Due to GHC issue <https://ghc.haskell.org/trac/ghc/ticket/2595 2595>, we cannot
+do the more succint thing - just update the records we actually change.
+-}

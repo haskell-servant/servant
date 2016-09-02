@@ -72,11 +72,8 @@ module Servant.API.ContentTypes
     , canHandleAcceptH
     ) where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative              ((*>), (<*))
-#endif
 import           Control.Arrow                    (left)
-import           Control.Monad
+import           Control.Monad.Compat
 import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
@@ -88,7 +85,7 @@ import           Data.ByteString.Lazy             (ByteString, fromStrict,
 import qualified Data.ByteString.Lazy             as B
 import qualified Data.ByteString.Lazy.Char8       as BC
 import           Data.Maybe                       (isJust)
-import           Data.Monoid
+import           Data.Monoid.Compat
 import           Data.String.Conversions          (cs)
 import qualified Data.Text                        as TextS
 import qualified Data.Text.Encoding               as TextS
@@ -99,6 +96,8 @@ import           GHC.Generics                     (Generic)
 import qualified Network.HTTP.Media               as M
 import           Network.URI                      (escapeURIString,
                                                    isUnreserved, unEscapeString)
+import           Prelude                          ()
+import           Prelude.Compat
 
 -- * Provided content types
 data JSON deriving Typeable
@@ -155,7 +154,7 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 -- > instance Accept MyContentType where
 -- >    contentType _ = "example" // "prs.me.mine" /: ("charset", "utf-8")
 -- >
--- > instance Show a => MimeRender MyContentType where
+-- > instance Show a => MimeRender MyContentType a where
 -- >    mimeRender _ val = pack ("This is MINE! " ++ show val)
 -- >
 -- > type MyAPI = "path" :> Get '[MyContentType] Int
@@ -170,7 +169,7 @@ class (AllMime list) => AllCTRender (list :: [*]) a where
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
 instance OVERLAPPABLE_
-         (AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
+         (Accept ct, AllMime cts, AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy (ct ': cts)
             amrs = allMimeRender pctyps val
@@ -320,7 +319,7 @@ instance MimeRender OctetStream BS.ByteString where
 
 -- | A type for responses without content-body.
 data NoContent = NoContent
-  deriving (Show, Eq, Read)
+  deriving (Show, Eq, Read, Generic)
 
 
 --------------------------------------------------------------------------

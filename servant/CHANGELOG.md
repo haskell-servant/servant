@@ -1,6 +1,23 @@
-HEAD
+next
 ----
 
+* Add `CaptureAll` combinator. Captures all of the remaining segments in a URL.
+
+0.8
+---
+
+* Minor fixes, documentation changes and cabal tweaks
+
+0.7.1
+-----
+
+* Add module `Servant.Utils.Enter` (https://github.com/haskell-servant/servant/pull/478)
+* Allow to set the same header multiple times in responses.
+
+0.5
+---
+
+* Add `WithNamedConfig` combinator.
 * Add `HttpVersion`, `IsSecure`, `RemoteHost` and `Vault` combinators
 * Fix safeLink, so Header is not in fact required.
 * Add more instances for (:<|>)
@@ -9,6 +26,8 @@ HEAD
 * Add PlainText String MimeRender and MimeUnrender instances.
 * Add new `Verbs` combinator, and make all existing and new verb combinators
 type synonyms of it.
+* Add `BasicAuth` combinator to support Basic authentication
+* Add generalized authentication support
 
 0.4.2
 -----

@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE QuasiQuotes         #-}
@@ -7,20 +6,22 @@
 {-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Servant.JSSpec where
 
 import           Data.Either                  (isRight)
-#if !MIN_VERSION_base(4,8,0)
-import           Data.Monoid                  ((<>),mconcat)
-#else
-import           Data.Monoid                  ((<>))
-#endif
+import           Data.Monoid                  ()
+import           Data.Monoid.Compat           ((<>))
 import           Data.Proxy
 import           Data.Text                    (Text)
 import qualified Data.Text                    as T
 import           Language.ECMAScript3.Parser  (program, parse)
+import           Prelude                      ()
+import           Prelude.Compat
 import           Test.Hspec  hiding (shouldContain, shouldNotContain)
 
+import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.API.ContentTypes
 import           Servant.JS
 import           Servant.JS.Internal
 import qualified Servant.JS.Angular           as NG
@@ -28,6 +29,13 @@ import qualified Servant.JS.Axios             as AX
 import qualified Servant.JS.JQuery            as JQ
 import qualified Servant.JS.Vanilla           as JS
 import           Servant.JSSpec.CustomHeaders
+
+-- * comprehensive api
+
+-- This declaration simply checks that all instances are in place.
+_ = jsForAPI comprehensiveAPIWithoutRaw vanillaJS :: Text
+
+-- * specs
 
 type TestAPI = "simple" :> ReqBody '[JSON,FormUrlEncoded] Text :> Post '[JSON] Bool
           :<|> "has.extension" :> Get '[FormUrlEncoded,JSON] Bool
@@ -98,7 +106,7 @@ a `shouldNotContain` b  = shouldNotSatisfy a (T.isInfixOf b)
 
 axiosSpec :: Spec
 axiosSpec = describe specLabel $ do
-    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy TestAPI)
+    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy NoContent) (Proxy :: Proxy TestAPI)
     it "should add withCredentials when needed" $ do
         let jsText = genJS withCredOpts $ reqList
         output jsText
@@ -122,7 +130,7 @@ axiosSpec = describe specLabel $ do
 
 angularSpec :: TestNames -> Spec
 angularSpec test = describe specLabel $ do
-    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy TestAPI)
+    let reqList = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy NoContent) (Proxy :: Proxy TestAPI)
     it "should implement a service globally" $ do
         let jsText = genJS reqList
         output jsText

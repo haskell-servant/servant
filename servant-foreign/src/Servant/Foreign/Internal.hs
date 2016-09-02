@@ -1,119 +1,139 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE CPP #-}
 #if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE NullaryTypeClasses    #-}
+{-# LANGUAGE NullaryTypeClasses #-}
 #endif
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE PolyKinds             #-}
 
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
-import           Control.Lens          (makeLenses, (%~), (&), (.~), (<>~))
-import qualified Data.Char             as C
+import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
+                               (.~))
+#if !MIN_VERSION_base(4,8,0)
+import           Data.Monoid
+#endif
 import           Data.Proxy
+import           Data.String
 import           Data.Text
-import           Data.Text.Encoding    (decodeUtf8)
-import           GHC.Exts              (Constraint)
+import           Data.Text.Encoding (decodeUtf8)
+import           GHC.Exts (Constraint)
 import           GHC.TypeLits
-import qualified Network.HTTP.Types    as HTTP
-import           Prelude               hiding (concat)
+import qualified Network.HTTP.Types as HTTP
+import           Prelude hiding (concat)
 import           Servant.API
 
--- | Function name builder that simply concat each part together
-concatCase :: FunctionName -> Text
-concatCase = concat
 
--- | Function name builder using the snake_case convention.
--- each part is separated by a single underscore character.
-snakeCase :: FunctionName -> Text
-snakeCase = intercalate "_"
+newtype FunctionName = FunctionName { unFunctionName :: [Text] }
+  deriving (Show, Eq, Monoid)
 
--- | Function name builder using the CamelCase convention.
--- each part begins with an upper case character.
-camelCase :: FunctionName -> Text
-camelCase = camelCase' . Prelude.map (replace "-" "")
-  where camelCase' []     = ""
-        camelCase' (p:ps) = concat $ p : Prelude.map capitalize ps
-        capitalize ""   = ""
-        capitalize name = C.toUpper (Data.Text.head name) `cons` Data.Text.tail name
+makePrisms ''FunctionName
 
-type ForeignType = Text
-type Arg = (Text, ForeignType)
+newtype PathSegment = PathSegment { unPathSegment :: Text }
+  deriving (Show, Eq, IsString, Monoid)
 
-newtype Segment = Segment { _segment :: SegmentType  }
-  deriving (Eq, Show)
+makePrisms ''PathSegment
 
-data SegmentType = Static Text  -- ^ a static path segment. like "/foo"
-                 | Cap Arg        -- ^ a capture. like "/:userid"
-  deriving (Eq, Show)
+data Arg f = Arg
+  { _argName :: PathSegment
+  , _argType :: f }
 
-type Path = [Segment]
+deriving instance Eq f => Eq (Arg f)
+deriving instance Show f => Show (Arg f)
 
-data ArgType =
-    Normal
+makeLenses ''Arg
+
+argPath :: Getter (Arg f) Text
+argPath = argName . _PathSegment
+
+data SegmentType f
+  = Static PathSegment
+    -- ^ a static path segment. like "/foo"
+  | Cap (Arg f)
+    -- ^ a capture. like "/:userid"
+
+deriving instance Eq f => Eq (SegmentType f)
+deriving instance Show f => Show (SegmentType f)
+
+makePrisms ''SegmentType
+
+newtype Segment f = Segment { unSegment :: SegmentType f }
+
+deriving instance Eq f => Eq (Segment f)
+deriving instance Show f => Show (Segment f)
+
+makePrisms ''Segment
+
+isCapture :: Segment f -> Bool
+isCapture (Segment (Cap _)) = True
+isCapture                _  = False
+
+captureArg :: Segment f -> Arg f
+captureArg (Segment (Cap s)) = s
+captureArg                 _ = error "captureArg called on non capture"
+
+type Path f = [Segment f]
+
+data ArgType
+  = Normal
   | Flag
   | List
   deriving (Eq, Show)
 
-data QueryArg = QueryArg
-  { _argName :: Arg
-  , _argType :: ArgType
-  } deriving (Eq, Show)
+makePrisms ''ArgType
 
-data HeaderArg = HeaderArg
-    { headerArg :: Arg
-    }
-  | ReplaceHeaderArg
-    { headerArg :: Arg
-    , headerPattern :: Text
-    } deriving (Eq, Show)
+data QueryArg f = QueryArg
+  { _queryArgName :: Arg f
+  , _queryArgType :: ArgType
+  }
 
-
-data Url = Url
-  { _path     :: Path
-  , _queryStr :: [QueryArg]
-  } deriving (Eq, Show)
-
-defUrl :: Url
-defUrl = Url [] []
-
-type FunctionName = [Text]
-
-data Req = Req
-  { _reqUrl        :: Url
-  , _reqMethod     :: HTTP.Method
-  , _reqHeaders    :: [HeaderArg]
-  , _reqBody       :: Maybe ForeignType
-  , _reqReturnType :: ForeignType
-  , _funcName      :: FunctionName
-  } deriving (Eq, Show)
+deriving instance Eq f => Eq (QueryArg f)
+deriving instance Show f => Show (QueryArg f)
 
 makeLenses ''QueryArg
-makeLenses ''Segment
+
+data HeaderArg f = HeaderArg
+  { _headerArg :: Arg f }
+  | ReplaceHeaderArg
+  { _headerArg     :: Arg f
+  , _headerPattern :: Text
+  }
+
+deriving instance Eq f => Eq (HeaderArg f)
+deriving instance Show f => Show (HeaderArg f)
+
+makeLenses ''HeaderArg
+
+makePrisms ''HeaderArg
+
+data Url f = Url
+  { _path     :: Path f
+  , _queryStr :: [QueryArg f]
+  }
+
+deriving instance Eq f => Eq (Url f)
+deriving instance Show f => Show (Url f)
+
+defUrl :: Url f
+defUrl = Url [] []
+
 makeLenses ''Url
+
+data Req f = Req
+  { _reqUrl        :: Url f
+  , _reqMethod     :: HTTP.Method
+  , _reqHeaders    :: [HeaderArg f]
+  , _reqBody       :: Maybe f
+  , _reqReturnType :: Maybe f
+  , _reqFuncName   :: FunctionName
+  }
+
+deriving instance Eq f => Eq (Req f)
+deriving instance Show f => Show (Req f)
+
 makeLenses ''Req
 
-isCapture :: Segment -> Bool
-isCapture (Segment (Cap _)) = True
-isCapture                _  = False
-
-captureArg :: Segment -> Arg
-captureArg (Segment (Cap s)) = s
-captureArg                 _ = error "captureArg called on non capture"
-
-defReq :: Req
-defReq = Req defUrl "GET" [] Nothing "" []
+defReq :: Req ftype
+defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName [])
 
 -- | To be used exclusively as a "negative" return type/constraint
 -- by @'Elem`@ type family.
@@ -126,194 +146,233 @@ type family Elem (a :: *) (ls::[*]) :: Constraint where
 
 -- | 'HasForeignType' maps Haskell types with types in the target
 -- language of your backend. For example, let's say you're
--- implementing a backend to some language __X__:
+-- implementing a backend to some language __X__, and you want
+-- a Text representation of each input/output type mentioned in the API:
 --
 -- > -- First you need to create a dummy type to parametrize your
 -- > -- instances.
 -- > data LangX
 -- >
 -- > -- Otherwise you define instances for the types you need
--- > instance HasForeignType LangX Int where
--- >    typeFor _ _ = "intX"
+-- > instance HasForeignType LangX Text Int where
+-- >    typeFor _ _ _ = "intX"
 -- >
 -- > -- Or for example in case of lists
--- > instance HasForeignType LangX a => HasForeignType LangX [a] where
--- >    typeFor lang _ = "listX of " <> typeFor lang (Proxy :: Proxy a)
+-- > instance HasForeignType LangX Text a => HasForeignType LangX Text [a] where
+-- >    typeFor lang type _ = "listX of " <> typeFor lang ftype (Proxy :: Proxy a)
 --
 -- Finally to generate list of information about all the endpoints for
 -- an API you create a function of a form:
 --
--- > getEndpoints :: (HasForeign LangX api, GenerateList (Foreign api))
--- >              => Proxy api -> [Req]
--- > getEndpoints api = listFromAPI (Proxy :: Proxy LangX) api
+-- > getEndpoints :: (HasForeign LangX Text api, GenerateList Text (Foreign Text api))
+-- >              => Proxy api -> [Req Text]
+-- > getEndpoints api = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy Text) api
 --
 -- > -- If language __X__ is dynamically typed then you can use
--- > -- a predefined NoTypes parameter
--- > getEndpoints :: (HasForeign NoTypes api, GenerateList (Foreign api))
--- >              => Proxy api -> [Req]
--- > getEndpoints api = listFromAPI (Proxy :: Proxy NoTypes) api
+-- > -- a predefined NoTypes parameter with the NoContent output type:
+--
+-- > getEndpoints :: (HasForeign NoTypes NoContent api, GenerateList Text (Foreign NoContent api))
+-- >              => Proxy api -> [Req NoContent]
+-- > getEndpoints api = listFromAPI (Proxy :: Proxy NoTypes) (Proxy :: Proxy NoContent) api
 -- >
 --
-class HasForeignType lang a where
-    typeFor :: Proxy lang -> Proxy a -> ForeignType
+class HasForeignType lang ftype a where
+  typeFor :: Proxy lang -> Proxy ftype -> Proxy a -> ftype
 
 data NoTypes
 
-instance HasForeignType NoTypes a where
-    typeFor _ _ = empty
+instance HasForeignType NoTypes NoContent ftype where
+  typeFor _ _ _ = NoContent
 
-class HasForeign lang (layout :: *) where
-  type Foreign layout :: *
-  foreignFor :: Proxy lang -> Proxy layout -> Req -> Foreign layout
+class HasForeign lang ftype (api :: *) where
+  type Foreign ftype api :: *
+  foreignFor :: Proxy lang -> Proxy ftype -> Proxy api -> Req ftype -> Foreign ftype api
 
-instance (HasForeign lang a, HasForeign lang b)
-      => HasForeign lang (a :<|> b) where
-  type Foreign (a :<|> b) = Foreign a :<|> Foreign b
+instance (HasForeign lang ftype a, HasForeign lang ftype b)
+  => HasForeign lang ftype (a :<|> b) where
+  type Foreign ftype (a :<|> b) = Foreign ftype a :<|> Foreign ftype b
 
-  foreignFor lang Proxy req =
-         foreignFor lang (Proxy :: Proxy a) req
-    :<|> foreignFor lang (Proxy :: Proxy b) req
+  foreignFor lang ftype Proxy req =
+         foreignFor lang ftype (Proxy :: Proxy a) req
+    :<|> foreignFor lang ftype (Proxy :: Proxy b) req
 
-instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
-      => HasForeign lang (Capture sym a :> sublayout) where
-  type Foreign (Capture sym a :> sublayout) = Foreign sublayout
+instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype api)
+  => HasForeign lang ftype (Capture sym t :> api) where
+  type Foreign ftype (Capture sym a :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Segment (Cap arg)]
-          & funcName %~ (++ ["by", str])
-
+  foreignFor lang Proxy Proxy req =
+    foreignFor lang Proxy (Proxy :: Proxy api) $
+      req & reqUrl . path <>~ [Segment (Cap arg)]
+          & reqFuncName . _FunctionName %~ (++ ["by", str])
     where
-    str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor lang (Proxy :: Proxy a))
+      str   = pack . symbolVal $ (Proxy :: Proxy sym)
+      ftype = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy t)
+      arg   = Arg
+        { _argName = PathSegment str
+        , _argType = ftype }
 
-instance (Elem JSON list, HasForeignType lang a, ReflectMethod method)
-      => HasForeign lang (Verb method status list a) where
-  type Foreign (Verb method status list a) = Req
+instance (KnownSymbol sym, HasForeignType lang ftype [t], HasForeign lang ftype sublayout)
+  => HasForeign lang ftype (CaptureAll sym t :> sublayout) where
+  type Foreign ftype (CaptureAll sym t :> sublayout) = Foreign ftype sublayout
 
-  foreignFor lang Proxy req =
-    req & funcName  %~ (methodLC :)
+  foreignFor lang Proxy Proxy req =
+    foreignFor lang Proxy (Proxy :: Proxy sublayout) $
+      req & reqUrl . path <>~ [Segment (Cap arg)]
+          & reqFuncName . _FunctionName %~ (++ ["by", str])
+    where
+      str   = pack . symbolVal $ (Proxy :: Proxy sym)
+      ftype = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy [t])
+      arg   = Arg
+        { _argName = PathSegment str
+        , _argType = ftype }
+
+instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
+  => HasForeign lang ftype (Verb method status list a) where
+  type Foreign ftype (Verb method status list a) = Req ftype
+
+  foreignFor lang Proxy Proxy req =
+    req & reqFuncName . _FunctionName %~ (methodLC :)
         & reqMethod .~ method
-        & reqReturnType .~ retType
+        & reqReturnType .~ Just retType
     where
-    retType  = typeFor lang (Proxy :: Proxy a)
-    method   = reflectMethod (Proxy :: Proxy method)
-    methodLC = toLower $ decodeUtf8 method
+      retType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a)
+      method   = reflectMethod (Proxy :: Proxy method)
+      methodLC = toLower $ decodeUtf8 method
 
-instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
-      => HasForeign lang (Header sym a :> sublayout) where
-  type Foreign (Header sym a :> sublayout) = Foreign sublayout
+instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype api)
+  => HasForeign lang ftype (Header sym a :> api) where
+  type Foreign ftype (Header sym a :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang subP $ req
-        & reqHeaders <>~ [HeaderArg arg]
-
+  foreignFor lang Proxy Proxy req =
+    foreignFor lang Proxy subP $ req & reqHeaders <>~ [HeaderArg arg]
     where
-    hname = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (hname, typeFor lang (Proxy :: Proxy a))
-    subP = Proxy :: Proxy sublayout
+      hname = pack . symbolVal $ (Proxy :: Proxy sym)
+      arg   = Arg
+        { _argName = PathSegment hname
+        , _argType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a) }
+      subP  = Proxy :: Proxy api
 
-instance (KnownSymbol sym, HasForeignType lang a, HasForeign lang sublayout)
-      => HasForeign lang (QueryParam sym a :> sublayout) where
-  type Foreign (QueryParam sym a :> sublayout) = Foreign sublayout
+instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype api)
+  => HasForeign lang ftype (QueryParam sym a :> api) where
+  type Foreign ftype (QueryParam sym a :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) $
+  foreignFor lang Proxy Proxy req =
+    foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
       req & reqUrl.queryStr <>~ [QueryArg arg Normal]
-
     where
-    str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor lang (Proxy :: Proxy a))
+      str = pack . symbolVal $ (Proxy :: Proxy sym)
+      arg = Arg
+        { _argName = PathSegment str
+        , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a) }
 
-instance (KnownSymbol sym, HasForeignType lang [a], HasForeign lang sublayout)
-      => HasForeign lang (QueryParams sym a :> sublayout) where
-  type Foreign (QueryParams sym a :> sublayout) = Foreign sublayout
-
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) $
+instance
+  (KnownSymbol sym, HasForeignType lang ftype [a], HasForeign lang ftype api)
+  => HasForeign lang ftype (QueryParams sym a :> api) where
+  type Foreign ftype (QueryParams sym a :> api) = Foreign ftype api
+  foreignFor lang Proxy Proxy req =
+    foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
       req & reqUrl.queryStr <>~ [QueryArg arg List]
-
     where
-    str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor lang (Proxy :: Proxy [a]))
+      str = pack . symbolVal $ (Proxy :: Proxy sym)
+      arg = Arg
+        { _argName = PathSegment str
+        , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy [a]) }
 
-instance (KnownSymbol sym, HasForeignType lang a, a ~ Bool, HasForeign lang sublayout)
-      => HasForeign lang (QueryFlag sym :> sublayout) where
-  type Foreign (QueryFlag sym :> sublayout) = Foreign sublayout
+instance
+  (KnownSymbol sym, HasForeignType lang ftype Bool, HasForeign lang ftype api)
+  => HasForeign lang ftype (QueryFlag sym :> api) where
+  type Foreign ftype (QueryFlag sym :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) $
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) $
       req & reqUrl.queryStr <>~ [QueryArg arg Flag]
-
     where
-    str = pack . symbolVal $ (Proxy :: Proxy sym)
-    arg = (str, typeFor lang (Proxy :: Proxy a))
+      str = pack . symbolVal $ (Proxy :: Proxy sym)
+      arg = Arg
+        { _argName = PathSegment str
+        , _argType = typeFor lang ftype (Proxy :: Proxy Bool) }
 
-instance HasForeign lang Raw where
-  type Foreign Raw = HTTP.Method -> Req
+instance HasForeign lang ftype Raw where
+  type Foreign ftype Raw = HTTP.Method -> Req ftype
 
-  foreignFor _ Proxy req method =
-    req & funcName %~ ((toLower $ decodeUtf8 method) :)
+  foreignFor _ Proxy Proxy req method =
+    req & reqFuncName . _FunctionName %~ ((toLower $ decodeUtf8 method) :)
         & reqMethod .~ method
 
-instance (Elem JSON list, HasForeignType lang a, HasForeign lang sublayout)
-      => HasForeign lang (ReqBody list a :> sublayout) where
-  type Foreign (ReqBody list a :> sublayout) = Foreign sublayout
+instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype api)
+      => HasForeign lang ftype (ReqBody list a :> api) where
+  type Foreign ftype (ReqBody list a :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) $
-      req & reqBody .~ (Just $ typeFor lang (Proxy :: Proxy a))
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) $
+      req & reqBody .~ (Just $ typeFor lang ftype (Proxy :: Proxy a))
 
-instance (KnownSymbol path, HasForeign lang sublayout)
-      => HasForeign lang (path :> sublayout) where
-  type Foreign (path :> sublayout) = Foreign sublayout
+instance (KnownSymbol path, HasForeign lang ftype api)
+      => HasForeign lang ftype (path :> api) where
+  type Foreign ftype (path :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) $
-      req & reqUrl.path <>~ [Segment (Static str)]
-          & funcName %~ (++ [str])
-
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) $
+      req & reqUrl . path <>~ [Segment (Static (PathSegment str))]
+          & reqFuncName . _FunctionName %~ (++ [str])
     where
-    str = Data.Text.map (\c -> if c == '.' then '_' else c)
-        . pack . symbolVal $ (Proxy :: Proxy path)
+      str =
+        Data.Text.map (\c -> if c == '.' then '_' else c)
+          . pack . symbolVal $ (Proxy :: Proxy path)
 
-instance HasForeign lang sublayout => HasForeign lang (RemoteHost :> sublayout) where
-  type Foreign (RemoteHost :> sublayout) = Foreign sublayout
+instance HasForeign lang ftype api
+  => HasForeign lang ftype (RemoteHost :> api) where
+  type Foreign ftype (RemoteHost :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) req
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) req
 
-instance HasForeign lang sublayout => HasForeign lang (IsSecure :> sublayout) where
-  type Foreign (IsSecure :> sublayout) = Foreign sublayout
+instance HasForeign lang ftype api
+  => HasForeign lang ftype (IsSecure :> api) where
+  type Foreign ftype (IsSecure :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) req
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) req
 
-instance HasForeign lang sublayout => HasForeign lang (Vault :> sublayout) where
-  type Foreign (Vault :> sublayout) = Foreign sublayout
+instance HasForeign lang ftype api => HasForeign lang ftype (Vault :> api) where
+  type Foreign ftype (Vault :> api) = Foreign ftype api
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) req
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) req
 
-instance HasForeign lang sublayout => HasForeign lang (HttpVersion :> sublayout) where
-  type Foreign (HttpVersion :> sublayout) = Foreign sublayout
+instance HasForeign lang ftype api =>
+  HasForeign lang ftype (WithNamedContext name context api) where
 
-  foreignFor lang Proxy req =
-    foreignFor lang (Proxy :: Proxy sublayout) req
+  type Foreign ftype (WithNamedContext name context api) = Foreign ftype api
+
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
+
+instance HasForeign lang ftype api
+  => HasForeign lang ftype (HttpVersion :> api) where
+  type Foreign ftype (HttpVersion :> api) = Foreign ftype api
+
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) req
 
 -- | Utility class used by 'listFromAPI' which computes
 --   the data needed to generate a function for each endpoint
 --   and hands it all back in a list.
-class GenerateList reqs where
-  generateList :: reqs -> [Req]
+class GenerateList ftype reqs where
+  generateList :: reqs -> [Req ftype]
 
-instance GenerateList Req where
+instance GenerateList ftype (Req ftype) where
   generateList r = [r]
 
-instance (GenerateList start, GenerateList rest) => GenerateList (start :<|> rest) where
+instance (GenerateList ftype start, GenerateList ftype rest)
+  => GenerateList ftype (start :<|> rest) where
   generateList (start :<|> rest) = (generateList start) ++ (generateList rest)
 
 -- | Generate the necessary data for codegen as a list, each 'Req'
 --   describing one endpoint from your API type.
-listFromAPI :: (HasForeign lang api, GenerateList (Foreign api)) => Proxy lang -> Proxy api -> [Req]
-listFromAPI lang p = generateList (foreignFor lang p defReq)
+listFromAPI
+  :: (HasForeign lang ftype api, GenerateList ftype (Foreign ftype api))
+  => Proxy lang
+  -> Proxy ftype
+  -> Proxy api
+  -> [Req ftype]
+listFromAPI lang ftype p = generateList (foreignFor lang ftype p defReq)

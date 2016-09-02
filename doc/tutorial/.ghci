@@ -1,0 +1,1 @@
+:set -pgmL markdown-unlit -Wall -Werror -fno-warn-missing-methods -fno-warn-name-shadowing -itest
