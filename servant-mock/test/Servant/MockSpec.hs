@@ -40,8 +40,8 @@ data TestHeader
 
 instance ToHttpApiData TestHeader where
   toHeader = toHeader . show
-  toUrlPiece _ = error "ToHttpApiData.toUrlPiece not implemented for TestHeader"
-  toQueryParam _ = error "ToHttpApiData.toQueryParam not implemented for TestHeader"
+  toUrlPiece = toUrlPiece . show
+  toQueryParam = toQueryParam . show
 
 
 instance Arbitrary TestHeader where
