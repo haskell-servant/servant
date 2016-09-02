@@ -2,6 +2,7 @@ next
 ----
 
 * Add `CaptureAll` combinator. Captures all of the remaining segments in a URL.
+* BACKWARD INCOMPATIBLE: Moved `From/ToFormUrlEncoded` classes, which were renamed to `From/ToForm` to `http-api-data`
 
 0.8
 ---
