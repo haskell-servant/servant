@@ -114,7 +114,6 @@ test-suite spec
     , aeson
     , base64-bytestring
     , bytestring
-    , bytestring-conversion
     , directory
     , exceptions
     , hspec == 2.*

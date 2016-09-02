@@ -69,5 +69,4 @@ test-suite spec
     servant-server,
     servant-mock,
     aeson,
-    bytestring-conversion,
     wai
