@@ -9,7 +9,7 @@
 
 module Servant.API.Times
     ( FTime(..)
-    , toProxy
+    , toFormatProxy
     , getFormat
     , renderTime
     , parseTime
@@ -78,11 +78,11 @@ instance (KnownSymbol format, T.ParseTime t) => FromHttpApiData (FTime format t)
     parseQueryParam = parseQueryParam >=> parseTime
 
 
-toProxy :: FTime format t -> Proxy format
-toProxy _ = Proxy
+toFormatProxy :: FTime format t -> Proxy format
+toFormatProxy _ = Proxy
 
 getFormat :: KnownSymbol format => FTime format t -> String
-getFormat t = symbolVal (toProxy t)
+getFormat t = symbolVal (toFormatProxy t)
 
 renderTime :: (KnownSymbol format, T.FormatTime t) => FTime format t -> String
 renderTime tt@(FTime t) = T.formatTime T.defaultTimeLocale (getFormat tt) t
