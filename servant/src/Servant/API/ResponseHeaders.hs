@@ -31,9 +31,8 @@ module Servant.API.ResponseHeaders
     ) where
 
 import           Data.ByteString.Char8       as BS (pack, unlines, init)
-import           Data.ByteString.Conversion  (--ToByteString, toByteString',
-                                              FromByteString, fromByteString)
-import Web.HttpApiData (ToHttpApiData,toHeader)
+import           Web.HttpApiData             (ToHttpApiData,toHeader
+                                             ,FromHttpApiData,parseHeader)
 import qualified Data.CaseInsensitive        as CI
 import           Data.Proxy
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
@@ -69,17 +68,17 @@ class BuildHeadersTo hs where
 instance OVERLAPPING_ BuildHeadersTo '[] where
     buildHeadersTo _ = HNil
 
-instance OVERLAPPABLE_ ( FromByteString v, BuildHeadersTo xs, KnownSymbol h )
+instance OVERLAPPABLE_ ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
          => BuildHeadersTo ((Header h v) ': xs) where
     buildHeadersTo headers =
       let wantedHeader = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
           matching = snd <$> filter (\(h, _) -> h == wantedHeader) headers
       in case matching of
         [] -> MissingHeader `HCons` buildHeadersTo headers
-        xs -> case fromByteString (BS.init $ BS.unlines xs) of
-          Nothing -> UndecodableHeader (BS.init $ BS.unlines xs)
+        xs -> case parseHeader (BS.init $ BS.unlines xs) of
+          Left _err -> UndecodableHeader (BS.init $ BS.unlines xs)
              `HCons` buildHeadersTo headers
-          Just h   -> Header h `HCons` buildHeadersTo headers
+          Right h   -> Header h `HCons` buildHeadersTo headers
 
 -- * Getting
 
