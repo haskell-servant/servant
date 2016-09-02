@@ -35,8 +35,8 @@ type ISO8601Date      = "%Y-%m-%d"
 type ISO8601DateTime  = "%Y-%m-%dT%H:%M:%S"
 type ISO8601DateTimeZ = "%Y-%m-%dT%H:%M:%S%z"
 
--- | A wrapper around a time type which can be parsed/rendered to with `format',
--- as specified in 'Data.Time.Format'.
+-- | An `FTime` is a wrapper around a time type which can be
+-- parsed/rendered with `format', as specified in "Data.Time.Format".
 --
 -- Example:
 --
@@ -46,7 +46,7 @@ type ISO8601DateTimeZ = "%Y-%m-%dT%H:%M:%S%z"
 -- __Note:__ Time Zones parsed in the @%z@ format (@±HHMM@) need to ensure that the @+@ symbol is
 -- url encoded (@%2B@) in requests, as the @+@ symbol is interpreted as a space in query params.
 newtype FTime (format :: Symbol) t = FTime {getFTime :: t}
-    deriving (Typeable, Eq, Ord)
+  deriving (Typeable, Eq, Ord)
 
 instance (KnownSymbol format, T.FormatTime t) => Show (FTime format t) where
   showsPrec i t = showParen (i > 1) (renderFTime t ++)
@@ -75,9 +75,17 @@ instance (KnownSymbol format, T.ParseTime t) => FromHttpApiData (FTime format t)
 toFormatProxy :: FTime format t -> Proxy format
 toFormatProxy _ = Proxy
 
+-- | Returns the sttring representation of the type level @format@ string
+--
+-- >>> getFormat (undefined :: FTime ISO8601Date UTCTime)
+-- "%Y-%m-%d"
 getFormat :: KnownSymbol format => FTime format t -> String
 getFormat t = symbolVal (toFormatProxy t)
 
+-- | Renders an @FTime format t@ using the format `format'.
+--
+-- >>> renderFTime (FTime (fromGregorian 2016 9 2) :: FTime ISO8601Date Day)
+-- "2016-09-02"
 renderFTime :: (KnownSymbol format, T.FormatTime t) => FTime format t -> String
 renderFTime tt@(FTime t) = T.formatTime T.defaultTimeLocale (getFormat tt) t
 
@@ -88,10 +96,10 @@ parseFTime str = res where
                              ++ str ++ "\" with format \"" ++ fmt ++ "\""
       Just t -> Right (FTime t)
 
-        fmt = getFormat (toFTimeTy res)
+  fmt = symbolVal (toFTimeTy res)
 
-        toFTimeTy :: Either Text (FTime format t) -> FTime format a
-        toFTimeTy _ = undefined
+  toFTimeTy :: Either Text (FTime format t) -> Proxy format
+  toFTimeTy _ = Proxy
 
 
 ptime :: T.ParseTime t => T.TimeLocale -> String -> String -> Maybe t
@@ -109,5 +117,6 @@ rtime = T.readSTime False
 -- >>> import Data.Aeson
 -- >>> import Data.Text
 -- >>> import Data.Time.Calendar
+-- >>> import Data.Time.Clock (UTCTime)
 -- >>> data Event
 -- >>> instance ToJSON Event where { toJSON = undefined }
