@@ -266,7 +266,7 @@ errorChoiceSpec = describe "Multiple handlers return errors"
 -- * Instances {{{
 
 instance MimeUnrender PlainText Int where
-    mimeUnrender _ x = maybe (Left "no parse") Right (readMay $ BCL.unpack x)
+    mimeUnrender _ x = maybe (throwE "no parse") return (readMay $ BCL.unpack x)
 
 instance MimeRender PlainText Int where
     mimeRender _ = BCL.pack . show

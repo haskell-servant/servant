@@ -22,6 +22,7 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
+import           Control.Monad.Trans.Except (runExceptT)
 import           Control.Monad.Trans        (liftIO)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
@@ -443,12 +444,15 @@ instance ( AllCTUnrender list a, HasServer api context
         -- http://www.w3.org/2001/tag/2002/0129-mime
         let contentTypeH = fromMaybe "application/octet-stream"
                          $ lookup hContentType $ requestHeaders request
-        mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
-               <$> liftIO (lazyRequestBody request)
+        lbody <- liftIO $ lazyRequestBody request
+        let mrqbody = handleCTypeH (Proxy :: Proxy list) (cs contentTypeH) lbody
         case mrqbody of
-          Nothing        -> delayedFailFatal err415
-          Just (Left e)  -> delayedFailFatal err400 { errBody = cs e }
-          Just (Right v) -> return v
+          Nothing   -> delayedFailFatal err415
+          Just run  -> do
+            val <- liftIO $ runExceptT run
+            case val of
+              Left e  -> delayedFailFatal err400 { errBody = cs e }
+              Right v -> return v
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @api@.

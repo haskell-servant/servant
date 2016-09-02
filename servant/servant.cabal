@@ -109,6 +109,7 @@ test-suite spec
     , attoparsec
     , bytestring
     , hspec == 2.*
+    , mtl >= 2 && < 3
     , QuickCheck
     , quickcheck-instances
     , servant

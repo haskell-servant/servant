@@ -74,6 +74,7 @@ module Servant.API.ContentTypes
 
 import           Control.Arrow                    (left)
 import           Control.Monad.Compat
+import           Control.Monad.Except             (ExceptT, MonadError(..))
 import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
@@ -183,6 +184,7 @@ instance OVERLAPPABLE_
 --
 -- >>> import Network.HTTP.Media hiding (Accept)
 -- >>> import qualified Data.ByteString.Lazy.Char8 as BSC
+-- >>> import Control.Monad.Except
 -- >>> data MyContentType = MyContentType String
 --
 -- >>> :{
@@ -194,19 +196,19 @@ instance OVERLAPPABLE_
 --instance Read a => MimeUnrender MyContentType a where
 --    mimeUnrender _ bs = case BSC.take 12 bs of
 --      "MyContentType" -> return . read . BSC.unpack $ BSC.drop 12 bs
---      _ -> Left "didn't start with the magic incantation"
+--      _ -> throwError "didn't start with the magic incantation"
 -- :}
 --
 -- >>> type MyAPI = "path" :> ReqBody '[MyContentType] Int :> Get '[JSON] Int
 --
 class Accept ctype => MimeUnrender ctype a where
-    mimeUnrender :: Proxy ctype -> ByteString -> Either String a
+    mimeUnrender :: Proxy ctype -> ByteString -> ExceptT String IO a
 
 class AllCTUnrender (list :: [*]) a where
     handleCTypeH :: Proxy list
                  -> ByteString     -- Content-Type header
                  -> ByteString     -- Request body
-                 -> Maybe (Either String a)
+                 -> Maybe (ExceptT String IO a)
 
 instance ( AllMimeUnrender ctyps a ) => AllCTUnrender ctyps a where
     handleCTypeH _ ctypeH body = M.mapContentMedia lkup (cs ctypeH)
@@ -269,7 +271,7 @@ instance OVERLAPPING_
 class (AllMime list) => AllMimeUnrender (list :: [*]) a where
     allMimeUnrender :: Proxy list
                     -> ByteString
-                    -> [(M.MediaType, Either String a)]
+                    -> [(M.MediaType, ExceptT String IO a)]
 
 instance AllMimeUnrender '[] a where
     allMimeUnrender _ _ = []
@@ -344,35 +346,35 @@ eitherDecodeLenient input =
           <* skipSpace
           <* (endOfInput <?> "trailing junk after valid JSON")
 
--- | `eitherDecode`
+-- | @either throwError return . eitherDecodeLenient@
 instance FromJSON a => MimeUnrender JSON a where
-    mimeUnrender _ = eitherDecodeLenient
+    mimeUnrender _ = either throwError return . eitherDecodeLenient
 
--- | @decodeFormUrlEncoded >=> fromFormUrlEncoded@
+-- | @either throwError return . (decodeFormUrlEncoded >=> fromFormUrlEncoded)@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
 instance FromFormUrlEncoded a => MimeUnrender FormUrlEncoded a where
-    mimeUnrender _ = decodeFormUrlEncoded >=> fromFormUrlEncoded
+    mimeUnrender _ = either throwError return . (decodeFormUrlEncoded >=> fromFormUrlEncoded)
 
--- | @left show . TextL.decodeUtf8'@
+-- | @either throwError return . left show . TextL.decodeUtf8'@
 instance MimeUnrender PlainText TextL.Text where
-    mimeUnrender _ = left show . TextL.decodeUtf8'
+    mimeUnrender _ = either throwError return . left show . TextL.decodeUtf8'
 
--- | @left show . TextS.decodeUtf8' . toStrict@
+-- | @either throwError return . left show . TextS.decodeUtf8' . toStrict@
 instance MimeUnrender PlainText TextS.Text where
-    mimeUnrender _ = left show . TextS.decodeUtf8' . toStrict
+    mimeUnrender _ = either throwError return . left show . TextS.decodeUtf8' . toStrict
 
--- | @Right . BC.unpack@
+-- | @return . BC.unpack@
 instance MimeUnrender PlainText String where
-    mimeUnrender _ = Right . BC.unpack
+    mimeUnrender _ = return . BC.unpack
 
--- | @Right . id@
+-- | @return . id@
 instance MimeUnrender OctetStream ByteString where
-    mimeUnrender _ = Right . id
+    mimeUnrender _ = return
 
--- | @Right . toStrict@
+-- | @return . toStrict@
 instance MimeUnrender OctetStream BS.ByteString where
-    mimeUnrender _ = Right . toStrict
+    mimeUnrender _ = return . toStrict
 
 
 --------------------------------------------------------------------------
