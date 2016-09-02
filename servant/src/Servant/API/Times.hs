@@ -52,18 +52,12 @@ instance (KnownSymbol format, T.FormatTime t) => Show (FTime format t) where
     showsPrec i t = showParen (i > 1) (renderTime t ++)
 
 instance (KnownSymbol format, T.ParseTime t) => Read (FTime format t) where
-    readsPrec i str = res
-        where
-            fmt = symbolVal (Proxy :: Proxy format)
-            res = fmap (first FTime)
-                       (readParen (i > 1)
-#if !MIN_VERSION_time(1,5,0)
-                                  (T.readsTime T.defaultTimeLocale fmt)
-#else
-                                  (T.readSTime False T.defaultTimeLocale fmt)
-#endif
-                                  str
-                        )
+  readsPrec i str = res where
+    fmt = symbolVal (Proxy :: Proxy format)
+    res = fmap (first FTime)
+               (readParen (i > 1)
+                          (rtime T.defaultTimeLocale fmt)
+                          str)
 
 
 instance (KnownSymbol format, T.FormatTime t) => ToHttpApiData (FTime format t) where
@@ -102,6 +96,17 @@ parseTime str = res
 
         toFTimeTy :: Either Text (FTime format t) -> FTime format a
         toFTimeTy _ = undefined
+
+
+ptime :: T.ParseTime t => T.TimeLocale -> String -> String -> Maybe t
+rtime :: T.ParseTime t => T.TimeLocale -> String -> ReadS t
+#if !MIN_VERSION_time(1,5,0)
+ptime = T.parseTime
+rtime = T.readsTime
+#else
+ptime = T.parseTimeM False
+rtime = T.readSTime False
+#endif
 
 -- $setup
 -- >>> import Servant.API
