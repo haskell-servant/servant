@@ -30,7 +30,7 @@ module Servant.ClientSpec where
 import           Control.Applicative        ((<$>))
 #endif
 import           Control.Arrow              (left)
-import           Control.Concurrent         (ThreadId, forkIO, killThread)
+import           Control.Concurrent         (forkIO, killThread, ThreadId)
 import           Control.Exception          (bracket)
 import           Control.Monad.Trans.Except (throwE )
 import           Data.Aeson
@@ -44,8 +44,7 @@ import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as HTTP
 import           Network.Socket
-import           Network.Wai                (Request, requestHeaders,
-                                             responseLBS)
+import           Network.Wai                (Request, requestHeaders, responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.Hspec
@@ -121,9 +120,9 @@ getBody         :: Person -> SCR.ClientM Person
 getQueryParam   :: Maybe String -> SCR.ClientM Person
 getQueryParams  :: [String] -> SCR.ClientM [Person]
 getQueryFlag    :: Bool -> SCR.ClientM Bool
-getRawSuccess :: HTTP.Method
+getRawSuccess :: HTTP.Method 
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
-getRawFailure   :: HTTP.Method
+getRawFailure   :: HTTP.Method 
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> SCR.ClientM (String, Maybe Int, Bool, [(String, [Rational])])

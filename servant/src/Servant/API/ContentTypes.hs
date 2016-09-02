@@ -72,8 +72,7 @@ module Servant.API.ContentTypes
 
 import           Control.Arrow                    (left)
 import           Control.Monad.Compat
-import           Data.Aeson                       (FromJSON (..), ToJSON (..),
-                                                   encode)
+import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
 import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
@@ -288,7 +287,7 @@ instance OVERLAPPABLE_
          ToJSON a => MimeRender JSON a where
     mimeRender _ = encode
 
--- | @urlEncodeAsForm"
+-- | @urlEncodeAsForm@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
 instance OVERLAPPABLE_
