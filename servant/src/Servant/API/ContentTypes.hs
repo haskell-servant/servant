@@ -66,15 +66,14 @@ module Servant.API.ContentTypes
     , AllMime(..)
     , AllMimeRender(..)
     , AllMimeUnrender(..)
-    , FromFormUrlEncoded(..)
-    , ToFormUrlEncoded(..)
     , eitherDecodeLenient
     , canHandleAcceptH
     ) where
 
 import           Control.Arrow                    (left)
 import           Control.Monad.Compat
-import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
+import           Data.Aeson                       (FromJSON (..), ToJSON (..),
+                                                   encode)
 import           Data.Aeson.Parser                (value)
 import           Data.Aeson.Types                 (parseEither)
 import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
@@ -82,10 +81,8 @@ import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
 import qualified Data.ByteString                  as BS
 import           Data.ByteString.Lazy             (ByteString, fromStrict,
                                                    toStrict)
-import qualified Data.ByteString.Lazy             as B
 import qualified Data.ByteString.Lazy.Char8       as BC
 import           Data.Maybe                       (isJust)
-import           Data.Monoid.Compat
 import           Data.String.Conversions          (cs)
 import qualified Data.Text                        as TextS
 import qualified Data.Text.Encoding               as TextS
@@ -94,8 +91,9 @@ import qualified Data.Text.Lazy.Encoding          as TextL
 import           Data.Typeable
 import           GHC.Generics                     (Generic)
 import qualified Network.HTTP.Media               as M
-import           Network.URI                      (escapeURIString,
-                                                   isUnreserved, unEscapeString)
+import           Web.FormUrlEncoded               (FromForm, ToForm,
+                                                   urlEncodeAsForm,
+                                                   urlDecodeAsForm)
 import           Prelude                          ()
 import           Prelude.Compat
 
@@ -290,12 +288,12 @@ instance OVERLAPPABLE_
          ToJSON a => MimeRender JSON a where
     mimeRender _ = encode
 
--- | @encodeFormUrlEncoded . toFormUrlEncoded@
+-- | @urlEncodeAsForm"
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
 instance OVERLAPPABLE_
-         ToFormUrlEncoded a => MimeRender FormUrlEncoded a where
-    mimeRender _ = encodeFormUrlEncoded . toFormUrlEncoded
+         ToForm a => MimeRender FormUrlEncoded a where
+    mimeRender _ = urlEncodeAsForm
 
 -- | `TextL.encodeUtf8`
 instance MimeRender PlainText TextL.Text where
@@ -348,11 +346,11 @@ eitherDecodeLenient input =
 instance FromJSON a => MimeUnrender JSON a where
     mimeUnrender _ = eitherDecodeLenient
 
--- | @decodeFormUrlEncoded >=> fromFormUrlEncoded@
+-- | @urlDecodeAsForm@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
-instance FromFormUrlEncoded a => MimeUnrender FormUrlEncoded a where
-    mimeUnrender _ = decodeFormUrlEncoded >=> fromFormUrlEncoded
+instance FromForm a => MimeUnrender FormUrlEncoded a where
+    mimeUnrender _ = left TextS.unpack . urlDecodeAsForm
 
 -- | @left show . TextL.decodeUtf8'@
 instance MimeUnrender PlainText TextL.Text where
@@ -375,49 +373,6 @@ instance MimeUnrender OctetStream BS.ByteString where
     mimeUnrender _ = Right . toStrict
 
 
---------------------------------------------------------------------------
--- * FormUrlEncoded
-
--- | A type that can be converted to @application/x-www-form-urlencoded@
-class ToFormUrlEncoded a where
-  toFormUrlEncoded :: a -> [(TextS.Text, TextS.Text)]
-
-instance ToFormUrlEncoded [(TextS.Text, TextS.Text)] where
-  toFormUrlEncoded = id
-
--- | A type that can be converted from @application/x-www-form-urlencoded@,
--- with the possibility of failure.
-class FromFormUrlEncoded a where
-  fromFormUrlEncoded :: [(TextS.Text, TextS.Text)] -> Either String a
-
-instance FromFormUrlEncoded [(TextS.Text, TextS.Text)] where
-  fromFormUrlEncoded = return
-
-encodeFormUrlEncoded :: [(TextS.Text, TextS.Text)] -> ByteString
-encodeFormUrlEncoded xs =
-    let escape :: TextS.Text -> ByteString
-        escape = cs . escapeURIString isUnreserved . cs
-        encodePair :: (TextS.Text, TextS.Text) -> ByteString
-        encodePair (k, "") = escape k
-        encodePair (k, v) = escape k <> "=" <> escape v
-    in B.intercalate "&" $ map encodePair xs
-
-decodeFormUrlEncoded :: ByteString -> Either String [(TextS.Text, TextS.Text)]
-decodeFormUrlEncoded "" = return []
-decodeFormUrlEncoded q = do
-    let xs :: [TextS.Text]
-        xs = TextS.splitOn "&" . cs $ q
-        parsePair :: TextS.Text -> Either String (TextS.Text, TextS.Text)
-        parsePair p =
-            case TextS.splitOn "=" p of
-                [k,v] -> return ( unescape k
-                                , unescape v
-                                )
-                [k] -> return ( unescape k, "" )
-                _ -> Left $ "not a valid pair: " <> cs p
-        unescape :: TextS.Text -> TextS.Text
-        unescape = cs . unEscapeString . cs . TextS.intercalate "%20" . TextS.splitOn "+"
-    mapM parsePair xs
 
 -- $setup
 -- >>> import Servant.API

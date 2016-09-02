@@ -62,10 +62,10 @@ import           Servant.API.Alternative     ((:<|>) (..))
 import           Servant.API.BasicAuth       (BasicAuth,BasicAuthData(..))
 import           Servant.API.Capture         (Capture, CaptureAll)
 import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
-                                              FromFormUrlEncoded (..), JSON,
+                                              JSON,
                                               MimeRender (..), NoContent (NoContent),
                                               MimeUnrender (..), OctetStream,
-                                              PlainText, ToFormUrlEncoded (..))
+                                              PlainText)
 import           Servant.API.Experimental.Auth (AuthProtect)
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
