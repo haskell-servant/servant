@@ -30,7 +30,7 @@ module Servant.ClientSpec where
 import           Control.Applicative        ((<$>))
 #endif
 import           Control.Arrow              (left)
-import           Control.Concurrent         (forkIO, killThread, ThreadId)
+import           Control.Concurrent         (ThreadId, forkIO, killThread)
 import           Control.Exception          (bracket)
 import           Control.Monad.Trans.Except (throwE )
 import           Data.Aeson
@@ -39,19 +39,20 @@ import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
-import qualified Data.Text                  as T
 import           GHC.Generics               (Generic)
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as HTTP
 import           Network.Socket
-import           Network.Wai                (Request, requestHeaders, responseLBS)
+import           Network.Wai                (Request, requestHeaders,
+                                             responseLBS)
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
 import           Test.QuickCheck
+import           Web.FormUrlEncoded         (FromForm, ToForm)
 
 import           Servant.API
 import           Servant.API.Internal.Test.ComprehensiveAPI
@@ -82,19 +83,8 @@ data Person = Person {
 instance ToJSON Person
 instance FromJSON Person
 
-instance ToFormUrlEncoded Person where
-    toFormUrlEncoded Person{..} =
-        [("name", T.pack name), ("age", T.pack (show age))]
-
-lookupEither :: (Show a, Eq a) => a -> [(a,b)] -> Either String b
-lookupEither x xs = do
-    maybe (Left $ "could not find key " <> show x) return $ lookup x xs
-
-instance FromFormUrlEncoded Person where
-    fromFormUrlEncoded xs = do
-        n <- lookupEither "name" xs
-        a <- lookupEither "age" xs
-        return $ Person (T.unpack n) (read $ T.unpack a)
+instance ToForm Person where
+instance FromForm Person where
 
 alice :: Person
 alice = Person "Alice" 42
@@ -131,9 +121,9 @@ getBody         :: Person -> SCR.ClientM Person
 getQueryParam   :: Maybe String -> SCR.ClientM Person
 getQueryParams  :: [String] -> SCR.ClientM [Person]
 getQueryFlag    :: Bool -> SCR.ClientM Bool
-getRawSuccess :: HTTP.Method 
+getRawSuccess :: HTTP.Method
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
-getRawFailure   :: HTTP.Method 
+getRawFailure   :: HTTP.Method
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> SCR.ClientM (String, Maybe Int, Bool, [(String, [Rational])])
