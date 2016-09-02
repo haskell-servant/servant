@@ -13,6 +13,9 @@ module Servant.API.Times
     , getFormat
     , renderTime
     , parseTime
+    , ISO8601Date
+    , ISO8601DateTime
+    , ISO8601DateTimeZ
     ) where
 
 import           Data.Typeable (Typeable)
@@ -26,6 +29,11 @@ import           Data.Text (pack, Text)
 import           Data.Proxy
 import           Control.Monad ((>=>))
 import           Control.Arrow (first)
+
+
+type ISO8601Date      = "%Y-%m-%d"
+type ISO8601DateTime  = "%Y-%m-%dT%H:%M:%S"
+type ISO8601DateTimeZ = "%Y-%m-%dT%H:%M:%S%z"
 
 -- | A wrapper around a time type which can be parsed/rendered to with `format',
 -- as specified in 'Data.Time.Format'.
