@@ -39,8 +39,12 @@ type ISO8601DateTimeZ = "%Y-%m-%dT%H:%M:%S%z"
 -- as specified in 'Data.Time.Format'.
 --
 -- Example:
+--
 -- >>>            -- GET /events/:date
 -- >>> type MyApi = "events" :> Capture "date" (FTime "%Y-%m-%d" Day) :> Get '[JSON] [Event]
+--
+-- __Note:__ Time Zones parsed in the @%z@ format (@±HHMM@) need to ensure that the @+@ symbol is
+-- url encoded (@%2B@) in requests, as the @+@ symbol is interpreted as a space in query params.
 newtype FTime (format :: Symbol) t = FTime {getFTime :: t}
     deriving (Typeable, Eq, Ord)
 
