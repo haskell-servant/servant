@@ -83,7 +83,7 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               HList (..), Headers (..),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
-import           Servant.API.Times           (FTime(..), getFormat, renderTime, parseTime)
+import           Servant.API.Times           (FTime(..), getFormat, renderFTime, parseFTime)
 import           Servant.API.Vault           (Vault)
 import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepted,
                                               DeleteNoContent,
