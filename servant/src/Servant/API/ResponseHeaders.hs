@@ -31,8 +31,9 @@ module Servant.API.ResponseHeaders
     ) where
 
 import           Data.ByteString.Char8       as BS (pack, unlines, init)
-import           Data.ByteString.Conversion  (ToByteString, toByteString',
+import           Data.ByteString.Conversion  (--ToByteString, toByteString',
                                               FromByteString, fromByteString)
+import Web.HttpApiData (ToHttpApiData,toHeader)
 import qualified Data.CaseInsensitive        as CI
 import           Data.Proxy
 import           GHC.TypeLits                (KnownSymbol, symbolVal)
@@ -88,18 +89,18 @@ class GetHeaders ls where
 instance OVERLAPPING_ GetHeaders (HList '[]) where
     getHeaders _ = []
 
-instance OVERLAPPABLE_ ( KnownSymbol h, ToByteString x, GetHeaders (HList xs) )
+instance OVERLAPPABLE_ ( KnownSymbol h, ToHttpApiData x, GetHeaders (HList xs) )
          => GetHeaders (HList (Header h x ': xs)) where
     getHeaders hdrs = case hdrs of
-        Header val `HCons` rest -> (headerName , toByteString' val):getHeaders rest
-        UndecodableHeader h `HCons` rest -> (headerName,  h) : getHeaders rest
+        Header val `HCons` rest -> (headerName , toHeader val):getHeaders rest
+        UndecodableHeader h `HCons` rest -> (headerName,  h)  :getHeaders rest
         MissingHeader `HCons` rest -> getHeaders rest
       where headerName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
 
 instance OVERLAPPING_ GetHeaders (Headers '[] a) where
     getHeaders _ = []
 
-instance OVERLAPPABLE_ ( KnownSymbol h, GetHeaders (HList rest), ToByteString v )
+instance OVERLAPPABLE_ ( KnownSymbol h, GetHeaders (HList rest), ToHttpApiData v )
          => GetHeaders (Headers (Header h v ': rest) a) where
     getHeaders hs = getHeaders $ getHeadersHList hs
 
@@ -111,11 +112,11 @@ class AddHeader h v orig new
   addHeader :: v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
 
 
-instance OVERLAPPING_ ( KnownSymbol h, ToByteString v )
+instance OVERLAPPING_ ( KnownSymbol h, ToHttpApiData v )
          => AddHeader h v (Headers (fst ': rest)  a) (Headers (Header h v  ': fst ': rest) a) where
     addHeader a (Headers resp heads) = Headers resp (HCons (Header a) heads)
 
-instance OVERLAPPABLE_ ( KnownSymbol h, ToByteString v
+instance OVERLAPPABLE_ ( KnownSymbol h, ToHttpApiData v
                        , new ~ (Headers '[Header h v] a) )
          => AddHeader h v a new where
     addHeader a resp = Headers resp (HCons (Header a) HNil)

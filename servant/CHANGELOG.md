@@ -2,6 +2,7 @@ next
 ----
 
 * Add `CaptureAll` combinator. Captures all of the remaining segments in a URL.
+* replace use of `ToByteString` with `HttpApiData` for `GetHeaders`
 
 0.8
 ---

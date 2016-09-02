@@ -8,9 +8,7 @@
 module Servant.MockSpec where
 
 import           Data.Aeson as Aeson
-import           Data.ByteString.Conversion.To
 import           Data.Proxy
-import           Data.String
 import           GHC.Generics
 import           Network.Wai
 import           Servant.API
@@ -40,8 +38,11 @@ data TestHeader
   | ArbitraryHeader
   deriving (Show)
 
-instance ToByteString TestHeader where
-  builder = fromString . show
+instance ToHttpApiData TestHeader where
+  toHeader = toHeader . show
+  toUrlPiece _ = error "ToHttpApiData.toUrlPiece not implemented for TestHeader"
+  toQueryParam _ = error "ToHttpApiData.toQueryParam not implemented for TestHeader"
+
 
 instance Arbitrary TestHeader where
   arbitrary = return ArbitraryHeader
