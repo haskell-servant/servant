@@ -22,50 +22,40 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
-import           Control.Monad.Trans        (liftIO)
-import qualified Data.ByteString            as B
-import qualified Data.ByteString.Char8      as BC8
-import qualified Data.ByteString.Lazy       as BL
-import           Data.Maybe                 (fromMaybe, mapMaybe)
-import           Data.String                (fromString)
-import           Data.String.Conversions    (cs, (<>))
+import           Control.Monad.Trans         (liftIO)
+import qualified Data.ByteString             as B
+import qualified Data.ByteString.Char8       as BC8
+import qualified Data.ByteString.Lazy        as BL
+import           Data.Maybe                  (fromMaybe, mapMaybe)
+import           Data.String                 (fromString)
+import           Data.String.Conversions     (cs, (<>))
 import           Data.Typeable
-import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
-                                             symbolVal)
-import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
-import           Network.Socket             (SockAddr)
-import           Network.Wai                (Application, Request, Response,
-                                             httpVersion, isSecure,
-                                             lazyRequestBody,
-                                             rawQueryString, remoteHost,
-                                             requestHeaders, requestMethod,
-                                             responseLBS, vault)
-import           Prelude                    ()
+import           GHC.TypeLits                (KnownNat, KnownSymbol, natVal,
+                                              symbolVal)
+import           Network.HTTP.Types          hiding (Header, ResponseHeaders)
+import           Network.Socket              (SockAddr)
+import           Network.Wai                 (Application, Request, Response,
+                                              httpVersion, isSecure,
+                                              lazyRequestBody, rawQueryString,
+                                              remoteHost, requestHeaders,
+                                              requestMethod, responseLBS, vault)
+import           Prelude                     ()
 import           Prelude.Compat
-import           Web.HttpApiData            (FromHttpApiData)
-#if MIN_VERSION_http_api_data(0,3,0)
-import           Web.Internal.HttpApiData   (parseHeaderMaybe,
-                                             parseQueryParamMaybe,
-                                             parseUrlPieceMaybe,
-                                             parseUrlPieces)
-#else
-import           Web.HttpApiData.Internal   (parseHeaderMaybe,
-                                             parseQueryParamMaybe,
-                                             parseUrlPieceMaybe,
-                                             parseUrlPieces)
-#endif
+import           Web.HttpApiData             (FromHttpApiData, parseHeaderMaybe,
+                                              parseQueryParamMaybe,
+                                              parseUrlPieceMaybe,
+                                              parseUrlPieces)
 
-import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
-                                              CaptureAll, Verb,
-                                              ReflectMethod(reflectMethod),
-                                              IsSecure(..), Header, QueryFlag,
+import           Servant.API                 ((:<|>) (..), (:>), BasicAuth,
+                                              Capture, CaptureAll, Header,
+                                              IsSecure (..), QueryFlag,
                                               QueryParam, QueryParams, Raw,
-                                              RemoteHost, ReqBody, Vault,
+                                              ReflectMethod (reflectMethod),
+                                              RemoteHost, ReqBody, Vault, Verb,
                                               WithNamedContext)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
-                                              AllCTUnrender (..),
-                                              AllMime,
+                                              AllCTUnrender (..), AllMime,
                                               canHandleAcceptH)
 import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
                                               getResponse)
