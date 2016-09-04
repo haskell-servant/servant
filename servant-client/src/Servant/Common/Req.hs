@@ -175,13 +175,13 @@ performRequest :: Method -> Req
                -> ClientM ( Int, ByteString, MediaType
                           , [HTTP.Header], Response ByteString)
 performRequest reqMethod req = do
-  manager <- asks manager
+  m <- asks manager
   reqHost <- asks baseUrl
   partialRequest <- liftIO $ reqToRequest req reqHost
 
   let request = partialRequest { Client.method = reqMethod }
 
-  eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request manager
+  eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request m
   case eResponse of
     Left err ->
       throwError . ConnectionError $ SomeException err

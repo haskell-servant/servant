@@ -15,11 +15,10 @@ need to have some language extensions and imports:
 
 module Client where
 
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import Data.Aeson
 import Data.Proxy
 import GHC.Generics
-import Network.HTTP.Client (Manager, newManager, defaultManagerSettings)
+import Network.HTTP.Client (newManager, defaultManagerSettings)
 import Servant.API
 import Servant.Client
 ```
