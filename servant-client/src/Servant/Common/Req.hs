@@ -152,23 +152,31 @@ parseRequest url = liftM disableStatusCheck (parseUrl url)
 displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
+-- previously: 
 --type ClientM = ExceptT ServantError IO
 
-newtype ClientM a = ClientM (ReaderT (Manager, BaseUrl) (ExceptT ServantError IO) a )
+data ClientEnv
+  = ClientEnv
+  { manager :: Manager
+  , baseUrl :: BaseUrl
+  }
+
+newtype ClientM a = ClientM { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
                     deriving ( Functor, Applicative, Monad, MonadIO
-                             , MonadReader (Manager, BaseUrl)
+                             , MonadReader ClientEnv
                              , MonadError ServantError
                              )
 
-runClientM :: ClientM a -> (Manager, BaseUrl) -> (ExceptT ServantError IO) a
-runClientM = undefined
+runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
 
 
 performRequest :: Method -> Req 
                -> ClientM ( Int, ByteString, MediaType
                           , [HTTP.Header], Response ByteString)
 performRequest reqMethod req = do
-  (manager, reqHost) <- ask
+  manager <- asks manager
+  reqHost <- asks baseUrl
   partialRequest <- liftIO $ reqToRequest req reqHost
 
   let request = partialRequest { Client.method = reqMethod }

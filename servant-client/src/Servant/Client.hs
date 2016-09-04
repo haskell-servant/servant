@@ -20,6 +20,8 @@ module Servant.Client
   , client
   , HasClient(..)
   , ClientM
+  , runClientM
+  , ClientEnv (ClientEnv)
   , mkAuthenticateReq
   , ServantError(..)
   , module Servant.Common.BaseUrl
@@ -28,6 +30,7 @@ module Servant.Client
 #if !MIN_VERSION_base(4,8,0)
 import           Control.Applicative        ((<$>))
 #endif
+import           Control.Monad.Reader       (ask)
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.List
 import           Data.Proxy
@@ -154,16 +157,16 @@ instance OVERLAPPABLE_
   -- Note [Non-Empty Content Types]
   (MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient (Verb method status cts' a) where
-  type Client (Verb method status cts' a) = Manager -> BaseUrl -> ClientM a
-  clientWithRoute Proxy req manager baseurl =
-    snd <$> performRequestCT (Proxy :: Proxy ct) method req 
+  type Client (Verb method status cts' a) = ClientM a
+  clientWithRoute Proxy req = do
+    snd <$> performRequestCT (Proxy :: Proxy ct) method req
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
   (ReflectMethod method) => HasClient (Verb method status cts NoContent) where
   type Client (Verb method status cts NoContent)
-    = Manager -> BaseUrl -> ClientM NoContent
-  clientWithRoute Proxy req manager baseurl =
+    = ClientM NoContent
+  clientWithRoute Proxy req = do
     performRequestNoBody method req >> return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
 
@@ -172,8 +175,8 @@ instance OVERLAPPING_
   ( MimeUnrender ct a, BuildHeadersTo ls, ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient (Verb method status cts' (Headers ls a)) where
   type Client (Verb method status cts' (Headers ls a))
-    = Manager -> BaseUrl -> ClientM (Headers ls a)
-  clientWithRoute Proxy req manager baseurl = do
+    = ClientM (Headers ls a)
+  clientWithRoute Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
     (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) method req 
     return $ Headers { getResponse = resp
@@ -184,8 +187,8 @@ instance OVERLAPPING_
   ( BuildHeadersTo ls, ReflectMethod method
   ) => HasClient (Verb method status cts (Headers ls NoContent)) where
   type Client (Verb method status cts (Headers ls NoContent))
-    = Manager -> BaseUrl -> ClientM (Headers ls NoContent)
-  clientWithRoute Proxy req manager baseurl = do
+    = ClientM (Headers ls NoContent)
+  clientWithRoute Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
     hdrs <- performRequestNoBody method req 
     return $ Headers { getResponse = NoContent
