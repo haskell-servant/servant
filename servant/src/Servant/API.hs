@@ -25,7 +25,7 @@ module Servant.API (
   -- | Access the location for arbitrary data to be shared by applications and middleware
   module Servant.API.WithNamedContext,
   -- | Access context entries in combinators in servant-server
-  module Servant.API.Times,
+  module Servant.API.Time,
   -- | Capturing dates and times in URLs and params with specified formats.
 
   -- * Actual endpoints, distinguished by HTTP method
@@ -83,7 +83,7 @@ import           Servant.API.ResponseHeaders (AddHeader (addHeader),
                                               HList (..), Headers (..),
                                               getHeadersHList, getResponse)
 import           Servant.API.Sub             ((:>))
-import           Servant.API.Times           (FTime(..), getFormat, renderFTime, parseFTime)
+import           Servant.API.Time            (FTime(..), getFormat, renderFTime, parseFTime)
 import           Servant.API.Vault           (Vault)
 import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepted,
                                               DeleteNoContent,

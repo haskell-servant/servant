@@ -295,7 +295,7 @@ captureDateTimeServer = return . show
 
 captureTimeSpec :: Spec
 captureTimeSpec = do
-  describe "Servant.API.Times(CaptureTime)" $ do
+  describe "Servant.API.Time(CaptureTime)" $ do
     with (return (serve captureTimeApi (captureDateServer :<|> captureDateTimeServer))) $ do
 
       it "can capture parts of the 'pathInfo' (date only)" $ do

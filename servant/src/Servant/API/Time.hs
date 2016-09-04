@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Servant.API.Times
+module Servant.API.Time
     ( FTime(..)
     , toFormatProxy
     , getFormat
