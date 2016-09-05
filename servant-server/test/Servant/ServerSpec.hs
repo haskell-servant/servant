@@ -61,7 +61,7 @@ import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
 import           Servant.Server.Internal.BasicAuth (BasicAuthCheck(BasicAuthCheck),
                                                     BasicAuthResult(Authorized,Unauthorized))
 import           Servant.Server.Experimental.Auth
-                                            (AuthHandler, AuthServerData,
+                                            (AuthHandler, HasAuthServerData, AuthServerData,
                                              mkAuthHandler)
 import           Servant.Server.Internal.Context
                                             (NamedContext(..))
@@ -71,8 +71,20 @@ import           Servant.Server.Internal.Context
 -- This declaration simply checks that all instances are in place.
 _ = serveWithContext comprehensiveAPI comprehensiveApiContext
 
-comprehensiveApiContext :: Context '[NamedContext "foo" '[]]
-comprehensiveApiContext = NamedContext EmptyContext :. EmptyContext
+authCheck :: BasicAuthCheck String
+authCheck = BasicAuthCheck check
+  where
+    check _  = return (Authorized "servant")
+
+authHandler :: AuthHandler Request String
+authHandler =
+  let handler req = return "foo"
+  in mkAuthHandler handler
+
+-- type instance AuthServerData (AuthProtect "foo") = String
+
+comprehensiveApiContext :: Context '[AuthHandler Request String, BasicAuthCheck String, NamedContext "foo" '[]]
+comprehensiveApiContext = authHandler :. authCheck :. NamedContext EmptyContext :. EmptyContext
 
 -- * Specs
 
@@ -637,7 +649,8 @@ genAuthServer :: Server GenAuthAPI
 genAuthServer = const (return tweety)
            :<|> (\ _ respond -> respond $ responseLBS imATeaPot418 [] "")
 
-type instance AuthServerData (AuthProtect "auth") = ()
+instance {-# OVERLAPS #-} HasAuthServerData (AuthProtect "auth") where
+ type AuthServerData (AuthProtect "auth") = ()
 
 genAuthContext :: Context '[AuthHandler Request ()]
 genAuthContext =
