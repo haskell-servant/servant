@@ -21,6 +21,13 @@ import Control.Monad.Error.Class (MonadError(..))
 #endif
 import Control.Monad.Trans.Except
 
+#if MIN_VERSION_http_client(0,4,19)
+import Network.HTTP.Client ( HasHttpManager )
+#else
+import Network.HTTP.Client.Conduit ( HasHttpManager(getHttpManager) )
+#endif
+
+
 import GHC.Generics
 import Control.Monad.IO.Class ()
 import Control.Monad.Reader
