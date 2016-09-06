@@ -39,10 +39,21 @@ import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
 import           Servant.API
+import           Servant.API.ContentTypes
 import           Servant.Client.Experimental.Auth
 import           Servant.Common.BaseUrl
 import           Servant.Common.BasicAuth
 import           Servant.Common.Req
+
+type family FirstCT cts :: [*] where
+    FirstCT '[] = '[]
+    FirstCT (ct ': cts) = '[ct]
+
+type family FirstCTVerb x :: * where
+    FirstCTVerb (Verb method statusCode cts r) = (Verb method statusCode (FirstCT cts) r)
+    FirstCTVerb (a :> b) = (a :> FirstCTVerb b)
+    FirstCTVerb (a :<|> b) = (FirstCTVerb a :<|> FirstCTVerb b)
+    FirstCTVerb a = a
 
 -- * Accessing APIs as a Client
 
@@ -57,8 +68,28 @@ import           Servant.Common.Req
 -- > getAllBooks :: Manager -> BaseUrl -> ClientM [Book]
 -- > postNewBook :: Book -> Manager -> BaseUrl -> ClientM Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
-client :: HasClient api => Proxy api -> Client api
-client p = clientWithRoute p defReq
+
+client
+    :: forall api . HasClient (FirstCTVerb api)
+    => Proxy api -> Client (FirstCTVerb api)
+client _ = clientWithRoute apiWithOnlyFirstCT defReq
+  where
+    apiWithOnlyFirstCT :: Proxy (FirstCTVerb api)
+    apiWithOnlyFirstCT = Proxy
+
+type family ReplaceCTs api (newCTs :: [*]) :: * where
+    ReplaceCTs (Verb method statusCode oldCTs r) newCTs = (Verb method statusCode newCTs r)
+    ReplaceCTs (a :> b) newCTs = (a :> ReplaceCTs b newCTs)
+    ReplaceCTs (a :<|> b) newCTs = (ReplaceCTs a newCTs :<|> ReplaceCTs b newCTs)
+    ReplaceCTs a newCTs = a
+
+clientWithCTs
+    :: forall api cts . (HasClient (ReplaceCTs api cts))
+    => Proxy cts -> Proxy api -> Client (ReplaceCTs api cts)
+clientWithCTs _ _ = clientWithRoute replacedCTs defReq
+  where
+    replacedCTs :: Proxy (ReplaceCTs api cts)
+    replacedCTs = Proxy
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
@@ -152,11 +183,11 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
 
 instance OVERLAPPABLE_
   -- Note [Non-Empty Content Types]
-  (MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
-  ) => HasClient (Verb method status cts' a) where
-  type Client (Verb method status cts' a) = Manager -> BaseUrl -> ClientM a
+  ( AllMime cts, AllMimeUnrender cts a, ReflectMethod method
+  ) => HasClient (Verb method status cts a) where
+  type Client (Verb method status cts a) = Manager -> BaseUrl -> ClientM a
   clientWithRoute Proxy req manager baseurl =
-    snd <$> performRequestCT (Proxy :: Proxy ct) method req manager baseurl
+    snd <$> performRequestCT (Proxy :: Proxy cts) method req manager baseurl
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
@@ -169,13 +200,13 @@ instance OVERLAPPING_
 
 instance OVERLAPPING_
   -- Note [Non-Empty Content Types]
-  ( MimeUnrender ct a, BuildHeadersTo ls, ReflectMethod method, cts' ~ (ct ': cts)
-  ) => HasClient (Verb method status cts' (Headers ls a)) where
-  type Client (Verb method status cts' (Headers ls a))
+  ( AllMime cts, AllMimeUnrender cts a, BuildHeadersTo ls, ReflectMethod method
+  ) => HasClient (Verb method status cts (Headers ls a)) where
+  type Client (Verb method status cts (Headers ls a))
     = Manager -> BaseUrl -> ClientM (Headers ls a)
   clientWithRoute Proxy req manager baseurl = do
     let method = reflectMethod (Proxy :: Proxy method)
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) method req manager baseurl
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy cts) method req manager baseurl
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
