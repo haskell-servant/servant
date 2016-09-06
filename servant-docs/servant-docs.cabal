@@ -36,7 +36,6 @@ library
     , aeson
     , aeson-pretty
     , bytestring
-    , bytestring-conversion
     , case-insensitive
     , hashable
     , http-media >= 0.6
@@ -61,7 +60,6 @@ executable greet-docs
   build-depends:
       base
     , aeson
-    , bytestring-conversion
     , lens
     , servant
     , servant-docs

@@ -2,6 +2,7 @@
 ----
 
 * Add `CaptureAll` combinator. Captures all of the remaining segments in a URL.
+* BACKWARDS INCOMPATIBLE replace use of `ToFromByteString` with `To/FromHttpApiData` for `GetHeaders/BuildHeadersTo`
 
 0.8
 ---
