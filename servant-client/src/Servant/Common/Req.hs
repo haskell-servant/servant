@@ -22,9 +22,9 @@ import Control.Monad.Error.Class (MonadError(..))
 import Control.Monad.Trans.Except
 
 #if MIN_VERSION_http_client(0,4,19)
-import Network.HTTP.Client ( HasHttpManager )
+import Network.HTTP.Client hiding (Proxy, path)
 #else
-import Network.HTTP.Client.Conduit ( HasHttpManager(getHttpManager) )
+import Network.HTTP.Client.Conduit hiding (Proxy, path)
 #endif
 
 
@@ -38,7 +38,6 @@ import Data.Proxy
 import Data.Text (Text)
 import Data.Text.Encoding
 import Data.Typeable
-import Network.HTTP.Client hiding (Proxy, path)
 import Network.HTTP.Media
 import Network.HTTP.Types
 import qualified Network.HTTP.Types.Header   as HTTP
