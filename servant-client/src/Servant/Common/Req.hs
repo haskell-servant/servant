@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -12,7 +13,15 @@ import Control.Applicative
 import Control.Exception
 import Control.Monad
 import Control.Monad.Catch (MonadThrow)
-import Control.Monad.Except
+
+#if MIN_VERSION_mtl(2,2,0)
+import Control.Monad.Except (MonadError(..))
+#else
+import Control.Monad.Error.Class (MonadError(..))
+#endif
+import Control.Monad.Trans.Except
+
+import GHC.Generics
 import Control.Monad.IO.Class ()
 import Control.Monad.Reader
 import Data.ByteString.Lazy hiding (pack, filter, map, null, elem)
@@ -152,17 +161,20 @@ parseRequest url = liftM disableStatusCheck (parseUrl url)
 displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
--- previously: 
---type ClientM = ExceptT ServantError IO
-
 data ClientEnv
   = ClientEnv
   { manager :: Manager
   , baseUrl :: BaseUrl
   }
 
+instance HasHttpManager ClientEnv where
+    getHttpManager = manager
+
+-- | @ClientM@ is the monad in which client functions run. Contains the
+-- 'Manager' and 'BaseUrl' used for requests in the reader environment.
+
 newtype ClientM a = ClientM { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
-                    deriving ( Functor, Applicative, Monad, MonadIO
+                    deriving ( Functor, Applicative, Monad, MonadIO, Generic
                              , MonadReader ClientEnv
                              , MonadError ServantError
                              )
