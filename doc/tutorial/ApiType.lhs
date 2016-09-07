@@ -319,8 +319,8 @@ Which is used like so:
 
 ``` haskell
 type ProtectedAPI12
-     = UserAPI                             -- this is public
- :<|> BasicAuth "my-real" User :> UserAPI2 -- this is protected by auth
+     = UserAPI                              -- this is public
+ :<|> BasicAuth "my-realm" User :> UserAPI2 -- this is protected by auth
 ```
 
 ### Interoperability with `wai`: `Raw`

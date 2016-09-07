@@ -8,9 +8,10 @@ repository. You can use `cabal`:
 ./scripts/test-all.sh      # Run all the tests
 ```
 
-`stack`:
+Or `stack`:
 
 ```shell
+stack setup    # Downloads and installs a proper GHC version if necessary
 stack build    # Install and build packages
 stack test     # Run all the tests
 ```

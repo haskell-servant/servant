@@ -1,8 +1,12 @@
 next
 ----
+* BACKWARDS INCOMPATIBLE replace use of `ToFromByteString` with `To/FromHttpApiData` for `GetHeaders/BuildHeadersTo`
+* Add Servant.API.Times for parsing times with a format specified in their type.
+
+0.8.1
+----
 
 * Add `CaptureAll` combinator. Captures all of the remaining segments in a URL.
-* Add Servant.API.Times for parsing times with a format specified in their type.
 
 0.8
 ---

@@ -1,5 +1,5 @@
 name:                servant-server
-version:             0.8
+version:             0.8.1
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -119,7 +119,6 @@ test-suite spec
     , aeson
     , base64-bytestring
     , bytestring
-    , bytestring-conversion
     , directory
     , exceptions
     , hspec == 2.*

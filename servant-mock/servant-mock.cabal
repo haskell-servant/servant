@@ -1,5 +1,5 @@
 name:                servant-mock
-version:             0.8
+version:             0.8.1
 synopsis:            Derive a mock server for free from your servant API types
 description:
   Derive a mock server for free from your servant API types
@@ -69,5 +69,4 @@ test-suite spec
     servant-server,
     servant-mock,
     aeson,
-    bytestring-conversion,
     wai
