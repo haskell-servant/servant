@@ -21,12 +21,6 @@ import Control.Monad.Error.Class (MonadError(..))
 #endif
 import Control.Monad.Trans.Except
 
-#if MIN_VERSION_http_client(0,4,19)
-import Network.HTTP.Client hiding (Proxy, path)
-#else
-import Network.HTTP.Client.Conduit hiding (Proxy, path)
-#endif
-
 
 import GHC.Generics
 import Control.Monad.IO.Class ()
@@ -40,6 +34,7 @@ import Data.Text.Encoding
 import Data.Typeable
 import Network.HTTP.Media
 import Network.HTTP.Types
+import Network.HTTP.Client hiding (Proxy, path)
 import qualified Network.HTTP.Types.Header   as HTTP
 import Network.URI hiding (path)
 import Servant.API.ContentTypes
@@ -173,8 +168,6 @@ data ClientEnv
   , baseUrl :: BaseUrl
   }
 
-instance HasHttpManager ClientEnv where
-    getHttpManager = manager
 
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Manager' and 'BaseUrl' used for requests in the reader environment.
