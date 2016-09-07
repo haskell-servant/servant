@@ -1,3 +1,11 @@
+0.8.1
+-----
+
+* BACKWARDS INCOMPATIBLE: `client` now returns a ClientM which is a Reader for
+  BasicEnv. BasicEnv comprises the HttpManager and BaseUrl that have had to be
+  passed to each method returned by `client`.
+
+
 0.7.1
 -----
 
