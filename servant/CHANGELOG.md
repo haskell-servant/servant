@@ -1,3 +1,7 @@
+next
+----
+* Added Eq, Show, Read, Generic and Ord instances to IsSecure
+
 0.8.1
 ----
 
