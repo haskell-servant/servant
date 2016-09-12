@@ -5,7 +5,6 @@ packages:
 - servant-docs/
 - servant-foreign/
 - servant-js/
-- servant-mock/
 - servant-server/
 extra-deps:
 - base-compat-0.9.1
@@ -18,10 +17,6 @@ extra-deps:
 - hspec-expectations-0.7.2
 - http-api-data-0.2.2
 - primitive-0.6.1.0
-- servant-0.7.1
-- servant-client-0.7.1
-- servant-docs-0.7.1
-- servant-server-0.7.1
 - should-not-typecheck-2.1.0
 - time-locale-compat-0.1.1.1
 - wai-app-static-3.1.5

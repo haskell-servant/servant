@@ -1,10 +1,12 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Servant.API.IsSecure
   ( -- $issecure
     IsSecure(..)
   ) where
 
 import           Data.Typeable
+import           GHC.Generics  (Generic)
 
 -- | Was this request made over an SSL connection?
 --
@@ -19,7 +21,7 @@ data IsSecure = Secure    -- ^ the connection to the server
                           --   is secure (HTTPS)
               | NotSecure -- ^ the connection to the server
                           --   is not secure (HTTP)
-  deriving Typeable
+  deriving (Eq, Show, Read, Generic, Ord, Typeable)
 
 -- $issecure
 --

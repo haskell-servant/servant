@@ -15,11 +15,10 @@ need to have some language extensions and imports:
 
 module Client where
 
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import Data.Aeson
 import Data.Proxy
 import GHC.Generics
-import Network.HTTP.Client (Manager, newManager, defaultManagerSettings)
+import Network.HTTP.Client (newManager, defaultManagerSettings)
 import Servant.API
 import Servant.Client
 ```
@@ -71,19 +70,13 @@ What we are going to get with **servant-client** here is 3 functions, one to que
 ``` haskell
 position :: Int -- ^ value for "x"
          -> Int -- ^ value for "y"
-         -> Manager -- ^ the HTTP client to use
-         -> BaseUrl -- ^ the URL at which the API can be found
-         -> ExceptT ServantError IO Position
+         -> ClientM Position
 
 hello :: Maybe String -- ^ an optional value for "name"
-      -> Manager -- ^ the HTTP client to use
-      -> BaseUrl -- ^ the URL at which the API can be found
-      -> ExceptT ServantError IO HelloMessage
+      -> ClientM HelloMessage
 
 marketing :: ClientInfo -- ^ value for the request body
-          -> Manager -- ^ the HTTP client to use
-          -> BaseUrl -- ^ the URL at which the API can be found
-          -> ExceptT ServantError IO Email
+          -> ClientM Email
 ```
 
 Each function makes available as an argument any value that the response may
@@ -120,17 +113,17 @@ data BaseUrl = BaseUrl
 That's it. Let's now write some code that uses our client functions.
 
 ``` haskell
-queries :: Manager -> BaseUrl -> ExceptT ServantError IO (Position, HelloMessage, Email)
-queries manager baseurl = do
-  pos <- position 10 10 manager baseurl
-  message <- hello (Just "servant") manager baseurl
-  em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]) manager baseurl
+queries :: ClientM (Position, HelloMessage, Email)
+queries = do
+  pos <- position 10 10 
+  message <- hello (Just "servant") 
+  em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"])
   return (pos, message, em)
 
 run :: IO ()
 run = do
   manager <- newManager defaultManagerSettings
-  res <- runExceptT (queries manager (BaseUrl Http "localhost" 8081 ""))
+  res <- runClientM queries (ClientEnv manager (BaseUrl Http "localhost" 8081 ""))
   case res of
     Left err -> putStrLn $ "Error: " ++ show err
     Right (pos, message, em) -> do

@@ -2,6 +2,7 @@ next
 ----
 * BACKWARDS INCOMPATIBLE replace use of `ToFromByteString` with `To/FromHttpApiData` for `GetHeaders/BuildHeadersTo`
 * Add Servant.API.Times for parsing times with a format specified in their type.
+* Added Eq, Show, Read, Generic and Ord instances to IsSecure
 
 0.8.1
 ----
