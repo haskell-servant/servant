@@ -15,9 +15,10 @@ extra-deps:
 - hspec-core-2.2.3
 - hspec-discover-2.2.3
 - hspec-expectations-0.7.2
-- http-api-data-0.2.2
+- http-api-data-0.3
 - primitive-0.6.1.0
 - should-not-typecheck-2.1.0
 - time-locale-compat-0.1.1.1
+- uri-bytestring-0.2.2.0
 - wai-app-static-3.1.5
 resolver: lts-2.22

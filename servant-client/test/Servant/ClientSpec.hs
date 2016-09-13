@@ -39,7 +39,6 @@ import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
-import qualified Data.Text                  as T
 import           GHC.Generics               (Generic)
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
@@ -52,6 +51,7 @@ import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
 import           Test.QuickCheck
+import           Web.FormUrlEncoded         (FromForm, ToForm)
 
 import           Servant.API
 import           Servant.API.Internal.Test.ComprehensiveAPI
@@ -82,19 +82,8 @@ data Person = Person {
 instance ToJSON Person
 instance FromJSON Person
 
-instance ToFormUrlEncoded Person where
-    toFormUrlEncoded Person{..} =
-        [("name", T.pack name), ("age", T.pack (show age))]
-
-lookupEither :: (Show a, Eq a) => a -> [(a,b)] -> Either String b
-lookupEither x xs = do
-    maybe (Left $ "could not find key " <> show x) return $ lookup x xs
-
-instance FromFormUrlEncoded Person where
-    fromFormUrlEncoded xs = do
-        n <- lookupEither "name" xs
-        a <- lookupEither "age" xs
-        return $ Person (T.unpack n) (read $ T.unpack a)
+instance ToForm Person where
+instance FromForm Person where
 
 alice :: Person
 alice = Person "Alice" 42

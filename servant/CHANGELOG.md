@@ -1,12 +1,13 @@
 next
 ----
 * Added Eq, Show, Read, Generic and Ord instances to IsSecure
+* BACKWARDS INCOMPATIBLE replace use of `ToFromByteString` with `To/FromHttpApiData` for `GetHeaders/BuildHeadersTo`
+* BACKWARD INCOMPATIBLE: Moved `From/ToFormUrlEncoded` classes, which were renamed to `From/ToForm` to `http-api-data`
 
 0.8.1
 ----
 
 * Add `CaptureAll` combinator. Captures all of the remaining segments in a URL.
-* BACKWARDS INCOMPATIBLE replace use of `ToFromByteString` with `To/FromHttpApiData` for `GetHeaders/BuildHeadersTo`
 
 0.8
 ---
