@@ -14,7 +14,7 @@ import           Data.Monoid           ((<>))
 import           GHC.Generics          (Generic)
 import           Network.HTTP.Client   (Manager, Request, Response, httpLbs,
                                         method, requestHeaders, responseBody,
-                                        responseHeaders, parseUrl, responseStatus)
+                                        responseHeaders, parseRequest, responseStatus)
 import           Network.HTTP.Media    (matchAccept)
 import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
                                         renderStdMethod, status100, status200,
@@ -92,7 +92,7 @@ createContainsValidLocation
      if responseStatus resp == status201
          then case lookup "Location" $ responseHeaders resp of
              Nothing -> fail n
-             Just l  -> case parseUrl $ SBSC.unpack l of
+             Just l  -> case parseRequest $ SBSC.unpack l of
                Nothing -> fail n
                Just x  -> do
                  resp2 <- httpLbs x mgr

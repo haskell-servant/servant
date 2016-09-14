@@ -1,0 +1,47 @@
+upcoming:
+
+  changes:
+
+    - description: Update CHANGELOG to YAML syntax.
+      pr: 16
+      authors: jkarni
+      date: 2016-09-14
+
+    - description: Support new CaptureAll combinator
+      pr: 16
+      authors: jkarni
+      date: 2016-09-14
+
+    - description: Support GHC 8
+      pr: 16
+      authors: jkarni
+      date: 2016-09-14
+
+
+
+releases:
+
+  - version: "0.0.1.1"
+    changes:
+
+      - description: Exclude GHC 7.8 (by bumping base lower bound to 4.8)
+        pr: none
+        authors: jkarni
+
+      - description: More generous bounds for other packages.
+        pr: none
+        authors: jkarni
+
+  - version: "0.0.1.0"
+    changes:
+
+      - description: Better error messages.
+        notes: >
+          Error messages now contain failing predicate, failing response and
+          (except for response predicates), failing requests.
+        pr: none
+        authors: jkarni
+
+      - description: Signicant changes to RequestPredicate and ResponsePredicate types.
+        pr: none
+        authors: jkarni

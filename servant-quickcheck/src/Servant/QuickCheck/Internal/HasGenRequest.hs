@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP       #-}
 {-# LANGUAGE PolyKinds #-}
 module Servant.QuickCheck.Internal.HasGenRequest where
 
@@ -5,6 +6,7 @@ import Data.Default.Class       (def)
 import Data.Monoid              ((<>))
 import Data.String              (fromString)
 import Data.String.Conversions  (cs)
+import qualified Data.ByteString as BS
 import GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
 import Network.HTTP.Client      (Request, RequestBody (..), host, method, path,
                                  port, queryString, requestBody, requestHeaders,
@@ -43,6 +45,19 @@ instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
       where
         old = genRequest (Proxy :: Proxy b)
         new = arbitrary :: Gen c
+
+#if MIN_VERSION_servant(0,8,0)
+instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
+    => HasGenRequest (CaptureAll x c :> b) where
+    genRequest _ = do
+      old' <- old
+      new' <- fmap (cs . toUrlPiece) <$> new
+      let new'' = BS.intercalate "/" new'
+      return $ \burl -> let r = old' burl in r { path = new'' <> path r }
+      where
+        old = genRequest (Proxy :: Proxy b)
+        new = arbitrary :: Gen [c]
+#endif
 
 instance (Arbitrary c, KnownSymbol h, HasGenRequest b, ToHttpApiData c)
     => HasGenRequest (Header h c :> b) where
