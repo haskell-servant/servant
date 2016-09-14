@@ -2,18 +2,12 @@ sudo: false
 
 language: c
 
-env:
-  - GHCVER=7.10.2
-
-addons:
-  apt:
-    sources:
-      - hvr-ghc
-    packages:
-      - ghc-7.10.2
-      - cabal-install-1.22
-      - libgmp-dev
-      - wrk
+matrix:
+  include:
+    - env: CABALVER=1.22 GHCVER=7.10.1
+      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.1],sources: [hvr-ghc]}}
+    - env: CABALVER=1.24 GHCVER=8.0.1
+      addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1],  sources: [hvr-ghc]}}
 
 install:
   - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
@@ -25,7 +19,6 @@ install:
 
 script:
   - tinc && cabal configure --enable-tests && cabal build && cabal test
-  #- (cd doc && tinc cabal configure --enable-tests && cabal build && cabal test)
 
 cache:
   directories:

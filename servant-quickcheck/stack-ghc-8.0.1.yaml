@@ -1,5 +1,5 @@
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-6.17
+resolver: nightly-2016-09-07
 packages:
 - '.'
 extra-deps: []

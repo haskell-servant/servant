@@ -27,19 +27,19 @@ library
                      , Servant.QuickCheck.Internal.QuickCheck
                      , Servant.QuickCheck.Internal.Equality
                      , Servant.QuickCheck.Internal.ErrorTypes
-  build-depends:       base >=4.8 && <4.9
+  build-depends:       base >=4.8 && <4.10
                      , base-compat == 0.9.*
                      , aeson > 0.8 && < 0.12
                      , bytestring == 0.10.*
                      , case-insensitive == 1.2.*
-                     , data-default-class == 0.0.*
+                     , data-default-class >= 0.0 && < 0.2
                      , hspec == 2.2.*
-                     , http-client == 0.4.*
+                     , http-client >= 0.4.30 && < 0.5
                      , http-media == 0.6.*
                      , http-types > 0.8 && < 0.10
                      , mtl > 2.1 && < 2.3
                      , pretty == 1.1.*
-                     , process == 1.2.*
+                     , process >= 1.2 && < 1.5
                      , QuickCheck > 2.7 && < 2.9
                      , servant > 0.6 && < 0.9
                      , servant-client > 0.6 && < 0.9
