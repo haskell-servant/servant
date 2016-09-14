@@ -5,7 +5,7 @@ import Control.Concurrent.MVar                    (newMVar, readMVar, swapMVar)
 import Control.Monad.IO.Class                     (liftIO)
 import Prelude.Compat
 import Servant
-import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPI)
+import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
 import Test.Hspec                                 (Spec, context, describe, it,
                                                    shouldBe, shouldContain)
 import Test.Hspec.Core.Spec                       (Arg, Example, Result (..),
@@ -81,7 +81,7 @@ isComprehensiveSpec :: Spec
 isComprehensiveSpec = describe "HasGenRequest" $ do
 
   it "has instances for all 'servant' combinators" $ do
-    let _g = genRequest comprehensiveAPI
+    let _g = genRequest comprehensiveAPIWithoutRaw
     True `shouldBe` True -- This is a type-level check
 
 
