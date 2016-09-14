@@ -1,25 +1,24 @@
 upcoming:
 
-  changes:
-
-    - description: Update CHANGELOG to YAML syntax.
-      pr: 16
-      authors: jkarni
-      date: 2016-09-14
-
-    - description: Support new CaptureAll combinator
-      pr: 16
-      authors: jkarni
-      date: 2016-09-14
-
-    - description: Support GHC 8
-      pr: 16
-      authors: jkarni
-      date: 2016-09-14
-
-
-
 releases:
+
+  - version: "0.0.2.0"
+    changes:
+
+      - description: Update CHANGELOG to YAML syntax.
+        pr: 16
+        authors: jkarni
+        date: 2016-09-14
+
+      - description: Support new CaptureAll combinator
+        pr: 16
+        authors: jkarni
+        date: 2016-09-14
+
+      - description: Support GHC 8
+        pr: 16
+        authors: jkarni
+        date: 2016-09-14
 
   - version: "0.0.1.1"
     changes:
