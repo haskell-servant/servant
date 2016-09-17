@@ -1,8 +1,9 @@
-next
-----
+0.9
+---
+
 * Added Eq, Show, Read, Generic and Ord instances to IsSecure
-* BACKWARDS INCOMPATIBLE replace use of `ToFromByteString` with `To/FromHttpApiData` for `GetHeaders/BuildHeadersTo`
-* BACKWARD INCOMPATIBLE: Moved `From/ToFormUrlEncoded` classes, which were renamed to `From/ToForm` to `http-api-data`
+* BACKWARDS INCOMPATIBLE: replace use of `ToFromByteString` with `To/FromHttpApiData` for `GetHeaders/BuildHeadersTo`
+* BACKWARDS INCOMPATIBLE: Moved `From/ToFormUrlEncoded` classes, which were renamed to `From/ToForm` to `http-api-data`
 
 0.8.1
 ----
