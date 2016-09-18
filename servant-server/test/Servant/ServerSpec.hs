@@ -3,7 +3,6 @@
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
@@ -45,7 +44,8 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              Post, Put,
                                              QueryFlag, QueryParam, QueryParams,
                                              Raw, RemoteHost, ReqBody,
-                                             StdMethod (..), Verb, addHeader)
+                                             StdMethod (..), Verb, addHeader,
+                                             FTime(..))
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server             (Server, Handler, err401, err403,
                                              err404, serve, serveWithContext,
@@ -64,7 +64,11 @@ import           Servant.Server.Experimental.Auth
                                              mkAuthHandler)
 import           Servant.Server.Internal.Context
                                             (NamedContext(..))
-
+import           Data.Time.Calendar         (Day, fromGregorian)
+import           Data.Time.LocalTime        (LocalTime(..), hoursToTimeZone,
+                                             localTimeToUTC, makeTimeOfDayValid)
+import           Data.Time.Clock            (UTCTime)
+import           Data.ByteString.Lazy       (ByteString)
 -- * comprehensive api test
 
 -- This declaration simply checks that all instances are in place.
@@ -79,6 +83,7 @@ spec :: Spec
 spec = do
   verbSpec
   captureSpec
+  captureTimeSpec
   queryParamSpec
   reqBodySpec
   headerSpec
@@ -216,6 +221,7 @@ captureSpec = do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
 -- }}}
+
 ------------------------------------------------------------------------------
 -- * captureAllSpec {{{
 ------------------------------------------------------------------------------
@@ -266,6 +272,55 @@ captureAllSpec = do
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "consumes everything from pathInfo" $ do
         get "/captured/foo/bar/baz" `shouldRespondWith` (fromString (show ([] :: [Int])))
+
+-- }}}
+------------------------------------------------------------------------------
+-- * timeCaptureSpec {{{
+------------------------------------------------------------------------------
+
+type TimeFormatWSpace = "%Y-%m-%d %H:%M:%S%Z"
+
+type CaptureTimeApi = (Capture "date" (FTime "%Y-%m-%d" Day) :> Get '[PlainText] String)
+                      :<|>
+                      ("datetime" :> Capture "datetime" (FTime TimeFormatWSpace UTCTime) :> Get '[PlainText] String)
+captureTimeApi :: Proxy CaptureTimeApi
+captureTimeApi = Proxy
+captureDateServer :: FTime "%Y-%m-%d" Day -> Handler String
+captureDateServer = return . show
+captureDateTimeServer :: FTime TimeFormatWSpace UTCTime -> Handler String
+captureDateTimeServer = return . show
+
+
+
+captureTimeSpec :: Spec
+captureTimeSpec = do
+  describe "Servant.API.Time(CaptureTime)" $ do
+    with (return (serve captureTimeApi (captureDateServer :<|> captureDateTimeServer))) $ do
+
+      it "can capture parts of the 'pathInfo' (date only)" $ do
+        response <- get "/2015-12-02"
+        liftIO $ simpleBody response `shouldBe` (fromString . show $ fromGregorian 2015 12 2 :: ByteString)
+
+      it "can capture parts of the 'pathInfo' (date and time with a space)" $ do
+        let day       =  fromGregorian 2015 12 2
+            Just time =  makeTimeOfDayValid 12 34 56
+            tz        =  hoursToTimeZone 10
+            utcT      =  localTimeToUTC tz (LocalTime day time)
+            ftime     :: FTime TimeFormatWSpace UTCTime
+            ftime     =  FTime utcT
+        response <- get "/datetime/2015-12-02%2012:34:56+1000"
+        liftIO $ simpleBody response `shouldBe` (fromString . show $ ftime)
+
+
+      it "returns 404 if the decoding fails" $ do
+        get "/notAnInt" `shouldRespondWith` 404
+
+    with (return (serve
+        (Proxy :: Proxy (Capture "datetime" (FTime TimeFormatWSpace UTCTime) :> Raw))
+        (\ (FTime _day) request_ respond ->
+            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+      it "strips the captured path snippet from pathInfo" $ do
+        get "/2015-12-02%2012:34:56+1000/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
 -- }}}
 ------------------------------------------------------------------------------

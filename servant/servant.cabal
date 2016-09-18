@@ -43,6 +43,7 @@ library
     Servant.API.ReqBody
     Servant.API.ResponseHeaders
     Servant.API.Sub
+    Servant.API.Time
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext
@@ -64,6 +65,11 @@ library
     , string-conversions    >= 0.3  && < 0.5
     , network-uri           >= 2.6  && < 2.7
     , vault                 >= 0.3  && < 0.4
+  if impl(ghc < 7.10)
+    build-depends: old-locale >= 1.0 && < 1.1
+                   , time >= 1.4 && < 1.5
+  else
+    build-depends: time >= 1.5 && < 1.7
   hs-source-dirs: src
   default-language: Haskell2010
   other-extensions: CPP
