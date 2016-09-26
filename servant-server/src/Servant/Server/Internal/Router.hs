@@ -31,6 +31,9 @@ data Router' env a =
   | CaptureRouter (Router' (Text, env) a)
       -- ^ first path component is passed to the child router in its
       --   environment and removed afterwards
+  | CaptureAllRouter (Router' ([Text], env) a)
+      -- ^ all path components are passed to the child router in its
+      --   environment and are removed afterwards
   | RawRouter     (env -> a)
       -- ^ to be used for routes we do not know anything about
   | Choice        (Router' env a) (Router' env a)
@@ -88,6 +91,9 @@ routerStructure :: Router' env a -> RouterStructure
 routerStructure (StaticRouter m ls) =
   StaticRouterStructure (fmap routerStructure m) (length ls)
 routerStructure (CaptureRouter router) =
+  CaptureRouterStructure $
+    routerStructure router
+routerStructure (CaptureAllRouter router) =
   CaptureRouterStructure $
     routerStructure router
 routerStructure (RawRouter _) =
@@ -163,6 +169,10 @@ runRouterEnv router env request respond =
         first : rest
           -> let request' = request { pathInfo = rest }
              in  runRouterEnv router' (first, env) request' respond
+    CaptureAllRouter router' ->
+      let segments = pathInfo request
+          request' = request { pathInfo = [] }
+      in runRouterEnv router' (segments, env) request' respond
     RawRouter app ->
       app env request respond
     Choice r1 r2 ->

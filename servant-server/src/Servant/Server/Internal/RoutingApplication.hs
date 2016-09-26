@@ -11,7 +11,6 @@ module Servant.Server.Internal.RoutingApplication where
 import           Control.Monad                      (ap, liftM)
 import           Control.Monad.Trans                (MonadIO(..))
 import           Control.Monad.Trans.Except         (runExceptT)
-import           Data.Text                          (Text)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived)
 import           Prelude                            ()
@@ -161,8 +160,8 @@ withRequest f = DelayedIO (\ req -> runDelayedIO (f req) req)
 
 -- | Add a capture to the end of the capture block.
 addCapture :: Delayed env (a -> b)
-           -> (Text -> DelayedIO a)
-           -> Delayed (Text, env) b
+           -> (captured -> DelayedIO a)
+           -> Delayed (captured, env) b
 addCapture Delayed{..} new =
   Delayed
     { capturesD = \ (txt, env) -> (,) <$> capturesD env <*> new txt

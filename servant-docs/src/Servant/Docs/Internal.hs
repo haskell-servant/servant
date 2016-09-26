@@ -25,7 +25,6 @@ import           Control.Arrow              (second)
 import           Control.Lens               (makeLenses, mapped, over, traversed, view, (%~),
                                              (&), (.~), (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
-import           Data.ByteString.Conversion (ToByteString, toByteString)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Char8      as BSC
 import qualified Data.CaseInsensitive       as CI
@@ -461,12 +460,12 @@ class AllHeaderSamples ls where
 instance AllHeaderSamples '[] where
     allHeaderToSample _  = []
 
-instance (ToByteString l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
+instance (ToHttpApiData l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
     => AllHeaderSamples (Header h l ': ls) where
     allHeaderToSample _ = mkHeader (toSample (Proxy :: Proxy l)) :
                           allHeaderToSample (Proxy :: Proxy ls)
       where headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy h)
-            mkHeader (Just x) = (headerName, cs $ toByteString x)
+            mkHeader (Just x) = (headerName, cs $ toHeader x)
             mkHeader Nothing  = (headerName, "<no header sample provided>")
 
 -- | Synthesise a sample value of a type, encoded in the specified media types.
@@ -696,6 +695,22 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)
 
     where subApiP = Proxy :: Proxy api
           captureP = Proxy :: Proxy (Capture sym a)
+
+          action' = over captures (|> toCapture captureP) action
+          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
+          symP = Proxy :: Proxy sym
+
+
+-- | @"books" :> 'CaptureAll' "isbn" Text@ will appear as
+-- @/books/:isbn@ in the docs.
+instance (KnownSymbol sym, ToCapture (CaptureAll sym a), HasDocs sublayout)
+      => HasDocs (CaptureAll sym a :> sublayout) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor sublayoutP (endpoint', action')
+
+    where sublayoutP = Proxy :: Proxy sublayout
+          captureP = Proxy :: Proxy (CaptureAll sym a)
 
           action' = over captures (|> toCapture captureP) action
           endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint

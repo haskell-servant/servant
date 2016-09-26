@@ -42,16 +42,16 @@ import           Network.Wai                (Application, Request, Response,
                                              responseLBS, vault)
 import           Prelude                    ()
 import           Prelude.Compat
-import           Web.HttpApiData            (FromHttpApiData)
-import           Web.HttpApiData.Internal   (parseHeaderMaybe,
+import           Web.HttpApiData            (FromHttpApiData, parseHeaderMaybe,
                                              parseQueryParamMaybe,
-                                             parseUrlPieceMaybe)
-
+                                             parseUrlPieceMaybe,
+                                             parseUrlPieces)
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
-                                              Verb, ReflectMethod(reflectMethod),
-                                              IsSecure(..), Header,
-                                              QueryFlag, QueryParam, QueryParams,
-                                              Raw, RemoteHost, ReqBody, Vault,
+                                              CaptureAll, Verb,
+                                              ReflectMethod(reflectMethod),
+                                              IsSecure(..), Header, QueryFlag,
+                                              QueryParam, QueryParams, Raw,
+                                              RemoteHost, ReqBody, Vault,
                                               WithNamedContext)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
@@ -128,10 +128,43 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
     CaptureRouter $
         route (Proxy :: Proxy api)
               context
-              (addCapture d $ \ txt -> case parseUrlPieceMaybe txt :: Maybe a of
+              (addCapture d $ \ txt -> case parseUrlPieceMaybe txt of
                  Nothing -> delayedFail err400
                  Just v  -> return v
               )
+
+-- | If you use 'CaptureAll' in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a
+-- function that takes an argument of a list of the type specified by
+-- the 'CaptureAll'. This lets servant worry about getting values from
+-- the URL and turning them into values of the type you specify.
+--
+-- You can control how they'll be converted from 'Text' to your type
+-- by simply providing an instance of 'FromHttpApiData' for your type.
+--
+-- Example:
+--
+-- > type MyApi = "src" :> CaptureAll "segments" Text :> Get '[JSON] SourceFile
+-- >
+-- > server :: Server MyApi
+-- > server = getSourceFile
+-- >   where getSourceFile :: [Text] -> Handler Book
+-- >         getSourceFile pathSegments = ...
+instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout context)
+      => HasServer (CaptureAll capture a :> sublayout) context where
+
+  type ServerT (CaptureAll capture a :> sublayout) m =
+    [a] -> ServerT sublayout m
+
+  route Proxy context d =
+    CaptureAllRouter $
+        route (Proxy :: Proxy sublayout)
+              context
+              (addCapture d $ \ txts -> case parseUrlPieces txts of
+                 Left _  -> delayedFail err400
+                 Right v -> return v
+              )
+
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
