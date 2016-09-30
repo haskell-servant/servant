@@ -20,12 +20,12 @@ import qualified Data.ByteString.Lazy as LBS
 import           Data.CaseInsensitive
 import           Data.Char
 import           Data.String.Conversions
+import           Foreign.StablePtr
 import           GHCJS.Foreign.Callback
 import           GHCJS.Prim
 import           Network.HTTP.Client
 import           Network.HTTP.Client.Internal as HttpClient
 import           Network.HTTP.Types
-
 import           Servant.Client.PerformRequest.Base
 
 newtype JSXMLHttpRequest = JSXMLHttpRequest JSVal
@@ -58,17 +58,29 @@ foreign import javascript unsafe "new $1()"
 -- Performs the xhr and blocks until the response was received
 performXhr :: JSXMLHttpRequest -> Request -> IO ()
 performXhr xhr request = do
-  waiter <- newEmptyMVar
-  callback <- onReadyStateChange xhr $ do
-    state <- readyState xhr
-    case state of
-      4 -> putMVar waiter ()
-      _ -> return ()
-  openXhr xhr (cs $ method request) (toUrl request) True
-  setHeaders xhr (requestHeaders request)
-  sendXhr xhr (toBody request)
-  takeMVar waiter
-  releaseCallback callback
+    waiter <- newEmptyMVar
+
+    bracket (acquire waiter) releaseCallback $ \_callback -> do
+        t <- myThreadId
+        s <- newStablePtr t
+
+        openXhr xhr (cs $ method request) (toUrl request) True
+        setHeaders xhr (requestHeaders request)
+        sendXhr xhr (toBody request)
+        takeMVar waiter
+
+        freeStablePtr s
+  where
+    acquire waiter = onReadyStateChange xhr $ do
+      state <- readyState xhr
+      case state of
+        -- onReadyStateChange's callback can fire state 4
+        -- (which means "request finished and response is ready")
+        -- multiple times. By using tryPutMVar, only the first time
+        -- state 4 is fired will cause an MVar to be put. Subsequent
+        -- fires are ignored.
+        4 -> tryPutMVar waiter () >> return ()
+        _ -> return ()
 
 onReadyStateChange :: JSXMLHttpRequest -> IO () -> IO (Callback (IO ()))
 onReadyStateChange xhr action = do
