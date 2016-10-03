@@ -3,3 +3,4 @@ scripts/
 samples/
 test-servers/
 /doc/
+.stack-work/

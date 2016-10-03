@@ -11,6 +11,8 @@ import           Data.Either           (isRight)
 import           Data.List.Split       (wordsBy)
 import           Data.Maybe            (fromMaybe, isJust)
 import           Data.Monoid           ((<>))
+import           Data.Time             (parseTimeM, defaultTimeLocale,
+                                        rfc822DateFormat, UTCTime)
 import           GHC.Generics          (Generic)
 import           Network.HTTP.Client   (Manager, Request, Response, httpLbs,
                                         method, requestHeaders, responseBody,
@@ -100,12 +102,43 @@ createContainsValidLocation
                  return [resp, resp2]
          else return [resp]
 
-{-
-getsHaveLastModifiedHeader :: ResponsePredicate
+-- | [__Optional__]
+--
+-- The @Last-Modified@ header represents the time a resource was last
+-- modified. It is used to drive caching and conditional requests.
+--
+-- When using this mechanism, the server adds the @Last-Modified@ header to
+-- responses. Clients may then make requests with the @If-Modified-Since@
+-- header to conditionally request resources. If the resource has not
+-- changed since that date, the server responds with a status code of 304
+-- (@Not Modified@) without a response body.
+--
+-- The @Last-Modified@ header can also be used in conjunction with the
+-- @If-Unmodified-Since@ header to drive optimistic concurrency.
+--
+-- The @Last-Modified@ date must be in RFC 822 format.
+--
+-- __References__:
+--
+--   * 304 Not Modified: <https://tools.ietf.org/html/rfc7232#section-4.1 RFC 7232 Section 4.1>
+--   * Last-Modified header: <https://tools.ietf.org/html/rfc7232#section-2.2 RFC 7232 Section 2.2>
+--   * If-Modified-Since header: <https://tools.ietf.org/html/rfc7232#section-3.3 RFC 7232 Section 3.3>
+--   * If-Unmodified-Since header: <https://tools.ietf.org/html/rfc7232#section-3.4 RFC 7232 Section 3.4>
+--   * Date format: <https://tools.ietf.org/html/rfc2616#section-3.3 RFC 2616 Section 3.3>
+--
+-- #SINCECURRENT#
+getsHaveLastModifiedHeader :: RequestPredicate
 getsHaveLastModifiedHeader
-  = ResponsePredicate "getsHaveLastModifiedHeader" (\resp ->
+  = RequestPredicate $ \req mgr ->
+     if (method req == methodGet)
+      then do
+        resp <- httpLbs req mgr
+        unless (hasValidHeader "Last-Modified" isRFC822Date resp) $ do
+          throw $ PredicateFailure "getsHaveLastModifiedHeader" (Just req) resp
+        return [resp]
+      else return []
 
--}
+
 
 -- | [__RFC Compliance__]
 --
@@ -353,6 +386,12 @@ hasValidHeader :: SBS.ByteString -> (SBS.ByteString -> Bool) -> Response b -> Bo
 hasValidHeader hdr p r = case lookup (mk hdr) (responseHeaders r) of
   Nothing -> False
   Just v  -> p v
+
+isRFC822Date :: SBS.ByteString -> Bool
+isRFC822Date s
+  = case parseTimeM True defaultTimeLocale rfc822DateFormat (SBSC.unpack s) of
+    Nothing -> False
+    Just (_ :: UTCTime) -> True
 
 status2XX :: Monad m => Response b -> String -> m ()
 status2XX r t

@@ -52,6 +52,7 @@ library
                      , string-conversions > 0.3 && < 0.5
                      , temporary == 1.2.*
                      , text == 1.*
+                     , time == 1.5.*
                      , warp >= 3.2.4 && < 3.3
 
   hs-source-dirs:      src
