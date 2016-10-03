@@ -50,7 +50,6 @@ import           Web.FormUrlEncoded         (FromForm, ToForm)
 import           Servant.API
 import           Servant.Client
 import           Servant.Client.TestServer
-import           Servant.Client.TestServer.GHC
 import qualified Servant.Common.Req as SCR
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
