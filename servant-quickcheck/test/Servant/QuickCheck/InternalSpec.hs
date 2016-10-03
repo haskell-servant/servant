@@ -5,7 +5,11 @@ import Control.Concurrent.MVar                    (newMVar, readMVar, swapMVar)
 import Control.Monad.IO.Class                     (liftIO)
 import Prelude.Compat
 import Servant
+#if MIN_VERSION_servant(0,8,0)
 import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
+#else
+import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPI, ComprehensiveAPI)
+#endif
 import Test.Hspec                                 (Spec, context, describe, it,
                                                    shouldBe, shouldContain)
 import Test.Hspec.Core.Spec                       (Arg, Example, Result (..),
@@ -134,4 +138,9 @@ noOfTestCases :: Int
 noOfTestCases = 20000
 #else
 noOfTestCases = 1000
+#endif
+
+#if !MIN_VERSION_servant(0,8,0)
+comprehensiveAPIWithoutRaw :: Proxy ComprehensiveAPI
+comprehensiveAPIWithoutRaw = comprehensiveAPI
 #endif

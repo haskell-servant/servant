@@ -1,10 +1,10 @@
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: nightly-2016-09-07
+resolver: nightly-2016-10-03
 packages:
 - '.'
 extra-deps:
-- 'servant-0.8.1'
-- 'servant-server-0.8.1'
-- 'servant-client-0.8.1'
+- 'servant-0.9'
+- 'servant-server-0.9'
+- 'servant-client-0.9'
 flags: {}
 extra-package-dbs: []

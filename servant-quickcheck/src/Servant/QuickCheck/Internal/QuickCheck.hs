@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE CPP #-}
 module Servant.QuickCheck.Internal.QuickCheck where
 
 import           Control.Concurrent       (modifyMVar_, newMVar, readMVar)
@@ -144,7 +145,11 @@ serverDoesntSatisfy api burl args preds = do
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
 noCheckStatus :: C.Request -> C.Request
+#if MIN_VERSION_http_client(0,5,0)
+noCheckStatus = id
+#else
 noCheckStatus r = r { C.checkStatus = \_ _ _ -> Nothing}
+#endif
 
 defManager :: C.Manager
 defManager = unsafePerformIO $ C.newManager C.defaultManagerSettings

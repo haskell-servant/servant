@@ -2,7 +2,6 @@
 {-# LANGUAGE PolyKinds #-}
 module Servant.QuickCheck.Internal.HasGenRequest where
 
-import Data.Default.Class       (def)
 import Data.Monoid              ((<>))
 import Data.String              (fromString)
 import Data.String.Conversions  (cs)
@@ -10,7 +9,7 @@ import qualified Data.ByteString as BS
 import GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
 import Network.HTTP.Client      (Request, RequestBody (..), host, method, path,
                                  port, queryString, requestBody, requestHeaders,
-                                 secure)
+                                 secure, defaultRequest)
 import Network.HTTP.Media       (renderHeader)
 import Prelude.Compat
 import Servant
@@ -125,7 +124,7 @@ instance (KnownSymbol x, HasGenRequest b)
 
 instance (ReflectMethod method)
     => HasGenRequest (Verb (method :: k) (status :: Nat) (cts :: [*]) a) where
-    genRequest _ = return $ \burl -> def
+    genRequest _ = return $ \burl -> defaultRequest
        { host = cs $ baseUrlHost burl
        , port = baseUrlPort burl
        , secure = baseUrlScheme burl == Https
