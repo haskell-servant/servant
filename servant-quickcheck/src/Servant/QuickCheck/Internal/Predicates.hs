@@ -321,7 +321,7 @@ unauthorizedContainsWWWAuthenticate
 -- | A predicate that depends only on the response.
 --
 -- /Since 0.0.0.0/
-data ResponsePredicate = ResponsePredicate
+newtype ResponsePredicate = ResponsePredicate
   { getResponsePredicate :: Response LBS.ByteString -> IO ()
   } deriving (Generic)
 
@@ -332,7 +332,7 @@ instance Monoid ResponsePredicate where
 -- | A predicate that depends on both the request and the response.
 --
 -- /Since 0.0.0.0/
-data RequestPredicate = RequestPredicate
+newtype RequestPredicate = RequestPredicate
   { getRequestPredicate    :: Request -> Manager -> IO [Response LBS.ByteString]
   } deriving (Generic)
 
