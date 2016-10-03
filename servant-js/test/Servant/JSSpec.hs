@@ -33,7 +33,7 @@ import           Servant.JSSpec.CustomHeaders
 -- * comprehensive api
 
 -- This declaration simply checks that all instances are in place.
-_ = jsForAPI comprehensiveAPI vanillaJS :: Text
+_ = jsForAPI comprehensiveAPIWithoutRaw vanillaJS :: Text
 
 -- * specs
 

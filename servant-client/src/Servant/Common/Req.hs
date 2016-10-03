@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving   #-}
 
 #if MIN_VERSION_base(4,9,0)
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
@@ -15,8 +17,18 @@ import Control.Applicative
 import Control.Exception
 import Control.Monad
 import Control.Monad.Catch (MonadThrow)
-import Control.Monad.IO.Class
+
+#if MIN_VERSION_mtl(2,2,0)
+import Control.Monad.Except (MonadError(..))
+#else
+import Control.Monad.Error.Class (MonadError(..))
+#endif
 import Control.Monad.Trans.Except
+
+
+import GHC.Generics
+import Control.Monad.IO.Class ()
+import Control.Monad.Reader
 import Data.ByteString.Lazy hiding (pack, filter, map, null, elem)
 import Data.String
 import Data.String.Conversions
@@ -68,7 +80,7 @@ setRQBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
-    setheaders . setAccept . setrqb . setQS <$> parseUrlThrow url
+    setheaders . setAccept . setrqb . setQS <$> parseRequest url
 
   where url = show $ nullURI { uriScheme = case reqScheme of
                                   Http  -> "http:"
@@ -94,8 +106,18 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
                                               | not . null . reqAccept $ req] }
         toProperHeader (name, val) =
           (fromString name, encodeUtf8 val)
+
 #if !MIN_VERSION_http_client(0,4,30)
-        parseUrlThrow = parseUrl
+-- 'parseRequest' is introduced in http-client-0.4.30
+-- it differs from 'parseUrl', by not throwing exceptions on non-2xx http statuses
+--
+-- See for implementations:
+-- http://hackage.haskell.org/package/http-client-0.4.30/docs/src/Network-HTTP-Client-Request.html#parseRequest
+-- http://hackage.haskell.org/package/http-client-0.5.0/docs/src/Network-HTTP-Client-Request.html#parseRequest
+parseRequest :: MonadThrow m => String -> m Request
+parseRequest url = liftM disableStatusCheck (parseUrl url)
+  where
+    disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }
 #endif
 
 
@@ -104,21 +126,40 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
 displayHttpRequest :: Method -> String
 displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
 
-type ClientM = ExceptT ServantError IO
+data ClientEnv
+  = ClientEnv
+  { manager :: Manager
+  , baseUrl :: BaseUrl
+  }
 
-performRequest :: Method -> Req -> Manager -> BaseUrl
+
+-- | @ClientM@ is the monad in which client functions run. Contains the
+-- 'Manager' and 'BaseUrl' used for requests in the reader environment.
+
+newtype ClientM a = ClientM { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
+                    deriving ( Functor, Applicative, Monad, MonadIO, Generic
+                             , MonadReader ClientEnv
+                             , MonadError ServantError
+                             )
+
+runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
+
+
+performRequest :: Method -> Req
                -> ClientM ( Int, ByteString, MediaType
                           , [HTTP.Header], Response ByteString)
-performRequest reqMethod req manager reqHost = do
+performRequest reqMethod req = do
+  m <- asks manager
+  reqHost <- asks baseUrl
   partialRequest <- liftIO $ reqToRequest req reqHost
 
-  let request = disableStatusCheck $
-        partialRequest { Client.method = reqMethod }
+  let request = partialRequest { Client.method = reqMethod }
 
-  eResponse <- liftIO $ performHttpRequest manager request
+  eResponse <- liftIO $ performHttpRequest m request
   case eResponse of
     Left err ->
-      throwE . ConnectionError $ SomeException err
+      throwError . ConnectionError $ SomeException err
 
     Right response -> do
       let status = Client.responseStatus response
@@ -128,33 +169,24 @@ performRequest reqMethod req manager reqHost = do
       ct <- case lookup "Content-Type" $ Client.responseHeaders response of
                  Nothing -> pure $ "application"//"octet-stream"
                  Just t -> case parseAccept t of
-                   Nothing -> throwE $ InvalidContentTypeHeader (cs t) body
+                   Nothing -> throwError $ InvalidContentTypeHeader (cs t) body
                    Just t' -> pure t'
       unless (status_code >= 200 && status_code < 300) $
-        throwE $ FailureResponse status ct body
+        throwError $ FailureResponse status ct body
       return (status_code, body, ct, hdrs, response)
 
-disableStatusCheck :: Request -> Request
-#if MIN_VERSION_http_client(0,5,0)
-disableStatusCheck req = req { checkResponse = \ _req _res -> return () }
-#else
-disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }
-#endif
-
-performRequestCT :: MimeUnrender ct result =>
-  Proxy ct -> Method -> Req -> Manager -> BaseUrl
+performRequestCT :: MimeUnrender ct result => Proxy ct -> Method -> Req
     -> ClientM ([HTTP.Header], result)
-performRequestCT ct reqMethod req manager reqHost = do
+performRequestCT ct reqMethod req = do
   let acceptCT = contentType ct
   (_status, respBody, respCT, hdrs, _response) <-
-    performRequest reqMethod (req { reqAccept = [acceptCT] }) manager reqHost
-  unless (matches respCT (acceptCT)) $ throwE $ UnsupportedContentType respCT respBody
+    performRequest reqMethod (req { reqAccept = [acceptCT] })
+  unless (matches respCT (acceptCT)) $ throwError $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
-    Left err -> throwE $ DecodeFailure err respCT respBody
+    Left err -> throwError $ DecodeFailure err respCT respBody
     Right val -> return (hdrs, val)
 
-performRequestNoBody :: Method -> Req -> Manager -> BaseUrl
-  -> ClientM [HTTP.Header]
-performRequestNoBody reqMethod req manager reqHost = do
-  (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req manager reqHost
+performRequestNoBody :: Method -> Req -> ClientM [HTTP.Header]
+performRequestNoBody reqMethod req = do
+  (_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req
   return hdrs

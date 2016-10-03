@@ -5,7 +5,8 @@ packages:
 - servant-docs/
 - servant-foreign/
 - servant-js/
-- servant-mock/
 - servant-server/
-extra-deps: []
+extra-deps:
+- http-api-data-0.3
+- uri-bytestring-0.2.2.0
 flags: {}

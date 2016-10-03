@@ -3,33 +3,27 @@ sudo: false
 language: c
 
 env:
-  - GHCVER=7.8.4 CABALVER=1.22
-  - GHCVER=7.10.3 CABALVER=1.22
-  - GHCVER=8.0.1 CABALVER=1.24
+  - STACK_YAML=stack-ghc-7.8.4.yaml
+  - STACK_YAML=stack.yaml
+  - STACK_YAML=stack-ghc-8.0.1.yaml
 
 addons:
   apt:
-    sources:
-      - hvr-ghc
     packages:
-      - ghc-7.8.4
-      - ghc-7.10.3
-      - ghc-8.0.1
-      - cabal-install-1.22
-      - cabal-install-1.24
       - libgmp-dev
 
 install:
-  - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
-  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
-  - ghc --version
-  - cabal --version
-  - travis_retry cabal update
-  - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+  - mkdir -p ~/.local/bin
+  - export PATH=$HOME/.local/bin:$PATH
+  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  - stack --version
+  - stack setup --no-terminal
+  - (cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
 
 script:
-  - ./travis.sh
+  - if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ; then ./scripts/ci-cron.sh ; else stack test --ghc-options=-Werror --no-terminal ; fi
 
 cache:
   directories:
     - $HOME/.tinc/cache
+    - $HOME/.stack

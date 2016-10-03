@@ -26,14 +26,13 @@ import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Arrow              (left)
-import           Control.Monad.Trans.Except (runExceptT, throwE)
+import           Control.Monad.Trans.Except (throwE )
 import           Data.Aeson
 import qualified Data.ByteString.Lazy       as BS
 import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
-import qualified Data.Text                  as T
 import           GHC.Generics               (Generic)
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
@@ -46,6 +45,7 @@ import           Test.HUnit
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.QuickCheck
+import           Web.FormUrlEncoded         (FromForm, ToForm)
 
 import           Servant.API
 import           Servant.Client
@@ -117,19 +117,8 @@ data Person = Person {
 instance ToJSON Person
 instance FromJSON Person
 
-instance ToFormUrlEncoded Person where
-    toFormUrlEncoded Person{..} =
-        [("name", T.pack name), ("age", T.pack (show age))]
-
-lookupEither :: (Show a, Eq a) => a -> [(a,b)] -> Either String b
-lookupEither x xs = do
-    maybe (Left $ "could not find key " <> show x) return $ lookup x xs
-
-instance FromFormUrlEncoded Person where
-    fromFormUrlEncoded xs = do
-        n <- lookupEither "name" xs
-        a <- lookupEither "age" xs
-        return $ Person (T.unpack n) (read $ T.unpack a)
+instance ToForm Person where
+instance FromForm Person where
 
 alice :: Person
 alice = Person "Alice" 42
@@ -140,6 +129,7 @@ type Api =
        "get" :> Get '[JSON] Person
   :<|> "deleteEmpty" :> DeleteNoContent '[JSON] NoContent
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
+  :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
@@ -157,24 +147,26 @@ type Api =
 api :: Proxy Api
 api = Proxy
 
-getGet :: C.Manager -> BaseUrl -> SCR.ClientM Person
-getDeleteEmpty :: C.Manager -> BaseUrl -> SCR.ClientM NoContent
-getCapture :: String -> C.Manager -> BaseUrl -> SCR.ClientM Person
-getBody :: Person -> C.Manager -> BaseUrl -> SCR.ClientM Person
-getQueryParam :: Maybe String -> C.Manager -> BaseUrl -> SCR.ClientM Person
-getQueryParams :: [String] -> C.Manager -> BaseUrl -> SCR.ClientM [Person]
-getQueryFlag :: Bool -> C.Manager -> BaseUrl -> SCR.ClientM Bool
-getRawSuccess :: HTTP.Method -> C.Manager -> BaseUrl
+getGet          :: SCR.ClientM Person
+getDeleteEmpty  :: SCR.ClientM NoContent
+getCapture      :: String -> SCR.ClientM Person
+getCaptureAll   :: [String] -> SCR.ClientM [Person]
+getBody         :: Person -> SCR.ClientM Person
+getQueryParam   :: Maybe String -> SCR.ClientM Person
+getQueryParams  :: [String] -> SCR.ClientM [Person]
+getQueryFlag    :: Bool -> SCR.ClientM Bool
+getRawSuccess :: HTTP.Method
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
-getRawFailure :: HTTP.Method -> C.Manager -> BaseUrl
+getRawFailure   :: HTTP.Method
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
-getMultiple :: String -> Maybe Int -> Bool -> [(String, [Rational])] -> C.Manager -> BaseUrl
+getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> SCR.ClientM (String, Maybe Int, Bool, [(String, [Rational])])
-getRespHeaders :: C.Manager -> BaseUrl -> SCR.ClientM (Headers TestHeaders Bool)
-getDeleteContentType :: C.Manager -> BaseUrl -> SCR.ClientM NoContent
+getRespHeaders  :: SCR.ClientM (Headers TestHeaders Bool)
+getDeleteContentType :: SCR.ClientM NoContent
 getGet
   :<|> getDeleteEmpty
   :<|> getCapture
+  :<|> getCaptureAll
   :<|> getBody
   :<|> getQueryParam
   :<|> getQueryParams
@@ -190,6 +182,7 @@ server = TestServer "server" $ serve api (
        return alice
   :<|> return NoContent
   :<|> (\ name -> return $ Person name 0)
+  :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
@@ -275,38 +268,42 @@ sucessSpec :: Spec
 sucessSpec = around (withTestServer "server") $ do
 
     it "Servant.API.Get" $ \baseUrl -> do
-      (left show <$> runExceptT (getGet manager baseUrl)) `shouldReturn` Right alice
+      (left show <$> (runClientM getGet  (ClientEnv manager baseUrl)))  `shouldReturn` Right alice
 
     describe "Servant.API.Delete" $ do
       it "allows empty content type" $ \baseUrl -> do
-        (left show <$> runExceptT (getDeleteEmpty manager baseUrl)) `shouldReturn` Right NoContent
+        (left show <$> (runClientM getDeleteEmpty (ClientEnv manager baseUrl))) `shouldReturn` Right NoContent
 
       it "allows content type" $ \baseUrl -> do
-        (left show <$> runExceptT (getDeleteContentType manager baseUrl)) `shouldReturn` Right NoContent
+        (left show <$> (runClientM getDeleteContentType (ClientEnv manager baseUrl))) `shouldReturn` Right NoContent
 
     it "Servant.API.Capture" $ \baseUrl -> do
-      (left show <$> runExceptT (getCapture "Paula" manager baseUrl)) `shouldReturn` Right (Person "Paula" 0)
+      (left show <$> (runClientM (getCapture "Paula") (ClientEnv manager baseUrl))) `shouldReturn` Right (Person "Paula" 0)
+
+    it "Servant.API.CaptureAll" $ \baseUrl -> do
+      let expected = [(Person "Paula" 0), (Person "Peta" 1)]
+      (left show <$> (runClientM (getCaptureAll ["Paula", "Peta"]) (ClientEnv  manager baseUrl))) `shouldReturn` Right expected
 
     it "Servant.API.ReqBody" $ \baseUrl -> do
       let p = Person "Clara" 42
-      (left show <$> runExceptT (getBody p manager baseUrl)) `shouldReturn` Right p
+      (left show <$> runClientM (getBody p) (ClientEnv manager baseUrl)) `shouldReturn` Right p
 
     it "Servant.API.QueryParam" $ \baseUrl -> do
-      left show <$> runExceptT (getQueryParam (Just "alice") manager baseUrl) `shouldReturn` Right alice
-      Left FailureResponse{..} <- runExceptT (getQueryParam (Just "bob") manager baseUrl)
+      left show <$> runClientM (getQueryParam (Just "alice")) (ClientEnv manager baseUrl)  `shouldReturn` Right alice
+      Left FailureResponse{..} <- runClientM (getQueryParam (Just "bob")) (ClientEnv manager baseUrl)
       responseStatus `shouldBe` HTTP.Status 400 "bob not found"
 
     it "Servant.API.QueryParam.QueryParams" $ \baseUrl -> do
-      (left show <$> runExceptT (getQueryParams [] manager baseUrl)) `shouldReturn` Right []
-      (left show <$> runExceptT (getQueryParams ["alice", "bob"] manager baseUrl))
+      (left show <$> runClientM (getQueryParams []) (ClientEnv manager baseUrl)) `shouldReturn` Right []
+      (left show <$> runClientM (getQueryParams ["alice", "bob"]) (ClientEnv manager baseUrl))
         `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
     context "Servant.API.QueryParam.QueryFlag" $
       forM_ [False, True] $ \ flag -> it (show flag) $ \baseUrl -> do
-        (left show <$> runExceptT (getQueryFlag flag manager baseUrl)) `shouldReturn` Right flag
+        (left show <$> runClientM (getQueryFlag flag) (ClientEnv manager baseUrl)) `shouldReturn` Right flag
 
     it "Servant.API.Raw on success" $ \baseUrl -> do
-      res <- runExceptT (getRawSuccess HTTP.methodGet manager baseUrl)
+      res <- runClientM (getRawSuccess HTTP.methodGet) (ClientEnv manager baseUrl)
       case res of
         Left e -> assertFailure $ show e
         Right (code, body, ct, _, response) -> do
@@ -315,7 +312,7 @@ sucessSpec = around (withTestServer "server") $ do
           C.responseStatus response `shouldBe` HTTP.ok200
 
     it "Servant.API.Raw should return a Left in case of failure" $ \baseUrl -> do
-      res <- runExceptT (getRawFailure HTTP.methodGet manager baseUrl)
+      res <- runClientM (getRawFailure HTTP.methodGet) (ClientEnv manager baseUrl)
       case res of
         Right _ -> assertFailure "expected Left, but got Right"
         Left e -> do
@@ -323,7 +320,7 @@ sucessSpec = around (withTestServer "server") $ do
           Servant.Client.responseBody e `shouldBe` "rawFailure"
 
     it "Returns headers appropriately" $ \baseUrl -> do
-      res <- runExceptT (getRespHeaders manager baseUrl)
+      res <- runClientM getRespHeaders (ClientEnv manager baseUrl)
       case res of
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
@@ -332,7 +329,7 @@ sucessSpec = around (withTestServer "server") $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \baseUrl ->
         property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
           ioProperty $ do
-            result <- left show <$> runExceptT (getMultiple cap num flag body manager baseUrl)
+            result <- left show <$> runClientM (getMultiple cap num flag body) (ClientEnv manager baseUrl)
             return $
               result === Right (cap, num, flag, body)
 
@@ -358,9 +355,9 @@ errorSpec =
       it "reports error statuses correctly" $ \baseUrl -> do
         let delete :<|> get :<|> post :<|> put =
               client errorApi
-            actions = map (\ f -> f manager baseUrl) [delete, get, post, put]
+            actions = [delete, get, post, put]
         forM_ actions $ \ clientAction -> do
-          Left FailureResponse{..} <- runExceptT clientAction
+          Left FailureResponse{..} <- runClientM clientAction (ClientEnv manager baseUrl)
           responseStatus `shouldBe` HTTP.Status 500 "error message"
 
 basicAuthSpec :: Spec
@@ -370,14 +367,14 @@ basicAuthSpec = around (withTestServer "basicAuthServer") $ do
     it "Authenticates a BasicAuth protected server appropriately" $ \baseUrl -> do
       let getBasic = client basicAuthAPI
       let basicAuthData = BasicAuthData "servant" "server"
-      (left show <$> runExceptT (getBasic basicAuthData manager baseUrl)) `shouldReturn` Right alice
+      (left show <$> runClientM (getBasic basicAuthData) (ClientEnv manager baseUrl)) `shouldReturn` Right alice
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
 
     it "Authenticates a BasicAuth protected server appropriately" $ \baseUrl -> do
       let getBasic = client basicAuthAPI
       let basicAuthData = BasicAuthData "not" "password"
-      Left FailureResponse{..} <- runExceptT (getBasic basicAuthData manager baseUrl)
+      Left FailureResponse{..} <- runClientM (getBasic basicAuthData) (ClientEnv manager baseUrl)
       responseStatus `shouldBe` HTTP.Status 403 "Forbidden"
 
 genAuthSpec :: Spec
@@ -387,14 +384,14 @@ genAuthSpec = around (withTestServer "genAuthServer") $ do
     it "Authenticates a AuthProtect protected server appropriately" $ \baseUrl -> do
       let getProtected = client genAuthAPI
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
-      (left show <$> runExceptT (getProtected authRequest manager baseUrl)) `shouldReturn` Right alice
+      (left show <$> runClientM (getProtected authRequest) (ClientEnv manager baseUrl)) `shouldReturn` Right alice
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
 
     it "Authenticates a AuthProtect protected server appropriately" $ \baseUrl -> do
       let getProtected = client genAuthAPI
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
-      Left FailureResponse{..} <- runExceptT (getProtected authRequest manager baseUrl)
+      Left FailureResponse{..} <- runClientM (getProtected authRequest) (ClientEnv manager baseUrl)
       responseStatus `shouldBe` (HTTP.Status 401 "Unauthorized")
 
 failSpec :: Spec
@@ -403,35 +400,36 @@ failSpec = around (withTestServer "failServer") $ do
     context "client returns errors appropriately" $ do
       it "reports FailureResponse" $ \baseUrl -> do
         let (_ :<|> getDeleteEmpty :<|> _) = client api
-        Left res <- runExceptT (getDeleteEmpty manager baseUrl)
+        Left res <- runClientM getDeleteEmpty (ClientEnv manager baseUrl)
         case res of
           FailureResponse (HTTP.Status 404 "Not Found") _ _ -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \baseUrl -> do
         let (_ :<|> _ :<|> getCapture :<|> _) = client api
-        Left res <- runExceptT (getCapture "foo" manager baseUrl)
+        Left res <- runClientM (getCapture "foo") (ClientEnv manager baseUrl)
         case res of
           DecodeFailure _ ("application/json") _ -> return ()
           _ -> fail $ "expected DecodeFailure, but got " <> show res
 
       it "reports ConnectionError" $ \_ -> do
         let (getGetWrongHost :<|> _) = client api
-        Left res <- runExceptT (getGetWrongHost manager (BaseUrl Http "127.0.0.1" 19872 ""))
+        Left res <- runClientM getGetWrongHost (ClientEnv manager (BaseUrl Http "127.0.0.1" 19872 ""))
         case res of
           ConnectionError _ -> return ()
           _ -> fail $ "expected ConnectionError, but got " <> show res
 
       it "reports UnsupportedContentType" $ \baseUrl -> do
         let (getGet :<|> _ ) = client api
-        Left res <- runExceptT (getGet manager baseUrl)
+        Left res <- runClientM getGet (ClientEnv manager baseUrl)
         case res of
           UnsupportedContentType ("application/octet-stream") _ -> return ()
           _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
       it "reports InvalidContentTypeHeader" $ \baseUrl -> do
-        let (_ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
-        Left res <- runExceptT (getBody alice manager baseUrl)
+        let (_ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
+        Left res <- runClientM (getBody alice) (ClientEnv manager baseUrl)
+
         case res of
           InvalidContentTypeHeader "fooooo" _ -> return ()
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res

@@ -1,5 +1,5 @@
 name:                servant-docs
-version:             0.8
+version:             0.9
 synopsis:            generate API docs for your servant webservice
 description:
   Library for generating API docs from a servant API definition.
@@ -36,13 +36,12 @@ library
     , aeson
     , aeson-pretty
     , bytestring
-    , bytestring-conversion
     , case-insensitive
     , hashable
     , http-media >= 0.6
     , http-types >= 0.7
     , lens
-    , servant == 0.8.*
+    , servant == 0.9.*
     , string-conversions
     , text
     , unordered-containers
@@ -61,7 +60,6 @@ executable greet-docs
   build-depends:
       base
     , aeson
-    , bytestring-conversion
     , lens
     , servant
     , servant-docs

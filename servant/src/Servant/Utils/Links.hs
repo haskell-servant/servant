@@ -107,7 +107,7 @@ import           Prelude.Compat
 
 import Web.HttpApiData
 import Servant.API.BasicAuth ( BasicAuth )
-import Servant.API.Capture ( Capture )
+import Servant.API.Capture ( Capture, CaptureAll )
 import Servant.API.ReqBody ( ReqBody )
 import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
 import Servant.API.Header ( Header )
@@ -162,6 +162,8 @@ type family IsElem endpoint api :: Constraint where
     IsElem sa (Header sym x :> sb)          = IsElem sa sb
     IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
     IsElem (Capture z y :> sa) (Capture x y :> sb)
+                                            = IsElem sa sb
+    IsElem (CaptureAll z y :> sa) (CaptureAll x y :> sb)
                                             = IsElem sa sb
     IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
     IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
@@ -283,6 +285,13 @@ instance (ToHttpApiData v, HasLink sub)
     toLink _ l v =
         toLink (Proxy :: Proxy sub) $
             addSegment (escape . Text.unpack $ toUrlPiece v) l
+
+instance (ToHttpApiData v, HasLink sub)
+    => HasLink (CaptureAll sym v :> sub) where
+    type MkLink (CaptureAll sym v :> sub) = [v] -> MkLink sub
+    toLink _ l vs =
+        toLink (Proxy :: Proxy sub) $
+            foldl' (flip $ addSegment . escape . Text.unpack . toUrlPiece) l vs
 
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub
