@@ -22,6 +22,7 @@ import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
                                         renderStdMethod, status100, status200,
                                         status201, status300, status401,
                                         status405, status500)
+import           System.Clock           (toNanoSecs, Clock(Monotonic), getTime, diffTimeSpec)
 import           Prelude.Compat
 
 import Servant.QuickCheck.Internal.ErrorTypes
@@ -39,6 +40,22 @@ import Servant.QuickCheck.Internal.ErrorTypes
 not500 :: ResponsePredicate
 not500 = ResponsePredicate $ \resp ->
   when (responseStatus resp == status500) $ fail "not500"
+
+-- | [__Optional__]
+--
+-- This function checks that the response from the server does not take longer
+-- than the specified number of nanoseconds.
+--
+-- #SINCE#
+notLongerThan :: Integer -> RequestPredicate
+notLongerThan maxAllowed
+  = RequestPredicate $ \req mgr -> do
+     start <- getTime Monotonic
+     resp <- httpLbs req mgr
+     end <- getTime Monotonic
+     when (toNanoSecs (end `diffTimeSpec` start) > maxAllowed) $
+       throw $ PredicateFailure "notLongerThan" (Just req) resp
+     return []
 
 -- | [__Best Practice__]
 --
@@ -126,7 +143,7 @@ createContainsValidLocation
 --   * If-Unmodified-Since header: <https://tools.ietf.org/html/rfc7232#section-3.4 RFC 7232 Section 3.4>
 --   * Date format: <https://tools.ietf.org/html/rfc2616#section-3.3 RFC 2616 Section 3.3>
 --
--- #SINCECURRENT#
+-- #SINCE#
 getsHaveLastModifiedHeader :: RequestPredicate
 getsHaveLastModifiedHeader
   = RequestPredicate $ \req mgr ->
