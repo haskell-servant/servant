@@ -5,7 +5,6 @@ module Servant.QuickCheck.Internal.HasGenRequest where
 import Data.Monoid              ((<>))
 import Data.String              (fromString)
 import Data.String.Conversions  (cs)
-import qualified Data.ByteString as BS
 import GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
 import Network.HTTP.Client      (Request, RequestBody (..), host, method, path,
                                  port, queryString, requestBody, requestHeaders,
@@ -16,6 +15,9 @@ import Servant
 import Servant.API.ContentTypes (AllMimeRender (..))
 import Servant.Client           (BaseUrl (..), Scheme (..))
 import Test.QuickCheck          (Arbitrary (..), Gen, elements, oneof)
+#if MIN_VERSION_servant(0,8,0)
+import qualified Data.ByteString as BS
+#endif
 
 
 class HasGenRequest a where

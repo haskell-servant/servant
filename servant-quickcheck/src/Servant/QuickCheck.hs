@@ -27,6 +27,7 @@ module Servant.QuickCheck
   -- in RFCs. The __Best Practices__ includes, in addition to RFC
   -- recommendations, recommendations found elsewhere or generally accepted.
   , not500
+  , notLongerThan
   , onlyJsonObjects
   , notAllowedContainsAllowHeader
   , unauthorizedContainsWWWAuthenticate

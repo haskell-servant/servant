@@ -25,6 +25,7 @@ spec = do
   serverSatisfiesSpec
   isComprehensiveSpec
   onlyJsonObjectSpec
+  notLongerThanSpec
 
 serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
@@ -80,6 +81,18 @@ onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
         (onlyJsonObjects <%> mempty)
     err `shouldContain` "onlyJsonObjects"
 
+notLongerThanSpec :: Spec
+notLongerThanSpec = describe "notLongerThan" $ do
+
+  it "fails correctly" $ do
+    Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
+      evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
+        (notLongerThan 1 <%> mempty)
+    err `shouldContain` "notLongerThan"
+
+  it "succeeds correctly" $ do
+    withServantServerAndContext api ctx server $ \burl ->
+      serverSatisfies api burl args (notLongerThan 1000000000000 <%> mempty)
 
 isComprehensiveSpec :: Spec
 isComprehensiveSpec = describe "HasGenRequest" $ do

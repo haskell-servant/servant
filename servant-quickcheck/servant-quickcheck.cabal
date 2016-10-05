@@ -36,6 +36,7 @@ library
                      , aeson > 0.8 && < 2
                      , bytestring == 0.10.*
                      , case-insensitive == 1.2.*
+                     , clock >= 0.7 && < 0.8
                      , data-default-class >= 0.0 && < 0.2
                      , hspec == 2.2.*
                      , http-client >= 0.4.30 && < 0.6

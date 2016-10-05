@@ -2,6 +2,11 @@ upcoming:
 
   changes:
 
+    - description: Add notLongerThan predicate
+      pr: 17
+      authors: jkarni
+      date: 2016-10-05
+
     - description: Add getsHaveLastModifiedHeader predicate
       pr: none
       authors: jkarni
