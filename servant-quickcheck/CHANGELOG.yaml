@@ -1,26 +1,28 @@
 upcoming:
 
-  changes:
-
-    - description: Add notLongerThan predicate
-      pr: 17
-      authors: jkarni
-      date: 2016-10-05
-
-    - description: Add getsHaveLastModifiedHeader predicate
-      pr: none
-      authors: jkarni
-      date: 2016-10-03
-
-    - description: Raise upper bounds 
-      notes: >
-          For Quickcheck, aeson, http-client, servant, servant-client and 
-          servant-server.
-      pr: none
-      authors: jkarni
-      date: 2016-10-03
-
 releases:
+
+  - version: "0.0.2.1"
+    changes:
+
+      - description: Add notLongerThan predicate
+        pr: 17
+        authors: jkarni
+        date: 2016-10-05
+
+      - description: Add getsHaveLastModifiedHeader predicate
+        pr: none
+        authors: jkarni
+        date: 2016-10-03
+
+      - description: Raise upper bounds 
+        notes: >
+            For Quickcheck, aeson, http-client, servant, servant-client and 
+            servant-server.
+        pr: none
+        authors: jkarni
+        date: 2016-10-03
+
 
   - version: "0.0.2.0"
     changes:

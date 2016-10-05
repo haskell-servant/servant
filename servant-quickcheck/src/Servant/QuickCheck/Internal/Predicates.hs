@@ -46,7 +46,7 @@ not500 = ResponsePredicate $ \resp ->
 -- This function checks that the response from the server does not take longer
 -- than the specified number of nanoseconds.
 --
--- #SINCE#
+-- /Since 0.0.2.1/
 notLongerThan :: Integer -> RequestPredicate
 notLongerThan maxAllowed
   = RequestPredicate $ \req mgr -> do
@@ -143,7 +143,7 @@ createContainsValidLocation
 --   * If-Unmodified-Since header: <https://tools.ietf.org/html/rfc7232#section-3.4 RFC 7232 Section 3.4>
 --   * Date format: <https://tools.ietf.org/html/rfc2616#section-3.3 RFC 2616 Section 3.3>
 --
--- #SINCE#
+-- /Since 0.0.2.1/
 getsHaveLastModifiedHeader :: RequestPredicate
 getsHaveLastModifiedHeader
   = RequestPredicate $ \req mgr ->
