@@ -3,4 +3,3 @@ servant-server
 servant-client
 servant-docs
 servant-foreign
-servant-js
