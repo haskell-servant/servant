@@ -7,7 +7,7 @@ packages:
   - location: ../../../servant-server
     extra-dep: true
 
-resolver: lts-5.12
+resolver: lts-6.0
 
 compiler: ghcjs-0.2.0.20160414_ghc-7.10.3
 compiler-check: match-exact
@@ -18,9 +18,4 @@ setup-info:
         url: https://s3.amazonaws.com/ghcjs/ghcjs-0.2.0.20160414_ghc-7.10.3.tar.gz
         sha1: 6d6f307503be9e94e0c96ef1308c7cf224d06be3
 
-extra-deps:
-  - hspec-expectations-0.7.2
-  - hspec-discover-2.2.1
-  - http-api-data-0.1.1.1
-  - hspec-2.2.1
-  - hspec-core-2.2.1
+extra-deps: []
