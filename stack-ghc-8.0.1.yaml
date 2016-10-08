@@ -4,7 +4,6 @@ packages:
 - servant-client/
 - servant-docs/
 - servant-foreign/
-- servant-js/
 - servant-server/
 extra-deps:
 - http-api-data-0.3
