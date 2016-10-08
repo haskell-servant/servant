@@ -18,4 +18,5 @@ setup-info:
         url: https://s3.amazonaws.com/ghcjs/ghcjs-0.2.0.20160414_ghc-7.10.3.tar.gz
         sha1: 6d6f307503be9e94e0c96ef1308c7cf224d06be3
 
-extra-deps: []
+extra-deps:
+- http-api-data-0.3
