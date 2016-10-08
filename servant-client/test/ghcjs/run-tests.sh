@@ -11,5 +11,5 @@ npm install xhr2
 
 export STACK_YAML=test/ghcjs/stack-ghcjs.yaml
 stack setup
-stack build
+# stack build
 # stack test --fast
