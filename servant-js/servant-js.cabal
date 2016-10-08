@@ -93,4 +93,5 @@ test-suite spec
                    , servant
                    , servant-js
                    , text
+                   , QuickCheck
   default-language:  Haskell2010

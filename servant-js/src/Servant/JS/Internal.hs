@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Servant.JS.Internal
   ( JavaScriptGenerator
@@ -116,12 +115,11 @@ toValidFunctionName t =
       setFirstChar x `T.cons` T.filter remainder xs
     Nothing -> "_"
   where
-    setFirstChar c = if firstChar c then c else '_'
-    firstChar c = prefixOK c || Set.member c firstLetterOK
-    remainder c = prefixOK c || Set.member c remainderOK
-    prefixOK c = c `elem` ['$','_']
+    setFirstChar c = if Set.member c firstLetterOK then c else '_'
+    remainder c = Set.member c remainderOK
     firstLetterOK = (filterBmpChars $ mconcat
-                      [ Set.lowercaseLetter
+                      [ Set.fromDistinctAscList "$_"
+                      , Set.lowercaseLetter
                       , Set.uppercaseLetter
                       , Set.titlecaseLetter
                       , Set.modifierLetter
