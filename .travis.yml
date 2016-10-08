@@ -19,6 +19,7 @@ install:
   - stack --version
   - stack setup --no-terminal
   - (cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
+  - if [ "$STACK_YAML" = "stack.yaml" ] ; then (cd servant-client/test/ghcjs/ && ./run-tests.sh) ; fi
 
 script:
   - if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ; then ./scripts/ci-cron.sh ; else stack test --ghc-options=-Werror --no-terminal ; fi
