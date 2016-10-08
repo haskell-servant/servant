@@ -11,7 +11,6 @@ module Servant.API.ContentTypesSpec where
 import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Arrow
 import           Data.Aeson
 import           Data.ByteString.Char8     (ByteString, append, pack)
 import qualified Data.ByteString.Lazy      as BSL
@@ -25,7 +24,6 @@ import           Data.String.Conversions   (cs)
 import qualified Data.Text                 as TextS
 import qualified Data.Text.Lazy            as TextL
 import           GHC.Generics
-import           Network.URL               (exportParams, importParams)
 import           Test.Hspec
 import           Test.QuickCheck
 import "quickcheck-instances" Test.QuickCheck.Instances ()
@@ -67,21 +65,6 @@ spec = describe "Servant.API.ContentTypes" $ do
 
         it "has mimeUnrender reverse mimeRender for valid top-level json " $ do
             property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::SomeData)
-
-    describe "The FormUrlEncoded Content-Type type" $ do
-        let p = Proxy :: Proxy FormUrlEncoded
-
-        it "has mimeUnrender reverse mimeRender" $ do
-            property $ \x -> mempty `notElem` x
-                ==> mimeUnrender p (mimeRender p x) == Right (x::[(TextS.Text,TextS.Text)])
-
-        it "has mimeUnrender reverse exportParams (Network.URL)" $ do
-            property $ \x -> mempty `notElem` x
-                ==> (mimeUnrender p . cs . exportParams . map (cs *** cs) $ x) == Right (x::[(TextS.Text,TextS.Text)])
-
-        it "has importParams (Network.URL) reverse mimeRender" $ do
-            property $ \x -> mempty `notElem` x
-                ==> (fmap (map (cs *** cs)) . importParams . cs . mimeRender p $ x) == Just (x::[(TextS.Text,TextS.Text)])
 
     describe "The PlainText Content-Type type" $ do
         let p = Proxy :: Proxy PlainText

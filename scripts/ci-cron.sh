@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 
+set -o nounset
 set -o errexit
+set -o verbose
 
-for package in $(cat sources.txt) doc/tutorial ; do
+export PATH=$(stack path --bin-path):$PATH
+
+stack install cabal-install
+cabal update
+
+for package in $(cat sources.txt) ; do
   echo testing $package
   pushd $package
   tinc

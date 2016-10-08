@@ -1,7 +1,0 @@
-dependencies:
-  - name: servant
-    path: ../servant
-  - name: servant-server
-    path: ../servant-server
-  - name: servant-foreign
-    path: ../servant-foreign

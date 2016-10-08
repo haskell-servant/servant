@@ -17,7 +17,6 @@ import           Control.Monad              (forM_, when, unless)
 import           Control.Monad.Trans.Except (throwE)
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
 import qualified Data.ByteString.Base64     as Base64
-import           Data.ByteString.Conversion ()
 import           Data.Char                  (toUpper)
 import           Data.Monoid
 import           Data.Proxy                 (Proxy (Proxy))

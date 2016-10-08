@@ -42,12 +42,10 @@ import           Network.Wai                (Application, Request, Response,
                                              responseLBS, vault)
 import           Prelude                    ()
 import           Prelude.Compat
-import           Web.HttpApiData            (FromHttpApiData)
-import           Web.HttpApiData.Internal   (parseHeaderMaybe,
+import           Web.HttpApiData            (FromHttpApiData, parseHeaderMaybe,
                                              parseQueryParamMaybe,
                                              parseUrlPieceMaybe,
                                              parseUrlPieces)
-
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
                                               CaptureAll, Verb,
                                               ReflectMethod(reflectMethod),

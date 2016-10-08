@@ -4,9 +4,9 @@ packages:
 - servant-client/
 - servant-docs/
 - servant-foreign/
-- servant-js/
-- servant-mock/
 - servant-server/
 - doc/tutorial
 extra-deps:
+- http-api-data-0.3
+- servant-js-0.9 # needed for tutorial
 resolver: lts-6.0
