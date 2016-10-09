@@ -56,8 +56,8 @@ import           Servant.Common.Req
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getAllBooks :: Manager -> BaseUrl -> ClientM [Book]
--- > postNewBook :: Book -> Manager -> BaseUrl -> ClientM Book
+-- > getAllBooks :: ClientM [Book]
+-- > postNewBook :: Book -> ClientM Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
 client :: HasClient api => Proxy api -> Client api
 client p = clientWithRoute p defReq
@@ -80,8 +80,8 @@ class HasClient api where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getAllBooks :: Manager -> BaseUrl -> ClientM [Book]
--- > postNewBook :: Book -> Manager -> BaseUrl -> ClientM Book
+-- > getAllBooks :: ClientM [Book]
+-- > postNewBook :: Book -> ClientM Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
   type Client (a :<|> b) = Client a :<|> Client b
@@ -105,7 +105,7 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBook :: Text -> Manager -> BaseUrl -> ClientM Book
+-- > getBook :: Text -> ClientM Book
 -- > getBook = client myApi
 -- > -- then you can just use "getBook" to query that endpoint
 instance (KnownSymbol capture, ToHttpApiData a, HasClient api)
@@ -137,7 +137,7 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient api)
 -- > myApi :: Proxy
 -- > myApi = Proxy
 --
--- > getSourceFile :: [Text] -> Manager -> BaseUrl -> ClientM SourceFile
+-- > getSourceFile :: [Text] -> ClientM SourceFile
 -- > getSourceFile = client myApi
 -- > -- then you can use "getSourceFile" to query that endpoint
 instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
@@ -177,7 +177,7 @@ instance OVERLAPPING_
     = ClientM (Headers ls a)
   clientWithRoute Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) method req 
+    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) method req
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -189,7 +189,7 @@ instance OVERLAPPING_
     = ClientM (Headers ls NoContent)
   clientWithRoute Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
-    hdrs <- performRequestNoBody method req 
+    hdrs <- performRequestNoBody method req
     return $ Headers { getResponse = NoContent
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -216,7 +216,7 @@ instance OVERLAPPING_
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > viewReferer :: Maybe Referer -> Manager -> BaseUrl -> ClientM Book
+-- > viewReferer :: Maybe Referer -> ClientM Book
 -- > viewReferer = client myApi
 -- > -- then you can just use "viewRefer" to query that endpoint
 -- > -- specifying Nothing or e.g Just "http://haskell.org/" as arguments
@@ -266,7 +266,7 @@ instance HasClient api
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: Maybe Text -> Manager -> BaseUrl -> ClientM [Book]
+-- > getBooksBy :: Maybe Text -> ClientM [Book]
 -- > getBooksBy = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy Nothing' for all books
@@ -310,7 +310,7 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: [Text] -> Manager -> BaseUrl -> ClientM [Book]
+-- > getBooksBy :: [Text] -> ClientM [Book]
 -- > getBooksBy = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy []' for all books
@@ -349,7 +349,7 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooks :: Bool -> Manager -> BaseUrl -> ClientM [Book]
+-- > getBooks :: Bool -> ClientM [Book]
 -- > getBooks = client myApi
 -- > -- then you can just use "getBooks" to query that endpoint.
 -- > -- 'getBooksBy False' for all books
@@ -395,7 +395,7 @@ instance HasClient Raw where
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > addBook :: Book -> Manager -> BaseUrl -> ClientM Book
+-- > addBook :: Book -> ClientM Book
 -- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
 instance (MimeRender ct a, HasClient api)
