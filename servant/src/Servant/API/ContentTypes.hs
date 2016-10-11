@@ -120,9 +120,12 @@ data OctetStream deriving Typeable
 --
 class Accept ctype where
     contentType   :: Proxy ctype -> M.MediaType
+    contentType = NE.head . contentTypes
 
     contentTypes  :: Proxy ctype -> NE.NonEmpty M.MediaType
     contentTypes  =  (NE.:| []) . contentType
+
+    {-# MINIMAL contentType | contentTypes #-}
 
 -- | @application/json@
 instance Accept JSON where
