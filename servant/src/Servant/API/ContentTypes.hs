@@ -8,6 +8,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -243,7 +244,7 @@ class (AllMime list) => AllMimeRender (list :: [*]) a where
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
 instance OVERLAPPABLE_ ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
-    allMimeRender _ a = [ (ct, bs) | ct <- NE.toList $ contentTypes pctyp ]
+    allMimeRender _ a = map (, bs) $ NE.toList $ contentTypes pctyp
       where
         bs    = mimeRender pctyp a
         pctyp = Proxy :: Proxy ctyp
@@ -253,7 +254,7 @@ instance OVERLAPPABLE_
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
     allMimeRender _ a =
-        [ (ct, bs) | ct <- NE.toList $ contentTypes pctyp ]
+        (map (, bs) $ NE.toList $ contentTypes pctyp)
         ++ allMimeRender pctyps a
       where
         bs     = mimeRender pctyp a
@@ -265,7 +266,7 @@ instance OVERLAPPABLE_
 -- then this would be taken care of. However there is no more specific instance
 -- between that and 'MimeRender JSON a', so we do this instead
 instance OVERLAPPING_ ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
-    allMimeRender _ _ = [ (ct, "") | ct <- NE.toList $ contentTypes pctyp ]
+    allMimeRender _ _ = map (, "") $ NE.toList $ contentTypes pctyp
       where
         pctyp = Proxy :: Proxy ctyp
 
@@ -289,7 +290,7 @@ instance ( MimeUnrender ctyp a
          , AllMimeUnrender ctyps a
          ) => AllMimeUnrender (ctyp ': ctyps) a where
     allMimeUnrender _ bs =
-        [ (ct, x) | ct <- NE.toList $ contentTypes pctyp ]
+        (map (, x) $ NE.toList $ contentTypes pctyp)
         ++ allMimeUnrender pctyps bs
       where
         x      = mimeUnrender pctyp bs
