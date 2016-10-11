@@ -14,9 +14,11 @@ import           Prelude.Compat
 import           Data.Aeson
 import           Data.ByteString.Char8     (ByteString, append, pack)
 import qualified Data.ByteString.Lazy      as BSL
+import qualified Data.ByteString.Lazy.Char8 as BSL8
 import           Data.Either
 import           Data.Function             (on)
 import           Data.List                 (maximumBy)
+import qualified Data.List.NonEmpty        as NE
 import           Data.Maybe                (fromJust, isJust, isNothing)
 import           Data.Proxy
 import           Data.String               (IsString (..))
@@ -24,8 +26,10 @@ import           Data.String.Conversions   (cs)
 import qualified Data.Text                 as TextS
 import qualified Data.Text.Lazy            as TextL
 import           GHC.Generics
+import qualified Network.HTTP.Media        as M
 import           Test.Hspec
 import           Test.QuickCheck
+import           Text.Read                 (readMaybe)
 import "quickcheck-instances" Test.QuickCheck.Instances ()
 
 import           Servant.API.ContentTypes
@@ -101,6 +105,14 @@ spec = describe "Servant.API.ContentTypes" $ do
                 "application/octet-stream" ("content" :: ByteString)
                 `shouldSatisfy` isJust
 
+        it "returns Just if the 'Accept' header matches, with multiple mime types" $ do
+            handleAcceptH (Proxy :: Proxy '[JSONorText]) "application/json" (3 :: Int)
+                `shouldSatisfy` isJust
+            handleAcceptH (Proxy :: Proxy '[JSONorText]) "text/plain" (3 :: Int)
+                `shouldSatisfy` isJust
+            handleAcceptH (Proxy :: Proxy '[JSONorText]) "image/jpeg" (3 :: Int)
+                `shouldBe` Nothing
+
         it "returns the Content-Type as the first element of the tuple" $ do
             handleAcceptH (Proxy :: Proxy '[JSON]) "*/*" (3 :: Int)
                 `shouldSatisfy` ((== "application/json") . fst . fromJust)
@@ -158,6 +170,15 @@ spec = describe "Servant.API.ContentTypes" $ do
                     (encode val)
                     `shouldBe` Just (Right val)
 
+            it "returns Just (Right val) if the decoding succeeds for either of multiple mime-types" $ do
+                let val = 42 :: Int
+                handleCTypeH (Proxy :: Proxy '[JSONorText]) "application/json"
+                    "42" `shouldBe` Just (Right val)
+                handleCTypeH (Proxy :: Proxy '[JSONorText]) "text/plain"
+                    "42" `shouldBe` Just (Right val)
+                handleCTypeH (Proxy :: Proxy '[JSONorText]) "image/jpeg"
+                    "42" `shouldBe` (Nothing :: Maybe (Either String Int))
+
 #if MIN_VERSION_aeson(0,9,0)
     -- aeson >= 0.9 decodes top-level strings
     describe "eitherDecodeLenient" $ do
@@ -200,6 +221,18 @@ instance ToJSON ByteString where
 
 instance IsString AcceptHeader where
     fromString = AcceptHeader . fromString
+
+-- To test multiple content types
+data JSONorText
+
+instance Accept JSONorText where
+    contentTypes _ = "text" M.// "plain" NE.:| [ "application" M.// "json" ]
+
+instance MimeRender JSONorText Int  where
+    mimeRender _ = cs . show
+
+instance MimeUnrender JSONorText Int where
+    mimeUnrender _ = maybe (Left "") Right . readMaybe . BSL8.unpack
 
 addToAccept :: Accept a => Proxy a -> ZeroToOne -> AcceptHeader -> AcceptHeader
 addToAccept p (ZeroToOne f) (AcceptHeader h) = AcceptHeader (cont h)

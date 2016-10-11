@@ -113,12 +113,17 @@ test-suite spec
     , attoparsec
     , bytestring
     , hspec == 2.*
+    , http-media
     , QuickCheck
     , quickcheck-instances
     , servant
     , string-conversions
     , text
     , url
+
+  if !impl(ghc >= 8.0)
+    build-depends:
+      semigroups            >= 0.16 && < 0.19
 
 test-suite doctests
  build-depends: base
