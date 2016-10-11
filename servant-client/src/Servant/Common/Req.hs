@@ -13,6 +13,7 @@ import Prelude.Compat
 import Control.Exception
 import Control.Monad
 import Control.Monad.Catch (MonadThrow, MonadCatch)
+import Data.Foldable (toList)
 
 #if MIN_VERSION_mtl(2,2,0)
 import Control.Monad.Except (MonadError(..))
@@ -25,7 +26,7 @@ import Control.Monad.Trans.Except
 import GHC.Generics
 import Control.Monad.IO.Class ()
 import Control.Monad.Reader
-import Data.ByteString.Lazy hiding (pack, filter, map, null, elem)
+import Data.ByteString.Lazy hiding (pack, filter, map, null, elem, any)
 import Data.String
 import Data.String.Conversions
 import Data.Proxy
@@ -215,10 +216,10 @@ performRequest reqMethod req = do
 performRequestCT :: MimeUnrender ct result => Proxy ct -> Method -> Req 
     -> ClientM ([HTTP.Header], result)
 performRequestCT ct reqMethod req = do
-  let acceptCT = contentType ct
+  let acceptCTS = contentTypes ct
   (_status, respBody, respCT, hdrs, _response) <-
-    performRequest reqMethod (req { reqAccept = [acceptCT] })
-  unless (matches respCT (acceptCT)) $ throwError $ UnsupportedContentType respCT respBody
+    performRequest reqMethod (req { reqAccept = toList acceptCTS })
+  unless (any (matches respCT) acceptCTS) $ throwError $ UnsupportedContentType respCT respBody
   case mimeUnrender ct respBody of
     Left err -> throwError $ DecodeFailure err respCT respBody
     Right val -> return (hdrs, val)
