@@ -6,6 +6,7 @@ packages:
 - servant-foreign/
 - servant-server/
 extra-deps:
+- aeson-compat-0.3.6
 - base-compat-0.9.1
 - control-monad-omega-0.3.1
 - cryptonite-0.6
