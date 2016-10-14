@@ -409,13 +409,15 @@ marshal an unauthenticated request into an authenticated request. Generally,
 this will look like:
 
 ```haskell ignore
+import           Servant.Common.Req               (Req, addHeader)
+
 -- | The datatype we'll use to authenticate a request. If we were wrapping
 -- something like OAuth, this might be a Bearer token.
 type instance AuthClientData (AuthProtect "cookie-auth") = String
 
 -- | A method to authenticate a request
 authenticateReq :: String -> Req -> Req
-authenticateReq s req = SCR.addHeader "my-bespoke-header" s req
+authenticateReq s req = addHeader "my-bespoke-header" s req
 ```
 
 Now, if the client method for our protected endpoint was `getProtected`, then
