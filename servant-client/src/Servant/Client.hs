@@ -27,9 +27,6 @@ module Servant.Client
   , module Servant.Common.BaseUrl
   ) where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative        ((<$>))
-#endif
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.List
 import           Data.Proxy
@@ -40,6 +37,8 @@ import           Network.HTTP.Client        (Response)
 import           Network.HTTP.Media
 import qualified Network.HTTP.Types         as H
 import qualified Network.HTTP.Types.Header  as HTTP
+import           Prelude ()
+import           Prelude.Compat
 import           Servant.API
 import           Servant.Client.Experimental.Auth
 import           Servant.Common.BaseUrl
