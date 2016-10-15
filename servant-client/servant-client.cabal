@@ -36,6 +36,7 @@ library
     Servant.Common.Req
   build-depends:
       base                  >= 4.7      && < 4.10
+    , base-compat           >= 0.9.1    && < 0.10
     , aeson                 >= 0.7      && < 1.1
     , attoparsec            >= 0.12     && < 0.14
     , base64-bytestring     >= 1.0.0.1  && < 1.1
@@ -72,6 +73,7 @@ test-suite spec
     , Servant.Common.BaseUrlSpec
   build-depends:
       base == 4.*
+    , base-compat
     , transformers
     , transformers-compat
     , aeson

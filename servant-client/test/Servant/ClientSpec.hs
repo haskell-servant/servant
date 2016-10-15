@@ -10,8 +10,8 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE RecordWildCards        #-}
-{-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -26,9 +26,6 @@
 #include "overlapping-compat.h"
 module Servant.ClientSpec where
 
-#if !MIN_VERSION_base(4,8,0)
-import           Control.Applicative        ((<$>))
-#endif
 import           Control.Arrow              (left)
 import           Control.Concurrent         (forkIO, killThread, ThreadId)
 import           Control.Exception          (bracket)
@@ -46,19 +43,21 @@ import qualified Network.HTTP.Types         as HTTP
 import           Network.Socket
 import           Network.Wai                (Request, requestHeaders, responseLBS)
 import           Network.Wai.Handler.Warp
+import           Prelude ()
+import           Prelude.Compat
 import           System.IO.Unsafe           (unsafePerformIO)
+import           Test.HUnit
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
-import           Test.HUnit
 import           Test.QuickCheck
 import           Web.FormUrlEncoded         (FromForm, ToForm)
 
 import           Servant.API
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
+import qualified Servant.Common.Req         as SCR
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
-import qualified Servant.Common.Req         as SCR
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPI
