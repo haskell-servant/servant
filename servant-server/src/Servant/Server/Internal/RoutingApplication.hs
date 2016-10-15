@@ -6,11 +6,13 @@
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TupleSections              #-}
 module Servant.Server.Internal.RoutingApplication where
 
 import           Control.Monad                      (ap, liftM)
 import           Control.Monad.Trans                (MonadIO(..))
 import           Control.Monad.Trans.Except         (runExceptT)
+import           Data.IORef                         (newIORef, readIORef, writeIORef)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived)
 import           Prelude                            ()
@@ -103,6 +105,10 @@ data Delayed env c where
              , authD     :: DelayedIO auth
              , bodyD     :: DelayedIO body
              , serverD   :: captures -> auth -> body -> Request -> RouteResult c
+             , cleanupD  :: body -> IO ()
+               -- not in DelayedIO because:
+               -- - most likely should not depend on the request
+               -- - simpler
              } -> Delayed env c
 
 instance Functor (Delayed env) where
@@ -142,7 +148,7 @@ instance MonadIO DelayedIO where
 -- | A 'Delayed' without any stored checks.
 emptyDelayed :: RouteResult a -> Delayed env a
 emptyDelayed result =
-  Delayed (const r) r r r (\ _ _ _ _ -> result)
+  Delayed (const r) r r r (\ _ _ _ _ -> result) (const $ return ())
   where
     r = return ()
 
@@ -196,8 +202,9 @@ addBodyCheck :: Delayed env (a -> b)
              -> Delayed env b
 addBodyCheck Delayed{..} new =
   Delayed
-    { bodyD   = (,) <$> bodyD <*> new
-    , serverD = \ c a (z, v) req -> ($ v) <$> serverD c a z req
+    { bodyD    = (,) <$> bodyD <*> new
+    , serverD  = \ c a (z, v) req -> ($ v) <$> serverD c a z req
+    , cleanupD = cleanupD . fst -- not sure that's right
     , ..
     } -- Note [Existential Record Update]
 
@@ -240,13 +247,19 @@ passToServer Delayed{..} x =
 runDelayed :: Delayed env a
            -> env
            -> Request
-           -> IO (RouteResult a)
-runDelayed Delayed{..} env = runDelayedIO $ do
-  c <- capturesD env
-  methodD
-  a <- authD
-  b <- bodyD
-  DelayedIO (\ req -> return $ serverD c a b req)
+           -> IO (RouteResult a, IO ())
+runDelayed Delayed{..} env req = do
+  cleanupRef <- newIORef (return ())
+  routeRes <- runDelayedIO
+    (do c <- capturesD env
+        methodD
+        a <- authD
+        b <- bodyD
+        liftIO (writeIORef cleanupRef $ cleanupD b)
+        DelayedIO $ \ req -> return (serverD c a b req)
+    )
+    req
+  fmap (routeRes,) $ readIORef cleanupRef
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.
@@ -258,8 +271,11 @@ runAction :: Delayed env (Handler a)
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
-runAction action env req respond k =
-  runDelayed action env req >>= go >>= respond
+runAction action env req respond k = do
+  (routeResult, cleanup) <- runDelayed action env req
+  resp <- go routeResult
+  cleanup
+  respond resp
   where
     go (Fail e)      = return $ Fail e
     go (FailFatal e) = return $ FailFatal e

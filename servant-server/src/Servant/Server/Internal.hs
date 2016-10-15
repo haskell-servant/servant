@@ -398,7 +398,7 @@ instance HasServer Raw context where
   type ServerT Raw m = Application
 
   route Proxy _ rawApplication = RawRouter $ \ env request respond -> do
-    r <- runDelayed rawApplication env request
+    (r, _) <- runDelayed rawApplication env request
     case r of
       Route app   -> app request (respond . Route)
       Fail a      -> respond $ Fail a
