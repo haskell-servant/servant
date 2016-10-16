@@ -256,7 +256,7 @@ runDelayed Delayed{..} env req = do
         a <- authD
         b <- bodyD
         liftIO (writeIORef cleanupRef $ cleanupD b)
-        DelayedIO $ \ req -> return (serverD c a b req)
+        DelayedIO $ \ r -> return (serverD c a b r)
     )
     req
   fmap (routeRes,) $ readIORef cleanupRef
