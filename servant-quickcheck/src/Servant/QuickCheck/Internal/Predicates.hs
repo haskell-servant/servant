@@ -167,10 +167,13 @@ getsHaveLastModifiedHeader
 -- This function checks that every @405 Method Not Allowed@ response contains
 -- an @Allow@ header with a list of standard HTTP methods.
 --
+-- Note that 'servant' itself does not currently set the @Allow@ headers.
+--
 -- __References__:
 --
 --   * @Allow@ header: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616 Section 14.7>
 --   * Status 405: <https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html RFC 2616 Section 10.4.6>
+--   * Servant Allow header issue: <https://github.com/haskell-servant/servant/issues/489 Issue #489>
 --
 -- /Since 0.0.0.0/
 notAllowedContainsAllowHeader :: RequestPredicate
