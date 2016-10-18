@@ -1,20 +1,22 @@
 {-# LANGUAGE CPP #-}
 module Servant.QuickCheck.InternalSpec (spec) where
 
-import Control.Concurrent.MVar                    (newMVar, readMVar, swapMVar)
-import Control.Monad.IO.Class                     (liftIO)
-import Prelude.Compat
-import Servant
+import           Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
+import           Control.Monad.IO.Class  (liftIO)
+import qualified Data.ByteString         as BS
+import           Prelude.Compat
+import           Servant
+import           Test.Hspec              (Spec, context, describe, it, shouldBe,
+                                          shouldContain)
+import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
+                                          defaultParams, evaluateExample)
+
 #if MIN_VERSION_servant(0,8,0)
 import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
 #else
-import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPI, ComprehensiveAPI)
+import Servant.API.Internal.Test.ComprehensiveAPI (ComprehensiveAPI,
+                                                   comprehensiveAPI)
 #endif
-import Test.Hspec                                 (Spec, context, describe, it,
-                                                   shouldBe, shouldContain)
-import Test.Hspec.Core.Spec                       (Arg, Example, Result (..),
-                                                   defaultParams,
-                                                   evaluateExample)
 
 import Servant.QuickCheck
 import Servant.QuickCheck.Internal (genRequest, serverDoesntSatisfy)
@@ -81,6 +83,10 @@ onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
         (onlyJsonObjects <%> mempty)
     err `shouldContain` "onlyJsonObjects"
 
+  it "accepts non-JSON endpoints" $ do
+    withServantServerAndContext octetAPI ctx serverOctetAPI $ \burl ->
+      serverSatisfies octetAPI burl args (onlyJsonObjects <%> mempty)
+
 notLongerThanSpec :: Spec
 notLongerThanSpec = describe "notLongerThan" $ do
 
@@ -131,6 +137,14 @@ server2 = return $ return 1
 
 server3 :: IO (Server API2)
 server3 = return $ return 2
+
+type OctetAPI = Get '[OctetStream] BS.ByteString
+
+octetAPI :: Proxy OctetAPI
+octetAPI = Proxy
+
+serverOctetAPI :: IO (Server OctetAPI)
+serverOctetAPI = return $ return "blah"
 
 ctx :: Context '[BasicAuthCheck ()]
 ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext

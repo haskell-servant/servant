@@ -85,6 +85,7 @@ test-suite spec
   build-depends:       base == 4.*
                      , base-compat
                      , servant-quickcheck
+                     , bytestring
                      , hspec
                      , hspec-core
                      , http-client

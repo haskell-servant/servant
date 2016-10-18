@@ -1,29 +1,32 @@
 module Servant.QuickCheck.Internal.Predicates where
 
 import           Control.Exception     (catch, throw)
-import           Control.Monad         (when, unless, liftM2)
+import           Control.Monad         (liftM2, unless, when)
 import           Data.Aeson            (Object, decode)
+import           Data.Bifunctor        (first)
 import qualified Data.ByteString       as SBS
 import qualified Data.ByteString.Char8 as SBSC
 import qualified Data.ByteString.Lazy  as LBS
-import           Data.CaseInsensitive  (mk)
+import           Data.CaseInsensitive  (mk, foldedCase)
 import           Data.Either           (isRight)
 import           Data.List.Split       (wordsBy)
 import           Data.Maybe            (fromMaybe, isJust)
 import           Data.Monoid           ((<>))
-import           Data.Time             (parseTimeM, defaultTimeLocale,
-                                        rfc822DateFormat, UTCTime)
+import           Data.Time             (UTCTime, defaultTimeLocale, parseTimeM,
+                                        rfc822DateFormat)
 import           GHC.Generics          (Generic)
 import           Network.HTTP.Client   (Manager, Request, Response, httpLbs,
-                                        method, requestHeaders, responseBody,
-                                        responseHeaders, parseRequest, responseStatus)
+                                        method, parseRequest, requestHeaders,
+                                        responseBody, responseHeaders,
+                                        responseStatus)
 import           Network.HTTP.Media    (matchAccept)
 import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
                                         renderStdMethod, status100, status200,
                                         status201, status300, status401,
                                         status405, status500)
-import           System.Clock           (toNanoSecs, Clock(Monotonic), getTime, diffTimeSpec)
 import           Prelude.Compat
+import           System.Clock          (Clock (Monotonic), diffTimeSpec,
+                                        getTime, toNanoSecs)
 
 import Servant.QuickCheck.Internal.ErrorTypes
 
@@ -80,9 +83,15 @@ notLongerThan maxAllowed
 -- /Since 0.0.0.0/
 onlyJsonObjects :: ResponsePredicate
 onlyJsonObjects
-  = ResponsePredicate (\resp -> case decode (responseBody resp) of
+  = ResponsePredicate (\resp -> case go resp of
       Nothing -> throw $ PredicateFailure "onlyJsonObjects" Nothing resp
-      Just (_ :: Object) -> return ())
+      Just () -> return ())
+    where
+      go r = do
+        ctyp <- lookup "content-type" (first foldedCase <$> responseHeaders r)
+        when ("application/json" `SBS.isPrefixOf` ctyp) $ do
+          (_ :: Object) <- decode (responseBody r)
+          return ()
 
 -- | __Optional__
 --
@@ -353,7 +362,7 @@ instance Monoid ResponsePredicate where
 --
 -- /Since 0.0.0.0/
 newtype RequestPredicate = RequestPredicate
-  { getRequestPredicate    :: Request -> Manager -> IO [Response LBS.ByteString]
+  { getRequestPredicate :: Request -> Manager -> IO [Response LBS.ByteString]
   } deriving (Generic)
 
 -- TODO: This isn't actually a monoid
@@ -364,7 +373,7 @@ instance Monoid RequestPredicate where
 
 -- | A set of predicates. Construct one with 'mempty' and '<%>'.
 data Predicates = Predicates
-  { requestPredicates :: RequestPredicate
+  { requestPredicates  :: RequestPredicate
   , responsePredicates :: ResponsePredicate
   } deriving (Generic)
 
