@@ -1,11 +1,15 @@
 upcoming:
 
-  - description: Make onlyJsonObjects succeed in non-JSON endpoints
-    issue: 20
-    authors: jkarni
-    date: 2016-10-18
-
 releases:
+
+  - version: "0.0.2.2"
+    changes:
+
+      - description: Make onlyJsonObjects succeed in non-JSON endpoints
+        issue: 20
+        authors: jkarni
+        date: 2016-10-18
+
 
   - version: "0.0.2.1"
     changes:
