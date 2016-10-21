@@ -22,6 +22,7 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
+import           Control.Exception          (finally)
 import           Control.Monad.Trans        (liftIO)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
@@ -398,11 +399,13 @@ instance HasServer Raw context where
   type ServerT Raw m = Application
 
   route Proxy _ rawApplication = RawRouter $ \ env request respond -> do
-    (r, _) <- runDelayed rawApplication env request
-    case r of
-      Route app   -> app request (respond . Route)
-      Fail a      -> respond $ Fail a
-      FailFatal e -> respond $ FailFatal e
+    (r, cleanup) <- runDelayed rawApplication env request
+    go r request respond `finally` cleanup
+
+    where go r request respond = case r of
+            Route app   -> app request (respond . Route)
+            Fail a      -> respond $ Fail a
+            FailFatal e -> respond $ FailFatal e
 
 -- | If you use 'ReqBody' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
