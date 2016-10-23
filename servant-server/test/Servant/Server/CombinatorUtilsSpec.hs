@@ -27,7 +27,7 @@ import           Servant.Server.CombinatorUtils
 runApp :: Application -> Request -> IO Response
 runApp app req = do
   mvar <- newMVar Nothing
-  app req $ \ response -> do
+  ResponseReceived <- app req $ \ response -> do
     modifyMVar mvar $ \ Nothing ->
       return $ (Just response, ResponseReceived)
   modifyMVar mvar $ \mResponse -> do
@@ -100,7 +100,7 @@ data FooHeader
 
 instance HasServer api context => HasServer (FooHeader :> api) context where
   type ServerT (FooHeader :> api) m = String -> ServerT api m
-  route = argumentCombinator getCustom
+  route = runCI $ argumentCombinator getCustom
 
 getCustom :: Request -> RouteResult String
 getCustom request = case lookup "FooHeader" (requestHeaders request) of
@@ -111,7 +111,7 @@ data StringCapture
 
 instance HasServer api context => HasServer (StringCapture :> api) context where
   type ServerT (StringCapture :> api) m = String -> ServerT api m
-  route = captureCombinator getCapture
+  route = runCI $ captureCombinator getCapture
 
 getCapture :: Text -> RouteResult String
 getCapture = Route . cs
