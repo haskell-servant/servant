@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -48,24 +49,6 @@ responseBodyLbs response = do
 
 spec :: Spec
 spec = do
-  it "allows to write a combinator by providing a function (Request -> a)" $ do
-    let server = return
-        app = serve (Proxy :: Proxy (FooHeader :> Get' String)) server
-        request = defaultRequest{
-          requestHeaders =
-            ("FooHeader", "foo") :
-            requestHeaders defaultRequest
-        }
-    response <- runApp app request
-    responseBodyLbs response `shouldReturn` "\"foo\""
-
-  it "allows to write a combinator the errors out" $ do
-    let server = return
-        app = serve (Proxy :: Proxy (FooHeader :> Get' String)) server
-        request = defaultRequest
-    response <- runApp app request
-    responseStatus response `shouldBe` status400
-
   it "allows to write capture combinators" $ do
     let server = return
         app = serve (Proxy :: Proxy (StringCapture :> Get' String)) server
@@ -75,6 +58,53 @@ spec = do
         }
     response <- runApp app request
     responseBodyLbs response `shouldReturn` "\"foo\""
+
+  it "allows to write request check combinators" $ do
+    let server = return ()
+        app = serve (Proxy :: Proxy (CheckFooHeader :> Get' ())) server
+        request = defaultRequest{
+          requestHeaders =
+            ("Foo", "foo") :
+            requestHeaders defaultRequest
+        }
+    response <- runApp app request
+    responseBodyLbs response `shouldReturn` "[]"
+
+  it "allows to write a combinator that errors out" $ do
+    let server = return
+        app = serve (Proxy :: Proxy (StringCapture :> Get' String)) server
+        request = defaultRequest {
+          rawPathInfo = "/error",
+          pathInfo = ["error"]
+        }
+    response <- runApp app request
+    responseStatus response `shouldBe` status418
+
+  it "allows to write a combinator using IO" $ do
+    pending
+
+  it "allows to write a combinator by providing a function (Request -> a)" $ do
+    let server = return
+        app = serve (Proxy :: Proxy (FooHeader :> Get' String)) server
+        request = defaultRequest{
+          requestHeaders =
+            ("Foo", "foo") :
+            requestHeaders defaultRequest
+        }
+    response <- runApp app request
+    responseBodyLbs response `shouldReturn` "\"foo\""
+
+  it "allows to write an auth combinator" $ do
+    let server (User name) = return name
+        app = serve (Proxy :: Proxy (AuthCombinator :> Get' String)) server
+        request = defaultRequest{
+          requestHeaders =
+            ("Auth", "secret") :
+            requestHeaders defaultRequest
+        }
+    response <- runApp app request
+    responseStatus response `shouldBe` ok200
+    responseBodyLbs response `shouldReturn` "\"Alice\""
 
   it "allows to pick the request check phase" $ do
     pending
@@ -96,6 +126,43 @@ spec = do
 
 type Get' = Get '[JSON]
 
+data StringCapture
+
+instance HasServer api context => HasServer (StringCapture :> api) context where
+  type ServerT (StringCapture :> api) m = String -> ServerT api m
+  route = runCI $ implementCaptureCombinator getCapture
+
+getCapture :: Text -> RouteResult String
+getCapture = \case
+  "error" -> FailFatal $ ServantErr 418 "I'm a teapot" "" []
+  text -> Route $ cs text
+
+data CheckFooHeader
+
+instance HasServer api context => HasServer (CheckFooHeader :> api) context where
+  type ServerT (CheckFooHeader :> api) m = ServerT api m
+  route = runCI $ implementRequestCheck checkFooHeader
+
+checkFooHeader :: Request -> RouteResult ()
+checkFooHeader request = case lookup "Foo" (requestHeaders request) of
+  Just _ -> Route ()
+  Nothing -> FailFatal err400
+
+data AuthCombinator
+
+data User = User String
+  deriving (Eq, Show)
+
+instance HasServer api context => HasServer (AuthCombinator :> api) context where
+  type ServerT (AuthCombinator :> api) m = User -> ServerT api m
+  route = runCI $ implementAuthCombinator checkAuth
+
+checkAuth :: Request -> RouteResult User
+checkAuth request = case lookup "Auth" (requestHeaders request) of
+  Just "secret" -> Route $ User "Alice"
+  Just _ -> FailFatal err401
+  Nothing -> FailFatal err400
+
 data FooHeader
 
 instance HasServer api context => HasServer (FooHeader :> api) context where
@@ -103,15 +170,6 @@ instance HasServer api context => HasServer (FooHeader :> api) context where
   route = runCI $ argumentCombinator getCustom
 
 getCustom :: Request -> RouteResult String
-getCustom request = case lookup "FooHeader" (requestHeaders request) of
+getCustom request = case lookup "Foo" (requestHeaders request) of
   Nothing -> FailFatal err400
   Just l -> Route $ cs l
-
-data StringCapture
-
-instance HasServer api context => HasServer (StringCapture :> api) context where
-  type ServerT (StringCapture :> api) m = String -> ServerT api m
-  route = runCI $ captureCombinator getCapture
-
-getCapture :: Text -> RouteResult String
-getCapture = Route . cs
