@@ -362,6 +362,20 @@ err417 = ServantErr { errHTTPCode = 417
                     , errHeaders = []
                     }
 
+-- | 'err418' Expectation Failed
+--
+-- Example:
+--
+-- > failingHandler :: Handler ()
+-- > failingHandler = throwError $ err418 { errBody = "Apologies, this is not a webserver but a teapot." }
+--
+err418 :: ServantErr
+err418 = ServantErr { errHTTPCode = 418
+                    , errReasonPhrase = "I'm a teapot"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
 -- | 'err500' Internal Server Error
 --
 -- Example:
