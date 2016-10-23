@@ -45,6 +45,7 @@ library
   exposed-modules:
     Servant
     Servant.Server
+    Servant.Server.CombinatorUtils
     Servant.Server.Experimental.Auth
     Servant.Server.Internal
     Servant.Server.Internal.BasicAuth
@@ -132,10 +133,12 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Servant.ArbitraryMonadServerSpec
+      Servant.Server.CombinatorUtilsSpec
       Servant.Server.ErrorSpec
       Servant.Server.Internal.ContextSpec
       Servant.Server.Internal.RoutingApplicationSpec
       Servant.Server.RouterSpec
+      Servant.ServerSpec
       Servant.Server.StreamingSpec
       Servant.Server.UsingContextSpec
       Servant.Server.UsingContextSpec.TestCombinators
