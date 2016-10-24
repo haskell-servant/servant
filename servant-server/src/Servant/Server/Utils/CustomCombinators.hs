@@ -4,6 +4,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- fixme: document phases
+-- fixme: add doctests
+
 module Servant.Server.Utils.CustomCombinators (
   CombinatorImplementation,
   runCI,

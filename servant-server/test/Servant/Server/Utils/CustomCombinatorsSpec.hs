@@ -53,51 +53,79 @@ responseBodyLbs response = do
 
 spec :: Spec
 spec = do
-  it "allows to write capture combinators" $ do
-    let server = return
-        app = serve (Proxy :: Proxy (StringCapture :> Get' String)) server
-        request = defaultRequest{
-          rawPathInfo = "/foo",
-          pathInfo = ["foo"]
-        }
-    response <- runApp app request
-    responseBodyLbs response `shouldReturn` "\"foo\""
+  describe "makeCaptureCombinator" $ do
+    it "allows to write capture combinators" $ do
+      let server = return
+          app = serve (Proxy :: Proxy (StringCapture :> Get' String)) server
+          request = defaultRequest{
+            rawPathInfo = "/foo",
+            pathInfo = ["foo"]
+          }
+      response <- runApp app request
+      responseBodyLbs response `shouldReturn` "\"foo\""
 
-  it "allows to write request check combinators" $ do
-    let server = return ()
-        app = serve (Proxy :: Proxy (CheckFooHeader :> Get' ())) server
-        request = defaultRequest{
-          requestHeaders =
-            ("Foo", "foo") :
-            requestHeaders defaultRequest
-        }
-    response <- runApp app request
-    responseBodyLbs response `shouldReturn` "[]"
+    it "allows to write a combinator that errors out" $ do
+      let server = return
+          app = serve (Proxy :: Proxy (StringCapture :> Get' String)) server
+          request = defaultRequest {
+            rawPathInfo = "/error",
+            pathInfo = ["error"]
+          }
+      response <- runApp app request
+      responseStatus response `shouldBe` status418
 
-  it "allows to write an auth combinator" $ do
-    let server (User name) = return name
-        app = serve (Proxy :: Proxy (AuthCombinator :> Get' String)) server
-        request = defaultRequest{
-          requestHeaders =
-            ("Auth", "secret") :
-            requestHeaders defaultRequest
-        }
-    response <- runApp app request
-    responseStatus response `shouldBe` ok200
-    responseBodyLbs response `shouldReturn` "\"Alice\""
+  describe "makeRequestCheckCombinator" $ do
+    it "allows to write request check combinators" $ do
+      let server = return ()
+          app = serve (Proxy :: Proxy (CheckFooHeader :> Get' ())) server
+          request = defaultRequest{
+            requestHeaders =
+              ("Foo", "foo") :
+              requestHeaders defaultRequest
+          }
+      response <- runApp app request
+      responseBodyLbs response `shouldReturn` "[]"
 
-  it "allows to write a combinator by providing a function (Request -> a)" $ do
-    let server = return
-        app = serve (Proxy :: Proxy (FooHeader :> Get' String)) server
-        request = defaultRequest{
-          requestHeaders =
-            ("Foo", "foo") :
-            requestHeaders defaultRequest
-        }
-    response <- runApp app request
-    responseBodyLbs response `shouldReturn` "\"foo\""
+    it "disallows to access the request body" $ do
+      let server = return ()
+          app = serve (Proxy :: Proxy (InvalidRequestCheckCombinator :> Get' ())) server
+          request = defaultRequest
+      runApp app request `shouldThrow`
+        errorCall "ERROR: makeRequestCheckCombinator: combinator must not access the request body"
 
-  context "streaming request bodies" $ do
+  describe "makeAuthCombinator" $ do
+    it "allows to write an auth combinator" $ do
+      let server (User name) = return name
+          app = serve (Proxy :: Proxy (AuthCombinator :> Get' String)) server
+          request = defaultRequest{
+            requestHeaders =
+              ("Auth", "secret") :
+              requestHeaders defaultRequest
+          }
+      response <- runApp app request
+      responseStatus response `shouldBe` ok200
+      responseBodyLbs response `shouldReturn` "\"Alice\""
+
+    it "disallows to access the request body" $ do
+      let server _user = return "foo"
+          app = serve (Proxy :: Proxy (InvalidAuthCombinator :> Get' String)) server
+          request = defaultRequest
+      runApp app request `shouldThrow`
+        errorCall "ERROR: makeAuthCombinator: combinator must not access the request body"
+
+  describe "makeCombinator" $ do
+    it "allows to write a combinator by providing a function (Request -> a)" $ do
+      let server = return
+          app = serve (Proxy :: Proxy (FooHeader :> Get' String)) server
+          request = defaultRequest{
+            requestHeaders =
+              ("Foo", "foo") :
+              requestHeaders defaultRequest
+          }
+      response <- runApp app request
+      responseBodyLbs response `shouldReturn` "\"foo\""
+
+  describe "makeReqBodyCombinator" $ do
     let toBody :: [IO SBS.ByteString] -> IO (IO SBS.ByteString)
         toBody list = do
           mvar <- newMVar list
@@ -133,39 +161,12 @@ spec = do
       response <- runApp app request
       responseBodyLbs response `shouldReturn` "\"foobar\""
 
-  it "allows to write a combinator that errors out" $ do
-    let server = return
-        app = serve (Proxy :: Proxy (StringCapture :> Get' String)) server
-        request = defaultRequest {
-          rawPathInfo = "/error",
-          pathInfo = ["error"]
-        }
-    response <- runApp app request
-    responseStatus response `shouldBe` status418
-
-  it "disallows to access the request body unless in the checkBody phase" $ do
-    let server = return ()
-        app = serve (Proxy :: Proxy (InvalidRequestCheckCombinator :> Get' ())) server
-        request = defaultRequest
-    runApp app request `shouldThrow`
-      errorCall "ERROR: makeRequestCheckCombinator: combinator must not access the request body"
-
-  it "disallows to access the request body unless in the auth phase" $ do
-    let server _user = return "foo"
-        app = serve (Proxy :: Proxy (InvalidAuthCombinator :> Get' String)) server
-        request = defaultRequest
-    runApp app request `shouldThrow`
-      errorCall "ERROR: makeAuthCombinator: combinator must not access the request body"
-
   -- fixme: reorder tests
 
   it "allows to access the context" $ do
     pending
 
-  it "allows to write combinators without args" $ do
-    pending
-
-  it "allows to implement combinators based in terms of existing combinators" $ do
+  it "allows to implement combinators in terms of existing combinators" $ do
     pending
 
 type Get' = Get '[JSON]
