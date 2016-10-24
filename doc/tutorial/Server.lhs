@@ -753,7 +753,29 @@ myHandler :: Server MyHandler
 myHandler = return $ addHeader 1797 albert
 ```
 
-Note that the type of `addHeader x` is different than the type of `x`!
+Note that the type of `addHeader header x` is different than the type of `x`!
+And if you add more headers, more headers will appear in the header list:
+
+``` haskell
+type MyHeadfulHandler = Get '[JSON] (Headers '[Header "X-A-Bool" Bool, Header "X-An-Int" Int] User)
+
+myHeadfulHandler :: Server MyHeadfulHandler
+myHeadfulHandler = return $ addHeader True $ addHeader 1797 albert
+```
+
+But what if your handler only *sometimes* adds a header? If you declare that
+your handler adds headers, and you don't add one, the return type of your
+handler will be different than expected. To solve this, you have to explicitly
+*not* add a header by using `noHeader`:
+
+``` haskell
+type MyMaybeHeaderHandler
+  = Capture "withHeader" Bool :> Get '[JSON] (Headers '[Header "X-An-Int" Int] User)
+
+myMaybeHeaderHandler :: Server MyMaybeHeaderHandler
+myMaybeHeaderHandler x = return $ if x then addHeader 1797 albert
+                                       else noHeader albert
+```
 
 ## Serving static files
 
