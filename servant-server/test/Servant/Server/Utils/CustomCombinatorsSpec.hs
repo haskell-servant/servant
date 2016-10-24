@@ -255,8 +255,6 @@ instance (HasContextEntry context [(SBS.ByteString, User)], HasServer api contex
   type ServerT (AuthWithContext :> api) m = User -> ServerT api m
   route = runCI $ makeAuthCombinator authWithContext
 
--- fixme: remove foralls from haddock
-
 authWithContext :: (HasContextEntry context [(SBS.ByteString, User)]) =>
   Context context -> Request -> IO (RouteResult User)
 authWithContext context request = return $ case lookup "Auth" (requestHeaders request) of
