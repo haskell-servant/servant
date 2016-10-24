@@ -1,3 +1,8 @@
+upcoming
+--------
+
+* Added 'noHeader' function for *not* adding response headers.
+
 0.9
 ---
 
