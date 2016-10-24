@@ -7,6 +7,7 @@
 -- fixme: document phases
 -- fixme: add doctests
 -- fixme: document that the req body can only be consumed once
+-- fixme: document dependency problem
 
 module Servant.Server.Utils.CustomCombinators (
   CombinatorImplementation,
@@ -57,60 +58,60 @@ makeCaptureCombinator ::
   forall api combinator arg context .
   (HasServer api context,
    WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler)) =>
-  (Text -> IO (RouteResult arg))
+  (Context context -> Text -> IO (RouteResult arg))
   -> CombinatorImplementation combinator arg api context
 makeCaptureCombinator getArg = CI $ \ Proxy context delayed ->
   CaptureRouter $
   route (Proxy :: Proxy api) context $ addCapture delayed $ \ captured ->
-  (liftRouteResult =<< liftIO (getArg captured))
+  (liftRouteResult =<< liftIO (getArg context captured))
 
 makeRequestCheckCombinator ::
   forall api combinator context .
   (HasServer api context,
    WithArg () (ServerT api Handler) ~ ServerT api Handler) =>
-  (Request -> IO (RouteResult ()))
+  (Context context -> Request -> IO (RouteResult ()))
   -> CombinatorImplementation combinator () api context
 makeRequestCheckCombinator check = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addMethodCheck delayed $
   withRequest $ \ request ->
-    liftRouteResult =<< liftIO (check (protectBody "makeRequestCheckCombinator" request))
+    liftRouteResult =<< liftIO (check context (protectBody "makeRequestCheckCombinator" request))
 
 makeAuthCombinator ::
   forall api combinator arg context .
   (HasServer api context,
    WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler)) =>
-  (Request -> IO (RouteResult arg))
+  (Context context -> Request -> IO (RouteResult arg))
   -> CombinatorImplementation combinator arg api context
 makeAuthCombinator authCheck = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addAuthCheck delayed $
   withRequest $ \ request ->
-    liftRouteResult =<< liftIO (authCheck (protectBody "makeAuthCombinator" request))
+    liftRouteResult =<< liftIO (authCheck context (protectBody "makeAuthCombinator" request))
 
 makeReqBodyCombinator ::
   forall api combinator arg context .
   (ServerT (combinator :> api) Handler ~ (arg -> ServerT api Handler),
    WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler),
    HasServer api context) =>
-  (IO ByteString -> arg)
+  (Context context -> IO ByteString -> arg)
   -> CombinatorImplementation combinator arg api context
 makeReqBodyCombinator getArg = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addBodyCheck delayed
   (return ())
   (\ () -> withRequest $ \ request ->
-    liftRouteResult $ Route $ getArg $ requestBody request)
+    liftRouteResult $ Route $ getArg context $ requestBody request)
 
 makeCombinator ::
   forall api combinator arg context .
   (ServerT (combinator :> api) Handler ~ (arg -> ServerT api Handler),
    WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler),
    HasServer api context) =>
-  (Request -> IO (RouteResult arg))
+  (Context context -> Request -> IO (RouteResult arg))
   -> CombinatorImplementation combinator arg api context
 makeCombinator getArg = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addBodyCheck delayed
   (return ())
   (\ () -> withRequest $ \ request ->
-    liftRouteResult =<< liftIO (getArg (protectBody "makeCombinator" request)))
+    liftRouteResult =<< liftIO (getArg context (protectBody "makeCombinator" request)))
 
 protectBody :: String -> Request -> Request
 protectBody name request = request{
