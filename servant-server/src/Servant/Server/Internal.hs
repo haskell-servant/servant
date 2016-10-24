@@ -399,8 +399,12 @@ instance HasServer Raw context where
   type ServerT Raw m = Application
 
   route Proxy _ rawApplication = RawRouter $ \ env request respond -> do
-    (r, cleanup) <- runDelayed rawApplication env request
-    go r request respond `finally` cleanup
+    -- note: a Raw application doesn't register any cleanup
+    -- but for the sake of consistency, we nonetheless run
+    -- the cleanup once its done
+    cleanupRef <- newCleanupRef
+    r <- runDelayed rawApplication env request cleanupRef
+    go r request respond `finally` runCleanup cleanupRef
 
     where go r request respond = case r of
             Route app   -> app request (respond . Route)
