@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Servant.Server.CombinatorUtils (
+module Servant.Server.Utils.CustomCombinators (
   CombinatorImplementation,
   runCI,
   makeCaptureCombinator,

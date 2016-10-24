@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Servant.Server.CombinatorUtilsSpec where
+module Servant.Server.Utils.CustomCombinatorsSpec where
 
 import           Control.Concurrent
 import           Data.ByteString.Builder
@@ -27,7 +27,7 @@ import           Test.Hspec
 
 import           Servant.API
 import           Servant.Server
-import           Servant.Server.CombinatorUtils
+import           Servant.Server.Utils.CustomCombinators
 
 runApp :: Application -> Request -> IO Response
 runApp app req = do
