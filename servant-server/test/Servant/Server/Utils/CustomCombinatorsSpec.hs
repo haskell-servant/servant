@@ -269,7 +269,7 @@ data FooHeader
 
 instance HasServer api context => HasServer (FooHeader :> api) context where
   type ServerT (FooHeader :> api) m = String -> ServerT api m
-  route = runServerCombinator $ makeCombinator (const getCustom)
+  route = runServerCombinator $ makeCombinator $ const $ getCustom
 
 getCustom :: Request -> IO (RouteResult String)
 getCustom request = return $ case lookup "Foo" (requestHeaders request) of
