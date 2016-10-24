@@ -11,10 +11,14 @@ module Servant.Server.CombinatorUtils (
   implementRequestCheck,
   implementAuthCombinator,
   argumentCombinator,
+  implementRequestStreamingCombinator,
+
   -- * re-exports
+
   RouteResult(..),
 ) where
 
+import           Data.ByteString
 import           Data.Proxy
 import           Data.Text
 import           Network.Wai
@@ -84,3 +88,15 @@ argumentCombinator getArg = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addBodyCheck delayed -- fixme: shouldn't be body
   (return ())
   (\ () -> withRequest $ \ request -> liftRouteResult (getArg request))
+
+implementRequestStreamingCombinator ::
+  forall api combinator arg context .
+  (ServerT (combinator :> api) Handler ~ (arg -> ServerT api Handler),
+   WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler),
+   HasServer api context) =>
+  (IO ByteString -> arg)
+  -> CombinatorImplementation combinator arg api context
+implementRequestStreamingCombinator getArg = CI $ \ Proxy context delayed ->
+  route (Proxy :: Proxy api) context $ addBodyCheck delayed
+  (return ())
+  (\ () -> withRequest $ \ request -> liftRouteResult $ Route $ getArg $ requestBody request)
