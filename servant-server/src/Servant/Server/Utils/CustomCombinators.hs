@@ -6,6 +6,7 @@
 
 -- fixme: document phases
 -- fixme: add doctests
+-- fixme: document that the req body can only be consumed once
 
 module Servant.Server.Utils.CustomCombinators (
   CombinatorImplementation,

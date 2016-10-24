@@ -161,8 +161,6 @@ spec = do
       response <- runApp app request
       responseBodyLbs response `shouldReturn` "\"foobar\""
 
-  -- fixme: reorder tests
-
   it "allows to access the context" $ do
     pending
 
@@ -170,6 +168,8 @@ spec = do
     pending
 
 type Get' = Get '[JSON]
+
+-- * capture combinators
 
 data StringCapture
 
@@ -182,6 +182,8 @@ getCapture snippet = return $ case snippet of
   "error" -> FailFatal $ ServantErr 418 "I'm a teapot" "" []
   text -> Route $ cs text
 
+-- * request check combinators
+
 data CheckFooHeader
 
 instance HasServer api context => HasServer (CheckFooHeader :> api) context where
@@ -193,6 +195,20 @@ checkFooHeader request = return $
   case lookup "Foo" (requestHeaders request) of
     Just _ -> Route ()
     Nothing -> FailFatal err400
+
+-- | a combinator that tries to access the request body in an invalid way
+data InvalidRequestCheckCombinator
+
+instance HasServer api context => HasServer (InvalidRequestCheckCombinator :> api) context where
+  type ServerT (InvalidRequestCheckCombinator :> api) m = ServerT api m
+  route = runCI $ makeRequestCheckCombinator accessReqBody
+
+accessReqBody :: Request -> IO (RouteResult ())
+accessReqBody request = do
+  body <- fromBody $ requestBody request
+  deepseq body (return $ Route ())
+
+-- * auth combinators
 
 data AuthCombinator
 
@@ -209,6 +225,20 @@ checkAuth request = return $ case lookup "Auth" (requestHeaders request) of
   Just _ -> FailFatal err401
   Nothing -> FailFatal err400
 
+-- | a combinator that tries to access the request body in an invalid way
+data InvalidAuthCombinator
+
+instance HasServer api context => HasServer (InvalidAuthCombinator :> api) context where
+  type ServerT (InvalidAuthCombinator :> api) m = User -> ServerT api m
+  route = runCI $ makeAuthCombinator authWithReqBody
+
+authWithReqBody :: Request -> IO (RouteResult User)
+authWithReqBody request = do
+  body <- fromBody $ requestBody request
+  deepseq body (return $ Route $ User $ cs body)
+
+-- * general combinators
+
 data FooHeader
 
 instance HasServer api context => HasServer (FooHeader :> api) context where
@@ -219,6 +249,8 @@ getCustom :: Request -> IO (RouteResult String)
 getCustom request = return $ case lookup "Foo" (requestHeaders request) of
   Nothing -> FailFatal err400
   Just l -> Route $ cs l
+
+-- * streaming combinators
 
 data StreamRequest
 
@@ -231,29 +263,7 @@ instance HasServer api context => HasServer (StreamRequest :> api) context where
 getSource :: IO SBS.ByteString -> Source
 getSource = Source
 
--- | a combinator that tries to access the request body in an invalid way
-data InvalidRequestCheckCombinator
-
-instance HasServer api context => HasServer (InvalidRequestCheckCombinator :> api) context where
-  type ServerT (InvalidRequestCheckCombinator :> api) m = ServerT api m
-  route = runCI $ makeRequestCheckCombinator accessReqBody
-
-accessReqBody :: Request -> IO (RouteResult ())
-accessReqBody request = do
-  body <- fromBody $ requestBody request
-  deepseq body (return $ Route ())
-
--- | a combinator that tries to access the request body in an invalid way
-data InvalidAuthCombinator
-
-instance HasServer api context => HasServer (InvalidAuthCombinator :> api) context where
-  type ServerT (InvalidAuthCombinator :> api) m = User -> ServerT api m
-  route = runCI $ makeAuthCombinator authWithReqBody
-
-authWithReqBody :: Request -> IO (RouteResult User)
-authWithReqBody request = do
-  body <- fromBody $ requestBody request
-  deepseq body (return $ Route $ User $ cs body)
+-- * utils
 
 fromBody :: IO SBS.ByteString -> IO SBS.ByteString
 fromBody getChunk = do
