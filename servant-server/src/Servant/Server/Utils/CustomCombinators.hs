@@ -19,6 +19,7 @@ module Servant.Server.Utils.CustomCombinators (
 ) where
 
 import           Control.Monad.IO.Class
+import           Control.Exception (throwIO, ErrorCall(..))
 import           Data.ByteString
 import           Data.Proxy
 import           Data.Text
@@ -36,6 +37,7 @@ data CombinatorImplementation combinator arg api context where
     -> Router' env RoutingApplication)
     -> CombinatorImplementation combinator arg api context
 
+-- fixme: get rid of WithArg?
 type family WithArg arg rest where
   WithArg () rest = rest
   WithArg arg rest = arg -> rest
@@ -66,7 +68,8 @@ makeRequestCheckCombinator ::
   -> CombinatorImplementation combinator () api context
 makeRequestCheckCombinator check = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addMethodCheck delayed $
-  withRequest $ \ request -> liftRouteResult =<< liftIO (check request)
+  withRequest $ \ request ->
+    liftRouteResult =<< liftIO (check (protectBody "makeRequestCheckCombinator" request))
 
 makeAuthCombinator ::
   forall api combinator arg context .
@@ -76,7 +79,8 @@ makeAuthCombinator ::
   -> CombinatorImplementation combinator arg api context
 makeAuthCombinator authCheck = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addAuthCheck delayed $
-  withRequest $ \ request -> liftRouteResult =<< liftIO (authCheck request)
+  withRequest $ \ request ->
+    liftRouteResult =<< liftIO (authCheck (protectBody "makeAuthCombinator" request))
 
 makeReqBodyCombinator ::
   forall api combinator arg context .
@@ -88,7 +92,8 @@ makeReqBodyCombinator ::
 makeReqBodyCombinator getArg = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addBodyCheck delayed
   (return ())
-  (\ () -> withRequest $ \ request -> liftRouteResult $ Route $ getArg $ requestBody request)
+  (\ () -> withRequest $ \ request ->
+    liftRouteResult $ Route $ getArg $ requestBody request)
 
 makeCombinator ::
   forall api combinator arg context .
@@ -100,4 +105,11 @@ makeCombinator ::
 makeCombinator getArg = CI $ \ Proxy context delayed ->
   route (Proxy :: Proxy api) context $ addBodyCheck delayed
   (return ())
-  (\ () -> withRequest $ \ request -> liftRouteResult =<< liftIO (getArg request))
+  (\ () -> withRequest $ \ request ->
+    liftRouteResult =<< liftIO (getArg (protectBody "makeCombinator" request)))
+
+protectBody :: String -> Request -> Request
+protectBody name request = request{
+  requestBody = throwIO $ ErrorCall $
+    "ERROR: " ++ name ++ ": combinator must not access the request body"
+}
