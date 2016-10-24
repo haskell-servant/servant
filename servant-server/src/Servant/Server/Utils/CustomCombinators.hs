@@ -5,7 +5,6 @@
 {-# LANGUAGE TypeOperators #-}
 
 -- fixme: document phases
--- fixme: add doctests
 -- fixme: document that the req body can only be consumed once
 -- fixme: document dependency problem
 
@@ -33,8 +32,10 @@ import           Control.Monad.IO.Class
 import           Control.Exception (throwIO, ErrorCall(..))
 import           Data.ByteString
 import           Data.Proxy
+import           Data.String.Conversions
 import           Data.Text
 import           Network.Wai
+import           Text.Read
 
 import           Servant.API
 import           Servant.Server
@@ -55,6 +56,18 @@ runServerCombinator :: ServerCombinator combinator serverType api context
   -> Router' env RoutingApplication
 runServerCombinator (CI i) = i
 
+-- |
+-- >>> :set -XTypeFamilies
+-- >>> :{
+--   data MyCaptureCombinator
+--   instance HasServer api context => HasServer (MyCaptureCombinator :> api) context where
+--     type ServerT (MyCaptureCombinator :> api) m = Int -> ServerT api m
+--     route = runServerCombinator $ makeCaptureCombinator getCaptureString
+--   getCaptureString :: Context context -> Text -> IO (RouteResult Int)
+--   getCaptureString _context pathSnippet = return $ case readMaybe (cs pathSnippet) of
+--     Just n -> Route n
+--     Nothing -> FailFatal err400
+-- :}
 makeCaptureCombinator ::
   (HasServer api context) =>
   (Context context -> Text -> IO (RouteResult arg))
@@ -71,6 +84,17 @@ makeCaptureCombinator = inner -- we use 'inner' to avoid having 'forall' show up
       route (Proxy :: Proxy api) context $ addCapture delayed $ \ captured ->
       (liftRouteResult =<< liftIO (getArg context captured))
 
+-- |
+-- >>> :{
+--   data BlockNonSSL
+--   instance HasServer api context => HasServer (BlockNonSSL :> api) context where
+--     type ServerT (BlockNonSSL :> api) m = ServerT api m
+--     route = runServerCombinator $ makeRequestCheckCombinator checkRequest
+--   checkRequest :: Context context -> Request -> IO (RouteResult ())
+--   checkRequest _context request = return $ if isSecure request
+--     then Route ()
+--     else FailFatal err400
+-- :}
 makeRequestCheckCombinator ::
   (HasServer api context) =>
   (Context context -> Request -> IO (RouteResult ()))
