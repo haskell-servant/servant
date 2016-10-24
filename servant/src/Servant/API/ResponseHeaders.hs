@@ -23,7 +23,9 @@
 -- example above).
 module Servant.API.ResponseHeaders
     ( Headers(..)
-    , AddHeader(addHeader)
+    , AddHeader
+    , addHeader
+    , noHeader
     , BuildHeadersTo(buildHeadersTo)
     , GetHeaders(getHeaders)
     , HeaderValMap
@@ -43,7 +45,7 @@ import           Prelude                     ()
 import           Prelude.Compat
 
 -- | Response Header objects. You should never need to construct one directly.
--- Instead, use 'addHeader'.
+-- Instead, use 'addOptionalHeader.
 data Headers ls a = Headers { getResponse :: a
                             -- ^ The underlying value of a 'Headers'
                             , getHeadersHList :: HList ls
@@ -108,17 +110,48 @@ instance OVERLAPPABLE_ ( KnownSymbol h, GetHeaders (HList rest), ToHttpApiData v
 -- We need all these fundeps to save type inference
 class AddHeader h v orig new
     | h v orig -> new, new -> h, new -> v, new -> orig where
-  addHeader :: v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
+  addOptionalHeader :: Header h v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
 
 
 instance OVERLAPPING_ ( KnownSymbol h, ToHttpApiData v )
          => AddHeader h v (Headers (fst ': rest)  a) (Headers (Header h v  ': fst ': rest) a) where
-    addHeader a (Headers resp heads) = Headers resp (HCons (Header a) heads)
+    addOptionalHeader hdr (Headers resp heads) = Headers resp (HCons hdr heads)
 
 instance OVERLAPPABLE_ ( KnownSymbol h, ToHttpApiData v
                        , new ~ (Headers '[Header h v] a) )
          => AddHeader h v a new where
-    addHeader a resp = Headers resp (HCons (Header a) HNil)
+    addOptionalHeader hdr resp = Headers resp (HCons hdr HNil)
+
+-- | @addHeader@ adds a header to a response. Note that it changes the type of
+-- the value in the following ways:
+--
+--   1. A simple value is wrapped in "Headers [<hdr>]":
+--
+-- >>> let example1 = addHeader 5 "hi" :: Headers '[Header "someheader" Int] String;
+-- >>> getHeaders example1
+-- [("someheader","5")]
+--
+--   2. A value that already has a header has its new header *prepended* to the
+--   existing list:
+--
+-- >>> let example1 = addHeader 5 "hi" :: Headers '[Header "someheader" Int] String;
+-- >>> let example2 = addHeader True example1 :: Headers '[Header "1st" Bool, Header "someheader" Int] String
+-- >>> getHeaders example2
+-- [("1st","true"),("someheader","5")]
+--
+-- Note that while in your handlers type annotations are not required, since
+-- the type can be inferred from the API type, in other cases you may find
+-- yourself needing to add annotations.
+addHeader :: AddHeader h v orig new => v -> orig -> new
+addHeader = addOptionalHeader . Header
+
+-- | Deliberately do not add a header to a value.
+--
+-- >>> let example1 = noHeader "hi" :: Headers '[Header "someheader" Int] String
+-- >>> getHeaders example1
+-- []
+noHeader :: AddHeader h v orig new => orig -> new
+noHeader = addOptionalHeader MissingHeader
 
 -- $setup
 -- >>> import Servant.API

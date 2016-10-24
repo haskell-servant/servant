@@ -75,7 +75,7 @@ import           Servant.API.QueryParam      (QueryFlag, QueryParam,
 import           Servant.API.Raw             (Raw)
 import           Servant.API.RemoteHost      (RemoteHost)
 import           Servant.API.ReqBody         (ReqBody)
-import           Servant.API.ResponseHeaders (AddHeader (addHeader),
+import           Servant.API.ResponseHeaders (AddHeader, addHeader, noHeader,
                                               BuildHeadersTo (buildHeadersTo),
                                               GetHeaders (getHeaders),
                                               HList (..), Headers (..),

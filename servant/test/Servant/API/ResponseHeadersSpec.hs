@@ -22,3 +22,9 @@ spec = describe "Servant.API.ResponseHeaders" $ do
     it "adds headers to the front of the list" $ do
       let val = addHeader 10 $ addHeader "b" 5 :: Headers '[Header "first" Int, Header "second" String] Int
       getHeaders val `shouldBe` [("first", "10"), ("second", "b")]
+
+  describe "noHeader" $ do
+
+    it "does not add a header" $ do
+      let val = noHeader 5 :: Headers '[Header "test" Int] Int
+      getHeaders val `shouldBe` []
