@@ -10,8 +10,8 @@
 -- fixme: document dependency problem
 
 module Servant.Server.Utils.CustomCombinators (
-  CombinatorImplementation,
-  runCI,
+  ServerCombinator,
+  runServerCombinator,
   makeCaptureCombinator,
   makeRequestCheckCombinator,
   makeAuthCombinator,
@@ -34,31 +34,31 @@ import           Servant.API
 import           Servant.Server
 import           Servant.Server.Internal
 
-data CombinatorImplementation combinator arg api context where
+data ServerCombinator combinator arg api context where
   CI :: (forall env .
     Proxy (combinator :> api)
     -> Context context
     -> Delayed env (WithArg arg (Server api))
     -> Router' env RoutingApplication)
-    -> CombinatorImplementation combinator arg api context
+    -> ServerCombinator combinator arg api context
 
 -- fixme: get rid of WithArg?
 type family WithArg arg rest where
   WithArg () rest = rest
   WithArg arg rest = arg -> rest
 
-runCI :: CombinatorImplementation combinator arg api context
+runServerCombinator :: ServerCombinator combinator arg api context
   -> Proxy (combinator :> api)
   -> Context context
   -> Delayed env (WithArg arg (Server api))
   -> Router' env RoutingApplication
-runCI (CI i) = i
+runServerCombinator (CI i) = i
 
 makeCaptureCombinator ::
   (HasServer api context,
    WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler)) =>
   (Context context -> Text -> IO (RouteResult arg))
-  -> CombinatorImplementation combinator arg api context
+  -> ServerCombinator combinator arg api context
 makeCaptureCombinator = inner -- we use 'inner' to avoid having 'forall' show up in haddock docs
   where
     inner ::
@@ -66,7 +66,7 @@ makeCaptureCombinator = inner -- we use 'inner' to avoid having 'forall' show up
       (HasServer api context,
        WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler)) =>
       (Context context -> Text -> IO (RouteResult arg))
-      -> CombinatorImplementation combinator arg api context
+      -> ServerCombinator combinator arg api context
     inner getArg = CI $ \ Proxy context delayed ->
       CaptureRouter $
       route (Proxy :: Proxy api) context $ addCapture delayed $ \ captured ->
@@ -76,7 +76,7 @@ makeRequestCheckCombinator ::
   (HasServer api context,
    WithArg () (ServerT api Handler) ~ ServerT api Handler) =>
   (Context context -> Request -> IO (RouteResult ()))
-  -> CombinatorImplementation combinator () api context
+  -> ServerCombinator combinator () api context
 makeRequestCheckCombinator = inner
   where
     inner ::
@@ -84,7 +84,7 @@ makeRequestCheckCombinator = inner
       (HasServer api context,
        WithArg () (ServerT api Handler) ~ ServerT api Handler) =>
       (Context context -> Request -> IO (RouteResult ()))
-      -> CombinatorImplementation combinator () api context
+      -> ServerCombinator combinator () api context
     inner check = CI $ \ Proxy context delayed ->
       route (Proxy :: Proxy api) context $ addMethodCheck delayed $
       withRequest $ \ request ->
@@ -94,7 +94,7 @@ makeAuthCombinator ::
   (HasServer api context,
    WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler)) =>
   (Context context -> Request -> IO (RouteResult arg))
-  -> CombinatorImplementation combinator arg api context
+  -> ServerCombinator combinator arg api context
 makeAuthCombinator = inner
   where
     inner ::
@@ -102,7 +102,7 @@ makeAuthCombinator = inner
       (HasServer api context,
        WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler)) =>
       (Context context -> Request -> IO (RouteResult arg))
-      -> CombinatorImplementation combinator arg api context
+      -> ServerCombinator combinator arg api context
     inner authCheck = CI $ \ Proxy context delayed ->
       route (Proxy :: Proxy api) context $ addAuthCheck delayed $
       withRequest $ \ request ->
@@ -113,7 +113,7 @@ makeReqBodyCombinator ::
    WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler),
    HasServer api context) =>
   (Context context -> IO ByteString -> arg)
-  -> CombinatorImplementation combinator arg api context
+  -> ServerCombinator combinator arg api context
 makeReqBodyCombinator = inner
   where
     inner ::
@@ -122,7 +122,7 @@ makeReqBodyCombinator = inner
        WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler),
        HasServer api context) =>
       (Context context -> IO ByteString -> arg)
-      -> CombinatorImplementation combinator arg api context
+      -> ServerCombinator combinator arg api context
     inner getArg = CI $ \ Proxy context delayed ->
       route (Proxy :: Proxy api) context $ addBodyCheck delayed
       (return ())
@@ -134,7 +134,7 @@ makeCombinator ::
    WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler),
    HasServer api context) =>
   (Context context -> Request -> IO (RouteResult arg))
-  -> CombinatorImplementation combinator arg api context
+  -> ServerCombinator combinator arg api context
 makeCombinator = inner
   where
     inner ::
@@ -143,7 +143,7 @@ makeCombinator = inner
        WithArg arg (ServerT api Handler) ~ (arg -> ServerT api Handler),
        HasServer api context) =>
       (Context context -> Request -> IO (RouteResult arg))
-      -> CombinatorImplementation combinator arg api context
+      -> ServerCombinator combinator arg api context
     inner getArg = CI $ \ Proxy context delayed ->
       route (Proxy :: Proxy api) context $ addBodyCheck delayed
       (return ())

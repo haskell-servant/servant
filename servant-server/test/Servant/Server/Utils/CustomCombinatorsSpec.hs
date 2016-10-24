@@ -186,7 +186,7 @@ data StringCapture
 
 instance HasServer api context => HasServer (StringCapture :> api) context where
   type ServerT (StringCapture :> api) m = String -> ServerT api m
-  route = runCI $ makeCaptureCombinator (const getCapture)
+  route = runServerCombinator $ makeCaptureCombinator (const getCapture)
 
 getCapture :: Text -> IO (RouteResult String)
 getCapture snippet = return $ case snippet of
@@ -199,7 +199,7 @@ data CheckFooHeader
 
 instance HasServer api context => HasServer (CheckFooHeader :> api) context where
   type ServerT (CheckFooHeader :> api) m = ServerT api m
-  route = runCI $ makeRequestCheckCombinator (const checkFooHeader)
+  route = runServerCombinator $ makeRequestCheckCombinator (const checkFooHeader)
 
 checkFooHeader :: Request -> IO (RouteResult ())
 checkFooHeader request = return $
@@ -212,7 +212,7 @@ data InvalidRequestCheckCombinator
 
 instance HasServer api context => HasServer (InvalidRequestCheckCombinator :> api) context where
   type ServerT (InvalidRequestCheckCombinator :> api) m = ServerT api m
-  route = runCI $ makeRequestCheckCombinator (const accessReqBody)
+  route = runServerCombinator $ makeRequestCheckCombinator (const accessReqBody)
 
 accessReqBody :: Request -> IO (RouteResult ())
 accessReqBody request = do
@@ -228,7 +228,7 @@ data User = User String
 
 instance HasServer api context => HasServer (AuthCombinator :> api) context where
   type ServerT (AuthCombinator :> api) m = User -> ServerT api m
-  route = runCI $ makeAuthCombinator (const checkAuth)
+  route = runServerCombinator $ makeAuthCombinator (const checkAuth)
 
 checkAuth :: Request -> IO (RouteResult User)
 checkAuth request = return $ case lookup "Auth" (requestHeaders request) of
@@ -241,7 +241,7 @@ data InvalidAuthCombinator
 
 instance HasServer api context => HasServer (InvalidAuthCombinator :> api) context where
   type ServerT (InvalidAuthCombinator :> api) m = User -> ServerT api m
-  route = runCI $ makeAuthCombinator (const authWithReqBody)
+  route = runServerCombinator $ makeAuthCombinator (const authWithReqBody)
 
 authWithReqBody :: Request -> IO (RouteResult User)
 authWithReqBody request = do
@@ -253,7 +253,7 @@ data AuthWithContext
 instance (HasContextEntry context [(SBS.ByteString, User)], HasServer api context) =>
   HasServer (AuthWithContext :> api) context where
   type ServerT (AuthWithContext :> api) m = User -> ServerT api m
-  route = runCI $ makeAuthCombinator authWithContext
+  route = runServerCombinator $ makeAuthCombinator authWithContext
 
 authWithContext :: (HasContextEntry context [(SBS.ByteString, User)]) =>
   Context context -> Request -> IO (RouteResult User)
@@ -269,7 +269,7 @@ data FooHeader
 
 instance HasServer api context => HasServer (FooHeader :> api) context where
   type ServerT (FooHeader :> api) m = String -> ServerT api m
-  route = runCI $ makeCombinator (const getCustom)
+  route = runServerCombinator $ makeCombinator (const getCustom)
 
 getCustom :: Request -> IO (RouteResult String)
 getCustom request = return $ case lookup "Foo" (requestHeaders request) of
@@ -284,7 +284,7 @@ data Source = Source (IO SBS.ByteString)
 
 instance HasServer api context => HasServer (StreamRequest :> api) context where
   type ServerT (StreamRequest :> api) m = Source -> ServerT api m
-  route = runCI $ makeReqBodyCombinator (const getSource)
+  route = runServerCombinator $ makeReqBodyCombinator (const getSource)
 
 getSource :: IO SBS.ByteString -> Source
 getSource = Source
