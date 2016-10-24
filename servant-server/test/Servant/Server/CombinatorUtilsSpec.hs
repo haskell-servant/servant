@@ -176,7 +176,7 @@ data StringCapture
 
 instance HasServer api context => HasServer (StringCapture :> api) context where
   type ServerT (StringCapture :> api) m = String -> ServerT api m
-  route = runCI $ implementCaptureCombinator getCapture
+  route = runCI $ makeCaptureCombinator getCapture
 
 getCapture :: Text -> RouteResult String
 getCapture = \case
@@ -187,7 +187,7 @@ data CheckFooHeader
 
 instance HasServer api context => HasServer (CheckFooHeader :> api) context where
   type ServerT (CheckFooHeader :> api) m = ServerT api m
-  route = runCI $ implementRequestCheck checkFooHeader
+  route = runCI $ makeRequestCheckCombinator checkFooHeader
 
 checkFooHeader :: Request -> RouteResult ()
 checkFooHeader request = case lookup "Foo" (requestHeaders request) of
@@ -201,7 +201,7 @@ data User = User String
 
 instance HasServer api context => HasServer (AuthCombinator :> api) context where
   type ServerT (AuthCombinator :> api) m = User -> ServerT api m
-  route = runCI $ implementAuthCombinator checkAuth
+  route = runCI $ makeAuthCombinator checkAuth
 
 checkAuth :: Request -> RouteResult User
 checkAuth request = case lookup "Auth" (requestHeaders request) of
@@ -213,7 +213,7 @@ data FooHeader
 
 instance HasServer api context => HasServer (FooHeader :> api) context where
   type ServerT (FooHeader :> api) m = String -> ServerT api m
-  route = runCI $ argumentCombinator getCustom
+  route = runCI $ makeCombinator getCustom
 
 getCustom :: Request -> RouteResult String
 getCustom request = case lookup "Foo" (requestHeaders request) of
@@ -226,7 +226,7 @@ data Source = Source (IO SBS.ByteString)
 
 instance HasServer api context => HasServer (StreamRequest :> api) context where
   type ServerT (StreamRequest :> api) m = Source -> ServerT api m
-  route = runCI $ implementRequestStreamingCombinator getSource
+  route = runCI $ makeReqBodyCombinator getSource
 
 getSource :: IO SBS.ByteString -> Source
 getSource = Source
