@@ -152,9 +152,6 @@ spec = do
     response <- runApp app request
     responseStatus response `shouldBe` status418
 
-  it "allows to write a combinator using IO" $ do
-    pending
-
   it "allows to pick the request check phase" $ do
     pending
 
@@ -178,8 +175,8 @@ instance HasServer api context => HasServer (StringCapture :> api) context where
   type ServerT (StringCapture :> api) m = String -> ServerT api m
   route = runCI $ makeCaptureCombinator getCapture
 
-getCapture :: Text -> RouteResult String
-getCapture = \case
+getCapture :: Text -> IO (RouteResult String)
+getCapture snippet = return $ case snippet of
   "error" -> FailFatal $ ServantErr 418 "I'm a teapot" "" []
   text -> Route $ cs text
 
@@ -189,10 +186,11 @@ instance HasServer api context => HasServer (CheckFooHeader :> api) context wher
   type ServerT (CheckFooHeader :> api) m = ServerT api m
   route = runCI $ makeRequestCheckCombinator checkFooHeader
 
-checkFooHeader :: Request -> RouteResult ()
-checkFooHeader request = case lookup "Foo" (requestHeaders request) of
-  Just _ -> Route ()
-  Nothing -> FailFatal err400
+checkFooHeader :: Request -> IO (RouteResult ())
+checkFooHeader request = return $
+  case lookup "Foo" (requestHeaders request) of
+    Just _ -> Route ()
+    Nothing -> FailFatal err400
 
 data AuthCombinator
 
@@ -203,8 +201,8 @@ instance HasServer api context => HasServer (AuthCombinator :> api) context wher
   type ServerT (AuthCombinator :> api) m = User -> ServerT api m
   route = runCI $ makeAuthCombinator checkAuth
 
-checkAuth :: Request -> RouteResult User
-checkAuth request = case lookup "Auth" (requestHeaders request) of
+checkAuth :: Request -> IO (RouteResult User)
+checkAuth request = return $ case lookup "Auth" (requestHeaders request) of
   Just "secret" -> Route $ User "Alice"
   Just _ -> FailFatal err401
   Nothing -> FailFatal err400
@@ -215,8 +213,8 @@ instance HasServer api context => HasServer (FooHeader :> api) context where
   type ServerT (FooHeader :> api) m = String -> ServerT api m
   route = runCI $ makeCombinator getCustom
 
-getCustom :: Request -> RouteResult String
-getCustom request = case lookup "Foo" (requestHeaders request) of
+getCustom :: Request -> IO (RouteResult String)
+getCustom request = return $ case lookup "Foo" (requestHeaders request) of
   Nothing -> FailFatal err400
   Just l -> Route $ cs l
 
