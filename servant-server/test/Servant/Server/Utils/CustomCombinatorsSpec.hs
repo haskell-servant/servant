@@ -284,7 +284,8 @@ data Source = Source (IO SBS.ByteString)
 
 instance HasServer api context => HasServer (StreamRequest :> api) context where
   type ServerT (StreamRequest :> api) m = Source -> ServerT api m
-  route = runServerCombinator $ makeReqBodyCombinator (const getSource)
+  route = runServerCombinator $ makeCombinator $
+    \ context request -> return $ Route $ getSource $ requestBody request
 
 getSource :: IO SBS.ByteString -> Source
 getSource = Source

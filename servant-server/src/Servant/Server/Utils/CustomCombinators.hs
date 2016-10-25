@@ -6,6 +6,7 @@
 
 -- fixme: document phases
 -- fixme: document that the req body can only be consumed once
+-- fixme: document that you can write request body streaming combinators
 -- fixme: document dependency problem
 
 module Servant.Server.Utils.CustomCombinators (
@@ -20,7 +21,6 @@ module Servant.Server.Utils.CustomCombinators (
   makeCaptureCombinator,
   makeRequestCheckCombinator,
   makeAuthCombinator,
-  makeReqBodyCombinator,
   makeCombinator,
 
   -- * Re-exports
@@ -30,12 +30,9 @@ module Servant.Server.Utils.CustomCombinators (
 
 import           Control.Monad.IO.Class
 import           Control.Exception (throwIO, ErrorCall(..))
-import           Data.ByteString
 import           Data.Proxy
-import           Data.String.Conversions
 import           Data.Text
 import           Network.Wai
-import           Text.Read
 
 import           Servant.API
 import           Servant.Server
@@ -59,6 +56,7 @@ runServerCombinator (CI i) = i
 -- |
 -- >>> :set -XTypeFamilies
 -- >>> :{
+--   import Text.Read
 --   data MyCaptureCombinator
 --   instance HasServer api context => HasServer (MyCaptureCombinator :> api) context where
 --     type ServerT (MyCaptureCombinator :> api) m = Int -> ServerT api m
@@ -127,23 +125,6 @@ makeAuthCombinator = inner
       withRequest $ \ request ->
         liftRouteResult =<< liftIO (authCheck context (protectBody "makeAuthCombinator" request))
 
-makeReqBodyCombinator ::
-  (HasServer api context) =>
-  (Context context -> IO ByteString -> arg)
-  -> ServerCombinator combinator (arg -> ServerT api Handler) api context
-makeReqBodyCombinator = inner
-  where
-    inner ::
-      forall api combinator arg context .
-      (HasServer api context) =>
-      (Context context -> IO ByteString -> arg)
-      -> ServerCombinator combinator (arg -> ServerT api Handler) api context
-    inner getArg = CI $ \ Proxy context delayed ->
-      route (Proxy :: Proxy api) context $ addBodyCheck delayed
-      (return ())
-      (\ () -> withRequest $ \ request ->
-        liftRouteResult $ Route $ getArg context $ requestBody request)
-
 makeCombinator ::
   (HasServer api context) =>
   (Context context -> Request -> IO (RouteResult arg))
@@ -159,7 +140,7 @@ makeCombinator = inner
       route (Proxy :: Proxy api) context $ addBodyCheck delayed
       (return ())
       (\ () -> withRequest $ \ request ->
-        liftRouteResult =<< liftIO (getArg context (protectBody "makeCombinator" request)))
+        liftRouteResult =<< liftIO (getArg context request))
 
 protectBody :: String -> Request -> Request
 protectBody name request = request{
