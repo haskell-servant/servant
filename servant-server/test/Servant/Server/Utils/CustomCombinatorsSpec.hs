@@ -258,7 +258,9 @@ instance (HasContextEntry context [(SBS.ByteString, User)], HasServer api contex
 authWithContext :: (HasContextEntry context [(SBS.ByteString, User)]) =>
   Context context -> Request -> IO (RouteResult User)
 authWithContext context request = return $ case lookup "Auth" (requestHeaders request) of
+  Nothing -> FailFatal err401
   Just authToken -> case lookup authToken userDict of
+    Nothing -> FailFatal err403
     Just user -> Route user
   where
     userDict = getContextEntry context
@@ -285,10 +287,7 @@ data Source = Source (IO SBS.ByteString)
 instance HasServer api context => HasServer (StreamRequest :> api) context where
   type ServerT (StreamRequest :> api) m = Source -> ServerT api m
   route = runServerCombinator $ makeCombinator $
-    \ context request -> return $ Route $ getSource $ requestBody request
-
-getSource :: IO SBS.ByteString -> Source
-getSource = Source
+    \ _context request -> return $ Route $ Source $ requestBody request
 
 -- * utils
 
