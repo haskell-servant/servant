@@ -1,3 +1,8 @@
+0.9.1.1
+-------
+
+* Add MonadThrow and MonadCatch instances for ClientM
+
 0.9
 ---
 
