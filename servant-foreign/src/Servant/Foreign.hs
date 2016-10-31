@@ -23,6 +23,7 @@ module Servant.Foreign
   , reqBody
   , reqReturnType
   , reqFuncName
+  , reqApiType
   , path
   , queryStr
   , queryArgName

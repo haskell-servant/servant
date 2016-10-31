@@ -29,7 +29,8 @@ generateJQueryJS = generateJQueryJSWith defCommonGeneratorOptions
 -- | js codegen using JQuery
 generateJQueryJSWith :: CommonGeneratorOptions -> AjaxReq -> Text
 generateJQueryJSWith opts req = "\n" <>
-    fname <> " = function(" <> argsStr <> ")\n"
+    jsdocs
+ <> fname <> " = function(" <> argsStr <> ")\n"
  <> "{\n"
  <> "  $.ajax(\n"
  <> "    { url: " <> url <> "\n"
@@ -101,3 +102,6 @@ generateJQueryJSWith opts req = "\n" <>
         queryArgs = if null queryparams
                       then ""
                       else " + '?" <> jsParams queryparams
+
+        jsdocs :: Text
+        jsdocs = "// " <> (T.pack .show $ req ^. reqApiType) <> "\n"
