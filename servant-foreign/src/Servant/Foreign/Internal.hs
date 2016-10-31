@@ -190,15 +190,15 @@ class HasForeign lang ftype (layout :: *) where
   type Foreign ftype layout :: *
   foreignFor :: Proxy lang -> Proxy ftype -> Proxy layout -> Req ftype -> Foreign ftype layout
 
-instance (HasForeign lang ftype a, HasForeign lang ftype b)
+instance (HasForeign lang ftype a, HasForeign lang ftype b, Typeable a, Typeable b)
   => HasForeign lang ftype (a :<|> b) where
   type Foreign ftype (a :<|> b) = Foreign ftype a :<|> Foreign ftype b
 
   foreignFor lang ftype Proxy req =
-         foreignFor lang ftype (Proxy :: Proxy a) req
-    :<|> foreignFor lang ftype (Proxy :: Proxy b) req
+         foreignFor lang ftype (Proxy :: Proxy a) (req & reqApiType .~ typeOf (undefined :: a))
+    :<|> foreignFor lang ftype (Proxy :: Proxy b) (req & reqApiType .~ typeOf (undefined :: b))
 
-instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype sublayout, Typeable (Capture sym t :> sublayout))
+instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype sublayout)
   => HasForeign lang ftype (Capture sym t :> sublayout) where
   type Foreign ftype (Capture sym a :> sublayout) = Foreign ftype sublayout
 
@@ -206,7 +206,6 @@ instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype su
     foreignFor lang Proxy (Proxy :: Proxy sublayout) $
       req & reqUrl . path <>~ [Segment (Cap arg)]
           & reqFuncName . _FunctionName %~ (++ ["by", str])
-          & reqApiType .~ typeOf (undefined :: Capture sym t :> sublayout)
     where
       str   = pack . symbolVal $ (Proxy :: Proxy sym)
       ftype = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy t)
@@ -214,7 +213,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype su
         { _argName = PathSegment str
         , _argType = ftype }
 
-instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method, Typeable (Verb method status list a))
+instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
   => HasForeign lang ftype (Verb method status list a) where
   type Foreign ftype (Verb method status list a) = Req ftype
 
@@ -222,19 +221,17 @@ instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method, Typ
     req & reqFuncName . _FunctionName %~ (methodLC :)
         & reqMethod .~ method
         & reqReturnType .~ Just retType
-        & reqApiType .~ typeOf (undefined :: Verb method status list a)
     where
       retType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a)
       method   = reflectMethod (Proxy :: Proxy method)
       methodLC = toLower $ decodeUtf8 method
 
-instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype sublayout, Typeable (Header sym a :> sublayout))
+instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype sublayout)
   => HasForeign lang ftype (Header sym a :> sublayout) where
   type Foreign ftype (Header sym a :> sublayout) = Foreign ftype sublayout
 
   foreignFor lang Proxy Proxy req =
     foreignFor lang Proxy subP $ req & reqHeaders <>~ [HeaderArg arg]
-                                     & reqApiType .~ typeOf (undefined :: Header sym a :> sublayout)
     where
       hname = pack . symbolVal $ (Proxy :: Proxy sym)
       arg   = Arg
@@ -242,14 +239,13 @@ instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype su
         , _argType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a) }
       subP  = Proxy :: Proxy sublayout
 
-instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype sublayout, Typeable (QueryParam sym a :> sublayout))
+instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype sublayout)
   => HasForeign lang ftype (QueryParam sym a :> sublayout) where
   type Foreign ftype (QueryParam sym a :> sublayout) = Foreign ftype sublayout
 
   foreignFor lang Proxy Proxy req =
     foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg arg Normal]
-          & reqApiType .~ typeOf (undefined :: QueryParam sym a :> sublayout)
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
@@ -257,13 +253,12 @@ instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype su
         , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a) }
 
 instance
-  (KnownSymbol sym, HasForeignType lang ftype [a], HasForeign lang ftype sublayout, Typeable (QueryParams sym a :> sublayout))
+  (KnownSymbol sym, HasForeignType lang ftype [a], HasForeign lang ftype sublayout)
   => HasForeign lang ftype (QueryParams sym a :> sublayout) where
   type Foreign ftype (QueryParams sym a :> sublayout) = Foreign ftype sublayout
   foreignFor lang Proxy Proxy req =
     foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg arg List]
-          & reqApiType .~ typeOf (undefined :: QueryParams sym a :> sublayout)
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
@@ -271,14 +266,13 @@ instance
         , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy [a]) }
 
 instance
-  (KnownSymbol sym, HasForeignType lang ftype Bool, HasForeign lang ftype sublayout, Typeable (QueryFlag sym :> sublayout))
+  (KnownSymbol sym, HasForeignType lang ftype Bool, HasForeign lang ftype sublayout)
   => HasForeign lang ftype (QueryFlag sym :> sublayout) where
   type Foreign ftype (QueryFlag sym :> sublayout) = Foreign ftype sublayout
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy sublayout) $
       req & reqUrl.queryStr <>~ [QueryArg arg Flag]
-          & reqApiType .~ typeOf (undefined :: QueryFlag sym :> sublayout)
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
@@ -291,18 +285,16 @@ instance HasForeign lang ftype Raw where
   foreignFor _ Proxy Proxy req method =
     req & reqFuncName . _FunctionName %~ ((toLower $ decodeUtf8 method) :)
         & reqMethod .~ method
-        & reqApiType .~ typeOf (undefined :: Raw)
 
-instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype sublayout, Typeable (ReqBody list a :> sublayout))
+instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype sublayout)
       => HasForeign lang ftype (ReqBody list a :> sublayout) where
   type Foreign ftype (ReqBody list a :> sublayout) = Foreign ftype sublayout
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy sublayout) $
       req & reqBody .~ (Just $ typeFor lang ftype (Proxy :: Proxy a))
-          & reqApiType .~ typeOf (undefined :: ReqBody list a :> sublayout)
 
-instance (KnownSymbol path, HasForeign lang ftype sublayout, Typeable (path :> sublayout))
+instance (KnownSymbol path, HasForeign lang ftype sublayout)
       => HasForeign lang ftype (path :> sublayout) where
   type Foreign ftype (path :> sublayout) = Foreign ftype sublayout
 
@@ -310,51 +302,44 @@ instance (KnownSymbol path, HasForeign lang ftype sublayout, Typeable (path :> s
     foreignFor lang ftype (Proxy :: Proxy sublayout) $
       req & reqUrl . path <>~ [Segment (Static (PathSegment str))]
           & reqFuncName . _FunctionName %~ (++ [str])
-          & reqApiType .~ typeOf (undefined :: path :> sublayout)
     where
       str =
         Data.Text.map (\c -> if c == '.' then '_' else c)
           . pack . symbolVal $ (Proxy :: Proxy path)
 
-instance (HasForeign lang ftype sublayout, Typeable (RemoteHost :> sublayout))
+instance HasForeign lang ftype sublayout
   => HasForeign lang ftype (RemoteHost :> sublayout) where
   type Foreign ftype (RemoteHost :> sublayout) = Foreign ftype sublayout
 
   foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy sublayout) $
-      req & reqApiType .~ typeOf (undefined :: (RemoteHost :> sublayout))
+    foreignFor lang ftype (Proxy :: Proxy sublayout) req
 
-instance (HasForeign lang ftype sublayout, Typeable (IsSecure :> sublayout))
+instance HasForeign lang ftype sublayout
   => HasForeign lang ftype (IsSecure :> sublayout) where
   type Foreign ftype (IsSecure :> sublayout) = Foreign ftype sublayout
 
   foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy sublayout) $
-      req & reqApiType .~ typeOf (undefined :: IsSecure :> sublayout)
+    foreignFor lang ftype (Proxy :: Proxy sublayout) req
 
-instance (HasForeign lang ftype sublayout, Typeable (Vault :> sublayout))
-    => HasForeign lang ftype (Vault :> sublayout) where
+instance HasForeign lang ftype sublayout => HasForeign lang ftype (Vault :> sublayout) where
   type Foreign ftype (Vault :> sublayout) = Foreign ftype sublayout
 
   foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy sublayout) $
-      req & reqApiType .~ typeOf (undefined :: Vault :> sublayout)
+    foreignFor lang ftype (Proxy :: Proxy sublayout) req
 
-instance (HasForeign lang ftype sublayout, Typeable (WithNamedContext name context sublayout))
-    => HasForeign lang ftype (WithNamedContext name context sublayout) where
+instance HasForeign lang ftype sublayout =>
+  HasForeign lang ftype (WithNamedContext name context sublayout) where
 
   type Foreign ftype (WithNamedContext name context sublayout) = Foreign ftype sublayout
 
-  foreignFor lang ftype Proxy req = foreignFor lang ftype (Proxy :: Proxy sublayout) $
-      req & reqApiType .~ typeOf (undefined :: WithNamedContext name context sublayout)
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy sublayout)
 
-instance (HasForeign lang ftype sublayout, Typeable (HttpVersion :> sublayout))
+instance HasForeign lang ftype sublayout
   => HasForeign lang ftype (HttpVersion :> sublayout) where
   type Foreign ftype (HttpVersion :> sublayout) = Foreign ftype sublayout
 
   foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy sublayout) $
-      req & reqApiType .~ typeOf (undefined :: HttpVersion :> sublayout)
+    foreignFor lang ftype (Proxy :: Proxy sublayout) req
 
 -- | Utility class used by 'listFromAPI' which computes
 --   the data needed to generate a function for each endpoint

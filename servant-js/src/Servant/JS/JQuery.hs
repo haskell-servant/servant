@@ -104,4 +104,4 @@ generateJQueryJSWith opts req = "\n" <>
                       else " + '?" <> jsParams queryparams
 
         jsdocs :: Text
-        jsdocs = "// " <> (T.pack .show $ req ^. reqApiType) <> "\n"
+        jsdocs = "// " <> (T.pack . show $ req ^. reqApiType) <> "\n"
