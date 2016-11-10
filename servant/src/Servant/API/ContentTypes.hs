@@ -157,7 +157,12 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 -- > type MyAPI = "path" :> Get '[MyContentType] Int
 --
 class Accept ctype => MimeRender ctype a where
-    mimeRender  :: Proxy ctype -> a -> ByteString
+    {-# MINIMAL mimeRenderMaybe | mimeRender #-}
+    mimeRenderMaybe  :: Proxy ctype -> a -> Maybe ByteString
+    mimeRenderMaybe p val = Just $ mimeRender p val
+
+    mimeRender :: Proxy ctype -> a -> ByteString
+    mimeRender _ _ = error "no mimeRender defn"
 
 class (AllMime list) => AllCTRender (list :: [*]) a where
     -- If the Accept header can be matched, returns (Just) a tuple of the
@@ -235,15 +240,19 @@ class (AllMime list) => AllMimeRender (list :: [*]) a where
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
 instance OVERLAPPABLE_ ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
-    allMimeRender _ a = [(contentType pctyp, mimeRender pctyp a)]
+    allMimeRender _ a = case mimeRenderMaybe pctyp a of
+                          Just bs -> [(contentType pctyp, bs)]
+                          Nothing -> []
         where pctyp = Proxy :: Proxy ctyp
 
 instance OVERLAPPABLE_
          ( MimeRender ctyp a
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
-    allMimeRender _ a = (contentType pctyp, mimeRender pctyp a)
-                       :(allMimeRender pctyps a)
+    allMimeRender _ a = case mimeRenderMaybe pctyp a of
+                          Just bs -> (contentType pctyp, bs)
+                                     :(allMimeRender pctyps a)
+                          Nothing -> (allMimeRender pctyps a)
         where pctyp = Proxy :: Proxy ctyp
               pctyps = Proxy :: Proxy (ctyp' ': ctyps)
 
