@@ -8,4 +8,5 @@ packages:
 extra-deps:
 - http-api-data-0.3
 - uri-bytestring-0.2.2.0
+- natural-transformation-0.4
 flags: {}

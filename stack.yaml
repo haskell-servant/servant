@@ -9,4 +9,5 @@ packages:
 extra-deps:
 - http-api-data-0.3
 - servant-js-0.9 # needed for tutorial
+- natural-transformation-0.4
 resolver: lts-6.0
