@@ -1,3 +1,8 @@
+0.10
+------
+
+* Use `NT` from `natural-transformation` for `Enter`
+
 0.9.1
 ------
 
