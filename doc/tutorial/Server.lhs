@@ -1044,17 +1044,17 @@ If we have a function that gets us from an `m a` to an `n a`, for any `a`, what
 do we have?
 
 ``` haskell ignore
-newtype m :~> n = Nat { unNat :: forall a. m a -> n a}
+newtype m :~> n = NT { ($$) :: forall a. m a -> n a}
 ```
 
 For example:
 
 ``` haskell
-listToMaybeNat :: [] :~> Maybe
-listToMaybeNat = Nat listToMaybe  -- from Data.Maybe
+listToMaybeNT :: [] :~> Maybe
+listToMaybeNT = NT listToMaybe  -- from Data.Maybe
 ```
 
-(`Nat` comes from "natural transformation", in case you're wondering.)
+(`NT` comes from "natural transformation", in case you're wondering.)
 
 So if you want to write handlers using another monad/type than `Handler`, say the `Reader String` monad, the first thing you have to
 prepare is a function:
@@ -1066,14 +1066,14 @@ readerToHandler :: Reader String :~> Handler
 Let's start with `readerToHandler'`. We obviously have to run the `Reader`
 computation by supplying it with a `String`, like `"hi"`. We get an `a` out
 from that and can then just `return` it into `ExceptT`. We can then just wrap
-that function with the `Nat` constructor to make it have the fancier type.
+that function with the `NT` constructor to make it have the fancier type.
 
 ``` haskell
 readerToHandler' :: forall a. Reader String a -> Handler a
 readerToHandler' r = return (runReader r "hi")
 
 readerToHandler :: Reader String :~> Handler
-readerToHandler = Nat readerToHandler'
+readerToHandler = NT readerToHandler'
 ```
 
 We can write some simple webservice with the handlers running in `Reader String`.
