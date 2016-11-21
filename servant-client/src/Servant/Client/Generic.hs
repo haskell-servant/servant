@@ -21,6 +21,7 @@ import Servant.Client (ClientM)
 --
 -- Example:
 --
+-- @
 -- type API
 --     = "foo" :> Capture "x" Int :> Get '[JSON] Int
 --  :<|> "bar" :> QueryParam "a" Char :> QueryParam "b" String :> Post '[JSON] [Int]
@@ -31,8 +32,8 @@ import Servant.Client (ClientM)
 --  :<|> "baz" :> QueryParam "c" Char :> Post '[JSON] ()
 --
 -- data APIClient = APIClient
---   { getFoo         :: Int -> Manager -> BaseUrl -> ClientM Int
---   , postBar        :: Maybe Char -> Maybe String -> Manager -> BaseUrl -> ClientM [Int]
+--   { getFoo         :: Int -> ClientM Int
+--   , postBar        :: Maybe Char -> Maybe String -> ClientM [Int]
 --   , mkNestedClient :: Int -> NestedClient
 --   } deriving GHC.Generic
 --
@@ -40,8 +41,8 @@ import Servant.Client (ClientM)
 -- instance (Client API ~ client) => ClientLike client APIClient
 --
 -- data NestedClient = NestedClient
---  { getString :: Manager -> BaseUrl -> ClientM String
---  , postBaz   :: Maybe Char -> Manager -> BaseUrl -> ClientM ()
+--  { getString ::  ClientM String
+--  , postBaz   :: Maybe Char -> ClientM ()
 --  } deriving GHC.Generic
 --
 -- instance Generic.SOP.Generic
@@ -49,6 +50,7 @@ import Servant.Client (ClientM)
 --
 -- mkAPIClient :: APIClient
 -- mkAPIClient = mkClient (client (Proxy :: Proxy API))
+-- @
 class ClientLike client custom where
   mkClient :: client -> custom
   default mkClient :: (Generic custom, GClientLikeP client xs, SOP I '[xs] ~ Rep custom)
