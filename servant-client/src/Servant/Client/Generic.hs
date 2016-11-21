@@ -21,36 +21,34 @@ import Servant.Client (ClientM)
 --
 -- Example:
 --
--- @
--- type API
---     = "foo" :> Capture "x" Int :> Get '[JSON] Int
---  :<|> "bar" :> QueryParam "a" Char :> QueryParam "b" String :> Post '[JSON] [Int]
---  :<|> Captre "nested" Int :> NestedAPI
---
--- type NestedAPI
---     = Get '[JSON] String
---  :<|> "baz" :> QueryParam "c" Char :> Post '[JSON] ()
---
--- data APIClient = APIClient
---   { getFoo         :: Int -> ClientM Int
---   , postBar        :: Maybe Char -> Maybe String -> ClientM [Int]
---   , mkNestedClient :: Int -> NestedClient
---   } deriving GHC.Generic
---
--- instance Generic.SOP.Generic APIClient
--- instance (Client API ~ client) => ClientLike client APIClient
---
--- data NestedClient = NestedClient
---  { getString ::  ClientM String
---  , postBaz   :: Maybe Char -> ClientM ()
---  } deriving GHC.Generic
---
--- instance Generic.SOP.Generic
--- instance (Client NestedAPI ~ client) => ClientLike client NestedAPI
---
--- mkAPIClient :: APIClient
--- mkAPIClient = mkClient (client (Proxy :: Proxy API))
--- @
+-- > type API
+-- >     = "foo" :> Capture "x" Int :> Get '[JSON] Int
+-- >  :<|> "bar" :> QueryParam "a" Char :> QueryParam "b" String :> Post '[JSON] [Int]
+-- >  :<|> Capture "nested" Int :> NestedAPI
+-- >
+-- > type NestedAPI
+-- >     = Get '[JSON] String
+-- >  :<|> "baz" :> QueryParam "c" Char :> Post '[JSON] ()
+-- >
+-- > data APIClient = APIClient
+-- >   { getFoo         :: Int -> ClientM Int
+-- >   , postBar        :: Maybe Char -> Maybe String -> ClientM [Int]
+-- >   , mkNestedClient :: Int -> NestedClient
+-- >   } deriving GHC.Generic
+-- >
+-- > instance Generic.SOP.Generic APIClient
+-- > instance (Client API ~ client) => ClientLike client APIClient
+-- >
+-- > data NestedClient = NestedClient
+-- >  { getString ::  ClientM String
+-- >  , postBaz   :: Maybe Char -> ClientM ()
+-- >  } deriving GHC.Generic
+-- >
+-- > instance Generic.SOP.Generic
+-- > instance (Client NestedAPI ~ client) => ClientLike client NestedClient
+-- >
+-- > mkAPIClient :: APIClient
+-- > mkAPIClient = mkClient (client (Proxy :: Proxy API))
 class ClientLike client custom where
   mkClient :: client -> custom
   default mkClient :: (Generic custom, GClientLikeP client xs, SOP I '[xs] ~ Rep custom)
