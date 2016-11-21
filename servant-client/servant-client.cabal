@@ -98,3 +98,4 @@ test-suite spec
     , transformers-compat
     , wai
     , warp
+    , generics-sop

@@ -36,6 +36,7 @@ import           Data.Char                  (chr, isPrint)
 import           Data.Foldable              (forM_)
 import           Data.Monoid                hiding (getLast)
 import           Data.Proxy
+import qualified Generics.SOP               as SOP
 import           GHC.Generics               (Generic)
 import qualified Network.HTTP.Client        as C
 import           Network.HTTP.Media
@@ -55,6 +56,7 @@ import           Web.FormUrlEncoded         (FromForm, ToForm)
 import           Servant.API
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
+import           Servant.Client.Generic
 import qualified Servant.Common.Req         as SCR
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
@@ -69,6 +71,7 @@ spec = describe "Servant.Client" $ do
     wrappedApiSpec
     basicAuthSpec
     genAuthSpec
+    genericClientSpec
 
 -- * test data types
 
@@ -221,6 +224,53 @@ genAuthServerContext = genAuthHandler :. EmptyContext
 
 genAuthServer :: Application
 genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
+
+-- * generic client stuff
+
+type GenericClientAPI
+    = QueryParam "sqr" Int :> Get '[JSON] Int
+ :<|> Capture "foo" String :> NestedAPI1
+
+data GenericClient = GenericClient
+  { getSqr          :: Maybe Int -> SCR.ClientM Int
+  , mkNestedClient1 :: String -> NestedClient1
+  } deriving Generic
+instance SOP.Generic GenericClient
+instance (Client GenericClientAPI ~ client) => ClientLike client GenericClient
+
+type NestedAPI1
+    = QueryParam "int" Int :> NestedAPI2
+ :<|> QueryParam "id" Char :> Get '[JSON] Char
+
+data NestedClient1 = NestedClient1
+  { mkNestedClient2 :: Maybe Int -> NestedClient2
+  , idChar          :: Maybe Char -> SCR.ClientM Char
+  } deriving Generic
+instance SOP.Generic NestedClient1
+instance (Client NestedAPI1 ~ client) => ClientLike client NestedClient1
+
+type NestedAPI2
+    = "sum"  :> Capture "first" Int :> Capture "second" Int :> Get '[JSON] Int
+ :<|> "void" :> Post '[JSON] ()
+
+data NestedClient2 = NestedClient2
+  { getSum    :: Int -> Int -> SCR.ClientM Int
+  , doNothing :: SCR.ClientM ()
+  } deriving Generic
+instance SOP.Generic NestedClient2
+instance (Client NestedAPI2 ~ client) => ClientLike client NestedClient2
+
+genericClientServer :: Application
+genericClientServer = serve (Proxy :: Proxy GenericClientAPI) (
+       (\ mx -> case mx of
+                  Just x -> return (x*x)
+                  Nothing -> throwE $ ServantErr 400 "missing parameter" "" []
+       )
+  :<|> nestedServer1
+ )
+  where
+    nestedServer1 _str = nestedServer2 :<|> (maybe (throwE $ ServantErr 400 "missing parameter" "" []) return)
+    nestedServer2 _int = (\ x y -> return (x + y)) :<|> return ()
 
 {-# NOINLINE manager #-}
 manager :: C.Manager
@@ -391,6 +441,22 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
       Left FailureResponse{..} <- runClientM (getProtected authRequest) (ClientEnv manager baseUrl)
       responseStatus `shouldBe` (HTTP.Status 401 "Unauthorized")
+
+genericClientSpec :: Spec
+genericClientSpec = beforeAll (startWaiApp genericClientServer) $ afterAll endWaiApp $ do
+  describe "Servant.Client.Generic" $ do
+
+    let GenericClient{..} = mkClient (client (Proxy :: Proxy GenericClientAPI))
+        NestedClient1{..} = mkNestedClient1 "example"
+        NestedClient2{..} = mkNestedClient2 (Just 42)
+
+    it "works for top-level client function" $ \(_, baseUrl) -> do
+      (left show <$> (runClientM (getSqr (Just 5)) (ClientEnv manager baseUrl))) `shouldReturn` Right 25
+
+    it "works for nested clients" $ \(_, baseUrl) -> do
+      (left show <$> (runClientM (idChar (Just 'c')) (ClientEnv manager baseUrl))) `shouldReturn` Right 'c'
+      (left show <$> (runClientM (getSum 3 4) (ClientEnv manager baseUrl))) `shouldReturn` Right 7
+      (left show <$> (runClientM doNothing (ClientEnv manager baseUrl))) `shouldReturn` Right ()
 
 -- * utils
 
