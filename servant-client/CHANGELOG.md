@@ -7,6 +7,8 @@
 * client asks for any content-type in Accept contentTypes non-empty list
   ([#615](https://github.com/haskell-servant/servant/pull/615))
 
+* Add `ClientLike` class that matches client functions generated using `client` with client data structure.
+
 0.9.1.1
 -------
 
