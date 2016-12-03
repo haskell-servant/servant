@@ -376,6 +376,20 @@ err418 = ServantErr { errHTTPCode = 418
                     , errHeaders = []
                     }
 
+-- | 'err422' Unprocessable Entity
+--
+-- Example:
+--
+-- > failingHandler :: Handler ()
+-- > failingHandler = throwError $ err422 { errBody = "I understood your request, but can't process it." }
+--
+err422 :: ServantErr
+err422 = ServantErr { errHTTPCode = 422
+                    , errReasonPhrase = "Unprocessable Entity"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
 -- | 'err500' Internal Server Error
 --
 -- Example:
