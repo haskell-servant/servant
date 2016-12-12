@@ -79,7 +79,7 @@ toApplication ra request respond = ra request routingRespond
 -- Therefore, while routing, we delay most checks so that they
 -- will ultimately occur in the right order.
 --
--- A 'Delayed' contains three delayed blocks of tests, and
+-- A 'Delayed' contains four delayed blocks of tests, and
 -- the actual handler:
 --
 -- 1. Delayed captures. These can actually cause 404, and
@@ -88,27 +88,36 @@ toApplication ra request respond = ra request routingRespond
 -- check order from the error reporting, see above). Delayed
 -- captures can provide inputs to the actual handler.
 --
--- 2. Method check(s). This can cause a 405. On success,
+-- 2. Query parameter checks. They require parsing and can cause 400 if the
+-- parsing fails. Query parameter checks provide inputs to the handler
+--
+-- 3. Method check(s). This can cause a 405. On success,
 -- it does not provide an input for the handler. Method checks
 -- are comparatively cheap.
 --
--- 3. Body and accept header checks. The request body check can
+-- 4. Body and accept header checks. The request body check can
 -- cause both 400 and 415. This provides an input to the handler.
 -- The accept header check can be performed as the final
 -- computation in this block. It can cause a 406.
 --
 data Delayed env c where
   Delayed :: { capturesD :: env -> DelayedIO captures
+             , paramsD   :: DelayedIO params
              , methodD   :: DelayedIO ()
              , authD     :: DelayedIO auth
              , bodyD     :: DelayedIO body
-             , serverD   :: captures -> auth -> body -> Request -> RouteResult c
+             , serverD   :: captures
+                         -> params
+                         -> auth
+                         -> body
+                         -> Request
+                         -> RouteResult c
              } -> Delayed env c
 
 instance Functor (Delayed env) where
   fmap f Delayed{..} =
     Delayed
-      { serverD = \ c a b req -> f <$> serverD c a b req
+      { serverD = \ c p a b req -> f <$> serverD c p a b req
       , ..
       } -- Note [Existential Record Update]
 
@@ -142,7 +151,7 @@ instance MonadIO DelayedIO where
 -- | A 'Delayed' without any stored checks.
 emptyDelayed :: RouteResult a -> Delayed env a
 emptyDelayed result =
-  Delayed (const r) r r r (\ _ _ _ _ -> result)
+  Delayed (const r) r r r r (\ _ _ _ _ _ -> result)
   where
     r = return ()
 
@@ -165,9 +174,20 @@ addCapture :: Delayed env (a -> b)
 addCapture Delayed{..} new =
   Delayed
     { capturesD = \ (txt, env) -> (,) <$> capturesD env <*> new txt
-    , serverD   = \ (x, v) a b req -> ($ v) <$> serverD x a b req
+    , serverD   = \ (x, v) p a b req -> ($ v) <$> serverD x p a b req
     , ..
     } -- Note [Existential Record Update]
+
+-- | Add a parameter check to the end of the params block
+addParameterCheck :: Delayed env (a -> b)
+                  -> DelayedIO a
+                  -> Delayed env b
+addParameterCheck Delayed {..} new =
+  Delayed
+    { paramsD = (,) <$> paramsD <*> new
+    , serverD = \c (p, pNew) a b req -> ($ pNew) <$> serverD c p a b req
+    , ..
+    }
 
 -- | Add a method check to the end of the method block.
 addMethodCheck :: Delayed env a
@@ -186,7 +206,7 @@ addAuthCheck :: Delayed env (a -> b)
 addAuthCheck Delayed{..} new =
   Delayed
     { authD   = (,) <$> authD <*> new
-    , serverD = \ c (y, v) b req -> ($ v) <$> serverD c y b req
+    , serverD = \ c p (y, v) b req -> ($ v) <$> serverD c p y b req
     , ..
     } -- Note [Existential Record Update]
 
@@ -197,7 +217,7 @@ addBodyCheck :: Delayed env (a -> b)
 addBodyCheck Delayed{..} new =
   Delayed
     { bodyD   = (,) <$> bodyD <*> new
-    , serverD = \ c a (z, v) req -> ($ v) <$> serverD c a z req
+    , serverD = \ c p a (z, v) req -> ($ v) <$> serverD c p a z req
     , ..
     } -- Note [Existential Record Update]
 
@@ -227,7 +247,7 @@ addAcceptCheck Delayed{..} new =
 passToServer :: Delayed env (a -> b) -> (Request -> a) -> Delayed env b
 passToServer Delayed{..} x =
   Delayed
-    { serverD = \ c a b req -> ($ x req) <$> serverD c a b req
+    { serverD = \ c p a b req -> ($ x req) <$> serverD c p a b req
     , ..
     } -- Note [Existential Record Update]
 
@@ -246,7 +266,8 @@ runDelayed Delayed{..} env = runDelayedIO $ do
   methodD
   a <- authD
   b <- bodyD
-  DelayedIO (\ req -> return $ serverD c a b req)
+  p <- paramsD -- Has to be after body to respect the relative error order
+  DelayedIO (\ req -> return $ serverD c p a b req)
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.
