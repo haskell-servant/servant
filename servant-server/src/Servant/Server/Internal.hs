@@ -28,7 +28,8 @@ import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
-import           Data.Maybe                 (fromMaybe, mapMaybe)
+import           Data.Either                (partitionEithers)
+import           Data.Maybe                 (fromMaybe)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
 import           Data.Typeable
@@ -45,7 +46,7 @@ import           Network.Wai                (Application, Request, Response,
 import           Prelude                    ()
 import           Prelude.Compat
 import           Web.HttpApiData            (FromHttpApiData, parseHeaderMaybe,
-                                             parseQueryParamMaybe,
+                                             parseQueryParam,
                                              parseUrlPieceMaybe,
                                              parseUrlPieces)
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
@@ -311,14 +312,23 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
     Maybe a -> ServerT api m
 
   route Proxy context subserver =
-    let querytext r = parseQueryText $ rawQueryString r
-        param r =
-          case lookup paramname (querytext r) of
-            Nothing       -> Nothing -- param absent from the query string
-            Just Nothing  -> Nothing -- param present with no value -> Nothing
-            Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
-                                        -- the right type
-    in route (Proxy :: Proxy api) context (passToServer subserver param)
+    let querytext req = parseQueryText $ rawQueryString req
+        parseParam req =
+          case lookup paramname (querytext req) of
+            Nothing       -> return Nothing -- param absent from the query string
+            Just Nothing  -> return Nothing -- param present with no value -> Nothing
+            Just (Just v) ->
+              case parseQueryParam v of
+                  -- TODO: This should set an error description (including
+                  -- paramname)
+                  Left _e -> delayedFailFatal err400 -- parsing the request
+                                                     -- paramter failed
+
+                  Right param -> return $ Just param
+        delayed = addParameterCheck subserver . withRequest $ \req ->
+                    parseParam req
+
+    in route (Proxy :: Proxy api) context delayed
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -352,12 +362,20 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
         -- named "foo" or "foo[]" and call parseQueryParam on the
         -- corresponding values
         parameters r = filter looksLikeParam (querytext r)
-        values r = mapMaybe (convert . snd) (parameters r)
-    in  route (Proxy :: Proxy api) context (passToServer subserver values)
+        parseParam (paramName, paramTxt) =
+          case parseQueryParam (fromMaybe "" paramTxt) of
+              Left _e -> Left paramName -- On error, remember name of parameter
+              Right paramVal -> Right paramVal
+        parseParams req =
+          case partitionEithers $ parseParam <$> parameters req of
+              ([], params) -> return params -- No errors
+              -- TODO: This should set an error description
+              (_errors, _) -> delayedFailFatal err400
+        delayed = addParameterCheck subserver . withRequest $ \req ->
+                    parseParams req
+    in  route (Proxy :: Proxy api) context delayed
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
-          convert Nothing = Nothing
-          convert (Just v) = parseQueryParamMaybe v
 
 -- | If you use @'QueryFlag' "published"@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
