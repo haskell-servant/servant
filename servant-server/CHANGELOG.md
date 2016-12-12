@@ -1,3 +1,10 @@
+0.10
+------
+
+* Changed `HasServer` instances for `QueryParam` and `QueryParam` to throw 400
+  when parsing fails
+* Added `paramD` block to `Delayed`
+
 0.7.1
 ------
 
