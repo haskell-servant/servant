@@ -12,7 +12,7 @@ module Servant.Client.Generic
   , genericMkClientP
   ) where
 
-import Generics.SOP   (Code, Generic, I(..), NP(..), NS(Z), Rep, SOP(..), to)
+import Generics.SOP   (Code, Generic, I(..), NP(..), NS(Z), SOP(..), to)
 import Servant.API    ((:<|>)(..))
 import Servant.Client (ClientM)
 
@@ -38,7 +38,7 @@ import Servant.Client (ClientM)
 -- >   , mkNestedClient :: Int -> NestedClient
 -- >   } deriving GHC.Generic
 -- >
--- > instance Generic.SOP.Generic APIClient
+-- > instance Generics.SOP.Generic APIClient
 -- > instance (Client API ~ client) => ClientLike client APIClient
 -- >
 -- > data NestedClient = NestedClient
@@ -46,8 +46,54 @@ import Servant.Client (ClientM)
 -- >  , postBaz   :: Maybe Char -> ClientM ()
 -- >  } deriving GHC.Generic
 -- >
--- > instance Generic.SOP.Generic NestedClient
+-- > instance Generics.SOP.Generic NestedClient
 -- > instance (Client NestedAPI ~ client) => ClientLike client NestedClient
+-- >
+-- > mkAPIClient :: APIClient
+-- > mkAPIClient = mkClient (client (Proxy :: Proxy API))
+--
+-- By default, left-nested alternatives are expanded:
+--
+-- > type API1
+-- >     = "foo" :> Capture "x" Int :> Get '[JSON] Int
+-- >  :<|> "bar" :> QueryParam "a" Char :> Post '[JSON] String
+-- >
+-- > type API2
+-- >     = "baz" :> QueryParam "c" Char :> Post '[JSON] ()
+-- >
+-- > type API = API1 :<|> API2
+-- >
+-- > data APIClient = APIClient
+-- >   { getFoo  :: Int -> ClientM Int
+-- >   , postBar :: Maybe Char -> ClientM String
+-- >   , postBaz :: Maybe Char -> ClientM ()
+-- >   } deriving GHC.Generic
+-- >
+-- > instance Generics.SOP.Generic APIClient
+-- > instance (Client API ~ client) => ClientLike client APIClient
+-- >
+-- > mkAPIClient :: APIClient
+-- > mkAPIClient = mkClient (client (Proxy :: Proxy API))
+--
+-- If you want to define client for @API1@ as a separate data structure,
+-- you can use 'genericMkClientP':
+--
+-- > data APIClient1 = APIClient1
+-- >   { getFoo  :: Int -> ClientM Int
+-- >   , postBar :: Maybe Char -> ClientM String
+-- >   } deriving GHC.Generic
+-- >
+-- > instance Generics.SOP.Generic APIClient1
+-- > instance (Client API1 ~ client) => ClientLike client APIClient1
+-- >
+-- > data APIClient = APIClient
+-- >   { mkAPIClient1 :: APIClient1
+-- >   , postBaz      :: Maybe Char -> ClientM ()
+-- >   } deriving GHC.Generic
+-- >
+-- > instance Generics.SOP.Generic APIClient
+-- > instance (Client API ~ client) => ClientLike client APIClient where
+-- >   mkClient = genericMkClientP
 -- >
 -- > mkAPIClient :: APIClient
 -- > mkAPIClient = mkClient (client (Proxy :: Proxy API))
@@ -100,11 +146,12 @@ instance {-# OVERLAPPABLE #-} (ClientList client acc ~ (client ': acc))
   => GClientList client acc where
   gClientList c acc = I c :* acc
 
--- | Generate client structure from client type.
+-- | Generate client structure from client type, expanding left-nested API (done by default).
 genericMkClientL :: (Generic custom, Code custom ~ '[xs], GClientList client '[], GClientLikeL (ClientList client '[]) xs)
   => client -> custom
 genericMkClientL = to . SOP . Z . gMkClientL . flip gClientList Nil
 
+-- | Generate client structure from client type, regarding left-nested API clients as separate data structures.
 genericMkClientP :: (Generic custom, Code custom ~ '[xs], GClientLikeP client xs)
   => client -> custom
 genericMkClientP = to . SOP . Z . gMkClientP

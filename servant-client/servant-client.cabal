@@ -43,7 +43,7 @@ library
     , base64-bytestring     >= 1.0.0.1  && < 1.1
     , bytestring            >= 0.10     && < 0.11
     , exceptions            >= 0.8      && < 0.9
-    , generics-sop
+    , generics-sop          >= 0.1.0.0  && < 0.3
     , http-api-data         >= 0.3      && < 0.4
     , http-client           >= 0.4.18.1 && < 0.6
     , http-client-tls       >= 0.2.2    && < 0.4
