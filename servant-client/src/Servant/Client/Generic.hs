@@ -114,7 +114,8 @@ instance ClientLike client custom
 instance ClientLike (ClientM a) (ClientM a) where
   mkClient = id
 
--- GClientLikeP
+-- | Match client structure with client functions, regarding left-nested API clients
+-- as separate data structures.
 class GClientLikeP client xs where
   gMkClientP :: client -> NP I xs
 
@@ -125,7 +126,8 @@ instance (GClientLikeP b (y ': xs), ClientLike a x)
 instance ClientLike a x => GClientLikeP a '[x] where
   gMkClientP a = I (mkClient a) :* Nil
 
--- GClientLikeL
+-- | Match client structure with client functions, expanding left-nested API clients
+-- in the same structure.
 class GClientLikeL (xs :: [*]) (ys :: [*]) where
   gMkClientL :: NP I xs -> NP I ys
 
