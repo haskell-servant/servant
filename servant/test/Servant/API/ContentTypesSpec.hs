@@ -11,7 +11,7 @@ module Servant.API.ContentTypesSpec where
 import           Prelude ()
 import           Prelude.Compat
 
-import           Data.Aeson
+import           Data.Aeson.Compat
 import           Data.ByteString.Char8     (ByteString, append, pack)
 import qualified Data.ByteString.Lazy      as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
@@ -24,9 +24,9 @@ import           Data.Proxy
 import           Data.String               (IsString (..))
 import           Data.String.Conversions   (cs)
 import qualified Data.Text                 as TextS
+import qualified Data.Text.Encoding        as TextSE
 import qualified Data.Text.Lazy            as TextL
 import           GHC.Generics
-import qualified Network.HTTP.Media        as M
 import           Test.Hspec
 import           Test.QuickCheck
 import           Text.Read                 (readMaybe)
@@ -179,6 +179,15 @@ spec = describe "Servant.API.ContentTypes" $ do
                 handleCTypeH (Proxy :: Proxy '[JSONorText]) "image/jpeg"
                     "42" `shouldBe` (Nothing :: Maybe (Either String Int))
 
+            it "passes content-type to mimeUnrenderWithType" $ do
+                let val = "foobar" :: TextS.Text
+                handleCTypeH (Proxy :: Proxy '[JSONorText]) "application/json"
+                    "\"foobar\"" `shouldBe` Just (Right val)
+                handleCTypeH (Proxy :: Proxy '[JSONorText]) "text/plain"
+                    "foobar" `shouldBe` Just (Right val)
+                handleCTypeH (Proxy :: Proxy '[JSONorText]) "image/jpeg"
+                    "foobar" `shouldBe` (Nothing :: Maybe (Either String Int))
+
 #if MIN_VERSION_aeson(0,9,0)
     -- aeson >= 0.9 decodes top-level strings
     describe "eitherDecodeLenient" $ do
@@ -226,13 +235,18 @@ instance IsString AcceptHeader where
 data JSONorText
 
 instance Accept JSONorText where
-    contentTypes _ = "text" M.// "plain" NE.:| [ "application" M.// "json" ]
+    contentTypes _ = "text/plain" NE.:| [ "application/json" ]
 
 instance MimeRender JSONorText Int  where
     mimeRender _ = cs . show
 
 instance MimeUnrender JSONorText Int where
     mimeUnrender _ = maybe (Left "") Right . readMaybe . BSL8.unpack
+
+instance MimeUnrender JSONorText TextS.Text where
+    mimeUnrenderWithType _ mt
+        | mt == "application/json" = maybe (Left "") Right . decode
+        | otherwise                = Right . TextSE.decodeUtf8 . BSL.toStrict
 
 addToAccept :: Accept a => Proxy a -> ZeroToOne -> AcceptHeader -> AcceptHeader
 addToAccept p (ZeroToOne f) (AcceptHeader h) = AcceptHeader (cont h)

@@ -111,10 +111,10 @@ test-suite spec
       base == 4.*
     , base-compat
     , aeson
+    , aeson-compat >=0.3.3 && <0.4
     , attoparsec
     , bytestring
     , hspec == 2.*
-    , http-media
     , QuickCheck
     , quickcheck-instances
     , servant

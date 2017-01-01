@@ -206,6 +206,16 @@ instance OVERLAPPABLE_
 --
 class Accept ctype => MimeUnrender ctype a where
     mimeUnrender :: Proxy ctype -> ByteString -> Either String a
+    mimeUnrender p = mimeUnrenderWithType p (contentType p)
+
+    -- | Variant which is given the actual 'M.MediaType' provided by the other party.
+    --
+    -- In the most cases you don't want to branch based on the 'M.MediaType'.
+    -- See <https://github.com/haskell-servant/servant/pull/552 pr552> for a motivating example.
+    mimeUnrenderWithType :: Proxy ctype -> M.MediaType -> ByteString -> Either String a
+    mimeUnrenderWithType p _ = mimeUnrender p
+
+    {-# MINIMAL mimeUnrender | mimeUnrenderWithType #-}
 
 class AllCTUnrender (list :: [*]) a where
     handleCTypeH :: Proxy list
@@ -290,10 +300,10 @@ instance ( MimeUnrender ctyp a
          , AllMimeUnrender ctyps a
          ) => AllMimeUnrender (ctyp ': ctyps) a where
     allMimeUnrender _ bs =
-        (map (, x) $ NE.toList $ contentTypes pctyp)
+        (map mk $ NE.toList $ contentTypes pctyp)
         ++ allMimeUnrender pctyps bs
       where
-        x      = mimeUnrender pctyp bs
+        mk ct   = (ct, mimeUnrenderWithType pctyp ct bs)
         pctyp  = Proxy :: Proxy ctyp
         pctyps = Proxy :: Proxy ctyps
 
