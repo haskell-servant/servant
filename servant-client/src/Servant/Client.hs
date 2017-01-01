@@ -407,6 +407,7 @@ instance (MimeRender ct a, HasClient api)
     clientWithRoute (Proxy :: Proxy api)
                     (let ctProxy = Proxy :: Proxy ct
                      in setRQBody (mimeRender ctProxy body)
+                                  -- We use first contentType from the Accept list
                                   (contentType ctProxy)
                                   req
                     )

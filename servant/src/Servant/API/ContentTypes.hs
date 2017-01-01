@@ -8,6 +8,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -81,6 +82,7 @@ import qualified Data.ByteString                  as BS
 import           Data.ByteString.Lazy             (ByteString, fromStrict,
                                                    toStrict)
 import qualified Data.ByteString.Lazy.Char8       as BC
+import qualified Data.List.NonEmpty               as NE
 import           Data.Maybe                       (isJust)
 import           Data.String.Conversions          (cs)
 import qualified Data.Text                        as TextS
@@ -119,6 +121,12 @@ data OctetStream deriving Typeable
 --
 class Accept ctype where
     contentType   :: Proxy ctype -> M.MediaType
+    contentType = NE.head . contentTypes
+
+    contentTypes  :: Proxy ctype -> NE.NonEmpty M.MediaType
+    contentTypes  =  (NE.:| []) . contentType
+
+    {-# MINIMAL contentType | contentTypes #-}
 
 -- | @application/json@
 instance Accept JSON where
@@ -219,9 +227,10 @@ instance AllMime '[] where
     allMime _ = []
 
 instance (Accept ctyp, AllMime ctyps) => AllMime (ctyp ': ctyps) where
-    allMime _ = (contentType pctyp):allMime pctyps
-      where pctyp  = Proxy :: Proxy ctyp
-            pctyps = Proxy :: Proxy ctyps
+    allMime _ = NE.toList (contentTypes pctyp) ++ allMime pctyps
+      where
+        pctyp  = Proxy :: Proxy ctyp
+        pctyps = Proxy :: Proxy ctyps
 
 canHandleAcceptH :: AllMime list => Proxy list -> AcceptHeader -> Bool
 canHandleAcceptH p (AcceptHeader h ) = isJust $ M.matchAccept (allMime p) h
@@ -235,25 +244,31 @@ class (AllMime list) => AllMimeRender (list :: [*]) a where
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
 instance OVERLAPPABLE_ ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
-    allMimeRender _ a = [(contentType pctyp, mimeRender pctyp a)]
-        where pctyp = Proxy :: Proxy ctyp
+    allMimeRender _ a = map (, bs) $ NE.toList $ contentTypes pctyp
+      where
+        bs    = mimeRender pctyp a
+        pctyp = Proxy :: Proxy ctyp
 
 instance OVERLAPPABLE_
          ( MimeRender ctyp a
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
-    allMimeRender _ a = (contentType pctyp, mimeRender pctyp a)
-                       :(allMimeRender pctyps a)
-        where pctyp = Proxy :: Proxy ctyp
-              pctyps = Proxy :: Proxy (ctyp' ': ctyps)
+    allMimeRender _ a =
+        (map (, bs) $ NE.toList $ contentTypes pctyp)
+        ++ allMimeRender pctyps a
+      where
+        bs     = mimeRender pctyp a
+        pctyp  = Proxy :: Proxy ctyp
+        pctyps = Proxy :: Proxy (ctyp' ': ctyps)
 
 
 -- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
 -- then this would be taken care of. However there is no more specific instance
 -- between that and 'MimeRender JSON a', so we do this instead
 instance OVERLAPPING_ ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
-    allMimeRender _ _ = [(contentType pctyp, "")]
-      where pctyp = Proxy :: Proxy ctyp
+    allMimeRender _ _ = map (, "") $ NE.toList $ contentTypes pctyp
+      where
+        pctyp = Proxy :: Proxy ctyp
 
 instance OVERLAPPING_
          ( AllMime (ctyp ': ctyp' ': ctyps)
@@ -274,10 +289,13 @@ instance AllMimeUnrender '[] a where
 instance ( MimeUnrender ctyp a
          , AllMimeUnrender ctyps a
          ) => AllMimeUnrender (ctyp ': ctyps) a where
-    allMimeUnrender _ val = (contentType pctyp, mimeUnrender pctyp val)
-                           :(allMimeUnrender pctyps val)
-        where pctyp = Proxy :: Proxy ctyp
-              pctyps = Proxy :: Proxy ctyps
+    allMimeUnrender _ bs =
+        (map (, x) $ NE.toList $ contentTypes pctyp)
+        ++ allMimeUnrender pctyps bs
+      where
+        x      = mimeUnrender pctyp bs
+        pctyp  = Proxy :: Proxy ctyp
+        pctyps = Proxy :: Proxy ctyps
 
 --------------------------------------------------------------------------
 -- * MimeRender Instances
