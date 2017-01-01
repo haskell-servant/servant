@@ -117,7 +117,7 @@ test-suite spec
     , directory
     , exceptions
     , hspec == 2.*
-    , hspec-wai
+    , hspec-wai >= 0.8 && <0.9
     , http-types
     , network >= 2.6
     , QuickCheck
