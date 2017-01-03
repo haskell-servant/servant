@@ -1,4 +1,4 @@
-resolver: nightly-2016-05-27
+resolver: nightly-2016-12-31
 packages:
 - servant/
 - servant-client/
@@ -6,7 +6,5 @@ packages:
 - servant-foreign/
 - servant-server/
 extra-deps:
-- http-api-data-0.3
-- uri-bytestring-0.2.2.0
-- natural-transformation-0.4
+- aeson-1.1.0.0
 flags: {}

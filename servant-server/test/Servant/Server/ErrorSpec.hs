@@ -211,11 +211,17 @@ errorRetrySpec =
 
   it "should continue when URLs don't match" $ do
     request methodPost "" [jsonCT, jsonAccept] jsonBody
-     `shouldRespondWith` 200 { matchBody = Just $ encode (8 :: Int) }
+     `shouldRespondWith` 200 { matchBody = mkBody $ encode (8 :: Int) }
 
   it "should continue when methods don't match" $ do
     request methodGet "a" [jsonCT, jsonAccept] jsonBody
-     `shouldRespondWith` 200 { matchBody = Just $ encode (4 :: Int) }
+     `shouldRespondWith` 200 { matchBody = mkBody $ encode (4 :: Int) }
+  where
+    mkBody b = MatchBody $ \_ b' ->
+      if b == b'
+        then Nothing
+        else Just "body not correct\n"
+
 
 -- }}}
 ------------------------------------------------------------------------------

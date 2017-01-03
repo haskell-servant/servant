@@ -11,10 +11,12 @@ extra-deps:
 - control-monad-omega-0.3.1
 - cryptonite-0.6
 - doctest-0.11.0
-- hspec-2.2.3
-- hspec-core-2.2.3
-- hspec-discover-2.2.3
-- hspec-expectations-0.7.2
+- hspec-2.3.2
+- hspec-discover-2.3.2
+- hspec-core-2.3.2
+- hspec-wai-0.8.0
+- hspec-expectations-0.8.2
+- call-stack-0.1.0
 - http-api-data-0.3
 - natural-transformation-0.4
 - primitive-0.6.1.0
