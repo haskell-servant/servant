@@ -136,7 +136,7 @@ server = randomPoint
 
 server' :: Server API'
 server' = server
-     :<|> serveDirectory "static"
+     :<|> serveDirectoryWebApp "static"
 
 app :: Application
 app = serve api' server'
