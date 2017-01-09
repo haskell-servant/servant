@@ -11,6 +11,8 @@ module Servant.Utils.StaticFiles
   , serveDirectoryFileServer
   , serveDirectoryEmbedded
   , serveDirectoryWith
+  , -- * Deprecated
+    serveDirectory
   ) where
 
 import           Data.ByteString                (ByteString)
@@ -49,8 +51,6 @@ serveDirectoryWebApp :: FilePath -> Server Raw
 serveDirectoryWebApp = staticApp . defaultWebAppSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses `defaultFileServerSettings`.
---
---   This used to be called 'serveDirectory' in @servant < 0.10@.
 serveDirectoryFileServer :: FilePath -> Server Raw
 serveDirectoryFileServer = staticApp . defaultFileServerSettings . fixPath
 
@@ -69,6 +69,13 @@ serveDirectoryEmbedded files = staticApp (embeddedSettings files)
 --   variants. This is the most flexible method.
 serveDirectoryWith :: StaticSettings -> Server Raw
 serveDirectoryWith = staticApp
+
+-- | Same as 'serveDirectoryFileServer'. It used to be the only
+--   file serving function in servant pre-0.10 and will be kept
+--   around for a few versions, but is deprecated.
+serveDirectory :: FilePath -> Server Raw
+serveDirectory = serveDirectoryFileServer
+{-# DEPRECATED serveDirectory "Use serveDirectoryFileServer instead" #-}
 
 fixPath :: FilePath -> FilePath
 fixPath =
