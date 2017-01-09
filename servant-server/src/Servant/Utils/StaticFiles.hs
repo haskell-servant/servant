@@ -49,6 +49,8 @@ serveDirectoryWebApp :: FilePath -> Server Raw
 serveDirectoryWebApp = staticApp . defaultWebAppSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses `defaultFileServerSettings`.
+--
+--   This used to be called 'serveDirectory' in @servant < 0.10@.
 serveDirectoryFileServer :: FilePath -> Server Raw
 serveDirectoryFileServer = staticApp . defaultFileServerSettings . fixPath
 
