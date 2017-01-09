@@ -4,8 +4,13 @@
 * Add `err422` Unprocessable Entity
   ([#646](https://github.com/haskell-servant/servant/pull/646))
 
-* `Handler` is not abstract datatype. Migration hint: change `throwE` to `throwError`.
+* `Handler` is now an abstract datatype. Migration hint: change `throwE` to `throwError`.
   ([#641](https://github.com/haskell-servant/servant/issues/641))
+
+* Deprecate `serveDirectory` and introduce `serveDirectoryFileServer`,
+  `serveDirectoryWebApp`, `serveDirectoryWebAppLookup`, `serveDirectoryEmbedded`
+  and `serveDirectoryWith` which offer 4 default options and a more flexible
+  one for serving static files.
 
 0.7.1
 ------
