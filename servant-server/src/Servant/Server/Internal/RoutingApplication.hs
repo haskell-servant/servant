@@ -9,7 +9,7 @@
 {-# LANGUAGE TupleSections              #-}
 module Servant.Server.Internal.RoutingApplication where
 
-import           Control.Exception                  (bracket)
+import           Control.Exception                  (finally)
 import           Control.Monad                      (ap, liftM, (>=>))
 import           Control.Monad.Trans                (MonadIO(..))
 import           Control.Monad.Trans.Except         (runExceptT)
@@ -290,9 +290,8 @@ runAction :: Delayed env (Handler a)
           -> IO r
 runAction action env req respond k = do
   cleanupRef <- newCleanupRef
-  bracket (runDelayed action env req cleanupRef)
-          (const $ runCleanup cleanupRef)
-          (go >=> respond)
+  (runDelayed action env req cleanupRef >>= go >>= respond)
+    `finally` runCleanup cleanupRef
 
   where
     go (Fail e)      = return $ Fail e
