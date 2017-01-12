@@ -10,10 +10,9 @@
 module Servant.Server.Internal.RoutingApplication where
 
 import           Control.Exception                  (finally)
-import           Control.Monad                      (ap, liftM, (>=>))
+import           Control.Monad                      (ap, liftM)
 import           Control.Monad.Trans                (MonadIO(..))
-import           Control.Monad.Trans.Except         (runExceptT)
-import           Data.IORef                         (newIORef, readIORef, writeIORef, IORef, atomicModifyIORef)
+import           Data.IORef                         (newIORef, readIORef, IORef, atomicModifyIORef)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived)
 import           Prelude                            ()
