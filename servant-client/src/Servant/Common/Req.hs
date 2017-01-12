@@ -87,7 +87,7 @@ instance Exception ServantError
 data Req = Req
   { reqPath   :: String
   , qs        :: QueryText
-  , reqBody   :: Maybe (ByteString, MediaType)
+  , reqBody   :: Maybe (RequestBody, MediaType)
   , reqAccept :: [MediaType]
   , headers   :: [(String, Text)]
   }
@@ -112,8 +112,31 @@ addHeader name val req = req { headers = headers req
                                       ++ [(name, decodeUtf8 (toHeader val))]
                              }
 
+-- | Set body and media type of the request being constructed.
+--
+-- The body is set to the given bytestring using the 'RequestBodyLBS'
+-- constructor.
+--
+{-# DEPRECATED setRQBody "Use setReqBodyLBS instead" #-}
 setRQBody :: ByteString -> MediaType -> Req -> Req
-setRQBody b t req = req { reqBody = Just (b, t) }
+setRQBody = setReqBodyLBS
+
+-- | Set body and media type of the request being constructed.
+--
+-- The body is set to the given bytestring using the 'RequestBodyLBS'
+-- constructor.
+--
+-- @since 0.9.2.0
+--
+setReqBodyLBS :: ByteString -> MediaType -> Req -> Req
+setReqBodyLBS b t req = req { reqBody = Just (RequestBodyLBS b, t) }
+
+-- | Set body and media type of the request being constructed.
+--
+-- @since 0.9.2.0
+--
+setReqBody :: RequestBody -> MediaType -> Req -> Req
+setReqBody b t req = req { reqBody = Just (b, t) }
 
 reqToRequest :: (Functor m, MonadThrow m) => Req -> BaseUrl -> m Request
 reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
@@ -132,7 +155,7 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
 
         setrqb r = case reqBody req of
                      Nothing -> r
-                     Just (b,t) -> r { requestBody = RequestBodyLBS b
+                     Just (b,t) -> r { requestBody = b
                                      , requestHeaders = requestHeaders r
                                                      ++ [(hContentType, cs . show $ t)] }
         setQS = setQueryString $ queryTextToQuery (qs req)
