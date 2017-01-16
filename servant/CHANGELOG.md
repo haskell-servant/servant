@@ -4,6 +4,10 @@
 * Use `NT` from `natural-transformation` for `Enter`
   ([#616](https://github.com/haskell-servant/servant/issues/616))
 
+* Change to `MkLink (Verb ...) = Link` (previously `URI`). To consume `Link`
+  use its `ToHttpApiData` instance.
+  ([#527](https://github.com/haskell-servant/servant/issues/527))
+
 0.9.1
 ------
 
