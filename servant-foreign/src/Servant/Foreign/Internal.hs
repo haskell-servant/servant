@@ -316,9 +316,7 @@ instance (KnownSymbol path, HasForeign lang ftype api)
       req & reqUrl . path <>~ [Segment (Static (PathSegment str))]
           & reqFuncName . _FunctionName %~ (++ [str])
     where
-      str =
-        Data.Text.map (\c -> if c == '.' then '_' else c)
-          . pack . symbolVal $ (Proxy :: Proxy path)
+      str = pack . symbolVal $ (Proxy :: Proxy path)
 
 instance HasForeign lang ftype api
   => HasForeign lang ftype (RemoteHost :> api) where
