@@ -101,7 +101,7 @@ import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepte
                                               ReflectMethod (reflectMethod),
                                               Verb, StdMethod(..))
 import           Servant.API.WithNamedContext (WithNamedContext)
-import           Servant.Utils.Links         (HasLink (..), IsElem, IsElem',
+import           Servant.Utils.Links         (HasLink (..), Link, IsElem, IsElem',
                                               URI (..), safeLink)
 import           Web.HttpApiData             (FromHttpApiData (..),
                                               ToHttpApiData (..))
