@@ -18,7 +18,32 @@ The code samples in this module use the following type synonym:
 >             :<|> "bye" :> Capture "name" String :> Post '[JSON, PlainText] Bool
 
 -}
-module Servant.API.TypeLevel where
+module Servant.API.TypeLevel (
+    -- $setup
+    -- * API predicates
+    Endpoints,
+    -- ** Lax inclusion
+    IsElem',
+    IsElem,
+    IsSubAPI,
+    AllIsElem,
+    -- ** Strict inclusion
+    IsIn,
+    IsStrictSubAPI,
+    AllIsIn,
+    -- * Helpers
+    -- ** Lists
+    MapSub,
+    AppendList,
+    IsSubList,
+    Elem,
+    ElemGo,
+    Or,
+    And,
+    -- * Custom type errors
+    -- | Before @base-4.9.0.0@ we use non-exported 'ElemNotFoundIn' class,
+    -- which cannot be instantiated.
+    ) where
 
 
 import           GHC.Exts                (Constraint)
@@ -223,6 +248,9 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 
 
 -- $setup
+--
+-- The doctests in this module are run with following preamble:
+--
 -- >>> :set -XPolyKinds
 -- >>> :set -XGADTs
 -- >>> import Data.Proxy
