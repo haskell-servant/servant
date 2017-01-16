@@ -220,14 +220,20 @@ class Accept ctype => MimeUnrender ctype a where
     {-# MINIMAL mimeUnrender | mimeUnrenderWithType #-}
 
 class AllCTUnrender (list :: [*]) a where
+    canHandleCTypeH
+        :: Proxy list
+        -> ByteString  -- Content-Type header
+        -> Maybe (ByteString -> Either String a)
+
     handleCTypeH :: Proxy list
                  -> ByteString     -- Content-Type header
                  -> ByteString     -- Request body
                  -> Maybe (Either String a)
+    handleCTypeH p ctypeH body = ($ body) `fmap` canHandleCTypeH p ctypeH
 
 instance ( AllMimeUnrender ctyps a ) => AllCTUnrender ctyps a where
-    handleCTypeH _ ctypeH body = M.mapContentMedia lkup (cs ctypeH)
-      where lkup = allMimeUnrender (Proxy :: Proxy ctyps) body
+    canHandleCTypeH p ctypeH =
+        M.mapContentMedia (allMimeUnrender p) (cs ctypeH)
 
 --------------------------------------------------------------------------
 -- * Utils (Internal)
@@ -292,20 +298,19 @@ instance OVERLAPPING_
 --------------------------------------------------------------------------
 class (AllMime list) => AllMimeUnrender (list :: [*]) a where
     allMimeUnrender :: Proxy list
-                    -> ByteString
-                    -> [(M.MediaType, Either String a)]
+                    -> [(M.MediaType, ByteString -> Either String a)]
 
 instance AllMimeUnrender '[] a where
-    allMimeUnrender _ _ = []
+    allMimeUnrender _ = []
 
 instance ( MimeUnrender ctyp a
          , AllMimeUnrender ctyps a
          ) => AllMimeUnrender (ctyp ': ctyps) a where
-    allMimeUnrender _ bs =
+    allMimeUnrender _ =
         (map mk $ NE.toList $ contentTypes pctyp)
-        ++ allMimeUnrender pctyps bs
+        ++ allMimeUnrender pctyps
       where
-        mk ct   = (ct, mimeUnrenderWithType pctyp ct bs)
+        mk ct   = (ct, \bs -> mimeUnrenderWithType pctyp ct bs)
         pctyp  = Proxy :: Proxy ctyp
         pctyps = Proxy :: Proxy ctyps
 

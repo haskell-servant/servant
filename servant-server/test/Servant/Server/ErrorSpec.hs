@@ -6,6 +6,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.Server.ErrorSpec (spec) where
 
+import           Control.Monad              (when)
 import           Data.Aeson                 (encode)
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.ByteString.Lazy.Char8 as BCL
@@ -114,10 +115,19 @@ errorOrderSpec =
       `shouldRespondWith` 415
 
   it "has 400 as its sixth highest priority error" $ do
-    request goodMethod badParams [goodAuth, goodContentType, goodAccept] goodBody
-      `shouldRespondWith` 400
-    request goodMethod goodUrl [goodAuth, goodContentType, goodAccept] badBody
-      `shouldRespondWith` 400
+    badParamsRes <- request goodMethod badParams [goodAuth, goodContentType, goodAccept] goodBody
+    badBodyRes <- request goodMethod goodUrl [goodAuth, goodContentType, goodAccept] badBody
+
+    -- Both bad body and bad params result in 400
+    return badParamsRes `shouldRespondWith` 400
+    return badBodyRes `shouldRespondWith` 400
+
+    -- Param check should occur before body checks
+    both <- request goodMethod badParams [goodAuth, goodContentType, goodAccept ] badBody
+    when (both /= badParamsRes) $ liftIO $
+        expectationFailure $ "badParams + badBody /= badParams: " ++ show both ++ ", " ++ show badParamsRes
+    when (both == badBodyRes) $ liftIO $
+        expectationFailure $ "badParams + badBody == badBody: " ++ show both
 
   it "has handler-level errors as last priority" $ do
     request goodMethod goodUrl [goodAuth, goodContentType, goodAccept] goodBody

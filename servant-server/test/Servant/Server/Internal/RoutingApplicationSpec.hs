@@ -19,6 +19,7 @@ import Data.Proxy
 import GHC.TypeLits (Symbol, KnownSymbol, symbolVal)
 import Servant
 import Servant.Server.Internal.RoutingApplication
+import Network.Wai (defaultRequest)
 import Test.Hspec
 import Test.Hspec.Wai (request, shouldRespondWith, with)
 
@@ -56,12 +57,14 @@ freeTestResource = modifyIORef delayedTestRef $ \r -> case r of
 
 delayed :: DelayedIO () -> RouteResult (Handler ()) -> Delayed () (Handler ())
 delayed body srv = Delayed
-  { capturesD = \_ -> return ()
+  { capturesD = \() -> return ()
   , methodD   = return ()
   , authD     = return ()
+  , acceptD   = return ()
+  , contentD  = return ()
   , paramsD   = return ()
-  , bodyD     = do
-      liftIO (writeTestResource"hia" >> putStrLn "garbage created")
+  , bodyD     = \() -> do
+      liftIO (writeTestResource "hia" >> putStrLn "garbage created")
       _ <- register (freeTestResource >> putStrLn "garbage collected")
       body
   , serverD   = \() () () _body _req -> srv
@@ -70,7 +73,7 @@ delayed body srv = Delayed
 simpleRun :: Delayed () (Handler ())
           -> IO ()
 simpleRun d = fmap (either ignoreE id) . try $
-  runAction d () undefined (\_ -> return ()) (\_ -> FailFatal err500)
+  runAction d () defaultRequest (\_ -> return ()) (\_ -> FailFatal err500)
 
   where ignoreE :: SomeException -> ()
         ignoreE = const ()
@@ -85,10 +88,10 @@ data Res (sym :: Symbol)
 instance (KnownSymbol sym, HasServer api ctx) => HasServer (Res sym :> api) ctx where
     type ServerT (Res sym :> api) m = IORef (TestResource String) -> ServerT api m
     route Proxy ctx server = route (Proxy :: Proxy api) ctx $
-        server `addBodyCheck` check
+        addBodyCheck server (return ()) check
       where
         sym  = symbolVal (Proxy :: Proxy sym)
-        check = do
+        check () = do
             liftIO $ writeTestResource sym
             _ <- register freeTestResource
             return delayedTestRef
