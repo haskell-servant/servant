@@ -1,0 +1,7 @@
+packages:
+  servant/
+  servant-client/
+  servant-docs/
+  servant-foreign/
+  servant-server/
+  doc/tutorial/
