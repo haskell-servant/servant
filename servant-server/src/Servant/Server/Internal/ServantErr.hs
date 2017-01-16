@@ -4,7 +4,6 @@
 module Servant.Server.Internal.ServantErr where
 
 import           Control.Exception (Exception)
-import           Control.Monad.Trans.Except (ExceptT)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as LBS
 import           Data.Typeable (Typeable)
@@ -18,8 +17,6 @@ data ServantErr = ServantErr { errHTTPCode     :: Int
                              } deriving (Show, Eq, Read, Typeable)
 
 instance Exception ServantErr
-
-type Handler = ExceptT ServantErr IO
 
 responseServantErr :: ServantErr -> Response
 responseServantErr ServantErr{..} = responseLBS status errHeaders errBody

@@ -75,10 +75,8 @@ test-suite spec
     , Servant.Common.BaseUrlSpec
   build-depends:
       base == 4.*
-    , base-compat
-    , transformers
-    , transformers-compat
     , aeson
+    , base-compat
     , bytestring
     , deepseq
     , hspec == 2.*
@@ -87,11 +85,14 @@ test-suite spec
     , http-media
     , http-types
     , HUnit
+    , mtl
     , network >= 2.6
     , QuickCheck >= 2.7
     , servant == 0.9.*
     , servant-client
     , servant-server == 0.9.*
     , text
+    , transformers
+    , transformers-compat
     , wai
     , warp

@@ -6,7 +6,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.Server.ErrorSpec (spec) where
 
-import           Control.Monad.Trans.Except (throwE)
 import           Data.Aeson                 (encode)
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.ByteString.Lazy.Char8 as BCL
@@ -51,7 +50,7 @@ errorOrderApi :: Proxy ErrorOrderApi
 errorOrderApi = Proxy
 
 errorOrderServer :: Server ErrorOrderApi
-errorOrderServer = \_ _ _ -> throwE err402
+errorOrderServer = \_ _ _ -> throwError err402
 
 -- On error priorities:
 --
@@ -187,7 +186,7 @@ errorRetryApi = Proxy
 
 errorRetryServer :: Server ErrorRetryApi
 errorRetryServer
-     = (\_ -> throwE err402)
+     = (\_ -> throwError err402)
   :<|> (\_ -> return 1)
   :<|> (\_ -> return 2)
   :<|> (\_ -> return 3)

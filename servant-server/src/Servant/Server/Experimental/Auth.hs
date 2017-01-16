@@ -13,7 +13,6 @@
 module Servant.Server.Experimental.Auth where
 
 import           Control.Monad.Trans                        (liftIO)
-import           Control.Monad.Trans.Except                 (runExceptT)
 import           Data.Proxy                                 (Proxy (Proxy))
 import           Data.Typeable                              (Typeable)
 import           GHC.Generics                               (Generic)
@@ -29,7 +28,7 @@ import           Servant.Server.Internal.RoutingApplication (addAuthCheck,
                                                              delayedFailFatal,
                                                              DelayedIO,
                                                              withRequest)
-import           Servant.Server.Internal.ServantErr         (Handler)
+import           Servant.Server.Internal.Handler            (Handler, runHandler)
 
 -- * General Auth
 
@@ -65,4 +64,4 @@ instance ( HasServer api context
         authHandler :: Request -> Handler (AuthServerData (AuthProtect tag))
         authHandler = unAuthHandler (getContextEntry context)
         authCheck :: Request -> DelayedIO (AuthServerData (AuthProtect tag))
-        authCheck = (>>= either delayedFailFatal return) . liftIO . runExceptT . authHandler
+        authCheck = (>>= either delayedFailFatal return) . liftIO . runHandler . authHandler

@@ -29,7 +29,7 @@ module Servant.ClientSpec where
 import           Control.Arrow              (left)
 import           Control.Concurrent         (forkIO, killThread, ThreadId)
 import           Control.Exception          (bracket)
-import           Control.Monad.Trans.Except (throwE )
+import           Control.Monad.Error.Class  (throwError )
 import           Data.Aeson
 import qualified Data.ByteString.Lazy       as BS
 import           Data.Char                  (chr, isPrint)
@@ -150,8 +150,8 @@ server = serve api (
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
-                   Just n -> throwE $ ServantErr 400 (n ++ " not found") "" []
-                   Nothing -> throwE $ ServantErr 400 "missing parameter" "" [])
+                   Just n -> throwError $ ServantErr 400 (n ++ " not found") "" []
+                   Nothing -> throwError $ ServantErr 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (\ _request respond -> respond $ responseLBS HTTP.ok200 [] "rawSuccess")
@@ -212,7 +212,7 @@ type instance AuthClientData (AuthProtect "auth-tag") = ()
 genAuthHandler :: AuthHandler Request ()
 genAuthHandler =
   let handler req = case lookup "AuthHeader" (requestHeaders req) of
-        Nothing -> throwE (err401 { errBody = "Missing auth header" })
+        Nothing -> throwError (err401 { errBody = "Missing auth header" })
         Just _ -> return ()
   in mkAuthHandler handler
 
@@ -298,7 +298,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
 wrappedApiSpec :: Spec
 wrappedApiSpec = describe "error status codes" $ do
-  let serveW api = serve api $ throwE $ ServantErr 500 "error message" "" []
+  let serveW api = serve api $ throwError $ ServantErr 500 "error message" "" []
   context "are correctly handled by the client" $
     let test :: (WrappedApi, String) -> Spec
         test (WrappedApi api, desc) =

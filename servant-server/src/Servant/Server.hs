@@ -17,7 +17,8 @@ module Servant.Server
   , -- * Handlers for all standard combinators
     HasServer(..)
   , Server
-  , Handler
+  , Handler (..)
+  , runHandler
 
     -- * Debugging the server layout
   , layout
