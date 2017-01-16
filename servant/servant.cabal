@@ -137,6 +137,7 @@ test-suite doctests
               , filemanip
               , directory
               , filepath
+              , hspec
  type: exitcode-stdio-1.0
  main-is: test/doctests.hs
  buildable: True

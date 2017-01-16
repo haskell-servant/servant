@@ -74,7 +74,7 @@ generateBuildModule flags pkg lbi = do
 #endif
 
     -- Lib sources and includes
-    iArgs <- mapM (fmap ("-i"++) . makeAbsolute) $ libAutogenDir : hsSourceDirs libBI
+    iArgs <- mapM (fmap ("-i"++) . makeAbsolute) $ "test" : libAutogenDir : hsSourceDirs libBI
     includeArgs <- mapM (fmap ("-I"++) . makeAbsolute) $ includeDirs libBI
 
     -- CPP includes, i.e. include cabal_macros.h
@@ -106,7 +106,7 @@ generateBuildModule flags pkg lbi = do
         , "flags = " ++ show (iArgs ++ includeArgs ++ dbFlags ++ cppFlags)
         , ""
         , "module_sources :: [String]"
-        , "module_sources = " ++ show (map display module_sources)
+        , "module_sources = " ++ show ("Servant.Utils.LinksSpec" : map display module_sources)
         ]
   where
     -- we do this check in Setup, as then doctests don't need to depend on Cabal
