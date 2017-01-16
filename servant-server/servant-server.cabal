@@ -105,6 +105,7 @@ test-suite spec
       Servant.ArbitraryMonadServerSpec
       Servant.Server.ErrorSpec
       Servant.Server.Internal.ContextSpec
+      Servant.Server.Internal.RoutingApplicationSpec
       Servant.Server.RouterSpec
       Servant.Server.StreamingSpec
       Servant.Server.UsingContextSpec
