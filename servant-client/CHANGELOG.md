@@ -1,3 +1,8 @@
+0.10
+----
+
+* Add MonadBase and MonadBaseControl instances for ClientM
+
 0.9.1.1
 -------
 
