@@ -38,6 +38,7 @@ module Servant.API.TypeLevel (
     IsSubList,
     Elem,
     ElemGo,
+    -- ** Logic
     Or,
     And,
     -- * Custom type errors
