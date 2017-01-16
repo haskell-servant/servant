@@ -8,6 +8,10 @@
   use its `ToHttpApiData` instance or `linkURI`.
   ([#527](https://github.com/haskell-servant/servant/issues/527))
 
+* Add `Servant.API.TypeLevel` module with type families to work with API types.
+  ([#345](https://github.com/haskell-servant/servant/pull/345))
+  ([#305](https://github.com/haskell-servant/servant/issues/305))
+
 0.9.1
 ------
 
