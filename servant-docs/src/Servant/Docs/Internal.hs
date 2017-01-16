@@ -37,12 +37,11 @@ import           Data.Ord                   (comparing)
 import           Data.Proxy                 (Proxy(Proxy))
 import           Data.String.Conversions    (cs)
 import           Data.Text                  (Text, unpack)
-import           GHC.Exts                   (Constraint)
 import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
-import           Servant.Utils.Links
+import           Servant.API.TypeLevel
 
 import qualified Data.HashMap.Strict        as HM
 import qualified Data.Text                  as T
@@ -305,15 +304,6 @@ docs p = docsWithOptions p defaultDocOptions
 -- | Generate the docs for a given API that implements 'HasDocs'.
 docsWithOptions :: HasDocs api => Proxy api -> DocOptions -> API
 docsWithOptions p = docsFor p (defEndpoint, defAction)
-
--- | Closed type family, check if endpoint is exactly within API.
-
--- We aren't sure what affects how an Endpoint is built up, so we require an
--- exact match.
-type family IsIn (endpoint :: *) (api :: *) :: Constraint where
-    IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
-    IsIn (e :> sa) (e :> sb)           = IsIn sa sb
-    IsIn e e                           = ()
 
 -- | Create an 'ExtraInfo' that is guaranteed to be within the given API layout.
 --
