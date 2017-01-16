@@ -2,6 +2,7 @@
 ------
 
 * Use `NT` from `natural-transformation` for `Enter`
+  ([#616](https://github.com/haskell-servant/servant/issues/616))
 
 0.9.1
 ------

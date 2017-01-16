@@ -1,3 +1,9 @@
+0.10
+----
+
+* Add `err422` Unprocessable Entity
+  ([#646](https://github.com/haskell-servant/servant/pull/646))
+
 0.7.1
 ------
 
