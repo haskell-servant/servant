@@ -30,7 +30,7 @@
 -- you would like to restrict links to. The second argument is the destination
 -- endpoint you would like the link to point to, this will need to end with a
 -- verb like GET or POST. Further arguments may be required depending on the
--- type of the endpoint. If everything lines up you will get a 'URI' out the
+-- type of the endpoint. If everything lines up you will get a 'Link' out the
 -- other end.
 --
 -- You may omit 'QueryParam's and the like should you not want to provide them,
@@ -41,19 +41,19 @@
 -- with an example. Here, a link is generated with no parameters:
 --
 -- >>> let hello = Proxy :: Proxy ("hello" :> Get '[JSON] Int)
--- >>> print (safeLink api hello :: URI)
--- hello
+-- >>> toUrlPiece (safeLink api hello :: Link)
+-- "hello"
 --
 -- If the API has an endpoint with parameters then we can generate links with
 -- or without those:
 --
 -- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] NoContent)
--- >>> print $ safeLink api with (Just "Hubert")
--- bye?name=Hubert
+-- >>> toUrlPiece $ safeLink api with (Just "Hubert")
+-- "bye?name=Hubert"
 --
 -- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] NoContent)
--- >>> print $ safeLink api without
--- bye
+-- >>> toUrlPiece $ safeLink api without
+-- "bye"
 --
 -- If you would like create a helper for generating links only within that API,
 -- you can partially apply safeLink if you specify a correct type signature
@@ -94,11 +94,11 @@ module Servant.Utils.Links (
   , Or
 ) where
 
-import qualified Data.ByteString.Char8 as BSC
 import           Data.List
 import           Data.Monoid.Compat    ( (<>) )
 import           Data.Proxy            ( Proxy(..) )
 import qualified Data.Text             as Text
+import qualified Data.Text.Encoding    as TE
 import           GHC.Exts              (Constraint)
 import           GHC.TypeLits          ( KnownSymbol, symbolVal )
 import           Network.URI           ( URI(..), escapeURIString, isUnreserved )
@@ -126,8 +126,10 @@ data Link = Link
   } deriving Show
 
 instance ToHttpApiData Link where
-    toUrlPiece = Text.pack . show
-    toHeader   = BSC.pack . show
+    toHeader   = TE.encodeUtf8 . toUrlPiece
+    toUrlPiece l =
+        let uri = linkURI l
+        in Text.pack $ uriPath uri ++ uriQuery uri
 
 -- | If either a or b produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
@@ -311,5 +313,5 @@ instance HasLink (Verb m s ct a) where
     toLink _ = id 
 
 instance HasLink Raw where
-    type MkLink Raw = URI
-    toLink _ = linkURI
+    type MkLink Raw = Link
+    toLink _ = id
