@@ -1,3 +1,12 @@
+0.10
+----
+
+* Add MonadBase and MonadBaseControl instances for ClientM
+  ([#663](https://github.com/haskell-servant/servant/issues/663))
+
+* client asks for any content-type in Accept contentTypes non-empty list
+  ([#615](https://github.com/haskell-servant/servant/pull/615))
+
 0.9.1.1
 -------
 
