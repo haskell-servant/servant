@@ -20,7 +20,8 @@ camelCaseSpec = describe "camelCase" $ do
     camelCase (FunctionName ["post", "counter", "inc"])
       `shouldBe` "postCounterInc"
     camelCase (FunctionName ["get", "hyphen-ated", "counter"])
-      `shouldBe` "getHyphenatedCounter"
+      `shouldBe` "getHyphen-atedCounter"
+
 
 ----------------------------------------------------------------------
 
