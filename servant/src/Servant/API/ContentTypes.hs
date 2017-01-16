@@ -130,7 +130,9 @@ class Accept ctype where
 
 -- | @application/json@
 instance Accept JSON where
-    contentType _ = "application" M.// "json"
+    contentTypes _ =
+      "application" M.// "json" M./: ("charset", "utf-8") NE.:|
+      [ "application" M.// "json" ]
 
 -- | @application/x-www-form-urlencoded@
 instance Accept FormUrlEncoded where
