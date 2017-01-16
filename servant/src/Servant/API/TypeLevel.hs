@@ -39,13 +39,8 @@ import           GHC.TypeLits            (TypeError, ErrorMessage(..))
 
 -- | Flatten API into a list of endpoints.
 --
--- >>> :t showType @(Endpoints SampleAPI)
--- ...
--- ... :: Proxy
--- ...  '["hello" :> Verb 'GET 200 '[JSON] Int,
--- ...    "bye"
--- ...    :> (Capture "name" String
--- ...        :> Verb 'POST 200 '[JSON, PlainText] Bool)]
+-- >>> Refl :: Endpoints SampleAPI :~: '["hello" :> Verb 'GET 200 '[JSON] Int, "bye" :> (Capture "name" String :> Verb 'POST 200 '[JSON, PlainText] Bool)]
+-- Refl
 type family Endpoints api where
   Endpoints (a :<|> b) = AppendList (Endpoints a) (Endpoints b)
   Endpoints (e :> a)   = MapSub e (Endpoints a)
@@ -70,21 +65,21 @@ type family IsElem' a s :: Constraint
 -- | Closed type family, check if @endpoint@ is within @api@.
 -- Uses @'IsElem''@ if it exhausts all other options.
 --
--- >>> ok @(IsElem ("hello" :> Get '[JSON] Int) SampleAPI)
+-- >>> ok (Proxy :: Proxy (IsElem ("hello" :> Get '[JSON] Int) SampleAPI))
 -- OK
 --
--- >>> ok @(IsElem ("bye" :> Get '[JSON] Int) SampleAPI)
+-- >>> ok (Proxy :: Proxy (IsElem ("bye" :> Get '[JSON] Int) SampleAPI))
 -- ...
--- ... Could not deduce: ...
+-- ... Could not deduce...
 -- ...
 --
 -- An endpoint is considered within an api even if it is missing combinators
 -- that don't affect the URL:
 --
--- >>> ok @(IsElem (Get '[JSON] Int) (Header "h" Bool :> Get '[JSON] Int))
+-- >>> ok (Proxy :: Proxy (IsElem (Get '[JSON] Int) (Header "h" Bool :> Get '[JSON] Int)))
 -- OK
 --
--- >>> ok @(IsElem (Get '[JSON] Int) (ReqBody '[JSON] Bool :> Get '[JSON] Int))
+-- >>> ok (Proxy :: Proxy (IsElem (Get '[JSON] Int) (ReqBody '[JSON] Bool :> Get '[JSON] Int)))
 -- OK
 --
 -- *N.B.:* @IsElem a b@ can be seen as capturing the notion of whether the URL
@@ -110,12 +105,12 @@ type family IsElem endpoint api :: Constraint where
 
 -- | Check whether @sub@ is a sub-API of @api@.
 --
--- >>> ok @(IsSubAPI SampleAPI (SampleAPI :<|> Get '[JSON] Int))
+-- >>> ok (Proxy :: Proxy (IsSubAPI SampleAPI (SampleAPI :<|> Get '[JSON] Int)))
 -- OK
 --
--- >>> ok @(IsSubAPI (SampleAPI :<|> Get '[JSON] Int) SampleAPI)
+-- >>> ok (Proxy :: Proxy (IsSubAPI (SampleAPI :<|> Get '[JSON] Int) SampleAPI))
 -- ...
--- ... Could not deduce: ...
+-- ... Could not deduce...
 -- ...
 --
 -- This uses @IsElem@ for checking; thus the note there applies here.
@@ -131,14 +126,14 @@ type family AllIsElem xs api :: Constraint where
 
 -- | Closed type family, check if @endpoint@ is exactly within @api@.
 --
--- >>> ok @(IsIn ("hello" :> Get '[JSON] Int) SampleAPI)
+-- >>> ok (Proxy :: Proxy (IsIn ("hello" :> Get '[JSON] Int) SampleAPI))
 -- OK
 --
 -- Unlike 'IsElem', this requires an *exact* match.
 --
--- >>> ok @(IsIn (Get '[JSON] Int) (Header "h" Bool :> Get '[JSON] Int))
+-- >>> ok (Proxy :: Proxy (IsIn (Get '[JSON] Int) (Header "h" Bool :> Get '[JSON] Int)))
 -- ...
--- ... Could not deduce: ...
+-- ... Could not deduce...
 -- ...
 type family IsIn (endpoint :: *) (api :: *) :: Constraint where
   IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
@@ -153,7 +148,7 @@ type family IsStrictSubAPI sub api :: Constraint where
 
 -- | Check that every element of @xs@ is an endpoint of @api@ (using @'IsIn'@).
 --
--- OK @(AllIsIn (Endpoints SampleAPI) SampleAPI)
+-- ok (Proxy :: Proxy (AllIsIn (Endpoints SampleAPI) SampleAPI))
 -- OK
 type family AllIsIn xs api :: Constraint where
   AllIsIn '[] api = ()
@@ -179,12 +174,12 @@ type family IsSubList a b :: Constraint where
 
 -- | Check that a value is an element of a list:
 --
--- >>> ok @(Elem Bool '[Int, Bool])
+-- >>> ok (Proxy :: Proxy (Elem Bool '[Int, Bool]))
 -- OK
 --
--- >>> ok @(Elem String '[Int, Bool])
+-- >>> ok (Proxy :: Proxy (Elem String '[Int, Bool]))
 -- ...
--- ... [Char] expected in list '[Int, Bool]
+-- ... [Char]...'[Int, Bool...
 -- ...
 type Elem e es = ElemGo e es es
 
@@ -228,12 +223,13 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 
 
 -- $setup
--- >>> :set -XTypeApplications
 -- >>> :set -XPolyKinds
+-- >>> :set -XGADTs
 -- >>> import Data.Proxy
+-- >>> import Data.Type.Equality
 -- >>> import Servant.API
--- >>> data OK ctx = OK deriving (Show)
--- >>> let ok :: ctx => OK ctx; ok = OK
--- >>> let showType :: Proxy a ; showType = Proxy
+-- >>> data OK ctx where OK :: ctx => OK ctx
+-- >>> instance Show (OK ctx) where show _ = "OK"
+-- >>> let ok :: ctx => Proxy ctx -> OK ctx; ok _ = OK
 -- >>> type SampleAPI = "hello" :> Get '[JSON] Int :<|> "bye" :> Capture "name" String :> Post '[JSON, PlainText] Bool
 -- >>> let sampleAPI = Proxy :: Proxy SampleAPI
