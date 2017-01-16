@@ -1,9 +1,11 @@
-{-# LANGUAGE DeriveDataTypeable  #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving   #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module Servant.Common.Req where
 
@@ -24,8 +26,10 @@ import Control.Monad.Trans.Except
 
 
 import GHC.Generics
+import Control.Monad.Base (MonadBase (..))
 import Control.Monad.IO.Class ()
 import Control.Monad.Reader
+import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Data.ByteString.Lazy hiding (pack, filter, map, null, elem, any)
 import Data.String
 import Data.String.Conversions
@@ -179,6 +183,18 @@ newtype ClientM a = ClientM { runClientM' :: ReaderT ClientEnv (ExceptT ServantE
                              , MonadError ServantError
                              , MonadThrow, MonadCatch
                              )
+
+instance MonadBase IO ClientM where
+  liftBase = ClientM . liftBase
+
+instance MonadBaseControl IO ClientM where
+  type StM ClientM a = Either ServantError a
+
+  -- liftBaseWith :: (RunInBase ClientM IO -> IO a) -> ClientM a
+  liftBaseWith f = ClientM (liftBaseWith (\g -> f (g . runClientM')))
+
+  -- restoreM :: StM ClientM a -> ClientM a
+  restoreM st = ClientM (restoreM st)
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
