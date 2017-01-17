@@ -18,7 +18,7 @@ import           Test.Hspec.Wai            (get, shouldRespondWith, with)
 import           Servant.API               ((:<|>) ((:<|>)), Capture, Get, Raw, (:>), JSON)
 import           Servant.Server            (Server, serve)
 import           Servant.ServerSpec        (Person (Person))
-import           Servant.Utils.StaticFiles (serveDirectory)
+import           Servant.Utils.StaticFiles (serveDirectoryFileServer)
 
 type Api =
        "dummy_api" :> Capture "person_name" String :> Get '[JSON] Person
@@ -34,7 +34,7 @@ app = serve api server
 server :: Server Api
 server =
        (\ name_ -> return (Person name_ 42))
-  :<|> serveDirectory "static"
+  :<|> serveDirectoryFileServer "static"
 
 withStaticFiles :: IO () -> IO ()
 withStaticFiles action = withSystemTempDirectory "servant-test" $ \ tmpDir ->

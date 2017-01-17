@@ -787,10 +787,10 @@ directory serving WAI application, namely:
 
 ``` haskell ignore
 -- exported by Servant and Servant.Server
-serveDirectory :: FilePath -> Server Raw
+serveDirectoryWebApp :: FilePath -> Server Raw
 ```
 
-`serveDirectory`'s argument must be a path to a valid directory.
+`serveDirectoryWebApp`'s argument must be a path to a valid directory.
 
 Here's an example API that will serve some static files:
 
@@ -807,7 +807,7 @@ staticAPI = Proxy
 
 ``` haskell
 server7 :: Server StaticAPI
-server7 = serveDirectory "static-files"
+server7 = serveDirectoryWebApp "static-files"
 
 app3 :: Application
 app3 = serve staticAPI server7
@@ -820,6 +820,10 @@ for a file at the path described by the rest of the request path, inside the
 In other words: If a client requests `/static/foo.txt`, the server will look for a file at
 `./static-files/foo.txt`. If that file exists it'll succeed and serve the file.
 If it doesn't exist, the handler will fail with a `404` status code.
+
+`serveDirectoryWebApp` uses some standard settings that fit the use case of
+serving static files for most web apps. You can find out about the other
+options in the documentation of the `Servant.Utils.StaticFiles` module.
 
 ## Nested APIs
 

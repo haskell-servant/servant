@@ -1,20 +1,29 @@
 {-# LANGUAGE CPP #-}
--- | This module defines a sever-side handler that lets you serve static files.
+-- | This module defines server-side handlers that lets you serve static files.
 --
--- - 'serveDirectory' lets you serve anything that lives under a particular
---   directory on your filesystem.
-module Servant.Utils.StaticFiles (
-  serveDirectory,
- ) where
+-- The most common needs for a web application are covered by
+-- 'serveDirectoryWebApp`, but the other variants allow you to use
+-- different `StaticSettings` and 'serveDirectoryWith' even allows you
+-- to specify arbitrary 'StaticSettings' to be used for serving static files.
+module Servant.Utils.StaticFiles
+  ( serveDirectoryWebApp
+  , serveDirectoryWebAppLookup
+  , serveDirectoryFileServer
+  , serveDirectoryEmbedded
+  , serveDirectoryWith
+  , -- * Deprecated
+    serveDirectory
+  ) where
 
-import           Network.Wai.Application.Static (defaultFileServerSettings,
-                                                 staticApp)
+import           Data.ByteString                (ByteString)
+import           Network.Wai.Application.Static
 import           Servant.API.Raw                (Raw)
 import           Servant.Server                 (Server)
 import           System.FilePath                (addTrailingPathSeparator)
 #if !MIN_VERSION_wai_app_static(3,1,0)
 import           Filesystem.Path.CurrentOS      (decodeString)
 #endif
+import WaiAppStatic.Storage.Filesystem          (ETagLookup)
 
 -- | Serve anything under the specified directory as a 'Raw' endpoint.
 --
@@ -22,7 +31,7 @@ import           Filesystem.Path.CurrentOS      (decodeString)
 -- type MyApi = "static" :> Raw
 --
 -- server :: Server MyApi
--- server = serveDirectory "\/var\/www"
+-- server = serveDirectoryWebApp "\/var\/www"
 -- @
 --
 -- would capture any request to @\/static\/\<something>@ and look for
@@ -33,13 +42,45 @@ import           Filesystem.Path.CurrentOS      (decodeString)
 --
 -- If your goal is to serve HTML, CSS and Javascript files that use the rest of the API
 -- as a webapp backend, you will most likely not want the static files to be hidden
--- behind a /\/static\// prefix. In that case, remember to put the 'serveDirectory'
+-- behind a /\/static\// prefix. In that case, remember to put the 'serveDirectoryWebApp'
 -- handler in the last position, because /servant/ will try to match the handlers
 -- in order.
+--
+-- Corresponds to the `defaultWebAppSettings` `StaticSettings` value.
+serveDirectoryWebApp :: FilePath -> Server Raw
+serveDirectoryWebApp = staticApp . defaultWebAppSettings . fixPath
+
+-- | Same as 'serveDirectoryWebApp', but uses `defaultFileServerSettings`.
+serveDirectoryFileServer :: FilePath -> Server Raw
+serveDirectoryFileServer = staticApp . defaultFileServerSettings . fixPath
+
+-- | Same as 'serveDirectoryWebApp', but uses 'webAppSettingsWithLookup'.
+serveDirectoryWebAppLookup :: ETagLookup -> FilePath -> Server Raw
+serveDirectoryWebAppLookup etag =
+  staticApp . flip webAppSettingsWithLookup etag . fixPath
+
+-- | Uses 'embeddedSettings'.
+serveDirectoryEmbedded :: [(FilePath, ByteString)] -> Server Raw
+serveDirectoryEmbedded files = staticApp (embeddedSettings files)
+
+-- | Alias for 'staticApp'. Lets you serve a directory
+--   with arbitrary 'StaticSettings'. Useful when you want
+--   particular settings not covered by the four other
+--   variants. This is the most flexible method.
+serveDirectoryWith :: StaticSettings -> Server Raw
+serveDirectoryWith = staticApp
+
+-- | Same as 'serveDirectoryFileServer'. It used to be the only
+--   file serving function in servant pre-0.10 and will be kept
+--   around for a few versions, but is deprecated.
 serveDirectory :: FilePath -> Server Raw
-serveDirectory =
+serveDirectory = serveDirectoryFileServer
+{-# DEPRECATED serveDirectory "Use serveDirectoryFileServer instead" #-}
+
+fixPath :: FilePath -> FilePath
+fixPath =
 #if MIN_VERSION_wai_app_static(3,1,0)
-    staticApp . defaultFileServerSettings . addTrailingPathSeparator
+    addTrailingPathSeparator
 #else
-    staticApp . defaultFileServerSettings . decodeString . addTrailingPathSeparator
+    decodeString . addTrailingPathSeparator
 #endif
