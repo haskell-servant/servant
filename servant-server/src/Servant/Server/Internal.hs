@@ -17,6 +17,7 @@ module Servant.Server.Internal
   ( module Servant.Server.Internal
   , module Servant.Server.Internal.Context
   , module Servant.Server.Internal.BasicAuth
+  , module Servant.Server.Internal.Handler
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
   , module Servant.Server.Internal.ServantErr
@@ -63,6 +64,7 @@ import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
 
 import           Servant.Server.Internal.Context
 import           Servant.Server.Internal.BasicAuth
+import           Servant.Server.Internal.Handler
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr

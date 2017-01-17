@@ -17,13 +17,8 @@ import Control.Monad
 import Control.Monad.Catch (MonadThrow, MonadCatch)
 import Data.Foldable (toList)
 
-#if MIN_VERSION_mtl(2,2,0)
-import Control.Monad.Except (MonadError(..))
-#else
 import Control.Monad.Error.Class (MonadError(..))
-#endif
 import Control.Monad.Trans.Except
-
 
 import GHC.Generics
 import Control.Monad.Base (MonadBase (..))

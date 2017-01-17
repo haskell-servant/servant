@@ -10,12 +10,12 @@ module Servant.Server.Internal.RoutingApplication where
 
 import           Control.Monad                      (ap, liftM)
 import           Control.Monad.Trans                (MonadIO(..))
-import           Control.Monad.Trans.Except         (runExceptT)
 import           Network.Wai                        (Application, Request,
                                                      Response, ResponseReceived)
 import           Prelude                            ()
 import           Prelude.Compat
 import           Servant.Server.Internal.ServantErr
+import           Servant.Server.Internal.Handler
 
 type RoutingApplication =
      Request -- ^ the request, the field 'pathInfo' may be modified by url routing
@@ -264,7 +264,7 @@ runAction action env req respond k =
     go (Fail e)      = return $ Fail e
     go (FailFatal e) = return $ FailFatal e
     go (Route a)     = do
-      e <- runExceptT a
+      e <- runHandler a
       case e of
         Left err -> return . Route $ responseServantErr err
         Right x  -> return $! k x

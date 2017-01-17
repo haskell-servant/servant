@@ -14,7 +14,7 @@
 module Servant.ServerSpec where
 
 import           Control.Monad              (forM_, when, unless)
-import           Control.Monad.Trans.Except (throwE)
+import           Control.Monad.Error.Class  (MonadError (..))
 import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
 import qualified Data.ByteString.Base64     as Base64
 import           Data.Char                  (toUpper)
@@ -194,7 +194,7 @@ captureServer :: Integer -> Handler Animal
 captureServer legs = case legs of
   4 -> return jerry
   2 -> return tweety
-  _ -> throwE err404
+  _ -> throwError err404
 
 captureSpec :: Spec
 captureSpec = do
@@ -228,7 +228,7 @@ captureAllServer legs = case sum legs of
   4 -> return jerry
   2 -> return tweety
   0 -> return beholder
-  _ -> throwE err404
+  _ -> throwError err404
 
 captureAllSpec :: Spec
 captureAllSpec = do
@@ -642,8 +642,8 @@ genAuthContext :: Context '[AuthHandler Request ()]
 genAuthContext =
   let authHandler = \req -> case lookup "Auth" (requestHeaders req) of
         Just "secret" -> return ()
-        Just _ -> throwE err403
-        Nothing -> throwE err401
+        Just _ -> throwError err403
+        Nothing -> throwError err401
   in mkAuthHandler authHandler :. EmptyContext
 
 genAuthSpec :: Spec
