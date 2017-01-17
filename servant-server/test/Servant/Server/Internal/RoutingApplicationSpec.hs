@@ -1,14 +1,24 @@
 module Servant.Server.Internal.RoutingApplicationSpec (spec) where
 
+import Prelude ()
+import Prelude.Compat
+
 import Control.Exception hiding (Handler)
 import Control.Monad.IO.Class
+import Data.Maybe (isJust)
+import Data.IORef
 import Servant.Server
 import Servant.Server.Internal.RoutingApplication
-import System.Directory
 import Test.Hspec
+
+import System.IO.Unsafe (unsafePerformIO)
 
 ok :: IO (RouteResult ())
 ok = return (Route ())
+
+-- Let's not write to the filesystem
+delayedTestRef :: IORef (Maybe String)
+delayedTestRef = unsafePerformIO $ newIORef Nothing
 
 delayed :: DelayedIO () -> RouteResult (Handler ()) -> Delayed () (Handler ())
 delayed body srv = Delayed
@@ -16,8 +26,8 @@ delayed body srv = Delayed
   , methodD = DelayedIO $ \_req_ _cl -> ok
   , authD = DelayedIO $ \_req _cl -> ok
   , bodyD = do
-      liftIO (writeFile "delayed.test" "hia")
-      addCleanup (removeFile "delayed.test" >> putStrLn "file removed")
+      liftIO (writeIORef delayedTestRef (Just "hia") >> putStrLn "garbage created")
+      addCleanup (writeIORef delayedTestRef Nothing >> putStrLn "garbage collected")
       body
   , serverD = \() () _body _req -> srv
   }
@@ -35,17 +45,17 @@ spec = do
   describe "Delayed" $ do
     it "actually runs clean up actions" $ do
       _ <- simpleRun $ delayed (return ()) (Route $ return ())
-      fileStillThere <- doesFileExist "delayed.test"
-      fileStillThere `shouldBe` False
+      cleanUpDone <- isJust <$> readIORef delayedTestRef
+      cleanUpDone `shouldBe` False
     it "even with exceptions in serverD" $ do
       _ <- simpleRun $ delayed (return ()) (Route $ throw DivideByZero)
-      fileStillThere <- doesFileExist "delayed.test"
-      fileStillThere `shouldBe` False
+      cleanUpDone <- isJust <$> readIORef delayedTestRef
+      cleanUpDone `shouldBe` False
     it "even with routing failure in bodyD" $ do
       _ <- simpleRun $ delayed (delayedFailFatal err500) (Route $ return ())
-      fileStillThere <- doesFileExist "delayed.test"
-      fileStillThere `shouldBe` False
+      cleanUpDone <- isJust <$> readIORef delayedTestRef
+      cleanUpDone `shouldBe` False
     it "even with exceptions in bodyD" $ do
       _ <- simpleRun $ delayed (liftIO $ throwIO DivideByZero) (Route $ return ())
-      fileStillThere <- doesFileExist "delayed.test"
-      fileStillThere `shouldBe` False
+      cleanUpDone <- isJust <$> readIORef delayedTestRef
+      cleanUpDone `shouldBe` False
