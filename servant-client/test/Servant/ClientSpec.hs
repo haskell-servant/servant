@@ -264,12 +264,12 @@ genericClientServer :: Application
 genericClientServer = serve (Proxy :: Proxy GenericClientAPI) (
        (\ mx -> case mx of
                   Just x -> return (x*x)
-                  Nothing -> throwE $ ServantErr 400 "missing parameter" "" []
+                  Nothing -> throwError $ ServantErr 400 "missing parameter" "" []
        )
   :<|> nestedServer1
  )
   where
-    nestedServer1 _str = nestedServer2 :<|> (maybe (throwE $ ServantErr 400 "missing parameter" "" []) return)
+    nestedServer1 _str = nestedServer2 :<|> (maybe (throwError $ ServantErr 400 "missing parameter" "" []) return)
     nestedServer2 _int = (\ x y -> return (x + y)) :<|> return ()
 
 {-# NOINLINE manager #-}
