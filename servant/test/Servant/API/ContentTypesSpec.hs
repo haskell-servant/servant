@@ -115,21 +115,21 @@ spec = describe "Servant.API.ContentTypes" $ do
 
         it "returns the Content-Type as the first element of the tuple" $ do
             handleAcceptH (Proxy :: Proxy '[JSON]) "*/*" (3 :: Int)
-                `shouldSatisfy` ((== "application/json") . fst . fromJust)
+                `shouldSatisfy` ((== "application/json;charset=utf-8") . fst . fromJust)
             handleAcceptH (Proxy :: Proxy '[PlainText, JSON]) "application/json" (3 :: Int)
-                `shouldSatisfy` ((== "application/json") . fst . fromJust)
+                `shouldSatisfy` ((== "application/json;charset=utf-8") . fst . fromJust)
             handleAcceptH (Proxy :: Proxy '[PlainText, JSON, OctetStream])
                 "application/octet-stream" ("content" :: ByteString)
                 `shouldSatisfy` ((== "application/octet-stream") . fst . fromJust)
 
         it "returns the appropriately serialized representation" $ do
             property $ \x -> handleAcceptH (Proxy :: Proxy '[JSON]) "*/*" (x :: SomeData)
-                == Just ("application/json", encode x)
+                == Just ("application/json;charset=utf-8", encode x)
 
         it "respects the Accept spec ordering" $ do
             let highest a b c = maximumBy (compare `on` snd)
                         [ ("application/octet-stream", a)
-                        , ("application/json", b)
+                        , ("application/json;charset=utf-8", b)
                         , ("text/plain;charset=utf-8", c)
                         ]
             let acceptH a b c = addToAccept (Proxy :: Proxy OctetStream) a $

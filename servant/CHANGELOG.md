@@ -12,6 +12,12 @@
   ([#345](https://github.com/haskell-servant/servant/pull/345))
   ([#305](https://github.com/haskell-servant/servant/issues/305))
 
+* Default JSON content type change to `application/json;charset=utf-8`.
+  ([#263](https://github.com/haskell-servant/servant/issues/263))
+  Related browser bugs:
+  [Chromium](https://bugs.chromium.org/p/chromium/issues/detail?id=438464) and
+  [Firefox](https://bugzilla.mozilla.org/show_bug.cgi?id=918742)
+
 0.9.1
 ------
 

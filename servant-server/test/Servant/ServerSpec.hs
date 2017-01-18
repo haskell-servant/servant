@@ -173,7 +173,7 @@ verbSpec = describe "Servant.API.Verb" $ do
           it "sets the Content-Type header" $ do
             response <- THW.request method "" [] ""
             liftIO $ simpleHeaders response `shouldContain`
-              [("Content-Type", "application/json")]
+              [("Content-Type", "application/json;charset=utf-8")]
 
   test "GET 200" get200 methodGet 200
   test "POST 210" post210 methodPost 210
