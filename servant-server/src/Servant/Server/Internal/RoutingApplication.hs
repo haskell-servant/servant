@@ -21,7 +21,7 @@ import           Control.Monad.Reader               (MonadReader (..), ReaderT, 
 import           Control.Monad.Trans                (MonadIO (..), MonadTrans (..))
 import           Control.Monad.Trans.Control        (ComposeSt, MonadBaseControl (..), MonadTransControl (..),
                                                      defaultLiftBaseWith, defaultRestoreM)
-import           Control.Monad.Trans.Resource       (MonadResource (..), ResourceT, runResourceT)
+import           Control.Monad.Trans.Resource       (MonadResource (..), ResourceT, runResourceT, transResourceT)
 import           Network.Wai                        (Application, Request, Response, ResponseReceived)
 import           Prelude                            ()
 import           Prelude.Compat
@@ -197,8 +197,8 @@ instance MonadBaseControl IO DelayedIO where
     liftBaseWith f = DelayedIO $ liftBaseWith $ \g -> f (g . runDelayedIO')
     restoreM       = DelayedIO . restoreM
 
-runDelayedIO :: DelayedIO a -> Request -> IO (RouteResult a)
-runDelayedIO m req = runRouteResultT $ runResourceT $ runReaderT (runDelayedIO' m) req
+runDelayedIO :: DelayedIO a -> Request -> ResourceT IO (RouteResult a)
+runDelayedIO m req = transResourceT runRouteResultT $ runReaderT (runDelayedIO' m) req
 
 -- | A 'Delayed' without any stored checks.
 emptyDelayed :: RouteResult a -> Delayed env a
@@ -303,7 +303,7 @@ passToServer Delayed{..} x =
 runDelayed :: Delayed env a
            -> env
            -> Request
-           -> IO (RouteResult a)
+           -> ResourceT IO (RouteResult a)
 runDelayed Delayed{..} env req  =
   runDelayedIO
     (do c <- capturesD env
@@ -325,12 +325,12 @@ runAction :: Delayed env (Handler a)
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
-runAction action env req respond k = do
-    runDelayed action env req >>= go >>= respond
+runAction action env req respond k = runResourceT $ do
+    runDelayed action env req >>= go >>= liftIO . respond
   where
     go (Fail e)      = return $ Fail e
     go (FailFatal e) = return $ FailFatal e
-    go (Route a)     = do
+    go (Route a)     = liftIO $ do
       e <- runHandler a
       case e of
         Left err -> return . Route $ responseServantErr err

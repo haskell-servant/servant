@@ -24,6 +24,7 @@ module Servant.Server.Internal
   ) where
 
 import           Control.Monad.Trans        (liftIO)
+import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
@@ -399,12 +400,12 @@ instance HasServer Raw context where
 
   type ServerT Raw m = Application
 
-  route Proxy _ rawApplication = RawRouter $ \ env request respond -> do
+  route Proxy _ rawApplication = RawRouter $ \ env request respond -> runResourceT $ do
     -- note: a Raw application doesn't register any cleanup
     -- but for the sake of consistency, we nonetheless run
     -- the cleanup once its done
     r <- runDelayed rawApplication env request
-    go r request respond
+    liftIO $ go r request respond
 
     where go r request respond = case r of
             Route app   -> app request (respond . Route)
