@@ -15,7 +15,6 @@ import Control.Exception hiding (Handler)
 import Control.Monad.Trans.Resource (register)
 import Control.Monad.IO.Class
 import Data.IORef
-import Data.Maybe (isJust)
 import Data.Proxy
 import GHC.TypeLits (Symbol, KnownSymbol, symbolVal)
 import Servant
@@ -27,9 +26,33 @@ import qualified Data.Text as T
 
 import System.IO.Unsafe (unsafePerformIO)
 
+data TestResource x
+    = TestResourceNone
+    | TestResource x
+    | TestResourceFreed
+    | TestResourceError
+  deriving (Eq, Show)
+
 -- Let's not write to the filesystem
-delayedTestRef :: IORef (Maybe String)
-delayedTestRef = unsafePerformIO $ newIORef Nothing
+delayedTestRef :: IORef (TestResource String)
+delayedTestRef = unsafePerformIO $ newIORef TestResourceNone
+
+fromTestResource :: a -> (b -> a) -> TestResource b -> a
+fromTestResource _ f (TestResource x) = f x
+fromTestResource x _ _                = x
+
+initTestResource :: IO ()
+initTestResource = writeIORef delayedTestRef TestResourceNone
+
+writeTestResource :: String -> IO ()
+writeTestResource x = modifyIORef delayedTestRef $ \r -> case r of
+    TestResourceNone -> TestResource x
+    _                -> TestResourceError
+
+freeTestResource :: IO ()
+freeTestResource = modifyIORef delayedTestRef $ \r -> case r of
+    TestResource _ -> TestResourceFreed
+    _              -> TestResourceError
 
 delayed :: DelayedIO () -> RouteResult (Handler ()) -> Delayed () (Handler ())
 delayed body srv = Delayed
@@ -37,8 +60,8 @@ delayed body srv = Delayed
   , methodD   = return ()
   , authD     = return ()
   , bodyD     = do
-      liftIO (writeIORef delayedTestRef (Just "hia") >> putStrLn "garbage created")
-      _ <- register (writeIORef delayedTestRef Nothing >> putStrLn "garbage collected")
+      liftIO (writeTestResource"hia" >> putStrLn "garbage created")
+      _ <- register (freeTestResource >> putStrLn "garbage collected")
       body
   , serverD   = \() () _body _req -> srv
   }
@@ -59,14 +82,14 @@ simpleRun d = fmap (either ignoreE id) . try $
 data Res (sym :: Symbol)
 
 instance (KnownSymbol sym, HasServer api ctx) => HasServer (Res sym :> api) ctx where
-    type ServerT (Res sym :> api) m = IORef (Maybe String) -> ServerT api m
+    type ServerT (Res sym :> api) m = IORef (TestResource String) -> ServerT api m
     route Proxy ctx server = route (Proxy :: Proxy api) ctx $
         server `addBodyCheck` check
       where
         sym  = symbolVal (Proxy :: Proxy sym)
         check = do
-            liftIO $ writeIORef delayedTestRef (Just sym)
-            _ <- register (writeIORef delayedTestRef Nothing)
+            liftIO $ writeTestResource sym
+            _ <- register freeTestResource
             return delayedTestRef
 
 type ResApi = "foobar" :> Res "foobar" :> Get '[PlainText] T.Text
@@ -75,7 +98,7 @@ resApi :: Proxy ResApi
 resApi = Proxy
 
 resServer :: Server ResApi
-resServer ref = liftIO $ fmap (maybe "<empty>" T.pack) $ readIORef ref
+resServer ref = liftIO $ fmap (fromTestResource "<wrong>" T.pack)  $ readIORef ref
 
 -------------------------------------------------------------------------------
 -- Spec
@@ -85,25 +108,30 @@ spec :: Spec
 spec = do
   describe "Delayed" $ do
     it "actually runs clean up actions" $ do
+      liftIO initTestResource
       _ <- simpleRun $ delayed (return ()) (Route $ return ())
-      cleanUpDone <- isJust <$> readIORef delayedTestRef
-      cleanUpDone `shouldBe` False
+      res <- readIORef delayedTestRef
+      res `shouldBe` TestResourceFreed
     it "even with exceptions in serverD" $ do
+      liftIO initTestResource
       _ <- simpleRun $ delayed (return ()) (Route $ throw DivideByZero)
-      cleanUpDone <- isJust <$> readIORef delayedTestRef
-      cleanUpDone `shouldBe` False
+      res <- readIORef delayedTestRef
+      res `shouldBe` TestResourceFreed
     it "even with routing failure in bodyD" $ do
+      liftIO initTestResource
       _ <- simpleRun $ delayed (delayedFailFatal err500) (Route $ return ())
-      cleanUpDone <- isJust <$> readIORef delayedTestRef
-      cleanUpDone `shouldBe` False
+      res <- readIORef delayedTestRef
+      res `shouldBe` TestResourceFreed
     it "even with exceptions in bodyD" $ do
+      liftIO initTestResource
       _ <- simpleRun $ delayed (liftIO $ throwIO DivideByZero) (Route $ return ())
-      cleanUpDone <- isJust <$> readIORef delayedTestRef
-      cleanUpDone `shouldBe` False
+      res <- readIORef delayedTestRef
+      res `shouldBe` TestResourceFreed
   describe "ResApi" $
     with (return $ serve resApi resServer) $ do
       it "writes and cleanups resources" $ do
+        liftIO initTestResource
         request "GET" "foobar" [] "" `shouldRespondWith` "foobar"
         liftIO $ do
-          cleanUpDone <- isJust <$> readIORef delayedTestRef
-          cleanUpDone `shouldBe` False
+          res <- readIORef delayedTestRef
+          res `shouldBe` TestResourceFreed
