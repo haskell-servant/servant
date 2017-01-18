@@ -1,3 +1,11 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 module Servant.Server.Internal.RoutingApplicationSpec (spec) where
 
 import Prelude ()
@@ -6,11 +14,16 @@ import Prelude.Compat
 import Control.Exception hiding (Handler)
 import Control.Monad.Trans.Resource (register)
 import Control.Monad.IO.Class
-import Data.Maybe (isJust)
 import Data.IORef
-import Servant.Server
+import Data.Maybe (isJust)
+import Data.Proxy
+import GHC.TypeLits (Symbol, KnownSymbol, symbolVal)
+import Servant
 import Servant.Server.Internal.RoutingApplication
 import Test.Hspec
+import Test.Hspec.Wai (request, shouldRespondWith, with)
+
+import qualified Data.Text as T
 
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -38,6 +51,36 @@ simpleRun d = fmap (either ignoreE id) . try $
   where ignoreE :: SomeException -> ()
         ignoreE = const ()
 
+-------------------------------------------------------------------------------
+-- Combinator example
+-------------------------------------------------------------------------------
+
+-- | This data types writes 'sym' to 'delayedTestRef'.
+data Res (sym :: Symbol)
+
+instance (KnownSymbol sym, HasServer api ctx) => HasServer (Res sym :> api) ctx where
+    type ServerT (Res sym :> api) m = IORef (Maybe String) -> ServerT api m
+    route Proxy ctx server = route (Proxy :: Proxy api) ctx $
+        server `addBodyCheck` check
+      where
+        sym  = symbolVal (Proxy :: Proxy sym)
+        check = do
+            liftIO $ writeIORef delayedTestRef (Just sym)
+            _ <- register (writeIORef delayedTestRef Nothing)
+            return delayedTestRef
+
+type ResApi = "foobar" :> Res "foobar" :> Get '[PlainText] T.Text
+
+resApi :: Proxy ResApi
+resApi = Proxy
+
+resServer :: Server ResApi
+resServer ref = liftIO $ fmap (maybe "<empty>" T.pack) $ readIORef ref
+
+-------------------------------------------------------------------------------
+-- Spec
+-------------------------------------------------------------------------------
+
 spec :: Spec
 spec = do
   describe "Delayed" $ do
@@ -57,3 +100,10 @@ spec = do
       _ <- simpleRun $ delayed (liftIO $ throwIO DivideByZero) (Route $ return ())
       cleanUpDone <- isJust <$> readIORef delayedTestRef
       cleanUpDone `shouldBe` False
+  describe "ResApi" $
+    with (return $ serve resApi resServer) $ do
+      it "writes and cleanups resources" $ do
+        request "GET" "foobar" [] "" `shouldRespondWith` "foobar"
+        liftIO $ do
+          cleanUpDone <- isJust <$> readIORef delayedTestRef
+          cleanUpDone `shouldBe` False
