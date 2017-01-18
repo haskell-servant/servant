@@ -4,6 +4,7 @@ import Prelude ()
 import Prelude.Compat
 
 import Control.Exception hiding (Handler)
+import Control.Monad.Trans.Resource (register)
 import Control.Monad.IO.Class
 import Data.Maybe (isJust)
 import Data.IORef
@@ -13,23 +14,20 @@ import Test.Hspec
 
 import System.IO.Unsafe (unsafePerformIO)
 
-ok :: IO (RouteResult ())
-ok = return (Route ())
-
 -- Let's not write to the filesystem
 delayedTestRef :: IORef (Maybe String)
 delayedTestRef = unsafePerformIO $ newIORef Nothing
 
 delayed :: DelayedIO () -> RouteResult (Handler ()) -> Delayed () (Handler ())
 delayed body srv = Delayed
-  { capturesD = \() -> DelayedIO $ \_req _cl -> ok
-  , methodD = DelayedIO $ \_req_ _cl -> ok
-  , authD = DelayedIO $ \_req _cl -> ok
-  , bodyD = do
+  { capturesD = \_ -> return ()
+  , methodD   = return ()
+  , authD     = return ()
+  , bodyD     = do
       liftIO (writeIORef delayedTestRef (Just "hia") >> putStrLn "garbage created")
-      addCleanup (writeIORef delayedTestRef Nothing >> putStrLn "garbage collected")
+      _ <- register (writeIORef delayedTestRef Nothing >> putStrLn "garbage collected")
       body
-  , serverD = \() () _body _req -> srv
+  , serverD   = \() () _body _req -> srv
   }
 
 simpleRun :: Delayed () (Handler ())

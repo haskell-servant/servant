@@ -23,7 +23,6 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
-import           Control.Exception          (finally)
 import           Control.Monad.Trans        (liftIO)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
@@ -404,9 +403,8 @@ instance HasServer Raw context where
     -- note: a Raw application doesn't register any cleanup
     -- but for the sake of consistency, we nonetheless run
     -- the cleanup once its done
-    cleanupRef <- newCleanupRef
-    r <- runDelayed rawApplication env request cleanupRef
-    go r request respond `finally` runCleanup cleanupRef
+    r <- runDelayed rawApplication env request
+    go r request respond
 
     where go r request respond = case r of
             Route app   -> app request (respond . Route)
