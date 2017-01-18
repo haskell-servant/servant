@@ -53,7 +53,6 @@ instance Monad RouteResult where
 newtype RouteResultT m a = RouteResultT { runRouteResultT :: m (RouteResult a) }
   deriving (Functor)
 
--- As we write these instances, we get instances for `DelayedIO` with GND.
 instance MonadTrans RouteResultT where
     lift = RouteResultT . liftM Route
 
@@ -89,8 +88,6 @@ instance MonadTransControl RouteResultT where
 instance MonadThrow m => MonadThrow (RouteResultT m) where
     throwM = lift . throwM
 
--- instance MonadCatch m => MonadCatch (RouteResultT m) where
--- instance MonadError ServantErr (RouteResultT m) where
 
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = ra request routingRespond
@@ -189,8 +186,8 @@ newtype DelayedIO a = DelayedIO { runDelayedIO' :: ReaderT Request (ResourceT (R
     , MonadResource
     )
 
-returnRouteResult :: RouteResult a -> DelayedIO a
-returnRouteResult x = DelayedIO $ lift . lift $ RouteResultT . return $ x
+liftRouteResult :: RouteResult a -> DelayedIO a
+liftRouteResult x = DelayedIO $ lift . lift $ RouteResultT . return $ x
 
 instance MonadBaseControl IO DelayedIO where
     type StM DelayedIO a = StM (ReaderT Request (ResourceT (RouteResultT IO))) a
@@ -209,11 +206,11 @@ emptyDelayed result =
 
 -- | Fail with the option to recover.
 delayedFail :: ServantErr -> DelayedIO a
-delayedFail err = returnRouteResult $ Fail err
+delayedFail err = liftRouteResult $ Fail err
 
 -- | Fail fatally, i.e., without any option to recover.
 delayedFailFatal :: ServantErr -> DelayedIO a
-delayedFailFatal err = returnRouteResult $ FailFatal err
+delayedFailFatal err = liftRouteResult $ FailFatal err
 
 -- | Gain access to the incoming request.
 withRequest :: (Request -> DelayedIO a) -> DelayedIO a
@@ -311,7 +308,7 @@ runDelayed Delayed{..} env req  =
         a <- authD
         b <- bodyD
         r <- ask
-        returnRouteResult (serverD c a b r)
+        liftRouteResult (serverD c a b r)
     )
     req
 
