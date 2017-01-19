@@ -7,6 +7,7 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Alternative ((:<|>)(..)) where
 
+import           Data.Semigroup   (Semigroup (..))
 import           Data.Typeable    (Typeable)
 import           Prelude ()
 import           Prelude.Compat
@@ -22,6 +23,9 @@ import           Prelude.Compat
 data a :<|> b = a :<|> b
     deriving (Typeable, Eq, Show, Functor, Traversable, Foldable, Bounded)
 infixr 8 :<|>
+
+instance (Semigroup a, Semigroup b) => Semigroup (a :<|> b) where
+    (a :<|> b) <> (a' :<|> b') = (a <> a') :<|> (b <> b')
 
 instance (Monoid a, Monoid b) => Monoid (a :<|> b) where
     mempty = mempty :<|> mempty
