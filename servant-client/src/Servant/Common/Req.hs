@@ -16,6 +16,7 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.Catch (MonadThrow, MonadCatch)
 import Data.Foldable (toList)
+import Data.Semigroup (Semigroup (..))
 
 import Control.Monad.Error.Class (MonadError(..))
 import Control.Monad.Trans.Except
@@ -27,7 +28,7 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Data.ByteString.Lazy hiding (pack, filter, map, null, elem, any)
 import Data.String
-import Data.String.Conversions
+import Data.String.Conversions (cs)
 import Data.Proxy
 import Data.Text (Text)
 import Data.Text.Encoding
@@ -213,6 +214,10 @@ instance MonadBaseControl IO ClientM where
 
   -- restoreM :: StM ClientM a -> ClientM a
   restoreM st = ClientM (restoreM st)
+
+-- | Try clients in order, last error is preserved.
+instance Semigroup (ClientM a) where
+  a <> b = a `catchError` \_ -> b
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
