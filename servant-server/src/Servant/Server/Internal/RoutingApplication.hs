@@ -132,14 +132,14 @@ toApplication ra request respond = ra request routingRespond
 -- 405 (bad method)
 -- 401 (unauthorized)
 -- 415 (unsupported media type)
--- 400 (bad request)
 -- 406 (not acceptable)
+-- 400 (bad request)
 -- @
 --
 -- Therefore, while routing, we delay most checks so that they
 -- will ultimately occur in the right order.
 --
--- A 'Delayed' contains three delayed blocks of tests, and
+-- A 'Delayed' contains many delayed blocks of tests, and
 -- the actual handler:
 --
 -- 1. Delayed captures. These can actually cause 404, and
@@ -152,23 +152,36 @@ toApplication ra request respond = ra request routingRespond
 -- it does not provide an input for the handler. Method checks
 -- are comparatively cheap.
 --
--- 3. Body and accept header checks. The request body check can
--- cause both 400 and 415. This provides an input to the handler.
--- The accept header check can be performed as the final
--- computation in this block. It can cause a 406.
+-- 3. Authentication checks. This can cause 401.
+--
+-- 4. Accept and content type header checks. These checks
+-- can cause 415 and 406 errors.
+--
+-- 5. Query parameter checks. They require parsing and can cause 400 if the
+-- parsing fails. Query parameter checks provide inputs to the handler
+--
+-- 6. Body check. The request body check can cause 400.
 --
 data Delayed env c where
   Delayed :: { capturesD :: env -> DelayedIO captures
              , methodD   :: DelayedIO ()
              , authD     :: DelayedIO auth
-             , bodyD     :: DelayedIO body
-             , serverD   :: captures -> auth -> body -> Request -> RouteResult c
+             , acceptD   :: DelayedIO ()
+             , contentD  :: DelayedIO contentType
+             , paramsD   :: DelayedIO params
+             , bodyD     :: contentType -> DelayedIO body
+             , serverD   :: captures
+                         -> params
+                         -> auth
+                         -> body
+                         -> Request
+                         -> RouteResult c
              } -> Delayed env c
 
 instance Functor (Delayed env) where
   fmap f Delayed{..} =
     Delayed
-      { serverD = \ c a b req -> f <$> serverD c a b req
+      { serverD = \ c p a b req -> f <$> serverD c p a b req
       , ..
       } -- Note [Existential Record Update]
 
@@ -200,7 +213,7 @@ runDelayedIO m req = transResourceT runRouteResultT $ runReaderT (runDelayedIO' 
 -- | A 'Delayed' without any stored checks.
 emptyDelayed :: RouteResult a -> Delayed env a
 emptyDelayed result =
-  Delayed (const r) r r r (\ _ _ _ _ -> result)
+  Delayed (const r) r r r r r (const r) (\ _ _ _ _ _ -> result)
   where
     r = return ()
 
@@ -225,9 +238,20 @@ addCapture :: Delayed env (a -> b)
 addCapture Delayed{..} new =
   Delayed
     { capturesD = \ (txt, env) -> (,) <$> capturesD env <*> new txt
-    , serverD   = \ (x, v) a b req -> ($ v) <$> serverD x a b req
+    , serverD   = \ (x, v) p a b req -> ($ v) <$> serverD x p a b req
     , ..
     } -- Note [Existential Record Update]
+
+-- | Add a parameter check to the end of the params block
+addParameterCheck :: Delayed env (a -> b)
+                  -> DelayedIO a
+                  -> Delayed env b
+addParameterCheck Delayed {..} new =
+  Delayed
+    { paramsD = (,) <$> paramsD <*> new
+    , serverD = \c (p, pNew) a b req -> ($ pNew) <$> serverD c p a b req
+    , ..
+    }
 
 -- | Add a method check to the end of the method block.
 addMethodCheck :: Delayed env a
@@ -246,24 +270,29 @@ addAuthCheck :: Delayed env (a -> b)
 addAuthCheck Delayed{..} new =
   Delayed
     { authD   = (,) <$> authD <*> new
-    , serverD = \ c (y, v) b req -> ($ v) <$> serverD c y b req
+    , serverD = \ c p (y, v) b req -> ($ v) <$> serverD c p y b req
     , ..
     } -- Note [Existential Record Update]
 
--- | Add a body check to the end of the body block.
+-- | Add a content type and body checks around parameter checks.
+--
+-- We'll report failed content type check (415), before trying to parse
+-- query parameters (400). Which, in turn, happens before request body parsing.
 addBodyCheck :: Delayed env (a -> b)
-             -> DelayedIO a
+             -> DelayedIO c         -- ^ content type check
+             -> (c -> DelayedIO a)  -- ^ body check
              -> Delayed env b
-addBodyCheck Delayed{..} new =
+addBodyCheck Delayed{..} newContentD newBodyD =
   Delayed
-    { bodyD    = (,) <$> bodyD <*> new
-    , serverD  = \ c a (z, v) req -> ($ v) <$> serverD c a z req
+    { contentD = (,) <$> contentD <*> newContentD
+    , bodyD    = \(content, c) -> (,) <$> bodyD content <*> newBodyD c
+    , serverD  = \ c p a (z, v) req -> ($ v) <$> serverD c p a z req
     , ..
     } -- Note [Existential Record Update]
 
 
--- | Add an accept header check to the beginning of the body
--- block. There is a tradeoff here. In principle, we'd like
+-- | Add an accept header check before handling parameters.
+-- In principle, we'd like
 -- to take a bad body (400) response take precedence over a
 -- failed accept check (406). BUT to allow streaming the body,
 -- we cannot run the body check and then still backtrack.
@@ -277,7 +306,7 @@ addAcceptCheck :: Delayed env a
                -> Delayed env a
 addAcceptCheck Delayed{..} new =
   Delayed
-    { bodyD = new *> bodyD
+    { acceptD = acceptD *> new
     , ..
     } -- Note [Existential Record Update]
 
@@ -287,7 +316,7 @@ addAcceptCheck Delayed{..} new =
 passToServer :: Delayed env (a -> b) -> (Request -> a) -> Delayed env b
 passToServer Delayed{..} x =
   Delayed
-    { serverD = \ c a b req -> ($ x req) <$> serverD c a b req
+    { serverD = \ c p a b req -> ($ x req) <$> serverD c p a b req
     , ..
     } -- Note [Existential Record Update]
 
@@ -301,16 +330,16 @@ runDelayed :: Delayed env a
            -> env
            -> Request
            -> ResourceT IO (RouteResult a)
-runDelayed Delayed{..} env req  =
-  runDelayedIO
-    (do c <- capturesD env
-        methodD
-        a <- authD
-        b <- bodyD
-        r <- ask
-        liftRouteResult (serverD c a b r)
-    )
-    req
+runDelayed Delayed{..} env = runDelayedIO $ do
+    r <- ask
+    c <- capturesD env
+    methodD
+    a <- authD
+    acceptD
+    content <- contentD
+    p <- paramsD       -- Has to be before body parsing, but after content-type checks
+    b <- bodyD content
+    liftRouteResult (serverD c p a b r)
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.

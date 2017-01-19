@@ -29,8 +29,10 @@ import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
 import           Data.Maybe                 (fromMaybe, mapMaybe)
+import           Data.Either                (partitionEithers)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
+import qualified Data.Text                  as T
 import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
@@ -45,7 +47,7 @@ import           Network.Wai                (Application, Request, Response,
 import           Prelude                    ()
 import           Prelude.Compat
 import           Web.HttpApiData            (FromHttpApiData, parseHeaderMaybe,
-                                             parseQueryParamMaybe,
+                                             parseQueryParam,
                                              parseUrlPieceMaybe,
                                              parseUrlPieces)
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
@@ -311,14 +313,22 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
     Maybe a -> ServerT api m
 
   route Proxy context subserver =
-    let querytext r = parseQueryText $ rawQueryString r
-        param r =
-          case lookup paramname (querytext r) of
-            Nothing       -> Nothing -- param absent from the query string
-            Just Nothing  -> Nothing -- param present with no value -> Nothing
-            Just (Just v) -> parseQueryParamMaybe v -- if present, we try to convert to
-                                        -- the right type
-    in route (Proxy :: Proxy api) context (passToServer subserver param)
+    let querytext req = parseQueryText $ rawQueryString req
+        parseParam req =
+          case lookup paramname (querytext req) of
+            Nothing       -> return Nothing -- param absent from the query string
+            Just Nothing  -> return Nothing -- param present with no value -> Nothing
+            Just (Just v) ->
+              case parseQueryParam v of
+                  Left e -> delayedFailFatal err400
+                      { errBody = cs $ "Error parsing query parameter " <> paramname <> " failed: " <> e
+                      }
+
+                  Right param -> return $ Just param
+        delayed = addParameterCheck subserver . withRequest $ \req ->
+                    parseParam req
+
+    in route (Proxy :: Proxy api) context delayed
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
@@ -346,18 +356,25 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
   type ServerT (QueryParams sym a :> api) m =
     [a] -> ServerT api m
 
-  route Proxy context subserver =
-    let querytext r = parseQueryText $ rawQueryString r
-        -- if sym is "foo", we look for query string parameters
-        -- named "foo" or "foo[]" and call parseQueryParam on the
-        -- corresponding values
-        parameters r = filter looksLikeParam (querytext r)
-        values r = mapMaybe (convert . snd) (parameters r)
-    in  route (Proxy :: Proxy api) context (passToServer subserver values)
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
-          looksLikeParam (name, _) = name == paramname || name == (paramname <> "[]")
-          convert Nothing = Nothing
-          convert (Just v) = parseQueryParamMaybe v
+  route Proxy context subserver = route (Proxy :: Proxy api) context $
+      subserver `addParameterCheck` withRequest paramsCheck
+    where
+      paramname = cs $ symbolVal (Proxy :: Proxy sym)
+      paramsCheck req =
+          case partitionEithers $ fmap parseQueryParam params of
+              ([], parsed) -> return parsed
+              (errs, _)    -> delayedFailFatal err400
+                  { errBody = cs $ "Error parsing query parameter(s) " <> paramname <> " failed: " <> T.intercalate ", " errs
+                  }
+        where
+          params :: [T.Text]
+          params = mapMaybe snd
+                 . filter (looksLikeParam . fst)
+                 . parseQueryText
+                 . rawQueryString
+                 $ req
+
+          looksLikeParam name = name == paramname || name == (paramname <> "[]")
 
 -- | If you use @'QueryFlag' "published"@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -439,22 +456,28 @@ instance ( AllCTUnrender list a, HasServer api context
   type ServerT (ReqBody list a :> api) m =
     a -> ServerT api m
 
-  route Proxy context subserver =
-    route (Proxy :: Proxy api) context (addBodyCheck subserver bodyCheck)
+  route Proxy context subserver
+      = route (Proxy :: Proxy api) context $
+          addBodyCheck subserver ctCheck bodyCheck
     where
-      bodyCheck = withRequest $ \ request -> do
+      -- Content-Type check, we only lookup we can try to parse the request body
+      ctCheck = withRequest $ \ request -> do
         -- See HTTP RFC 2616, section 7.2.1
         -- http://www.w3.org/Protocols/rfc2616/rfc2616-sec7.html#sec7.2.1
         -- See also "W3C Internet Media Type registration, consistency of use"
         -- http://www.w3.org/2001/tag/2002/0129-mime
         let contentTypeH = fromMaybe "application/octet-stream"
                          $ lookup hContentType $ requestHeaders request
-        mrqbody <- handleCTypeH (Proxy :: Proxy list) (cs contentTypeH)
-               <$> liftIO (lazyRequestBody request)
+        case canHandleCTypeH (Proxy :: Proxy list) (cs contentTypeH) :: Maybe (BL.ByteString -> Either String a) of
+          Nothing -> delayedFailFatal err415
+          Just f  -> return f
+
+      -- Body check, we get a body parsing functions as the first argument.
+      bodyCheck f = withRequest $ \ request -> do
+        mrqbody <- f <$> liftIO (lazyRequestBody request)
         case mrqbody of
-          Nothing        -> delayedFailFatal err415
-          Just (Left e)  -> delayedFailFatal err400 { errBody = cs e }
-          Just (Right v) -> return v
+          Left e  -> delayedFailFatal err400 { errBody = cs e }
+          Right v -> return v
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @api@.

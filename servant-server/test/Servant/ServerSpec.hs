@@ -275,18 +275,25 @@ captureAllSpec = do
 type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
                 :<|> "a" :> QueryParams "names" String :> Get '[JSON] Person
                 :<|> "b" :> QueryFlag "capitalize" :> Get '[JSON] Person
+                :<|> "param" :> QueryParam "age" Integer :> Get '[JSON] Person
+                :<|> "multiparam" :> QueryParams "ages" Integer :> Get '[JSON] Person
 
 queryParamApi :: Proxy QueryParamApi
 queryParamApi = Proxy
 
 qpServer :: Server QueryParamApi
-qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize
+qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges
 
   where qpNames (_:name2:_) = return alice { name = name2 }
         qpNames _           = return alice
 
         qpCapitalize False = return alice
         qpCapitalize True  = return alice { name = map toUpper (name alice) }
+
+        qpAge Nothing = return alice
+        qpAge (Just age') = return alice{ age = age'}
+
+        qpAges ages = return alice{ age = sum ages}
 
         queryParamServer (Just name_) = return alice{name = name_}
         queryParamServer Nothing = return alice
@@ -318,6 +325,54 @@ queryParamSpec = do
             decode' (simpleBody response2) `shouldBe` Just alice{
               name = "john"
              }
+
+      it "parses a query parameter" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params = "?age=55"
+        response <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params,
+            queryString = parseQuery params,
+            pathInfo = ["param"]
+           }
+        liftIO $
+            decode' (simpleBody response) `shouldBe` Just alice{
+              age = 55
+            }
+
+      it "generates an error on query parameter parse failure" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params = "?age=foo"
+        response <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params,
+            queryString = parseQuery params,
+            pathInfo = ["param"]
+           }
+        liftIO $ statusCode (simpleStatus response) `shouldBe` 400
+        return ()
+
+      it "parses multiple query parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params = "?ages=10&ages=22"
+        response <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params,
+            queryString = parseQuery params,
+            pathInfo = ["multiparam"]
+           }
+        liftIO $
+            decode' (simpleBody response) `shouldBe` Just alice{
+              age = 32
+            }
+
+      it "generates an error on parse failures of multiple parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params = "?ages=2&ages=foo"
+        response <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params,
+            queryString = parseQuery params,
+            pathInfo = ["multiparam"]
+           }
+        liftIO $ statusCode (simpleStatus response) `shouldBe` 400
+        return ()
 
 
       it "allows retrieving value-less GET parameters" $
