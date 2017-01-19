@@ -1,24 +1,32 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TupleSections              #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 module Servant.Server.Internal.RoutingApplication where
 
-import           Control.Exception                  (finally)
 import           Control.Monad                      (ap, liftM)
-import           Control.Monad.Trans                (MonadIO(..))
-import           Data.IORef                         (newIORef, readIORef, IORef, atomicModifyIORef)
-import           Network.Wai                        (Application, Request,
-                                                     Response, ResponseReceived)
+import           Control.Monad.Base                 (MonadBase (..))
+import           Control.Monad.Catch                (MonadThrow (..))
+import           Control.Monad.Reader               (MonadReader (..), ReaderT, runReaderT)
+import           Control.Monad.Trans                (MonadIO (..), MonadTrans (..))
+import           Control.Monad.Trans.Control        (ComposeSt, MonadBaseControl (..), MonadTransControl (..),
+                                                     defaultLiftBaseWith, defaultRestoreM)
+import           Control.Monad.Trans.Resource       (MonadResource (..), ResourceT, runResourceT, transResourceT)
+import           Network.Wai                        (Application, Request, Response, ResponseReceived)
 import           Prelude                            ()
 import           Prelude.Compat
-import           Servant.Server.Internal.ServantErr
 import           Servant.Server.Internal.Handler
+import           Servant.Server.Internal.ServantErr
 
 type RoutingApplication =
      Request -- ^ the request, the field 'pathInfo' may be modified by url routing
@@ -31,6 +39,55 @@ data RouteResult a =
   | FailFatal !ServantErr     -- ^ Don't try other paths.
   | Route !a
   deriving (Eq, Show, Read, Functor)
+
+instance Applicative RouteResult where
+    pure = return
+    (<*>) = ap
+
+instance Monad RouteResult where
+    return = Route
+    Route a     >>= f = f a
+    Fail e      >>= _ = Fail e
+    FailFatal e >>= _ = FailFatal e
+
+newtype RouteResultT m a = RouteResultT { runRouteResultT :: m (RouteResult a) }
+  deriving (Functor)
+
+instance MonadTrans RouteResultT where
+    lift = RouteResultT . liftM Route
+
+instance (Functor m, Monad m) => Applicative (RouteResultT m) where
+    pure  = return
+    (<*>) = ap
+
+instance Monad m => Monad (RouteResultT m) where
+    return = RouteResultT . return . Route
+    m >>= k = RouteResultT $ do
+        a <- runRouteResultT m
+        case a of
+            Fail e      -> return $ Fail e
+            FailFatal e -> return $ FailFatal e
+            Route b     -> runRouteResultT (k b)
+
+instance MonadIO m => MonadIO (RouteResultT m) where
+    liftIO = lift . liftIO
+
+instance MonadBase b m => MonadBase b (RouteResultT m) where
+    liftBase = lift . liftBase
+
+instance MonadBaseControl b m => MonadBaseControl b (RouteResultT m) where
+    type StM (RouteResultT m) a = ComposeSt RouteResultT m a
+    liftBaseWith = defaultLiftBaseWith
+    restoreM     = defaultRestoreM
+
+instance MonadTransControl RouteResultT where
+    type StT RouteResultT a = RouteResult a
+    liftWith f = RouteResultT $ liftM return $ f $ runRouteResultT
+    restoreT = RouteResultT
+
+instance MonadThrow m => MonadThrow (RouteResultT m) where
+    throwM = lift . throwM
+
 
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = ra request routingRespond
@@ -115,53 +172,30 @@ instance Functor (Delayed env) where
       , ..
       } -- Note [Existential Record Update]
 
--- | A mutable cleanup action
-newtype CleanupRef = CleanupRef (IORef (IO ()))
-
-newCleanupRef :: IO CleanupRef
-newCleanupRef = CleanupRef <$> newIORef (return ())
-
--- | Add a clean up action to a 'CleanupRef'
-addCleanup' :: IO () -> CleanupRef -> IO ()
-addCleanup' act (CleanupRef ref) = atomicModifyIORef ref (\act' -> (act' >> act, ()))
-
-addCleanup :: IO () -> DelayedIO ()
-addCleanup act = DelayedIO $ \_req cleanupRef ->
-  addCleanup' act cleanupRef >> return (Route ())
-
--- | Run all the clean up actions registered in
---   a 'CleanupRef'.
-runCleanup :: CleanupRef -> IO ()
-runCleanup (CleanupRef ref) = do
-  act <- readIORef ref
-  act
-
 -- | Computations used in a 'Delayed' can depend on the
 -- incoming 'Request', may perform 'IO, and result in a
 -- 'RouteResult, meaning they can either suceed, fail
 -- (with the possibility to recover), or fail fatally.
 --
-newtype DelayedIO a = DelayedIO { runDelayedIO :: Request -> CleanupRef -> IO (RouteResult a) }
+newtype DelayedIO a = DelayedIO { runDelayedIO' :: ReaderT Request (ResourceT (RouteResultT IO)) a }
+  deriving
+    ( Functor, Applicative, Monad
+    , MonadIO, MonadReader Request
+    , MonadBase IO
+    , MonadThrow
+    , MonadResource
+    )
 
-instance Functor DelayedIO where
-  fmap = liftM
+liftRouteResult :: RouteResult a -> DelayedIO a
+liftRouteResult x = DelayedIO $ lift . lift $ RouteResultT . return $ x
 
-instance Applicative DelayedIO where
-  pure = return
-  (<*>) = ap
+instance MonadBaseControl IO DelayedIO where
+    type StM DelayedIO a = StM (ReaderT Request (ResourceT (RouteResultT IO))) a
+    liftBaseWith f = DelayedIO $ liftBaseWith $ \g -> f (g . runDelayedIO')
+    restoreM       = DelayedIO . restoreM
 
-instance Monad DelayedIO where
-  return x = DelayedIO (\_req _cleanup -> return (Route x))
-  DelayedIO m >>= f =
-    DelayedIO $ \ req cl -> do
-      r <- m req cl
-      case r of
-        Fail      e -> return $ Fail e
-        FailFatal e -> return $ FailFatal e
-        Route     a -> runDelayedIO (f a) req cl
-
-instance MonadIO DelayedIO where
-  liftIO m = DelayedIO (\_req _cl -> Route <$> m)
+runDelayedIO :: DelayedIO a -> Request -> ResourceT IO (RouteResult a)
+runDelayedIO m req = transResourceT runRouteResultT $ runReaderT (runDelayedIO' m) req
 
 -- | A 'Delayed' without any stored checks.
 emptyDelayed :: RouteResult a -> Delayed env a
@@ -172,15 +206,17 @@ emptyDelayed result =
 
 -- | Fail with the option to recover.
 delayedFail :: ServantErr -> DelayedIO a
-delayedFail err = DelayedIO (\_req _cleanup -> return $ Fail err)
+delayedFail err = liftRouteResult $ Fail err
 
 -- | Fail fatally, i.e., without any option to recover.
 delayedFailFatal :: ServantErr -> DelayedIO a
-delayedFailFatal err = DelayedIO (\_req _cleanup -> return $ FailFatal err)
+delayedFailFatal err = liftRouteResult $ FailFatal err
 
 -- | Gain access to the incoming request.
 withRequest :: (Request -> DelayedIO a) -> DelayedIO a
-withRequest f = DelayedIO (\ req cl -> runDelayedIO (f req) req cl)
+withRequest f = do
+    req <- ask
+    f req
 
 -- | Add a capture to the end of the capture block.
 addCapture :: Delayed env (a -> b)
@@ -264,18 +300,17 @@ passToServer Delayed{..} x =
 runDelayed :: Delayed env a
            -> env
            -> Request
-           -> CleanupRef
-           -> IO (RouteResult a)
-runDelayed Delayed{..} env req cleanupRef =
+           -> ResourceT IO (RouteResult a)
+runDelayed Delayed{..} env req  =
   runDelayedIO
     (do c <- capturesD env
         methodD
         a <- authD
         b <- bodyD
-        DelayedIO $ \ r _cleanup -> return (serverD c a b r)
+        r <- ask
+        liftRouteResult (serverD c a b r)
     )
     req
-    cleanupRef
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.
@@ -287,15 +322,12 @@ runAction :: Delayed env (Handler a)
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
-runAction action env req respond k = do
-  cleanupRef <- newCleanupRef
-  (runDelayed action env req cleanupRef >>= go >>= respond)
-    `finally` runCleanup cleanupRef
-
+runAction action env req respond k = runResourceT $ do
+    runDelayed action env req >>= go >>= liftIO . respond
   where
     go (Fail e)      = return $ Fail e
     go (FailFatal e) = return $ FailFatal e
-    go (Route a)     = do
+    go (Route a)     = liftIO $ do
       e <- runHandler a
       case e of
         Left err -> return . Route $ responseServantErr err

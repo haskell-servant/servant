@@ -69,6 +69,7 @@ library
       , string-conversions >= 0.3  && < 0.5
       , system-filepath    >= 0.4  && < 0.5
       , filepath           >= 1    && < 1.5
+      , resourcet          >= 1.1.6 && <1.2
       , text               >= 1.2  && < 1.3
       , transformers       >= 0.3  && < 0.6
       , transformers-base  >= 0.4.4 && < 0.5
@@ -127,19 +128,20 @@ test-suite spec
     , hspec == 2.*
     , hspec-wai >= 0.8 && <0.9
     , http-types
+    , mtl
     , network >= 2.6
-    , QuickCheck
     , parsec
+    , QuickCheck
+    , resourcet
     , safe
     , servant
     , servant-server
-    , string-conversions
     , should-not-typecheck == 2.1.*
+    , string-conversions
     , temporary
     , text
     , transformers
     , transformers-compat
-    , mtl
     , wai
     , wai-extra
     , warp
