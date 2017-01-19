@@ -21,6 +21,8 @@ import Control.Monad.Error.Class (MonadError(..))
 import Control.Monad.Trans.Except
 
 import GHC.Generics
+import Data.Monoid
+import Control.Applicative
 import Control.Monad.Base (MonadBase (..))
 import Control.Monad.IO.Class ()
 import Control.Monad.Reader
@@ -82,6 +84,10 @@ instance Eq ServantError where
   _ == _ = False
 
 instance Exception ServantError
+
+instance Monoid ServantError where -- Outlaw Implementation
+  mempty = ConnectionError (SomeException (AssertionFailed "Empty"))
+  mappend a b = b
 
 data Req = Req
   { reqPath   :: String
@@ -213,6 +219,11 @@ instance MonadBaseControl IO ClientM where
 
   -- restoreM :: StM ClientM a -> ClientM a
   restoreM st = ClientM (restoreM st)
+
+-- Should we really have this exception as the empty case? Who knows!
+instance Alternative ClientM where
+  empty = throwError (ConnectionError (SomeException (AssertionFailed "Empty")))
+  (ClientM x) <|> (ClientM y) = ClientM (x <|> y)
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
