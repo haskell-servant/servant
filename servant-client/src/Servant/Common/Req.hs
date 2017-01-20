@@ -16,7 +16,8 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.Catch (MonadThrow, MonadCatch)
 import Data.Foldable (toList)
-import Data.Semigroup (Semigroup (..))
+import Data.Functor.Alt (Alt (..))
+import Data.Semigroup ((<>))
 
 import Control.Monad.Error.Class (MonadError(..))
 import Control.Monad.Trans.Except
@@ -216,8 +217,8 @@ instance MonadBaseControl IO ClientM where
   restoreM st = ClientM (restoreM st)
 
 -- | Try clients in order, last error is preserved.
-instance Semigroup (ClientM a) where
-  a <> b = a `catchError` \_ -> b
+instance Alt ClientM where
+  a <!> b = a `catchError` \_ -> b
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
