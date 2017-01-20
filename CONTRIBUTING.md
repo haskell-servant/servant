@@ -59,8 +59,9 @@ As for adding them to the main repo: maintaining combinators can be expensive,
 since official combinators must have instances for all classes (and new classes
 come along fairly frequently). We therefore have to be quite selective about
 those that we accept. If you're considering writing a new combinator, open an
-issue to discuss it first! (You could release your combinator as a separate
-package, of course.)
+issue to discuss it first!  Or contribute it to the
+[servant-contrib](https://github.com/haskell-servant/servant-contrib) repository.
+You could release your combinator as a separate package, of course.
 
 
 ## New classes
