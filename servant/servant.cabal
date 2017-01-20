@@ -1,5 +1,6 @@
 name:                servant
 version:             0.9.1.1
+x-revision:          1
 synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -51,7 +52,7 @@ library
   build-depends:
       base                  >= 4.7  && < 4.10
     , base-compat           >= 0.9  && < 0.10
-    , aeson                 >= 0.7  && < 1.1
+    , aeson                 >= 0.7  && < 1.2
     , attoparsec            >= 0.12 && < 0.14
     , bytestring            >= 0.10 && < 0.11
     , case-insensitive      >= 1.2  && < 1.3
