@@ -82,7 +82,7 @@ module Servant.Utils.Links (
 
   -- * Building and using safe links
   --
-  -- | Note that 'URI' is Network.URI.URI from the network-uri package.
+  -- | Note that 'URI' is from the "Network.URI" module in the @network-uri@ package.
     safeLink
   , URI(..)
   -- * Adding custom types

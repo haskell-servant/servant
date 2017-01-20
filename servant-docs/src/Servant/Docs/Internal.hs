@@ -20,6 +20,8 @@
 #include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
+import           Prelude ()
+import           Prelude.Compat
 import           Control.Applicative
 import           Control.Arrow              (second)
 import           Control.Lens               (makeLenses, mapped, over, traversed, view, (%~),
@@ -30,9 +32,10 @@ import qualified Data.ByteString.Char8      as BSC
 import qualified Data.CaseInsensitive       as CI
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
-import           Data.List
+import           Data.List.Compat           (intercalate, intersperse, sort)
 import           Data.Maybe
-import           Data.Monoid
+import           Data.Monoid                (All (..), Any (..), Sum (..), Product (..), First (..), Last (..), Dual (..))
+import           Data.Semigroup             (Semigroup (..))
 import           Data.Ord                   (comparing)
 import           Data.Proxy                 (Proxy(Proxy))
 import           Data.String.Conversions    (cs)
@@ -102,8 +105,11 @@ data API = API
   , _apiEndpoints :: HashMap Endpoint Action
   } deriving (Eq, Show)
 
+instance Semigroup API where
+    (<>) = mappend
+
 instance Monoid API where
-    API a1 b1 `mappend` API a2 b2 = API (a1 <> a2) (b1 <> b2)
+    API a1 b1 `mappend` API a2 b2 = API (a1 `mappend` a2) (b1 `mappend` b2)
     mempty = API mempty mempty
 
 -- | An empty 'API'
@@ -162,6 +168,8 @@ data DocNote = DocNote
 -- These are intended to be built using extraInfo.
 -- Multiple ExtraInfo may be combined with the monoid instance.
 newtype ExtraInfo api = ExtraInfo (HashMap Endpoint Action)
+instance Semigroup (ExtraInfo a) where
+    (<>) = mappend
 instance Monoid (ExtraInfo a) where
     mempty = ExtraInfo mempty
     ExtraInfo a `mappend` ExtraInfo b =
