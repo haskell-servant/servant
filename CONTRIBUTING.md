@@ -29,7 +29,7 @@ Some things we like:
 - Explicit imports
 - Upper and lower bounds for packages
 - Few dependencies
-- -Werror-compatible (for both 7.8 and 7.10)
+- -Werror-compatible (7.8, 7.10 and 8.0)
 
 Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
 files in the repository provide a good baseline for consistency.
