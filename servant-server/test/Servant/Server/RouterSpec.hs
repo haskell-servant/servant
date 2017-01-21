@@ -49,6 +49,8 @@ distributivitySpec =
       dynamic `shouldHaveSameStructureAs` dynamicRef
     it "properly reorders permuted static paths" $ do
       permute `shouldHaveSameStructureAs` permuteRef
+    it "properly reorders permuted static paths in the presence of QueryParams" $ do
+      permuteQuery `shouldHaveSameStructureAs` permuteRef
     it "properly reorders permuted static paths in the presence of Raw in end" $ do
       permuteRawEnd `shouldHaveSameStructureAs` permuteRawEndRef
     it "properly reorders permuted static paths in the presence of Raw in beginning" $ do
@@ -153,6 +155,19 @@ permute = Proxy
 
 permuteRef :: Proxy PermuteRef
 permuteRef = Proxy
+
+-- Adding a "QueryParam" should not affect structure
+
+type PermuteQuery =
+       QueryParam "1" Int :> "a" :> "b" :> "c" :> End
+  :<|> QueryParam "2" Int :> "b" :> "a" :> "c" :> End
+  :<|> QueryParam "3" Int :> "a" :> "c" :> "b" :> End
+  :<|> QueryParam "4" Int :> "c" :> "a" :> "b" :> End
+  :<|> QueryParam "5" Int :> "b" :> "c" :> "a" :> End
+  :<|> QueryParam "6" Int :> "c" :> "b" :> "a" :> End
+
+permuteQuery :: Proxy PermuteQuery
+permuteQuery = Proxy
 
 -- Adding a 'Raw' in one of the ends should have minimal
 -- effect on the grouping.
