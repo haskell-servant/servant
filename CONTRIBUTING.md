@@ -11,9 +11,9 @@ repository. You can use `cabal`:
 Or `stack`:
 
 ```shell
-stack setup    # Downloads and installs a proper GHC version if necessary
-stack build    # Install and build packages
-stack test     # Run all the tests
+stack setup                    # Downloads and installs a proper GHC version if necessary
+stack build --fast --pedantic  # Install dependencies and build packages
+stack test                     # Run all the tests
 ```
 
 Or `nix`:
@@ -29,7 +29,7 @@ Some things we like:
 - Explicit imports
 - Upper and lower bounds for packages
 - Few dependencies
-- -Werror-compatible (for both 7.8 and 7.10)
+- -Werror-compatible (7.8, 7.10 and 8.0)
 
 Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
 files in the repository provide a good baseline for consistency.
@@ -59,8 +59,9 @@ As for adding them to the main repo: maintaining combinators can be expensive,
 since official combinators must have instances for all classes (and new classes
 come along fairly frequently). We therefore have to be quite selective about
 those that we accept. If you're considering writing a new combinator, open an
-issue to discuss it first! (You could release your combinator as a separate
-package, of course.)
+issue to discuss it first!  Or contribute it to the
+[servant-contrib](https://github.com/haskell-servant/servant-contrib) repository.
+You could release your combinator as a separate package, of course.
 
 
 ## New classes
