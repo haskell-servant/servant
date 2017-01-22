@@ -6,8 +6,10 @@ module Servant.ForeignSpec where
 import Data.Monoid ((<>))
 import Data.Proxy
 import Servant.Foreign
+import Servant.API.Internal.Test.ComprehensiveAPI
 
 import Test.Hspec
+
 
 spec :: Spec
 spec = describe "Servant.Foreign" $ do
@@ -22,12 +24,19 @@ camelCaseSpec = describe "camelCase" $ do
     camelCase (FunctionName ["get", "hyphen-ated", "counter"])
       `shouldBe` "getHyphen-atedCounter"
 
+----------------------------------------------------------------------
+
+-- This declaration simply checks that all instances are in place.
+_ = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) comprehensiveAPIWithoutRaw
 
 ----------------------------------------------------------------------
 
 data LangX
 
 instance HasForeignType LangX String NoContent where
+  typeFor _ _ _ = "voidX"
+
+instance HasForeignType LangX String (Headers ctyps NoContent) where
   typeFor _ _ _ = "voidX"
 
 instance HasForeignType LangX String Int where
