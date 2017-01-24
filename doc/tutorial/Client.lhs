@@ -27,8 +27,8 @@ Also, we need examples for some domain specific data types:
 
 ``` haskell
 data Position = Position
-  { x :: Int
-  , y :: Int
+  { xCoord :: Int
+  , yCoord :: Int
   } deriving (Show, Generic)
 
 instance FromJSON Position
@@ -135,7 +135,7 @@ run = do
 Here's the output of the above code running against the appropriate server:
 
 ``` bash
-Position {x = 10, y = 10}
+Position {xCoord = 10, yCoord = 10}
 HelloMessage {msg = "Hello, servant"}
 Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we miss you!", body = "Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!"}
 ```
