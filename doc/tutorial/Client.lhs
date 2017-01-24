@@ -107,6 +107,7 @@ data BaseUrl = BaseUrl
   { baseUrlScheme :: Scheme -- ^ URI scheme to use
   , baseUrlHost :: String   -- ^ host (eg "haskell.org")
   , baseUrlPort :: Int      -- ^ port (eg 80)
+  , baseUrlPath :: String   -- ^ path (eg "/a/b/c")
   }
 ```
 
