@@ -8,7 +8,7 @@ packages:
 - doc/tutorial
 extra-deps:
 - http-api-data-0.3
-- servant-js-0.9 # needed for tutorial
+- servant-js-0.9.1
 - natural-transformation-0.4
 - hspec-2.3.2
 - hspec-discover-2.3.2
