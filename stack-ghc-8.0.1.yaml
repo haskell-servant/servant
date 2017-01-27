@@ -5,7 +5,7 @@ packages:
 - servant-docs/
 - servant-foreign/
 - servant-server/
+- doc/tutorial
 extra-deps:
 - aeson-1.1.0.0
 - servant-js-0.9.1
-flags: {}
