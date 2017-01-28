@@ -34,7 +34,9 @@ data SortBy = Age | Name
 
 data User = User {
   name :: String,
-  age :: Int
+  age :: Int,
+  email :: String,
+  registration_date :: UTCTime
 }
 ```
 
