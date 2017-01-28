@@ -10,6 +10,7 @@ need to have some language extensions and imports:
 module ApiType where
 
 import Data.Text
+import Data.Time (UTCTime)
 import Servant.API
 ```
 
