@@ -10,6 +10,7 @@ need to have some language extensions and imports:
 module ApiType where
 
 import Data.Text
+import Data.Time (UTCTime)
 import Servant.API
 ```
 
@@ -34,7 +35,9 @@ data SortBy = Age | Name
 
 data User = User {
   name :: String,
-  age :: Int
+  age :: Int,
+  email :: String,
+  registration_date :: UTCTime
 }
 ```
 
