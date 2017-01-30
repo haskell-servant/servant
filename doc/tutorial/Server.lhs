@@ -603,8 +603,8 @@ $ curl -H 'Accept: text/html' http://localhost:8081/persons
 
 ## The `Handler` monad
 
-At the heart of the handlers is the monad they run in, namely `ExceptT ServantErr IO`
-([haddock documentation for `ExceptT`](http://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)), which is aliased as `Handler`.
+At the heart of the handlers is the monad they run in, namely a newtype `Handler` around `ExceptT ServantErr IO`
+([haddock documentation for `ExceptT`](http://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)).
 One might wonder: why this monad? The answer is that it is the
 simplest monad with the following properties:
 
@@ -626,7 +626,7 @@ action that either returns an error or a result.
 
 The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)
 from which `ExceptT` comes is worth looking at.
-Perhaps most importantly, `ExceptT` is an instance of `MonadError`, so
+Perhaps most importantly, `ExceptT` and `Handler` are an instances of `MonadError`, so
 `throwError` can be used to return an error from your handler (whereas `return`
         is enough to return a success).
 
@@ -636,8 +636,8 @@ kind and abort early. The next two sections cover how to do just that.
 
 ### Performing IO
 
-Another important instance from the list above is `MonadIO m => MonadIO
-(ExceptT e m)`.
+Another important instances from the list above are `MonadIO m => MonadIO
+(ExceptT e m)`, and therefore also `MonadIO Handler` as there is `MonadIO IO` instance..
 [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html)
 is a class from the **transformers** package defined as:
 
@@ -646,8 +646,7 @@ class Monad m => MonadIO m where
   liftIO :: IO a -> m a
 ```
 
-The `IO` monad provides a `MonadIO` instance. Hence for any type
-`e`, `ExceptT e IO` has a `MonadIO` instance. So if you want to run any kind of
+So if you want to run any kind of
 IO computation in your handlers, just use `liftIO`:
 
 ``` haskell
@@ -861,7 +860,7 @@ Server UserAPI4 = Int -> (    Handler User
 
 In the first case, each handler receives the *userid* argument. In the latter,
 the whole `Server` takes the *userid* and has handlers that are just
-computations in `ExceptT`, with no arguments. In other words:
+computations in `Handler`, with no arguments. In other words:
 
 ``` haskell
 server8 :: Server UserAPI3
@@ -1069,7 +1068,7 @@ readerToHandler :: Reader String :~> Handler
 
 Let's start with `readerToHandler'`. We obviously have to run the `Reader`
 computation by supplying it with a `String`, like `"hi"`. We get an `a` out
-from that and can then just `return` it into `ExceptT`. We can then just wrap
+from that and can then just `return` it into `Handler`. We can then just wrap
 that function with the `NT` constructor to make it have the fancier type.
 
 ``` haskell
