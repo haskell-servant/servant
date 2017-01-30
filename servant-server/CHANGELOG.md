@@ -15,6 +15,16 @@
   `serveDirectoryWebApp`, `serveDirectoryWebAppLookup`, `serveDirectoryEmbedded`
   and `serveDirectoryWith` which offer 4 default options and a more flexible
   one for serving static files.
+  ([#658](https://github.com/haskell-servant/servant/pull/658))
+
+* `DelayedIO` is an instance of `MonadResource`, allowing safe resource handling.
+  ([#622](https://github.com/haskell-servant/servant/pull/622)
+  , [#674](https://github.com/haskell-servant/servant/pull/674)
+  , [#675](https://github.com/haskell-servant/servant/pull/675))
+
+* We now throw error on parameter parse failure
+  ([#649](https://github.com/haskell-servant/servant/pull/649)
+  , [#670](https://github.com/haskell-servant/servant/pull/670))
 
 0.7.1
 ------

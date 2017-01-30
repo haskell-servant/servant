@@ -9,14 +9,18 @@
   ([#527](https://github.com/haskell-servant/servant/issues/527))
 
 * Add `Servant.API.TypeLevel` module with type families to work with API types.
-  ([#345](https://github.com/haskell-servant/servant/pull/345))
-  ([#305](https://github.com/haskell-servant/servant/issues/305))
+  ([#345](https://github.com/haskell-servant/servant/pull/345)
+  , [#305](https://github.com/haskell-servant/servant/issues/305))
 
 * Default JSON content type change to `application/json;charset=utf-8`.
   ([#263](https://github.com/haskell-servant/servant/issues/263))
   Related browser bugs:
   [Chromium](https://bugs.chromium.org/p/chromium/issues/detail?id=438464) and
   [Firefox](https://bugzilla.mozilla.org/show_bug.cgi?id=918742)
+
+* `Accept` class may accept multiple content-types. `MimeUnrender` adopted as well.
+  ([#613](https://github.com/haskell-servant/servant/pull/614)
+  , [#615](https://github.com/haskell-servant/servant/pull/615))
 
 0.9.1
 ------
