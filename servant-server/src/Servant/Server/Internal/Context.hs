@@ -63,14 +63,17 @@ instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
 -- ...
 class HasContextEntry (context :: [*]) (val :: *) where
     getContextEntry :: Context context -> val
+    setContextEntry :: Context context -> val -> Context context
 
 instance OVERLAPPABLE_
          HasContextEntry xs val => HasContextEntry (notIt ': xs) val where
     getContextEntry (_ :. xs) = getContextEntry xs
+    setContextEntry (x :. xs) y = x :. setContextEntry xs y
 
 instance OVERLAPPING_
          HasContextEntry (val ': xs) val where
     getContextEntry (x :. _) = x
+    setContextEntry (_ :. xs) y = y :. xs
 
 -- * support for named subcontexts
 

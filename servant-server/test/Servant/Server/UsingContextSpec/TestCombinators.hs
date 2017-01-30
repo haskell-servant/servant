@@ -23,8 +23,8 @@ import           Servant
 
 data ExtractFromContext
 
-instance (HasContextEntry context String, HasServer subApi context) =>
-  HasServer (ExtractFromContext :> subApi) context where
+instance (HasContextEntry context String, HasServer subApi (Context context)) =>
+  HasServer (ExtractFromContext :> subApi) (Context context) where
 
   type ServerT (ExtractFromContext :> subApi) m =
     String -> ServerT subApi m
@@ -39,8 +39,8 @@ instance (HasContextEntry context String, HasServer subApi context) =>
 
 data InjectIntoContext
 
-instance (HasServer subApi (String ': context)) =>
-  HasServer (InjectIntoContext :> subApi) context where
+instance (HasServer subApi (Context (String ': context))) =>
+  HasServer (InjectIntoContext :> subApi) (Context context) where
 
   type ServerT (InjectIntoContext :> subApi) m =
     ServerT subApi m
@@ -55,8 +55,8 @@ instance (HasServer subApi (String ': context)) =>
 
 data NamedContextWithBirdface (name :: Symbol) (subContext :: [*])
 
-instance (HasContextEntry context (NamedContext name subContext), HasServer subApi subContext) =>
-  HasServer (NamedContextWithBirdface name subContext :> subApi) context where
+instance (HasContextEntry context (NamedContext name subContext), HasServer subApi (Context subContext)) =>
+  HasServer (NamedContextWithBirdface name subContext :> subApi) (Context context) where
 
   type ServerT (NamedContextWithBirdface name subContext :> subApi) m =
     ServerT subApi m

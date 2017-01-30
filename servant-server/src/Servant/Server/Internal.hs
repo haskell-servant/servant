@@ -10,6 +10,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 #include "overlapping-compat.h"
 
@@ -23,6 +24,7 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
+import           Control.Lens               (Lens', lens, (^.))
 import           Control.Monad.Trans        (liftIO)
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.ByteString            as B
@@ -78,7 +80,7 @@ class HasServer api context where
 
   route ::
        Proxy api
-    -> Context context
+    -> context
     -> Delayed env (Server api)
     -> Router env
 
@@ -518,9 +520,20 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
     route (Proxy :: Proxy api) context (passToServer subserver httpVersion)
 
 -- | Basic Authentication
+class HasBasicAuthCheck ctx usr where
+    basicAuthCheck :: Lens' ctx (BasicAuthCheck usr)
+
+instance HasBasicAuthCheck (BasicAuthCheck usr) usr where
+    basicAuthCheck = id
+
+instance HasContextEntry context (BasicAuthCheck usr)
+    => HasBasicAuthCheck (Context context) usr
+  where
+    basicAuthCheck = lens getContextEntry setContextEntry 
+
 instance ( KnownSymbol realm
          , HasServer api context
-         , HasContextEntry context (BasicAuthCheck usr)
+         , HasBasicAuthCheck context usr
          )
     => HasServer (BasicAuth realm usr :> api) context where
 
@@ -530,7 +543,7 @@ instance ( KnownSymbol realm
     route (Proxy :: Proxy api) context (subserver `addAuthCheck` authCheck)
     where
        realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
-       basicAuthContext = getContextEntry context
+       basicAuthContext = context ^. basicAuthCheck
        authCheck = withRequest $ \ req -> runBasicAuth req realm basicAuthContext
 
 -- * helpers
@@ -543,8 +556,8 @@ ct_wildcard = "*" <> "/" <> "*" -- Because CPP
 
 -- * contexts
 
-instance (HasContextEntry context (NamedContext name subContext), HasServer subApi subContext)
-  => HasServer (WithNamedContext name subContext subApi) context where
+instance (HasContextEntry context (NamedContext name subContext), HasServer subApi (Context subContext))
+  => HasServer (WithNamedContext name subContext subApi) (Context context) where
 
   type ServerT (WithNamedContext name subContext subApi) m =
     ServerT subApi m
