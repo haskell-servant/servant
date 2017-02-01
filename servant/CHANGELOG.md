@@ -1,12 +1,16 @@
 0.10
 ------
 
+### Breaking changes
+
 * Use `NT` from `natural-transformation` for `Enter`
   ([#616](https://github.com/haskell-servant/servant/issues/616))
 
 * Change to `MkLink (Verb ...) = Link` (previously `URI`). To consume `Link`
   use its `ToHttpApiData` instance or `linkURI`.
   ([#527](https://github.com/haskell-servant/servant/issues/527))
+
+### Other changes
 
 * Add `Servant.API.TypeLevel` module with type families to work with API types.
   ([#345](https://github.com/haskell-servant/servant/pull/345)

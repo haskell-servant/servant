@@ -1,15 +1,21 @@
 0.10
 ----
 
-* Add `err422` Unprocessable Entity
-  ([#646](https://github.com/haskell-servant/servant/pull/646))
-* Changed `HasServer` instances for `QueryParam` and `QueryParam` to throw 400
-  when parsing fails
-  ([#649](6e77453b67dc164e5381fb867e5e6475302619a3))
-* Added `paramD` block to `Delayed`
+### Breaking changes
 
 * `Handler` is now an abstract datatype. Migration hint: change `throwE` to `throwError`.
   ([#641](https://github.com/haskell-servant/servant/issues/641))
+
+* Changed `HasServer` instances for `QueryParam` and `QueryParam` to throw 400
+  when parsing fails
+  ([#649](https://github.com/haskell-servant/servant/pull/649))
+
+### Other changes
+
+* Added `paramD` block to `Delayed`
+
+* Add `err422` Unprocessable Entity
+  ([#646](https://github.com/haskell-servant/servant/pull/646))
 
 * Deprecate `serveDirectory` and introduce `serveDirectoryFileServer`,
   `serveDirectoryWebApp`, `serveDirectoryWebAppLookup`, `serveDirectoryEmbedded`
@@ -21,10 +27,6 @@
   ([#622](https://github.com/haskell-servant/servant/pull/622)
   , [#674](https://github.com/haskell-servant/servant/pull/674)
   , [#675](https://github.com/haskell-servant/servant/pull/675))
-
-* We now throw error on parameter parse failure
-  ([#649](https://github.com/haskell-servant/servant/pull/649)
-  , [#670](https://github.com/haskell-servant/servant/pull/670))
 
 0.7.1
 ------

@@ -1,5 +1,11 @@
 0.10
-----
+-----
+
+### Breaking changes
+
+There shouldn't be breaking changes. Released as a part of `servant` suite.
+
+### Other changes
 
 * Add MonadBase and MonadBaseControl instances for ClientM
   ([#663](https://github.com/haskell-servant/servant/issues/663))

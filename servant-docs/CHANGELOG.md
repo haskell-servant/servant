@@ -1,3 +1,8 @@
+0.10
+----
+
+There are no changes. Released as a part of `servant` suite.
+
 0.7.1
 -----
 

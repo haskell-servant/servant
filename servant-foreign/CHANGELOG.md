@@ -1,6 +1,8 @@
 0.10
 ----
 
+### Breaking changes
+
 * Do not apply JavaScript specific mangling to the names.
   ([#191](https://github.com/haskell-servant/servant/issues/191))
 
