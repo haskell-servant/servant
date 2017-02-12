@@ -134,7 +134,7 @@ test-suite spec
 test-suite doctests
  build-depends: base
               , servant
-              , doctest >=0.11.1 && <0.12
+              , doctest >=0.11.0 && <0.12
               , filemanip
               , directory
               , filepath

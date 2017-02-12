@@ -1,0 +1,9 @@
+resolver: nightly-2017-02-11
+packages:
+- servant/
+- servant-client/
+- servant-docs/
+- servant-foreign/
+- servant-server/
+- doc/tutorial
+extra-deps: []
