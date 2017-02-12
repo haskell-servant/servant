@@ -1,5 +1,19 @@
 \begin{code}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
+module Main (main) where
+
+#ifndef MIN_VERSION_cabal_doctest
+#define MIN_VERSION_cabal_doctest(x,y,z) 0
+#endif
+
+
+#if MIN_VERSION_cabal_doctest(1,0,0)
+import Distribution.Extra.Doctest ( defaultMainWithDoctests )
+#else
+
+-- Otherwise we provide a shim
+
 #ifndef MIN_VERSION_Cabal
 #define MIN_VERSION_Cabal(x,y,z) 0
 #endif
@@ -9,10 +23,10 @@
 #if MIN_VERSION_Cabal(1,24,0)
 #define InstalledPackageId UnitId
 #endif
-module Main (main) where
 
 import Control.Monad ( when )
 import Data.List ( nub )
+import Data.String ( fromString )
 import Distribution.Package ( InstalledPackageId )
 import Distribution.Package ( PackageId, Package (..), packageVersion )
 import Distribution.PackageDescription ( PackageDescription(), TestSuite(..) , Library (..), BuildInfo (..))
@@ -42,15 +56,8 @@ makeAbsolute p | isAbsolute p = return p
     return $ cwd </> p
 #endif
 
-main :: IO ()
-main = defaultMainWithHooks simpleUserHooks
-  { buildHook = \pkg lbi hooks flags -> do
-     generateBuildModule flags pkg lbi
-     buildHook simpleUserHooks pkg lbi hooks flags
-  }
-
-generateBuildModule :: BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
-generateBuildModule flags pkg lbi = do
+generateBuildModule :: String -> BuildFlags -> PackageDescription -> LocalBuildInfo -> IO ()
+generateBuildModule testsuiteName flags pkg lbi = do
   let verbosity = fromFlag (buildVerbosity flags)
   let distPref = fromFlag (buildDistPref flags)
 
@@ -74,7 +81,7 @@ generateBuildModule flags pkg lbi = do
 #endif
 
     -- Lib sources and includes
-    iArgs <- mapM (fmap ("-i"++) . makeAbsolute) $ "test" : libAutogenDir : hsSourceDirs libBI
+    iArgs <- mapM (fmap ("-i"++) . makeAbsolute) $ libAutogenDir : hsSourceDirs libBI
     includeArgs <- mapM (fmap ("-I"++) . makeAbsolute) $ includeDirs libBI
 
     -- CPP includes, i.e. include cabal_macros.h
@@ -82,9 +89,7 @@ generateBuildModule flags pkg lbi = do
             [ "-include", libAutogenDir ++ "/cabal_macros.h" ]
             ++ cppOptions libBI
 
-    -- Actually we need to check whether testName suite == "doctests"
-    -- pending https://github.com/haskell/cabal/pull/4229 getting into GHC HEAD tree
-    withTestLBI pkg lbi $ \suite suitecfg -> when (testName suite == "doctests") $ do
+    withTestLBI pkg lbi $ \suite suitecfg -> when (testName suite == fromString testsuiteName) $ do
 
       -- get and create autogen dir
 #if MIN_VERSION_Cabal(1,25,0)
@@ -106,7 +111,7 @@ generateBuildModule flags pkg lbi = do
         , "flags = " ++ show (iArgs ++ includeArgs ++ dbFlags ++ cppFlags)
         , ""
         , "module_sources :: [String]"
-        , "module_sources = " ++ show ("Servant.Utils.LinksSpec" : map display module_sources)
+        , "module_sources = " ++ show (map display module_sources)
         ]
   where
     -- we do this check in Setup, as then doctests don't need to depend on Cabal
@@ -161,5 +166,17 @@ generateBuildModule flags pkg lbi = do
 
 testDeps :: ComponentLocalBuildInfo -> ComponentLocalBuildInfo -> [(InstalledPackageId, PackageId)]
 testDeps xs ys = nub $ componentPackageDeps xs ++ componentPackageDeps ys
+
+defaultMainWithDoctests :: String -> IO ()
+defaultMainWithDoctests testSuiteName = defaultMainWithHooks simpleUserHooks
+  { buildHook = \pkg lbi hooks flags -> do
+     generateBuildModule testSuiteName flags pkg lbi
+     buildHook simpleUserHooks pkg lbi hooks flags
+  }
+
+#endif
+
+main :: IO ()
+main = defaultMainWithDoctests "doctests"
 
 \end{code}
