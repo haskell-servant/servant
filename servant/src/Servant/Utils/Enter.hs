@@ -65,7 +65,7 @@ logWriterTSNat logger = NT $ \x -> do
     liftIO $ logger w
     return a
 
--- | Like `logWriterTSNat`, but for strict @WriterT@.
+-- | Like `logWriterTSNat`, but for lazy @WriterT@.
 logWriterTLNat :: MonadIO m => (w -> IO ()) -> (LWriter.WriterT w m :~> m)
 logWriterTLNat logger = NT $ \x -> do
     (a, w) <- LWriter.runWriterT x
