@@ -91,9 +91,9 @@ instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
     genRequest _ = do
       new' <- new
       old' <- old
-      return $ \burl -> let r = old' burl in r {
-          queryString = queryString r
-                     <> param <> "=" <> cs (toQueryParam new') }
+      return $ \burl -> let r = old' burl
+                            qs = queryString r in r {
+          queryString = (if BS.null qs then "" else "&") <> qs <> param <> "=" <> cs (toQueryParam new') }
       where
         old = genRequest (Proxy :: Proxy b)
         param = cs $ symbolVal (Proxy :: Proxy x)
