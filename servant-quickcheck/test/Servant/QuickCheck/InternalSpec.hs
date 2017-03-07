@@ -121,7 +121,7 @@ queryParamsSpec = describe "QueryParams" $ do
         gen = genRequest paramsAPI
         req = (unGen gen rng 0) burl
         qs = C.unpack $ queryString req
-    qs `shouldBe` "one=&two="
+    qs `shouldBe` "one=_&two=_"
 
 ------------------------------------------------------------------------------
 -- APIs
@@ -134,7 +134,7 @@ type API = ReqBody '[JSON] String :> Post '[JSON] String
 api :: Proxy API
 api = Proxy
 
-type ParamsAPI = QueryParam "one" String :> QueryParam "two" String :> Get '[JSON] ()
+type ParamsAPI = QueryParam "one" () :> QueryParam "two" () :> Get '[JSON] ()
 
 paramsAPI :: Proxy ParamsAPI
 paramsAPI = Proxy
