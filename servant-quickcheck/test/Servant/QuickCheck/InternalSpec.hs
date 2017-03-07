@@ -33,6 +33,7 @@ spec = do
   onlyJsonObjectSpec
   notLongerThanSpec
   queryParamsSpec
+  queryFlagsSpec
 
 serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
@@ -123,6 +124,17 @@ queryParamsSpec = describe "QueryParams" $ do
         qs = C.unpack $ queryString req
     qs `shouldBe` "one=_&two=_"
 
+queryFlagsSpec :: Spec
+queryFlagsSpec = describe "QueryFlags" $ do
+
+  it "reduce to an HTTP query string correctly" $ do
+    let rng = mkQCGen 0
+        burl = BaseUrl Http "localhost" 80 ""
+        gen = genRequest flagsAPI
+        req = (unGen gen rng 0) burl
+        qs = C.unpack $ queryString req
+    qs `shouldBe` "one=&two="
+
 ------------------------------------------------------------------------------
 -- APIs
 ------------------------------------------------------------------------------
@@ -138,6 +150,12 @@ type ParamsAPI = QueryParam "one" () :> QueryParam "two" () :> Get '[JSON] ()
 
 paramsAPI :: Proxy ParamsAPI
 paramsAPI = Proxy
+
+type FlagsAPI = QueryFlag "one" :> QueryFlag "two" :> Get '[JSON] ()
+
+flagsAPI :: Proxy FlagsAPI
+flagsAPI = Proxy
+
 
 server :: IO (Server API)
 server = do

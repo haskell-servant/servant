@@ -119,8 +119,10 @@ instance (KnownSymbol x, HasGenRequest b)
     => HasGenRequest (QueryFlag x :> b) where
     genRequest _ = do
       old' <- old
-      return $ \burl -> let r = old' burl in r {
-          queryString = queryString r <> param <> "=" }
+      return $ \burl -> let r = old' burl
+                            newExpr = param <> "="
+                            qs = queryString r in r {
+          queryString = if BS.null qs then newExpr else newExpr <> "&" <> qs }
       where
         old = genRequest (Proxy :: Proxy b)
         param = cs $ symbolVal (Proxy :: Proxy x)
