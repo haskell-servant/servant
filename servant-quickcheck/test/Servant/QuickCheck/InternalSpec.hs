@@ -4,7 +4,7 @@ module Servant.QuickCheck.InternalSpec (spec) where
 import           Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
 import           Control.Monad.IO.Class  (liftIO)
 import qualified Data.ByteString         as BS
-import qualified Data.ByteString.Char8 as C
+import qualified Data.ByteString.Char8   as C
 import           Prelude.Compat
 import           Servant
 import           Test.Hspec              (Spec, context, describe, it, shouldBe,
@@ -121,8 +121,7 @@ queryParamsSpec = describe "QueryParams" $ do
         gen = genRequest paramsAPI
         req = (unGen gen rng 0) burl
         qs = C.unpack $ queryString req
-    qs `shouldContain` ("one=")
-    qs `shouldContain` ("&two=")
+    qs `shouldBe` "one=&two="
 
 ------------------------------------------------------------------------------
 -- APIs
@@ -135,7 +134,7 @@ type API = ReqBody '[JSON] String :> Post '[JSON] String
 api :: Proxy API
 api = Proxy
 
-type ParamsAPI = QueryParam "one" String :> QueryParam "two" String :> Get '[JSON] String
+type ParamsAPI = QueryParam "one" String :> QueryParam "two" String :> Get '[JSON] ()
 
 paramsAPI :: Proxy ParamsAPI
 paramsAPI = Proxy
