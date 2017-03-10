@@ -15,9 +15,8 @@ import Servant
 import Servant.API.ContentTypes (AllMimeRender (..))
 import Servant.Client           (BaseUrl (..), Scheme (..))
 import Test.QuickCheck          (Arbitrary (..), Gen, elements, oneof)
-#if MIN_VERSION_servant(0,8,0)
+
 import qualified Data.ByteString as BS
-#endif
 
 
 class HasGenRequest a where
@@ -120,9 +119,8 @@ instance (KnownSymbol x, HasGenRequest b)
     genRequest _ = do
       old' <- old
       return $ \burl -> let r = old' burl
-                            newExpr = param <> "="
                             qs = queryString r in r {
-          queryString = if BS.null qs then newExpr else newExpr <> "&" <> qs }
+          queryString = if BS.null qs then param else param <> "&" <> qs }
       where
         old = genRequest (Proxy :: Proxy b)
         param = cs $ symbolVal (Proxy :: Proxy x)

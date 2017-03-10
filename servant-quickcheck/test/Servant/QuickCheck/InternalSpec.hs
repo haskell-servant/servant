@@ -133,7 +133,7 @@ queryFlagsSpec = describe "QueryFlags" $ do
         gen = genRequest flagsAPI
         req = (unGen gen rng 0) burl
         qs = C.unpack $ queryString req
-    qs `shouldBe` "one=&two="
+    qs `shouldBe` "one&two"
 
 ------------------------------------------------------------------------------
 -- APIs
