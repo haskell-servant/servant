@@ -15,9 +15,8 @@ import Servant
 import Servant.API.ContentTypes (AllMimeRender (..))
 import Servant.Client           (BaseUrl (..), Scheme (..))
 import Test.QuickCheck          (Arbitrary (..), Gen, elements, oneof)
-#if MIN_VERSION_servant(0,8,0)
+
 import qualified Data.ByteString as BS
-#endif
 
 
 class HasGenRequest a where
@@ -91,9 +90,10 @@ instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
     genRequest _ = do
       new' <- new
       old' <- old
-      return $ \burl -> let r = old' burl in r {
-          queryString = queryString r
-                     <> param <> "=" <> cs (toQueryParam new') }
+      return $ \burl -> let r = old' burl
+                            newExpr = param <> "=" <> cs (toQueryParam new')
+                            qs = queryString r in r {
+          queryString = if BS.null qs then newExpr else newExpr <> "&" <> qs }
       where
         old = genRequest (Proxy :: Proxy b)
         param = cs $ symbolVal (Proxy :: Proxy x)
@@ -118,8 +118,9 @@ instance (KnownSymbol x, HasGenRequest b)
     => HasGenRequest (QueryFlag x :> b) where
     genRequest _ = do
       old' <- old
-      return $ \burl -> let r = old' burl in r {
-          queryString = queryString r <> param <> "=" }
+      return $ \burl -> let r = old' burl
+                            qs = queryString r in r {
+          queryString = if BS.null qs then param else param <> "&" <> qs }
       where
         old = genRequest (Proxy :: Proxy b)
         param = cs $ symbolVal (Proxy :: Proxy x)
