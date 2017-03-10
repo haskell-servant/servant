@@ -4,12 +4,16 @@ module Servant.QuickCheck.InternalSpec (spec) where
 import           Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
 import           Control.Monad.IO.Class  (liftIO)
 import qualified Data.ByteString         as BS
+import qualified Data.ByteString.Char8   as C
 import           Prelude.Compat
 import           Servant
 import           Test.Hspec              (Spec, context, describe, it, shouldBe,
                                           shouldContain)
 import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
                                           defaultParams, evaluateExample)
+import           Test.QuickCheck.Gen     (unGen)
+import           Test.QuickCheck.Random  (mkQCGen)
+import           Network.HTTP.Client     (queryString)
 
 #if MIN_VERSION_servant(0,8,0)
 import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
@@ -28,6 +32,8 @@ spec = do
   isComprehensiveSpec
   onlyJsonObjectSpec
   notLongerThanSpec
+  queryParamsSpec
+  queryFlagsSpec
 
 serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
@@ -107,6 +113,27 @@ isComprehensiveSpec = describe "HasGenRequest" $ do
     let _g = genRequest comprehensiveAPIWithoutRaw
     True `shouldBe` True -- This is a type-level check
 
+queryParamsSpec :: Spec
+queryParamsSpec = describe "QueryParams" $ do
+
+  it "reduce to an HTTP query string correctly" $ do
+    let rng = mkQCGen 0
+        burl = BaseUrl Http "localhost" 80 ""
+        gen = genRequest paramsAPI
+        req = (unGen gen rng 0) burl
+        qs = C.unpack $ queryString req
+    qs `shouldBe` "one=_&two=_"
+
+queryFlagsSpec :: Spec
+queryFlagsSpec = describe "QueryFlags" $ do
+
+  it "reduce to an HTTP query string correctly" $ do
+    let rng = mkQCGen 0
+        burl = BaseUrl Http "localhost" 80 ""
+        gen = genRequest flagsAPI
+        req = (unGen gen rng 0) burl
+        qs = C.unpack $ queryString req
+    qs `shouldBe` "one&two"
 
 ------------------------------------------------------------------------------
 -- APIs
@@ -118,6 +145,17 @@ type API = ReqBody '[JSON] String :> Post '[JSON] String
 
 api :: Proxy API
 api = Proxy
+
+type ParamsAPI = QueryParam "one" () :> QueryParam "two" () :> Get '[JSON] ()
+
+paramsAPI :: Proxy ParamsAPI
+paramsAPI = Proxy
+
+type FlagsAPI = QueryFlag "one" :> QueryFlag "two" :> Get '[JSON] ()
+
+flagsAPI :: Proxy FlagsAPI
+flagsAPI = Proxy
+
 
 server :: IO (Server API)
 server = do
