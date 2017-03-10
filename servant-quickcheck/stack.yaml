@@ -1,6 +1,9 @@
 resolver: lts-8.4
 packages:
 - '.'
-extra-deps: []
+extra-deps:
+- hspec-2.3.2
+- hspec-core-2.3.2
+- hspec-discover-2.3.2
 flags: {}
 extra-package-dbs: []
