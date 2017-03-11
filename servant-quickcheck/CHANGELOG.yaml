@@ -2,6 +2,14 @@ upcoming:
 
 releases:
 
+  - version: "0.0.2.3"
+    changes:
+
+      - description: Fix QueryParam and QueryFlag requests
+        issue: 23
+        authors: declension
+        date: 2017-03-10
+
   - version: "0.0.2.2"
     changes:
 
