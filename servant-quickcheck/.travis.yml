@@ -2,25 +2,30 @@ sudo: false
 
 language: c
 
-matrix:
-  include:
-    - env: CABALVER=1.22 GHCVER=7.10.1
-      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.1],sources: [hvr-ghc]}}
-    - env: CABALVER=1.24 GHCVER=8.0.1
-      addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1],  sources: [hvr-ghc]}}
+env:
+  - STACK_YAML=stack.yaml
+  - STACK_YAML=stack-lts-7.yaml
+  - STACK_YAML=stack-lts-6.yaml
+
+
+addons:
+  apt:
+    packages: libgmp-dev
+
 
 install:
-  - (mkdir -p $HOME/.local/bin && cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
-  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
-  - ghc --version
-  - cabal --version
-  - travis_retry cabal update
-  - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+  # stack
+  - mkdir -p ~/.local/bin
+  - export PATH=~/.local/bin:$PATH
+  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  - stack --version
 
 script:
-  - tinc && cabal configure --enable-tests && cabal build && cabal test
-  - cabal check
+  - stack setup --no-terminal
+  - stack build --ghc-options=-Werror --no-terminal
+  - stack test --ghc-options=-Werror --no-terminal --coverage
+  - stack haddock --no-terminal
 
 cache:
   directories:
-    - $HOME/.tinc/cache
+    - $HOME/.stack

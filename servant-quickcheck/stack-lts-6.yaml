@@ -1,0 +1,6 @@
+resolver: lts-6.30
+packages:
+- '.'
+extra-deps: []
+flags: {}
+extra-package-dbs: []
