@@ -17,6 +17,7 @@ import Servant.Client           (BaseUrl (..), Scheme (..))
 import Test.QuickCheck          (Arbitrary (..), Gen, elements, oneof)
 
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Internal as BS (c2w)
 
 
 class HasGenRequest a where
@@ -31,7 +32,11 @@ instance (HasGenRequest a, HasGenRequest b) => HasGenRequest (a :<|> b) where
 instance (KnownSymbol path, HasGenRequest b) => HasGenRequest (path :> b) where
     genRequest _ = do
       old' <- old
-      return $ \burl -> let r = old' burl in r { path = new <> path r }
+      return $ \burl -> let r = old' burl
+                            oldPath = path r
+                            oldPath' = BS.dropWhile (== BS.c2w '/') oldPath
+                            paths = filter (not . BS.null) [new, oldPath']
+                            in r { path = "/" <> BS.intercalate "/" paths }
       where
         old = genRequest (Proxy :: Proxy b)
         new = cs $ symbolVal (Proxy :: Proxy path)
