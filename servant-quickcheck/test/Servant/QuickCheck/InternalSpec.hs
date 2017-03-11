@@ -13,7 +13,7 @@ import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
                                           defaultParams, evaluateExample)
 import           Test.QuickCheck.Gen     (unGen)
 import           Test.QuickCheck.Random  (mkQCGen)
-import           Network.HTTP.Client     (queryString)
+import           Network.HTTP.Client     (queryString, path)
 
 #if MIN_VERSION_servant(0,8,0)
 import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
@@ -34,6 +34,7 @@ spec = do
   notLongerThanSpec
   queryParamsSpec
   queryFlagsSpec
+  deepPathSpec
 
 serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
@@ -52,7 +53,7 @@ serversEqualSpec = describe "serversEqual" $ do
           evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
       show err `shouldContain` "Body: 1"
       show err `shouldContain` "Body: 2"
-      show err `shouldContain` "Path: failplz/"
+      show err `shouldContain` "Path: /failplz"
 
 serverSatisfiesSpec :: Spec
 serverSatisfiesSpec = describe "serverSatisfies" $ do
@@ -113,6 +114,17 @@ isComprehensiveSpec = describe "HasGenRequest" $ do
     let _g = genRequest comprehensiveAPIWithoutRaw
     True `shouldBe` True -- This is a type-level check
 
+deepPathSpec :: Spec
+deepPathSpec = describe "Path components" $ do
+
+  it "are separated by slashes, without a trailing slash" $ do
+    let rng = mkQCGen 0
+        burl = BaseUrl Http "localhost" 80 ""
+        gen = genRequest deepAPI
+        req = (unGen gen rng 0) burl
+    path req `shouldBe` ("/one/two/three")
+
+
 queryParamsSpec :: Spec
 queryParamsSpec = describe "QueryParams" $ do
 
@@ -169,6 +181,12 @@ type API2 = "failplz" :> Get '[JSON] Int
 
 api2 :: Proxy API2
 api2 = Proxy
+
+type DeepAPI = "one" :> "two" :> "three":> Get '[JSON] ()
+
+deepAPI :: Proxy DeepAPI
+deepAPI = Proxy
+
 
 server2 :: IO (Server API2)
 server2 = return $ return 1
