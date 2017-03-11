@@ -2,6 +2,14 @@ upcoming:
 
 releases:
 
+  - version: "0.0.2.4"
+    changes:
+
+      - description: Don't append slashes to paths
+        issue: 22
+        authors: declension
+        date: 2017-03-11
+
   - version: "0.0.2.3"
     changes:
 
