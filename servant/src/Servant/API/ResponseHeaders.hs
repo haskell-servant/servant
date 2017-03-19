@@ -45,7 +45,7 @@ import           Prelude                     ()
 import           Prelude.Compat
 
 -- | Response Header objects. You should never need to construct one directly.
--- Instead, use 'addOptionalHeader.
+-- Instead, use 'addOptionalHeader'.
 data Headers ls a = Headers { getResponse :: a
                             -- ^ The underlying value of a 'Headers'
                             , getHeadersHList :: HList ls
@@ -125,7 +125,7 @@ instance OVERLAPPABLE_ ( KnownSymbol h, ToHttpApiData v
 -- | @addHeader@ adds a header to a response. Note that it changes the type of
 -- the value in the following ways:
 --
---   1. A simple value is wrapped in "Headers [<hdr>]":
+--   1. A simple value is wrapped in "Headers '[hdr]":
 --
 -- >>> let example1 = addHeader 5 "hi" :: Headers '[Header "someheader" Int] String;
 -- >>> getHeaders example1

@@ -12,7 +12,7 @@ data RemoteHost deriving Typeable
 
 -- $remotehost
 --
--- | Use 'RemoteHost' whenever your request handlers need the host or IP address
+--   Use 'RemoteHost' whenever your request handlers need the host or IP address
 --   from which the client issued the HTTP request. The corresponding handlers
 --   receive arguments of type @SockAddr@ (from @Network.Socket@).
 --
