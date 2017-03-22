@@ -88,6 +88,8 @@ module Servant.Utils.Links (
   -- * Adding custom types
   , HasLink(..)
   , linkURI
+  , linkSegments
+  , linkQueryParams
   , Link
 ) where
 
@@ -120,6 +122,18 @@ data Link = Link
   { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
   , _queryParams :: [Param Query]
   } deriving Show
+
+-- | Link path segments
+linkSegments :: Link -> [String]
+linkSegments = _segments
+
+-- | Query params of a link, values are optional because of 'QueryFlag'
+linkQueryParams :: Link -> [(String, Maybe String)]
+linkQueryParams = map toKeyValue . _queryParams
+  where
+    toKeyValue (ArrayElemParam k v) = (k <> "[]", Just $ Text.unpack v)
+    toKeyValue (SingleParam k v)    = (k, Just $ Text.unpack v)
+    toKeyValue (FlagParam k)        = (k, Nothing)
 
 instance ToHttpApiData Link where
     toHeader   = TE.encodeUtf8 . toUrlPiece
