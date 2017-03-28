@@ -6,6 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_HADDOCK not-home        #-}
 
 -- | Type safe generation of internal links.
@@ -176,11 +177,15 @@ safeLink
 safeLink _ endpoint = toLink endpoint (Link mempty mempty)
 
 -- | Construct a toLink for an endpoint.
+--
+-- Default implementation for combinators not used in link e.g. headers.
 class HasLink endpoint where
     type MkLink endpoint
+    type MkLink endpoint = MkLink endpoint
     toLink :: Proxy endpoint -- ^ The API endpoint you would like to point to
          -> Link
          -> MkLink endpoint
+    toLink _ = toLink (Proxy :: Proxy endpoint)
 
 -- Naked symbol instance
 instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
@@ -240,17 +245,10 @@ instance (ToHttpApiData v, HasLink sub)
         toLink (Proxy :: Proxy sub) $
             foldl' (flip $ addSegment . escape . Text.unpack . toUrlPiece) l vs
 
-instance HasLink sub => HasLink (Header sym a :> sub) where
-    type MkLink (Header sym a :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
-
-instance HasLink sub => HasLink (RemoteHost :> sub) where
-    type MkLink (RemoteHost :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
-
-instance HasLink sub => HasLink (BasicAuth realm a :> sub) where
-    type MkLink (BasicAuth realm a :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+instance HasLink sub => HasLink (Header sym a :> sub)
+instance HasLink sub => HasLink (RemoteHost :> sub)
+instance HasLink sub => HasLink (BasicAuth realm a :> sub)
+instance HasLink sub => HasLink (AuthProtect tag :> sub)
 
 -- Verb (terminal) instances
 instance HasLink (Verb m s ct a) where
@@ -260,8 +258,3 @@ instance HasLink (Verb m s ct a) where
 instance HasLink Raw where
     type MkLink Raw = Link
     toLink _ = id
-
--- AuthProtext instances
-instance HasLink sub => HasLink (AuthProtect tag :> sub) where
-  type MkLink (AuthProtect tag :> sub) = MkLink sub
-  toLink _ = toLink (Proxy :: Proxy sub)
