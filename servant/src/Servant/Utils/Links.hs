@@ -112,6 +112,7 @@ import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
 import Servant.API.TypeLevel
+import Servant.API.Experimental.Auth ( AuthProtect )
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
@@ -259,3 +260,8 @@ instance HasLink (Verb m s ct a) where
 instance HasLink Raw where
     type MkLink Raw = Link
     toLink _ = id
+
+-- AuthProtext instances
+instance HasLink sub => HasLink (AuthProtect tag :> sub) where
+  type MkLink (AuthProtect tag :> sub) = MkLink sub
+  toLink _ = toLink (Proxy :: Proxy sub)
