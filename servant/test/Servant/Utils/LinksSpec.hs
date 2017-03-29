@@ -26,6 +26,8 @@ type TestApi =
   :<|> "delete" :> Header "ponies" String :> Delete '[JSON] NoContent
   :<|> "raw" :> Raw
 
+  -- With headers
+  :<|> "header" :> Get '[JSON] (Headers '[Header "Content-Type" String] NoContent)
 
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
          => Proxy endpoint -> MkLink endpoint
@@ -66,6 +68,8 @@ spec = describe "Servant.Utils.Links" $ do
         apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] NoContent)) `shouldBeLink` "delete"
         apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeLink` "raw"
 
+    it "generates correct links when there is headers" $ do
+        apiLink (Proxy :: Proxy ("header" :> Get '[JSON] (Headers '[Header "Content-Type" String] NoContent))) `shouldBeLink` "header"
 
 -- |
 -- Before https://github.com/CRogers/should-not-typecheck/issues/5 is fixed,
