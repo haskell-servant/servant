@@ -189,7 +189,7 @@ instance (HasForeign lang ftype a, HasForeign lang ftype b)
 
 instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype api)
   => HasForeign lang ftype (Capture sym t :> api) where
-  type Foreign ftype (Capture sym a :> api) = Foreign ftype api
+  type Foreign ftype (Capture sym t :> api) = Foreign ftype api
 
   foreignFor lang Proxy Proxy req =
     foreignFor lang Proxy (Proxy :: Proxy api) $
