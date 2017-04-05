@@ -8,7 +8,9 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE MultiParamTypeClasses#-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 #include "overlapping-compat.h"
 -- | This module provides 'client' which can automatically generate
@@ -18,6 +20,7 @@ module Servant.Client
   ( AuthClientData
   , AuthenticateReq(..)
   , client
+  , staticClient
   , HasClient(..)
   , ClientM
   , runClientM
@@ -60,6 +63,24 @@ import           Servant.Common.Req
 -- > (getAllBooks :<|> postNewBook) = client myApi
 client :: HasClient api => Proxy api -> Client api
 client p = clientWithRoute p defReq
+
+newtype InjectArg arg = InjectArg arg
+
+class HasArgument s arg result | s arg -> result, s result -> arg where
+  supplyArgument :: arg -> s -> result
+
+
+instance (HasArgument left arg left1, HasArgument right arg right1) => HasArgument (left :<|> right) arg (left1 :<|> right1) where
+  supplyArgument arg (left :<|> right) = supplyArgument arg left :<|> supplyArgument arg right
+
+instance (HasArgument rest arg rest') => HasArgument (a -> rest) arg (a -> rest') where
+  supplyArgument arg f = \a -> supplyArgument arg (f a)
+
+instance HasArgument  (arg -> rest) (InjectArg arg) rest where
+  supplyArgument (InjectArg arg) f = f arg
+
+staticClient :: (HasClient layout, HasArgument (Client layout) (InjectArg BaseUrl) result) => Proxy layout -> BaseUrl -> result
+staticClient p baseUrl = supplyArgument (InjectArg baseUrl) $ client p
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
