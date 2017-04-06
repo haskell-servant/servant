@@ -46,7 +46,7 @@ import           Network.Wai                (Application, Request, Response,
                                              responseLBS, vault)
 import           Prelude                    ()
 import           Prelude.Compat
-import           Web.HttpApiData            (FromHttpApiData, parseHeaderMaybe,
+import           Web.HttpApiData            (FromHttpApiData, parseHeader,
                                              parseQueryParam,
                                              parseUrlPieceMaybe,
                                              parseUrlPieces)
@@ -280,10 +280,21 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
   type ServerT (Header sym a :> api) m =
     Maybe a -> ServerT api m
 
-  route Proxy context subserver =
-    let mheader req = parseHeaderMaybe =<< lookup str (requestHeaders req)
-    in  route (Proxy :: Proxy api) context (passToServer subserver mheader)
-    where str = fromString $ symbolVal (Proxy :: Proxy sym)
+  route Proxy context subserver = route (Proxy :: Proxy api) context $
+      subserver `addHeaderCheck` withRequest headerCheck
+    where
+      headerName = symbolVal (Proxy :: Proxy sym)
+      headerCheck req =
+        case lookup (fromString headerName) (requestHeaders req) of
+          Nothing -> return Nothing
+          Just txt ->
+            case parseHeader txt of
+              Left e -> delayedFailFatal err400
+                  { errBody = cs $ "Error parsing header "
+                                   <> fromString headerName
+                                   <> " failed: " <> e
+                  }
+              Right header -> return $ Just header
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -321,7 +332,8 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
             Just (Just v) ->
               case parseQueryParam v of
                   Left e -> delayedFailFatal err400
-                      { errBody = cs $ "Error parsing query parameter " <> paramname <> " failed: " <> e
+                      { errBody = cs $ "Error parsing query parameter "
+                                       <> paramname <> " failed: " <> e
                       }
 
                   Right param -> return $ Just param
@@ -364,7 +376,9 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
           case partitionEithers $ fmap parseQueryParam params of
               ([], parsed) -> return parsed
               (errs, _)    -> delayedFailFatal err400
-                  { errBody = cs $ "Error parsing query parameter(s) " <> paramname <> " failed: " <> T.intercalate ", " errs
+                  { errBody = cs $ "Error parsing query parameter(s) "
+                                   <> paramname <> " failed: "
+                                   <> T.intercalate ", " errs
                   }
         where
           params :: [T.Text]

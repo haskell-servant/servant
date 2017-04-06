@@ -477,6 +477,13 @@ headerSpec = describe "Servant.API.Header" $ do
         it "passes the header to the handler (String)" $
             delete' "/" "" `shouldRespondWith` 200
 
+    with (return (serve headerApi expectsInt)) $ do
+        let delete' x = THW.request methodDelete x [("MyHeader", "not a number")]
+
+        it "checks for parse errors" $
+            delete' "/" "" `shouldRespondWith` 400
+
+
 -- }}}
 ------------------------------------------------------------------------------
 -- * rawSpec {{{
