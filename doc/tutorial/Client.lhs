@@ -1,12 +1,11 @@
 # Querying an API
 
-While defining handlers that serve an API has a lot to it, querying an API is simpler: we do not care about what happens inside the webserver, we just need to know how to talk to it and get a response back. Except that we usually have to write the querying functions by hand because the structure of the API isn't a first class citizen and can't be inspected to generate a bunch of client-side functions.
+While defining handlers that [serve an API](Server.lhs) has a lot to it, querying an API is simpler: we do not care about what happens inside the webserver, we just need to know how to talk to it and get a response back. Except that we usually have to write the querying functions by hand because the structure of the API isn't a first class citizen and can't be inspected to generate a bunch of client-side functions.
 
-**servant** however has a way to inspect APIs, because APIs are just Haskell types and (GHC) Haskell lets us do quite a few things with types. In the same way that we look at an API type to deduce the types the handlers should have, we can inspect the structure of the API to *derive* Haskell functions that take one argument for each occurence of `Capture`, `ReqBody`, `QueryParam`
-and friends. By *derive*, we mean that there's no code generation involved, the functions are defined just by the structure of the API type.
+**servant** however has a way to inspect APIs, because APIs are just Haskell types and (GHC) Haskell lets us do quite a few things with types. In the same way that we look at an API type to deduce the types the handlers should have, we can inspect the structure of the API to *derive* Haskell functions that take one argument for each occurrence of `Capture`, `ReqBody`, `QueryParam`
+and friends (see [the tutorial introduction](ApiType.lhs) for an overview). By *derive*, we mean that there's no code generation involved - the functions are defined just by the structure of the API type.
 
-The source for this tutorial section is a literate haskell file, so first we
-need to have some language extensions and imports:
+The source for this tutorial section is a literate Haskell file, so first we need to have some language extensions and imports:
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
@@ -65,7 +64,7 @@ type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Posit
       :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
 ```
 
-What we are going to get with **servant-client** here is 3 functions, one to query each endpoint:
+What we are going to get with **servant-client** here is three functions, one to query each endpoint:
 
 ``` haskell
 position :: Int -- ^ value for "x"
@@ -92,7 +91,7 @@ api = Proxy
 position :<|> hello :<|> marketing = client api
 ```
 
-As you can see in the code above, we just "pattern match our way" to these functions. If we try to derive less or more functions than there are endpoints in the API, we obviously get an error. The `BaseUrl` value there is just:
+`client api` returns client functions for our _entire_ API, combined with `:<|>`, which we can pattern match on as above. You could say `client` "calculates" the correct type and number of client functions for the API type it is given (via a `Proxy`), as well as their implementations.
 
 ``` haskell ignore
 -- | URI scheme to use
@@ -135,7 +134,7 @@ run = do
 
 Here's the output of the above code running against the appropriate server:
 
-``` bash
+```
 Position {xCoord = 10, yCoord = 10}
 HelloMessage {msg = "Hello, servant"}
 Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we miss you!", body = "Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!"}
