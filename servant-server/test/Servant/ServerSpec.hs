@@ -44,7 +44,7 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              NoContent (..), Patch, PlainText,
                                              Post, Put,
                                              QueryFlag, QueryParam, QueryParams,
-                                             Raw, RemoteHost, ReqBody,
+                                             QueryParamForm, Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server             (Server, Handler, err401, err403,
@@ -64,6 +64,7 @@ import           Servant.Server.Experimental.Auth
                                              mkAuthHandler)
 import           Servant.Server.Internal.Context
                                             (NamedContext(..))
+import           Web.FormUrlEncoded         (FromForm)
 
 -- * comprehensive api test
 
@@ -277,12 +278,13 @@ type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
                 :<|> "b" :> QueryFlag "capitalize" :> Get '[JSON] Person
                 :<|> "param" :> QueryParam "age" Integer :> Get '[JSON] Person
                 :<|> "multiparam" :> QueryParams "ages" Integer :> Get '[JSON] Person
+                :<|> "paramform" :> QueryParamForm Person :> Get '[JSON] Person
 
 queryParamApi :: Proxy QueryParamApi
 queryParamApi = Proxy
 
 qpServer :: Server QueryParamApi
-qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges
+qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges :<|> qpPerson
 
   where qpNames (_:name2:_) = return alice { name = name2 }
         qpNames _           = return alice
@@ -294,6 +296,8 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAge
         qpAge (Just age') = return alice{ age = age'}
 
         qpAges ages = return alice{ age = sum ages}
+
+        qpPerson person = return person
 
         queryParamServer (Just name_) = return alice{name = name_}
         queryParamServer Nothing = return alice
@@ -409,6 +413,28 @@ queryParamSpec = do
             decode' (simpleBody response3'') `shouldBe` Just alice{
               name = "Alice"
              }
+
+      it "parses query form" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params = "?name=Alice&age=42"
+        response <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params,
+            queryString = parseQuery params,
+            pathInfo = ["paramform"]
+           }
+        liftIO $
+            decode' (simpleBody response) `shouldBe` Just alice
+
+      it "generates an error on parse failures of query form" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params = "?name=Alice"
+        response <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params,
+            queryString = parseQuery params,
+            pathInfo = ["paramform"]
+           }
+        liftIO $ statusCode (simpleStatus response) `shouldBe` 400
+        return ()
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -732,6 +758,7 @@ data Person = Person {
 
 instance ToJSON Person
 instance FromJSON Person
+instance FromForm Person
 
 alice :: Person
 alice = Person "Alice" 42

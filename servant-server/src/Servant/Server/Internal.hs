@@ -46,6 +46,7 @@ import           Network.Wai                (Application, Request, Response,
                                              responseLBS, vault)
 import           Prelude                    ()
 import           Prelude.Compat
+import           Web.FormUrlEncoded         (FromForm, urlDecodeAsForm)
 import           Web.HttpApiData            (FromHttpApiData, parseHeaderMaybe,
                                              parseQueryParam,
                                              parseUrlPieceMaybe,
@@ -54,7 +55,7 @@ import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capt
                                               CaptureAll, Verb,
                                               ReflectMethod(reflectMethod),
                                               IsSecure(..), Header, QueryFlag,
-                                              QueryParam, QueryParams, Raw,
+                                              QueryParam, QueryParams, QueryParamForm, Raw,
                                               RemoteHost, ReqBody, Vault,
                                               WithNamedContext)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
@@ -404,6 +405,48 @@ instance (KnownSymbol sym, HasServer api context)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
+
+-- | If you use @'QueryParamForm' BookSearchParams@ in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a function
+-- that takes an argument of type @['BookSearchParams']@.
+--
+-- This lets servant worry about all key-values in the query string
+-- and turning each of them into a value of the type you specify.
+--
+-- You can control how the individual values are converted from 'BookSearchParams'
+-- to your type by simply providing an instance of 'FromForm' for your type.
+--
+-- Example:
+--
+-- > data BookSearchParams = BookSearchParams
+-- >   { title :: Text
+-- >   { authors :: [Text]
+-- >   , page :: Maybe Int
+-- >   } deriving (Generic)
+-- > instance FromForm BookSearchParams
+-- >
+-- > type MyApi = "books" :> QueryParamForm BookSearchParams :> Get '[JSON] [Book]
+-- >
+-- > server :: Server MyApi
+-- > server = getBooksBy
+-- >   where getBooksBy :: BookSearchParams -> Handler [Book]
+-- >         getBooksBy searchParams = ...return all books by these conditions...
+
+instance (FromForm a, HasServer api context)
+      => HasServer (QueryParamForm a :> api) context where
+
+  type ServerT (QueryParamForm a :> api) m =
+    a -> ServerT api m
+
+  route Proxy context subserver = route (Proxy :: Proxy api) context $
+      subserver `addParameterCheck` withRequest paramsCheck
+    where
+      paramsCheck req =
+          case urlDecodeAsForm (BL.drop 1 . BL.fromStrict $ rawQueryString req) of
+              Right form -> return form
+              Left  err  -> delayedFailFatal err400
+                  { errBody = cs $ "Error parsing query parameter(s) to form failed: " <> err
+                  }
 
 -- | Just pass the request to the underlying application and serve its response.
 --
