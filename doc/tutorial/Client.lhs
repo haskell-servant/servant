@@ -1,6 +1,6 @@
 # Querying an API
 
-While defining handlers that [serve an API](Server.lhs) has a lot to it, querying an API is simpler: we do not care about what happens inside the webserver, we just need to know how to talk to it and get a response back. Except that we usually have to write the querying functions by hand because the structure of the API isn't a first class citizen and can't be inspected to generate a bunch of client-side functions.
+While defining handlers that [serve an API](Server.lhs) has a lot to it, querying an API is simpler: we do not care about what happens inside the webserver, we just need to know how to talk to it and get a response back. That said, we usually have to write the querying functions by hand because the structure of the API isn't a first class citizen and can't be inspected to generate the client-side functions.
 
 **servant** however has a way to inspect APIs, because APIs are just Haskell types and (GHC) Haskell lets us do quite a few things with types. In the same way that we look at an API type to deduce the types the handlers should have, we can inspect the structure of the API to *derive* Haskell functions that take one argument for each occurrence of `Capture`, `ReqBody`, `QueryParam`
 and friends (see [the tutorial introduction](ApiType.lhs) for an overview). By *derive*, we mean that there's no code generation involved - the functions are defined just by the structure of the API type.
