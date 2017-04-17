@@ -56,7 +56,7 @@ library
   build-depends:
       base                  >= 4.7  && < 4.10
     , base-compat           >= 0.9  && < 0.10
-    , aeson                 >= 0.7  && < 1.2
+    , aeson                 >= 0.7  && < 1.3
     , attoparsec            >= 0.12 && < 0.14
     , bytestring            >= 0.10 && < 0.11
     , case-insensitive      >= 1.2  && < 1.3
