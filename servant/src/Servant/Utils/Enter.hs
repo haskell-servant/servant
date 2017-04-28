@@ -37,7 +37,7 @@ class ( Entered m n typ ~ ret
       )
     => Enter typ m n ret
   where
-    enter :: m :~> n -> typ -> ret
+    enter :: (m :~> n) -> typ -> ret
 
 -- **  Servant combinators
 
