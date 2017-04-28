@@ -207,7 +207,7 @@ layoutWithContext p context =
 -- monad. Or have your types ensure that your handlers don't do any IO. Enter
 -- `enter`.
 --
--- With `enter`, you can provide a function, wrapped in the `(:~>)` / `Nat`
+-- With `enter`, you can provide a function, wrapped in the `(:~>)` / `NT`
 -- newtype, to convert any number of endpoints from one type constructor to
 -- another. For example
 --
@@ -215,7 +215,8 @@ layoutWithContext p context =
 -- >>> import qualified Control.Category as C
 -- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String
 -- >>> let readerServer = return 1797 :<|> ask :: ServerT ReaderAPI (Reader String)
--- >>> let mainServer = enter (generalizeNat C.. (runReaderTNat "hi")) readerServer :: Server ReaderAPI
+-- >>> let nt = generalizeNat C.. (runReaderTNat "hi") :: Reader String :~> Handler
+-- >>> let mainServer = enter nt readerServer :: Server ReaderAPI
 --
 
 -- $setup

@@ -5,6 +5,7 @@ module Servant.ArbitraryMonadServerSpec where
 
 import qualified Control.Category           as C
 import           Control.Monad.Reader
+import Data.Functor.Identity
 import           Data.Proxy
 import           Servant.API
 import           Servant.Server
@@ -40,7 +41,7 @@ readerServer :: Server ReaderAPI
 readerServer = enter fReader readerServer'
 
 combinedReaderServer' :: ServerT CombinedAPI (Reader String)
-combinedReaderServer' = readerServer' :<|> enter generalizeNat (return True)
+combinedReaderServer' = readerServer' :<|> enter (generalizeNat :: Identity :~> Reader String) (return True)
 
 combinedReaderServer :: Server CombinedAPI
 combinedReaderServer = enter fReader combinedReaderServer'
