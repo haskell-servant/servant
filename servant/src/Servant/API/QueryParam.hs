@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeOperators      #-}
 {-# LANGUAGE PolyKinds          #-}
 {-# OPTIONS_HADDOCK not-home    #-}
-module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParams) where
+module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParams, QueryParamForm) where
 
 import           Data.Typeable (Typeable)
 import           GHC.TypeLits (Symbol)
@@ -42,9 +42,21 @@ data QueryParams (sym :: Symbol) a
 -- >>> type MyApi = "books" :> QueryFlag "published" :> Get '[JSON] [Book]
 data QueryFlag (sym :: Symbol)
 
+-- | Lookup the values associated to the query string parameter
+-- and try to extract it as a value of type @a@.
+--
+-- Example:
+--
+-- >>> -- /books?title=<title>&authors[]=<author1>&authors[]=<author2>&...
+-- >>> type MyApi = "books" :> QueryParamForm BookSearchParams :> Get '[JSON] [Book]
+data QueryParamForm a
+    deriving Typeable
+
 -- $setup
 -- >>> import Servant.API
 -- >>> import Data.Aeson
 -- >>> import Data.Text
+-- >>> import Web.FormUrlEncoded (FromForm)
 -- >>> data Book
 -- >>> instance ToJSON Book where { toJSON = undefined }
+-- >>> data BookSearchParams

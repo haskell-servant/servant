@@ -127,6 +127,7 @@ test-suite spec
     , exceptions
     , hspec == 2.*
     , hspec-wai >= 0.8 && <0.9
+    , http-api-data
     , http-types
     , mtl
     , network >= 2.6
