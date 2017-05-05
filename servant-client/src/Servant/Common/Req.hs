@@ -72,8 +72,8 @@ data ServantError
   deriving (Show, Typeable)
 
 instance Eq ServantError where
-  FailureResponse a b c d == FailureResponse w x y z =
-    (show a, b, c, d) == (show w, x, y, z)
+  FailureResponse _ a b c == FailureResponse _ x y z =
+    (a, b, c) == (x, y, z)
   DecodeFailure a b c == DecodeFailure x y z =
     (a, b, c) == (x, y, z)
   UnsupportedContentType a b == UnsupportedContentType x y =
