@@ -63,11 +63,12 @@ delayed body srv = Delayed
   , acceptD   = return ()
   , contentD  = return ()
   , paramsD   = return ()
+  , headersD   = return ()
   , bodyD     = \() -> do
       liftIO (writeTestResource "hia" >> putStrLn "garbage created")
       _ <- register (freeTestResource >> putStrLn "garbage collected")
       body
-  , serverD   = \() () () _body _req -> srv
+  , serverD   = \() () () () _body _req -> srv
   }
 
 simpleRun :: Delayed () (Handler ())
