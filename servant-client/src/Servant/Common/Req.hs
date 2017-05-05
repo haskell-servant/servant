@@ -48,7 +48,7 @@ import Web.HttpApiData
 
 data ServantError
   = FailureResponse
-    { failingRequest            :: Request
+    { failingRequest            :: UrlReq
     , responseStatus            :: Status
     , responseContentType       :: MediaType
     , responseBody              :: ByteString
@@ -85,6 +85,11 @@ instance Eq ServantError where
   _ == _ = False
 
 instance Exception ServantError
+
+data UrlReq = UrlReq BaseUrl Req
+
+instance Show UrlReq where
+  show (UrlReq url req) = showBaseUrl url ++ reqPath req ++ "?" ++ show (qs req)
 
 data Req = Req
   { reqPath   :: String
@@ -251,7 +256,7 @@ performRequest reqMethod req = do
                    Nothing -> throwError $ InvalidContentTypeHeader (cs t) body
                    Just t' -> pure t'
       unless (status_code >= 200 && status_code < 300) $
-        throwError $ FailureResponse request status ct body
+        throwError $ FailureResponse (UrlReq reqHost req) status ct body
       return (status_code, body, ct, hdrs, response)
 
 performRequestCT :: MimeUnrender ct result => Proxy ct -> Method -> Req
