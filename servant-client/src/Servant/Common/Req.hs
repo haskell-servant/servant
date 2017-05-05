@@ -48,7 +48,8 @@ import Web.HttpApiData
 
 data ServantError
   = FailureResponse
-    { responseStatus            :: Status
+    { failingRequest            :: Request
+    , responseStatus            :: Status
     , responseContentType       :: MediaType
     , responseBody              :: ByteString
     }
@@ -71,8 +72,8 @@ data ServantError
   deriving (Show, Typeable)
 
 instance Eq ServantError where
-  FailureResponse a b c == FailureResponse x y z =
-    (a, b, c) == (x, y, z)
+  FailureResponse a b c d == FailureResponse w x y z =
+    (show a, b, c, d) == (show w, x, y, z)
   DecodeFailure a b c == DecodeFailure x y z =
     (a, b, c) == (x, y, z)
   UnsupportedContentType a b == UnsupportedContentType x y =
@@ -224,7 +225,7 @@ runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
 
 
-performRequest :: Method -> Req 
+performRequest :: Method -> Req
                -> ClientM ( Int, ByteString, MediaType
                           , [HTTP.Header], Response ByteString)
 performRequest reqMethod req = do
@@ -250,10 +251,10 @@ performRequest reqMethod req = do
                    Nothing -> throwError $ InvalidContentTypeHeader (cs t) body
                    Just t' -> pure t'
       unless (status_code >= 200 && status_code < 300) $
-        throwError $ FailureResponse status ct body
+        throwError $ FailureResponse request status ct body
       return (status_code, body, ct, hdrs, response)
 
-performRequestCT :: MimeUnrender ct result => Proxy ct -> Method -> Req 
+performRequestCT :: MimeUnrender ct result => Proxy ct -> Method -> Req
     -> ClientM ([HTTP.Header], result)
 performRequestCT ct reqMethod req = do
   let acceptCTS = contentTypes ct

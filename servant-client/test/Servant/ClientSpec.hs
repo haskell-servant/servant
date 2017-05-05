@@ -122,9 +122,9 @@ getBody         :: Person -> SCR.ClientM Person
 getQueryParam   :: Maybe String -> SCR.ClientM Person
 getQueryParams  :: [String] -> SCR.ClientM [Person]
 getQueryFlag    :: Bool -> SCR.ClientM Bool
-getRawSuccess :: HTTP.Method 
+getRawSuccess :: HTTP.Method
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
-getRawFailure   :: HTTP.Method 
+getRawFailure   :: HTTP.Method
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> SCR.ClientM (String, Maybe Int, Bool, [(String, [Rational])])
@@ -372,7 +372,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
         let (_ :<|> getDeleteEmpty :<|> _) = client api
         Left res <- runClientM getDeleteEmpty (ClientEnv manager baseUrl)
         case res of
-          FailureResponse (HTTP.Status 404 "Not Found") _ _ -> return ()
+          FailureResponse _ (HTTP.Status 404 "Not Found") _ _ -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \(_, baseUrl) -> do
