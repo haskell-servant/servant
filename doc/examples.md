@@ -29,6 +29,15 @@
     functions in elm for the API,
   - test-suites for both the backend and the frontend.
 
+- **[servant-purescript](https://github.com/eskimor/servant-purescript/tree/master/examples/central-counter)**:
+
+         An example consisting of
+
+  - a backend in uses `haskell-servant`
+  - a frontend written in [PureScript](http://www.purescript.org/) using
+    [servant-purescript](https://github.com/eskimor/servant-purescript) to generate
+    an API wrapper in PureScript to interface the web API with 
+
 
 - **[example-servant-persistent](https://github.com/haskell-servant/example-servant-persistent)**:
 
