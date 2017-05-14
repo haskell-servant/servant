@@ -7,7 +7,8 @@ packages:
 - servant-server/
 - doc/tutorial
 extra-deps:
-- http-api-data-0.3
+- attoparsec-iso8601-1.0.0.0
+- http-api-data-0.3.7
 - servant-js-0.9.1
 - natural-transformation-0.4
 - hspec-2.3.2
