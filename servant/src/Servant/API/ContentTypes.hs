@@ -185,7 +185,7 @@ instance OVERLAPPABLE_
             lkup = fmap (\(a,b) -> (a, (fromStrict $ M.renderHeader a, b))) amrs
 
 #if MIN_VERSION_base(4,9,0)
-instance TL.TypeError (TL.Text "No instance for (), use NoContent instead.")
+instance TL.TypeError ('TL.Text "No instance for (), use NoContent instead.")
   => AllCTRender '[] () where
   handleAcceptH _ _ _ = error "unreachable"
 #endif
