@@ -122,9 +122,9 @@ getBody         :: Person -> SCR.ClientM Person
 getQueryParam   :: Maybe String -> SCR.ClientM Person
 getQueryParams  :: [String] -> SCR.ClientM [Person]
 getQueryFlag    :: Bool -> SCR.ClientM Bool
-getRawSuccess :: HTTP.Method 
+getRawSuccess :: HTTP.Method
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
-getRawFailure   :: HTTP.Method 
+getRawFailure   :: HTTP.Method
   -> SCR.ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> SCR.ClientM (String, Maybe Int, Bool, [(String, [Rational])])
