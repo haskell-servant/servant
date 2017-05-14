@@ -19,7 +19,7 @@ See [here](https://github.com/haskell-servant/servant/blob/master/servant-docs/e
 
 import Data.Proxy
 import Data.Text
-import Servant
+import Servant.Docs
 
 -- our type for a Greeting message
 data Greet = Greet { _msg :: Text }
