@@ -164,6 +164,10 @@ addQueryParam qp l =
 -- >>> linkURI $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API) [1, 2, 3]
 -- sum?x[]=1&x[]=2&x[]=3
 --
+-- >>> type API = "foo/bar" :> Get '[JSON] Int
+-- >>> linkURI $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API)
+-- foo%2Fbar
+--
 linkURI :: Link -> URI
 linkURI = linkURI' LinkArrayElementBracket
 
@@ -186,7 +190,7 @@ linkURI' :: LinkArrayElementStyle -> Link -> URI
 linkURI' addBrackets (Link segments q_params) =
     URI mempty  -- No scheme (relative)
         Nothing -- Or authority (relative)
-        (intercalate "/" segments)
+        (intercalate "/" $ map escape segments)
         (makeQueries q_params) mempty
   where
     makeQueries :: [Param] -> String
