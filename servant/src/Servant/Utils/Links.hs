@@ -154,6 +154,16 @@ addQueryParam :: Param -> Link -> Link
 addQueryParam qp l =
     l { _queryParams = _queryParams l <> [qp] }
 
+-- | Transform 'Link' into 'URI'.
+--
+-- >>> type API = "something" :> Get '[JSON] Int
+-- >>> linkURI $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API)
+-- something
+--
+-- >>> type API = "sum" :> QueryParams "x" Int :> Get '[JSON] Int
+-- >>> linkURI $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API) [1, 2, 3]
+-- sum?x[]=1&x[]=2&x[]=3
+--
 linkURI :: Link -> URI
 linkURI = linkURI' LinkArrayElementBracket
 
@@ -163,6 +173,15 @@ data LinkArrayElementStyle
     | LinkArrayElementPlain    -- ^ @foo=1&foo=2@
   deriving (Eq, Ord, Show, Enum, Bounded)
 
+-- | Configurable 'linkURI'.
+--
+-- >>> type API = "sum" :> QueryParams "x" Int :> Get '[JSON] Int
+-- >>> linkURI' LinkArrayElementBracket $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API) [1, 2, 3]
+-- sum?x[]=1&x[]=2&x[]=3
+--
+-- >>> linkURI' LinkArrayElementPlain $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API) [1, 2, 3]
+-- sum?x=1&x=2&x=3
+--
 linkURI' :: LinkArrayElementStyle -> Link -> URI
 linkURI' addBrackets (Link segments q_params) =
     URI mempty  -- No scheme (relative)
@@ -287,3 +306,6 @@ instance HasLink Raw where
 instance HasLink sub => HasLink (AuthProtect tag :> sub) where
   type MkLink (AuthProtect tag :> sub) = MkLink sub
   toLink _ = toLink (Proxy :: Proxy sub)
+
+-- $setup
+-- >>> import Servant.API
