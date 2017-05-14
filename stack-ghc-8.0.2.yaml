@@ -8,3 +8,5 @@ packages:
 - doc/tutorial
 extra-deps:
 - aeson-1.2.0.0
+- attoparsec-iso8601-1.0.0.0
+- http-api-data-0.3.7
