@@ -1,3 +1,8 @@
+next
+----
+
+* Add `linkSegments` and `linkQueryParams` accessor functions
+
 0.10
 ------
 
