@@ -15,4 +15,4 @@ extra-deps:
 - hspec-core-2.3.2
 - hspec-wai-0.8.0
 - hspec-expectations-0.8.2
-resolver: lts-7.15
+resolver: lts-6.27
