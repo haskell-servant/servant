@@ -87,8 +87,14 @@ module Servant.Utils.Links (
   , URI(..)
   -- * Adding custom types
   , HasLink(..)
-  , linkURI
   , Link
+  , linkURI
+  , linkURI'
+  , LinkArrayElementStyle (..)
+  -- ** Link accessors
+  , Param (..)
+  , linkSegments
+  , linkQueryParams
 ) where
 
 import           Data.List
@@ -118,9 +124,15 @@ import Servant.API.Experimental.Auth ( AuthProtect )
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
 -- 'Link' is guaranteed to be part of the mentioned API.
 data Link = Link
-  { _segments :: [String] -- ^ Segments of "foo/bar" would be ["foo", "bar"]
-  , _queryParams :: [Param Query]
+  { _segments :: [String]   -- ^ Segments of "foo/bar" would be ["foo", "bar"]
+  , _queryParams :: [Param]
   } deriving Show
+
+linkSegments :: Link -> [String]
+linkSegments = _segments
+
+linkQueryParams :: Link -> [Param]
+linkQueryParams = _queryParams
 
 instance ToHttpApiData Link where
     toHeader   = TE.encodeUtf8 . toUrlPiece
@@ -128,11 +140,8 @@ instance ToHttpApiData Link where
         let uri = linkURI l
         in Text.pack $ uriPath uri ++ uriQuery uri
 
--- Phantom types for Param
-data Query
-
--- | Query param
-data Param a
+-- | Query parameter.
+data Param
     = SingleParam    String Text.Text
     | ArrayElemParam String Text.Text
     | FlagParam      String
@@ -141,26 +150,58 @@ data Param a
 addSegment :: String -> Link -> Link
 addSegment seg l = l { _segments = _segments l <> [seg] }
 
-addQueryParam :: Param Query -> Link -> Link
+addQueryParam :: Param -> Link -> Link
 addQueryParam qp l =
     l { _queryParams = _queryParams l <> [qp] }
 
+-- | Transform 'Link' into 'URI'.
+--
+-- >>> type API = "something" :> Get '[JSON] Int
+-- >>> linkURI $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API)
+-- something
+--
+-- >>> type API = "sum" :> QueryParams "x" Int :> Get '[JSON] Int
+-- >>> linkURI $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API) [1, 2, 3]
+-- sum?x[]=1&x[]=2&x[]=3
+--
 linkURI :: Link -> URI
-linkURI (Link segments q_params) =
+linkURI = linkURI' LinkArrayElementBracket
+
+-- | How to encode array query elements.
+data LinkArrayElementStyle
+    = LinkArrayElementBracket  -- ^ @foo[]=1&foo[]=2@
+    | LinkArrayElementPlain    -- ^ @foo=1&foo=2@
+  deriving (Eq, Ord, Show, Enum, Bounded)
+
+-- | Configurable 'linkURI'.
+--
+-- >>> type API = "sum" :> QueryParams "x" Int :> Get '[JSON] Int
+-- >>> linkURI' LinkArrayElementBracket $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API) [1, 2, 3]
+-- sum?x[]=1&x[]=2&x[]=3
+--
+-- >>> linkURI' LinkArrayElementPlain $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API) [1, 2, 3]
+-- sum?x=1&x=2&x=3
+--
+linkURI' :: LinkArrayElementStyle -> Link -> URI
+linkURI' addBrackets (Link segments q_params) =
     URI mempty  -- No scheme (relative)
         Nothing -- Or authority (relative)
         (intercalate "/" segments)
         (makeQueries q_params) mempty
   where
-    makeQueries :: [Param Query] -> String
+    makeQueries :: [Param] -> String
     makeQueries [] = ""
     makeQueries xs =
         "?" <> intercalate "&" (fmap makeQuery xs)
 
-    makeQuery :: Param Query -> String
-    makeQuery (ArrayElemParam k v) = escape k <> "[]=" <> escape (Text.unpack v)
+    makeQuery :: Param -> String
+    makeQuery (ArrayElemParam k v) = escape k <> style <> escape (Text.unpack v)
     makeQuery (SingleParam k v)    = escape k <> "=" <> escape (Text.unpack v)
     makeQuery (FlagParam k)        = escape k
+
+    style = case addBrackets of
+        LinkArrayElementBracket -> "[]="
+        LinkArrayElementPlain -> "="
 
 escape :: String -> String
 escape = escapeURIString isUnreserved
@@ -265,3 +306,6 @@ instance HasLink Raw where
 instance HasLink sub => HasLink (AuthProtect tag :> sub) where
   type MkLink (AuthProtect tag :> sub) = MkLink sub
   toLink _ = toLink (Proxy :: Proxy sub)
+
+-- $setup
+-- >>> import Servant.API
