@@ -228,5 +228,7 @@ layoutWithContext p context =
 --
 
 -- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeOperators
 -- >>> import Servant.API
 -- >>> import Servant.Server

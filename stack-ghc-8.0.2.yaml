@@ -9,4 +9,6 @@ packages:
 extra-deps:
 - aeson-1.2.0.0
 - attoparsec-iso8601-1.0.0.0
+- cabal-doctest-1.0.2
 - http-api-data-0.3.7
+- servant-js-0.9.3
