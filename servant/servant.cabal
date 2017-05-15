@@ -112,6 +112,7 @@ test-suite spec
       Servant.API.ContentTypesSpec
       Servant.API.ResponseHeadersSpec
       Servant.Utils.LinksSpec
+      Servant.Utils.EnterSpec
   build-depends:
       base == 4.*
     , base-compat
