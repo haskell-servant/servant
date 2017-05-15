@@ -90,7 +90,9 @@ instance Exception ServantError
 data UrlReq = UrlReq BaseUrl Req
 
 instance Show UrlReq where
-  show (UrlReq url req) = showBaseUrl url ++ reqPath req ++ "?" ++ show (qs req)
+  show (UrlReq url req) = showBaseUrl url ++ path ++ "?" ++ show (qs req)
+    where
+      path = cs (BS.toLazyByteString (reqPath req))
 
 data Req = Req
   { reqPath   :: BS.Builder
