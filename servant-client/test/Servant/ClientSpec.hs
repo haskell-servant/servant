@@ -372,7 +372,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
         let (_ :<|> getDeleteEmpty :<|> _) = client api
         Left res <- runClientM getDeleteEmpty (ClientEnv manager baseUrl)
         case res of
-          FailureResponse (HTTP.Status 404 "Not Found") _ _ -> return ()
+          FailureResponse _ (HTTP.Status 404 "Not Found") _ _ -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \(_, baseUrl) -> do
