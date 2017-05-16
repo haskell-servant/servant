@@ -321,7 +321,7 @@ data BasicAuth (realm :: Symbol) (userData :: *)
 Which is used like so:
 
 ``` haskell
-type ProtectedAPI12
+type ProtectedAPI11
      = UserAPI                              -- this is public
  :<|> BasicAuth "my-realm" User :> UserAPI2 -- this is protected by auth
 ```
@@ -334,7 +334,7 @@ you want to plug a [wai `Application`](http://hackage.haskell.org/package/wai)
 into your webservice:
 
 ``` haskell
-type UserAPI11 = "users" :> Get '[JSON] [User]
+type UserAPI12 = "users" :> Get '[JSON] [User]
                  -- a /users endpoint
 
             :<|> Raw
