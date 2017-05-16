@@ -24,6 +24,7 @@ module Servant.Client
   , ClientEnv (ClientEnv)
   , mkAuthenticateReq
   , ServantError(..)
+  , EmptyAPIClient(..)
   , module Servant.Common.BaseUrl
   ) where
 
@@ -87,6 +88,13 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
   clientWithRoute Proxy req =
     clientWithRoute (Proxy :: Proxy a) req :<|>
     clientWithRoute (Proxy :: Proxy b) req
+
+-- | TODO docs
+data EmptyAPIClient = EmptyAPIClient
+
+instance HasClient EmptyAPI where
+  type Client EmptyAPI = EmptyAPIClient
+  clientWithRoute Proxy _ = EmptyAPIClient
 
 -- | If you use a 'Capture' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
