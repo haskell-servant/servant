@@ -63,7 +63,7 @@ testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: P
 
 listFromAPISpec :: Spec
 listFromAPISpec = describe "listFromAPI" $ do
-  it "generates 4 endpoints for TestApi" $ do
+  it "generates 5 endpoints for TestApi" $ do
     length testApi `shouldBe` 5
 
   let [getReq, postReq, putReq, deleteReq, captureAllReq] = testApi
