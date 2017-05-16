@@ -37,7 +37,8 @@ type ComprehensiveAPIWithoutRaw =
   Verb 'POST 204 '[JSON] NoContent :<|>
   Verb 'POST 204 '[JSON] Int :<|>
   WithNamedContext "foo" '[] GET :<|>
-  CaptureAll "foo" Int :> GET
+  CaptureAll "foo" Int :> GET :<|>
+  EmptyAPI
 
 comprehensiveAPIWithoutRaw :: Proxy ComprehensiveAPIWithoutRaw
 comprehensiveAPIWithoutRaw = Proxy
