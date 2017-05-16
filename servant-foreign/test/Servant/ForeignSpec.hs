@@ -57,6 +57,7 @@ type TestApi
  :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] NoContent
  :<|> "test" :> Capture "id" Int :> Delete '[JSON] NoContent
  :<|> "test" :> CaptureAll "ids" Int :> Get '[JSON] [Int]
+ :<|> "test" :> EmptyAPI
 
 testApi :: [Req String]
 testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: Proxy TestApi)
