@@ -89,9 +89,19 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
     clientWithRoute (Proxy :: Proxy a) req :<|>
     clientWithRoute (Proxy :: Proxy b) req
 
--- | TODO docs
+-- | Singleton type representing a client for an empty API.
 data EmptyAPIClient = EmptyAPIClient
 
+-- | The client for 'EmptyAPI' is simply 'EmptyAPIClient'.
+--
+-- > type MyAPI = "books" :> Get '[JSON] [Book] -- GET /books
+-- >         :<|> "nothing" :> EmptyAPI
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > getAllBooks :: ClientM [Book]
+-- > (getAllBooks :<|> EmptyAPIClient) = client myApi
 instance HasClient EmptyAPI where
   type Client EmptyAPI = EmptyAPIClient
   clientWithRoute Proxy _ = EmptyAPIClient
