@@ -5,6 +5,8 @@ module Servant.API (
   -- | Type-level combinator for expressing subrouting: @':>'@
   module Servant.API.Alternative,
   -- | Type-level combinator for alternative endpoints: @':<|>'@
+  module Servant.API.Empty,
+  -- | Type-level combinator for an empty API: @'EmptyAPI'@
 
   -- * Accessing information from the request
   module Servant.API.Capture,
@@ -66,6 +68,7 @@ import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
                                               MimeRender (..), NoContent (NoContent),
                                               MimeUnrender (..), OctetStream,
                                               PlainText)
+import           Servant.API.Empty           (EmptyAPI (..))
 import           Servant.API.Experimental.Auth (AuthProtect)
 import           Servant.API.Header          (Header (..))
 import           Servant.API.HttpVersion     (HttpVersion (..))
