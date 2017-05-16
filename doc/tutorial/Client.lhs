@@ -77,8 +77,6 @@ hello :: Maybe String -- ^ an optional value for "name"
 
 marketing :: ClientInfo -- ^ value for the request body
           -> ClientM Email
-
-emptyClient :: EmptyAPIClient
 ```
 
 Each function makes available as an argument any value that the response may
@@ -91,7 +89,7 @@ the function `client`. It takes one argument:
 api :: Proxy API
 api = Proxy
 
-position :<|> hello :<|> marketing :<|> emptyClient = client api
+position :<|> hello :<|> marketing :<|> EmptyClient = client api
 ```
 
 `client api` returns client functions for our _entire_ API, combined with `:<|>`, which we can pattern match on as above. You could say `client` "calculates" the correct type and number of client functions for the API type it is given (via a `Proxy`), as well as their implementations.

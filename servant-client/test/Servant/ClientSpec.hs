@@ -146,7 +146,7 @@ getGet
   :<|> getMultiple
   :<|> getRespHeaders
   :<|> getDeleteContentType
-  :<|> EmptyAPIClient = client api
+  :<|> EmptyClient = client api
 
 server :: Application
 server = serve api (

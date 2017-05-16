@@ -24,7 +24,7 @@ module Servant.Client
   , ClientEnv (ClientEnv)
   , mkAuthenticateReq
   , ServantError(..)
-  , EmptyAPIClient(..)
+  , EmptyClient(..)
   , module Servant.Common.BaseUrl
   ) where
 
@@ -90,9 +90,9 @@ instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
     clientWithRoute (Proxy :: Proxy b) req
 
 -- | Singleton type representing a client for an empty API.
-data EmptyAPIClient = EmptyAPIClient
+data EmptyClient = EmptyClient deriving (Eq, Show, Bounded, Enum)
 
--- | The client for 'EmptyAPI' is simply 'EmptyAPIClient'.
+-- | The client for 'EmptyAPI' is simply 'EmptyClient'.
 --
 -- > type MyAPI = "books" :> Get '[JSON] [Book] -- GET /books
 -- >         :<|> "nothing" :> EmptyAPI
@@ -101,10 +101,10 @@ data EmptyAPIClient = EmptyAPIClient
 -- > myApi = Proxy
 -- >
 -- > getAllBooks :: ClientM [Book]
--- > (getAllBooks :<|> EmptyAPIClient) = client myApi
+-- > (getAllBooks :<|> EmptyClient) = client myApi
 instance HasClient EmptyAPI where
-  type Client EmptyAPI = EmptyAPIClient
-  clientWithRoute Proxy _ = EmptyAPIClient
+  type Client EmptyAPI = EmptyClient
+  clientWithRoute Proxy _ = EmptyClient
 
 -- | If you use a 'Capture' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
