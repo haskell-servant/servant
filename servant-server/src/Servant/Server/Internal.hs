@@ -532,11 +532,19 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (passToServer subserver httpVersion)
 
+-- | Singleton type representing a server that serves an empty API
 data EmptyAPIServer = EmptyAPIServer
 
+-- | Server for `EmptyAPI`
 emptyAPIServer :: Server EmptyAPI
 emptyAPIServer = Tagged EmptyAPIServer
 
+-- | The server for an `EmptyAPI` is `emptyAPIServer`.
+--
+-- > type MyApi = "nothing" :> EmptyApi
+-- >
+-- > server :: Server MyApi
+-- > server = emptyAPIServer
 instance HasServer EmptyAPI context where
   type ServerT EmptyAPI m = Tagged m EmptyAPIServer
 
