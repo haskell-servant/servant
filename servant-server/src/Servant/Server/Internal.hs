@@ -32,7 +32,7 @@ import           Data.Maybe                 (fromMaybe, mapMaybe)
 import           Data.Either                (partitionEithers)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
-import           Data.Tagged                (Tagged, untag)
+import           Data.Tagged                (Tagged(..), untag)
 import qualified Data.Text                  as T
 import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
@@ -52,7 +52,7 @@ import           Web.HttpApiData            (FromHttpApiData, parseHeader,
                                              parseUrlPieceMaybe,
                                              parseUrlPieces)
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
-                                              CaptureAll, Verb,
+                                              CaptureAll, Verb, EmptyAPI,
                                               ReflectMethod(reflectMethod),
                                               IsSecure(..), Header, QueryFlag,
                                               QueryParam, QueryParams, Raw,
@@ -531,6 +531,16 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (passToServer subserver httpVersion)
+
+data EmptyAPIServer = EmptyAPIServer
+
+emptyAPIServer :: Server EmptyAPI
+emptyAPIServer = Tagged EmptyAPIServer
+
+instance HasServer EmptyAPI context where
+  type ServerT EmptyAPI m = Tagged m EmptyAPIServer
+
+  route Proxy _ _ = StaticRouter mempty mempty
 
 -- | Basic Authentication
 instance ( KnownSymbol realm

@@ -1020,6 +1020,15 @@ serverFor = error "..."
 -- or the mailing list if you get stuck!
 ```
 
+TODO prose
+
+``` haskell
+type CombinedAPI2 = CombinedAPI :<|> EmptyAPI
+
+server11 :: Server CombinedAPI2
+server11 = server10 :<|> emptyAPIServer
+```
+
 ## Using another monad for your handlers
 
 Remember how `Server` turns combinators for HTTP methods into `Handler`? Well, actually, there's more to that. `Server` is actually a
