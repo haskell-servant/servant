@@ -334,7 +334,7 @@ you want to plug a [wai `Application`](http://hackage.haskell.org/package/wai)
 into your webservice:
 
 ``` haskell
-type UserAPI12 = "users" :> Get '[JSON] [User]
+type UserAPI13 = "users" :> Get '[JSON] [User]
                  -- a /users endpoint
 
             :<|> Raw
