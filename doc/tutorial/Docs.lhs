@@ -38,9 +38,10 @@ Like client function generation, documentation generation amounts to inspecting 
 This time however, we have to assist **servant**. While it is able to deduce a lot of things about our API, it can't magically come up with descriptions of the various pieces of our APIs that are human-friendly and explain what's going on "at the business-logic level". A good example to study for documentation generation is our webservice with the `/position`, `/hello` and `/marketing` endpoints from earlier:
 
 ``` haskell
-type ExampleAPI = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
+type ExampleAPI = ("position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
-      :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
+      :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email)
+      :<|> EmptyAPI
 
 exampleAPI :: Proxy ExampleAPI
 exampleAPI = Proxy
@@ -220,7 +221,7 @@ api :: Proxy DocsAPI
 api = Proxy
 
 server :: Server DocsAPI
-server = Server.server3 :<|> Tagged serveDocs where
+server = (Server.server3 :<|> emptyAPIServer) :<|> Tagged serveDocs where
     serveDocs _ respond =
         respond $ responseLBS ok200 [plain] docsBS
     plain = ("Content-Type", "text/plain")
