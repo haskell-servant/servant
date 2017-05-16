@@ -209,7 +209,10 @@ type GenAuthAPI =
 genAuthAPI :: Proxy GenAuthAPI
 genAuthAPI = Proxy
 
-type instance AuthServerData (AuthProtect "auth-tag") = ()
+instance HasAuthServerData (AuthProtect "auth-tag") where
+  AuthServerData (AuthProtect "auth-tag") = ()
+
+-- type instance AuthServerData (AuthProtect "auth-tag") = ()
 type instance AuthClientData (AuthProtect "auth-tag") = ()
 
 genAuthHandler :: AuthHandler Request ()

@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE DataKinds                  #-}
 
 module Servant.Server.Experimental.Auth where
 
@@ -30,13 +31,21 @@ import           Servant.Server.Internal.RoutingApplication (addAuthCheck,
                                                              withRequest)
 import           Servant.Server.Internal.Handler            (Handler, runHandler)
 
+import           GHC.TypeLits
+
 -- * General Auth
 
 -- | Specify the type of data returned after we've authenticated a request.
 -- quite often this is some `User` datatype.
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-type family AuthServerData a :: *
+-- type family AuthServerData a :: *
+class HasAuthServerData a where
+
+type AuthServerData a :: *
+
+instance {-# OVERLAPPING #-} HasAuthServerData a where
+   type AuthServerData a = TypeError ('Text "aha this should never occur")
 
 -- | Handlers for AuthProtected resources
 --

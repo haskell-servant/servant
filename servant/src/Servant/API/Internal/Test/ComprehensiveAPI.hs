@@ -36,8 +36,10 @@ type ComprehensiveAPIWithoutRaw =
   Vault :> GET :<|>
   Verb 'POST 204 '[JSON] NoContent :<|>
   Verb 'POST 204 '[JSON] Int :<|>
+  BasicAuth "foo" String :> GET :<|>
   WithNamedContext "foo" '[] GET :<|>
-  CaptureAll "foo" Int :> GET
+  CaptureAll "foo" Int :> GET :<|>
+  AuthProtect "foo" :> GET
 
 comprehensiveAPIWithoutRaw :: Proxy ComprehensiveAPIWithoutRaw
 comprehensiveAPIWithoutRaw = Proxy
