@@ -1,4 +1,4 @@
-flags: {}
+resolver: nightly-2017-04-01
 packages:
 - servant/
 - servant-client/
@@ -7,15 +7,8 @@ packages:
 - servant-server/
 - doc/tutorial
 extra-deps:
+- aeson-1.2.0.0
 - attoparsec-iso8601-1.0.0.0
 - cabal-doctest-1.0.2
-- hspec-2.3.2
-- hspec-core-2.3.2
-- hspec-discover-2.3.2
-- hspec-expectations-0.8.2
-- hspec-wai-0.8.0
 - http-api-data-0.3.7
-- natural-transformation-0.4
-- servant-js-0.9.1
 - servant-js-0.9.3
-resolver: lts-6.27
