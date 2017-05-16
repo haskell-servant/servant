@@ -134,7 +134,7 @@ api' = Proxy
 server :: Server API
 server = randomPoint
     :<|> searchBook
-    :<|> emptyAPIServer
+    :<|> emptyServer
 
 server' :: Server API'
 server' = server

@@ -166,8 +166,7 @@ server = serve api (
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
-  :<|> emptyAPIServer
- )
+  :<|> emptyServer)
 
 
 type FailApi =

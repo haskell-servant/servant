@@ -536,8 +536,8 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
 data EmptyServer = EmptyServer deriving (Typeable, Eq, Show, Bounded, Enum)
 
 -- | Server for `EmptyAPI`
-emptyAPIServer :: Server EmptyAPI
-emptyAPIServer = Tagged EmptyServer
+emptyServer :: Server EmptyAPI
+emptyServer = Tagged EmptyServer
 
 -- | The server for an `EmptyAPI` is `emptyAPIServer`.
 --

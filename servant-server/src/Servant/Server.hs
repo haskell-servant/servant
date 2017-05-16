@@ -18,7 +18,7 @@ module Servant.Server
     HasServer(..)
   , Server
   , EmptyServer
-  , emptyAPIServer
+  , emptyServer
   , Handler (..)
   , runHandler
 

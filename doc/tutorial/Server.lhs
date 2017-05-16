@@ -1026,7 +1026,7 @@ TODO prose
 type CombinedAPI2 = API :<|> EmptyAPI
 
 server11 :: Server CombinedAPI2
-server11 = server3 :<|> emptyAPIServer
+server11 = server3 :<|> emptyServer
 ```
 
 ## Using another monad for your handlers

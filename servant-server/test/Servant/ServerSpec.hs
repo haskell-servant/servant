@@ -49,7 +49,7 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server             (Server, Handler, Tagged (..), err401, err403,
                                              err404, serve, serveWithContext,
-                                             Context((:.), EmptyContext), emptyAPIServer)
+                                             Context((:.), EmptyContext), emptyServer)
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
 import qualified Test.Hspec.Wai             as THW
@@ -618,7 +618,7 @@ miscServ :: Server MiscCombinatorsAPI
 miscServ = versionHandler
       :<|> secureHandler
       :<|> hostHandler
-      :<|> emptyAPIServer
+      :<|> emptyServer
 
   where versionHandler = return . show
         secureHandler Secure = return "secure"
