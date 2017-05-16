@@ -326,6 +326,16 @@ type ProtectedAPI11
  :<|> BasicAuth "my-realm" User :> UserAPI2 -- this is protected by auth
 ```
 
+### Empty APIs
+
+TODO motivation...
+
+``` haskell ignore
+type UserAPI12
+     = UserAPI
+ :<|> EmptyAPI -- this adds nothing to the API
+```
+
 ### Interoperability with `wai`: `Raw`
 
 Finally, we also include a combinator named `Raw` that provides an escape hatch
