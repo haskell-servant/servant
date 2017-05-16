@@ -1023,10 +1023,10 @@ serverFor = error "..."
 TODO prose
 
 ``` haskell
-type CombinedAPI2 = CombinedAPI :<|> EmptyAPI
+type CombinedAPI2 = API :<|> EmptyAPI
 
 server11 :: Server CombinedAPI2
-server11 = server10 :<|> emptyAPIServer
+server11 = server3 :<|> emptyAPIServer
 ```
 
 ## Using another monad for your handlers
