@@ -17,7 +17,7 @@ module Servant.Server
   , -- * Handlers for all standard combinators
     HasServer(..)
   , Server
-  , EmptyAPIServer
+  , EmptyServer
   , emptyAPIServer
   , Handler (..)
   , runHandler
