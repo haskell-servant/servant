@@ -328,13 +328,24 @@ type ProtectedAPI11
 
 ### Empty APIs
 
-TODO motivation...
+Sometimes it is useful to be able to generalise an API over the type of some
+part of it:
 
-``` haskell ignore
-type UserAPI12
-     = UserAPI
- :<|> EmptyAPI -- this adds nothing to the API
+``` haskell
+type UserAPI12 innerAPI
+     = UserAPI             -- this is the fixed bit of the API
+ :<|> "inner" :> innerAPI  -- this lets us put various other APIs under /inner
 ```
+
+If there is a case where you do not have anything extra to serve, you can use
+the `EmptyAPI` combinator to indicate this:
+
+``` haskell
+type UserAPI12Alone = UserAPI12 EmptyAPI
+```
+
+This also works well as a placeholder for unfinished parts of an API while it
+is under development.
 
 ### Interoperability with `wai`: `Raw`
 

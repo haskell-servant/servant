@@ -1020,10 +1020,11 @@ serverFor = error "..."
 -- or the mailing list if you get stuck!
 ```
 
-TODO prose
+If the API contains the `EmptyAPI` combinator, the corresponding server is
+called `emptyServer`:
 
 ``` haskell
-type CombinedAPI2 = API :<|> EmptyAPI
+type CombinedAPI2 = API :<|> "empty" :> EmptyAPI
 
 server11 :: Server CombinedAPI2
 server11 = server3 :<|> emptyServer

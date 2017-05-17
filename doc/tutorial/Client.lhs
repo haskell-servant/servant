@@ -62,7 +62,6 @@ Enough chitchat, let's see an example. Consider the following API type from the 
 type API = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
       :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
-      :<|> EmptyAPI
 ```
 
 What we are going to get with **servant-client** here is three functions, one to query each endpoint:
@@ -89,10 +88,22 @@ the function `client`. It takes one argument:
 api :: Proxy API
 api = Proxy
 
-position :<|> hello :<|> marketing :<|> EmptyClient = client api
+position :<|> hello :<|> marketing = client api
 ```
 
 `client api` returns client functions for our _entire_ API, combined with `:<|>`, which we can pattern match on as above. You could say `client` "calculates" the correct type and number of client functions for the API type it is given (via a `Proxy`), as well as their implementations.
+
+If there is an `EmptyAPI` within your API, this matches the `EmptyClient`
+constructor:
+
+``` haskell ignore
+type API' = API :<|> EmptyAPI
+
+api' :: Proxy API'
+api' = Proxy
+
+(position' :<|> hello' :<|> marketing') :<|> EmptyClient = client api'
+```
 
 ``` haskell ignore
 -- | URI scheme to use

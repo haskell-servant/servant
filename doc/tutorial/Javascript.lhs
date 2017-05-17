@@ -45,7 +45,6 @@ Now let's have the API type(s) and the accompanying datatypes.
 ``` haskell
 type API = "point" :> Get '[JSON] Point
       :<|> "books" :> QueryParam "q" Text :> Get '[JSON] (Search Book)
-      :<|> EmptyAPI
 
 type API' = API :<|> Raw
 
@@ -134,7 +133,6 @@ api' = Proxy
 server :: Server API
 server = randomPoint
     :<|> searchBook
-    :<|> emptyServer
 
 server' :: Server API'
 server' = server
