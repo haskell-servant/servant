@@ -221,8 +221,8 @@ layoutWithContext p context =
 --
 -- >>> import Control.Monad.Reader
 -- >>> import qualified Control.Category as C
--- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String :<|> Raw
--- >>> let readerServer = return 1797 :<|> ask :<|> Tagged (error "raw server") :: ServerT ReaderAPI (Reader String)
+-- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String :<|> Raw :<|> EmptyAPI
+-- >>> let readerServer = return 1797 :<|> ask :<|> Tagged (error "raw server") :<|> emptyServer :: ServerT ReaderAPI (Reader String)
 -- >>> let nt = generalizeNat C.. (runReaderTNat "hi") :: Reader String :~> Handler
 -- >>> let mainServer = enter nt readerServer :: Server ReaderAPI
 --
