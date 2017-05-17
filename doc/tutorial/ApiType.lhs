@@ -345,7 +345,8 @@ type UserAPI12Alone = UserAPI12 EmptyAPI
 ```
 
 This also works well as a placeholder for unfinished parts of an API while it
-is under development.
+is under development, for when you know that there should be _something_ there
+but you don't yet know what. Think of it as similar to the unit type `()`.
 
 ### Interoperability with `wai`: `Raw`
 

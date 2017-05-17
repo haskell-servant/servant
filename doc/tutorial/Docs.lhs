@@ -89,6 +89,8 @@ instance ToSample Email where
 ```
 
 Types that are used as request or response bodies have to instantiate the `ToSample` typeclass which lets you specify one or more examples of values. `Capture`s and `QueryParam`s have to instantiate their respective `ToCapture` and `ToParam` classes and provide a name and some information about the concrete meaning of that argument, as illustrated in the code above.
+The `EmptyAPI` combinator needs no special treatment as it generates no
+documentation: an empty API has no endpoints to document.
 
 With all of this, we can derive docs for our API.
 

@@ -1020,8 +1020,9 @@ serverFor = error "..."
 -- or the mailing list if you get stuck!
 ```
 
-If the API contains the `EmptyAPI` combinator, the corresponding server is
-called `emptyServer`:
+When your API contains the `EmptyAPI` combinator, you'll want to use
+`emptyServer` in the corresponding slot for your server, which will simply fail
+with 404 whenever a request reaches it:
 
 ``` haskell
 type CombinedAPI2 = API :<|> "empty" :> EmptyAPI

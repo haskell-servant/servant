@@ -149,6 +149,9 @@ Why two different API types, proxies and servers though? Simply because we
 don't want to generate javascript functions for the `Raw` part of our API type,
 so we need a `Proxy` for our API type `API'` without its `Raw` endpoint.
 
+The `EmptyAPI` combinator needs no special treatment as it generates no
+Javascript functions: an empty API has no endpoints to access.
+
 Very similarly to how one can derive haskell functions, we can derive the
 javascript with just a simple function call to `jsForAPI` from
 `Servant.JS`.
