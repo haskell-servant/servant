@@ -1020,6 +1020,17 @@ serverFor = error "..."
 -- or the mailing list if you get stuck!
 ```
 
+When your API contains the `EmptyAPI` combinator, you'll want to use
+`emptyServer` in the corresponding slot for your server, which will simply fail
+with 404 whenever a request reaches it:
+
+``` haskell
+type CombinedAPI2 = API :<|> "empty" :> EmptyAPI
+
+server11 :: Server CombinedAPI2
+server11 = server3 :<|> emptyServer
+```
+
 ## Using another monad for your handlers
 
 Remember how `Server` turns combinators for HTTP methods into `Handler`? Well, actually, there's more to that. `Server` is actually a

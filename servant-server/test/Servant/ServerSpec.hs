@@ -42,14 +42,14 @@ import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              Headers, HttpVersion,
                                              IsSecure (..), JSON,
                                              NoContent (..), Patch, PlainText,
-                                             Post, Put,
+                                             Post, Put, EmptyAPI,
                                              QueryFlag, QueryParam, QueryParams,
                                              Raw, RemoteHost, ReqBody,
                                              StdMethod (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server             (Server, Handler, Tagged (..), err401, err403,
                                              err404, serve, serveWithContext,
-                                             Context((:.), EmptyContext))
+                                             Context((:.), EmptyContext), emptyServer)
 import           Test.Hspec                 (Spec, context, describe, it,
                                              shouldBe, shouldContain)
 import qualified Test.Hspec.Wai             as THW
@@ -609,6 +609,7 @@ type MiscCombinatorsAPI
   =    "version" :> HttpVersion :> Get '[JSON] String
   :<|> "secure"  :> IsSecure :> Get '[JSON] String
   :<|> "host"    :> RemoteHost :> Get '[JSON] String
+  :<|> "empty"   :> EmptyAPI
 
 miscApi :: Proxy MiscCombinatorsAPI
 miscApi = Proxy
@@ -617,6 +618,7 @@ miscServ :: Server MiscCombinatorsAPI
 miscServ = versionHandler
       :<|> secureHandler
       :<|> hostHandler
+      :<|> emptyServer
 
   where versionHandler = return . show
         secureHandler Secure = return "secure"
@@ -634,6 +636,9 @@ miscCombinatorSpec = with (return $ serve miscApi miscServ) $
 
     it "Checks that hspec-wai issues request from 0.0.0.0" $
       go "/host" "\"0.0.0.0:0\""
+
+    it "Doesn't serve anything from the empty API" $
+      Test.Hspec.Wai.get "empty" `shouldRespondWith` 404
 
   where go path res = Test.Hspec.Wai.get path `shouldRespondWith` res
 

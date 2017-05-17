@@ -93,6 +93,19 @@ position :<|> hello :<|> marketing = client api
 
 `client api` returns client functions for our _entire_ API, combined with `:<|>`, which we can pattern match on as above. You could say `client` "calculates" the correct type and number of client functions for the API type it is given (via a `Proxy`), as well as their implementations.
 
+If you have an `EmptyAPI` in your API, servant-client will hand you a value of
+type `EmptyClient` in the corresponding slot, where `data EmptyClient =
+EmptyClient`, as a way to indicate that you can't do anything useful with it.
+
+``` haskell ignore
+type API' = API :<|> EmptyAPI
+
+api' :: Proxy API'
+api' = Proxy
+
+(position' :<|> hello' :<|> marketing') :<|> EmptyClient = client api'
+```
+
 ``` haskell ignore
 -- | URI scheme to use
 data Scheme =

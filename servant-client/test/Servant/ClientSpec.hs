@@ -111,6 +111,8 @@ type Api =
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
   :<|> "deleteContentType" :> DeleteNoContent '[JSON] NoContent
+  :<|> "empty" :> EmptyAPI
+
 api :: Proxy Api
 api = Proxy
 
@@ -130,6 +132,7 @@ getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> SCR.ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: SCR.ClientM (Headers TestHeaders Bool)
 getDeleteContentType :: SCR.ClientM NoContent
+
 getGet
   :<|> getDeleteEmpty
   :<|> getCapture
@@ -142,7 +145,8 @@ getGet
   :<|> getRawFailure
   :<|> getMultiple
   :<|> getRespHeaders
-  :<|> getDeleteContentType = client api
+  :<|> getDeleteContentType
+  :<|> EmptyClient = client api
 
 server :: Application
 server = serve api (
@@ -162,7 +166,7 @@ server = serve api (
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
- )
+  :<|> emptyServer)
 
 
 type FailApi =

@@ -683,6 +683,10 @@ instance OVERLAPPABLE_
           p2 :: Proxy b
           p2 = Proxy
 
+-- | The generated docs for @'EmptyAPI'@ are empty.
+instance HasDocs EmptyAPI where
+  docsFor Proxy _ _ = emptyAPI
+
 -- | @"books" :> 'Capture' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
 instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)

@@ -187,6 +187,13 @@ instance (HasForeign lang ftype a, HasForeign lang ftype b)
          foreignFor lang ftype (Proxy :: Proxy a) req
     :<|> foreignFor lang ftype (Proxy :: Proxy b) req
 
+data EmptyForeignAPI = EmptyForeignAPI
+
+instance HasForeign lang ftype EmptyAPI where
+  type Foreign ftype EmptyAPI = EmptyForeignAPI
+
+  foreignFor Proxy Proxy Proxy _ = EmptyForeignAPI
+
 instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype api)
   => HasForeign lang ftype (Capture sym t :> api) where
   type Foreign ftype (Capture sym t :> api) = Foreign ftype api
@@ -348,6 +355,9 @@ instance HasForeign lang ftype api
 --   and hands it all back in a list.
 class GenerateList ftype reqs where
   generateList :: reqs -> [Req ftype]
+
+instance GenerateList ftype EmptyForeignAPI where
+  generateList _ = []
 
 instance GenerateList ftype (Req ftype) where
   generateList r = [r]
