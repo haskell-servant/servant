@@ -79,7 +79,7 @@ type UserAPI2 = "users" :> "list-all" :> Get '[JSON] [User]
 
 **servant** provides a fair amount of combinators out-of-the-box, but you can
 always write your own when you need it. Here's a quick overview of the most
-often needed the combinators that **servant** comes with.
+often needed combinators that **servant** comes with.
 
 ## Combinators
 
