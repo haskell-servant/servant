@@ -249,7 +249,7 @@ data Action = Action
   , _notes    :: [DocNote]                   -- user supplied
   , _mxParams :: [(String, [DocQueryParam])] -- type collected + user supplied info
   , _rqtypes  :: [M.MediaType]               -- type collected
-  , _rqbody   :: [(M.MediaType, ByteString)] -- user supplied
+  , _rqbody   :: [(Text, M.MediaType, ByteString)] -- user supplied
   , _response :: Response                    -- user supplied
   } deriving (Eq, Ord, Show)
 
@@ -618,7 +618,7 @@ markdown api = unlines $
 
           where values = param ^. paramValues
 
-        rqbodyStr :: [M.MediaType] -> [(M.MediaType, ByteString)]-> [String]
+        rqbodyStr :: [M.MediaType] -> [(Text, M.MediaType, ByteString)]-> [String]
         rqbodyStr [] [] = []
         rqbodyStr types s =
             ["#### Request:", ""]
@@ -630,8 +630,8 @@ markdown api = unlines $
             <> map (\t -> "    - `" <> show t <> "`") ts
             <> [""]
 
-        formatBody (m, b) =
-          "- Example: `" <> cs (show m) <> "`" :
+        formatBody (t, m, b) =
+          "- Example (" <> cs t <> "): `" <> cs (show m) <> "`" :
           contentStr m b
 
         markdownForType mime_type =
@@ -805,11 +805,12 @@ instance HasDocs Raw where
 instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
       => HasDocs (ReqBody (ct ': cts) a :> api) where
 
-  docsFor Proxy (endpoint, action) =
-    docsFor subApiP (endpoint, action')
+  docsFor Proxy (endpoint, action) opts@DocOptions{..} =
+    docsFor subApiP (endpoint, action') opts
 
     where subApiP = Proxy :: Proxy api
-          action' = action & rqbody .~ sampleByteString t p
+          action' :: Action
+          action' = action & rqbody .~ take _maxSamples (sampleByteStrings t p)
                            & rqtypes .~ allMime t
           t = Proxy :: Proxy (ct ': cts)
           p = Proxy :: Proxy a
