@@ -89,8 +89,13 @@ runServerCombinator (CI i) = i
 -- the endpoint handler will not be called.
 --
 -- >>> :set -XTypeFamilies
+-- >>> :set -XTypeOperators
+-- >>> :set -XFlexibleInstances
+-- >>> :set -XMultiParamTypeClasses
+-- >>> :set -Wno-missing-methods
+-- >>> import Text.Read
+-- >>> import Data.String.Conversions
 -- >>> :{
---   import Text.Read
 --   data MyCaptureCombinator
 --   instance HasServer api context => HasServer (MyCaptureCombinator :> api) context where
 --     type ServerT (MyCaptureCombinator :> api) m = Int -> ServerT api m
@@ -175,7 +180,7 @@ makeAuthCombinator = inner
 -- | 'makeCombinator' allows you to write combinators that have access to the whole request
 -- (including the request body) while providing an additional argument to the endpoint handler.
 -- This includes writing combinators that allow you to stream the request body. Here's a simple
--- example for that using a very simple stream implementation 'Source':
+-- example for that using a very simple stream implementation @Source@:
 --
 -- >>> import Data.ByteString
 -- >>> :{

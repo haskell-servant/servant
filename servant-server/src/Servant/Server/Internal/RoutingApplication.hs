@@ -28,7 +28,7 @@ type RoutingApplication =
      Request -- ^ the request, the field 'pathInfo' may be modified by url routing
   -> (RouteResult Response -> IO ResponseReceived) -> IO ResponseReceived
 
--- | The result of matching against a path in the route tree.
+-- | The result of running an endpoint handler. On success this will contains an @a@.
 data RouteResult a =
     Fail ServantErr           -- ^ Keep trying other paths. The @ServantErr@
                               -- should only be 404, 405 or 406.
