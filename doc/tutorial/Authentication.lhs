@@ -246,7 +246,7 @@ your feedback!
 ### What is Generalized Authentication?
 
 **TL;DR**: you throw a tagged `AuthProtect` combinator in front of the endpoints
-you want protected and then supply a function `Request -> Handler user`
+you want protected and then supply a function `Request -> Handler req`
 which we run anytime a request matches a protected endpoint. It precisely solves
 the "I just need to protect these endpoints with a function that does some
 complicated business logic" and nothing more. Behind the scenes we use a type
@@ -256,14 +256,14 @@ family instance (`AuthServerData`) and `Context` to accomplish this.
 
 Let's implement a trivial authentication scheme. We will protect our API by
 looking for a cookie named `"servant-auth-cookie"`. This cookie's value will
-contain a key from which we can lookup a `User`.
+contain a key from which we can lookup a `Account`.
 
 ```haskell
--- | A user type that we "fetch from the database" after
+-- | An account type that we "fetch from the database" after
 -- performing authentication
 newtype Account = Account { unAccount :: Text }
 
--- | A (pure) database mapping keys to users.
+-- | A (pure) database mapping keys to accounts.
 database :: Map ByteString Account
 database = fromList [ ("key1", Account "Anne Briggs")
                     , ("key2", Account "Bruce Cockburn")
@@ -279,7 +279,7 @@ lookupAccount key = case Map.lookup key database of
 ```
 
 For generalized authentication, servant exposes the `AuthHandler` type,
-which is used to wrap the `Request -> Handler user` logic. Let's
+which is used to wrap the `Request -> Handler Account` logic. Let's
 create a value of type `AuthHandler Request Account` using the above `lookupAccount`
 method:
 
@@ -377,13 +377,13 @@ forward:
 
 1. use the `AuthProtect` combinator to protect your API.
 2. choose a application-specific data type used by your server when
-authentication is successful (in our case this was `User`).
-3. Create a value of `AuthHandler Request User` which encapsulates the
-authentication logic (`Request -> Handler User`). This function
+authentication is successful (in our case this was `Account`).
+3. Create a value of `AuthHandler Request Account` which encapsulates the
+authentication logic (`Request -> Handler Account`). This function
 will be executed everytime a request matches a protected route.
 4. Provide an instance of the `AuthServerData` type family, specifying your
 application-specific data type returned when authentication is successful (in
-our case this was `User`).
+our case this was `Account`).
 
 Caveats:
 
