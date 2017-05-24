@@ -8,18 +8,20 @@ packages:
 extra-deps:
 - aeson-compat-0.3.6
 - base-compat-0.9.1
+- cabal-doctest-1.0.2
+- call-stack-0.1.0
 - control-monad-omega-0.3.1
 - cryptonite-0.6
 - doctest-0.11.0
 - hspec-2.3.2
-- hspec-discover-2.3.2
 - hspec-core-2.3.2
-- hspec-wai-0.8.0
+- hspec-discover-2.3.2
 - hspec-expectations-0.8.2
-- call-stack-0.1.0
+- hspec-wai-0.8.0
 - http-api-data-0.3.6
 - natural-transformation-0.4
 - primitive-0.6.1.0
+- servant-js-0.9.3
 - should-not-typecheck-2.1.0
 - time-locale-compat-0.1.1.1
 - uri-bytestring-0.2.2.0

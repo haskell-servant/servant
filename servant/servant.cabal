@@ -1,5 +1,5 @@
 name:                servant
-version:             0.10
+version:             0.11
 synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -27,7 +27,9 @@ source-repository head
 
 custom-setup
   setup-depends:
-     Cabal >=1.14, base, filepath, directory
+    base >= 4 && <5,
+    Cabal,
+    cabal-doctest >= 1.0.2 && <1.1
 
 library
   exposed-modules:
@@ -147,5 +149,8 @@ test-suite doctests
  buildable: True
  default-language: Haskell2010
  ghc-options: -Wall -threaded
- build-tools: hsc2hs
+ if impl(ghc >= 8.2)
+   x-doctest-options: -fdiagnostics-color=never
  include-dirs: include
+ x-doctest-source-dirs: test
+ x-doctest-modules: Servant.Utils.LinksSpec

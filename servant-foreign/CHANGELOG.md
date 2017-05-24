@@ -1,3 +1,12 @@
+0.10.1
+------
+
+### Changes
+
+* Don't drop samples in `HasDocs ReqBody` instance
+  ([#755](https://github.com/haskell-servant/servant/pull/755/files)).
+  *Breaking change in an `Internal` module*.
+
 0.10
 ----
 

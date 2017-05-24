@@ -25,9 +25,9 @@ library
                      , directory
                      , blaze-markup
                      , containers
-                     , servant == 0.10.*
-                     , servant-server == 0.10.*
-                     , servant-client == 0.10.*
+                     , servant == 0.11.*
+                     , servant-server == 0.11.*
+                     , servant-client == 0.11.*
                      , servant-docs == 0.10.*
                      , servant-js >= 0.9 && <0.10
                      , warp
