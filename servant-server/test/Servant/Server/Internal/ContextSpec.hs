@@ -37,7 +37,7 @@ spec = do
 
         it "works with operators" $ do
           let cxt = ((1 :: Integer) :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)
-          show cxt `shouldBe` "(1 :. 'a' :. EmptyContext) :<|> ('b' :. True :. EmptyContext)"
+          show cxt `shouldBe` "1 :. 'a' :. EmptyContext :<|> 'b' :. True :. EmptyContext"
 
   describe "descendIntoNamedContext" $ do
     let cxt :: Context [Char, NamedContext "sub" '[Char]]
