@@ -22,7 +22,7 @@ import           Prelude.Compat
 -- :}
 data a :<|> b = a :<|> b
     deriving (Typeable, Eq, Show, Functor, Traversable, Foldable, Bounded)
-infixr 8 :<|>
+infixr 3 :<|>
 
 instance (Semigroup a, Semigroup b) => Semigroup (a :<|> b) where
     (a :<|> b) <> (a' :<|> b') = (a <> a') :<|> (b <> b')

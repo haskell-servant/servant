@@ -1,3 +1,9 @@
+Unreleased changes
+---
+
+- Lower `:>` and `:<|>` infix precedence to 4 and 3 respectively
+  ([#761](https://github.com/haskell-servant/servant/issues/761))
+
 0.11
 ----
 
