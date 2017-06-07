@@ -51,7 +51,7 @@ library
     Servant.Server.Internal.ServantErr
     Servant.Utils.StaticFiles
   build-depends:
-        base               >= 4.7  && < 4.10
+        base               >= 4.7  && < 4.11
       , base-compat        >= 0.9  && < 0.10
       , aeson              >= 0.7  && < 1.3
       , attoparsec         >= 0.12 && < 0.14
