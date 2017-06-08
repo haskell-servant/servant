@@ -58,7 +58,8 @@ import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capt
                                               IsSecure(..), Header, QueryFlag,
                                               QueryParam, QueryParams, Raw,
                                               RemoteHost, ReqBody, Vault,
-                                              WithNamedContext)
+                                              WithNamedContext,
+                                              Description, Summary)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..),
@@ -532,6 +533,18 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (passToServer subserver httpVersion)
+
+-- | Ignore @'Summary'@ in server handlers.
+instance HasServer api ctx => HasServer (Summary desc :> api) ctx where
+  type ServerT (Summary desc :> api) m = ServerT api m
+
+  route _ = route (Proxy :: Proxy api)
+
+-- | Ignore @'Description'@ in server handlers.
+instance HasServer api ctx => HasServer (Description desc :> api) ctx where
+  type ServerT (Description desc :> api) m = ServerT api m
+
+  route _ = route (Proxy :: Proxy api)
 
 -- | Singleton type representing a server that serves an empty API.
 data EmptyServer = EmptyServer deriving (Typeable, Eq, Show, Bounded, Enum)

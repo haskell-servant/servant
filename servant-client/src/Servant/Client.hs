@@ -263,6 +263,18 @@ instance HasClient api
   clientWithRoute Proxy =
     clientWithRoute (Proxy :: Proxy api)
 
+-- | Ignore @'Summary'@ in client functions.
+instance HasClient api => HasClient (Summary desc :> api) where
+  type Client (Summary desc :> api) = Client api
+
+  clientWithRoute _ = clientWithRoute (Proxy :: Proxy api)
+
+-- | Ignore @'Description'@ in client functions.
+instance HasClient api => HasClient (Description desc :> api) where
+  type Client (Description desc :> api) = Client api
+
+  clientWithRoute _ = clientWithRoute (Proxy :: Proxy api)
+
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
 -- an additional argument of the type specified by your 'QueryParam',
