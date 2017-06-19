@@ -18,7 +18,14 @@ data Summary (sym :: Symbol)
 --
 -- Example:
 --
--- >>> type MyApi = Description "Some longer implementation details here." :> "books" :> Capture "isbn" Text :> Get '[JSON] Book
+-- >>> :{
+--type MyApi = Description
+--  "This comment is visible in multiple Servant interpretations \
+--  \and can be really long if necessary. \
+--  \Haskell multiline support is not perfect \
+--  \but it's still very readable."
+-- :> Get '[JSON] Book
+-- :}
 data Description (sym :: Symbol)
     deriving (Typeable)
 
