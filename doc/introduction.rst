@@ -22,7 +22,7 @@ Introduction
 
 - separation of concerns
 
-   Your handlers and your HTTP logic should be separate. True to the philosphy
+   Your handlers and your HTTP logic should be separate. True to the philosophy
    at the core of HTTP and REST, with **servant** your handlers return normal
    Haskell datatypes - that's the resource. And then from a description of your
    API, **servant** handles the *presentation* (i.e., the Content-Types). But
