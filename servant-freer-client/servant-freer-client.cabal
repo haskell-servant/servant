@@ -1,4 +1,4 @@
-name:                freer-servant-client
+name:                servant-freer-client
 version:             0.1
 synopsis: automatical derivation of querying functions for servant webservices
 description:

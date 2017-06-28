@@ -1,7 +1,7 @@
 packages:
   servant/
   servant-client/
-  freer-servant-client/
+  servant-freer-client/
   servant-docs/
   servant-foreign/
   servant-server/

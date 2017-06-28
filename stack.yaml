@@ -2,7 +2,7 @@ resolver: nightly-2017-04-01
 packages:
 - servant/
 - servant-client/
-- freer-servant-client/
+- servant-freer-client/
 - servant-docs/
 - servant-foreign/
 - servant-server/
