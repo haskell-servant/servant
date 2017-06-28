@@ -2,6 +2,7 @@ flags: {}
 packages:
 - servant/
 - servant-client/
+- freer-servant-client/
 - servant-docs/
 - servant-foreign/
 - servant-server/

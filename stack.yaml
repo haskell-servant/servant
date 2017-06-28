@@ -2,14 +2,18 @@ resolver: nightly-2017-04-01
 packages:
 - servant/
 - servant-client/
+- freer-servant-client/
 - servant-docs/
 - servant-foreign/
 - servant-server/
 - doc/tutorial
+- location:
+    git: git@gitlab.com:costar-astrology/freer-http.git
+    commit: 23310fb0d4d91197a2c6cda071e9f5fb6fe34fcc
+  extra-dep: true
 extra-deps:
 - aeson-1.2.0.0
 - attoparsec-iso8601-1.0.0.0
-- http-media-0.7.0
 - cabal-doctest-1.0.2
 - http-api-data-0.3.7
 - servant-js-0.9.3
