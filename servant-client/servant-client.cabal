@@ -1,5 +1,6 @@
 name:                servant-client
 version:             0.11
+x-revision:          1
 synopsis: automatical derivation of querying functions for servant webservices
 description:
   This library lets you derive automatically Haskell functions that
@@ -36,7 +37,7 @@ library
     Servant.Common.BasicAuth
     Servant.Common.Req
   build-depends:
-      base                  >= 4.7      && < 4.10
+      base                  >= 4.7      && < 4.11
     , base-compat           >= 0.9.1    && < 0.10
     , aeson                 >= 0.7      && < 1.3
     , attoparsec            >= 0.12     && < 0.14
@@ -47,7 +48,7 @@ library
     , http-api-data         >= 0.3.6    && < 0.4
     , http-client           >= 0.4.18.1 && < 0.6
     , http-client-tls       >= 0.2.2    && < 0.4
-    , http-media            >= 0.6.2    && < 0.7
+    , http-media            >= 0.6.2    && < 0.8
     , http-types            >= 0.8.6    && < 0.10
     , monad-control         >= 1.0.0.4  && < 1.1
     , network-uri           >= 2.6      && < 2.7
