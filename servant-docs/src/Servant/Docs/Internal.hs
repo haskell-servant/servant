@@ -561,6 +561,7 @@ markdown api = unlines $
 
 
         authStr :: [DocAuthentication] -> [String]
+        authStr [] = []
         authStr auths =
           let authIntros = mapped %~ view authIntro $ auths
               clientInfos = mapped %~ view authDataRequired $ auths
