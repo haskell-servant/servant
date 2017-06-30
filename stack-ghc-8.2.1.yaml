@@ -1,6 +1,7 @@
 resolver: ghc-8.2.0.20170507
 packages:
 - servant-client/
+- servant-freer-client/
 - servant-docs/
 - servant-foreign/
 - servant-server/
