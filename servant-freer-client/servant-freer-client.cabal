@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+    Servant.FreerReq
     Servant.FreerClient
   build-depends:
       base                  >= 4.7      && < 4.11
