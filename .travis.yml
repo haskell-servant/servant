@@ -14,6 +14,9 @@ addons:
     packages:
       - libgmp-dev
 
+before_install:
+  - rvm use 2.1 --install --binary --fuzzy
+
 install:
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
@@ -21,6 +24,12 @@ install:
   - stack --version
   - stack setup --no-terminal
   - (cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
+  - rake hlint:install[2.0.9]
+  - bundle install --deployment
+
+
+before_script:
+  - bundle exec danger
 
 script:
   - if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ; then ./scripts/ci-cron.sh ; else stack test --ghc-options=-Werror --no-terminal ; fi
@@ -29,3 +38,4 @@ cache:
   directories:
     - $HOME/.tinc/cache
     - $HOME/.stack
+    - vendor/bundle
