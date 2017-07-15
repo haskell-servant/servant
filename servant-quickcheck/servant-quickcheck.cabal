@@ -38,14 +38,15 @@ library
                      , case-insensitive == 1.2.*
                      , clock >= 0.7 && < 0.8
                      , data-default-class >= 0.0 && < 0.2
-                     , hspec >= 2.2 && < 2.4
+                     , hspec >= 2.4.4 && < 2.5
+                     , hspec-core >= 2.4.4 && < 2.5
                      , http-client >= 0.4.30 && < 0.6
                      , http-media == 0.6.*
                      , http-types > 0.8 && < 0.10
                      , mtl > 2.1 && < 2.3
                      , pretty == 1.1.*
                      , process >= 1.2 && < 1.5
-                     , QuickCheck > 2.7 && < 2.10
+                     , QuickCheck > 2.9 && < 2.11
                      , servant > 0.6 && < 0.10
                      , servant-client > 0.6 && < 0.10
                      , servant-server > 0.6 && < 0.10

@@ -2,6 +2,7 @@
 module Servant.QuickCheck.InternalSpec (spec) where
 
 import           Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
+import           Control.Exception
 import           Control.Monad.IO.Class  (liftIO)
 import qualified Data.ByteString         as BS
 import qualified Data.ByteString.Char8   as C
@@ -9,8 +10,8 @@ import           Prelude.Compat
 import           Servant
 import           Test.Hspec              (Spec, context, describe, it, shouldBe,
                                           shouldContain)
-import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
-                                          defaultParams, evaluateExample)
+import           Test.Hspec.Core.Spec    (Arg, Example, Result (..), FailureReason (..),
+                                          defaultParams, evaluateExample, safeEvaluateExample)
 import           Test.QuickCheck.Gen     (unGen)
 import           Test.QuickCheck.Random  (mkQCGen)
 import           Network.HTTP.Client     (queryString, path)
@@ -46,11 +47,11 @@ serversEqualSpec = describe "serversEqual" $ do
 
   context "when servers are not equal" $ do
 
-
     it "provides the failing responses in the error message" $ do
-      Fail _ err <- withServantServer api2 server2 $ \burl1 ->
+      Right (Failure _ err) <- withServantServer api2 server2 $ \burl1 ->
         withServantServer api2 server3 $ \burl2 -> do
-          evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
+          safeEvalExample $ serversEqual api2 burl1 burl2 args bodyEquality
+      show err `shouldContain` "Server equality failed"
       show err `shouldContain` "Body: 1"
       show err `shouldContain` "Body: 2"
       show err `shouldContain` "Path: /failplz"
@@ -75,20 +76,20 @@ serverSatisfiesSpec = describe "serverSatisfies" $ do
   context "when predicates are false" $ do
 
     it "fails with informative error messages" $ do
-      Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
-        evalExample $ serverSatisfies api burl args (getsHaveCacheControlHeader <%> mempty)
-      err `shouldContain` "getsHaveCacheControlHeader"
-      err `shouldContain` "Headers"
-      err `shouldContain` "Body"
+      Right (Failure _ err) <- withServantServerAndContext api ctx server $ \burl -> do
+        safeEvalExample $ serverSatisfies api burl args (getsHaveCacheControlHeader <%> mempty)
+      show err `shouldContain` "getsHaveCacheControlHeader"
+      show err `shouldContain` "Headers"
+      show err `shouldContain` "Body"
 
 onlyJsonObjectSpec :: Spec
 onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
 
   it "fails correctly" $ do
-    Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
-      evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
+    Right (Failure _ err) <- withServantServerAndContext api ctx server $ \burl -> do
+      safeEvalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
         (onlyJsonObjects <%> mempty)
-    err `shouldContain` "onlyJsonObjects"
+    show err `shouldContain` "onlyJsonObjects"
 
   it "accepts non-JSON endpoints" $ do
     withServantServerAndContext octetAPI ctx serverOctetAPI $ \burl ->
@@ -98,10 +99,10 @@ notLongerThanSpec :: Spec
 notLongerThanSpec = describe "notLongerThan" $ do
 
   it "fails correctly" $ do
-    Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
-      evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
+    Right (Failure _ err) <- withServantServerAndContext api ctx server $ \burl -> do
+      safeEvalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
         (notLongerThan 1 <%> mempty)
-    err `shouldContain` "notLongerThan"
+    show err `shouldContain` "notLongerThan"
 
   it "succeeds correctly" $ do
     withServantServerAndContext api ctx server $ \burl ->
@@ -212,6 +213,12 @@ evalExample :: (Example e, Arg e ~ ()) => e -> IO Result
 evalExample e = evaluateExample e defaultParams ($ ()) progCallback
   where
     progCallback _ = return ()
+
+safeEvalExample :: (Example e, Arg e ~ ()) => e -> IO (Either SomeException Result)
+safeEvalExample e = safeEvaluateExample e defaultParams ($ ()) progCallback
+  where
+    progCallback _ = return ()
+
 
 args :: Args
 args = defaultArgs { maxSuccess = noOfTestCases }
