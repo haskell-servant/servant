@@ -10,8 +10,8 @@ import           Prelude.Compat
 import           Servant
 import           Test.Hspec              (Spec, context, describe, it, shouldBe,
                                           shouldContain)
-import           Test.Hspec.Core.Spec    (Arg, Example, Result (..), FailureReason (..),
-                                          defaultParams, evaluateExample, safeEvaluateExample)
+import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
+                                          defaultParams, safeEvaluateExample)
 import           Test.QuickCheck.Gen     (unGen)
 import           Test.QuickCheck.Random  (mkQCGen)
 import           Network.HTTP.Client     (queryString, path)
@@ -208,12 +208,6 @@ ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
 ------------------------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------------------------
-
-evalExample :: (Example e, Arg e ~ ()) => e -> IO Result
-evalExample e = evaluateExample e defaultParams ($ ()) progCallback
-  where
-    progCallback _ = return ()
-
 safeEvalExample :: (Example e, Arg e ~ ()) => e -> IO (Either SomeException Result)
 safeEvalExample e = safeEvaluateExample e defaultParams ($ ()) progCallback
   where
