@@ -14,8 +14,7 @@ import           Servant                  (Context (EmptyContext), HasServer,
 import           Servant.Client           (BaseUrl (..), Scheme (..))
 import           System.IO.Unsafe         (unsafePerformIO)
 import           Test.Hspec               (Expectation, expectationFailure)
-import           Test.QuickCheck          (Args (..), Result (..),
-                                           quickCheckWithResult)
+import           Test.QuickCheck          (Args (..),  Result (..), quickCheckWithResult)
 import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, monitor,
                                            run)
 import           Test.QuickCheck.Property (counterexample)
@@ -85,11 +84,10 @@ serversEqual api burl1 burl2 args req = do
       assert False
   case r of
     Success {} -> return ()
-    Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $
-      "Failed:\n" ++ show x
+    Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $ "Failed:\n" ++ show x
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
-    NoExpectedFailure {} -> expectationFailure $ "No expected failure"
-    InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
+    NoExpectedFailure {} -> expectationFailure "No expected failure"
+    InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
 
 -- | Check that a server satisfies the set of properties specified.
 --
