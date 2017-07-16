@@ -69,6 +69,28 @@ serversEqualSpec = describe "serversEqual" $ do
       show err `shouldContain` "Body: 2"
       show err `shouldContain` "Path: /failplz"
 
+  context "when JSON is equal but looks a bit different as a ByteString" $ do
+
+    it "considers equal JSON apis equal regardless of ordering or whitespace" $ do
+      withServantServerAndContext jsonApi ctx jsonServer1 $ \burl1 ->
+        withServantServerAndContext jsonApi ctx jsonServer2 $ \burl2 ->
+          serversEqual jsonApi burl1 burl2 args jsonEquality
+
+    it "sees when JSON apis are not equal regardless of ordering or whitespace" $ do
+      Right (Failure _ err) <- withServantServer jsonApi jsonServer2 $ \burl1 ->
+        withServantServer jsonApi jsonServer3 $ \burl2 -> do
+          safeEvalExample $ serversEqual jsonApi burl1 burl2 args jsonEquality
+      show err `shouldContain` "Server equality failed"
+      show err `shouldContain` "Path: /jsonComparison"
+
+    it "sees when JSON apis are not equal due to different keys but same values" $ do
+      Right (Failure _ err) <- withServantServer jsonApi jsonServer2 $ \burl1 ->
+        withServantServer jsonApi jsonServer4 $ \burl2 -> do
+          safeEvalExample $ serversEqual jsonApi burl1 burl2 args jsonEquality
+      show err `shouldContain` "Server equality failed"
+      show err `shouldContain` "Path: /jsonComparison"
+
+
 serverSatisfiesSpec :: Spec
 serverSatisfiesSpec = describe "serverSatisfies" $ do
 
@@ -261,6 +283,24 @@ octetAPI = Proxy
 
 serverOctetAPI :: IO (Server OctetAPI)
 serverOctetAPI = return $ return "blah"
+
+type JsonApi = "jsonComparison" :> Get '[OctetStream] BS.ByteString
+
+jsonApi :: Proxy JsonApi
+jsonApi = Proxy
+
+jsonServer1 :: IO (Server JsonApi)
+jsonServer1 = return $ return "{ \"b\": [\"b\"], \"a\": 1 }"  -- whitespace, ordering different
+
+jsonServer2 :: IO (Server JsonApi)
+jsonServer2 = return $ return "{\"a\": 1,\"b\":[\"b\"]}"
+
+jsonServer3 :: IO (Server JsonApi)
+jsonServer3 = return $ return "{\"a\": 2, \"b\": [\"b\"]}"
+
+jsonServer4 :: IO (Server JsonApi)
+jsonServer4 = return $ return "{\"c\": 1, \"d\": [\"b\"]}"
+
 
 ctx :: Context '[BasicAuthCheck ()]
 ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
