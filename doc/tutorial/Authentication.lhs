@@ -281,7 +281,8 @@ lookupAccount key = case Map.lookup key database of
 For generalized authentication, servant exposes the `AuthHandler` type,
 which is used to wrap the `Request -> Handler user` logic. Let's
 create a value of type `AuthHandler Request Account` using the above `lookupAccount`
-method (note: we depend upon `cookie`'s `parseCookies` for this):
+method (note: we depend upon [`cookie`](https://hackage.haskell.org/package/cookie)'s
+`parseCookies` for this):
 
 ```haskell
 import           Web.Cookie             (parseCookies)
