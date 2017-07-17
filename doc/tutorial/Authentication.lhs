@@ -286,9 +286,9 @@ method (note: we depend upon `cookie`'s `parseCookies` for this):
 ```haskell
 import           Web.Cookie             (parseCookies)
 
---- | The auth handler wraps a function from Request -> Handler Account
---- we look for a Cookie in the header and the perform a token look up 
---- on the cookie, passing it to `lookupAccount`.
+--- | The auth handler wraps a function from Request -> Handler Account.
+--- We look for a token in the request headers that we expect to be in the cookie.
+--- The token is then passed to our `lookupAccount` function.
 authHandler :: AuthHandler Request Account
 authHandler = mkAuthHandler handler
   where
