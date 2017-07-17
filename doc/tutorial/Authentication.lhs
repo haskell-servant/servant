@@ -284,14 +284,16 @@ create a value of type `AuthHandler Request Account` using the above `lookupAcco
 method:
 
 ```haskell
--- | The auth handler wraps a function from Request -> Handler Account
--- we look for a Cookie and pass the value of the cookie to `lookupAccount`.
+import           Web.Cookie             (parseCookies)
+
 authHandler :: AuthHandler Request Account
-authHandler =
-  let handler req = case lookup "servant-auth-cookie" (requestHeaders req) of
-        Nothing -> throwError (err401 { errBody = "Missing auth header" })
-        Just authCookieKey -> lookupAccount authCookieKey
-  in mkAuthHandler handler
+authHandler = mkAuthHandler handler
+  where
+  maybeToEither e = maybe (Left e) Right
+  throw401 msg = throwError $ err401 { errBody = msg }
+  handler req = either throw401 lookupAccount $ do
+    cookie <- maybeToEither "Missing cookie header" $ lookup "cookie" $ requestHeaders req
+    maybeToEither "Missing token in cookie" $ lookup "servant-auth-cookie" $ parseCookies cookie
 ```
 
 Let's now protect our API with our new, bespoke authentication scheme. We'll
