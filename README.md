@@ -27,7 +27,7 @@ release of `servant` package.
 | servant-blaze       | 0.7.1    | ?        |
 | servant-cassava     | 0.7      | ?        |
 | servant-client      | 0.10     | 0.11     |
-| servant-docs        | 0.10     | 0.10.1   |
+| servant-docs        | 0.10     | 0.11     |
 | servant-foreign     | 0.10     | 0.10.0.1 |
 | servant-js          | 0.9.1    | ?        |
 | servant-lucid       | 0.7.1    | ?        |

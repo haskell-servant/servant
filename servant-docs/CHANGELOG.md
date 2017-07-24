@@ -1,3 +1,8 @@
+0.11
+----
+
+* changed the type of `rqbody`.
+
 0.10
 ----
 
