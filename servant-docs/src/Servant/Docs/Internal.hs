@@ -525,10 +525,10 @@ markdown api = unlines $
         printEndpoint endpoint action =
           str :
           "" :
+          headersStr (action ^. headers) ++
           notesStr (action ^. notes) ++
           authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
-          headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
           rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
           responseStr (action ^. response) ++
