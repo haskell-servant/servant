@@ -125,9 +125,10 @@ data DocCapture = DocCapture
   , _capDesc   :: String -- user supplied
   } deriving (Eq, Ord, Show)
 
--- | A type to represent a /GET/ parameter from the Query String. Holds its name,
---   the possible values (leave empty if there isn't a finite number of them),
---   and a description of how it influences the output or behavior.
+-- | A type to represent a /GET/ (or other possible 'HTTP.Method')
+--   parameter from the Query String. Holds its name, the possible
+--   values (leave empty if there isn't a finite number of them), and
+--   a description of how it influences the output or behavior.
 --
 -- Write a 'ToParam' instance for your GET parameter types
 data DocQueryParam = DocQueryParam
@@ -185,7 +186,7 @@ defaultDocOptions :: DocOptions
 defaultDocOptions = DocOptions
   { _maxSamples = 5 }
 
--- | Type of GET parameter:
+-- | Type of GET (or other 'HTTP.Method') parameter:
 --
 -- - Normal corresponds to @QueryParam@, i.e your usual GET parameter
 -- - List corresponds to @QueryParams@, i.e GET parameters with multiple values
@@ -235,7 +236,7 @@ defResponse = Response
 -- at an endpoint, with its lenses:
 --
 -- - List of captures ('captures')
--- - List of GET parameters ('params')
+-- - List of GET (or other 'HTTP.Method') parameters ('params')
 -- - What the request body should look like, if any is requested ('rqbody')
 -- - What the response should be if everything goes well ('response')
 --
@@ -263,7 +264,7 @@ combineAction :: Action -> Action -> Action
 Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
         Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
--- Default 'Action'. Has no 'captures', no GET 'params', expects
+-- Default 'Action'. Has no 'captures', no query 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
 --
 -- Tweakable with lenses.
@@ -487,8 +488,8 @@ sampleByteStrings ctypes@Proxy Proxy =
         enc (t, s) = uncurry (t,,) <$> allMimeRender ctypes s
     in concatMap enc samples'
 
--- | The class that helps us automatically get documentation
---   for GET parameters.
+-- | The class that helps us automatically get documentation for GET
+--   (or other 'HTTP.Method') parameters.
 --
 -- Example of an instance:
 --
