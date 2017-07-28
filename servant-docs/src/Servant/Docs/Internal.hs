@@ -529,13 +529,15 @@ markdown api = unlines $
           authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
           headersStr (action ^. headers) ++
-          paramsStr (action ^. params) ++
+          paramsStr meth (action ^. params) ++
           rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
           responseStr (action ^. response) ++
           []
 
-          where str = "## " ++ BSC.unpack (endpoint^.method)
+          where str = "## " ++ BSC.unpack meth
                     ++ " " ++ showPath (endpoint^.path)
+
+                meth = endpoint ^. method
 
         introsStr :: [DocIntro] -> [String]
         introsStr = concatMap introStr
@@ -593,23 +595,23 @@ markdown api = unlines $
           where headerStr hname = "- This endpoint is sensitive to the value of the **"
                                ++ unpack hname ++ "** HTTP header."
 
-        paramsStr :: [DocQueryParam] -> [String]
-        paramsStr [] = []
-        paramsStr l =
-          "#### GET Parameters:" :
+        paramsStr :: HTTP.Method -> [DocQueryParam] -> [String]
+        paramsStr _ [] = []
+        paramsStr m l =
+          ("#### " ++ cs m ++ " Parameters:") :
           "" :
-          map paramStr l ++
+          map (paramStr m) l ++
           "" :
           []
 
-        paramStr param = unlines $
+        paramStr m param = unlines $
           ("- " ++ param ^. paramName) :
           (if (not (null values) || param ^. paramKind /= Flag)
             then ["     - **Values**: *" ++ intercalate ", " values ++ "*"]
             else []) ++
           ("     - **Description**: " ++ param ^. paramDesc) :
           (if (param ^. paramKind == List)
-            then ["     - This parameter is a **list**. All GET parameters with the name "
+            then ["     - This parameter is a **list**. All " ++ cs m ++ " parameters with the name "
                   ++ param ^. paramName ++ "[] will forward their values in a list to the handler."]
             else []) ++
           (if (param ^. paramKind == Flag)
