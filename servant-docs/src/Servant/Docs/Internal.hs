@@ -264,7 +264,7 @@ combineAction :: Action -> Action -> Action
 Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
         Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
--- Default 'Action'. Has no 'captures', no query 'params', expects
+-- | Default 'Action'. Has no 'captures', no query 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
 --
 -- Tweakable with lenses.
