@@ -525,10 +525,10 @@ markdown api = unlines $
         printEndpoint endpoint action =
           str :
           "" :
-          headersStr (action ^. headers) ++
           notesStr (action ^. notes) ++
           authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
+          headersStr (action ^. headers) ++
           paramsStr (action ^. params) ++
           rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
           responseStr (action ^. response) ++
@@ -588,7 +588,12 @@ markdown api = unlines $
 
         headersStr :: [Text] -> [String]
         headersStr [] = []
-        headersStr l = [""] ++ map headerStr l ++ [""]
+        headersStr l =
+          "#### Headers:" :
+          "" :
+          map headerStr l ++
+          "" :
+          []
 
           where headerStr hname = "- This endpoint is sensitive to the value of the **"
                                ++ unpack hname ++ "** HTTP header."
