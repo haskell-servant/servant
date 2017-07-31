@@ -588,7 +588,12 @@ markdown api = unlines $
 
         headersStr :: [Text] -> [String]
         headersStr [] = []
-        headersStr l = [""] ++ map headerStr l ++ [""]
+        headersStr l =
+          "#### Headers:" :
+          "" :
+          map headerStr l ++
+          "" :
+          []
 
           where headerStr hname = "- This endpoint is sensitive to the value of the **"
                                ++ unpack hname ++ "** HTTP header."
