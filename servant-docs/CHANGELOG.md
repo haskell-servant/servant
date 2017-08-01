@@ -1,3 +1,12 @@
+0.11.1
+------
+
+* Export `DocAuthentication` and related lenses.
+* Make `defAction`'s documentation visible in Haddock documentation.
+* Add a markdown header for the Headers an endpoint is sensitive to.
+* Document the HTTP Method the parameters of an endpoint belong to
+  (rather than assuming `GET` for all of them).
+
 0.11
 ----
 
