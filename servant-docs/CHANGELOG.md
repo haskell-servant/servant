@@ -6,6 +6,8 @@
 * Add a markdown header for the Headers an endpoint is sensitive to.
 * Document the HTTP Method the parameters of an endpoint belong to
   (rather than assuming `GET` for all of them).
+* Remove `ToSample a => ToSample [a]` and `ToSample (ZipList a)` instances
+  (https://github.com/haskell-servant/servant/pull/797).
 
 0.11
 ----
