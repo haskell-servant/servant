@@ -42,6 +42,7 @@ import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
 import           Servant.Client.Experimental.Auth
+import           Servant.Client.HttpClient
 import           Servant.Common.BaseUrl
 import           Servant.Common.BasicAuth
 import           Servant.Common.Req

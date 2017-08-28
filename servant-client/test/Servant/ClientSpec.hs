@@ -58,6 +58,7 @@ import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
 import           Servant.Client.Generic
 import qualified Servant.Common.Req         as SCR
+import qualified Servant.Client.HttpClient  as SCR
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 
