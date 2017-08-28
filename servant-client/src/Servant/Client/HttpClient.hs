@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -36,11 +37,22 @@ import Network.HTTP.Types
 import Network.HTTP.Client hiding (Proxy, path)
 import qualified Network.HTTP.Types.Header   as HTTP
 import Servant.API.ContentTypes
+import Servant.Client.Class
 import Servant.Common.BaseUrl
 import Servant.Common.Req
 
 import qualified Network.HTTP.Client as Client
 
+instance RunClient ClientM NoContent ( Int, ByteString, MediaType
+                                     , [HTTP.Header], Response ByteString) where
+  runRequest _ meth req = performRequest meth req
+
+instance (MimeUnrender ct a) =>
+         RunClient ClientM ct ([HTTP.Header], a) where
+  runRequest p meth req = performRequestCT p meth req
+
+instance RunClient ClientM NoContent [HTTP.Header] where
+  runRequest _ meth req = performRequestNoBody meth req
 
 data ClientEnv
   = ClientEnv

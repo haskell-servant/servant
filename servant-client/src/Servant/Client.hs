@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes  #-}
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
@@ -43,6 +44,7 @@ import           Prelude.Compat
 import           Servant.API
 import           Servant.Client.Experimental.Auth
 import           Servant.Client.HttpClient
+import           Servant.Client.Class
 import           Servant.Common.BaseUrl
 import           Servant.Common.BasicAuth
 import           Servant.Common.Req
@@ -60,15 +62,15 @@ import           Servant.Common.Req
 -- > getAllBooks :: ClientM [Book]
 -- > postNewBook :: Book -> ClientM Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
-client :: HasClient api => Proxy api -> Client api
+client :: HasClient api => Proxy api -> Client m api
 client p = clientWithRoute p defReq
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
 -- an internal class, you can just use 'client'.
 class HasClient api where
-  type Client api :: *
-  clientWithRoute :: Proxy api -> Req -> Client api
+  type Client (m :: * -> *) (api :: *) :: *
+  clientWithRoute :: Proxy api -> Req -> Client m api
 
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
@@ -85,7 +87,7 @@ class HasClient api where
 -- > postNewBook :: Book -> ClientM Book
 -- > (getAllBooks :<|> postNewBook) = client myApi
 instance (HasClient a, HasClient b) => HasClient (a :<|> b) where
-  type Client (a :<|> b) = Client a :<|> Client b
+  type Client m (a :<|> b) = Client m a :<|> Client m b
   clientWithRoute Proxy req =
     clientWithRoute (Proxy :: Proxy a) req :<|>
     clientWithRoute (Proxy :: Proxy b) req
@@ -104,7 +106,7 @@ data EmptyClient = EmptyClient deriving (Eq, Show, Bounded, Enum)
 -- > getAllBooks :: ClientM [Book]
 -- > (getAllBooks :<|> EmptyClient) = client myApi
 instance HasClient EmptyAPI where
-  type Client EmptyAPI = EmptyClient
+  type Client m EmptyAPI = EmptyClient
   clientWithRoute Proxy _ = EmptyClient
 
 -- | If you use a 'Capture' in one of your endpoints in your API,
@@ -129,8 +131,8 @@ instance HasClient EmptyAPI where
 instance (KnownSymbol capture, ToHttpApiData a, HasClient api)
       => HasClient (Capture capture a :> api) where
 
-  type Client (Capture capture a :> api) =
-    a -> Client api
+  type Client m (Capture capture a :> api) =
+    a -> Client m api
 
   clientWithRoute Proxy req val =
     clientWithRoute (Proxy :: Proxy api)
@@ -161,8 +163,8 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient api)
 instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
       => HasClient (CaptureAll capture a :> sublayout) where
 
-  type Client (CaptureAll capture a :> sublayout) =
-    [a] -> Client sublayout
+  type Client m (CaptureAll capture a :> sublayout) =
+    [a] -> Client m sublayout
 
   clientWithRoute Proxy req vals =
     clientWithRoute (Proxy :: Proxy sublayout)
@@ -172,42 +174,42 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient sublayout)
 
 instance OVERLAPPABLE_
   -- Note [Non-Empty Content Types]
-  (MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
+  (RunClient m ct ([H.Header], a), MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient (Verb method status cts' a) where
-  type Client (Verb method status cts' a) = ClientM a
+  type Client m (Verb method status cts' a) = m a
   clientWithRoute Proxy req = do
-    snd <$> performRequestCT (Proxy :: Proxy ct) method req
+    snd <$> runRequest (Proxy :: Proxy ct) method req
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
-  (ReflectMethod method) => HasClient (Verb method status cts NoContent) where
-  type Client (Verb method status cts NoContent)
-    = ClientM NoContent
+  (RunClient m NoContent [H.Header], ReflectMethod method) => HasClient (Verb method status cts NoContent) where
+  type Client m (Verb method status cts NoContent)
+    = m NoContent
   clientWithRoute Proxy req = do
-    performRequestNoBody method req >> return NoContent
+    runRequest (Proxy :: Proxy NoContent) method req >> return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
   -- Note [Non-Empty Content Types]
-  ( MimeUnrender ct a, BuildHeadersTo ls, ReflectMethod method, cts' ~ (ct ': cts)
+  ( RunClient m ct ([H.Header], a), MimeUnrender ct a, BuildHeadersTo ls, ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient (Verb method status cts' (Headers ls a)) where
-  type Client (Verb method status cts' (Headers ls a))
-    = ClientM (Headers ls a)
+  type Client m (Verb method status cts' (Headers ls a))
+    = m (Headers ls a)
   clientWithRoute Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
-    (hdrs, resp) <- performRequestCT (Proxy :: Proxy ct) method req
+    (hdrs, resp) <- runRequest (Proxy :: Proxy ct) method req
     return $ Headers { getResponse = resp
                      , getHeadersHList = buildHeadersTo hdrs
                      }
 
 instance OVERLAPPING_
-  ( BuildHeadersTo ls, ReflectMethod method
+  ( RunClient m NoContent [H.Header], BuildHeadersTo ls, ReflectMethod method
   ) => HasClient (Verb method status cts (Headers ls NoContent)) where
-  type Client (Verb method status cts (Headers ls NoContent))
-    = ClientM (Headers ls NoContent)
+  type Client m (Verb method status cts (Headers ls NoContent))
+    = m (Headers ls NoContent)
   clientWithRoute Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
-    hdrs <- performRequestNoBody method req
+    hdrs <- runRequest method req
     return $ Headers { getResponse = NoContent
                      , getHeadersHList = buildHeadersTo hdrs
                      }
@@ -241,8 +243,8 @@ instance OVERLAPPING_
 instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
       => HasClient (Header sym a :> api) where
 
-  type Client (Header sym a :> api) =
-    Maybe a -> Client api
+  type Client m (Header sym a :> api) =
+    Maybe a -> Client m api
 
   clientWithRoute Proxy req mval =
     clientWithRoute (Proxy :: Proxy api)
@@ -258,21 +260,21 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
 instance HasClient api
   => HasClient (HttpVersion :> api) where
 
-  type Client (HttpVersion :> api) =
-    Client api
+  type Client m (HttpVersion :> api) =
+    Client m api
 
   clientWithRoute Proxy =
     clientWithRoute (Proxy :: Proxy api)
 
 -- | Ignore @'Summary'@ in client functions.
 instance HasClient api => HasClient (Summary desc :> api) where
-  type Client (Summary desc :> api) = Client api
+  type Client m (Summary desc :> api) = Client m api
 
   clientWithRoute _ = clientWithRoute (Proxy :: Proxy api)
 
 -- | Ignore @'Description'@ in client functions.
 instance HasClient api => HasClient (Description desc :> api) where
-  type Client (Description desc :> api) = Client api
+  type Client m (Description desc :> api) = Client m api
 
   clientWithRoute _ = clientWithRoute (Proxy :: Proxy api)
 
@@ -304,8 +306,8 @@ instance HasClient api => HasClient (Description desc :> api) where
 instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
       => HasClient (QueryParam sym a :> api) where
 
-  type Client (QueryParam sym a :> api) =
-    Maybe a -> Client api
+  type Client m (QueryParam sym a :> api) =
+    Maybe a -> Client m api
 
   -- if mparam = Nothing, we don't add it to the query string
   clientWithRoute Proxy req mparam =
@@ -349,8 +351,8 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
 instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
       => HasClient (QueryParams sym a :> api) where
 
-  type Client (QueryParams sym a :> api) =
-    [a] -> Client api
+  type Client m (QueryParams sym a :> api) =
+    [a] -> Client m api
 
   clientWithRoute Proxy req paramlist =
     clientWithRoute (Proxy :: Proxy api)
@@ -387,8 +389,8 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient api)
 instance (KnownSymbol sym, HasClient api)
       => HasClient (QueryFlag sym :> api) where
 
-  type Client (QueryFlag sym :> api) =
-    Bool -> Client api
+  type Client m (QueryFlag sym :> api) =
+    Bool -> Client m api
 
   clientWithRoute Proxy req flag =
     clientWithRoute (Proxy :: Proxy api)
@@ -403,12 +405,12 @@ instance (KnownSymbol sym, HasClient api)
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
 instance HasClient Raw where
-  type Client Raw
-    = H.Method ->  ClientM (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
+  type Client m Raw
+    = H.Method ->  m (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
 
   clientWithRoute :: Proxy Raw -> Req -> Client Raw
   clientWithRoute Proxy req httpMethod = do
-    performRequest httpMethod req
+    runRequest (Proxy :: Proxy NoContent) httpMethod req
 
 -- | If you use a 'ReqBody' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -431,8 +433,8 @@ instance HasClient Raw where
 instance (MimeRender ct a, HasClient api)
       => HasClient (ReqBody (ct ': cts) a :> api) where
 
-  type Client (ReqBody (ct ': cts) a :> api) =
-    a -> Client api
+  type Client m (ReqBody (ct ': cts) a :> api) =
+    a -> Client m api
 
   clientWithRoute Proxy req body =
     clientWithRoute (Proxy :: Proxy api)
@@ -445,7 +447,7 @@ instance (MimeRender ct a, HasClient api)
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient api) => HasClient (path :> api) where
-  type Client (path :> api) = Client api
+  type Client m (path :> api) = Client m api
 
   clientWithRoute Proxy req =
      clientWithRoute (Proxy :: Proxy api)
@@ -454,19 +456,19 @@ instance (KnownSymbol path, HasClient api) => HasClient (path :> api) where
     where p = symbolVal (Proxy :: Proxy path)
 
 instance HasClient api => HasClient (Vault :> api) where
-  type Client (Vault :> api) = Client api
+  type Client m (Vault :> api) = Client m api
 
   clientWithRoute Proxy req =
     clientWithRoute (Proxy :: Proxy api) req
 
 instance HasClient api => HasClient (RemoteHost :> api) where
-  type Client (RemoteHost :> api) = Client api
+  type Client m (RemoteHost :> api) = Client m api
 
   clientWithRoute Proxy req =
     clientWithRoute (Proxy :: Proxy api) req
 
 instance HasClient api => HasClient (IsSecure :> api) where
-  type Client (IsSecure :> api) = Client api
+  type Client m (IsSecure :> api) = Client m api
 
   clientWithRoute Proxy req =
     clientWithRoute (Proxy :: Proxy api) req
@@ -474,13 +476,13 @@ instance HasClient api => HasClient (IsSecure :> api) where
 instance HasClient subapi =>
   HasClient (WithNamedContext name context subapi) where
 
-  type Client (WithNamedContext name context subapi) = Client subapi
+  type Client m (WithNamedContext name context subapi) = Client m subapi
   clientWithRoute Proxy = clientWithRoute (Proxy :: Proxy subapi)
 
 instance ( HasClient api
          ) => HasClient (AuthProtect tag :> api) where
-  type Client (AuthProtect tag :> api)
-    = AuthenticateReq (AuthProtect tag) -> Client api
+  type Client m (AuthProtect tag :> api)
+    = AuthenticateReq (AuthProtect tag) -> Client m api
 
   clientWithRoute Proxy req (AuthenticateReq (val,func)) =
     clientWithRoute (Proxy :: Proxy api) (func val req)
@@ -488,7 +490,7 @@ instance ( HasClient api
 -- * Basic Authentication
 
 instance HasClient api => HasClient (BasicAuth realm usr :> api) where
-  type Client (BasicAuth realm usr :> api) = BasicAuthData -> Client api
+  type Client m (BasicAuth realm usr :> api) = BasicAuthData -> Client m api
 
   clientWithRoute Proxy req val =
     clientWithRoute (Proxy :: Proxy api) (basicAuthReq val req)
