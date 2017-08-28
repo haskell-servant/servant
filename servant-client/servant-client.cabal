@@ -30,6 +30,7 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
+    Servant.Client.HttpClient
     Servant.Client.Generic
     Servant.Client.Experimental.Auth
     Servant.Common.BaseUrl
