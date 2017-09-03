@@ -10,6 +10,7 @@ import Servant.API
 import Servant.Common.Req
 
 class (Monad m) => RunClient m ct result where
-  runRequest :: MimeUnrender ct result
-             => Proxy ct
-             -> Method -> Req -> m result
+  runRequest :: Proxy ct
+             -> Method
+             -> Req
+             -> m result

@@ -63,7 +63,7 @@ import           Servant.Server
 import           Servant.Server.Experimental.Auth
 
 -- This declaration simply checks that all instances are in place.
-_ = client comprehensiveAPI
+_ = client (Proxy :: Proxy ClientM) comprehensiveAPI
 
 spec :: Spec
 spec = describe "Servant.Client" $ do
@@ -147,7 +147,7 @@ getGet
   :<|> getMultiple
   :<|> getRespHeaders
   :<|> getDeleteContentType
-  :<|> EmptyClient = client api
+  :<|> EmptyClient = client (Proxy :: Proxy ClientM) api
 
 server :: Application
 server = serve api (
@@ -241,7 +241,7 @@ data GenericClient = GenericClient
   , mkNestedClient1 :: String -> NestedClient1
   } deriving Generic
 instance SOP.Generic GenericClient
-instance (Client GenericClientAPI ~ client) => ClientLike client GenericClient
+instance (Client ClientM GenericClientAPI ~ client) => ClientLike client GenericClient
 
 type NestedAPI1
     = QueryParam "int" Int :> NestedAPI2
@@ -252,7 +252,7 @@ data NestedClient1 = NestedClient1
   , idChar          :: Maybe Char -> SCR.ClientM Char
   } deriving Generic
 instance SOP.Generic NestedClient1
-instance (Client NestedAPI1 ~ client) => ClientLike client NestedClient1
+instance (Client ClientM NestedAPI1 ~ client) => ClientLike client NestedClient1
 
 type NestedAPI2
     = "sum"  :> Capture "first" Int :> Capture "second" Int :> Get '[JSON] Int
@@ -263,7 +263,7 @@ data NestedClient2 = NestedClient2
   , doNothing :: SCR.ClientM ()
   } deriving Generic
 instance SOP.Generic NestedClient2
-instance (Client NestedAPI2 ~ client) => ClientLike client NestedClient2
+instance (Client ClientM NestedAPI2 ~ client) => ClientLike client NestedClient2
 
 genericClientServer :: Application
 genericClientServer = serve (Proxy :: Proxy GenericClientAPI) (
@@ -359,7 +359,7 @@ wrappedApiSpec = describe "error status codes" $ do
         test (WrappedApi api, desc) =
           it desc $ bracket (startWaiApp $ serveW api) endWaiApp $ \(_, baseUrl) -> do
             let getResponse :: SCR.ClientM ()
-                getResponse = client api
+                getResponse = client (Proxy :: Proxy ClientM) api
             Left FailureResponse{..} <- runClientM getResponse (ClientEnv manager baseUrl)
             responseStatus `shouldBe` (HTTP.Status 500 "error message")
     in mapM_ test $
@@ -374,35 +374,35 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
 
     context "client returns errors appropriately" $ do
       it "reports FailureResponse" $ \(_, baseUrl) -> do
-        let (_ :<|> getDeleteEmpty :<|> _) = client api
+        let (_ :<|> getDeleteEmpty :<|> _) = client (Proxy :: Proxy ClientM) api
         Left res <- runClientM getDeleteEmpty (ClientEnv manager baseUrl)
         case res of
           FailureResponse _ (HTTP.Status 404 "Not Found") _ _ -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \(_, baseUrl) -> do
-        let (_ :<|> _ :<|> getCapture :<|> _) = client api
+        let (_ :<|> _ :<|> getCapture :<|> _) = client (Proxy :: Proxy ClientM) api
         Left res <- runClientM (getCapture "foo") (ClientEnv manager baseUrl)
         case res of
           DecodeFailure _ ("application/json") _ -> return ()
           _ -> fail $ "expected DecodeFailure, but got " <> show res
 
       it "reports ConnectionError" $ \_ -> do
-        let (getGetWrongHost :<|> _) = client api
+        let (getGetWrongHost :<|> _) = client (Proxy :: Proxy ClientM) api
         Left res <- runClientM getGetWrongHost (ClientEnv manager (BaseUrl Http "127.0.0.1" 19872 ""))
         case res of
           ConnectionError _ -> return ()
           _ -> fail $ "expected ConnectionError, but got " <> show res
 
       it "reports UnsupportedContentType" $ \(_, baseUrl) -> do
-        let (getGet :<|> _ ) = client api
+        let (getGet :<|> _ ) = client (Proxy :: Proxy ClientM) api
         Left res <- runClientM getGet (ClientEnv manager baseUrl)
         case res of
           UnsupportedContentType ("application/octet-stream") _ -> return ()
           _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
       it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
-        let (_ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
+        let (_ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client (Proxy :: Proxy ClientM) api
         Left res <- runClientM (getBody alice) (ClientEnv manager baseUrl)
         case res of
           InvalidContentTypeHeader "fooooo" _ -> return ()
@@ -410,7 +410,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
 
 data WrappedApi where
   WrappedApi :: (HasServer (api :: *) '[], Server api ~ Handler a,
-                 HasClient api, Client api ~ SCR.ClientM ()) =>
+                 HasClient ClientM api, Client ClientM api ~ SCR.ClientM ()) =>
     Proxy api -> WrappedApi
 
 basicAuthSpec :: Spec
@@ -418,14 +418,14 @@ basicAuthSpec = beforeAll (startWaiApp basicAuthServer) $ afterAll endWaiApp $ d
   context "Authentication works when requests are properly authenticated" $ do
 
     it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
-      let getBasic = client basicAuthAPI
+      let getBasic = client (Proxy :: Proxy ClientM) basicAuthAPI
       let basicAuthData = BasicAuthData "servant" "server"
       (left show <$> runClientM (getBasic basicAuthData) (ClientEnv  manager baseUrl)) `shouldReturn` Right alice
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
 
     it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
-      let getBasic = client basicAuthAPI
+      let getBasic = client (Proxy :: Proxy ClientM) basicAuthAPI
       let basicAuthData = BasicAuthData "not" "password"
       Left FailureResponse{..} <- runClientM (getBasic basicAuthData) (ClientEnv manager baseUrl)
       responseStatus `shouldBe` HTTP.Status 403 "Forbidden"
@@ -435,14 +435,14 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
   context "Authentication works when requests are properly authenticated" $ do
 
     it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
-      let getProtected = client genAuthAPI
+      let getProtected = client (Proxy :: Proxy ClientM) genAuthAPI
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "AuthHeader" ("cool" :: String) req)
       (left show <$> runClientM (getProtected authRequest) (ClientEnv manager baseUrl)) `shouldReturn` Right alice
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
 
     it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
-      let getProtected = client genAuthAPI
+      let getProtected = client (Proxy :: Proxy ClientM) genAuthAPI
       let authRequest = mkAuthenticateReq () (\_ req ->  SCR.addHeader "Wrong" ("header" :: String) req)
       Left FailureResponse{..} <- runClientM (getProtected authRequest) (ClientEnv manager baseUrl)
       responseStatus `shouldBe` (HTTP.Status 401 "Unauthorized")
@@ -451,11 +451,11 @@ genericClientSpec :: Spec
 genericClientSpec = beforeAll (startWaiApp genericClientServer) $ afterAll endWaiApp $ do
   describe "Servant.Client.Generic" $ do
 
-    let GenericClient{..} = mkClient (client (Proxy :: Proxy GenericClientAPI))
+    let GenericClient{..} = mkClient (client (Proxy :: Proxy ClientM) (Proxy :: Proxy GenericClientAPI))
         NestedClient1{..} = mkNestedClient1 "example"
         NestedClient2{..} = mkNestedClient2 (Just 42)
 
-    it "works for top-level client function" $ \(_, baseUrl) -> do
+    it "works for top-level client (Proxy :: Proxy ClientM) function" $ \(_, baseUrl) -> do
       (left show <$> (runClientM (getSqr (Just 5)) (ClientEnv manager baseUrl))) `shouldReturn` Right 25
 
     it "works for nested clients" $ \(_, baseUrl) -> do
