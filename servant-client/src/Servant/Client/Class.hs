@@ -6,7 +6,6 @@ where
 
 import Data.Proxy
 import Network.HTTP.Types
-import Servant.API
 import Servant.Common.Req
 
 class (Monad m) => RunClient m ct result where

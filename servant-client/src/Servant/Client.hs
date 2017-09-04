@@ -108,7 +108,7 @@ data EmptyClient = EmptyClient deriving (Eq, Show, Bounded, Enum)
 -- > (getAllBooks :<|> EmptyClient) = client myApi
 instance HasClient m EmptyAPI where
   type Client m EmptyAPI = EmptyClient
-  clientWithRoute pm Proxy _ = EmptyClient
+  clientWithRoute _pm Proxy _ = EmptyClient
 
 -- | If you use a 'Capture' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -178,7 +178,7 @@ instance OVERLAPPABLE_
   (RunClient m ct ([H.Header], a), MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient m (Verb method status cts' a) where
   type Client m (Verb method status cts' a) = m a
-  clientWithRoute pm Proxy req = do
+  clientWithRoute _pm Proxy req = do
     (_hdrs, a) :: ([H.Header], a) <- runRequest (Proxy :: Proxy ct) method req
     return a
       where method = reflectMethod (Proxy :: Proxy method)
@@ -188,7 +188,7 @@ instance OVERLAPPING_
   , ReflectMethod method) => HasClient m (Verb method status cts NoContent) where
   type Client m (Verb method status cts NoContent)
     = m NoContent
-  clientWithRoute pm Proxy req = do
+  clientWithRoute _pm Proxy req = do
     _hdrs :: [H.Header] <- runRequest (Proxy :: Proxy NoContent) method req
     return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
@@ -200,7 +200,7 @@ instance OVERLAPPING_
   ) => HasClient m (Verb method status cts' (Headers ls a)) where
   type Client m (Verb method status cts' (Headers ls a))
     = m (Headers ls a)
-  clientWithRoute pm Proxy req = do
+  clientWithRoute _pm Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
     (hdrs, resp) <- runRequest (Proxy :: Proxy ct) method req
     return $ Headers { getResponse = resp
@@ -213,7 +213,7 @@ instance OVERLAPPING_
   ) => HasClient m (Verb method status cts (Headers ls NoContent)) where
   type Client m (Verb method status cts (Headers ls NoContent))
     = m (Headers ls NoContent)
-  clientWithRoute pm Proxy req = do
+  clientWithRoute _pm Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
     hdrs <- runRequest (Proxy :: Proxy NoContent) method req
     return $ Headers { getResponse = NoContent
@@ -416,7 +416,7 @@ instance (RunClient m NoContent (Int, ByteString, MediaType, [HTTP.Header], Resp
     = H.Method ->  m (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
 
   clientWithRoute :: Proxy m -> Proxy Raw -> Req -> Client m Raw
-  clientWithRoute pm Proxy req httpMethod = do
+  clientWithRoute _pm Proxy req httpMethod = do
     runRequest (Proxy :: Proxy NoContent) httpMethod req
 
 -- | If you use a 'ReqBody' in one of your endpoints in your API,
