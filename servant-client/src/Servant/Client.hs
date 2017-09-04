@@ -22,7 +22,7 @@ module Servant.Client
   , client
   , HasClient(..)
   , ClientM
-  , runClientM
+  , runClientM, inClientM, clientM
   , ClientEnv (ClientEnv)
   , mkAuthenticateReq
   , ServantError(..)
@@ -52,7 +52,8 @@ import           Servant.Common.Req
 
 -- * Accessing APIs as a Client
 
--- | 'client' allows you to produce operations to query an API from a client.
+-- | 'client' allows you to produce operations to query an API from a client within
+-- a given monadic context `m`
 --
 -- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
 -- >         :<|> "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book -- POST /books
@@ -60,11 +61,25 @@ import           Servant.Common.Req
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
+-- > clientM :: Proxy ClientM
+-- > clientM = Proxy
+-- >
 -- > getAllBooks :: ClientM [Book]
 -- > postNewBook :: Book -> ClientM Book
--- > (getAllBooks :<|> postNewBook) = client myApi
+-- > (getAllBooks :<|> postNewBook) = client clientM myApi
 client :: HasClient m api => Proxy m -> Proxy api -> Client m api
 client pm p = clientWithRoute pm p defReq
+
+-- | Helper proxy to simplify common case of working in `ClientM` monad
+inClientM :: Proxy ClientM
+inClientM = Proxy
+
+-- | Convenience method to declare clients running in the `ClientM` monad.
+--
+-- Simply pass `inClientM` to `client`....
+clientM :: (HasClient ClientM api) => Proxy api -> Client ClientM api
+clientM = client inClientM
+
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
