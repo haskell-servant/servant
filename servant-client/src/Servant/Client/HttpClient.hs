@@ -63,7 +63,6 @@ data ClientEnv
 
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Manager' and 'BaseUrl' used for requests in the reader environment.
-
 newtype ClientM a = ClientM { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
                     deriving ( Functor, Applicative, Monad, MonadIO, Generic
                              , MonadReader ClientEnv
@@ -77,10 +76,8 @@ instance MonadBase IO ClientM where
 instance MonadBaseControl IO ClientM where
   type StM ClientM a = Either ServantError a
 
-  -- liftBaseWith :: (RunInBase ClientM IO -> IO a) -> ClientM a
   liftBaseWith f = ClientM (liftBaseWith (\g -> f (g . runClientM')))
 
-  -- restoreM :: StM ClientM a -> ClientM a
   restoreM st = ClientM (restoreM st)
 
 -- | Try clients in order, last error is preserved.
