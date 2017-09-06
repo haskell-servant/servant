@@ -4,44 +4,42 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 {-| http-client based client  requests executor -}
 module Servant.Client.HttpClient where
 
 
-import Prelude ()
-import Prelude.Compat
+import           Prelude                     ()
+import           Prelude.Compat
 
-import Control.Exception
-import Control.Monad
-import Control.Monad.Catch (MonadThrow, MonadCatch)
-import Data.Foldable (toList)
-import Data.Functor.Alt (Alt (..))
+import           Control.Exception
+import           Control.Monad
+import           Control.Monad.Base          (MonadBase (..))
+import           Control.Monad.Catch         (MonadCatch, MonadThrow)
+import           Control.Monad.Error.Class   (MonadError (..))
+import           Control.Monad.IO.Class      ()
+import           Control.Monad.Reader
+import           Control.Monad.Trans.Control (MonadBaseControl (..))
+import           Control.Monad.Trans.Except
+import           Data.ByteString.Lazy        hiding (any, elem, filter, map,
+                                              null, pack)
+import           Data.Foldable               (toList)
+import           Data.Functor.Alt            (Alt (..))
+import           Data.Proxy
+import           Data.String.Conversions     (cs)
+import           GHC.Generics
+import           Network.HTTP.Media
+import           Network.HTTP.Types
+import           Servant.API.ContentTypes
+import           Servant.Client.Class
+import           Servant.Common.BaseUrl
+import           Servant.Common.Req
 
-import Control.Monad.Error.Class (MonadError(..))
-import Control.Monad.Trans.Except
-
-import GHC.Generics
-import Control.Monad.Base (MonadBase (..))
-import Control.Monad.IO.Class ()
-import Control.Monad.Reader
-import Control.Monad.Trans.Control (MonadBaseControl (..))
-import Data.ByteString.Lazy hiding (pack, filter, map, null, elem, any)
-import Data.String.Conversions (cs)
-import Data.Proxy
-import Network.HTTP.Media
-import Network.HTTP.Types
-import Network.HTTP.Client hiding (Proxy, path)
+import qualified Network.HTTP.Client         as Client
 import qualified Network.HTTP.Types.Header   as HTTP
-import Servant.API.ContentTypes
-import Servant.Client.Class
-import Servant.Common.BaseUrl
-import Servant.Common.Req
-
-import qualified Network.HTTP.Client as Client
 
 instance RunClient ClientM NoContent ( Int, ByteString, MediaType
                                      , [HTTP.Header], Response ByteString) where
@@ -89,8 +87,7 @@ runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
 
 
 performRequest :: Method -> Req
-               -> ClientM ( Int, ByteString, MediaType
-                          , [HTTP.Header], Response ByteString)
+               -> ClientM Response
 performRequest reqMethod req = do
   m <- asks manager
   reqHost <- asks baseUrl
