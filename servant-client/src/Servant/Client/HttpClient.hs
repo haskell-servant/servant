@@ -20,33 +20,24 @@ import           Control.Monad
 import           Control.Monad.Base          (MonadBase (..))
 import           Control.Monad.Catch         (MonadCatch, MonadThrow)
 import           Control.Monad.Error.Class   (MonadError (..))
+import           Control.Monad.Reader
+import           Control.Monad.Trans.Control (MonadBaseControl (..))
+import           Control.Monad.Trans.Except
 import           Data.ByteString.Builder     (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
+import           Data.Foldable               (toList)
+import           Data.Functor.Alt            (Alt (..))
 import           Data.Monoid                 ((<>))
 import           Data.String                 (fromString)
 import qualified Data.Text                   as T
 import           GHC.Exts                    (fromList)
-{-import           Control.Monad.IO.Class      ()-}
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Control (MonadBaseControl (..))
-import           Control.Monad.Trans.Except
-{-import           Data.ByteString.Lazy        hiding (any, elem, filter, map,-}
-                                              {-null, pack)-}
-import           Data.Foldable               (toList)
-import           Data.Functor.Alt            (Alt (..))
-import           Data.Proxy
-{-import           Data.String.Conversions     (cs)-}
 import           GHC.Generics
-import           Network.HTTP.Media          (parseAccept, renderHeader, (//))
+import           Network.HTTP.Media          (renderHeader)
 import           Network.HTTP.Types          (hContentType, renderQuery,
                                               statusCode)
-{-import           Servant.API.ContentTypes-}
 import           Servant.Client.Core
-{-import           Servant.Common.BaseUrl-}
-{-import           Servant.Common.Req-}
 
 import qualified Network.HTTP.Client         as Client
-{-import qualified Network.HTTP.Types.Header   as HTTP-}
 
 data ClientEnv
   = ClientEnv
@@ -97,15 +88,8 @@ performRequest req = do
     Left err -> throwError $ err
     Right response -> do
       let status = Client.responseStatus response
-          body = Client.responseBody response
-          hdrs = Client.responseHeaders response
           status_code = statusCode status
           ourResponse = clientResponseToReponse response
-      ct <- case lookup "Content-Type" $ Client.responseHeaders response of
-                 Nothing -> pure $ "application"//"octet-stream"
-                 Just t -> case parseAccept t of
-                   Nothing -> throwError $ InvalidContentTypeHeader ourResponse
-                   Just t' -> pure t'
       unless (status_code >= 200 && status_code < 300) $
         throwError $ FailureResponse ourResponse
       return ourResponse
@@ -135,24 +119,8 @@ requestToClientRequest burl r = Client.defaultRequest
   where
     (body, contentTypeHdr) = case requestBody r of
       Nothing -> (Client.RequestBodyLBS "", Nothing)
-      Just (RequestBodyLBS body, typ)
-        -> (Client.RequestBodyLBS body, Just (hContentType, renderHeader typ))
-
-{-performRequestCT :: MimeUnrender ct result => Proxy ct -> Method -> Req-}
-    {--> ClientM ([HTTP.Header], result)-}
-{-performRequestCT ct reqMethod req = do-}
-  {-let acceptCTS = contentTypes ct-}
-  {-(_status, respBody, respCT, hdrs, _response) <--}
-    {-performRequest reqMethod (req { reqAccept = toList acceptCTS })-}
-  {-unless (any (matches respCT) acceptCTS) $ throwError $ UnsupportedContentType respCT respBody-}
-  {-case mimeUnrender ct respBody of-}
-    {-Left err -> throwError $ DecodeFailure err respCT respBody-}
-    {-Right val -> return (hdrs, val)-}
-
-{-performRequestNoBody :: Method -> Req -> ClientM [HTTP.Header]-}
-{-performRequestNoBody reqMethod req = do-}
-  {-(_status, _body, _ct, hdrs, _response) <- performRequest reqMethod req-}
-  {-return hdrs-}
+      Just (RequestBodyLBS body', typ)
+        -> (Client.RequestBodyLBS body', Just (hContentType, renderHeader typ))
 
 catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =
