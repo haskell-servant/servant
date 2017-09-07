@@ -27,11 +27,17 @@ import           Network.HTTP.Types      (Header, HeaderName, HttpVersion,
 import           Web.HttpApiData         (ToHttpApiData, toEncodedUrlPiece,
                                           toHeader)
 
-data ServantError
-  = FailureResponse Response
+-- | A type representing possible errors in a request
+data ServantError =
+  -- | The server returned an error response
+    FailureResponse Response
+  -- | The body could not be decoded at the expected type
   | DecodeFailure Text Response
+  -- | The content-type of the response is not supported
   | UnsupportedContentType MediaType Response
+  -- | The content-type header is invalid
   | InvalidContentTypeHeader Response
+  -- | There was a connection error, and no response was received
   | ConnectionError Text
   deriving (Eq, Show, Generic, Typeable)
 
@@ -45,6 +51,7 @@ data Request = Request
   , requestMethod      :: Method
   } deriving (Generic, Typeable)
 
+-- | The request body. Currently only lazy ByteStrings are supported.
 newtype RequestBody = RequestBodyLBS LBS.ByteString
   deriving (Eq, Ord, Read, Show, Typeable)
 
@@ -55,6 +62,7 @@ data Response = Response
   , responseHttpVersion :: HttpVersion
   } deriving (Eq, Show, Generic, Typeable)
 
+-- A GET request to the top-level path
 defaultRequest :: Request
 defaultRequest = Request
   { requestPath = ""

@@ -24,6 +24,10 @@ module Servant.Client.Core
   , mkAuthenticateReq
   , ServantError(..)
   , EmptyClient(..)
+  , RunClient(..)
+  , Request(..)
+  , Response(..)
+  , RequestBody(..)
   , module Servant.Client.Core.Internal.BaseUrl
   ) where
 
