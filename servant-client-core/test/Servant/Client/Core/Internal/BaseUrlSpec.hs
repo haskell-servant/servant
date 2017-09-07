@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Servant.Common.BaseUrlSpec where
+module Servant.Client.Core.Internal.BaseUrlSpec (spec) where
+
 
 import           Control.DeepSeq
 import           Prelude ()
@@ -7,7 +8,7 @@ import           Prelude.Compat
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           Servant.Common.BaseUrl
+import           Servant.Client.Core.Internal.BaseUrl
 
 spec :: Spec
 spec = do
@@ -78,6 +79,3 @@ instance Arbitrary BaseUrl where
       (1, choose (1, 20000)) :
       []
     pathGen = listOf1 . elements $ letters
-
-isLeft :: Either a b -> Bool
-isLeft = either (const True) (const False)
