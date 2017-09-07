@@ -4,13 +4,9 @@
 
 -- | Authentication for clients
 
-module Servant.Client.Experimental.Auth (
-    AuthenticateReq(AuthenticateReq, unAuthReq)
-  , AuthClientData
-  , mkAuthenticateReq
-  ) where
+module Servant.Client.Core.Internal.Auth where
 
-import Servant.Common.Req (Request)
+import Servant.Client.Core.Internal.Request (Request)
 
 -- | For a resource protected by authentication (e.g. AuthProtect), we need
 -- to provide the client with some data used to add authentication data

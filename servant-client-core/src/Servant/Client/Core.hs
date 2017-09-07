@@ -16,7 +16,7 @@
 -- | This module provides 'client' which can automatically generate
 -- querying functions for each endpoint just from the type representing your
 -- API.
-module Servant.Client
+module Servant.Client.Core
   ( AuthClientData
   , AuthenticateReq(..)
   , client

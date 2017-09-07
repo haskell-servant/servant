@@ -10,7 +10,7 @@
 
 #include "overlapping-compat.h"
 
-module Servant.Client.Generic
+module Servant.Client.Core.Internal.Generic
   ( ClientLike(..)
   , genericMkClientL
   , genericMkClientP
@@ -18,7 +18,6 @@ module Servant.Client.Generic
 
 import Generics.SOP   (Code, Generic, I(..), NP(..), NS(Z), SOP(..), to)
 import Servant.API    ((:<|>)(..))
-import Servant.Client (ClientM)
 
 -- | This class allows us to match client structure with client functions
 -- produced with 'client' without explicit pattern-matching.
@@ -111,7 +110,7 @@ instance ClientLike client custom
       => ClientLike (a -> client) (a -> custom) where
   mkClient c = mkClient . c
 
-instance ClientLike (ClientM a) (ClientM a) where
+instance ClientLike (m a) (m a) where
   mkClient = id
 
 -- | Match client structure with client functions, regarding left-nested API clients

@@ -7,7 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module Servant.Common.Request where
+module Servant.Client.Core.Internal.Request where
 
 import           Prelude                 ()
 import           Prelude.Compat
@@ -16,13 +16,12 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy    as LBS
 import           Data.Semigroup          ((<>))
 import qualified Data.Sequence           as Seq
-import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import           Data.Typeable           (Typeable)
 import           GHC.Generics            (Generic)
 import           Network.HTTP.Media      (MediaType)
 import           Network.HTTP.Types      (Header, HeaderName, HttpVersion,
-                                          Method, QueryItem, Status, http11)
+                                          QueryItem, Status, http11)
 import           Web.HttpApiData         (ToHttpApiData, toEncodedUrlPiece,
                                           toHeader)
 
@@ -126,21 +125,22 @@ setRequestBody b t req = req { requestBody = Just (b, t) }
         {-toProperHeader (name, val) =-}
           {-(fromString name, encodeUtf8 val)-}
 
-#if !MIN_VERSION_http_client(0,4,30)
--- 'parseRequest' is introduced in http-client-0.4.30
--- it differs from 'parseUrl', by not throwing exceptions on non-2xx http statuses
---
--- See for implementations:
--- http://hackage.haskell.org/package/http-client-0.4.30/docs/src/Network-HTTP-Client-Request.html#parseRequest
--- http://hackage.haskell.org/package/http-client-0.5.0/docs/src/Network-HTTP-Client-Request.html#parseRequest
-parseRequest :: MonadThrow m => String -> m Request
-parseRequest url = liftM disableStatusCheck (parseUrl url)
-  where
-    disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }
-#endif
+
+    {- #if !MIN_VERSION_http_client(0,4,30)-}
+    {--- 'parseRequest' is introduced in http-client-0.4.30-}
+    {--- it differs from 'parseUrl', by not throwing exceptions on non-2xx http statuses-}
+    {----}
+    {--- See for implementations:-}
+    {--- http://hackage.haskell.org/package/http-client-0.4.30/docs/src/Network-HTTP-Client-Request.html#parseRequest-}
+    {--- http://hackage.haskell.org/package/http-client-0.5.0/docs/src/Network-HTTP-Client-Request.html#parseRequest-}
+    {-parseRequest :: MonadThrow m => String -> m Request-}
+    {-parseRequest url = liftM disableStatusCheck (parseUrl url)-}
+      {-where-}
+        {-disableStatusCheck req = req { checkStatus = \ _status _headers _cookies -> Nothing }-}
+    {- #endif-}
 
 
--- * performing requests
+    {--- * performing requests-}
 
-displayHttpRequest :: Method -> String
-displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"
+    {-displayHttpRequest :: Method -> String-}
+    {-displayHttpRequest httpmethod = "HTTP " ++ cs httpmethod ++ " request"-}

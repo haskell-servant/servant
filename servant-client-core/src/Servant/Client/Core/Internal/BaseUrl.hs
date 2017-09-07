@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE ViewPatterns       #-}
-module Servant.Common.BaseUrl (
+module Servant.Client.Core.Internal.BaseUrl (
   -- * types
     BaseUrl (..)
   , InvalidBaseUrlException

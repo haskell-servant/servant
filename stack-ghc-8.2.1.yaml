@@ -1,6 +1,7 @@
 resolver: nightly-2017-09-01
 packages:
 - servant-client/
+- servant-client-core/
 - servant-docs/
 - servant-foreign/
 - servant-server/
