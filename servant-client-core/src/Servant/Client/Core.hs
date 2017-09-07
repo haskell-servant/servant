@@ -21,34 +21,52 @@ module Servant.Client.Core
   , AuthenticateReq(..)
   , client
   , HasClient(..)
-  , ClientM
-  , runClientM, inClientM, clientM
-  , ClientEnv (ClientEnv)
   , mkAuthenticateReq
   , ServantError(..)
   , EmptyClient(..)
-  , module Servant.Common.BaseUrl
+  , module Servant.Client.Core.Internal.BaseUrl
   ) where
 
-import           Data.ByteString.Lazy       (ByteString)
-import           Data.List
-import           Data.Proxy
-import           Data.String.Conversions
-import           Data.Text                  (unpack)
-import           GHC.TypeLits
-import           Network.HTTP.Client        (Response)
-import           Network.HTTP.Media
-import qualified Network.HTTP.Types         as H
-import qualified Network.HTTP.Types.Header  as HTTP
-import           Prelude ()
+import           Control.Monad.Error.Class              (throwError)
+import           Data.List                              (foldl')
+import           Data.Proxy                             (Proxy (Proxy))
+import           Data.String                            (fromString)
+import           Data.Text                              (pack)
+import           GHC.Exts                               (fromList, toList)
+import           GHC.TypeLits                           (KnownSymbol, symbolVal)
+import qualified Network.HTTP.Types                     as H
+import           Prelude                                ()
 import           Prelude.Compat
-import           Servant.API
-import           Servant.Client.Experimental.Auth
-import           Servant.Client.HttpClient
-import           Servant.Client.Class
-import           Servant.Common.BaseUrl
-import           Servant.Common.BasicAuth
-import           Servant.Common.Req
+import           Servant.API                            ((:<|>) ((:<|>)), (:>),
+                                                         AuthProtect, BasicAuth,
+                                                         BasicAuthData,
+                                                         BuildHeadersTo (..),
+                                                         Capture, CaptureAll,
+                                                         Description, EmptyAPI,
+                                                         Header, Headers (..),
+                                                         HttpVersion, IsSecure,
+                                                         MimeRender (mimeRender),
+                                                         MimeUnrender (mimeUnrender),
+                                                         NoContent (NoContent),
+                                                         QueryFlag, QueryParam,
+                                                         QueryParams, Raw,
+                                                         ReflectMethod (..),
+                                                         RemoteHost, ReqBody,
+                                                         Summary, ToHttpApiData,
+                                                         Vault, Verb,
+                                                         WithNamedContext,
+                                                         contentType,
+                                                         getHeadersHList,
+                                                         getResponse,
+                                                         toQueryParam,
+                                                         toUrlPiece)
+import           Servant.API.ContentTypes               (contentTypes)
+
+import           Servant.Client.Core.Internal.Auth
+import           Servant.Client.Core.Internal.BaseUrl
+import           Servant.Client.Core.Internal.BasicAuth
+import           Servant.Client.Core.Internal.Class
+import           Servant.Client.Core.Internal.Request
 
 -- * Accessing APIs as a Client
 
@@ -68,25 +86,15 @@ import           Servant.Common.Req
 -- > postNewBook :: Book -> ClientM Book
 -- > (getAllBooks :<|> postNewBook) = client clientM myApi
 client :: HasClient m api => Proxy m -> Proxy api -> Client m api
-client pm p = clientWithRoute pm p defReq
-
--- | Helper proxy to simplify common case of working in `ClientM` monad
-inClientM :: Proxy ClientM
-inClientM = Proxy
-
--- | Convenience method to declare clients running in the `ClientM` monad.
---
--- Simply pass `inClientM` to `client`....
-clientM :: (HasClient ClientM api) => Proxy api -> Client ClientM api
-clientM = client inClientM
+client pm p = clientWithRoute pm p defaultRequest
 
 
 -- | This class lets us define how each API combinator
 -- influences the creation of an HTTP request. It's mostly
 -- an internal class, you can just use 'client'.
-class HasClient m api where
+class RunClient m => HasClient m api where
   type Client (m :: * -> *) (api :: *) :: *
-  clientWithRoute :: Proxy m -> Proxy api -> Req -> Client m api
+  clientWithRoute :: Proxy m -> Proxy api -> Request -> Client m api
 
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
@@ -121,7 +129,7 @@ data EmptyClient = EmptyClient deriving (Eq, Show, Bounded, Enum)
 -- >
 -- > getAllBooks :: ClientM [Book]
 -- > (getAllBooks :<|> EmptyClient) = client myApi
-instance HasClient m EmptyAPI where
+instance RunClient m => HasClient m EmptyAPI where
   type Client m EmptyAPI = EmptyClient
   clientWithRoute _pm Proxy _ = EmptyClient
 
@@ -154,7 +162,7 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m api)
     clientWithRoute pm (Proxy :: Proxy api)
                     (appendToPath p req)
 
-    where p = unpack (toUrlPiece val)
+    where p = (toUrlPiece val)
 
 -- | If you use a 'CaptureAll' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take an
@@ -186,53 +194,65 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
     clientWithRoute pm (Proxy :: Proxy sublayout)
                     (foldl' (flip appendToPath) req ps)
 
-    where ps = map (unpack . toUrlPiece) vals
+    where ps = map (toUrlPiece) vals
 
 instance OVERLAPPABLE_
   -- Note [Non-Empty Content Types]
-  (RunClient m ct ([H.Header], a), MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
+  ( RunClient m, MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient m (Verb method status cts' a) where
   type Client m (Verb method status cts' a) = m a
   clientWithRoute _pm Proxy req = do
-    (_hdrs, a) :: ([H.Header], a) <- runRequest (Proxy :: Proxy ct) method req
-    return a
+    response <- runRequest req
+      { requestAccept = fromList $ toList accept
+      , requestMethod = method
+      }
+    case mimeUnrender (Proxy :: Proxy ct) $ responseBody response of
+      Left err -> throwError $ DecodeFailure (pack err) response
+      Right val -> return val
       where method = reflectMethod (Proxy :: Proxy method)
+            accept = contentTypes (Proxy :: Proxy ct)
 
 instance OVERLAPPING_
-  ( RunClient m NoContent [HTTP.Header]
-  , ReflectMethod method) => HasClient m (Verb method status cts NoContent) where
+  ( RunClient m, ReflectMethod method
+  ) => HasClient m (Verb method status cts NoContent) where
   type Client m (Verb method status cts NoContent)
     = m NoContent
   clientWithRoute _pm Proxy req = do
-    _hdrs :: [H.Header] <- runRequest (Proxy :: Proxy NoContent) method req
+    _response <- runRequest req { requestMethod = method }
     return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
   -- Note [Non-Empty Content Types]
-  ( RunClient m ct ([H.Header], a)
-  , MimeUnrender ct a, BuildHeadersTo ls, ReflectMethod method, cts' ~ (ct ': cts)
+  ( RunClient m, MimeUnrender ct a, BuildHeadersTo ls
+  , ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient m (Verb method status cts' (Headers ls a)) where
   type Client m (Verb method status cts' (Headers ls a))
     = m (Headers ls a)
   clientWithRoute _pm Proxy req = do
-    let method = reflectMethod (Proxy :: Proxy method)
-    (hdrs, resp) <- runRequest (Proxy :: Proxy ct) method req
-    return $ Headers { getResponse = resp
-                     , getHeadersHList = buildHeadersTo hdrs
-                     }
+    response <- runRequest req
+       { requestMethod = method
+       , requestAccept = fromList $ toList accept
+       }
+    case mimeUnrender (Proxy :: Proxy ct) $ responseBody response of
+      Left err -> throwError $ DecodeFailure (pack err) response
+      Right val -> return $ Headers
+        { getResponse = val
+        , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
+        }
+      where method = reflectMethod (Proxy :: Proxy method)
+            accept = contentTypes (Proxy :: Proxy ct)
 
 instance OVERLAPPING_
-  ( RunClient m NoContent [H.Header]
-  , BuildHeadersTo ls, ReflectMethod method
+  ( RunClient m, BuildHeadersTo ls, ReflectMethod method
   ) => HasClient m (Verb method status cts (Headers ls NoContent)) where
   type Client m (Verb method status cts (Headers ls NoContent))
     = m (Headers ls NoContent)
   clientWithRoute _pm Proxy req = do
     let method = reflectMethod (Proxy :: Proxy method)
-    hdrs <- runRequest (Proxy :: Proxy NoContent) method req
+    response <- runRequest req { requestMethod = method }
     return $ Headers { getResponse = NoContent
-                     , getHeadersHList = buildHeadersTo hdrs
+                     , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
 
 
@@ -270,11 +290,11 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
   clientWithRoute pm Proxy req mval =
     clientWithRoute pm (Proxy :: Proxy api)
                     (maybe req
-                           (\value -> Servant.Common.Req.addHeader hname value req)
+                           (\value -> addHeader hname value req)
                            mval
                     )
 
-    where hname = symbolVal (Proxy :: Proxy sym)
+    where hname = fromString $ symbolVal (Proxy :: Proxy sym)
 
 -- | Using a 'HttpVersion' combinator in your API doesn't affect the client
 -- functions.
@@ -338,8 +358,7 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
                            mparamText
                     )
 
-    where pname  = cs pname'
-          pname' = symbolVal (Proxy :: Proxy sym)
+    where pname  = pack $ symbolVal (Proxy :: Proxy sym)
           mparamText = fmap toQueryParam mparam
 
 -- | If you use a 'QueryParams' in one of your endpoints in your API,
@@ -382,8 +401,7 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
                             paramlist'
                     )
 
-    where pname  = cs pname'
-          pname' = symbolVal (Proxy :: Proxy sym)
+    where pname = pack $ symbolVal (Proxy :: Proxy sym)
           paramlist' = map (Just . toQueryParam) paramlist
 
 -- | If you use a 'QueryFlag' in one of your endpoints in your API,
@@ -420,19 +438,18 @@ instance (KnownSymbol sym, HasClient m api)
                        else req
                     )
 
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+    where paramname = pack $ symbolVal (Proxy :: Proxy sym)
 
 
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
-instance (RunClient m NoContent (Int, ByteString, MediaType, [HTTP.Header], Response ByteString))
-    => HasClient m Raw where
+instance RunClient m => HasClient m Raw where
   type Client m Raw
-    = H.Method ->  m (Int, ByteString, MediaType, [HTTP.Header], Response ByteString)
+    = H.Method ->  m Response
 
-  clientWithRoute :: Proxy m -> Proxy Raw -> Req -> Client m Raw
+  clientWithRoute :: Proxy m -> Proxy Raw -> Request -> Client m Raw
   clientWithRoute _pm Proxy req httpMethod = do
-    runRequest (Proxy :: Proxy NoContent) httpMethod req
+    runRequest req { requestMethod = httpMethod }
 
 -- | If you use a 'ReqBody' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -461,10 +478,10 @@ instance (MimeRender ct a, HasClient m api)
   clientWithRoute pm Proxy req body =
     clientWithRoute pm (Proxy :: Proxy api)
                     (let ctProxy = Proxy :: Proxy ct
-                     in setReqBodyLBS (mimeRender ctProxy body)
-                                  -- We use first contentType from the Accept list
-                                  (contentType ctProxy)
-                                  req
+                     in setRequestBodyLBS (mimeRender ctProxy body)
+                                          -- We use first contentType from the Accept list
+                                          (contentType ctProxy)
+                                          req
                     )
 
 -- | Make the querying function append @path@ to the request path.
@@ -475,7 +492,7 @@ instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where
      clientWithRoute pm (Proxy :: Proxy api)
                      (appendToPath p req)
 
-    where p = symbolVal (Proxy :: Proxy path)
+    where p = pack $ symbolVal (Proxy :: Proxy path)
 
 instance HasClient m api => HasClient m (Vault :> api) where
   type Client m (Vault :> api) = Client m api

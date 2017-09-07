@@ -1,16 +1,16 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE TypeFamilies      #-}
 
 -- | Basic Authentication for clients
 
 module Servant.Client.Core.Internal.BasicAuth where
 
-import Data.ByteString.Base64 (encode)
-import Data.Monoid ((<>))
-import Data.Text.Encoding (decodeUtf8)
-import Servant.Client.Core.Internal.Request (addHeader, Request)
-import Servant.API.BasicAuth (BasicAuthData(BasicAuthData))
+import           Data.ByteString.Base64               (encode)
+import           Data.Monoid                          ((<>))
+import           Data.Text.Encoding                   (decodeUtf8)
+import           Servant.API.BasicAuth                (BasicAuthData (BasicAuthData))
+import           Servant.Client.Core.Internal.Request (Request, addHeader)
 
 -- | Authenticate a request using Basic Authentication
 basicAuthReq :: BasicAuthData -> Request -> Request

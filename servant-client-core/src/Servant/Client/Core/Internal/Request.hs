@@ -17,11 +17,13 @@ import qualified Data.ByteString.Lazy    as LBS
 import           Data.Semigroup          ((<>))
 import qualified Data.Sequence           as Seq
 import           Data.Text               (Text)
+import           Data.Text.Encoding      (encodeUtf8)
 import           Data.Typeable           (Typeable)
 import           GHC.Generics            (Generic)
 import           Network.HTTP.Media      (MediaType)
 import           Network.HTTP.Types      (Header, HeaderName, HttpVersion,
-                                          QueryItem, Status, http11)
+                                          Method, QueryItem, Status, http11,
+                                          methodGet)
 import           Web.HttpApiData         (ToHttpApiData, toEncodedUrlPiece,
                                           toHeader)
 
@@ -40,6 +42,7 @@ data Request = Request
   , requestAccept      :: Seq.Seq MediaType
   , requestHeaders     :: Seq.Seq Header
   , requestHttpVersion :: HttpVersion
+  , requestMethod      :: Method
   } deriving (Generic, Typeable)
 
 newtype RequestBody = RequestBodyLBS LBS.ByteString
@@ -60,18 +63,20 @@ defaultRequest = Request
   , requestAccept = Seq.empty
   , requestHeaders = Seq.empty
   , requestHttpVersion = http11
+  , requestMethod = methodGet
   }
 
 appendToPath :: Text -> Request -> Request
 appendToPath p req
   = req { requestPath = requestPath req <> "/" <> toEncodedUrlPiece p }
 
-{-appendToQueryString :: Text       -- ^ param name-}
-                    {--> Maybe Text -- ^ param value-}
-                    {--> Request-}
-                    {--> Request-}
-{-appendToQueryString pname pvalue req-}
-  {-= req { requestQueryString = requestQueryString req Seq.|> (pname, pvalue)}-}
+appendToQueryString :: Text       -- ^ param name
+                    -> Maybe Text -- ^ param value
+                    -> Request
+                    -> Request
+appendToQueryString pname pvalue req
+  = req { requestQueryString = requestQueryString req
+                        Seq.|> (encodeUtf8 pname, encodeUtf8 <$> pvalue)}
 
 addHeader :: ToHttpApiData a => HeaderName -> a -> Request -> Request
 addHeader name val req

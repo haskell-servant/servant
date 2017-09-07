@@ -49,7 +49,6 @@ library
     , transformers          >= 0.3      && < 0.6
     , transformers-base     >= 0.4.4    && < 0.5
     , transformers-compat   >= 0.4      && < 0.6
-    , mtl
   if !impl(ghc >= 8.0)
     build-depends:
         semigroups          >=0.16.2.2 && <0.19
