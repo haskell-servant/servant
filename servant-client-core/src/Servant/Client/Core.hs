@@ -26,6 +26,7 @@ module Servant.Client.Core
   , EmptyClient(..)
   , RunClient(..)
   , Request(..)
+  , defaultRequest
   , Response(..)
   , RequestBody(..)
   , module Servant.Client.Core.Internal.BaseUrl

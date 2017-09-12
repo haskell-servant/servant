@@ -76,6 +76,9 @@ instance Alt ClientM where
 instance RunClient ClientM where
   runRequest = performRequest
 
+instance ClientLike (ClientM a) (ClientM a) where
+  mkClient = id
+
 runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
 

@@ -106,9 +106,6 @@ instance ClientLike client custom
       => ClientLike (a -> client) (a -> custom) where
   mkClient c = mkClient . c
 
-instance ClientLike (m a) (m a) where
-  mkClient = id
-
 -- | Match client structure with client functions, regarding left-nested API clients
 -- as separate data structures.
 class GClientLikeP client xs where

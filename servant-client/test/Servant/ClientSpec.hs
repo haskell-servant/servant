@@ -26,6 +26,9 @@
 #include "overlapping-compat.h"
 module Servant.ClientSpec where
 
+import           Prelude                                    ()
+import           Prelude.Compat
+
 import           Control.Arrow                              (left)
 import           Control.Concurrent                         (ThreadId, forkIO,
                                                              killThread)
@@ -34,9 +37,12 @@ import           Control.Monad.Error.Class                  (throwError)
 import           Data.Aeson
 import qualified Data.ByteString.Lazy                       as BS
 import           Data.Char                                  (chr, isPrint)
+import           Data.Foldable                              (toList)
 import           Data.Foldable                              (forM_)
+import           Data.Maybe                                 (isJust)
 import           Data.Monoid                                hiding (getLast)
 import           Data.Proxy
+import           Data.Sequence                              (findIndexL)
 import qualified Generics.SOP                               as SOP
 import           GHC.Generics                               (Generic)
 import qualified Network.HTTP.Client                        as C
@@ -45,8 +51,6 @@ import qualified Network.HTTP.Types                         as HTTP
 import           Network.Socket
 import qualified Network.Wai                                as Wai
 import           Network.Wai.Handler.Warp
-import           Prelude                                    ()
-import           Prelude.Compat
 import           System.IO.Unsafe                           (unsafePerformIO)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
@@ -61,19 +65,19 @@ import           Servant.API                                ((:<|>) ((:<|>)),
                                                              Capture,
                                                              CaptureAll, Delete,
                                                              DeleteNoContent,
-                                                             EmptyAPI,
+                                                             EmptyAPI, addHeader,
                                                              FormUrlEncoded,
                                                              Get, Header,
                                                              Headers, JSON,
-                                                             NoContent, Post,
-                                                             Put, QueryFlag,
+                                                             NoContent (NoContent),
+                                                             Post, Put, Raw,
+                                                             QueryFlag,
                                                              QueryParam,
                                                              QueryParams,
-                                                             ReqBody)
+                                                             ReqBody,
+                                                             getHeaders)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
-{-import qualified Servant.Common.Req         as SCR-}
-{-import qualified Servant.Client.HttpClient  as SCR-}
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 
@@ -139,10 +143,8 @@ getBody         :: Person -> ClientM Person
 getQueryParam   :: Maybe String -> ClientM Person
 getQueryParams  :: [String] -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
-getRawSuccess :: HTTP.Method
-  -> ClientM Response
-getRawFailure   :: HTTP.Method
-  -> ClientM (Int, BS.ByteString, MediaType, [HTTP.Header], C.Response BS.ByteString)
+getRawSuccess   :: HTTP.Method -> ClientM Response
+getRawFailure   :: HTTP.Method -> ClientM Response
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
@@ -179,7 +181,7 @@ server = serve api (
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
-  :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
+  :<|> (return $ Servant.API.addHeader 1729 $ Servant.API.addHeader "eg2" True)
   :<|> return NoContent
   :<|> emptyServer)
 
@@ -233,7 +235,7 @@ type instance AuthClientData (AuthProtect "auth-tag") = ()
 
 genAuthHandler :: AuthHandler Request ()
 genAuthHandler =
-  let handler req = case lookup "AuthHeader" (requestHeaders req) of
+  let handler req = case lookup "AuthHeader" (toList $ requestHeaders req) of
         Nothing -> throwError (err401 { errBody = "Missing auth header" })
         Just _ -> return ()
   in mkAuthHandler handler
@@ -295,57 +297,58 @@ genericClientServer = serve (Proxy :: Proxy GenericClientAPI) (
 manager' :: C.Manager
 manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
-runClient x = runClientM x (ClientEnv manager' baseUrl)
+runClient x baseUrl' = runClientM x (ClientEnv manager' baseUrl')
 
 sucessSpec :: Spec
 sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     it "Servant.API.Get" $ \(_, baseUrl) -> do
-      (left show <$> runClient getGet)  `shouldReturn` Right alice
+      left show <$> runClient getGet baseUrl  `shouldReturn` Right alice
 
     describe "Servant.API.Delete" $ do
       it "allows empty content type" $ \(_, baseUrl) -> do
-        (left show <$> (runClient getDeleteEmpty)) `shouldReturn` Right NoContent
+        left show <$> runClient getDeleteEmpty baseUrl `shouldReturn` Right NoContent
 
       it "allows content type" $ \(_, baseUrl) -> do
-        (left show <$> (runClient getDeleteContentType)) `shouldReturn` Right NoContent
+        left show <$> runClient getDeleteContentType baseUrl `shouldReturn` Right NoContent
 
     it "Servant.API.Capture" $ \(_, baseUrl) -> do
-      (left show <$> (runClient (getCapture "Paula"))) `shouldReturn` Right (Person "Paula" 0)
+      left show <$> runClient (getCapture "Paula") baseUrl `shouldReturn` Right (Person "Paula" 0)
 
     it "Servant.API.CaptureAll" $ \(_, baseUrl) -> do
       let expected = [(Person "Paula" 0), (Person "Peta" 1)]
-      (left show <$> (runClient (getCaptureAll ["Paula", "Peta"]))) `shouldReturn` Right expected
+      left show <$> runClient (getCaptureAll ["Paula", "Peta"]) baseUrl `shouldReturn` Right expected
 
     it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
       let p = Person "Clara" 42
-      (left show <$> runClient (getBody p)) `shouldReturn` Right p
+      left show <$> runClient (getBody p) baseUrl `shouldReturn` Right p
 
     it "Servant.API.QueryParam" $ \(_, baseUrl) -> do
-      left show <$> runClient (getQueryParam (Just "alice"))  `shouldReturn` Right alice
-      Left (FailureResponse r) <- runClient (getQueryParam (Just "bob"))
+      left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
+      Left (FailureResponse r) <- runClient (getQueryParam (Just "bob")) baseUrl
       responseStatusCode r `shouldBe` HTTP.Status 400 "bob not found"
 
     it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
-      (left show <$> runClient (getQueryParams [])) `shouldReturn` Right []
-      (left show <$> runClient (getQueryParams ["alice", "bob"]))
+      left show <$> runClient (getQueryParams []) baseUrl `shouldReturn` Right []
+      left show <$> runClient (getQueryParams ["alice", "bob"]) baseUrl
         `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
     context "Servant.API.QueryParam.QueryFlag" $
       forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
-        (left show <$> runClient (getQueryFlag flag)) `shouldReturn` Right flag
+        left show <$> runClient (getQueryFlag flag) baseUrl `shouldReturn` Right flag
 
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
-      res <- runClient (getRawSuccess HTTP.methodGet)
+      res <- runClient (getRawSuccess HTTP.methodGet) baseUrl
       case res of
         Left e -> assertFailure $ show e
-        Right (code, body, ct, _, response) -> do
-          (code, body, ct) `shouldBe` (200, "rawSuccess", "application"//"octet-stream")
-          C.responseBody response `shouldBe` body
-          C.responseStatus response `shouldBe` HTTP.ok200
+        Right r -> do
+          responseStatusCode r `shouldBe` HTTP.status200
+          responseBody r `shouldBe` "rawSuccess"
+          findIndexL (\x -> fst x == HTTP.hContentType) (responseHeaders r)
+            `shouldSatisfy` isJust
 
     it "Servant.API.Raw should return a Left in case of failure" $ \(_, baseUrl) -> do
-      res <- runClient (getRawFailure HTTP.methodGet)
+      res <- runClient (getRawFailure HTTP.methodGet) baseUrl
       case res of
         Right _ -> assertFailure "expected Left, but got Right"
         Left (FailureResponse r) -> do
@@ -354,7 +357,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         Left e -> assertFailure $ "expected FailureResponse, but got " ++ show e
 
     it "Returns headers appropriately" $ \(_, baseUrl) -> do
-      res <- runClient getRespHeaders
+      res <- runClient getRespHeaders baseUrl
       case res of
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
@@ -363,7 +366,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
         property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
           ioProperty $ do
-            result <- left show <$> runClient (getMultiple cap num flag body)
+            result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
             return $
               result === Right (cap, num, flag, body)
 
@@ -377,7 +380,7 @@ wrappedApiSpec = describe "error status codes" $ do
           it desc $ bracket (startWaiApp $ serveW api) endWaiApp $ \(_, baseUrl) -> do
             let getResponse :: ClientM ()
                 getResponse = client api
-            Left (FailureResponse r) <- runClient getResponse
+            Left (FailureResponse r) <- runClient getResponse baseUrl
             responseStatusCode r `shouldBe` (HTTP.Status 500 "error message")
     in mapM_ test $
         (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete") :
@@ -392,35 +395,35 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
     context "client returns errors appropriately" $ do
       it "reports FailureResponse" $ \(_, baseUrl) -> do
         let (_ :<|> getDeleteEmpty :<|> _) = client api
-        Left res <- runClient getDeleteEmpty
+        Left res <- runClient getDeleteEmpty baseUrl
         case res of
-          FailureResponse r | responseStatusCode r == 404 -> return ()
+          FailureResponse r | responseStatusCode r == HTTP.status404 -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \(_, baseUrl) -> do
         let (_ :<|> _ :<|> getCapture :<|> _) = client api
-        Left res <- runClient (getCapture "foo") (ClientEnv manager baseUrl)
+        Left res <- runClient (getCapture "foo") baseUrl
         case res of
           DecodeFailure _ _ -> return ()
           _ -> fail $ "expected DecodeFailure, but got " <> show res
 
       it "reports ConnectionError" $ \_ -> do
         let (getGetWrongHost :<|> _) = client api
-        Left res <- runClientM getGetWrongHost (ClientEnv manager (BaseUrl Http "127.0.0.1" 19872 ""))
+        Left res <- runClient getGetWrongHost (BaseUrl Http "127.0.0.1" 19872 "")
         case res of
           ConnectionError _ -> return ()
           _ -> fail $ "expected ConnectionError, but got " <> show res
 
       it "reports UnsupportedContentType" $ \(_, baseUrl) -> do
         let (getGet :<|> _ ) = client api
-        Left res <- runClient getGet
+        Left res <- runClient getGet baseUrl
         case res of
           UnsupportedContentType ("application/octet-stream") _ -> return ()
           _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
       it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
         let (_ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
-        Left res <- runClient (getBody alice)
+        Left res <- runClient (getBody alice) baseUrl
         case res of
           InvalidContentTypeHeader _ -> return ()
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
@@ -437,14 +440,14 @@ basicAuthSpec = beforeAll (startWaiApp basicAuthServer) $ afterAll endWaiApp $ d
     it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
       let getBasic = client basicAuthAPI
       let basicAuthData = BasicAuthData "servant" "server"
-      (left show <$> runClient (getBasic basicAuthData)) `shouldReturn` Right alice
+      left show <$> runClient (getBasic basicAuthData) baseUrl `shouldReturn` Right alice
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
 
     it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
       let getBasic = client basicAuthAPI
       let basicAuthData = BasicAuthData "not" "password"
-      Left (FailureResponse r) <- runClient (getBasic basicAuthData)
+      Left (FailureResponse r) <- runClient (getBasic basicAuthData) baseUrl
       responseStatusCode r `shouldBe` HTTP.Status 403 "Forbidden"
 
 genAuthSpec :: Spec
@@ -453,15 +456,15 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
 
     it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
       let getProtected = client genAuthAPI
-      let authRequest = mkAuthenticateReq () (\_ req -> addHeader "AuthHeader" ("cool" :: String) req)
-      (left show <$> runClient (getProtected authRequest) ) `shouldReturn` Right alice
+      let authRequest = mkAuthenticateReq () (\_ req -> Servant.Client.addHeader "AuthHeader" ("cool" :: String) req)
+      left show <$> runClient (getProtected authRequest) baseUrl `shouldReturn` Right alice
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
 
     it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
       let getProtected = client genAuthAPI
-      let authRequest = mkAuthenticateReq () (\_ req -> addHeader "Wrong" ("header" :: String) req)
-      Left (FailureResponse r) <- runClient (getProtected authRequest)
+      let authRequest = mkAuthenticateReq () (\_ req -> Servant.Client.addHeader "Wrong" ("header" :: String) req)
+      Left (FailureResponse r) <- runClient (getProtected authRequest) baseUrl
       responseStatusCode r `shouldBe` (HTTP.Status 401 "Unauthorized")
 
 genericClientSpec :: Spec
@@ -473,12 +476,12 @@ genericClientSpec = beforeAll (startWaiApp genericClientServer) $ afterAll endWa
         NestedClient2{..} = mkNestedClient2 (Just 42)
 
     it "works for top-level client inClientM function" $ \(_, baseUrl) -> do
-      (left show <$> (runClient (getSqr (Just 5)))) `shouldReturn` Right 25
+      left show <$> runClient (getSqr (Just 5)) baseUrl `shouldReturn` Right 25
 
     it "works for nested clients" $ \(_, baseUrl) -> do
-      (left show <$> (runClient (idChar (Just 'c')))) `shouldReturn` Right 'c'
-      (left show <$> (runClient (getSum 3 4))) `shouldReturn` Right 7
-      (left show <$> (runClient doNothing )) `shouldReturn` Right ()
+      left show <$> runClient (idChar (Just 'c')) baseUrl `shouldReturn` Right 'c'
+      left show <$> runClient (getSum 3 4) baseUrl `shouldReturn` Right 7
+      left show <$> runClient doNothing baseUrl `shouldReturn` Right ()
 
 -- * utils
 

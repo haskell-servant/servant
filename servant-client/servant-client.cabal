@@ -73,6 +73,7 @@ test-suite spec
     , aeson
     , base-compat
     , bytestring
+    , containers
     , deepseq
     , hspec == 2.*
     , http-api-data
