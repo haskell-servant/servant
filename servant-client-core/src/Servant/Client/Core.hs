@@ -225,11 +225,10 @@ instance OVERLAPPABLE_
       { requestAccept = fromList $ toList accept
       , requestMethod = method
       }
-    case mimeUnrender (Proxy :: Proxy ct) $ responseBody response of
-      Left err -> throwError $ DecodeFailure (pack err) response
-      Right val -> return val
-      where method = reflectMethod (Proxy :: Proxy method)
-            accept = contentTypes (Proxy :: Proxy ct)
+    response `decodedAs` (Proxy :: Proxy ct)
+    where
+      accept = contentTypes (Proxy :: Proxy ct)
+      method = reflectMethod (Proxy :: Proxy method)
 
 instance OVERLAPPING_
   ( RunClient m, ReflectMethod method

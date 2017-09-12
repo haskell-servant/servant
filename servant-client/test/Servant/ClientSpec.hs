@@ -24,7 +24,7 @@
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 #include "overlapping-compat.h"
-module Servant.ClientSpec where
+module Servant.ClientSpec (spec) where
 
 import           Prelude                                    ()
 import           Prelude.Compat
@@ -35,18 +35,13 @@ import           Control.Concurrent                         (ThreadId, forkIO,
 import           Control.Exception                          (bracket)
 import           Control.Monad.Error.Class                  (throwError)
 import           Data.Aeson
-import qualified Data.ByteString.Lazy                       as BS
 import           Data.Char                                  (chr, isPrint)
-import           Data.Foldable                              (toList)
 import           Data.Foldable                              (forM_)
-import           Data.Maybe                                 (isJust)
 import           Data.Monoid                                hiding (getLast)
 import           Data.Proxy
-import           Data.Sequence                              (findIndexL)
 import qualified Generics.SOP                               as SOP
 import           GHC.Generics                               (Generic)
 import qualified Network.HTTP.Client                        as C
-import           Network.HTTP.Media
 import qualified Network.HTTP.Types                         as HTTP
 import           Network.Socket
 import qualified Network.Wai                                as Wai
@@ -96,8 +91,8 @@ spec = describe "Servant.Client" $ do
 -- * test data types
 
 data Person = Person
-  { name :: String
-  , age  :: Integer
+  { _name :: String
+  , _age  :: Integer
   } deriving (Eq, Show, Generic)
 
 instance ToJSON Person
@@ -233,14 +228,14 @@ genAuthAPI = Proxy
 type instance AuthServerData (AuthProtect "auth-tag") = ()
 type instance AuthClientData (AuthProtect "auth-tag") = ()
 
-genAuthHandler :: AuthHandler Request ()
+genAuthHandler :: AuthHandler Wai.Request ()
 genAuthHandler =
-  let handler req = case lookup "AuthHeader" (toList $ requestHeaders req) of
+  let handler req = case lookup "AuthHeader" (Wai.requestHeaders req) of
         Nothing -> throwError (err401 { errBody = "Missing auth header" })
         Just _ -> return ()
   in mkAuthHandler handler
 
-genAuthServerContext :: Context '[ AuthHandler Request () ]
+genAuthServerContext :: Context '[ AuthHandler Wai.Request () ]
 genAuthServerContext = genAuthHandler :. EmptyContext
 
 genAuthServer :: Application
@@ -297,6 +292,7 @@ genericClientServer = serve (Proxy :: Proxy GenericClientAPI) (
 manager' :: C.Manager
 manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
+runClient :: ClientM a -> BaseUrl -> IO (Either ServantError a)
 runClient x baseUrl' = runClientM x (ClientEnv manager' baseUrl')
 
 sucessSpec :: Spec
@@ -344,8 +340,6 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         Right r -> do
           responseStatusCode r `shouldBe` HTTP.status200
           responseBody r `shouldBe` "rawSuccess"
-          findIndexL (\x -> fst x == HTTP.hContentType) (responseHeaders r)
-            `shouldSatisfy` isJust
 
     it "Servant.API.Raw should return a Left in case of failure" $ \(_, baseUrl) -> do
       res <- runClient (getRawFailure HTTP.methodGet) baseUrl
