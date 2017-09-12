@@ -19,7 +19,7 @@
 module Servant.Client.Core
   ( AuthClientData
   , AuthenticateReq(..)
-  , client
+  , clientIn
   , HasClient(..)
   , mkAuthenticateReq
   , ServantError(..)
@@ -29,6 +29,15 @@ module Servant.Client.Core
   , Response(..)
   , RequestBody(..)
   , module Servant.Client.Core.Internal.BaseUrl
+  , ClientLike(..)
+  , genericMkClientL
+  , genericMkClientP
+  -- * Writing instances
+  , addHeader
+  , appendToQueryString
+  , appendToPath
+  , setRequestBodyLBS
+  , setRequestBody
   ) where
 
 import           Control.Monad.Error.Class              (throwError)
@@ -67,10 +76,15 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
 import           Servant.API.ContentTypes               (contentTypes)
 
 import           Servant.Client.Core.Internal.Auth
-import           Servant.Client.Core.Internal.BaseUrl
+import           Servant.Client.Core.Internal.BaseUrl   (BaseUrl (..),
+                                                         InvalidBaseUrlException,
+                                                         Scheme (..),
+                                                         parseBaseUrl,
+                                                         showBaseUrl)
 import           Servant.Client.Core.Internal.BasicAuth
 import           Servant.Client.Core.Internal.Class
 import           Servant.Client.Core.Internal.Request
+import           Servant.Client.Core.Internal.Generic
 
 -- * Accessing APIs as a Client
 
@@ -88,9 +102,9 @@ import           Servant.Client.Core.Internal.Request
 -- >
 -- > getAllBooks :: ClientM [Book]
 -- > postNewBook :: Book -> ClientM Book
--- > (getAllBooks :<|> postNewBook) = client clientM myApi
-client :: HasClient m api => Proxy m -> Proxy api -> Client m api
-client pm p = clientWithRoute pm p defaultRequest
+-- > (getAllBooks :<|> postNewBook) = myApi `clientIn` clientM
+clientIn :: HasClient m api => Proxy api -> Proxy m -> Client m api
+clientIn p pm = clientWithRoute pm p defaultRequest
 
 
 -- | This class lets us define how each API combinator

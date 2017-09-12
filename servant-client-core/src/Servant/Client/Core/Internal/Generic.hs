@@ -10,11 +10,7 @@
 
 #include "overlapping-compat.h"
 
-module Servant.Client.Core.Internal.Generic
-  ( ClientLike(..)
-  , genericMkClientL
-  , genericMkClientP
-  ) where
+module Servant.Client.Core.Internal.Generic where
 
 import Generics.SOP   (Code, Generic, I(..), NP(..), NS(Z), SOP(..), to)
 import Servant.API    ((:<|>)(..))

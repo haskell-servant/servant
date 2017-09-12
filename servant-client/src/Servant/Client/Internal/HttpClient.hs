@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -9,7 +10,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 {-| http-client based client  requests executor -}
-module Servant.Client.HttpClient where
+module Servant.Client.Internal.HttpClient where
 
 
 import           Prelude                     ()
@@ -28,6 +29,7 @@ import qualified Data.ByteString.Lazy        as BSL
 import           Data.Foldable               (toList)
 import           Data.Functor.Alt            (Alt (..))
 import           Data.Monoid                 ((<>))
+import           Data.Proxy                  (Proxy (..))
 import           Data.String                 (fromString)
 import qualified Data.Text                   as T
 import           GHC.Exts                    (fromList)
@@ -45,6 +47,8 @@ data ClientEnv
   , baseUrl :: BaseUrl
   }
 
+client :: HasClient ClientM api => Proxy api -> Client ClientM api
+client api = api `clientIn` (Proxy :: Proxy ClientM)
 
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Manager' and 'BaseUrl' used for requests in the reader environment.

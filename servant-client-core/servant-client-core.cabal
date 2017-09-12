@@ -65,5 +65,3 @@ test-suite spec
     , QuickCheck >= 2.7 && < 2.10
   other-modules:
       Servant.Client.Core.Internal.BaseUrlSpec
-  build-depends:
-      base == 4.*

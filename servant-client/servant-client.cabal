@@ -12,7 +12,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
+copyright:           2014-2017 Zalora South East Asia Pte Ltd, Servant Contributors
 category:            Servant, Web
 build-type:          Simple
 cabal-version:       >=1.10
@@ -29,7 +29,8 @@ source-repository head
 
 library
   exposed-modules:
-    Servant.Client.HttpClient
+    Servant.Client
+    Servant.Client.Internal.HttpClient
   build-depends:
       base                  >= 4.7      && < 4.11
     , base-compat           >= 0.9.1    && < 0.10
@@ -67,7 +68,6 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Servant.ClientSpec
-    , Servant.Common.BaseUrlSpec
   build-depends:
       base == 4.*
     , aeson
