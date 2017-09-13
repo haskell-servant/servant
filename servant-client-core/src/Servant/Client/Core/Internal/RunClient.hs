@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE OverloadedStrings          #-}
 -- | Types for possible backends to run client-side `Request` queries
-module Servant.Client.Core.Internal.Class where
+module Servant.Client.Core.Internal.RunClient where
 
 import           Control.Monad                        (unless)
 import           Control.Monad.Error.Class            (MonadError, throwError)

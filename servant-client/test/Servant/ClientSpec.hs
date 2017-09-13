@@ -73,6 +73,8 @@ import           Servant.API                                ((:<|>) ((:<|>)),
                                                              getHeaders)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
+import qualified Servant.Client.Core.Internal.Request as Req
+import qualified Servant.Client.Core.Internal.Auth as Auth
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 
@@ -176,7 +178,7 @@ server = serve api (
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
-  :<|> (return $ Servant.API.addHeader 1729 $ Servant.API.addHeader "eg2" True)
+  :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
   :<|> emptyServer)
 
@@ -226,7 +228,7 @@ genAuthAPI :: Proxy GenAuthAPI
 genAuthAPI = Proxy
 
 type instance AuthServerData (AuthProtect "auth-tag") = ()
-type instance AuthClientData (AuthProtect "auth-tag") = ()
+type instance Auth.AuthClientData (AuthProtect "auth-tag") = ()
 
 genAuthHandler :: AuthHandler Wai.Request ()
 genAuthHandler =
@@ -450,14 +452,14 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
 
     it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
       let getProtected = client genAuthAPI
-      let authRequest = mkAuthenticateReq () (\_ req -> Servant.Client.addHeader "AuthHeader" ("cool" :: String) req)
+      let authRequest = Auth.mkAuthenticatedRequest () (\_ req -> Req.addHeader "AuthHeader" ("cool" :: String) req)
       left show <$> runClient (getProtected authRequest) baseUrl `shouldReturn` Right alice
 
   context "Authentication is rejected when requests are not authenticated properly" $ do
 
     it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
       let getProtected = client genAuthAPI
-      let authRequest = mkAuthenticateReq () (\_ req -> Servant.Client.addHeader "Wrong" ("header" :: String) req)
+      let authRequest = Auth.mkAuthenticatedRequest () (\_ req -> Req.addHeader "Wrong" ("header" :: String) req)
       Left (FailureResponse r) <- runClient (getProtected authRequest) baseUrl
       responseStatusCode r `shouldBe` (HTTP.Status 401 "Unauthorized")
 

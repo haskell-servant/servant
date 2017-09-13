@@ -1,69 +1,20 @@
--- | This module provides backend-agnostic functionality for generating clients
--- from @servant@ APIs. By "backend," we mean something that concretely
--- executes the request, such as:
---
---  * The 'http-client' library
---  * The 'haxl' library
---  * GHCJS via FFI
---
--- etc.
---
--- Each backend is encapsulated in a monad that is an instance of the
--- 'RunClient' class.
---
--- This library is primarily of interest to backend-writers, who are encouraged
--- to re-export the parts of the
-module Servant.Client.Core
-  (
-  -- * Client generation
-    clientIn
-  , HasClient(..)
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
-  -- * Request
-  , Request(..)
-  , defaultRequest
-  , RequestBody(..)
-
-  -- * Authentication
-  , mkAuthenticatedRequest
-  , basicAuthReq
-  , AuthenticatedRequest(..)
-  , AuthClientData
-
-  -- * Generic Client
-  , ClientLike(..)
-  , genericMkClientL
-  , genericMkClientP
-  , ServantError(..)
-  , EmptyClient(..)
+#include "overlapping-compat.h"
+module Servant.Client.Core.Internal.HasClient where
 
 
-  -- * Response
-  , Response(..)
-  , RunClient(..)
-  , module Servant.Client.Core.Internal.BaseUrl
-
-  -- * Writing HasClient instances
-  -- | These functions need not be re-exported by backend libraries.
-  , addHeader
-  , appendToQueryString
-  , appendToPath
-  , setRequestBodyLBS
-  , setRequestBody
-  ) where
-import           Servant.Client.Core.Internal.Auth
-import           Servant.Client.Core.Internal.BaseUrl   (BaseUrl (..),
-                                                         InvalidBaseUrlException,
-                                                         Scheme (..),
-                                                         parseBaseUrl,
-                                                         showBaseUrl)
-import           Servant.Client.Core.Internal.BasicAuth
-import           Servant.Client.Core.Internal.HasClient
-import           Servant.Client.Core.Internal.Generic
-import           Servant.Client.Core.Internal.Request
-import           Servant.Client.Core.Internal.RunClient
-
-{-
 import           Control.Monad.Error.Class              (throwError)
 import           Data.List                              (foldl')
 import           Data.Proxy                             (Proxy (Proxy))
@@ -100,15 +51,9 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
 import           Servant.API.ContentTypes               (contentTypes)
 
 import           Servant.Client.Core.Internal.Auth
-import           Servant.Client.Core.Internal.BaseUrl   (BaseUrl (..),
-                                                         InvalidBaseUrlException,
-                                                         Scheme (..),
-                                                         parseBaseUrl,
-                                                         showBaseUrl)
 import           Servant.Client.Core.Internal.BasicAuth
-import           Servant.Client.Core.Internal.Class
-import           Servant.Client.Core.Internal.Generic
 import           Servant.Client.Core.Internal.Request
+import           Servant.Client.Core.Internal.RunClient
 
 -- * Accessing APIs as a Client
 
@@ -565,9 +510,9 @@ instance HasClient m subapi =>
 instance ( HasClient m api
          ) => HasClient m (AuthProtect tag :> api) where
   type Client m (AuthProtect tag :> api)
-    = AuthenticateReq (AuthProtect tag) -> Client m api
+    = AuthenticatedRequest (AuthProtect tag) -> Client m api
 
-  clientWithRoute pm Proxy req (AuthenticateReq (val,func)) =
+  clientWithRoute pm Proxy req (AuthenticatedRequest (val,func)) =
     clientWithRoute pm (Proxy :: Proxy api) (func val req)
 
 -- * Basic Authentication
@@ -593,5 +538,4 @@ But this means that if another instance exists that does *not* require
 non-empty lists, but is otherwise more specific, no instance will be overall
 more specific. This in turn generally means adding yet another instance (one
 for empty and one for non-empty lists).
--}
 -}

@@ -9,7 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-{-| http-client based client  requests executor -}
+-- | @http-client@-based client requests executor
 module Servant.Client.Internal.HttpClient where
 
 
@@ -94,7 +94,6 @@ instance ClientLike (ClientM a) (ClientM a) where
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
-
 
 
 performRequest :: Request -> ClientM Response

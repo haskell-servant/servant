@@ -20,13 +20,13 @@ type family AuthClientData a :: *
 -- data to a request
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-newtype AuthenticateReq a =
-  AuthenticateReq { unAuthReq :: (AuthClientData a, AuthClientData a -> Request -> Request) }
+newtype AuthenticatedRequest a =
+  AuthenticatedRequest { unAuthReq :: (AuthClientData a, AuthClientData a -> Request -> Request) }
 
 -- | Handy helper to avoid wrapping datatypes in tuples everywhere.
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-mkAuthenticateReq :: AuthClientData a
+mkAuthenticatedRequest :: AuthClientData a
                   -> (AuthClientData a -> Request -> Request)
-                  -> AuthenticateReq a
-mkAuthenticateReq val func = AuthenticateReq (val, func)
+                  -> AuthenticatedRequest a
+mkAuthenticatedRequest val func = AuthenticatedRequest (val, func)

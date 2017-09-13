@@ -24,12 +24,14 @@ source-repository head
 library
   exposed-modules:
       Servant.Client.Core
+      Servant.Client.Core.Reexport
       Servant.Client.Core.Internal.Auth
       Servant.Client.Core.Internal.BaseUrl
       Servant.Client.Core.Internal.BasicAuth
-      Servant.Client.Core.Internal.Class
       Servant.Client.Core.Internal.Generic
+      Servant.Client.Core.Internal.HasClient
       Servant.Client.Core.Internal.Request
+      Servant.Client.Core.Internal.RunClient
   build-depends:
       base                  >= 4.7      && < 4.11
     , base-compat           >= 0.9.1    && < 0.10
