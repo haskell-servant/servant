@@ -245,12 +245,15 @@ your feedback!
 
 ### What is Generalized Authentication?
 
-**TL;DR**: you throw a tagged `AuthProtect` combinator in front of the endpoints
-you want protected and then supply a function `Request -> Handler req`
-which we run anytime a request matches a protected endpoint. It precisely solves
-the "I just need to protect these endpoints with a function that does some
-complicated business logic" and nothing more. Behind the scenes we use a type
-family instance (`AuthServerData`) and `Context` to accomplish this.
+**TL;DR**: you throw a tagged `AuthProtect` combinator in front of the
+endpoints you want protected and then supply a function `Request -> Handler a`,
+where `a` is the type of your choice representing the data returned by
+successful authentication - e.g., a `User` or, in our example below, `Account`.
+This function is run anytime a request matches a protected endpoint. It
+precisely solves the "I just need to protect these endpoints with a function
+that does some complicated business logic" and nothing more. Behind the scenes
+we use a type family instance (`AuthServerData`) and `Context` to accomplish
+this.
 
 ### Generalized Authentication in Action
 
