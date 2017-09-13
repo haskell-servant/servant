@@ -10,7 +10,7 @@ This library should mainly be of interest to backend- and combinator-writers.
 
 If you are creating a new backend, you'll need to:
 
-1. Define a `RunClient` instance for your datatype (call it 'MyMonad')
+1. Define a `RunClient` instance for your datatype (call it `MyMonad`)
 2. Define a `ClientLike` instance. This will look like:
 
 ``` haskell

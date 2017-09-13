@@ -6,8 +6,8 @@ module Servant.Client
   , ClientM
   , runClientM
   , ClientEnv(..)
-  , module X
+  , module Servant.Client.Core.Reexport
   ) where
 
 import Servant.Client.Internal.HttpClient
-import Servant.Client.Core.Reexport as X
+import Servant.Client.Core.Reexport

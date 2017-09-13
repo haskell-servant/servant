@@ -128,15 +128,15 @@ That's it. Let's now write some code that uses our client functions.
 ``` haskell
 queries :: ClientM (Position, HelloMessage, Email)
 queries = do
-  pos <- position 10 10 
-  message <- hello (Just "servant") 
+  pos <- position 10 10
+  message <- hello (Just "servant")
   em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"])
   return (pos, message, em)
 
 run :: IO ()
 run = do
-  manager <- newManager defaultManagerSettings
-  res <- runClientM queries (ClientEnv manager (BaseUrl Http "localhost" 8081 ""))
+  manager' <- newManager defaultManagerSettings
+  res <- runClientM queries (ClientEnv manager' (BaseUrl Http "localhost" 8081 ""))
   case res of
     Left err -> putStrLn $ "Error: " ++ show err
     Right (pos, message, em) -> do

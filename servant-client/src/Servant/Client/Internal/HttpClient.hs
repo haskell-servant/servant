@@ -65,7 +65,7 @@ client :: HasClient ClientM api => Proxy api -> Client ClientM api
 client api = api `clientIn` (Proxy :: Proxy ClientM)
 
 -- | @ClientM@ is the monad in which client functions run. Contains the
--- 'Manager' and 'BaseUrl' used for requests in the reader environment.
+-- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
   { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
