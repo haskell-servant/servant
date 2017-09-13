@@ -41,23 +41,36 @@ import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
 
+-- | The environment in which a request is run.
 data ClientEnv
   = ClientEnv
   { manager :: Client.Manager
   , baseUrl :: BaseUrl
   }
 
+-- | Generates a set of client functions for an API.
+--
+-- Example:
+--
+-- > type API = Capture "no" Int :> Get '[JSON] Int
+-- >        :<|> Get '[JSON] [Bool]
+-- >
+-- > api :: Proxy API
+-- > api = Proxy
+-- >
+-- > getInt :: Int -> ClientM Int
+-- > getBools :: ClientM [Bool]
+-- > getInt :<|> getBools = client api
 client :: HasClient ClientM api => Proxy api -> Client ClientM api
 client api = api `clientIn` (Proxy :: Proxy ClientM)
 
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Manager' and 'BaseUrl' used for requests in the reader environment.
-newtype ClientM a = ClientM { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
-                    deriving ( Functor, Applicative, Monad, MonadIO, Generic
-                             , MonadReader ClientEnv
-                             , MonadError ServantError
-                             , MonadThrow, MonadCatch
-                             )
+newtype ClientM a = ClientM
+  { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
+  deriving ( Functor, Applicative, Monad, MonadIO, Generic
+           , MonadReader ClientEnv, MonadError ServantError, MonadThrow
+           , MonadCatch)
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftBase

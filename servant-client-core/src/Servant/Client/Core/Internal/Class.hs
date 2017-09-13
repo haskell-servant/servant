@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-| Types for possible backends to run client-side `Request` queries -}
+-- | Types for possible backends to run client-side `Request` queries
 module Servant.Client.Core.Internal.Class where
 
 import           Control.Monad                        (unless)

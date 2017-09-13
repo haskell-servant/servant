@@ -1,4 +1,3 @@
-{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -17,23 +16,34 @@
 -- querying functions for each endpoint just from the type representing your
 -- API.
 module Servant.Client.Core
-  ( AuthClientData
-  , AuthenticateReq(..)
-  , clientIn
+  (
+  -- * Client generation
+    clientIn
   , HasClient(..)
+
+  -- * Authentication
   , mkAuthenticateReq
-  , ServantError(..)
-  , EmptyClient(..)
-  , RunClient(..)
-  , Request(..)
-  , defaultRequest
-  , Response(..)
-  , RequestBody(..)
-  , module Servant.Client.Core.Internal.BaseUrl
+  , AuthenticateReq(..)
+  , AuthClientData
+
+  -- * Generic Client
   , ClientLike(..)
   , genericMkClientL
   , genericMkClientP
-  -- * Writing instances
+  , ServantError(..)
+  , EmptyClient(..)
+
+  -- * Request
+  , Request(..)
+  , defaultRequest
+  , RequestBody(..)
+
+  -- * Response
+  , Response(..)
+  , RunClient(..)
+  , module Servant.Client.Core.Internal.BaseUrl
+
+  -- * Writing HasClient instances
   , addHeader
   , appendToQueryString
   , appendToPath
@@ -84,13 +94,13 @@ import           Servant.Client.Core.Internal.BaseUrl   (BaseUrl (..),
                                                          showBaseUrl)
 import           Servant.Client.Core.Internal.BasicAuth
 import           Servant.Client.Core.Internal.Class
-import           Servant.Client.Core.Internal.Request
 import           Servant.Client.Core.Internal.Generic
+import           Servant.Client.Core.Internal.Request
 
 -- * Accessing APIs as a Client
 
--- | 'client' allows you to produce operations to query an API from a client within
--- a given monadic context `m`
+-- | 'clientIn' allows you to produce operations to query an API from a client
+-- within a 'RunClient' monad.
 --
 -- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
 -- >         :<|> "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book -- POST /books
@@ -108,9 +118,12 @@ clientIn :: HasClient m api => Proxy api -> Proxy m -> Client m api
 clientIn p pm = clientWithRoute pm p defaultRequest
 
 
--- | This class lets us define how each API combinator
--- influences the creation of an HTTP request. It's mostly
--- an internal class, you can just use 'client'.
+-- | This class lets us define how each API combinator influences the creation
+-- of an HTTP request.
+--
+-- Unless you are writing a new backend for @servant-client-core@ or new
+-- combinators that you want to support client-generation, you can ignore this
+-- class.
 class RunClient m => HasClient m api where
   type Client (m :: * -> *) (api :: *) :: *
   clientWithRoute :: Proxy m -> Proxy api -> Request -> Client m api
