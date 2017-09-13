@@ -10,18 +10,18 @@ This library should mainly be of interest to backend- and combinator-writers.
 
 If you are creating a new backend, you'll need to:
 
-    1) Define a `RunClient` instance for your datatype (call it 'MyMonad')
-    2) Define a `ClientLike` instance. This will look like:
+1. Define a `RunClient` instance for your datatype (call it 'MyMonad')
+2. Define a `ClientLike` instance. This will look like:
 
 ``` haskell
 instance ClientLike (MyMonad a) (MyMonad a) where
   mkClient = id
 ```
 
-    3) Re-export the module Servant.Client.Core.Reexport so that your end-users
-    can be blissfully unaware of 'servant-client-core', and so each
-    backend-package comes closer to the warm hearth of the drop-in-replacement
-    equivalence class.
+3. Re-export the module Servant.Client.Core.Reexport so that your end-users
+   can be blissfully unaware of 'servant-client-core', and so each
+   backend-package comes closer to the warm hearth of the drop-in-replacement
+   equivalence class.
 
 ## For combinator-writers
 
