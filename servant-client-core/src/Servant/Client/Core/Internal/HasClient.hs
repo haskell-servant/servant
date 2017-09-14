@@ -14,6 +14,8 @@
 #include "overlapping-compat.h"
 module Servant.Client.Core.Internal.HasClient where
 
+import           Prelude.Compat
+import           Prelude                              ()
 
 import           Control.Monad.Error.Class              (throwError)
 import           Data.List                              (foldl')
@@ -23,8 +25,6 @@ import           Data.Text                              (pack)
 import           GHC.Exts                               (fromList, toList)
 import           GHC.TypeLits                           (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types                     as H
-import           Prelude                                ()
-import           Prelude.Compat
 import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          AuthProtect, BasicAuth,
                                                          BasicAuthData,

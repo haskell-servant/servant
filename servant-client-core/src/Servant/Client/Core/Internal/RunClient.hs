@@ -1,13 +1,17 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE OverloadedStrings          #-}
 -- | Types for possible backends to run client-side `Request` queries
 module Servant.Client.Core.Internal.RunClient where
 
+import           Prelude.Compat
+import           Prelude                              ()
+
 import           Control.Monad                        (unless)
 import           Control.Monad.Error.Class            (MonadError, throwError)
+import           Data.Foldable                        (toList)
 import           Data.Proxy                           (Proxy)
 import qualified Data.Text                            as T
 import           Network.HTTP.Media                   (MediaType, matches,
@@ -17,7 +21,6 @@ import           Servant.API                          (MimeUnrender,
                                                        mimeUnrender)
 import           Servant.Client.Core.Internal.Request (Request, Response (..),
                                                        ServantError (..))
-import Data.Foldable (toList)
 
 class (MonadError ServantError m) => RunClient m where
   -- | How to make a request.
@@ -26,10 +29,10 @@ class (MonadError ServantError m) => RunClient m where
 checkContentTypeHeader :: RunClient m => Response -> m MediaType
 checkContentTypeHeader response =
   case lookup "Content-Type" $ toList $ responseHeaders response of
-    Nothing -> pure $ "application"//"octet-stream"
+    Nothing -> return $ "application"//"octet-stream"
     Just t -> case parseAccept t of
       Nothing -> throwError $ InvalidContentTypeHeader response
-      Just t' -> pure t'
+      Just t' -> return t'
 
 decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
   => Response -> Proxy ct -> m a

@@ -1,4 +1,4 @@
-resolver: nightly-2017-09-01
+resolver: nightly-2017-09-13
 packages:
 - servant-client/
 - servant-client-core/
