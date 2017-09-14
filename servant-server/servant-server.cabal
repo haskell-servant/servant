@@ -164,3 +164,5 @@ test-suite doctests
  if impl(ghc >= 8.2)
    x-doctest-options: -fdiagnostics-color=never
  include-dirs: include
+ other-modules:
+   Build_doctests
