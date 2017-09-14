@@ -1,5 +1,5 @@
 -- | This module is a utility for @servant-client-core@ backend writers. It
--- contains all the functionality fron @servant-client-core@ that should be
+-- contains all the functionality from @servant-client-core@ that should be
 -- re-exported.
 module Servant.Client.Core.Reexport
   (
