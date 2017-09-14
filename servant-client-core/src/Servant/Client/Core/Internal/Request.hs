@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
@@ -43,15 +44,17 @@ data ServantError =
   | ConnectionError Text
   deriving (Eq, Show, Generic, Typeable)
 
-data Request = Request
-  { requestPath        :: Builder.Builder
+data RequestF a = Request
+  { requestPath        :: a
   , requestQueryString :: Seq.Seq QueryItem
   , requestBody        :: Maybe (RequestBody, MediaType)
   , requestAccept      :: Seq.Seq MediaType
   , requestHeaders     :: Seq.Seq Header
   , requestHttpVersion :: HttpVersion
   , requestMethod      :: Method
-  } deriving (Generic, Typeable)
+  } deriving (Eq, Show, Functor, Generic, Typeable)
+
+type Request = RequestF Builder.Builder
 
 -- | The request body. Currently only lazy ByteStrings are supported.
 newtype RequestBody = RequestBodyLBS LBS.ByteString

@@ -20,7 +20,8 @@ module Servant.Client.Core
   , HasClient(..)
 
   -- * Request
-  , Request(..)
+  , Request
+  , RequestF(..)
   , defaultRequest
   , RequestBody(..)
 
