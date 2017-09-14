@@ -20,6 +20,7 @@ extra-deps:
 - hspec-expectations-0.8.2
 - hspec-wai-0.8.0
 - http-api-data-0.3.6
+- http-client-0.4.30
 - natural-transformation-0.4
 - primitive-0.6.1.0
 - servant-js-0.9.3

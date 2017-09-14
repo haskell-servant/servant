@@ -30,9 +30,9 @@ import           Data.Foldable               (toList)
 import           Data.Functor.Alt            (Alt (..))
 import           Data.Monoid                 ((<>))
 import           Data.Proxy                  (Proxy (..))
+import           Data.Sequence               (fromList)
 import           Data.String                 (fromString)
 import qualified Data.Text                   as T
-import           GHC.Exts                    (fromList)
 import           GHC.Generics
 import           Network.HTTP.Media          (renderHeader)
 import           Network.HTTP.Types          (hContentType, renderQuery,

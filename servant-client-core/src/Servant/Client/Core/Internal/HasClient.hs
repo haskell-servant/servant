@@ -14,15 +14,16 @@
 #include "overlapping-compat.h"
 module Servant.Client.Core.Internal.HasClient where
 
+import           Prelude                                ()
 import           Prelude.Compat
-import           Prelude                              ()
 
 import           Control.Monad.Error.Class              (throwError)
+import           Data.Foldable                          (toList)
 import           Data.List                              (foldl')
 import           Data.Proxy                             (Proxy (Proxy))
+import           Data.Sequence                          (fromList)
 import           Data.String                            (fromString)
 import           Data.Text                              (pack)
-import           GHC.Exts                               (fromList, toList)
 import           GHC.TypeLits                           (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types                     as H
 import           Servant.API                            ((:<|>) ((:<|>)), (:>),
