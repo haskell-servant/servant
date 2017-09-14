@@ -23,7 +23,8 @@ install:
   - (cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
 
 script:
-  - if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ; then ./scripts/ci-cron.sh ; else stack test --ghc-options=-Werror --no-terminal ; fi
+  - if [ "$STACK_YAML" = "stack-ghc-8.2.1.yaml" ]; then HOMEMODULES="--ghc-options=-Wno-missing-home-modules"; fi
+  - if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ; then ./scripts/ci-cron.sh ; else stack test $HOMEMODULES --ghc-options=-Werror --no-terminal ; fi
 
 cache:
   directories:

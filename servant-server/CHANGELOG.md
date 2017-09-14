@@ -1,3 +1,12 @@
+Next
+----
+
+### Breaking changes
+
+* Added `hoistServer` member to the `HasServer` class, which is `HasServer`
+  specific `enter`.
+  ([#804](https://github.com/haskell-servant/servant/pull/804))
+
 0.11
 ----
 

@@ -1,5 +1,6 @@
 **/*/dist
 dist-newstyle
+.ghc.environment.*
 /bin
 /lib
 /share

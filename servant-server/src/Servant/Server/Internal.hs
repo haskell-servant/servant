@@ -8,6 +8,7 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -33,7 +34,7 @@ import           Data.Maybe                 (fromMaybe, mapMaybe)
 import           Data.Either                (partitionEithers)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
-import           Data.Tagged                (Tagged(..), untag)
+import           Data.Tagged                (Tagged(..), retag, untag)
 import qualified Data.Text                  as T
 import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
@@ -85,6 +86,13 @@ class HasServer api context where
     -> Delayed env (Server api)
     -> Router env
 
+  hoistServer
+      :: Proxy api
+      -> Proxy context
+      -> (forall x. m x -> n x)
+      -> ServerT api m
+      -> ServerT api n
+
 type Server api = ServerT api Handler
 
 -- * Instances
@@ -109,6 +117,11 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b
 
+  -- | This is better than 'enter', as it's taylor made for 'HasServer'.
+  hoistServer _ pc nt (a :<|> b) =
+    hoistServer (Proxy :: Proxy a) pc nt a :<|>
+    hoistServer (Proxy :: Proxy b) pc nt b
+
 -- | If you use 'Capture' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by the 'Capture'.
@@ -131,6 +144,8 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
 
   type ServerT (Capture capture a :> api) m =
      a -> ServerT api m
+
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
   route Proxy context d =
     CaptureRouter $
@@ -158,15 +173,17 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
 -- > server = getSourceFile
 -- >   where getSourceFile :: [Text] -> Handler Book
 -- >         getSourceFile pathSegments = ...
-instance (KnownSymbol capture, FromHttpApiData a, HasServer sublayout context)
-      => HasServer (CaptureAll capture a :> sublayout) context where
+instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
+      => HasServer (CaptureAll capture a :> api) context where
 
-  type ServerT (CaptureAll capture a :> sublayout) m =
-    [a] -> ServerT sublayout m
+  type ServerT (CaptureAll capture a :> api) m =
+    [a] -> ServerT api m
+
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
   route Proxy context d =
     CaptureAllRouter $
-        route (Proxy :: Proxy sublayout)
+        route (Proxy :: Proxy api)
               context
               (addCapture d $ \ txts -> case parseUrlPieces txts of
                  Left _  -> delayedFail err400
@@ -241,6 +258,7 @@ instance OVERLAPPABLE_
          ) => HasServer (Verb method status ctypes a) context where
 
   type ServerT (Verb method status ctypes a) m = m a
+  hoistServer _ _ nt s = nt s
 
   route Proxy _ = methodRouter method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
@@ -252,6 +270,7 @@ instance OVERLAPPING_
          ) => HasServer (Verb method status ctypes (Headers h a)) context where
 
   type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
+  hoistServer _ _ nt s = nt s
 
   route Proxy _ = methodRouterHeaders method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
@@ -282,6 +301,8 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
 
   type ServerT (Header sym a :> api) m =
     Maybe a -> ServerT api m
+
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver = route (Proxy :: Proxy api) context $
       subserver `addHeaderCheck` withRequest headerCheck
@@ -325,6 +346,8 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
 
   type ServerT (QueryParam sym a :> api) m =
     Maybe a -> ServerT api m
+
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
     let querytext req = parseQueryText $ rawQueryString req
@@ -371,6 +394,8 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
   type ServerT (QueryParams sym a :> api) m =
     [a] -> ServerT api m
 
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
+
   route Proxy context subserver = route (Proxy :: Proxy api) context $
       subserver `addParameterCheck` withRequest paramsCheck
     where
@@ -411,6 +436,8 @@ instance (KnownSymbol sym, HasServer api context)
   type ServerT (QueryFlag sym :> api) m =
     Bool -> ServerT api m
 
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
+
   route Proxy context subserver =
     let querytext r = parseQueryText $ rawQueryString r
         param r = case lookup paramname (querytext r) of
@@ -433,6 +460,8 @@ instance (KnownSymbol sym, HasServer api context)
 instance HasServer Raw context where
 
   type ServerT Raw m = Tagged m Application
+
+  hoistServer _ _ _ = retag
 
   route Proxy _ rawApplication = RawRouter $ \ env request respond -> runResourceT $ do
     -- note: a Raw application doesn't register any cleanup
@@ -473,6 +502,8 @@ instance ( AllCTUnrender list a, HasServer api context
   type ServerT (ReqBody list a :> api) m =
     a -> ServerT api m
 
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
+
   route Proxy context subserver
       = route (Proxy :: Proxy api) context $
           addBodyCheck subserver ctCheck bodyCheck
@@ -507,44 +538,51 @@ instance (KnownSymbol path, HasServer api context) => HasServer (path :> api) co
       (cs (symbolVal proxyPath))
       (route (Proxy :: Proxy api) context subserver)
     where proxyPath = Proxy :: Proxy path
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt s
 
 instance HasServer api context => HasServer (RemoteHost :> api) context where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (passToServer subserver remoteHost)
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
 instance HasServer api context => HasServer (IsSecure :> api) context where
   type ServerT (IsSecure :> api) m = IsSecure -> ServerT api m
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (passToServer subserver secure)
-
     where secure req = if isSecure req then Secure else NotSecure
+
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
 instance HasServer api context => HasServer (Vault :> api) context where
   type ServerT (Vault :> api) m = Vault -> ServerT api m
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (passToServer subserver vault)
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
 instance HasServer api context => HasServer (HttpVersion :> api) context where
   type ServerT (HttpVersion :> api) m = HttpVersion -> ServerT api m
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (passToServer subserver httpVersion)
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
 -- | Ignore @'Summary'@ in server handlers.
 instance HasServer api ctx => HasServer (Summary desc :> api) ctx where
   type ServerT (Summary desc :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt s
 
 -- | Ignore @'Description'@ in server handlers.
 instance HasServer api ctx => HasServer (Description desc :> api) ctx where
   type ServerT (Description desc :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt s
 
 -- | Singleton type representing a server that serves an empty API.
 data EmptyServer = EmptyServer deriving (Typeable, Eq, Show, Bounded, Enum)
@@ -564,6 +602,8 @@ instance HasServer EmptyAPI context where
 
   route Proxy _ _ = StaticRouter mempty mempty
 
+  hoistServer _ _ _ = retag
+
 -- | Basic Authentication
 instance ( KnownSymbol realm
          , HasServer api context
@@ -579,6 +619,8 @@ instance ( KnownSymbol realm
        realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
        basicAuthContext = getContextEntry context
        authCheck = withRequest $ \ req -> runBasicAuth req realm basicAuthContext
+
+  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
 
 -- * helpers
 
@@ -604,3 +646,5 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 
       subContext :: Context subContext
       subContext = descendIntoNamedContext (Proxy :: Proxy name) context
+
+  hoistServer _ _ nt s = hoistServer (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
