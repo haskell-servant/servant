@@ -17,7 +17,6 @@ module Servant.Client.Core.Internal.HasClient where
 import           Prelude                                ()
 import           Prelude.Compat
 
-import           Control.Monad.Error.Class              (throwError)
 import           Data.Foldable                          (toList)
 import           Data.List                              (foldl')
 import           Data.Proxy                             (Proxy (Proxy))
@@ -225,7 +224,7 @@ instance OVERLAPPING_
        , requestAccept = fromList $ toList accept
        }
     case mimeUnrender (Proxy :: Proxy ct) $ responseBody response of
-      Left err -> throwError $ DecodeFailure (pack err) response
+      Left err -> throwServantError $ DecodeFailure (pack err) response
       Right val -> return $ Headers
         { getResponse = val
         , getHeadersHList = buildHeadersTo . toList $ responseHeaders response

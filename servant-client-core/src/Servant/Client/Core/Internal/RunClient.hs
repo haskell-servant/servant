@@ -6,11 +6,10 @@
 -- | Types for possible backends to run client-side `Request` queries
 module Servant.Client.Core.Internal.RunClient where
 
-import           Prelude.Compat
 import           Prelude                              ()
+import           Prelude.Compat
 
 import           Control.Monad                        (unless)
-import           Control.Monad.Error.Class            (MonadError, throwError)
 import           Data.Foldable                        (toList)
 import           Data.Proxy                           (Proxy)
 import qualified Data.Text                            as T
@@ -22,16 +21,18 @@ import           Servant.API                          (MimeUnrender,
 import           Servant.Client.Core.Internal.Request (Request, Response (..),
                                                        ServantError (..))
 
-class (MonadError ServantError m) => RunClient m where
+class (Monad m) => RunClient m where
   -- | How to make a request.
   runRequest :: Request -> m Response
+  throwServantError :: ServantError -> m a
+  catchServantError :: m a -> (ServantError -> m a) -> m a
 
 checkContentTypeHeader :: RunClient m => Response -> m MediaType
 checkContentTypeHeader response =
   case lookup "Content-Type" $ toList $ responseHeaders response of
     Nothing -> return $ "application"//"octet-stream"
     Just t -> case parseAccept t of
-      Nothing -> throwError $ InvalidContentTypeHeader response
+      Nothing -> throwServantError $ InvalidContentTypeHeader response
       Just t' -> return t'
 
 decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
@@ -39,9 +40,9 @@ decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
 decodedAs response contentType = do
   responseContentType <- checkContentTypeHeader response
   unless (any (matches responseContentType) accept) $
-    throwError $ UnsupportedContentType responseContentType response
+    throwServantError $ UnsupportedContentType responseContentType response
   case mimeUnrender contentType $ responseBody response of
-    Left err -> throwError $ DecodeFailure (T.pack err) response
+    Left err -> throwServantError $ DecodeFailure (T.pack err) response
     Right val -> return val
   where
     accept = toList $ contentTypes contentType

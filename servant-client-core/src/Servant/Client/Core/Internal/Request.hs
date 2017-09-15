@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
@@ -13,6 +13,7 @@ module Servant.Client.Core.Internal.Request where
 import           Prelude                 ()
 import           Prelude.Compat
 
+import           Control.Monad.Catch     (Exception)
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy    as LBS
 import           Data.Semigroup          ((<>))
@@ -43,6 +44,8 @@ data ServantError =
   -- | There was a connection error, and no response was received
   | ConnectionError Text
   deriving (Eq, Show, Generic, Typeable)
+
+instance Exception ServantError
 
 data RequestF a = Request
   { requestPath        :: a

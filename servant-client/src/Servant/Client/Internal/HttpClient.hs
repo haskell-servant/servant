@@ -88,6 +88,8 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
   runRequest = performRequest
+  throwServantError = throwError
+  catchServantError = catchError
 
 instance ClientLike (ClientM a) (ClientM a) where
   mkClient = id
