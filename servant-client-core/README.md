@@ -25,6 +25,6 @@ instance ClientLike (MyMonad a) (MyMonad a) where
 
 ## For combinator-writers
 
-You'l need to define a new `HasClient` instance for your combinator. There are
+You'll need to define a new `HasClient` instance for your combinator. There are
 plenty of examples to guide you in the
 [HasClient](src/Servant/Client/Core/Internal/HasClient.hs) module.

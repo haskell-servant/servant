@@ -155,5 +155,3 @@ test-suite doctests
  include-dirs: include
  x-doctest-source-dirs: test
  x-doctest-modules: Servant.Utils.LinksSpec
- other-modules:
-   Build_doctests

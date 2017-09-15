@@ -30,7 +30,7 @@ import           Web.HttpApiData         (ToHttpApiData, toEncodedUrlPiece,
 
 -- | A type representing possible errors in a request
 --
--- Note that this type substially change in 0.12
+-- Note that this type substantially changed in 0.12.
 data ServantError =
   -- | The server returned an error response
     FailureResponse Response

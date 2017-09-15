@@ -11,7 +11,7 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 homepage:            http://haskell-servant.readthedocs.org/
 bug-reports:         http://github.com/haskell-servant/servant/issues
 cabal-version:       >=1.10
--- copyright:
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2017 Servant Contributors
 category:            Web
 build-type:          Simple
 extra-source-files:
