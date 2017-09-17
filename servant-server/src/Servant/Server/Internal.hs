@@ -117,7 +117,7 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
     where pa = Proxy :: Proxy a
           pb = Proxy :: Proxy b
 
-  -- | This is better than 'enter', as it's taylor made for 'HasServer'.
+  -- | This is better than 'enter', as it's tailor made for 'HasServer'.
   hoistServer _ pc nt (a :<|> b) =
     hoistServer (Proxy :: Proxy a) pc nt a :<|>
     hoistServer (Proxy :: Proxy b) pc nt b
