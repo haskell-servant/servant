@@ -12,7 +12,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2017 Servant Contributors
 category:            Servant, Web
 build-type:          Simple
 cabal-version:       >=1.10
@@ -30,39 +30,27 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
-    Servant.Client.Generic
-    Servant.Client.Experimental.Auth
-    Servant.Common.BaseUrl
-    Servant.Common.BasicAuth
-    Servant.Common.Req
+    Servant.Client.Internal.HttpClient
   build-depends:
       base                  >= 4.7      && < 4.11
     , base-compat           >= 0.9.1    && < 0.10
+    , bytestring            >= 0.10     && < 0.11
     , aeson                 >= 0.7      && < 1.3
     , attoparsec            >= 0.12     && < 0.14
-    , base64-bytestring     >= 1.0.0.1  && < 1.1
-    , bytestring            >= 0.10     && < 0.11
-    , exceptions            >= 0.8      && < 0.9
-    , generics-sop          >= 0.1.0.0  && < 0.4
-    , http-api-data         >= 0.3.6    && < 0.4
-    , http-client           >= 0.4.18.1 && < 0.6
+    , containers            >= 0.5      && < 0.6
+    , http-client           >= 0.4.30   && < 0.6
     , http-client-tls       >= 0.2.2    && < 0.4
     , http-media            >= 0.6.2    && < 0.8
     , http-types            >= 0.8.6    && < 0.10
+    , exceptions            >= 0.8      && < 0.9
     , monad-control         >= 1.0.0.4  && < 1.1
-    , network-uri           >= 2.6      && < 2.7
-    , safe                  >= 0.3.9    && < 0.4
+    , mtl                   >= 2.1      && < 2.3
     , semigroupoids         >= 4.3      && < 5.3
-    , servant               == 0.11.*
-    , string-conversions    >= 0.3      && < 0.5
+    , servant-client-core   == 0.11.*
     , text                  >= 1.2      && < 1.3
     , transformers          >= 0.3      && < 0.6
     , transformers-base     >= 0.4.4    && < 0.5
     , transformers-compat   >= 0.4      && < 0.6
-    , mtl
-  if !impl(ghc >= 8.0)
-    build-depends:
-        semigroups          >=0.16.2.2 && <0.19
   hs-source-dirs: src
   default-language: Haskell2010
   ghc-options: -Wall
@@ -78,12 +66,12 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Servant.ClientSpec
-    , Servant.Common.BaseUrlSpec
   build-depends:
       base == 4.*
     , aeson
     , base-compat
     , bytestring
+    , containers
     , deepseq
     , hspec == 2.*
     , http-api-data
@@ -96,6 +84,7 @@ test-suite spec
     , QuickCheck >= 2.7
     , servant
     , servant-client
+    , servant-client-core
     , servant-server == 0.11.*
     , text
     , transformers
