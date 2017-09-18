@@ -29,6 +29,7 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Control (MonadBaseControl (..))
 import qualified Data.ByteString.Builder as BS
 import Data.ByteString.Lazy hiding (pack, filter, map, null, elem, any)
+import qualified Data.ByteString.Lazy as BS
 import Data.String
 import Data.String.Conversions (cs)
 import Data.Proxy
@@ -162,7 +163,9 @@ reqToRequest req (BaseUrl reqScheme reqHost reqPort path) =
                                          }
                              , uriPath = fullPath
                              }
-        fullPath = path ++ cs (BS.toLazyByteString (reqPath req))
+        fullPath = path ++ cs (slashIfNull $ BS.toLazyByteString (reqPath req))
+          where slashIfNull s | BS.null s = "/"
+                              | otherwise = s
 
         setrqb r = case reqBody req of
                      Nothing -> r
