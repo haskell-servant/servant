@@ -41,20 +41,21 @@ library
   if impl(ghc >= 8.0)
     ghc-options: -Wno-redundant-constraints
   include-dirs: include
-  default-extensions:  CPP
-                     , ConstraintKinds
+  default-extensions:  ConstraintKinds
+                     , CPP
                      , DataKinds
+                     , DeriveDataTypeable
                      , FlexibleContexts
                      , FlexibleInstances
                      , GeneralizedNewtypeDeriving
                      , MultiParamTypeClasses
+                     , OverloadedStrings
+                     , PolyKinds
                      , ScopedTypeVariables
                      , TemplateHaskell
                      , TypeFamilies
                      , TypeOperators
                      , UndecidableInstances
-                     , OverloadedStrings
-                     , PolyKinds
 
 
 test-suite spec

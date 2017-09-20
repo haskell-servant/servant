@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 #if !MIN_VERSION_base(4,8,0)
 {-# LANGUAGE NullaryTypeClasses #-}
 #endif
