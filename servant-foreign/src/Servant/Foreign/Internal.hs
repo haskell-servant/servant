@@ -9,7 +9,7 @@ module Servant.Foreign.Internal where
 
 import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
                                (.~))
-import           Data.Data
+import           Data.Data (Data)
 #if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid
 #endif
