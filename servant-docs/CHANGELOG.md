@@ -6,6 +6,7 @@
 * Add a markdown header for the Headers an endpoint is sensitive to.
 * Document the HTTP Method the parameters of an endpoint belong to
   (rather than assuming `GET` for all of them).
+* Content type of sample response body is also displayed.
 
 0.11
 ----

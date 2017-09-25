@@ -674,7 +674,7 @@ markdown api = unlines $
                   []        -> ["- No response body\n"]
                   [("", t, r)] -> "- Response body as below." : contentStr t r
                   xs        ->
-                    concatMap (\(ctx, t, r) -> ("- " <> T.unpack ctx) : contentStr t r) xs
+                    concatMap (\(ctx, t, r) -> ("- " <> T.unpack ctx <> " (`" <> cs (show t) <> "`)") : contentStr t r) xs
 
 -- * Instances
 
