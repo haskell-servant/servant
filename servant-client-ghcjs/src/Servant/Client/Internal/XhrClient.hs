@@ -44,46 +44,46 @@ newtype JSXMLHttpRequest = JSXMLHttpRequest JSVal
 
 newtype JSXMLHttpRequestClass = JSXMLHttpRequestClass JSVal
 
-newtype GhcjsClientEnv
-   = GhcjsClientEnv
+newtype ClientEnv
+   = ClientEnv
    { baseUrl :: BaseUrl }
    deriving (Eq, Show)
 
-client :: HasClient GhcjsClientM api => Proxy api -> Client GhcjsClientM api
-client api = api `clientIn` (Proxy :: Proxy GhcjsClientM)
+client :: HasClient ClientM api => Proxy api -> Client ClientM api
+client api = api `clientIn` (Proxy :: Proxy ClientM)
 
-newtype GhcjsClientM a = GhcjsClientM
-  { runGhcjsClientM' :: ReaderT GhcjsClientEnv (ExceptT ServantError IO) a }
+newtype ClientM a = ClientM
+  { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader GhcjsClientEnv, MonadError ServantError, MonadThrow
+           , MonadReader ClientEnv, MonadError ServantError, MonadThrow
            , MonadCatch)
 
-instance MonadBase IO GhcjsClientM where
-  liftBase = GhcjsClientM . liftBase
+instance MonadBase IO ClientM where
+  liftBase = ClientM . liftBase
 
-instance MonadBaseControl IO GhcjsClientM where
-  type StM GhcjsClientM a = Either ServantError a
+instance MonadBaseControl IO ClientM where
+  type StM ClientM a = Either ServantError a
 
-  liftBaseWith f = GhcjsClientM (liftBaseWith (\g -> f (g . runGhcjsClientM')))
+  liftBaseWith f = ClientM (liftBaseWith (\g -> f (g . runClientM')))
 
-  restoreM st = GhcjsClientM (restoreM st)
+  restoreM st = ClientM (restoreM st)
 
 -- | Try clients in order, last error is preserved.
-instance Alt GhcjsClientM where
+instance Alt ClientM where
   a <!> b = a `catchError` const b
 
-instance RunClient GhcjsClientM where
+instance RunClient ClientM where
   runRequest = performRequest
   throwServantError = throwError
   catchServantError = catchError
 
-instance ClientLike (GhcjsClientM a) (GhcjsClientM a) where
+instance ClientLike (ClientM a) (ClientM a) where
   mkClient = id
 
-runGhcjsClientM :: GhcjsClientM a -> GhcjsClientEnv -> IO (Either ServantError a)
-runGhcjsClientM cm env = runExceptT $ flip runReaderT env $ runGhcjsClientM' cm
+runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientM cm env = runExceptT $ flip runReaderT env $ runClientM' cm
 
-performRequest :: Request -> GhcjsClientM Response
+performRequest :: Request -> ClientM Response
 performRequest req = do
   xhr <- liftIO initXhr
   burl <- asks baseUrl
@@ -188,7 +188,7 @@ toBody request = case requestBody request of
 
 -- This function is only supposed to handle 'ConnectionError's. Other
 -- 'ServantError's are created in Servant.Client.Req.
-toResponse :: JSXMLHttpRequest -> GhcjsClientM Response
+toResponse :: JSXMLHttpRequest -> ClientM Response
 toResponse xhr = do
   status <- liftIO $ getStatus xhr
   case status of

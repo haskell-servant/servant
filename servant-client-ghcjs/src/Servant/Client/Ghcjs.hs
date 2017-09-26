@@ -4,9 +4,9 @@
 module Servant.Client.Ghcjs
   (
     client
-  , GhcjsClientM
-  , runGhcjsClientM
-  , GhcjsClientEnv(..)
+  , ClientM
+  , runClientM
+  , ClientEnv(..)
   , module Servant.Client.Core.Reexport
   ) where
 
