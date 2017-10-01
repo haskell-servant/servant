@@ -57,7 +57,7 @@ instance ( HasServer api context
   type ServerT (AuthProtect tag :> api) m =
     AuthServerData (AuthProtect tag) -> ServerT api m
 
-  hoistServer _ pc nt s = hoistServer (Proxy :: Proxy api) pc nt . s
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (subserver `addAuthCheck` withRequest authCheck)

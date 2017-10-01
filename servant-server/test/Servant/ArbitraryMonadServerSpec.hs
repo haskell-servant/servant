@@ -3,9 +3,8 @@
 {-# LANGUAGE TypeOperators     #-}
 module Servant.ArbitraryMonadServerSpec where
 
-import qualified Control.Category           as C
 import           Control.Monad.Reader
-import Data.Functor.Identity
+import           Data.Functor.Identity
 import           Data.Proxy
 import           Servant.API
 import           Servant.Server
@@ -28,23 +27,26 @@ type CombinedAPI = ReaderAPI :<|> IdentityAPI
 readerAPI :: Proxy ReaderAPI
 readerAPI = Proxy
 
+identityAPI :: Proxy IdentityAPI
+identityAPI = Proxy
+
 combinedAPI :: Proxy CombinedAPI
 combinedAPI = Proxy
 
 readerServer' :: ServerT ReaderAPI (Reader String)
 readerServer' = return 1797 :<|> ask
 
-fReader :: Reader String :~> Handler
-fReader = generalizeNat C.. (runReaderTNat "hi")
+fReader :: Reader String a -> Handler a
+fReader x = return (runReader x "hi")
 
 readerServer :: Server ReaderAPI
-readerServer = enter fReader readerServer'
+readerServer = hoistServer readerAPI fReader readerServer'
 
 combinedReaderServer' :: ServerT CombinedAPI (Reader String)
-combinedReaderServer' = readerServer' :<|> enter (generalizeNat :: Identity :~> Reader String) (return True)
+combinedReaderServer' = readerServer' :<|> hoistServer identityAPI (return . runIdentity) (return True)
 
 combinedReaderServer :: Server CombinedAPI
-combinedReaderServer = enter fReader combinedReaderServer'
+combinedReaderServer = hoistServer combinedAPI fReader combinedReaderServer'
 
 enterSpec :: Spec
 enterSpec = describe "Enter" $ do

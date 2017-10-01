@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-module Servant.Utils.Enter (
+module Servant.Utils.Enter {-# DEPRECATED "Use hoistServer or hoistServerWithContext from servant-server" #-} (
     module Servant.Utils.Enter,
     -- * natural-transformation re-exports
     (:~>)(..),

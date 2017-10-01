@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TypeFamilies      #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
@@ -26,24 +27,10 @@ module Servant.Server
   , layout
   , layoutWithContext
 
-    -- * Enter
-    -- $enterDoc
+    -- * Enter / hoisting server
+  , hoistServer
 
-    -- ** Basic functions and datatypes
-  , enter
-  , (:~>)(..)
-    -- ** `Nat` utilities
-  , liftNat
-  , runReaderTNat
-  , evalStateTLNat
-  , evalStateTSNat
-  , logWriterTLNat
-  , logWriterTSNat
   -- ** Functions based on <https://hackage.haskell.org/package/mmorph mmorph>
-  , hoistNat
-  , embedNat
-  , squashNat
-  , generalizeNat
   , tweakResponse
 
   -- * Context
@@ -106,12 +93,11 @@ module Servant.Server
 
   ) where
 
-import           Data.Proxy                    (Proxy)
+import           Data.Proxy                    (Proxy (..))
 import           Data.Tagged                   (Tagged (..))
 import           Data.Text                     (Text)
 import           Network.Wai                   (Application)
 import           Servant.Server.Internal
-import           Servant.Utils.Enter
 
 
 -- * Implementing Servers
@@ -144,6 +130,30 @@ serveWithContext :: (HasServer api context)
     => Proxy api -> Context context -> Server api -> Application
 serveWithContext p context server =
   toApplication (runRouter (route p context (emptyDelayed (Route server))))
+
+-- | Hoist server implementation.
+--
+-- Sometimes our cherished `Handler` monad isn't quite the type you'd like for
+-- your handlers. Maybe you want to thread some configuration in a @Reader@
+-- monad. Or have your types ensure that your handlers don't do any IO. Use
+-- `hoistServer` (a successor of now deprecated @enter@).
+--
+-- With `hoistServer`, you can provide a function,
+-- to convert any number of endpoints from one type constructor to
+-- another. For example
+--
+-- /Note:/ 'Server' 'Raw' can also be entered. It will be retagged.
+--
+-- >>> import Control.Monad.Reader
+-- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String :<|> Raw :<|> EmptyAPI
+-- >>> let readerApi = Proxy :: Proxy ReaderAPI
+-- >>> let readerServer = return 1797 :<|> ask :<|> Tagged (error "raw server") :<|> emptyServer :: ServerT ReaderAPI (Reader String)
+-- >>> let nt x = return (runReader x "hi")
+-- >>> let mainServer = hoistServer readerApi nt readerServer :: Server ReaderAPI
+--
+hoistServer :: (HasServer api '[]) => Proxy api
+            -> (forall x. m x -> n x) -> ServerT api m -> ServerT api n
+hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
 
 -- | The function 'layout' produces a textual description of the internal
 -- router layout for debugging purposes. Note that the router layout is
@@ -204,28 +214,6 @@ layoutWithContext :: (HasServer api context)
     => Proxy api -> Context context -> Text
 layoutWithContext p context =
   routerLayout (route p context (emptyDelayed (FailFatal err501)))
-
--- Documentation
-
--- $enterDoc
--- Sometimes our cherished `ExceptT` monad isn't quite the type you'd like for
--- your handlers. Maybe you want to thread some configuration in a @Reader@
--- monad. Or have your types ensure that your handlers don't do any IO. Enter
--- `enter`.
---
--- With `enter`, you can provide a function, wrapped in the `(:~>)` / `NT`
--- newtype, to convert any number of endpoints from one type constructor to
--- another. For example
---
--- /Note:/ 'Server' 'Raw' can also be entered. It will be retagged.
---
--- >>> import Control.Monad.Reader
--- >>> import qualified Control.Category as C
--- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String :<|> Raw :<|> EmptyAPI
--- >>> let readerServer = return 1797 :<|> ask :<|> Tagged (error "raw server") :<|> emptyServer :: ServerT ReaderAPI (Reader String)
--- >>> let nt = generalizeNat C.. (runReaderTNat "hi") :: Reader String :~> Handler
--- >>> let mainServer = enter nt readerServer :: Server ReaderAPI
---
 
 -- $setup
 -- >>> :set -XDataKinds
