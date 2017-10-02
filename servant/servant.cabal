@@ -138,6 +138,10 @@ test-suite spec
       semigroups            >= 0.16 && < 0.19
 
 test-suite doctests
+ -- For example ghcjs isn't ghc :)
+ if !impl(ghc) || impl(ghcjs)
+   buildable: False
+
  build-depends: base
               , servant
               , doctest

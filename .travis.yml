@@ -8,6 +8,7 @@ env:
   - STACK_YAML=stack-ghc-7.10.3.yaml
   - STACK_YAML=stack.yaml
   - STACK_YAML=stack-ghc-8.2.1.yaml
+  - STACK_YAML=stack-ghcjs-0.2.1.9007019.yaml
 
 addons:
   apt:
