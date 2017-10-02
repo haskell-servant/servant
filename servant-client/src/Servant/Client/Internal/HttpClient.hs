@@ -136,12 +136,16 @@ requestToClientRequest burl r = Client.defaultRequest
       let orig = toList $ requestHeaders r
       in maybe orig (: orig) contentTypeHdr
   , Client.requestBody = body
+  , Client.secure = isSecure
   }
   where
     (body, contentTypeHdr) = case requestBody r of
       Nothing -> (Client.RequestBodyLBS "", Nothing)
       Just (RequestBodyLBS body', typ)
         -> (Client.RequestBodyLBS body', Just (hContentType, renderHeader typ))
+    isSecure = case baseUrlScheme burl of
+      Http -> False
+      Https -> True
 
 catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =
