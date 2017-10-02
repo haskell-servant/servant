@@ -1,12 +1,10 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
-{-# OPTIONS_GHC -fno-warn-deprecations #-}
-module Servant.Utils.EnterSpec where
+module Servant.HoistSpec where
 
 import Test.Hspec (Spec)
 
-import Servant.API
-import Servant.Utils.Enter
+import Servant
 
 -------------------------------------------------------------------------------
 -- https://github.com/haskell-servant/servant/issues/734
@@ -14,16 +12,23 @@ import Servant.Utils.Enter
 
 -- This didn't fail if executed in GHCi; cannot have as a doctest.
 
-data App a
+newtype App a = App a
 
-f :: App :~> App
-f = NT id
+type API = Get '[JSON] Int
+    :<|> ReqBody '[JSON] String :> Get '[JSON] Bool
+
+api :: Proxy API
+api = Proxy
 
 server :: App Int :<|> (String -> App Bool)
 server = undefined
 
+-- Natural transformation still seems to need an explicit type.
+f :: App a -> App a
+f = id
+
 server' :: App Int :<|> (String -> App Bool)
-server' = enter f server
+server' = hoistServer api f server
 
 -------------------------------------------------------------------------------
 -- Spec

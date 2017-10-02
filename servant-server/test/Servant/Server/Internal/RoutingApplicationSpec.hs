@@ -89,7 +89,7 @@ data Res (sym :: Symbol)
 instance (KnownSymbol sym, HasServer api ctx) => HasServer (Res sym :> api) ctx where
     type ServerT (Res sym :> api) m = IORef (TestResource String) -> ServerT api m
 
-    hoistServer _ nc nt s = hoistServer (Proxy :: Proxy api) nc nt . s
+    hoistServerWithContext _ nc nt s = hoistServerWithContext (Proxy :: Proxy api) nc nt . s
 
     route Proxy ctx server = route (Proxy :: Proxy api) ctx $
         addBodyCheck server (return ()) check
