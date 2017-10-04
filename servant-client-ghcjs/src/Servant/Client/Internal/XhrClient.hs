@@ -38,6 +38,7 @@ import           GHC.Generics
 import           GHCJS.Foreign.Callback
 import           GHCJS.Prim
 import           Network.HTTP.Types
+import           Network.HTTP.Media (renderHeader)
 import           Servant.Client.Core
 
 newtype JSXMLHttpRequest = JSXMLHttpRequest JSVal
@@ -117,7 +118,7 @@ performXhr xhr burl request = do
         s <- newStablePtr t
 
         openXhr xhr (cs $ requestMethod request) (toUrl burl request) True
-        setHeaders xhr $ toList $ requestHeaders request
+        setHeaders xhr request
         sendXhr xhr (toBody request)
         takeMVar waiter
 
@@ -161,9 +162,23 @@ toUrl burl request =
           requestQueryString request
   in showBaseUrl burl ++ pathS ++ queryS
 
-setHeaders :: JSXMLHttpRequest -> RequestHeaders -> IO ()
-setHeaders xhr headers = forM_ headers $ \ (key, value) ->
-  js_setRequestHeader xhr (toJSString $ cs $ original key) (toJSString $ cs value)
+setHeaders :: JSXMLHttpRequest -> Request -> IO ()
+setHeaders xhr request = do
+  forM_ (toList $ requestAccept request) $ \mediaType ->
+    js_setRequestHeader
+      xhr
+      (toJSString "Accept")
+      (toJSString $ cs $ renderHeader mediaType)
+
+  forM_ (requestBody request) $ \(_, mediaType) ->
+    js_setRequestHeader
+      xhr
+      (toJSString "Content-Type")
+      (toJSString $ cs $ renderHeader mediaType)
+
+  forM_ (toList $ requestHeaders request) $ \(key, value) ->
+    js_setRequestHeader xhr (toJSString $ cs $ original key) (toJSString $ cs value)
+
 foreign import javascript unsafe "$1.setRequestHeader($2, $3)"
   js_setRequestHeader :: JSXMLHttpRequest -> JSVal -> JSVal -> IO ()
 
