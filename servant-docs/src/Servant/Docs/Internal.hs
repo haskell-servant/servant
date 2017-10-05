@@ -647,6 +647,7 @@ markdown api = unlines $
             case (M.mainType mime_type, M.subType mime_type) of
                 ("text", "html") -> "html"
                 ("application", "xml") -> "xml"
+                ("text", "xml") -> "xml"
                 ("application", "json") -> "javascript"
                 ("application", "javascript") -> "javascript"
                 ("text", "css") -> "css"
