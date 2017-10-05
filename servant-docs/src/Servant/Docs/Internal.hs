@@ -20,24 +20,31 @@
 #include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
-import           Prelude ()
+import           Prelude                    ()
 import           Prelude.Compat
+
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, mapped, over, traversed, view, (%~),
-                                             (&), (.~), (<>~), (^.), (|>))
+import           Control.Lens               (makeLenses, mapped, over,
+                                             traversed, view, (%~), (&), (.~),
+                                             (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
-import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Char8      as BSC
+import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
+import           Data.Foldable              (fold)
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
 import           Data.List.Compat           (intercalate, intersperse, sort)
+import           Data.List.NonEmpty         (NonEmpty ((:|)), groupWith)
+import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe
-import           Data.Monoid                (All (..), Any (..), Sum (..), Product (..), First (..), Last (..), Dual (..))
-import           Data.Semigroup             (Semigroup (..))
+import           Data.Monoid                (All (..), Any (..), Dual (..),
+                                             First (..), Last (..),
+                                             Product (..), Sum (..))
 import           Data.Ord                   (comparing)
-import           Data.Proxy                 (Proxy(Proxy))
+import           Data.Proxy                 (Proxy (Proxy))
+import           Data.Semigroup             (Semigroup (..))
 import           Data.String.Conversions    (cs)
 import           Data.Text                  (Text, unpack)
 import           GHC.Generics
@@ -291,6 +298,23 @@ defAction =
 single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
+-- | How many examples should be shown?
+data ShowContentTypes = AllContentTypes | FirstContentType
+  deriving (Eq, Ord, Show, Read, Bounded, Enum)
+
+-- | Customise how an 'API' is converted into documentation.
+data ApiOptions = ApiOptions
+  { _requestExamples  :: !ShowContentTypes
+  , _responseExamples :: !ShowContentTypes
+  } deriving (Show)
+
+-- | Default API generation options.
+defApiOptions :: ApiOptions
+defApiOptions = ApiOptions
+  { _requestExamples  = AllContentTypes
+  , _responseExamples = AllContentTypes
+  }
+
 -- gimme some lenses
 makeLenses ''DocAuthentication
 makeLenses ''DocOptions
@@ -302,6 +326,7 @@ makeLenses ''DocIntro
 makeLenses ''DocNote
 makeLenses ''Response
 makeLenses ''Action
+makeLenses ''ApiOptions
 
 -- | Generate the docs for a given API that implements 'HasDocs'. This is the
 -- default way to create documentation.
@@ -518,7 +543,10 @@ class ToAuthInfo a where
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
-markdown api = unlines $
+markdown = markdownWith defApiOptions
+
+markdownWith :: ApiOptions -> API -> String
+markdownWith ApiOptions{..}  api = unlines $
        introsStr (api ^. apiIntros)
     ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
 
@@ -632,19 +660,34 @@ markdown api = unlines $
         rqbodyStr types s =
             ["#### Request:", ""]
             <> formatTypes types
-            <> formatBodies s
+            <> formatBodies _requestExamples s
 
         formatTypes [] = []
         formatTypes ts = ["- Supported content types are:", ""]
             <> map (\t -> "    - `" <> show t <> "`") ts
             <> [""]
 
-        formatBodies :: [(Text, M.MediaType, ByteString)] -> [String]
-        formatBodies = concatMap formatBody
+        -- This assumes that when the bodies are created, identical
+        -- labels and representations are located next to each other.
+        formatBodies :: ShowContentTypes -> [(Text, M.MediaType, ByteString)] -> [String]
+        formatBodies ex bds = concatMap formatBody (select bodyGroups)
+          where
+            bodyGroups :: [(Text, NonEmpty M.MediaType, ByteString)]
+            bodyGroups =
+              map (\grps -> let (t,_,b) = NE.head grps in (t, fmap (\(_,m,_) -> m) grps, b))
+              . groupWith (\(t,_,b) -> (t,b))
+              $ bds
 
-        formatBody (t, m, b) =
-          "- " <> cs t <> " (`" <> cs (show m) <> "`):" :
-          contentStr m b
+            select = case ex of
+                       AllContentTypes  -> id
+                       FirstContentType -> map (\(t,ms,b) -> (t, NE.head ms :| [], b))
+
+        formatBody :: (Text, NonEmpty M.MediaType, ByteString) -> [String]
+        formatBody (t, ms, b) =
+          "- " <> cs t <> " (" <> mediaList ms <> "):" :
+          contentStr (NE.head ms) b
+          where
+            mediaList = fold . NE.intersperse ", " . fmap (\m -> "`" ++ show m ++ "`")
 
         markdownForType mime_type =
             case (M.mainType mime_type, M.subType mime_type) of
@@ -679,7 +722,10 @@ markdown api = unlines $
                   []        -> ["- No response body\n"]
                   [("", t, r)] -> "- Response body as below." : contentStr t r
                   xs        ->
-                    formatBodies xs
+                    formatBodies _responseExamples xs
+
+uncurry3 :: (a -> b -> c -> d) -> (a,b,c) -> d
+uncurry3 f (a,b,c) = f a b c
 
 -- * Instances
 
