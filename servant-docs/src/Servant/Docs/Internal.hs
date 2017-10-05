@@ -632,15 +632,18 @@ markdown api = unlines $
         rqbodyStr types s =
             ["#### Request:", ""]
             <> formatTypes types
-            <> concatMap formatBody s
+            <> formatBodies s
 
         formatTypes [] = []
         formatTypes ts = ["- Supported content types are:", ""]
             <> map (\t -> "    - `" <> show t <> "`") ts
             <> [""]
 
+        formatBodies :: [(Text, M.MediaType, ByteString)] -> [String]
+        formatBodies = concatMap formatBody
+
         formatBody (t, m, b) =
-          "- Example (" <> cs t <> "): `" <> cs (show m) <> "`" :
+          "- " <> cs t <> " (`" <> cs (show m) <> "`):" :
           contentStr m b
 
         markdownForType mime_type =
@@ -676,7 +679,7 @@ markdown api = unlines $
                   []        -> ["- No response body\n"]
                   [("", t, r)] -> "- Response body as below." : contentStr t r
                   xs        ->
-                    concatMap (\(ctx, t, r) -> ("- " <> T.unpack ctx <> " (`" <> cs (show t) <> "`)") : contentStr t r) xs
+                    formatBodies xs
 
 -- * Instances
 
