@@ -23,6 +23,7 @@ extra-deps:
 - http-client-0.4.30
 - natural-transformation-0.4
 - primitive-0.6.1.0
+- semigroups-0.17
 - servant-js-0.9.3
 - should-not-typecheck-2.1.0
 - time-locale-compat-0.1.1.1
