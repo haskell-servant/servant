@@ -653,11 +653,12 @@ markdown api = unlines $
                 ("text", "css") -> "css"
                 (_, _) -> ""
 
+
         contentStr mime_type body =
           "" :
-          "```" <> markdownForType mime_type :
+          "    ```" <> markdownForType mime_type :
           cs body :
-          "```" :
+          "    ```" :
           "" :
           []
 
