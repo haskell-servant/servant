@@ -303,14 +303,14 @@ data ShowContentTypes = AllContentTypes | FirstContentType
   deriving (Eq, Ord, Show, Read, Bounded, Enum)
 
 -- | Customise how an 'API' is converted into documentation.
-data ApiOptions = ApiOptions
+data RenderingOptions = RenderingOptions
   { _requestExamples  :: !ShowContentTypes
   , _responseExamples :: !ShowContentTypes
   } deriving (Show)
 
 -- | Default API generation options.
-defApiOptions :: ApiOptions
-defApiOptions = ApiOptions
+defRenderingOptions :: RenderingOptions
+defRenderingOptions = RenderingOptions
   { _requestExamples  = AllContentTypes
   , _responseExamples = AllContentTypes
   }
@@ -326,7 +326,7 @@ makeLenses ''DocIntro
 makeLenses ''DocNote
 makeLenses ''Response
 makeLenses ''Action
-makeLenses ''ApiOptions
+makeLenses ''RenderingOptions
 
 -- | Generate the docs for a given API that implements 'HasDocs'. This is the
 -- default way to create documentation.
@@ -543,10 +543,10 @@ class ToAuthInfo a where
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 markdown :: API -> String
-markdown = markdownWith defApiOptions
+markdown = markdownWith defRenderingOptions
 
-markdownWith :: ApiOptions -> API -> String
-markdownWith ApiOptions{..}  api = unlines $
+markdownWith :: RenderingOptions -> API -> String
+markdownWith RenderingOptions{..}  api = unlines $
        introsStr (api ^. apiIntros)
     ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
 

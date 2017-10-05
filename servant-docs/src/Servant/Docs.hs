@@ -25,7 +25,7 @@ module Servant.Docs
   ( -- * 'HasDocs' class and key functions
     HasDocs(..), docs, pretty, markdown
     -- ** Customising generated documentation
-  , markdownWith, ApiOptions(..), defApiOptions
+  , markdownWith, RenderingOptions(..), defRenderingOptions
   , requestExamples, responseExamples, ShowContentTypes(..)
     -- * Generating docs with extra information
   , docsWith, docsWithIntros, docsWithOptions
