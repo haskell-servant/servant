@@ -724,9 +724,6 @@ markdownWith ApiOptions{..}  api = unlines $
                   xs        ->
                     formatBodies _responseExamples xs
 
-uncurry3 :: (a -> b -> c -> d) -> (a,b,c) -> d
-uncurry3 f (a,b,c) = f a b c
-
 -- * Instances
 
 -- | The generated docs for @a ':<|>' b@ just appends the docs
