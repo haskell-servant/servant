@@ -719,10 +719,14 @@ markdownWith RenderingOptions{..}  api = unlines $
 
         formatBody :: (Text, NonEmpty M.MediaType, ByteString) -> [String]
         formatBody (t, ms, b) =
-          "- " <> cs t <> " (" <> mediaList ms <> "):" :
+          "- " <> title <> " (" <> mediaList ms <> "):" :
           contentStr (NE.head ms) b
           where
             mediaList = fold . NE.intersperse ", " . fmap (\m -> "`" ++ show m ++ "`")
+
+            title
+              | T.null t  = "Example"
+              | otherwise = cs t
 
         markdownForType mime_type =
             case (M.mainType mime_type, M.subType mime_type) of
