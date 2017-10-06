@@ -211,6 +211,46 @@ docsBS = encodeUtf8
 
 `docsWithIntros` just takes an additional parameter, a list of `DocIntro`s that must be displayed before any endpoint docs.
 
+More customisation can be done with the `markdownWith` function, which allows customising some of the parameters used when generating Markdown.  The most obvious of these is how to handle when a request or response body has multiple content types.  For example, if we make a slight change to the `/marketing` endpoint of our API so that the request body can also be encoded as a form:
+
+``` haskell
+type ExampleAPI2 = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
+      :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
+      :<|> "marketing" :> ReqBody '[JSON, FormUrlEncoded] ClientInfo :> Post '[JSON] Email
+
+exampleAPI2 :: Proxy ExampleAPI2
+exampleAPI2 = Proxy
+
+api2Docs :: API
+api2Docs = docs exampleAPI2
+```
+
+The relevant output of `markdown api2Docs` is now:
+
+```````` text
+#### Request:
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+    - `application/x-www-form-urlencoded`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+{"clientAge":26,"clientEmail":"alp@foo.com","clientName":"Alp","clientInterestedIn":["haskell","mathematics"]}
+    ```
+
+- Example (`application/x-www-form-urlencoded`):
+
+    ```
+clientAge=26&clientEmail=alp%40foo.com&clientName=Alp&clientInterestedIn=haskell&clientInterestedIn=mathematics
+    ```
+````````
+
+If, however, you don't want the extra example encoding shown, then you can use `markdownWith (defRenderingOptions & requestExamples .~ FirstContentType)` to get behaviour identical to `markdown apiDocs`.
+
 We can now serve the API *and* the API docs with a simple server.
 
 ``` haskell
