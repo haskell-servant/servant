@@ -110,12 +110,6 @@ markdown :: API -> String
 That lets us see what our API docs look down in markdown, by looking at `markdown apiDocs`.
 
 ````````` text
-## Welcome
-
-This is our super webservice's API.
-
-Enjoy!
-
 ## GET /hello
 
 #### GET Parameters:
@@ -132,19 +126,20 @@ Enjoy!
 
 - Supported content types are:
 
+    - `application/json;charset=utf-8`
     - `application/json`
 
-- When a value is provided for 'name'
+- When a value is provided for 'name' (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"msg":"Hello, Alp"}
-  ```
+    ```javascript
+{"msg":"Hello, Alp"}
+    ```
 
-- When 'name' is not specified
+- When 'name' is not specified (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"msg":"Hello, anonymous coward"}
-  ```
+    ```javascript
+{"msg":"Hello, anonymous coward"}
+    ```
 
 ## POST /marketing
 
@@ -152,28 +147,30 @@ Enjoy!
 
 - Supported content types are:
 
+    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example: `application/json`
+- Example (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"email":"alp@foo.com","interested_in":["haskell","mathematics"],"age":26,"name":"Alp"}
-  ```
+    ```javascript
+{"clientAge":26,"clientEmail":"alp@foo.com","clientName":"Alp","clientInterestedIn":["haskell","mathematics"]}
+    ```
 
 #### Response:
 
-- Status code 201
+- Status code 200
 - Headers: []
 
 - Supported content types are:
 
+    - `application/json;charset=utf-8`
     - `application/json`
 
-- Response body as below.
+- Example (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"subject":"Hey Alp, we miss you!","body":"Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
-  ```
+    ```javascript
+{"subject":"Hey Alp, we miss you!","body":"Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
+    ```
 
 ## GET /position/:x/:y
 
@@ -189,13 +186,14 @@ Enjoy!
 
 - Supported content types are:
 
+    - `application/json;charset=utf-8`
     - `application/json`
 
-- Response body as below.
+- Example (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"x":3,"y":14}
-  ```
+    ```javascript
+{"yCoord":14,"xCoord":3}
+    ````
 
 `````````
 
