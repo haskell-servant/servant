@@ -298,17 +298,29 @@ defAction =
 single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
--- | How many examples should be shown?
-data ShowContentTypes = AllContentTypes | FirstContentType
+-- | How many content-types for each example should be shown?
+--
+--   @since 0.11.1
+data ShowContentTypes = AllContentTypes  -- ^ For each example, show each content type.
+                      | FirstContentType -- ^ For each example, show only one content type.
   deriving (Eq, Ord, Show, Read, Bounded, Enum)
 
 -- | Customise how an 'API' is converted into documentation.
+--
+--   @since 0.11.1
 data RenderingOptions = RenderingOptions
   { _requestExamples  :: !ShowContentTypes
+    -- ^ How many content types to display for request body examples?
   , _responseExamples :: !ShowContentTypes
+    -- ^ How many content types to display for response body examples?
   } deriving (Show)
 
 -- | Default API generation options.
+--
+--   All content types are shown for both 'requestExamples' and
+--   'responseExamples'.
+--
+--   @since 0.11.1
 defRenderingOptions :: RenderingOptions
 defRenderingOptions = RenderingOptions
   { _requestExamples  = AllContentTypes
@@ -542,9 +554,32 @@ class ToAuthInfo a where
 
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
+--
+--   This is equivalent to @'markdownWith' 'defRenderingOptions'@.
 markdown :: API -> String
 markdown = markdownWith defRenderingOptions
 
+-- | Generate documentation in Markdown format for
+--   the given 'API' using the specified options.
+--
+--   These options allow you to customise aspects such as:
+--
+--   * Choose how many content-types for each request body example are
+--     shown with 'requestExamples'.
+--
+--   * Choose how many content-types for each response body example
+--     are shown with 'responseExamples'.
+--
+--   For example, to only show the first content-type of each example:
+--
+--   @
+--   markdownWith ('defRenderingOptions'
+--                   & 'requestExamples'  '.~' 'FirstContentType'
+--                   & 'responseExamples' '.~' 'FirstContentType' )
+--                myAPI
+--   @
+--
+--   @since 0.11.1
 markdownWith :: RenderingOptions -> API -> String
 markdownWith RenderingOptions{..}  api = unlines $
        introsStr (api ^. apiIntros)
