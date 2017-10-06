@@ -1,0 +1,47 @@
+aliases: &build
+    machine: true
+    steps: 
+      - checkout
+
+      - run: echo 'export PATH=$HOME/.local/bin:$PATH' >> $BASH_ENV
+      - run: echo "export STACK_YAML=$CIRCLE_JOB" >> $BASH_ENV
+      - run: if [ "$STACK_YAML" = "stack-ghc-8.2.1.yaml" ]; then echo "export HOMEMODULES=--ghc-options=-Wno-missing-home-modules" >> $BASH_ENV; fi        
+
+      - run: cp $STACK_YAML "stack-cache-key"
+      - restore_cache:
+          keys:
+            - v1-cache-{{ checksum "stack-cache-key"}}
+        
+      - run: sudo apt-get update
+      - run: sudo apt-get install libgmp-dev
+
+      - run: mkdir -p ~/.local/bin
+      - run: curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+      - run: stack --version
+
+      - run: stack setup --no-terminal
+      - run: cd ~/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc
+      - run: stack test $HOMEMODULES --ghc-options=-Werror --no-terminal
+
+      - save_cache:
+          key: v1-cache-{{ checksum "stack-cache-key"}}-{{ epoch }}
+          paths:
+            - ~/.tinc/cache
+            - ~/.stack
+
+
+version: 2
+jobs:
+  stack.yaml: *build
+  stack-ghc-7.8.4.yaml: *build
+  stack-ghc-7.10.3.yaml: *build
+  stack-ghc-8.2.1.yaml: *build
+        
+workflows:
+  version: 2
+  build_all:
+    jobs:
+      - stack.yaml
+      - stack-ghc-7.8.4.yaml
+      - stack-ghc-7.10.3.yaml
+      - stack-ghc-8.2.1.yaml
