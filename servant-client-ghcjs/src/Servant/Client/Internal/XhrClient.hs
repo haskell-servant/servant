@@ -89,7 +89,13 @@ performRequest req = do
   xhr <- liftIO initXhr
   burl <- asks baseUrl
   liftIO $ performXhr xhr burl req
-  toResponse xhr
+  resp <- toResponse xhr
+
+  let status = statusCode (responseStatusCode resp)
+  unless (status >= 200 && status < 300) $
+        throwError $ FailureResponse resp
+
+  pure resp
 
 -- * initialization
 
