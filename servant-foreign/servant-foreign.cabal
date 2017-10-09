@@ -31,10 +31,10 @@ library
                      , Servant.Foreign.Internal
                      , Servant.Foreign.Inflections
   build-depends:       base       == 4.*
-                     , http-media == 0.7.*
                      , lens       == 4.*
                      , servant    == 0.11.*
                      , text       >= 1.2  && < 1.3
+                     , http-media
                      , http-types
   hs-source-dirs:      src
   default-language:    Haskell2010
