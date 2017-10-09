@@ -31,6 +31,7 @@ library
                      , servant-docs == 0.11.*
                      , servant-js >= 0.9 && <0.10
                      , warp
+                     , http-api-data
                      , http-media
                      , lucid
                      , time

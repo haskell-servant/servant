@@ -23,6 +23,7 @@ import Network.Wai
 import Servant.API
 import Servant.Docs
 import Servant.Server
+import Web.FormUrlEncoded(FromForm(..), ToForm(..))
 ```
 
 And we'll import some things from one of our earlier modules
@@ -217,6 +218,9 @@ More customisation can be done with the `markdownWith` function, which allows cu
 type ExampleAPI2 = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
       :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
       :<|> "marketing" :> ReqBody '[JSON, FormUrlEncoded] ClientInfo :> Post '[JSON] Email
+
+instance ToForm ClientInfo
+instance FromForm ClientInfo
 
 exampleAPI2 :: Proxy ExampleAPI2
 exampleAPI2 = Proxy
