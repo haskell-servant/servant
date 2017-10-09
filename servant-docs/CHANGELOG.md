@@ -7,6 +7,8 @@
 * Document the HTTP Method the parameters of an endpoint belong to
   (rather than assuming `GET` for all of them).
 * Content type of sample response body is also displayed.
+* Can now control how many content-types for each example are shown
+  with `markdownWith` and `RenderingOptions`.
 
 0.11
 ----

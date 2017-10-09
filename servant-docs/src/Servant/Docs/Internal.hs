@@ -20,24 +20,31 @@
 #include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
-import           Prelude ()
+import           Prelude                    ()
 import           Prelude.Compat
+
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, mapped, over, traversed, view, (%~),
-                                             (&), (.~), (<>~), (^.), (|>))
+import           Control.Lens               (makeLenses, mapped, over,
+                                             traversed, view, (%~), (&), (.~),
+                                             (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
-import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Char8      as BSC
+import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
+import           Data.Foldable              (fold)
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
 import           Data.List.Compat           (intercalate, intersperse, sort)
+import           Data.List.NonEmpty         (NonEmpty ((:|)), groupWith)
+import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe
-import           Data.Monoid                (All (..), Any (..), Sum (..), Product (..), First (..), Last (..), Dual (..))
-import           Data.Semigroup             (Semigroup (..))
+import           Data.Monoid                (All (..), Any (..), Dual (..),
+                                             First (..), Last (..),
+                                             Product (..), Sum (..))
 import           Data.Ord                   (comparing)
-import           Data.Proxy                 (Proxy(Proxy))
+import           Data.Proxy                 (Proxy (Proxy))
+import           Data.Semigroup             (Semigroup (..))
 import           Data.String.Conversions    (cs)
 import           Data.Text                  (Text, unpack)
 import           GHC.Generics
@@ -291,6 +298,35 @@ defAction =
 single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
+-- | How many content-types for each example should be shown?
+--
+--   @since 0.11.1
+data ShowContentTypes = AllContentTypes  -- ^ For each example, show each content type.
+                      | FirstContentType -- ^ For each example, show only one content type.
+  deriving (Eq, Ord, Show, Read, Bounded, Enum)
+
+-- | Customise how an 'API' is converted into documentation.
+--
+--   @since 0.11.1
+data RenderingOptions = RenderingOptions
+  { _requestExamples  :: !ShowContentTypes
+    -- ^ How many content types to display for request body examples?
+  , _responseExamples :: !ShowContentTypes
+    -- ^ How many content types to display for response body examples?
+  } deriving (Show)
+
+-- | Default API generation options.
+--
+--   All content types are shown for both 'requestExamples' and
+--   'responseExamples'.
+--
+--   @since 0.11.1
+defRenderingOptions :: RenderingOptions
+defRenderingOptions = RenderingOptions
+  { _requestExamples  = AllContentTypes
+  , _responseExamples = AllContentTypes
+  }
+
 -- gimme some lenses
 makeLenses ''DocAuthentication
 makeLenses ''DocOptions
@@ -302,6 +338,7 @@ makeLenses ''DocIntro
 makeLenses ''DocNote
 makeLenses ''Response
 makeLenses ''Action
+makeLenses ''RenderingOptions
 
 -- | Generate the docs for a given API that implements 'HasDocs'. This is the
 -- default way to create documentation.
@@ -517,8 +554,34 @@ class ToAuthInfo a where
 
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
+--
+--   This is equivalent to @'markdownWith' 'defRenderingOptions'@.
 markdown :: API -> String
-markdown api = unlines $
+markdown = markdownWith defRenderingOptions
+
+-- | Generate documentation in Markdown format for
+--   the given 'API' using the specified options.
+--
+--   These options allow you to customise aspects such as:
+--
+--   * Choose how many content-types for each request body example are
+--     shown with 'requestExamples'.
+--
+--   * Choose how many content-types for each response body example
+--     are shown with 'responseExamples'.
+--
+--   For example, to only show the first content-type of each example:
+--
+--   @
+--   markdownWith ('defRenderingOptions'
+--                   & 'requestExamples'  '.~' 'FirstContentType'
+--                   & 'responseExamples' '.~' 'FirstContentType' )
+--                myAPI
+--   @
+--
+--   @since 0.11.1
+markdownWith :: RenderingOptions -> API -> String
+markdownWith RenderingOptions{..}  api = unlines $
        introsStr (api ^. apiIntros)
     ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
 
@@ -632,31 +695,55 @@ markdown api = unlines $
         rqbodyStr types s =
             ["#### Request:", ""]
             <> formatTypes types
-            <> concatMap formatBody s
+            <> formatBodies _requestExamples s
 
         formatTypes [] = []
         formatTypes ts = ["- Supported content types are:", ""]
             <> map (\t -> "    - `" <> show t <> "`") ts
             <> [""]
 
-        formatBody (t, m, b) =
-          "- Example (" <> cs t <> "): `" <> cs (show m) <> "`" :
-          contentStr m b
+        -- This assumes that when the bodies are created, identical
+        -- labels and representations are located next to each other.
+        formatBodies :: ShowContentTypes -> [(Text, M.MediaType, ByteString)] -> [String]
+        formatBodies ex bds = concatMap formatBody (select bodyGroups)
+          where
+            bodyGroups :: [(Text, NonEmpty M.MediaType, ByteString)]
+            bodyGroups =
+              map (\grps -> let (t,_,b) = NE.head grps in (t, fmap (\(_,m,_) -> m) grps, b))
+              . groupWith (\(t,_,b) -> (t,b))
+              $ bds
+
+            select = case ex of
+                       AllContentTypes  -> id
+                       FirstContentType -> map (\(t,ms,b) -> (t, NE.head ms :| [], b))
+
+        formatBody :: (Text, NonEmpty M.MediaType, ByteString) -> [String]
+        formatBody (t, ms, b) =
+          "- " <> title <> " (" <> mediaList ms <> "):" :
+          contentStr (NE.head ms) b
+          where
+            mediaList = fold . NE.intersperse ", " . fmap (\m -> "`" ++ show m ++ "`")
+
+            title
+              | T.null t  = "Example"
+              | otherwise = cs t
 
         markdownForType mime_type =
             case (M.mainType mime_type, M.subType mime_type) of
                 ("text", "html") -> "html"
                 ("application", "xml") -> "xml"
+                ("text", "xml") -> "xml"
                 ("application", "json") -> "javascript"
                 ("application", "javascript") -> "javascript"
                 ("text", "css") -> "css"
                 (_, _) -> ""
 
+
         contentStr mime_type body =
           "" :
-          "```" <> markdownForType mime_type :
+          "    ```" <> markdownForType mime_type :
           cs body :
-          "```" :
+          "    ```" :
           "" :
           []
 
@@ -674,7 +761,7 @@ markdown api = unlines $
                   []        -> ["- No response body\n"]
                   [("", t, r)] -> "- Response body as below." : contentStr t r
                   xs        ->
-                    concatMap (\(ctx, t, r) -> ("- " <> T.unpack ctx <> " (`" <> cs (show t) <> "`)") : contentStr t r) xs
+                    formatBodies _responseExamples xs
 
 -- * Instances
 
