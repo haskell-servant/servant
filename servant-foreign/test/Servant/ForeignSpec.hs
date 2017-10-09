@@ -3,6 +3,7 @@
 
 module Servant.ForeignSpec where
 
+import Data.List.NonEmpty (toList)
 import Data.Monoid ((<>))
 import Data.Proxy
 import Servant.Foreign
@@ -57,6 +58,7 @@ type TestApi
  :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] NoContent
  :<|> "test" :> Capture "id" Int :> Delete '[JSON] NoContent
  :<|> "test" :> CaptureAll "ids" Int :> Get '[JSON] [Int]
+ :<|> "test" :> "text" :> Get '[PlainText] String
  :<|> "test" :> EmptyAPI
 
 testApi :: [Req String]
@@ -65,9 +67,9 @@ testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: P
 listFromAPISpec :: Spec
 listFromAPISpec = describe "listFromAPI" $ do
   it "generates 5 endpoints for TestApi" $ do
-    length testApi `shouldBe` 5
+    length testApi `shouldBe` 6
 
-  let [getReq, postReq, putReq, deleteReq, captureAllReq] = testApi
+  let [getReq, postReq, putReq, deleteReq, captureAllReq, getTextReq] = testApi
 
   it "collects all info for get request" $ do
     shouldBe getReq $ defReq
@@ -79,6 +81,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Nothing
       , _reqReturnType = Just "intX"
       , _reqFuncName   = FunctionName ["get", "test"]
+      , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
       }
 
   it "collects all info for post request" $ do
@@ -91,6 +94,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Just "listX of stringX"
       , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["post", "test"]
+      , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
       }
 
   it "collects all info for put request" $ do
@@ -104,6 +108,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Just "stringX"
       , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["put", "test"]
+      , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
       }
 
   it "collects all info for delete request" $ do
@@ -117,6 +122,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Nothing
       , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["delete", "test", "by", "id"]
+      , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
       }
 
   it "collects all info for capture all request" $ do
@@ -130,4 +136,20 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Nothing
       , _reqReturnType = Just "listX of intX"
       , _reqFuncName   = FunctionName ["get", "test", "by", "ids"]
+      , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
       }
+
+  it "collects all info for plaintext request" $ do
+    shouldBe getTextReq $ defReq
+      { _reqUrl        = Url
+          [ Segment $ Static "test"
+          , Segment $ Static "text" ]
+          []
+      , _reqMethod     = "GET"
+      , _reqHeaders    = []
+      , _reqBody       = Nothing
+      , _reqReturnType = Just "stringX"
+      , _reqFuncName   = FunctionName ["get", "test", "text"]
+      , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy PlainText)
+      }
+
