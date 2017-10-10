@@ -1,16 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE TypeFamilies      #-}
 
 -- | Authentication for clients
 
-module Servant.Client.Experimental.Auth (
-    AuthenticateReq(AuthenticateReq, unAuthReq)
-  , AuthClientData
-  , mkAuthenticateReq
-  ) where
+module Servant.Client.Core.Internal.Auth where
 
-import Servant.Common.Req (Req)
+import           Servant.Client.Core.Internal.Request (Request)
 
 -- | For a resource protected by authentication (e.g. AuthProtect), we need
 -- to provide the client with some data used to add authentication data
@@ -24,13 +20,13 @@ type family AuthClientData a :: *
 -- data to a request
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-newtype AuthenticateReq a =
-  AuthenticateReq { unAuthReq :: (AuthClientData a, AuthClientData a -> Req -> Req) }
+newtype AuthenticatedRequest a =
+  AuthenticatedRequest { unAuthReq :: (AuthClientData a, AuthClientData a -> Request -> Request) }
 
 -- | Handy helper to avoid wrapping datatypes in tuples everywhere.
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-mkAuthenticateReq :: AuthClientData a
-                  -> (AuthClientData a -> Req -> Req)
-                  -> AuthenticateReq a
-mkAuthenticateReq val func = AuthenticateReq (val, func)
+mkAuthenticatedRequest :: AuthClientData a
+                  -> (AuthClientData a -> Request -> Request)
+                  -> AuthenticatedRequest a
+mkAuthenticatedRequest val func = AuthenticatedRequest (val, func)

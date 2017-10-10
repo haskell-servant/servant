@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -7,6 +8,12 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# OPTIONS_GHC -freduction-depth=100 #-}
+#else
+{-# OPTIONS_GHC -fcontext-stack=100 #-}
+#endif
+
 module Servant.DocsSpec where
 
 import           Control.Lens
@@ -104,6 +111,9 @@ spec = describe "Servant.Docs" $ do
     it "contains request body samples" $
       md `shouldContain` "17"
 
+    it "does not generate any docs mentioning the 'empty-api' path" $
+      md `shouldNotContain` "empty-api"
+
 
 -- * APIs
 
@@ -128,6 +138,7 @@ instance MimeRender PlainText Int where
 type TestApi1 = Get '[JSON, PlainText] (Headers '[Header "Location" String] Int)
            :<|> ReqBody '[JSON] String :> Post '[JSON] Datatype1
            :<|> Header "X-Test" Int :> Put '[JSON] Int
+           :<|> "empty-api" :> EmptyAPI
 
 data TT = TT1 | TT2 deriving (Show, Eq)
 data UT = UT1 | UT2 deriving (Show, Eq)

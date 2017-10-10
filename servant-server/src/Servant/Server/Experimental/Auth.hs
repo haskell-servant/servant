@@ -21,9 +21,8 @@ import           Network.Wai                                (Request)
 import           Servant                                    ((:>))
 import           Servant.API.Experimental.Auth
 import           Servant.Server.Internal                    (HasContextEntry,
-                                                             HasServer, ServerT,
-                                                             getContextEntry,
-                                                             route)
+                                                             HasServer (..),
+                                                             getContextEntry)
 import           Servant.Server.Internal.RoutingApplication (addAuthCheck,
                                                              delayedFailFatal,
                                                              DelayedIO,
@@ -57,6 +56,8 @@ instance ( HasServer api context
 
   type ServerT (AuthProtect tag :> api) m =
     AuthServerData (AuthProtect tag) -> ServerT api m
+
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (subserver `addAuthCheck` withRequest authCheck)

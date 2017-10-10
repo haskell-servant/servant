@@ -1,5 +1,5 @@
 name:                servant
-version:             0.10
+version:             0.11
 synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -14,7 +14,7 @@ license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
-category:            Servant Web
+category:            Servant, Web
 build-type:          Custom
 cabal-version:       >=1.10
 tested-with:         GHC >= 7.8
@@ -27,7 +27,9 @@ source-repository head
 
 custom-setup
   setup-depends:
-     Cabal >=1.14, base, filepath, directory
+    base >= 4 && <5,
+    Cabal,
+    cabal-doctest >= 1.0.2 && <1.1
 
 library
   exposed-modules:
@@ -36,6 +38,8 @@ library
     Servant.API.BasicAuth
     Servant.API.Capture
     Servant.API.ContentTypes
+    Servant.API.Description
+    Servant.API.Empty
     Servant.API.Experimental.Auth
     Servant.API.Header
     Servant.API.HttpVersion
@@ -54,18 +58,19 @@ library
     Servant.Utils.Links
     Servant.Utils.Enter
   build-depends:
-      base                  >= 4.7  && < 4.10
+      base                  >= 4.7  && < 4.11
     , base-compat           >= 0.9  && < 0.10
     , aeson                 >= 0.7  && < 1.3
     , attoparsec            >= 0.12 && < 0.14
     , bytestring            >= 0.10 && < 0.11
     , case-insensitive      >= 1.2  && < 1.3
     , http-api-data         >= 0.3  && < 0.4
-    , http-media            >= 0.4  && < 0.7
+    , http-media            >= 0.4  && < 0.8
     , http-types            >= 0.8  && < 0.10
     , natural-transformation >= 0.4 && < 0.5
     , mtl                   >= 2.0  && < 2.3
-    , mmorph                >= 1    && < 1.1
+    , mmorph                >= 1    && < 1.2
+    , tagged                >= 0.7.3 && < 0.9
     , text                  >= 1    && < 1.3
     , string-conversions    >= 0.3  && < 0.5
     , network-uri           >= 2.6  && < 2.7
@@ -145,5 +150,8 @@ test-suite doctests
  buildable: True
  default-language: Haskell2010
  ghc-options: -Wall -threaded
- build-tools: hsc2hs
+ if impl(ghc >= 8.2)
+   x-doctest-options: -fdiagnostics-color=never
  include-dirs: include
+ x-doctest-source-dirs: test
+ x-doctest-modules: Servant.Utils.LinksSpec

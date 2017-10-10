@@ -23,6 +23,7 @@ import Network.Wai
 import Servant.API
 import Servant.Docs
 import Servant.Server
+import Web.FormUrlEncoded(FromForm(..), ToForm(..))
 ```
 
 And we'll import some things from one of our earlier modules
@@ -89,6 +90,8 @@ instance ToSample Email where
 ```
 
 Types that are used as request or response bodies have to instantiate the `ToSample` typeclass which lets you specify one or more examples of values. `Capture`s and `QueryParam`s have to instantiate their respective `ToCapture` and `ToParam` classes and provide a name and some information about the concrete meaning of that argument, as illustrated in the code above.
+The `EmptyAPI` combinator needs no special treatment as it generates no
+documentation: an empty API has no endpoints to document.
 
 With all of this, we can derive docs for our API.
 
@@ -108,12 +111,6 @@ markdown :: API -> String
 That lets us see what our API docs look down in markdown, by looking at `markdown apiDocs`.
 
 ````````` text
-## Welcome
-
-This is our super webservice's API.
-
-Enjoy!
-
 ## GET /hello
 
 #### GET Parameters:
@@ -130,19 +127,20 @@ Enjoy!
 
 - Supported content types are:
 
+    - `application/json;charset=utf-8`
     - `application/json`
 
-- When a value is provided for 'name'
+- When a value is provided for 'name' (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"msg":"Hello, Alp"}
-  ```
+    ```javascript
+{"msg":"Hello, Alp"}
+    ```
 
-- When 'name' is not specified
+- When 'name' is not specified (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"msg":"Hello, anonymous coward"}
-  ```
+    ```javascript
+{"msg":"Hello, anonymous coward"}
+    ```
 
 ## POST /marketing
 
@@ -150,28 +148,30 @@ Enjoy!
 
 - Supported content types are:
 
+    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example: `application/json`
+- Example (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"email":"alp@foo.com","interested_in":["haskell","mathematics"],"age":26,"name":"Alp"}
-  ```
+    ```javascript
+{"clientAge":26,"clientEmail":"alp@foo.com","clientName":"Alp","clientInterestedIn":["haskell","mathematics"]}
+    ```
 
 #### Response:
 
-- Status code 201
+- Status code 200
 - Headers: []
 
 - Supported content types are:
 
+    - `application/json;charset=utf-8`
     - `application/json`
 
-- Response body as below.
+- Example (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"subject":"Hey Alp, we miss you!","body":"Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
-  ```
+    ```javascript
+{"subject":"Hey Alp, we miss you!","body":"Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
+    ```
 
 ## GET /position/:x/:y
 
@@ -187,13 +187,14 @@ Enjoy!
 
 - Supported content types are:
 
+    - `application/json;charset=utf-8`
     - `application/json`
 
-- Response body as below.
+- Example (`application/json;charset=utf-8`, `application/json`):
 
-  ```javascript
-  {"x":3,"y":14}
-  ```
+    ```javascript
+{"yCoord":14,"xCoord":3}
+    ````
 
 `````````
 
@@ -211,6 +212,49 @@ docsBS = encodeUtf8
 
 `docsWithIntros` just takes an additional parameter, a list of `DocIntro`s that must be displayed before any endpoint docs.
 
+More customisation can be done with the `markdownWith` function, which allows customising some of the parameters used when generating Markdown.  The most obvious of these is how to handle when a request or response body has multiple content types.  For example, if we make a slight change to the `/marketing` endpoint of our API so that the request body can also be encoded as a form:
+
+``` haskell
+type ExampleAPI2 = "position" :> Capture "x" Int :> Capture "y" Int :> Get '[JSON] Position
+      :<|> "hello" :> QueryParam "name" String :> Get '[JSON] HelloMessage
+      :<|> "marketing" :> ReqBody '[JSON, FormUrlEncoded] ClientInfo :> Post '[JSON] Email
+
+instance ToForm ClientInfo
+instance FromForm ClientInfo
+
+exampleAPI2 :: Proxy ExampleAPI2
+exampleAPI2 = Proxy
+
+api2Docs :: API
+api2Docs = docs exampleAPI2
+```
+
+The relevant output of `markdown api2Docs` is now:
+
+```````` text
+#### Request:
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+    - `application/x-www-form-urlencoded`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+{"clientAge":26,"clientEmail":"alp@foo.com","clientName":"Alp","clientInterestedIn":["haskell","mathematics"]}
+    ```
+
+- Example (`application/x-www-form-urlencoded`):
+
+    ```
+clientAge=26&clientEmail=alp%40foo.com&clientName=Alp&clientInterestedIn=haskell&clientInterestedIn=mathematics
+    ```
+````````
+
+If, however, you don't want the extra example encoding shown, then you can use `markdownWith (defRenderingOptions & requestExamples .~ FirstContentType)` to get behaviour identical to `markdown apiDocs`.
+
 We can now serve the API *and* the API docs with a simple server.
 
 ``` haskell
@@ -220,12 +264,10 @@ api :: Proxy DocsAPI
 api = Proxy
 
 server :: Server DocsAPI
-server = Server.server3 :<|> serveDocs
-
-  where serveDocs _ respond =
-          respond $ responseLBS ok200 [plain] docsBS
-
-        plain = ("Content-Type", "text/plain")
+server = Server.server3 :<|> Tagged serveDocs where
+    serveDocs _ respond =
+        respond $ responseLBS ok200 [plain] docsBS
+    plain = ("Content-Type", "text/plain")
 
 app :: Application
 app = serve api server

@@ -1,5 +1,41 @@
+Unreleased changes
+---
+
+- Lower `:>` and `:<|>` infix precedence to 4 and 3 respectively
+  ([#761](https://github.com/haskell-servant/servant/issues/761))
+
+0.11
+----
+
+### Breaking changes
+
+- `Enter` refactored
+  ([#734](https://github.com/haskell-servant/servant/issues/734)
+  , [#736](https://github.com/haskell-servant/servant/pull/736))
+
+### Other changes
+
+- Add a type representing an empty API
+  ([#753](https://github.com/haskell-servant/servant/pull/753))
+- Add `linkURI'` and `Link` accessors
+  ([#745](https://github.com/haskell-servant/servant/pull/745)
+  , [#717](https://github.com/haskell-servant/servant/pull/717)
+  , [#715](https://github.com/haskell-servant/servant/issues/715))
+- Prepare for GHC-8.2
+  ([#722](https://github.com/haskell-servant/servant/pull/722))
+- Add `HasLink AuthProtect` instance
+  ([#720](https://github.com/haskell-servant/servant/pull/720))
+- `AllCTRender [] ()` `TypeError` (use `NoContent`)
+  ([#671](https://github.com/haskell-servant/servant/pull/671))
+- Documentation improvements and typo fixes
+  ([#702](https://github.com/haskell-servant/servant/pull/702)
+  , [#709](https://github.com/haskell-servant/servant/pull/709)
+  , [#716](https://github.com/haskell-servant/servant/pull/716)
+  , [#725](https://github.com/haskell-servant/servant/pull/725)
+  , [#727](https://github.com/haskell-servant/servant/pull/727))
+
 0.10
-------
+----
 
 ### Breaking changes
 

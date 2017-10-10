@@ -29,6 +29,8 @@ instance (HasContextEntry context String, HasServer subApi context) =>
   type ServerT (ExtractFromContext :> subApi) m =
     String -> ServerT subApi m
 
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy subApi) pc nt . s
+
   route Proxy context delayed =
     route subProxy context (fmap inject delayed)
     where
@@ -45,6 +47,9 @@ instance (HasServer subApi (String ': context)) =>
   type ServerT (InjectIntoContext :> subApi) m =
     ServerT subApi m
 
+  hoistServerWithContext _ _ nt s =
+    hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy (String ': context)) nt s
+
   route Proxy context delayed =
     route subProxy newContext delayed
     where
@@ -60,6 +65,9 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 
   type ServerT (NamedContextWithBirdface name subContext :> subApi) m =
     ServerT subApi m
+
+  hoistServerWithContext _ _ nt s =
+    hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
 
   route Proxy context delayed =
     route subProxy subContext delayed

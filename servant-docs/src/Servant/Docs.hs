@@ -24,6 +24,9 @@
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
     HasDocs(..), docs, pretty, markdown
+    -- ** Customising generated documentation
+  , markdownWith, RenderingOptions(..), defRenderingOptions
+  , requestExamples, responseExamples, ShowContentTypes(..)
     -- * Generating docs with extra information
   , docsWith, docsWithIntros, docsWithOptions
   , ExtraInfo(..), extraInfo
@@ -43,12 +46,13 @@ module Servant.Docs
   , -- * ADTs to represent an 'API'
     Endpoint, path, method, defEndpoint
   , API, apiIntros, apiEndpoints, emptyAPI
+  , DocAuthentication(..), authIntro, authDataRequired
   , DocCapture(..), capSymbol, capDesc
   , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
   , DocNote(..), noteTitle, noteBody
   , DocIntro(..), introTitle, introBody
   , Response(..), respStatus, respTypes, respBody, defResponse
-  , Action, captures, headers, notes, params, rqtypes, rqbody, response, defAction
+  , Action, authInfo, captures, headers, notes, params, rqtypes, rqbody, response, defAction
   , single
   ) where
 

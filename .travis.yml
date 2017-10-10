@@ -1,11 +1,13 @@
 sudo: false
+dist: trusty
 
 language: c
 
 env:
   - STACK_YAML=stack-ghc-7.8.4.yaml
+  - STACK_YAML=stack-ghc-7.10.3.yaml
   - STACK_YAML=stack.yaml
-  - STACK_YAML=stack-ghc-8.0.2.yaml
+  - STACK_YAML=stack-ghc-8.2.1.yaml
 
 addons:
   apt:
@@ -21,7 +23,8 @@ install:
   - (cd $HOME/.local/bin && wget https://zalora-public.s3.amazonaws.com/tinc && chmod +x tinc)
 
 script:
-  - if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ; then ./scripts/ci-cron.sh ; else stack test --ghc-options=-Werror --no-terminal ; fi
+  - if [ "$STACK_YAML" = "stack-ghc-8.2.1.yaml" ]; then HOMEMODULES="--ghc-options=-Wno-missing-home-modules"; fi
+  - if [ "$TRAVIS_EVENT_TYPE" = "cron" ] ; then ./scripts/ci-cron.sh ; else stack test $HOMEMODULES --ghc-options=-Werror --no-terminal ; fi
 
 cache:
   directories:

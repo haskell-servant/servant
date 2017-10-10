@@ -1,3 +1,15 @@
+0.11
+----
+
+### Other changes
+
+- Path components are escaped
+  ([#696](https://github.com/haskell-servant/servant/pull/696))
+- `Req` `reqPath` field changed from `String` to `BS.Builder`
+  ([#696](https://github.com/haskell-servant/servant/pull/696))
+- Include `Req` in failure errors
+  ([#740](https://github.com/haskell-servant/servant/pull/740))
+
 0.10
 -----
 

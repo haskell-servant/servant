@@ -20,24 +20,31 @@
 #include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
-import           Prelude ()
+import           Prelude                    ()
 import           Prelude.Compat
+
 import           Control.Applicative
 import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, mapped, over, traversed, view, (%~),
-                                             (&), (.~), (<>~), (^.), (|>))
+import           Control.Lens               (makeLenses, mapped, over,
+                                             traversed, view, (%~), (&), (.~),
+                                             (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
-import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Char8      as BSC
+import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive       as CI
+import           Data.Foldable              (fold)
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
 import           Data.List.Compat           (intercalate, intersperse, sort)
+import           Data.List.NonEmpty         (NonEmpty ((:|)), groupWith)
+import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe
-import           Data.Monoid                (All (..), Any (..), Sum (..), Product (..), First (..), Last (..), Dual (..))
-import           Data.Semigroup             (Semigroup (..))
+import           Data.Monoid                (All (..), Any (..), Dual (..),
+                                             First (..), Last (..),
+                                             Product (..), Sum (..))
 import           Data.Ord                   (comparing)
-import           Data.Proxy                 (Proxy(Proxy))
+import           Data.Proxy                 (Proxy (Proxy))
+import           Data.Semigroup             (Semigroup (..))
 import           Data.String.Conversions    (cs)
 import           Data.Text                  (Text, unpack)
 import           GHC.Generics
@@ -125,9 +132,10 @@ data DocCapture = DocCapture
   , _capDesc   :: String -- user supplied
   } deriving (Eq, Ord, Show)
 
--- | A type to represent a /GET/ parameter from the Query String. Holds its name,
---   the possible values (leave empty if there isn't a finite number of them),
---   and a description of how it influences the output or behavior.
+-- | A type to represent a /GET/ (or other possible 'HTTP.Method')
+--   parameter from the Query String. Holds its name, the possible
+--   values (leave empty if there isn't a finite number of them), and
+--   a description of how it influences the output or behavior.
 --
 -- Write a 'ToParam' instance for your GET parameter types
 data DocQueryParam = DocQueryParam
@@ -185,7 +193,7 @@ defaultDocOptions :: DocOptions
 defaultDocOptions = DocOptions
   { _maxSamples = 5 }
 
--- | Type of GET parameter:
+-- | Type of GET (or other 'HTTP.Method') parameter:
 --
 -- - Normal corresponds to @QueryParam@, i.e your usual GET parameter
 -- - List corresponds to @QueryParams@, i.e GET parameters with multiple values
@@ -235,7 +243,7 @@ defResponse = Response
 -- at an endpoint, with its lenses:
 --
 -- - List of captures ('captures')
--- - List of GET parameters ('params')
+-- - List of GET (or other 'HTTP.Method') parameters ('params')
 -- - What the request body should look like, if any is requested ('rqbody')
 -- - What the response should be if everything goes well ('response')
 --
@@ -249,7 +257,7 @@ data Action = Action
   , _notes    :: [DocNote]                   -- user supplied
   , _mxParams :: [(String, [DocQueryParam])] -- type collected + user supplied info
   , _rqtypes  :: [M.MediaType]               -- type collected
-  , _rqbody   :: [(M.MediaType, ByteString)] -- user supplied
+  , _rqbody   :: [(Text, M.MediaType, ByteString)] -- user supplied
   , _response :: Response                    -- user supplied
   } deriving (Eq, Ord, Show)
 
@@ -263,7 +271,7 @@ combineAction :: Action -> Action -> Action
 Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
         Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
 
--- Default 'Action'. Has no 'captures', no GET 'params', expects
+-- | Default 'Action'. Has no 'captures', no query 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
 --
 -- Tweakable with lenses.
@@ -290,6 +298,35 @@ defAction =
 single :: Endpoint -> Action -> API
 single e a = API mempty (HM.singleton e a)
 
+-- | How many content-types for each example should be shown?
+--
+--   @since 0.11.1
+data ShowContentTypes = AllContentTypes  -- ^ For each example, show each content type.
+                      | FirstContentType -- ^ For each example, show only one content type.
+  deriving (Eq, Ord, Show, Read, Bounded, Enum)
+
+-- | Customise how an 'API' is converted into documentation.
+--
+--   @since 0.11.1
+data RenderingOptions = RenderingOptions
+  { _requestExamples  :: !ShowContentTypes
+    -- ^ How many content types to display for request body examples?
+  , _responseExamples :: !ShowContentTypes
+    -- ^ How many content types to display for response body examples?
+  } deriving (Show)
+
+-- | Default API generation options.
+--
+--   All content types are shown for both 'requestExamples' and
+--   'responseExamples'.
+--
+--   @since 0.11.1
+defRenderingOptions :: RenderingOptions
+defRenderingOptions = RenderingOptions
+  { _requestExamples  = AllContentTypes
+  , _responseExamples = AllContentTypes
+  }
+
 -- gimme some lenses
 makeLenses ''DocAuthentication
 makeLenses ''DocOptions
@@ -301,6 +338,7 @@ makeLenses ''DocIntro
 makeLenses ''DocNote
 makeLenses ''Response
 makeLenses ''Action
+makeLenses ''RenderingOptions
 
 -- | Generate the docs for a given API that implements 'HasDocs'. This is the
 -- default way to create documentation.
@@ -487,8 +525,8 @@ sampleByteStrings ctypes@Proxy Proxy =
         enc (t, s) = uncurry (t,,) <$> allMimeRender ctypes s
     in concatMap enc samples'
 
--- | The class that helps us automatically get documentation
---   for GET parameters.
+-- | The class that helps us automatically get documentation for GET
+--   (or other 'HTTP.Method') parameters.
 --
 -- Example of an instance:
 --
@@ -516,8 +554,34 @@ class ToAuthInfo a where
 
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
+--
+--   This is equivalent to @'markdownWith' 'defRenderingOptions'@.
 markdown :: API -> String
-markdown api = unlines $
+markdown = markdownWith defRenderingOptions
+
+-- | Generate documentation in Markdown format for
+--   the given 'API' using the specified options.
+--
+--   These options allow you to customise aspects such as:
+--
+--   * Choose how many content-types for each request body example are
+--     shown with 'requestExamples'.
+--
+--   * Choose how many content-types for each response body example
+--     are shown with 'responseExamples'.
+--
+--   For example, to only show the first content-type of each example:
+--
+--   @
+--   markdownWith ('defRenderingOptions'
+--                   & 'requestExamples'  '.~' 'FirstContentType'
+--                   & 'responseExamples' '.~' 'FirstContentType' )
+--                myAPI
+--   @
+--
+--   @since 0.11.1
+markdownWith :: RenderingOptions -> API -> String
+markdownWith RenderingOptions{..}  api = unlines $
        introsStr (api ^. apiIntros)
     ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
 
@@ -529,13 +593,15 @@ markdown api = unlines $
           authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
           headersStr (action ^. headers) ++
-          paramsStr (action ^. params) ++
+          paramsStr meth (action ^. params) ++
           rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
           responseStr (action ^. response) ++
           []
 
-          where str = "## " ++ BSC.unpack (endpoint^.method)
+          where str = "## " ++ BSC.unpack meth
                     ++ " " ++ showPath (endpoint^.path)
+
+                meth = endpoint ^. method
 
         introsStr :: [DocIntro] -> [String]
         introsStr = concatMap introStr
@@ -561,6 +627,7 @@ markdown api = unlines $
 
 
         authStr :: [DocAuthentication] -> [String]
+        authStr [] = []
         authStr auths =
           let authIntros = mapped %~ view authIntro $ auths
               clientInfos = mapped %~ view authDataRequired $ auths
@@ -587,28 +654,33 @@ markdown api = unlines $
 
         headersStr :: [Text] -> [String]
         headersStr [] = []
-        headersStr l = [""] ++ map headerStr l ++ [""]
+        headersStr l =
+          "#### Headers:" :
+          "" :
+          map headerStr l ++
+          "" :
+          []
 
           where headerStr hname = "- This endpoint is sensitive to the value of the **"
                                ++ unpack hname ++ "** HTTP header."
 
-        paramsStr :: [DocQueryParam] -> [String]
-        paramsStr [] = []
-        paramsStr l =
-          "#### GET Parameters:" :
+        paramsStr :: HTTP.Method -> [DocQueryParam] -> [String]
+        paramsStr _ [] = []
+        paramsStr m l =
+          ("#### " ++ cs m ++ " Parameters:") :
           "" :
-          map paramStr l ++
+          map (paramStr m) l ++
           "" :
           []
 
-        paramStr param = unlines $
+        paramStr m param = unlines $
           ("- " ++ param ^. paramName) :
           (if (not (null values) || param ^. paramKind /= Flag)
             then ["     - **Values**: *" ++ intercalate ", " values ++ "*"]
             else []) ++
           ("     - **Description**: " ++ param ^. paramDesc) :
           (if (param ^. paramKind == List)
-            then ["     - This parameter is a **list**. All GET parameters with the name "
+            then ["     - This parameter is a **list**. All " ++ cs m ++ " parameters with the name "
                   ++ param ^. paramName ++ "[] will forward their values in a list to the handler."]
             else []) ++
           (if (param ^. paramKind == Flag)
@@ -618,36 +690,60 @@ markdown api = unlines $
 
           where values = param ^. paramValues
 
-        rqbodyStr :: [M.MediaType] -> [(M.MediaType, ByteString)]-> [String]
+        rqbodyStr :: [M.MediaType] -> [(Text, M.MediaType, ByteString)]-> [String]
         rqbodyStr [] [] = []
         rqbodyStr types s =
             ["#### Request:", ""]
             <> formatTypes types
-            <> concatMap formatBody s
+            <> formatBodies _requestExamples s
 
         formatTypes [] = []
         formatTypes ts = ["- Supported content types are:", ""]
             <> map (\t -> "    - `" <> show t <> "`") ts
             <> [""]
 
-        formatBody (m, b) =
-          "- Example: `" <> cs (show m) <> "`" :
-          contentStr m b
+        -- This assumes that when the bodies are created, identical
+        -- labels and representations are located next to each other.
+        formatBodies :: ShowContentTypes -> [(Text, M.MediaType, ByteString)] -> [String]
+        formatBodies ex bds = concatMap formatBody (select bodyGroups)
+          where
+            bodyGroups :: [(Text, NonEmpty M.MediaType, ByteString)]
+            bodyGroups =
+              map (\grps -> let (t,_,b) = NE.head grps in (t, fmap (\(_,m,_) -> m) grps, b))
+              . groupWith (\(t,_,b) -> (t,b))
+              $ bds
+
+            select = case ex of
+                       AllContentTypes  -> id
+                       FirstContentType -> map (\(t,ms,b) -> (t, NE.head ms :| [], b))
+
+        formatBody :: (Text, NonEmpty M.MediaType, ByteString) -> [String]
+        formatBody (t, ms, b) =
+          "- " <> title <> " (" <> mediaList ms <> "):" :
+          contentStr (NE.head ms) b
+          where
+            mediaList = fold . NE.intersperse ", " . fmap (\m -> "`" ++ show m ++ "`")
+
+            title
+              | T.null t  = "Example"
+              | otherwise = cs t
 
         markdownForType mime_type =
             case (M.mainType mime_type, M.subType mime_type) of
                 ("text", "html") -> "html"
                 ("application", "xml") -> "xml"
+                ("text", "xml") -> "xml"
                 ("application", "json") -> "javascript"
                 ("application", "javascript") -> "javascript"
                 ("text", "css") -> "css"
                 (_, _) -> ""
 
+
         contentStr mime_type body =
           "" :
-          "```" <> markdownForType mime_type :
+          "    ```" <> markdownForType mime_type :
           cs body :
-          "```" :
+          "    ```" :
           "" :
           []
 
@@ -665,7 +761,7 @@ markdown api = unlines $
                   []        -> ["- No response body\n"]
                   [("", t, r)] -> "- Response body as below." : contentStr t r
                   xs        ->
-                    concatMap (\(ctx, t, r) -> ("- " <> T.unpack ctx) : contentStr t r) xs
+                    formatBodies _responseExamples xs
 
 -- * Instances
 
@@ -682,6 +778,10 @@ instance OVERLAPPABLE_
 
           p2 :: Proxy b
           p2 = Proxy
+
+-- | The generated docs for @'EmptyAPI'@ are empty.
+instance HasDocs EmptyAPI where
+  docsFor Proxy _ _ = emptyAPI
 
 -- | @"books" :> 'Capture' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
@@ -794,6 +894,27 @@ instance HasDocs Raw where
   docsFor _proxy (endpoint, action) _ =
     single endpoint action
 
+
+instance (KnownSymbol desc, HasDocs api)
+  => HasDocs (Description desc :> api) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          action' = over notes (|> note) action
+          note = DocNote (symbolVal (Proxy :: Proxy desc)) []
+
+instance (KnownSymbol desc, HasDocs api)
+  => HasDocs (Summary desc :> api) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          action' = over notes (|> note) action
+          note = DocNote (symbolVal (Proxy :: Proxy desc)) []
+
 -- TODO: We use 'AllMimeRender' here because we need to be able to show the
 -- example data. However, there's no reason to believe that the instances of
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
@@ -801,11 +922,12 @@ instance HasDocs Raw where
 instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
       => HasDocs (ReqBody (ct ': cts) a :> api) where
 
-  docsFor Proxy (endpoint, action) =
-    docsFor subApiP (endpoint, action')
+  docsFor Proxy (endpoint, action) opts@DocOptions{..} =
+    docsFor subApiP (endpoint, action') opts
 
     where subApiP = Proxy :: Proxy api
-          action' = action & rqbody .~ sampleByteString t p
+          action' :: Action
+          action' = action & rqbody .~ take _maxSamples (sampleByteStrings t p)
                            & rqtypes .~ allMime t
           t = Proxy :: Proxy (ct ': cts)
           p = Proxy :: Proxy a

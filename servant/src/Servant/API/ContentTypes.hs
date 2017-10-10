@@ -419,6 +419,9 @@ instance MimeUnrender OctetStream BS.ByteString where
 
 
 -- $setup
+-- >>> :set -XFlexibleInstances
+-- >>> :set -XMultiParamTypeClasses
+-- >>> :set -XOverloadedStrings
 -- >>> import Servant.API
 -- >>> import Data.Aeson
 -- >>> import Data.Text

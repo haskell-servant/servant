@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
 module Servant.Utils.EnterSpec where
 
 import Test.Hspec (Spec)

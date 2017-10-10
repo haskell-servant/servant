@@ -16,7 +16,7 @@ import           Data.Typeable (Typeable)
 -- >>> type MyApi = "hello" :> "world" :> Get '[JSON] World
 data (path :: k) :> a
     deriving (Typeable)
-infixr 9 :>
+infixr 4 :>
 
 -- $setup
 -- >>> import Servant.API

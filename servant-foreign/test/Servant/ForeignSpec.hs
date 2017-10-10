@@ -57,13 +57,14 @@ type TestApi
  :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] NoContent
  :<|> "test" :> Capture "id" Int :> Delete '[JSON] NoContent
  :<|> "test" :> CaptureAll "ids" Int :> Get '[JSON] [Int]
+ :<|> "test" :> EmptyAPI
 
 testApi :: [Req String]
 testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: Proxy TestApi)
 
 listFromAPISpec :: Spec
 listFromAPISpec = describe "listFromAPI" $ do
-  it "generates 4 endpoints for TestApi" $ do
+  it "generates 5 endpoints for TestApi" $ do
     length testApi `shouldBe` 5
 
   let [getReq, postReq, putReq, deleteReq, captureAllReq] = testApi
