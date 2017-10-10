@@ -619,7 +619,7 @@ markdownWith RenderingOptions{..}  api = unlines $
 
         noteStr :: DocNote -> [String]
         noteStr nt =
-            ("#### " ++ nt ^. noteTitle) :
+            ("### " ++ nt ^. noteTitle) :
             "" :
             intersperse "" (nt ^. noteBody) ++
             "" :
@@ -631,7 +631,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         authStr auths =
           let authIntros = mapped %~ view authIntro $ auths
               clientInfos = mapped %~ view authDataRequired $ auths
-          in "#### Authentication":
+          in "### Authentication":
               "":
               unlines authIntros :
               "":
@@ -643,7 +643,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
         capturesStr l =
-          "#### Captures:" :
+          "### Captures:" :
           "" :
           map captureStr l ++
           "" :
@@ -655,7 +655,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         headersStr :: [Text] -> [String]
         headersStr [] = []
         headersStr l =
-          "#### Headers:" :
+          "### Headers:" :
           "" :
           map headerStr l ++
           "" :
@@ -667,7 +667,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         paramsStr :: HTTP.Method -> [DocQueryParam] -> [String]
         paramsStr _ [] = []
         paramsStr m l =
-          ("#### " ++ cs m ++ " Parameters:") :
+          ("### " ++ cs m ++ " Parameters:") :
           "" :
           map (paramStr m) l ++
           "" :
@@ -693,7 +693,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         rqbodyStr :: [M.MediaType] -> [(Text, M.MediaType, ByteString)]-> [String]
         rqbodyStr [] [] = []
         rqbodyStr types s =
-            ["#### Request:", ""]
+            ["### Request:", ""]
             <> formatTypes types
             <> formatBodies _requestExamples s
 
@@ -749,7 +749,7 @@ markdownWith RenderingOptions{..}  api = unlines $
 
         responseStr :: Response -> [String]
         responseStr resp =
-          "#### Response:" :
+          "### Response:" :
           "" :
           ("- Status code " ++ show (resp ^. respStatus)) :
           ("- Headers: " ++ show (resp ^. respHeaders)) :
