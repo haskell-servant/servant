@@ -58,7 +58,8 @@ type TestApi
  :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] NoContent
  :<|> "test" :> Capture "id" Int :> Delete '[JSON] NoContent
  :<|> "test" :> CaptureAll "ids" Int :> Get '[JSON] [Int]
- :<|> "test" :> "text" :> Get '[PlainText] String
+ :<|> "test" :> "text" :> ReqBody '[PlainText] String :> Get '[PlainText] String
+ :<|> "test" :> "multi" :> ReqBody '[JSON, PlainText] String :> Get '[JSON, PlainText] String
  :<|> "test" :> EmptyAPI
 
 testApi :: [Req String]
@@ -67,9 +68,9 @@ testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: P
 listFromAPISpec :: Spec
 listFromAPISpec = describe "listFromAPI" $ do
   it "generates 5 endpoints for TestApi" $ do
-    length testApi `shouldBe` 6
+    length testApi `shouldBe` 7
 
-  let [getReq, postReq, putReq, deleteReq, captureAllReq, getTextReq] = testApi
+  let [getReq, postReq, putReq, deleteReq, captureAllReq, getTextReq, getMultiReq] = testApi
 
   it "collects all info for get request" $ do
     shouldBe getReq $ defReq
@@ -79,9 +80,10 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "GET"
       , _reqHeaders    = [HeaderArg $ Arg "header" "listX of stringX"]
       , _reqBody       = Nothing
+      , _reqBodyContentTypes = []
       , _reqReturnType = Just "intX"
-      , _reqFuncName   = FunctionName ["get", "test"]
       , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
+      , _reqFuncName   = FunctionName ["get", "test"]
       }
 
   it "collects all info for post request" $ do
@@ -92,9 +94,10 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "POST"
       , _reqHeaders    = []
       , _reqBody       = Just "listX of stringX"
+      , _reqBodyContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
       , _reqReturnType = Just "voidX"
-      , _reqFuncName   = FunctionName ["post", "test"]
       , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
+      , _reqFuncName   = FunctionName ["post", "test"]
       }
 
   it "collects all info for put request" $ do
@@ -106,9 +109,10 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "PUT"
       , _reqHeaders    = []
       , _reqBody       = Just "stringX"
+      , _reqBodyContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
       , _reqReturnType = Just "voidX"
-      , _reqFuncName   = FunctionName ["put", "test"]
       , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
+      , _reqFuncName   = FunctionName ["put", "test"]
       }
 
   it "collects all info for delete request" $ do
@@ -120,9 +124,10 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "DELETE"
       , _reqHeaders    = []
       , _reqBody       = Nothing
+      , _reqBodyContentTypes = []
       , _reqReturnType = Just "voidX"
-      , _reqFuncName   = FunctionName ["delete", "test", "by", "id"]
       , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
+      , _reqFuncName   = FunctionName ["delete", "test", "by", "id"]
       }
 
   it "collects all info for capture all request" $ do
@@ -134,9 +139,10 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "GET"
       , _reqHeaders    = []
       , _reqBody       = Nothing
+      , _reqBodyContentTypes = []
       , _reqReturnType = Just "listX of intX"
-      , _reqFuncName   = FunctionName ["get", "test", "by", "ids"]
       , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy JSON)
+      , _reqFuncName   = FunctionName ["get", "test", "by", "ids"]
       }
 
   it "collects all info for plaintext request" $ do
@@ -147,9 +153,25 @@ listFromAPISpec = describe "listFromAPI" $ do
           []
       , _reqMethod     = "GET"
       , _reqHeaders    = []
-      , _reqBody       = Nothing
+      , _reqBody       = Just "stringX"
+      , _reqBodyContentTypes = toList $ contentTypes (Proxy :: Proxy PlainText)
       , _reqReturnType = Just "stringX"
-      , _reqFuncName   = FunctionName ["get", "test", "text"]
       , _reqReturnContentTypes = toList $ contentTypes (Proxy :: Proxy PlainText)
+      , _reqFuncName   = FunctionName ["get", "test", "text"]
+      }
+
+  it "collects all info for requets with multiple request/return types" $ do
+    shouldBe getMultiReq $ defReq
+      { _reqUrl        = Url
+          [ Segment $ Static "test"
+          , Segment $ Static "multi" ]
+          []
+      , _reqMethod     = "GET"
+      , _reqHeaders    = []
+      , _reqBody       = Just "stringX"
+      , _reqBodyContentTypes = (toList $ contentTypes (Proxy :: Proxy JSON)) ++ [contentType (Proxy :: Proxy PlainText)]
+      , _reqReturnType = Just "stringX"
+      , _reqReturnContentTypes = (toList $ contentTypes (Proxy :: Proxy JSON)) ++ [contentType (Proxy :: Proxy PlainText)]
+      , _reqFuncName   = FunctionName ["get", "test", "multi"]
       }
 

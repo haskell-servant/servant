@@ -22,7 +22,6 @@ import           Network.HTTP.Media.MediaType
 import           Prelude hiding (concat)
 import           Servant.API
 import           Servant.API.ContentTypes (AllMime, allMime)
-import           Servant.API.TypeLevel
 
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
@@ -121,13 +120,14 @@ defUrl = Url [] []
 makeLenses ''Url
 
 data Req f = Req
-  { _reqUrl        :: Url f
-  , _reqMethod     :: HTTP.Method
-  , _reqHeaders    :: [HeaderArg f]
-  , _reqBody       :: Maybe f
-  , _reqReturnType :: Maybe f
-  , _reqFuncName   :: FunctionName
+  { _reqUrl                :: Url f
+  , _reqMethod             :: HTTP.Method
+  , _reqHeaders            :: [HeaderArg f]
+  , _reqBody               :: Maybe f
+  , _reqBodyContentTypes   :: [MediaType]
+  , _reqReturnType         :: Maybe f
   , _reqReturnContentTypes :: [MediaType]
+  , _reqFuncName           :: FunctionName
   }
 
 deriving instance Eq f => Eq (Req f)
@@ -136,7 +136,7 @@ deriving instance Show f => Show (Req f)
 makeLenses ''Req
 
 defReq :: Req ftype
-defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName []) []
+defReq = Req defUrl "GET" [] Nothing [] Nothing [] (FunctionName [])
 
 -- | 'HasForeignType' maps Haskell types with types in the target
 -- language of your backend. For example, let's say you're
@@ -302,13 +302,14 @@ instance HasForeign lang ftype Raw where
     req & reqFuncName . _FunctionName %~ ((toLower $ decodeUtf8 method) :)
         & reqMethod .~ method
 
-instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype api)
+instance (AllMime list, HasForeignType lang ftype a, HasForeign lang ftype api)
       => HasForeign lang ftype (ReqBody list a :> api) where
   type Foreign ftype (ReqBody list a :> api) = Foreign ftype api
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) $
       req & reqBody .~ (Just $ typeFor lang ftype (Proxy :: Proxy a))
+          & reqBodyContentTypes .~ allMime (Proxy :: Proxy list)
 
 instance (KnownSymbol path, HasForeign lang ftype api)
       => HasForeign lang ftype (path :> api) where
