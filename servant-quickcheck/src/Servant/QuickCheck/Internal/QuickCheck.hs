@@ -70,7 +70,7 @@ withServantServerAndContext api ctx server t
 serversEqual :: HasGenRequest a =>
   Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality LBS.ByteString -> Expectation
 serversEqual api burl1 burl2 args req = do
-  let reqs = (\f -> (f burl1, f burl2)) <$> genRequest api
+  let reqs = (\f -> (f burl1, f burl2)) <$> runGenRequest api
   -- This MVar stuff is clunky! But there doesn't seem to be an easy way to
   -- return results when a test fails, since an exception is throw.
   deetsMVar <- newMVar $ error "should not be called"
@@ -111,7 +111,7 @@ serversEqual api burl1 burl2 args req = do
 serverSatisfies :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
 serverSatisfies api burl args preds = do
-  let reqs = ($ burl) <$> genRequest api
+  let reqs = ($ burl) <$> runGenRequest api
   deetsMVar <- newMVar $ error "should not be called"
   r <- quickCheckWithResult args { chatty = False } $ monadicIO $ forAllM reqs $ \req -> do
      v <- run $ finishPredicates preds (noCheckStatus req) defManager
@@ -131,7 +131,7 @@ serverSatisfies api burl args preds = do
 serverDoesntSatisfy :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
 serverDoesntSatisfy api burl args preds = do
-  let reqs = ($ burl) <$> genRequest api
+  let reqs = ($ burl) <$> runGenRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
      v <- run $ finishPredicates preds (noCheckStatus req) defManager
      assert $ not $ null v
