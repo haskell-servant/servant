@@ -21,7 +21,9 @@ module Servant.Foreign
   , reqMethod
   , reqHeaders
   , reqBody
+  , reqBodyContentTypes
   , reqReturnType
+  , reqReturnContentTypes
   , reqFuncName
   , path
   , queryStr
