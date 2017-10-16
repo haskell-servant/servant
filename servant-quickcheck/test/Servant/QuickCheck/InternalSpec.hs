@@ -2,22 +2,22 @@
 module Servant.QuickCheck.InternalSpec (spec) where
 
 
-import           Control.Concurrent.MVar      (newMVar, readMVar, swapMVar)
-import           Control.Exception            (SomeException)
-import           Control.Monad                (replicateM)
-import           Control.Monad.IO.Class       (liftIO)
-import qualified Data.ByteString              as BS
-import qualified Data.ByteString.Char8        as C
-import           Data.Maybe                   (fromJust)
+import           Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
+import           Control.Exception       (SomeException)
+import           Control.Monad           (replicateM)
+import           Control.Monad.IO.Class  (liftIO)
+import qualified Data.ByteString         as BS
+import qualified Data.ByteString.Char8   as C
+import           Data.Maybe              (fromJust)
+import           Network.HTTP.Client     (path, queryString)
 import           Prelude.Compat
 import           Servant
-import           Test.Hspec                   (Spec, context, describe, it, shouldBe,
-                                               shouldContain)
-import           Test.Hspec.Core.Spec         (Arg, Example, Result (..),
-                                               defaultParams, safeEvaluateExample)
-import           Test.QuickCheck.Gen          (unGen, generate)
-import           Test.QuickCheck.Random       (mkQCGen)
-import           Network.HTTP.Client          (queryString, path)
+import           Test.Hspec              (Spec, context, describe, it, shouldBe,
+                                          shouldContain)
+import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
+                                          defaultParams)
+import           Test.QuickCheck.Gen     (generate, unGen)
+import           Test.QuickCheck.Random  (mkQCGen)
 
 
 #if MIN_VERSION_servant(0,8,0)
@@ -27,8 +27,16 @@ import Servant.API.Internal.Test.ComprehensiveAPI (ComprehensiveAPI,
                                                    comprehensiveAPI)
 #endif
 
+#if MIN_VERSION_hspec(2,4,0)
+import Test.Hspec.Core.Spec (safeEvaluateExample)
+#else
+import Control.Exception    (try)
+import Test.Hspec.Core.Spec (evaluateExample)
+#endif
+
 import Servant.QuickCheck
-import Servant.QuickCheck.Internal (genRequest, runGenRequest, serverDoesntSatisfy)
+import Servant.QuickCheck.Internal (genRequest, runGenRequest,
+                                    serverDoesntSatisfy)
 
 
 spec :: Spec
@@ -53,9 +61,9 @@ serversEqualSpec = describe "serversEqual" $ do
 
   context "when servers are not equal" $ do
     it "provides the failing responses in the error message" $ do
-      Right (Failure _ err) <- withServantServer api2 server2 $ \burl1 ->
+      FailedWith err <- withServantServer api2 server2 $ \burl1 ->
         withServantServer api2 server3 $ \burl2 -> do
-          safeEvalExample $ serversEqual api2 burl1 burl2 args bodyEquality
+          evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
       show err `shouldContain` "Server equality failed"
       show err `shouldContain` "Body: 1"
       show err `shouldContain` "Body: 2"
@@ -81,8 +89,8 @@ serverSatisfiesSpec = describe "serverSatisfies" $ do
   context "when predicates are false" $ do
 
     it "fails with informative error messages" $ do
-      Right (Failure _ err) <- withServantServerAndContext api ctx server $ \burl -> do
-        safeEvalExample $ serverSatisfies api burl args (notAllowedContainsAllowHeader <%> mempty)
+      FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
+        evalExample $ serverSatisfies api burl args (notAllowedContainsAllowHeader <%> mempty)
       show err `shouldContain` "notAllowedContainsAllowHeader"
       show err `shouldContain` "Headers"
       show err `shouldContain` "Body"
@@ -92,8 +100,8 @@ onlyJsonObjectSpec :: Spec
 onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
 
   it "fails correctly" $ do
-    Right (Failure _ err) <- withServantServerAndContext api ctx server $ \burl -> do
-      safeEvalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
+    FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
+      evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
         (onlyJsonObjects <%> mempty)
     show err `shouldContain` "onlyJsonObjects"
 
@@ -105,8 +113,8 @@ notLongerThanSpec :: Spec
 notLongerThanSpec = describe "notLongerThan" $ do
 
   it "fails correctly" $ do
-    Right (Failure _ err) <- withServantServerAndContext api ctx server $ \burl -> do
-      safeEvalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
+    FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
+      evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
         (notLongerThan 1 <%> mempty)
     show err `shouldContain` "notLongerThan"
 
@@ -259,10 +267,34 @@ ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
 ------------------------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------------------------
-safeEvalExample :: (Example e, Arg e ~ ()) => e -> IO (Either SomeException Result)
-safeEvalExample e = safeEvaluateExample e defaultParams ($ ()) progCallback
+evalExample :: (Example e, Arg e ~ ()) => e -> IO EvalResult
+#if MIN_VERSION_hspec(2,4,0)
+evalExample e = do
+  r <- safeEvaluateExample e defaultParams ($ ()) progCallback
+  case r of
+    Left err -> return $ AnException err
+    Right Success -> return $ AllGood
+    Right (Failure _ reason) -> return $ FailedWith $ show reason
+    Right (Pending _) -> error "should not happen"
   where
     progCallback _ = return ()
+#else
+evalExample e = do
+  r <- try $ evaluateExample e defaultParams ($ ()) progCallback
+  case r of
+    Left err -> return $ AnException err
+    Right Success -> return $ AllGood
+    Right (Fail _ reason) -> return $ FailedWith reason
+    Right (Pending _) -> error "should not happen"
+  where
+    progCallback _ = return ()
+#endif
+
+data EvalResult
+  = AnException SomeException
+  | AllGood
+  | FailedWith String
+  deriving (Show)
 
 
 args :: Args
