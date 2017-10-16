@@ -84,6 +84,7 @@ test-suite spec
   other-modules:       Servant.QuickCheck.InternalSpec
   build-depends:       base == 4.*
                      , base-compat
+                     , aeson
                      , servant-quickcheck
                      , bytestring
                      , hspec

@@ -49,6 +49,7 @@ module Servant.QuickCheck
   -- represents other means of checking equality
   -- *** Useful @ResponseEquality@s
   , bodyEquality
+  , jsonEquality
   , allEquality
   -- ** Response equality type
   , ResponseEquality(..)
