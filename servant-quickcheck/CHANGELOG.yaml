@@ -1,19 +1,21 @@
 upcoming:
 
-  - description: Add jsonEquality
-    issue: 2
-    pr: 30
-    authors: erewok
-    date: 2017-10-15
-
-  - description: Support hspec >= 2.4
-    issue: 27
-    pr: 29
-    authors: erewok, jkarni
-    date: 2017-10-15
-
 releases:
 
+  - version: "0.0.3.0"
+    changes:
+
+      - description: Add jsonEquality
+        issue: 2
+        pr: 30
+        authors: erewok
+        date: 2017-10-15
+
+      - description: Support hspec >= 2.4
+        issue: 27
+        pr: 29
+        authors: erewok, jkarni
+        date: 2017-10-15
 
   - version: "0.0.2.4"
     changes:
