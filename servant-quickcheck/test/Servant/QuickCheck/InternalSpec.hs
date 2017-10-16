@@ -1,21 +1,24 @@
 {-# LANGUAGE CPP #-}
 module Servant.QuickCheck.InternalSpec (spec) where
 
-import           Control.Concurrent.MVar      (newMVar, readMVar, swapMVar)
-import           Control.Monad                (replicateM)
-import           Control.Monad.IO.Class       (liftIO)
-import qualified Data.ByteString              as BS
-import qualified Data.ByteString.Char8        as C
-import           Data.Maybe                   (fromJust)
+
+import           Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
+import           Control.Exception       (SomeException)
+import           Control.Monad           (replicateM)
+import           Control.Monad.IO.Class  (liftIO)
+import qualified Data.ByteString         as BS
+import qualified Data.ByteString.Char8   as C
+import           Data.Maybe              (fromJust)
+import           Network.HTTP.Client     (path, queryString)
 import           Prelude.Compat
 import           Servant
-import           Test.Hspec                   (Spec, context, describe, it, shouldBe,
-                                               shouldContain)
-import           Test.Hspec.Core.Spec         (Arg, Example, Result (..),
-                                               defaultParams, evaluateExample)
-import           Test.QuickCheck.Gen          (unGen, generate)
-import           Test.QuickCheck.Random       (mkQCGen)
-import           Network.HTTP.Client          (queryString, path)
+import           Test.Hspec              (Spec, context, describe, it, shouldBe,
+                                          shouldContain)
+import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
+                                          defaultParams)
+import           Test.QuickCheck.Gen     (generate, unGen)
+import           Test.QuickCheck.Random  (mkQCGen)
+
 
 #if MIN_VERSION_servant(0,8,0)
 import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
@@ -24,8 +27,16 @@ import Servant.API.Internal.Test.ComprehensiveAPI (ComprehensiveAPI,
                                                    comprehensiveAPI)
 #endif
 
+#if MIN_VERSION_hspec(2,4,0)
+import Test.Hspec.Core.Spec (safeEvaluateExample)
+#else
+import Control.Exception    (try)
+import Test.Hspec.Core.Spec (evaluateExample)
+#endif
+
 import Servant.QuickCheck
-import Servant.QuickCheck.Internal (genRequest, runGenRequest, serverDoesntSatisfy)
+import Servant.QuickCheck.Internal (genRequest, runGenRequest,
+                                    serverDoesntSatisfy)
 
 
 spec :: Spec
@@ -50,9 +61,10 @@ serversEqualSpec = describe "serversEqual" $ do
 
   context "when servers are not equal" $ do
     it "provides the failing responses in the error message" $ do
-      Fail _ err <- withServantServer api2 server2 $ \burl1 ->
+      FailedWith err <- withServantServer api2 server2 $ \burl1 ->
         withServantServer api2 server3 $ \burl2 -> do
           evalExample $ serversEqual api2 burl1 burl2 args bodyEquality
+      show err `shouldContain` "Server equality failed"
       show err `shouldContain` "Body: 1"
       show err `shouldContain` "Body: 2"
       show err `shouldContain` "Path: /failplz"
@@ -77,21 +89,21 @@ serverSatisfiesSpec = describe "serverSatisfies" $ do
   context "when predicates are false" $ do
 
     it "fails with informative error messages" $ do
-      Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
+      FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
         evalExample $ serverSatisfies api burl args (notAllowedContainsAllowHeader <%> mempty)
-      err `shouldContain` "notAllowedContainsAllowHeader"
-      err `shouldContain` "Headers"
-      err `shouldContain` "Body"
+      show err `shouldContain` "notAllowedContainsAllowHeader"
+      show err `shouldContain` "Headers"
+      show err `shouldContain` "Body"
 
 
 onlyJsonObjectSpec :: Spec
 onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
 
   it "fails correctly" $ do
-    Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
+    FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
       evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
         (onlyJsonObjects <%> mempty)
-    err `shouldContain` "onlyJsonObjects"
+    show err `shouldContain` "onlyJsonObjects"
 
   it "accepts non-JSON endpoints" $ do
     withServantServerAndContext octetAPI ctx serverOctetAPI $ \burl ->
@@ -101,10 +113,10 @@ notLongerThanSpec :: Spec
 notLongerThanSpec = describe "notLongerThan" $ do
 
   it "fails correctly" $ do
-    Fail _ err <- withServantServerAndContext api ctx server $ \burl -> do
+    FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
       evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
         (notLongerThan 1 <%> mempty)
-    err `shouldContain` "notLongerThan"
+    show err `shouldContain` "notLongerThan"
 
   it "succeeds correctly" $ do
     withServantServerAndContext api ctx server $ \burl ->
@@ -166,8 +178,8 @@ unbiasedGenerationSpec = describe "Unbiased Generation of requests" $
     let mean = (sum $ map fromIntegral someRequests) / runs
     let variancer x = let ix = fromIntegral x in (ix - mean) * (ix - mean)
     let variance = (sum $ map variancer someRequests) / runs - 1
-    -- mean should be around 8
-    mean > 7 `shouldBe` True
+    -- mean should be around 8.5. If this fails, we likely need more runs (or there's a bug!)
+    mean > 8 `shouldBe` True
     mean < 9 `shouldBe` True
     -- Std dev is likely around 4. Variance is probably greater than 20.
     variance > 19.5 `shouldBe` True
@@ -255,11 +267,35 @@ ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
 ------------------------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------------------------
-
-evalExample :: (Example e, Arg e ~ ()) => e -> IO Result
-evalExample e = evaluateExample e defaultParams ($ ()) progCallback
+evalExample :: (Example e, Arg e ~ ()) => e -> IO EvalResult
+#if MIN_VERSION_hspec(2,4,0)
+evalExample e = do
+  r <- safeEvaluateExample e defaultParams ($ ()) progCallback
+  case r of
+    Left err -> return $ AnException err
+    Right Success -> return $ AllGood
+    Right (Failure _ reason) -> return $ FailedWith $ show reason
+    Right (Pending _) -> error "should not happen"
   where
     progCallback _ = return ()
+#else
+evalExample e = do
+  r <- try $ evaluateExample e defaultParams ($ ()) progCallback
+  case r of
+    Left err -> return $ AnException err
+    Right Success -> return $ AllGood
+    Right (Fail _ reason) -> return $ FailedWith reason
+    Right (Pending _) -> error "should not happen"
+  where
+    progCallback _ = return ()
+#endif
+
+data EvalResult
+  = AnException SomeException
+  | AllGood
+  | FailedWith String
+  deriving (Show)
+
 
 args :: Args
 args = defaultArgs { maxSuccess = noOfTestCases }
