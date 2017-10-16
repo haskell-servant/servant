@@ -27,6 +27,10 @@ allEquality = ResponseEquality (==)
 bodyEquality :: Eq b => ResponseEquality b
 bodyEquality = ResponseEquality ((==) `on` responseBody)
 
+-- | Equality as 'Value'. This means that if two bodies are equal as JSON
+-- (e.g., insignificant whitespace difference) they are considered equal.
+--
+-- /Since 0.0.3.0/
 jsonEquality :: (JsonEq b) => ResponseEquality b
 jsonEquality = ResponseEquality (jsonEq `on` responseBody)
 
