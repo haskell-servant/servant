@@ -72,9 +72,9 @@ serversEqualSpec = describe "serversEqual" $ do
   context "when JSON is equal but looks a bit different as a ByteString" $ do
 
     it "sanity check: different whitespace same JSON objects bodyEquality fails" $ do
-      Right (Failure _ err) <- withServantServer jsonApi jsonServer1 $ \burl1 ->
+      FailedWith err <- withServantServer jsonApi jsonServer1 $ \burl1 ->
         withServantServer jsonApi jsonServer2 $ \burl2 -> do
-          safeEvalExample $ serversEqual jsonApi burl1 burl2 args bodyEquality
+          evalExample $ serversEqual jsonApi burl1 burl2 args bodyEquality
       show err `shouldContain` "Server equality failed"
 
     it "jsonEquality considers equal JSON apis equal regardless of key ordering or whitespace" $ do
@@ -83,16 +83,16 @@ serversEqualSpec = describe "serversEqual" $ do
           serversEqual jsonApi burl1 burl2 args jsonEquality
 
     it "sees when JSON apis are not equal because any value is different" $ do
-      Right (Failure _ err) <- withServantServer jsonApi jsonServer2 $ \burl1 ->
+      FailedWith err <- withServantServer jsonApi jsonServer2 $ \burl1 ->
         withServantServer jsonApi jsonServer3 $ \burl2 -> do
-          safeEvalExample $ serversEqual jsonApi burl1 burl2 args jsonEquality
+          evalExample $ serversEqual jsonApi burl1 burl2 args jsonEquality
       show err `shouldContain` "Server equality failed"
       show err `shouldContain` "Path: /jsonComparison"
 
     it "sees when JSON apis are not equal due to different keys but same values" $ do
-      Right (Failure _ err) <- withServantServer jsonApi jsonServer2 $ \burl1 ->
+      FailedWith err <- withServantServer jsonApi jsonServer2 $ \burl1 ->
         withServantServer jsonApi jsonServer4 $ \burl2 -> do
-          safeEvalExample $ serversEqual jsonApi burl1 burl2 args jsonEquality
+          evalExample $ serversEqual jsonApi burl1 burl2 args jsonEquality
       show err `shouldContain` "Server equality failed"
       show err `shouldContain` "Path: /jsonComparison"
 
