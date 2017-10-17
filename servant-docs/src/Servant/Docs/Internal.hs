@@ -313,18 +313,22 @@ data RenderingOptions = RenderingOptions
     -- ^ How many content types to display for request body examples?
   , _responseExamples :: !ShowContentTypes
     -- ^ How many content types to display for response body examples?
+  , _notesHeading     :: !(Maybe String)
+    -- ^ Optionally group all 'notes' together under a common heading.
   } deriving (Show)
 
 -- | Default API generation options.
 --
 --   All content types are shown for both 'requestExamples' and
---   'responseExamples'.
+--   'responseExamples'; 'notesHeading' is set to 'Nothing'
+--   (i.e. un-grouped).
 --
 --   @since 0.11.1
 defRenderingOptions :: RenderingOptions
 defRenderingOptions = RenderingOptions
   { _requestExamples  = AllContentTypes
   , _responseExamples = AllContentTypes
+  , _notesHeading     = Nothing
   }
 
 -- gimme some lenses
@@ -615,23 +619,28 @@ markdownWith RenderingOptions{..}  api = unlines $
             []
 
         notesStr :: [DocNote] -> [String]
-        notesStr = concatMap noteStr
+        notesStr = addHeading
+                   . concatMap noteStr
+          where
+            addHeading nts = maybe nts (\hd -> ("### " ++ hd) : "" : nts) _notesHeading
 
         noteStr :: DocNote -> [String]
         noteStr nt =
-            ("#### " ++ nt ^. noteTitle) :
+            (hdr ++ nt ^. noteTitle) :
             "" :
             intersperse "" (nt ^. noteBody) ++
             "" :
             []
-
+          where
+            hdr | isJust _notesHeading = "#### "
+                | otherwise            = "### "
 
         authStr :: [DocAuthentication] -> [String]
         authStr [] = []
         authStr auths =
           let authIntros = mapped %~ view authIntro $ auths
               clientInfos = mapped %~ view authDataRequired $ auths
-          in "#### Authentication":
+          in "### Authentication":
               "":
               unlines authIntros :
               "":
@@ -643,7 +652,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         capturesStr :: [DocCapture] -> [String]
         capturesStr [] = []
         capturesStr l =
-          "#### Captures:" :
+          "### Captures:" :
           "" :
           map captureStr l ++
           "" :
@@ -655,7 +664,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         headersStr :: [Text] -> [String]
         headersStr [] = []
         headersStr l =
-          "#### Headers:" :
+          "### Headers:" :
           "" :
           map headerStr l ++
           "" :
@@ -667,7 +676,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         paramsStr :: HTTP.Method -> [DocQueryParam] -> [String]
         paramsStr _ [] = []
         paramsStr m l =
-          ("#### " ++ cs m ++ " Parameters:") :
+          ("### " ++ cs m ++ " Parameters:") :
           "" :
           map (paramStr m) l ++
           "" :
@@ -693,7 +702,7 @@ markdownWith RenderingOptions{..}  api = unlines $
         rqbodyStr :: [M.MediaType] -> [(Text, M.MediaType, ByteString)]-> [String]
         rqbodyStr [] [] = []
         rqbodyStr types s =
-            ["#### Request:", ""]
+            ["### Request:", ""]
             <> formatTypes types
             <> formatBodies _requestExamples s
 
@@ -749,7 +758,7 @@ markdownWith RenderingOptions{..}  api = unlines $
 
         responseStr :: Response -> [String]
         responseStr resp =
-          "#### Response:" :
+          "### Response:" :
           "" :
           ("- Status code " ++ show (resp ^. respStatus)) :
           ("- Headers: " ++ show (resp ^. respHeaders)) :

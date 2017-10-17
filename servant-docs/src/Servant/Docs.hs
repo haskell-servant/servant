@@ -26,7 +26,7 @@ module Servant.Docs
     HasDocs(..), docs, pretty, markdown
     -- ** Customising generated documentation
   , markdownWith, RenderingOptions(..), defRenderingOptions
-  , requestExamples, responseExamples, ShowContentTypes(..)
+  , requestExamples, responseExamples, ShowContentTypes(..), notesHeading
     -- * Generating docs with extra information
   , docsWith, docsWithIntros, docsWithOptions
   , ExtraInfo(..), extraInfo
