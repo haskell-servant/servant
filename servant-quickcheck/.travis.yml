@@ -26,6 +26,12 @@ script:
   - stack test --ghc-options=-Werror --no-terminal --coverage
   - stack haddock --no-terminal
 
+after_script:
+  # SHC only has a build for 8.0.1, not above
+  - if [ "$STACK_YAML" == stack-lts-7.yaml ]
+  - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar -xj
+  - ./shc servant-quickcheck spec
+
 cache:
   directories:
     - $HOME/.stack
