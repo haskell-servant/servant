@@ -38,7 +38,6 @@ import Servant.QuickCheck
 import Servant.QuickCheck.Internal (genRequest, runGenRequest,
                                     serverDoesntSatisfy)
 
-
 spec :: Spec
 spec = do
   serversEqualSpec
