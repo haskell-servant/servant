@@ -25,12 +25,15 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
+import           Control.Monad              (when)
 import           Control.Monad.Trans        (liftIO)
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.ByteString            as B
+import qualified Data.ByteString.Builder    as BB
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
-import           Data.Maybe                 (fromMaybe, mapMaybe)
+import           Data.Maybe                 (fromMaybe, mapMaybe,
+                                             isNothing, maybeToList)
 import           Data.Either                (partitionEithers)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
@@ -40,13 +43,15 @@ import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
 import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
+import qualified Network.HTTP.Media         as NHM
 import           Network.Socket             (SockAddr)
 import           Network.Wai                (Application, Request, Response,
                                              httpVersion, isSecure,
                                              lazyRequestBody,
                                              rawQueryString, remoteHost,
                                              requestHeaders, requestMethod,
-                                             responseLBS, vault)
+                                             responseLBS, responseStream,
+                                             vault)
 import           Prelude                    ()
 import           Prelude.Compat
 import           Web.HttpApiData            (FromHttpApiData, parseHeader,
@@ -60,11 +65,16 @@ import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capt
                                               QueryParam, QueryParams, Raw,
                                               RemoteHost, ReqBody, Vault,
                                               WithNamedContext,
-                                              Description, Summary)
+                                              Description, Summary,
+                                              Accept(..),
+                                              Framing(..), Stream,
+                                              StreamGenerator(..),
+                                              BoundaryStrategy(..))
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..),
                                               AllMime,
+                                              MimeRender(..),
                                               canHandleAcceptH)
 import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
                                               getResponse)
@@ -276,6 +286,42 @@ instance OVERLAPPING_
     where method = reflectMethod (Proxy :: Proxy method)
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
+
+instance ( MimeRender ctype a, ReflectMethod method, Framing framing ctype
+         ) => HasServer (Stream method framing ctype a) context where
+
+  type ServerT (Stream method framing ctype a) m = m (StreamGenerator a)
+  hoistServerWithContext _ _ nt s = nt s
+
+  route Proxy _ action = leafRouter $ \env request respond ->
+          let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+              cmediatype = NHM.matchAccept [contentType (Proxy :: Proxy ctype)] accH
+              accCheck = when (isNothing cmediatype) $ delayedFail err406
+              contentHeader = (hContentType, NHM.renderHeader . maybeToList $ cmediatype)
+          in runAction (action `addMethodCheck` methodCheck method request
+                               `addAcceptCheck` accCheck
+                       ) env request respond $ \ (StreamGenerator k) ->
+                Route $ responseStream status200 [contentHeader] $ \write flush -> do
+                      write . BB.lazyByteString . header (Proxy :: Proxy framing) $ (Proxy :: Proxy ctype)
+                      case boundary (Proxy :: Proxy framing) (Proxy :: Proxy ctype) of
+                           BoundaryStrategyBracket f ->
+                                    let go x = let bs = mimeRender (Proxy :: Proxy ctype) $ x
+                                                   (before, after) = f bs
+                                               in write (   BB.lazyByteString before
+                                                         <> BB.lazyByteString bs
+                                                         <> BB.lazyByteString after)
+                                    in k go go
+                           BoundaryStrategyIntersperse sep -> k
+                             (\x -> do
+                                write . BB.lazyByteString . mimeRender (Proxy :: Proxy ctype) $ x
+                                flush)
+                             (\x -> do
+                                write . (BB.lazyByteString sep <>) . BB.lazyByteString . mimeRender (Proxy :: Proxy ctype) $ x
+                                flush)
+                      write . BB.lazyByteString . terminate (Proxy :: Proxy framing) $ (Proxy :: Proxy ctype)
+    where method = reflectMethod (Proxy :: Proxy method)
+
+
 -- | If you use 'Header' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by 'Header'.
@@ -318,7 +364,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
                                    <> fromString headerName
                                    <> " failed: " <> e
                   }
-              Right header -> return $ Just header
+              Right hdr -> return $ Just hdr
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
