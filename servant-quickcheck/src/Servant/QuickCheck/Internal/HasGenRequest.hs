@@ -64,6 +64,10 @@ instance (KnownSymbol path, HasGenRequest b) => HasGenRequest (path :> b) where
         (oldf, old) = genRequest (Proxy :: Proxy b)
         new = cs $ symbolVal (Proxy :: Proxy path)
 
+#if MIN_VERSION_servant(0,11,0)
+instance HasGenRequest EmptyAPI where
+  genRequest _ = (0, error "EmptyAPIs cannot be queried.")
+#endif
 
 instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
     => HasGenRequest (Capture x c :> b) where
