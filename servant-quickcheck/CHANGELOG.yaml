@@ -9,7 +9,7 @@ releases:
         authors: phadej
         date: 2017-11-07
 
-  - version: "0.0.3.1"
+  - version: "0.0.4.0"
     changes:
 
       - description: Support for Servant 0.11
@@ -17,6 +17,7 @@ releases:
         pr: 32
         authors: adinapoli-iohk
         date: 2017-10-18
+        notes: Includes 0-weighted instance for EmptyAPI
 
   - version: "0.0.3.0"
     changes:
