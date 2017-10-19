@@ -46,9 +46,9 @@ library
                      , pretty == 1.1.*
                      , process >= 1.2 && < 1.5
                      , QuickCheck > 2.7 && < 2.11
-                     , servant > 0.6 && < 0.10
-                     , servant-client > 0.6 && < 0.10
-                     , servant-server > 0.6 && < 0.10
+                     , servant > 0.6 && < 0.12
+                     , servant-client > 0.6 && < 0.12
+                     , servant-server > 0.6 && < 0.12
                      , split == 0.2.*
                      , string-conversions > 0.3 && < 0.5
                      , temporary == 1.2.*

@@ -6,6 +6,7 @@ env:
   - STACK_YAML=stack.yaml
   - STACK_YAML=stack-lts-7.yaml
   - STACK_YAML=stack-lts-6.yaml
+  - STACK_YAML=stack-lts-9.yaml
 
 
 addons:
