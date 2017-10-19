@@ -34,7 +34,7 @@ module Servant.API (
   -- * Streaming endpoints, distinguished by HTTP method
   module Servant.API.Stream,
 
--- * Authentication
+  -- * Authentication
   module Servant.API.BasicAuth,
 
   -- * Endpoints description
