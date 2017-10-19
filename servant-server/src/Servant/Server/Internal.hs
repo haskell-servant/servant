@@ -10,6 +10,7 @@
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 
@@ -67,8 +68,8 @@ import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capt
                                               WithNamedContext,
                                               Description, Summary,
                                               Accept(..),
-                                              Framing(..), Stream,
-                                              StreamGenerator(..),
+                                              FramingRender(..), Stream,
+                                              StreamGenerator(..), ToStreamGenerator(..),
                                               BoundaryStrategy(..))
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
@@ -287,40 +288,68 @@ instance OVERLAPPING_
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
 
-instance ( MimeRender ctype a, ReflectMethod method, Framing framing ctype
-         ) => HasServer (Stream method framing ctype a) context where
+instance OVERLAPPABLE_
+         ( MimeRender ctype a, ReflectMethod method,
+           FramingRender framing ctype, ToStreamGenerator f a
+         ) => HasServer (Stream method framing ctype (f a)) context where
 
-  type ServerT (Stream method framing ctype a) m = m (StreamGenerator a)
+  type ServerT (Stream method framing ctype (f a)) m = m (f a)
   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ action = leafRouter $ \env request respond ->
+  route Proxy _ = streamRouter ([],) method (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
+      where method = reflectMethod (Proxy :: Proxy method)
+
+instance OVERLAPPING_
+         ( MimeRender ctype a, ReflectMethod method,
+           FramingRender framing ctype, ToStreamGenerator f a,
+           GetHeaders (Headers h (f a))
+         ) => HasServer (Stream method framing ctype (Headers h (f a))) context where
+
+  type ServerT (Stream method framing ctype (Headers h (f a))) m = m (Headers h (f a))
+  hoistServerWithContext _ _ nt s = nt s
+
+  route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
+      where method = reflectMethod (Proxy :: Proxy method)
+
+
+streamRouter :: (MimeRender ctype a, FramingRender framing ctype, ToStreamGenerator f a) =>
+                (b -> ([(HeaderName, B.ByteString)], f a))
+             -> Method
+             -> Proxy framing
+             -> Proxy ctype
+             -> Delayed env (Handler b)
+             -> Router env
+streamRouter splitHeaders method framingproxy ctypeproxy action = leafRouter $ \env request respond ->
           let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-              cmediatype = NHM.matchAccept [contentType (Proxy :: Proxy ctype)] accH
+              cmediatype = NHM.matchAccept [contentType ctypeproxy] accH
               accCheck = when (isNothing cmediatype) $ delayedFail err406
               contentHeader = (hContentType, NHM.renderHeader . maybeToList $ cmediatype)
           in runAction (action `addMethodCheck` methodCheck method request
                                `addAcceptCheck` accCheck
-                       ) env request respond $ \ (StreamGenerator k) ->
-                Route $ responseStream status200 [contentHeader] $ \write flush -> do
-                      write . BB.lazyByteString . header (Proxy :: Proxy framing) $ (Proxy :: Proxy ctype)
-                      case boundary (Proxy :: Proxy framing) (Proxy :: Proxy ctype) of
+                       ) env request respond $ \ output ->
+                let (headers, fa) = splitHeaders output
+                    k = getStreamGenerator . toStreamGenerator $ fa in
+                Route $ responseStream status200 (contentHeader : headers) $ \write flush -> do
+                      write . BB.lazyByteString $ header framingproxy ctypeproxy
+                      case boundary framingproxy ctypeproxy of
                            BoundaryStrategyBracket f ->
-                                    let go x = let bs = mimeRender (Proxy :: Proxy ctype) $ x
+                                    let go x = let bs = mimeRender ctypeproxy $ x
                                                    (before, after) = f bs
                                                in write (   BB.lazyByteString before
                                                          <> BB.lazyByteString bs
-                                                         <> BB.lazyByteString after)
+                                                         <> BB.lazyByteString after) >> flush
                                     in k go go
                            BoundaryStrategyIntersperse sep -> k
                              (\x -> do
-                                write . BB.lazyByteString . mimeRender (Proxy :: Proxy ctype) $ x
+                                write . BB.lazyByteString . mimeRender ctypeproxy $ x
                                 flush)
                              (\x -> do
-                                write . (BB.lazyByteString sep <>) . BB.lazyByteString . mimeRender (Proxy :: Proxy ctype) $ x
+                                write . (BB.lazyByteString sep <>) . BB.lazyByteString . mimeRender ctypeproxy $ x
                                 flush)
-                      write . BB.lazyByteString . terminate (Proxy :: Proxy framing) $ (Proxy :: Proxy ctype)
-    where method = reflectMethod (Proxy :: Proxy method)
-
+                           BoundaryStrategyGeneral f ->
+                                    let go = (>> flush) . write . BB.lazyByteString . f . mimeRender ctypeproxy
+                                    in k go go
+                      write . BB.lazyByteString $ terminate framingproxy ctypeproxy
 
 -- | If you use 'Header' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
