@@ -10,6 +10,7 @@
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 
@@ -197,16 +198,6 @@ allowedMethodHead method request = method == methodGet && requestMethod request 
 allowedMethod :: Method -> Request -> Bool
 allowedMethod method request = allowedMethodHead method request || requestMethod request == method
 
-processMethodRouter :: Maybe (BL.ByteString, BL.ByteString) -> Status -> Method
-                    -> Maybe [(HeaderName, B.ByteString)]
-                    -> Request -> RouteResult Response
-processMethodRouter handleA status method headers request = case handleA of
-  Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
-  Just (contentT, body) -> Route $ responseLBS status hdrs bdy
-    where
-      bdy = if allowedMethodHead method request then "" else body
-      hdrs = (hContentType, cs contentT) : (fromMaybe [] headers)
-
 methodCheck :: Method -> Request -> DelayedIO ()
 methodCheck method request
   | allowedMethod method request = return ()
@@ -225,33 +216,23 @@ acceptCheck proxy accH
   | otherwise                                  = delayedFail err406
 
 methodRouter :: (AllCTRender ctypes a)
-             => Method -> Proxy ctypes -> Status
-             -> Delayed env (Handler a)
+             => (b -> ([(HeaderName, B.ByteString)], a))
+             -> Method -> Proxy ctypes -> Status
+             -> Delayed env (Handler b)
              -> Router env
-methodRouter method proxy status action = leafRouter route'
+methodRouter splitHeaders method proxy status action = leafRouter route'
   where
     route' env request respond =
           let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
           in runAction (action `addMethodCheck` methodCheck method request
                                `addAcceptCheck` acceptCheck proxy accH
                        ) env request respond $ \ output -> do
-               let handleA = handleAcceptH proxy (AcceptHeader accH) output
-               processMethodRouter handleA status method Nothing request
-
-methodRouterHeaders :: (GetHeaders (Headers h v), AllCTRender ctypes v)
-                    => Method -> Proxy ctypes -> Status
-                    -> Delayed env (Handler (Headers h v))
-                    -> Router env
-methodRouterHeaders method proxy status action = leafRouter route'
-  where
-    route' env request respond =
-          let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-          in runAction (action `addMethodCheck` methodCheck method request
-                               `addAcceptCheck` acceptCheck proxy accH
-                       ) env request respond $ \ output -> do
-                let headers = getHeaders output
-                    handleA = handleAcceptH proxy (AcceptHeader accH) (getResponse output)
-                processMethodRouter handleA status method (Just headers) request
+               let (headers, b) = splitHeaders output
+               case handleAcceptH proxy (AcceptHeader accH) b of
+                 Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
+                 Just (contentT, body) ->
+                      let bdy = if allowedMethodHead method request then "" else body
+                      in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
 
 instance OVERLAPPABLE_
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
@@ -260,7 +241,7 @@ instance OVERLAPPABLE_
   type ServerT (Verb method status ctypes a) m = m a
   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ = methodRouter method (Proxy :: Proxy ctypes) status
+  route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
@@ -272,7 +253,7 @@ instance OVERLAPPING_
   type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ = methodRouterHeaders method (Proxy :: Proxy ctypes) status
+  route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
