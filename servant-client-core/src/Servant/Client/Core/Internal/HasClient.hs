@@ -18,6 +18,7 @@ import           Prelude                                ()
 import           Prelude.Compat
 
 import           Data.Foldable                          (toList)
+import qualified Data.ByteString.Lazy                   as BL
 import           Data.List                              (foldl')
 import           Data.Proxy                             (Proxy (Proxy))
 import           Data.Sequence                          (fromList)
@@ -29,8 +30,10 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          AuthProtect, BasicAuth,
                                                          BasicAuthData,
                                                          BuildHeadersTo (..),
+                                                         BuildFromStream (..),
                                                          Capture, CaptureAll,
                                                          Description, EmptyAPI,
+                                                         FramingUnrender (..),
                                                          Header, Headers (..),
                                                          HttpVersion, IsSecure,
                                                          MimeRender (mimeRender),
@@ -40,6 +43,7 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          QueryParams, Raw,
                                                          ReflectMethod (..),
                                                          RemoteHost, ReqBody,
+                                                         Stream,
                                                          Summary, ToHttpApiData,
                                                          Vault, Verb,
                                                          WithNamedContext,
@@ -244,6 +248,44 @@ instance OVERLAPPING_
                      , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
 
+instance OVERLAPPABLE_
+  ( RunClient m, MimeUnrender ct a, ReflectMethod method,
+    FramingUnrender framing a, BuildFromStream a (f a)
+  ) => HasClient m (Stream method framing ct (f a)) where
+  type Client m (Stream method framing ct (f a)) = m (f a)
+  clientWithRoute _pm Proxy req = do
+    response <- runRequest req
+      { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
+      , requestMethod = reflectMethod (Proxy :: Proxy method)
+      }
+    return $ decodeFramed (Proxy :: Proxy framing) (Proxy :: Proxy ct) (Proxy :: Proxy a) response
+
+instance OVERLAPPING_
+  ( RunClient m, BuildHeadersTo ls, MimeUnrender ct a, ReflectMethod method,
+    FramingUnrender framing a, BuildFromStream a (f a)
+  ) => HasClient m (Stream method framing ct (Headers ls (f a))) where
+  type Client m (Stream method framing ct (Headers ls (f a))) = m (Headers ls (f a))
+  clientWithRoute _pm Proxy req = do
+    response <- runRequest req
+      { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
+      , requestMethod = reflectMethod (Proxy :: Proxy method)
+      }
+    return Headers { getResponse = decodeFramed (Proxy :: Proxy framing) (Proxy :: Proxy ct) (Proxy :: Proxy a) response
+                   , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
+                   }
+
+decodeFramed :: forall ctype strategy a b.
+                (MimeUnrender ctype a, FramingUnrender strategy a, BuildFromStream a b) =>
+                Proxy strategy -> Proxy ctype -> Proxy a -> Response -> b
+decodeFramed framingproxy ctypeproxy typeproxy response =
+    let (body, uncons) = unrenderFrames framingproxy typeproxy (responseBody response)
+        loop b | BL.null b = []
+               | otherwise = case uncons b of
+                              (Right x,  r) -> case mimeUnrender ctypeproxy x :: Either String a of
+                                     Left err -> Left err : loop r
+                                     Right x' -> Right x' : loop r
+                              (Left err, r) -> Left err : loop r
+    in buildFromStream $ loop body
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take

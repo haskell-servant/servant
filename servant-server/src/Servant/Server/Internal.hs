@@ -349,7 +349,7 @@ streamRouter splitHeaders method framingproxy ctypeproxy action = leafRouter $ \
                            BoundaryStrategyGeneral f ->
                                     let go = (>> flush) . write . BB.lazyByteString . f . mimeRender ctypeproxy
                                     in k go go
-                      write . BB.lazyByteString $ terminate framingproxy ctypeproxy
+                      write . BB.lazyByteString $ trailer framingproxy ctypeproxy
 
 -- | If you use 'Header' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function

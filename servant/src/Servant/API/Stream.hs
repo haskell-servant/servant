@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds                #-}
 {-# LANGUAGE DeriveDataTypeable       #-}
 {-# LANGUAGE DeriveGeneric            #-}
 {-# LANGUAGE FlexibleInstances        #-}
@@ -17,10 +18,14 @@ import           Data.Proxy                  (Proxy)
 import           Data.Typeable               (Typeable)
 import           GHC.Generics                (Generic)
 import           Text.Read                   (readMaybe)
+import           Network.HTTP.Types.Method   (StdMethod (..))
 
--- | A stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy.
+-- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Steam endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
 data Stream (method :: k1) (framing :: *) (contentType :: *) a
   deriving (Typeable, Generic)
+
+type StreamGet  = Stream 'GET
+type StreamPost = Stream 'POST
 
 -- | Stream endpoints may be implemented as producing a @StreamGenerator@ -- a function that itself takes two emit functions -- the first to be used on the first value the stream emits, and the second to be used on all subsequent values (to allow interspersed framing strategies such as comma separation).
 newtype StreamGenerator a =  StreamGenerator {getStreamGenerator :: (a -> IO ()) -> (a -> IO ()) -> IO ()}
@@ -32,11 +37,18 @@ class ToStreamGenerator f a where
 instance ToStreamGenerator StreamGenerator a
    where toStreamGenerator x = x
 
+-- | BuildFromStream is intended to be implemented for types such as Conduit, Pipe, etc. By implementing this class, all such streaming abstractions can be used directly on the client side for talking to streaming endpoints. The streams we build from are represented as lazy lists of elements interspersed with possible errors.
+class BuildFromStream a b where
+   buildFromStream :: [Either String a] -> b
+
+instance BuildFromStream a [Either String a]
+   where buildFromStream x = x
+
 -- | The FramingRender class provides the logic for emitting a framing strategy. The strategy emits a header, followed by boundary-delimited data, and finally a termination character. For many strategies, some of these will just be empty bytestrings.
 class FramingRender strategy a where
-   header    :: Proxy strategy -> Proxy a -> ByteString
-   boundary  :: Proxy strategy -> Proxy a -> BoundaryStrategy
-   terminate :: Proxy strategy -> Proxy a -> ByteString
+   header   :: Proxy strategy -> Proxy a -> ByteString
+   boundary :: Proxy strategy -> Proxy a -> BoundaryStrategy
+   trailer  :: Proxy strategy -> Proxy a -> ByteString
 
 -- | The bracketing strategy generates things to precede and follow the content, as with netstrings.
 --   The intersperse strategy inserts seperators between things, as with newline framing.
@@ -45,7 +57,7 @@ data BoundaryStrategy = BoundaryStrategyBracket (ByteString -> (ByteString,ByteS
                       | BoundaryStrategyIntersperse ByteString
                       | BoundaryStrategyGeneral (ByteString -> ByteString)
 
--- | The FramingUnrender class provides the logic for parsing a framing strategy. Given a ByteString, it strips the header, and returns a tuple of the remainder along with a step function that can progressively "uncons" elements from this remainder. The error state is presented per-frame so that protocols that can resume after errors are able to do so.
+-- | The FramingUnrender class provides the logic for parsing a framing strategy. Given a ByteString, it strips the header, and returns a tuple of the remainder along with a step function that can progressively "uncons" elements from this remainder. The error state is presented per-frame so that protocols that can resume after errors are able to do so. Termination of the unrendering is indicated by return of an empty reminder.
 
 class FramingUnrender strategy a where
    unrenderFrames :: Proxy strategy -> Proxy a -> ByteString -> (ByteString,  ByteString -> (Either String ByteString, ByteString))
@@ -57,7 +69,7 @@ data NewlineFraming
 instance FramingRender NewlineFraming a where
    header    _ _ = empty
    boundary  _ _ = BoundaryStrategyIntersperse "\n"
-   terminate _ _ = empty
+   trailer   _ _ = empty
 
 instance FramingUnrender NewlineFraming a where
    unrenderFrames _ _ = (, (Right *** LB.drop 1) . LB.break (== '\n'))
@@ -68,7 +80,7 @@ data NetstringFraming
 instance FramingRender NetstringFraming a where
    header    _ _ = empty
    boundary  _ _ = BoundaryStrategyBracket $ \b -> (LB.pack . show . LB.length $ b, "")
-   terminate _ _ = empty
+   trailer   _ _ = empty
 
 instance FramingUnrender NetstringFraming a where
    unrenderFrames _ _ = (, \b -> let (i,r) = LB.break (==':') b

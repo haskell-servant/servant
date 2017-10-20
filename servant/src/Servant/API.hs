@@ -83,9 +83,10 @@ import           Servant.API.IsSecure        (IsSecure (..))
 import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
-import           Servant.API.Stream          (Stream, StreamGenerator(..), ToStreamGenerator(..),
-                                              FramingRender(..), BoundaryStrategy(..),
-                                              FramingUnrender(..),
+import           Servant.API.Stream          (Stream, StreamGenerator (..),
+                                              ToStreamGenerator (..), BuildFromStream (..),
+                                              FramingRender (..), BoundaryStrategy (..),
+                                              FramingUnrender (..),
                                               NewlineFraming)
 import           Servant.API.RemoteHost      (RemoteHost)
 import           Servant.API.ReqBody         (ReqBody)
