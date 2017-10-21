@@ -37,6 +37,8 @@ import           Foreign.StablePtr
 import           GHC.Generics
 import           GHCJS.Foreign.Callback
 import           GHCJS.Prim
+import           GHCJS.Types
+import           JavaScript.Web.Location
 import           Network.HTTP.Types
 import           Network.HTTP.Media (renderHeader)
 import           Servant.Client.Core
@@ -81,8 +83,34 @@ instance RunClient ClientM where
 instance ClientLike (ClientM a) (ClientM a) where
   mkClient = id
 
-runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
-runClientM cm env = runExceptT $ flip runReaderT env $ runClientM' cm
+runClientMOrigin :: ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientMOrigin cm env = runExceptT $ flip runReaderT env $ runClientM' cm
+
+runClientM :: ClientM a -> IO (Either ServantError a)
+runClientM m = do
+    curLoc <- getWindowLocation
+
+    jsStr_protocol <- getProtocol curLoc
+    jsStr_port     <- getPort     curLoc
+    jsStr_hostname <- getHostname curLoc
+
+    let protocol
+          | jsStr_protocol == "https:" = Https
+          | otherwise                  = Http
+
+        portStr :: String
+        portStr = fromJSString $ jsval jsStr_port
+
+        port :: Int
+        port | null portStr = case protocol of
+                 Http  ->  80
+                 Https -> 443
+             | otherwise = read portStr
+
+        hostname :: String
+        hostname = fromJSString $ jsval jsStr_hostname
+
+    runClientMOrigin m (ClientEnv (BaseUrl protocol hostname port ""))
 
 performRequest :: Request -> ClientM Response
 performRequest req = do
