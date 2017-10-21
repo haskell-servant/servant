@@ -90,10 +90,12 @@ test-suite spec
                      , hspec
                      , hspec-core
                      , http-client
+                     , blaze-html
                      , warp
                      , servant-server
                      , servant-client
                      , servant
+                     , servant-blaze
                      , transformers
                      , QuickCheck
                      , quickcheck-io

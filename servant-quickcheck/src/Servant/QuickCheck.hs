@@ -34,6 +34,9 @@ module Servant.QuickCheck
   , getsHaveCacheControlHeader
   , headsHaveCacheControlHeader
   , createContainsValidLocation
+    -- * Html Predicates
+  , htmlIncludesDoctype
+
   -- *** Predicate utilities and types
   , (<%>)
   , Predicates

@@ -12,6 +12,9 @@ import           Data.Maybe              (fromJust)
 import           Network.HTTP.Client     (path, queryString)
 import           Prelude.Compat
 import           Servant
+import           Servant.HTML.Blaze      (HTML)
+import qualified Text.Blaze.Html         as Blaze
+import qualified Text.Blaze.Html5        as Blaze5
 import           Test.Hspec              (Spec, context, describe, it, shouldBe,
                                           shouldContain)
 import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
@@ -48,6 +51,7 @@ spec = do
   queryParamsSpec
   queryFlagsSpec
   deepPathSpec
+  htmlDocTypesSpec
   unbiasedGenerationSpec
 
 serversEqualSpec :: Spec
@@ -189,6 +193,25 @@ queryFlagsSpec = describe "QueryFlags" $ do
         qs = C.unpack $ queryString req
     qs `shouldBe` "one&two"
 
+htmlDocTypesSpec :: Spec
+htmlDocTypesSpec = describe "HtmlDocTypes" $ do
+
+    it "fails HTML without doctype correctly" $ do
+      err <- withServantServerAndContext docTypeApi ctx noDocTypeServer $ \burl -> do
+        evalExample $ serverSatisfies docTypeApi burl args
+          (htmlIncludesDoctype <%> mempty)
+      show err `shouldContain` "htmlIncludesDoctype"
+
+    it "passes HTML with a doctype at start" $ do
+      withServantServerAndContext docTypeApi ctx docTypeServer $ \burl ->
+        serverSatisfies docTypeApi burl args (htmlIncludesDoctype <%> mempty)
+
+    it "accepts json endpoints and passes over them in silence" $ do
+      withServantServerAndContext api ctx server $ \burl -> do
+        serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
+          (htmlIncludesDoctype <%> mempty)
+
+
 makeRandomRequest :: Proxy LargeAPI -> BaseUrl -> IO Integer
 makeRandomRequest large burl = do
   req <- generate $ runGenRequest large
@@ -258,7 +281,20 @@ server2 = return $ return 1
 server3 :: IO (Server API2)
 server3 = return $ return 2
 
+-- With Doctypes
+type HtmlDoctype = Get '[HTML] Blaze.Html
 
+docTypeApi :: Proxy HtmlDoctype
+docTypeApi = Proxy
+
+docTypeServer :: IO (Server HtmlDoctype)
+docTypeServer = pure $ pure $ Blaze5.docTypeHtml $ Blaze5.span "Hello Test!"
+
+noDocTypeServer :: IO (Server HtmlDoctype)
+noDocTypeServer = pure $ pure $ Blaze.text "Hello Test!"
+
+
+-- Api for unbiased generation of requests tests
 largeApi :: Proxy LargeAPI
 largeApi = Proxy
 
