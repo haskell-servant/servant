@@ -1,20 +1,176 @@
 # servant-client-ghcjs
 
-![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
+Type safe querying of servant APIs from the browser.
 
-This library lets you automatically derive Haskell functions that let you query each endpoint of a *servant* webservice. This library is specifically for ghcjs, as opposed to servant-client.
+`servant-client-ghcjs` is much like `servant-client`, as both packages allow you to generate functions that query the endpoints of your servant API. Both packages should feel the same in usage. The big difference lies in how they perform the actual requests. `servant-client` (indirectly) uses your operating system's socket mechanisms, whereas `servant-client-ghcjs` uses your browser's [XHR](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest) mechanisms to send requests.
 
-## Example
+This guide assumes knowledge of servant. Reading its [documentation](haskell-servant.readthedocs.io) is recommended if you're new to the subject.
 
-``` haskell
-type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
-        :<|> "books" :> ReqBody Book :> Post '[JSON] Book -- POST /books
+## Using servant-client-ghcjs
+`servant-client-ghcjs` should feel familiar if you've worked with `servant-client`.
 
-myApi :: Proxy MyApi
-myApi = Proxy
+Take the following API (taken from the [Querying an API](http://haskell-servant.readthedocs.io/en/stable/tutorial/Client.html) section in the servant documentation)
 
-getAllBooks :: Manager -> BaseUrl -> ExceptT String IO [Book]
-postNewBook :: Book -> Manager -> BaseUrl -> ExceptT String IO Book
--- 'client' allows you to produce operations to query an API from a client.
-(getAllBooks :<|> postNewBook) = client myApi
+```haskell
+{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE TypeOperators  #-}
+
+module Main where
+
+import "aeson" Data.Aeson
+import "base" Data.Proxy
+import "base" GHC.Generics
+import "servant" Servant.API                       -- To define the API itself
+import "servant-client-ghcjs" Servant.Client.Ghcjs -- To generate client functions
+
+type API =
+         "position"  :> Capture "x" Int            :> Capture "y" Int          :> Get '[JSON] Position
+    :<|> "hello"     :> QueryParam "name" String   :> Get  '[JSON] HelloMessage
+    :<|> "marketing" :> ReqBody '[JSON] ClientInfo :> Post '[JSON] Email
+
+
+-- Data types used in the API
+
+data Position = Position
+  { xCoord :: Int
+  , yCoord :: Int
+  } deriving (Show, Generic)
+
+instance FromJSON Position
+
+newtype HelloMessage = HelloMessage { msg :: String }
+  deriving (Show, Generic)
+
+instance FromJSON HelloMessage
+
+data ClientInfo = ClientInfo
+  { clientName         :: String
+  , clientEmail        :: String
+  , clientAge          :: Int
+  , clientInterestedIn :: [String]
+  } deriving Generic
+
+instance ToJSON ClientInfo
+
+data Email = Email
+  { from    :: String
+  , to      :: String
+  , subject :: String
+  , body    :: String
+  } deriving (Show, Generic)
+
+instance FromJSON Email
+```
+
+Client functions are generated with the `client` function, like with `servant-client`:
+
+```haskell
+position :: Int
+         -> Int
+         -> ClientM Position
+
+hello :: Maybe String
+      -> ClientM HelloMessage
+
+marketing :: ClientInfo
+          -> ClientM Email
+
+api :: Proxy API
+api = Proxy
+
+position :<|> hello :<|> marketing = client api
+```
+
+To run these requests, they only need to be given to `runClientM`. The type of which is as follows:
+
+```haskell
+runClientM :: ClientM a -> IO (Either ServantError a)
+```
+
+The requests can then be run as follows:
+
+```haskell
+main :: IO ()
+main = do
+    ePos <- runClientM $ position 10 20
+    print ePos
+
+    eHelloMessage <- runClientM $ hello (Just "Servant")
+    print eHelloMessage
+
+    eEmail <- runClientM $ marketing ClientInfo
+      { clientName         = "Servant"
+      , clientEmail        = "servant@example.com"
+      , clientAge          = 3
+      , clientInterestedIn = ["servant", "haskell", "type safety", "web apps"]
+      }
+    print eEmail
+```
+
+`runClientM` requires no URL, as it assumes that all requests are meant for the server that served the web page on which the code is being run. It is however possible to call REST APIs from other locations with [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) using `runClientMOrigin`:
+
+```haskell
+runClientMOrigin :: ClientM a -> ClientEnv -> IO (Either ServantError a)
+```
+
+Where `ClientEnv` holds a `BaseURL` that tells servant where to send the request to.
+
+# Common client functions
+Specifically in big applications it can be desirable to have client functions that work for both `servant-client` *and* `servant-client-ghcjs`. Luckily, the common bits of those two packages live in a parent package, called `servant-client-core`. This package holds the tools to create generic client functions. Generating clients this way is a bit different, though, as the client functions need to be generic in the monad `m` that runs the actual requests.
+
+In the example below, the client functions are put in a data type called `APIClient`, which has `m` as a type parameter. The lowercase `apiClient` constructs this data type, demanding that `m` is indeed a monad that can run requests.
+
+```haskell
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+
+...
+import "servant-client-core" Servant.Client.Core
+
+...
+
+data APIClient m = APIClient
+  { position  :: Int -> Int -> m Position
+  , hello     :: Maybe String -> m HelloMessage
+  , marketing :: ClientInfo -> m Email
+  }
+
+apiClient
+    :: forall m
+     . RunClient m
+    => APIClient m
+apiClient = APIClient { .. }
+  where
+    position
+      :<|> hello
+      :<|> marketing = Proxy @API `clientIn` Proxy @m
+```
+
+The call site changes slightly too, as the functions now need to be taken from `apiClient`:
+
+```haskell
+import "servant-client-ghcjs" Servant.Client.Ghcjs
+
+main :: IO ()
+main = do
+    ePos <- runClientM $ position apiClient 10 20
+    print ePos
+```
+
+Here's how the requests would be performed in regular `servant-client`:
+
+```haskell
+import "servant-client" Servant.Client
+import "http-client" Network.HTTP.Client ( newManager, defaultManagerSettings )
+
+main :: IO ()
+main = do
+    mgr <- newManager defaultManagerSettings
+    let clientBaseUrl = BaseUrl Http "www.example.com" 80 ""
+    ePos <- runClientM (position apiClient 10 20) $ ClientEnv mgr clientBaseUrl
+    print ePos
 ```
