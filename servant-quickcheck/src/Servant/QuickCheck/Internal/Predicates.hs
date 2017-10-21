@@ -7,11 +7,12 @@ import           Data.Bifunctor        (first)
 import qualified Data.ByteString       as SBS
 import qualified Data.ByteString.Char8 as SBSC
 import qualified Data.ByteString.Lazy  as LBS
-import           Data.CaseInsensitive  (mk, foldedCase)
+import           Data.CaseInsensitive  (foldCase, foldedCase, mk)
 import           Data.Either           (isRight)
 import           Data.List.Split       (wordsBy)
 import           Data.Maybe            (fromMaybe, isJust)
 import           Data.Monoid           ((<>))
+import qualified Data.Text             as T
 import           Data.Time             (UTCTime, defaultTimeLocale, parseTimeM,
                                         rfc822DateFormat)
 import           GHC.Generics          (Generic)
@@ -42,7 +43,7 @@ import Servant.QuickCheck.Internal.ErrorTypes
 -- /Since 0.0.0.0/
 not500 :: ResponsePredicate
 not500 = ResponsePredicate $ \resp ->
-  when (responseStatus resp == status500) $ fail "not500"
+  when (responseStatus resp == status500) $ throw $ PredicateFailure "not500" Nothing resp
 
 -- | [__Optional__]
 --
@@ -119,12 +120,12 @@ createContainsValidLocation
      resp <- httpLbs req mgr
      if responseStatus resp == status201
          then case lookup "Location" $ responseHeaders resp of
-             Nothing -> fail n
+             Nothing -> throw $ PredicateFailure n (Just req) resp
              Just l  -> case parseRequest $ SBSC.unpack l of
-               Nothing -> fail n
+               Nothing -> throw $ PredicateFailure n (Just req) resp
                Just x  -> do
                  resp2 <- httpLbs x mgr
-                 status2XX resp2 n
+                 status2XX (Just req) resp2 n
                  return [resp, resp2]
          else return [resp]
 
@@ -225,7 +226,7 @@ honoursAcceptHeader
           sacc  = fromMaybe "*/*" $ lookup "Accept" (requestHeaders req)
       if status100 < scode && scode < status300
         then if isJust $ sctype >>= \x -> matchAccept [x] sacc
-          then fail "honoursAcceptHeader"
+          then throw $ PredicateFailure "honoursAcceptHeader" (Just req) resp
           else return [resp]
         else return [resp]
 
@@ -336,7 +337,29 @@ unauthorizedContainsWWWAuthenticate
   = ResponsePredicate $ \resp ->
       if responseStatus resp == status401
         then unless (hasValidHeader "WWW-Authenticate" (const True) resp) $
-          fail "unauthorizedContainsWWWAuthenticate"
+          throw $ PredicateFailure "unauthorizedContainsWWWAuthenticate" Nothing resp
+        else return ()
+
+
+-- | [__RFC Compliance__]
+--
+-- [An HTML] document will start with exactly this string: <!DOCTYPE html>
+--
+-- This function checks that HTML documents (those with `Content-Type: text/html...`)
+-- include a DOCTYPE declaration at the top. We do not enforce capital case for the string `DOCTYPE`.
+--
+-- __References__:
+--
+--  * HTML5 Doctype: <https://tools.ietf.org/html/rfc7992#section-6.1 RFC 7992 Section 6.1>
+-- /Since 0.3.0.0/
+htmlIncludesDoctype :: ResponsePredicate
+htmlIncludesDoctype
+  = ResponsePredicate $ \resp ->
+      if hasValidHeader "Content-Type" (SBS.isPrefixOf . foldCase $ "text/html") resp
+        then do
+            let htmlContent = foldCase . LBS.take 20 $ responseBody resp
+            unless (LBS.isPrefixOf (foldCase "<!doctype html>") htmlContent) $
+              throw $ PredicateFailure "htmlIncludesDoctype" Nothing resp
         else return ()
 
 -- * Predicate logic
@@ -422,8 +445,8 @@ isRFC822Date s
     Nothing -> False
     Just (_ :: UTCTime) -> True
 
-status2XX :: Monad m => Response b -> String -> m ()
-status2XX r t
-  | status200 <= responseStatus r && responseStatus r < status300
+status2XX :: Monad m => Maybe Request -> Response LBS.ByteString -> T.Text -> m ()
+status2XX mreq resp t
+  | status200 <= responseStatus resp && responseStatus resp < status300
   = return ()
-  | otherwise = fail t
+  | otherwise = throw $ PredicateFailure t mreq resp
