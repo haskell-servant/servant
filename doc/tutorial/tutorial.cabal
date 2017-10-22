@@ -13,6 +13,9 @@ tested-with:
   GHC==7.10.3
   GHC==8.0.2
   GHC==8.2.1
+extra-source-files:
+  static/index.html
+  static/ui.js
 
 library
   exposed-modules:     ApiType
@@ -42,7 +45,8 @@ library
                      , string-conversions
                      , bytestring
                      , attoparsec
-                     , mtl
+                     , mtl >=2.1 && <2.3
+                     , mtl-compat
                      , random
                      , js-jquery
                      , wai
@@ -61,6 +65,8 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules: JavascriptSpec
+  build-tool-depends:
+    hspec-discover:hspec-discover
   build-depends: base == 4.*
                , tutorial
                , hspec

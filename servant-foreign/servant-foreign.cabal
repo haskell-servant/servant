@@ -71,6 +71,8 @@ test-suite spec
   include-dirs:      include
   main-is:           Spec.hs
   other-modules:     Servant.ForeignSpec
+  build-tool-depends:
+    hspec-discover:hspec-discover
   build-depends:     base
                    , hspec >= 2.1.8
                    , servant

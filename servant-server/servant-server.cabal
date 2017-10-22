@@ -125,6 +125,8 @@ test-suite spec
       Servant.Server.UsingContextSpec.TestCombinators
       Servant.ServerSpec
       Servant.Utils.StaticFilesSpec
+  build-tool-depends:
+    hspec-discover:hspec-discover
   build-depends:
       base == 4.*
     , base-compat
