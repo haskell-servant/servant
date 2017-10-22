@@ -70,5 +70,7 @@ test-suite spec
     , servant-client-core
     , hspec == 2.*
     , QuickCheck >= 2.7 && < 2.11
+  build-tool-depends:
+    hspec-discover:hspec-discover
   other-modules:
       Servant.Client.Core.Internal.BaseUrlSpec
