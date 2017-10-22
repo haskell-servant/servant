@@ -77,8 +77,8 @@ install:
       (cd "doc/tutorial"; autoreconf -i);
     fi
   - rm -f cabal.project.freeze
-  - cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
-  - cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
+  - cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 servant-server servant-client
+  - cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 servant-server servant-client
   - rm -rf "servant"/.ghc.environment.* "servant-client"/.ghc.environment.* "servant-client-core"/.ghc.environment.* "servant-docs"/.ghc.environment.* "servant-foreign"/.ghc.environment.* "servant-server"/.ghc.environment.* "doc/tutorial"/.ghc.environment.* "servant"/dist "servant-client"/dist "servant-client-core"/dist "servant-docs"/dist "servant-foreign"/dist "servant-server"/dist "doc/tutorial"/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
