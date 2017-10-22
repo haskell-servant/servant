@@ -1,4 +1,5 @@
 **/*/dist
+.ghc.environment.*
 dist-newstyle
 /bin
 /lib
