@@ -18,7 +18,11 @@ copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contribut
 category:            Servant Web
 build-type:          Custom
 cabal-version:       >=1.10
-tested-with:         GHC >= 7.8
+tested-with:
+  GHC==7.8.4
+  GHC==7.10.3
+  GHC==8.0.2
+  GHC==8.2.1
 extra-source-files:
   include/*.h
   CHANGELOG.md
@@ -118,6 +122,8 @@ test-suite spec
       Servant.API.ResponseHeadersSpec
       Servant.Utils.LinksSpec
       Servant.Utils.EnterSpec
+  build-tool-depends:
+    hspec-discover:hspec-discover
   build-depends:
       base == 4.*
     , base-compat

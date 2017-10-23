@@ -22,6 +22,12 @@ extra-source-files:
   CHANGELOG.md
   README.md
 bug-reports:         http://github.com/haskell-servant/servant/issues
+tested-with:
+  GHC==7.8.4
+  GHC==7.10.3
+  GHC==8.0.2
+  GHC==8.2.1
+
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git
@@ -65,6 +71,8 @@ test-suite spec
   include-dirs:      include
   main-is:           Spec.hs
   other-modules:     Servant.ForeignSpec
+  build-tool-depends:
+    hspec-discover:hspec-discover
   build-depends:     base
                    , hspec >= 2.1.8
                    , servant
