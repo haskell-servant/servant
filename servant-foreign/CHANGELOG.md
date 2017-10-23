@@ -1,3 +1,11 @@
+0.10.2
+------
+
+### Changes
+
+* Add support for body/return content types in `Req`
+  ([#832](https://github.com/haskell-servant/servant/pull/832/files)).
+
 0.10.1
 ------
 
