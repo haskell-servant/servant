@@ -28,7 +28,11 @@ import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
                                              methodDelete, methodGet,
                                              methodHead, methodPatch,
                                              methodPost, methodPut, ok200,
+#if MIN_VERSION_http_types(0,10,0)
+                                             imATeapot418,
+#else
                                              imATeaPot418,
+#endif
                                              parseQuery)
 import           Network.Wai                (Application, Request, requestHeaders, pathInfo,
                                              queryString, rawQueryString,
@@ -64,6 +68,11 @@ import           Servant.Server.Experimental.Auth
                                              mkAuthHandler)
 import           Servant.Server.Internal.Context
                                             (NamedContext(..))
+
+#if !MIN_VERSION_http_types(0,10,0)
+imATeapot418 :: Status
+imATeapot418 = imATeaPot418
+#endif
 
 -- * comprehensive api test
 
@@ -657,7 +666,7 @@ basicAuthApi = Proxy
 basicAuthServer :: Server BasicAuthAPI
 basicAuthServer =
   const (return jerry) :<|>
-  (Tagged $ \ _ respond -> respond $ responseLBS imATeaPot418 [] "")
+  (Tagged $ \ _ respond -> respond $ responseLBS imATeapot418 [] "")
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
@@ -702,7 +711,7 @@ genAuthApi = Proxy
 
 genAuthServer :: Server GenAuthAPI
 genAuthServer = const (return tweety)
-           :<|> (Tagged $ \ _ respond -> respond $ responseLBS imATeaPot418 [] "")
+           :<|> (Tagged $ \ _ respond -> respond $ responseLBS imATeapot418 [] "")
 
 type instance AuthServerData (AuthProtect "auth") = ()
 
