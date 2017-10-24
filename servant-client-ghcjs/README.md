@@ -4,7 +4,7 @@ Type safe querying of servant APIs from the browser.
 
 `servant-client-ghcjs` is much like `servant-client`, as both packages allow you to generate functions that query the endpoints of your servant API. Both packages should feel the same in usage. The big difference lies in how they perform the actual requests. `servant-client` (indirectly) uses your operating system's socket mechanisms, whereas `servant-client-ghcjs` uses your browser's [XHR](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest) mechanisms to send requests.
 
-This guide assumes knowledge of servant. Reading its [documentation](haskell-servant.readthedocs.io) is recommended if you're new to the subject.
+This guide assumes knowledge of servant. Reading its [documentation](http://haskell-servant.readthedocs.io) is recommended if you're new to the subject.
 
 ## Using servant-client-ghcjs
 `servant-client-ghcjs` should feel familiar if you've worked with `servant-client`.
@@ -14,16 +14,15 @@ Take the following API (taken from the [Querying an API](http://haskell-servant.
 ```haskell
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE DeriveGeneric  #-}
-{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE TypeOperators  #-}
 
 module Main where
 
-import "aeson" Data.Aeson
-import "base" Data.Proxy
-import "base" GHC.Generics
-import "servant" Servant.API                       -- To define the API itself
-import "servant-client-ghcjs" Servant.Client.Ghcjs -- To generate client functions
+import Data.Aeson
+import Data.Proxy
+import GHC.Generics
+import Servant.API          -- From the 'servant' package, to define the API itself
+import Servant.Client.Ghcjs -- To generate client functions
 
 type API =
          "position"  :> Capture "x" Int            :> Capture "y" Int          :> Get '[JSON] Position
@@ -129,7 +128,7 @@ In the example below, the client functions are put in a data type called `APICli
 {-# LANGUAGE TypeApplications    #-}
 
 ...
-import "servant-client-core" Servant.Client.Core
+import Servant.Client.Core -- From the 'servant-client-core' package
 
 ...
 
@@ -153,7 +152,7 @@ apiClient = APIClient { .. }
 The call site changes slightly too, as the functions now need to be taken from `apiClient`:
 
 ```haskell
-import "servant-client-ghcjs" Servant.Client.Ghcjs
+import Servant.Client.Ghcjs
 
 main :: IO ()
 main = do
@@ -161,11 +160,11 @@ main = do
     print ePos
 ```
 
-Here's how the requests would be performed in regular `servant-client`:
+Here's how the requests would be performed using the regular `servant-client` package:
 
 ```haskell
-import "servant-client" Servant.Client
-import "http-client" Network.HTTP.Client ( newManager, defaultManagerSettings )
+import Servant.Client
+import Network.HTTP.Client ( newManager, defaultManagerSettings )
 
 main :: IO ()
 main = do
