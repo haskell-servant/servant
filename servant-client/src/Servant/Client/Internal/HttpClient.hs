@@ -88,6 +88,7 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
   runRequest = performRequest
+  streamingRequest = performStreamingRequest
   throwServantError = throwError
   catchServantError = catchError
 
@@ -114,6 +115,17 @@ performRequest req = do
       unless (status_code >= 200 && status_code < 300) $
         throwError $ FailureResponse ourResponse
       return ourResponse
+
+performStreamingRequest :: Request -> ClientM StreamingResponse
+performStreamingRequest req = do
+  m <- asks manager
+  burl <- asks baseUrl
+  let request = requestToClientRequest burl req
+
+  return $ StreamingResponse $
+    \k -> Client.withResponse request m $
+    \r ->
+    k (Client.responseStatus r, fromList $ Client.responseHeaders r, Client.responseVersion r, Client.responseBody r)
 
 clientResponseToReponse :: Client.Response BSL.ByteString -> Response
 clientResponseToReponse r = Response

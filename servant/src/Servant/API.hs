@@ -85,6 +85,7 @@ import           Servant.API.QueryParam      (QueryFlag, QueryParam,
 import           Servant.API.Raw             (Raw)
 import           Servant.API.Stream          (Stream, StreamGenerator (..),
                                               ToStreamGenerator (..), BuildFromStream (..),
+                                              ByteStringParser (..),
                                               FramingRender (..), BoundaryStrategy (..),
                                               FramingUnrender (..),
                                               NewlineFraming)

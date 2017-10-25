@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -17,9 +18,12 @@ module Servant.Client.Core.Internal.HasClient where
 import           Prelude                                ()
 import           Prelude.Compat
 
+import           Control.Concurrent                     (newMVar, modifyMVar)
+import           Control.Monad                          (when)
 import           Data.Foldable                          (toList)
 import qualified Data.ByteString.Lazy                   as BL
 import           Data.List                              (foldl')
+import           Data.Monoid                            ((<>))
 import           Data.Proxy                             (Proxy (Proxy))
 import           Data.Sequence                          (fromList)
 import           Data.String                            (fromString)
@@ -31,6 +35,7 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          BasicAuthData,
                                                          BuildHeadersTo (..),
                                                          BuildFromStream (..),
+                                                         ByteStringParser (..),
                                                          Capture, CaptureAll,
                                                          Description, EmptyAPI,
                                                          FramingUnrender (..),
@@ -248,44 +253,54 @@ instance OVERLAPPING_
                      , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
 
+data ResultStream a = ResultStream ((forall b. (IO (Maybe (Either String a)) -> IO b) -> IO b))
+
 instance OVERLAPPABLE_
   ( RunClient m, MimeUnrender ct a, ReflectMethod method,
     FramingUnrender framing a, BuildFromStream a (f a)
   ) => HasClient m (Stream method framing ct (f a)) where
-  type Client m (Stream method framing ct (f a)) = m (f a)
+
+  type Client m (Stream method framing ct (f a)) = m (ResultStream a)
+
   clientWithRoute _pm Proxy req = do
-    response <- runRequest req
+   sresp <- streamingRequest req
       { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
       , requestMethod = reflectMethod (Proxy :: Proxy method)
       }
-    return $ decodeFramed (Proxy :: Proxy framing) (Proxy :: Proxy ct) (Proxy :: Proxy a) response
+   return $ ResultStream $ \k ->
+     runStreamingResponse sresp $ \(status,_headers,_httpversion,reader) -> do
+      when (H.statusCode status /= 200) $ error "bad status" --fixme
+      let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)
+           loop bs = do
+             res <- BL.fromStrict <$> reader
+             if BL.null res
+              then return $ parseEOF unrender res
+              else let sofar = (bs <> res)
+                   in case parseIncremental unrender sofar of
+                     Just x -> return x
+                     Nothing -> loop sofar
+      (frameParser, remainder) <- loop BL.empty
+      state <- newMVar remainder
+      let frameLoop bs = do
+              res <- BL.fromStrict <$> reader
+              let addIsEmptyInfo (a, r) = (r, (a, BL.null r && BL.null res))
+              if BL.null res
+                   then return . addIsEmptyInfo $ parseEOF frameParser res
+                   else let sofar = (bs <> res)
+                        in case parseIncremental frameParser res of
+                          Just x -> return $ addIsEmptyInfo x
+                          Nothing -> frameLoop sofar
 
-instance OVERLAPPING_
-  ( RunClient m, BuildHeadersTo ls, MimeUnrender ct a, ReflectMethod method,
-    FramingUnrender framing a, BuildFromStream a (f a)
-  ) => HasClient m (Stream method framing ct (Headers ls (f a))) where
-  type Client m (Stream method framing ct (Headers ls (f a))) = m (Headers ls (f a))
-  clientWithRoute _pm Proxy req = do
-    response <- runRequest req
-      { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
-      , requestMethod = reflectMethod (Proxy :: Proxy method)
-      }
-    return Headers { getResponse = decodeFramed (Proxy :: Proxy framing) (Proxy :: Proxy ct) (Proxy :: Proxy a) response
-                   , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
-                   }
+          go = processResult <$> modifyMVar state frameLoop
+          processResult (Right bs,isDone) =
+               if BL.null bs && isDone
+                    then Nothing
+                    else Just $ case mimeUnrender (Proxy :: Proxy ct) bs :: Either String a of
+                                  Left err -> Left err
+                                  Right x -> Right x
+          processResult (Left err, _) = Just (Left err)
+      k go
 
-decodeFramed :: forall ctype strategy a b.
-                (MimeUnrender ctype a, FramingUnrender strategy a, BuildFromStream a b) =>
-                Proxy strategy -> Proxy ctype -> Proxy a -> Response -> b
-decodeFramed framingproxy ctypeproxy typeproxy response =
-    let (body, uncons) = unrenderFrames framingproxy typeproxy (responseBody response)
-        loop b | BL.null b = []
-               | otherwise = case uncons b of
-                              (Right x,  r) -> case mimeUnrender ctypeproxy x :: Either String a of
-                                     Left err -> Left err : loop r
-                                     Right x' -> Right x' : loop r
-                              (Left err, r) -> Left err : loop r
-    in buildFromStream $ loop body
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take

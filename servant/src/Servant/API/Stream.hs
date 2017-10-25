@@ -11,13 +11,11 @@
 
 module Servant.API.Stream where
 
-import           Control.Arrow               ((***), first)
 import           Data.ByteString.Lazy        (ByteString, empty)
 import qualified Data.ByteString.Lazy.Char8  as LB
 import           Data.Proxy                  (Proxy)
 import           Data.Typeable               (Typeable)
 import           GHC.Generics                (Generic)
-import           Text.Read                   (readMaybe)
 import           Network.HTTP.Types.Method   (StdMethod (..))
 
 -- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Steam endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
@@ -57,10 +55,16 @@ data BoundaryStrategy = BoundaryStrategyBracket (ByteString -> (ByteString,ByteS
                       | BoundaryStrategyIntersperse ByteString
                       | BoundaryStrategyGeneral (ByteString -> ByteString)
 
--- | The FramingUnrender class provides the logic for parsing a framing strategy. Given a ByteString, it strips the header, and returns a tuple of the remainder along with a step function that can progressively "uncons" elements from this remainder. The error state is presented per-frame so that protocols that can resume after errors are able to do so. Termination of the unrendering is indicated by return of an empty reminder.
+-- | A type of parser that can never fail, and has different parsing strategies (incremental, or EOF) depending if more input can be sent. The incremental parser should return `Nothing` if it would like to be sent a longer ByteString. If it returns a value, it also returns the remainder following that value.
+data ByteStringParser a = ByteStringParser {
+  parseIncremental :: ByteString -> Maybe (a, ByteString),
+  parseEOF :: ByteString -> (a, ByteString)
+}
 
+-- | The FramingUnrender class provides the logic for parsing a framing strategy. The outer @ByteStringParser@ strips the header from a stream of bytes, and yields a parser that can handle the remainder, stepwise. Each frame may be a ByteString, or a String indicating the error state for that frame. Such states are per-frame, so that protocols that can resume after errors are able to do so. Eventually this returns an empty ByteString to indicate termination.
 class FramingUnrender strategy a where
-   unrenderFrames :: Proxy strategy -> Proxy a -> ByteString -> (ByteString,  ByteString -> (Either String ByteString, ByteString))
+   unrenderFrames :: Proxy strategy -> Proxy a -> ByteStringParser (ByteStringParser (Either String ByteString))
+
 
 -- | A simple framing strategy that has no header or termination, and inserts a newline character between each frame.
 --   This assumes that it is used with a Content-Type that encodes without newlines (e.g. JSON).
@@ -72,8 +76,14 @@ instance FramingRender NewlineFraming a where
    trailer   _ _ = empty
 
 instance FramingUnrender NewlineFraming a where
-   unrenderFrames _ _ = (, (Right *** LB.drop 1) . LB.break (== '\n'))
-
+   unrenderFrames _ _ = ByteStringParser (Just . (go,)) (go,)
+         where go = ByteStringParser
+                        (\x -> case LB.break (== '\n') x of
+                              (h,r) -> if not (LB.null r) then Just (Right h, LB.drop 1 r) else Nothing
+                        )
+                        (\x -> case LB.break (== '\n') x of
+                              (h,r) -> (Right h, LB.drop 1 r)
+                        )
 -- | The netstring framing strategy as defined by djb: <http://cr.yp.to/proto/netstrings.txt>
 data NetstringFraming
 
@@ -82,9 +92,12 @@ instance FramingRender NetstringFraming a where
    boundary  _ _ = BoundaryStrategyBracket $ \b -> (LB.pack . show . LB.length $ b, "")
    trailer   _ _ = empty
 
+{-
+
 instance FramingUnrender NetstringFraming a where
    unrenderFrames _ _ = (, \b -> let (i,r) = LB.break (==':') b
                                  in case readMaybe (LB.unpack i) of
                                     Just len -> first Right $ LB.splitAt len . LB.drop 1 $ r
                                     Nothing -> (Left ("Bad netstring frame, couldn't parse value as integer value: " ++ LB.unpack i), LB.drop 1 . LB.dropWhile (/= ',') $ r)
                         )
+-}
