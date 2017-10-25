@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -48,6 +47,7 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          QueryParams, Raw,
                                                          ReflectMethod (..),
                                                          RemoteHost, ReqBody,
+                                                         ResultStream(..),
                                                          Stream,
                                                          Summary, ToHttpApiData,
                                                          Vault, Verb,
@@ -253,21 +253,19 @@ instance OVERLAPPING_
                      , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
 
-data ResultStream a = ResultStream ((forall b. (IO (Maybe (Either String a)) -> IO b) -> IO b))
-
 instance OVERLAPPABLE_
   ( RunClient m, MimeUnrender ct a, ReflectMethod method,
     FramingUnrender framing a, BuildFromStream a (f a)
   ) => HasClient m (Stream method framing ct (f a)) where
 
-  type Client m (Stream method framing ct (f a)) = m (ResultStream a)
+  type Client m (Stream method framing ct (f a)) = m (f a)
 
   clientWithRoute _pm Proxy req = do
    sresp <- streamingRequest req
       { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
       , requestMethod = reflectMethod (Proxy :: Proxy method)
       }
-   return $ ResultStream $ \k ->
+   return . buildFromStream $ ResultStream $ \k ->
      runStreamingResponse sresp $ \(status,_headers,_httpversion,reader) -> do
       when (H.statusCode status /= 200) $ error "bad status" --fixme
       let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)

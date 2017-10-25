@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses    #-}
 {-# LANGUAGE OverloadedStrings        #-}
 {-# LANGUAGE PolyKinds                #-}
+{-# LANGUAGE RankNTypes               #-}
 {-# LANGUAGE TupleSections            #-}
 {-# OPTIONS_HADDOCK not-home          #-}
 
@@ -35,11 +36,14 @@ class ToStreamGenerator f a where
 instance ToStreamGenerator StreamGenerator a
    where toStreamGenerator x = x
 
--- | BuildFromStream is intended to be implemented for types such as Conduit, Pipe, etc. By implementing this class, all such streaming abstractions can be used directly on the client side for talking to streaming endpoints. The streams we build from are represented as lazy lists of elements interspersed with possible errors.
-class BuildFromStream a b where
-   buildFromStream :: [Either String a] -> b
+-- | Clients reading from streaming endpoints can be implemented as producing a @ResultStream@ that captures the setup, takedown, and incremental logic for a read, being an IO continuation that takes a producer of Just either values or errors that terminates with a Nothing.
+data ResultStream a = ResultStream ((forall b. (IO (Maybe (Either String a)) -> IO b) -> IO b))
 
-instance BuildFromStream a [Either String a]
+-- | BuildFromStream is intended to be implemented for types such as Conduit, Pipe, etc. By implementing this class, all such streaming abstractions can be used directly on the client side for talking to streaming endpoints.
+class BuildFromStream a b where
+   buildFromStream :: ResultStream a -> b
+
+instance BuildFromStream a (ResultStream a)
    where buildFromStream x = x
 
 -- | The FramingRender class provides the logic for emitting a framing strategy. The strategy emits a header, followed by boundary-delimited data, and finally a termination character. For many strategies, some of these will just be empty bytestrings.
