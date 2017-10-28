@@ -42,7 +42,7 @@ import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
 import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
 import           Network.Socket             (SockAddr)
-import           Network.Wai                (Application, Request, Response,
+import           Network.Wai                (Application, Request,
                                              httpVersion, isSecure,
                                              lazyRequestBody,
                                              rawQueryString, remoteHost,
