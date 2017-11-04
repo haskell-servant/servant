@@ -14,9 +14,12 @@ module Servant.API.Stream where
 
 import           Data.ByteString.Lazy        (ByteString, empty)
 import qualified Data.ByteString.Lazy.Char8  as LB
+import           Data.Monoid                 ((<>))
 import           Data.Proxy                  (Proxy)
 import           Data.Typeable               (Typeable)
 import           GHC.Generics                (Generic)
+import           Text.Read                   (readMaybe)
+import           Data.Bifunctor              (first)
 import           Network.HTTP.Types.Method   (StdMethod (..))
 
 -- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Steam endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
@@ -93,15 +96,22 @@ data NetstringFraming
 
 instance FramingRender NetstringFraming a where
    header    _ _ = empty
-   boundary  _ _ = BoundaryStrategyBracket $ \b -> (LB.pack . show . LB.length $ b, "")
+   boundary  _ _ = BoundaryStrategyBracket $ \b -> ((<> ":") . LB.pack . show . LB.length $ b, ",")
    trailer   _ _ = empty
 
-{-
 
 instance FramingUnrender NetstringFraming a where
-   unrenderFrames _ _ = (, \b -> let (i,r) = LB.break (==':') b
-                                 in case readMaybe (LB.unpack i) of
-                                    Just len -> first Right $ LB.splitAt len . LB.drop 1 $ r
-                                    Nothing -> (Left ("Bad netstring frame, couldn't parse value as integer value: " ++ LB.unpack i), LB.drop 1 . LB.dropWhile (/= ',') $ r)
-                        )
--}
+   unrenderFrames _ _ = ByteStringParser (Just . (go,)) (go,)
+       where go = ByteStringParser
+                 (\b -> let (i,r) = LB.break (==':') b
+                        in case readMaybe (LB.unpack i) of
+                             Just len -> if LB.length r > len
+                                         then Just . first Right . fmap (LB.drop 1) $ LB.splitAt len . LB.drop 1 $ r
+                                         else Nothing
+                             Nothing -> Just (Left ("Bad netstring frame, couldn't parse value as integer value: " ++ LB.unpack i), LB.drop 1 . LB.dropWhile (/= ',') $ r))
+                 (\b -> let (i,r) = LB.break (==':') b
+                        in case readMaybe (LB.unpack i) of
+                             Just len -> if LB.length r > len
+                                         then first Right . fmap (LB.drop 1) $ LB.splitAt len . LB.drop 1 $ r
+                                         else (Right $ LB.take len r, LB.empty)
+                             Nothing -> (Left ("Bad netstring frame, couldn't parse value as integer value: " ++ LB.unpack i), LB.drop 1 . LB.dropWhile (/= ',') $ r))

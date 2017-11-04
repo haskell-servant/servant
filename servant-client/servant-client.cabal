@@ -66,6 +66,7 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Servant.ClientSpec
+      Servant.StreamSpec
   build-depends:
       base == 4.*
     , aeson

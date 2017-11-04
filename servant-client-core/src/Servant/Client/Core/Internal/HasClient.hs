@@ -267,7 +267,7 @@ instance OVERLAPPABLE_
       }
    return . buildFromStream $ ResultStream $ \k ->
      runStreamingResponse sresp $ \(status,_headers,_httpversion,reader) -> do
-      when (H.statusCode status /= 200) $ error "bad status" --fixme
+      when (H.statusCode status /= 200) $ error "bad status" -- TODO fixme
       let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)
            loop bs = do
              res <- BL.fromStrict <$> reader
@@ -283,10 +283,12 @@ instance OVERLAPPABLE_
               res <- BL.fromStrict <$> reader
               let addIsEmptyInfo (a, r) = (r, (a, BL.null r && BL.null res))
               if BL.null res
-                   then return . addIsEmptyInfo $ parseEOF frameParser res
+                   then if BL.null bs
+                           then return ("", (Right "", True))
+                           else return . addIsEmptyInfo $ parseEOF frameParser bs
                    else let sofar = (bs <> res)
-                        in case parseIncremental frameParser res of
-                          Just x -> return $ addIsEmptyInfo x
+                        in case parseIncremental frameParser sofar of
+                          Just x ->  return $ addIsEmptyInfo x
                           Nothing -> frameLoop sofar
 
           go = processResult <$> modifyMVar state frameLoop
