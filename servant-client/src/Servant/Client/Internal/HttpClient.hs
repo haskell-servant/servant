@@ -111,7 +111,7 @@ performRequest req = do
     Right response -> do
       let status = Client.responseStatus response
           status_code = statusCode status
-          ourResponse = clientResponseToReponse response
+          ourResponse = clientResponseToResponse response
       unless (status_code >= 200 && status_code < 300) $
         throwError $ FailureResponse ourResponse
       return ourResponse
@@ -121,14 +121,18 @@ performStreamingRequest req = do
   m <- asks manager
   burl <- asks baseUrl
   let request = requestToClientRequest burl req
-
   return $ StreamingResponse $
     \k -> Client.withResponse request m $
-    \r ->
-    k (Client.responseStatus r, fromList $ Client.responseHeaders r, Client.responseVersion r, Client.responseBody r)
+    \r -> do
+      let status = Client.responseStatus r
+          status_code = statusCode status
+      unless (status_code >= 200 && status_code < 300) $ do
+        b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody r)
+        throw $ FailureResponse $ Response status b (fromList $ Client.responseHeaders r) (Client.responseVersion r)
+      k (status, fromList $ Client.responseHeaders r, Client.responseVersion r, Client.responseBody r)
 
-clientResponseToReponse :: Client.Response BSL.ByteString -> Response
-clientResponseToReponse r = Response
+clientResponseToResponse :: Client.Response BSL.ByteString -> Response
+clientResponseToResponse r = Response
   { responseStatusCode = Client.responseStatus r
   , responseBody = Client.responseBody r
   , responseHeaders = fromList $ Client.responseHeaders r

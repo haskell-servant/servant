@@ -267,7 +267,6 @@ instance OVERLAPPABLE_
       }
    return . buildFromStream $ ResultStream $ \k ->
      runStreamingResponse sresp $ \(status,_headers,_httpversion,reader) -> do
-      when (H.statusCode status /= 200) $ error "bad status" -- TODO fixme
       let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)
            loop bs = do
              res <- BL.fromStrict <$> reader
