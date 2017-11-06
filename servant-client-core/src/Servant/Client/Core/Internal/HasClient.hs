@@ -18,7 +18,6 @@ import           Prelude                                ()
 import           Prelude.Compat
 
 import           Control.Concurrent                     (newMVar, modifyMVar)
-import           Control.Monad                          (when)
 import           Data.Foldable                          (toList)
 import qualified Data.ByteString.Lazy                   as BL
 import           Data.List                              (foldl')
@@ -266,7 +265,7 @@ instance OVERLAPPABLE_
       , requestMethod = reflectMethod (Proxy :: Proxy method)
       }
    return . buildFromStream $ ResultStream $ \k ->
-     runStreamingResponse sresp $ \(status,_headers,_httpversion,reader) -> do
+     runStreamingResponse sresp $ \(_status,_headers,_httpversion,reader) -> do
       let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)
            loop bs = do
              res <- BL.fromStrict <$> reader

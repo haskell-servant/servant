@@ -19,7 +19,7 @@ import           Data.Proxy                  (Proxy)
 import           Data.Typeable               (Typeable)
 import           GHC.Generics                (Generic)
 import           Text.Read                   (readMaybe)
-import           Data.Bifunctor              (first)
+import           Control.Arrow               (first)
 import           Network.HTTP.Types.Method   (StdMethod (..))
 
 -- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Steam endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
