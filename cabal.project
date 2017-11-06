@@ -5,3 +5,5 @@ packages: servant/
   servant-foreign/
   servant-server/
   doc/tutorial/
+
+allow-newer: servant-js:servant, servant-js:servant-foreign

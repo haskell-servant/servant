@@ -1,8 +1,39 @@
-Unreleased changes
+[The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
+
+0.12
 ---
 
+### Significant changes
+
+- *servant-client* *servant-client-core*
+  Factored out of `servant-client` all the functionality that was
+  independent of the `http-client` backend.
+  ([#803](https://github.com/haskell-servant/servant/pull/803)
+   [#821](https://github.com/haskell-servant/servant/issues/821))
+- *servant-server* Added `hoistServer` member to the `HasServer` class, which is `HasServer`
+  specific `enter`.
+  ([#804](https://github.com/haskell-servant/servant/pull/804)
+   [#824](https://github.com/haskell-servant/servant/pull/824))
+- Add `Description` and `Summary` combinators
+  ([#767](https://github.com/haskell-servant/servant/pull/767))
 - Lower `:>` and `:<|>` infix precedence to 4 and 3 respectively
   ([#761](https://github.com/haskell-servant/servant/issues/761))
+
+### Other changes
+
+- Allow newest dependencies
+ ([#772](https://github.com/haskell-servant/servant/pull/772)
+  [#842](https://github.com/haskell-servant/servant/pull/842))
+- Documentation improvements and typo fixes
+ ([#757](https://github.com/haskell-servant/servant/pull/757)
+  [#771](https://github.com/haskell-servant/servant/pull/771)
+  [#775](https://github.com/haskell-servant/servant/pull/775)
+  [#790](https://github.com/haskell-servant/servant/pull/790)
+  [#791](https://github.com/haskell-servant/servant/pull/791)
+  [#806](https://github.com/haskell-servant/servant/pull/806))
+- Development process improvements
+  ([#764](https://github.com/haskell-servant/servant/pull/764)
+   [#839](https://github.com/haskell-servant/servant/pull/839))
 
 0.11
 ----
