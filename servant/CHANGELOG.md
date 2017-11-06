@@ -18,6 +18,8 @@
   ([#767](https://github.com/haskell-servant/servant/pull/767))
 - Lower `:>` and `:<|>` infix precedence to 4 and 3 respectively
   ([#761](https://github.com/haskell-servant/servant/issues/761))
+* *servant-foreign* Add support for body/return content types in `Req`
+  ([#832](https://github.com/haskell-servant/servant/pull/832))
 
 ### Other changes
 

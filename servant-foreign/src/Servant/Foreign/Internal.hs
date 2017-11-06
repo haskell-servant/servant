@@ -20,9 +20,10 @@ import           Data.Typeable (Typeable)
 import           Data.Text.Encoding (decodeUtf8)
 import           GHC.TypeLits
 import qualified Network.HTTP.Types as HTTP
+import           Network.HTTP.Media.MediaType
 import           Prelude hiding (concat)
 import           Servant.API
-import           Servant.API.TypeLevel
+import           Servant.API.ContentTypes (AllMime, allMime)
 
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
@@ -109,19 +110,21 @@ defUrl = Url [] []
 makeLenses ''Url
 
 data Req f = Req
-  { _reqUrl        :: Url f
-  , _reqMethod     :: HTTP.Method
-  , _reqHeaders    :: [HeaderArg f]
-  , _reqBody       :: Maybe f
-  , _reqReturnType :: Maybe f
-  , _reqFuncName   :: FunctionName
+  { _reqUrl                :: Url f
+  , _reqMethod             :: HTTP.Method
+  , _reqHeaders            :: [HeaderArg f]
+  , _reqBody               :: Maybe f
+  , _reqBodyContentTypes   :: [MediaType]
+  , _reqReturnType         :: Maybe f
+  , _reqReturnContentTypes :: [MediaType]
+  , _reqFuncName           :: FunctionName
   }
   deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Req
 
 defReq :: Req ftype
-defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName [])
+defReq = Req defUrl "GET" [] Nothing [] Nothing [] (FunctionName [])
 
 -- | 'HasForeignType' maps Haskell types with types in the target
 -- language of your backend. For example, let's say you're
@@ -212,7 +215,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype [t], HasForeign lang ftype 
         { _argName = PathSegment str
         , _argType = ftype }
 
-instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
+instance (AllMime list, HasForeignType lang ftype a, ReflectMethod method)
   => HasForeign lang ftype (Verb method status list a) where
   type Foreign ftype (Verb method status list a) = Req ftype
 
@@ -220,10 +223,12 @@ instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
     req & reqFuncName . _FunctionName %~ (methodLC :)
         & reqMethod .~ method
         & reqReturnType .~ Just retType
+        & reqReturnContentTypes .~ cTypes
     where
       retType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a)
       method   = reflectMethod (Proxy :: Proxy method)
       methodLC = toLower $ decodeUtf8 method
+      cTypes   = allMime (Proxy :: Proxy list)
 
 instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype api)
   => HasForeign lang ftype (Header sym a :> api) where
@@ -285,13 +290,14 @@ instance HasForeign lang ftype Raw where
     req & reqFuncName . _FunctionName %~ ((toLower $ decodeUtf8 method) :)
         & reqMethod .~ method
 
-instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype api)
+instance (AllMime list, HasForeignType lang ftype a, HasForeign lang ftype api)
       => HasForeign lang ftype (ReqBody list a :> api) where
   type Foreign ftype (ReqBody list a :> api) = Foreign ftype api
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) $
       req & reqBody .~ (Just $ typeFor lang ftype (Proxy :: Proxy a))
+          & reqBodyContentTypes .~ allMime (Proxy :: Proxy list)
 
 instance (KnownSymbol path, HasForeign lang ftype api)
       => HasForeign lang ftype (path :> api) where

@@ -28,7 +28,7 @@ release of `servant` package.
 | servant-cassava     | 0.7      | ?        | ?        |
 | servant-client      | 0.10     | 0.11     | 0.12     |
 | servant-docs        | 0.10     | 0.11     | 0.11.1   |
-| servant-foreign     | 0.10     | 0.10.0.1 | 0.10.2   |
+| servant-foreign     | 0.10     | 0.10.0.1 | 0.11     |
 | servant-js          | 0.9.1    | ?        | ?        |
 | servant-lucid       | 0.7.1    | ?        | ?        |
 | servant-mock        | 0.8.1.1  | ?        | ?        |

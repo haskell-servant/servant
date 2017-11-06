@@ -1,11 +1,13 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-foreign/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
-0.10.2
-------
+0.11
+----
 
 ### Changes
 
+* Add support for body/return content types in `Req`
+  ([#832](https://github.com/haskell-servant/servant/pull/832))
 * Add instances for `Description` and `Summary` combinators
   ([#767](https://github.com/haskell-servant/servant/pull/767))
 * Derive Data for all types
