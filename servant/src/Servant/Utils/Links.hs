@@ -84,6 +84,7 @@ module Servant.Utils.Links (
   --
   -- | Note that 'URI' is from the "Network.URI" module in the @network-uri@ package.
     safeLink
+  , allLinks
   , URI(..)
   -- * Adding custom types
   , HasLink(..)
@@ -108,6 +109,7 @@ import           Prelude               ()
 import           Prelude.Compat
 
 import Web.HttpApiData
+import Servant.API.Alternative ( (:<|>)((:<|>)) )
 import Servant.API.BasicAuth ( BasicAuth )
 import Servant.API.Capture ( Capture, CaptureAll )
 import Servant.API.ReqBody ( ReqBody )
@@ -220,6 +222,16 @@ safeLink
     -> MkLink endpoint
 safeLink _ endpoint = toLink endpoint (Link mempty mempty)
 
+-- | Create all links in an API.
+--
+-- Note that the @api@ type must be restricted to the endpoints that have
+-- valid links to them.
+allLinks
+    :: forall api. HasLink api
+    => Proxy api
+    -> MkLink api
+allLinks api = toLink api (Link mempty mempty)
+
 -- | Construct a toLink for an endpoint.
 class HasLink endpoint where
     type MkLink endpoint
@@ -265,6 +277,11 @@ instance (KnownSymbol sym, HasLink sub)
         toLink (Proxy :: Proxy sub) $ addQueryParam (FlagParam k) l
       where
         k = symbolVal (Proxy :: Proxy sym)
+
+-- :<|> instance - Generate all links at once
+instance (HasLink a, HasLink b) => HasLink (a :<|> b) where
+  type MkLink (a :<|> b) = MkLink a :<|> MkLink b
+  toLink _ l = toLink (Proxy :: Proxy a) l :<|> toLink (Proxy :: Proxy b) l
 
 -- Misc instances
 instance HasLink sub => HasLink (ReqBody ct a :> sub) where
