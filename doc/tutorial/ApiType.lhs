@@ -127,6 +127,19 @@ type UserAPI4 = "users" :> Get '[JSON] [User]
            :<|> "admins" :> Get '[JSON] [User]
 ```
 
+### `StreamGet` and `StreamPost`
+
+The `StreamGet` and `StreamPost` combinators are defined in terms of the more general `Stream`
+
+``` haskell ignore
+data Stream (method :: k1) (framing :: *) (contentType :: *) a
+type StreamGet  = Stream 'GET
+type StreamPost = Stream 'POST
+```
+
+These describe endpoints that return a stream of values rather than just a single value. They not only take a single content type as a paremeter, but also a framing strategy -- this specifies how the individual results are deliniated from one another in the stream. The two standard strategies given with Servant are `NewlineFraming` and `NetstringFraming`, but others can be written to match other protocols.
+
+
 ### `Capture`
 
 URL captures are segments of the path of a URL that are variable and whose actual value is

@@ -1092,7 +1092,7 @@ We can write some simple webservice with the handlers running in `Reader String`
 
 ``` haskell
 type ReaderAPI = "a" :> Get '[JSON] Int
-            :<|> "b" :> ReqBody '[JSON] Double :> Get '[JSON] Bool 
+            :<|> "b" :> ReqBody '[JSON] Double :> Get '[JSON] Bool
 
 readerAPI :: Proxy ReaderAPI
 readerAPI = Proxy
@@ -1162,6 +1162,25 @@ funToHandler f = return (f "hi")
 
 app5 :: Application
 app5 = serve readerAPI (hoistServer readerAPI funToHandler funServerT)
+```
+
+## Streaming endpoints
+
+We can create endpoints that don't just give back a single result, but give back a *stream* of results, served one at a time. Stream endpoints only provide a single content type, and also specify what framing strategy is used to deliniate the results. To serve these results, we need to give back a stream producer. Adapters can be written to `Pipes`, `Conduit` and the like, or written directly as `StreamGenerator`s. StreamGenerators are IO-based continuations that are handed two functions -- the first to write the first result back, and the second to write all subsequent results back. (This is to allow handling of situations where the entire stream is prefixed by a header, or where a boundary is written between elements, but not prior to the first element). The API of a streaming endpoint is needs to explicitly specify which sort of generator it produces. Note that the generator itself is returned by a `Handler` action, so that additional IO may be done in the creation of one.
+
+``` haskell
+type StreamAPI = "userStream" :> StreamGet NewlineFraming JSON (StreamGenerator User)
+streamAPI :: Proxy StreamAPI
+streamAPI = Proxy
+
+streamUsers :: StreamGenerator User
+streamUsers = StreamGenerator $ \sendFirst sendRest -> do
+                       sendFirst isaac
+                       sendRest  albert
+                       sendRest  albert
+
+app6 :: Application
+app6 = serve streamAPI (return streamUsers)
 ```
 
 ## Conclusion
