@@ -16,6 +16,7 @@ import           Data.Monoid
 import           Data.Proxy
 import           Data.String
 import           Data.Text
+import           Data.Typeable (Typeable)
 import           Data.Text.Encoding (decodeUtf8)
 import           GHC.TypeLits
 import qualified Network.HTTP.Types as HTTP
@@ -25,19 +26,19 @@ import           Servant.API.TypeLevel
 
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
-  deriving (Data, Show, Eq, Monoid)
+  deriving (Data, Show, Eq, Monoid, Typeable)
 
 makePrisms ''FunctionName
 
 newtype PathSegment = PathSegment { unPathSegment :: Text }
-  deriving (Data, Show, Eq, IsString, Monoid)
+  deriving (Data, Show, Eq, IsString, Monoid, Typeable)
 
 makePrisms ''PathSegment
 
 data Arg f = Arg
   { _argName :: PathSegment
   , _argType :: f }
-  deriving (Data, Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Arg
 
@@ -49,12 +50,12 @@ data SegmentType f
     -- ^ a static path segment. like "/foo"
   | Cap (Arg f)
     -- ^ a capture. like "/:userid"
-  deriving (Data, Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''SegmentType
 
 newtype Segment f = Segment { unSegment :: SegmentType f }
-  deriving (Data, Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''Segment
 
@@ -72,7 +73,7 @@ data ArgType
   = Normal
   | Flag
   | List
-  deriving (Data, Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''ArgType
 
@@ -80,7 +81,7 @@ data QueryArg f = QueryArg
   { _queryArgName :: Arg f
   , _queryArgType :: ArgType
   }
-  deriving (Data, Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''QueryArg
 
@@ -90,7 +91,7 @@ data HeaderArg f = HeaderArg
   { _headerArg     :: Arg f
   , _headerPattern :: Text
   }
-  deriving (Data, Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''HeaderArg
 
@@ -100,7 +101,7 @@ data Url f = Url
   { _path     :: Path f
   , _queryStr :: [QueryArg f]
   }
-  deriving (Data, Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 defUrl :: Url f
 defUrl = Url [] []
@@ -115,7 +116,7 @@ data Req f = Req
   , _reqReturnType :: Maybe f
   , _reqFuncName   :: FunctionName
   }
-  deriving (Data, Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Req
 
