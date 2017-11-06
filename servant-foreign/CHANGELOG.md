@@ -8,6 +8,8 @@
 
 * Add instances for `Description` and `Summary` combinators
   ([#767](https://github.com/haskell-servant/servant/pull/767))
+* Derive Data for all types
+  ([#809](https://github.com/haskell-servant/servant/pull/809))
 
 0.10.1
 ------

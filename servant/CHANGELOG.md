@@ -21,6 +21,15 @@
 
 ### Other changes
 
+- *servant-foreign* Derive `Data` for all types
+  ([#809](https://github.com/haskell-servant/servant/pull/809))
+- *servant-docs* Add authentication lenses
+  ([#787](https://github.com/haskell-servant/servant/pull/787))
+- *servant-docs* Generated markdown improvements
+  ([#813](https://github.com/haskell-servant/servant/pull/787)
+   [#767](https://github.com/haskell-servant/servant/pull/767)
+   [#790](https://github.com/haskell-servant/servant/pull/790)
+   [#788](https://github.com/haskell-servant/servant/pull/788))
 - Allow newest dependencies
  ([#772](https://github.com/haskell-servant/servant/pull/772)
   [#842](https://github.com/haskell-servant/servant/pull/842))
