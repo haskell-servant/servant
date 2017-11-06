@@ -1,3 +1,14 @@
+[The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-foreign/CHANGELOG.md)
+[Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
+
+0.10.2
+------
+
+### Changes
+
+* Add instances for `Description` and `Summary` combinators
+  ([#767](https://github.com/haskell-servant/servant/pull/767))
+
 0.10.1
 ------
 
