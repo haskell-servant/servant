@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE PolyKinds       #-}
 {-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Servant.Utils.LinksSpec where
 
 import           Data.Proxy              (Proxy (..))
@@ -10,6 +11,7 @@ import           Test.Hspec              (Expectation, Spec, describe, it,
 import           Data.String             (fromString)
 
 import           Servant.API
+import           Servant.Utils.Links     (allLinks)
 
 type TestApi =
   -- Capture and query params
@@ -26,6 +28,10 @@ type TestApi =
   :<|> "delete" :> Header "ponies" String :> Delete '[JSON] NoContent
   :<|> "raw" :> Raw
   :<|> NoEndpoint
+
+type LinkableApi =
+       "all" :> CaptureAll "names" String :> Get '[JSON] NoContent
+  :<|> "get" :> Get '[JSON] NoContent
 
 
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
@@ -66,6 +72,13 @@ spec = describe "Servant.Utils.Links" $ do
         apiLink (Proxy :: Proxy ("post" :> Post '[JSON] NoContent)) `shouldBeLink` "post"
         apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] NoContent)) `shouldBeLink` "delete"
         apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeLink` "raw"
+
+    it "can generate all links for an API that has only linkable endpoints" $ do
+        let (allNames :<|> simple) = allLinks (Proxy :: Proxy LinkableApi)
+        simple
+          `shouldBeLink` "get"
+        allNames ["Seneca", "Aurelius"]
+          `shouldBeLink` "all/Seneca/Aurelius"
 
 
 -- |
