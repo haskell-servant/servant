@@ -30,6 +30,8 @@
    [#767](https://github.com/haskell-servant/servant/pull/767)
    [#790](https://github.com/haskell-servant/servant/pull/790)
    [#788](https://github.com/haskell-servant/servant/pull/788))
+- Add `addLinks` to generate all links for unnested APIs.
+  ([#851](https://github.com/haskell-servant/servant/pull/851))
 - Allow newest dependencies
  ([#772](https://github.com/haskell-servant/servant/pull/772)
   [#842](https://github.com/haskell-servant/servant/pull/842))

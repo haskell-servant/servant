@@ -226,6 +226,20 @@ safeLink _ endpoint = toLink endpoint (Link mempty mempty)
 --
 -- Note that the @api@ type must be restricted to the endpoints that have
 -- valid links to them.
+--
+-- >>> type API = "foo" :> Capture "name" Text :> Get '[JSON] Text :<|> "bar" :> Capture "name" Int :> Get '[JSON] Double
+-- >>> let fooLink :<|> barLink = allLinks (Proxy :: Proxy API)
+-- >>> :t fooLink
+-- fooLink :: Text -> Link
+-- >>> :t barLink
+-- barLink :: Int -> Link
+--
+-- Note: nested APIs don't work well with this approach
+--
+-- >>> :kind! MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double))
+-- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) :: *
+-- = Char -> (Int -> Link) :<|> (Double -> Link)
+--
 allLinks
     :: forall api. HasLink api
     => Proxy api
@@ -330,3 +344,4 @@ instance HasLink sub => HasLink (AuthProtect tag :> sub) where
 
 -- $setup
 -- >>> import Servant.API
+-- >>> import Data.Text (Text)
