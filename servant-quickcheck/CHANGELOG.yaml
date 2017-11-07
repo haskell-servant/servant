@@ -1,6 +1,13 @@
 upcoming:
 
 releases:
+  - version: "0.0.4"
+    changes:
+
+      - description: Support for Servant 0.12
+        issue: none
+        authors: phadej
+        date: 2017-11-07
 
   - version: "0.0.3.1"
     changes:
