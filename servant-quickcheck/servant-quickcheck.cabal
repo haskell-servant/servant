@@ -1,5 +1,5 @@
 name:                servant-quickcheck
-version:             0.0.3.1
+version:             0.0.4
 synopsis:            QuickCheck entire APIs
 description:
  This packages provides QuickCheck properties that are tested across an entire
@@ -14,6 +14,10 @@ build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:
   CHANGELOG.yaml
+tested-with:
+  GHC==7.10.3,
+  GHC==8.0.2,
+  GHC==8.2.1
 
 source-repository head
   type: git
@@ -31,7 +35,7 @@ library
                      , Servant.QuickCheck.Internal.QuickCheck
                      , Servant.QuickCheck.Internal.Equality
                      , Servant.QuickCheck.Internal.ErrorTypes
-  build-depends:       base >=4.8 && <4.10
+  build-depends:       base >=4.8 && <4.11
                      , base-compat == 0.9.*
                      , aeson > 0.8 && < 2
                      , bytestring == 0.10.*
@@ -40,20 +44,20 @@ library
                      , data-default-class >= 0.0 && < 0.2
                      , hspec >= 2.2 && < 2.5
                      , http-client >= 0.4.30 && < 0.6
-                     , http-media == 0.6.*
-                     , http-types > 0.8 && < 0.10
+                     , http-media >= 0.6 && <0.8
+                     , http-types > 0.8 && < 0.11
                      , mtl > 2.1 && < 2.3
                      , pretty == 1.1.*
-                     , process >= 1.2 && < 1.5
+                     , process >= 1.2 && < 1.7
                      , QuickCheck > 2.7 && < 2.11
-                     , servant > 0.6 && < 0.12
-                     , servant-client > 0.6 && < 0.12
-                     , servant-server > 0.6 && < 0.12
+                     , servant > 0.6 && < 0.13
+                     , servant-client > 0.6 && < 0.13
+                     , servant-server > 0.6 && < 0.13
                      , split == 0.2.*
                      , string-conversions > 0.3 && < 0.5
                      , temporary == 1.2.*
                      , text == 1.*
-                     , time >= 1.5 && < 1.7
+                     , time >= 1.5 && < 1.9
                      , warp >= 3.2.4 && < 3.3
 
   hs-source-dirs:      src
