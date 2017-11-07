@@ -122,6 +122,7 @@ test-suite spec
       Servant.Server.StreamingSpec
       Servant.Server.UsingContextSpec
       Servant.Server.UsingContextSpec.TestCombinators
+      Servant.HoistSpec
       Servant.ServerSpec
       Servant.Utils.StaticFilesSpec
   build-tool-depends:
