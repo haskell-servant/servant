@@ -38,3 +38,23 @@ release of `servant` package.
 ## Contributing
 
 See `CONTRIBUTING.md`
+
+## Release process outline (by phadej)
+
+- Update changelog and bump versions in `master`
+    - `git log --oneline v0.12.. | grep 'Merge pull request'` is a good starting point (use correct previous release tag)
+- Create a release branch, e.g. `release-0.13`, and *protect it* from accidental force pushes.
+    - Release branch is useful for backporting fixes from `master`
+- Smoke test in [`servant-universe`](https://github.com/phadej/servant-universe)
+    - `git submodule foreach git checkout master` and `git submodule foreach git pull` to get newest of everything.
+    - `cabal new-build --enable-tests all` to verify that everything builds, and `cabal new-test all` to run tests
+        - It's a good idea to separate these steps, as tests often pass, if they compile :)
+    - See `cabal.project` to selectively `allow-newer`
+    - If some packages are broken, on your discretisation there are two options:
+        - Fix them and make PRs: it's good idea to test against older `servant` version too.
+        - Temporarily comment out broken package
+    - If you make a commit for `servant-universe`, you can use it as submodule in private projects to test even more
+- When ripples are cleared out:
+    - `git tag -s` the release
+    - `git push --tags`
+    - `cabal sdist` and `cabal upload`
