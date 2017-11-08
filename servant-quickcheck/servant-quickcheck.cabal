@@ -86,6 +86,7 @@ test-suite spec
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       Servant.QuickCheck.InternalSpec
+  build-tool-depends:  hspec-discover:hspec-discover
   build-depends:       base == 4.*
                      , base-compat
                      , aeson
