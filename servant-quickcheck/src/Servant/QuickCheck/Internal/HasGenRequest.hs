@@ -69,6 +69,14 @@ instance HasGenRequest EmptyAPI where
   genRequest _ = (0, error "EmptyAPIs cannot be queried.")
 #endif
 
+#if MIN_VERSION_servant(0,12,0)
+instance HasGenRequest api => HasGenRequest (Summary d :> api) where
+  genRequest _ = genRequest (Proxy :: Proxy api)
+
+instance HasGenRequest api => HasGenRequest (Description d :> api) where
+  genRequest _ = genRequest (Proxy :: Proxy api)
+#endif
+
 instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
     => HasGenRequest (Capture x c :> b) where
     genRequest _ = (oldf, do
