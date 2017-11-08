@@ -10,14 +10,57 @@
   independent of the `http-client` backend.
   ([#803](https://github.com/haskell-servant/servant/pull/803)
    [#821](https://github.com/haskell-servant/servant/issues/821))
+
+  If you have own combinators, you'll need to add an additional `m` argument
+  in `HasClient`, `Client` and `clientWithRoute`:
+
+  ```diff
+  -class HasClient api
+  -  type Client (api :: *) :: *
+  -  clientWithRoute :: Proxy api -> Req -> Client api
+  +class HasClient m api
+  +  type Client (m :: * -> *) (api :: *) :: *
+  +  clientWithRoute :: Proxy m -> Proxy api -> Request -> Client m api
+  ```
+
+  See https://github.com/haskell-servant/servant-auth/pull/67/commits/f777818e3cc0fa3ed2346baff8328e96d62b1790 for a real world example.
+
 - *servant-server* Added `hoistServer` member to the `HasServer` class, which is `HasServer`
   specific `enter`.
   ([#804](https://github.com/haskell-servant/servant/pull/804)
    [#824](https://github.com/haskell-servant/servant/pull/824))
+
+  `enter` isn't exported from `Servant` module anymore. You can change
+  `enter` to `hoistServer` in a straight forward way.
+  Unwrap natural transformation and add a api type `Proxy`:
+
+  ```diff
+  -server = enter (NT nt) impl
+  +server = hoistServer (Proxy :: Proxy MyApi) nt impl
+  ```
+
+  If you have own combinators, you'll need to define a new method of
+  `HasServer` class, for example:
+
+  ```haskell
+  type ServerT (MyCombinator :> api) m = MyValue -> ServerT api m
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+  ```
+
+  See https://github.com/haskell-servant/servant-auth/pull/67/commits/8ee3b6315247ac076516213fd7cfcdbfdb583ac9 for a real world example.
+
 - Add `Description` and `Summary` combinators
   ([#767](https://github.com/haskell-servant/servant/pull/767))
+
+  It's possible to annotate endpoints with free form text.
+  This information is used by e.g. by `servant-swagger`, see screenshot in
+  https://github.com/phadej/servant-swagger-ui
+
 - Lower `:>` and `:<|>` infix precedence to 4 and 3 respectively
   ([#761](https://github.com/haskell-servant/servant/issues/761))
+
+  This should affect you, except if you define your own infix operators
+  for Servant type-level DSL.
 
 ### Other changes
 
