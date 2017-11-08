@@ -59,7 +59,7 @@
 - Lower `:>` and `:<|>` infix precedence to 4 and 3 respectively
   ([#761](https://github.com/haskell-servant/servant/issues/761))
 
-  This should affect you, except if you define your own infix operators
+  This shouldn't affect you, except if you define your own infix operators
   for Servant type-level DSL.
 
 ### Other changes
