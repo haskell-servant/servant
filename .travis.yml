@@ -10,6 +10,11 @@ sudo: false
 git:
   submodules: false  # whether to recursively clone submodules
 
+branches:
+  only:
+    - master
+    - release-0.12
+
 cache:
   directories:
     - $HOME/.cabal/packages
