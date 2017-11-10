@@ -28,6 +28,7 @@ import           Data.ByteString.Builder     (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
 import           Data.Foldable               (toList)
 import           Data.Functor.Alt            (Alt (..))
+import           Data.Maybe                  (maybeToList)
 import           Data.Monoid                 ((<>))
 import           Data.Proxy                  (Proxy (..))
 import           Data.Sequence               (fromList)
@@ -133,16 +134,26 @@ requestToClientRequest burl r = Client.defaultRequest
                <> toLazyByteString (requestPath r)
   , Client.queryString = renderQuery True . toList $ requestQueryString r
   , Client.requestHeaders =
-      let orig = toList $ requestHeaders r
-      in maybe orig (: orig) contentTypeHdr
+    maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
   , Client.requestBody = body
   , Client.secure = isSecure
   }
   where
+    -- Content-Type and Accept are specified by requestBody and requestAccept
+    headers = filter (\(h, _) -> h /= "Accept" && h /= "Content-Type") $
+        toList $requestHeaders r
+
+    acceptHdr
+        | null hs   = Nothing
+        | otherwise = Just ("Accept", renderHeader hs)
+      where
+        hs = toList $ requestAccept r
+
     (body, contentTypeHdr) = case requestBody r of
       Nothing -> (Client.RequestBodyLBS "", Nothing)
       Just (RequestBodyLBS body', typ)
         -> (Client.RequestBodyLBS body', Just (hContentType, renderHeader typ))
+
     isSecure = case baseUrlScheme burl of
       Http -> False
       Https -> True
