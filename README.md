@@ -22,7 +22,7 @@ This table lists the versions of some `servant-` libraries at the point of
 release of `servant` package.
 
 |                     | **0.10** | **0.11** | **0.12** |
-| ------------------- | -------- |---------------------|
+| ------------------- | -------- |----------|----------|
 | servant             | 0.10     | 0.11     | 0.12     |
 | servant-blaze       | 0.7.1    | ?        | ?        |
 | servant-cassava     | 0.7      | ?        | ?        |
