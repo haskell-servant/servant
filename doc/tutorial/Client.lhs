@@ -157,7 +157,7 @@ The types of the arguments for the functions are the same as for (server-side) r
 
 ## Querying Streaming APIs.
 
-Enough chitchat, let's see an example. Consider the following streaming API type:
+Consider the following streaming API type:
 
 ``` haskell
 type StreamAPI = "positionStream" :> StreamGet NewlineFraming JSON (ResultStream Position)
@@ -182,7 +182,7 @@ posStream :: ClientM (ResultStream Position)
 posStream = client streamAPI
 ```
 
-And here's how to just print out all elements from a `ResultStream`, to give some idea how to work with them.
+And here's how to just print out all elements from a `ResultStream`, to give some idea of how to work with them.
 
 ``` haskell
 printResultStream :: Show a => ResultStream a -> IO ()
@@ -195,5 +195,6 @@ printResultStream (ResultStream k) = k $ \getResult ->
        in loop
 ```
 
+The stream is parsed and provided incrementally. So the above loop prints out each result as soon as it is received on the stream, rather than waiting until they are all available to print them at once.
 
 You now know how to use **servant-client**!
