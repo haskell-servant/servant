@@ -5,6 +5,7 @@ module Servant.Foreign
   , HeaderArg(..)
   , QueryArg(..)
   , Req(..)
+  , ReqPart(..)
   , Segment(..)
   , SegmentType(..)
   , Url(..)
@@ -23,6 +24,7 @@ module Servant.Foreign
   , reqBody
   , reqReturnType
   , reqFuncName
+  , reqParts
   , path
   , queryStr
   , queryArgName
@@ -37,6 +39,10 @@ module Servant.Foreign
   , _Normal
   , _Flag
   , _List
+  , _ReqSegment
+  , _ReqQueryArg
+  , _ReqHeaderArg
+  , _ReqBody
     -- rest of it
   , HasForeign(..)
   , HasForeignType(..)

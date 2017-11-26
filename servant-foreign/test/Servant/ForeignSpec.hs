@@ -79,6 +79,11 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Nothing
       , _reqReturnType = Just "intX"
       , _reqFuncName   = FunctionName ["get", "test"]
+      , _reqParts      =
+          [ ReqSegment $ Segment $ Static "test"
+          , ReqHeaderArg $ HeaderArg $ Arg "header" "listX of stringX"
+          , ReqQueryArg $ QueryArg (Arg "flag" "boolX") Flag
+          ]
       }
 
   it "collects all info for post request" $ do
@@ -91,6 +96,11 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Just "listX of stringX"
       , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["post", "test"]
+      , _reqParts      =
+          [ ReqSegment $ Segment $ Static "test"
+          , ReqQueryArg $ QueryArg (Arg "param" "intX") Normal
+          , ReqBody "listX of stringX"
+          ]
       }
 
   it "collects all info for put request" $ do
@@ -104,6 +114,11 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Just "stringX"
       , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["put", "test"]
+      , _reqParts      =
+          [ ReqSegment $ Segment $ Static "test"
+          , ReqQueryArg $ QueryArg (Arg "params" "listX of intX") List
+          , ReqBody "stringX"
+          ]
       }
 
   it "collects all info for delete request" $ do
@@ -117,6 +132,10 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Nothing
       , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["delete", "test", "by", "id"]
+      , _reqParts      =
+          [ ReqSegment $ Segment $ Static "test"
+          , ReqSegment $ Segment $ Cap (Arg "id" "intX")
+          ]
       }
 
   it "collects all info for capture all request" $ do
@@ -130,4 +149,8 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqBody       = Nothing
       , _reqReturnType = Just "listX of intX"
       , _reqFuncName   = FunctionName ["get", "test", "by", "ids"]
+      , _reqParts      =
+          [ ReqSegment (Segment (Static "test"))
+          , ReqSegment (Segment (Cap (Arg "ids" "listX of intX")))
+          ]
       }

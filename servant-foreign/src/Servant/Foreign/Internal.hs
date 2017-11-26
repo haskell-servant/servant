@@ -108,6 +108,15 @@ defUrl = Url [] []
 
 makeLenses ''Url
 
+data ReqPart f
+  = ReqSegment (Segment f)
+  | ReqQueryArg (QueryArg f)
+  | ReqHeaderArg (HeaderArg f)
+  | ReqBody f
+  deriving (Data, Eq, Show, Typeable)
+
+makePrisms ''ReqPart
+
 data Req f = Req
   { _reqUrl        :: Url f
   , _reqMethod     :: HTTP.Method
@@ -115,13 +124,14 @@ data Req f = Req
   , _reqBody       :: Maybe f
   , _reqReturnType :: Maybe f
   , _reqFuncName   :: FunctionName
+  , _reqParts      :: [ReqPart f]
   }
   deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Req
 
 defReq :: Req ftype
-defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName [])
+defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName []) []
 
 -- | 'HasForeignType' maps Haskell types with types in the target
 -- language of your backend. For example, let's say you're
@@ -190,6 +200,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype ap
     foreignFor lang Proxy (Proxy :: Proxy api) $
       req & reqUrl . path <>~ [Segment (Cap arg)]
           & reqFuncName . _FunctionName %~ (++ ["by", str])
+          & reqParts <>~ [ReqSegment (Segment (Cap arg))]
     where
       str   = pack . symbolVal $ (Proxy :: Proxy sym)
       ftype = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy t)
@@ -205,6 +216,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype [t], HasForeign lang ftype 
     foreignFor lang Proxy (Proxy :: Proxy sublayout) $
       req & reqUrl . path <>~ [Segment (Cap arg)]
           & reqFuncName . _FunctionName %~ (++ ["by", str])
+          & reqParts <>~ [ReqSegment (Segment (Cap arg))]
     where
       str   = pack . symbolVal $ (Proxy :: Proxy sym)
       ftype = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy [t])
@@ -230,7 +242,9 @@ instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype ap
   type Foreign ftype (Header sym a :> api) = Foreign ftype api
 
   foreignFor lang Proxy Proxy req =
-    foreignFor lang Proxy subP $ req & reqHeaders <>~ [HeaderArg arg]
+    foreignFor lang Proxy subP $
+      req & reqHeaders <>~ [HeaderArg arg]
+          & reqParts <>~ [ReqHeaderArg (HeaderArg arg)]
     where
       hname = pack . symbolVal $ (Proxy :: Proxy sym)
       arg   = Arg
@@ -245,6 +259,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype ap
   foreignFor lang Proxy Proxy req =
     foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
       req & reqUrl.queryStr <>~ [QueryArg arg Normal]
+          & reqParts <>~ [ReqQueryArg (QueryArg arg Normal)]
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
@@ -258,6 +273,7 @@ instance
   foreignFor lang Proxy Proxy req =
     foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
       req & reqUrl.queryStr <>~ [QueryArg arg List]
+          & reqParts <>~ [ReqQueryArg (QueryArg arg List)]
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
@@ -272,6 +288,7 @@ instance
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) $
       req & reqUrl.queryStr <>~ [QueryArg arg Flag]
+          & reqParts <>~ [ReqQueryArg (QueryArg arg Flag)]
     where
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
@@ -291,7 +308,10 @@ instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype api
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) $
-      req & reqBody .~ (Just $ typeFor lang ftype (Proxy :: Proxy a))
+      req & reqBody .~ (Just $ bodyType)
+          & reqParts <>~ [ReqBody bodyType]
+    where
+      bodyType = typeFor lang ftype (Proxy :: Proxy a)
 
 instance (KnownSymbol path, HasForeign lang ftype api)
       => HasForeign lang ftype (path :> api) where
@@ -301,6 +321,7 @@ instance (KnownSymbol path, HasForeign lang ftype api)
     foreignFor lang ftype (Proxy :: Proxy api) $
       req & reqUrl . path <>~ [Segment (Static (PathSegment str))]
           & reqFuncName . _FunctionName %~ (++ [str])
+          & reqParts <>~ [ReqSegment (Segment (Static (PathSegment str)))]
     where
       str = pack . symbolVal $ (Proxy :: Proxy path)
 
