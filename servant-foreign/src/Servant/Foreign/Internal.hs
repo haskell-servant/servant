@@ -225,7 +225,7 @@ instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
       method   = reflectMethod (Proxy :: Proxy method)
       methodLC = toLower $ decodeUtf8 method
 
-instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype api)
+instance (KnownSymbol sym, HasForeignType lang ftype (Maybe a), HasForeign lang ftype api)
   => HasForeign lang ftype (Header sym a :> api) where
   type Foreign ftype (Header sym a :> api) = Foreign ftype api
 
@@ -235,7 +235,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype ap
       hname = pack . symbolVal $ (Proxy :: Proxy sym)
       arg   = Arg
         { _argName = PathSegment hname
-        , _argType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a) }
+        , _argType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy (Maybe a)) }
       subP  = Proxy :: Proxy api
 
 instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype api)

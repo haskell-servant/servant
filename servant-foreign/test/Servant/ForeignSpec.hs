@@ -51,6 +51,9 @@ instance OVERLAPPING_ HasForeignType LangX String String where
 instance OVERLAPPABLE_ HasForeignType LangX String a => HasForeignType LangX String [a] where
   typeFor lang ftype _ = "listX of " <> typeFor lang ftype (Proxy :: Proxy a)
 
+instance (HasForeignType LangX String a) => HasForeignType LangX String (Maybe a) where
+  typeFor lang ftype _ = "maybe " <> typeFor lang ftype (Proxy :: Proxy a)
+
 type TestApi
     = "test" :> Header "header" [String] :> QueryFlag "flag" :> Get '[JSON] Int
  :<|> "test" :> QueryParam "param" Int :> ReqBody '[JSON] [String] :> Post '[JSON] NoContent
@@ -75,7 +78,7 @@ listFromAPISpec = describe "listFromAPI" $ do
           [ Segment $ Static "test" ]
           [ QueryArg (Arg "flag" "boolX") Flag ]
       , _reqMethod     = "GET"
-      , _reqHeaders    = [HeaderArg $ Arg "header" "listX of stringX"]
+      , _reqHeaders    = [HeaderArg $ Arg "header" "maybe listX of stringX"]
       , _reqBody       = Nothing
       , _reqReturnType = Just "intX"
       , _reqFuncName   = FunctionName ["get", "test"]
