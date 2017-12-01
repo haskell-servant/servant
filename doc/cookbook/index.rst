@@ -17,4 +17,5 @@ you name it!
 .. toctree::
   :maxdepth: 1
 
-  BasicAuth.lhs
+  basic-auth/BasicAuth.lhs
+  db-sqlite-simple/DBConnection.lhs
