@@ -1,6 +1,7 @@
 packages:
   basic-auth/
   db-sqlite-simple/
+  db-postgres-pool/
   ../../servant
   ../../servant-server
   ../../servant-client-core
