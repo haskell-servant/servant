@@ -1,0 +1,9 @@
+packages:
+  basic-auth/
+  db-sqlite-simple/
+  ../../servant
+  ../../servant-server
+  ../../servant-client-core
+  ../../servant-client
+  ../../servant-docs
+  ../../servant-foreign

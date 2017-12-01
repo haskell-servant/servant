@@ -12,11 +12,10 @@ First, some throat clearing.
 {-# LANGUAGE TypeOperators #-}
 import Control.Concurrent
 import Control.Exception
-import Control.Monad.IO.Class
 import qualified Data.Map as Map
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
-import Network.HTTP.Client (Manager, newManager, defaultManagerSettings)
+import Network.HTTP.Client (newManager, defaultManagerSettings)
 import Network.Wai.Handler.Warp
 import Servant
 import Servant.Client
@@ -28,7 +27,7 @@ For the sake of simplicity, it will just be read only but the same code could
 be used with mutable references, database connections, files and more in place
 of our `Map`.
 
-```
+``` haskell
 type Username = T.Text
 type Password = T.Text
 type Website = T.Text
@@ -176,4 +175,4 @@ code and see what happens when you specify credentials that are not in the
 database.
 
 The entire program covered here is available as a literate Haskell file
-[here](...).
+[here](...), along with a `cabal` project.
