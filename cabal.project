@@ -6,4 +6,4 @@ packages: servant/
   servant-server/
   doc/tutorial/
 
-allow-newer: servant-js:servant, servant-js:servant-foreign
+allow-newer: servant-js:servant-foreign
