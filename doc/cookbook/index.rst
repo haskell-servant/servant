@@ -19,3 +19,4 @@ you name it!
 
   basic-auth/BasicAuth.lhs
   db-sqlite-simple/DBConnection.lhs
+  db-postgres-pool/PostgresPool.lhs
