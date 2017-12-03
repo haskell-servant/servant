@@ -72,6 +72,7 @@ test-suite spec
     hspec-discover:hspec-discover
   other-modules:
       Servant.ClientSpec
+      Servant.StreamSpec
   build-depends:
       base == 4.*
     , aeson

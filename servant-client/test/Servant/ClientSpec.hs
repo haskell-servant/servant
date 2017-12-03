@@ -24,7 +24,7 @@
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 #include "overlapping-compat.h"
-module Servant.ClientSpec (spec) where
+module Servant.ClientSpec (spec, Person(..), startWaiApp, endWaiApp) where
 
 import           Prelude                                    ()
 import           Prelude.Compat

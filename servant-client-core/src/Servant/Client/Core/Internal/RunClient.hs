@@ -19,11 +19,13 @@ import           Servant.API                          (MimeUnrender,
                                                        contentTypes,
                                                        mimeUnrender)
 import           Servant.Client.Core.Internal.Request (Request, Response (..),
+                                                       StreamingResponse (..),
                                                        ServantError (..))
 
 class (Monad m) => RunClient m where
   -- | How to make a request.
   runRequest :: Request -> m Response
+  streamingRequest :: Request -> m StreamingResponse
   throwServantError :: ServantError -> m a
   catchServantError :: m a -> (ServantError -> m a) -> m a
 

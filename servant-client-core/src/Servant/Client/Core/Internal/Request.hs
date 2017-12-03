@@ -4,6 +4,7 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -15,6 +16,7 @@ import           Prelude.Compat
 
 import           Control.Monad.Catch     (Exception)
 import qualified Data.ByteString.Builder as Builder
+import qualified Data.ByteString         as BS
 import qualified Data.ByteString.Lazy    as LBS
 import           Data.Semigroup          ((<>))
 import qualified Data.Sequence           as Seq
@@ -69,6 +71,8 @@ data Response = Response
   , responseHeaders     :: Seq.Seq Header
   , responseHttpVersion :: HttpVersion
   } deriving (Eq, Show, Generic, Typeable)
+
+data StreamingResponse = StreamingResponse { runStreamingResponse :: forall a. ((Status, Seq.Seq Header, HttpVersion, IO BS.ByteString) -> IO a) -> IO a }
 
 -- A GET request to the top-level path
 defaultRequest :: Request

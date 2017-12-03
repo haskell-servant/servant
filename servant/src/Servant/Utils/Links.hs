@@ -119,6 +119,7 @@ import Servant.API.RemoteHost ( RemoteHost )
 import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
+import Servant.API.Stream ( Stream )
 import Servant.API.TypeLevel
 import Servant.API.Experimental.Auth ( AuthProtect )
 
@@ -335,6 +336,10 @@ instance HasLink (Verb m s ct a) where
 
 instance HasLink Raw where
     type MkLink Raw = Link
+    toLink _ = id
+
+instance HasLink (Stream m fr ct a) where
+    type MkLink (Stream m fr ct a) = Link
     toLink _ = id
 
 -- AuthProtext instances
