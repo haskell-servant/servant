@@ -6,4 +6,8 @@ packages: servant/
   servant-server/
   doc/tutorial/
 
-allow-newer: servant-js:servant, servant-js:servant-foreign
+allow-newer: servant-js:servant-foreign
+
+constraints:
+  -- see https://github.com/haskell-infra/hackage-trustees/issues/119
+  foundation >=0.0.14
