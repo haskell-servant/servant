@@ -109,6 +109,9 @@ script:
   # Allow-newer and other cabal.project amendments
   - "echo 'allow-newer: servant-js:servant, servant-js:servant-foreign' >> cabal.project"
 
+  # cryptonite
+  - "echo 'constraints: foundation >=0.0.14' >> cabal.project"
+
   - echo -en 'travis_fold:end:unpack\\r'
   - echo Building... && echo -en 'travis_fold:start:build\\r'
   # this builds all libraries and executables (without tests/benchmarks)
