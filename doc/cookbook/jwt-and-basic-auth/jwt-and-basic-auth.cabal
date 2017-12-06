@@ -1,0 +1,34 @@
+name:                cookbook-jwt-and-basic-auth
+version:             0.0.1
+synopsis:            JWT and basic access authentication cookbook example
+description:         Using servant-auth to support both JWT-based and basic
+                     authentication.
+homepage:            http://haskell-servant.readthedocs.org/
+license:             BSD3
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+category:            Servant
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable cookbook-jwt-and-basic-auth
+  main-is:             JWTAndBasicAuth.lhs
+  build-depends:       base == 4.*
+                     , text
+                     , aeson
+                     , containers
+                     , servant
+                     , servant-client
+                     , servant-server
+                     , servant-auth
+                     , servant-auth-server
+                     , warp
+                     , wai
+                     , http-types
+                     , markdown-unlit >= 0.4
+                     , http-client
+                     , bytestring
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
+  build-tool-depends:  markdown-unlit:markdown-unlit
