@@ -17,6 +17,7 @@ you name it!
 .. toctree::
   :maxdepth: 1
 
-  basic-auth/BasicAuth.lhs
   db-sqlite-simple/DBConnection.lhs
   db-postgres-pool/PostgresPool.lhs
+  basic-auth/BasicAuth.lhs
+  jwt-and-basic-auth/JWTAndBasicAuth.lhs

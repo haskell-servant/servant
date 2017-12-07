@@ -5,6 +5,10 @@ packages: servant/
   servant-foreign/
   servant-server/
   doc/tutorial/
+  doc/cookbook/basic-auth/
+  doc/cookbook/db-postgres-pool/
+  doc/cookbook/db-sqlite-simple/
+  doc/cookbook/jwt-and-basic-auth/
 
 allow-newer: servant-js:servant-foreign
 
