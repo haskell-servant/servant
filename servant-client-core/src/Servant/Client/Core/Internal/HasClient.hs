@@ -17,8 +17,11 @@ module Servant.Client.Core.Internal.HasClient where
 import           Prelude                                ()
 import           Prelude.Compat
 
+import           Control.Concurrent                     (newMVar, modifyMVar)
 import           Data.Foldable                          (toList)
+import qualified Data.ByteString.Lazy                   as BL
 import           Data.List                              (foldl')
+import           Data.Monoid                            ((<>))
 import           Data.Proxy                             (Proxy (Proxy))
 import           Data.Sequence                          (fromList)
 import           Data.String                            (fromString)
@@ -29,8 +32,11 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          AuthProtect, BasicAuth,
                                                          BasicAuthData,
                                                          BuildHeadersTo (..),
+                                                         BuildFromStream (..),
+                                                         ByteStringParser (..),
                                                          Capture, CaptureAll,
                                                          Description, EmptyAPI,
+                                                         FramingUnrender (..),
                                                          Header, Headers (..),
                                                          HttpVersion, IsSecure,
                                                          MimeRender (mimeRender),
@@ -40,6 +46,8 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          QueryParams, Raw,
                                                          ReflectMethod (..),
                                                          RemoteHost, ReqBody,
+                                                         ResultStream(..),
+                                                         Stream,
                                                          Summary, ToHttpApiData,
                                                          Vault, Verb,
                                                          WithNamedContext,
@@ -243,6 +251,53 @@ instance OVERLAPPING_
     return $ Headers { getResponse = NoContent
                      , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
+
+instance OVERLAPPABLE_
+  ( RunClient m, MimeUnrender ct a, ReflectMethod method,
+    FramingUnrender framing a, BuildFromStream a (f a)
+  ) => HasClient m (Stream method framing ct (f a)) where
+
+  type Client m (Stream method framing ct (f a)) = m (f a)
+
+  clientWithRoute _pm Proxy req = do
+   sresp <- streamingRequest req
+      { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
+      , requestMethod = reflectMethod (Proxy :: Proxy method)
+      }
+   return . buildFromStream $ ResultStream $ \k ->
+     runStreamingResponse sresp $ \(_status,_headers,_httpversion,reader) -> do
+      let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)
+           loop bs = do
+             res <- BL.fromStrict <$> reader
+             if BL.null res
+              then return $ parseEOF unrender res
+              else let sofar = (bs <> res)
+                   in case parseIncremental unrender sofar of
+                     Just x -> return x
+                     Nothing -> loop sofar
+      (frameParser, remainder) <- loop BL.empty
+      state <- newMVar remainder
+      let frameLoop bs = do
+              res <- BL.fromStrict <$> reader
+              let addIsEmptyInfo (a, r) = (r, (a, BL.null r && BL.null res))
+              if BL.null res
+                   then if BL.null bs
+                           then return ("", (Right "", True))
+                           else return . addIsEmptyInfo $ parseEOF frameParser bs
+                   else let sofar = (bs <> res)
+                        in case parseIncremental frameParser sofar of
+                          Just x ->  return $ addIsEmptyInfo x
+                          Nothing -> frameLoop sofar
+
+          go = processResult <$> modifyMVar state frameLoop
+          processResult (Right bs,isDone) =
+               if BL.null bs && isDone
+                    then Nothing
+                    else Just $ case mimeUnrender (Proxy :: Proxy ct) bs :: Either String a of
+                                  Left err -> Left err
+                                  Right x -> Right x
+          processResult (Left err, _) = Just (Left err)
+      k go
 
 
 -- | If you use a 'Header' in one of your endpoints in your API,

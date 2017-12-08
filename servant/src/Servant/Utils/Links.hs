@@ -84,6 +84,7 @@ module Servant.Utils.Links (
   --
   -- | Note that 'URI' is from the "Network.URI" module in the @network-uri@ package.
     safeLink
+  , allLinks
   , URI(..)
   -- * Adding custom types
   , HasLink(..)
@@ -108,6 +109,7 @@ import           Prelude               ()
 import           Prelude.Compat
 
 import Web.HttpApiData
+import Servant.API.Alternative ( (:<|>)((:<|>)) )
 import Servant.API.BasicAuth ( BasicAuth )
 import Servant.API.Capture ( Capture, CaptureAll )
 import Servant.API.ReqBody ( ReqBody )
@@ -117,6 +119,7 @@ import Servant.API.RemoteHost ( RemoteHost )
 import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
+import Servant.API.Stream ( Stream )
 import Servant.API.TypeLevel
 import Servant.API.Experimental.Auth ( AuthProtect )
 
@@ -220,6 +223,30 @@ safeLink
     -> MkLink endpoint
 safeLink _ endpoint = toLink endpoint (Link mempty mempty)
 
+-- | Create all links in an API.
+--
+-- Note that the @api@ type must be restricted to the endpoints that have
+-- valid links to them.
+--
+-- >>> type API = "foo" :> Capture "name" Text :> Get '[JSON] Text :<|> "bar" :> Capture "name" Int :> Get '[JSON] Double
+-- >>> let fooLink :<|> barLink = allLinks (Proxy :: Proxy API)
+-- >>> :t fooLink
+-- fooLink :: Text -> Link
+-- >>> :t barLink
+-- barLink :: Int -> Link
+--
+-- Note: nested APIs don't work well with this approach
+--
+-- >>> :kind! MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double))
+-- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) :: *
+-- = Char -> (Int -> Link) :<|> (Double -> Link)
+--
+allLinks
+    :: forall api. HasLink api
+    => Proxy api
+    -> MkLink api
+allLinks api = toLink api (Link mempty mempty)
+
 -- | Construct a toLink for an endpoint.
 class HasLink endpoint where
     type MkLink endpoint
@@ -266,6 +293,11 @@ instance (KnownSymbol sym, HasLink sub)
       where
         k = symbolVal (Proxy :: Proxy sym)
 
+-- :<|> instance - Generate all links at once
+instance (HasLink a, HasLink b) => HasLink (a :<|> b) where
+  type MkLink (a :<|> b) = MkLink a :<|> MkLink b
+  toLink _ l = toLink (Proxy :: Proxy a) l :<|> toLink (Proxy :: Proxy b) l
+
 -- Misc instances
 instance HasLink sub => HasLink (ReqBody ct a :> sub) where
     type MkLink (ReqBody ct a :> sub) = MkLink sub
@@ -306,6 +338,10 @@ instance HasLink Raw where
     type MkLink Raw = Link
     toLink _ = id
 
+instance HasLink (Stream m fr ct a) where
+    type MkLink (Stream m fr ct a) = Link
+    toLink _ = id
+
 -- AuthProtext instances
 instance HasLink sub => HasLink (AuthProtect tag :> sub) where
   type MkLink (AuthProtect tag :> sub) = MkLink sub
@@ -313,3 +349,4 @@ instance HasLink sub => HasLink (AuthProtect tag :> sub) where
 
 -- $setup
 -- >>> import Servant.API
+-- >>> import Data.Text (Text)

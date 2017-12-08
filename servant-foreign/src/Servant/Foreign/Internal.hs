@@ -9,12 +9,14 @@ module Servant.Foreign.Internal where
 
 import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
                                (.~))
+import           Data.Data (Data)
 #if !MIN_VERSION_base(4,8,0)
 import           Data.Monoid
 #endif
 import           Data.Proxy
 import           Data.String
 import           Data.Text
+import           Data.Typeable (Typeable)
 import           Data.Text.Encoding (decodeUtf8)
 import           GHC.TypeLits
 import qualified Network.HTTP.Types as HTTP
@@ -24,21 +26,19 @@ import           Servant.API.TypeLevel
 
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
-  deriving (Show, Eq, Monoid)
+  deriving (Data, Show, Eq, Monoid, Typeable)
 
 makePrisms ''FunctionName
 
 newtype PathSegment = PathSegment { unPathSegment :: Text }
-  deriving (Show, Eq, IsString, Monoid)
+  deriving (Data, Show, Eq, IsString, Monoid, Typeable)
 
 makePrisms ''PathSegment
 
 data Arg f = Arg
   { _argName :: PathSegment
   , _argType :: f }
-
-deriving instance Eq f => Eq (Arg f)
-deriving instance Show f => Show (Arg f)
+  deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Arg
 
@@ -50,16 +50,12 @@ data SegmentType f
     -- ^ a static path segment. like "/foo"
   | Cap (Arg f)
     -- ^ a capture. like "/:userid"
-
-deriving instance Eq f => Eq (SegmentType f)
-deriving instance Show f => Show (SegmentType f)
+  deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''SegmentType
 
 newtype Segment f = Segment { unSegment :: SegmentType f }
-
-deriving instance Eq f => Eq (Segment f)
-deriving instance Show f => Show (Segment f)
+  deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''Segment
 
@@ -77,7 +73,7 @@ data ArgType
   = Normal
   | Flag
   | List
-  deriving (Eq, Show)
+  deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''ArgType
 
@@ -85,9 +81,7 @@ data QueryArg f = QueryArg
   { _queryArgName :: Arg f
   , _queryArgType :: ArgType
   }
-
-deriving instance Eq f => Eq (QueryArg f)
-deriving instance Show f => Show (QueryArg f)
+  deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''QueryArg
 
@@ -97,9 +91,7 @@ data HeaderArg f = HeaderArg
   { _headerArg     :: Arg f
   , _headerPattern :: Text
   }
-
-deriving instance Eq f => Eq (HeaderArg f)
-deriving instance Show f => Show (HeaderArg f)
+  deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''HeaderArg
 
@@ -109,9 +101,7 @@ data Url f = Url
   { _path     :: Path f
   , _queryStr :: [QueryArg f]
   }
-
-deriving instance Eq f => Eq (Url f)
-deriving instance Show f => Show (Url f)
+  deriving (Data, Eq, Show, Typeable)
 
 defUrl :: Url f
 defUrl = Url [] []
@@ -126,9 +116,7 @@ data Req f = Req
   , _reqReturnType :: Maybe f
   , _reqFuncName   :: FunctionName
   }
-
-deriving instance Eq f => Eq (Req f)
-deriving instance Show f => Show (Req f)
+  deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Req
 
@@ -237,7 +225,7 @@ instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
       method   = reflectMethod (Proxy :: Proxy method)
       methodLC = toLower $ decodeUtf8 method
 
-instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype api)
+instance (KnownSymbol sym, HasForeignType lang ftype (Maybe a), HasForeign lang ftype api)
   => HasForeign lang ftype (Header sym a :> api) where
   type Foreign ftype (Header sym a :> api) = Foreign ftype api
 
@@ -247,7 +235,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype ap
       hname = pack . symbolVal $ (Proxy :: Proxy sym)
       arg   = Arg
         { _argName = PathSegment hname
-        , _argType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a) }
+        , _argType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy (Maybe a)) }
       subP  = Proxy :: Proxy api
 
 instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype api)

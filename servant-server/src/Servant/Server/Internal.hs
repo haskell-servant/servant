@@ -26,12 +26,15 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
+import           Control.Monad              (when)
 import           Control.Monad.Trans        (liftIO)
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.ByteString            as B
+import qualified Data.ByteString.Builder    as BB
 import qualified Data.ByteString.Char8      as BC8
 import qualified Data.ByteString.Lazy       as BL
-import           Data.Maybe                 (fromMaybe, mapMaybe)
+import           Data.Maybe                 (fromMaybe, mapMaybe,
+                                             isNothing, maybeToList)
 import           Data.Either                (partitionEithers)
 import           Data.String                (fromString)
 import           Data.String.Conversions    (cs, (<>))
@@ -41,13 +44,15 @@ import           Data.Typeable
 import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
                                              symbolVal)
 import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
+import qualified Network.HTTP.Media         as NHM
 import           Network.Socket             (SockAddr)
 import           Network.Wai                (Application, Request,
                                              httpVersion, isSecure,
                                              lazyRequestBody,
                                              rawQueryString, remoteHost,
                                              requestHeaders, requestMethod,
-                                             responseLBS, vault)
+                                             responseLBS, responseStream,
+                                             vault)
 import           Prelude                    ()
 import           Prelude.Compat
 import           Web.HttpApiData            (FromHttpApiData, parseHeader,
@@ -61,11 +66,16 @@ import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capt
                                               QueryParam, QueryParams, Raw,
                                               RemoteHost, ReqBody, Vault,
                                               WithNamedContext,
-                                              Description, Summary)
+                                              Description, Summary,
+                                              Accept(..),
+                                              FramingRender(..), Stream,
+                                              StreamGenerator(..), ToStreamGenerator(..),
+                                              BoundaryStrategy(..))
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..),
                                               AllMime,
+                                              MimeRender(..),
                                               canHandleAcceptH)
 import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
                                               getResponse)
@@ -257,6 +267,70 @@ instance OVERLAPPING_
     where method = reflectMethod (Proxy :: Proxy method)
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
+
+instance OVERLAPPABLE_
+         ( MimeRender ctype a, ReflectMethod method,
+           FramingRender framing ctype, ToStreamGenerator f a
+         ) => HasServer (Stream method framing ctype (f a)) context where
+
+  type ServerT (Stream method framing ctype (f a)) m = m (f a)
+  hoistServerWithContext _ _ nt s = nt s
+
+  route Proxy _ = streamRouter ([],) method (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
+      where method = reflectMethod (Proxy :: Proxy method)
+
+instance OVERLAPPING_
+         ( MimeRender ctype a, ReflectMethod method,
+           FramingRender framing ctype, ToStreamGenerator f a,
+           GetHeaders (Headers h (f a))
+         ) => HasServer (Stream method framing ctype (Headers h (f a))) context where
+
+  type ServerT (Stream method framing ctype (Headers h (f a))) m = m (Headers h (f a))
+  hoistServerWithContext _ _ nt s = nt s
+
+  route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
+      where method = reflectMethod (Proxy :: Proxy method)
+
+
+streamRouter :: (MimeRender ctype a, FramingRender framing ctype, ToStreamGenerator f a) =>
+                (b -> ([(HeaderName, B.ByteString)], f a))
+             -> Method
+             -> Proxy framing
+             -> Proxy ctype
+             -> Delayed env (Handler b)
+             -> Router env
+streamRouter splitHeaders method framingproxy ctypeproxy action = leafRouter $ \env request respond ->
+          let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+              cmediatype = NHM.matchAccept [contentType ctypeproxy] accH
+              accCheck = when (isNothing cmediatype) $ delayedFail err406
+              contentHeader = (hContentType, NHM.renderHeader . maybeToList $ cmediatype)
+          in runAction (action `addMethodCheck` methodCheck method request
+                               `addAcceptCheck` accCheck
+                       ) env request respond $ \ output ->
+                let (headers, fa) = splitHeaders output
+                    k = getStreamGenerator . toStreamGenerator $ fa in
+                Route $ responseStream status200 (contentHeader : headers) $ \write flush -> do
+                      write . BB.lazyByteString $ header framingproxy ctypeproxy
+                      case boundary framingproxy ctypeproxy of
+                           BoundaryStrategyBracket f ->
+                                    let go x = let bs = mimeRender ctypeproxy $ x
+                                                   (before, after) = f bs
+                                               in write (   BB.lazyByteString before
+                                                         <> BB.lazyByteString bs
+                                                         <> BB.lazyByteString after) >> flush
+                                    in k go go
+                           BoundaryStrategyIntersperse sep -> k
+                             (\x -> do
+                                write . BB.lazyByteString . mimeRender ctypeproxy $ x
+                                flush)
+                             (\x -> do
+                                write . (BB.lazyByteString sep <>) . BB.lazyByteString . mimeRender ctypeproxy $ x
+                                flush)
+                           BoundaryStrategyGeneral f ->
+                                    let go = (>> flush) . write . BB.lazyByteString . f . mimeRender ctypeproxy
+                                    in k go go
+                      write . BB.lazyByteString $ trailer framingproxy ctypeproxy
+
 -- | If you use 'Header' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by 'Header'.
@@ -299,7 +373,7 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
                                    <> fromString headerName
                                    <> " failed: " <> e
                   }
-              Right header -> return $ Just header
+              Right hdr -> return $ Just hdr
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function

@@ -1,3 +1,24 @@
+[The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-foreign/CHANGELOG.md)
+[Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
+
+0.11
+----
+
+### Breaking changes
+
+* Make foreign client Header arguments have the representation of 'Maybe' in those languages
+  ([#843](https://github.com/haskell-servant/servant/pull/843))
+
+0.10.2
+------
+
+### Changes
+
+* Add instances for `Description` and `Summary` combinators
+  ([#767](https://github.com/haskell-servant/servant/pull/767))
+* Derive Data for all types
+  ([#809](https://github.com/haskell-servant/servant/pull/809))
+
 0.10.1
 ------
 

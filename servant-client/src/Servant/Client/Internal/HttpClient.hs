@@ -28,6 +28,7 @@ import           Data.ByteString.Builder     (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
 import           Data.Foldable               (toList)
 import           Data.Functor.Alt            (Alt (..))
+import           Data.Maybe                  (maybeToList)
 import           Data.Monoid                 ((<>))
 import           Data.Proxy                  (Proxy (..))
 import           Data.Sequence               (fromList)
@@ -88,6 +89,7 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
   runRequest = performRequest
+  streamingRequest = performStreamingRequest
   throwServantError = throwError
   catchServantError = catchError
 
@@ -110,13 +112,28 @@ performRequest req = do
     Right response -> do
       let status = Client.responseStatus response
           status_code = statusCode status
-          ourResponse = clientResponseToReponse response
+          ourResponse = clientResponseToResponse response
       unless (status_code >= 200 && status_code < 300) $
         throwError $ FailureResponse ourResponse
       return ourResponse
 
-clientResponseToReponse :: Client.Response BSL.ByteString -> Response
-clientResponseToReponse r = Response
+performStreamingRequest :: Request -> ClientM StreamingResponse
+performStreamingRequest req = do
+  m <- asks manager
+  burl <- asks baseUrl
+  let request = requestToClientRequest burl req
+  return $ StreamingResponse $
+    \k -> Client.withResponse request m $
+    \r -> do
+      let status = Client.responseStatus r
+          status_code = statusCode status
+      unless (status_code >= 200 && status_code < 300) $ do
+        b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody r)
+        throw $ FailureResponse $ Response status b (fromList $ Client.responseHeaders r) (Client.responseVersion r)
+      k (status, fromList $ Client.responseHeaders r, Client.responseVersion r, Client.responseBody r)
+
+clientResponseToResponse :: Client.Response BSL.ByteString -> Response
+clientResponseToResponse r = Response
   { responseStatusCode = Client.responseStatus r
   , responseBody = Client.responseBody r
   , responseHeaders = fromList $ Client.responseHeaders r
@@ -133,16 +150,26 @@ requestToClientRequest burl r = Client.defaultRequest
                <> toLazyByteString (requestPath r)
   , Client.queryString = renderQuery True . toList $ requestQueryString r
   , Client.requestHeaders =
-      let orig = toList $ requestHeaders r
-      in maybe orig (: orig) contentTypeHdr
+    maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
   , Client.requestBody = body
   , Client.secure = isSecure
   }
   where
+    -- Content-Type and Accept are specified by requestBody and requestAccept
+    headers = filter (\(h, _) -> h /= "Accept" && h /= "Content-Type") $
+        toList $requestHeaders r
+
+    acceptHdr
+        | null hs   = Nothing
+        | otherwise = Just ("Accept", renderHeader hs)
+      where
+        hs = toList $ requestAccept r
+
     (body, contentTypeHdr) = case requestBody r of
       Nothing -> (Client.RequestBodyLBS "", Nothing)
       Just (RequestBodyLBS body', typ)
         -> (Client.RequestBodyLBS body', Just (hContentType, renderHeader typ))
+
     isSecure = case baseUrlScheme burl of
       Http -> False
       Https -> True

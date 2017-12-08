@@ -31,6 +31,9 @@ module Servant.API (
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Verbs,
 
+  -- * Streaming endpoints, distinguished by HTTP method
+  module Servant.API.Stream,
+
   -- * Authentication
   module Servant.API.BasicAuth,
 
@@ -80,6 +83,15 @@ import           Servant.API.IsSecure        (IsSecure (..))
 import           Servant.API.QueryParam      (QueryFlag, QueryParam,
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
+import           Servant.API.Stream          (Stream, StreamGet, StreamPost,
+                                              StreamGenerator (..),
+                                              ToStreamGenerator (..),
+                                              ResultStream(..), BuildFromStream (..),
+                                              ByteStringParser (..),
+                                              FramingRender (..), BoundaryStrategy (..),
+                                              FramingUnrender (..),
+                                              NewlineFraming,
+                                              NetstringFraming)
 import           Servant.API.RemoteHost      (RemoteHost)
 import           Servant.API.ReqBody         (ReqBody)
 import           Servant.API.ResponseHeaders (AddHeader, addHeader, noHeader,

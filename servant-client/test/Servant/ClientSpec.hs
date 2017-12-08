@@ -24,7 +24,7 @@
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 #include "overlapping-compat.h"
-module Servant.ClientSpec (spec) where
+module Servant.ClientSpec (spec, Person(..), startWaiApp, endWaiApp) where
 
 import           Prelude                                    ()
 import           Prelude.Compat
@@ -106,10 +106,14 @@ instance FromForm Person
 alice :: Person
 alice = Person "Alice" 42
 
+carol :: Person
+carol = Person "Carol" 17
+
 type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
 type Api =
-       "get" :> Get '[JSON] Person
+  Get '[JSON] Person
+  :<|> "get" :> Get '[JSON] Person
   :<|> "deleteEmpty" :> DeleteNoContent '[JSON] NoContent
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
@@ -132,6 +136,7 @@ type Api =
 api :: Proxy Api
 api = Proxy
 
+getRoot         :: ClientM Person
 getGet          :: ClientM Person
 getDeleteEmpty  :: ClientM NoContent
 getCapture      :: String -> ClientM Person
@@ -147,7 +152,8 @@ getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
 getDeleteContentType :: ClientM NoContent
 
-getGet
+getRoot
+  :<|> getGet
   :<|> getDeleteEmpty
   :<|> getCapture
   :<|> getCaptureAll
@@ -164,7 +170,8 @@ getGet
 
 server :: Application
 server = serve api (
-       return alice
+       return carol
+  :<|> return alice
   :<|> return NoContent
   :<|> (\ name -> return $ Person name 0)
   :<|> (\ names -> return (zipWith Person names [0..]))
@@ -299,6 +306,8 @@ runClient x baseUrl' = runClientM x (ClientEnv manager' baseUrl')
 
 sucessSpec :: Spec
 sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+    it "Servant.API.Get root" $ \(_, baseUrl) -> do
+      left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
 
     it "Servant.API.Get" $ \(_, baseUrl) -> do
       left show <$> runClient getGet baseUrl  `shouldReturn` Right alice
@@ -390,14 +399,14 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
 
     context "client returns errors appropriately" $ do
       it "reports FailureResponse" $ \(_, baseUrl) -> do
-        let (_ :<|> getDeleteEmpty :<|> _) = client api
+        let (_ :<|> _ :<|> getDeleteEmpty :<|> _) = client api
         Left res <- runClient getDeleteEmpty baseUrl
         case res of
           FailureResponse r | responseStatusCode r == HTTP.status404 -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \(_, baseUrl) -> do
-        let (_ :<|> _ :<|> getCapture :<|> _) = client api
+        let (_ :<|> _ :<|> _ :<|> getCapture :<|> _) = client api
         Left res <- runClient (getCapture "foo") baseUrl
         case res of
           DecodeFailure _ _ -> return ()
@@ -411,14 +420,14 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           _ -> fail $ "expected ConnectionError, but got " <> show res
 
       it "reports UnsupportedContentType" $ \(_, baseUrl) -> do
-        let (getGet :<|> _ ) = client api
+        let (_ :<|> getGet :<|> _ ) = client api
         Left res <- runClient getGet baseUrl
         case res of
           UnsupportedContentType ("application/octet-stream") _ -> return ()
           _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
       it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
-        let (_ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
+        let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
         Left res <- runClient (getBody alice) baseUrl
         case res of
           InvalidContentTypeHeader _ -> return ()

@@ -10,6 +10,11 @@ sudo: false
 git:
   submodules: false  # whether to recursively clone submodules
 
+branches:
+  only:
+    - master
+    - release-0.12
+
 cache:
   directories:
     - $HOME/.cabal/packages
@@ -100,6 +105,13 @@ script:
   - cd ${DISTDIR}
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal\n' > cabal.project"
+
+  # Allow-newer and other cabal.project amendments
+  - "echo 'allow-newer: servant-js:servant, servant-js:servant-foreign' >> cabal.project"
+
+  # cryptonite
+  - "echo 'constraints: foundation >=0.0.14' >> cabal.project"
+
   - echo -en 'travis_fold:end:unpack\\r'
   - echo Building... && echo -en 'travis_fold:start:build\\r'
   # this builds all libraries and executables (without tests/benchmarks)
