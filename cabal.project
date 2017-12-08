@@ -10,6 +10,7 @@ packages: servant/
   doc/cookbook/db-sqlite-simple/
   doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/file-upload/
+  doc/cookbook/structuring-apis/
 
 allow-newer: servant-js:servant-foreign
 

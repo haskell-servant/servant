@@ -22,3 +22,4 @@ you name it!
   basic-auth/BasicAuth.lhs
   jwt-and-basic-auth/JWTAndBasicAuth.lhs
   file-upload/FileUpload.lhs
+  structuring-apis/StructuringApis.lhs
