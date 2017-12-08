@@ -21,3 +21,4 @@ you name it!
   db-postgres-pool/PostgresPool.lhs
   basic-auth/BasicAuth.lhs
   jwt-and-basic-auth/JWTAndBasicAuth.lhs
+  file-upload/FileUpload.lhs
