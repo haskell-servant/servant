@@ -60,7 +60,7 @@ an effect on the server for such an API, and its type
 in particular. While the server for `FactoringAPI'` would
 be made of a function of type `Int -> Maybe Int -> Handler Int`
 and a function of type `Int -> Handler Int` glued with `:<|>`,
-a server for `Factoring` (without the `'`) reflects the
+a server for `FactoringAPI` (without the `'`) reflects the
 "factorisation" and therefore, `Server FactoringAPI` is
 `Int -> (Maybe Int -> Handler Int :<|> Handler Int)`. That is, the
 server must be a function that takes an `Int` (the `Capture`) and
@@ -191,4 +191,5 @@ main = run 8080 . serve api $
   factoringServer :<|> userServer :<|> productServer
 ```
 
-This program is available as a cabal project [here]().
+This program is available as a cabal project
+[here](https://github.com/haskell-servant/servant/tree/master/doc/cookbook/structuring-apis).

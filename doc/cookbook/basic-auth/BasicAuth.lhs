@@ -175,4 +175,5 @@ code and see what happens when you specify credentials that are not in the
 database.
 
 The entire program covered here is available as a literate Haskell file
-[here](...), along with a `cabal` project.
+[here](https://github.com/haskell-servant/servant/tree/master/doc/cookbook/basic-auth),
+along with a `cabal` project.

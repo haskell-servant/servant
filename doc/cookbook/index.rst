@@ -17,9 +17,10 @@ you name it!
 .. toctree::
   :maxdepth: 1
 
+  structuring-apis/StructuringApis.lhs
+  https/Https.lhs
   db-sqlite-simple/DBConnection.lhs
   db-postgres-pool/PostgresPool.lhs
   basic-auth/BasicAuth.lhs
   jwt-and-basic-auth/JWTAndBasicAuth.lhs
   file-upload/FileUpload.lhs
-  structuring-apis/StructuringApis.lhs

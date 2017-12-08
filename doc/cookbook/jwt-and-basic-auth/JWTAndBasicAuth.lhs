@@ -247,3 +247,6 @@ curl -v -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJkYXQiOnsiYXVPcmdJRCI6M
 …
 < HTTP/1.1 200 OK
 ```
+
+This program is available as a cabal project
+[here](https://github.com/haskell-servant/servant/tree/master/doc/cookbook/jwt-and-basic-auth).

@@ -139,4 +139,5 @@ You could alternatively have the handlers live in `ReaderT (Pool Connection)`
 and access the pool using e.g `ask`, but this would be more complicated
 than simply taking the pool as argument.
 
-The entire source for this example is available [here](...).
+The entire source for this example is available as a cabal project
+[here](https://github.com/haskell-servant/servant/tree/master/doc/cookbook/db-postgres-pool).

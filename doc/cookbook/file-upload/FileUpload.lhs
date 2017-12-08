@@ -183,5 +183,5 @@ See `CONTRIBUTING.md`
 Response {responseStatus = Status {statusCode = 200, statusMessage = "OK"}, responseVersion = HTTP/1.1, responseHeaders = [("Transfer-Encoding","chunked"),("Date","Fri, 08 Dec 2017 16:50:14 GMT"),("Server","Warp/3.2.13"),("Content-Type","application/json;charset=utf-8")], responseBody = "0", responseCookieJar = CJ {expose = []}, responseClose' = ResponseClose}
 ```
 
-As usual, the code for this recipe is available in a cabal
-project [here]().
+As usual, the code for this recipe is available in a cabal project
+[here](https://github.com/haskell-servant/servant/tree/master/doc/cookbook/file-upload).

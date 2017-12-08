@@ -1,0 +1,25 @@
+name:                cookbook-https
+version:             0.1
+synopsis:            HTTPS cookbook example
+homepage:            http://haskell-servant.readthedocs.org/
+license:             BSD3
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable cookbook-https
+  if impl(ghc < 7.10.1)
+    buildable:         False
+  main-is:             Https.lhs
+  build-depends:       base == 4.*
+                     , servant
+                     , servant-server
+                     , wai
+                     , warp
+                     , warp-tls
+                     , markdown-unlit >= 0.4
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit

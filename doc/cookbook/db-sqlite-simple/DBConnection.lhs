@@ -96,4 +96,5 @@ main = do
 This program prints `Right ["hello","world"]` the first time it is executed,
 `Right ["hello","world","hello","world"]` the second time and so on.
 
-The entire source for this example is available [here](...).
+The entire source for this example is available as a cabal project
+[here](https://github.com/haskell-servant/servant/tree/master/doc/cookbook/db-sqlite-simple).

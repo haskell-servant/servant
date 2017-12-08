@@ -11,6 +11,7 @@ packages: servant/
   doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/file-upload/
   doc/cookbook/structuring-apis/
+  doc/cookbook/https/
 
 allow-newer: servant-js:servant-foreign
 
