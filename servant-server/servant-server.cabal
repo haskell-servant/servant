@@ -65,7 +65,7 @@ library
       , exceptions         >= 0.8  && < 0.9
       , http-api-data      >= 0.3  && < 0.4
       , http-media         >= 0.4  && < 0.8
-      , http-types         >= 0.8  && < 0.11
+      , http-types         >= 0.8  && < 0.12
       , network-uri        >= 2.6  && < 2.7
       , monad-control      >= 1.0.0.4 && < 1.1
       , mtl                >= 2    && < 2.3
@@ -137,7 +137,7 @@ test-suite spec
     , directory
     , exceptions
     , hspec == 2.*
-    , hspec-wai >= 0.8 && <0.9
+    , hspec-wai >= 0.8 && <0.10
     , http-types
     , mtl
     , network >= 2.6

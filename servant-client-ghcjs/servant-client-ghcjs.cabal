@@ -39,7 +39,7 @@ library
     , ghcjs-base            >= 0.2.0.0  && < 0.3.0.0
     , ghcjs-prim            >= 0.1.0.0  && < 0.2.0.0
     , http-media            >= 0.6.2    && < 0.8
-    , http-types            >= 0.8.6    && < 0.10
+    , http-types            >= 0.8.6    && < 0.12
     , monad-control         >= 1.0.0.4  && < 1.1
     , mtl                   >= 2.1      && < 2.3
     , semigroupoids         >= 4.3      && < 5.3
