@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveDataTypeable     #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -23,6 +24,7 @@
 -- example above).
 module Servant.API.ResponseHeaders
     ( Headers(..)
+    , ResponseHeader (..)
     , AddHeader
     , addHeader
     , noHeader
@@ -32,15 +34,16 @@ module Servant.API.ResponseHeaders
     , HList(..)
     ) where
 
-import           Data.ByteString.Char8       as BS (pack, unlines, init)
+import           Data.ByteString.Char8       as BS (ByteString, pack, unlines, init)
+import           Data.Typeable               (Typeable)
 import           Web.HttpApiData             (ToHttpApiData, toHeader,
                                              FromHttpApiData, parseHeader)
 import qualified Data.CaseInsensitive        as CI
 import           Data.Proxy
-import           GHC.TypeLits                (KnownSymbol, symbolVal)
+import           GHC.TypeLits                (KnownSymbol, Symbol, symbolVal)
 import qualified Network.HTTP.Types.Header   as HTTP
 
-import           Servant.API.Header          (Header (..))
+import           Servant.API.Header          (Header)
 import           Prelude                     ()
 import           Prelude.Compat
 
@@ -52,9 +55,15 @@ data Headers ls a = Headers { getResponse :: a
                             -- ^ HList of headers.
                             } deriving (Functor)
 
+data ResponseHeader (sym :: Symbol) a
+    = Header a
+    | MissingHeader
+    | UndecodableHeader ByteString
+  deriving (Typeable, Eq, Show, Functor)
+
 data HList a where
     HNil  :: HList '[]
-    HCons :: Header h x -> HList xs -> HList (Header h x ': xs)
+    HCons :: ResponseHeader h x -> HList xs -> HList (Header h x ': xs)
 
 type family HeaderValMap (f :: * -> *) (xs :: [*]) where
     HeaderValMap f '[]                = '[]
@@ -110,7 +119,7 @@ instance OVERLAPPABLE_ ( KnownSymbol h, GetHeaders (HList rest), ToHttpApiData v
 -- We need all these fundeps to save type inference
 class AddHeader h v orig new
     | h v orig -> new, new -> h, new -> v, new -> orig where
-  addOptionalHeader :: Header h v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
+  addOptionalHeader :: ResponseHeader h v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
 
 
 instance OVERLAPPING_ ( KnownSymbol h, ToHttpApiData v )

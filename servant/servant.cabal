@@ -49,12 +49,13 @@ library
     Servant.API.HttpVersion
     Servant.API.Internal.Test.ComprehensiveAPI
     Servant.API.IsSecure
+    Servant.API.Modifiers
     Servant.API.QueryParam
     Servant.API.Raw
-    Servant.API.Stream
     Servant.API.RemoteHost
     Servant.API.ReqBody
     Servant.API.ResponseHeaders
+    Servant.API.Stream
     Servant.API.Sub
     Servant.API.TypeLevel
     Servant.API.Vault
@@ -77,6 +78,7 @@ library
     , mmorph                >= 1    && < 1.2
     , tagged                >= 0.7.3 && < 0.9
     , text                  >= 1    && < 1.3
+    , singleton-bool        >= 0.1.2.0 && <0.2
     , string-conversions    >= 0.3  && < 0.5
     , network-uri           >= 2.6  && < 2.7
     , vault                 >= 0.3  && < 0.4

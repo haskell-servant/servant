@@ -24,13 +24,16 @@ type ComprehensiveAPIWithoutRaw =
   Get '[JSON] Int :<|>
   Capture "foo" Int :> GET :<|>
   Header "foo" Int :> GET :<|>
+  Header' '[Required, Lenient] "bar" Int :> GET :<|>
   HttpVersion :> GET :<|>
   IsSecure :> GET :<|>
   QueryParam "foo" Int :> GET :<|>
+  QueryParam' '[Required, Lenient] "bar" Int :> GET :<|>
   QueryParams "foo" Int :> GET :<|>
   QueryFlag "foo" :> GET :<|>
   RemoteHost :> GET :<|>
   ReqBody '[JSON] Int :> GET :<|>
+  ReqBody' '[Lenient] '[JSON] Int :> GET :<|>
   Get '[JSON] (Headers '[Header "foo" Int] NoContent) :<|>
   "foo" :> GET :<|>
   Vault :> GET :<|>

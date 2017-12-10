@@ -33,7 +33,9 @@ import           Servant.Docs.Internal
 -- This declaration simply checks that all instances are in place.
 _ = docs comprehensiveAPI
 
-instance ToParam (QueryParam "foo" Int) where
+instance ToParam (QueryParam' mods "foo" Int) where
+  toParam = error "unused"
+instance ToParam (QueryParam' mods "bar" Int) where
   toParam = error "unused"
 instance ToParam (QueryParams "foo" Int) where
   toParam = error "unused"

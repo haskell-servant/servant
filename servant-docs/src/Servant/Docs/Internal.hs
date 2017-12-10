@@ -534,7 +534,7 @@ sampleByteStrings ctypes@Proxy Proxy =
 --
 -- Example of an instance:
 --
--- > instance ToParam (QueryParam "capital" Bool) where
+-- > instance ToParam (QueryParam' mods "capital" Bool) where
 -- >   toParam _ =
 -- >     DocQueryParam "capital"
 -- >                   ["true", "false"]
@@ -859,7 +859,7 @@ instance OVERLAPPING_
           p = Proxy :: Proxy a
 
 instance (KnownSymbol sym, HasDocs api)
-      => HasDocs (Header sym a :> api) where
+      => HasDocs (Header' mods sym a :> api) where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
 
@@ -867,14 +867,14 @@ instance (KnownSymbol sym, HasDocs api)
           action' = over headers (|> headername) action
           headername = T.pack $ symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, ToParam (QueryParam sym a), HasDocs api)
-      => HasDocs (QueryParam sym a :> api) where
+instance (KnownSymbol sym, ToParam (QueryParam' mods sym a), HasDocs api)
+      => HasDocs (QueryParam' mods sym a :> api) where
 
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
 
     where subApiP = Proxy :: Proxy api
-          paramP = Proxy :: Proxy (QueryParam sym a)
+          paramP = Proxy :: Proxy (QueryParam' mods sym a)
           action' = over params (|> toParam paramP) action
 
 instance (KnownSymbol sym, ToParam (QueryParams sym a), HasDocs api)
@@ -929,7 +929,7 @@ instance (KnownSymbol desc, HasDocs api)
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
 -- both are even defined) for any particular type.
 instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
-      => HasDocs (ReqBody (ct ': cts) a :> api) where
+      => HasDocs (ReqBody' mods (ct ': cts) a :> api) where
 
   docsFor Proxy (endpoint, action) opts@DocOptions{..} =
     docsFor subApiP (endpoint, action') opts

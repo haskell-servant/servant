@@ -20,12 +20,12 @@
 -- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
+import Prelude ()
+import Prelude.Compat
+
 import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
                                (.~))
 import           Data.Data (Data)
-#if !MIN_VERSION_base(4,8,0)
-import           Data.Monoid
-#endif
 import           Data.Proxy
 import           Data.String
 import           Data.Text
@@ -33,10 +33,9 @@ import           Data.Typeable (Typeable)
 import           Data.Text.Encoding (decodeUtf8)
 import           GHC.TypeLits
 import qualified Network.HTTP.Types as HTTP
-import           Prelude hiding (concat)
 import           Servant.API
 import           Servant.API.TypeLevel
-
+import           Servant.API.Modifiers (RequiredArgument)
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
   deriving (Data, Show, Eq, Monoid, Typeable)
@@ -238,9 +237,9 @@ instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
       method   = reflectMethod (Proxy :: Proxy method)
       methodLC = toLower $ decodeUtf8 method
 
-instance (KnownSymbol sym, HasForeignType lang ftype (Maybe a), HasForeign lang ftype api)
-  => HasForeign lang ftype (Header sym a :> api) where
-  type Foreign ftype (Header sym a :> api) = Foreign ftype api
+instance (KnownSymbol sym, HasForeignType lang ftype (RequiredArgument mods a), HasForeign lang ftype api)
+  => HasForeign lang ftype (Header' mods sym a :> api) where
+  type Foreign ftype (Header' mods sym a :> api) = Foreign ftype api
 
   foreignFor lang Proxy Proxy req =
     foreignFor lang Proxy subP $ req & reqHeaders <>~ [HeaderArg arg]
@@ -248,12 +247,12 @@ instance (KnownSymbol sym, HasForeignType lang ftype (Maybe a), HasForeign lang 
       hname = pack . symbolVal $ (Proxy :: Proxy sym)
       arg   = Arg
         { _argName = PathSegment hname
-        , _argType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy (Maybe a)) }
+        , _argType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy (RequiredArgument mods a)) }
       subP  = Proxy :: Proxy api
 
-instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype api)
-  => HasForeign lang ftype (QueryParam sym a :> api) where
-  type Foreign ftype (QueryParam sym a :> api) = Foreign ftype api
+instance (KnownSymbol sym, HasForeignType lang ftype (RequiredArgument mods a), HasForeign lang ftype api)
+  => HasForeign lang ftype (QueryParam' mods sym a :> api) where
+  type Foreign ftype (QueryParam' mods sym a :> api) = Foreign ftype api
 
   foreignFor lang Proxy Proxy req =
     foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
@@ -262,7 +261,7 @@ instance (KnownSymbol sym, HasForeignType lang ftype a, HasForeign lang ftype ap
       str = pack . symbolVal $ (Proxy :: Proxy sym)
       arg = Arg
         { _argName = PathSegment str
-        , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a) }
+        , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy (RequiredArgument mods a)) }
 
 instance
   (KnownSymbol sym, HasForeignType lang ftype [a], HasForeign lang ftype api)
@@ -299,8 +298,8 @@ instance HasForeign lang ftype Raw where
         & reqMethod .~ method
 
 instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype api)
-      => HasForeign lang ftype (ReqBody list a :> api) where
-  type Foreign ftype (ReqBody list a :> api) = Foreign ftype api
+      => HasForeign lang ftype (ReqBody' mods list a :> api) where
+  type Foreign ftype (ReqBody' mods list a :> api) = Foreign ftype api
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) $
