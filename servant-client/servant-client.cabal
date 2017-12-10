@@ -20,7 +20,7 @@ tested-with:
   GHC==7.8.4
   GHC==7.10.3
   GHC==8.0.2
-  GHC==8.2.1
+  GHC==8.2.2
 homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
@@ -45,7 +45,7 @@ library
     , http-client           >= 0.4.30   && < 0.6
     , http-client-tls       >= 0.2.2    && < 0.4
     , http-media            >= 0.6.2    && < 0.8
-    , http-types            >= 0.8.6    && < 0.11
+    , http-types            >= 0.8.6    && < 0.12
     , exceptions            >= 0.8      && < 0.9
     , monad-control         >= 1.0.0.4  && < 1.1
     , mtl                   >= 2.1      && < 2.3
