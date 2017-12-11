@@ -153,4 +153,48 @@ HelloMessage {msg = "Hello, servant"}
 Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we miss you!", body = "Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!"}
 ```
 
-The types of the arguments for the functions are the same as for (server-side) request handlers. You now know how to use **servant-client**!
+The types of the arguments for the functions are the same as for (server-side) request handlers.
+
+## Querying Streaming APIs.
+
+Consider the following streaming API type:
+
+``` haskell
+type StreamAPI = "positionStream" :> StreamGet NewlineFraming JSON (ResultStream Position)
+```
+
+Note that when we declared an API to serve, we specified a `StreamGenerator` as a producer of streams. Now we specify our result type as a `ResultStream`. With types that can be used both ways, if appropriate adaptors are written (in the form of `ToStreamGenerator` and `BuildFromStream` instances), then this asymmetry isn't necessary. Otherwise, if you want to share the same API across clients and servers, you can parameterize it like so:
+
+``` haskell ignore
+type StreamAPI f = "positionStream" :> StreamGet NewlineFraming JSON (f Position)
+type ServerStreamAPI = StreamAPI StreamGenerator
+type ClientStreamAPI = StreamAPI ResultStream
+```
+
+In any case, here's how we write a function to query our API:
+
+``` haskell
+streamAPI :: Proxy StreamAPI
+streamAPI = Proxy
+
+posStream :: ClientM (ResultStream Position)
+
+posStream = client streamAPI
+```
+
+And here's how to just print out all elements from a `ResultStream`, to give some idea of how to work with them.
+
+``` haskell
+printResultStream :: Show a => ResultStream a -> IO ()
+printResultStream (ResultStream k) = k $ \getResult ->
+       let loop = do
+            r <- getResult
+            case r of
+                Nothing -> return ()
+                Just x -> print x >> loop
+       in loop
+```
+
+The stream is parsed and provided incrementally. So the above loop prints out each result as soon as it is received on the stream, rather than waiting until they are all available to print them at once.
+
+You now know how to use **servant-client**!
