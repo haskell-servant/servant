@@ -69,6 +69,7 @@ import Servant.Server                   (BasicAuthCheck (BasicAuthCheck),
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
                                          mkAuthHandler)
 import Servant.Server.Experimental.Auth()
+import Web.Cookie                       (parseCookies)
 
 -- | private data that needs protection
 newtype PrivateData = PrivateData { ssshhh :: Text }
@@ -285,7 +286,6 @@ method (note: we depend upon [`cookie`](https://hackage.haskell.org/package/cook
 `parseCookies` for this):
 
 ```haskell
-import           Web.Cookie             (parseCookies)
 
 --- | The auth handler wraps a function from Request -> Handler Account.
 --- We look for a token in the request headers that we expect to be in the cookie.
