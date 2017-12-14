@@ -29,8 +29,10 @@ module Servant.QuickCheck
   , not500
   , notLongerThan
   , onlyJsonObjects
+  , honoursAcceptHeader
   , notAllowedContainsAllowHeader
   , unauthorizedContainsWWWAuthenticate
+  , getsHaveLastModifiedHeader
   , getsHaveCacheControlHeader
   , headsHaveCacheControlHeader
   , createContainsValidLocation
