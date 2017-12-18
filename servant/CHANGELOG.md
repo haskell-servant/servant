@@ -1,5 +1,14 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.12.1
+------
+
+### Bug fixes
+
+- Prevent double-escaping in link segments
+  ([#835](https://github.com/haskell-servant/servant/issues/835)
+   [#878](https://github.com/haskell-servant/servant/pull/878))
+
 0.12
 ---
 
