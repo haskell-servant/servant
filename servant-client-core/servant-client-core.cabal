@@ -1,5 +1,6 @@
 name:                servant-client-core
 version:             0.12
+x-revision:          1
 synopsis:            Core functionality and class for client function generation for servant APIs
 description:
   This library provides backend-agnostic generation of client functions. For
@@ -49,7 +50,7 @@ library
     , generics-sop          >= 0.1.0.0  && < 0.4
     , http-api-data         >= 0.3.6    && < 0.4
     , http-media            >= 0.6.2    && < 0.8
-    , http-types            >= 0.8.6    && < 0.11
+    , http-types            >= 0.8.6    && < 0.12
     , mtl                   >= 2.1      && < 2.3
     , network-uri           >= 2.6      && < 2.7
     , safe                  >= 0.3.9    && < 0.4

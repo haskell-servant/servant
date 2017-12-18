@@ -1,5 +1,6 @@
 name:                servant
 version:             0.12
+x-revision:          1
 synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -70,7 +71,7 @@ library
     , case-insensitive      >= 1.2  && < 1.3
     , http-api-data         >= 0.3  && < 0.4
     , http-media            >= 0.4  && < 0.8
-    , http-types            >= 0.8  && < 0.11
+    , http-types            >= 0.8  && < 0.12
     , natural-transformation >= 0.4 && < 0.5
     , mtl                   >= 2.0  && < 2.3
     , mmorph                >= 1    && < 1.2
