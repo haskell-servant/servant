@@ -126,12 +126,24 @@ import Servant.API.Experimental.Auth ( AuthProtect )
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
 -- 'Link' is guaranteed to be part of the mentioned API.
 data Link = Link
-  { _segments :: [String]   -- ^ Segments of "foo/bar" would be ["foo", "bar"]
+  { _segments    :: [Escaped]
   , _queryParams :: [Param]
   } deriving Show
 
+newtype Escaped = Escaped String
+
+escaped :: String -> Escaped
+escaped = Escaped . escapeURIString isUnreserved
+
+getEscaped :: Escaped -> String
+getEscaped (Escaped s) = s
+
+instance Show Escaped where
+    showsPrec d (Escaped s) = showsPrec d s
+    show (Escaped s)        = show s
+
 linkSegments :: Link -> [String]
-linkSegments = _segments
+linkSegments = map getEscaped . _segments
 
 linkQueryParams :: Link -> [Param]
 linkQueryParams = _queryParams
@@ -149,7 +161,7 @@ data Param
     | FlagParam      String
   deriving Show
 
-addSegment :: String -> Link -> Link
+addSegment :: Escaped -> Link -> Link
 addSegment seg l = l { _segments = _segments l <> [seg] }
 
 addQueryParam :: Param -> Link -> Link
@@ -169,6 +181,14 @@ addQueryParam qp l =
 -- >>> type API = "foo/bar" :> Get '[JSON] Int
 -- >>> linkURI $ safeLink (Proxy :: Proxy API) (Proxy :: Proxy API)
 -- foo%2Fbar
+--
+-- >>> type SomeRoute = "abc" :> Capture "email" String :> Put '[JSON] ()
+-- >>> let someRoute = Proxy :: Proxy SomeRoute
+-- >>> safeLink someRoute someRoute "test@example.com"
+-- Link {_segments = ["abc","test%40example.com"], _queryParams = []}
+--
+-- >>> linkURI $ safeLink someRoute someRoute "test@example.com"
+-- abc/test%40example.com
 --
 linkURI :: Link -> URI
 linkURI = linkURI' LinkArrayElementBracket
@@ -192,7 +212,7 @@ linkURI' :: LinkArrayElementStyle -> Link -> URI
 linkURI' addBrackets (Link segments q_params) =
     URI mempty  -- No scheme (relative)
         Nothing -- Or authority (relative)
-        (intercalate "/" $ map escape segments)
+        (intercalate "/" $ map getEscaped segments)
         (makeQueries q_params) mempty
   where
     makeQueries :: [Param] -> String
@@ -257,7 +277,7 @@ class HasLink endpoint where
 instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
     type MkLink (sym :> sub) = MkLink sub
     toLink _ =
-        toLink (Proxy :: Proxy sub) . addSegment seg
+        toLink (Proxy :: Proxy sub) . addSegment (escaped seg)
       where
         seg = symbolVal (Proxy :: Proxy sym)
 
@@ -307,14 +327,14 @@ instance (ToHttpApiData v, HasLink sub)
     type MkLink (Capture sym v :> sub) = v -> MkLink sub
     toLink _ l v =
         toLink (Proxy :: Proxy sub) $
-            addSegment (escape . Text.unpack $ toUrlPiece v) l
+            addSegment (escaped . Text.unpack $ toUrlPiece v) l
 
 instance (ToHttpApiData v, HasLink sub)
     => HasLink (CaptureAll sym v :> sub) where
     type MkLink (CaptureAll sym v :> sub) = [v] -> MkLink sub
     toLink _ l vs =
         toLink (Proxy :: Proxy sub) $
-            foldl' (flip $ addSegment . escape . Text.unpack . toUrlPiece) l vs
+            foldl' (flip $ addSegment . escaped . Text.unpack . toUrlPiece) l vs
 
 instance HasLink sub => HasLink (Header sym a :> sub) where
     type MkLink (Header sym a :> sub) = MkLink sub
