@@ -137,7 +137,7 @@ test-suite spec
     , directory
     , exceptions
     , hspec == 2.*
-    , hspec-wai >= 0.8 && <0.9
+    , hspec-wai >= 0.8 && <0.10
     , http-types
     , mtl
     , network >= 2.6
