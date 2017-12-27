@@ -12,7 +12,7 @@ in
 
 stdenv.mkDerivation {
     name = "servant-dev";
-    buildInputs = [ ghc zlib ]
+    buildInputs = [ ghc zlib python3 wget ]
       ++ (if tutorial then [docstuffs postgresql] else []);
     shellHook = ''
       eval $(grep export ${ghc}/bin/ghc)

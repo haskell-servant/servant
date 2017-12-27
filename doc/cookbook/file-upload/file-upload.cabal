@@ -14,17 +14,17 @@ executable cookbook-file-upload
     buildable:          False
   main-is:             FileUpload.lhs
   build-depends:       base == 4.*
-                     , text
-                     , mtl
-                     , network
-                     , bytestring
+                     , text >= 1.2
+                     , mtl >= 2.2
+                     , network >= 2.6
+                     , bytestring >= 0.10
                      , servant
                      , servant-server
                      , servant-multipart
-                     , warp
-                     , wai
+                     , warp >= 3.2
+                     , wai >= 3.2
                      , markdown-unlit >= 0.4
-                     , http-client
+                     , http-client >= 0.5
   default-language:    Haskell2010
   ghc-options:         -Wall -pgmL markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit
