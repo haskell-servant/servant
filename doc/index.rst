@@ -19,5 +19,6 @@ All in a type-safe manner.
 
   introduction.rst
   tutorial/index.rst
+  cookbook/index.rst
   examples.md
   links.rst
