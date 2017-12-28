@@ -69,6 +69,7 @@ import Servant.Server                   (BasicAuthCheck (BasicAuthCheck),
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
                                          mkAuthHandler)
 import Servant.Server.Experimental.Auth()
+import Web.Cookie                       (parseCookies)
 
 -- | private data that needs protection
 newtype PrivateData = PrivateData { ssshhh :: Text }
@@ -284,17 +285,22 @@ lookupAccount key = case Map.lookup key database of
 For generalized authentication, servant exposes the `AuthHandler` type,
 which is used to wrap the `Request -> Handler Account` logic. Let's
 create a value of type `AuthHandler Request Account` using the above `lookupAccount`
-method:
+method (note: we depend upon [`cookie`](https://hackage.haskell.org/package/cookie)'s
+`parseCookies` for this):
 
 ```haskell
--- | The auth handler wraps a function from Request -> Handler Account
--- we look for a Cookie and pass the value of the cookie to `lookupAccount`.
+
+--- | The auth handler wraps a function from Request -> Handler Account.
+--- We look for a token in the request headers that we expect to be in the cookie.
+--- The token is then passed to our `lookupAccount` function.
 authHandler :: AuthHandler Request Account
-authHandler =
-  let handler req = case lookup "servant-auth-cookie" (requestHeaders req) of
-        Nothing -> throwError (err401 { errBody = "Missing auth header" })
-        Just authCookieKey -> lookupAccount authCookieKey
-  in mkAuthHandler handler
+authHandler = mkAuthHandler handler
+  where
+  maybeToEither e = maybe (Left e) Right
+  throw401 msg = throwError $ err401 { errBody = msg }
+  handler req = either throw401 lookupAccount $ do
+    cookie <- maybeToEither "Missing cookie header" $ lookup "cookie" $ requestHeaders req
+    maybeToEither "Missing token in cookie" $ lookup "servant-auth-cookie" $ parseCookies cookie
 ```
 
 Let's now protect our API with our new, bespoke authentication scheme. We'll
