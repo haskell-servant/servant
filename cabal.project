@@ -7,6 +7,7 @@ packages: servant/
   doc/tutorial/
   doc/cookbook/basic-auth/
   doc/cookbook/db-postgres-pool/
+  doc/cookbook/using-custom-monad/
   doc/cookbook/db-sqlite-simple/
   doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/file-upload/
