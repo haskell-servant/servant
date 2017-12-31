@@ -164,7 +164,7 @@ main :: IO ()
 main = do
   mgr <- newManager defaultManagerSettings
   bracket (forkIO $ runApp userDB) killThread $ \_ ->
-    runClientM (getSite u) (ClientEnv mgr (BaseUrl Http "localhost" 8080 ""))
+    runClientM (getSite u) (ClientEnv mgr (BaseUrl Http "localhost" 8080 "") Nothing)
       >>= print
 
   where u = BasicAuthData "foo" "bar"

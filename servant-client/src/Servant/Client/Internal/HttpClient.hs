@@ -16,17 +16,19 @@ module Servant.Client.Internal.HttpClient where
 import           Prelude                     ()
 import           Prelude.Compat
 
+import           Control.Concurrent.STM.TVar
 import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Base          (MonadBase (..))
 import           Control.Monad.Catch         (MonadCatch, MonadThrow)
 import           Control.Monad.Error.Class   (MonadError (..))
 import           Control.Monad.Reader
+import           Control.Monad.STM           (atomically)
 import           Control.Monad.Trans.Control (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
 import           Data.ByteString.Builder     (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
-import           Data.Foldable               (toList)
+import           Data.Foldable               (toList, traverse_)
 import           Data.Functor.Alt            (Alt (..))
 import           Data.Maybe                  (maybeToList)
 import           Data.Monoid                 ((<>))
@@ -34,6 +36,7 @@ import           Data.Proxy                  (Proxy (..))
 import           Data.Sequence               (fromList)
 import           Data.String                 (fromString)
 import qualified Data.Text                   as T
+import           Data.Time.Clock             (getCurrentTime)
 import           GHC.Generics
 import           Network.HTTP.Media          (renderHeader)
 import           Network.HTTP.Types          (hContentType, renderQuery,
@@ -47,6 +50,7 @@ data ClientEnv
   = ClientEnv
   { manager :: Client.Manager
   , baseUrl :: BaseUrl
+  , cookieJar :: Maybe (TVar Client.CookieJar)
   }
 
 -- | Generates a set of client functions for an API.
@@ -104,12 +108,30 @@ performRequest :: Request -> ClientM Response
 performRequest req = do
   m <- asks manager
   burl <- asks baseUrl
-  let request = requestToClientRequest burl req
+  cookieJar' <- asks cookieJar
+  now <- liftIO getCurrentTime
+  request <- let clientRequest = requestToClientRequest burl req in
+    case cookieJar' of
+      Nothing -> pure clientRequest
+      Just cj -> liftIO . atomically $ do
+        oldCookieJar <- readTVar cj
+        let (newRequest, newCookieJar) =
+              Client.insertCookiesIntoRequest
+                (requestToClientRequest burl req)
+                oldCookieJar
+                now
+        writeTVar cj newCookieJar
+        pure newRequest
 
   eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request m
   case eResponse of
     Left err -> throwError $ err
     Right response -> do
+      now' <- liftIO getCurrentTime
+      traverse_
+        (liftIO . atomically . flip modifyTVar'
+          (fst . Client.updateCookieJar response request now'))
+        cookieJar'
       let status = Client.responseStatus response
           status_code = statusCode status
           ourResponse = clientResponseToResponse response

@@ -302,7 +302,7 @@ manager' :: C.Manager
 manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
 runClient :: ClientM a -> BaseUrl -> IO (Either ServantError a)
-runClient x baseUrl' = runClientM x (ClientEnv manager' baseUrl')
+runClient x baseUrl' = runClientM x (ClientEnv manager' baseUrl' Nothing)
 
 sucessSpec :: Spec
 sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do

@@ -11,7 +11,7 @@ We start with a pretty standard set of imports and definition of the model:
 {-# LANGUAGE TypeOperators #-}
 
 import           Control.Concurrent          (forkIO, killThread)
-import           Control.Concurrent.STM.TVar (TVar, newTVar, readTVar, 
+import           Control.Concurrent.STM.TVar (TVar, newTVar, readTVar,
                                               writeTVar)
 import           Control.Exception           (bracket)
 import           Control.Monad.IO.Class      (liftIO)
@@ -95,7 +95,7 @@ main = do
   bracket (forkIO runApp) killThread $ \_ -> do
     let getBooksClient :<|> addBookClient = client api
     let printBooks = getBooksClient >>= liftIO . print
-    _ <- flip runClientM (ClientEnv mgr (BaseUrl Http "localhost" port "")) $ do
+    _ <- flip runClientM (ClientEnv mgr (BaseUrl Http "localhost" port "") Nothing) $ do
       _ <- printBooks
       _ <- addBookClient $ Book "Harry Potter and the Order of the Phoenix"
       _ <- printBooks
