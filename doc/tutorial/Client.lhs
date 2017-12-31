@@ -136,7 +136,7 @@ queries = do
 run :: IO ()
 run = do
   manager' <- newManager defaultManagerSettings
-  res <- runClientM queries (ClientEnv manager' (BaseUrl Http "localhost" 8081 ""))
+  res <- runClientM queries (mkClientEnv manager' (BaseUrl Http "localhost" 8081 ""))
   case res of
     Left err -> putStrLn $ "Error: " ++ show err
     Right (pos, message, em) -> do

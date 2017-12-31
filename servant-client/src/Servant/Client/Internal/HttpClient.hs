@@ -16,17 +16,19 @@ module Servant.Client.Internal.HttpClient where
 import           Prelude                     ()
 import           Prelude.Compat
 
+import           Control.Concurrent.STM.TVar
 import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Base          (MonadBase (..))
 import           Control.Monad.Catch         (MonadCatch, MonadThrow)
 import           Control.Monad.Error.Class   (MonadError (..))
 import           Control.Monad.Reader
+import           Control.Monad.STM           (atomically)
 import           Control.Monad.Trans.Control (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
 import           Data.ByteString.Builder     (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
-import           Data.Foldable               (toList)
+import           Data.Foldable               (toList, for_)
 import           Data.Functor.Alt            (Alt (..))
 import           Data.Maybe                  (maybeToList)
 import           Data.Monoid                 ((<>))
@@ -34,6 +36,7 @@ import           Data.Proxy                  (Proxy (..))
 import           Data.Sequence               (fromList)
 import           Data.String                 (fromString)
 import qualified Data.Text                   as T
+import           Data.Time.Clock             (getCurrentTime)
 import           GHC.Generics
 import           Network.HTTP.Media          (renderHeader)
 import           Network.HTTP.Types          (hContentType, renderQuery,
@@ -47,7 +50,12 @@ data ClientEnv
   = ClientEnv
   { manager :: Client.Manager
   , baseUrl :: BaseUrl
+  , cookieJar :: Maybe (TVar Client.CookieJar)
   }
+
+-- | 'ClientEnv' smart constructor.
+mkClientEnv :: Client.Manager -> BaseUrl -> ClientEnv
+mkClientEnv mgr burl = ClientEnv mgr burl Nothing
 
 -- | Generates a set of client functions for an API.
 --
@@ -68,7 +76,7 @@ client api = api `clientIn` (Proxy :: Proxy ClientM)
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
-  { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
+  { unClientM :: ReaderT ClientEnv (ExceptT ServantError IO) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
            , MonadReader ClientEnv, MonadError ServantError, MonadThrow
            , MonadCatch)
@@ -79,7 +87,7 @@ instance MonadBase IO ClientM where
 instance MonadBaseControl IO ClientM where
   type StM ClientM a = Either ServantError a
 
-  liftBaseWith f = ClientM (liftBaseWith (\g -> f (g . runClientM')))
+  liftBaseWith f = ClientM (liftBaseWith (\g -> f (g . unClientM)))
 
   restoreM st = ClientM (restoreM st)
 
@@ -97,19 +105,33 @@ instance ClientLike (ClientM a) (ClientM a) where
   mkClient = id
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
-runClientM cm env = runExceptT $ (flip runReaderT env) $ runClientM' cm
-
+runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
 
 performRequest :: Request -> ClientM Response
 performRequest req = do
-  m <- asks manager
-  burl <- asks baseUrl
-  let request = requestToClientRequest burl req
+  ClientEnv m burl cookieJar' <- ask
+  let clientRequest = requestToClientRequest burl req
+  request <- case cookieJar' of
+    Nothing -> pure clientRequest
+    Just cj -> liftIO $ do
+      now <- getCurrentTime
+      atomically $ do
+        oldCookieJar <- readTVar cj
+        let (newRequest, newCookieJar) =
+              Client.insertCookiesIntoRequest
+                (requestToClientRequest burl req)
+                oldCookieJar
+                now
+        writeTVar cj newCookieJar
+        pure newRequest
 
   eResponse <- liftIO $ catchConnectionError $ Client.httpLbs request m
   case eResponse of
-    Left err -> throwError $ err
+    Left err -> throwError err
     Right response -> do
+      for_ cookieJar' $ \cj -> liftIO $ do
+        now' <- getCurrentTime
+        atomically $ modifyTVar' cj (fst . Client.updateCookieJar response request now')
       let status = Client.responseStatus response
           status_code = statusCode status
           ourResponse = clientResponseToResponse response
