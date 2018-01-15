@@ -77,6 +77,13 @@ instance
   where
     enter (NT f) = f
 
+-- | A lifting function from @a@ to @n a@. Used to `enter` particular
+-- datatypes.
+newtype x :^ n = Lift { unLift :: forall a. a -> n a} deriving Typeable
+
+instance Enter a (a :^ n) (n a) where
+    enter (Lift f) = f
+
 -- | Like `lift`.
 liftNat :: (Control.Monad.Morph.MonadTrans t, Monad m) => m :~> t m
 liftNat = NT Control.Monad.Morph.lift
