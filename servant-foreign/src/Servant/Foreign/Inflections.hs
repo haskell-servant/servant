@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Servant.Foreign.Inflections
   ( concatCase
   , snakeCase
