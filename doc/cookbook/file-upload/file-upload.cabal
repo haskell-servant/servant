@@ -8,19 +8,19 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 build-type:          Simple
 cabal-version:       >=1.10
+tested-with:         GHC==7.8.4, GHC==7.10.3, GHC==8.0.2, GHC==8.2.2
 
 executable cookbook-file-upload
-  if impl(ghc < 7.10.1)
-    buildable:          False
   main-is:             FileUpload.lhs
   build-depends:       base == 4.*
                      , text >= 1.2
-                     , mtl >= 2.2
+                     , mtl >= 2.1
                      , network >= 2.6
                      , bytestring >= 0.10
                      , servant
                      , servant-server
                      , servant-multipart
+                     , transformers
                      , warp >= 3.2
                      , wai >= 3.2
                      , markdown-unlit >= 0.4

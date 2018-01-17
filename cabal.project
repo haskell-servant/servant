@@ -5,18 +5,11 @@ packages: servant/
   servant-foreign/
   servant-server/
   doc/tutorial/
-  doc/cookbook/basic-auth/
-  doc/cookbook/db-postgres-pool/
-  doc/cookbook/using-custom-monad/
-  doc/cookbook/db-sqlite-simple/
-  doc/cookbook/jwt-and-basic-auth/
-  doc/cookbook/file-upload/
-  doc/cookbook/structuring-apis/
-  doc/cookbook/https/
+  doc/cookbook/*/*.cabal
 
 allow-newer: servant-js:servant-foreign
 
 constraints:
   -- see https://github.com/haskell-infra/hackage-trustees/issues/119
   foundation >=0.0.14,
-  memory <0.14.2 && >0.14.2
+  memory <0.14.12 || >0.14.12
