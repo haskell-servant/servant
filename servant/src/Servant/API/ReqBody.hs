@@ -11,7 +11,7 @@ import           Data.Typeable (Typeable)
 --
 -- >>>            -- POST /books
 -- >>> type MyApi = "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book
-data ReqBody (contentTypes :: [*]) a
+data ReqBody (contentTypes :: [*]) (a :: *)
     deriving (Typeable)
 
 -- $setup

@@ -23,7 +23,7 @@ import           Network.HTTP.Types.Method (Method, StdMethod (..),
 -- provided, but you are free to define your own:
 --
 -- >>> type Post204 contentTypes a = Verb 'POST 204 contentTypes a
-data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [*]) a
+data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
   deriving (Typeable, Generic)
 
 -- * 200 responses
