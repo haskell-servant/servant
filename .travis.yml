@@ -29,7 +29,7 @@ before_cache:
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar.idx
 
-  - rm -fv $HOME/.cabal/packages/head.hackage
+  - rm -rfv $HOME/.cabal/packages/head.hackage
 
 matrix:
   include:
@@ -69,6 +69,10 @@ install:
   - rm -fv cabal.project cabal.project.local
   - "if [ $HCNUMVER -ge 70800 ]; then sed -i.bak 's/-- ghc-options:.*/ghc-options: -j2/' ${HOME}/.cabal/config; fi"
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
+  - "printf 'packages: \"servant\" \"servant-client\" \"servant-client-core\" \"servant-docs\" \"servant-foreign\" \"servant-server\" \"doc/tutorial\"\\n' > cabal.project"
+  - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
+  - "echo 'allow-newer: servant-js:servant-foreign' >> cabal.project"
+  - cat cabal.project
   - if [ -f "servant/configure.ac" ]; then
       (cd "servant" && autoreconf -i);
     fi
@@ -112,7 +116,7 @@ script:
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal\\n' > cabal.project"
-  - "echo 'constraints: foundation >=0.0.14' >> cabal.project"
+  - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-js:servant-foreign' >> cabal.project"
   - cat cabal.project
   - echo -en 'travis_fold:end:unpack\\r'
@@ -130,7 +134,7 @@ script:
   # build & run tests, build benchmarks
   - cabal new-build -w ${HC} ${TEST} ${BENCH} all
   - echo -en 'travis_fold:end:build-everything\\r'
-  - if [ "x$TEST" = "x--enable-tests" ]; then cabal new-test -w ${HC} ${TEST} all; fi
+  - if [ "x$TEST" = "x--enable-tests" ]; then cabal new-test -w ${HC} ${TEST} ${BENCH} all; fi
 
   - echo cabal check... && echo -en 'travis_fold:start:check\\r'
   # cabal check
@@ -146,7 +150,7 @@ script:
   - echo Haddock... && echo -en 'travis_fold:start:haddock\\r'
   # haddock
   - rm -rf ./dist-newstyle
-  - if $HADDOCK; then cabal new-haddock -w ${HC} --disable-tests --disable-benchmarks all; else echo "Skipping haddock generation";fi
+  - if $HADDOCK; then cabal new-haddock -w ${HC} ${TEST} ${BENCH} all; else echo "Skipping haddock generation";fi
 
   - echo -en 'travis_fold:end:haddock\\r'
 # REGENDATA ["--config=cabal.make-travis-yml","--output=.travis.yml","cabal.project"]

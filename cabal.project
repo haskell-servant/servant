@@ -18,4 +18,5 @@ allow-newer: servant-js:servant-foreign
 
 constraints:
   -- see https://github.com/haskell-infra/hackage-trustees/issues/119
-  foundation >=0.0.14
+  foundation >=0.0.14,
+  memory <0.14.2 && >0.14.2
