@@ -30,7 +30,7 @@ extra-source-files:
   include/*.h
   CHANGELOG.md
   README.md
-bug-reports:         http://github.com/haskell-servant/servant/issues
+
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git

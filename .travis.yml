@@ -29,7 +29,7 @@ before_cache:
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar
   - rm -fv $HOME/.cabal/packages/hackage.haskell.org/01-index.tar.idx
 
-  - rm -fv $HOME/.cabal/packages/head.hackage
+  - rm -rfv $HOME/.cabal/packages/head.hackage
 
 matrix:
   include:
@@ -69,6 +69,10 @@ install:
   - rm -fv cabal.project cabal.project.local
   - "if [ $HCNUMVER -ge 70800 ]; then sed -i.bak 's/-- ghc-options:.*/ghc-options: -j2/' ${HOME}/.cabal/config; fi"
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
+  - "printf 'packages: \"servant\" \"servant-client\" \"servant-client-core\" \"servant-docs\" \"servant-foreign\" \"servant-server\" \"doc/tutorial\" \"doc/cookbook/db-postgres-pool\" \"doc/cookbook/jwt-and-basic-auth\" \"doc/cookbook/db-sqlite-simple\" \"doc/cookbook/basic-auth\" \"doc/cookbook/https\" \"doc/cookbook/structuring-apis\" \"doc/cookbook/using-custom-monad\" \"doc/cookbook/file-upload\"\\n' > cabal.project"
+  - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
+  - "echo 'allow-newer: servant-js:servant-foreign' >> cabal.project"
+  - cat cabal.project
   - if [ -f "servant/configure.ac" ]; then
       (cd "servant" && autoreconf -i);
     fi
@@ -90,8 +94,32 @@ install:
   - if [ -f "doc/tutorial/configure.ac" ]; then
       (cd "doc/tutorial" && autoreconf -i);
     fi
+  - if [ -f "doc/cookbook/db-postgres-pool/configure.ac" ]; then
+      (cd "doc/cookbook/db-postgres-pool" && autoreconf -i);
+    fi
+  - if [ -f "doc/cookbook/jwt-and-basic-auth/configure.ac" ]; then
+      (cd "doc/cookbook/jwt-and-basic-auth" && autoreconf -i);
+    fi
+  - if [ -f "doc/cookbook/db-sqlite-simple/configure.ac" ]; then
+      (cd "doc/cookbook/db-sqlite-simple" && autoreconf -i);
+    fi
+  - if [ -f "doc/cookbook/basic-auth/configure.ac" ]; then
+      (cd "doc/cookbook/basic-auth" && autoreconf -i);
+    fi
+  - if [ -f "doc/cookbook/https/configure.ac" ]; then
+      (cd "doc/cookbook/https" && autoreconf -i);
+    fi
+  - if [ -f "doc/cookbook/structuring-apis/configure.ac" ]; then
+      (cd "doc/cookbook/structuring-apis" && autoreconf -i);
+    fi
+  - if [ -f "doc/cookbook/using-custom-monad/configure.ac" ]; then
+      (cd "doc/cookbook/using-custom-monad" && autoreconf -i);
+    fi
+  - if [ -f "doc/cookbook/file-upload/configure.ac" ]; then
+      (cd "doc/cookbook/file-upload" && autoreconf -i);
+    fi
   - rm -f cabal.project.freeze
-  - rm -rf "servant"/.ghc.environment.* "servant-client"/.ghc.environment.* "servant-client-core"/.ghc.environment.* "servant-docs"/.ghc.environment.* "servant-foreign"/.ghc.environment.* "servant-server"/.ghc.environment.* "doc/tutorial"/.ghc.environment.* "servant"/dist "servant-client"/dist "servant-client-core"/dist "servant-docs"/dist "servant-foreign"/dist "servant-server"/dist "doc/tutorial"/dist
+  - rm -rf "servant"/.ghc.environment.* "servant-client"/.ghc.environment.* "servant-client-core"/.ghc.environment.* "servant-docs"/.ghc.environment.* "servant-foreign"/.ghc.environment.* "servant-server"/.ghc.environment.* "doc/tutorial"/.ghc.environment.* "doc/cookbook/db-postgres-pool"/.ghc.environment.* "doc/cookbook/jwt-and-basic-auth"/.ghc.environment.* "doc/cookbook/db-sqlite-simple"/.ghc.environment.* "doc/cookbook/basic-auth"/.ghc.environment.* "doc/cookbook/https"/.ghc.environment.* "doc/cookbook/structuring-apis"/.ghc.environment.* "doc/cookbook/using-custom-monad"/.ghc.environment.* "doc/cookbook/file-upload"/.ghc.environment.* "servant"/dist "servant-client"/dist "servant-client-core"/dist "servant-docs"/dist "servant-foreign"/dist "servant-server"/dist "doc/tutorial"/dist "doc/cookbook/db-postgres-pool"/dist "doc/cookbook/jwt-and-basic-auth"/dist "doc/cookbook/db-sqlite-simple"/dist "doc/cookbook/basic-auth"/dist "doc/cookbook/https"/dist "doc/cookbook/structuring-apis"/dist "doc/cookbook/using-custom-monad"/dist "doc/cookbook/file-upload"/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
 # Here starts the actual work to be performed for the package under test;
@@ -106,47 +134,36 @@ script:
   - (cd "servant-foreign" && cabal sdist)
   - (cd "servant-server" && cabal sdist)
   - (cd "doc/tutorial" && cabal sdist)
+  - (cd "doc/cookbook/db-postgres-pool" && cabal sdist)
+  - (cd "doc/cookbook/jwt-and-basic-auth" && cabal sdist)
+  - (cd "doc/cookbook/db-sqlite-simple" && cabal sdist)
+  - (cd "doc/cookbook/basic-auth" && cabal sdist)
+  - (cd "doc/cookbook/https" && cabal sdist)
+  - (cd "doc/cookbook/structuring-apis" && cabal sdist)
+  - (cd "doc/cookbook/using-custom-monad" && cabal sdist)
+  - (cd "doc/cookbook/file-upload" && cabal sdist)
   - echo -en 'travis_fold:end:sdist\\r'
   - echo Unpacking... && echo -en 'travis_fold:start:unpack\\r'
-  - mv "servant"/dist/servant-*.tar.gz "servant-client"/dist/servant-client-*.tar.gz "servant-client-core"/dist/servant-client-core-*.tar.gz "servant-docs"/dist/servant-docs-*.tar.gz "servant-foreign"/dist/servant-foreign-*.tar.gz "servant-server"/dist/servant-server-*.tar.gz "doc/tutorial"/dist/tutorial-*.tar.gz ${DISTDIR}/
+  - mv "servant"/dist/servant-*.tar.gz "servant-client"/dist/servant-client-*.tar.gz "servant-client-core"/dist/servant-client-core-*.tar.gz "servant-docs"/dist/servant-docs-*.tar.gz "servant-foreign"/dist/servant-foreign-*.tar.gz "servant-server"/dist/servant-server-*.tar.gz "doc/tutorial"/dist/tutorial-*.tar.gz "doc/cookbook/db-postgres-pool"/dist/cookbook-db-postgres-pool-*.tar.gz "doc/cookbook/jwt-and-basic-auth"/dist/cookbook-jwt-and-basic-auth-*.tar.gz "doc/cookbook/db-sqlite-simple"/dist/cookbook-db-sqlite-simple-*.tar.gz "doc/cookbook/basic-auth"/dist/cookbook-basic-auth-*.tar.gz "doc/cookbook/https"/dist/cookbook-https-*.tar.gz "doc/cookbook/structuring-apis"/dist/cookbook-structuring-apis-*.tar.gz "doc/cookbook/using-custom-monad"/dist/cookbook-using-custom-monad-*.tar.gz "doc/cookbook/file-upload"/dist/cookbook-file-upload-*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
-  - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal\\n' > cabal.project"
-  - "echo 'constraints: foundation >=0.0.14' >> cabal.project"
+  - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal cookbook-db-postgres-pool-*/*.cabal cookbook-jwt-and-basic-auth-*/*.cabal cookbook-db-sqlite-simple-*/*.cabal cookbook-basic-auth-*/*.cabal cookbook-https-*/*.cabal cookbook-structuring-apis-*/*.cabal cookbook-using-custom-monad-*/*.cabal cookbook-file-upload-*/*.cabal\\n' > cabal.project"
+  - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-js:servant-foreign' >> cabal.project"
   - cat cabal.project
   - echo -en 'travis_fold:end:unpack\\r'
-  - echo Building... && echo -en 'travis_fold:start:build\\r'
-  # this builds all libraries and executables (without tests/benchmarks)
-  - cabal new-build -w ${HC} --disable-tests --disable-benchmarks all
-  - echo -en 'travis_fold:end:build\\r'
 
-  - echo Building with installed constraints for package in global-db... && echo -en 'travis_fold:start:build-installed\\r'
-  # Build with installed constraints for packages in global-db
-  - if $INSTALLED; then echo cabal new-build -w ${HC} --disable-tests --disable-benchmarks $(${HCPKG} list --global --simple-output --names-only | sed 's/\([a-zA-Z0-9-]\{1,\}\) */--constraint="\1 installed" /g') all | sh; else echo "Not building with installed constraints"; fi
-  - echo -en 'travis_fold:end:build-installed\\r'
 
   - echo Building with tests and benchmarks... && echo -en 'travis_fold:start:build-everything\\r'
   # build & run tests, build benchmarks
-  - cabal new-build -w ${HC} ${TEST} ${BENCH} all
+  - cabal new-build -w ${HC} ${TEST} ${BENCH} all --max-backjumps=20000
   - echo -en 'travis_fold:end:build-everything\\r'
-  - if [ "x$TEST" = "x--enable-tests" ]; then cabal new-test -w ${HC} ${TEST} all; fi
+  - if [ "x$TEST" = "x--enable-tests" ]; then cabal new-test -w ${HC} ${TEST} ${BENCH} all; fi
 
-  - echo cabal check... && echo -en 'travis_fold:start:check\\r'
-  # cabal check
-  - (cd servant-* && cabal check)
-  - (cd servant-client-* && cabal check)
-  - (cd servant-client-core-* && cabal check)
-  - (cd servant-docs-* && cabal check)
-  - (cd servant-foreign-* && cabal check)
-  - (cd servant-server-* && cabal check)
-  - (cd tutorial-* && cabal check)
-
-  - echo -en 'travis_fold:end:check\\r'
   - echo Haddock... && echo -en 'travis_fold:start:haddock\\r'
   # haddock
   - rm -rf ./dist-newstyle
-  - if $HADDOCK; then cabal new-haddock -w ${HC} --disable-tests --disable-benchmarks all; else echo "Skipping haddock generation";fi
+  - if $HADDOCK; then cabal new-haddock -w ${HC} ${TEST} ${BENCH} all; else echo "Skipping haddock generation";fi
 
   - echo -en 'travis_fold:end:haddock\\r'
 # REGENDATA ["--config=cabal.make-travis-yml","--output=.travis.yml","cabal.project"]
