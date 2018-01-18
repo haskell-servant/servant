@@ -12,7 +12,7 @@ import           GHC.TypeLits  (Symbol)
 --
 -- >>>            -- GET /books/:isbn
 -- >>> type MyApi = "books" :> Capture "isbn" Text :> Get '[JSON] Book
-data Capture (sym :: Symbol) a
+data Capture (sym :: Symbol) (a :: *)
     deriving (Typeable)
 
 
@@ -23,7 +23,7 @@ data Capture (sym :: Symbol) a
 --
 -- >>>            -- GET /src/*
 -- >>> type MyAPI = "src" :> CaptureAll "segments" Text :> Get '[JSON] SourceFile
-data CaptureAll (sym :: Symbol) a
+data CaptureAll (sym :: Symbol) (a :: *)
     deriving (Typeable)
 
 -- $setup

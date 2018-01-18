@@ -14,7 +14,7 @@ import           GHC.TypeLits (Symbol)
 --
 -- >>> -- /books?author=<author name>
 -- >>> type MyApi = "books" :> QueryParam "author" Text :> Get '[JSON] [Book]
-data QueryParam (sym :: Symbol) a
+data QueryParam (sym :: Symbol) (a :: *)
     deriving Typeable
 
 -- | Lookup the values associated to the @sym@ query string parameter
@@ -28,7 +28,7 @@ data QueryParam (sym :: Symbol) a
 --
 -- >>> -- /books?authors[]=<author1>&authors[]=<author2>&...
 -- >>> type MyApi = "books" :> QueryParams "authors" Text :> Get '[JSON] [Book]
-data QueryParams (sym :: Symbol) a
+data QueryParams (sym :: Symbol) (a :: *)
     deriving Typeable
 
 -- | Lookup a potentially value-less query string parameter

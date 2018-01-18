@@ -24,7 +24,7 @@ type TestApi =
   -- All of the verbs
   :<|> "get" :> Get '[JSON] NoContent
   :<|> "put" :> Put '[JSON] NoContent
-  :<|> "post" :> ReqBody '[JSON] 'True :> Post '[JSON] NoContent
+  :<|> "post" :> ReqBody '[JSON] Bool :> Post '[JSON] NoContent
   :<|> "delete" :> Header "ponies" String :> Delete '[JSON] NoContent
   :<|> "raw" :> Raw
   :<|> NoEndpoint
@@ -124,6 +124,6 @@ type WrongPath = "getTypo" :> Get '[JSON] NoContent
 type WrongReturnType = "get" :> Get '[JSON] Bool
 type WrongContentType = "get" :> Get '[OctetStream] NoContent
 type WrongMethod = "get" :> Post '[JSON] NoContent
-type NotALink = "hello" :> ReqBody '[JSON] 'True :> Get '[JSON] Bool
+type NotALink = "hello" :> ReqBody '[JSON] Bool :> Get '[JSON] Bool
 type AllGood = "get" :> Get '[JSON] NoContent
 type NoEndpoint = "empty" :> EmptyAPI
