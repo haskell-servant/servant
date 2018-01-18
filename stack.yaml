@@ -1,17 +1,12 @@
-resolver: nightly-2017-04-01
+# Let's try to keep resolver at the first day of the month
+resolver: nightly-2018-01-01
 packages:
-- servant/
 - servant-client/
 - servant-client-core/
 - servant-docs/
 - servant-foreign/
 - servant-server/
-- doc/tutorial
-extra-deps:
-- aeson-1.2.0.0
-- attoparsec-iso8601-1.0.0.0
-- cabal-doctest-1.0.2
-- http-api-data-0.3.7
-- http-media-0.7.0
-- http-types-0.10
-- servant-js-0.9.3
+- servant/
+
+# allow-newer: true # ignores all bounds, that's a sledgehammer
+# - doc/tutorial/
