@@ -4,7 +4,6 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE PolyKinds                  #-}
@@ -13,6 +12,7 @@
 {-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 #include "overlapping-compat.h"
 
@@ -87,6 +87,10 @@ import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 
+#if MIN_VERSION_base(4,9,0)
+import Data.Void
+import GHC.TypeLits (TypeError, ErrorMessage (..))
+#endif
 
 class HasServer api context where
   type ServerT api (m :: * -> *) :: *
@@ -703,3 +707,54 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
       subContext = descendIntoNamedContext (Proxy :: Proxy name) context
 
   hoistServerWithContext _ _ nt s = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
+
+-------------------------------------------------------------------------------
+-- TypeError helpers
+-------------------------------------------------------------------------------
+
+#if MIN_VERSION_base(4,9,0)
+-- | This instance catches mistakes when there are non-saturated
+-- type applications on LHS of ':>'.
+--
+-- >>> serve (Proxy :: Proxy (Capture "foo" :> Get '[JSON] Int)) (error "...")
+-- ...
+-- ...Expected something of kind Symbol or *, got: k -> l on the LHS of ':>'.
+-- ...Maybe you haven't applied enough arguments to
+-- ...Capture "foo"
+-- ...
+instance TypeError
+    ('Text "Expected something of kind Symbol or *, got: k -> l on the LHS of ':>'."
+    ':$$: 'Text "Maybe you haven't applied enough arguments to"
+    ':$$: 'ShowType arr)
+    => HasServer ((arr :: k -> l) :> api) context
+  where
+    type ServerT (arr :> api) m = Void
+    -- it doens't really matter what sub route we peak
+    route Proxy context d = route (Proxy :: Proxy Raw) context (vacuous d)
+    hoistServerWithContext _ _ _ = id
+
+-- | This instance prevents from accidentally using '->' instead of ':>'
+--
+-- >>> serve (Proxy :: Proxy (Capture "foo" Int -> Get '[JSON] Int)) (error "...")
+-- ...
+-- ...No instance HasServer (a -> b).
+-- ...Maybe you have used '->' instead of ':>' between
+-- ...Capture "foo" Int
+-- ...and
+-- ...Verb 'GET 200 '[JSON] Int
+-- ...
+instance TypeError
+    ('Text "No instance HasServer (a -> b)."
+    ':$$: 'Text "Maybe you have used '->' instead of ':>' between "
+    ':$$: 'ShowType a
+    ':$$: 'Text "and"
+    ':$$: 'ShowType b)
+    => HasServer (a -> b) context
+  where
+    type ServerT (a -> b) m = Void
+    route Proxy context d = route (Proxy :: Proxy Raw) context (vacuous d)
+    hoistServerWithContext _ _ _ = id
+#endif
+
+-- $setup
+-- >>> import Servant
