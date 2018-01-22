@@ -40,7 +40,7 @@ library
     , base-compat >= 0.9.1 && <0.10
     , aeson
     , aeson-pretty
-    , bytestring
+    , bytestring >= 0.10.4.0 && <0.11
     , case-insensitive
     , hashable
     , http-media >= 0.6
@@ -49,8 +49,8 @@ library
     , servant == 0.12.*
     , string-conversions
     , text
-    , unordered-containers
-    , control-monad-omega == 0.3.*
+    , unordered-containers >=0.2.5.0
+    , control-monad-omega >= 0.3.1 && <0.4
   if !impl(ghc >= 8.0)
     build-depends:
       semigroups          >=0.17 && <0.19
