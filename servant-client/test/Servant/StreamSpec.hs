@@ -92,7 +92,7 @@ manager' :: C.Manager
 manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
 runClient :: ClientM a -> BaseUrl -> IO (Either ServantError a)
-runClient x baseUrl' = runClientM x (ClientEnv manager' baseUrl')
+runClient x baseUrl' = runClientM x (ClientEnv manager' baseUrl' Nothing)
 
 runResultStream :: ResultStream a -> IO (Maybe (Either String a), Maybe (Either String a), Maybe (Either String a), Maybe (Either String a))
 runResultStream (ResultStream k) = k $ \act -> (,,,) <$> act <*> act <*> act <*> act
