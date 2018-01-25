@@ -63,29 +63,38 @@ library
     Servant.API.WithNamedContext
     Servant.Utils.Links
     Servant.Utils.Enter
+
+  -- Bundled with GHC: Lower bound to not force re-installs
+  -- text and mtl are bundled starting with GHC-8.4
+  --
+  -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                  >= 4.7  && < 4.11
-    , base-compat           >= 0.9  && < 0.10
-    , aeson                 >= 0.7  && < 1.3
-    , attoparsec            >= 0.12 && < 0.14
-    , bytestring            >= 0.10 && < 0.11
-    , case-insensitive      >= 1.2  && < 1.3
-    , http-api-data         >= 0.3  && < 0.4
-    , http-media            >= 0.4  && < 0.8
-    , http-types            >= 0.8  && < 0.12
-    , natural-transformation >= 0.4 && < 0.5
-    , mtl                   >= 2.0  && < 2.3
-    , mmorph                >= 1    && < 1.2
-    , tagged                >= 0.7.3 && < 0.9
-    , text                  >= 1    && < 1.3
-    , singleton-bool        >= 0.1.2.0 && <0.2
-    , string-conversions    >= 0.3  && < 0.5
-    , network-uri           >= 2.6  && < 2.7
-    , vault                 >= 0.3  && < 0.4
+      base                  >= 4.7      && < 4.11
+    , bytestring            >= 0.10.4.0 && < 0.11
+    , mtl                   >= 2.0.1    && < 2.3
+    , text                  >= 1.2.3.0  && < 1.3
 
   if !impl(ghc >= 8.0)
     build-depends:
-      semigroups            >= 0.16 && < 0.19
+      semigroups            >= 0.18.3 && < 0.19
+
+  -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
+  -- Here can be exceptions if we really need features from the newer versions.
+  build-depends: 
+      base-compat            >= 0.9.3    && < 0.10
+    , aeson                  >= 1.2.3.0  && < 1.3
+    , attoparsec             >= 0.13.2.0 && < 0.14
+    , case-insensitive       >= 1.2.0.10 && < 1.3
+    , http-api-data          >= 0.3.7.1  && < 0.4
+    , http-media             >= 0.7.1.1  && < 0.8
+    , http-types             >= 0.9.1    && < 0.12
+    , natural-transformation >= 0.4      && < 0.5
+    , mmorph                 >= 1.1.0    && < 1.2
+    , tagged                 >= 0.8.5    && < 0.9
+    , singleton-bool         >= 0.1.2.0  && < 0.2
+    , string-conversions     >= 0.4.0.1  && < 0.5
+    , network-uri            >= 2.6.1.0  && < 2.7
+    , vault                  >= 0.3.0.7  && < 0.4
 
   hs-source-dirs: src
   default-language: Haskell2010
@@ -125,42 +134,49 @@ test-suite spec
       Servant.API.ResponseHeadersSpec
       Servant.Utils.LinksSpec
       Servant.Utils.EnterSpec
-  build-tool-depends:
-    hspec-discover:hspec-discover
+
+  -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
-      base == 4.*
+      base
     , base-compat
     , aeson
-    , aeson-compat >=0.3.3 && <0.4
     , attoparsec
     , bytestring
-    , hspec == 2.*
-    , QuickCheck
-    , quickcheck-instances
     , servant
     , string-conversions
     , text
-    , url
 
   if !impl(ghc >= 8.0)
     build-depends:
-      semigroups            >= 0.16 && < 0.19
+      semigroups
+
+  -- Additonal dependencies
+  build-depends:
+      aeson-compat         >= 0.3.3  && < 0.4
+    , hspec                >= 2.4.4  && < 2.5
+    , QuickCheck           >= 2.10.1 && < 2.12
+    , quickcheck-instances >= 0.3.16 && < 0.4
+
+  build-tool-depends:
+    hspec-discover:hspec-discover >= 2.4.4 && < 2.5
 
 test-suite doctests
- build-depends: base
-              , servant
-              , doctest
-              , filemanip
-              , directory
-              , filepath
-              , hspec
- type: exitcode-stdio-1.0
- main-is: test/doctests.hs
- buildable: True
- default-language: Haskell2010
- ghc-options: -Wall -threaded
- if impl(ghc >= 8.2)
-   x-doctest-options: -fdiagnostics-color=never
- include-dirs: include
- x-doctest-source-dirs: test
- x-doctest-modules: Servant.Utils.LinksSpec
+  build-depends:
+      base
+    , servant
+    , doctest >= 0.13.0 && <0.14
+
+  -- We test Links failure with doctest, so we need extra dependencies
+  build-depends:
+      hspec                >= 2.4.4  && < 2.5
+
+  type: exitcode-stdio-1.0
+  main-is: test/doctests.hs
+  buildable: True
+  default-language: Haskell2010
+  ghc-options: -Wall -threaded
+  if impl(ghc >= 8.2)
+    x-doctest-options: -fdiagnostics-color=never
+  include-dirs: include
+  x-doctest-source-dirs: test
+  x-doctest-modules: Servant.Utils.LinksSpec

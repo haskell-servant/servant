@@ -4,7 +4,7 @@
 {-# LANGUAGE PolyKinds       #-}
 {-# LANGUAGE TypeOperators   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-#if __GLASGOW__HASKELL < 709
+#if __GLASGOW_HASKELL__ < 709
 {-# OPTIONS_GHC -fcontext-stack=41 #-}
 #endif
 module Servant.Utils.LinksSpec where
