@@ -22,47 +22,60 @@ extra-source-files:
   static/ui.js
 
 library
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
   exposed-modules:     ApiType
                      , Authentication
                      , Client
                      , Docs
                      , Javascript
                      , Server
-  build-depends:       base == 4.*
-                     , base-compat
-                     , text
-                     , aeson
-                     , aeson-compat
-                     , blaze-html
-                     , directory
-                     , blaze-markup
-                     , containers
-                     , servant == 0.12.*
-                     , servant-server == 0.12.*
-                     , servant-client == 0.12.*
-                     , servant-docs >= 0.11.1 && <0.12
-                     , servant-js >= 0.9 && <0.10
-                     , warp
-                     , http-api-data
-                     , http-media
-                     , lucid
-                     , time
-                     , string-conversions
-                     , bytestring
-                     , attoparsec
-                     , mtl >=2.1 && <2.3
-                     , mtl-compat
-                     , random
-                     , js-jquery
-                     , wai
-                     , http-types
-                     , transformers
-                     , markdown-unlit >= 0.4
-                     , http-client
-                     , cookie
-  default-language:    Haskell2010
-  ghc-options:         -Wall -pgmL markdown-unlit
-  build-tool-depends: markdown-unlit:markdown-unlit
+
+  -- Packages `servant` depends on.
+  -- We don't need to specify bounds here as this package is never released.
+  build-depends:
+      base >= 4.7 && <4.11
+    , aeson
+    , aeson-compat
+    , attoparsec
+    , base-compat
+    , bytestring
+    , containers
+    , directory
+    , http-api-data
+    , http-client
+    , http-media
+    , http-types
+    , mtl
+    , string-conversions
+    , text
+    , transformers
+    , wai
+    , warp
+
+  -- Servant dependencies
+  build-depends:
+       servant
+     , servant-server
+     , servant-client
+     , servant-docs
+
+  -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
+  -- Here can be exceptions if we really need features from the newer versions.
+  build-depends:
+      blaze-html   >= 0.9.0.1 && < 0.10
+    , blaze-markup >= 0.8.0.0 && < 0.9
+    , cookie       >= 0.4.3   && < 0.5
+    , js-jquery    >= 3.2.1   && < 3.3
+    , lucid        >= 2.9.9   && < 2.10
+    , mtl-compat   >= 0.2.1   && < 0.3
+    , random       >= 1.1     && < 1.2
+    , servant-js   >= 0.9     && < 0.10
+    , time         >= 1.4.2   && < 1.9
+
+  -- For legacy tools, we need to specify build-depends too
+  build-depends: markdown-unlit >= 0.4.1 && <0.5
+  build-tool-depends: markdown-unlit:markdown-unlit >= 0.4.1 && <0.5
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -73,7 +86,7 @@ test-suite spec
   other-modules: JavascriptSpec
   build-tool-depends:
     hspec-discover:hspec-discover
-  build-depends: base == 4.*
+  build-depends: base
                , tutorial
                , hspec
                , hspec-wai

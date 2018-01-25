@@ -9,7 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-#if __GLASGOW__HASKELL < 709
+#if __GLASGOW_HASKELL__ < 709
 {-# OPTIONS_GHC -fcontext-stack=41 #-}
 #endif
 #include "overlapping-compat.h"

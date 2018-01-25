@@ -8,5 +8,8 @@ packages:
 - servant-server/
 - servant/
 
+extra-deps:
+- text-1.2.3.0
+
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/
