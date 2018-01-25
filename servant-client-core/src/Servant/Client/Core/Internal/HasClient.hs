@@ -25,7 +25,7 @@ import           Data.Monoid                            ((<>))
 import           Data.Proxy                             (Proxy (Proxy))
 import           Data.Sequence                          (fromList)
 import           Data.String                            (fromString)
-import           Data.Text                              (pack)
+import           Data.Text                              (Text, pack)
 import           GHC.TypeLits                           (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types                     as H
 import           Servant.API                            ((:<|>) ((:<|>)), (:>),
@@ -37,16 +37,17 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          Capture, CaptureAll,
                                                          Description, EmptyAPI,
                                                          FramingUnrender (..),
-                                                         Header, Headers (..),
+                                                         Header', Headers (..),
                                                          HttpVersion, IsSecure,
                                                          MimeRender (mimeRender),
                                                          MimeUnrender (mimeUnrender),
                                                          NoContent (NoContent),
-                                                         QueryFlag, QueryParam,
+                                                         QueryFlag, QueryParam',
                                                          QueryParams, Raw,
                                                          ReflectMethod (..),
-                                                         RemoteHost, ReqBody,
+                                                         RemoteHost, ReqBody',
                                                          ResultStream(..),
+                                                         SBoolI,
                                                          Stream,
                                                          Summary, ToHttpApiData,
                                                          Vault, Verb,
@@ -57,6 +58,9 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          toQueryParam,
                                                          toUrlPiece)
 import           Servant.API.ContentTypes               (contentTypes)
+import           Servant.API.Modifiers                  (FoldRequired,
+                                                         RequiredArgument,
+                                                         foldRequiredArgument)
 
 import           Servant.Client.Core.Internal.Auth
 import           Servant.Client.Core.Internal.BasicAuth
@@ -325,20 +329,20 @@ instance OVERLAPPABLE_
 -- > viewReferer = client myApi
 -- > -- then you can just use "viewRefer" to query that endpoint
 -- > -- specifying Nothing or e.g Just "http://haskell.org/" as arguments
-instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
-      => HasClient m (Header sym a :> api) where
+instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequired mods))
+      => HasClient m (Header' mods sym a :> api) where
 
-  type Client m (Header sym a :> api) =
-    Maybe a -> Client m api
+  type Client m (Header' mods sym a :> api) =
+    RequiredArgument mods a -> Client m api
 
   clientWithRoute pm Proxy req mval =
-    clientWithRoute pm (Proxy :: Proxy api)
-                    (maybe req
-                           (\value -> addHeader hname value req)
-                           mval
-                    )
+    clientWithRoute pm (Proxy :: Proxy api) $ foldRequiredArgument
+      (Proxy :: Proxy mods) add (maybe req add) mval
+    where
+      hname = fromString $ symbolVal (Proxy :: Proxy sym)
 
-    where hname = fromString $ symbolVal (Proxy :: Proxy sym)
+      add :: a -> Request
+      add value = addHeader hname value req
 
 -- | Using a 'HttpVersion' combinator in your API doesn't affect the client
 -- functions.
@@ -388,22 +392,22 @@ instance HasClient m api => HasClient m (Description desc :> api) where
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
-instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
-      => HasClient m (QueryParam sym a :> api) where
+instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequired mods))
+      => HasClient m (QueryParam' mods sym a :> api) where
 
-  type Client m (QueryParam sym a :> api) =
-    Maybe a -> Client m api
+  type Client m (QueryParam' mods sym a :> api) =
+    RequiredArgument mods a -> Client m api
 
   -- if mparam = Nothing, we don't add it to the query string
   clientWithRoute pm Proxy req mparam =
-    clientWithRoute pm (Proxy :: Proxy api)
-                    (maybe req
-                           (flip (appendToQueryString pname) req . Just)
-                           mparamText
-                    )
+    clientWithRoute pm (Proxy :: Proxy api) $ foldRequiredArgument
+      (Proxy :: Proxy mods) add (maybe req add) mparam
+    where
+      add :: a -> Request
+      add param = appendToQueryString pname (Just $ toQueryParam param) req
 
-    where pname  = pack $ symbolVal (Proxy :: Proxy sym)
-          mparamText = fmap toQueryParam mparam
+      pname :: Text
+      pname  = pack $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use a 'QueryParams' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -514,9 +518,9 @@ instance RunClient m => HasClient m Raw where
 -- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
 instance (MimeRender ct a, HasClient m api)
-      => HasClient m (ReqBody (ct ': cts) a :> api) where
+      => HasClient m (ReqBody' mods (ct ': cts) a :> api) where
 
-  type Client m (ReqBody (ct ': cts) a :> api) =
+  type Client m (ReqBody' mods (ct ': cts) a :> api) =
     a -> Client m api
 
   clientWithRoute pm Proxy req body =

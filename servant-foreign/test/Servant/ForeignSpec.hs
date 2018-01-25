@@ -7,9 +7,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+#if __GLASGOW__HASKELL < 709
+{-# OPTIONS_GHC -fcontext-stack=41 #-}
+#endif
 #include "overlapping-compat.h"
 
 module Servant.ForeignSpec where
@@ -99,7 +101,7 @@ listFromAPISpec = describe "listFromAPI" $ do
     shouldBe postReq $ defReq
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
-          [ QueryArg (Arg "param" "intX") Normal ]
+          [ QueryArg (Arg "param" "maybe intX") Normal ]
       , _reqMethod     = "POST"
       , _reqHeaders    = []
       , _reqBody       = Just "listX of stringX"

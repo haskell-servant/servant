@@ -4,13 +4,15 @@
 {-# LANGUAGE PolyKinds          #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Header (
-  Header(..),
-) where
+    Header, Header',
+    ) where
 
-import           Data.ByteString (ByteString)
 import           Data.Typeable   (Typeable)
 import           GHC.TypeLits    (Symbol)
+import           Servant.API.Modifiers
+
 -- | Extract the given header's value as a value of type @a@.
+-- I.e. header sent by client, parsed by server.
 --
 -- Example:
 --
@@ -18,10 +20,10 @@ import           GHC.TypeLits    (Symbol)
 -- >>>
 -- >>>            -- GET /view-my-referer
 -- >>> type MyApi = "view-my-referer" :> Header "from" Referer :> Get '[JSON] Referer
-data Header (sym :: Symbol) a = Header a
-                              | MissingHeader
-                              | UndecodableHeader ByteString
-    deriving (Typeable, Eq, Show, Functor)
+type Header = Header' '[Optional, Strict]
+
+data Header' (mods :: [*]) (sym :: Symbol) a
+    deriving Typeable
 
 -- $setup
 -- >>> import Servant.API

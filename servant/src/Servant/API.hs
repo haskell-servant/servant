@@ -7,6 +7,8 @@ module Servant.API (
   -- | Type-level combinator for alternative endpoints: @':<|>'@
   module Servant.API.Empty,
   -- | Type-level combinator for an empty API: @'EmptyAPI'@
+  module Servant.API.Modifiers,
+  -- | Type-level modifiers for 'QueryParam', 'Header' and 'ReqBody'.
 
   -- * Accessing information from the request
   module Servant.API.Capture,
@@ -64,6 +66,10 @@ module Servant.API (
   -- * Utilities
   module Servant.Utils.Links,
   -- | Type-safe internal URIs
+  
+  -- * Re-exports
+  If,
+  SBool (..), SBoolI (..)
   ) where
 
 import           Servant.API.Alternative     ((:<|>) (..))
@@ -77,10 +83,11 @@ import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
 import           Servant.API.Description     (Description, Summary)
 import           Servant.API.Empty           (EmptyAPI (..))
 import           Servant.API.Experimental.Auth (AuthProtect)
-import           Servant.API.Header          (Header (..))
+import           Servant.API.Header          (Header, Header')
 import           Servant.API.HttpVersion     (HttpVersion (..))
 import           Servant.API.IsSecure        (IsSecure (..))
-import           Servant.API.QueryParam      (QueryFlag, QueryParam,
+import           Servant.API.Modifiers       (Required,  Optional, Lenient, Strict)
+import           Servant.API.QueryParam      (QueryFlag, QueryParam, QueryParam',
                                               QueryParams)
 import           Servant.API.Raw             (Raw)
 import           Servant.API.Stream          (Stream, StreamGet, StreamPost,
@@ -93,12 +100,12 @@ import           Servant.API.Stream          (Stream, StreamGet, StreamPost,
                                               NewlineFraming,
                                               NetstringFraming)
 import           Servant.API.RemoteHost      (RemoteHost)
-import           Servant.API.ReqBody         (ReqBody)
+import           Servant.API.ReqBody         (ReqBody, ReqBody')
 import           Servant.API.ResponseHeaders (AddHeader, addHeader, noHeader,
                                               BuildHeadersTo (buildHeadersTo),
                                               GetHeaders (getHeaders),
                                               HList (..), Headers (..),
-                                              getHeadersHList, getResponse)
+                                              getHeadersHList, getResponse, ResponseHeader (..))
 import           Servant.API.Sub             ((:>))
 import           Servant.API.Vault           (Vault)
 import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepted,
@@ -124,3 +131,6 @@ import           Servant.Utils.Links         (HasLink (..), Link, IsElem, IsElem
                                               URI (..), safeLink)
 import           Web.HttpApiData             (FromHttpApiData (..),
                                               ToHttpApiData (..))
+
+import           Data.Type.Bool              (If)
+import           Data.Singletons.Bool        (SBool (..), SBoolI (..))

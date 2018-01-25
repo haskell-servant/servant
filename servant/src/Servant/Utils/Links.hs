@@ -1,11 +1,13 @@
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_HADDOCK not-home        #-}
 
 -- | Type safe generation of internal links.
@@ -101,8 +103,10 @@ module Servant.Utils.Links (
 import           Data.List
 import           Data.Monoid.Compat    ( (<>) )
 import           Data.Proxy            ( Proxy(..) )
+import           Data.Singletons.Bool  ( SBool (..), SBoolI (..) )
 import qualified Data.Text             as Text
 import qualified Data.Text.Encoding    as TE
+import           Data.Type.Bool        (If)
 import           GHC.TypeLits          ( KnownSymbol, symbolVal )
 import           Network.URI           ( URI(..), escapeURIString, isUnreserved )
 import           Prelude               ()
@@ -112,15 +116,22 @@ import Web.HttpApiData
 import Servant.API.Alternative ( (:<|>)((:<|>)) )
 import Servant.API.BasicAuth ( BasicAuth )
 import Servant.API.Capture ( Capture, CaptureAll )
-import Servant.API.ReqBody ( ReqBody )
-import Servant.API.QueryParam ( QueryParam, QueryParams, QueryFlag )
-import Servant.API.Header ( Header )
+import Servant.API.ReqBody ( ReqBody' )
+import Servant.API.QueryParam ( QueryParam', QueryParams, QueryFlag )
+import Servant.API.Header ( Header' )
+import Servant.API.HttpVersion (HttpVersion)
 import Servant.API.RemoteHost ( RemoteHost )
+import Servant.API.IsSecure (IsSecure)
+import Servant.API.Empty (EmptyAPI (..))
 import Servant.API.Verbs ( Verb )
 import Servant.API.Sub ( type (:>) )
 import Servant.API.Raw ( Raw )
 import Servant.API.Stream ( Stream )
 import Servant.API.TypeLevel
+import Servant.API.Modifiers (FoldRequired)
+import Servant.API.Description (Description, Summary)
+import Servant.API.Vault (Vault)
+import Servant.API.WithNamedContext (WithNamedContext)
 import Servant.API.Experimental.Auth ( AuthProtect )
 
 -- | A safe link datatype.
@@ -282,14 +293,15 @@ instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
       where
         seg = symbolVal (Proxy :: Proxy sym)
 
-
 -- QueryParam instances
-instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
-    => HasLink (QueryParam sym v :> sub) where
-    type MkLink (QueryParam sym v :> sub) = Maybe v -> MkLink sub
+instance (KnownSymbol sym, ToHttpApiData v, HasLink sub, SBoolI (FoldRequired mods))
+    => HasLink (QueryParam' mods sym v :> sub) where
+    type MkLink (QueryParam' mods sym v :> sub) = If (FoldRequired mods) v (Maybe v) -> MkLink sub
     toLink _ l mv =
         toLink (Proxy :: Proxy sub) $
-            maybe id (addQueryParam . SingleParam k . toQueryParam) mv l
+            case sbool :: SBool (FoldRequired mods) of
+                STrue  -> (addQueryParam . SingleParam k . toQueryParam) mv l
+                SFalse -> maybe id (addQueryParam . SingleParam k . toQueryParam) mv l
       where
         k :: String
         k = symbolVal (Proxy :: Proxy sym)
@@ -319,8 +331,8 @@ instance (HasLink a, HasLink b) => HasLink (a :<|> b) where
   toLink _ l = toLink (Proxy :: Proxy a) l :<|> toLink (Proxy :: Proxy b) l
 
 -- Misc instances
-instance HasLink sub => HasLink (ReqBody ct a :> sub) where
-    type MkLink (ReqBody ct a :> sub) = MkLink sub
+instance HasLink sub => HasLink (ReqBody' mods ct a :> sub) where
+    type MkLink (ReqBody' mods ct a :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
 instance (ToHttpApiData v, HasLink sub)
@@ -337,8 +349,32 @@ instance (ToHttpApiData v, HasLink sub)
         toLink (Proxy :: Proxy sub) $
             foldl' (flip $ addSegment . escaped . Text.unpack . toUrlPiece) l vs
 
-instance HasLink sub => HasLink (Header sym a :> sub) where
-    type MkLink (Header sym a :> sub) = MkLink sub
+instance HasLink sub => HasLink (Header' mods sym a :> sub) where
+    type MkLink (Header' mods sym a :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (Vault :> sub) where
+    type MkLink (Vault :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (Description s :> sub) where
+    type MkLink (Description s :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (Summary s :> sub) where
+    type MkLink (Summary s :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (HttpVersion :> sub) where
+    type MkLink (HttpVersion:> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (IsSecure :> sub) where
+    type MkLink (IsSecure :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (WithNamedContext name context sub) where
+    type MkLink (WithNamedContext name context sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (RemoteHost :> sub) where
@@ -348,6 +384,10 @@ instance HasLink sub => HasLink (RemoteHost :> sub) where
 instance HasLink sub => HasLink (BasicAuth realm a :> sub) where
     type MkLink (BasicAuth realm a :> sub) = MkLink sub
     toLink _ = toLink (Proxy :: Proxy sub)
+
+instance HasLink EmptyAPI where
+    type MkLink EmptyAPI = EmptyAPI
+    toLink _ _ = EmptyAPI
 
 -- Verb (terminal) instances
 instance HasLink (Verb m s ct a) where

@@ -3,10 +3,12 @@
 {-# LANGUAGE TypeOperators      #-}
 {-# LANGUAGE PolyKinds          #-}
 {-# OPTIONS_HADDOCK not-home    #-}
-module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParams) where
+module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParam', QueryParams) where
 
 import           Data.Typeable (Typeable)
 import           GHC.TypeLits (Symbol)
+import           Servant.API.Modifiers
+
 -- | Lookup the value associated to the @sym@ query string parameter
 -- and try to extract it as a value of type @a@.
 --
@@ -14,7 +16,10 @@ import           GHC.TypeLits (Symbol)
 --
 -- >>> -- /books?author=<author name>
 -- >>> type MyApi = "books" :> QueryParam "author" Text :> Get '[JSON] [Book]
-data QueryParam (sym :: Symbol) (a :: *)
+type QueryParam = QueryParam' '[Optional, Strict]
+
+-- | 'QueryParam' which can be 'Required', 'Lenient', or modified otherwise.
+data QueryParam' (mods :: [*]) (sym :: Symbol) (a :: *)
     deriving Typeable
 
 -- | Lookup the values associated to the @sym@ query string parameter

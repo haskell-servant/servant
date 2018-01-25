@@ -12,6 +12,7 @@
 {-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 #if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
 #define HAS_TYPE_ERROR
@@ -33,7 +34,7 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
-import           Control.Monad              (when)
+import           Control.Monad              (join, when)
 import           Control.Monad.Trans        (liftIO)
 import           Control.Monad.Trans.Resource (runResourceT)
 import qualified Data.ByteString            as B
@@ -43,7 +44,7 @@ import qualified Data.ByteString.Lazy       as BL
 import           Data.Maybe                 (fromMaybe, mapMaybe,
                                              isNothing, maybeToList)
 import           Data.Either                (partitionEithers)
-import           Data.String                (fromString)
+import           Data.String                (IsString (..))
 import           Data.String.Conversions    (cs, (<>))
 import           Data.Tagged                (Tagged(..), retag, untag)
 import qualified Data.Text                  as T
@@ -69,15 +70,17 @@ import           Web.HttpApiData            (FromHttpApiData, parseHeader,
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
                                               CaptureAll, Verb, EmptyAPI,
                                               ReflectMethod(reflectMethod),
-                                              IsSecure(..), Header, QueryFlag,
-                                              QueryParam, QueryParams, Raw,
-                                              RemoteHost, ReqBody, Vault,
+                                              IsSecure(..), Header', QueryFlag,
+                                              QueryParam', QueryParams, Raw,
+                                              RemoteHost, ReqBody', Vault,
                                               WithNamedContext,
                                               Description, Summary,
                                               Accept(..),
                                               FramingRender(..), Stream,
                                               StreamGenerator(..), ToStreamGenerator(..),
-                                              BoundaryStrategy(..))
+                                              BoundaryStrategy(..),
+                                              If, SBool (..), SBoolI (..))
+import           Servant.API.Modifiers       (unfoldRequestArgument, RequestArgument, FoldRequired, FoldLenient)
 import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               AllCTRender (..),
                                               AllCTUnrender (..),
@@ -361,29 +364,39 @@ streamRouter splitHeaders method framingproxy ctypeproxy action = leafRouter $ \
 -- > server = viewReferer
 -- >   where viewReferer :: Referer -> Handler referer
 -- >         viewReferer referer = return referer
-instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
-      => HasServer (Header sym a :> api) context where
-
-  type ServerT (Header sym a :> api) m =
-    Maybe a -> ServerT api m
+instance
+  (KnownSymbol sym, FromHttpApiData a, HasServer api context
+  , SBoolI (FoldRequired mods), SBoolI (FoldLenient mods)
+  )
+  => HasServer (Header' mods sym a :> api) context where
+------
+  type ServerT (Header' mods sym a :> api) m =
+    RequestArgument mods a -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver = route (Proxy :: Proxy api) context $
       subserver `addHeaderCheck` withRequest headerCheck
     where
-      headerName = symbolVal (Proxy :: Proxy sym)
+      headerName :: IsString n => n
+      headerName = fromString $ symbolVal (Proxy :: Proxy sym)
+
+      headerCheck :: Request -> DelayedIO (RequestArgument mods a)
       headerCheck req =
-        case lookup (fromString headerName) (requestHeaders req) of
-          Nothing -> return Nothing
-          Just txt ->
-            case parseHeader txt of
-              Left e -> delayedFailFatal err400
-                  { errBody = cs $ "Error parsing header "
-                                   <> fromString headerName
-                                   <> " failed: " <> e
-                  }
-              Right hdr -> return $ Just hdr
+          unfoldRequestArgument (Proxy :: Proxy mods) errReq errSt mev
+        where
+          mev :: Maybe (Either T.Text a)
+          mev = fmap parseHeader $ lookup headerName (requestHeaders req)
+
+          errReq = delayedFailFatal err400
+            { errBody = "Header " <> headerName <> " is required"
+            }
+
+          errSt e = delayedFailFatal err400
+              { errBody = cs $ "Error parsing header "
+                               <> headerName
+                               <> " failed: " <> e
+              }
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -406,33 +419,41 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
 -- >   where getBooksBy :: Maybe Text -> Handler [Book]
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
-instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
-      => HasServer (QueryParam sym a :> api) context where
-
-  type ServerT (QueryParam sym a :> api) m =
-    Maybe a -> ServerT api m
+instance
+  ( KnownSymbol sym, FromHttpApiData a, HasServer api context
+  , SBoolI (FoldRequired mods), SBoolI (FoldLenient mods)
+  )
+  => HasServer (QueryParam' mods sym a :> api) context where
+------
+  type ServerT (QueryParam' mods sym a :> api) m =
+    RequestArgument mods a -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
     let querytext req = parseQueryText $ rawQueryString req
-        parseParam req =
-          case lookup paramname (querytext req) of
-            Nothing       -> return Nothing -- param absent from the query string
-            Just Nothing  -> return Nothing -- param present with no value -> Nothing
-            Just (Just v) ->
-              case parseQueryParam v of
-                  Left e -> delayedFailFatal err400
-                      { errBody = cs $ "Error parsing query parameter "
-                                       <> paramname <> " failed: " <> e
-                      }
+        paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
-                  Right param -> return $ Just param
+        parseParam :: Request -> DelayedIO (RequestArgument mods a)
+        parseParam req =
+            unfoldRequestArgument (Proxy :: Proxy mods) errReq errSt mev
+          where
+            mev :: Maybe (Either T.Text a)
+            mev = fmap parseQueryParam $ join $ lookup paramname $ querytext req
+
+            errReq = delayedFailFatal err400
+              { errBody = cs $ "Query parameter " <> paramname <> " is required"
+              }
+
+            errSt e = delayedFailFatal err400
+              { errBody = cs $ "Error parsing query parameter "
+                               <> paramname <> " failed: " <> e
+              }
+
         delayed = addParameterCheck subserver . withRequest $ \req ->
                     parseParam req
 
     in route (Proxy :: Proxy api) context delayed
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
 -- | If you use @'QueryParams' "authors" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -561,11 +582,11 @@ instance HasServer Raw context where
 -- > server = postBook
 -- >   where postBook :: Book -> Handler Book
 -- >         postBook book = ...insert into your db...
-instance ( AllCTUnrender list a, HasServer api context
-         ) => HasServer (ReqBody list a :> api) context where
+instance ( AllCTUnrender list a, HasServer api context, SBoolI (FoldLenient mods)
+         ) => HasServer (ReqBody' mods list a :> api) context where
 
-  type ServerT (ReqBody list a :> api) m =
-    a -> ServerT api m
+  type ServerT (ReqBody' mods list a :> api) m =
+    If (FoldLenient mods) (Either String a) a -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
@@ -588,9 +609,11 @@ instance ( AllCTUnrender list a, HasServer api context
       -- Body check, we get a body parsing functions as the first argument.
       bodyCheck f = withRequest $ \ request -> do
         mrqbody <- f <$> liftIO (lazyRequestBody request)
-        case mrqbody of
-          Left e  -> delayedFailFatal err400 { errBody = cs e }
-          Right v -> return v
+        case sbool :: SBool (FoldLenient mods) of
+          STrue -> return mrqbody
+          SFalse -> case mrqbody of
+            Left e  -> delayedFailFatal err400 { errBody = cs e }
+            Right v -> return v
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @api@.

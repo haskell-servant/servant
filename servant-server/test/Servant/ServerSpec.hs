@@ -47,7 +47,7 @@ import           Network.Wai.Test           (defaultRequest, request,
                                              simpleHeaders, simpleStatus)
 import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
                                              BasicAuth, BasicAuthData(BasicAuthData),
-                                             Capture, CaptureAll, Delete, Get, Header (..),
+                                             Capture, CaptureAll, Delete, Get, Header,
                                              Headers, HttpVersion,
                                              IsSecure (..), JSON,
                                              NoContent (..), Patch, PlainText,
@@ -461,8 +461,8 @@ reqBodySpec = describe "Servant.API.ReqBody" $ do
 ------------------------------------------------------------------------------
 
 type HeaderApi a = Header "MyHeader" a :> Delete '[JSON] NoContent
-headerApi :: Proxy (HeaderApi a)
-headerApi = Proxy
+headerApi :: Proxy a -> Proxy (HeaderApi a)
+headerApi _ = Proxy
 
 headerSpec :: Spec
 headerSpec = describe "Servant.API.Header" $ do
@@ -479,19 +479,19 @@ headerSpec = describe "Servant.API.Header" $ do
           return NoContent
         expectsString Nothing  = error "Expected a string"
 
-    with (return (serve headerApi expectsInt)) $ do
+    with (return (serve (headerApi (Proxy :: Proxy Int)) expectsInt)) $ do
         let delete' x = THW.request methodDelete x [("MyHeader", "5")]
 
         it "passes the header to the handler (Int)" $
             delete' "/" "" `shouldRespondWith` 200
 
-    with (return (serve headerApi expectsString)) $ do
+    with (return (serve (headerApi (Proxy :: Proxy String)) expectsString)) $ do
         let delete' x = THW.request methodDelete x [("MyHeader", "more from you")]
 
         it "passes the header to the handler (String)" $
             delete' "/" "" `shouldRespondWith` 200
 
-    with (return (serve headerApi expectsInt)) $ do
+    with (return (serve (headerApi (Proxy :: Proxy Int)) expectsInt)) $ do
         let delete' x = THW.request methodDelete x [("MyHeader", "not a number")]
 
         it "checks for parse errors" $

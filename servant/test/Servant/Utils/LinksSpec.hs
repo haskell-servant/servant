@@ -1,8 +1,12 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE PolyKinds       #-}
 {-# LANGUAGE TypeOperators   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+#if __GLASGOW__HASKELL < 709
+{-# OPTIONS_GHC -fcontext-stack=41 #-}
+#endif
 module Servant.Utils.LinksSpec where
 
 import           Data.Proxy              (Proxy (..))
@@ -11,11 +15,13 @@ import           Test.Hspec              (Expectation, Spec, describe, it,
 import           Data.String             (fromString)
 
 import           Servant.API
-import           Servant.Utils.Links     (allLinks)
+import           Servant.Utils.Links     (allLinks, linkURI)
+import           Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
 
 type TestApi =
   -- Capture and query params
        "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete '[JSON] NoContent
+  :<|> "hi"    :> Capture "name" String :> QueryParam' '[Required] "capital" Bool :> Delete '[JSON] NoContent
   :<|> "all" :> CaptureAll "names" String :> Get '[JSON] NoContent
 
   -- Flags
@@ -55,6 +61,11 @@ spec = describe "Servant.Utils.Links" $ do
                                          :> Delete '[JSON] NoContent)
         apiLink l2 "bye" (Just True) `shouldBeLink` "hello/bye?capital=true"
 
+        let l4 = Proxy :: Proxy ("hi" :> Capture "name" String
+                                      :> QueryParam' '[Required] "capital" Bool
+                                      :> Delete '[JSON] NoContent)
+        apiLink l4 "privet" False `shouldBeLink` "hi/privet?capital=false"
+
     it "generates correct links for CaptureAll" $ do
         apiLink (Proxy :: Proxy ("all" :> CaptureAll "names" String :> Get '[JSON] NoContent))
           ["roads", "lead", "to", "rome"]
@@ -75,11 +86,12 @@ spec = describe "Servant.Utils.Links" $ do
 
     it "can generate all links for an API that has only linkable endpoints" $ do
         let (allNames :<|> simple) = allLinks (Proxy :: Proxy LinkableApi)
-        simple
-          `shouldBeLink` "get"
-        allNames ["Seneca", "Aurelius"]
-          `shouldBeLink` "all/Seneca/Aurelius"
+        simple `shouldBeLink` "get"
+        allNames ["Seneca", "Aurelius"] `shouldBeLink` "all/Seneca/Aurelius"
 
+    it "can generate all links for ComprehensiveAPIWithoutRaw" $ do
+        let (firstLink :<|> _) = allLinks comprehensiveAPIWithoutRaw
+        firstLink `shouldBeLink` ""
 
 -- |
 -- Before https://github.com/CRogers/should-not-typecheck/issues/5 is fixed,
@@ -112,9 +124,9 @@ spec = describe "Servant.Utils.Links" $ do
 -- ...Could not deduce...
 -- ...
 --
--- >>> apiLink (Proxy :: Proxy NoEndpoint)
+-- >>> linkURI $ apiLink (Proxy :: Proxy NoEndpoint)
 -- ...
--- ...No instance for...
+-- <interactive>...
 -- ...
 --
 -- sanity check
