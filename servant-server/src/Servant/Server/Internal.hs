@@ -326,7 +326,7 @@ streamRouter splitHeaders method framingproxy ctypeproxy action = leafRouter $ \
                       write . BB.lazyByteString $ header framingproxy ctypeproxy
                       case boundary framingproxy ctypeproxy of
                            BoundaryStrategyBracket f ->
-                                    let go x = let bs = mimeRender ctypeproxy $ x
+                                    let go x = let bs = mimeRender ctypeproxy x
                                                    (before, after) = f bs
                                                in write (   BB.lazyByteString before
                                                          <> BB.lazyByteString bs
