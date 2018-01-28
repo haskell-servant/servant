@@ -20,7 +20,7 @@ executable cookbook-db-sqlite-simple
                      , servant-server
                      , warp >= 3.2
                      , wai >= 3.2
-                     , http-types >= 0.10
+                     , http-types >= 0.12
                      , markdown-unlit >= 0.4
                      , http-client >= 0.5
                      , sqlite-simple >= 0.4

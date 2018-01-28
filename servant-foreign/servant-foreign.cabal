@@ -53,8 +53,8 @@ library
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
       base-compat >= 0.9.3  && <0.10
-    , lens        >= 4.15.4 && <4.16
-    , http-types  >= 0.9.1  && < 0.12
+    , lens        >= 4.15.4 && <4.17
+    , http-types  >= 0.12   && < 0.13
 
   hs-source-dirs:      src
   default-language:    Haskell2010

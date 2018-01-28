@@ -82,7 +82,7 @@ library
     , exceptions          >= 0.8.3    && < 0.9
     , http-api-data       >= 0.3.7.1  && < 0.4
     , http-media          >= 0.7.1.1  && < 0.8
-    , http-types          >= 0.9.1    && < 0.12
+    , http-types          >= 0.12     && < 0.13
     , network-uri         >= 2.6.1.0  && < 2.7
     , monad-control       >= 1.0.0.4  && < 1.1
     , network             >= 2.6.3.2  && < 2.7
