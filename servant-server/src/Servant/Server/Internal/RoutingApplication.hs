@@ -3,12 +3,8 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -82,7 +78,7 @@ instance MonadBaseControl b m => MonadBaseControl b (RouteResultT m) where
 
 instance MonadTransControl RouteResultT where
     type StT RouteResultT a = RouteResult a
-    liftWith f = RouteResultT $ liftM return $ f $ runRouteResultT
+    liftWith f = RouteResultT $ liftM return $ f runRouteResultT
     restoreT = RouteResultT
 
 instance MonadThrow m => MonadThrow (RouteResultT m) where
@@ -367,7 +363,7 @@ runAction :: Delayed env (Handler a)
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
           -> IO r
-runAction action env req respond k = runResourceT $ do
+runAction action env req respond k = runResourceT $
     runDelayed action env req >>= go >>= liftIO . respond
   where
     go (Fail e)      = return $ Fail e

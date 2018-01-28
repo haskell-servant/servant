@@ -67,7 +67,7 @@ data HList a where
 
 type family HeaderValMap (f :: * -> *) (xs :: [*]) where
     HeaderValMap f '[]                = '[]
-    HeaderValMap f (Header h x ': xs) = Header h (f x) ': (HeaderValMap f xs)
+    HeaderValMap f (Header h x ': xs) = Header h (f x) ': HeaderValMap f xs
 
 
 class BuildHeadersTo hs where
@@ -80,7 +80,7 @@ instance OVERLAPPING_ BuildHeadersTo '[] where
     buildHeadersTo _ = HNil
 
 instance OVERLAPPABLE_ ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
-         => BuildHeadersTo ((Header h v) ': xs) where
+         => BuildHeadersTo (Header h v ': xs) where
     buildHeadersTo headers =
       let wantedHeader = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
           matching = snd <$> filter (\(h, _) -> h == wantedHeader) headers

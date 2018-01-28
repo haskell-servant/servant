@@ -282,7 +282,7 @@ instance OVERLAPPABLE_
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
     allMimeRender _ a =
-        (map (, bs) $ NE.toList $ contentTypes pctyp)
+        map (, bs) (NE.toList $ contentTypes pctyp)
         ++ allMimeRender pctyps a
       where
         bs     = mimeRender pctyp a
@@ -317,10 +317,10 @@ instance ( MimeUnrender ctyp a
          , AllMimeUnrender ctyps a
          ) => AllMimeUnrender (ctyp ': ctyps) a where
     allMimeUnrender _ =
-        (map mk $ NE.toList $ contentTypes pctyp)
+        map mk (NE.toList $ contentTypes pctyp)
         ++ allMimeUnrender pctyps
       where
-        mk ct   = (ct, \bs -> mimeUnrenderWithType pctyp ct bs)
+        mk ct   = (ct, mimeUnrenderWithType pctyp ct)
         pctyp  = Proxy :: Proxy ctyp
         pctyps = Proxy :: Proxy ctyps
 
