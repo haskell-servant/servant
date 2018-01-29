@@ -6,6 +6,7 @@ module Servant.Client
   , ClientM
   , runClientM
   , ClientEnv(..)
+  , mkClientEnv
   , module Servant.Client.Core.Reexport
   ) where
 

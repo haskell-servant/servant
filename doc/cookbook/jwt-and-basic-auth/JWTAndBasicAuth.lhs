@@ -151,7 +151,7 @@ testClient = do
   let (foo :<|> _) = client (Proxy :: Proxy TestAPIClient)
                      (BasicAuthData "name" "pass")
   res <- runClientM (foo 42)
-    (ClientEnv mgr (BaseUrl Http "localhost" port ""))
+    (mkClientEnv mgr (BaseUrl Http "localhost" port ""))
   hPutStrLn stderr $ case res of
     Left err -> "Error: " ++ show err
     Right r -> "Success: " ++ show r

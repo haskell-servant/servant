@@ -86,7 +86,7 @@ main = do
   initDB dbfile
   mgr <- newManager defaultManagerSettings
   bracket (forkIO $ runApp dbfile) killThread $ \_ -> do
-    ms <- flip runClientM (ClientEnv mgr (BaseUrl Http "localhost" 8080 "")) $ do
+    ms <- flip runClientM (mkClientEnv mgr (BaseUrl Http "localhost" 8080 "")) $ do
       postMsg "hello"
       postMsg "world"
       getMsgs

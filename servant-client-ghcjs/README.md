@@ -170,6 +170,6 @@ main :: IO ()
 main = do
     mgr <- newManager defaultManagerSettings
     let clientBaseUrl = BaseUrl Http "www.example.com" 80 ""
-    ePos <- runClientM (position apiClient 10 20) $ ClientEnv mgr clientBaseUrl
+    ePos <- runClientM (position apiClient 10 20) $ mkClientEnv mgr clientBaseUrl
     print ePos
 ```
