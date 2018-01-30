@@ -5,8 +5,11 @@ module Servant.Client.Core.Reexport
   (
     -- * HasClient
     HasClient(..)
+
     -- * Response (for @Raw@)
-  , Response(..)
+  , Response
+  , StreamingResponse
+  , GenResponse(..)
 
   -- * Generic Client
   , ClientLike(..)

@@ -40,7 +40,8 @@ module Servant.Client.Core
 
 
   -- * Response
-  , Response(..)
+  , Response
+  , GenResponse (..)
   , RunClient(..)
   , module Servant.Client.Core.Internal.BaseUrl
   , StreamingResponse(..)

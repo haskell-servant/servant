@@ -1,8 +1,9 @@
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveFoldable             #-}
+{-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE OverloadedStrings          #-}
@@ -65,14 +66,15 @@ type Request = RequestF Builder.Builder
 newtype RequestBody = RequestBodyLBS LBS.ByteString
   deriving (Eq, Ord, Read, Show, Typeable)
 
-data Response = Response
+data GenResponse a = Response
   { responseStatusCode  :: Status
-  , responseBody        :: LBS.ByteString
   , responseHeaders     :: Seq.Seq Header
   , responseHttpVersion :: HttpVersion
-  } deriving (Eq, Show, Generic, Typeable)
+  , responseBody        :: a
+  } deriving (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
 
-data StreamingResponse = StreamingResponse { runStreamingResponse :: forall a. ((Status, Seq.Seq Header, HttpVersion, IO BS.ByteString) -> IO a) -> IO a }
+type Response = GenResponse LBS.ByteString
+newtype StreamingResponse = StreamingResponse { runStreamingResponse :: forall a. (GenResponse (IO BS.ByteString) -> IO a) -> IO a }
 
 -- A GET request to the top-level path
 defaultRequest :: Request

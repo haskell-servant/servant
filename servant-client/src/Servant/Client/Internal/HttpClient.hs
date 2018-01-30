@@ -8,10 +8,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
-
--- | @http-client@-based client requests executor
 module Servant.Client.Internal.HttpClient where
-
 
 import           Prelude                     ()
 import           Prelude.Compat
@@ -31,7 +28,7 @@ import qualified Data.ByteString.Lazy        as BSL
 import           Data.Foldable               (toList, for_)
 import           Data.Functor.Alt            (Alt (..))
 import           Data.Maybe                  (maybeToList)
-import           Data.Monoid                 ((<>))
+import           Data.Semigroup              ((<>))
 import           Data.Proxy                  (Proxy (..))
 import           Data.Sequence               (fromList)
 import           Data.String                 (fromString)
@@ -151,10 +148,10 @@ performStreamingRequest req = do
           status_code = statusCode status
       unless (status_code >= 200 && status_code < 300) $ do
         b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody r)
-        throw $ FailureResponse $ Response status b (fromList $ Client.responseHeaders r) (Client.responseVersion r)
-      k (status, fromList $ Client.responseHeaders r, Client.responseVersion r, Client.responseBody r)
+        throw $ FailureResponse $ clientResponseToResponse r { Client.responseBody = b }
+      k (clientResponseToResponse r)
 
-clientResponseToResponse :: Client.Response BSL.ByteString -> Response
+clientResponseToResponse :: Client.Response a -> GenResponse a
 clientResponseToResponse r = Response
   { responseStatusCode = Client.responseStatus r
   , responseBody = Client.responseBody r

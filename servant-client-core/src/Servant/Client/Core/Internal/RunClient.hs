@@ -18,7 +18,7 @@ import           Network.HTTP.Media                   (MediaType, matches,
 import           Servant.API                          (MimeUnrender,
                                                        contentTypes,
                                                        mimeUnrender)
-import           Servant.Client.Core.Internal.Request (Request, Response (..),
+import           Servant.Client.Core.Internal.Request (Request, Response, GenResponse (..),
                                                        StreamingResponse (..),
                                                        ServantError (..))
 

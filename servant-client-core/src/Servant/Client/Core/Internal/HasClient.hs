@@ -269,7 +269,8 @@ instance OVERLAPPABLE_
       , requestMethod = reflectMethod (Proxy :: Proxy method)
       }
    return . buildFromStream $ ResultStream $ \k ->
-     runStreamingResponse sresp $ \(_status,_headers,_httpversion,reader) -> do
+     runStreamingResponse sresp $ \gres -> do
+      let  reader   = responseBody gres
       let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)
            loop bs = do
              res <- BL.fromStrict <$> reader
