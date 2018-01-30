@@ -3,7 +3,6 @@
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
@@ -33,11 +32,7 @@ import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
                                              methodDelete, methodGet,
                                              methodHead, methodPatch,
                                              methodPost, methodPut, ok200,
-#if MIN_VERSION_http_types(0,10,0)
                                              imATeapot418,
-#else
-                                             imATeaPot418,
-#endif
                                              parseQuery)
 import           Network.Wai                (Application, Request, requestHeaders, pathInfo,
                                              queryString, rawQueryString,
@@ -73,11 +68,6 @@ import           Servant.Server.Experimental.Auth
                                              mkAuthHandler)
 import           Servant.Server.Internal.Context
                                             (NamedContext(..))
-
-#if !MIN_VERSION_http_types(0,10,0)
-imATeapot418 :: Status
-imATeapot418 = imATeaPot418
-#endif
 
 -- * comprehensive api test
 

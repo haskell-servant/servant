@@ -9,6 +9,9 @@ packages:
 - servant/
 
 extra-deps:
+- cabal-doctest-1.0.6
+- http-api-data-0.3.7.2
+- http-types-0.12
 - text-1.2.3.0
 
 # allow-newer: true # ignores all bounds, that's a sledgehammer

@@ -29,7 +29,7 @@ executable cookbook-jwt-and-basic-auth
                      , servant-auth-server >= 0.3.1.0
                      , warp >= 3.2
                      , wai >= 3.2
-                     , http-types >= 0.10
+                     , http-types >= 0.12
                      , markdown-unlit >= 0.4
                      , http-client >= 0.5
                      , bytestring >= 0.10.4
