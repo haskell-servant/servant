@@ -14,6 +14,7 @@ branches:
   only:
     - master
     - release-0.12
+    - release-0.13
 
 cache:
   directories:
