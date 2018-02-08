@@ -72,7 +72,7 @@ install:
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
   - "printf 'packages: \"servant\" \"servant-client\" \"servant-client-core\" \"servant-docs\" \"servant-foreign\" \"servant-server\" \"doc/tutorial\" \"doc/cookbook/db-postgres-pool\" \"doc/cookbook/jwt-and-basic-auth\" \"doc/cookbook/db-sqlite-simple\" \"doc/cookbook/basic-auth\" \"doc/cookbook/https\" \"doc/cookbook/structuring-apis\" \"doc/cookbook/using-custom-monad\" \"doc/cookbook/file-upload\"\\n' > cabal.project"
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
-  - "echo 'allow-newer: servant-js:servant-foreign, servant-auth-server:http-types, servant-multipart:lens' >> cabal.project"
+  - "echo 'allow-newer: servant-js:servant-foreign,servant-auth-server:http-types,servant-multipart:lens,servant-multipart:resourcet' >> cabal.project"
   - cat cabal.project
   - if [ -f "servant/configure.ac" ]; then
       (cd "servant" && autoreconf -i);
@@ -150,7 +150,7 @@ script:
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal cookbook-db-postgres-pool-*/*.cabal cookbook-jwt-and-basic-auth-*/*.cabal cookbook-db-sqlite-simple-*/*.cabal cookbook-basic-auth-*/*.cabal cookbook-https-*/*.cabal cookbook-structuring-apis-*/*.cabal cookbook-using-custom-monad-*/*.cabal cookbook-file-upload-*/*.cabal\\n' > cabal.project"
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
-  - "echo 'allow-newer: servant-js:servant-foreign, servant-auth-server:http-types, servant-multipart:lens' >> cabal.project"
+  - "echo 'allow-newer: servant-js:servant-foreign,servant-auth-server:http-types,servant-multipart:lens,servant-multipart:resourcet' >> cabal.project"
   - cat cabal.project
   - echo -en 'travis_fold:end:unpack\\r'
 

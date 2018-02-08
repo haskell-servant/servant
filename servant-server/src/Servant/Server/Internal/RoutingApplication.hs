@@ -13,11 +13,11 @@ module Servant.Server.Internal.RoutingApplication where
 import           Control.Monad                      (ap, liftM)
 import           Control.Monad.Base                 (MonadBase (..))
 import           Control.Monad.Catch                (MonadThrow (..))
-import           Control.Monad.Reader               (MonadReader (..), ReaderT, runReaderT)
+import           Control.Monad.Reader               (MonadReader (..), ReaderT (..), runReaderT)
 import           Control.Monad.Trans                (MonadIO (..), MonadTrans (..))
 import           Control.Monad.Trans.Control        (ComposeSt, MonadBaseControl (..), MonadTransControl (..),
                                                      defaultLiftBaseWith, defaultRestoreM)
-import           Control.Monad.Trans.Resource       (MonadResource (..), ResourceT, runResourceT, transResourceT)
+import           Control.Monad.Trans.Resource       (MonadResource (..), ResourceT, runResourceT, transResourceT, withInternalState, runInternalState)
 import           Network.Wai                        (Application, Request, Response, ResponseReceived)
 import           Prelude                            ()
 import           Prelude.Compat
@@ -83,7 +83,6 @@ instance MonadTransControl RouteResultT where
 
 instance MonadThrow m => MonadThrow (RouteResultT m) where
     throwM = lift . throwM
-
 
 toApplication :: RoutingApplication -> Application
 toApplication ra request respond = ra request routingRespond
@@ -194,18 +193,27 @@ newtype DelayedIO a = DelayedIO { runDelayedIO' :: ReaderT Request (ResourceT (R
   deriving
     ( Functor, Applicative, Monad
     , MonadIO, MonadReader Request
-    , MonadBase IO
     , MonadThrow
     , MonadResource
     )
+
+instance MonadBase IO DelayedIO where
+    liftBase = liftIO
 
 liftRouteResult :: RouteResult a -> DelayedIO a
 liftRouteResult x = DelayedIO $ lift . lift $ RouteResultT . return $ x
 
 instance MonadBaseControl IO DelayedIO where
-    type StM DelayedIO a = StM (ReaderT Request (ResourceT (RouteResultT IO))) a
-    liftBaseWith f = DelayedIO $ liftBaseWith $ \g -> f (g . runDelayedIO')
-    restoreM       = DelayedIO . restoreM
+    -- type StM DelayedIO a = StM (ReaderT Request (ResourceT (RouteResultT IO))) a
+    -- liftBaseWith f = DelayedIO $ liftBaseWith $ \g -> f (g . runDelayedIO')
+    -- restoreM       = DelayedIO . restoreM
+
+    type StM DelayedIO a = RouteResult a
+    liftBaseWith f = DelayedIO $ ReaderT $ \req -> withInternalState $ \s ->
+        liftBaseWith $ \runInBase -> f $ \x ->
+            runInBase (runInternalState (runReaderT (runDelayedIO' x) req) s)
+    restoreM      = DelayedIO . lift . withInternalState . const . restoreM
+
 
 runDelayedIO :: DelayedIO a -> Request -> ResourceT IO (RouteResult a)
 runDelayedIO m req = transResourceT runRouteResultT $ runReaderT (runDelayedIO' m) req
