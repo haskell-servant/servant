@@ -6,7 +6,9 @@
 
 ### Breaking changes
 
-* Make foreign client Header arguments have the representation of 'Maybe' in those languages
+- *servant* Add `Servant.API.Modifiers`
+  ([#873](https://github.com/haskell-servant/servant/pull/873))
+- Make foreign client Header arguments have the representation of 'Maybe' in those languages
   ([#843](https://github.com/haskell-servant/servant/pull/843))
 
 0.10.2

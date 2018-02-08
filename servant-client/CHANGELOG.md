@@ -1,6 +1,17 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.13
+----
+
+- Streaming endpoint support.
+  ([#836](https://github.com/haskell-servant/servant/pull/836))
+- *servant* Add `Servant.API.Modifiers`
+  ([#873](https://github.com/haskell-servant/servant/pull/873))
+- *servant-client* Support `http-client`’s `CookieJar`
+  ([#897](https://github.com/haskell-servant/servant/pull/897)
+   [#883](https://github.com/haskell-servant/servant/pull/883))
+
 0.12.0.1
 --------
 

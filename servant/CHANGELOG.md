@@ -1,5 +1,78 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.13
+----
+
+### Significant changes
+
+- Streaming endpoint support.
+  ([#836](https://github.com/haskell-servant/servant/pull/836))
+
+  ```haskell
+  type StreamApi f = "streamGetNewline" :> StreamGet NewlineFraming JSON (f Person)
+  ```
+
+  See tutorial for more details
+  - [A web API as a type - StreamGet and StreamPost](http://haskell-servant.readthedocs.io/en/release-0.13/tutorial/ApiType.html#streamget-and-streampost)
+  - [Serving an API - streaming endpoints](http://haskell-servant.readthedocs.io/en/release-0.13/tutorial/Server.html#streaming-endpoints)
+  - [Querying an API - Querying Streaming APIs](http://haskell-servant.readthedocs.io/en/release-0.13/tutorial/Client.html#querying-streaming-apis)
+
+- *servant* Add `Servant.API.Modifiers`
+  ([#873](https://github.com/haskell-servant/servant/pull/873))
+
+  `QueryParam`, `Header` and `ReqBody` understand modifiers:
+  - `Required` or `Optional` (resulting in `a` or `Maybe a` in handlers)
+  - `Strict` or `Lenient` (resulting in `a` or `Either String a` in handlers)
+
+- *servant-client* Support `http-client`’s `CookieJar`
+  ([#897](https://github.com/haskell-servant/servant/pull/897)
+   [#883](https://github.com/haskell-servant/servant/pull/883))
+
+  `ClientM` preserves cookies between requests,
+  if given initial `CookieJar`.
+  To migrate from older code, change `ClientEnv` constructor
+  to `mkClientEnv` which makes `ClientEnv` without `CookieJar`.
+
+- *servant* Mono-kind-ise modifiers, resulting in better error messages.
+  ([#887](https://github.com/haskell-servant/servant/issues/887)
+   [#890](https://github.com/haskell-servant/servant/pull/890))
+
+- *servant* Add `TypeError ... => HasServer`s instances in GHC-8.2 for
+  not saturated modifiers (`Capture "foo" :> ...`) or `->` in place of `:>`.
+  ([#893](https://github.com/haskell-servant/servant/pull/893))
+
+- *Cookbook* example projects at
+  http://haskell-servant.readthedocs.io/en/master/cookbook/index.html
+  ([#867](https://github.com/haskell-servant/servant/pull/867)
+   [#892](https://github.com/haskell-servant/servant/pull/882))
+
+- *Experimental work* `servant-client-ghcjs`
+  ([#818](https://github.com/haskell-servant/servant/pull/818)
+   [#869](https://github.com/haskell-servant/servant/pull/869))
+
+### Other changes
+
+- *servant* Links aren't double escaped
+  ([#878](https://github.com/haskell-servant/servant/pull/878))
+
+- Dependency updates
+  ([#900](https://github.com/haskell-servant/servant/pull/900)
+   [#898](https://github.com/haskell-servant/servant/pull/898)
+   [#895](https://github.com/haskell-servant/servant/pull/895)
+   [#872](https://github.com/haskell-servant/servant/pull/872))
+
+- Documentation updates
+  ([#875](https://github.com/haskell-servant/servant/pull/875)
+   [#861](https://github.com/haskell-servant/servant/pull/861))
+
+- Refactorings
+  ([#899](https://github.com/haskell-servant/servant/pull/899)
+   [#896](https://github.com/haskell-servant/servant/pull/896)
+   [#889](https://github.com/haskell-servant/servant/pull/889)
+   [#891](https://github.com/haskell-servant/servant/pull/891)
+   [#892](https://github.com/haskell-servant/servant/pull/892)
+   [#885](https://github.com/haskell-servant/servant/pull/885))
+
 0.12.1
 ------
 

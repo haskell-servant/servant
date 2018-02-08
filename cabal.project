@@ -8,10 +8,14 @@ packages: servant/
   doc/cookbook/*/*.cabal
 
 allow-newer:
+  servant-js:servant,
   servant-js:servant-foreign,
   servant-auth-server:http-types,
   servant-multipart:lens,
-  servant-multipart:resourcet
+  servant-multipart:resourcet,
+  servant-multipart:servant,
+  servant-multipart:servant-server,
+  servant-auth-server:servant-server
 
 constraints:
   -- see https://github.com/haskell-infra/hackage-trustees/issues/119
