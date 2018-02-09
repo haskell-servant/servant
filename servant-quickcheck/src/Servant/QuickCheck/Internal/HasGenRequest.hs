@@ -78,7 +78,7 @@ instance HasGenRequest api => HasGenRequest (Description d :> api) where
 #endif
 
 instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
-    => HasGenRequest (Capture x c :> b) where
+    => HasGenRequest (Capture' mods x c :> b) where
     genRequest _ = (oldf, do
       old' <- old
       new' <- toUrlPiece <$> new
@@ -101,10 +101,10 @@ instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
 #endif
 
 instance (Arbitrary c, KnownSymbol h, HasGenRequest b, ToHttpApiData c)
-    => HasGenRequest (Header h c :> b) where
+    => HasGenRequest (Header' mods h c :> b) where
     genRequest _ = (oldf, do
       old' <- old
-      new' <- toUrlPiece <$> new
+      new' <- toUrlPiece <$> new  -- TODO: generate lenient or/and optional
       return $ \burl -> let r = old' burl in r {
           requestHeaders = (hdr, cs new') : requestHeaders r })
       where
@@ -113,9 +113,9 @@ instance (Arbitrary c, KnownSymbol h, HasGenRequest b, ToHttpApiData c)
         new = arbitrary :: Gen c
 
 instance (AllMimeRender x c, Arbitrary c, HasGenRequest b)
-    => HasGenRequest (ReqBody x c :> b) where
+    => HasGenRequest (ReqBody' mods x c :> b) where
     genRequest _ = (oldf, do
-      old' <- old
+      old' <- old  -- TODO: generate lenient
       new' <- new
       (ct, bd) <- elements $ allMimeRender (Proxy :: Proxy x) new'
       return $ \burl -> let r = old' burl in r {
@@ -127,9 +127,9 @@ instance (AllMimeRender x c, Arbitrary c, HasGenRequest b)
         new = arbitrary :: Gen c
 
 instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
-    => HasGenRequest (QueryParam x c :> b) where
+    => HasGenRequest (QueryParam' mods x c :> b) where
     genRequest _ = (oldf, do
-      new' <- new
+      new' <- new  -- TODO: generate lenient or/and optional
       old' <- old
       return $ \burl -> let r = old' burl
                             newExpr = param <> "=" <> cs (toQueryParam new')
