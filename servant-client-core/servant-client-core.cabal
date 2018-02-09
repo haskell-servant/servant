@@ -85,17 +85,22 @@ test-suite spec
   main-is:             Spec.hs
   other-modules:
       Servant.Client.Core.Internal.BaseUrlSpec
+      Servant.Client.Core.Internal.HasClientSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
       base
     , base-compat
+    , bytestring
+    , servant
     , servant-client-core
+    , text
 
   -- Additonal dependencies
   build-depends:
-      deepseq    >= 1.3.0.2 && <1.5
-    , hspec      >= 2.4.4   && <2.5
+      deepseq    >= 1.3.0.2 && < 1.5
+    , free       >= 4.12.4  && < 5.1
+    , hspec      >= 2.4.4   && < 2.5
     , QuickCheck >= 2.10.1  && < 2.12
 
   build-tool-depends:
