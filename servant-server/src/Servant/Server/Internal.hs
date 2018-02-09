@@ -67,7 +67,7 @@ import           Web.HttpApiData            (FromHttpApiData, parseHeader,
                                              parseQueryParam,
                                              parseUrlPieceMaybe,
                                              parseUrlPieces)
-import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture,
+import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture',
                                               CaptureAll, Verb, EmptyAPI,
                                               ReflectMethod(reflectMethod),
                                               IsSecure(..), Header', QueryFlag,
@@ -164,9 +164,9 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
 -- >   where getBook :: Text -> Handler Book
 -- >         getBook isbn = ...
 instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
-      => HasServer (Capture capture a :> api) context where
+      => HasServer (Capture' mods capture a :> api) context where
 
-  type ServerT (Capture capture a :> api) m =
+  type ServerT (Capture' mods capture a :> api) m =
      a -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
@@ -749,14 +749,14 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -- ...
 -- ...Expected something of kind Symbol or *, got: k -> l on the LHS of ':>'.
 -- ...Maybe you haven't applied enough arguments to
--- ...Capture "foo"
+-- ...Capture' '[] "foo"
 -- ...
 --
 -- >>> undefined :: Server (Capture "foo" :> Get '[JSON] Int)
 -- ...
 -- ...Expected something of kind Symbol or *, got: k -> l on the LHS of ':>'.
 -- ...Maybe you haven't applied enough arguments to
--- ...Capture "foo"
+-- ...Capture' '[] "foo"
 -- ...
 -- 
 instance TypeError (HasServerArrowKindError arr) => HasServer ((arr :: k -> l) :> api) context
@@ -778,7 +778,7 @@ type HasServerArrowKindError arr =
 -- ...
 -- ...No instance HasServer (a -> b).
 -- ...Maybe you have used '->' instead of ':>' between
--- ...Capture "foo" Int
+-- ...Capture' '[] "foo" Int
 -- ...and
 -- ...Verb 'GET 200 '[JSON] Int
 -- ...
@@ -787,7 +787,7 @@ type HasServerArrowKindError arr =
 -- ...
 -- ...No instance HasServer (a -> b).
 -- ...Maybe you have used '->' instead of ':>' between
--- ...Capture "foo" Int
+-- ...Capture' '[] "foo" Int
 -- ...and
 -- ...Verb 'GET 200 '[JSON] Int
 -- ...

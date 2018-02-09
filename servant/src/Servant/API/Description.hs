@@ -1,11 +1,25 @@
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds          #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TypeFamilies        #-}
 {-# OPTIONS_HADDOCK not-home    #-}
-module Servant.API.Description (Description, Summary) where
+module Servant.API.Description (
+    -- * Combinators
+    Description,
+    Summary,
+    -- * Used as modifiers
+    FoldDescription,
+    FoldDescription',
+    reflectDescription,
+    ) where
 
 import           Data.Typeable (Typeable)
-import           GHC.TypeLits  (Symbol)
+import           GHC.TypeLits  (Symbol, KnownSymbol, symbolVal)
+import           Data.Proxy    (Proxy (..))
+
 -- | Add a short summary for (part of) API.
 --
 -- Example:
@@ -28,6 +42,32 @@ data Summary (sym :: Symbol)
 -- :}
 data Description (sym :: Symbol)
     deriving (Typeable)
+
+-- | Fold modifier list to decide whether argument should be parsed strictly or leniently.
+--
+-- >>> :kind! FoldDescription '[]
+-- FoldDescription '[] :: Symbol
+-- = ""
+--
+-- >>> :kind! FoldDescription '[Required, Description "foobar", Lenient]
+-- FoldDescription '[Required, Description "foobar", Lenient] :: Symbol
+-- = "foobar"
+--
+type FoldDescription mods = FoldDescription' "" mods
+
+-- | Implementation of 'FoldDescription'.
+type family FoldDescription' (acc :: Symbol) (mods ::  [*]) :: Symbol where
+    FoldDescription' acc '[]                        = acc
+    FoldDescription' acc (Description desc ': mods) = FoldDescription' desc mods
+    FoldDescription' acc (mod     ': mods)          = FoldDescription' acc mods
+
+-- | Reflect description to the term level.
+--
+-- >>> reflectDescription (Proxy :: Proxy '[Required, Description "foobar", Lenient])
+-- "foobar"
+--
+reflectDescription :: forall mods. KnownSymbol (FoldDescription mods) => Proxy mods -> String
+reflectDescription _ = symbolVal (Proxy :: Proxy (FoldDescription mods))
 
 -- $setup
 -- >>> import Servant.API

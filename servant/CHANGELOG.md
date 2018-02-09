@@ -18,11 +18,15 @@
   - [Querying an API - Querying Streaming APIs](http://haskell-servant.readthedocs.io/en/release-0.13/tutorial/Client.html#querying-streaming-apis)
 
 - *servant* Add `Servant.API.Modifiers`
-  ([#873](https://github.com/haskell-servant/servant/pull/873))
+  ([#873](https://github.com/haskell-servant/servant/pull/873)
+   [#903](https://github.com/haskell-servant/servant/pull/903))
 
   `QueryParam`, `Header` and `ReqBody` understand modifiers:
   - `Required` or `Optional` (resulting in `a` or `Maybe a` in handlers)
   - `Strict` or `Lenient` (resulting in `a` or `Either String a` in handlers)
+
+  Also you can use `Description` as a modifier, but it doesn't yet work
+  with `servant-docs`, only `servant-swagger`. [There is an issue.](https://github.com/haskell-servant/servant/issues/902)
 
 - *servant-client* Support `http-client`’s `CookieJar`
   ([#897](https://github.com/haskell-servant/servant/pull/897)
