@@ -22,7 +22,7 @@ comprehensiveAPI = Proxy
 type ComprehensiveAPIWithoutRaw =
   GET :<|>
   Get '[JSON] Int :<|>
-  Capture "foo" Int :> GET :<|>
+  Capture' '[Description "example description"] "foo" Int :> GET :<|>
   Header "foo" Int :> GET :<|>
   Header' '[Required, Lenient] "bar" Int :> GET :<|>
   HttpVersion :> GET :<|>

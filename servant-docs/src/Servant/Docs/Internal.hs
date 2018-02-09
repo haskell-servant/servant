@@ -795,7 +795,7 @@ instance HasDocs EmptyAPI where
 -- | @"books" :> 'Capture' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
 instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)
-      => HasDocs (Capture sym a :> api) where
+      => HasDocs (Capture' mods sym a :> api) where
 
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint', action')
