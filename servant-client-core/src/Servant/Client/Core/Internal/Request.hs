@@ -32,6 +32,7 @@ import           Network.HTTP.Types      (Header, HeaderName, HttpVersion,
 import           Web.HttpApiData         (ToHttpApiData, toEncodedUrlPiece,
                                           toHeader)
 
+
 -- | A type representing possible errors in a request
 --
 -- Note that this type substantially changed in 0.12.
@@ -79,18 +80,22 @@ newtype StreamingResponse = StreamingResponse { runStreamingResponse :: forall a
 -- A GET request to the top-level path
 defaultRequest :: Request
 defaultRequest = Request
-  { requestPath = ""
+  { requestPath        = "/"
   , requestQueryString = Seq.empty
-  , requestBody = Nothing
-  , requestAccept = Seq.empty
-  , requestHeaders = Seq.empty
+  , requestBody        = Nothing
+  , requestAccept      = Seq.empty
+  , requestHeaders     = Seq.empty
   , requestHttpVersion = http11
-  , requestMethod = methodGet
+  , requestMethod      = methodGet
   }
 
 appendToPath :: Text -> Request -> Request
-appendToPath p req
-  = req { requestPath = requestPath req <> "/" <> toEncodedUrlPiece p }
+appendToPath p req = req { requestPath = path' }
+  where
+    path = requestPath req
+    path'
+        | Builder.toLazyByteString path == "/" = path <> toEncodedUrlPiece p
+        | otherwise                            = path <> "/" <> toEncodedUrlPiece p
 
 appendToQueryString :: Text       -- ^ param name
                     -> Maybe Text -- ^ param value
