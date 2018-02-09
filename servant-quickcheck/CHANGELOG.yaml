@@ -2,6 +2,14 @@ upcoming:
 
 releases:
 
+  - version: "0.0.6.0"
+    changes:
+
+      - description: Support for servant-0.12
+        issue: none
+        authors: phadej
+        date: 2018-02-09
+
   - version: "0.0.5.0"
     changes:
 

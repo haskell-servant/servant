@@ -1,5 +1,5 @@
 name:                servant-quickcheck
-version:             0.0.5.0
+version:             0.0.6.0
 synopsis:            QuickCheck entire APIs
 description:
  This packages provides QuickCheck properties that are tested across an entire
@@ -17,7 +17,7 @@ extra-source-files:
 tested-with:
   GHC==7.10.3,
   GHC==8.0.2,
-  GHC==8.2.1
+  GHC==8.2.2
 
 source-repository head
   type: git
@@ -45,14 +45,14 @@ library
                      , hspec >= 2.2 && < 2.5
                      , http-client >= 0.4.30 && < 0.6
                      , http-media >= 0.6 && <0.8
-                     , http-types > 0.8 && < 0.11
+                     , http-types > 0.8 && < 0.13
                      , mtl > 2.1 && < 2.3
                      , pretty == 1.1.*
                      , process >= 1.2 && < 1.7
-                     , QuickCheck > 2.7 && < 2.11
-                     , servant > 0.6 && < 0.13
-                     , servant-client > 0.6 && < 0.13
-                     , servant-server > 0.6 && < 0.13
+                     , QuickCheck > 2.7 && < 2.12
+                     , servant >= 0.13 && < 0.14
+                     , servant-client >= 0.13 && < 0.14
+                     , servant-server >= 0.13 && < 0.14
                      , split == 0.2.*
                      , string-conversions > 0.3 && < 0.5
                      , temporary == 1.2.*
@@ -114,3 +114,17 @@ test-suite spec
                      , ScopedTypeVariables
   if flag(long-tests)
       cpp-options: -DLONG_TESTS
+
+test-suite example
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs:
+    example
+  ghc-options: -Wall
+  build-depends:
+      base
+    , hspec
+    , servant-server
+    , servant-quickcheck
+    , text
+  default-language: Haskell2010
