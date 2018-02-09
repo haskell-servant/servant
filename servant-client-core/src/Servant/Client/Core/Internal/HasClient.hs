@@ -34,7 +34,7 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          BuildHeadersTo (..),
                                                          BuildFromStream (..),
                                                          ByteStringParser (..),
-                                                         Capture, CaptureAll,
+                                                         Capture', CaptureAll,
                                                          Description, EmptyAPI,
                                                          FramingUnrender (..),
                                                          Header', Headers (..),
@@ -155,9 +155,9 @@ instance RunClient m => HasClient m EmptyAPI where
 -- > getBook = client myApi
 -- > -- then you can just use "getBook" to query that endpoint
 instance (KnownSymbol capture, ToHttpApiData a, HasClient m api)
-      => HasClient m (Capture capture a :> api) where
+      => HasClient m (Capture' mods capture a :> api) where
 
-  type Client m (Capture capture a :> api) =
+  type Client m (Capture' mods capture a :> api) =
     a -> Client m api
 
   clientWithRoute pm Proxy req val =

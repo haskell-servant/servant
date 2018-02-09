@@ -115,7 +115,7 @@ import           Prelude.Compat
 import Web.HttpApiData
 import Servant.API.Alternative ( (:<|>)((:<|>)) )
 import Servant.API.BasicAuth ( BasicAuth )
-import Servant.API.Capture ( Capture, CaptureAll )
+import Servant.API.Capture ( Capture', CaptureAll )
 import Servant.API.ReqBody ( ReqBody' )
 import Servant.API.QueryParam ( QueryParam', QueryParams, QueryFlag )
 import Servant.API.Header ( Header' )
@@ -336,8 +336,8 @@ instance HasLink sub => HasLink (ReqBody' mods ct a :> sub) where
     toLink _ = toLink (Proxy :: Proxy sub)
 
 instance (ToHttpApiData v, HasLink sub)
-    => HasLink (Capture sym v :> sub) where
-    type MkLink (Capture sym v :> sub) = v -> MkLink sub
+    => HasLink (Capture' mods sym v :> sub) where
+    type MkLink (Capture' mods sym v :> sub) = v -> MkLink sub
     toLink _ l v =
         toLink (Proxy :: Proxy sub) $
             addSegment (escaped . Text.unpack $ toUrlPiece v) l

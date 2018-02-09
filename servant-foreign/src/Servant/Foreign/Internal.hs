@@ -195,8 +195,8 @@ instance HasForeign lang ftype EmptyAPI where
   foreignFor Proxy Proxy Proxy _ = EmptyForeignAPI
 
 instance (KnownSymbol sym, HasForeignType lang ftype t, HasForeign lang ftype api)
-  => HasForeign lang ftype (Capture sym t :> api) where
-  type Foreign ftype (Capture sym t :> api) = Foreign ftype api
+  => HasForeign lang ftype (Capture' mods sym t :> api) where
+  type Foreign ftype (Capture' mods sym t :> api) = Foreign ftype api
 
   foreignFor lang Proxy Proxy req =
     foreignFor lang Proxy (Proxy :: Proxy api) $
