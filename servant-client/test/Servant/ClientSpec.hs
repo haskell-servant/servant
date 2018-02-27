@@ -103,6 +103,9 @@ instance FromJSON Person
 instance ToForm Person
 instance FromForm Person
 
+instance Arbitrary Person where
+  arbitrary = Person <$> arbitrary <*> arbitrary
+
 alice :: Person
 alice = Person "Alice" 42
 

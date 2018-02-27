@@ -183,10 +183,18 @@ requestToClientRequest burl r = Client.defaultRequest
       where
         hs = toList $ requestAccept r
 
+    convertBody bd = case bd of
+      RequestBodyLBS body' -> Client.RequestBodyLBS body'
+      RequestBodyBS body' -> Client.RequestBodyBS body'
+      RequestBodyBuilder size body' -> Client.RequestBodyBuilder size body'
+      RequestBodyStream size body' -> Client.RequestBodyStream size body'
+      RequestBodyStreamChunked body' -> Client.RequestBodyStreamChunked body'
+      RequestBodyIO body' -> Client.RequestBodyIO (convertBody <$> body')
+
     (body, contentTypeHdr) = case requestBody r of
       Nothing -> (Client.RequestBodyLBS "", Nothing)
-      Just (RequestBodyLBS body', typ)
-        -> (Client.RequestBodyLBS body', Just (hContentType, renderHeader typ))
+      Just (body', typ)
+        -> (convertBody body', Just (hContentType, renderHeader typ))
 
     isSecure = case baseUrlScheme burl of
       Http -> False
