@@ -367,6 +367,18 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
+    describe "baseUrl" $ do
+
+      it "accepts urls with trailing slashes without modifying non-root paths"
+        $ \(_, burl) -> do
+          left show <$> runClient getGet (burl { baseUrlPath = baseUrlPath burl ++ "/"} )
+              `shouldReturn` Right alice
+
+      it "still works with root paths when it has a trailing slash"
+        $ \(_, burl) -> do
+          left show <$> runClient getRoot (burl { baseUrlPath = baseUrlPath burl ++ "/"} )
+              `shouldReturn` Right carol
+
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
         property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->

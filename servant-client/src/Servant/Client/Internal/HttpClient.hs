@@ -25,6 +25,7 @@ import           Control.Monad.Trans.Control (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
 import           Data.ByteString.Builder     (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
+import qualified Data.ByteString.Lazy.Char8  as BSLC
 import           Data.Foldable               (toList, for_)
 import           Data.Functor.Alt            (Alt (..))
 import           Data.Maybe                  (maybeToList)
@@ -166,7 +167,7 @@ requestToClientRequest burl r = Client.defaultRequest
   , Client.port = baseUrlPort burl
   , Client.path = BSL.toStrict
                 $ fromString (baseUrlPath burl)
-               <> toLazyByteString (requestPath r)
+               </> toLazyByteString (requestPath r)
   , Client.queryString = renderQuery True . toList $ requestQueryString r
   , Client.requestHeaders =
     maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
@@ -197,3 +198,13 @@ catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =
   catch (Right <$> action) $ \e ->
     pure . Left . ConnectionError . T.pack $ show (e :: Client.HttpException)
+
+-- Concatenate path components, making sure there's exactly one slash between
+-- them, unless they're both empty.
+(</>) :: BSL.ByteString -> BSL.ByteString -> BSL.ByteString
+a </> b = case (BSLC.unsnoc a, BSLC.uncons b) of
+  (Just (_, '/')     , Just ('/', tailB)) -> a <> tailB
+  (Just (_, '/')     , _                ) -> a <> b
+  (_                 , Just ('/', _    )) -> a <> b
+  (_                 , Nothing          ) -> a
+  (_                 , _                ) -> a <> "/" <> b
