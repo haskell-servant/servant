@@ -130,7 +130,7 @@
 
   ```haskell
   type ServerT (MyCombinator :> api) m = MyValue -> ServerT api m
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
   ```
 
   See https://github.com/haskell-servant/servant-auth/pull/67/commits/8ee3b6315247ac076516213fd7cfcdbfdb583ac9 for a real world example.
