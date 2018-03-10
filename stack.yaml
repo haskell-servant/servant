@@ -1,5 +1,5 @@
 # Let's try to keep resolver at the first day of the month
-resolver: nightly-2018-01-01
+resolver: nightly-2018-03-01
 packages:
 - servant-client/
 - servant-client-core/
@@ -13,6 +13,7 @@ extra-deps:
 - http-api-data-0.3.7.2
 - http-types-0.12
 - text-1.2.3.0
+- aeson-1.3.0.0
 
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/
