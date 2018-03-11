@@ -1,14 +1,16 @@
 {-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DeriveFoldable     #-}
+{-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DeriveTraversable  #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Alternative ((:<|>)(..)) where
 
-import           Data.Semigroup   (Semigroup (..))
-import           Data.Typeable    (Typeable)
+import           Data.Semigroup
+                 (Semigroup (..))
+import           Data.Typeable
+                 (Typeable)
 import           Prelude ()
 import           Prelude.Compat
 

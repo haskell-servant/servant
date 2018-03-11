@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE TypeOperators #-}
 
 -- | This is a module containing an API with all `Servant.API` combinators. It
@@ -7,7 +7,6 @@
 module Servant.API.Internal.Test.ComprehensiveAPI where
 
 import           Data.Proxy
-
 import           Servant.API
 
 type GET = Get '[JSON] NoContent

@@ -8,15 +8,18 @@ module Servant.API.Verbs
   , StdMethod(GET, POST, HEAD, PUT, DELETE, TRACE, CONNECT, OPTIONS, PATCH)
   ) where
 
-import           Data.Typeable             (Typeable)
-import           Data.Proxy                (Proxy)
-import           GHC.Generics              (Generic)
-import           GHC.TypeLits              (Nat)
-import           Network.HTTP.Types.Method (Method, StdMethod (..),
-                                            methodDelete, methodGet, methodHead,
-                                            methodPatch, methodPost, methodPut,
-                                            methodTrace, methodConnect,
-                                            methodOptions)
+import           Data.Proxy
+                 (Proxy)
+import           Data.Typeable
+                 (Typeable)
+import           GHC.Generics
+                 (Generic)
+import           GHC.TypeLits
+                 (Nat)
+import           Network.HTTP.Types.Method
+                 (Method, StdMethod (..), methodConnect, methodDelete,
+                 methodGet, methodHead, methodOptions, methodPatch, methodPost,
+                 methodPut, methodTrace)
 
 -- | @Verb@ is a general type for representing HTTP verbs (a.k.a. methods). For
 -- convenience, type synonyms for each verb with a 200 response code are

@@ -13,7 +13,6 @@ module Servant.Utils.Enter {-# DEPRECATED "Use hoistServer or hoistServerWithCon
     (:~>)(..),
     ) where
 
-import           Control.Natural
 import           Control.Monad.Identity
 import           Control.Monad.Morph
 import           Control.Monad.Reader
@@ -21,8 +20,10 @@ import qualified Control.Monad.State.Lazy    as LState
 import qualified Control.Monad.State.Strict  as SState
 import qualified Control.Monad.Writer.Lazy   as LWriter
 import qualified Control.Monad.Writer.Strict as SWriter
-import           Data.Tagged                 (Tagged, retag)
-import           Prelude                     ()
+import           Control.Natural
+import           Data.Tagged
+                 (Tagged, retag)
+import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
 

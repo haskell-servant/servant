@@ -1,12 +1,14 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE TypeOperators      #-}
 {-# LANGUAGE PolyKinds          #-}
+{-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParam', QueryParams) where
 
-import           Data.Typeable (Typeable)
-import           GHC.TypeLits (Symbol)
+import           Data.Typeable
+                 (Typeable)
+import           GHC.TypeLits
+                 (Symbol)
 import           Servant.API.Modifiers
 
 -- | Lookup the value associated to the @sym@ query string parameter

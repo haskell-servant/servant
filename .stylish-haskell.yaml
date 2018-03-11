@@ -184,6 +184,7 @@ newline: lf
 # needs to be aware of these, so it can parse the file correctly.
 #
 # No language extensions are enabled by default.
-# language_extensions:
-  # - TemplateHaskell
-  # - QuasiQuotes
+language_extensions:
+  - FlexibleContexts
+  - TemplateHaskell
+  - QuasiQuotes

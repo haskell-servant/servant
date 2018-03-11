@@ -6,8 +6,9 @@ module Servant.API.ReqBody (
     ReqBody, ReqBody',
     ) where
 
-import Data.Typeable (Typeable)
-import Servant.API.Modifiers
+import           Data.Typeable
+                 (Typeable)
+import           Servant.API.Modifiers
 
 -- | Extract the request body as a value of type @a@.
 --
@@ -17,7 +18,7 @@ import Servant.API.Modifiers
 -- >>> type MyApi = "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book
 type ReqBody = ReqBody' '[Required, Strict]
 
--- | 
+-- |
 --
 -- /Note:/ 'ReqBody'' is always 'Required'.
 data ReqBody' (mods :: [*]) (contentTypes :: [*]) (a :: *)

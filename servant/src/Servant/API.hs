@@ -66,71 +66,75 @@ module Servant.API (
   -- * Utilities
   module Servant.Utils.Links,
   -- | Type-safe internal URIs
-  
+
   -- * Re-exports
   If,
   SBool (..), SBoolI (..)
   ) where
 
-import           Servant.API.Alternative     ((:<|>) (..))
-import           Servant.API.BasicAuth       (BasicAuth,BasicAuthData(..))
-import           Servant.API.Capture         (Capture, Capture', CaptureAll)
-import           Servant.API.ContentTypes    (Accept (..), FormUrlEncoded,
-                                              JSON,
-                                              MimeRender (..), NoContent (NoContent),
-                                              MimeUnrender (..), OctetStream,
-                                              PlainText)
-import           Servant.API.Description     (Description, Summary)
-import           Servant.API.Empty           (EmptyAPI (..))
-import           Servant.API.Experimental.Auth (AuthProtect)
-import           Servant.API.Header          (Header, Header')
-import           Servant.API.HttpVersion     (HttpVersion (..))
-import           Servant.API.IsSecure        (IsSecure (..))
-import           Servant.API.Modifiers       (Required,  Optional, Lenient, Strict)
-import           Servant.API.QueryParam      (QueryFlag, QueryParam, QueryParam',
-                                              QueryParams)
-import           Servant.API.Raw             (Raw)
-import           Servant.API.Stream          (Stream, StreamGet, StreamPost,
-                                              StreamGenerator (..),
-                                              ToStreamGenerator (..),
-                                              ResultStream(..), BuildFromStream (..),
-                                              ByteStringParser (..),
-                                              FramingRender (..), BoundaryStrategy (..),
-                                              FramingUnrender (..),
-                                              NewlineFraming,
-                                              NetstringFraming)
-import           Servant.API.RemoteHost      (RemoteHost)
-import           Servant.API.ReqBody         (ReqBody, ReqBody')
-import           Servant.API.ResponseHeaders (AddHeader, addHeader, noHeader,
-                                              BuildHeadersTo (buildHeadersTo),
-                                              GetHeaders (getHeaders),
-                                              HList (..), Headers (..),
-                                              getHeadersHList, getResponse, ResponseHeader (..))
-import           Servant.API.Sub             ((:>))
-import           Servant.API.Vault           (Vault)
-import           Servant.API.Verbs           (PostCreated, Delete, DeleteAccepted,
-                                              DeleteNoContent,
-                                              DeleteNonAuthoritative, Get,
-                                              GetAccepted, GetNoContent,
-                                              GetNonAuthoritative,
-                                              GetPartialContent,
-                                              GetResetContent,
-                                              Patch,
-                                              PatchAccepted, PatchNoContent,
-                                              PatchNoContent,
-                                              PatchNonAuthoritative, Post,
-                                              PostAccepted, PostNoContent,
-                                              PostNonAuthoritative,
-                                              PostResetContent, Put,
-                                              PutAccepted, PutNoContent,
-                                              PutNoContent, PutNonAuthoritative,
-                                              ReflectMethod (reflectMethod),
-                                              Verb, StdMethod(..))
-import           Servant.API.WithNamedContext (WithNamedContext)
-import           Servant.Utils.Links         (HasLink (..), Link, IsElem, IsElem',
-                                              URI (..), safeLink)
-import           Web.HttpApiData             (FromHttpApiData (..),
-                                              ToHttpApiData (..))
-
-import           Data.Type.Bool              (If)
-import           Data.Singletons.Bool        (SBool (..), SBoolI (..))
+import           Data.Singletons.Bool
+                 (SBool (..), SBoolI (..))
+import           Data.Type.Bool
+                 (If)
+import           Servant.API.Alternative
+                 ((:<|>) (..))
+import           Servant.API.BasicAuth
+                 (BasicAuth, BasicAuthData (..))
+import           Servant.API.Capture
+                 (Capture, Capture', CaptureAll)
+import           Servant.API.ContentTypes
+                 (Accept (..), FormUrlEncoded, JSON, MimeRender (..),
+                 MimeUnrender (..), NoContent (NoContent), OctetStream,
+                 PlainText)
+import           Servant.API.Description
+                 (Description, Summary)
+import           Servant.API.Empty
+                 (EmptyAPI (..))
+import           Servant.API.Experimental.Auth
+                 (AuthProtect)
+import           Servant.API.Header
+                 (Header, Header')
+import           Servant.API.HttpVersion
+                 (HttpVersion (..))
+import           Servant.API.IsSecure
+                 (IsSecure (..))
+import           Servant.API.Modifiers
+                 (Lenient, Optional, Required, Strict)
+import           Servant.API.QueryParam
+                 (QueryFlag, QueryParam, QueryParam', QueryParams)
+import           Servant.API.Raw
+                 (Raw)
+import           Servant.API.RemoteHost
+                 (RemoteHost)
+import           Servant.API.ReqBody
+                 (ReqBody, ReqBody')
+import           Servant.API.ResponseHeaders
+                 (AddHeader, BuildHeadersTo (buildHeadersTo),
+                 GetHeaders (getHeaders), HList (..), Headers (..),
+                 ResponseHeader (..), addHeader, getHeadersHList, getResponse,
+                 noHeader)
+import           Servant.API.Stream
+                 (BoundaryStrategy (..), BuildFromStream (..),
+                 ByteStringParser (..), FramingRender (..),
+                 FramingUnrender (..), NetstringFraming, NewlineFraming,
+                 ResultStream (..), Stream, StreamGenerator (..), StreamGet,
+                 StreamPost, ToStreamGenerator (..))
+import           Servant.API.Sub
+                 ((:>))
+import           Servant.API.Vault
+                 (Vault)
+import           Servant.API.Verbs
+                 (Delete, DeleteAccepted, DeleteNoContent,
+                 DeleteNonAuthoritative, Get, GetAccepted, GetNoContent,
+                 GetNonAuthoritative, GetPartialContent, GetResetContent,
+                 Patch, PatchAccepted, PatchNoContent, PatchNonAuthoritative,
+                 Post, PostAccepted, PostCreated, PostNoContent,
+                 PostNonAuthoritative, PostResetContent, Put, PutAccepted,
+                 PutNoContent, PutNonAuthoritative,
+                 ReflectMethod (reflectMethod), StdMethod (..), Verb)
+import           Servant.API.WithNamedContext
+                 (WithNamedContext)
+import           Servant.Utils.Links
+                 (HasLink (..), IsElem, IsElem', Link, URI (..), safeLink)
+import           Web.HttpApiData
+                 (FromHttpApiData (..), ToHttpApiData (..))

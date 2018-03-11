@@ -4,7 +4,8 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Sub ((:>)) where
 
-import           Data.Typeable (Typeable)
+import           Data.Typeable
+                 (Typeable)
 
 -- | The contained API (second argument) can be found under @("/" ++ path)@
 -- (path being the first argument).

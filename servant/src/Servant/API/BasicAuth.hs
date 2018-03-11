@@ -1,13 +1,16 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE KindSignatures     #-}
+{-# LANGUAGE PolyKinds          #-}
 
 module Servant.API.BasicAuth where
 
-import           Data.ByteString (ByteString)
-import           Data.Typeable (Typeable)
-import           GHC.TypeLits (Symbol)
+import           Data.ByteString
+                 (ByteString)
+import           Data.Typeable
+                 (Typeable)
+import           GHC.TypeLits
+                 (Symbol)
 
 
 -- | Combinator for <https://tools.ietf.org/html/rfc2617#section-2 Basic Access Authentication>.

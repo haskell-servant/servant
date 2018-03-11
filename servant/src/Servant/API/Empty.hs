@@ -2,7 +2,8 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Empty(EmptyAPI(..)) where
 
-import           Data.Typeable    (Typeable)
+import           Data.Typeable
+                 (Typeable)
 import           Prelude ()
 import           Prelude.Compat
 
