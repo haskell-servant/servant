@@ -47,16 +47,25 @@ module Servant.API.TypeLevel (
     ) where
 
 
-import           GHC.Exts                (Constraint)
-import           Servant.API.Alternative (type (:<|>))
-import           Servant.API.Capture     (Capture, CaptureAll)
-import           Servant.API.Header      (Header)
-import           Servant.API.QueryParam  (QueryFlag, QueryParam, QueryParams)
-import           Servant.API.ReqBody     (ReqBody)
-import           Servant.API.Sub         (type (:>))
-import           Servant.API.Verbs       (Verb)
+import           GHC.Exts
+                 (Constraint)
+import           Servant.API.Alternative
+                 (type (:<|>))
+import           Servant.API.Capture
+                 (Capture, CaptureAll)
+import           Servant.API.Header
+                 (Header)
+import           Servant.API.QueryParam
+                 (QueryFlag, QueryParam, QueryParams)
+import           Servant.API.ReqBody
+                 (ReqBody)
+import           Servant.API.Sub
+                 (type (:>))
+import           Servant.API.Verbs
+                 (Verb)
 #if MIN_VERSION_base(4,9,0)
-import           GHC.TypeLits            (TypeError, ErrorMessage(..))
+import           GHC.TypeLits
+                 (ErrorMessage (..), TypeError)
 #endif
 
 

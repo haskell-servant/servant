@@ -34,18 +34,22 @@ module Servant.API.ResponseHeaders
     , HList(..)
     ) where
 
-import           Data.ByteString.Char8       as BS (ByteString, pack, unlines, init)
-import           Data.Typeable               (Typeable)
-import           Web.HttpApiData             (ToHttpApiData, toHeader,
-                                             FromHttpApiData, parseHeader)
-import qualified Data.CaseInsensitive        as CI
+import           Data.ByteString.Char8     as BS
+                 (ByteString, init, pack, unlines)
+import qualified Data.CaseInsensitive      as CI
 import           Data.Proxy
-import           GHC.TypeLits                (KnownSymbol, Symbol, symbolVal)
-import qualified Network.HTTP.Types.Header   as HTTP
+import           Data.Typeable
+                 (Typeable)
+import           GHC.TypeLits
+                 (KnownSymbol, Symbol, symbolVal)
+import qualified Network.HTTP.Types.Header as HTTP
+import           Web.HttpApiData
+                 (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
 
-import           Servant.API.Header          (Header)
-import           Prelude                     ()
+import           Prelude ()
 import           Prelude.Compat
+import           Servant.API.Header
+                 (Header)
 
 -- | Response Header objects. You should never need to construct one directly.
 -- Instead, use 'addOptionalHeader'.

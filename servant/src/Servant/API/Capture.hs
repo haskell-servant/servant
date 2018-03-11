@@ -4,8 +4,10 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Capture (Capture, Capture', CaptureAll) where
 
-import           Data.Typeable (Typeable)
-import           GHC.TypeLits  (Symbol)
+import           Data.Typeable
+                 (Typeable)
+import           GHC.TypeLits
+                 (Symbol)
 -- | Capture a value from the request path under a certain type @a@.
 --
 -- Example:

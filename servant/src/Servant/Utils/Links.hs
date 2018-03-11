@@ -101,38 +101,63 @@ module Servant.Utils.Links (
 ) where
 
 import           Data.List
-import           Data.Monoid.Compat    ( (<>) )
-import           Data.Proxy            ( Proxy(..) )
-import           Data.Singletons.Bool  ( SBool (..), SBoolI (..) )
-import qualified Data.Text             as Text
-import qualified Data.Text.Encoding    as TE
-import           Data.Type.Bool        (If)
-import           GHC.TypeLits          ( KnownSymbol, symbolVal )
-import           Network.URI           ( URI(..), escapeURIString, isUnreserved )
-import           Prelude               ()
+import           Data.Monoid.Compat
+                 ((<>))
+import           Data.Proxy
+                 (Proxy (..))
+import           Data.Singletons.Bool
+                 (SBool (..), SBoolI (..))
+import qualified Data.Text                     as Text
+import qualified Data.Text.Encoding            as TE
+import           Data.Type.Bool
+                 (If)
+import           GHC.TypeLits
+                 (KnownSymbol, symbolVal)
+import           Network.URI
+                 (URI (..), escapeURIString, isUnreserved)
+import           Prelude ()
 import           Prelude.Compat
 
-import Web.HttpApiData
-import Servant.API.Alternative ( (:<|>)((:<|>)) )
-import Servant.API.BasicAuth ( BasicAuth )
-import Servant.API.Capture ( Capture', CaptureAll )
-import Servant.API.ReqBody ( ReqBody' )
-import Servant.API.QueryParam ( QueryParam', QueryParams, QueryFlag )
-import Servant.API.Header ( Header' )
-import Servant.API.HttpVersion (HttpVersion)
-import Servant.API.RemoteHost ( RemoteHost )
-import Servant.API.IsSecure (IsSecure)
-import Servant.API.Empty (EmptyAPI (..))
-import Servant.API.Verbs ( Verb )
-import Servant.API.Sub ( type (:>) )
-import Servant.API.Raw ( Raw )
-import Servant.API.Stream ( Stream )
-import Servant.API.TypeLevel
-import Servant.API.Modifiers (FoldRequired)
-import Servant.API.Description (Description, Summary)
-import Servant.API.Vault (Vault)
-import Servant.API.WithNamedContext (WithNamedContext)
-import Servant.API.Experimental.Auth ( AuthProtect )
+import           Servant.API.Alternative
+                 ((:<|>) ((:<|>)))
+import           Servant.API.BasicAuth
+                 (BasicAuth)
+import           Servant.API.Capture
+                 (Capture', CaptureAll)
+import           Servant.API.Description
+                 (Description, Summary)
+import           Servant.API.Empty
+                 (EmptyAPI (..))
+import           Servant.API.Experimental.Auth
+                 (AuthProtect)
+import           Servant.API.Header
+                 (Header')
+import           Servant.API.HttpVersion
+                 (HttpVersion)
+import           Servant.API.IsSecure
+                 (IsSecure)
+import           Servant.API.Modifiers
+                 (FoldRequired)
+import           Servant.API.QueryParam
+                 (QueryFlag, QueryParam', QueryParams)
+import           Servant.API.Raw
+                 (Raw)
+import           Servant.API.RemoteHost
+                 (RemoteHost)
+import           Servant.API.ReqBody
+                 (ReqBody')
+import           Servant.API.Stream
+                 (Stream)
+import           Servant.API.Sub
+                 (type (:>))
+import           Servant.API.TypeLevel
+import           Servant.API.Vault
+                 (Vault)
+import           Servant.API.Verbs
+                 (Verb)
+import           Servant.API.WithNamedContext
+                 (WithNamedContext)
+import           Web.HttpApiData
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any

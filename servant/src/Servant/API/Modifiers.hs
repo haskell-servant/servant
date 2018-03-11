@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
@@ -19,10 +19,14 @@ module Servant.API.Modifiers (
     unfoldRequestArgument,
     ) where
 
-import Data.Proxy           (Proxy (..))
-import Data.Singletons.Bool (SBool (..), SBoolI (..))
-import Data.Text            (Text)
-import Data.Type.Bool       (If)
+import           Data.Proxy
+                 (Proxy (..))
+import           Data.Singletons.Bool
+                 (SBool (..), SBoolI (..))
+import           Data.Text
+                 (Text)
+import           Data.Type.Bool
+                 (If)
 
 -- | Required argument. Not wrapped.
 data Required

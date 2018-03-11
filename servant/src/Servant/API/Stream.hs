@@ -1,26 +1,34 @@
-{-# LANGUAGE DataKinds                #-}
-{-# LANGUAGE DeriveDataTypeable       #-}
-{-# LANGUAGE DeriveGeneric            #-}
-{-# LANGUAGE FlexibleInstances        #-}
-{-# LANGUAGE KindSignatures           #-}
-{-# LANGUAGE MultiParamTypeClasses    #-}
-{-# LANGUAGE OverloadedStrings        #-}
-{-# LANGUAGE PolyKinds                #-}
-{-# LANGUAGE RankNTypes               #-}
-{-# LANGUAGE TupleSections            #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TupleSections         #-}
 {-# OPTIONS_HADDOCK not-home          #-}
 
 module Servant.API.Stream where
 
-import           Data.ByteString.Lazy        (ByteString, empty)
-import qualified Data.ByteString.Lazy.Char8  as LB
-import           Data.Monoid                 ((<>))
-import           Data.Proxy                  (Proxy)
-import           Data.Typeable               (Typeable)
-import           GHC.Generics                (Generic)
-import           Text.Read                   (readMaybe)
-import           Control.Arrow               (first)
-import           Network.HTTP.Types.Method   (StdMethod (..))
+import           Control.Arrow
+                 (first)
+import           Data.ByteString.Lazy
+                 (ByteString, empty)
+import qualified Data.ByteString.Lazy.Char8 as LB
+import           Data.Monoid
+                 ((<>))
+import           Data.Proxy
+                 (Proxy)
+import           Data.Typeable
+                 (Typeable)
+import           GHC.Generics
+                 (Generic)
+import           Network.HTTP.Types.Method
+                 (StdMethod (..))
+import           Text.Read
+                 (readMaybe)
 
 -- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Steam endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
 data Stream (method :: k1) (framing :: *) (contentType :: *) (a :: *)

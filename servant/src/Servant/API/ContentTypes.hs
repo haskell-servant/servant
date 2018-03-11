@@ -71,32 +71,38 @@ module Servant.API.ContentTypes
     , canHandleAcceptH
     ) where
 
-import           Control.Arrow                    (left)
+import           Control.Arrow
+                 (left)
 import           Control.Monad.Compat
-import           Data.Aeson                       (FromJSON(..), ToJSON(..), encode)
-import           Data.Aeson.Parser                (value)
-import           Data.Aeson.Types                 (parseEither)
-import           Data.Attoparsec.ByteString.Char8 (endOfInput, parseOnly,
-                                                   skipSpace, (<?>))
+import           Data.Aeson
+                 (FromJSON (..), ToJSON (..), encode)
+import           Data.Aeson.Parser
+                 (value)
+import           Data.Aeson.Types
+                 (parseEither)
+import           Data.Attoparsec.ByteString.Char8
+                 (endOfInput, parseOnly, skipSpace, (<?>))
 import qualified Data.ByteString                  as BS
-import           Data.ByteString.Lazy             (ByteString, fromStrict,
-                                                   toStrict)
+import           Data.ByteString.Lazy
+                 (ByteString, fromStrict, toStrict)
 import qualified Data.ByteString.Lazy.Char8       as BC
 import qualified Data.List.NonEmpty               as NE
-import           Data.Maybe                       (isJust)
-import           Data.String.Conversions          (cs)
+import           Data.Maybe
+                 (isJust)
+import           Data.String.Conversions
+                 (cs)
 import qualified Data.Text                        as TextS
 import qualified Data.Text.Encoding               as TextS
 import qualified Data.Text.Lazy                   as TextL
 import qualified Data.Text.Lazy.Encoding          as TextL
 import           Data.Typeable
-import           GHC.Generics                     (Generic)
+import           GHC.Generics
+                 (Generic)
 import qualified Network.HTTP.Media               as M
-import           Web.FormUrlEncoded               (FromForm, ToForm,
-                                                   urlEncodeAsForm,
-                                                   urlDecodeAsForm)
-import           Prelude                          ()
+import           Prelude ()
 import           Prelude.Compat
+import           Web.FormUrlEncoded
+                 (FromForm, ToForm, urlDecodeAsForm, urlEncodeAsForm)
 
 #if MIN_VERSION_base(4,9,0)
 import qualified GHC.TypeLits                     as TL

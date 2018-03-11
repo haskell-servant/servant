@@ -3,8 +3,8 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Description (
     -- * Combinators
@@ -16,9 +16,12 @@ module Servant.API.Description (
     reflectDescription,
     ) where
 
-import           Data.Typeable (Typeable)
-import           GHC.TypeLits  (Symbol, KnownSymbol, symbolVal)
-import           Data.Proxy    (Proxy (..))
+import           Data.Proxy
+                 (Proxy (..))
+import           Data.Typeable
+                 (Typeable)
+import           GHC.TypeLits
+                 (KnownSymbol, Symbol, symbolVal)
 
 -- | Add a short summary for (part of) API.
 --
