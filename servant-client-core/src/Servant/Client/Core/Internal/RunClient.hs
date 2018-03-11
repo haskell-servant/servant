@@ -10,6 +10,7 @@ import           Prelude                              ()
 import           Prelude.Compat
 
 import           Control.Monad                        (unless)
+import           Control.Monad.Free                   (Free (..), liftF)
 import           Data.Foldable                        (toList)
 import           Data.Proxy                           (Proxy)
 import qualified Data.Text                            as T
@@ -18,16 +19,17 @@ import           Network.HTTP.Media                   (MediaType, matches,
 import           Servant.API                          (MimeUnrender,
                                                        contentTypes,
                                                        mimeUnrender)
+
 import           Servant.Client.Core.Internal.Request (Request, Response, GenResponse (..),
                                                        StreamingResponse (..),
                                                        ServantError (..))
+import           Servant.Client.Core.Internal.ClientF
 
-class (Monad m) => RunClient m where
+class Monad m => RunClient m where
   -- | How to make a request.
   runRequest :: Request -> m Response
   streamingRequest :: Request -> m StreamingResponse
   throwServantError :: ServantError -> m a
-  catchServantError :: m a -> (ServantError -> m a) -> m a
 
 checkContentTypeHeader :: RunClient m => Response -> m MediaType
 checkContentTypeHeader response =
@@ -48,3 +50,8 @@ decodedAs response contentType = do
     Right val -> return val
   where
     accept = toList $ contentTypes contentType
+
+instance ClientF ~ f => RunClient (Free f) where
+    runRequest req  = liftF (RunRequest req id)
+    streamingRequest req = liftF (StreamingRequest req id)
+    throwServantError = liftF . Throw

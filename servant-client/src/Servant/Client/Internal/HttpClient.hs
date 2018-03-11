@@ -96,7 +96,6 @@ instance RunClient ClientM where
   runRequest = performRequest
   streamingRequest = performStreamingRequest
   throwServantError = throwError
-  catchServantError = catchError
 
 instance ClientLike (ClientM a) (ClientM a) where
   mkClient = id

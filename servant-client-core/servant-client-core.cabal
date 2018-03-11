@@ -31,10 +31,12 @@ source-repository head
 library
   exposed-modules:
       Servant.Client.Core
+      Servant.Client.Free
       Servant.Client.Core.Reexport
       Servant.Client.Core.Internal.Auth
       Servant.Client.Core.Internal.BaseUrl
       Servant.Client.Core.Internal.BasicAuth
+      Servant.Client.Core.Internal.ClientF
       Servant.Client.Core.Internal.Generic
       Servant.Client.Core.Internal.HasClient
       Servant.Client.Core.Internal.Request
@@ -65,6 +67,7 @@ library
       base-compat           >= 0.9.3    && < 0.10
     , base64-bytestring     >= 1.0.0.1  && < 1.1
     , exceptions            >= 0.8.3    && < 0.9
+    , free                  >= 5.0.1    && < 5.1
     , generics-sop          >= 0.3.1.0  && < 0.4
     , http-api-data         >= 0.3.7.1  && < 0.4
     , http-media            >= 0.7.1.1  && < 0.8
