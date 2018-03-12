@@ -48,7 +48,7 @@ dedicated `ReqBody`-like combinator named
 This combinator takes two parameters. The first one is the
 "backend" to use. Currently, you only have the choice between
 `Mem` and `Tmp`. The former loads the entire input in memory,
-even the uploadedd files, while `Tmp` will stream uploaded
+even the uploaded files, while `Tmp` will stream uploaded
 files to some temporary directory.
 
 The second parameter is the type you want the multipart data
