@@ -61,7 +61,7 @@ to flexibly set up a whole bunch of PostgreSQL connections tailored to our
 needs and then to forget about it all by simply asking for a connection
 using `withResource`.
 
-The handlers are straighforward. One takes care of inserting a new
+The handlers are straightforward. One takes care of inserting a new
 value in the database while the other fetches all messages and returns
 them. We also provide a function for serving our web app given a PostgreSQL
 connection pool, which simply calls servant-server's `serve` function.

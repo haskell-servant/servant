@@ -42,9 +42,9 @@ initDB dbfile = withConnection dbfile $ \conn ->
     "CREATE TABLE IF NOT EXISTS messages (msg text not null)"
 ```
 
-Next, our server implementation. It will be parametrised (take as
+Next, our server implementation. It will be parametrised (take as an
 argument) by the name of the file that contains our SQLite database.
-The handlers are straighforward. One takes care of inserting a new
+The handlers are straightforward. One takes care of inserting a new
 value in the database while the other fetches all messages and returns
 them. We also provide a function for serving our web app given an
 SQLite database file, which simply calls servant-server's `serve` function.
