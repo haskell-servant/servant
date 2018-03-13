@@ -1,9 +1,9 @@
 name:                servant-client
 version:             0.13
-synopsis: automatical derivation of querying functions for servant webservices
+synopsis: Automatic derivation of querying functions for servant webservices
 description:
-  This library lets you derive automatically Haskell functions that
-  let you query each endpoint of a <http://hackage.haskell.org/package/servant servant> webservice.
+  This library lets you automatically derive Haskell functions that
+  query each endpoint of a <http://hackage.haskell.org/package/servant servant> webservice.
   .
   See <http://haskell-servant.readthedocs.org/en/stable/tutorial/Client.html the client section of the tutorial>.
   .
@@ -12,7 +12,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2017 Servant Contributors
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2018 Servant Contributors
 category:            Servant, Web
 build-type:          Simple
 cabal-version:       >=1.10
@@ -21,6 +21,7 @@ tested-with:
   GHC==7.10.3
   GHC==8.0.2
   GHC==8.2.2
+  GHC==8.4.1
 homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
@@ -41,7 +42,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                  >= 4.7      && < 4.11
+      base                  >= 4.7      && < 4.12
     , bytestring            >= 0.10.4.0 && < 0.11
     , containers            >= 0.5.5.1  && < 0.6
     , mtl                   >= 2.1      && < 2.3
