@@ -66,7 +66,7 @@ library
   build-depends:
       base-compat           >= 0.9.3    && < 0.10
     , base64-bytestring     >= 1.0.0.1  && < 1.1
-    , exceptions            >= 0.8.3    && < 0.9
+    , exceptions            >= 0.8.3    && < 0.11
     , free                  >= 5.0.1    && < 5.1
     , generics-sop          >= 0.3.1.0  && < 0.4
     , http-api-data         >= 0.3.7.1  && < 0.4

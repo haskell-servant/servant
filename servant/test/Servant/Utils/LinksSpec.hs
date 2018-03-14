@@ -15,7 +15,7 @@ import           Test.Hspec              (Expectation, Spec, describe, it,
 import           Data.String             (fromString)
 
 import           Servant.API
-import           Servant.Utils.Links     (allLinks, linkURI)
+import           Servant.Utils.Links
 import           Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
 
 type TestApi =
