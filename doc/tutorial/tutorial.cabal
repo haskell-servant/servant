@@ -34,7 +34,7 @@ library
   -- Packages `servant` depends on.
   -- We don't need to specify bounds here as this package is never released.
   build-depends:
-      base >= 4.7 && <4.11
+      base >= 4.7 && <4.12
     , aeson
     , aeson-compat
     , attoparsec
