@@ -21,6 +21,7 @@ tested-with:
   GHC==7.10.3
   GHC==8.0.2
   GHC==8.2.2
+  GHC==8.4.2
 homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
@@ -42,7 +43,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base       >= 4.7      && < 4.11
+      base       >= 4.7      && < 4.12
     , bytestring >= 0.10.4.0 && < 0.11
     , text       >= 1.2.3.0  && < 1.3
 
