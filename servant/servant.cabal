@@ -18,10 +18,11 @@ category:            Servant, Web
 build-type:          Custom
 cabal-version:       >=1.10
 tested-with:
-  GHC==7.8.4
-  GHC==7.10.3
-  GHC==8.0.2
-  GHC==8.2.2
+  GHC==7.8.4,
+  GHC==7.10.3,
+  GHC==8.0.2,
+  GHC==8.2.2,
+  GHC==8.4.1
 extra-source-files:
   include/*.h
   CHANGELOG.md

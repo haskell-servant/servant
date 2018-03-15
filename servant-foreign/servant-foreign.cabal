@@ -23,10 +23,11 @@ extra-source-files:
   README.md
 bug-reports:         http://github.com/haskell-servant/servant/issues
 tested-with:
-  GHC==7.8.4
-  GHC==7.10.3
-  GHC==8.0.2
-  GHC==8.2.2
+  GHC==7.8.4,
+  GHC==7.10.3,
+  GHC==8.0.2,
+  GHC==8.2.2,
+  GHC==8.4.1
 
 source-repository head
   type: git
