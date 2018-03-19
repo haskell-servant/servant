@@ -29,14 +29,12 @@ module Servant.StreamSpec (spec) where
 import           Control.Monad       (replicateM_, void)
 import qualified Data.ByteString     as BS
 import           Data.Proxy
-import           GHC.Stats           (currentBytesUsed, getGCStats)
+import           GHC.Stats
 import qualified Network.HTTP.Client as C
 import           Prelude             ()
 import           Prelude.Compat
-import           System.IO           (IOMode (ReadMode), withFile)
 import           System.IO.Unsafe    (unsafePerformIO)
 import           Test.Hspec
-import           Test.QuickCheck
 
 import           Servant.API         ((:<|>) ((:<|>)), (:>), JSON,
                                       NetstringFraming, NewlineFraming,
@@ -46,6 +44,7 @@ import           Servant.Client
 import           Servant.ClientSpec  (Person (..))
 import qualified Servant.ClientSpec  as CS
 import           Servant.Server
+import           Data.ByteString.Random.MWC       (random)
 
 
 spec :: Spec
@@ -81,17 +80,17 @@ server = serve sapi
   :<|> return (StreamGenerator lotsGenerator)
   where
     lotsGenerator f r = do
-      f ""
-      withFile "/dev/urandom" ReadMode $
-        \handle -> streamFiveMBNTimes handle 1000 r
+      _ <- f ""
+      streamFiveMBNTimes 1000 r
       return ()
 
-    streamFiveMBNTimes handle left sink
-      | left <= 0 = return ""
+    streamFiveMBNTimes :: Int -> (BS.ByteString -> IO ()) -> IO ()
+    streamFiveMBNTimes left sink
+      | left <= 0 = return ()
       | otherwise = do
-          msg <- BS.hGet handle (megabytes 5)
+          msg <- random (megabytes 5)
           sink msg
-          streamFiveMBNTimes handle (left - 1) sink
+          streamFiveMBNTimes (left - 1) sink
 
 
 
@@ -129,8 +128,12 @@ streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
        Right (ResultStream res) <- runClient getGetALot baseUrl
        let consumeNChunks n = replicateM_ n (res void)
        consumeNChunks 900
+#if MIN_VERSION_base(4,9,0)
+       memUsed <- max_mem_in_use_bytes <$> getRTSStats
+#else
        memUsed <- currentBytesUsed <$> getGCStats
+#endif
        memUsed `shouldSatisfy` (< (megabytes 20))
 
 megabytes :: Num a => a -> a
-megabytes n = n * (1000 ^ 2)
+megabytes n = n * (1000 ^ (2 :: Int))
