@@ -66,9 +66,9 @@ a server for `FactoringAPI` (without the `'`) reflects the
 server must be a function that takes an `Int` (the `Capture`) and
 returns two values glued with `:<|>`, one of type `Maybe Int -> Handler Int`
 and the other of type `Handler Int`. Let's provide such a server
-implementation.
+implementation, with those "nested types".
 
-_Note_: you can load this module in ghci and ask for the concrete
+**Tip**: you can load this module in ghci and ask for the concrete
 type that `Server FactoringAPI` "resolves to" by typing
 `:kind! Server FactoringAPI`.
 
@@ -81,6 +81,16 @@ factoringServer x = getXY :<|> postX
 
         postX = return (x - 1)
 ```
+
+If you want to avoid the "nested types" and the need to manually
+dispatch the arguments (like `x` above) to the different request
+handlers, and would just like to be able to declare the API type
+as above but pretending that the `Capture` is not factored out,
+that every combinator is "distributed" (i.e that all endpoints
+are specified like `FactoringAPI'` above), then you should
+look at `flatten` from the
+[servant-flatten](https://hackage.haskell.org/package/servant-flatten)
+package.
 
 Next come the two sub-APIs defined in terms of this `SimpleAPI`
 type, but with different parameters. That type is just a good old
