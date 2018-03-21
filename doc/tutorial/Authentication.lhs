@@ -409,6 +409,8 @@ As of `0.5`, *servant-client* comes with support for basic authentication!
 Endpoints protected by Basic Authentication will require a value of type
 `BasicAuthData` to complete the request.
 
+You can find more comprehensive Basic Authentication example in the [Cookbook](../cookbook/basic-auth/BasicAuth.html).
+
 ### Generalized Authentication
 
 Servant `0.5` also shipped with support for generalized authentication. Similar
