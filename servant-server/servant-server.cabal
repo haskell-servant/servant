@@ -82,7 +82,7 @@ library
     , base64-bytestring   >= 1.0.0.1  && < 1.1
     , exceptions          >= 0.8.3    && < 0.11
     , http-api-data       >= 0.3.7.1  && < 0.4
-    , http-media          >= 0.7.1.1  && < 0.8
+    , http-media          >= 0.7.0    && < 0.8
     , http-types          >= 0.12     && < 0.13
     , network-uri         >= 2.6.1.0  && < 2.7
     , monad-control       >= 1.0.0.4  && < 1.1
