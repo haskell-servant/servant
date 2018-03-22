@@ -1,5 +1,6 @@
 name:                servant-client-core
 version:             0.13
+x-revision:          1
 synopsis:            Core functionality and class for client function generation for servant APIs
 description:
   This library provides backend-agnostic generation of client functions. For
