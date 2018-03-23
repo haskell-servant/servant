@@ -15,7 +15,6 @@
 module Servant.Client.Internal.XhrClient where
 
 import           Control.Arrow
-import           Data.ByteString.Builder     (toLazyByteString)
 import           Control.Concurrent
 import           Control.Exception
 import           Control.Monad
@@ -25,13 +24,15 @@ import           Control.Monad.Error.Class   (MonadError (..))
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Control (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
-import qualified Data.ByteString.Char8 as BS
+import           Data.ByteString.Builder     (toLazyByteString)
+import qualified Data.ByteString.Char8       as BS
 import           Data.CaseInsensitive
 import           Data.Char
 import           Data.Foldable               (toList)
 import           Data.Functor.Alt            (Alt (..))
+import           Data.IORef                  (modifyIORef, newIORef, readIORef)
 import           Data.Proxy                  (Proxy (..))
-import qualified Data.Sequence           as Seq
+import qualified Data.Sequence               as Seq
 import           Data.String.Conversions
 import           Foreign.StablePtr
 import           GHC.Generics
@@ -39,8 +40,8 @@ import           GHCJS.Foreign.Callback
 import           GHCJS.Prim
 import           GHCJS.Types
 import           JavaScript.Web.Location
+import           Network.HTTP.Media          (renderHeader)
 import           Network.HTTP.Types
-import           Network.HTTP.Media (renderHeader)
 import           Servant.Client.Core
 
 newtype JSXMLHttpRequest = JSXMLHttpRequest JSVal
@@ -152,7 +153,8 @@ performXhr xhr burl request = do
 
         openXhr xhr (cs $ requestMethod request) (toUrl burl request) True
         setHeaders xhr request
-        sendXhr xhr (toBody request)
+        body <- toBody request
+        sendXhr xhr body
         takeMVar waiter
 
         freeStablePtr s
@@ -226,11 +228,31 @@ foreign import javascript unsafe "$1.send()"
 foreign import javascript unsafe "$1.send($2)"
   js_sendXhrWithBody :: JSXMLHttpRequest -> JSVal -> IO ()
 
-toBody :: Request -> Maybe String
+toBody :: Request -> IO (Maybe String)
 toBody request = case requestBody request of
-  Nothing -> Nothing
-  Just (RequestBodyLBS "", _) -> Nothing
-  Just (RequestBodyLBS x, _) -> Just $ cs x
+  Nothing -> return Nothing
+  Just (a, _) -> go a
+
+  where
+    go :: RequestBody -> IO (Maybe String)
+    go x = case x of
+      RequestBodyLBS x -> return $ mBody x
+      RequestBodyBS x -> return $ mBody x
+      RequestBodyBuilder _ x -> return $ mBody $ toLazyByteString x
+      RequestBodyStream _ x -> mBody <$> readBody x
+      RequestBodyStreamChunked x -> mBody <$> readBody x
+      RequestBodyIO x -> x >>= go
+
+    mBody :: ConvertibleStrings a String => a -> Maybe String
+    mBody x = let y = cs x in if y == "" then Nothing else Just y
+
+    readBody writer = do
+      m <- newIORef mempty
+      _ <- writer (\bsAct -> do
+        bs <- bsAct
+        modifyIORef m (<> bs))
+      readIORef m
+
 
 -- * inspecting the xhr response
 

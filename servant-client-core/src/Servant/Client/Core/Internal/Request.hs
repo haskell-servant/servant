@@ -1,14 +1,14 @@
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveFoldable             #-}
-{-# LANGUAGE DeriveTraversable          #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveFoldable        #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DeriveTraversable     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Servant.Client.Core.Internal.Request where
 
@@ -16,9 +16,10 @@ import           Prelude                 ()
 import           Prelude.Compat
 
 import           Control.Monad.Catch     (Exception)
-import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString         as BS
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy    as LBS
+import           Data.Int                (Int64)
 import           Data.Semigroup          ((<>))
 import qualified Data.Sequence           as Seq
 import           Data.Text               (Text)
@@ -58,13 +59,19 @@ data RequestF a = Request
   , requestHeaders     :: Seq.Seq Header
   , requestHttpVersion :: HttpVersion
   , requestMethod      :: Method
-  } deriving (Eq, Show, Functor, Generic, Typeable)
+  } deriving (Generic, Typeable)
 
 type Request = RequestF Builder.Builder
 
--- | The request body. Currently only lazy ByteStrings are supported.
-newtype RequestBody = RequestBodyLBS LBS.ByteString
-  deriving (Eq, Ord, Read, Show, Typeable)
+-- | The request body. A replica of the @http-client@ @RequestBody@.
+data RequestBody
+  = RequestBodyLBS LBS.ByteString
+  | RequestBodyBS BS.ByteString
+  | RequestBodyBuilder Int64 Builder.Builder
+  | RequestBodyStream Int64 ((IO BS.ByteString -> IO ()) -> IO ())
+  | RequestBodyStreamChunked ((IO BS.ByteString -> IO ()) -> IO ())
+  | RequestBodyIO (IO RequestBody)
+  deriving (Generic, Typeable)
 
 data GenResponse a = Response
   { responseStatusCode  :: Status
