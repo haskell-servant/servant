@@ -5,15 +5,19 @@ import Data.ByteString     (ByteString)
 import qualified Data.ByteString.Lazy as LB
 import Data.Function       (on)
 import Network.HTTP.Client (Response, responseBody)
+import Data.Semigroup      (Semigroup (..))
 import Prelude.Compat
 
 newtype ResponseEquality b
   = ResponseEquality { getResponseEquality :: Response b -> Response b -> Bool }
 
+instance Semigroup (ResponseEquality b) where
+  ResponseEquality a <> ResponseEquality b = ResponseEquality $ \x y ->
+    a x y && b x y  
+
 instance Monoid (ResponseEquality b) where
   mempty = ResponseEquality $ \_ _ -> True
-  ResponseEquality a `mappend` ResponseEquality b = ResponseEquality $ \x y ->
-    a x y && b x y
+  mappend = (<>)
 
 -- | Use `Eq` instance for `Response`
 --

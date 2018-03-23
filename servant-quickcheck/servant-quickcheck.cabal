@@ -1,5 +1,5 @@
 name:                servant-quickcheck
-version:             0.0.6.0
+version:             0.0.7.0
 synopsis:            QuickCheck entire APIs
 description:
  This packages provides QuickCheck properties that are tested across an entire
@@ -17,7 +17,8 @@ extra-source-files:
 tested-with:
   GHC==7.10.3,
   GHC==8.0.2,
-  GHC==8.2.2
+  GHC==8.2.2,
+  GHC==8.4.1
 
 source-repository head
   type: git
@@ -35,14 +36,14 @@ library
                      , Servant.QuickCheck.Internal.QuickCheck
                      , Servant.QuickCheck.Internal.Equality
                      , Servant.QuickCheck.Internal.ErrorTypes
-  build-depends:       base >=4.8 && <4.11
+  build-depends:       base >=4.8 && <4.12
                      , base-compat == 0.9.*
                      , aeson > 0.8 && < 2
                      , bytestring == 0.10.*
                      , case-insensitive == 1.2.*
                      , clock >= 0.7 && < 0.8
                      , data-default-class >= 0.0 && < 0.2
-                     , hspec >= 2.2 && < 2.5
+                     , hspec >= 2.5 && < 2.6
                      , http-client >= 0.4.30 && < 0.6
                      , http-media >= 0.6 && <0.8
                      , http-types > 0.8 && < 0.13
@@ -59,6 +60,10 @@ library
                      , text == 1.*
                      , time >= 1.5 && < 1.9
                      , warp >= 3.2.4 && < 3.3
+
+  if !impl(ghc >= 8.0)
+    build-depends:
+      semigroups >= 0.18.3 && <0.19
 
   hs-source-dirs:      src
   default-extensions:  TypeOperators
@@ -87,7 +92,7 @@ test-suite spec
   main-is:             Spec.hs
   other-modules:       Servant.QuickCheck.InternalSpec
   build-tool-depends:  hspec-discover:hspec-discover
-  build-depends:       base == 4.*
+  build-depends:       base
                      , base-compat
                      , aeson
                      , servant-quickcheck
