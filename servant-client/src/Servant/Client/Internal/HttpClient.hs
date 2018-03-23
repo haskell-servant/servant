@@ -6,6 +6,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 module Servant.Client.Internal.HttpClient where
@@ -69,6 +70,16 @@ mkClientEnv mgr burl = ClientEnv mgr burl Nothing
 -- > getInt :<|> getBools = client api
 client :: HasClient ClientM api => Proxy api -> Client ClientM api
 client api = api `clientIn` (Proxy :: Proxy ClientM)
+
+-- | Change the monad the client functions live in, by
+--   supplying a natural transformation.
+hoistClient
+  :: HasClient ClientM api
+  => Proxy api
+  -> (forall a. m a -> n a)
+  -> Client m api
+  -> Client n api
+hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
