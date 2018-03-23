@@ -11,7 +11,7 @@ import           Data.CaseInsensitive  (foldCase, foldedCase, mk)
 import           Data.Either           (isRight)
 import           Data.List.Split       (wordsBy)
 import           Data.Maybe            (fromMaybe, isJust)
-import           Data.Monoid           ((<>))
+import           Data.Semigroup        (Semigroup (..))
 import qualified Data.Text             as T
 import           Data.Time             (UTCTime, defaultTimeLocale, parseTimeM,
                                         rfc822DateFormat)
@@ -377,9 +377,12 @@ newtype ResponsePredicate = ResponsePredicate
   { getResponsePredicate :: Response LBS.ByteString -> IO ()
   } deriving (Generic)
 
+instance Semigroup ResponsePredicate where
+  ResponsePredicate a <> ResponsePredicate b = ResponsePredicate $ \x -> a x >> b x
+
 instance Monoid ResponsePredicate where
   mempty = ResponsePredicate $ const $ return ()
-  ResponsePredicate a `mappend` ResponsePredicate b = ResponsePredicate $ \x -> a x >> b x
+  mappend = (<>)
 
 -- | A predicate that depends on both the request and the response.
 --
@@ -391,7 +394,11 @@ newtype RequestPredicate = RequestPredicate
 -- TODO: This isn't actually a monoid
 instance Monoid RequestPredicate where
   mempty = RequestPredicate (\r m -> httpLbs r m >>= \x -> return ([x]))
-  RequestPredicate a `mappend` RequestPredicate b = RequestPredicate $ \r mgr ->
+  mappend = (<>)
+
+-- TODO: This isn't actually a monoid
+instance Semigroup RequestPredicate where
+  RequestPredicate a <> RequestPredicate b = RequestPredicate $ \r mgr ->
     liftM2 (<>) (a r mgr) (b r mgr)
 
 -- | A set of predicates. Construct one with 'mempty' and '<%>'.
@@ -400,10 +407,13 @@ data Predicates = Predicates
   , responsePredicates :: ResponsePredicate
   } deriving (Generic)
 
+instance Semigroup Predicates where
+  a <> b = Predicates (requestPredicates a <> requestPredicates b)
+                      (responsePredicates a <> responsePredicates b)
+
 instance Monoid Predicates where
   mempty = Predicates mempty mempty
-  a `mappend` b = Predicates (requestPredicates a <> requestPredicates b)
-                             (responsePredicates a <> responsePredicates b)
+  mappend = (<>)
 
 class JoinPreds a where
   joinPreds :: a -> Predicates -> Predicates

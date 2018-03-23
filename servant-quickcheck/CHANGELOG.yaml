@@ -1,6 +1,17 @@
-upcoming:
-
 releases:
+
+  - version: "0.0.7.0"
+    changes:
+
+      - description: Support for GHC-8.4.1
+        issue: none
+        authors: phadej
+        date: 2018-03-23
+
+      - description: Requires hspec-2.5
+        issue: none
+        authors: phadej
+        date: 2018-03-23
 
   - version: "0.0.6.0"
     changes:

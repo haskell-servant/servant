@@ -17,8 +17,8 @@ import qualified Text.Blaze.Html         as Blaze
 import qualified Text.Blaze.Html5        as Blaze5
 import           Test.Hspec              (Spec, context, describe, it, shouldBe,
                                           shouldContain)
-import           Test.Hspec.Core.Spec    (Arg, Example, Result (..),
-                                          defaultParams)
+import           Test.Hspec.Core.Spec    (Arg, Example, Result (..), ResultStatus (..),
+                                          defaultParams, safeEvaluateExample)
 import           Test.QuickCheck.Gen     (generate, unGen)
 import           Test.QuickCheck.Random  (mkQCGen)
 
@@ -28,13 +28,6 @@ import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
 #else
 import Servant.API.Internal.Test.ComprehensiveAPI (ComprehensiveAPI,
                                                    comprehensiveAPI)
-#endif
-
-#if MIN_VERSION_hspec(2,4,0)
-import Test.Hspec.Core.Spec (safeEvaluateExample)
-#else
-import Control.Exception    (try)
-import Test.Hspec.Core.Spec (evaluateExample)
 #endif
 
 import Servant.QuickCheck
@@ -349,27 +342,14 @@ ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
 -- Utils
 ------------------------------------------------------------------------------
 evalExample :: (Example e, Arg e ~ ()) => e -> IO EvalResult
-#if MIN_VERSION_hspec(2,4,0)
 evalExample e = do
   r <- safeEvaluateExample e defaultParams ($ ()) progCallback
-  case r of
-    Left err -> return $ AnException err
-    Right Success -> return $ AllGood
-    Right (Failure _ reason) -> return $ FailedWith $ show reason
-    Right (Pending _) -> error "should not happen"
+  case resultStatus r of
+    Success          -> return $ AllGood
+    Failure _ reason -> return $ FailedWith $ show reason
+    Pending {}       -> error "should not happen"
   where
     progCallback _ = return ()
-#else
-evalExample e = do
-  r <- try $ evaluateExample e defaultParams ($ ()) progCallback
-  case r of
-    Left err -> return $ AnException err
-    Right Success -> return $ AllGood
-    Right (Fail _ reason) -> return $ FailedWith reason
-    Right (Pending _) -> error "should not happen"
-  where
-    progCallback _ = return ()
-#endif
 
 data EvalResult
   = AnException SomeException

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Servant.QuickCheck.Internal.ErrorTypes where
 
 import           Control.Exception       (Exception (..))
@@ -8,8 +9,13 @@ import           Data.Typeable           (Typeable)
 import           GHC.Generics            (Generic)
 import qualified Network.HTTP.Client     as C
 import           Network.HTTP.Types      (Header, statusCode)
-import           Prelude.Compat
 import           Text.PrettyPrint
+
+#if MIN_VERSION_base(4,11,0)
+import           Prelude.Compat hiding ((<>))
+#else
+import           Prelude.Compat
+#endif
 
 data PredicateFailure
   = PredicateFailure T.Text (Maybe C.Request) (C.Response LBS.ByteString)
