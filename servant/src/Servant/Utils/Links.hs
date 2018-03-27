@@ -80,7 +80,8 @@
 --  bad_link under api after trying the open (but empty) type family
 --  `IsElem'` as a last resort.
 module Servant.Utils.Links (
-  module Servant.API.TypeLevel,
+  module Servant.Utils.Links, URI(..), safeLink, module Servant.API.TypeLevel
+{-  module Servant.API.TypeLevel,
 
   -- * Building and using safe links
   --
@@ -97,7 +98,7 @@ module Servant.Utils.Links (
   -- ** Link accessors
   , Param (..)
   , linkSegments
-  , linkQueryParams
+  , linkQueryParams -}
 ) where
 
 import           Data.List
@@ -112,7 +113,7 @@ import qualified Data.Text.Encoding            as TE
 import           Data.Type.Bool
                  (If)
 import           GHC.TypeLits
-                 (KnownSymbol, symbolVal)
+                 (Symbol, KnownSymbol, symbolVal)
 import           Network.URI
                  (URI (..), escapeURIString, isUnreserved)
 import           Prelude ()
@@ -163,8 +164,9 @@ import           Web.HttpApiData
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
 -- 'Link' is guaranteed to be part of the mentioned API.
 data Link = Link
-  { _segments    :: [Escaped]
-  , _queryParams :: [Param]
+  { _segments      :: [Escaped]
+  , _queryParams   :: [Param]
+  , _hashFragments :: [Escaped] -- what comes after #
   } deriving Show
 
 newtype Escaped = Escaped String
@@ -204,6 +206,9 @@ addSegment seg l = l { _segments = _segments l <> [seg] }
 addQueryParam :: Param -> Link -> Link
 addQueryParam qp l =
     l { _queryParams = _queryParams l <> [qp] }
+
+addHashFragment :: Escaped -> Link -> Link
+addHashFragment seg l = l { _hashFragments = _hashFragments l <> [seg] }
 
 -- | Transform 'Link' into 'URI'.
 --
@@ -246,11 +251,12 @@ data LinkArrayElementStyle
 -- sum?x=1&x=2&x=3
 --
 linkURI' :: LinkArrayElementStyle -> Link -> URI
-linkURI' addBrackets (Link segments q_params) =
+linkURI' addBrackets (Link segments q_params fragments) =
     URI mempty  -- No scheme (relative)
         Nothing -- Or authority (relative)
         (intercalate "/" $ map getEscaped segments)
-        (makeQueries q_params) mempty
+        (makeQueries q_params)
+        (intercalate "/" $ map getEscaped fragments)
   where
     makeQueries :: [Param] -> String
     makeQueries [] = ""
@@ -277,7 +283,7 @@ safeLink
     => Proxy api      -- ^ The whole API that this endpoint is a part of
     -> Proxy endpoint -- ^ The API endpoint you would like to point to
     -> MkLink endpoint
-safeLink _ endpoint = toLink endpoint (Link mempty mempty)
+safeLink _ endpoint = toLink endpoint (Link mempty mempty mempty)
 
 -- | Create all links in an API.
 --
@@ -301,7 +307,7 @@ allLinks
     :: forall api. HasLink api
     => Proxy api
     -> MkLink api
-allLinks api = toLink api (Link mempty mempty)
+allLinks api = toLink api (Link mempty mempty mempty)
 
 -- | Construct a toLink for an endpoint.
 class HasLink endpoint where
@@ -431,6 +437,39 @@ instance HasLink (Stream m fr ct a) where
 instance HasLink sub => HasLink (AuthProtect tag :> sub) where
   type MkLink (AuthProtect tag :> sub) = MkLink sub
   toLink _ = toLink (Proxy :: Proxy sub)
+
+-- #-prefixed URL fragments
+
+-- | A combinator for specifying what we expect to see
+--   in the URL fragments that come after the hash in URLs.
+--   The type @a@ contains such a description.
+data Hash (fragments :: [*])
+
+-- | a wrapper for static path, which allows us to store
+--   (wrapped) type-level strings in a type-level list whose
+--   elements (which are types) have kind *.
+data P (sym :: Symbol)
+
+instance HasLink sub => HasLink (Hash '[] :> sub) where
+  type MkLink (Hash '[] :> sub) = MkLink sub
+  toLink _ = toLink (Proxy :: Proxy sub)
+
+instance (KnownSymbol (sym :: Symbol), HasLink (Hash xs :> sub))
+      => HasLink (Hash (P sym ': xs) :> sub) where
+  type MkLink (Hash (P sym ': xs) :> sub) = MkLink (Hash xs :> sub)
+  toLink _ l = toLink (Proxy :: Proxy (Hash xs :> sub)) $
+    addHashFragment str l
+
+    where str = escaped (symbolVal (Proxy :: Proxy sym))
+
+instance (ToHttpApiData a, HasLink (Hash xs :> sub))
+      => HasLink (Hash (Capture' s mods a ': xs) :> sub) where
+  type MkLink (Hash (Capture' s mods a ': xs) :> sub)
+    = a -> MkLink (Hash xs :> sub)
+  toLink _ l a = toLink (Proxy :: Proxy (Hash xs :> sub)) $
+    addHashFragment str l
+
+    where str = escaped $ Text.unpack (toUrlPiece a)
 
 -- $setup
 -- >>> import Servant.API

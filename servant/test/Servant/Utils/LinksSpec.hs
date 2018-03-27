@@ -93,6 +93,9 @@ spec = describe "Servant.Utils.Links" $ do
         let (firstLink :<|> _) = allLinks comprehensiveAPIWithoutRaw
         firstLink `shouldBeLink` ""
 
+    it "generates correct links for hash-fragments" $ do
+        testLinkFragments 12 'c' "hello" True `shouldBe` "bar/c/hello"
+
 -- |
 -- Before https://github.com/CRogers/should-not-typecheck/issues/5 is fixed,
 -- we'll just use doctest
@@ -139,3 +142,13 @@ type WrongMethod = "get" :> Post '[JSON] NoContent
 type NotALink = "hello" :> ReqBody '[JSON] Bool :> Get '[JSON] Bool
 type AllGood = "get" :> Get '[JSON] NoContent
 type NoEndpoint = "empty" :> EmptyAPI
+
+type FooAPI
+  = "foo" :> Capture "fooid" Int
+          :> Hash '[P "bar", Capture "barid" Char, Capture "str" String]
+          :> Capture "baz" Bool
+          :> Get '[JSON] Int
+
+testLinkFragments :: Int -> Char -> String -> Bool -> String
+testLinkFragments a b c d = uriFragment . linkURI $
+  safeLink (Proxy :: Proxy FooAPI) (Proxy :: Proxy FooAPI) a b c d
