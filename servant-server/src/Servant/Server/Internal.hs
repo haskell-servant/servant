@@ -1,25 +1,24 @@
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE ConstraintKinds            #-}
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE PolyKinds                  #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TupleSections              #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 #if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
 #define HAS_TYPE_ERROR
 #endif
 
 #ifdef HAS_TYPE_ERROR
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE UndecidableInstances  #-}
 #endif
 
 #include "overlapping-compat.h"
@@ -34,73 +33,74 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
-import           Control.Monad              (join, when)
-import           Control.Monad.Trans        (liftIO)
-import           Control.Monad.Trans.Resource (runResourceT)
-import qualified Data.ByteString            as B
-import qualified Data.ByteString.Builder    as BB
-import qualified Data.ByteString.Char8      as BC8
-import qualified Data.ByteString.Lazy       as BL
-import           Data.Maybe                 (fromMaybe, mapMaybe,
-                                             isNothing, maybeToList)
-import           Data.Either                (partitionEithers)
-import qualified Data.Map.Strict            as Map
-import           Data.String                (IsString (..))
-import           Data.String.Conversions    (cs, (<>))
-import           Data.Tagged                (Tagged(..), retag, untag)
-import qualified Data.Text                  as T
+import           Control.Monad
+                 (join, when)
+import           Control.Monad.Trans
+                 (liftIO)
+import           Control.Monad.Trans.Resource
+                 (runResourceT)
+import qualified Data.ByteString                            as B
+import qualified Data.ByteString.Builder                    as BB
+import qualified Data.ByteString.Char8                      as BC8
+import qualified Data.ByteString.Lazy                       as BL
+import           Data.Either
+                 (partitionEithers)
+import qualified Data.Map.Strict                            as Map
+import           Data.Maybe
+                 (fromMaybe, isNothing, mapMaybe, maybeToList)
+import           Data.String
+                 (IsString (..))
+import           Data.String.Conversions
+                 (cs, (<>))
+import           Data.Tagged
+                 (Tagged (..), retag, untag)
+import qualified Data.Text                                  as T
 import           Data.Typeable
-import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
-                                             symbolVal)
-import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
-import qualified Network.HTTP.Media         as NHM
-import           Network.Socket             (SockAddr)
-import           Network.Wai                (Application, Request,
-                                             httpVersion, isSecure,
-                                             lazyRequestBody,
-                                             rawQueryString, remoteHost,
-                                             requestHeaders, requestMethod,
-                                             responseLBS, responseStream,
-                                             vault)
-import           Prelude                    ()
+import           GHC.TypeLits
+                 (KnownNat, KnownSymbol, natVal, symbolVal)
+import qualified Network.HTTP.Media                         as NHM
+import           Network.HTTP.Types                         hiding
+                 (Header, ResponseHeaders)
+import           Network.Socket
+                 (SockAddr)
+import           Network.Wai
+                 (Application, Request, httpVersion, isSecure, lazyRequestBody,
+                 rawQueryString, remoteHost, requestHeaders, requestMethod,
+                 responseLBS, responseStream, vault)
+import           Prelude ()
 import           Prelude.Compat
-import           Web.HttpApiData            (FromHttpApiData, parseHeader,
-                                             parseQueryParam,
-                                             parseUrlPieceMaybe,
-                                             parseUrlPieces)
-import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture',
-                                              CaptureAll, Verb, EmptyAPI,
-                                              ReflectMethod(reflectMethod),
-                                              IsSecure(..), Header', QueryFlag,
-                                              QueryParam', QueryParams, Raw,
-                                              RemoteHost, ReqBody', Vault,
-                                              WithNamedContext,
-                                              Description, Summary,
-                                              Accept(..),
-                                              FramingRender(..), Stream,
-                                              StreamGenerator(..), ToStreamGenerator(..),
-                                              BoundaryStrategy(..),
-                                              If, SBool (..), SBoolI (..))
-import           Servant.API.Modifiers       (unfoldRequestArgument, RequestArgument, FoldRequired, FoldLenient)
-import           Servant.API.ContentTypes    (AcceptHeader (..),
-                                              AllCTRender (..),
-                                              AllCTUnrender (..),
-                                              AllMime,
-                                              MimeRender(..),
-                                              canHandleAcceptH)
-import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
-                                              getResponse, DynHeaders,
-                                              DynResponse, withDynHeaders)
+import           Servant.API
+                 ((:<|>) (..), (:>), Accept (..), BasicAuth,
+                 BoundaryStrategy (..), Capture', CaptureAll, Description,
+                 EmptyAPI, FramingRender (..), Header', If, IsSecure (..),
+                 QueryFlag, QueryParam', QueryParams, Raw,
+                 ReflectMethod (reflectMethod), RemoteHost, ReqBody',
+                 SBool (..), SBoolI (..), Stream, StreamGenerator (..),
+                 Summary, ToStreamGenerator (..), Vault, Verb,
+                 WithNamedContext)
+import           Servant.API.ContentTypes
+                 (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
+                 AllMime, MimeRender (..), canHandleAcceptH)
+import           Servant.API.Modifiers
+                 (FoldLenient, FoldRequired, RequestArgument,
+                 unfoldRequestArgument)
+import           Servant.API.ResponseHeaders
+                 (DynHeaders (..), GetHeaders, Headers, getHeaders,
+                 getResponse)
+import           Web.HttpApiData
+                 (FromHttpApiData, parseHeader, parseQueryParam,
+                 parseUrlPieceMaybe, parseUrlPieces)
 
-import           Servant.Server.Internal.Context
 import           Servant.Server.Internal.BasicAuth
+import           Servant.Server.Internal.Context
 import           Servant.Server.Internal.Handler
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 
 #ifdef HAS_TYPE_ERROR
-import GHC.TypeLits (TypeError, ErrorMessage (..))
+import           GHC.TypeLits
+                 (ErrorMessage (..), TypeError)
 #endif
 
 class HasServer api context where
@@ -286,7 +286,7 @@ instance OVERLAPPING_
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
          ) => HasServer (Verb method status ctypes (DynHeaders a)) context where
 
-  type ServerT (Verb method status ctypes (DynHeaders a)) m = m (DynResponse a)
+  type ServerT (Verb method status ctypes (DynHeaders a)) m = m (DynHeaders a)
   hoistServerWithContext _ _ nt s = nt s
 
   route Proxy _ = methodRouter (\x -> (Map.toList (dynHeaders x), dynResponse x))
@@ -771,7 +771,7 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -- ...Maybe you haven't applied enough arguments to
 -- ...Capture' '[] "foo"
 -- ...
--- 
+--
 instance TypeError (HasServerArrowKindError arr) => HasServer ((arr :: k -> l) :> api) context
   where
     type ServerT (arr :> api) m = TypeError (HasServerArrowKindError arr)

@@ -36,7 +36,6 @@ module Servant.API.ResponseHeaders
 
     , -- * "Dynamic" response headers
       DynHeaders(..)
-    , DynResponse(..)
     , withDynHeaders
     ) where
 
@@ -177,22 +176,20 @@ noHeader = addOptionalHeader MissingHeader
 
 -- | Combinator to use when you want your endpoint to return a response
 --   along with some response headers, dynamically,
---   by simply building a value of type 'DynResponse a', which is just a
+--   by simply building a value of type 'DynHeaders a', which is just a
 --   response of type @a@ along with a map from header names to header values.
 --
 --   For all other interpretations than the server one, this combinator basically
 --   has no effect and behaves just as if you were using @a@ directly.
-data DynHeaders a
-
-data DynResponse a = DynResponse
+data DynHeaders a = DynHeaders
   { dynResponse :: a
   , dynHeaders  :: Map HTTP.HeaderName ByteString
   } deriving (Typeable, Eq, Show, Functor)
 
 -- | Build a \"response with headers\", where the headers are
 --   provided at runtime as a 'Map' from header name to header value.
-withDynHeaders :: a -> Map HTTP.HeaderName ByteString -> DynResponse a
-withDynHeaders = DynResponse
+withDynHeaders :: a -> Map HTTP.HeaderName ByteString -> DynHeaders a
+withDynHeaders = DynHeaders
 
 -- $setup
 -- >>> import Servant.API

@@ -109,11 +109,10 @@ import           Servant.API.RemoteHost
 import           Servant.API.ReqBody
                  (ReqBody, ReqBody')
 import           Servant.API.ResponseHeaders
-                 (AddHeader, BuildHeadersTo (buildHeadersTo),
-                 DynHeaders(..), DynResponse(..), withDynHeaders,
+                 (AddHeader, BuildHeadersTo (buildHeadersTo), DynHeaders (..),
                  GetHeaders (getHeaders), HList (..), Headers (..),
                  ResponseHeader (..), addHeader, getHeadersHList, getResponse,
-                 noHeader)
+                 noHeader, withDynHeaders)
 import           Servant.API.Stream
                  (BoundaryStrategy (..), BuildFromStream (..),
                  ByteStringParser (..), FramingRender (..),
