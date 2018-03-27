@@ -4,8 +4,8 @@ packages: servant/
   servant-docs/
   servant-foreign/
   servant-server/
-  doc/tutorial/
-  doc/cookbook/*/*.cabal
+  -- doc/tutorial/
+  -- doc/cookbook/*/*.cabal
 
 allow-newer:
   servant-js:servant,

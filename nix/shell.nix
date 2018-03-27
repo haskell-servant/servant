@@ -1,5 +1,5 @@
 { pkgs ? import <nixpkgs> {}
-, compiler ? "ghc822"
+, compiler ? "ghc821"
 , tutorial ? false
 }:
 
