@@ -858,6 +858,22 @@ instance OVERLAPPING_
           status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
+instance OVERLAPPING_
+  ( ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
+  , ReflectMethod method
+  ) => HasDocs (Verb method status (ct ': cts) (DynHeaders a)) where
+  docsFor Proxy (endpoint, action) DocOptions{..} =
+    single endpoint' action'
+
+    where endpoint' = endpoint & method .~ method'
+          action'   = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
+                             & response.respTypes .~ allMime t
+                             & response.respStatus .~ status
+          t = Proxy :: Proxy (ct ': cts)
+          method' = reflectMethod (Proxy :: Proxy method)
+          status = fromInteger $ natVal (Proxy :: Proxy status)
+          p = Proxy :: Proxy a
+
 instance (KnownSymbol sym, HasDocs api)
       => HasDocs (Header' mods sym a :> api) where
   docsFor Proxy (endpoint, action) =

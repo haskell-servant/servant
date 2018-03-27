@@ -36,7 +36,8 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          BuildFromStream (..),
                                                          ByteStringParser (..),
                                                          Capture', CaptureAll,
-                                                         Description, EmptyAPI,
+                                                         Description, DynHeaders,
+                                                         EmptyAPI,
                                                          FramingUnrender (..),
                                                          Header', Headers (..),
                                                          HttpVersion, IsSecure,
@@ -279,6 +280,36 @@ instance OVERLAPPING_
     return $ Headers { getResponse = NoContent
                      , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
+
+  hoistClientMonad _ _ f ma = f ma
+
+instance OVERLAPPING_
+  ( RunClient m, MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
+  ) => HasClient m (Verb method status cts' (DynHeaders a)) where
+  type Client m (Verb method status cts' (DynHeaders a)) = m a
+  clientWithRoute _pm Proxy req = do
+    response <- runRequest req
+       { requestMethod = method
+       , requestAccept = fromList $ toList accept
+       }
+    case mimeUnrender (Proxy :: Proxy ct) $ responseBody response of
+      Left err -> throwServantError $ DecodeFailure (pack err) response
+      Right val -> return val
+
+    where method = reflectMethod (Proxy :: Proxy method)
+          accept = contentTypes (Proxy :: Proxy ct)
+
+  hoistClientMonad _ _ f ma = f ma
+
+instance OVERLAPPING_
+  ( RunClient m, ReflectMethod method
+  ) => HasClient m (Verb method status cts (DynHeaders NoContent)) where
+  type Client m (Verb method status cts (DynHeaders NoContent)) = m NoContent
+  clientWithRoute _pm Proxy req = do
+    response <- runRequest req { requestMethod = method }
+    return NoContent
+
+    where method = reflectMethod (Proxy :: Proxy method)
 
   hoistClientMonad _ _ f ma = f ma
 

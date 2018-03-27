@@ -44,6 +44,7 @@ import qualified Data.ByteString.Lazy       as BL
 import           Data.Maybe                 (fromMaybe, mapMaybe,
                                              isNothing, maybeToList)
 import           Data.Either                (partitionEithers)
+import qualified Data.Map.Strict            as Map
 import           Data.String                (IsString (..))
 import           Data.String.Conversions    (cs, (<>))
 import           Data.Tagged                (Tagged(..), retag, untag)
@@ -88,7 +89,8 @@ import           Servant.API.ContentTypes    (AcceptHeader (..),
                                               MimeRender(..),
                                               canHandleAcceptH)
 import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
-                                              getResponse)
+                                              getResponse, DynHeaders,
+                                              DynResponse, withDynHeaders)
 
 import           Servant.Server.Internal.Context
 import           Servant.Server.Internal.BasicAuth
@@ -280,6 +282,17 @@ instance OVERLAPPING_
     where method = reflectMethod (Proxy :: Proxy method)
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
+instance OVERLAPPING_
+         ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
+         ) => HasServer (Verb method status ctypes (DynHeaders a)) context where
+
+  type ServerT (Verb method status ctypes (DynHeaders a)) m = m (DynResponse a)
+  hoistServerWithContext _ _ nt s = nt s
+
+  route Proxy _ = methodRouter (\x -> (Map.toList (dynHeaders x), dynResponse x))
+                               method (Proxy :: Proxy ctypes) status
+    where method = reflectMethod (Proxy :: Proxy method)
+          status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
 instance OVERLAPPABLE_
          ( MimeRender ctype a, ReflectMethod method,

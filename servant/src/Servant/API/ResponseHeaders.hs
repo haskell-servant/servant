@@ -23,7 +23,8 @@
 -- The value is added to the header specified by the type (@Location@ in the
 -- example above).
 module Servant.API.ResponseHeaders
-    ( Headers(..)
+    ( -- * "Static" response headers, tracked at the type-level
+      Headers(..)
     , ResponseHeader (..)
     , AddHeader
     , addHeader
@@ -32,11 +33,18 @@ module Servant.API.ResponseHeaders
     , GetHeaders(getHeaders)
     , HeaderValMap
     , HList(..)
+
+    , -- * "Dynamic" response headers
+      DynHeaders(..)
+    , DynResponse(..)
+    , withDynHeaders
     ) where
 
 import           Data.ByteString.Char8     as BS
                  (ByteString, init, pack, unlines)
 import qualified Data.CaseInsensitive      as CI
+import           Data.Map
+                 (Map)
 import           Data.Proxy
 import           Data.Typeable
                  (Typeable)
@@ -51,8 +59,9 @@ import           Prelude.Compat
 import           Servant.API.Header
                  (Header)
 
--- | Response Header objects. You should never need to construct one directly.
--- Instead, use 'addOptionalHeader'.
+-- | Response Header objects where each header name is tracked at the type-level.
+--   You should never need to construct one directly. Instead, use
+--   'addOptionalHeader'.
 data Headers ls a = Headers { getResponse :: a
                             -- ^ The underlying value of a 'Headers'
                             , getHeadersHList :: HList ls
@@ -165,6 +174,25 @@ addHeader = addOptionalHeader . Header
 -- []
 noHeader :: AddHeader h v orig new => orig -> new
 noHeader = addOptionalHeader MissingHeader
+
+-- | Combinator to use when you want your endpoint to return a response
+--   along with some response headers, dynamically,
+--   by simply building a value of type 'DynResponse a', which is just a
+--   response of type @a@ along with a map from header names to header values.
+--
+--   For all other interpretations than the server one, this combinator basically
+--   has no effect and behaves just as if you were using @a@ directly.
+data DynHeaders a
+
+data DynResponse a = DynResponse
+  { dynResponse :: a
+  , dynHeaders  :: Map HTTP.HeaderName ByteString
+  } deriving (Typeable, Eq, Show, Functor)
+
+-- | Build a \"response with headers\", where the headers are
+--   provided at runtime as a 'Map' from header name to header value.
+withDynHeaders :: a -> Map HTTP.HeaderName ByteString -> DynResponse a
+withDynHeaders = DynResponse
 
 -- $setup
 -- >>> import Servant.API

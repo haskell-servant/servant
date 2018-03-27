@@ -34,6 +34,7 @@ type ComprehensiveAPIWithoutRaw =
   ReqBody '[JSON] Int :> GET :<|>
   ReqBody' '[Lenient] '[JSON] Int :> GET :<|>
   Get '[JSON] (Headers '[Header "foo" Int] NoContent) :<|>
+  Get '[JSON] (DynHeaders NoContent) :<|>
   "foo" :> GET :<|>
   Vault :> GET :<|>
   Verb 'POST 204 '[JSON] NoContent :<|>

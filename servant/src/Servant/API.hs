@@ -110,6 +110,7 @@ import           Servant.API.ReqBody
                  (ReqBody, ReqBody')
 import           Servant.API.ResponseHeaders
                  (AddHeader, BuildHeadersTo (buildHeadersTo),
+                 DynHeaders(..), DynResponse(..), withDynHeaders,
                  GetHeaders (getHeaders), HList (..), Headers (..),
                  ResponseHeader (..), addHeader, getHeadersHList, getResponse,
                  noHeader)
