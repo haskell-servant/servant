@@ -9,6 +9,7 @@ module Servant.Client
   , runClientM
   , ClientEnv(..)
   , mkClientEnv
+  , hoistClient
   , module Servant.Client.Core.Reexport
   ) where
 
