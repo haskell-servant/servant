@@ -72,7 +72,19 @@ client :: HasClient ClientM api => Proxy api -> Client ClientM api
 client api = api `clientIn` (Proxy :: Proxy ClientM)
 
 -- | Change the monad the client functions live in, by
---   supplying a natural transformation.
+--   supplying a conversion function
+--   (a natural transformation to be precise).
+--
+--   For example, assuming you have some @manager :: 'Manager'@ and
+--   @baseurl :: 'BaseUrl'@ around:
+--
+--   > type API = Get '[JSON] Int :<|> Capture "n" Int :> Post '[JSON] Int
+--   > api :: Proxy API
+--   > api = Proxy
+--   > getInt :: IO Int
+--   > postInt :: Int -> IO Int
+--   > getInt :<|> postInt = hoistClient api (flip runClientM cenv) (client api)
+--   >   where cenv = mkClientEnv manager baseurl
 hoistClient
   :: HasClient ClientM api
   => Proxy api
