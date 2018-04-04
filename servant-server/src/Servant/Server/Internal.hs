@@ -603,7 +603,7 @@ instance ( AllCTUnrender list a, HasServer api context, SBoolI (FoldLenient mods
         let contentTypeH = fromMaybe "application/octet-stream"
                          $ lookup hContentType $ requestHeaders request
         case canHandleCTypeH (Proxy :: Proxy list) (cs contentTypeH) :: Maybe (BL.ByteString -> Either String a) of
-          Nothing -> delayedFailFatal err415
+          Nothing -> delayedFail err415
           Just f  -> return f
 
       -- Body check, we get a body parsing functions as the first argument.
