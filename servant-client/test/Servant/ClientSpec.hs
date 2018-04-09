@@ -89,6 +89,7 @@ spec = describe "Servant.Client" $ do
     basicAuthSpec
     genAuthSpec
     genericClientSpec
+    hoistClientSpec
 
 -- * test data types
 
@@ -490,6 +491,28 @@ genericClientSpec = beforeAll (startWaiApp genericClientServer) $ afterAll endWa
       left show <$> runClient (idChar (Just 'c')) baseUrl `shouldReturn` Right 'c'
       left show <$> runClient (getSum 3 4) baseUrl `shouldReturn` Right 7
       left show <$> runClient doNothing baseUrl `shouldReturn` Right ()
+
+-- * hoistClient
+
+type HoistClientAPI = Get '[JSON] Int :<|> Capture "n" Int :> Post '[JSON] Int
+
+hoistClientAPI :: Proxy HoistClientAPI
+hoistClientAPI = Proxy
+
+hoistClientServer :: Application -- implements HoistClientAPI
+hoistClientServer = serve hoistClientAPI $ return 5 :<|> (\n -> return n)
+
+hoistClientSpec :: Spec
+hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp $ do
+  describe "Servant.Client.hoistClient" $ do
+    it "allows us to GET/POST/... requests in IO instead of ClientM" $ \(_, baseUrl) -> do
+      let (getInt :<|> postInt)
+            = hoistClient hoistClientAPI
+                          (fmap (either (error . show) id) . flip runClient baseUrl)
+                          (client hoistClientAPI)
+
+      getInt `shouldReturn` 5
+      postInt 5 `shouldReturn` 5
 
 -- * utils
 

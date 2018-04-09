@@ -155,6 +155,63 @@ Email {from = "great@company.com", to = "alp@foo.com", subject = "Hey Alp, we mi
 
 The types of the arguments for the functions are the same as for (server-side) request handlers.
 
+## Changing the monad the client functions live in
+
+Just like `hoistServer` allows us to change the monad in which request handlers
+of a web application live in, we also have `hoistClient` for changing the monad
+in which _client functions_ live. Consider the following trivial API:
+
+``` haskell
+type HoistClientAPI = Get '[JSON] Int :<|> Capture "n" Int :> Post '[JSON] Int
+
+hoistClientAPI :: Proxy HoistClientAPI
+hoistClientAPI = Proxy
+```
+
+We already know how to derive client functions for this API, and as we have
+seen above they all return results in the `ClientM` monad when using `servant-client`.
+However, `ClientM` rarely (or never) is the actual monad we need to use the client
+functions in. Sometimes we need to run them in IO, sometimes in a custom monad
+stack. `hoistClient` is a very simple solution to the problem of "changing" the monad
+the clients run in.
+
+``` haskell ignore
+hoistClient
+  :: HasClient ClientM api   -- we need a valid API
+  => Proxy api               -- a Proxy to the API type
+  -> (forall a. m a -> n a)  -- a "monad conversion function" (natural transformation)
+  -> Client m api            -- clients in the source monad
+  -> Client n api            -- result: clients in the target monad
+```
+
+The "conversion function" argument above, just like the ones given to `hoistServer`, must
+be able to turn an `m a` into an `n a` for any choice of type `a`.
+
+Let's see this in action on our example. We first derive our client functions as usual,
+with all of them returning a result in `ClientM`.
+
+``` haskell
+getIntClientM :: ClientM Int
+postIntClientM :: Int -> ClientM Int
+getIntClientM :<|> postIntClientM = client hoistClientAPI
+```
+
+And we finally decide that we want the handlers to run in IO instead, by
+"post-applying" `runClientM` to a fixed client environment.
+
+``` haskell
+-- our conversion function has type: forall a. ClientM a -> IO a
+-- the result has type:
+-- Client IO HoistClientAPI = IO Int :<|> (Int -> IO Int)
+getClients :: ClientEnv -> Client IO HoistClientAPI
+getClients clientEnv
+  = hoistClient hoistClientAPI
+                ( fmap (either (error . show) id)
+                . flip runClientM clientEnv
+                )
+                (client hoistClientAPI)
+```
+
 ## Querying Streaming APIs.
 
 Consider the following streaming API type:
