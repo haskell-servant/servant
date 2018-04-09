@@ -1,6 +1,13 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-client-core/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.14
+----
+
+- Add a `hoistClientMonad` method to the `HasClient` typeclass, for
+  changing the monad in which client functions run.
+  ([#936](https://github.com/haskell-servant/servant/pull/936))
+
 0.13
 ----
 
