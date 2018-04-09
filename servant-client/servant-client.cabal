@@ -1,5 +1,6 @@
 name:                servant-client
 version:             0.13
+x-revision:          2
 synopsis: automatical derivation of querying functions for servant webservices
 description:
   This library lets you derive automatically Haskell functions that
@@ -60,7 +61,7 @@ library
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
       aeson                 >= 1.2.3.0  && < 1.4
-    , base-compat           >= 0.9.3    && < 0.10
+    , base-compat           >= 0.9.3    && < 0.11
     , attoparsec            >= 0.13.2.0 && < 0.14
     , http-client           >= 0.5.7.1  && < 0.6
     , http-client-tls       >= 0.3.5.1  && < 0.4
@@ -109,6 +110,10 @@ test-suite spec
     , transformers-compat
     , wai
     , warp
+
+  if !impl(ghc >= 8.0)
+    build-depends:
+      semigroups
 
   -- Additonal dependencies
   build-depends:

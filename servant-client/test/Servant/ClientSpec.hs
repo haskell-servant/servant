@@ -37,7 +37,8 @@ import           Control.Monad.Error.Class                  (throwError)
 import           Data.Aeson
 import           Data.Char                                  (chr, isPrint)
 import           Data.Foldable                              (forM_)
-import           Data.Monoid                                hiding (getLast)
+import           Data.Semigroup                             ((<>))
+import           Data.Monoid                                ()
 import           Data.Proxy
 import qualified Generics.SOP                               as SOP
 import           GHC.Generics                               (Generic)

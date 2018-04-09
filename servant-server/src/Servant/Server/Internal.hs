@@ -44,8 +44,9 @@ import qualified Data.ByteString.Lazy       as BL
 import           Data.Maybe                 (fromMaybe, mapMaybe,
                                              isNothing, maybeToList)
 import           Data.Either                (partitionEithers)
+import           Data.Semigroup             ((<>))
 import           Data.String                (IsString (..))
-import           Data.String.Conversions    (cs, (<>))
+import           Data.String.Conversions    (cs)
 import           Data.Tagged                (Tagged(..), retag, untag)
 import qualified Data.Text                  as T
 import           Data.Typeable

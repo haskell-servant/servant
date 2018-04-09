@@ -101,14 +101,16 @@ module Servant.Utils.Links (
 ) where
 
 import           Data.List
-import           Data.Monoid.Compat
-                 ((<>))
 import           Data.Proxy
                  (Proxy (..))
+import           Data.Semigroup
+                 ((<>))
 import           Data.Singletons.Bool
                  (SBool (..), SBoolI (..))
 import qualified Data.Text                     as Text
 import qualified Data.Text.Encoding            as TE
+import           Data.Type.Bool
+                 (If)
 import           Data.Type.Bool
                  (If)
 import           GHC.TypeLits
