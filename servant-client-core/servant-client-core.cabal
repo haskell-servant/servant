@@ -1,6 +1,5 @@
 name:                servant-client-core
-version:             0.13
-x-revision:          1
+version:             0.13.0.1
 synopsis:            Core functionality and class for client function generation for servant APIs
 description:
   This library provides backend-agnostic generation of client functions. For
@@ -64,7 +63,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat           >= 0.9.3    && < 0.10
+      base-compat           >= 0.9.3    && < 0.11
     , base64-bytestring     >= 1.0.0.1  && < 1.1
     , exceptions            >= 0.8.3    && < 0.11
     , generics-sop          >= 0.3.1.0  && < 0.4
