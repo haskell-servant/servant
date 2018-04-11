@@ -1,5 +1,6 @@
 name:                servant-foreign
 version:             0.11.1
+x-revision:          1
 synopsis:            Helpers for generating clients for servant APIs in any programming language
 description:
   Helper types and functions for generating client functions for servant APIs in any programming language
@@ -57,7 +58,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat >= 0.9.3  && <0.10
+      base-compat >= 0.9.3  && <0.11
     , lens        >= 4.15.4 && <4.17
     , http-types  >= 0.12   && < 0.13
 
