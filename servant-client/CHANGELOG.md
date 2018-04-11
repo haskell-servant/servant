@@ -1,6 +1,11 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.13.0.1
+--------
+
+- Support `base-compat-0.10`
+
 0.13
 ----
 
