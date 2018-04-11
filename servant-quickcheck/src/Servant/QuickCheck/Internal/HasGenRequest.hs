@@ -2,7 +2,6 @@
 {-# LANGUAGE PolyKinds #-}
 module Servant.QuickCheck.Internal.HasGenRequest where
 
-import Data.Monoid              ((<>))
 import Data.String              (fromString)
 import Data.String.Conversions  (cs)
 import GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
