@@ -8,6 +8,11 @@
   client functions run.
   ([#936](https://github.com/haskell-servant/servant/pull/936))
 
+0.13.0.1
+--------
+
+- Support `base-compat-0.10`
+
 0.13
 ----
 
