@@ -97,7 +97,7 @@ library
     , resourcet           >= 1.1.9    && < 1.3
     , tagged              >= 0.8.5    && < 0.9
     , transformers-base   >= 0.4.4    && < 0.5
-    , transformers-compat >= 0.5.1    && < 0.6
+    , transformers-compat >= 0.5.1    && < 0.7
     , wai                 >= 3.2.1.1  && < 3.3
     , wai-app-static      >= 3.1.6.1  && < 3.2
     , warp                >= 3.2.13   && < 3.3
@@ -168,7 +168,7 @@ test-suite spec
   -- Additonal dependencies
   build-depends:
       directory            >= 1.2.1.0  && < 1.4
-    , hspec                >= 2.4.4    && < 2.5
+    , hspec                >= 2.4.4    && < 2.6
     , hspec-wai            >= 0.9      && < 0.10
     , should-not-typecheck >= 2.1.0    && < 2.2
     , parsec               >= 3.1.11   && < 3.2
@@ -177,13 +177,13 @@ test-suite spec
     , temporary            >= 1.2.0.3  && < 1.4
 
   build-tool-depends:
-    hspec-discover:hspec-discover >=2.4.4 && <2.5
+    hspec-discover:hspec-discover >=2.4.4 && <2.6
 
 test-suite doctests
   build-depends:
       base
     , servant-server
-    , doctest >= 0.13.0 && <0.14
+    , doctest >= 0.13.0 && <0.16
   type: exitcode-stdio-1.0
   main-is: test/doctests.hs
   buildable: True

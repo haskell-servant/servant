@@ -109,7 +109,7 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      hspec                >= 2.4.4    && < 2.5
+      hspec                >= 2.4.4    && < 2.6
 
   build-tool-depends:
-    hspec-discover:hspec-discover >=2.4.4 && <2.5
+    hspec-discover:hspec-discover >=2.4.4 && <2.6

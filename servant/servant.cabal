@@ -153,22 +153,22 @@ test-suite spec
   -- Additonal dependencies
   build-depends:
       aeson-compat         >= 0.3.3  && < 0.4
-    , hspec                >= 2.4.4  && < 2.5
+    , hspec                >= 2.4.4  && < 2.6
     , QuickCheck           >= 2.10.1 && < 2.12
     , quickcheck-instances >= 0.3.16 && < 0.4
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.4.4 && < 2.5
+    hspec-discover:hspec-discover >= 2.4.4 && < 2.6
 
 test-suite doctests
   build-depends:
       base
     , servant
-    , doctest >= 0.13.0 && <0.14
+    , doctest >= 0.13.0 && <0.16
 
   -- We test Links failure with doctest, so we need extra dependencies
   build-depends:
-      hspec                >= 2.4.4  && < 2.5
+      hspec                >= 2.4.4  && < 2.6
 
   type: exitcode-stdio-1.0
   main-is: test/doctests.hs
