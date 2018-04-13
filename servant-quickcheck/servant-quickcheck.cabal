@@ -1,5 +1,5 @@
 name:                servant-quickcheck
-version:             0.0.7.0
+version:             0.0.7.1
 synopsis:            QuickCheck entire APIs
 description:
  This packages provides QuickCheck properties that are tested across an entire
@@ -37,7 +37,7 @@ library
                      , Servant.QuickCheck.Internal.Equality
                      , Servant.QuickCheck.Internal.ErrorTypes
   build-depends:       base >=4.8 && <4.12
-                     , base-compat == 0.9.*
+                     , base-compat-batteries >= 0.10.1 && <0.11
                      , aeson > 0.8 && < 2
                      , bytestring == 0.10.*
                      , case-insensitive == 1.2.*
@@ -56,7 +56,7 @@ library
                      , servant-server >= 0.13 && < 0.14
                      , split == 0.2.*
                      , string-conversions > 0.3 && < 0.5
-                     , temporary == 1.2.*
+                     , temporary >= 1.2 && <1.4
                      , text == 1.*
                      , time >= 1.5 && < 1.9
                      , warp >= 3.2.4 && < 3.3
