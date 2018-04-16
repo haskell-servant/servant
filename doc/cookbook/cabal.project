@@ -7,6 +7,7 @@ packages:
   file-upload/
   structuring-apis/
   https/
+  pagination/
   ../../servant
   ../../servant-server
   ../../servant-client-core
