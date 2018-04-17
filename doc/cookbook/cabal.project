@@ -5,6 +5,7 @@ packages:
   using-custom-monad/
   jwt-and-basic-auth/
   file-upload/
+  jsonerror/
   structuring-apis/
   https/
   pagination/
