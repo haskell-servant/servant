@@ -57,9 +57,6 @@ module Servant.API.ContentTypes
     , MimeRender(..)
     , MimeUnrender(..)
 
-    -- * NoContent
-    , NoContent(..)
-
     -- * Internal
     , AcceptHeader(..)
     , AllCTRender(..)
@@ -296,6 +293,8 @@ instance OVERLAPPABLE_
         pctyps = Proxy :: Proxy (ctyp' ': ctyps)
 
 
+{- TODO issue-841 delete
+
 -- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
 -- then this would be taken care of. However there is no more specific instance
 -- between that and 'MimeRender JSON a', so we do this instead
@@ -308,6 +307,7 @@ instance OVERLAPPING_
          ( AllMime (ctyp ': ctyp' ': ctyps)
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) NoContent where
     allMimeRender p _ = zip (allMime p) (repeat "")
+-}
 
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
@@ -365,9 +365,6 @@ instance MimeRender OctetStream ByteString where
 instance MimeRender OctetStream BS.ByteString where
     mimeRender _ = fromStrict
 
--- | A type for responses without content-body.
-data NoContent = NoContent
-  deriving (Show, Eq, Read, Generic)
 
 
 --------------------------------------------------------------------------

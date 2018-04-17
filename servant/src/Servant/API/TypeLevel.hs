@@ -261,6 +261,7 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 --
 -- The doctests in this module are run with following preamble:
 --
+-- >>> :set -XConstraintKinds
 -- >>> :set -XPolyKinds
 -- >>> :set -XGADTs
 -- >>> import Data.Proxy

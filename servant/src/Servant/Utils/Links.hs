@@ -20,7 +20,7 @@
 -- >>> import Data.Proxy
 -- >>>
 -- >>> type Hello = "hello" :> Get '[JSON] Int
--- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] NoContent
+-- >>> type Bye   = "bye"   :> QueryParam "name" String :> DeleteNoContent
 -- >>> type API   = Hello :<|> Bye
 -- >>> let api = Proxy :: Proxy API
 --
@@ -46,11 +46,11 @@
 -- If the API has an endpoint with parameters then we can generate links with
 -- or without those:
 --
--- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> Delete '[JSON] NoContent)
+-- >>> let with = Proxy :: Proxy ("bye" :> QueryParam "name" String :> DeleteNoContent)
 -- >>> toUrlPiece $ safeLink api with (Just "Hubert")
 -- "bye?name=Hubert"
 --
--- >>> let without = Proxy :: Proxy ("bye" :> Delete '[JSON] NoContent)
+-- >>> let without = Proxy :: Proxy ("bye" :> DeleteNoContent)
 -- >>> toUrlPiece $ safeLink api without
 -- "bye"
 --
@@ -82,7 +82,7 @@
 -- Attempting to construct a link to an endpoint that does not exist in api
 -- will result in a type error like this:
 --
--- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] NoContent)
+-- >>> let bad_link = Proxy :: Proxy ("hello" :> DeleteNoContent)
 -- >>> safeLink api bad_link
 -- ...
 -- ...Could not deduce...
@@ -168,7 +168,7 @@ import           Servant.API.TypeLevel
 import           Servant.API.Vault
                  (Vault)
 import           Servant.API.Verbs
-                 (Verb)
+                 (Verb')
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Web.HttpApiData
@@ -452,8 +452,8 @@ instance HasLink EmptyAPI where
     toLink _ _ _ = EmptyAPI
 
 -- Verb (terminal) instances
-instance HasLink (Verb m s ct a) where
-    type MkLink (Verb m s ct a) r = r
+instance HasLink (Verb' method a) where
+    type MkLink (Verb' method a) r = r
     toLink toA _ = toA
 
 instance HasLink Raw where

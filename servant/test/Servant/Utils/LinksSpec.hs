@@ -20,24 +20,24 @@ import           Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWit
 
 type TestApi =
   -- Capture and query params
-       "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete '[JSON] NoContent
-  :<|> "hi"    :> Capture "name" String :> QueryParam' '[Required] "capital" Bool :> Delete '[JSON] NoContent
-  :<|> "all" :> CaptureAll "names" String :> Get '[JSON] NoContent
+       "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete '[JSON] Int
+  :<|> "hi"    :> Capture "name" String :> QueryParam' '[Required] "capital" Bool :> Delete '[JSON] Int
+  :<|> "all" :> CaptureAll "names" String :> Get '[JSON] Int
 
   -- Flags
-  :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete '[JSON] NoContent
+  :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete '[JSON] Int
 
   -- All of the verbs
-  :<|> "get" :> Get '[JSON] NoContent
-  :<|> "put" :> Put '[JSON] NoContent
-  :<|> "post" :> ReqBody '[JSON] Bool :> Post '[JSON] NoContent
-  :<|> "delete" :> Header "ponies" String :> Delete '[JSON] NoContent
+  :<|> "get" :> Get '[JSON] Int
+  :<|> "put" :> Put '[JSON] Int
+  :<|> "post" :> ReqBody '[JSON] Bool :> Post '[JSON] Int
+  :<|> "delete" :> Header "ponies" String :> Delete '[JSON] Int
   :<|> "raw" :> Raw
   :<|> NoEndpoint
 
 type LinkableApi =
-       "all" :> CaptureAll "names" String :> Get '[JSON] NoContent
-  :<|> "get" :> Get '[JSON] NoContent
+       "all" :> CaptureAll "names" String :> Get '[JSON] Int
+  :<|> "get" :> Get '[JSON] Int
 
 
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
@@ -53,35 +53,35 @@ shouldBeLink link expected =
 spec :: Spec
 spec = describe "Servant.Utils.Links" $ do
     it "generates correct links for capture query params" $ do
-        let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete '[JSON] NoContent)
+        let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete '[JSON] Int)
         apiLink l1 "hi" `shouldBeLink` "hello/hi"
 
         let l2 = Proxy :: Proxy ("hello" :> Capture "name" String
                                          :> QueryParam "capital" Bool
-                                         :> Delete '[JSON] NoContent)
+                                         :> Delete '[JSON] Int)
         apiLink l2 "bye" (Just True) `shouldBeLink` "hello/bye?capital=true"
 
         let l4 = Proxy :: Proxy ("hi" :> Capture "name" String
                                       :> QueryParam' '[Required] "capital" Bool
-                                      :> Delete '[JSON] NoContent)
+                                      :> Delete '[JSON] Int)
         apiLink l4 "privet" False `shouldBeLink` "hi/privet?capital=false"
 
     it "generates correct links for CaptureAll" $ do
-        apiLink (Proxy :: Proxy ("all" :> CaptureAll "names" String :> Get '[JSON] NoContent))
+        apiLink (Proxy :: Proxy ("all" :> CaptureAll "names" String :> Get '[JSON] Int))
           ["roads", "lead", "to", "rome"]
           `shouldBeLink` "all/roads/lead/to/rome"
 
     it "generates correct links for query flags" $ do
         let l1 = Proxy :: Proxy ("balls" :> QueryFlag "bouncy"
-                                         :> QueryFlag "fast" :> Delete '[JSON] NoContent)
+                                         :> QueryFlag "fast" :> Delete '[JSON] Int)
         apiLink l1 True True `shouldBeLink` "balls?bouncy&fast"
         apiLink l1 False True `shouldBeLink` "balls?fast"
 
     it "generates correct links for all of the verbs" $ do
-        apiLink (Proxy :: Proxy ("get" :> Get '[JSON] NoContent)) `shouldBeLink` "get"
-        apiLink (Proxy :: Proxy ("put" :> Put '[JSON] NoContent)) `shouldBeLink` "put"
-        apiLink (Proxy :: Proxy ("post" :> Post '[JSON] NoContent)) `shouldBeLink` "post"
-        apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] NoContent)) `shouldBeLink` "delete"
+        apiLink (Proxy :: Proxy ("get" :> Get '[JSON] Int)) `shouldBeLink` "get"
+        apiLink (Proxy :: Proxy ("put" :> Put '[JSON] Int)) `shouldBeLink` "put"
+        apiLink (Proxy :: Proxy ("post" :> Post '[JSON] Int)) `shouldBeLink` "post"
+        apiLink (Proxy :: Proxy ("delete" :> Delete '[JSON] Int)) `shouldBeLink` "delete"
         apiLink (Proxy :: Proxy ("raw" :> Raw)) `shouldBeLink` "raw"
 
     it "can generate all links for an API that has only linkable endpoints" $ do
@@ -132,10 +132,10 @@ spec = describe "Servant.Utils.Links" $ do
 -- sanity check
 -- >>> toUrlPiece $ apiLink (Proxy :: Proxy AllGood)
 -- "get"
-type WrongPath = "getTypo" :> Get '[JSON] NoContent
+type WrongPath = "getTypo" :> Get '[JSON] Int
 type WrongReturnType = "get" :> Get '[JSON] Bool
-type WrongContentType = "get" :> Get '[OctetStream] NoContent
-type WrongMethod = "get" :> Post '[JSON] NoContent
+type WrongContentType = "get" :> Get '[OctetStream] Int
+type WrongMethod = "get" :> Post '[JSON] Int
 type NotALink = "hello" :> ReqBody '[JSON] Bool :> Get '[JSON] Bool
-type AllGood = "get" :> Get '[JSON] NoContent
+type AllGood = "get" :> Get '[JSON] Int
 type NoEndpoint = "empty" :> EmptyAPI
