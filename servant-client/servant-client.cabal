@@ -128,3 +128,10 @@ test-suite spec
 
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.4.4 && < 2.6
+
+test-suite readme
+  type:           exitcode-stdio-1.0
+  main-is:        README.lhs
+  build-depends:  base, servant, http-client, text, servant-client, markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit
+  ghc-options:    -pgmL markdown-unlit
