@@ -86,15 +86,19 @@ instance MonadThrow m => MonadThrow (RouteResultT m) where
     throwM = lift . throwM
 
 toApplication :: Bool -> RoutingApplication -> Application
-toApplication fullyEvaluate ra request respond = ra request routingRespond
- where
-  maybeEval :: (RouteResult Response -> IO ResponseReceived)
-     -> RouteResult Response -> IO ResponseReceived
-  maybeEval resp = if fullyEvaluate then force resp else resp 
-  routingRespond :: RouteResult Response -> IO ResponseReceived
-  routingRespond (Fail err)      = respond $ responseServantErr err
-  routingRespond (FailFatal err) = respond $ responseServantErr err
-  routingRespond (Route v)       = respond v
+toApplication fullyEvaluate ra request respond =
+  ra request (maybeEval routingRespond)
+  where
+    maybeEval :: (RouteResult Response -> IO ResponseReceived)
+              -> RouteResult Response -> IO ResponseReceived
+    maybeEval resp =
+      if fullyEvaluate
+        then force resp
+        else resp 
+    routingRespond :: RouteResult Response -> IO ResponseReceived
+    routingRespond (Fail err)      = respond $ responseServantErr err
+    routingRespond (FailFatal err) = respond $ responseServantErr err
+    routingRespond (Route v)       = respond v
 
 -- | A 'Delayed' is a representation of a handler with scheduled
 -- delayed checks that can trigger errors.

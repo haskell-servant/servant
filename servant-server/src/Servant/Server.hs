@@ -122,16 +122,15 @@ import           Servant.Server.Internal
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: (HasServer api '[]) => Proxy api -> Server api -> Application
-serve p = serveWithContext p EmptyContext
 
-type FullyEvaluateResponse = Bool
+serve :: (HasServer api '[Bool]) => Proxy api -> Server api -> Application
+serve p = serveWithContext p (False :. EmptyContext)
 
 serveWithContext :: (HasServer api context)
     => Proxy api -> Context context -> Server api -> Application
 serveWithContext p context server =
   toApplication
-    False
+    False -- determins if we should fully evaluate response
     (runRouter (route p context (emptyDelayed (Route server))))
 
 -- | Hoist server implementation.
