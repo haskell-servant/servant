@@ -1,20 +1,24 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DeriveAnyClass     #-}
 module Servant.Server.Internal.ServantErr where
 
+import           Control.DeepSeq (NFData)
 import           Control.Exception (Exception)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as LBS
 import           Data.Typeable (Typeable)
 import qualified Network.HTTP.Types    as HTTP
 import           Network.Wai           (Response, responseLBS)
+import           GHC.Generics (Generic)
 
 data ServantErr = ServantErr { errHTTPCode     :: Int
                              , errReasonPhrase :: String
                              , errBody         :: LBS.ByteString
                              , errHeaders      :: [HTTP.Header]
-                             } deriving (Show, Eq, Read, Typeable)
+                             } deriving (Show, Eq, Read, Typeable, Generic, NFData)
 
 instance Exception ServantErr
 

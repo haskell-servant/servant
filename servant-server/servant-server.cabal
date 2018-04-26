@@ -83,6 +83,7 @@ library
     , base-compat         >= 0.9.3    && < 0.11
     , attoparsec          >= 0.13.2.0 && < 0.14
     , base64-bytestring   >= 1.0.0.1  && < 1.1
+    , deepseq             >= 1.4.3.0  && < 1.5
     , exceptions          >= 0.8.3    && < 0.11
     , http-api-data       >= 0.3.7.1  && < 0.4
     , http-media          >= 0.7.1.1  && < 0.8
