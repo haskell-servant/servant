@@ -111,8 +111,6 @@ import qualified Data.Text                     as Text
 import qualified Data.Text.Encoding            as TE
 import           Data.Type.Bool
                  (If)
-import           Data.Type.Bool
-                 (If)
 import           GHC.TypeLits
                  (KnownSymbol, symbolVal)
 import           Network.URI
