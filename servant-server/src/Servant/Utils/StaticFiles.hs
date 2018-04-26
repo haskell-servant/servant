@@ -18,7 +18,7 @@ module Servant.Utils.StaticFiles
 import           Data.ByteString                (ByteString)
 import           Network.Wai.Application.Static
 import           Servant.API.Raw                (Raw)
-import           Servant.Server                 (Server, Tagged (..))
+import           Servant.Server                 (ServerT, Tagged (..))
 import           System.FilePath                (addTrailingPathSeparator)
 #if !MIN_VERSION_wai_app_static(3,1,0)
 import           Filesystem.Path.CurrentOS      (decodeString)
@@ -47,33 +47,33 @@ import WaiAppStatic.Storage.Filesystem          (ETagLookup)
 -- in order.
 --
 -- Corresponds to the `defaultWebAppSettings` `StaticSettings` value.
-serveDirectoryWebApp :: FilePath -> Server Raw
+serveDirectoryWebApp :: FilePath -> ServerT Raw m
 serveDirectoryWebApp = serveDirectoryWith . defaultWebAppSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses `defaultFileServerSettings`.
-serveDirectoryFileServer :: FilePath -> Server Raw
+serveDirectoryFileServer :: FilePath -> ServerT Raw m
 serveDirectoryFileServer = serveDirectoryWith . defaultFileServerSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses 'webAppSettingsWithLookup'.
-serveDirectoryWebAppLookup :: ETagLookup -> FilePath -> Server Raw
+serveDirectoryWebAppLookup :: ETagLookup -> FilePath -> ServerT Raw m
 serveDirectoryWebAppLookup etag =
   serveDirectoryWith . flip webAppSettingsWithLookup etag . fixPath
 
 -- | Uses 'embeddedSettings'.
-serveDirectoryEmbedded :: [(FilePath, ByteString)] -> Server Raw
+serveDirectoryEmbedded :: [(FilePath, ByteString)] -> ServerT Raw m
 serveDirectoryEmbedded files = serveDirectoryWith (embeddedSettings files)
 
 -- | Alias for 'staticApp'. Lets you serve a directory
 --   with arbitrary 'StaticSettings'. Useful when you want
 --   particular settings not covered by the four other
 --   variants. This is the most flexible method.
-serveDirectoryWith :: StaticSettings -> Server Raw
+serveDirectoryWith :: StaticSettings -> ServerT Raw m
 serveDirectoryWith = Tagged . staticApp
 
 -- | Same as 'serveDirectoryFileServer'. It used to be the only
 --   file serving function in servant pre-0.10 and will be kept
 --   around for a few versions, but is deprecated.
-serveDirectory :: FilePath -> Server Raw
+serveDirectory :: FilePath -> ServerT Raw m
 serveDirectory = serveDirectoryFileServer
 {-# DEPRECATED serveDirectory "Use serveDirectoryFileServer instead" #-}
 
