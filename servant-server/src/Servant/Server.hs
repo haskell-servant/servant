@@ -126,11 +126,12 @@ import           Servant.Server.Internal
 serve :: (HasServer api '[Bool]) => Proxy api -> Server api -> Application
 serve p = serveWithContext p (False :. EmptyContext)
 
-serveWithContext :: (HasServer api context)
+serveWithContext :: (HasServer api context, HasContextEntry context Bool)
     => Proxy api -> Context context -> Server api -> Application
 serveWithContext p context server =
   toApplication
-    False -- determins if we should fully evaluate response
+    (getContextEntry context :: Bool)
+    -- ^ determins if we should fully evaluate response
     (runRouter (route p context (emptyDelayed (Route server))))
 
 -- | Hoist server implementation.
