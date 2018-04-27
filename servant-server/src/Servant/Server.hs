@@ -10,6 +10,8 @@ module Servant.Server
   ( -- * Run a wai application from an API
     serve
   , serveWithContext
+  , fullyEvalResponse
+  , noEvalResponse
 
   , -- * Construct a wai Application from an API
     toApplication
@@ -124,15 +126,22 @@ import           Servant.Server.Internal
 --
 
 serve :: (HasServer api '[Bool]) => Proxy api -> Server api -> Application
-serve p = serveWithContext p (False :. EmptyContext)
+serve p = serveWithContext p noEvalResponse 
 
 serveWithContext :: (HasServer api context, HasContextEntry context Bool)
     => Proxy api -> Context context -> Server api -> Application
 serveWithContext p context server =
   toApplication
-    (getContextEntry context :: Bool)
+    ((getContextEntry context :: Bool) || False)
     -- ^ determins if we should fully evaluate response
+    -- defaults to False
     (runRouter (route p context (emptyDelayed (Route server))))
+
+fullyEvalResponse :: Context '[Bool] 
+fullyEvalResponse = True :. EmptyContext
+
+noEvalResponse :: Context '[Bool] 
+noEvalResponse = False :. EmptyContext
 
 -- | Hoist server implementation.
 --
