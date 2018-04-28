@@ -35,6 +35,7 @@ import           Data.IORef                  (modifyIORef, newIORef, readIORef)
 import           Data.Proxy                  (Proxy (..))
 import qualified Data.Sequence               as Seq
 import           Data.String.Conversions
+import           Data.Typeable           (Typeable)
 import           Foreign.StablePtr
 import           GHC.Generics
 import qualified GHCJS.Buffer as Buffer
@@ -51,14 +52,34 @@ newtype JSXMLHttpRequest = JSXMLHttpRequest JSVal
 
 newtype JSXMLHttpRequestClass = JSXMLHttpRequestClass JSVal
 
+-- | The environment in which a request is run.
 newtype ClientEnv
    = ClientEnv
    { baseUrl :: BaseUrl }
    deriving (Eq, Show)
 
+-- | Generates a set of client functions for an API.
+--
+-- Example:
+--
+-- > type API = Capture "no" Int :> Get '[JSON] Int
+-- >        :<|> Get '[JSON] [Bool]
+-- >
+-- > api :: Proxy API
+-- > api = Proxy
+-- >
+-- > getInt :: Int -> ClientM Int
+-- > getBools :: ClientM [Bool]
+-- > getInt :<|> getBools = client api
+--
+-- NOTE: Does not support constant space streaming of the request body!
 client :: HasClient ClientM api => Proxy api -> Client ClientM api
 client api = api `clientIn` (Proxy :: Proxy ClientM)
 
+-- | @ClientM@ is the monad in which client functions run. Contains the
+-- 'BaseUrl' used for requests in the reader environment.
+--
+-- NOTE: Does not support constant space streaming of the request body!
 newtype ClientM a = ClientM
   { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
@@ -79,8 +100,15 @@ instance MonadBaseControl IO ClientM where
 instance Alt ClientM where
   a <!> b = a `catchError` const b
 
+data StreamingNotSupportedException = StreamingNotSupportedException
+  deriving ( Typeable, Show )
+
+instance Exception StreamingNotSupportedException where
+  displayException _ = "streamingRequest: streaming is not supported!"
+
 instance RunClient ClientM where
   runRequest = performRequest
+  streamingRequest _ = liftIO $ throwIO StreamingNotSupportedException
   throwServantError = throwError
 
 instance ClientLike (ClientM a) (ClientM a) where
