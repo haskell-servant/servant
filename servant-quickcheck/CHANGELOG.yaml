@@ -1,5 +1,18 @@
 releases:
 
+  - version: "0.0.7.2"
+    changes:
+
+      - description: Allow client to pass an HTTP Manager in to functions
+        issue: 47
+        authors: parsonsmatt
+        date: 2018-05-10
+
+      - description: Fix "should not happen" error when exceptions are thrown
+        issue: 48
+        authors: parsonsmatt
+        date: 2018-05-10
+
   - version: "0.0.7.0"
     changes:
 
