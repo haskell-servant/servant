@@ -110,11 +110,15 @@ serversEqual api burl1 burl2 args req = do
 -- /Since 0.0.0.0/
 serverSatisfies :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
-serverSatisfies api burl args preds = do
+serverSatisfies api =  serverSatisfiesMgr api defManager
+
+serverSatisfiesMgr :: (HasGenRequest a) =>
+  Proxy a -> C.Manager -> BaseUrl -> Args -> Predicates -> Expectation
+serverSatisfiesMgr api manager burl args preds = do
   let reqs = ($ burl) <$> runGenRequest api
   deetsMVar <- newMVar $ error "should not be called"
   r <- quickCheckWithResult args { chatty = False } $ monadicIO $ forAllM reqs $ \req -> do
-     v <- run $ finishPredicates preds (noCheckStatus req) defManager
+     v <- run $ finishPredicates preds (noCheckStatus req) manager
      run $ modifyMVar_ deetsMVar $ const $ return v
      case v of
        Just _ -> assert False
@@ -127,13 +131,16 @@ serverSatisfies api burl args preds = do
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
 
-
 serverDoesntSatisfy :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
-serverDoesntSatisfy api burl args preds = do
+serverDoesntSatisfy api = serverDoesntSatisfyMgr api defManager
+
+serverDoesntSatisfyMgr :: (HasGenRequest a) =>
+  Proxy a -> C.Manager -> BaseUrl -> Args -> Predicates -> Expectation
+serverDoesntSatisfyMgr api manager burl args preds = do
   let reqs = ($ burl) <$> runGenRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
-     v <- run $ finishPredicates preds (noCheckStatus req) defManager
+     v <- run $ finishPredicates preds (noCheckStatus req) manager
      assert $ not $ null v
   case r of
     Success {} -> return ()
