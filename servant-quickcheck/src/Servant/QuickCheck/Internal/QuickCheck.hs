@@ -2,7 +2,7 @@
 {-# LANGUAGE CPP #-}
 module Servant.QuickCheck.Internal.QuickCheck where
 
-import           Control.Concurrent       (modifyMVar_, newMVar, readMVar)
+import           Control.Concurrent       (tryReadMVar, newEmptyMVar, tryPutMVar)
 import           Control.Monad            (unless)
 import qualified Data.ByteString.Lazy     as LBS
 import           Data.Proxy               (Proxy)
@@ -73,18 +73,23 @@ serversEqual api burl1 burl2 args req = do
   let reqs = (\f -> (f burl1, f burl2)) <$> runGenRequest api
   -- This MVar stuff is clunky! But there doesn't seem to be an easy way to
   -- return results when a test fails, since an exception is throw.
-  deetsMVar <- newMVar $ error "should not be called"
+  deetsMVar <- newEmptyMVar
   r <- quickCheckWithResult args { chatty = False } $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
     resp1 <- run $ C.httpLbs (noCheckStatus req1) defManager
     resp2 <- run $ C.httpLbs (noCheckStatus req2) defManager
     unless (getResponseEquality req resp1 resp2) $ do
       monitor (counterexample "hi" )
-      run $ modifyMVar_ deetsMVar $ const $ return $
-        ServerEqualityFailure req1 resp1 resp2
+      _ <- run $ tryPutMVar deetsMVar $ ServerEqualityFailure req1 resp1 resp2
       assert False
   case r of
     Success {} -> return ()
-    Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $ "Failed:\n" ++ show x
+    Failure{..} -> do
+      mx <- tryReadMVar deetsMVar
+      case mx of
+        Just x ->
+          expectationFailure $ "Failed:\n" ++ show x
+        Nothing ->
+          expectationFailure $ "We failed to record a reason for failure: " <> show r
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     NoExpectedFailure {} -> expectationFailure "No expected failure"
     InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
@@ -112,21 +117,32 @@ serverSatisfies :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
 serverSatisfies api =  serverSatisfiesMgr api defManager
 
+-- | Check that a server satisfies the set of properties specified, and
+-- accept a 'Manager' for running the HTTP requests through.
+--
+-- See 'serverSatisfies' for more details.
+--
+-- @since 0.0.7.2
 serverSatisfiesMgr :: (HasGenRequest a) =>
   Proxy a -> C.Manager -> BaseUrl -> Args -> Predicates -> Expectation
 serverSatisfiesMgr api manager burl args preds = do
   let reqs = ($ burl) <$> runGenRequest api
-  deetsMVar <- newMVar $ error "should not be called"
+  deetsMVar <- newEmptyMVar
   r <- quickCheckWithResult args { chatty = False } $ monadicIO $ forAllM reqs $ \req -> do
-     v <- run $ finishPredicates preds (noCheckStatus req) manager
-     run $ modifyMVar_ deetsMVar $ const $ return v
-     case v of
-       Just _ -> assert False
-       _ -> return ()
+    v <- run $ finishPredicates preds (noCheckStatus req) manager
+    _ <- run $ tryPutMVar deetsMVar v
+    case v of
+      Just _ -> assert False
+      _ -> return ()
   case r of
     Success {} -> return ()
-    Failure{..} -> readMVar deetsMVar >>= \x -> expectationFailure $
-      "Failed:\n" ++ show x
+    Failure {..} -> do
+      mx <- tryReadMVar deetsMVar
+      case mx of
+        Just x ->
+          expectationFailure $ "Failed:\n" ++ show x
+        Nothing ->
+          expectationFailure $ "We failed to record a reason for failure: " <> show r
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
     InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
