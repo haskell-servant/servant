@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -38,13 +39,13 @@ type StreamGet  = Stream 'GET
 type StreamPost = Stream 'POST
 
 -- | Stream endpoints may be implemented as producing a @StreamGenerator@ -- a function that itself takes two emit functions -- the first to be used on the first value the stream emits, and the second to be used on all subsequent values (to allow interspersed framing strategies such as comma separation).
-newtype StreamGenerator a =  StreamGenerator {getStreamGenerator :: (a -> IO ()) -> (a -> IO ()) -> IO ()}
+newtype StreamGenerator a = StreamGenerator {getStreamGenerator :: (a -> IO ()) -> (a -> IO ()) -> IO ()}
 
 -- | ToStreamGenerator is intended to be implemented for types such as Conduit, Pipe, etc. By implementing this class, all such streaming abstractions can be used directly as endpoints.
-class ToStreamGenerator f a where
-   toStreamGenerator :: f a -> StreamGenerator a
+class ToStreamGenerator a b | a -> b where
+   toStreamGenerator :: a -> StreamGenerator b
 
-instance ToStreamGenerator StreamGenerator a
+instance ToStreamGenerator (StreamGenerator a) a
    where toStreamGenerator x = x
 
 -- | Clients reading from streaming endpoints can be implemented as producing a @ResultStream@ that captures the setup, takedown, and incremental logic for a read, being an IO continuation that takes a producer of Just either values or errors that terminates with a Nothing.
