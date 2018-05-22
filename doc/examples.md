@@ -9,7 +9,7 @@
 - **[servant-examples](https://github.com/sras/servant-examples)**:
 
     Similar to [the cookbook](https://haskell-servant.readthedocs.io/en/latest/cookbook/index.html) but
-    with no explanations, for developers just want to look at code examples to find out how to do X or Y
+    with no explanations, for developers who just want to look at code examples to find out how to do X or Y
     with servant.
 
 - **[stack-templates](https://github.com/commercialhaskell/stack-templates)**
