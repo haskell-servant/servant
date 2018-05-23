@@ -41,7 +41,8 @@ import           Test.QuickCheck
 import           Servant.API         ((:<|>) ((:<|>)), (:>), JSON,
                                       NetstringFraming, NewlineFraming,
                                       OctetStream, ResultStream (..),
-                                      StreamGenerator (..), StreamGet)
+                                      StreamGenerator (..), StreamGet,
+                                      NoFraming)
 import           Servant.Client
 import           Servant.ClientSpec  (Person (..))
 import qualified Servant.ClientSpec  as CS
@@ -55,7 +56,7 @@ spec = describe "Servant.Stream" $ do
 type StreamApi f =
        "streamGetNewline" :> StreamGet NewlineFraming JSON (f Person)
   :<|> "streamGetNetstring" :> StreamGet  NetstringFraming JSON (f Person)
-  :<|> "streamALot" :> StreamGet NewlineFraming OctetStream (f BS.ByteString)
+  :<|> "streamALot" :> StreamGet NoFraming OctetStream (f BS.ByteString)
 
 
 capi :: Proxy (StreamApi ResultStream)

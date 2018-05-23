@@ -81,6 +81,18 @@ data ByteStringParser a = ByteStringParser {
 class FramingUnrender strategy a where
    unrenderFrames :: Proxy strategy -> Proxy a -> ByteStringParser (ByteStringParser (Either String ByteString))
 
+-- | A framing strategy that does not do any framing at all, it just passes the input data
+--   This will be used most of the time with binary data, such as files
+data NoFraming
+
+instance FramingRender NoFraming a where
+    header   _ _ = empty
+    boundary _ _ = BoundaryStrategyGeneral id
+    trailer  _ _ = empty
+
+instance FramingUnrender NoFraming a where
+    unrenderFrames _ _ = ByteStringParser (Just . (go,)) (go,)
+          where go = ByteStringParser (Just . (, empty) . Right) ((, empty) . Right)
 
 -- | A simple framing strategy that has no header or termination, and inserts a newline character between each frame.
 --   This assumes that it is used with a Content-Type that encodes without newlines (e.g. JSON).
