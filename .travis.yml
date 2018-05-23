@@ -172,11 +172,12 @@ script:
   - echo -en 'travis_fold:end:build-everything\\r'
   - if [ "x$TEST" = "x--enable-tests" ]; then cabal new-test -w ${HC} ${TEST} ${BENCH} ${CABALNEWBUILDOPTS} all; fi
 
-  - echo Haddock... && echo -en 'travis_fold:start:haddock\\r'
-  # haddock
-  - rm -rf ./dist-newstyle
-  - if $HADDOCK; then cabal new-haddock -w ${HC} ${TEST} ${BENCH} ${CABALNEWBUILDOPTS} all; else echo "Skipping haddock generation";fi
+#  - echo Haddock... && echo -en 'travis_fold:start:haddock\\r'
+#  # haddock
+#  - rm -rf ./dist-newstyle
+#  - if $HADDOCK; then cabal new-haddock -w ${HC} ${TEST} ${BENCH} ${CABALNEWBUILDOPTS} all; else echo "Skipping haddock generation";fi
+#
+#  - echo -en 'travis_fold:end:haddock\\r'
 
-  - echo -en 'travis_fold:end:haddock\\r'
 # REGENDATA ["--config=cabal.make-travis-yml","--output=.travis.yml","--max-backjumps=10000","cabal.project"]
 # EOF
