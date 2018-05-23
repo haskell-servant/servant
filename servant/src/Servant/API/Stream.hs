@@ -30,7 +30,7 @@ import           Network.HTTP.Types.Method
 import           Text.Read
                  (readMaybe)
 
--- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Steam endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
+-- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Stream endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
 data Stream (method :: k1) (framing :: *) (contentType :: *) (a :: *)
   deriving (Typeable, Generic)
 
