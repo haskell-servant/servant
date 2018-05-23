@@ -35,16 +35,16 @@ matrix:
   include:
     - compiler: "ghc-7.8.4"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-7.8.4], sources: [hvr-ghc]}}
+      addons: {apt: {packages: [ghc-ppa-tools,ghc-7.8.4,xz-utils], sources: [hvr-ghc]}}
     - compiler: "ghc-7.10.3"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-7.10.3], sources: [hvr-ghc]}}
+      addons: {apt: {packages: [ghc-ppa-tools,ghc-7.10.3,xz-utils], sources: [hvr-ghc]}}
     - compiler: "ghc-8.0.2"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.0.2], sources: [hvr-ghc]}}
+      addons: {apt: {packages: [ghc-ppa-tools,ghc-8.0.2,xz-utils], sources: [hvr-ghc]}}
     - compiler: "ghc-8.2.2"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.2.2], sources: [hvr-ghc]}}
+      addons: {apt: {packages: [ghc-ppa-tools,ghc-8.2.2,xz-utils], sources: [hvr-ghc]}}
 
 before_install:
   - HC=${CC}
@@ -55,6 +55,17 @@ before_install:
   - "PATH=/opt/ghc/bin:/opt/ghc-ppa-tools/bin:$HOME/local/bin:$PATH"
   - HCNUMVER=$(( $(${HC} --numeric-version|sed -E 's/([0-9]+)\.([0-9]+)\.([0-9]+).*/\1 * 10000 + \2 * 100 + \3/') ))
   - echo $HCNUMVER
+
+  # Let's download "better" cabal
+  - "curl -L http://oleg.fi/cabal-grayjay-buildable-fix.xz | xz -d > $HOME/.local/bin/cabal"
+  - |
+    if [ "$(cd $HOME/.local/bin && sha256sum cabal)" != "e281e9466b8eef30ac0d1371e8ea83c9d2e856bda4714a728ac474138b09b20f  cabal" ]; then
+      rm -f $HOME/.local/bin/cabal;
+      sha256sum $HOME/.local/bin/cabal;
+      false;
+    else
+      chmod a+x $HOME/.local/bin/cabal;
+    fi
 
 install:
   - cabal --version
