@@ -137,7 +137,7 @@ type StreamGet  = Stream 'GET
 type StreamPost = Stream 'POST
 ```
 
-These describe endpoints that return a stream of values rather than just a single value. They not only take a single content type as a parameter, but also a framing strategy -- this specifies how the individual results are delineated from one another in the stream. The two standard strategies given with Servant are `NewlineFraming` and `NetstringFraming`, but others can be written to match other protocols.
+These describe endpoints that return a stream of values rather than just a single value. They not only take a single content type as a parameter, but also a framing strategy -- this specifies how the individual results are delineated from one another in the stream. The three standard strategies given with Servant are `NewlineFraming`, `NetstringFraming` and `NoFraming`, but others can be written to match other protocols.
 
 
 ### `Capture`
