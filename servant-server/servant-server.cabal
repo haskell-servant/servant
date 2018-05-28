@@ -1,5 +1,6 @@
 name:                servant-server
 version:             0.13.0.1
+x-revision:          1
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -90,7 +91,7 @@ library
     , http-types          >= 0.12     && < 0.13
     , network-uri         >= 2.6.1.0  && < 2.7
     , monad-control       >= 1.0.0.4  && < 1.1
-    , network             >= 2.6.3.2  && < 2.7
+    , network             >= 2.6.3.2  && < 2.8
     , safe                >= 0.3.15   && < 0.4
     , split               >= 0.2.3.2  && < 0.3
     , string-conversions  >= 0.4.0.1  && < 0.5
