@@ -284,10 +284,10 @@ instance OVERLAPPING_
 
 instance OVERLAPPABLE_
          ( MimeRender ctype a, ReflectMethod method,
-           FramingRender framing ctype, ToStreamGenerator f a
-         ) => HasServer (Stream method framing ctype (f a)) context where
+           FramingRender framing ctype, ToStreamGenerator b a
+         ) => HasServer (Stream method framing ctype b) context where
 
-  type ServerT (Stream method framing ctype (f a)) m = m (f a)
+  type ServerT (Stream method framing ctype b) m = m b
   hoistServerWithContext _ _ nt s = nt s
 
   route Proxy _ = streamRouter ([],) method (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
@@ -295,23 +295,23 @@ instance OVERLAPPABLE_
 
 instance OVERLAPPING_
          ( MimeRender ctype a, ReflectMethod method,
-           FramingRender framing ctype, ToStreamGenerator f a,
-           GetHeaders (Headers h (f a))
-         ) => HasServer (Stream method framing ctype (Headers h (f a))) context where
+           FramingRender framing ctype, ToStreamGenerator b a,
+           GetHeaders (Headers h b)
+         ) => HasServer (Stream method framing ctype (Headers h b)) context where
 
-  type ServerT (Stream method framing ctype (Headers h (f a))) m = m (Headers h (f a))
+  type ServerT (Stream method framing ctype (Headers h b)) m = m (Headers h b)
   hoistServerWithContext _ _ nt s = nt s
 
   route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
       where method = reflectMethod (Proxy :: Proxy method)
 
 
-streamRouter :: (MimeRender ctype a, FramingRender framing ctype, ToStreamGenerator f a) =>
-                (b -> ([(HeaderName, B.ByteString)], f a))
+streamRouter :: (MimeRender ctype a, FramingRender framing ctype, ToStreamGenerator b a) =>
+                (c -> ([(HeaderName, B.ByteString)], b))
              -> Method
              -> Proxy framing
              -> Proxy ctype
-             -> Delayed env (Handler b)
+             -> Delayed env (Handler c)
              -> Router env
 streamRouter splitHeaders method framingproxy ctypeproxy action = leafRouter $ \env request respond ->
           let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
