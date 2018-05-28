@@ -29,7 +29,6 @@ module Servant.StreamSpec (spec) where
 import           Control.Monad       (replicateM_, void)
 import qualified Data.ByteString     as BS
 import           Data.Proxy
-import           GHC.Stats           (currentBytesUsed, getGCStats)
 import qualified Network.HTTP.Client as C
 import           Prelude             ()
 import           Prelude.Compat
@@ -47,6 +46,11 @@ import           Servant.ClientSpec  (Person (..))
 import qualified Servant.ClientSpec  as CS
 import           Servant.Server
 
+#if MIN_VERSION_base(4,10,0)
+import           GHC.Stats           (gcdetails_mem_in_use_bytes, gc, getRTSStats)
+#else
+import           GHC.Stats           (currentBytesUsed, getGCStats)
+#endif
 
 spec :: Spec
 spec = describe "Servant.Stream" $ do
@@ -81,16 +85,16 @@ server = serve sapi
   :<|> return (StreamGenerator lotsGenerator)
   where
     lotsGenerator f r = do
-      f ""
-      withFile "/dev/urandom" ReadMode $
+      void $ f ""
+      void $ withFile "/dev/urandom" ReadMode $
         \handle -> streamFiveMBNTimes handle 1000 r
       return ()
 
     streamFiveMBNTimes handle left sink
-      | left <= 0 = return ""
+      | left <= (0 :: Int) = return ()
       | otherwise = do
           msg <- BS.hGet handle (megabytes 5)
-          sink msg
+          _ <- sink msg
           streamFiveMBNTimes handle (left - 1) sink
 
 
@@ -129,8 +133,12 @@ streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
        Right (ResultStream res) <- runClient getGetALot baseUrl
        let consumeNChunks n = replicateM_ n (res void)
        consumeNChunks 900
+#if MIN_VERSION_base(4,10,0)
+       memUsed <- gcdetails_mem_in_use_bytes . gc <$> getRTSStats
+#else
        memUsed <- currentBytesUsed <$> getGCStats
-       memUsed `shouldSatisfy` (< (megabytes 20))
+#endif
+       memUsed `shouldSatisfy` (< megabytes 22)
 
 megabytes :: Num a => a -> a
-megabytes n = n * (1000 ^ 2)
+megabytes n = n * (1000 ^ (2 :: Int))
