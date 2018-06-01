@@ -41,7 +41,7 @@ type LinkableApi =
 
 
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
-         => Proxy endpoint -> MkLink endpoint
+         => Proxy endpoint -> MkLink endpoint Link
 apiLink = safeLink (Proxy :: Proxy TestApi)
 
 -- | Convert a link to a URI and ensure that this maps to the given string
