@@ -11,7 +11,7 @@ cabal-version:       >=1.10
 extra-source-files:
   Pagination.lhs
   dummy/Pagination.lhs
-tested-with:         GHC==7.8.4, GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.2
+tested-with:         GHC==7.8.4, GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
 
 executable cookbook-pagination
   main-is:             Pagination.lhs

@@ -21,7 +21,7 @@ tested-with:
   GHC==7.10.3
   GHC==8.0.2
   GHC==8.2.2
-  GHC==8.4.2
+  GHC==8.4.3
 homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
