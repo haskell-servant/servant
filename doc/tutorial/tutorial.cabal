@@ -17,7 +17,7 @@ tested-with:
   GHC==7.10.3
   GHC==8.0.2
   GHC==8.2.2
-  GHC==8.4.2
+  GHC==8.4.3
 extra-source-files:
   static/index.html
   static/ui.js

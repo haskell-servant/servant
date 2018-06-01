@@ -11,8 +11,10 @@ packages: servant/
   doc/cookbook/basic-auth
   doc/cookbook/db-postgres-pool
   doc/cookbook/db-sqlite-simple
-  doc/cookbook/file-upload
+  -- MkLink changed
+  -- doc/cookbook/file-upload
   doc/cookbook/https
+  -- servant-auth-* doesn't support GHC-8.4
   -- doc/cookbook/jwt-and-basic-auth
   doc/cookbook/pagination
   doc/cookbook/structuring-apis
