@@ -1,28 +1,26 @@
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE ConstraintKinds            #-}
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE PolyKinds                  #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TupleSections              #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 #if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
 #define HAS_TYPE_ERROR
 #endif
 
 #ifdef HAS_TYPE_ERROR
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE UndecidableInstances  #-}
 #endif
-
-#include "overlapping-compat.h"
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
@@ -34,89 +32,127 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServantErr
   ) where
 
-import           Control.Monad              (join, when)
-import           Control.Monad.Trans        (liftIO)
-import           Control.Monad.Trans.Resource (runResourceT)
-import qualified Data.ByteString            as B
-import qualified Data.ByteString.Builder    as BB
-import qualified Data.ByteString.Char8      as BC8
-import qualified Data.ByteString.Lazy       as BL
-import           Data.Maybe                 (fromMaybe, mapMaybe,
-                                             isNothing, maybeToList)
-import           Data.Either                (partitionEithers)
-import           Data.Semigroup             ((<>))
-import           Data.String                (IsString (..))
-import           Data.String.Conversions    (cs)
-import           Data.Tagged                (Tagged(..), retag, untag)
-import qualified Data.Text                  as T
+import           Control.Monad
+                 (join, when)
+import           Control.Monad.Trans
+                 (liftIO)
+import           Control.Monad.Trans.Resource
+                 (runResourceT)
+import qualified Data.ByteString                            as B
+import qualified Data.ByteString.Builder                    as BB
+import qualified Data.ByteString.Char8                      as BC8
+import qualified Data.ByteString.Lazy                       as BL
+import           Data.Either
+                 (partitionEithers)
+import           Data.Maybe
+                 (fromMaybe, isNothing, mapMaybe, maybeToList)
+import           Data.Profunctor
+                 (Profunctor (..))
+import           Data.Semigroup
+                 ((<>))
+import           Data.String
+                 (IsString (..))
+import           Data.String.Conversions
+                 (cs)
+import           Data.Tagged
+                 (Tagged (..), retag, untag)
+import qualified Data.Text                                  as T
 import           Data.Typeable
-import           GHC.TypeLits               (KnownNat, KnownSymbol, natVal,
-                                             symbolVal)
-import           Network.HTTP.Types         hiding (Header, ResponseHeaders)
-import qualified Network.HTTP.Media         as NHM
-import           Network.Socket             (SockAddr)
-import           Network.Wai                (Application, Request,
-                                             httpVersion, isSecure,
-                                             lazyRequestBody,
-                                             rawQueryString, remoteHost,
-                                             requestHeaders, requestMethod,
-                                             responseLBS, responseStream,
-                                             vault)
-import           Prelude                    ()
+import           GHC.TypeLits
+                 (KnownNat, KnownSymbol, natVal, symbolVal)
+import qualified Network.HTTP.Media                         as NHM
+import           Network.HTTP.Types                         hiding
+                 (Header, ResponseHeaders)
+import           Network.Socket
+                 (SockAddr)
+import           Network.Wai
+                 (Application, Request, httpVersion, isSecure, lazyRequestBody,
+                 rawQueryString, remoteHost, requestHeaders, requestMethod,
+                 responseLBS, responseStream, vault)
+import           Prelude ()
 import           Prelude.Compat
-import           Web.HttpApiData            (FromHttpApiData, parseHeader,
-                                             parseQueryParam,
-                                             parseUrlPieceMaybe,
-                                             parseUrlPieces)
-import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture',
-                                              CaptureAll, Verb, EmptyAPI,
-                                              ReflectMethod(reflectMethod),
-                                              IsSecure(..), Header', QueryFlag,
-                                              QueryParam', QueryParams, Raw,
-                                              RemoteHost, ReqBody', Vault,
-                                              WithNamedContext,
-                                              Description, Summary,
-                                              Accept(..),
-                                              FramingRender(..), Stream,
-                                              StreamGenerator(..), ToStreamGenerator(..),
-                                              BoundaryStrategy(..),
-                                              If, SBool (..), SBoolI (..))
-import           Servant.API.Modifiers       (unfoldRequestArgument, RequestArgument, FoldRequired, FoldLenient)
-import           Servant.API.ContentTypes    (AcceptHeader (..),
-                                              AllCTRender (..),
-                                              AllCTUnrender (..),
-                                              AllMime,
-                                              MimeRender(..),
-                                              canHandleAcceptH)
-import           Servant.API.ResponseHeaders (GetHeaders, Headers, getHeaders,
-                                              getResponse)
+import           Servant.API
+                 ((:<|>) (..), (:>), Accept (..), BasicAuth,
+                 BoundaryStrategy (..), Capture', CaptureAll, Description,
+                 EmptyAPI, FramingRender (..), Header', If, IsSecure (..),
+                 NoContent (..), QueryFlag, QueryParam', QueryParams, Raw,
+                 ReflectMethod (reflectMethod), RemoteHost, ReqBody', Result,
+                 SBool (..), SBoolI (..), Stream, StreamGenerator (..),
+                 Summary, ToStreamGenerator (..), Vault, Verb',
+                 WithNamedContext)
+import           Servant.API.ContentTypes
+                 (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
+                 AllMime, MimeRender (..), canHandleAcceptH)
+import           Servant.API.Modifiers
+                 (FoldLenient, FoldRequired, RequestArgument,
+                 unfoldRequestArgument)
+import           Servant.API.ResponseHeaders
+                 (GetHeaders', Headers, getHeaders, getResponse)
+import           Web.HttpApiData
+                 (FromHttpApiData, parseHeader, parseQueryParam,
+                 parseUrlPieceMaybe, parseUrlPieces)
 
-import           Servant.Server.Internal.Context
 import           Servant.Server.Internal.BasicAuth
+import           Servant.Server.Internal.Context
 import           Servant.Server.Internal.Handler
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 
 #ifdef HAS_TYPE_ERROR
-import GHC.TypeLits (TypeError, ErrorMessage (..))
+import           GHC.TypeLits
+                 (ErrorMessage (..), TypeError)
 #endif
 
+import qualified Network.Wai                                as Wai
+
 class HasServer api context where
-  type ServerT api (m :: * -> *) :: *
+    type ServerT api (m :: * -> *) :: *
 
-  route ::
-       Proxy api
-    -> Context context
-    -> Delayed env (Server api)
-    -> Router env
+    route ::
+         Proxy api
+      -> Context context
+      -> Delayed env (Server api)
+      -> Router env
 
-  hoistServerWithContext
-      :: Proxy api
-      -> Proxy context
-      -> (forall x. m x -> n x)
-      -> ServerT api m
-      -> ServerT api n
+    hoistServerWithContext
+        :: Proxy api
+        -> Proxy context
+        -> (forall x. m x -> n x)
+        -> ServerT api m
+        -> ServerT api n
+
+class HasServerR api where
+    type ServerR api :: *
+
+    -- TODO: add headers, method we don't need "Router", but "Leaf", in a sense.
+    routeR
+        :: Proxy api
+        -> Context context
+        -> Request
+        -> RouteResultR (ServerR api) Wai.Response
+
+-- | @('RouteResult' a, forall env c. 'Delayed' env c -> 'Delayed' env c)@
+data RouteResultR a b where
+    RouteResultR
+        :: (forall env k. Delayed env k -> Delayed env k)  -- add additional checks for router to consider
+        -> (a -> RouteResult b)                            -- convert @a@ to @RouteResult b@ (b is Wai.Response)
+        -> RouteResultR a b
+
+routeResultR :: (a ->  RouteResult b) -> RouteResultR a b
+routeResultR = RouteResultR id
+
+instance Functor (RouteResultR a) where
+    fmap f = mapRouteResultR (fmap f .)
+
+instance Profunctor RouteResultR where
+    dimap f g = mapRouteResultR $ \r -> fmap g . r . f
+
+mapRouteResultR
+    :: ((a -> RouteResult b) -> c -> RouteResult d)
+    -> RouteResultR a b
+    -> RouteResultR c d
+mapRouteResultR f (RouteResultR d r) = RouteResultR d (f r)
 
 type Server api = ServerT api Handler
 
@@ -239,6 +275,27 @@ acceptCheck proxy accH
   | canHandleAcceptH proxy (AcceptHeader accH) = return ()
   | otherwise                                  = delayedFail err406
 
+{-
+addMethodCheck :: Method
+             -> Delayed env (Handler b)
+             -> Delayer env (
+addMethodCheck  method action = error "todo" {- leafRouter route'
+  where
+    route' env request respond =
+          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+          in runAction (action `addMethodCheck` methodCheck method request
+                               `addAcceptCheck` acceptCheck proxy accH
+                       ) env request respond $ \ output -> do
+               let (headers, b) = splitHeaders output
+               case handleAcceptH proxy (AcceptHeader accH) b of
+                 Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
+                 Just (contentT, body) ->
+                      let bdy = if allowedMethodHead method request then "" else body
+                      in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
+-}
+-}
+
+{-
 methodRouter :: (AllCTRender ctypes a)
              => (b -> ([(HeaderName, B.ByteString)], a))
              -> Method -> Proxy ctypes -> Status
@@ -257,31 +314,83 @@ methodRouter splitHeaders method proxy status action = leafRouter route'
                  Just (contentT, body) ->
                       let bdy = if allowedMethodHead method request then "" else body
                       in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
+-}
 
-instance OVERLAPPABLE_
-         ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
-         ) => HasServer (Verb method status ctypes a) context where
+instance (HasServerR api, ReflectMethod method)
+    => HasServer (Verb' method api) context
+  where
+    type ServerT (Verb' method api) m = m (ServerR api)
+    hoistServerWithContext _ _ nt s = nt s
 
-  type ServerT (Verb method status ctypes a) m = m a
-  hoistServerWithContext _ _ nt s = nt s
+    route Proxy context subserver = leafRouter $ \env request respond ->
+        case routeR (Proxy :: Proxy api) context request of
+            RouteResultR d k -> runAction (d subserver') env request respond $ \output ->
+                if allowedMethodHead method request
+                then emptyBodyResponse <$> k output
+                else k output
+      where
+        subserver' = subserver `addMethodCheck` withRequest methodCheck'
+        method = reflectMethod (Proxy :: Proxy method)
 
-  route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
-    where method = reflectMethod (Proxy :: Proxy method)
-          status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+        methodCheck' :: Request -> DelayedIO ()
+        methodCheck' request
+            | allowedMethod method request = return ()
+            | otherwise                    = delayedFail err405
 
-instance OVERLAPPING_
-         ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
-         , GetHeaders (Headers h a)
-         ) => HasServer (Verb method status ctypes (Headers h a)) context where
+emptyBodyResponse :: Wai.Response -> Wai.Response
+emptyBodyResponse res = responseLBS (Wai.responseStatus res) (Wai.responseHeaders res) mempty
 
-  type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
-  hoistServerWithContext _ _ nt s = nt s
+instance (AllCTRender contentTypes a, KnownNat status) => HasServerR (Result status contentTypes a) where
+    type ServerR (Result status contentTypes a) = a
 
-  route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
-    where method = reflectMethod (Proxy :: Proxy method)
-          status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+    routeR _proxy _context request = RouteResultR headerCheck $ \a ->
+        case handleAcceptH contentTypesP (AcceptHeader acceptHeader) a of
+            -- this should not happen (checked before), so we make it fatal if it does
+            Nothing -> FailFatal err406
+            Just (contentT, body) ->
+                Route $ responseLBS status ((hContentType, cs contentT) : headers) body
+      where
+        headerCheck :: Delayed env' k -> Delayed env' k
+        headerCheck d = d `addAcceptCheck` acceptCheck contentTypesP acceptHeader
 
+        contentTypesP = Proxy :: Proxy contentTypes
 
+        status       = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+        acceptHeader = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+        headers      = []
+
+instance KnownNat status => HasServerR (NoContent status) where
+    type ServerR (NoContent status) = NoContent status
+
+    routeR _proxy _context _request = routeResultR $ \NoContent ->
+        Route $ responseLBS status headers mempty
+      where
+        headers = []
+        status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+
+instance (HasServerR api, GetHeaders' hs) => HasServerR (Headers hs :> api) where
+    type ServerR (Headers hs :> api) = Headers hs (ServerR api)
+
+    routeR Proxy context request = mapRouteResultR addHeaders $
+        routeR (Proxy :: Proxy api) context request
+      where
+        addHeaders
+            :: (ServerR api -> RouteResult Wai.Response)
+            -> Headers hs (ServerR api)
+            -> RouteResult Wai.Response
+        addHeaders f x = Wai.mapResponseHeaders (++ headers) <$> f output
+          where
+            output  = getResponse x
+            headers = getHeaders x
+{-
+
+            addHeaders :: Wai.Response -> Wai.Response
+            addHeaders = Wai.mapResponseHeaders (++ headers)
+        in _
+      where
+        RouteResultR r sub =
+-}
+{-
 instance OVERLAPPABLE_
          ( MimeRender ctype a, ReflectMethod method, KnownNat status,
            FramingRender framing ctype, ToStreamGenerator b a
@@ -307,6 +416,7 @@ instance OVERLAPPING_
       where method = reflectMethod (Proxy :: Proxy method)
             status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
+-}
 
 streamRouter :: (MimeRender ctype a, FramingRender framing ctype, ToStreamGenerator b a) =>
                 (c -> ([(HeaderName, B.ByteString)], b))
@@ -762,7 +872,7 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -- ...Maybe you haven't applied enough arguments to
 -- ...Capture' '[] "foo"
 -- ...
--- 
+--
 instance TypeError (HasServerArrowKindError arr) => HasServer ((arr :: k -> l) :> api) context
   where
     type ServerT (arr :> api) m = TypeError (HasServerArrowKindError arr)

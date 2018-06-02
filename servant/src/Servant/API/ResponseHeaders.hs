@@ -30,6 +30,8 @@ module Servant.API.ResponseHeaders
     , noHeader
     , BuildHeadersTo(buildHeadersTo)
     , GetHeaders(getHeaders)
+    , GetHeaders'(getHeaders')
+    , GetHeadersFromHList(getHeadersFromHList)
     , HeaderValMap
     , HList(..)
     ) where

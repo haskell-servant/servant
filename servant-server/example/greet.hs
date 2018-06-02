@@ -34,7 +34,7 @@ type TestApi =
   :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
 
        -- DELETE /greet/:greetid
-  :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent
+  :<|> "greet" :> Capture "greetid" Text :> DeleteNoContent
 
 testApi :: Proxy TestApi
 testApi = Proxy
@@ -69,4 +69,6 @@ runTestServer port = run port test
 
 -- Put this all to work!
 main :: IO ()
-main = runTestServer 8001
+main = do
+    putStrLn "Try: curl http://localhost:8001/hello/world"
+    runTestServer 8001
