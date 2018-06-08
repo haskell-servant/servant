@@ -100,23 +100,41 @@ instance OVERLAPPABLE_ ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
 class GetHeaders ls where
     getHeaders :: ls -> [HTTP.Header]
 
-instance OVERLAPPING_ GetHeaders (HList '[]) where
-    getHeaders _ = []
+-- | Auxiliary class for @'GetHeaders' ('HList' hs)@ instance
+class GetHeadersFromHList hs where
+    getHeadersFromHList :: HList hs  -> [HTTP.Header]
 
-instance OVERLAPPABLE_ ( KnownSymbol h, ToHttpApiData x, GetHeaders (HList xs) )
-         => GetHeaders (HList (Header h x ': xs)) where
-    getHeaders hdrs = case hdrs of
-        Header val `HCons` rest -> (headerName , toHeader val):getHeaders rest
-        UndecodableHeader h `HCons` rest -> (headerName,  h)  :getHeaders rest
-        MissingHeader `HCons` rest -> getHeaders rest
-      where headerName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
+instance GetHeadersFromHList hs => GetHeaders (HList hs) where
+    getHeaders = getHeadersFromHList
 
-instance OVERLAPPING_ GetHeaders (Headers '[] a) where
-    getHeaders _ = []
+instance GetHeadersFromHList '[] where
+    getHeadersFromHList _ = []
 
-instance OVERLAPPABLE_ ( KnownSymbol h, GetHeaders (HList rest), ToHttpApiData v )
-         => GetHeaders (Headers (Header h v ': rest) a) where
-    getHeaders hs = getHeaders $ getHeadersHList hs
+instance (KnownSymbol h, ToHttpApiData x, GetHeadersFromHList xs)
+    => GetHeadersFromHList (Header h x ': xs)
+  where
+    getHeadersFromHList hdrs = case hdrs of
+        Header val `HCons` rest          -> (headerName , toHeader val) : getHeadersFromHList rest
+        UndecodableHeader h `HCons` rest -> (headerName,  h) : getHeadersFromHList rest
+        MissingHeader `HCons` rest       -> getHeadersFromHList rest
+      where
+        headerName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
+
+-- | Auxiliary class for @'GetHeaders' ('Headers' hs a)@ instance
+class GetHeaders' hs where
+    getHeaders' :: Headers hs a -> [HTTP.Header]
+
+instance GetHeaders' hs => GetHeaders (Headers hs a) where
+    getHeaders = getHeaders'
+
+-- | This instance is an optimisation
+instance GetHeaders' '[] where
+    getHeaders' _ = []
+
+instance (KnownSymbol h, GetHeadersFromHList rest, ToHttpApiData v)
+    => GetHeaders' (Header h v ': rest)
+  where
+    getHeaders' hs = getHeadersFromHList $ getHeadersHList hs
 
 -- * Adding
 
