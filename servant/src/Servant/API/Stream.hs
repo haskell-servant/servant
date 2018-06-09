@@ -26,17 +26,19 @@ import           Data.Typeable
                  (Typeable)
 import           GHC.Generics
                  (Generic)
+import           GHC.TypeLits
+                 (Nat)
 import           Network.HTTP.Types.Method
                  (StdMethod (..))
 import           Text.Read
                  (readMaybe)
 
 -- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Stream endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
-data Stream (method :: k1) (framing :: *) (contentType :: *) (a :: *)
+data Stream (method :: k1) (status :: Nat) (framing :: *) (contentType :: *) (a :: *)
   deriving (Typeable, Generic)
 
-type StreamGet  = Stream 'GET
-type StreamPost = Stream 'POST
+type StreamGet  = Stream 'GET 200
+type StreamPost = Stream 'POST 200
 
 -- | Stream endpoints may be implemented as producing a @StreamGenerator@ -- a function that itself takes two emit functions -- the first to be used on the first value the stream emits, and the second to be used on all subsequent values (to allow interspersed framing strategies such as comma separation).
 newtype StreamGenerator a = StreamGenerator {getStreamGenerator :: (a -> IO ()) -> (a -> IO ()) -> IO ()}

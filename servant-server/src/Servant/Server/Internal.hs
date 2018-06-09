@@ -283,37 +283,40 @@ instance OVERLAPPING_
 
 
 instance OVERLAPPABLE_
-         ( MimeRender ctype a, ReflectMethod method,
+         ( MimeRender ctype a, ReflectMethod method, KnownNat status,
            FramingRender framing ctype, ToStreamGenerator b a
-         ) => HasServer (Stream method framing ctype b) context where
+         ) => HasServer (Stream method status framing ctype b) context where
 
-  type ServerT (Stream method framing ctype b) m = m b
+  type ServerT (Stream method status framing ctype b) m = m b
   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ = streamRouter ([],) method (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
+  route Proxy _ = streamRouter ([],) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
       where method = reflectMethod (Proxy :: Proxy method)
+            status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
 instance OVERLAPPING_
-         ( MimeRender ctype a, ReflectMethod method,
+         ( MimeRender ctype a, ReflectMethod method, KnownNat status,
            FramingRender framing ctype, ToStreamGenerator b a,
            GetHeaders (Headers h b)
-         ) => HasServer (Stream method framing ctype (Headers h b)) context where
+         ) => HasServer (Stream method status framing ctype (Headers h b)) context where
 
-  type ServerT (Stream method framing ctype (Headers h b)) m = m (Headers h b)
+  type ServerT (Stream method status framing ctype (Headers h b)) m = m (Headers h b)
   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
+  route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
       where method = reflectMethod (Proxy :: Proxy method)
+            status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
 
 streamRouter :: (MimeRender ctype a, FramingRender framing ctype, ToStreamGenerator b a) =>
                 (c -> ([(HeaderName, B.ByteString)], b))
              -> Method
+             -> Status
              -> Proxy framing
              -> Proxy ctype
              -> Delayed env (Handler c)
              -> Router env
-streamRouter splitHeaders method framingproxy ctypeproxy action = leafRouter $ \env request respond ->
+streamRouter splitHeaders method status framingproxy ctypeproxy action = leafRouter $ \env request respond ->
           let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
               cmediatype = NHM.matchAccept [contentType ctypeproxy] accH
               accCheck = when (isNothing cmediatype) $ delayedFail err406
@@ -323,7 +326,7 @@ streamRouter splitHeaders method framingproxy ctypeproxy action = leafRouter $ \
                        ) env request respond $ \ output ->
                 let (headers, fa) = splitHeaders output
                     k = getStreamGenerator . toStreamGenerator $ fa in
-                Route $ responseStream status200 (contentHeader : headers) $ \write flush -> do
+                Route $ responseStream status (contentHeader : headers) $ \write flush -> do
                       write . BB.lazyByteString $ header framingproxy ctypeproxy
                       case boundary framingproxy ctypeproxy of
                            BoundaryStrategyBracket f ->
