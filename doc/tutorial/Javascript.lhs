@@ -477,7 +477,7 @@ data AngularOptions = AngularOptions
   }
 ```
 
-# Custom function name builder
+## Custom function name builder
 
 Servant comes with three name builders included:
 
@@ -518,4 +518,3 @@ var get_books = function(q, onSuccess, onError)
 }
 
 ```
-
