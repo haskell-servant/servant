@@ -88,6 +88,7 @@ spec :: Spec
 spec = do
   verbSpec
   captureSpec
+  captureAllSpec
   queryParamSpec
   reqBodySpec
   headerSpec
