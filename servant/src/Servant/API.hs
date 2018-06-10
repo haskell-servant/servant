@@ -81,7 +81,7 @@ import           Servant.API.Alternative
 import           Servant.API.BasicAuth
                  (BasicAuth, BasicAuthData (..))
 import           Servant.API.Capture
-                 (Capture, Capture', CaptureAll)
+                 (Capture, Capture', CaptureAll, CaptureMany)
 import           Servant.API.ContentTypes
                  (Accept (..), FormUrlEncoded, JSON, MimeRender (..),
                  MimeUnrender (..), NoContent (NoContent), OctetStream,
