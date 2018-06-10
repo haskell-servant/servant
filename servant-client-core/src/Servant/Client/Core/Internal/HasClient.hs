@@ -285,9 +285,9 @@ instance OVERLAPPING_
 instance OVERLAPPABLE_
   ( RunClient m, MimeUnrender ct a, ReflectMethod method,
     FramingUnrender framing a, BuildFromStream a (f a)
-  ) => HasClient m (Stream method framing ct (f a)) where
+  ) => HasClient m (Stream method status framing ct (f a)) where
 
-  type Client m (Stream method framing ct (f a)) = m (f a)
+  type Client m (Stream method status framing ct (f a)) = m (f a)
 
   clientWithRoute _pm Proxy req = do
    sresp <- streamingRequest req

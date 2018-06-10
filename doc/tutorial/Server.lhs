@@ -95,12 +95,6 @@ users1 =
   ]
 ```
 
-Let's also write our API type.
-
-``` haskell ignore
-type UserAPI1 = "users" :> Get '[JSON] [User]
-```
-
 We can now take care of writing the actual webservice that will handle requests
 to such an API. This one will be very simple, being reduced to just a single
 endpoint. The type of the web application is determined by the API type,

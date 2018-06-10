@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -25,26 +26,28 @@ import           Data.Typeable
                  (Typeable)
 import           GHC.Generics
                  (Generic)
+import           GHC.TypeLits
+                 (Nat)
 import           Network.HTTP.Types.Method
                  (StdMethod (..))
 import           Text.Read
                  (readMaybe)
 
--- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Steam endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
-data Stream (method :: k1) (framing :: *) (contentType :: *) (a :: *)
+-- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Stream endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
+data Stream (method :: k1) (status :: Nat) (framing :: *) (contentType :: *) (a :: *)
   deriving (Typeable, Generic)
 
-type StreamGet  = Stream 'GET
-type StreamPost = Stream 'POST
+type StreamGet  = Stream 'GET 200
+type StreamPost = Stream 'POST 200
 
 -- | Stream endpoints may be implemented as producing a @StreamGenerator@ -- a function that itself takes two emit functions -- the first to be used on the first value the stream emits, and the second to be used on all subsequent values (to allow interspersed framing strategies such as comma separation).
-newtype StreamGenerator a =  StreamGenerator {getStreamGenerator :: (a -> IO ()) -> (a -> IO ()) -> IO ()}
+newtype StreamGenerator a = StreamGenerator {getStreamGenerator :: (a -> IO ()) -> (a -> IO ()) -> IO ()}
 
 -- | ToStreamGenerator is intended to be implemented for types such as Conduit, Pipe, etc. By implementing this class, all such streaming abstractions can be used directly as endpoints.
-class ToStreamGenerator f a where
-   toStreamGenerator :: f a -> StreamGenerator a
+class ToStreamGenerator a b | a -> b where
+   toStreamGenerator :: a -> StreamGenerator b
 
-instance ToStreamGenerator StreamGenerator a
+instance ToStreamGenerator (StreamGenerator a) a
    where toStreamGenerator x = x
 
 -- | Clients reading from streaming endpoints can be implemented as producing a @ResultStream@ that captures the setup, takedown, and incremental logic for a read, being an IO continuation that takes a producer of Just either values or errors that terminates with a Nothing.
@@ -80,6 +83,18 @@ data ByteStringParser a = ByteStringParser {
 class FramingUnrender strategy a where
    unrenderFrames :: Proxy strategy -> Proxy a -> ByteStringParser (ByteStringParser (Either String ByteString))
 
+-- | A framing strategy that does not do any framing at all, it just passes the input data
+--   This will be used most of the time with binary data, such as files
+data NoFraming
+
+instance FramingRender NoFraming a where
+    header   _ _ = empty
+    boundary _ _ = BoundaryStrategyGeneral id
+    trailer  _ _ = empty
+
+instance FramingUnrender NoFraming a where
+    unrenderFrames _ _ = ByteStringParser (Just . (go,)) (go,)
+          where go = ByteStringParser (Just . (, empty) . Right) ((, empty) . Right)
 
 -- | A simple framing strategy that has no header or termination, and inserts a newline character between each frame.
 --   This assumes that it is used with a Content-Type that encodes without newlines (e.g. JSON).

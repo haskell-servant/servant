@@ -117,8 +117,8 @@ import           Servant.API.Stream
                  (BoundaryStrategy (..), BuildFromStream (..),
                  ByteStringParser (..), FramingRender (..),
                  FramingUnrender (..), NetstringFraming, NewlineFraming,
-                 ResultStream (..), Stream, StreamGenerator (..), StreamGet,
-                 StreamPost, ToStreamGenerator (..))
+                 NoFraming, ResultStream (..), Stream, StreamGenerator (..),
+                 StreamGet, StreamPost, ToStreamGenerator (..))
 import           Servant.API.Sub
                  ((:>))
 import           Servant.API.Vault

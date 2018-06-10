@@ -27,6 +27,7 @@ import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
                                (.~))
 import           Data.Data (Data)
 import           Data.Proxy
+import           Data.Semigroup (Semigroup)
 import           Data.String
 import           Data.Text
 import           Data.Typeable (Typeable)
@@ -38,12 +39,12 @@ import           Servant.API.TypeLevel
 import           Servant.API.Modifiers (RequiredArgument)
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
-  deriving (Data, Show, Eq, Monoid, Typeable)
+  deriving (Data, Show, Eq, Semigroup, Monoid, Typeable)
 
 makePrisms ''FunctionName
 
 newtype PathSegment = PathSegment { unPathSegment :: Text }
-  deriving (Data, Show, Eq, IsString, Monoid, Typeable)
+  deriving (Data, Show, Eq, IsString, Semigroup, Monoid, Typeable)
 
 makePrisms ''PathSegment
 

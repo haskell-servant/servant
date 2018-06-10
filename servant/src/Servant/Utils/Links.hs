@@ -19,8 +19,6 @@
 -- >>> import Servant.Utils.Links
 -- >>> import Data.Proxy
 -- >>>
--- >>>
--- >>>
 -- >>> type Hello = "hello" :> Get '[JSON] Int
 -- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] NoContent
 -- >>> type API   = Hello :<|> Bye
@@ -63,9 +61,23 @@
 -- >>> :set -XConstraintKinds
 -- >>> :{
 -- >>> let apiLink :: (IsElem endpoint API, HasLink endpoint)
--- >>>             => Proxy endpoint -> MkLink endpoint
+-- >>>             => Proxy endpoint -> MkLink endpoint Link
 -- >>>     apiLink = safeLink api
 -- >>> :}
+--
+-- `safeLink'` allows to make specialise the output:
+--
+-- >>> safeLink' toUrlPiece api without
+-- "bye"
+--
+-- >>> :{
+-- >>> let apiTextLink :: (IsElem endpoint API, HasLink endpoint)
+-- >>>                  => Proxy endpoint -> MkLink endpoint Text
+-- >>>     apiTextLink = safeLink' toUrlPiece api
+-- >>> :}
+--
+-- >>> apiTextLink without
+-- "bye"
 --
 -- Attempting to construct a link to an endpoint that does not exist in api
 -- will result in a type error like this:
@@ -86,7 +98,9 @@ module Servant.Utils.Links (
   --
   -- | Note that 'URI' is from the "Network.URI" module in the @network-uri@ package.
     safeLink
+  , safeLink'
   , allLinks
+  , allLinks'
   , URI(..)
   -- * Adding custom types
   , HasLink(..)
@@ -276,8 +290,18 @@ safeLink
     :: forall endpoint api. (IsElem endpoint api, HasLink endpoint)
     => Proxy api      -- ^ The whole API that this endpoint is a part of
     -> Proxy endpoint -- ^ The API endpoint you would like to point to
-    -> MkLink endpoint
-safeLink _ endpoint = toLink endpoint (Link mempty mempty)
+    -> MkLink endpoint Link
+safeLink = safeLink' id
+
+-- | More general 'safeLink'.
+--
+safeLink'
+    :: forall endpoint api a. (IsElem endpoint api, HasLink endpoint)
+    => (Link -> a)
+    -> Proxy api      -- ^ The whole API that this endpoint is a part of
+    -> Proxy endpoint -- ^ The API endpoint you would like to point to
+    -> MkLink endpoint a
+safeLink' toA _ endpoint = toLink toA endpoint (Link mempty mempty)
 
 -- | Create all links in an API.
 --
@@ -293,37 +317,47 @@ safeLink _ endpoint = toLink endpoint (Link mempty mempty)
 --
 -- Note: nested APIs don't work well with this approach
 --
--- >>> :kind! MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double))
--- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) :: *
+-- >>> :kind! MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link
+-- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link :: *
 -- = Char -> (Int -> Link) :<|> (Double -> Link)
---
 allLinks
     :: forall api. HasLink api
     => Proxy api
-    -> MkLink api
-allLinks api = toLink api (Link mempty mempty)
+    -> MkLink api Link
+allLinks = allLinks' id
+
+-- | More general 'allLinks'. See `safeLink'`.
+allLinks'
+    :: forall api a. HasLink api
+    => (Link -> a)
+    -> Proxy api
+    -> MkLink api a
+allLinks' toA api = toLink toA api (Link mempty mempty)
 
 -- | Construct a toLink for an endpoint.
 class HasLink endpoint where
-    type MkLink endpoint
-    toLink :: Proxy endpoint -- ^ The API endpoint you would like to point to
-         -> Link
-         -> MkLink endpoint
+    type MkLink endpoint (a :: *)
+    toLink
+        :: (Link -> a)
+        -> Proxy endpoint -- ^ The API endpoint you would like to point to
+        -> Link
+        -> MkLink endpoint a
 
 -- Naked symbol instance
 instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
-    type MkLink (sym :> sub) = MkLink sub
-    toLink _ =
-        toLink (Proxy :: Proxy sub) . addSegment (escaped seg)
+    type MkLink (sym :> sub) a = MkLink sub a
+    toLink toA _ =
+        toLink toA (Proxy :: Proxy sub) . addSegment (escaped seg)
       where
         seg = symbolVal (Proxy :: Proxy sym)
 
 -- QueryParam instances
 instance (KnownSymbol sym, ToHttpApiData v, HasLink sub, SBoolI (FoldRequired mods))
-    => HasLink (QueryParam' mods sym v :> sub) where
-    type MkLink (QueryParam' mods sym v :> sub) = If (FoldRequired mods) v (Maybe v) -> MkLink sub
-    toLink _ l mv =
-        toLink (Proxy :: Proxy sub) $
+    => HasLink (QueryParam' mods sym v :> sub)
+  where
+    type MkLink (QueryParam' mods sym v :> sub) a = If (FoldRequired mods) v (Maybe v) -> MkLink sub a
+    toLink toA _ l mv =
+        toLink toA (Proxy :: Proxy sub) $
             case sbool :: SBool (FoldRequired mods) of
                 STrue  -> (addQueryParam . SingleParam k . toQueryParam) mv l
                 SFalse -> maybe id (addQueryParam . SingleParam k . toQueryParam) mv l
@@ -332,105 +366,121 @@ instance (KnownSymbol sym, ToHttpApiData v, HasLink sub, SBoolI (FoldRequired mo
         k = symbolVal (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
-    => HasLink (QueryParams sym v :> sub) where
-    type MkLink (QueryParams sym v :> sub) = [v] -> MkLink sub
-    toLink _ l =
-        toLink (Proxy :: Proxy sub) .
+    => HasLink (QueryParams sym v :> sub)
+  where
+    type MkLink (QueryParams sym v :> sub) a = [v] -> MkLink sub a
+    toLink toA _ l =
+        toLink toA (Proxy :: Proxy sub) .
             foldl' (\l' v -> addQueryParam (ArrayElemParam k (toQueryParam v)) l') l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
 instance (KnownSymbol sym, HasLink sub)
-    => HasLink (QueryFlag sym :> sub) where
-    type MkLink (QueryFlag sym :> sub) = Bool -> MkLink sub
-    toLink _ l False =
-        toLink (Proxy :: Proxy sub) l
-    toLink _ l True =
-        toLink (Proxy :: Proxy sub) $ addQueryParam (FlagParam k) l
+    => HasLink (QueryFlag sym :> sub)
+  where
+    type MkLink (QueryFlag sym :> sub) a = Bool -> MkLink sub a
+    toLink toA  _ l False =
+        toLink toA (Proxy :: Proxy sub) l
+    toLink toA _ l True =
+        toLink toA (Proxy :: Proxy sub) $ addQueryParam (FlagParam k) l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
 -- :<|> instance - Generate all links at once
 instance (HasLink a, HasLink b) => HasLink (a :<|> b) where
-  type MkLink (a :<|> b) = MkLink a :<|> MkLink b
-  toLink _ l = toLink (Proxy :: Proxy a) l :<|> toLink (Proxy :: Proxy b) l
+    type MkLink (a :<|> b) r = MkLink a r :<|> MkLink b r
+    toLink toA _ l = toLink toA (Proxy :: Proxy a) l :<|> toLink toA (Proxy :: Proxy b) l
 
 -- Misc instances
 instance HasLink sub => HasLink (ReqBody' mods ct a :> sub) where
-    type MkLink (ReqBody' mods ct a :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (ReqBody' mods ct a :> sub) r = MkLink sub r
+    toLink toA _ = toLink toA (Proxy :: Proxy sub)
 
 instance (ToHttpApiData v, HasLink sub)
-    => HasLink (Capture' mods sym v :> sub) where
-    type MkLink (Capture' mods sym v :> sub) = v -> MkLink sub
-    toLink _ l v =
-        toLink (Proxy :: Proxy sub) $
+    => HasLink (Capture' mods sym v :> sub)
+  where
+    type MkLink (Capture' mods sym v :> sub) a = v -> MkLink sub a
+    toLink toA _ l v =
+        toLink toA (Proxy :: Proxy sub) $
             addSegment (escaped . Text.unpack $ toUrlPiece v) l
 
 instance (ToHttpApiData v, HasLink sub)
-    => HasLink (CaptureAll sym v :> sub) where
-    type MkLink (CaptureAll sym v :> sub) = [v] -> MkLink sub
-    toLink _ l vs =
-        toLink (Proxy :: Proxy sub) $
-            foldl' (flip $ addSegment . escaped . Text.unpack . toUrlPiece) l vs
+    => HasLink (CaptureAll sym v :> sub)
+  where
+    type MkLink (CaptureAll sym v :> sub) a = [v] -> MkLink sub a
+    toLink toA _ l vs = toLink toA (Proxy :: Proxy sub) $
+        foldl' (flip $ addSegment . escaped . Text.unpack . toUrlPiece) l vs
 
-instance HasLink sub => HasLink (Header' mods sym a :> sub) where
-    type MkLink (Header' mods sym a :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+instance HasLink sub => HasLink (Header' mods sym (a :: *) :> sub) where
+    type MkLink (Header' mods sym a :> sub) r = MkLink sub r
+    toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (Vault :> sub) where
-    type MkLink (Vault :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (Vault :> sub) a = MkLink sub a
+    toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (Description s :> sub) where
-    type MkLink (Description s :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (Description s :> sub) a = MkLink sub a
+    toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (Summary s :> sub) where
-    type MkLink (Summary s :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (Summary s :> sub) a = MkLink sub a
+    toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (HttpVersion :> sub) where
-    type MkLink (HttpVersion:> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (HttpVersion:> sub) a = MkLink sub a
+    toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (IsSecure :> sub) where
-    type MkLink (IsSecure :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (IsSecure :> sub) a = MkLink sub a
+    toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (WithNamedContext name context sub) where
-    type MkLink (WithNamedContext name context sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (WithNamedContext name context sub) a = MkLink sub a
+    toLink toA _ = toLink toA (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (RemoteHost :> sub) where
-    type MkLink (RemoteHost :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (RemoteHost :> sub) a = MkLink sub a
+    toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (BasicAuth realm a :> sub) where
-    type MkLink (BasicAuth realm a :> sub) = MkLink sub
-    toLink _ = toLink (Proxy :: Proxy sub)
+    type MkLink (BasicAuth realm a :> sub) r = MkLink sub r
+    toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink EmptyAPI where
-    type MkLink EmptyAPI = EmptyAPI
-    toLink _ _ = EmptyAPI
+    type MkLink EmptyAPI a = EmptyAPI
+    toLink _ _ _ = EmptyAPI
 
 -- Verb (terminal) instances
 instance HasLink (Verb m s ct a) where
-    type MkLink (Verb m s ct a) = Link
-    toLink _ = id
+    type MkLink (Verb m s ct a) r = r
+    toLink toA _ = toA
 
 instance HasLink Raw where
-    type MkLink Raw = Link
-    toLink _ = id
+    type MkLink Raw a = a
+    toLink toA _ = toA
 
 instance HasLink (Stream m fr ct a) where
-    type MkLink (Stream m fr ct a) = Link
-    toLink _ = id
+    type MkLink (Stream m fr ct a) r = r
+    toLink toA _ = toA
 
 -- AuthProtext instances
 instance HasLink sub => HasLink (AuthProtect tag :> sub) where
-  type MkLink (AuthProtect tag :> sub) = MkLink sub
-  toLink _ = toLink (Proxy :: Proxy sub)
+  type MkLink (AuthProtect tag :> sub) a = MkLink sub a
+  toLink = simpleToLink (Proxy :: Proxy sub)
+
+-- | Helper for implemneting 'toLink' for combinators not affecting link
+-- structure.
+simpleToLink
+    :: forall sub a combinator.
+       (HasLink sub, MkLink sub a ~ MkLink (combinator :> sub) a)
+    => Proxy sub
+    -> (Link -> a)
+    -> Proxy (combinator :> sub)
+    -> Link
+    -> MkLink (combinator :> sub) a
+simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
+
 
 -- $setup
 -- >>> import Servant.API
