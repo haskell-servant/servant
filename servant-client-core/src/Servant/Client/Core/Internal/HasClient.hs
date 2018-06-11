@@ -12,56 +12,47 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-#include "overlapping-compat.h"
 module Servant.Client.Core.Internal.HasClient where
 
-import           Prelude                                ()
+import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Concurrent                     (newMVar, modifyMVar)
-import           Data.Foldable                          (toList)
+import           Control.Concurrent
+                 (modifyMVar, newMVar)
 import qualified Data.ByteString.Lazy                   as BL
-import           Data.List                              (foldl')
-import           Data.Proxy                             (Proxy (Proxy))
-import           Data.Semigroup                         ((<>))
-import           Data.Sequence                          (fromList)
-import           Data.String                            (fromString)
-import           Data.Text                              (Text, pack)
-import           GHC.TypeLits                           (KnownSymbol, symbolVal)
+import           Data.Foldable
+                 (toList)
+import           Data.List
+                 (foldl')
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Data.Semigroup
+                 ((<>))
+import           Data.Sequence
+                 (fromList)
+import           Data.String
+                 (fromString)
+import           Data.Text
+                 (Text, pack)
+import           GHC.TypeLits
+                 (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types                     as H
-import           Servant.API                            ((:<|>) ((:<|>)), (:>),
-                                                         AuthProtect, BasicAuth,
-                                                         BasicAuthData,
-                                                         BuildHeadersTo (..),
-                                                         BuildFromStream (..),
-                                                         ByteStringParser (..),
-                                                         Capture', CaptureAll,
-                                                         Description, EmptyAPI,
-                                                         FramingUnrender (..),
-                                                         Header', Headers (..),
-                                                         HttpVersion, IsSecure,
-                                                         MimeRender (mimeRender),
-                                                         MimeUnrender (mimeUnrender),
-                                                         NoContent (NoContent),
-                                                         QueryFlag, QueryParam',
-                                                         QueryParams, Raw,
-                                                         ReflectMethod (..),
-                                                         RemoteHost, ReqBody',
-                                                         ResultStream(..),
-                                                         SBoolI,
-                                                         Stream,
-                                                         Summary, ToHttpApiData,
-                                                         Vault, Verb,
-                                                         WithNamedContext,
-                                                         contentType,
-                                                         getHeadersHList,
-                                                         getResponse,
-                                                         toQueryParam,
-                                                         toUrlPiece)
-import           Servant.API.ContentTypes               (contentTypes)
-import           Servant.API.Modifiers                  (FoldRequired,
-                                                         RequiredArgument,
-                                                         foldRequiredArgument)
+import           Servant.API
+                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
+                 BuildFromStream (..), BuildHeadersTo (..),
+                 ByteStringParser (..), Capture', CaptureAll, Description,
+                 EmptyAPI, FramingUnrender (..), Header', Headers (..),
+                 HttpVersion, IsSecure, MimeRender (mimeRender),
+                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
+                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
+                 ReqBody', Result (..), ResultStream (..), SBoolI, Stream,
+                 Summary, ToHttpApiData, Vault, Verb', WithNamedContext,
+                 contentType, getHeadersHList, getResponse, toQueryParam,
+                 toUrlPiece)
+import           Servant.API.ContentTypes
+                 (contentTypes)
+import           Servant.API.Modifiers
+                 (FoldRequired, RequiredArgument, foldRequiredArgument)
 
 import           Servant.Client.Core.Internal.Auth
 import           Servant.Client.Core.Internal.BasicAuth
@@ -105,6 +96,15 @@ class RunClient m => HasClient m api where
     -> Client mon api
     -> Client mon' api
 
+data ClientResponse a = ClientResponse (Request -> Request) (Response -> Either ServantError a)
+
+clientResponse :: (Response -> Either ServantError a) -> ClientResponse a
+clientResponse = ClientResponse id
+
+class HasClientR api where
+  type ClientR api :: *
+
+  clientWithRouteR :: Proxy api -> ClientResponse (ClientR api)
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
 --   one function for querying @a@ and another one for querying @b@,
@@ -216,71 +216,49 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy sublayout) f (cl as)
 
-instance OVERLAPPABLE_
-  -- Note [Non-Empty Content Types]
-  ( RunClient m, MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
-  ) => HasClient m (Verb method status cts' a) where
-  type Client m (Verb method status cts' a) = m a
-  clientWithRoute _pm Proxy req = do
-    response <- runRequest req
-      { requestAccept = fromList $ toList accept
-      , requestMethod = method
-      }
-    response `decodedAs` (Proxy :: Proxy ct)
+
+
+instance
+  ( RunClient m, HasClientR api, ReflectMethod method
+  ) => HasClient m (Verb' method api) where
+  type Client m (Verb' method api) = m (ClientR api)
+
+  clientWithRoute _pm Proxy req =
+    case clientWithRouteR (Proxy :: Proxy api) of
+      ClientResponse f g -> do
+        response  <- runRequest (f req) { requestMethod = method }
+        either throwServantError pure $
+          g response
     where
-      accept = contentTypes (Proxy :: Proxy ct)
       method = reflectMethod (Proxy :: Proxy method)
 
   hoistClientMonad _ _ f ma = f ma
 
-instance OVERLAPPING_
-  ( RunClient m, ReflectMethod method
-  ) => HasClient m (Verb method status cts NoContent) where
-  type Client m (Verb method status cts NoContent)
-    = m NoContent
-  clientWithRoute _pm Proxy req = do
-    _response <- runRequest req { requestMethod = method }
-    return NoContent
-      where method = reflectMethod (Proxy :: Proxy method)
+instance (ctypes ~ (ct ': cts), MimeUnrender ct a) => HasClientR (Result status ctypes a) where
+  type ClientR (Result status ctypes a) = a
 
-  hoistClientMonad _ _ f ma = f ma
+  clientWithRouteR Proxy = ClientResponse f g
+    where
+      accept = contentTypes (Proxy :: Proxy ct)
+      f req = req { requestAccept = fromList $ toList accept }
+      g res = res `decodedAs2` (Proxy :: Proxy ct)
 
-instance OVERLAPPING_
-  -- Note [Non-Empty Content Types]
-  ( RunClient m, MimeUnrender ct a, BuildHeadersTo ls
-  , ReflectMethod method, cts' ~ (ct ': cts)
-  ) => HasClient m (Verb method status cts' (Headers ls a)) where
-  type Client m (Verb method status cts' (Headers ls a))
-    = m (Headers ls a)
-  clientWithRoute _pm Proxy req = do
-    response <- runRequest req
-       { requestMethod = method
-       , requestAccept = fromList $ toList accept
-       }
-    case mimeUnrender (Proxy :: Proxy ct) $ responseBody response of
-      Left err -> throwServantError $ DecodeFailure (pack err) response
-      Right val -> return $ Headers
-        { getResponse = val
-        , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
+instance HasClientR (NoContent status) where
+  type ClientR (NoContent status) = NoContent status
+
+  clientWithRouteR Proxy = clientResponse (\_ -> Right NoContent)
+
+instance (HasClientR api, BuildHeadersTo ls) => HasClientR (Headers ls :> api) where
+  type ClientR (Headers ls :> api) = Headers ls (ClientR api)
+
+  clientWithRouteR Proxy = case clientWithRouteR (Proxy :: Proxy api) of
+    ClientResponse f g -> ClientResponse f $ \res -> do
+      x <- g res
+      return $ Headers
+        { getResponse     = x
+        , getHeadersHList = buildHeadersTo . toList $ responseHeaders res
         }
-      where method = reflectMethod (Proxy :: Proxy method)
-            accept = contentTypes (Proxy :: Proxy ct)
-
-  hoistClientMonad _ _ f ma = f ma
-
-instance OVERLAPPING_
-  ( RunClient m, BuildHeadersTo ls, ReflectMethod method
-  ) => HasClient m (Verb method status cts (Headers ls NoContent)) where
-  type Client m (Verb method status cts (Headers ls NoContent))
-    = m (Headers ls NoContent)
-  clientWithRoute _pm Proxy req = do
-    let method = reflectMethod (Proxy :: Proxy method)
-    response <- runRequest req { requestMethod = method }
-    return $ Headers { getResponse = NoContent
-                     , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
-                     }
-
-  hoistClientMonad _ _ f ma = f ma
+{-
 
 instance OVERLAPPABLE_
   ( RunClient m, MimeUnrender ct a, ReflectMethod method,
@@ -331,6 +309,7 @@ instance OVERLAPPABLE_
       k go
 
   hoistClientMonad _ _ f ma = f ma
+-}
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take

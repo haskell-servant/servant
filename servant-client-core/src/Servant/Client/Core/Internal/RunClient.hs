@@ -39,6 +39,14 @@ checkContentTypeHeader response =
       Nothing -> throwServantError $ InvalidContentTypeHeader response
       Just t' -> return t'
 
+checkContentTypeHeader2 :: Response -> Either ServantError MediaType
+checkContentTypeHeader2 response =
+  case lookup "Content-Type" $ toList $ responseHeaders response of
+    Nothing -> return $ "application"//"octet-stream"
+    Just t -> case parseAccept t of
+      Nothing -> Left $ InvalidContentTypeHeader response
+      Just t' -> return t'
+
 decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
   => Response -> Proxy ct -> m a
 decodedAs response contentType = do
@@ -47,6 +55,18 @@ decodedAs response contentType = do
     throwServantError $ UnsupportedContentType responseContentType response
   case mimeUnrender contentType $ responseBody response of
     Left err -> throwServantError $ DecodeFailure (T.pack err) response
+    Right val -> return val
+  where
+    accept = toList $ contentTypes contentType
+
+decodedAs2 :: forall ct a. (MimeUnrender ct a)
+  => Response -> Proxy ct -> Either ServantError a
+decodedAs2 response contentType = do
+  responseContentType <- checkContentTypeHeader2 response
+  unless (any (matches responseContentType) accept) $
+    Left $ UnsupportedContentType responseContentType response
+  case mimeUnrender contentType $ responseBody response of
+    Left err -> Left $ DecodeFailure (T.pack err) response
     Right val -> return val
   where
     accept = toList $ contentTypes contentType
