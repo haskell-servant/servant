@@ -1,5 +1,5 @@
 folds: all-but-test
-branches: master release-0.12
+branches: master
 
 -- We have inplace packages (servant-js) so we skip installing dependencies in a separate step
 install-dependencies-step: False
