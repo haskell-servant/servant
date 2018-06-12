@@ -124,8 +124,8 @@ test-suite spec
     , random-bytestring >= 0.1     && < 0.2
     , network           >= 2.6.3.2 && < 2.8
     , QuickCheck        >= 2.10.1  && < 2.12
-    , servant           == 0.13.*
-    , servant-server    == 0.13.*
+    , servant           == 0.14.*
+    , servant-server    == 0.14.*
 
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.4.4 && < 2.6
