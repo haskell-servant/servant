@@ -1,6 +1,6 @@
 name:                servant-docs
 version:             0.11.2
-x-revision:          2
+x-revision:          3
 synopsis:            generate API docs for your servant webservice
 description:
   Library for generating API docs from a servant API definition.
@@ -58,7 +58,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson                >= 1.2.3.0  && < 1.4
+      aeson                >= 1.2.3.0  && < 1.5
     , aeson-pretty         >= 0.8.5    && < 0.9
     , base-compat          >= 0.9.3    && < 0.11
     , case-insensitive     >= 1.2.0.10 && < 1.3
