@@ -1,5 +1,116 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.14
+----
+
+### Signifacant changes
+
+- `Stream` takes a status code argument
+
+  ```diff
+  -Stream method        framing ctype a
+  +Stream method status framing ctype a
+  ```
+
+  ([#966](https://github.com/haskell-servant/servant/pull/966)
+   [#972](https://github.com/haskell-servant/servant/pull/972))
+
+- `ToStreamGenerator` definition changed, so it's possible to write an instance
+  for conduits.
+
+  ```diff
+  -class ToStreamGenerator f a where
+  -   toStreamGenerator :: f a -> StreamGenerator a
+  +class ToStreamGenerator a b | a -> b where
+  +   toStreamGenerator :: a -> StreamGenerator b
+  ```
+
+  ([#959](https://github.com/haskell-servant/servant/pull/959))
+
+- Added `NoFraming` streaming strategy
+  ([#959](https://github.com/haskell-servant/servant/pull/959))
+
+- *servant-client* Free `Client` implementation.
+  Useful for testing `HasClient` instances.
+  ([#920](https://github.com/haskell-servant/servant/pull/920))
+
+- *servant-client* Add `hoistClient` to `HasClient`.
+  Just like `hoistServer` allows us to change the monad in which request handlers
+  of a web application live in, we also have `hoistClient` for changing the monad
+  in which *client functions* live. Read [tutorial section for more information](#link).
+  ([#936](https://github.com/haskell-servant/servant/pull/936))
+
+- *servant* Add `safeLink' :: (Link -> a) -> ... -> MkLink endpoint a`,
+  which allows to create helpers returning something else than `Link`.
+  ([#968](https://github.com/haskell-servant/servant/pull/968))
+
+- *servant-server* File serving in polymorphic monad.
+  i.e. Generalised types of `serveDirectoryFileServer` etc functions in
+  `Servant.Utils.StaticFiles`
+  ([#953](https://github.com/haskell-servant/servant/pull/953))
+
+- *servant-server* `ReqBody` content type check is recoverable.
+  This allows writing APIs like:
+
+  ```haskell
+        ReqBody '[JSON] Int      :> Post '[PlainText] Int
+  :<|>  ReqBody '[PlainText] Int :> Post '[PlainText] Int
+  ```
+
+  which is useful when handlers are subtly different,
+  for example may do less work.
+  ([#937](https://github.com/haskell-servant/servant/pull/937))
+
+- *servant-client* Add more constructors to `RequestBody`, including
+  `RequestBodyStream`.
+  *Note:* we are looking for http-library agnostic API,
+  so the might change again soon.
+  Tell us which constructors are useful for you!
+  ([#913](https://github.com/haskell-servant/servant/pull/913))
+
+### Other changes
+
+- `GetHeaders` instances implemented without `OverlappingInstances`
+  ([#971](https://github.com/haskell-servant/servant/pull/971))
+
+- Added tests or enabled tests
+  ([#975](https://github.com/haskell-servant/servant/pull/975))
+
+- Add [pagination cookbook recipe](#link)
+  ([#946](https://github.com/haskell-servant/servant/pull/946))
+
+- Add [`servant-flatten` cookbook recipe](#link)
+  ([#929](https://github.com/haskell-servant/servant/pull/929))
+
+- Dependency updates
+  ([#900](https://github.com/haskell-servant/servant/pull/900)
+   [#919](https://github.com/haskell-servant/servant/pull/919)
+   [#924](https://github.com/haskell-servant/servant/pull/924)
+   [#943](https://github.com/haskell-servant/servant/pull/943)
+   [#964](https://github.com/haskell-servant/servant/pull/964)
+   [#967](https://github.com/haskell-servant/servant/pull/967)
+   [#976](https://github.com/haskell-servant/servant/pull/976))
+
+- Documentation updates
+   [#963](https://github.com/haskell-servant/servant/pull/963)
+   [#960](https://github.com/haskell-servant/servant/pull/960)
+   [#908](https://github.com/haskell-servant/servant/pull/908)
+   [#958](https://github.com/haskell-servant/servant/pull/958)
+   [#948](https://github.com/haskell-servant/servant/pull/948)
+   [#928](https://github.com/haskell-servant/servant/pull/928)
+   [#921](https://github.com/haskell-servant/servant/pull/921))
+
+- Development process improvements
+  ([#680](https://github.com/haskell-servant/servant/pull/680)
+   [#917](https://github.com/haskell-servant/servant/pull/917)
+   [#923](https://github.com/haskell-servant/servant/pull/923)
+   [#961](https://github.com/haskell-servant/servant/pull/961)
+   [#973](https://github.com/haskell-servant/servant/pull/973))
+
+### Note
+
+(VIM) Regular-expression to link PR numbers: `s/\v#(\d+)/[#\1](https:\/\/github.com\/haskell-servant\/servant/pull\/\1)/`
+
 0.13.0.1
 --------
 
