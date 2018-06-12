@@ -1,6 +1,6 @@
 name:                servant-server
 version:             0.13.0.1
-x-revision:          1
+x-revision:          2
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -81,7 +81,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson               >= 1.2.3.0  && < 1.4
+      aeson               >= 1.2.3.0  && < 1.5
     , base-compat         >= 0.9.3    && < 0.11
     , attoparsec          >= 0.13.2.0 && < 0.14
     , base64-bytestring   >= 1.0.0.1  && < 1.1
