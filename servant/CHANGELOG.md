@@ -37,7 +37,8 @@
 - *servant-client* Add `hoistClient` to `HasClient`.
   Just like `hoistServer` allows us to change the monad in which request handlers
   of a web application live in, we also have `hoistClient` for changing the monad
-  in which *client functions* live. Read [tutorial section for more information](#link).
+  in which *client functions* live.
+  Read [tutorial section for more information](https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
   ([#936](https://github.com/haskell-servant/servant/pull/936))
 
 - *servant* Add `safeLink' :: (Link -> a) -> ... -> MkLink endpoint a`,
@@ -76,10 +77,10 @@
 - Added tests or enabled tests
   ([#975](https://github.com/haskell-servant/servant/pull/975))
 
-- Add [pagination cookbook recipe](#link)
+- Add [pagination cookbook recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/pagination/Pagination.html)
   ([#946](https://github.com/haskell-servant/servant/pull/946))
 
-- Add [`servant-flatten` cookbook recipe](#link)
+- Add [`servant-flatten` "spice" to the structuring api recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/structuring-apis/StructuringApis.html)
   ([#929](https://github.com/haskell-servant/servant/pull/929))
 
 - Dependency updates
