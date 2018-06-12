@@ -41,6 +41,14 @@
   Read [tutorial section for more information](https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
   ([#936](https://github.com/haskell-servant/servant/pull/936))
 
+  iF you have own combinators, you'll need to define a new method of
+  `HasClient` class, for example:
+
+  ```haskell
+  type Client m (MyCombinator :> api) = MyValue :> Client m api
+  hoistClientMonad pm _ nt cl = hoistClientMonad pm (Proxy :: Proxy api) nt . cl
+  ```
+
 - *servant* Add `safeLink' :: (Link -> a) -> ... -> MkLink endpoint a`,
   which allows to create helpers returning something else than `Link`.
   ([#968](https://github.com/haskell-servant/servant/pull/968))
