@@ -13,7 +13,7 @@ git:
 branches:
   only:
     - master
-    - release-0.12
+    - release-0.14
 
 cache:
   directories:
@@ -74,7 +74,7 @@ install:
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
   - "printf 'packages: \"servant\" \"servant-client\" \"servant-client-core\" \"servant-docs\" \"servant-foreign\" \"servant-server\" \"doc/tutorial\" \"doc/cookbook/basic-auth\" \"doc/cookbook/db-postgres-pool\" \"doc/cookbook/db-sqlite-simple\" \"doc/cookbook/https\" \"doc/cookbook/pagination\" \"doc/cookbook/structuring-apis\" \"doc/cookbook/using-custom-monad\"\\n' > cabal.project"
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
-  - "echo 'allow-newer: servant-auth-server:http-types,servant-auth-server:servant-server, http-media:base' >> cabal.project"
+  - "echo 'allow-newer: servant-auth-server:http-types,servant-auth-server:servant-server, http-media:base, servant-js:servant,servant-pagination:servant,servant-pagination:servant-server' >> cabal.project"
   - cat cabal.project
   - if [ -f "servant/configure.ac" ]; then
       (cd "servant" && autoreconf -i);
@@ -148,7 +148,7 @@ script:
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal cookbook-basic-auth-*/*.cabal cookbook-db-postgres-pool-*/*.cabal cookbook-db-sqlite-simple-*/*.cabal cookbook-https-*/*.cabal cookbook-pagination-*/*.cabal cookbook-structuring-apis-*/*.cabal cookbook-using-custom-monad-*/*.cabal\\n' > cabal.project"
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
-  - "echo 'allow-newer: servant-auth-server:http-types,servant-auth-server:servant-server, http-media:base' >> cabal.project"
+  - "echo 'allow-newer: servant-auth-server:http-types,servant-auth-server:servant-server, http-media:base, servant-js:servant,servant-pagination:servant,servant-pagination:servant-server' >> cabal.project"
   - cat cabal.project
   - echo -en 'travis_fold:end:unpack\\r'
 
