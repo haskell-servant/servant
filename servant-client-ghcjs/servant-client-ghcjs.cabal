@@ -1,5 +1,5 @@
 name:                servant-client-ghcjs
-version:             0.13
+version:             0.14
 synopsis: automatical derivation of querying functions for servant webservices for ghcjs
 description:
   This library lets you automatically derive Haskell functions that
@@ -43,7 +43,7 @@ library
     , monad-control         >= 1.0.0.4  && < 1.1
     , mtl                   >= 2.1      && < 2.3
     , semigroupoids         >= 4.3      && < 5.3
-    , servant-client-core   == 0.13.*
+    , servant-client-core   == 0.14.*
     , string-conversions    >= 0.3      && < 0.5
     , transformers          >= 0.3      && < 0.6
     , transformers-base     >= 0.4.4    && < 0.5

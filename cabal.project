@@ -31,3 +31,8 @@ constraints:
 
 allow-newer:
   http-media:base
+
+allow-newer:
+  servant-js:servant,
+  servant-pagination:servant,
+  servant-pagination:servant-server
