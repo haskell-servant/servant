@@ -1,6 +1,6 @@
 name:                servant-client
 version:             0.13.0.1
-x-revision:          1
+x-revision:          2
 synopsis: automatical derivation of querying functions for servant webservices
 description:
   This library lets you derive automatically Haskell functions that
@@ -61,7 +61,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson                 >= 1.2.3.0  && < 1.4
+      aeson                 >= 1.2.3.0  && < 1.5
     , base-compat           >= 0.9.3    && < 0.11
     , attoparsec            >= 0.13.2.0 && < 0.14
     , http-client           >= 0.5.7.1  && < 0.6
