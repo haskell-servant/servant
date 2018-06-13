@@ -44,7 +44,7 @@ import           Network.Wai.Test
                  simpleHeaders, simpleStatus)
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
-                 BasicAuthData (BasicAuthData), Capture, CaptureAll, Delete,
+                 BasicAuthData (BasicAuthData), Capture, CaptureAll, CaptureMany, Delete,
                  EmptyAPI, Get, Header, Headers, HttpVersion, IsSecure (..),
                  JSON, NoContent (..), NoFraming, OctetStream, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
@@ -84,6 +84,7 @@ spec = do
   verbSpec
   captureSpec
   captureAllSpec
+  captureManySpec
   queryParamSpec
   reqBodySpec
   headerSpec
@@ -279,6 +280,47 @@ captureAllSpec = do
             respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "consumes everything from pathInfo" $ do
         get "/captured/foo/bar/baz" `shouldRespondWith` (fromString (show ([] :: [Int])))
+
+-- }}}
+------------------------------------------------------------------------------
+-- * captureManySpec {{{
+------------------------------------------------------------------------------
+
+type CaptureManyApi = CaptureMany "legs" Integer :> Capture "species" String :> Get '[JSON] Animal
+captureManyApi :: Proxy CaptureManyApi
+captureManyApi = Proxy
+captureManyServer :: [Integer] -> String -> Handler Animal
+captureManyServer legs speciesName = pure Animal { numberOfLegs = sum legs, species = speciesName }
+
+captureManySpec :: Spec
+captureManySpec =
+  describe "Servant.API.CaptureMany" $
+    with (return (serve captureManyApi captureManyServer)) $ do
+
+      it "can capture a single element of the 'pathInfo'" $ do
+        response <- get "/2/fish"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just Animal { numberOfLegs = 2, species = "fish" }
+
+      it "can capture multiple elements of the 'pathInfo'" $ do
+        response <- get "/2/2/fish"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just Animal { numberOfLegs = 4, species = "fish" }
+
+      it "can capture arbitrarily many elements of the 'pathInfo'" $ do
+        response <- get "/1/1/0/1/0/1/fish"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just Animal { numberOfLegs = 4, species = "fish" }
+
+      it "can capture when there are no elements in 'pathInfo'" $ do
+        response <- get "/beholder"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just Animal { numberOfLegs = 0, species = "beholder" }
+
+      it "returns 400 if the decoding fails" $
+        get "/notAnInt/fish" `shouldRespondWith` 400
+
+      it "returns 400 if the decoding fails, regardless of which element" $
+        get "/1/0/0/notAnInt/3/fish" `shouldRespondWith` 400
+
+      it "returns 400 if the decoding fails, even when it's multiple elements" $
+        get "/1/0/0/notAnInt/3/orange/fish" `shouldRespondWith` 400
 
 -- }}}
 ------------------------------------------------------------------------------
