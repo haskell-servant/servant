@@ -69,7 +69,7 @@ import           Web.HttpApiData            (FromHttpApiData, parseHeader,
                                              parseUrlPieceMaybe,
                                              parseUrlPieces)
 import           Servant.API                 ((:<|>) (..), (:>), BasicAuth, Capture',
-                                              CaptureAll, Verb, EmptyAPI,
+                                              CaptureAll, CaptureMany, Verb, EmptyAPI,
                                               ReflectMethod(reflectMethod),
                                               IsSecure(..), Header', QueryFlag,
                                               QueryParam', QueryParams, Raw,
@@ -208,6 +208,41 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
 
   route Proxy context d =
     CaptureAllRouter $
+        route (Proxy :: Proxy api)
+              context
+              (addCapture d $ \ txts -> case parseUrlPieces txts of
+                 Left _  -> delayedFail err400
+                 Right v -> return v
+              )
+
+
+-- | If you use 'CaptureMany' in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a
+-- function that takes an argument of a list of the type specified by
+-- the 'CaptureMany'. This lets servant worry about getting values from
+-- the URL and turning them into values of the type you specify.
+--
+-- You can control how they'll be converted from 'Text' to your type
+-- by simply providing an instance of 'FromHttpApiData' for your type.
+--
+-- Example:
+--
+-- > type MyApi = "src" :> CaptureMany "segments" Text :> Capture "last" Text :> Get '[JSON] SourceFile
+-- >
+-- > server :: Server MyApi
+-- > server = getSourceFile
+-- >   where getSourceFile :: [Text] -> Text -> Handler Book
+-- >         getSourceFile pathSegments = ...
+instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
+      => HasServer (CaptureMany capture a :> api) context where
+
+  type ServerT (CaptureMany capture a :> api) m =
+    [a] -> ServerT api m
+
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+
+  route Proxy context d =
+    CaptureManyRouter $
         route (Proxy :: Proxy api)
               context
               (addCapture d $ \ txts -> case parseUrlPieces txts of

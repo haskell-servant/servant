@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Servant.Server.Internal.Router where
 
+import           Data.List                                  (inits, tails)
 import           Data.Map                                   (Map)
 import qualified Data.Map                                   as M
 import           Data.Monoid
@@ -33,6 +34,9 @@ data Router' env a =
   | CaptureAllRouter (Router' ([Text], env) a)
       -- ^ all path components are passed to the child router in its
       --   environment and are removed afterwards
+  | CaptureManyRouter (Router' ([Text], env) a)
+      -- ^ pass as many path components as we can get, while still matching
+      -- the rest of the route, to the router, removing the ones we match
   | RawRouter     (env -> a)
       -- ^ to be used for routes we do not know anything about
   | Choice        (Router' env a) (Router' env a)
@@ -93,6 +97,9 @@ routerStructure (CaptureRouter router) =
   CaptureRouterStructure $
     routerStructure router
 routerStructure (CaptureAllRouter router) =
+  CaptureRouterStructure $
+    routerStructure router
+routerStructure (CaptureManyRouter router) =
   CaptureRouterStructure $
     routerStructure router
 routerStructure (RawRouter _) =
@@ -172,10 +179,26 @@ runRouterEnv router env request respond =
       let segments = pathInfo request
           request' = request { pathInfo = [] }
       in runRouterEnv router' (segments, env) request' respond
+    CaptureManyRouter router' ->
+      runCaptureMany router' env request respond
     RawRouter app ->
       app env request respond
     Choice r1 r2 ->
       runChoice [runRouterEnv r1, runRouterEnv r2] env request respond
+
+runCaptureMany :: Router ([Text], env) -> env -> RoutingApplication
+runCaptureMany router env request respond =
+  captureLongest (reverse (zip (inits segments) (tails segments)))
+
+  where
+    segments = pathInfo request
+
+    captureLongest [] = respond $ Fail err400
+    captureLongest ((captured, left):rest) =
+      runRouterEnv router (captured, env) request { pathInfo = left } $ \ response ->
+        case response of
+          Fail _ -> captureLongest rest
+          _ -> respond response
 
 -- | Try a list of routing applications in order.
 -- We stop as soon as one fails fatally or succeeds.
