@@ -232,7 +232,7 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
 -- > server :: Server MyApi
 -- > server = getSourceFile
 -- >   where getSourceFile :: [Text] -> Text -> Handler Book
--- >         getSourceFile pathSegments = ...
+-- >         getSourceFile pathSegments pathLast = ...
 instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
       => HasServer (CaptureMany capture a :> api) context where
 
