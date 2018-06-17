@@ -36,6 +36,7 @@ import           Servant.API                            ((:<|>) ((:<|>)), (:>),
                                                          BuildFromStream (..),
                                                          ByteStringParser (..),
                                                          Capture', CaptureAll,
+                                                         CaptureMany,
                                                          Description, EmptyAPI,
                                                          FramingUnrender (..),
                                                          Header', Headers (..),
@@ -205,6 +206,41 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
       => HasClient m (CaptureAll capture a :> sublayout) where
 
   type Client m (CaptureAll capture a :> sublayout) =
+    [a] -> Client m sublayout
+
+  clientWithRoute pm Proxy req vals =
+    clientWithRoute pm (Proxy :: Proxy sublayout)
+                    (foldl' (flip appendToPath) req ps)
+
+    where ps = map (toUrlPiece) vals
+
+  hoistClientMonad pm _ f cl = \as ->
+    hoistClientMonad pm (Proxy :: Proxy sublayout) f (cl as)
+
+-- | If you use a 'CaptureMany' in one of your endpoints in your API,
+-- the corresponding querying function will automatically take an
+-- additional argument of a list of the type specified by your
+-- 'CaptureMany'. That function will take care of inserting a textual
+-- representation of this value at the right place in the request
+-- path.
+--
+-- You can control how these values are turned into text by specifying
+-- a 'ToHttpApiData' instance of your type.
+--
+-- Example:
+--
+-- > type MyAPI = "src" :> CaptureMany "segments" Text -> Capture "version" Int -> Get '[JSON] SourceFile
+-- >
+-- > myApi :: Proxy
+-- > myApi = Proxy
+--
+-- > getSourceFile :: [Text] -> Int -> ClientM SourceFile
+-- > getSourceFile = client myApi
+-- > -- then you can use "getSourceFile" to query that endpoint
+instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
+      => HasClient m (CaptureMany capture a :> sublayout) where
+
+  type Client m (CaptureMany capture a :> sublayout) =
     [a] -> Client m sublayout
 
   clientWithRoute pm Proxy req vals =

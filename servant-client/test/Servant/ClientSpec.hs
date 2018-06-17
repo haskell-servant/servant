@@ -58,6 +58,7 @@ import           Servant.API                                ((:<|>) ((:<|>)),
                                                              BasicAuthData (..),
                                                              Capture,
                                                              CaptureAll, Delete,
+                                                             CaptureMany,
                                                              DeleteNoContent,
                                                              EmptyAPI, addHeader,
                                                              FormUrlEncoded,
@@ -120,6 +121,7 @@ type Api =
   :<|> "deleteEmpty" :> DeleteNoContent '[JSON] NoContent
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
+  :<|> "captureMany" :> CaptureMany "names" String :> Capture "count" Int :> Get '[JSON] ([Person], Int)
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
@@ -144,6 +146,7 @@ getGet          :: ClientM Person
 getDeleteEmpty  :: ClientM NoContent
 getCapture      :: String -> ClientM Person
 getCaptureAll   :: [String] -> ClientM [Person]
+getCaptureMany  :: [String] -> Int -> ClientM ([Person], Int)
 getBody         :: Person -> ClientM Person
 getQueryParam   :: Maybe String -> ClientM Person
 getQueryParams  :: [String] -> ClientM [Person]
@@ -160,6 +163,7 @@ getRoot
   :<|> getDeleteEmpty
   :<|> getCapture
   :<|> getCaptureAll
+  :<|> getCaptureMany
   :<|> getBody
   :<|> getQueryParam
   :<|> getQueryParams
@@ -178,6 +182,7 @@ server = serve api (
   :<|> return NoContent
   :<|> (\ name -> return $ Person name 0)
   :<|> (\ names -> return (zipWith Person names [0..]))
+  :<|> (\ names count -> return (zipWith Person names [0..], count))
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
@@ -329,6 +334,10 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       let expected = [(Person "Paula" 0), (Person "Peta" 1)]
       left show <$> runClient (getCaptureAll ["Paula", "Peta"]) baseUrl `shouldReturn` Right expected
 
+    it "Servant.API.CaptureMany" $ \(_, baseUrl) -> do
+      let expected = ([Person "Paula" 0, Person "Peta" 1], 5)
+      left show <$> runClient (getCaptureMany ["Paula", "Peta"] 5) baseUrl `shouldReturn` Right expected
+
     it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
       let p = Person "Clara" 42
       left show <$> runClient (getBody p) baseUrl `shouldReturn` Right p
@@ -430,7 +439,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
       it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
-        let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
+        let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
         Left res <- runClient (getBody alice) baseUrl
         case res of
           InvalidContentTypeHeader _ -> return ()
