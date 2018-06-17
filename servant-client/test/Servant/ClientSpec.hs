@@ -82,7 +82,7 @@ _ = client comprehensiveAPI
 
 spec :: Spec
 spec = describe "Servant.Client" $ do
-    sucessSpec
+    successSpec
     failSpec
     wrappedApiSpec
     basicAuthSpec
@@ -307,8 +307,8 @@ manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
 runClient :: ClientM a -> BaseUrl -> IO (Either ServantError a)
 runClient x baseUrl' = runClientM x (mkClientEnv manager' baseUrl')
 
-sucessSpec :: Spec
-sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+successSpec :: Spec
+successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     it "Servant.API.Get root" $ \(_, baseUrl) -> do
       left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
 
