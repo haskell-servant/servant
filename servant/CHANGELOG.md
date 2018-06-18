@@ -30,11 +30,11 @@
 - Added `NoFraming` streaming strategy
   ([#959](https://github.com/haskell-servant/servant/pull/959))
 
-- *servant-client* Free `Client` implementation.
+- *servant-client-core* Free `Client` implementation.
   Useful for testing `HasClient` instances.
   ([#920](https://github.com/haskell-servant/servant/pull/920))
 
-- *servant-client* Add `hoistClient` to `HasClient`.
+- *servant-client-core* Add `hoistClient` to `HasClient`.
   Just like `hoistServer` allows us to change the monad in which request handlers
   of a web application live in, we also have `hoistClient` for changing the monad
   in which *client functions* live.

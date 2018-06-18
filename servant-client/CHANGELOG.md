@@ -4,9 +4,44 @@
 0.14
 ----
 
-- Add `hoistClient` for changing the monad in which
-  client functions run.
+- `Stream` takes a status code argument
+
+  ```diff
+  -Stream method        framing ctype a
+  +Stream method status framing ctype a
+  ```
+
+  ([#966](https://github.com/haskell-servant/servant/pull/966)
+   [#972](https://github.com/haskell-servant/servant/pull/972))
+
+- `ToStreamGenerator` definition changed, so it's possible to write an instance
+  for conduits.
+
+  ```diff
+  -class ToStreamGenerator f a where
+  -   toStreamGenerator :: f a -> StreamGenerator a
+  +class ToStreamGenerator a b | a -> b where
+  +   toStreamGenerator :: a -> StreamGenerator b
+  ```
+
+  ([#959](https://github.com/haskell-servant/servant/pull/959))
+
+- Added `NoFraming` streaming strategy
+  ([#959](https://github.com/haskell-servant/servant/pull/959))
+
+- *servant-client-core* Add `hoistClient` to `HasClient`.
+  Just like `hoistServer` allows us to change the monad in which request handlers
+  of a web application live in, we also have `hoistClient` for changing the monad
+  in which *client functions* live.
+  Read [tutorial section for more information](https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
   ([#936](https://github.com/haskell-servant/servant/pull/936))
+
+- *servant-client* Add more constructors to `RequestBody`, including
+  `RequestBodyStream`.
+  *Note:* we are looking for http-library agnostic API,
+  so the might change again soon.
+  Tell us which constructors are useful for you!
+  ([#913](https://github.com/haskell-servant/servant/pull/913))
 
 0.13.0.1
 --------
