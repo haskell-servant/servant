@@ -65,7 +65,8 @@ install:
   - BENCH=${BENCH---enable-benchmarks}
   - TEST=${TEST---enable-tests}
   - HADDOCK=${HADDOCK-true}
-  - INSTALLED=${INSTALLED-true}
+  - UNCONSTRAINED=${UNCONSTRAINED-true}
+  - NOINSTALLEDCONSTRAINTS=${NOINSTALLEDCONSTRAINTS-false}
   - GHCHEAD=${GHCHEAD-false}
   - travis_retry cabal update -v
   - "sed -i.bak 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config"
@@ -75,7 +76,10 @@ install:
   - "printf 'packages: \"servant\" \"servant-client\" \"servant-client-core\" \"servant-docs\" \"servant-foreign\" \"servant-server\" \"doc/tutorial\" \"doc/cookbook/basic-auth\" \"doc/cookbook/db-postgres-pool\" \"doc/cookbook/db-sqlite-simple\" \"doc/cookbook/https\" \"doc/cookbook/pagination\" \"doc/cookbook/structuring-apis\" \"doc/cookbook/using-custom-monad\"\\n' > cabal.project"
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-auth-server:http-types,servant-auth-server:servant-server, http-media:base, servant-js:servant,servant-pagination:servant,servant-pagination:servant-server' >> cabal.project"
-  - cat cabal.project
+  - touch cabal.project.local
+  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
+  - cat cabal.project || true
+  - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then
       (cd "servant" && autoreconf -i);
     fi
@@ -149,9 +153,11 @@ script:
   - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal cookbook-basic-auth-*/*.cabal cookbook-db-postgres-pool-*/*.cabal cookbook-db-sqlite-simple-*/*.cabal cookbook-https-*/*.cabal cookbook-pagination-*/*.cabal cookbook-structuring-apis-*/*.cabal cookbook-using-custom-monad-*/*.cabal\\n' > cabal.project"
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-auth-server:http-types,servant-auth-server:servant-server, http-media:base, servant-js:servant,servant-pagination:servant,servant-pagination:servant-server' >> cabal.project"
-  - cat cabal.project
+  - touch cabal.project.local
+  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
+  - cat cabal.project || true
+  - cat cabal.project.local || true
   - echo -en 'travis_fold:end:unpack\\r'
-
 
   - echo Building with tests and benchmarks... && echo -en 'travis_fold:start:build-everything\\r'
   # build & run tests, build benchmarks
@@ -165,5 +171,10 @@ script:
   - if $HADDOCK; then cabal new-haddock -w ${HC} ${TEST} ${BENCH} all; else echo "Skipping haddock generation";fi
 
   - echo -en 'travis_fold:end:haddock\\r'
+  - echo Building without installed constraints for packages in global-db... && echo -en 'travis_fold:start:build-installed\\r'
+  # Build without installed constraints for packages in global-db
+  - if $UNCONSTRAINED; then rm -f cabal.project.local; echo cabal new-build -w ${HC} --disable-tests --disable-benchmarks all; else echo "Not building without installed constraints"; fi
+
+  - echo -en 'travis_fold:end:build-installed\\r'
 # REGENDATA ["--config=cabal.make-travis-yml","--output=.travis.yml","cabal.project"]
 # EOF
