@@ -1,5 +1,6 @@
 name:                servant-quickcheck
 version:             0.0.7.2
+x-revision:          1
 synopsis:            QuickCheck entire APIs
 description:
  This packages provides QuickCheck properties that are tested across an entire
@@ -18,7 +19,7 @@ tested-with:
   GHC==7.10.3,
   GHC==8.0.2,
   GHC==8.2.2,
-  GHC==8.4.1
+  GHC==8.4.3
 
 source-repository head
   type: git
@@ -51,9 +52,9 @@ library
                      , pretty == 1.1.*
                      , process >= 1.2 && < 1.7
                      , QuickCheck > 2.7 && < 2.12
-                     , servant >= 0.13 && < 0.14
-                     , servant-client >= 0.13 && < 0.14
-                     , servant-server >= 0.13 && < 0.14
+                     , servant >= 0.13 && < 0.15
+                     , servant-client >= 0.13 && < 0.15
+                     , servant-server >= 0.13 && < 0.15
                      , split == 0.2.*
                      , string-conversions > 0.3 && < 0.5
                      , temporary >= 1.2 && <1.4
