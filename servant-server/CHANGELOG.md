@@ -1,6 +1,52 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.14
+----
+
+- `Stream` takes a status code argument
+
+  ```diff
+  -Stream method        framing ctype a
+  +Stream method status framing ctype a
+  ```
+
+  ([#966](https://github.com/haskell-servant/servant/pull/966)
+   [#972](https://github.com/haskell-servant/servant/pull/972))
+
+- `ToStreamGenerator` definition changed, so it's possible to write an instance
+  for conduits.
+
+  ```diff
+  -class ToStreamGenerator f a where
+  -   toStreamGenerator :: f a -> StreamGenerator a
+  +class ToStreamGenerator a b | a -> b where
+  +   toStreamGenerator :: a -> StreamGenerator b
+  ```
+
+  ([#959](https://github.com/haskell-servant/servant/pull/959))
+
+- Added `NoFraming` streaming strategy
+  ([#959](https://github.com/haskell-servant/servant/pull/959))
+
+- *servant-server* File serving in polymorphic monad.
+  i.e. Generalised types of `serveDirectoryFileServer` etc functions in
+  `Servant.Utils.StaticFiles`
+  ([#953](https://github.com/haskell-servant/servant/pull/953))
+
+- *servant-server* `ReqBody` content type check is recoverable.
+  This allows writing APIs like:
+
+  ```haskell
+        ReqBody '[JSON] Int      :> Post '[PlainText] Int
+  :<|>  ReqBody '[PlainText] Int :> Post '[PlainText] Int
+  ```
+
+  which is useful when handlers are subtly different,
+  for example may do less work.
+  ([#937](https://github.com/haskell-servant/servant/pull/937))
+
+
 0.13.0.1
 --------
 
