@@ -129,3 +129,4 @@ test-suite readme
   build-depends:  base, servant, http-client, text, servant-client, markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit
   ghc-options:    -pgmL markdown-unlit
+  default-language: Haskell2010
