@@ -97,7 +97,7 @@ The function `formatMessage` simply uses the request and the exception to return
 ```haskell
 formatMessage :: Maybe Request -> SomeException -> String
 formatMessage Nothing exception        = "Exception before request could be parsed: " ++ show exception
-formatMessage (Just request) exception = "Exception " ++ show exception ++ " while handling request " ++ request
+formatMessage (Just request) exception = "Exception " ++ show exception ++ " while handling request " ++ show request
 ```
 
 The only piece left now is the `recordUpdate` function which allows to decorate with other [attributes](https://docs.sentry.io/clientdev/attributes/) the default `SentryRecord`.
