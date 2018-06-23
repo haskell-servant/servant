@@ -114,7 +114,7 @@ import           Servant.API.ResponseHeaders
                  ResponseHeader (..), addHeader, getHeadersHList, getResponse,
                  noHeader)
 import           Servant.API.Stream
-                 (BoundaryStrategy (..), BuildFromStream (..),
+                 (BoundaryStrategy (..), FromResultStream (..),
                  ByteStringParser (..), FramingRender (..),
                  FramingUnrender (..), NetstringFraming, NewlineFraming,
                  NoFraming, ResultStream (..), Stream, StreamGenerator (..),

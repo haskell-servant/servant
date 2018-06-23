@@ -460,8 +460,8 @@ instance HasLink Raw where
     type MkLink Raw a = a
     toLink toA _ = toA
 
-instance HasLink (Stream m fr ct a) where
-    type MkLink (Stream m fr ct a) r = r
+instance HasLink (Stream m status fr ct a) where
+    type MkLink (Stream m status fr ct a) r = r
     toLink toA _ = toA
 
 -- AuthProtext instances
