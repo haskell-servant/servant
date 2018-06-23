@@ -160,8 +160,6 @@ import           Servant.API.RemoteHost
                  (RemoteHost)
 import           Servant.API.ReqBody
                  (ReqBody')
-import           Servant.API.Stream
-                 (Stream)
 import           Servant.API.Sub
                  (type (:>))
 import           Servant.API.TypeLevel
@@ -462,10 +460,6 @@ instance HasLink (VerbNoContent method a) where
 
 instance HasLink Raw where
     type MkLink Raw a = a
-    toLink toA _ = toA
-
-instance HasLink (Stream m fr ct a) where
-    type MkLink (Stream m fr ct a) r = r
     toLink toA _ = toA
 
 -- AuthProtext instances

@@ -1,14 +1,14 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveDataTypeable     #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE TupleSections          #-}
 {-# OPTIONS_HADDOCK not-home          #-}
 
 module Servant.API.Stream where
@@ -33,12 +33,15 @@ import           Network.HTTP.Types.Method
 import           Text.Read
                  (readMaybe)
 
+import           Servant.API.Verbs
+                 (Verb)
+
 -- | A Stream endpoint for a given method emits a stream of encoded values at a given Content-Type, delimited by a framing strategy. Stream endpoints always return response code 200 on success. Type synonyms are provided for standard methods.
-data Stream (method :: k1) (status :: Nat) (framing :: *) (contentType :: *) (a :: *)
+data Stream (status :: Nat) (framing :: *) (a :: *)
   deriving (Typeable, Generic)
 
-type StreamGet  = Stream 'GET 200
-type StreamPost = Stream 'POST 200
+type StreamGet  status ct framing a = Verb 'GET  ct (Stream status framing a)
+type StreamPost status ct framing a = Verb 'POST ct (Stream status framing a)
 
 -- | Stream endpoints may be implemented as producing a @StreamGenerator@ -- a function that itself takes two emit functions -- the first to be used on the first value the stream emits, and the second to be used on all subsequent values (to allow interspersed framing strategies such as comma separation).
 newtype StreamGenerator a = StreamGenerator {getStreamGenerator :: (a -> IO ()) -> (a -> IO ()) -> IO ()}
@@ -47,8 +50,8 @@ newtype StreamGenerator a = StreamGenerator {getStreamGenerator :: (a -> IO ()) 
 class ToStreamGenerator a b | a -> b where
    toStreamGenerator :: a -> StreamGenerator b
 
-instance ToStreamGenerator (StreamGenerator a) a
-   where toStreamGenerator x = x
+instance ToStreamGenerator (StreamGenerator a) a where
+    toStreamGenerator x = x
 
 -- | Clients reading from streaming endpoints can be implemented as producing a @ResultStream@ that captures the setup, takedown, and incremental logic for a read, being an IO continuation that takes a producer of Just either values or errors that terminates with a Nothing.
 newtype ResultStream a = ResultStream (forall b. (IO (Maybe (Either String a)) -> IO b) -> IO b)
