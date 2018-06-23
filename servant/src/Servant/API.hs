@@ -33,9 +33,6 @@ module Servant.API (
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Verbs,
 
-  -- * TODO issue-841 Endpoints without content
-  module Servant.API.NoContent,
-
   -- * Streaming endpoints, distinguished by HTTP method
   module Servant.API.Stream,
 
@@ -87,8 +84,7 @@ import           Servant.API.Capture
                  (Capture, Capture', CaptureAll)
 import           Servant.API.ContentTypes
                  (Accept (..), FormUrlEncoded, JSON, MimeRender (..),
-                 MimeUnrender (..), OctetStream,
-                 PlainText)
+                 MimeUnrender (..), OctetStream, PlainText)
 import           Servant.API.Description
                  (Description, Summary)
 import           Servant.API.Empty
@@ -103,8 +99,6 @@ import           Servant.API.IsSecure
                  (IsSecure (..))
 import           Servant.API.Modifiers
                  (Lenient, Optional, Required, Strict)
-import           Servant.API.NoContent
-                 (NoContent (..))
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam, QueryParam', QueryParams)
 import           Servant.API.Raw
@@ -132,12 +126,12 @@ import           Servant.API.Verbs
                  (Delete, DeleteAccepted, DeleteNoContent,
                  DeleteNonAuthoritative, Get, GetAccepted, GetNoContent,
                  GetNonAuthoritative, GetPartialContent, GetResetContent,
-                 Patch, PatchAccepted, PatchNoContent, PatchNonAuthoritative,
-                 Post, PostAccepted, PostCreated, PostNoContent,
-                 PostNonAuthoritative, PostResetContent, Put, PutAccepted,
-                 PutNoContent, PutNonAuthoritative,
+                 NoContent (..), Patch, PatchAccepted, PatchNoContent,
+                 PatchNonAuthoritative, Post, PostAccepted, PostCreated,
+                 PostNoContent, PostNonAuthoritative, PostResetContent, Put,
+                 PutAccepted, PutNoContent, PutNonAuthoritative,
                  ReflectMethod (reflectMethod), Result, StdMethod (..), Verb,
-                 Verb')
+                 VerbNoContent)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Servant.Utils.Links

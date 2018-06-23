@@ -133,8 +133,7 @@ type family IsElem endpoint api :: Constraint where
   IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
   IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
   IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
-  IsElem (Verb m s ct typ) (Verb m s ct' typ)
-                                          = IsSubList ct ct'
+  IsElem (Verb m ct sb) (Verb m ct' sb')  = IsSubList ct ct'
   IsElem e e                              = ()
   IsElem e a                              = IsElem' e a
 

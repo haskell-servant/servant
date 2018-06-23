@@ -9,7 +9,7 @@ module Servant.API.Internal.Test.ComprehensiveAPI where
 import           Data.Proxy
 import           Servant.API
 
-type GET = Verb' 'GET (NoContent 200)
+type GET = VerbNoContent 'GET (NoContent 200)
 
 type ComprehensiveAPI =
   ComprehensiveAPIWithoutRaw :<|>
@@ -33,11 +33,11 @@ type ComprehensiveAPIWithoutRaw =
   RemoteHost :> GET :<|>
   ReqBody '[JSON] Int :> GET :<|>
   ReqBody' '[Lenient] '[JSON] Int :> GET :<|>
-  Verb' 'GET (Headers '[Header "foo" Int] :> NoContent 200) :<|>
+  VerbNoContent 'GET (Headers '[Header "foo" Int] :> NoContent 200) :<|>
   "foo" :> GET :<|>
   Vault :> GET :<|>
   PostNoContent :<|>
-  Verb 'POST 204 '[JSON] Int :<|>
+  Verb 'POST '[JSON] (Result 204 Int) :<|>
   WithNamedContext "foo" '[] GET :<|>
   CaptureAll "foo" Int :> GET :<|>
   Summary "foo" :> GET :<|>

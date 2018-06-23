@@ -292,23 +292,6 @@ instance OVERLAPPABLE_
         pctyp  = Proxy :: Proxy ctyp
         pctyps = Proxy :: Proxy (ctyp' ': ctyps)
 
-
-{- TODO issue-841 delete
-
--- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
--- then this would be taken care of. However there is no more specific instance
--- between that and 'MimeRender JSON a', so we do this instead
-instance OVERLAPPING_ ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
-    allMimeRender _ _ = map (, "") $ NE.toList $ contentTypes pctyp
-      where
-        pctyp = Proxy :: Proxy ctyp
-
-instance OVERLAPPING_
-         ( AllMime (ctyp ': ctyp' ': ctyps)
-         ) => AllMimeRender (ctyp ': ctyp' ': ctyps) NoContent where
-    allMimeRender p _ = zip (allMime p) (repeat "")
--}
-
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
 --------------------------------------------------------------------------

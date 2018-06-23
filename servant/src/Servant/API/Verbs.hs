@@ -21,21 +21,24 @@ import           Network.HTTP.Types.Method
                  methodGet, methodHead, methodOptions, methodPatch, methodPost,
                  methodPut, methodTrace)
 
-import Servant.API.NoContent
-
 -- | @Verb@ is a general type for representing HTTP verbs (a.k.a. methods). For
 -- convenience, type synonyms for each verb with a 200 response code are
 -- provided, but you are free to define your own:
 --
--- >>> type Post204 contentTypes a = Verb 'POST 204 contentTypes a
-type Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
-    = Verb' method (Result statusCode contentTypes a)
-
-data Verb' (method :: k1) (a :: *)
+-- >>> type Post204 contentTypes a = Verb 'POST contentTypes (Result a)
+data Verb (method :: k1) (contentTypes :: [*]) (api :: *)
   deriving (Typeable, Generic)
 
-data Result (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
+-- | A type for responses.
+data Result (statusCode :: Nat) (a :: *)
   deriving (Typeable, Generic)
+
+data VerbNoContent (method :: k1) (api :: *)
+  deriving (Typeable, Generic)
+
+-- | A type for responses without content-body.
+data NoContent (statusCode :: Nat) = NoContent
+  deriving (Show, Eq, Read, Generic)
 
 -- * 200 responses
 --
@@ -47,15 +50,15 @@ data Result (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
 -- the relevant information is summarily presented here.
 
 -- | 'GET' with 200 status code.
-type Get ct a    = Verb 'GET    200 ct a
+type Get ct a    = Verb 'GET    ct (Result 200 a)
 -- | 'POST' with 200 status code.
-type Post ct a   = Verb 'POST   200 ct a
+type Post ct a   = Verb 'POST   ct (Result 200 a)
 -- | 'PUT' with 200 status code.
-type Put ct a    = Verb 'PUT    200 ct a
+type Put ct a    = Verb 'PUT    ct (Result 200 a)
 -- | 'DELETE' with 200 status code.
-type Delete ct a = Verb 'DELETE 200 ct a
+type Delete ct a = Verb 'DELETE ct (Result 200 a)
 -- | 'PATCH' with 200 status code.
-type Patch ct a  = Verb 'PATCH  200 ct a
+type Patch ct a  = Verb 'PATCH  ct (Result 200 a)
 
 -- * Other responses
 
@@ -71,7 +74,7 @@ type Patch ct a  = Verb 'PATCH  200 ct a
 
 -- | 'POST' with 201 status code.
 --
-type PostCreated ct a = Verb 'POST 201 ct a
+type PostCreated ct a = Verb 'POST ct (Result 201 a)
 
 
 -- ** 202 Accepted
@@ -82,15 +85,15 @@ type PostCreated ct a = Verb 'POST 201 ct a
 -- estimate of when the processing will be finished.
 
 -- | 'GET' with 202 status code.
-type GetAccepted ct a    = Verb 'GET 202 ct a
+type GetAccepted ct a    = Verb 'GET ct (Result 202 a)
 -- | 'POST' with 202 status code.
-type PostAccepted ct a   = Verb 'POST 202 ct a
+type PostAccepted ct a   = Verb 'POST ct (Result 202 a)
 -- | 'DELETE' with 202 status code.
-type DeleteAccepted ct a = Verb 'DELETE 202 ct a
+type DeleteAccepted ct a = Verb 'DELETE ct (Result 202 a)
 -- | 'PATCH' with 202 status code.
-type PatchAccepted ct a = Verb 'PATCH 202 ct a
+type PatchAccepted ct a = Verb 'PATCH ct (Result 202 a)
 -- | 'PUT' with 202 status code.
-type PutAccepted ct a   = Verb 'PUT 202 ct a
+type PutAccepted ct a   = Verb 'PUT ct (Result 202 a)
 
 
 -- ** 203 Non-Authoritative Information
@@ -99,15 +102,15 @@ type PutAccepted ct a   = Verb 'PUT 202 ct a
 -- information may come from a third-party.
 
 -- | 'GET' with 203 status code.
-type GetNonAuthoritative ct a    = Verb 'GET 203 ct a
+type GetNonAuthoritative ct a    = Verb 'GET ct (Result 203 a)
 -- | 'POST' with 203 status code.
-type PostNonAuthoritative ct a   = Verb 'POST 203 ct a
+type PostNonAuthoritative ct a   = Verb 'POST ct (Result 203 a)
 -- | 'DELETE' with 203 status code.
-type DeleteNonAuthoritative ct a = Verb 'DELETE 203 ct a
+type DeleteNonAuthoritative ct a = Verb 'DELETE ct (Result 203 a)
 -- | 'PATCH' with 203 status code.
-type PatchNonAuthoritative ct a  = Verb 'PATCH 203 ct a
+type PatchNonAuthoritative ct a  = Verb 'PATCH ct (Result 203 a)
 -- | 'PUT' with 203 status code.
-type PutNonAuthoritative ct a    = Verb 'PUT 203 ct a
+type PutNonAuthoritative ct a    = Verb 'PUT ct (Result 203 a)
 
 
 -- ** 204 No Content
@@ -118,15 +121,15 @@ type PutNonAuthoritative ct a    = Verb 'PUT 203 ct a
 -- If the document view should be reset, use @205 Reset Content@.
 
 -- | 'GET' with 204 status code.
-type GetNoContent    = Verb' 'GET (NoContent 204)
+type GetNoContent    = VerbNoContent 'GET (NoContent 204)
 -- | 'POST' with 204 status code.
-type PostNoContent   = Verb' 'POST (NoContent 204)
+type PostNoContent   = VerbNoContent 'POST (NoContent 204)
 -- | 'DELETE' with 204 status code.
-type DeleteNoContent = Verb' 'DELETE (NoContent 204)
+type DeleteNoContent = VerbNoContent 'DELETE (NoContent 204)
 -- | 'PATCH' with 204 status code.
-type PatchNoContent  = Verb' 'PATCH (NoContent 204)
+type PatchNoContent  = VerbNoContent 'PATCH (NoContent 204)
 -- | 'PUT' with 204 status code.
-type PutNoContent    = Verb' 'PUT (NoContent 204)
+type PutNoContent    = VerbNoContent 'PUT (NoContent 204)
 
 
 -- ** 205 Reset Content
@@ -137,15 +140,15 @@ type PutNoContent    = Verb' 'PUT (NoContent 204)
 -- If the document view should not be reset, use @204 No Content@.
 
 -- | 'GET' with 205 status code.
-type GetResetContent    = Verb' 'GET (NoContent 205)
+type GetResetContent    = VerbNoContent 'GET (NoContent 205)
 -- | 'POST' with 205 status code.
-type PostResetContent   = Verb' 'POST (NoContent 205)
+type PostResetContent   = VerbNoContent 'POST (NoContent 205)
 -- | 'DELETE' with 205 status code.
-type DeleteResetContent = Verb' 'DELETE (NoContent 205)
+type DeleteResetContent = VerbNoContent 'DELETE (NoContent 205)
 -- | 'PATCH' with 205 status code.
-type PatchResetContent  = Verb' 'PATCH (NoContent 205)
+type PatchResetContent  = VerbNoContent 'PATCH (NoContent 205)
 -- | 'PUT' with 205 status code.
-type PutResetContent    = Verb' 'PUT (NoContent 205)
+type PutResetContent    = VerbNoContent 'PUT (NoContent 205)
 
 
 -- ** 206 Partial Content
@@ -157,7 +160,7 @@ type PutResetContent    = Verb' 'PUT (NoContent 205)
 -- RFC7233 Section 4.1>
 
 -- | 'GET' with 206 status code.
-type GetPartialContent ct a = Verb 'GET 206 ct a
+type GetPartialContent ct a = Verb 'GET ct (Result 206 a)
 
 
 class ReflectMethod a where

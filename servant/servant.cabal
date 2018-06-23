@@ -51,7 +51,6 @@ library
     Servant.API.Internal.Test.ComprehensiveAPI
     Servant.API.IsSecure
     Servant.API.Modifiers
-    Servant.API.NoContent
     Servant.API.QueryParam
     Servant.API.Raw
     Servant.API.RemoteHost
