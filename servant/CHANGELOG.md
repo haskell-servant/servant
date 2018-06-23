@@ -92,9 +92,6 @@
 
 ### Other changes
 
-- Add [Sentry cookbook recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/sentry/Sentry.html)
-  ([#987](https://github.com/haskell-servant/servant/pull/987))
-
 - `GetHeaders` instances implemented without `OverlappingInstances`
   ([#971](https://github.com/haskell-servant/servant/pull/971))
 
