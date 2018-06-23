@@ -49,19 +49,12 @@ import           Network.Wai.Test
                  simpleHeaders, simpleStatus)
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
-                 BasicAuthData (BasicAuthData), Capture, CaptureAll, Delete,
-<<<<<<< HEAD
-                 EmptyAPI, Get, Header, Headers, HttpVersion, IsSecure (..),
-                 JSON, NoContent (..), NoFraming, OctetStream, Patch,
-                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
-                 RemoteHost, ReqBody, StdMethod (..), Stream,
-                 StreamGenerator (..), Verb, addHeader)
-=======
+                 BasicAuthData (BasicAuthData), Capture, CaptureAll,
                  DeleteNoContent, EmptyAPI, Get, Header, Headers, HttpVersion,
-                 IsSecure (..), JSON, NoContent (..), Patch, PlainText, Post,
-                 Put, QueryFlag, QueryParam, QueryParams, Raw, RemoteHost, Result,
-                 ReqBody, StdMethod (..), Verb, Verb', addHeader)
->>>>>>> acc798c... Issue 841: Refactor servant-server
+                 IsSecure (..), JSON, NoContent (..), NoFraming, OctetStream,
+                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
+                 RemoteHost, ReqBody, Result, StdMethod (..), Stream,
+                 StreamGenerator (..), Verb, VerbNoContent, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
@@ -111,14 +104,14 @@ spec = do
 ------------------------------------------------------------------------------
 
 type VerbApi method status
-    =                Verb method status '[JSON] Person
- :<|> "noContent" :> Verb' method (NoContent status)
- :<|> "header"    :> Verb' method (Headers '[Header "H" Int] :> Result status '[JSON] Person)
- :<|> "headerNC"  :> Verb' method (Headers '[Header "H" Int] :> NoContent status)
- :<|> "accept"    :> (    Verb method status '[JSON] Person
-                     :<|> Verb method status '[PlainText] String
+    =                Verb method '[JSON] (Result status Person)
+ :<|> "noContent" :> VerbNoContent method (NoContent status)
+ :<|> "header"    :> Verb method '[JSON] (Headers '[Header "H" Int] :> Result status Person)
+ :<|> "headerNC"  :> VerbNoContent method (Headers '[Header "H" Int] :> NoContent status)
+ :<|> "accept"    :> (    Verb method '[JSON]      (Result status Person)
+                     :<|> Verb method '[PlainText] (Result status String)
                      )
- :<|> "stream"    :> Stream method status NoFraming OctetStream (StreamGenerator BS.ByteString)
+ :<|> "stream"    :> Verb method '[OctetStream] (Stream status NoFraming (StreamGenerator BS.ByteString))
 
 verbSpec :: Spec
 verbSpec = describe "Servant.API.Verb" $ do
@@ -198,7 +191,8 @@ verbSpec = describe "Servant.API.Verb" $ do
           it "works for Stream as for Result" $ do
               response <- THW.request method "/stream" [] ""
               liftIO $ statusCode (simpleStatus response) `shouldBe` status
-              liftIO $ simpleBody response `shouldBe` "bytestring"
+              unless (method == methodHead) $
+                  liftIO $ simpleBody response `shouldBe` "bytestring"
 
   test "GET 200" get200 methodGet 200
   test "POST 210" post210 methodPost 210
@@ -592,13 +586,12 @@ alternativeSpec = do
 ------------------------------------------------------------------------------
 -- * responseHeaderSpec {{{
 ------------------------------------------------------------------------------
-{- WIP: Issue 841
-type ResponseHeadersApi =
-       Get   '[JSON] (Headers '[Header "H1" Int, Header "H2" String] String)
-  :<|> Post  '[JSON] (Headers '[Header "H1" Int, Header "H2" String] String)
-  :<|> Put   '[JSON] (Headers '[Header "H1" Int, Header "H2" String] String)
-  :<|> Patch '[JSON] (Headers '[Header "H1" Int, Header "H2" String] String)
 
+type ResponseHeadersApi =
+       Verb 'GET   '[JSON] (Headers '[Header "H1" Int, Header "H2" String] :> Result 200 String)
+  :<|> Verb 'POST  '[JSON] (Headers '[Header "H1" Int, Header "H2" String] :> Result 200 String)
+  :<|> Verb 'PUT   '[JSON] (Headers '[Header "H1" Int, Header "H2" String] :> Result 200 String)
+  :<|> Verb 'PATCH '[JSON] (Headers '[Header "H1" Int, Header "H2" String] :> Result 200 String)
 
 responseHeadersServer :: Server ResponseHeadersApi
 responseHeadersServer = let h = return $ addHeader 5 $ addHeader "kilroy" "hi"
@@ -627,8 +620,8 @@ responseHeadersSpec = describe "ResponseHeaders" $ do
       forM_ methods $ \method ->
         THW.request method "" [(hAccept, "crazy/mime")] ""
           `shouldRespondWith` 406
--}
 -- }}}
+
 ------------------------------------------------------------------------------
 -- * miscCombinatorSpec {{{
 ------------------------------------------------------------------------------

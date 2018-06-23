@@ -8,13 +8,6 @@
 -- with a server implemented with servant-server.
 module Servant.Server.StreamingSpec where
 
-import           Test.Hspec
-
-spec :: Spec
-spec = return ()
-
-{- WIP: Issue 841
-
 import           Control.Concurrent
 import           Control.Exception hiding (Handler)
 import           Control.Monad.IO.Class
@@ -30,7 +23,7 @@ import qualified System.Timeout
 import           Test.Hspec
 
 type TestAPI =
-  ReqBody '[OctetStream] Lazy.ByteString :> Get '[JSON] NoContent
+  ReqBody '[OctetStream] Lazy.ByteString :> GetNoContent
 
 testAPI :: Proxy TestAPI
 testAPI = Proxy
@@ -72,7 +65,7 @@ spec = do
     -- - receives the first chunk
     -- - notifies serverReceivedFirstChunk
     -- - receives the rest of the request
-    let handler :: Lazy.ByteString -> Handler NoContent
+    let handler :: Lazy.ByteString -> Handler (NoContent 204)
         handler input = liftIO $ do
           let prefix = Lazy.take 3 input
           prefix `shouldBe` "foo"
@@ -82,7 +75,7 @@ spec = do
 
         app = serve testAPI handler
     response <- executeRequest app request
-    statusCode (responseStatus response) `shouldBe` 200
+    statusCode (responseStatus response) `shouldBe` 204
 
 executeRequest :: Application -> Request -> IO Response
 executeRequest app request = do
@@ -113,5 +106,3 @@ newWaiter = do
     notify = putMVar mvar,
     waitFor = readMVar mvar
   }
-
--}

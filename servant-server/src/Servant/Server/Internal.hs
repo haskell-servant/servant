@@ -36,7 +36,7 @@ module Servant.Server.Internal
   ) where
 
 import           Control.Monad
-                 (join, when)
+                 (join)
 import           Control.Monad.Trans
                  (liftIO)
 import           Control.Monad.Trans.Resource
@@ -48,7 +48,7 @@ import qualified Data.ByteString.Lazy                       as BL
 import           Data.Either
                  (partitionEithers)
 import           Data.Maybe
-                 (fromMaybe, isNothing, mapMaybe, maybeToList)
+                 (fromMaybe, mapMaybe)
 import           Data.Profunctor
                  (Profunctor (..))
 import           Data.Semigroup
@@ -128,7 +128,6 @@ class HasServer api context where
 class HasServerR (api :: Type) (contentTypes :: [Type]) where
     type ServerR api :: Type
 
-    -- TODO: add headers, method we don't need "Router", but "Leaf", in a sense.
     routeR
         :: Proxy api
         -> Proxy contentTypes
@@ -270,47 +269,6 @@ acceptCheck proxy accH
   | canHandleAcceptH proxy (AcceptHeader accH) = return ()
   | otherwise                                  = delayedFail err406
 
-{-
-addMethodCheck :: Method
-             -> Delayed env (Handler b)
-             -> Delayer env (
-addMethodCheck  method action = error "todo" {- leafRouter route'
-  where
-    route' env request respond =
-          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-          in runAction (action `addMethodCheck` methodCheck method request
-                               `addAcceptCheck` acceptCheck proxy accH
-                       ) env request respond $ \ output -> do
-               let (headers, b) = splitHeaders output
-               case handleAcceptH proxy (AcceptHeader accH) b of
-                 Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
-                 Just (contentT, body) ->
-                      let bdy = if allowedMethodHead method request then "" else body
-                      in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
--}
--}
-
-{-
-methodRouter :: (AllCTRender ctypes a)
-             => (b -> ([(HeaderName, B.ByteString)], a))
-             -> Method -> Proxy ctypes -> Status
-             -> Delayed env (Handler b)
-             -> Router env
-methodRouter splitHeaders method proxy status action = leafRouter route'
-  where
-    route' env request respond =
-          let accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-          in runAction (action `addMethodCheck` methodCheck method request
-                               `addAcceptCheck` acceptCheck proxy accH
-                       ) env request respond $ \ output -> do
-               let (headers, b) = splitHeaders output
-               case handleAcceptH proxy (AcceptHeader accH) b of
-                 Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
-                 Just (contentT, body) ->
-                      let bdy = if allowedMethodHead method request then "" else body
-                      in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
--}
-
 instance (HasServerR api contentTypes, ReflectMethod method, AllMime contentTypes)
     => HasServer (Verb method contentTypes api) context
   where
@@ -384,6 +342,53 @@ instance (KnownNat status, AllCTRender contentTypes a)
         acceptHeader = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
         headers      = []
 
+instance
+    ( KnownNat status, MimeRender ctype a, contentTypes ~ '[ctype]
+    , FramingRender framing ctype, ToStreamGenerator b a, Show a
+    )
+    => HasServerR (Stream status framing b) contentTypes
+  where
+    type ServerR (Stream status framing b) = b
+
+    routeR _proxy _ct _context request = RouteResultR $ \a ->
+        case NHM.matchAccept [contentType ctypeP] acceptHeader of
+            -- this should not happen (checked before), so we make it fatal if it does
+            Nothing -> FailFatal err406
+            Just mt ->
+                Route $ responseStream status (contentHeader mt : headers) $ \write flush -> do
+                    let k = getStreamGenerator (toStreamGenerator a)
+                    write . BB.lazyByteString $ header framingP ctypeP
+                    case boundary framingP ctypeP of
+                        BoundaryStrategyBracket f ->
+                            let go x = let bs = mimeRender ctypeP x
+                                           (before, after) = f bs
+                                       in write (   BB.lazyByteString before
+                                                 <> BB.lazyByteString bs
+                                                 <> BB.lazyByteString after) >> flush
+                            in k go go
+                        BoundaryStrategyIntersperse sep -> k
+                           (\x -> do
+                              write . BB.lazyByteString . mimeRender ctypeP $ x
+                              flush)
+                           (\x -> do
+                              write . (BB.lazyByteString sep <>) . BB.lazyByteString . mimeRender ctypeP $ x
+                              flush)
+                        BoundaryStrategyGeneral f ->
+                            let go x = do
+                                    write . BB.lazyByteString . f . mimeRender ctypeP $ x
+                                    flush
+                            in k go go
+                    write . BB.lazyByteString $ trailer framingP ctypeP
+      where
+        status       = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+        headers      = []
+
+        acceptHeader     = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+        contentHeader mt = (hContentType, NHM.renderHeader [mt])
+        
+        ctypeP   = Proxy :: Proxy ctype
+        framingP = Proxy :: Proxy framing
+
 instance KnownNat status => HasServerR (NoContent status) contentTypes where
     type ServerR (NoContent status) = NoContent status
 
@@ -414,81 +419,6 @@ instance (HasServerR api ct, GetHeaders' hs) => HasServerR (Headers hs :> api) c
           where
             output  = getResponse x
             headers = getHeaders x
-{-
-
-            addHeaders :: Wai.Response -> Wai.Response
-            addHeaders = Wai.mapResponseHeaders (++ headers)
-        in _
-      where
-        RouteResultR r sub =
--}
-{-
-instance OVERLAPPABLE_
-         ( MimeRender ctype a, ReflectMethod method, KnownNat status,
-           FramingRender framing ctype, ToStreamGenerator b a
-         ) => HasServer (Stream method status framing ctype b) context where
-
-  type ServerT (Stream method status framing ctype b) m = m b
-  hoistServerWithContext _ _ nt s = nt s
-
-  route Proxy _ = streamRouter ([],) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
-      where method = reflectMethod (Proxy :: Proxy method)
-            status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
-
-instance OVERLAPPING_
-         ( MimeRender ctype a, ReflectMethod method, KnownNat status,
-           FramingRender framing ctype, ToStreamGenerator b a,
-           GetHeaders (Headers h b)
-         ) => HasServer (Stream method status framing ctype (Headers h b)) context where
-
-  type ServerT (Stream method status framing ctype (Headers h b)) m = m (Headers h b)
-  hoistServerWithContext _ _ nt s = nt s
-
-  route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
-      where method = reflectMethod (Proxy :: Proxy method)
-            status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
-
--}
-
-streamRouter :: (MimeRender ctype a, FramingRender framing ctype, ToStreamGenerator b a) =>
-                (c -> ([(HeaderName, B.ByteString)], b))
-             -> Method
-             -> Status
-             -> Proxy framing
-             -> Proxy ctype
-             -> Delayed env (Handler c)
-             -> Router env
-streamRouter splitHeaders method status framingproxy ctypeproxy action = leafRouter $ \env request respond ->
-          let accH    = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-              cmediatype = NHM.matchAccept [contentType ctypeproxy] accH
-              accCheck = when (isNothing cmediatype) $ delayedFail err406
-              contentHeader = (hContentType, NHM.renderHeader . maybeToList $ cmediatype)
-          in runAction (action `addMethodCheck` methodCheck method request
-                               `addAcceptCheck` accCheck
-                       ) env request respond $ \ output ->
-                let (headers, fa) = splitHeaders output
-                    k = getStreamGenerator . toStreamGenerator $ fa in
-                Route $ responseStream status (contentHeader : headers) $ \write flush -> do
-                      write . BB.lazyByteString $ header framingproxy ctypeproxy
-                      case boundary framingproxy ctypeproxy of
-                           BoundaryStrategyBracket f ->
-                                    let go x = let bs = mimeRender ctypeproxy x
-                                                   (before, after) = f bs
-                                               in write (   BB.lazyByteString before
-                                                         <> BB.lazyByteString bs
-                                                         <> BB.lazyByteString after) >> flush
-                                    in k go go
-                           BoundaryStrategyIntersperse sep -> k
-                             (\x -> do
-                                write . BB.lazyByteString . mimeRender ctypeproxy $ x
-                                flush)
-                             (\x -> do
-                                write . (BB.lazyByteString sep <>) . BB.lazyByteString . mimeRender ctypeproxy $ x
-                                flush)
-                           BoundaryStrategyGeneral f ->
-                                    let go = (>> flush) . write . BB.lazyByteString . f . mimeRender ctypeproxy
-                                    in k go go
-                      write . BB.lazyByteString $ trailer framingproxy ctypeproxy
 
 -- | If you use 'Header' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -926,7 +856,7 @@ type HasServerArrowKindError arr =
 -- ...Maybe you have used '->' instead of ':>' between
 -- ...Capture' '[] "foo" Int
 -- ...and
--- ...Verb 'GET 200 '[JSON] Int
+-- ...Verb 'GET '[JSON] (Result 200 Int)
 -- ...
 --
 -- >>> undefined :: Server (Capture "foo" Int -> Get '[JSON] Int)
@@ -935,7 +865,7 @@ type HasServerArrowKindError arr =
 -- ...Maybe you have used '->' instead of ':>' between
 -- ...Capture' '[] "foo" Int
 -- ...and
--- ...Verb 'GET 200 '[JSON] Int
+-- ...Verb 'GET '[JSON] (Result 200 Int)
 -- ...
 --
 instance TypeError (HasServerArrowTypeError a b) => HasServer (a -> b) context
