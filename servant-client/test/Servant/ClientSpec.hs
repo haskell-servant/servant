@@ -26,56 +26,57 @@
 #include "overlapping-compat.h"
 module Servant.ClientSpec (spec, Person(..), startWaiApp, endWaiApp) where
 
-import           Prelude                                    ()
+import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Arrow                              (left)
-import           Control.Concurrent                         (ThreadId, forkIO,
-                                                             killThread)
-import           Control.Exception                          (bracket)
-import           Control.Monad.Error.Class                  (throwError)
+import           Control.Arrow
+                 (left)
+import           Control.Concurrent
+                 (ThreadId, forkIO, killThread)
+import           Control.Exception
+                 (bracket)
+import           Control.Monad.Error.Class
+                 (throwError)
 import           Data.Aeson
-import           Data.Char                                  (chr, isPrint)
-import           Data.Foldable                              (forM_)
-import           Data.Semigroup                             ((<>))
-import           Data.Monoid                                ()
+                 (FromJSON, ToJSON)
+import           Data.Char
+                 (chr, isPrint)
+import           Data.Foldable
+                 (forM_)
+import           Data.Monoid ()
 import           Data.Proxy
+import           Data.Semigroup
+                 ((<>))
 import qualified Generics.SOP                               as SOP
-import           GHC.Generics                               (Generic)
+import           GHC.Generics
+                 (Generic)
 import qualified Network.HTTP.Client                        as C
 import qualified Network.HTTP.Types                         as HTTP
 import           Network.Socket
 import qualified Network.Wai                                as Wai
 import           Network.Wai.Handler.Warp
-import           System.IO.Unsafe                           (unsafePerformIO)
+import           System.IO.Unsafe
+                 (unsafePerformIO)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
 import           Test.QuickCheck
-import           Web.FormUrlEncoded                         (FromForm, ToForm)
+                 (Arbitrary (..), Gen, NonEmptyList (..), elements,
+                 forAllShrink, ioProperty, listOf1, property, (===))
+import           Web.FormUrlEncoded
+                 (FromForm, ToForm)
 
-import           Servant.API                                ((:<|>) ((:<|>)),
-                                                             (:>), AuthProtect,
-                                                             BasicAuth,
-                                                             BasicAuthData (..),
-                                                             Capture,
-                                                             CaptureAll, Delete,
-                                                             DeleteNoContent,
-                                                             EmptyAPI, addHeader,
-                                                             FormUrlEncoded,
-                                                             Get, Header,
-                                                             Headers, JSON,
-                                                             NoContent (NoContent),
-                                                             Post, Put, Raw,
-                                                             QueryFlag,
-                                                             QueryParam,
-                                                             QueryParams,
-                                                             ReqBody,
-                                                             getHeaders)
+import           Servant.API
+                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
+                 BasicAuthData (..), Capture, CaptureAll, Delete,
+                 DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
+                 Headers, JSON, NoContent (NoContent), Post, Put, QueryFlag,
+                 QueryParam, QueryParams, Raw, ReqBody, Result, StdMethod (..),
+                 Verb, addHeader, getHeaders)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
-import qualified Servant.Client.Core.Internal.Request as Req
-import qualified Servant.Client.Core.Internal.Auth as Auth
+import qualified Servant.Client.Core.Internal.Auth          as Auth
+import qualified Servant.Client.Core.Internal.Request       as Req
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 
@@ -119,7 +120,7 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 type Api =
   Get '[JSON] Person
   :<|> "get" :> Get '[JSON] Person
-  :<|> "deleteEmpty" :> DeleteNoContent '[JSON] NoContent
+  :<|> "deleteEmpty" :> DeleteNoContent
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
@@ -134,8 +135,8 @@ type Api =
             QueryFlag "third" :>
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
-  :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
-  :<|> "deleteContentType" :> DeleteNoContent '[JSON] NoContent
+  :<|> "headers" :> Verb 'GET '[JSON] (Headers TestHeaders :> Result 200 Bool)
+  :<|> "deleteContentType" :> DeleteNoContent
   :<|> "empty" :> EmptyAPI
 
 api :: Proxy Api
@@ -143,7 +144,7 @@ api = Proxy
 
 getRoot         :: ClientM Person
 getGet          :: ClientM Person
-getDeleteEmpty  :: ClientM NoContent
+getDeleteEmpty  :: ClientM (NoContent 204)
 getCapture      :: String -> ClientM Person
 getCaptureAll   :: [String] -> ClientM [Person]
 getBody         :: Person -> ClientM Person
@@ -155,7 +156,7 @@ getRawFailure   :: HTTP.Method -> ClientM Response
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
-getDeleteContentType :: ClientM NoContent
+getDeleteContentType :: ClientM (NoContent 204)
 
 getRoot
   :<|> getGet

@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
@@ -38,17 +39,16 @@ import           GHC.TypeLits
                  (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types                     as H
 import           Servant.API
-                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
-                 BuildFromStream (..), BuildHeadersTo (..),
+                 ((:<|>) ((:<|>)), (:>), Accept, AuthProtect, BasicAuth,
+                 BasicAuthData, BuildFromStream (..), BuildHeadersTo (..),
                  ByteStringParser (..), Capture', CaptureAll, Description,
                  EmptyAPI, FramingUnrender (..), Header', Headers (..),
                  HttpVersion, IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
                  QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
-                 ReqBody', Result (..), ResultStream (..), SBoolI, Stream,
-                 Summary, ToHttpApiData, Vault, Verb', WithNamedContext,
-                 contentType, getHeadersHList, getResponse, toQueryParam,
-                 toUrlPiece)
+                 ReqBody', Result, ResultStream (..), SBoolI, Stream, Summary,
+                 ToHttpApiData, Vault, Verb, VerbNoContent, WithNamedContext, contentType,
+                 getHeadersHList, getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
@@ -96,15 +96,10 @@ class RunClient m => HasClient m api where
     -> Client mon api
     -> Client mon' api
 
-data ClientResponse a = ClientResponse (Request -> Request) (Response -> Either ServantError a)
-
-clientResponse :: (Response -> Either ServantError a) -> ClientResponse a
-clientResponse = ClientResponse id
-
-class HasClientR api where
+class HasClientR (api :: *) (contentTypes :: [*]) where
   type ClientR api :: *
 
-  clientWithRouteR :: Proxy api -> ClientResponse (ClientR api)
+  clientWithRouteR :: Proxy api -> Proxy contentTypes -> Response -> Either ServantError (ClientR api)
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
 --   one function for querying @a@ and another one for querying @b@,
@@ -219,53 +214,59 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
 
 
 instance
-  ( RunClient m, HasClientR api, ReflectMethod method
-  ) => HasClient m (Verb' method api) where
-  type Client m (Verb' method api) = m (ClientR api)
+  ( RunClient m, HasClientR api contentTypes, ReflectMethod method, contentTypes ~ (ct ': cts), Accept ct
+  ) => HasClient m (Verb method contentTypes api) where
+  type Client m (Verb method contentTypes api) = m (ClientR api)
 
-  clientWithRoute _pm Proxy req =
-    case clientWithRouteR (Proxy :: Proxy api) of
-      ClientResponse f g -> do
-        response  <- runRequest (f req) { requestMethod = method }
-        either throwServantError pure $
-          g response
+  clientWithRoute _pm Proxy req = do
+    response  <- runRequest req
+      { requestMethod = method
+      , requestAccept = fromList $ toList accept
+      }
+    either throwServantError pure $
+      clientWithRouteR (Proxy :: Proxy api) (Proxy :: Proxy contentTypes) response
+    where
+      method = reflectMethod (Proxy :: Proxy method)
+      accept = contentTypes (Proxy :: Proxy ct)
+
+  hoistClientMonad _ _ f ma = f ma
+
+instance
+  ( RunClient m, HasClientR api '[], ReflectMethod method
+  ) => HasClient m (VerbNoContent method api) where
+  type Client m (VerbNoContent method api) = m (ClientR api)
+
+  clientWithRoute _pm Proxy req = do
+    response  <- runRequest req
+      { requestMethod = method
+      }
+    either throwServantError pure $
+      clientWithRouteR (Proxy :: Proxy api) (Proxy :: Proxy '[]) response
     where
       method = reflectMethod (Proxy :: Proxy method)
 
   hoistClientMonad _ _ f ma = f ma
 
-instance (ctypes ~ (ct ': cts), MimeUnrender ct a) => HasClientR (Result status ctypes a) where
-  type ClientR (Result status ctypes a) = a
+instance (ctypes ~ (ct ': cts), MimeUnrender ct a) => HasClientR (Result status a) ctypes where
+  type ClientR (Result status a) = a
 
-  clientWithRouteR Proxy = ClientResponse f g
-    where
-      accept = contentTypes (Proxy :: Proxy ct)
-      f req = req { requestAccept = fromList $ toList accept }
-      g res = res `decodedAs2` (Proxy :: Proxy ct)
+  clientWithRouteR Proxy _cts res = res `decodedAs2` (Proxy :: Proxy ct)
 
-instance HasClientR (NoContent status) where
-  type ClientR (NoContent status) = NoContent status
+instance
+  ( contentTypes ~ '[ct], MimeUnrender ct a, FramingUnrender framing a, BuildFromStream a b
+  ) => HasClientR (Stream status framing b) contentTypes where
 
-  clientWithRouteR Proxy = clientResponse (\_ -> Right NoContent)
+  type ClientR (Stream status framing b) = b
 
-instance (HasClientR api, BuildHeadersTo ls) => HasClientR (Headers ls :> api) where
-  type ClientR (Headers ls :> api) = Headers ls (ClientR api)
+  clientWithRouteR Proxy _cts res = error "question"
 
-  clientWithRouteR Proxy = case clientWithRouteR (Proxy :: Proxy api) of
-    ClientResponse f g -> ClientResponse f $ \res -> do
-      x <- g res
-      return $ Headers
-        { getResponse     = x
-        , getHeadersHList = buildHeadersTo . toList $ responseHeaders res
-        }
 {-
 
 instance OVERLAPPABLE_
   ( RunClient m, MimeUnrender ct a, ReflectMethod method,
-    FramingUnrender framing a, BuildFromStream a (f a)
-  ) => HasClient m (Stream method status framing ct (f a)) where
+    FramingUnrender framing a, BuildFromStream a b
+  ) => HasClient m (Stream method status framing ct b) where
 
-  type Client m (Stream method status framing ct (f a)) = m (f a)
 
   clientWithRoute _pm Proxy req = do
    sresp <- streamingRequest req
@@ -310,6 +311,24 @@ instance OVERLAPPABLE_
 
   hoistClientMonad _ _ f ma = f ma
 -}
+
+
+
+
+instance HasClientR (NoContent status) ctypes where
+  type ClientR (NoContent status) = NoContent status
+
+  clientWithRouteR _api _ct _ = Right NoContent
+
+instance (HasClientR api ctypes, BuildHeadersTo ls) => HasClientR (Headers ls :> api) ctypes where
+  type ClientR (Headers ls :> api) = Headers ls (ClientR api)
+
+  clientWithRouteR Proxy ct res = do
+    x <- clientWithRouteR (Proxy :: Proxy api) ct res
+    return $ Headers
+      { getResponse     = x
+      , getHeadersHList = buildHeadersTo . toList $ responseHeaders res
+      }
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take

@@ -57,7 +57,7 @@ instance ToStreamGenerator (StreamGenerator a) a where
 newtype ResultStream a = ResultStream (forall b. (IO (Maybe (Either String a)) -> IO b) -> IO b)
 
 -- | BuildFromStream is intended to be implemented for types such as Conduit, Pipe, etc. By implementing this class, all such streaming abstractions can be used directly on the client side for talking to streaming endpoints.
-class BuildFromStream a b where
+class BuildFromStream a b | b -> a where
    buildFromStream :: ResultStream a -> b
 
 instance BuildFromStream a (ResultStream a)
