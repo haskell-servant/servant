@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeOperators     #-}
 
 import           Data.Aeson
+                 (FromJSON, ToJSON)
 import           Data.Monoid
 import           Data.Proxy
 import           Data.Text
@@ -31,7 +32,9 @@ type TestApi =
 
        -- POST /greet with a Greet as JSON in the request body,
        --             returns a Greet as JSON
-  :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
+  :<|> "greet"
+      :> ReqBody '[JSON] Greet
+      :> Verb 'POST '[JSON] (Result 400 Text :<|> Result 200 Greet)
 
        -- DELETE /greet/:greetid
   :<|> "greet" :> Capture "greetid" Text :> DeleteNoContent
@@ -52,7 +55,8 @@ server = helloH :<|> postGreetH :<|> deleteGreetH
         helloH name (Just False) = return . Greet $ "Hello, " <> name
         helloH name (Just True) = return . Greet . toUpper $ "Hello, " <> name
 
-        postGreetH greet = return greet
+        postGreetH (Greet "by") = return (Left "wrong greet")
+        postGreetH greet        = return (Right greet)
 
         deleteGreetH _ = return NoContent
 

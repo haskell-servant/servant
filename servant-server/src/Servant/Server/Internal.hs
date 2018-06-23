@@ -2,6 +2,7 @@
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
@@ -21,6 +22,8 @@
 #ifdef HAS_TYPE_ERROR
 {-# LANGUAGE UndecidableInstances  #-}
 #endif
+
+#define Type *
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
@@ -78,7 +81,7 @@ import           Servant.API
                  NoContent (..), QueryFlag, QueryParam', QueryParams, Raw,
                  ReflectMethod (reflectMethod), RemoteHost, ReqBody', Result,
                  SBool (..), SBoolI (..), Stream, StreamGenerator (..),
-                 Summary, ToStreamGenerator (..), Vault, Verb',
+                 Summary, ToStreamGenerator (..), Vault, Verb, VerbNoContent,
                  WithNamedContext)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
@@ -122,28 +125,20 @@ class HasServer api context where
         -> ServerT api m
         -> ServerT api n
 
-class HasServerR api where
-    type ServerR api :: *
+class HasServerR (api :: Type) (contentTypes :: [Type]) where
+    type ServerR api :: Type
 
     -- TODO: add headers, method we don't need "Router", but "Leaf", in a sense.
     routeR
         :: Proxy api
+        -> Proxy contentTypes
         -> Context context
         -> Request
         -> RouteResultR (ServerR api) Wai.Response
 
--- | @('RouteResult' a, forall env c. 'Delayed' env c -> 'Delayed' env c)@
-data RouteResultR a b where
-    RouteResultR
-        :: (forall env k. Delayed env k -> Delayed env k)  -- add additional checks for router to consider
-        -> (a -> RouteResult b)                            -- convert @a@ to @RouteResult b@ (b is Wai.Response)
-        -> RouteResultR a b
-
-routeResultR :: (a ->  RouteResult b) -> RouteResultR a b
-routeResultR = RouteResultR id
-
-instance Functor (RouteResultR a) where
-    fmap f = mapRouteResultR (fmap f .)
+-- | convert @a@ to @RouteResult b@ (b is Wai.Response)
+newtype RouteResultR a b = RouteResultR { runRouteResultR :: a -> RouteResult b }
+  deriving Functor
 
 instance Profunctor RouteResultR where
     dimap f g = mapRouteResultR $ \r -> fmap g . r . f
@@ -152,7 +147,7 @@ mapRouteResultR
     :: ((a -> RouteResult b) -> c -> RouteResult d)
     -> RouteResultR a b
     -> RouteResultR c d
-mapRouteResultR f (RouteResultR d r) = RouteResultR d (f r)
+mapRouteResultR f (RouteResultR r) = RouteResultR (f r)
 
 type Server api = ServerT api Handler
 
@@ -316,20 +311,53 @@ methodRouter splitHeaders method proxy status action = leafRouter route'
                       in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
 -}
 
-instance (HasServerR api, ReflectMethod method)
-    => HasServer (Verb' method api) context
+instance (HasServerR api contentTypes, ReflectMethod method, AllMime contentTypes)
+    => HasServer (Verb method contentTypes api) context
   where
-    type ServerT (Verb' method api) m = m (ServerR api)
+    type ServerT (Verb method contentTypes api) m = m (ServerR api)
     hoistServerWithContext _ _ nt s = nt s
 
     route Proxy context subserver = leafRouter $ \env request respond ->
-        case routeR (Proxy :: Proxy api) context request of
-            RouteResultR d k -> runAction (d subserver') env request respond $ \output ->
+        case routeR (Proxy :: Proxy api) contentTypesP context request of
+            RouteResultR k -> runAction subserver' env request respond $ \output ->
                 if allowedMethodHead method request
                 then emptyBodyResponse <$> k output
                 else k output
       where
-        subserver' = subserver `addMethodCheck` withRequest methodCheck'
+        subserver' = subserver
+            `addMethodCheck` withRequest methodCheck'
+            `addAcceptCheck` withRequest (acceptCheck contentTypesP . acceptHeader)
+
+        method = reflectMethod (Proxy :: Proxy method)
+        contentTypesP = Proxy :: Proxy contentTypes
+
+        methodCheck' :: Request -> DelayedIO ()
+        methodCheck' request
+            | allowedMethod method request = return ()
+            | otherwise                    = delayedFail err405
+
+        acceptHeader request = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+
+-- TODO: combine with Verb
+--
+-- We require HasServerR api '[] -- without any contenttypes!
+-- In GHC-8.6 we could require @forall ct. HasSereverR api ct@
+instance (HasServerR api '[], ReflectMethod method)
+    => HasServer (VerbNoContent method api) context
+  where
+    type ServerT (VerbNoContent method api) m = m (ServerR api)
+    hoistServerWithContext _ _ nt s = nt s
+
+    route Proxy context subserver = leafRouter $ \env request respond ->
+        case routeR (Proxy :: Proxy api) (Proxy :: Proxy '[]) context request of
+            RouteResultR k -> runAction subserver' env request respond $ \output ->
+                if allowedMethodHead method request
+                then emptyBodyResponse <$> k output
+                else k output
+      where
+        subserver' = subserver
+            `addMethodCheck` withRequest methodCheck'
+
         method = reflectMethod (Proxy :: Proxy method)
 
         methodCheck' :: Request -> DelayedIO ()
@@ -340,39 +368,43 @@ instance (HasServerR api, ReflectMethod method)
 emptyBodyResponse :: Wai.Response -> Wai.Response
 emptyBodyResponse res = responseLBS (Wai.responseStatus res) (Wai.responseHeaders res) mempty
 
-instance (AllCTRender contentTypes a, KnownNat status) => HasServerR (Result status contentTypes a) where
-    type ServerR (Result status contentTypes a) = a
+instance (KnownNat status, AllCTRender contentTypes a)
+    => HasServerR (Result status a) contentTypes
+  where
+    type ServerR (Result status a) = a
 
-    routeR _proxy _context request = RouteResultR headerCheck $ \a ->
+    routeR _proxy contentTypesP _context request = RouteResultR $ \a ->
         case handleAcceptH contentTypesP (AcceptHeader acceptHeader) a of
             -- this should not happen (checked before), so we make it fatal if it does
             Nothing -> FailFatal err406
             Just (contentT, body) ->
                 Route $ responseLBS status ((hContentType, cs contentT) : headers) body
       where
-        headerCheck :: Delayed env' k -> Delayed env' k
-        headerCheck d = d `addAcceptCheck` acceptCheck contentTypesP acceptHeader
-
-        contentTypesP = Proxy :: Proxy contentTypes
-
         status       = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
         acceptHeader = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
         headers      = []
 
-instance KnownNat status => HasServerR (NoContent status) where
+instance KnownNat status => HasServerR (NoContent status) contentTypes where
     type ServerR (NoContent status) = NoContent status
 
-    routeR _proxy _context _request = routeResultR $ \NoContent ->
+    routeR _proxy _ct _context _request = RouteResultR $ \_ ->
         Route $ responseLBS status headers mempty
       where
         headers = []
         status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
-instance (HasServerR api, GetHeaders' hs) => HasServerR (Headers hs :> api) where
+instance (HasServerR a ct, HasServerR b ct) => HasServerR (a :<|> b) ct where
+    type ServerR (a :<|> b) = Either (ServerR a) (ServerR b)
+
+    routeR _api ct context request = RouteResultR $ \e -> case e of
+        Left x  -> runRouteResultR (routeR (Proxy :: Proxy a) ct context request) x
+        Right y -> runRouteResultR (routeR (Proxy :: Proxy b) ct context request) y
+
+instance (HasServerR api ct, GetHeaders' hs) => HasServerR (Headers hs :> api) ct where
     type ServerR (Headers hs :> api) = Headers hs (ServerR api)
 
-    routeR Proxy context request = mapRouteResultR addHeaders $
-        routeR (Proxy :: Proxy api) context request
+    routeR _api _ct context request = mapRouteResultR addHeaders $
+        routeR (Proxy :: Proxy api) (Proxy :: Proxy ct) context request
       where
         addHeaders
             :: (ServerR api -> RouteResult Wai.Response)
