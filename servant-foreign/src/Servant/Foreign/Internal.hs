@@ -238,6 +238,20 @@ instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
       method   = reflectMethod (Proxy :: Proxy method)
       methodLC = toLower $ decodeUtf8 method
 
+-- | TODO: doesn't taking framing into account.
+instance (ct ~ JSON, HasForeignType lang ftype a, ReflectMethod method)
+  => HasForeign lang ftype (Stream method status framing ct a) where
+  type Foreign ftype (Stream method status framing ct a) = Req ftype
+
+  foreignFor lang Proxy Proxy req =
+    req & reqFuncName . _FunctionName %~ (methodLC :)
+        & reqMethod .~ method
+        & reqReturnType .~ Just retType
+    where
+      retType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a)
+      method   = reflectMethod (Proxy :: Proxy method)
+      methodLC = toLower $ decodeUtf8 method
+
 instance (KnownSymbol sym, HasForeignType lang ftype (RequiredArgument mods a), HasForeign lang ftype api)
   => HasForeign lang ftype (Header' mods sym a :> api) where
   type Foreign ftype (Header' mods sym a :> api) = Foreign ftype api

@@ -840,6 +840,24 @@ instance OVERLAPPABLE_
           status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
+-- | TODO: mention the endpoint is streaming, its framing strategy
+--
+-- Also there are no samples.
+instance OVERLAPPABLE_
+        (MimeRender ct a, KnownNat status
+        , ReflectMethod method)
+    => HasDocs (Stream method status framing ct a) where
+  docsFor Proxy (endpoint, action) DocOptions{..} =
+    single endpoint' action'
+
+    where endpoint' = endpoint & method .~ method'
+          action' = action & response.respTypes .~ allMime t
+                           & response.respStatus .~ status
+          t = Proxy :: Proxy '[ct]
+          method' = reflectMethod (Proxy :: Proxy method)
+          status = fromInteger $ natVal (Proxy :: Proxy status)
+          p = Proxy :: Proxy a
+
 instance OVERLAPPING_
         (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
         , ReflectMethod method, AllHeaderSamples ls, GetHeaders (HList ls))

@@ -107,12 +107,12 @@ manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
 runClient :: ClientM a -> BaseUrl -> IO (Either ServantError a)
 runClient x baseUrl' = runClientM x (mkClientEnv manager' baseUrl')
 
-runResultStream :: ResultStream a
+testRunResultStream :: ResultStream a
   -> IO ( Maybe (Either String a)
         , Maybe (Either String a)
         , Maybe (Either String a)
         , Maybe (Either String a))
-runResultStream (ResultStream k)
+testRunResultStream (ResultStream k)
   = k $ \act -> (,,,) <$> act <*> act <*> act <*> act
 
 streamSpec :: Spec
@@ -122,13 +122,13 @@ streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
        Right res <- runClient getGetNL baseUrl
        let jra = Just (Right alice)
            jrb = Just (Right bob)
-       runResultStream res `shouldReturn` (jra, jrb, jra, Nothing)
+       testRunResultStream res `shouldReturn` (jra, jrb, jra, Nothing)
 
     it "works with Servant.API.StreamGet.Netstring" $ \(_, baseUrl) -> do
        Right res <- runClient getGetNS baseUrl
        let jra = Just (Right alice)
            jrb = Just (Right bob)
-       runResultStream res `shouldReturn` (jra, jrb, jra, Nothing)
+       testRunResultStream res `shouldReturn` (jra, jrb, jra, Nothing)
 
     it "streams in constant memory" $ \(_, baseUrl) -> do
        Right (ResultStream res) <- runClient getGetALot baseUrl
