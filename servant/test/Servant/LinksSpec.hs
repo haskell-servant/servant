@@ -7,7 +7,7 @@
 #if __GLASGOW_HASKELL__ < 709
 {-# OPTIONS_GHC -fcontext-stack=41 #-}
 #endif
-module Servant.Utils.LinksSpec where
+module Servant.LinksSpec where
 
 import           Data.Proxy              (Proxy (..))
 import           Test.Hspec              (Expectation, Spec, describe, it,
@@ -15,7 +15,7 @@ import           Test.Hspec              (Expectation, Spec, describe, it,
 import           Data.String             (fromString)
 
 import           Servant.API
-import           Servant.Utils.Links
+import           Servant.Links
 import           Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
 
 type TestApi =
@@ -51,7 +51,7 @@ shouldBeLink link expected =
     toUrlPiece link `shouldBe` fromString expected
 
 spec :: Spec
-spec = describe "Servant.Utils.Links" $ do
+spec = describe "Servant.Links" $ do
     it "generates correct links for capture query params" $ do
         let l1 = Proxy :: Proxy ("hello" :> Capture "name" String :> Delete '[JSON] NoContent)
         apiLink l1 "hi" `shouldBeLink` "hello/hi"

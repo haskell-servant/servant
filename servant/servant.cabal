@@ -62,6 +62,10 @@ library
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext
+    Servant.Links
+
+  -- Deprecated modules, to be removed in late 2019
+  exposed-modules:
     Servant.Utils.Links
     Servant.Utils.Enter
 
@@ -133,8 +137,8 @@ test-suite spec
   other-modules:
       Servant.API.ContentTypesSpec
       Servant.API.ResponseHeadersSpec
-      Servant.Utils.LinksSpec
       Servant.Utils.EnterSpec
+      Servant.LinksSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
@@ -179,4 +183,4 @@ test-suite doctests
     x-doctest-options: -fdiagnostics-color=never
   include-dirs: include
   x-doctest-source-dirs: test
-  x-doctest-modules: Servant.Utils.LinksSpec
+  x-doctest-modules: Servant.LinksSpec

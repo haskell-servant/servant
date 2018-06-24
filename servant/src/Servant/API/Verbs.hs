@@ -58,7 +58,7 @@ type Patch  = Verb 'PATCH  200
 --
 -- If the resource cannot be created immediately, use 'PostAccepted'.
 --
--- Consider using 'Servant.Utils.Links.safeLink' for the @Location@ header
+-- Consider using 'Servant.Links.safeLink' for the @Location@ header
 -- field.
 
 -- | 'POST' with 201 status code.
