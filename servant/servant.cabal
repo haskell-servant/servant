@@ -63,7 +63,6 @@ library
     Servant.API.Verbs
     Servant.API.WithNamedContext
     Servant.Utils.Links
-    Servant.Utils.Enter
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
@@ -89,7 +88,6 @@ library
     , http-api-data          >= 0.3.8.1  && < 0.4
     , http-media             >= 0.7.1.2  && < 0.8
     , http-types             >= 0.12.1   && < 0.13
-    , natural-transformation >= 0.4      && < 0.5
     , mmorph                 >= 1.1.2    && < 1.2
     , tagged                 >= 0.8.5    && < 0.9
     , singleton-bool         >= 0.1.4    && < 0.2
@@ -134,7 +132,6 @@ test-suite spec
       Servant.API.ContentTypesSpec
       Servant.API.ResponseHeadersSpec
       Servant.Utils.LinksSpec
-      Servant.Utils.EnterSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
