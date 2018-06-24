@@ -42,7 +42,7 @@ import Lucid
 import Network.HTTP.Media ((//), (/:))
 import Network.Wai
 import Network.Wai.Handler.Warp
-import Servant
+import Servant.API
 import System.Directory
 import Text.Blaze
 import Text.Blaze.Html.Renderer.Utf8
