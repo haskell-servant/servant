@@ -6,7 +6,7 @@ module Servant (
   -- | For implementing servers for servant APIs.
   module Servant.Server,
   -- | Utilities on top of the servant core
-  module Servant.Utils.Links,
+  module Servant.Links,
   module Servant.Utils.StaticFiles,
   -- | Useful re-exports
   Proxy(..),
@@ -17,5 +17,5 @@ import           Control.Monad.Error.Class (throwError)
 import           Data.Proxy
 import           Servant.API
 import           Servant.Server
-import           Servant.Utils.Links
+import           Servant.Links
 import           Servant.Utils.StaticFiles
