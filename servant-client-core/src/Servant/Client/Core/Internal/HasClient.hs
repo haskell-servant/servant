@@ -16,10 +16,7 @@ module Servant.Client.Core.Internal.HasClient where
 import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Concurrent
-                 (modifyMVar, newMVar)
-import           Control.Monad.IO.Class
-                 (MonadIO (..))
+import qualified Data.ByteString                        as BS
 import qualified Data.ByteString.Lazy                   as BL
 import           Data.Foldable
                  (toList)
@@ -27,8 +24,6 @@ import           Data.List
                  (foldl')
 import           Data.Proxy
                  (Proxy (Proxy))
-import           Data.Semigroup
-                 ((<>))
 import           Data.Sequence
                  (fromList)
 import           Data.String
@@ -40,19 +35,22 @@ import           GHC.TypeLits
 import qualified Network.HTTP.Types                     as H
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
-                 BuildHeadersTo (..), ByteStringParser (..), Capture',
-                 CaptureAll, Description, EmptyAPI, FramingUnrender (..),
-                 FromResultStream (..), Header', Headers (..), HttpVersion,
-                 IsSecure, MimeRender (mimeRender),
-                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
-                 ReqBody', ResultStream (..), SBoolI, Stream, Summary,
-                 ToHttpApiData, Vault, Verb, WithNamedContext, contentType,
-                 getHeadersHList, getResponse, toQueryParam, toUrlPiece)
+                 BuildHeadersTo (..), Capture', CaptureAll, Description,
+                 EmptyAPI, FramingUnrender (..), FromSourceIO (..),
+                 Header', Headers (..), HttpVersion, IsSecure,
+                 MimeRender (mimeRender), MimeUnrender (mimeUnrender),
+                 NoContent (NoContent), QueryFlag, QueryParam', QueryParams,
+                 Raw, ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
+                 StreamBody, Summary, ToHttpApiData, Vault, Verb,
+                 WithNamedContext, contentType, getHeadersHList, getResponse,
+                 toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
+import           Control.Monad.Codensity
+                 (Codensity (..))
+import qualified Servant.Types.SourceT                  as S
 
 import           Servant.Client.Core.Internal.Auth
 import           Servant.Client.Core.Internal.BasicAuth
@@ -274,54 +272,25 @@ instance {-# OVERLAPPING #-}
   hoistClientMonad _ _ f ma = f ma
 
 instance {-# OVERLAPPABLE #-}
-  ( RunClient m, MonadIO m, MimeUnrender ct a, ReflectMethod method,
-    FramingUnrender framing a, FromResultStream a b
-  ) => HasClient m (Stream method status framing ct b) where
+  ( RunClient m, MimeUnrender ct chunk, ReflectMethod method,
+    FramingUnrender framing, FromSourceIO chunk a
+  ) => HasClient m (Stream method status framing ct a) where
 
-  type Client m (Stream method status framing ct b) = m b
+  type Client m (Stream method status framing ct a) = m (Codensity IO a)
+
+  hoistClientMonad _ _ f ma = f ma
 
   clientWithRoute _pm Proxy req = do
-   sresp <- streamingRequest req
+    sresp <- streamingRequest req
       { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
       , requestMethod = reflectMethod (Proxy :: Proxy method)
       }
-   liftIO $ fromResultStream $ ResultStream $ \k ->
-     runStreamingResponse sresp $ \gres -> do
-      let  reader   = responseBody gres
-      let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)
-           loop bs = do
-             res <- BL.fromStrict <$> reader
-             if BL.null res
-              then return $ parseEOF unrender res
-              else let sofar = (bs <> res)
-                   in case parseIncremental unrender sofar of
-                     Just x -> return x
-                     Nothing -> loop sofar
-      (frameParser, remainder) <- loop BL.empty
-      state <- newMVar remainder
-      let frameLoop bs = do
-              res <- BL.fromStrict <$> reader
-              let addIsEmptyInfo (a, r) = (r, (a, BL.null r && BL.null res))
-              if BL.null res
-                   then if BL.null bs
-                           then return ("", (Right "", True))
-                           else return . addIsEmptyInfo $ parseEOF frameParser bs
-                   else let sofar = (bs <> res)
-                        in case parseIncremental frameParser sofar of
-                          Just x ->  return $ addIsEmptyInfo x
-                          Nothing -> frameLoop sofar
+    return $ do
+        let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
+            framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
+        gres <- sresp
+        return $ fromSourceIO $ framingUnrender' $ S.fromAction BS.null (responseBody gres)
 
-          go = processResult <$> modifyMVar state frameLoop
-          processResult (Right bs,isDone) =
-               if BL.null bs && isDone
-                    then Nothing
-                    else Just $ case mimeUnrender (Proxy :: Proxy ct) bs :: Either String a of
-                                  Left err -> Left err
-                                  Right x -> Right x
-          processResult (Left err, _) = Just (Left err)
-      k go
-
-  hoistClientMonad _ _ f ma = f ma
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -572,6 +541,18 @@ instance (MimeRender ct a, HasClient m api)
 
   hoistClientMonad pm _ f cl = \a ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
+
+instance
+    ( HasClient m api
+    ) => HasClient m (StreamBody framing ctype a :> api)
+  where
+
+    type Client m (StreamBody framing ctype a :> api) = a -> Client m api
+
+    hoistClientMonad pm _ f cl = \a ->
+      hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
+
+    clientWithRoute _pm Proxy _req _body = error "HasClient @StreamBody"
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where

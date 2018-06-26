@@ -42,6 +42,7 @@ import           Network.Wai
 import           Network.Wai.Test
                  (defaultRequest, request, runSession, simpleBody,
                  simpleHeaders, simpleStatus)
+import qualified Servant.Types.SourceT as S
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (BasicAuthData), Capture, CaptureAll, Delete,
@@ -49,7 +50,7 @@ import           Servant.API
                  JSON, NoContent (..), NoFraming, OctetStream, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
                  RemoteHost, ReqBody, StdMethod (..), Stream,
-                 StreamGenerator (..), Verb, addHeader)
+                 SourceIO, Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
@@ -106,7 +107,7 @@ type VerbApi method status
  :<|> "accept"    :> (    Verb method status '[JSON] Person
                      :<|> Verb method status '[PlainText] String
                      )
- :<|> "stream"    :> Stream method status NoFraming OctetStream (StreamGenerator BS.ByteString)
+ :<|> "stream"    :> Stream method status NoFraming OctetStream (SourceIO BS.ByteString)
 
 verbSpec :: Spec
 verbSpec = describe "Servant.API.Verb" $ do
@@ -116,7 +117,7 @@ verbSpec = describe "Servant.API.Verb" $ do
           :<|> return (addHeader 5 alice)
           :<|> return (addHeader 10 NoContent)
           :<|> (return alice :<|> return "B")
-          :<|> return (StreamGenerator $ \f _ -> f "bytestring")
+          :<|> return (S.source ["bytestring"])
 
       get200     = Proxy :: Proxy (VerbApi 'GET 200)
       post210    = Proxy :: Proxy (VerbApi 'POST 210)

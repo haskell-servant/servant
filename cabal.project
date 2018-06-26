@@ -6,10 +6,15 @@ packages: servant/
   servant-server/
   doc/tutorial/
 
+  servant-machines/
+  servant-conduit/
+  servant-pipes/
+
   -- doc/cookbook/*/*.cabal
 
   doc/cookbook/basic-auth
   doc/cookbook/curl-mock
+  doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
   doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload

@@ -9,6 +9,8 @@ module Servant.API.Internal.Test.ComprehensiveAPI where
 import           Data.Proxy
                  (Proxy (..))
 import           Servant.API
+import           Servant.Types.SourceT
+                 (SourceT)
 
 type GET = Get '[JSON] NoContent
 
@@ -39,7 +41,7 @@ type ComprehensiveAPIWithoutRaw =
   Vault :> GET :<|>
   Verb 'POST 204 '[JSON] NoContent :<|>
   Verb 'POST 204 '[JSON] Int :<|>
-  Stream 'GET 200 NetstringFraming JSON [Int] :<|>
+  StreamBody NetstringFraming JSON (SourceT IO Int) :> Stream 'GET 200 NetstringFraming JSON (SourceT IO Int) :<|>
   WithNamedContext "foo" '[] GET :<|>
   CaptureAll "foo" Int :> GET :<|>
   Summary "foo" :> GET :<|>

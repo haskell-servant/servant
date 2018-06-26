@@ -21,6 +21,8 @@ import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Catch
                  (MonadCatch, MonadThrow)
+import           Control.Monad.Codensity
+                 (Codensity (..))
 import           Control.Monad.Error.Class
                  (MonadError (..))
 import           Control.Monad.Reader
@@ -141,6 +143,17 @@ instance ClientLike (ClientM a) (ClientM a) where
 runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
 
+withClientM
+    :: ClientM (Codensity IO a)         -- ^ client with codensity result
+    -> ClientEnv                        -- ^ environment
+    -> (Either ServantError a -> IO b)  -- ^ continuation
+    -> IO b
+withClientM cm env k = do
+    e <- runExceptT (runReaderT (unClientM cm) env)
+    case e of
+        Left err  -> k (Left err)
+        Right cod -> runCodensity cod (k . Right)
+
 performRequest :: Request -> ClientM Response
 performRequest req = do
   ClientEnv m burl cookieJar' <- ask
@@ -178,7 +191,7 @@ performStreamingRequest req = do
   m <- asks manager
   burl <- asks baseUrl
   let request = requestToClientRequest burl req
-  return $ StreamingResponse $
+  return $ Codensity $
     \k -> Client.withResponse request m $
     \r -> do
       let status = Client.responseStatus r

@@ -29,3 +29,6 @@ doc/_build
 doc/venv
 doc/tutorial/static/api.js
 doc/tutorial/static/jq.js
+
+# local versions of things
+servant-multipart

@@ -16,6 +16,8 @@ import           Data.Monoid
 import           Data.Proxy
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Foreign
+import           Servant.Types.SourceT
+                 (SourceT)
 
 import           Test.Hspec
 
@@ -50,6 +52,9 @@ instance HasForeignType LangX String (Headers ctyps NoContent) where
 
 instance HasForeignType LangX String Int where
   typeFor _ _ _ = "intX"
+
+instance HasForeignType LangX String (SourceT m a) where
+  typeFor _ _ _ = "streamTX"
 
 instance HasForeignType LangX String Bool where
   typeFor _ _ _ = "boolX"

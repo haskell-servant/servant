@@ -61,27 +61,27 @@ import           Network.Socket
                  (SockAddr)
 import           Network.Wai
                  (Application, Request, httpVersion, isSecure, lazyRequestBody,
-                 rawQueryString, remoteHost, requestHeaders, requestMethod,
-                 responseLBS, responseStream, vault)
+                 rawQueryString, remoteHost, requestBody, requestHeaders,
+                 requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
-                 ((:<|>) (..), (:>), Accept (..), BasicAuth,
-                 BoundaryStrategy (..), Capture', CaptureAll, Description,
-                 EmptyAPI, FramingRender (..), Header', If, IsSecure (..),
-                 QueryFlag, QueryParam', QueryParams, Raw,
+                 ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
+                 CaptureAll, Description, EmptyAPI, FramingRender (..),
+                 FramingUnrender (..), FromSourceIO (..), Header', If,
+                 IsSecure (..), QueryFlag, QueryParam', QueryParams, Raw,
                  ReflectMethod (reflectMethod), RemoteHost, ReqBody',
-                 SBool (..), SBoolI (..), Stream, StreamGenerator (..),
-                 Summary, ToStreamGenerator (..), Vault, Verb,
-                 WithNamedContext)
+                 SBool (..), SBoolI (..), SourceIO, Stream, StreamBody,
+                 Summary, ToSourceIO (..), Vault, Verb, WithNamedContext)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
-                 AllMime, MimeRender (..), canHandleAcceptH)
+                 AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH)
 import           Servant.API.Modifiers
                  (FoldLenient, FoldRequired, RequestArgument,
                  unfoldRequestArgument)
 import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
+import qualified Servant.Types.SourceT                      as S
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam,
                  parseUrlPieceMaybe, parseUrlPieces)
@@ -279,24 +279,25 @@ instance {-# OVERLAPPING #-}
 
 
 instance {-# OVERLAPPABLE #-}
-         ( MimeRender ctype a, ReflectMethod method, KnownNat status,
-           FramingRender framing ctype, ToStreamGenerator b a
-         ) => HasServer (Stream method status framing ctype b) context where
+         ( MimeRender ctype chunk, ReflectMethod method, KnownNat status,
+           FramingRender framing, ToSourceIO chunk a
+         ) => HasServer (Stream method status framing ctype a) context where
 
-  type ServerT (Stream method status framing ctype b) m = m b
+  type ServerT (Stream method status framing ctype a) m = m a
   hoistServerWithContext _ _ nt s = nt s
 
   route Proxy _ = streamRouter ([],) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
       where method = reflectMethod (Proxy :: Proxy method)
             status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
-instance {-# OVERLAPPING #-}
-         ( MimeRender ctype a, ReflectMethod method, KnownNat status,
-           FramingRender framing ctype, ToStreamGenerator b a,
-           GetHeaders (Headers h b)
-         ) => HasServer (Stream method status framing ctype (Headers h b)) context where
 
-  type ServerT (Stream method status framing ctype (Headers h b)) m = m (Headers h b)
+instance {-# OVERLAPPING #-}
+         ( MimeRender ctype chunk, ReflectMethod method, KnownNat status,
+           FramingRender framing, ToSourceIO chunk a,
+           GetHeaders (Headers h a)
+         ) => HasServer (Stream method status framing ctype (Headers h a)) context where
+
+  type ServerT (Stream method status framing ctype (Headers h a)) m = m (Headers h a)
   hoistServerWithContext _ _ nt s = nt s
 
   route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
@@ -304,8 +305,8 @@ instance {-# OVERLAPPING #-}
             status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
 
-streamRouter :: (MimeRender ctype a, FramingRender framing ctype, ToStreamGenerator b a) =>
-                (c -> ([(HeaderName, B.ByteString)], b))
+streamRouter :: forall ctype a c chunk env framing. (MimeRender ctype chunk, FramingRender framing, ToSourceIO chunk a) =>
+                (c -> ([(HeaderName, B.ByteString)], a))
              -> Method
              -> Status
              -> Proxy framing
@@ -321,28 +322,19 @@ streamRouter splitHeaders method status framingproxy ctypeproxy action = leafRou
                                `addAcceptCheck` accCheck
                        ) env request respond $ \ output ->
                 let (headers, fa) = splitHeaders output
-                    k = getStreamGenerator . toStreamGenerator $ fa in
-                Route $ responseStream status (contentHeader : headers) $ \write flush -> do
-                      write . BB.lazyByteString $ header framingproxy ctypeproxy
-                      case boundary framingproxy ctypeproxy of
-                           BoundaryStrategyBracket f ->
-                                    let go x = let bs = mimeRender ctypeproxy x
-                                                   (before, after) = f bs
-                                               in write (   BB.lazyByteString before
-                                                         <> BB.lazyByteString bs
-                                                         <> BB.lazyByteString after) >> flush
-                                    in k go go
-                           BoundaryStrategyIntersperse sep -> k
-                             (\x -> do
-                                write . BB.lazyByteString . mimeRender ctypeproxy $ x
-                                flush)
-                             (\x -> do
-                                write . (BB.lazyByteString sep <>) . BB.lazyByteString . mimeRender ctypeproxy $ x
-                                flush)
-                           BoundaryStrategyGeneral f ->
-                                    let go = (>> flush) . write . BB.lazyByteString . f . mimeRender ctypeproxy
-                                    in k go go
-                      write . BB.lazyByteString $ trailer framingproxy ctypeproxy
+                    sourceT = toSourceIO fa
+                    S.SourceT kStepLBS = framingRender framingproxy (mimeRender ctypeproxy :: chunk -> BL.ByteString) sourceT
+                in Route $ responseStream status (contentHeader : headers) $ \write flush -> do
+                    let loop S.Stop          = flush
+                        loop (S.Error err)   = fail err -- TODO: throw better error
+                        loop (S.Skip s)      = loop s
+                        loop (S.Effect ms)   = ms >>= loop
+                        loop (S.Yield lbs s) = do
+                            write (BB.lazyByteString lbs)
+                            flush
+                            loop s
+
+                    kStepLBS loop
 
 -- | If you use 'Header' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -614,6 +606,31 @@ instance ( AllCTUnrender list a, HasServer api context, SBoolI (FoldLenient mods
           SFalse -> case mrqbody of
             Left e  -> delayedFailFatal err400 { errBody = cs e }
             Right v -> return v
+
+instance
+    ( FramingUnrender framing, FromSourceIO chunk a, MimeUnrender ctype chunk
+    , HasServer api context
+    ) => HasServer (StreamBody framing ctype a :> api) context
+  where
+    type ServerT (StreamBody framing ctype a :> api) m = a -> ServerT api m
+
+    hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+
+    route Proxy context subserver = route (Proxy :: Proxy api) context $
+        addBodyCheck subserver ctCheck bodyCheck
+      where
+        ctCheck :: DelayedIO (SourceIO chunk -> a)
+        -- TODO: do content-type check
+        ctCheck = return fromSourceIO
+
+        bodyCheck :: (SourceIO chunk -> a) -> DelayedIO a
+        bodyCheck fromRS = withRequest $ \req -> do
+            let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ctype) :: BL.ByteString -> Either String chunk
+            let framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender' :: SourceIO B.ByteString ->  SourceIO chunk
+            let body = requestBody req
+            let rs = S.fromAction B.null body
+            let rs' = fromRS $ framingUnrender' rs
+            return rs'
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @api@.
