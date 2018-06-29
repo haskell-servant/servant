@@ -11,34 +11,49 @@
 {-# LANGUAGE TypeFamilies               #-}
 module Servant.Client.Internal.HttpClient where
 
-import           Prelude                     ()
+import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Concurrent.STM.TVar
 import           Control.Exception
 import           Control.Monad
-import           Control.Monad.Base          (MonadBase (..))
-import           Control.Monad.Catch         (MonadCatch, MonadThrow)
-import           Control.Monad.Error.Class   (MonadError (..))
+import           Control.Monad.Base
+                 (MonadBase (..))
+import           Control.Monad.Catch
+                 (MonadCatch, MonadThrow)
+import           Control.Monad.Error.Class
+                 (MonadError (..))
 import           Control.Monad.Reader
-import           Control.Monad.STM           (atomically)
-import           Control.Monad.Trans.Control (MonadBaseControl (..))
+import           Control.Monad.STM
+                 (atomically)
+import           Control.Monad.Trans.Control
+                 (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
-import           Data.ByteString.Builder     (toLazyByteString)
+import           Data.ByteString.Builder
+                 (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
-import           Data.Foldable               (toList, for_)
-import           Data.Functor.Alt            (Alt (..))
-import           Data.Maybe                  (maybeToList)
-import           Data.Semigroup              ((<>))
-import           Data.Proxy                  (Proxy (..))
-import           Data.Sequence               (fromList)
-import           Data.String                 (fromString)
+import           Data.Foldable
+                 (for_, toList)
+import           Data.Functor.Alt
+                 (Alt (..))
+import           Data.Maybe
+                 (maybeToList)
+import           Data.Proxy
+                 (Proxy (..))
+import           Data.Semigroup
+                 ((<>))
+import           Data.Sequence
+                 (fromList)
+import           Data.String
+                 (fromString)
 import qualified Data.Text                   as T
-import           Data.Time.Clock             (getCurrentTime)
+import           Data.Time.Clock
+                 (getCurrentTime)
 import           GHC.Generics
-import           Network.HTTP.Media          (renderHeader)
-import           Network.HTTP.Types          (hContentType, renderQuery,
-                                              statusCode)
+import           Network.HTTP.Media
+                 (renderHeader)
+import           Network.HTTP.Types
+                 (hContentType, renderQuery, statusCode)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client

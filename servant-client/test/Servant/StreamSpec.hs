@@ -26,31 +26,36 @@
 #include "overlapping-compat.h"
 module Servant.StreamSpec (spec) where
 
-import           Control.Monad       (replicateM_, void)
+import           Control.Monad
+                 (replicateM_, void)
 import qualified Data.ByteString     as BS
 import           Data.Proxy
 import qualified Network.HTTP.Client as C
-import           Prelude             ()
+import           Prelude ()
 import           Prelude.Compat
-import           System.IO           (IOMode (ReadMode), withFile)
-import           System.IO.Unsafe    (unsafePerformIO)
+import           System.IO
+                 (IOMode (ReadMode), withFile)
+import           System.IO.Unsafe
+                 (unsafePerformIO)
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           Servant.API         ((:<|>) ((:<|>)), (:>), JSON,
-                                      NetstringFraming, NewlineFraming,
-                                      OctetStream, ResultStream (..),
-                                      StreamGenerator (..), StreamGet,
-                                      NoFraming)
+import           Servant.API
+                 ((:<|>) ((:<|>)), (:>), JSON, NetstringFraming,
+                 NewlineFraming, NoFraming, OctetStream, ResultStream (..),
+                 StreamGenerator (..), StreamGet)
 import           Servant.Client
-import           Servant.ClientSpec  (Person (..))
+import           Servant.ClientSpec
+                 (Person (..))
 import qualified Servant.ClientSpec  as CS
 import           Servant.Server
 
 #if MIN_VERSION_base(4,10,0)
-import           GHC.Stats           (gcdetails_mem_in_use_bytes, gc, getRTSStats)
+import           GHC.Stats
+                 (gc, gcdetails_mem_in_use_bytes, getRTSStats)
 #else
-import           GHC.Stats           (currentBytesUsed, getGCStats)
+import           GHC.Stats
+                 (currentBytesUsed, getGCStats)
 #endif
 
 spec :: Spec

@@ -15,15 +15,21 @@ module Servant.Utils.StaticFiles
     serveDirectory
   ) where
 
-import           Data.ByteString                (ByteString)
+import           Data.ByteString
+                 (ByteString)
 import           Network.Wai.Application.Static
-import           Servant.API.Raw                (Raw)
-import           Servant.Server                 (ServerT, Tagged (..))
-import           System.FilePath                (addTrailingPathSeparator)
+import           Servant.API.Raw
+                 (Raw)
+import           Servant.Server
+                 (ServerT, Tagged (..))
+import           System.FilePath
+                 (addTrailingPathSeparator)
 #if !MIN_VERSION_wai_app_static(3,1,0)
-import           Filesystem.Path.CurrentOS      (decodeString)
+import           Filesystem.Path.CurrentOS
+                 (decodeString)
 #endif
-import WaiAppStatic.Storage.Filesystem          (ETagLookup)
+import           WaiAppStatic.Storage.Filesystem
+                 (ETagLookup)
 
 -- | Serve anything under the specified directory as a 'Raw' endpoint.
 --

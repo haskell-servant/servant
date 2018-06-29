@@ -1,31 +1,37 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module Servant.Server.Internal.RoutingApplicationSpec (spec) where
 
-import Prelude ()
-import Prelude.Compat
+import           Prelude ()
+import           Prelude.Compat
 
-import Control.Exception hiding (Handler)
-import Control.Monad.Trans.Resource (register)
-import Control.Monad.IO.Class
-import Data.IORef
-import Data.Proxy
-import GHC.TypeLits (Symbol, KnownSymbol, symbolVal)
-import Servant
-import Servant.Server.Internal.RoutingApplication
-import Network.Wai (defaultRequest)
-import Test.Hspec
-import Test.Hspec.Wai (request, shouldRespondWith, with)
+import           Control.Exception                          hiding
+                 (Handler)
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Resource
+                 (register)
+import           Data.IORef
+import           Data.Proxy
+import           GHC.TypeLits
+                 (KnownSymbol, Symbol, symbolVal)
+import           Network.Wai
+                 (defaultRequest)
+import           Servant
+import           Servant.Server.Internal.RoutingApplication
+import           Test.Hspec
+import           Test.Hspec.Wai
+                 (request, shouldRespondWith, with)
 
-import qualified Data.Text as T
+import qualified Data.Text                                  as T
 
-import System.IO.Unsafe (unsafePerformIO)
+import           System.IO.Unsafe
+                 (unsafePerformIO)
 
 data TestResource x
     = TestResourceNone

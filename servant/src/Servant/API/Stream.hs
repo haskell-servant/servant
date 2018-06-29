@@ -22,12 +22,12 @@ module Servant.API.Stream (
   StreamGenerator (..),
   ToStreamGenerator (..),
   ResultStream (..),
-  FromResultStream (..), 
+  FromResultStream (..),
   -- * Framing
   FramingRender (..),
   FramingUnrender (..),
   BoundaryStrategy (..),
-  ByteStringParser (..), 
+  ByteStringParser (..),
   -- ** Strategies
   NoFraming,
   NewlineFraming,

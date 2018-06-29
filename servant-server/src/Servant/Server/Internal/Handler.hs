@@ -5,17 +5,25 @@
 {-# LANGUAGE TypeFamilies               #-}
 module Servant.Server.Internal.Handler where
 
-import Prelude ()
-import Prelude.Compat
+import           Prelude ()
+import           Prelude.Compat
 
-import           Control.Monad.Base                 (MonadBase (..))
-import           Control.Monad.Catch                (MonadCatch, MonadThrow)
-import           Control.Monad.Error.Class          (MonadError)
-import           Control.Monad.IO.Class             (MonadIO)
-import           Control.Monad.Trans.Control        (MonadBaseControl (..))
-import           Control.Monad.Trans.Except         (ExceptT, runExceptT)
-import           GHC.Generics                       (Generic)
-import           Servant.Server.Internal.ServantErr (ServantErr)
+import           Control.Monad.Base
+                 (MonadBase (..))
+import           Control.Monad.Catch
+                 (MonadCatch, MonadThrow)
+import           Control.Monad.Error.Class
+                 (MonadError)
+import           Control.Monad.IO.Class
+                 (MonadIO)
+import           Control.Monad.Trans.Control
+                 (MonadBaseControl (..))
+import           Control.Monad.Trans.Except
+                 (ExceptT, runExceptT)
+import           GHC.Generics
+                 (Generic)
+import           Servant.Server.Internal.ServantErr
+                 (ServantErr)
 
 newtype Handler a = Handler { runHandler' :: ExceptT ServantErr IO a }
   deriving

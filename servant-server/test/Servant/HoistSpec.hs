@@ -1,10 +1,11 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE TypeOperators #-}
 module Servant.HoistSpec where
 
-import Test.Hspec (Spec)
+import           Test.Hspec
+                 (Spec)
 
-import Servant
+import           Servant
 
 -------------------------------------------------------------------------------
 -- https://github.com/haskell-servant/servant/issues/734

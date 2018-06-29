@@ -1,14 +1,14 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 #if __GLASGOW_HASKELL__ < 709
 {-# OPTIONS_GHC -fcontext-stack=41 #-}
 #endif
@@ -16,12 +16,13 @@
 
 module Servant.ForeignSpec where
 
-import Data.Monoid ((<>))
-import Data.Proxy
-import Servant.Foreign
-import Servant.API.Internal.Test.ComprehensiveAPI
+import           Data.Monoid
+                 ((<>))
+import           Data.Proxy
+import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.Foreign
 
-import Test.Hspec
+import           Test.Hspec
 
 
 spec :: Spec
