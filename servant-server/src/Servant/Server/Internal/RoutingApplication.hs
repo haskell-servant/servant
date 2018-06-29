@@ -10,16 +10,25 @@
 {-# LANGUAGE UndecidableInstances       #-}
 module Servant.Server.Internal.RoutingApplication where
 
-import           Control.Monad                      (ap, liftM)
-import           Control.Monad.Base                 (MonadBase (..))
-import           Control.Monad.Catch                (MonadThrow (..))
-import           Control.Monad.Reader               (MonadReader (..), ReaderT (..), runReaderT)
-import           Control.Monad.Trans                (MonadIO (..), MonadTrans (..))
-import           Control.Monad.Trans.Control        (ComposeSt, MonadBaseControl (..), MonadTransControl (..),
-                                                     defaultLiftBaseWith, defaultRestoreM)
-import           Control.Monad.Trans.Resource       (MonadResource (..), ResourceT, runResourceT, transResourceT, withInternalState, runInternalState)
-import           Network.Wai                        (Application, Request, Response, ResponseReceived)
-import           Prelude                            ()
+import           Control.Monad
+                 (ap, liftM)
+import           Control.Monad.Base
+                 (MonadBase (..))
+import           Control.Monad.Catch
+                 (MonadThrow (..))
+import           Control.Monad.Reader
+                 (MonadReader (..), ReaderT (..), runReaderT)
+import           Control.Monad.Trans
+                 (MonadIO (..), MonadTrans (..))
+import           Control.Monad.Trans.Control
+                 (ComposeSt, MonadBaseControl (..), MonadTransControl (..),
+                 defaultLiftBaseWith, defaultRestoreM)
+import           Control.Monad.Trans.Resource
+                 (MonadResource (..), ResourceT, runInternalState,
+                 runResourceT, transResourceT, withInternalState)
+import           Network.Wai
+                 (Application, Request, Response, ResponseReceived)
+import           Prelude ()
 import           Prelude.Compat
 import           Servant.Server.Internal.Handler
 import           Servant.Server.Internal.ServantErr

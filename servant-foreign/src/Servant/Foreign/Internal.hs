@@ -1,42 +1,47 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 #if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE NullaryTypeClasses #-}
+{-# LANGUAGE NullaryTypeClasses         #-}
 #endif
 
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
-import Prelude ()
-import Prelude.Compat
+import           Prelude ()
+import           Prelude.Compat
 
-import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
-                               (.~))
-import           Data.Data (Data)
+import           Control.Lens
+                 (Getter, makeLenses, makePrisms, (%~), (&), (.~), (<>~))
+import           Data.Data
+                 (Data)
 import           Data.Proxy
-import           Data.Semigroup (Semigroup)
+import           Data.Semigroup
+                 (Semigroup)
 import           Data.String
 import           Data.Text
-import           Data.Typeable (Typeable)
-import           Data.Text.Encoding (decodeUtf8)
+import           Data.Text.Encoding
+                 (decodeUtf8)
+import           Data.Typeable
+                 (Typeable)
 import           GHC.TypeLits
-import qualified Network.HTTP.Types as HTTP
+import qualified Network.HTTP.Types    as HTTP
 import           Servant.API
+import           Servant.API.Modifiers
+                 (RequiredArgument)
 import           Servant.API.TypeLevel
-import           Servant.API.Modifiers (RequiredArgument)
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
   deriving (Data, Show, Eq, Semigroup, Monoid, Typeable)

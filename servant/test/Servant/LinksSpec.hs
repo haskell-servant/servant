@@ -1,22 +1,25 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE PolyKinds       #-}
-{-# LANGUAGE TypeOperators   #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE ConstraintKinds     #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators       #-}
 #if __GLASGOW_HASKELL__ < 709
 {-# OPTIONS_GHC -fcontext-stack=41 #-}
 #endif
 module Servant.LinksSpec where
 
-import           Data.Proxy              (Proxy (..))
-import           Test.Hspec              (Expectation, Spec, describe, it,
-                                          shouldBe)
-import           Data.String             (fromString)
+import           Data.Proxy
+                 (Proxy (..))
+import           Data.String
+                 (fromString)
+import           Test.Hspec
+                 (Expectation, Spec, describe, it, shouldBe)
 
 import           Servant.API
+import           Servant.API.Internal.Test.ComprehensiveAPI
+                 (comprehensiveAPIWithoutRaw)
 import           Servant.Links
-import           Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
 
 type TestApi =
   -- Capture and query params

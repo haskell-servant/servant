@@ -20,7 +20,8 @@ import           Control.Lens
 import           Data.Aeson
 import           Data.Monoid
 import           Data.Proxy
-import           Data.String.Conversions (cs)
+import           Data.String.Conversions
+                 (cs)
 import           GHC.Generics
 import           Test.Hspec
 

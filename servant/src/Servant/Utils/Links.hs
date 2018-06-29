@@ -3,4 +3,4 @@ module Servant.Utils.Links
     ( module Servant.Links )
   where
 
-import Servant.Links
+import           Servant.Links

@@ -20,33 +20,45 @@
 #include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
-import           Prelude                    ()
+import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Applicative
-import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, mapped, over,
-                                             traversed, view, (%~), (&), (.~),
-                                             (<>~), (^.), (|>))
+import           Control.Arrow
+                 (second)
+import           Control.Lens
+                 (makeLenses, mapped, over, traversed, view, (%~), (&), (.~),
+                 (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
 import qualified Data.ByteString.Char8      as BSC
-import           Data.ByteString.Lazy.Char8 (ByteString)
+import           Data.ByteString.Lazy.Char8
+                 (ByteString)
 import qualified Data.CaseInsensitive       as CI
-import           Data.Foldable              (fold)
-import           Data.Hashable              (Hashable)
-import           Data.HashMap.Strict        (HashMap)
-import           Data.List.Compat           (intercalate, intersperse, sort)
-import           Data.List.NonEmpty         (NonEmpty ((:|)), groupWith)
+import           Data.Foldable
+                 (fold)
+import           Data.Hashable
+                 (Hashable)
+import           Data.HashMap.Strict
+                 (HashMap)
+import           Data.List.Compat
+                 (intercalate, intersperse, sort)
+import           Data.List.NonEmpty
+                 (NonEmpty ((:|)), groupWith)
 import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe
-import           Data.Monoid                (All (..), Any (..), Dual (..),
-                                             First (..), Last (..),
-                                             Product (..), Sum (..))
-import           Data.Ord                   (comparing)
-import           Data.Proxy                 (Proxy (Proxy))
-import           Data.Semigroup             (Semigroup (..))
-import           Data.String.Conversions    (cs)
-import           Data.Text                  (Text, unpack)
+import           Data.Monoid
+                 (All (..), Any (..), Dual (..), First (..), Last (..),
+                 Product (..), Sum (..))
+import           Data.Ord
+                 (comparing)
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Data.Semigroup
+                 (Semigroup (..))
+import           Data.String.Conversions
+                 (cs)
+import           Data.Text
+                 (Text, unpack)
 import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API

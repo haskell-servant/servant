@@ -26,56 +26,53 @@
 #include "overlapping-compat.h"
 module Servant.ClientSpec (spec, Person(..), startWaiApp, endWaiApp) where
 
-import           Prelude                                    ()
+import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Arrow                              (left)
-import           Control.Concurrent                         (ThreadId, forkIO,
-                                                             killThread)
-import           Control.Exception                          (bracket)
-import           Control.Monad.Error.Class                  (throwError)
+import           Control.Arrow
+                 (left)
+import           Control.Concurrent
+                 (ThreadId, forkIO, killThread)
+import           Control.Exception
+                 (bracket)
+import           Control.Monad.Error.Class
+                 (throwError)
 import           Data.Aeson
-import           Data.Char                                  (chr, isPrint)
-import           Data.Foldable                              (forM_)
-import           Data.Semigroup                             ((<>))
-import           Data.Monoid                                ()
+import           Data.Char
+                 (chr, isPrint)
+import           Data.Foldable
+                 (forM_)
+import           Data.Monoid ()
 import           Data.Proxy
+import           Data.Semigroup
+                 ((<>))
 import qualified Generics.SOP                               as SOP
-import           GHC.Generics                               (Generic)
+import           GHC.Generics
+                 (Generic)
 import qualified Network.HTTP.Client                        as C
 import qualified Network.HTTP.Types                         as HTTP
 import           Network.Socket
 import qualified Network.Wai                                as Wai
 import           Network.Wai.Handler.Warp
-import           System.IO.Unsafe                           (unsafePerformIO)
+import           System.IO.Unsafe
+                 (unsafePerformIO)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
 import           Test.QuickCheck
-import           Web.FormUrlEncoded                         (FromForm, ToForm)
+import           Web.FormUrlEncoded
+                 (FromForm, ToForm)
 
-import           Servant.API                                ((:<|>) ((:<|>)),
-                                                             (:>), AuthProtect,
-                                                             BasicAuth,
-                                                             BasicAuthData (..),
-                                                             Capture,
-                                                             CaptureAll, Delete,
-                                                             DeleteNoContent,
-                                                             EmptyAPI, addHeader,
-                                                             FormUrlEncoded,
-                                                             Get, Header,
-                                                             Headers, JSON,
-                                                             NoContent (NoContent),
-                                                             Post, Put, Raw,
-                                                             QueryFlag,
-                                                             QueryParam,
-                                                             QueryParams,
-                                                             ReqBody,
-                                                             getHeaders)
+import           Servant.API
+                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
+                 BasicAuthData (..), Capture, CaptureAll, Delete,
+                 DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
+                 Headers, JSON, NoContent (NoContent), Post, Put, QueryFlag,
+                 QueryParam, QueryParams, Raw, ReqBody, addHeader, getHeaders)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Client
-import qualified Servant.Client.Core.Internal.Request as Req
-import qualified Servant.Client.Core.Internal.Auth as Auth
+import qualified Servant.Client.Core.Internal.Auth          as Auth
+import qualified Servant.Client.Core.Internal.Request       as Req
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 

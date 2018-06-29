@@ -6,16 +6,20 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.Server.ErrorSpec (spec) where
 
-import           Control.Monad              (when)
-import           Data.Aeson                 (encode)
+import           Control.Monad
+                 (when)
+import           Data.Aeson
+                 (encode)
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.ByteString.Lazy.Char8 as BCL
-import           Data.Monoid                ((<>))
+import           Data.Monoid
+                 ((<>))
 import           Data.Proxy
-import           Network.HTTP.Types         (hAccept, hAuthorization,
-                                             hContentType, methodGet,
-                                             methodPost, methodPut)
-import           Safe                       (readMay)
+import           Network.HTTP.Types
+                 (hAccept, hAuthorization, hContentType, methodGet, methodPost,
+                 methodPut)
+import           Safe
+                 (readMay)
 import           Test.Hspec
 import           Test.Hspec.Wai
 

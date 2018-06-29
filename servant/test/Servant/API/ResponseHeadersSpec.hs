@@ -1,11 +1,11 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Servant.API.ResponseHeadersSpec where
 
-import Test.Hspec
+import           Test.Hspec
 
-import Servant.API.Header
-import Servant.API.ResponseHeaders
+import           Servant.API.Header
+import           Servant.API.ResponseHeaders
 
 spec :: Spec
 spec = describe "Servant.API.ResponseHeaders" $ do

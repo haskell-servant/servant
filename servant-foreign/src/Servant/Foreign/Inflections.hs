@@ -10,11 +10,14 @@ module Servant.Foreign.Inflections
   ) where
 
 
-import           Control.Lens hiding (cons)
-import qualified Data.Char as C
+import           Control.Lens             hiding
+                 (cons)
+import qualified Data.Char                as C
 import           Data.Monoid
-import           Data.Text hiding (map)
-import           Prelude hiding (head, tail)
+import           Data.Text                hiding
+                 (map)
+import           Prelude                  hiding
+                 (head, tail)
 import           Servant.Foreign.Internal
 
 concatCaseL :: Getter FunctionName Text

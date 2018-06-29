@@ -2,9 +2,12 @@
 {-# OPTIONS_GHC -fdefer-type-errors -Wwarn #-}
 module Servant.Server.Internal.ContextSpec (spec) where
 
-import           Data.Proxy                     (Proxy (..))
-import           Test.Hspec                     (Spec, describe, it, shouldBe, context)
-import           Test.ShouldNotTypecheck        (shouldNotTypecheck)
+import           Data.Proxy
+                 (Proxy (..))
+import           Test.Hspec
+                 (Spec, context, describe, it, shouldBe)
+import           Test.ShouldNotTypecheck
+                 (shouldNotTypecheck)
 
 import           Servant.API
 import           Servant.Server.Internal.Context

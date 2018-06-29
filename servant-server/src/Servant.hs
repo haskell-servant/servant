@@ -13,9 +13,10 @@ module Servant (
   throwError
   ) where
 
-import           Control.Monad.Error.Class (throwError)
+import           Control.Monad.Error.Class
+                 (throwError)
 import           Data.Proxy
 import           Servant.API
-import           Servant.Server
 import           Servant.Links
+import           Servant.Server
 import           Servant.Utils.StaticFiles
