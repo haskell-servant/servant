@@ -1,19 +1,21 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DefaultSignatures     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 #include "overlapping-compat.h"
 
 module Servant.Client.Core.Internal.Generic where
 
-import Generics.SOP   (Code, Generic, I(..), NP(..), NS(Z), SOP(..), to)
-import Servant.API    ((:<|>)(..))
+import           Generics.SOP
+                 (Code, Generic, I (..), NP (..), NS (Z), SOP (..), to)
+import           Servant.API
+                 ((:<|>) (..))
 
 -- | This class allows us to match client structure with client functions
 -- produced with 'client' without explicit pattern-matching.

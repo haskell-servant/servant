@@ -15,54 +15,46 @@
 #include "overlapping-compat.h"
 module Servant.Client.Core.Internal.HasClient where
 
-import           Prelude                                ()
+import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Concurrent                     (newMVar, modifyMVar)
-import           Data.Foldable                          (toList)
+import           Control.Concurrent
+                 (modifyMVar, newMVar)
+import           Control.Monad.IO.Class
+                 (MonadIO (..))
 import qualified Data.ByteString.Lazy                   as BL
-import Control.Monad.IO.Class (MonadIO (..))
-import           Data.List                              (foldl')
-import           Data.Proxy                             (Proxy (Proxy))
-import           Data.Semigroup                         ((<>))
-import           Data.Sequence                          (fromList)
-import           Data.String                            (fromString)
-import           Data.Text                              (Text, pack)
-import           GHC.TypeLits                           (KnownSymbol, symbolVal)
+import           Data.Foldable
+                 (toList)
+import           Data.List
+                 (foldl')
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Data.Semigroup
+                 ((<>))
+import           Data.Sequence
+                 (fromList)
+import           Data.String
+                 (fromString)
+import           Data.Text
+                 (Text, pack)
+import           GHC.TypeLits
+                 (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types                     as H
-import           Servant.API                            ((:<|>) ((:<|>)), (:>),
-                                                         AuthProtect, BasicAuth,
-                                                         BasicAuthData,
-                                                         BuildHeadersTo (..),
-                                                         FromResultStream (..),
-                                                         ByteStringParser (..),
-                                                         Capture', CaptureAll,
-                                                         Description, EmptyAPI,
-                                                         FramingUnrender (..),
-                                                         Header', Headers (..),
-                                                         HttpVersion, IsSecure,
-                                                         MimeRender (mimeRender),
-                                                         MimeUnrender (mimeUnrender),
-                                                         NoContent (NoContent),
-                                                         QueryFlag, QueryParam',
-                                                         QueryParams, Raw,
-                                                         ReflectMethod (..),
-                                                         RemoteHost, ReqBody',
-                                                         ResultStream(..),
-                                                         SBoolI,
-                                                         Stream,
-                                                         Summary, ToHttpApiData,
-                                                         Vault, Verb,
-                                                         WithNamedContext,
-                                                         contentType,
-                                                         getHeadersHList,
-                                                         getResponse,
-                                                         toQueryParam,
-                                                         toUrlPiece)
-import           Servant.API.ContentTypes               (contentTypes)
-import           Servant.API.Modifiers                  (FoldRequired,
-                                                         RequiredArgument,
-                                                         foldRequiredArgument)
+import           Servant.API
+                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
+                 BuildHeadersTo (..), ByteStringParser (..), Capture',
+                 CaptureAll, Description, EmptyAPI, FramingUnrender (..),
+                 FromResultStream (..), Header', Headers (..), HttpVersion,
+                 IsSecure, MimeRender (mimeRender),
+                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
+                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
+                 ReqBody', ResultStream (..), SBoolI, Stream, Summary,
+                 ToHttpApiData, Vault, Verb, WithNamedContext, contentType,
+                 getHeadersHList, getResponse, toQueryParam, toUrlPiece)
+import           Servant.API.ContentTypes
+                 (contentTypes)
+import           Servant.API.Modifiers
+                 (FoldRequired, RequiredArgument, foldRequiredArgument)
 
 import           Servant.Client.Core.Internal.Auth
 import           Servant.Client.Core.Internal.BasicAuth
