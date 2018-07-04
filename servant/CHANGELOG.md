@@ -1,5 +1,18 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.14.1
+------
+
+- Merge in (and slightly refactor) `servant-generic`
+  (by [Patrick Chilton](https://github.com/chpatrick))
+  into `servant` (`Servant.API.Generic`),
+  `servant-client-code` (`Servant.Client.Generic`)
+  and `servant-server` (`Servant.Server.Generic`).
+
+- Deprecate `Servant.Utils.Links`, use `Servant.Links`.
+
+- *servant-server* Deprecate `Servant.Utils.StaticUtils`, use `Servant.Server.StaticUtils`.
+
 0.14
 ----
 

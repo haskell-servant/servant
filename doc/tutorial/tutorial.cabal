@@ -75,8 +75,8 @@ library
     , time         >= 1.4.2   && < 1.9
 
   -- For legacy tools, we need to specify build-depends too
-  build-depends: markdown-unlit >= 0.4.1 && <0.5
-  build-tool-depends: markdown-unlit:markdown-unlit >= 0.4.1 && <0.5
+  build-depends: markdown-unlit >= 0.5.0 && <0.6
+  build-tool-depends: markdown-unlit:markdown-unlit >= 0.5.0 && <0.6
 
 test-suite spec
   type: exitcode-stdio-1.0
