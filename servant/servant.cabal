@@ -164,7 +164,7 @@ test-suite doctests
   build-depends:
       base
     , servant
-    , doctest >= 0.15.0 && <0.16
+    , doctest >= 0.15.0 && <0.17
 
   -- We test Links failure with doctest, so we need extra dependencies
   build-depends:

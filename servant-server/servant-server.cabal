@@ -176,7 +176,7 @@ test-suite doctests
   build-depends:
       base
     , servant-server
-    , doctest >= 0.15.0 && <0.16
+    , doctest >= 0.15.0 && <0.17
   type: exitcode-stdio-1.0
   main-is: test/doctests.hs
   buildable: True
