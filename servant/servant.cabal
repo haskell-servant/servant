@@ -1,5 +1,5 @@
 name:                servant
-version:             0.14
+version:             0.14.1
 synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -46,6 +46,7 @@ library
     Servant.API.Description
     Servant.API.Empty
     Servant.API.Experimental.Auth
+    Servant.API.Generic
     Servant.API.Header
     Servant.API.HttpVersion
     Servant.API.Internal.Test.ComprehensiveAPI

@@ -12,6 +12,7 @@ packages: servant/
   doc/cookbook/db-postgres-pool
   doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
+  doc/cookbook/generic
   doc/cookbook/https
   doc/cookbook/jwt-and-basic-auth
   doc/cookbook/pagination

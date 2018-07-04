@@ -91,6 +91,8 @@
 --  This error is essentially saying that the type family couldn't find
 --  bad_link under api after trying the open (but empty) type family
 --  `IsElem'` as a last resort.
+--
+--  @since 0.14.1
 module Servant.Links (
   module Servant.API.TypeLevel,
 
@@ -102,6 +104,12 @@ module Servant.Links (
   , allLinks
   , allLinks'
   , URI(..)
+  -- * Generics
+  , AsLink
+  , fieldLink
+  , fieldLink'
+  , allFieldLinks
+  , allFieldLinks'
   -- * Adding custom types
   , HasLink(..)
   , Link
@@ -144,6 +152,7 @@ import           Servant.API.Empty
                  (EmptyAPI (..))
 import           Servant.API.Experimental.Auth
                  (AuthProtect)
+import           Servant.API.Generic
 import           Servant.API.Header
                  (Header')
 import           Servant.API.HttpVersion
@@ -333,6 +342,83 @@ allLinks'
     -> Proxy api
     -> MkLink api a
 allLinks' toA api = toLink toA api (Link mempty mempty)
+
+-------------------------------------------------------------------------------
+-- Generics
+-------------------------------------------------------------------------------
+
+-- | Given an API record field, create a link for that route. Only the field's
+-- type is used.
+--
+-- @
+-- data Record route = Record
+--     { _get :: route :- Capture "id" Int :> Get '[JSON] String
+--     , _put :: route :- ReqBody '[JSON] Int :> Put '[JSON] Bool
+--     }
+--   deriving ('Generic')
+--
+-- getLink :: Int -> Link
+-- getLink = 'fieldLink' _get
+-- @
+--
+-- @since 0.14.1
+fieldLink
+    :: ( IsElem endpoint (ToServantApi routes), HasLink endpoint
+       , GenericServant routes AsApi
+       )
+    => (routes AsApi -> endpoint)
+    -> MkLink endpoint Link
+fieldLink = fieldLink' id
+
+-- | More general version of 'fieldLink'
+--
+-- @since 0.14.1
+fieldLink'
+    :: forall routes endpoint a.
+       ( IsElem endpoint (ToServantApi routes), HasLink endpoint
+       , GenericServant routes AsApi
+       )
+    => (Link -> a)
+    -> (routes AsApi -> endpoint)
+    -> MkLink endpoint a
+fieldLink' toA _ = safeLink' toA (genericApi (Proxy :: Proxy routes)) (Proxy :: Proxy endpoint)
+
+-- | A type that specifies that an API record contains a set of links.
+--
+-- @since 0.14.1
+data AsLink (a :: *)
+instance GenericMode (AsLink a) where
+    type (AsLink a) :- api = MkLink api a
+
+-- | Get all links as a record.
+--
+-- @since 0.14.1
+allFieldLinks
+    :: ( HasLink (ToServantApi routes)
+       , GenericServant routes (AsLink Link)
+       , ToServant routes (AsLink Link) ~ MkLink (ToServantApi routes) Link
+       )
+    => routes (AsLink Link)
+allFieldLinks = allFieldLinks' id
+
+-- | More general version of 'allFieldLinks'.
+--
+-- @since 0.14.1
+allFieldLinks'
+    :: forall routes a.
+       ( HasLink (ToServantApi routes)
+       , GenericServant routes (AsLink a)
+       , ToServant routes (AsLink a) ~ MkLink (ToServantApi routes) a
+       )
+    => (Link -> a)
+    -> routes (AsLink a)
+allFieldLinks' toA
+    = fromServant
+    $ allLinks' toA (Proxy :: Proxy (ToServantApi routes))
+
+-------------------------------------------------------------------------------
+-- HasLink
+-------------------------------------------------------------------------------
 
 -- | Construct a toLink for an endpoint.
 class HasLink endpoint where
