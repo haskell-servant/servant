@@ -135,6 +135,7 @@ streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
            jrb = Just (Right bob)
        testRunResultStream res `shouldReturn` (jra, jrb, jra, Nothing)
 
+{-
     it "streams in constant memory" $ \(_, baseUrl) -> do
        Right (ResultStream res) <- runClient getGetALot baseUrl
        let consumeNChunks n = replicateM_ n (res void)
@@ -145,6 +146,7 @@ streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
        memUsed <- currentBytesUsed <$> getGCStats
 #endif
        memUsed `shouldSatisfy` (< megabytes 22)
+-}
 
 megabytes :: Num a => a -> a
 megabytes n = n * (1000 ^ (2 :: Int))
