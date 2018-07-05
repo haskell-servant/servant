@@ -50,8 +50,8 @@ api :: Proxy API
 api = Proxy
 ```
 
-Next we implement a `main`. If passed `server` it will run `server`, if passed
-`client` it will run a small `test` (to be defined next) will be run. This should be
+Next we implement a `main`. If passed `"server"` it will run `server`, if passed
+`"client"` it will run a `test` function (to be defined next). This should be
 pretty straightforward:
 
 ```haskell
