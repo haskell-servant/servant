@@ -1,12 +1,13 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators     #-}
 
 module Servant.Server.UsingContextSpec where
 
 import           Network.Wai
-import           Test.Hspec (Spec, describe, it)
+import           Test.Hspec
+                 (Spec, describe, it)
 import           Test.Hspec.Wai
 
 import           Servant

@@ -3,11 +3,13 @@
 {-# LANGUAGE ViewPatterns       #-}
 module Servant.Client.Core.Internal.BaseUrl where
 
-import           Control.Monad.Catch (Exception, MonadThrow, throwM)
+import           Control.Monad.Catch
+                 (Exception, MonadThrow, throwM)
 import           Data.List
 import           Data.Typeable
 import           GHC.Generics
-import           Network.URI         hiding (path)
+import           Network.URI         hiding
+                 (path)
 import           Safe
 import           Text.Read
 

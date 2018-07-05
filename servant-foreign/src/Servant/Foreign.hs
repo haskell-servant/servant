@@ -51,6 +51,6 @@ module Servant.Foreign
   , module Servant.Foreign.Inflections
   ) where
 
-import Servant.API
-import Servant.Foreign.Internal
-import Servant.Foreign.Inflections
+import           Servant.API
+import           Servant.Foreign.Inflections
+import           Servant.Foreign.Internal

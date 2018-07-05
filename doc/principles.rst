@@ -1,5 +1,5 @@
-Introduction
-------------
+Principles
+----------
 
 **servant** has the following guiding principles:
 

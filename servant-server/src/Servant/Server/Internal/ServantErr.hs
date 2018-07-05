@@ -1,18 +1,21 @@
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE RecordWildCards    #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
 module Servant.Server.Internal.ServantErr where
 
+import           Control.Exception
+                 (Exception)
 import           Control.DeepSeq (NFData)
-import           Control.Exception (Exception)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as LBS
-import           Data.Typeable (Typeable)
-import qualified Network.HTTP.Types    as HTTP
-import           Network.Wai           (Response, responseLBS)
+import           Data.Typeable
+                 (Typeable)
 import           GHC.Generics (Generic)
+import qualified Network.HTTP.Types    as HTTP
+import           Network.Wai
+                 (Response, responseLBS)
 
 data ServantErr = ServantErr { errHTTPCode     :: Int
                              , errReasonPhrase :: String

@@ -1,18 +1,19 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE TypeOperators       #-}
 
 -- | This module tests whether streaming works from client to server
 -- with a server implemented with servant-server.
 module Servant.Server.StreamingSpec where
 
 import           Control.Concurrent
-import           Control.Exception hiding (Handler)
+import           Control.Exception      hiding
+                 (Handler)
 import           Control.Monad.IO.Class
-import qualified Data.ByteString as Strict
-import qualified Data.ByteString.Lazy as Lazy
+import qualified Data.ByteString        as Strict
+import qualified Data.ByteString.Lazy   as Lazy
 import           Network.HTTP.Types
 import           Network.Wai
 import           Network.Wai.Internal

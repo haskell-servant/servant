@@ -20,33 +20,45 @@
 #include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
-import           Prelude                    ()
+import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Applicative
-import           Control.Arrow              (second)
-import           Control.Lens               (makeLenses, mapped, over,
-                                             traversed, view, (%~), (&), (.~),
-                                             (<>~), (^.), (|>))
+import           Control.Arrow
+                 (second)
+import           Control.Lens
+                 (makeLenses, mapped, over, traversed, view, (%~), (&), (.~),
+                 (<>~), (^.), (|>))
 import qualified Control.Monad.Omega        as Omega
 import qualified Data.ByteString.Char8      as BSC
-import           Data.ByteString.Lazy.Char8 (ByteString)
+import           Data.ByteString.Lazy.Char8
+                 (ByteString)
 import qualified Data.CaseInsensitive       as CI
-import           Data.Foldable              (fold)
-import           Data.Hashable              (Hashable)
-import           Data.HashMap.Strict        (HashMap)
-import           Data.List.Compat           (intercalate, intersperse, sort)
-import           Data.List.NonEmpty         (NonEmpty ((:|)), groupWith)
+import           Data.Foldable
+                 (fold)
+import           Data.Hashable
+                 (Hashable)
+import           Data.HashMap.Strict
+                 (HashMap)
+import           Data.List.Compat
+                 (intercalate, intersperse, sort)
+import           Data.List.NonEmpty
+                 (NonEmpty ((:|)), groupWith)
 import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe
-import           Data.Monoid                (All (..), Any (..), Dual (..),
-                                             First (..), Last (..),
-                                             Product (..), Sum (..))
-import           Data.Ord                   (comparing)
-import           Data.Proxy                 (Proxy (Proxy))
-import           Data.Semigroup             (Semigroup (..))
-import           Data.String.Conversions    (cs)
-import           Data.Text                  (Text, unpack)
+import           Data.Monoid
+                 (All (..), Any (..), Dual (..), First (..), Last (..),
+                 Product (..), Sum (..))
+import           Data.Ord
+                 (comparing)
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Data.Semigroup
+                 (Semigroup (..))
+import           Data.String.Conversions
+                 (cs)
+import           Data.Text
+                 (Text, unpack)
 import           GHC.Generics
 import           GHC.TypeLits
 import           Servant.API
@@ -836,6 +848,24 @@ instance OVERLAPPABLE_
                            & response.respTypes .~ allMime t
                            & response.respStatus .~ status
           t = Proxy :: Proxy (ct ': cts)
+          method' = reflectMethod (Proxy :: Proxy method)
+          status = fromInteger $ natVal (Proxy :: Proxy status)
+          p = Proxy :: Proxy a
+
+-- | TODO: mention the endpoint is streaming, its framing strategy
+--
+-- Also there are no samples.
+instance OVERLAPPABLE_
+        (MimeRender ct a, KnownNat status
+        , ReflectMethod method)
+    => HasDocs (Stream method status framing ct a) where
+  docsFor Proxy (endpoint, action) DocOptions{..} =
+    single endpoint' action'
+
+    where endpoint' = endpoint & method .~ method'
+          action' = action & response.respTypes .~ allMime t
+                           & response.respStatus .~ status
+          t = Proxy :: Proxy '[ct]
           method' = reflectMethod (Proxy :: Proxy method)
           status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a

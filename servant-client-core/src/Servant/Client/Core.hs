@@ -55,13 +55,11 @@ module Servant.Client.Core
   , setRequestBody
   ) where
 import           Servant.Client.Core.Internal.Auth
-import           Servant.Client.Core.Internal.BaseUrl   (BaseUrl (..),
-                                                         InvalidBaseUrlException,
-                                                         Scheme (..),
-                                                         parseBaseUrl,
-                                                         showBaseUrl)
+import           Servant.Client.Core.Internal.BaseUrl
+                 (BaseUrl (..), InvalidBaseUrlException, Scheme (..),
+                 parseBaseUrl, showBaseUrl)
 import           Servant.Client.Core.Internal.BasicAuth
-import           Servant.Client.Core.Internal.HasClient
 import           Servant.Client.Core.Internal.Generic
+import           Servant.Client.Core.Internal.HasClient
 import           Servant.Client.Core.Internal.Request
 import           Servant.Client.Core.Internal.RunClient

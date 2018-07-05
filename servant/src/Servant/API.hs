@@ -63,8 +63,8 @@ module Servant.API (
   module Servant.API.Experimental.Auth,
   -- | General Authentication
 
-  -- * Utilities
-  module Servant.Utils.Links,
+  -- * Links
+  module Servant.Links,
   -- | Type-safe internal URIs
 
   -- * Re-exports
@@ -114,9 +114,9 @@ import           Servant.API.ResponseHeaders
                  ResponseHeader (..), addHeader, getHeadersHList, getResponse,
                  noHeader)
 import           Servant.API.Stream
-                 (BoundaryStrategy (..), BuildFromStream (..),
-                 ByteStringParser (..), FramingRender (..),
-                 FramingUnrender (..), NetstringFraming, NewlineFraming,
+                 (BoundaryStrategy (..), ByteStringParser (..),
+                 FramingRender (..), FramingUnrender (..),
+                 FromResultStream (..), NetstringFraming, NewlineFraming,
                  NoFraming, ResultStream (..), Stream, StreamGenerator (..),
                  StreamGet, StreamPost, ToStreamGenerator (..))
 import           Servant.API.Sub
@@ -134,7 +134,7 @@ import           Servant.API.Verbs
                  ReflectMethod (reflectMethod), StdMethod (..), Verb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
-import           Servant.Utils.Links
+import           Servant.Links
                  (HasLink (..), IsElem, IsElem', Link, URI (..), safeLink)
 import           Web.HttpApiData
                  (FromHttpApiData (..), ToHttpApiData (..))

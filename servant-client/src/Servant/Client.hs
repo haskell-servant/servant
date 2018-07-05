@@ -13,5 +13,5 @@ module Servant.Client
   , module Servant.Client.Core.Reexport
   ) where
 
-import Servant.Client.Core.Reexport
-import Servant.Client.Internal.HttpClient
+import           Servant.Client.Core.Reexport
+import           Servant.Client.Internal.HttpClient

@@ -1,5 +1,5 @@
 name:                servant-client
-version:             0.13.0.1
+version:             0.14
 synopsis: automatical derivation of querying functions for servant webservices
 description:
   This library lets you derive automatically Haskell functions that
@@ -51,28 +51,25 @@ library
     , transformers          >= 0.3.0.0  && < 0.6
 
   if !impl(ghc >= 8.0)
-    build-depends: semigroups >=0.18.3 && <0.19
+    build-depends: semigroups >=0.18.4 && <0.19
 
   -- Servant dependencies
   build-depends:
-      servant-client-core   == 0.13.*
+      servant-client-core   == 0.14.*
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson                 >= 1.2.3.0  && < 1.4
-    , base-compat           >= 0.9.3    && < 0.11
-    , attoparsec            >= 0.13.2.0 && < 0.14
-    , http-client           >= 0.5.7.1  && < 0.6
-    , http-client-tls       >= 0.3.5.1  && < 0.4
-    , http-media            >= 0.7.1.1  && < 0.8
-    , http-types            >= 0.12     && < 0.13
-    , exceptions            >= 0.8.3    && < 0.11
-    , monad-control         >= 1.0.0.4  && < 1.1
-    , semigroupoids         >= 5.2.1    && < 5.3
-    , stm                   >= 2.4.4.1  && < 2.5
-    , transformers-base     >= 0.4.4    && < 0.5
-    , transformers-compat   >= 0.5.1    && < 0.7
+      base-compat           >= 0.10.1   && < 0.11
+    , http-client           >= 0.5.12   && < 0.6
+    , http-media            >= 0.7.1.2  && < 0.8
+    , http-types            >= 0.12.1   && < 0.13
+    , exceptions            >= 0.10.0   && < 0.11
+    , monad-control         >= 1.0.2.3  && < 1.1
+    , semigroupoids         >= 5.2.2    && < 5.3
+    , stm                   >= 2.4.5.0  && < 2.5
+    , transformers-base     >= 0.4.5.2  && < 0.5
+    , transformers-compat   >= 0.6.2    && < 0.7
 
   hs-source-dirs: src
   default-language: Haskell2010
@@ -97,10 +94,8 @@ test-suite spec
     , aeson
     , base-compat
     , bytestring
-    , containers
     , http-api-data
     , http-client
-    , http-media
     , http-types
     , mtl
     , servant-client
@@ -117,18 +112,16 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      deepseq           >= 1.3.0.2 && < 1.5
-    , generics-sop      >= 0.3.1.0 && < 0.4
-    , hspec             >= 2.4.4   && < 2.6
+      generics-sop      >= 0.3.2.0 && < 0.4
+    , hspec             >= 2.5.1   && < 2.6
     , HUnit             >= 1.6     && < 1.7
-    , random-bytestring >= 0.1     && < 0.2
     , network           >= 2.6.3.2 && < 2.8
     , QuickCheck        >= 2.10.1  && < 2.12
-    , servant           == 0.13.*
-    , servant-server    == 0.13.*
+    , servant           == 0.14.*
+    , servant-server    == 0.14.*
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.4.4 && < 2.6
+    hspec-discover:hspec-discover >= 2.5.1 && < 2.6
 
 test-suite readme
   type:           exitcode-stdio-1.0
@@ -136,3 +129,4 @@ test-suite readme
   build-depends:  base, servant, http-client, text, servant-client, markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit
   ghc-options:    -pgmL markdown-unlit
+  default-language: Haskell2010

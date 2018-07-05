@@ -3,22 +3,31 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Servant.Utils.StaticFilesSpec where
+module Servant.Server.StaticFilesSpec where
 
-import           Control.Exception         (bracket)
-import           Data.Proxy                (Proxy (Proxy))
-import           Network.Wai               (Application)
-import           System.Directory          (createDirectory,
-                                            getCurrentDirectory,
-                                            setCurrentDirectory)
-import           System.IO.Temp            (withSystemTempDirectory)
-import           Test.Hspec                (Spec, around_, describe, it)
-import           Test.Hspec.Wai            (get, shouldRespondWith, with)
+import           Control.Exception
+                 (bracket)
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Network.Wai
+                 (Application)
+import           System.Directory
+                 (createDirectory, getCurrentDirectory, setCurrentDirectory)
+import           System.IO.Temp
+                 (withSystemTempDirectory)
+import           Test.Hspec
+                 (Spec, around_, describe, it)
+import           Test.Hspec.Wai
+                 (get, shouldRespondWith, with)
 
-import           Servant.API               ((:<|>) ((:<|>)), Capture, Get, Raw, (:>), JSON)
-import           Servant.Server            (Server, serve)
-import           Servant.ServerSpec        (Person (Person))
-import           Servant.Utils.StaticFiles (serveDirectoryFileServer)
+import           Servant.API
+                 ((:<|>) ((:<|>)), (:>), Capture, Get, JSON, Raw)
+import           Servant.Server
+                 (Server, serve)
+import           Servant.Server.StaticFiles
+                 (serveDirectoryFileServer)
+import           Servant.ServerSpec
+                 (Person (Person))
 
 type Api =
        "dummy_api" :> Capture "person_name" String :> Get '[JSON] Person

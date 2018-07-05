@@ -6,24 +6,27 @@
 -- | Types for possible backends to run client-side `Request` queries
 module Servant.Client.Core.Internal.RunClient where
 
-import           Prelude                              ()
+import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Monad                        (unless)
-import           Control.Monad.Free                   (Free (..), liftF)
-import           Data.Foldable                        (toList)
-import           Data.Proxy                           (Proxy)
+import           Control.Monad
+                 (unless)
+import           Control.Monad.Free
+                 (Free (..), liftF)
+import           Data.Foldable
+                 (toList)
+import           Data.Proxy
+                 (Proxy)
 import qualified Data.Text                            as T
-import           Network.HTTP.Media                   (MediaType, matches,
-                                                       parseAccept, (//))
-import           Servant.API                          (MimeUnrender,
-                                                       contentTypes,
-                                                       mimeUnrender)
+import           Network.HTTP.Media
+                 (MediaType, matches, parseAccept, (//))
+import           Servant.API
+                 (MimeUnrender, contentTypes, mimeUnrender)
 
-import           Servant.Client.Core.Internal.Request (Request, Response, GenResponse (..),
-                                                       StreamingResponse (..),
-                                                       ServantError (..))
 import           Servant.Client.Core.Internal.ClientF
+import           Servant.Client.Core.Internal.Request
+                 (GenResponse (..), Request, Response, ServantError (..),
+                 StreamingResponse (..))
 
 class Monad m => RunClient m where
   -- | How to make a request.

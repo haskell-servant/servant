@@ -1,42 +1,47 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 #if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE NullaryTypeClasses #-}
+{-# LANGUAGE NullaryTypeClasses         #-}
 #endif
 
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
-import Prelude ()
-import Prelude.Compat
+import           Prelude ()
+import           Prelude.Compat
 
-import           Control.Lens (makePrisms, makeLenses, Getter, (&), (<>~), (%~),
-                               (.~))
-import           Data.Data (Data)
+import           Control.Lens
+                 (Getter, makeLenses, makePrisms, (%~), (&), (.~), (<>~))
+import           Data.Data
+                 (Data)
 import           Data.Proxy
-import           Data.Semigroup (Semigroup)
+import           Data.Semigroup
+                 (Semigroup)
 import           Data.String
 import           Data.Text
-import           Data.Typeable (Typeable)
-import           Data.Text.Encoding (decodeUtf8)
+import           Data.Text.Encoding
+                 (decodeUtf8)
+import           Data.Typeable
+                 (Typeable)
 import           GHC.TypeLits
-import qualified Network.HTTP.Types as HTTP
+import qualified Network.HTTP.Types    as HTTP
 import           Servant.API
+import           Servant.API.Modifiers
+                 (RequiredArgument)
 import           Servant.API.TypeLevel
-import           Servant.API.Modifiers (RequiredArgument)
 
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
   deriving (Data, Show, Eq, Semigroup, Monoid, Typeable)
@@ -228,6 +233,20 @@ instance (KnownSymbol sym, HasForeignType lang ftype [t], HasForeign lang ftype 
 instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
   => HasForeign lang ftype (Verb method status list a) where
   type Foreign ftype (Verb method status list a) = Req ftype
+
+  foreignFor lang Proxy Proxy req =
+    req & reqFuncName . _FunctionName %~ (methodLC :)
+        & reqMethod .~ method
+        & reqReturnType .~ Just retType
+    where
+      retType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a)
+      method   = reflectMethod (Proxy :: Proxy method)
+      methodLC = toLower $ decodeUtf8 method
+
+-- | TODO: doesn't taking framing into account.
+instance (ct ~ JSON, HasForeignType lang ftype a, ReflectMethod method)
+  => HasForeign lang ftype (Stream method status framing ct a) where
+  type Foreign ftype (Stream method status framing ct a) = Req ftype
 
   foreignFor lang Proxy Proxy req =
     req & reqFuncName . _FunctionName %~ (methodLC :)

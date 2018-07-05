@@ -12,26 +12,34 @@
 
 module Servant.Client.Core.Internal.Request where
 
-import           Prelude                 ()
+import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Monad.Catch     (Exception)
+import           Control.Monad.Catch
+                 (Exception)
 import qualified Data.ByteString         as BS
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy    as LBS
-import           Data.Int                (Int64)
-import           Data.Semigroup          ((<>))
+import           Data.Int
+                 (Int64)
+import           Data.Semigroup
+                 ((<>))
 import qualified Data.Sequence           as Seq
-import           Data.Text               (Text)
-import           Data.Text.Encoding      (encodeUtf8)
-import           Data.Typeable           (Typeable)
-import           GHC.Generics            (Generic)
-import           Network.HTTP.Media      (MediaType)
-import           Network.HTTP.Types      (Header, HeaderName, HttpVersion,
-                                          Method, QueryItem, Status, http11,
-                                          methodGet)
-import           Web.HttpApiData         (ToHttpApiData, toEncodedUrlPiece,
-                                          toHeader)
+import           Data.Text
+                 (Text)
+import           Data.Text.Encoding
+                 (encodeUtf8)
+import           Data.Typeable
+                 (Typeable)
+import           GHC.Generics
+                 (Generic)
+import           Network.HTTP.Media
+                 (MediaType)
+import           Network.HTTP.Types
+                 (Header, HeaderName, HttpVersion, Method, QueryItem, Status,
+                 http11, methodGet)
+import           Web.HttpApiData
+                 (ToHttpApiData, toEncodedUrlPiece, toHeader)
 
 -- | A type representing possible errors in a request
 --

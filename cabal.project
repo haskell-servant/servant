@@ -11,11 +11,10 @@ packages: servant/
   doc/cookbook/basic-auth
   doc/cookbook/db-postgres-pool
   doc/cookbook/db-sqlite-simple
-  -- MkLink changed
-  -- doc/cookbook/file-upload
+  doc/cookbook/file-upload
+  doc/cookbook/generic
   doc/cookbook/https
-  -- servant-auth-* doesn't support GHC-8.4
-  -- doc/cookbook/jwt-and-basic-auth
+  doc/cookbook/jwt-and-basic-auth
   doc/cookbook/pagination
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
@@ -30,4 +29,5 @@ constraints:
   memory <0.14.12 || >0.14.12
 
 allow-newer:
-  http-media:base
+  servant-pagination:servant,
+  servant-pagination:servant-server
