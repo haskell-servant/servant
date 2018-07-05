@@ -18,6 +18,7 @@ packages: servant/
   doc/cookbook/pagination
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
+  doc/cookbook/using-free-client
 
 allow-newer:
   servant-auth-server:http-types,

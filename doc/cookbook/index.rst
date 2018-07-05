@@ -23,6 +23,7 @@ you name it!
   db-sqlite-simple/DBConnection.lhs
   db-postgres-pool/PostgresPool.lhs
   using-custom-monad/UsingCustomMonad.lhs
+  using-free-client/UsingFreeClient.lhs
   basic-auth/BasicAuth.lhs
   jwt-and-basic-auth/JWTAndBasicAuth.lhs
   file-upload/FileUpload.lhs

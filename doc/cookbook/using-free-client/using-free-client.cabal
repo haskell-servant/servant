@@ -1,0 +1,26 @@
+name:                cookbook-using-free-client
+version:             0.1
+synopsis:            Using Free client
+homepage:            http://haskell-servant.readthedocs.org/
+license:             BSD3
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+build-type:          Simple
+cabal-version:       >=1.10
+tested-with:         GHC==7.8.4, GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
+
+executable cookbook-using-free-client
+  main-is:             UsingFreeClient.lhs
+  build-depends:       base == 4.*
+                     , free
+                     , servant
+                     , servant-client
+                     , http-client
+                     , servant-client-core
+                     , base-compat
+                     , servant-server
+                     , warp >= 3.2
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit >= 0.4
