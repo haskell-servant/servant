@@ -68,7 +68,7 @@ library
       base-compat           >= 0.10.1   && < 0.11
     , base64-bytestring     >= 1.0.0.1  && < 1.1
     , exceptions            >= 0.10.0   && < 0.11
-    , free                  >= 5.0.2    && < 5.1
+    , free                  >= 5.0.2    && < 5.2
     , generics-sop          >= 0.3.2.0  && < 0.4
     , http-api-data         >= 0.3.8.1  && < 0.4
     , http-media            >= 0.7.1.2  && < 0.8
