@@ -118,7 +118,7 @@ and `BaseUrl`:
         mgr <- HTTP.newManager HTTP.defaultManagerSettings
 ```
 
-Now we can use `servant-client` internals to convert servant's `Request`
+Now we can use `servant-client`'s internals to convert servant's `Request`
 to http-client's `Request`, and we can inspect it:
 
 ```haskell
@@ -126,8 +126,8 @@ to http-client's `Request`, and we can inspect it:
         putStrLn $ "Making request: " ++ show req'
 ```
 
-`servant-client` does a bit more than `httpLbs`, but that's enough for us.
-We get back a http-client `Response` which we can also inspect
+`servant-client`'s request does a little more, but this is good enough for
+our demo. We get back an http-client `Response` which we can also inspect.
 
 ```haskell
         res' <- HTTP.httpLbs req' mgr
