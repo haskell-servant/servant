@@ -54,6 +54,10 @@ library
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServantErr
+    Servant.Server.StaticFiles
+
+  -- deprecated
+  exposed-modules:
     Servant.Utils.StaticFiles
 
   -- Bundled with GHC: Lower bound to not force re-installs
@@ -133,12 +137,12 @@ test-suite spec
       Servant.Server.Internal.ContextSpec
       Servant.Server.Internal.RoutingApplicationSpec
       Servant.Server.RouterSpec
+      Servant.Server.StaticFilesSpec
       Servant.Server.StreamingSpec
       Servant.Server.UsingContextSpec
       Servant.Server.UsingContextSpec.TestCombinators
       Servant.HoistSpec
       Servant.ServerSpec
-      Servant.Utils.StaticFilesSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:

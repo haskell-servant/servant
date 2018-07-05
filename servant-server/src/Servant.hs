@@ -7,7 +7,7 @@ module Servant (
   module Servant.Server,
   -- | Utilities on top of the servant core
   module Servant.Links,
-  module Servant.Utils.StaticFiles,
+  module Servant.Server.StaticFiles,
   -- | Useful re-exports
   Proxy(..),
   throwError
@@ -19,4 +19,4 @@ import           Data.Proxy
 import           Servant.API
 import           Servant.Links
 import           Servant.Server
-import           Servant.Utils.StaticFiles
+import           Servant.Server.StaticFiles

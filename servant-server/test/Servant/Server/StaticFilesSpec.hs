@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Servant.Utils.StaticFilesSpec where
+module Servant.Server.StaticFilesSpec where
 
 import           Control.Exception
                  (bracket)
@@ -24,10 +24,10 @@ import           Servant.API
                  ((:<|>) ((:<|>)), (:>), Capture, Get, JSON, Raw)
 import           Servant.Server
                  (Server, serve)
+import           Servant.Server.StaticFiles
+                 (serveDirectoryFileServer)
 import           Servant.ServerSpec
                  (Person (Person))
-import           Servant.Utils.StaticFiles
-                 (serveDirectoryFileServer)
 
 type Api =
        "dummy_api" :> Capture "person_name" String :> Get '[JSON] Person
