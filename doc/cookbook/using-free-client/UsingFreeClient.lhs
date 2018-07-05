@@ -1,9 +1,12 @@
-# Using Free Client (for tests)
+# Inspecting, debugging, simulating clients and more
 
-Someone asked on IRC about getting `Request` & `Response` of what
-`servant-client` uses, for testing purposes.  My response: to ad-hoc extend
-`servant-client` (as for tests), use `Servant.Client.Free`. This recipe is an
-evidence.
+or simply put: _a practical introduction to `Servant.Client.Free`_.
+By Oleg Grenrus
+
+Someone asked on IRC how one could access the intermediate Requests (resp. Responses) 
+produced (resp. received) by client functions derived using servant-client.
+My response to such inquiries is: to extend `servant-client` in an ad-hoc way (e.g for testing or debugging
+purposes), use `Servant.Client.Free`. This recipe shows how.
 
 First the module header, but this time We'll comment the imports.
 
@@ -48,9 +51,9 @@ api :: Proxy API
 api = Proxy
 ```
 
-Next we implement a `main`. If passed `server` it will run `server`, if
-`client` a small `test` (to be defined next) will be run. This should be pretty
-straigh-forward:
+Next we implement a `main`. If passed `server` it will run `server`, if passed
+`client` it will run a small `test` (to be defined next) will be run. This should be
+pretty straightforward:
 
 ```haskell
 main :: IO ()
@@ -70,20 +73,29 @@ main = do
 
 ## Test
 
-In the actual test, we'll use a `Servant.Client.Free` client.
-Cecause we have a single endpoint API, we'll get a single client function:
+In the client part, we will use a `Servant.Client.Free` client.
+Because we have a single endpoint API, we'll get a single client function,
+running in the `Free ClientF` (free) monad:
 
 ```haskell
-fcli :: Int -> Free ClientF Int
-fcli = client api
+getSquare :: Int -> Free ClientF Int
+getSquare = client api
 ```
 
-Next, we can write our small test. We'll pass a value to `fcli` and inspect
-the `Free` structure. First three possibilities are self-explanatory:
+Such clients are "client functions without a backend", so to speak,
+or where the backend has been abstracted out. To be more precise, `ClientF` is a functor that
+precisely represents the operations servant-client-core needs from an http client backend.
+So if we are to emulate one or augment what such a backend does, it will be by interpreting
+all those operations, the way we want to. This also means we get access to the requests and
+responses and can do anything we want with them, right when they are produced or consumed,
+respectively.
+
+Next, we can write our small test. We'll pass a value to `getSquare` and inspect
+the `Free` structure. The first three possibilities are self-explanatory:
 
 ```haskell
 test :: IO ()
-test = case fcli 42 of
+test = case getSquare 42 of
     Pure n ->
         putStrLn $ "ERROR: got pure result: " ++ show n
     Free (Throw err) ->
@@ -136,8 +148,18 @@ and calling the continuation. We should get a `Pure` value.
 ```
 
 So that's it. Using `Free` we can evaluate servant clients step-by-step, and
-validate that they or the backend does what we expect (think: debugger). At the
-end an example of client run (prettified):
+validate that the client functions or the HTTP client backend does what we expect
+(e.g by printing requests/responses on the fly). In fact, using `Servant.Client.Free`
+is a little simpler than defining a custom `RunClient` instance, especially
+for those cases where it is handy to have the full sequence of client calls
+and responses available for us to inspect, since `RunClient` only gives us
+access to one `Request` or `Response` at a time.
+
+On the other hand, a "batch collection" of requests and/or responses can be achieved
+with both free clients and a custom `RunClient` instance rather easily, for example 
+by using a `Writer [(Request, Response)]` monad.
+
+Here is an example of running our small `test` against a running server:
 
 ```
 Making request: Request {
