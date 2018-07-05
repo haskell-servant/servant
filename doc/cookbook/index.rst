@@ -18,6 +18,7 @@ you name it!
   :maxdepth: 1
 
   structuring-apis/StructuringApis.lhs
+  generic/Generic.lhs
   https/Https.lhs
   db-sqlite-simple/DBConnection.lhs
   db-postgres-pool/PostgresPool.lhs
