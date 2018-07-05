@@ -1,7 +1,6 @@
 # Inspecting, debugging, simulating clients and more
 
 or simply put: _a practical introduction to `Servant.Client.Free`_.
-By Oleg Grenrus
 
 Someone asked on IRC how one could access the intermediate Requests (resp. Responses) 
 produced (resp. received) by client functions derived using servant-client.
