@@ -1,6 +1,6 @@
 name:                servant-foreign
 version:             0.11.1
-x-revision:          2
+x-revision:          3
 synopsis:            Helpers for generating clients for servant APIs in any programming language
 description:
   Helper types and functions for generating client functions for servant APIs in any programming language
@@ -59,7 +59,7 @@ library
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
       base-compat >= 0.9.3  && <0.11
-    , lens        >= 4.15.4 && <4.17
+    , lens        >= 4.15.4 && <4.18
     , http-types  >= 0.12   && < 0.13
 
   hs-source-dirs:      src
