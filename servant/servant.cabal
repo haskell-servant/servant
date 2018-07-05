@@ -1,5 +1,5 @@
 name:                servant
-version:             0.14
+version:             0.14.1
 synopsis:            A family of combinators for defining webservices APIs
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -46,6 +46,7 @@ library
     Servant.API.Description
     Servant.API.Empty
     Servant.API.Experimental.Auth
+    Servant.API.Generic
     Servant.API.Header
     Servant.API.HttpVersion
     Servant.API.Internal.Test.ComprehensiveAPI
@@ -62,6 +63,10 @@ library
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext
+    Servant.Links
+
+  -- Deprecated modules, to be removed in late 2019
+  exposed-modules:
     Servant.Utils.Links
     Servant.Utils.Enter
 
@@ -133,8 +138,8 @@ test-suite spec
   other-modules:
       Servant.API.ContentTypesSpec
       Servant.API.ResponseHeadersSpec
-      Servant.Utils.LinksSpec
       Servant.Utils.EnterSpec
+      Servant.LinksSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
@@ -164,7 +169,7 @@ test-suite doctests
   build-depends:
       base
     , servant
-    , doctest >= 0.15.0 && <0.16
+    , doctest >= 0.15.0 && <0.17
 
   -- We test Links failure with doctest, so we need extra dependencies
   build-depends:
@@ -179,4 +184,4 @@ test-suite doctests
     x-doctest-options: -fdiagnostics-color=never
   include-dirs: include
   x-doctest-source-dirs: test
-  x-doctest-modules: Servant.Utils.LinksSpec
+  x-doctest-modules: Servant.LinksSpec

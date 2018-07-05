@@ -1,5 +1,5 @@
 name:                servant-server
-version:             0.14
+version:             0.14.1
 synopsis:            A family of combinators for defining webservices APIs and serving them
 description:
   A family of combinators for defining webservices APIs and serving them
@@ -47,6 +47,7 @@ library
     Servant
     Servant.Server
     Servant.Server.Experimental.Auth
+    Servant.Server.Generic
     Servant.Server.Internal
     Servant.Server.Internal.BasicAuth
     Servant.Server.Internal.Context
@@ -54,6 +55,10 @@ library
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServantErr
+    Servant.Server.StaticFiles
+
+  -- deprecated
+  exposed-modules:
     Servant.Utils.StaticFiles
 
   -- Bundled with GHC: Lower bound to not force re-installs
@@ -75,7 +80,7 @@ library
 
   -- Servant dependencies
   build-depends:
-      servant            == 0.14.*
+      servant            >= 0.14.1 && <0.15
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
@@ -133,12 +138,12 @@ test-suite spec
       Servant.Server.Internal.ContextSpec
       Servant.Server.Internal.RoutingApplicationSpec
       Servant.Server.RouterSpec
+      Servant.Server.StaticFilesSpec
       Servant.Server.StreamingSpec
       Servant.Server.UsingContextSpec
       Servant.Server.UsingContextSpec.TestCombinators
       Servant.HoistSpec
       Servant.ServerSpec
-      Servant.Utils.StaticFilesSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
@@ -176,7 +181,7 @@ test-suite doctests
   build-depends:
       base
     , servant-server
-    , doctest >= 0.15.0 && <0.16
+    , doctest >= 0.15.0 && <0.17
   type: exitcode-stdio-1.0
   main-is: test/doctests.hs
   buildable: True

@@ -1,6 +1,14 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-client-core/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.14.1
+------
+
+- Merge in `servant-generic` (by [Patrick Chilton](https://github.com/chpatrick))
+  into `servant` (`Servant.API.Generic`),
+  `servant-client-code` (`Servant.Client.Generic`)
+  and `servant-server` (`Servant.Server.Generic`).
+
 0.14
 ----
 
