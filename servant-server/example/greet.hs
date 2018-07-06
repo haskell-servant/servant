@@ -6,7 +6,6 @@
 {-# LANGUAGE TypeOperators     #-}
 
 import           Data.Aeson
-import           Data.Monoid
 import           Data.Proxy
 import           Data.Text
 import           GHC.Generics
