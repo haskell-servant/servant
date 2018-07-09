@@ -31,7 +31,7 @@ spec = describe "Servant.Server.Internal.Router" $ do
 routerSpec :: Spec
 routerSpec = do
   let app' :: Application
-      app' = toApplication $ runRouter router'
+      app' = toApplication Force $ runRouter router'
 
       router', router :: Router ()
       router' = tweakResponse (fmap twk) router

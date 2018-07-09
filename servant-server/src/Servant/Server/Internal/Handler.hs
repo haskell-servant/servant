@@ -46,3 +46,10 @@ instance MonadBaseControl IO Handler where
 
 runHandler :: Handler a -> IO (Either ServantErr a)
 runHandler = runExceptT . runHandler'
+
+-- determins if response should be reduced to NF
+data Evaluate =
+    Force
+  | Lazy
+  deriving (Show)
+

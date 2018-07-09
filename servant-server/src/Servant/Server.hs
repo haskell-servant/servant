@@ -132,7 +132,7 @@ serve p = serveWithContext p EmptyContext
 serveWithContext :: (HasServer api context)
     => Proxy api -> Context context -> Server api -> Application
 serveWithContext p context server =
-  toApplication True (runRouter (route p context (emptyDelayed (Route server))))
+  toApplication Force (runRouter (route p context (emptyDelayed (Route server))))
 
 -- | Hoist server implementation.
 --

@@ -95,16 +95,16 @@ instance MonadTransControl RouteResultT where
 instance MonadThrow m => MonadThrow (RouteResultT m) where
     throwM = lift . throwM
 
-toApplication :: Bool -> RoutingApplication -> Application
+toApplication :: Evaluate -> RoutingApplication -> Application
 toApplication fullyEvaluate ra request respond =
   ra request (maybeEval routingRespond)
   where
     maybeEval :: (RouteResult Response -> IO ResponseReceived)
               -> RouteResult Response -> IO ResponseReceived
     maybeEval resp =
-      if fullyEvaluate
-        then force resp
-        else resp
+      case fullyEvaluate of
+        Force -> force resp
+        Lazy  -> resp
     routingRespond :: RouteResult Response -> IO ResponseReceived
     routingRespond (Fail err)      = respond $ responseServantErr err
     routingRespond (FailFatal err) = respond $ responseServantErr err
