@@ -32,12 +32,14 @@ module Servant.Server
   -- ** Functions based on <https://hackage.haskell.org/package/mmorph mmorph>
   , tweakResponse
 
+{-
   -- * Context
   , Context(..)
   , HasContextEntry(getContextEntry)
   -- ** NamedContext
   , NamedContext(..)
   , descendIntoNamedContext
+-}
 
   -- * Basic Authentication
   , BasicAuthCheck(BasicAuthCheck, unBasicAuthCheck)
@@ -126,11 +128,11 @@ import           Servant.Server.Internal
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: (HasServer api '[]) => Proxy api -> Server api -> Application
-serve p = serveWithContext p EmptyContext
+serve :: HasServer api () => Proxy api -> Server api -> Application
+serve p = serveWithContext p ()
 
-serveWithContext :: (HasServer api context)
-    => Proxy api -> Context context -> Server api -> Application
+serveWithContext :: HasServer api context
+    => Proxy api -> context -> Server api -> Application
 serveWithContext p context server =
   toApplication (runRouter (route p context (emptyDelayed (Route server))))
 
@@ -154,9 +156,9 @@ serveWithContext p context server =
 -- >>> let nt x = return (runReader x "hi")
 -- >>> let mainServer = hoistServer readerApi nt readerServer :: Server ReaderAPI
 --
-hoistServer :: (HasServer api '[]) => Proxy api
+hoistServer :: HasServer api () => Proxy api
             -> (forall x. m x -> n x) -> ServerT api m -> ServerT api n
-hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
+hoistServer p = hoistServerWithContext p (Proxy :: Proxy ())
 
 -- | The function 'layout' produces a textual description of the internal
 -- router layout for debugging purposes. Note that the router layout is
@@ -209,12 +211,12 @@ hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
 -- that one takes precedence. If both parts fail, the \"better\" error
 -- code will be returned.
 --
-layout :: (HasServer api '[]) => Proxy api -> Text
-layout p = layoutWithContext p EmptyContext
+layout :: HasServer api () => Proxy api -> Text
+layout p = layoutWithContext p ()
 
 -- | Variant of 'layout' that takes an additional 'Context'.
-layoutWithContext :: (HasServer api context)
-    => Proxy api -> Context context -> Text
+layoutWithContext :: HasServer api context
+    => Proxy api -> context -> Text
 layoutWithContext p context =
   routerLayout (route p context (emptyDelayed (FailFatal err501)))
 

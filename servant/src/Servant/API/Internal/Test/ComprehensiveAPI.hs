@@ -19,6 +19,7 @@ type ComprehensiveAPI =
 comprehensiveAPI :: Proxy ComprehensiveAPI
 comprehensiveAPI = Proxy
 
+-- TODO: Add BasicAuth
 type ComprehensiveAPIWithoutRaw =
   GET :<|>
   Get '[JSON] Int :<|>
@@ -40,7 +41,7 @@ type ComprehensiveAPIWithoutRaw =
   Verb 'POST 204 '[JSON] NoContent :<|>
   Verb 'POST 204 '[JSON] Int :<|>
   Stream 'GET 200 NetstringFraming JSON [Int] :<|>
-  WithNamedContext "foo" '[] GET :<|>
+--  WithNamedContext "foo" '[] GET :<|>
   CaptureAll "foo" Int :> GET :<|>
   Summary "foo" :> GET :<|>
   Description "foo" :> GET :<|>

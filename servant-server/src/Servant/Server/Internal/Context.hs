@@ -9,6 +9,7 @@
 
 module Servant.Server.Internal.Context where
 
+{-
 import           Data.Proxy
 import           GHC.TypeLits
 
@@ -99,3 +100,4 @@ descendIntoNamedContext :: forall context name subContext .
 descendIntoNamedContext Proxy context =
   let NamedContext subContext = getContextEntry context :: NamedContext name subContext
   in subContext
+-}

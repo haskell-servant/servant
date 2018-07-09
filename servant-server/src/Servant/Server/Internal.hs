@@ -1,18 +1,19 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TupleSections         #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE CPP                    #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveDataTypeable     #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TupleSections          #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 #if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
 #define HAS_TYPE_ERROR
@@ -98,12 +99,13 @@ import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
 #endif
 
+-- | context acts as a 'Reader' environment.
 class HasServer api context where
   type ServerT api (m :: * -> *) :: *
 
   route ::
        Proxy api
-    -> Context context
+    -> context
     -> Delayed env (Server api)
     -> Router env
 
@@ -693,19 +695,25 @@ instance HasServer EmptyAPI context where
   hoistServerWithContext _ _ _ = retag
 
 -- | Basic Authentication
+class HasBasicAuthCheck user context where
+    getBasicAuthCheck :: context ->  BasicAuthCheck user
+
+instance HasBasicAuthCheck user (BasicAuthCheck user) where
+    getBasicAuthCheck = id
+
 instance ( KnownSymbol realm
          , HasServer api context
-         , HasContextEntry context (BasicAuthCheck usr)
+         , HasBasicAuthCheck user context
          )
-    => HasServer (BasicAuth realm usr :> api) context where
+    => HasServer (BasicAuth realm user :> api) context where
 
-  type ServerT (BasicAuth realm usr :> api) m = usr -> ServerT api m
+  type ServerT (BasicAuth realm user :> api) m = user -> ServerT api m
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (subserver `addAuthCheck` authCheck)
     where
        realm = BC8.pack $ symbolVal (Proxy :: Proxy realm)
-       basicAuthContext = getContextEntry context
+       basicAuthContext = getBasicAuthCheck context
        authCheck = withRequest $ \ req -> runBasicAuth req realm basicAuthContext
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
@@ -718,10 +726,20 @@ ct_wildcard = "*" <> "/" <> "*" -- Because CPP
 -- * General Authentication
 
 
+-- Named Context is weird idea.
+
 -- * contexts
 
-instance (HasContextEntry context (NamedContext name subContext), HasServer subApi subContext)
-  => HasServer (WithNamedContext name subContext subApi) context where
+-- | This is an example of how to change the context.
+class GetNamedContext context name sub where
+    getNamedContext :: Proxy name -> context -> sub
+
+-- write instances for vinyl, extensible-records, etc.
+
+instance
+  ( GetNamedContext context name subContext
+  , HasServer subApi subContext
+  ) => HasServer (WithNamedContext name subContext subApi) context where
 
   type ServerT (WithNamedContext name subContext subApi) m =
     ServerT subApi m
@@ -732,8 +750,8 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
       subProxy :: Proxy subApi
       subProxy = Proxy
 
-      subContext :: Context subContext
-      subContext = descendIntoNamedContext (Proxy :: Proxy name) context
+      subContext :: subContext
+      subContext = getNamedContext (Proxy :: Proxy name) context
 
   hoistServerWithContext _ _ nt s = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
 

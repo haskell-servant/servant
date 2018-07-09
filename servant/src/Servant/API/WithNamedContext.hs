@@ -18,4 +18,4 @@ import           GHC.TypeLits
 -- 'Context's are only relevant for @servant-server@.
 --
 -- For more information, see the tutorial.
-data WithNamedContext (name :: Symbol) (subContext :: [*]) subApi
+data WithNamedContext (name :: Symbol) (subContext :: *) subApi

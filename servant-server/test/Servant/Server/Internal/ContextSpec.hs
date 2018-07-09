@@ -13,7 +13,9 @@ import           Servant.API
 import           Servant.Server.Internal.Context
 
 spec :: Spec
-spec = do
+spec = pure ()
+
+{-
   describe "getContextEntry" $ do
     it "gets the context if a matching one exists" $ do
       let cxt = 'a' :. EmptyContext
@@ -63,3 +65,4 @@ spec = do
     it "does not typecheck if subContext with that name doesn't exist" $ do
       let x = descendIntoNamedContext (Proxy :: Proxy "foo") cxt :: Context '[Char]
       shouldNotTypecheck (show x)
+-}

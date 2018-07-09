@@ -32,3 +32,5 @@ constraints:
 allow-newer:
   servant-pagination:servant,
   servant-pagination:servant-server
+
+packages: servant-multipart

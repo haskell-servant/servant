@@ -80,7 +80,7 @@ errorOrderSpec :: Spec
 errorOrderSpec =
   describe "HTTP error order" $
     with (return $ serveWithContext errorOrderApi
-                   (errorOrderAuthCheck :. EmptyContext)
+                   errorOrderAuthCheck
                    errorOrderServer
          ) $ do
   let badContentType  = (hContentType, "text/plain")
@@ -219,7 +219,7 @@ errorRetrySpec :: Spec
 errorRetrySpec =
   describe "Handler search" $
     with (return $ serveWithContext errorRetryApi
-                         (errorOrderAuthCheck :. EmptyContext)
+                         errorOrderAuthCheck
                          errorRetryServer
          ) $ do
 

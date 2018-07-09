@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -27,7 +28,7 @@ import           Servant
                  ((:>))
 import           Servant.API.Experimental.Auth
 import           Servant.Server.Internal
-                 (HasContextEntry, HasServer (..), getContextEntry)
+                 (HasServer (..))
 import           Servant.Server.Internal.Handler
                  (Handler, runHandler)
 import           Servant.Server.Internal.RoutingApplication
@@ -52,9 +53,16 @@ newtype AuthHandler r usr = AuthHandler
 mkAuthHandler :: (r -> Handler usr) -> AuthHandler r usr
 mkAuthHandler = AuthHandler
 
+-- | "TODO": We'd like to have functiona dependency here
+class HasAuthHandler context tag where
+    getAuthHandler :: context -> Proxy tag -> AuthHandler Request (AuthServerData (AuthProtect tag))
+
+instance d ~ AuthServerData (AuthProtect tag)  => HasAuthHandler (AuthHandler Request d) tag where
+    getAuthHandler ctx _ = ctx
+
 -- | Known orphan instance.
 instance ( HasServer api context
-         , HasContextEntry context (AuthHandler Request (AuthServerData (AuthProtect tag)))
+         , HasAuthHandler context tag
          )
   => HasServer (AuthProtect tag :> api) context where
 
@@ -67,6 +75,6 @@ instance ( HasServer api context
     route (Proxy :: Proxy api) context (subserver `addAuthCheck` withRequest authCheck)
       where
         authHandler :: Request -> Handler (AuthServerData (AuthProtect tag))
-        authHandler = unAuthHandler (getContextEntry context)
+        authHandler = unAuthHandler (getAuthHandler context (Proxy :: Proxy tag))
         authCheck :: Request -> DelayedIO (AuthServerData (AuthProtect tag))
         authCheck = (>>= either delayedFailFatal return) . liftIO . runHandler . authHandler

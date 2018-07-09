@@ -52,7 +52,7 @@ import           Servant.API
                  StreamGenerator (..), Verb, addHeader)
 import           Servant.API.Internal.Test.ComprehensiveAPI
 import           Servant.Server
-                 (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
+                 (Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, serve, serveWithContext)
 import           Test.Hspec
                  (Spec, context, describe, it, shouldBe, shouldContain)
@@ -66,16 +66,16 @@ import           Servant.Server.Experimental.Auth
 import           Servant.Server.Internal.BasicAuth
                  (BasicAuthCheck (BasicAuthCheck),
                  BasicAuthResult (Authorized, Unauthorized))
-import           Servant.Server.Internal.Context
-                 (NamedContext (..))
+--import           Servant.Server.Internal.Context
+--                 (NamedContext (..))
 
 -- * comprehensive api test
 
 -- This declaration simply checks that all instances are in place.
-_ = serveWithContext comprehensiveAPI comprehensiveApiContext
+_ = serveWithContext comprehensiveAPI ()
 
-comprehensiveApiContext :: Context '[NamedContext "foo" '[]]
-comprehensiveApiContext = NamedContext EmptyContext :. EmptyContext
+-- comprehensiveApiContext :: Context '[NamedContext "foo" '[]]
+-- comprehensiveApiContext = NamedContext EmptyContext :. EmptyContext
 
 -- * Specs
 
@@ -672,13 +672,12 @@ basicAuthServer =
   const (return jerry) :<|>
   (Tagged $ \ _ respond -> respond $ responseLBS imATeapot418 [] "")
 
-basicAuthContext :: Context '[ BasicAuthCheck () ]
+basicAuthContext :: BasicAuthCheck ()
 basicAuthContext =
-  let basicHandler = BasicAuthCheck $ \(BasicAuthData usr pass) ->
-        if usr == "servant" && pass == "server"
-          then return (Authorized ())
-          else return Unauthorized
-  in basicHandler :. EmptyContext
+   BasicAuthCheck $ \(BasicAuthData usr pass) ->
+      if usr == "servant" && pass == "server"
+      then return (Authorized ())
+      else return Unauthorized
 
 basicAuthSpec :: Spec
 basicAuthSpec = do
@@ -719,13 +718,13 @@ genAuthServer = const (return tweety)
 
 type instance AuthServerData (AuthProtect "auth") = ()
 
-genAuthContext :: Context '[AuthHandler Request ()]
+genAuthContext :: AuthHandler Request ()
 genAuthContext =
   let authHandler = \req -> case lookup "Auth" (requestHeaders req) of
         Just "secret" -> return ()
         Just _ -> throwError err403
         Nothing -> throwError err401
-  in mkAuthHandler authHandler :. EmptyContext
+  in mkAuthHandler authHandler
 
 genAuthSpec :: Spec
 genAuthSpec = do

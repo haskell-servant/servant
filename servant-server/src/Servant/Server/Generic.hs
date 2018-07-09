@@ -31,7 +31,7 @@ type AsServer = AsServerT Handler
 -- | Transform record of routes into a WAI 'Application'.
 genericServe
     :: forall routes.
-       ( HasServer (ToServantApi routes) '[]
+       ( HasServer (ToServantApi routes) ()
        , GenericServant routes AsServer
        , Server (ToServantApi routes) ~ ToServant routes AsServer
        )

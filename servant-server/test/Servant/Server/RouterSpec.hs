@@ -74,14 +74,14 @@ distributivitySpec =
       level `shouldHaveSameStructureAs` levelRef
 
 shouldHaveSameStructureAs ::
-  (HasServer api1 '[], HasServer api2 '[]) => Proxy api1 -> Proxy api2 -> Expectation
+  (HasServer api1 (), HasServer api2 ()) => Proxy api1 -> Proxy api2 -> Expectation
 shouldHaveSameStructureAs p1 p2 =
   unless (sameStructure (makeTrivialRouter p1) (makeTrivialRouter p2)) $
     expectationFailure ("expected:\n" ++ unpack (layout p2) ++ "\nbut got:\n" ++ unpack (layout p1))
 
-makeTrivialRouter :: (HasServer layout '[]) => Proxy layout -> Router ()
+makeTrivialRouter :: (HasServer layout ()) => Proxy layout -> Router ()
 makeTrivialRouter p =
-  route p EmptyContext (emptyDelayed (FailFatal err501))
+  route p () (emptyDelayed (FailFatal err501))
 
 type End = Get '[JSON] NoContent
 

@@ -21,6 +21,7 @@ import           GHC.TypeLits
 
 import           Servant
 
+{-
 data ExtractFromContext
 
 instance (HasContextEntry context String, HasServer subApi context) =>
@@ -77,3 +78,4 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 
       subContext :: Context subContext
       subContext = descendIntoNamedContext (Proxy :: Proxy name) context
+-}
