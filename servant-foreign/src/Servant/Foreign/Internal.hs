@@ -12,9 +12,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-#if !MIN_VERSION_base(4,8,0)
-{-# LANGUAGE NullaryTypeClasses         #-}
-#endif
 
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.

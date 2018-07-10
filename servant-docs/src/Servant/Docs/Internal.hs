@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DefaultSignatures      #-}
@@ -17,7 +16,6 @@
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
-#include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
 import           Prelude ()
@@ -788,7 +786,7 @@ markdownWith RenderingOptions{..}  api = unlines $
 
 -- | The generated docs for @a ':<|>' b@ just appends the docs
 --   for @a@ with the docs for @b@.
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
          (HasDocs a, HasDocs b)
       => HasDocs (a :<|> b) where
 
@@ -836,7 +834,7 @@ instance (KnownSymbol sym, ToCapture (CaptureAll sym a), HasDocs sublayout)
           symP = Proxy :: Proxy sym
 
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
         (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
         , ReflectMethod method)
     => HasDocs (Verb method status (ct ': cts) a) where
@@ -855,7 +853,7 @@ instance OVERLAPPABLE_
 -- | TODO: mention the endpoint is streaming, its framing strategy
 --
 -- Also there are no samples.
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
         (MimeRender ct a, KnownNat status
         , ReflectMethod method)
     => HasDocs (Stream method status framing ct a) where
@@ -870,7 +868,7 @@ instance OVERLAPPABLE_
           status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
         (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
         , ReflectMethod method, AllHeaderSamples ls, GetHeaders (HList ls))
     => HasDocs (Verb method status (ct ': cts) (Headers ls a)) where

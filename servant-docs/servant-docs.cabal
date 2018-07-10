@@ -23,7 +23,6 @@ tested-with:
 homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
-  include/*.h
   CHANGELOG.md
   README.md
 source-repository head
@@ -44,10 +43,6 @@ library
       base       >= 4.7      && < 4.12
     , bytestring >= 0.10.4.0 && < 0.11
     , text       >= 1.2.3.0  && < 1.3
-
-  if !impl(ghc >= 8.0)
-    build-depends:
-      semigroups          >=0.18.3 && <0.19
 
   -- Servant dependencies
   build-depends:
@@ -70,10 +65,7 @@ library
 
   hs-source-dirs: src
   default-language: Haskell2010
-  ghc-options: -Wall
-  if impl(ghc >= 8.0)
-    ghc-options: -Wno-redundant-constraints
-  include-dirs: include
+  ghc-options: -Wall -Wno-redundant-constraints
 
 executable greet-docs
   main-is: greet.hs

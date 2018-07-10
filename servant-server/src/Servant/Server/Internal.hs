@@ -18,8 +18,6 @@
 #define HAS_TYPE_ERROR
 #endif
 
-#include "overlapping-compat.h"
-
 module Servant.Server.Internal
   ( module Servant.Server.Internal
   , module Servant.Server.Internal.BasicAuth
@@ -256,7 +254,7 @@ methodRouter splitHeaders method proxy status action = leafRouter route'
                       let bdy = if allowedMethodHead method request then "" else body
                       in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
          ) => HasServer (Verb method status ctypes a) context where
 
@@ -267,7 +265,7 @@ instance OVERLAPPABLE_
     where method = reflectMethod (Proxy :: Proxy method)
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
          , GetHeaders (Headers h a)
          ) => HasServer (Verb method status ctypes (Headers h a)) context where
@@ -280,7 +278,7 @@ instance OVERLAPPING_
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
          ( MimeRender ctype a, ReflectMethod method, KnownNat status,
            FramingRender framing ctype, ToStreamGenerator b a
          ) => HasServer (Stream method status framing ctype b) context where
@@ -292,7 +290,7 @@ instance OVERLAPPABLE_
       where method = reflectMethod (Proxy :: Proxy method)
             status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
          ( MimeRender ctype a, ReflectMethod method, KnownNat status,
            FramingRender framing ctype, ToStreamGenerator b a,
            GetHeaders (Headers h b)

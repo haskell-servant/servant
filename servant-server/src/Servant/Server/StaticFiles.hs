@@ -24,10 +24,6 @@ import           Servant.Server
                  (ServerT, Tagged (..))
 import           System.FilePath
                  (addTrailingPathSeparator)
-#if !MIN_VERSION_wai_app_static(3,1,0)
-import           Filesystem.Path.CurrentOS
-                 (decodeString)
-#endif
 import           WaiAppStatic.Storage.Filesystem
                  (ETagLookup)
 
@@ -84,9 +80,4 @@ serveDirectory = serveDirectoryFileServer
 {-# DEPRECATED serveDirectory "Use serveDirectoryFileServer instead" #-}
 
 fixPath :: FilePath -> FilePath
-fixPath =
-#if MIN_VERSION_wai_app_static(3,1,0)
-    addTrailingPathSeparator
-#else
-    decodeString . addTrailingPathSeparator
-#endif
+fixPath = addTrailingPathSeparator

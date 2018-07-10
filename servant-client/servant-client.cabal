@@ -23,7 +23,6 @@ tested-with:
 homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
-  include/*.h
   CHANGELOG.md
   README.md
 source-repository head
@@ -48,9 +47,6 @@ library
     , time                  >= 1.4.2    && < 1.9
     , transformers          >= 0.3.0.0  && < 0.6
 
-  if !impl(ghc >= 8.0)
-    build-depends: semigroups >=0.18.4 && <0.19
-
   -- Servant dependencies
   build-depends:
       servant-client-core   == 0.14.*
@@ -71,10 +67,7 @@ library
 
   hs-source-dirs: src
   default-language: Haskell2010
-  ghc-options: -Wall
-  if impl(ghc >= 8.0)
-    ghc-options: -Wno-redundant-constraints
-  include-dirs: include
+  ghc-options: -Wall -Wno-redundant-constraints
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -103,10 +96,6 @@ test-suite spec
     , transformers-compat
     , wai
     , warp
-
-  if !impl(ghc >= 8.0)
-    build-depends:
-      semigroups
 
   -- Additonal dependencies
   build-depends:

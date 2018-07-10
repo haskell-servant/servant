@@ -22,7 +22,6 @@ tested-with:
   GHC==8.2.2
   GHC==8.4.3
 extra-source-files:
-  include/*.h
   CHANGELOG.md
 source-repository head
   type: git
@@ -120,10 +119,7 @@ library
                   , TypeOperators
                   , TypeSynonymInstances
                   , UndecidableInstances
-  ghc-options: -Wall
-  if impl(ghc >= 8.0)
-    ghc-options: -Wno-redundant-constraints
-  include-dirs: include
+  ghc-options: -Wall -Wno-redundant-constraints
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -145,10 +141,6 @@ test-suite spec
     , servant
     , string-conversions
     , text
-
-  if !impl(ghc >= 8.0)
-    build-depends:
-      semigroups
 
   -- Additonal dependencies
   build-depends:
@@ -177,6 +169,5 @@ test-suite doctests
   ghc-options: -Wall -threaded
   if impl(ghc >= 8.2)
     x-doctest-options: -fdiagnostics-color=never
-  include-dirs: include
   x-doctest-source-dirs: test
   x-doctest-modules: Servant.LinksSpec

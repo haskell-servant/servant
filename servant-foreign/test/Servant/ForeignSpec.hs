@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -9,10 +8,6 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-#if __GLASGOW_HASKELL__ < 709
-{-# OPTIONS_GHC -fcontext-stack=41 #-}
-#endif
-#include "overlapping-compat.h"
 
 module Servant.ForeignSpec where
 
@@ -59,10 +54,10 @@ instance HasForeignType LangX String Int where
 instance HasForeignType LangX String Bool where
   typeFor _ _ _ = "boolX"
 
-instance OVERLAPPING_ HasForeignType LangX String String where
+instance {-# OVERLAPPING #-} HasForeignType LangX String String where
   typeFor _ _ _ = "stringX"
 
-instance OVERLAPPABLE_ HasForeignType LangX String a => HasForeignType LangX String [a] where
+instance {-# OVERLAPPABLE #-} HasForeignType LangX String a => HasForeignType LangX String [a] where
   typeFor lang ftype _ = "listX of " <> typeFor lang ftype (Proxy :: Proxy a)
 
 instance (HasForeignType LangX String a) => HasForeignType LangX String (Maybe a) where
