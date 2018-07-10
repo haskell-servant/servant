@@ -22,8 +22,6 @@ category:            Servant, Web
 build-type:          Custom
 cabal-version:       >=1.10
 tested-with:
-  GHC==7.8.4
-  GHC==7.10.3
   GHC==8.0.2
   GHC==8.2.2
   GHC==8.4.3
@@ -181,7 +179,7 @@ test-suite doctests
   build-depends:
       base
     , servant-server
-    , doctest >= 0.15.0 && <0.16
+    , doctest >= 0.16.0 && <0.17
   type: exitcode-stdio-1.0
   main-is: test/doctests.hs
   buildable: True

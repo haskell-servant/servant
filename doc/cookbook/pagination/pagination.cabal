@@ -8,25 +8,16 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 build-type:          Simple
 cabal-version:       >=1.10
-extra-source-files:
-  Pagination.lhs
-  dummy/Pagination.lhs
-tested-with:         GHC==7.8.4, GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
+tested-with:         GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
 
 executable cookbook-pagination
   main-is:             Pagination.lhs
   build-tool-depends:  markdown-unlit:markdown-unlit
   default-language:    Haskell2010
   ghc-options:         -Wall -pgmL markdown-unlit
-
-  if impl(ghc >= 8.0)
-    hs-source-dirs: .
-    build-depends:       base >= 4.8 && <4.12
-                       , aeson
-                       , servant
-                       , servant-server
-                       , servant-pagination >= 2.1.0 && < 3.0.0
-                       , warp
-  else
-    hs-source-dirs: dummy
-    build-depends: base
+  build-depends:       base >= 4.8 && <4.12
+                     , aeson
+                     , servant
+                     , servant-server
+                     , servant-pagination >= 2.1.0 && < 3.0.0
+                     , warp

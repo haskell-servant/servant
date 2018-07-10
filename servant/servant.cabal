@@ -18,8 +18,6 @@ category:            Servant, Web
 build-type:          Custom
 cabal-version:       >=1.10
 tested-with:
-  GHC==7.8.4
-  GHC==7.10.3
   GHC==8.0.2
   GHC==8.2.2
   GHC==8.4.3
@@ -74,22 +72,22 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                  >= 4.7      && < 4.12
-    , bytestring            >= 0.10.4.0 && < 0.11
+      base                  >= 4.9      && < 4.12
+    , bytestring            >= 0.10.8.1 && < 0.11
     , mtl                   >= 2.1      && < 2.3
     , text                  >= 1.2.3.0  && < 1.3
 
   if !impl(ghc >= 8.0)
     build-depends:
-      semigroups            >= 0.18.4 && < 0.19
+      semigroups            >= 0.18.5 && < 0.19
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat            >= 0.10.1   && < 0.11
+      base-compat            >= 0.10.4   && < 0.11
     , aeson                  >= 1.3.1.1  && < 1.5
     , attoparsec             >= 0.13.2.2 && < 0.14
-    , case-insensitive       >= 1.2.0.10 && < 1.3
+    , case-insensitive       >= 1.2.0.11 && < 1.3
     , http-api-data          >= 0.3.8.1  && < 0.4
     , http-media             >= 0.7.1.2  && < 0.8
     , http-types             >= 0.12.1   && < 0.13
@@ -154,23 +152,23 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      aeson-compat         >= 0.3.7.1 && < 0.4
-    , hspec                >= 2.5.1   && < 2.6
+      aeson-compat         >= 0.3.8   && < 0.4
+    , hspec                >= 2.5.4   && < 2.6
     , QuickCheck           >= 2.11.3  && < 2.12
     , quickcheck-instances >= 0.3.18  && < 0.4
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.5.1 && < 2.6
+    hspec-discover:hspec-discover >= 2.5.4 && < 2.6
 
 test-suite doctests
   build-depends:
       base
     , servant
-    , doctest >= 0.15.0 && <0.16
+    , doctest >= 0.16.0 && <0.17
 
   -- We test Links failure with doctest, so we need extra dependencies
   build-depends:
-      hspec                >= 2.5.1  && < 2.6
+      hspec                >= 2.5.4  && < 2.6
 
   type: exitcode-stdio-1.0
   main-is: test/doctests.hs

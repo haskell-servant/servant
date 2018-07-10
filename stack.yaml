@@ -1,5 +1,5 @@
 # Let's try to keep resolver at the first day of the month
-resolver: nightly-2018-06-01
+resolver: nightly-2018-07-08
 packages:
 - servant-client/
 - servant-client-core/
