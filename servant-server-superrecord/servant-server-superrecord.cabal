@@ -1,0 +1,33 @@
+name:                servant-server-superrecord
+version:             0
+synopsis:            Use superrecord as servant-server context
+description:         Use superrecord as servant-server context.
+homepage:            http://haskell-servant.readthedocs.org/
+license:             BSD3
+license-file:        LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2018 Servant Contributors
+category:            Web, Servant, Records
+build-type:          Simple
+cabal-version:       >=1.10
+bug-reports:         http://github.com/haskell-servant/servant/issues
+tested-with:
+  GHC==8.0.2,
+  GHC==8.2.2,
+  GHC==8.4.3
+
+source-repository head
+  type: git
+  location: http://github.com/haskell-servant/servant.git
+
+library
+  exposed-modules:     Servant.Server.SuperRecord
+  build-depends:       base >=4.9 && <5
+                     , superrecord       >=0.5.0.0 && <0.6
+                     , servant           >=0.14    && <0.15
+                     , servant-server    >=0.14    && <0.15
+                     , servant-multipart >=0.11.2  && <0.12
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:        -Wall

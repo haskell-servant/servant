@@ -17,6 +17,9 @@ Occasionally you have a big API with different things needing a context.
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeOperators         #-}
 
+-- For superrecords
+{-# LANGUAGE OverloadedLabels #-}
+
 -- This is need for generics-lens instance
 {-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
@@ -27,11 +30,16 @@ import Prelude.Compat
 
 import GHC.Generics (Generic)
 import Data.Text (Text)
+import System.Environment       (getArgs)
+
 import qualified Data.Text.Encoding as TE
 import qualified Data.ByteString.Lazy as LBS
 
-import Control.Lens
+import Control.Lens (view)
 import Data.Generics.Product
+
+import SuperRecord  ((&), rnil, (:=) (..))
+import Servant.Server.SuperRecord ()
 
 import Servant
 import Servant.Multipart
@@ -43,7 +51,7 @@ import Servant.Server.Internal (GetNamedContext (..))
 ```
 
 ```haskell
-type API = 
+type API =
          "upload" :> MultipartForm Mem (MultipartData Mem) :> Post '[JSON] Int
     :<|> "users" :>  WithNamedContext "users"
         ( BasicAuth "User space" User :> Get '[PlainText] Text )
@@ -122,12 +130,12 @@ app = serveWithContext api ctx server where
         { ctxUploadOpts = uploadOpts
         , ctxUserSpace  = check ["alice", "bob"]
         , ctxAdminUI    = check ["alice"]
-        }  
+        }
 
 uploadOpts :: MultipartOptions Mem
 uploadOpts = MultipartOptions
     { generalOptions
-        = setMaxRequestFileSize 1024 
+        = setMaxRequestFileSize 1024
         $ defaultParseRequestBodyOptions
     , backendOptions = ()
     }
@@ -245,10 +253,52 @@ appGL = serveWithContext api ctx server where
         { upload = uploadOpts
         , users  = check ["alice", "bob"]
         , admin  = check ["alice"]
-        }  
+        }
 ```
+
+SuperRecord
+-----------
+
+If you prefer using anonymous records libraries, you can do that too.
+Here's an example using [`superrecord`](https://hackage.haskell.org/package/superrecord)
+though servant maintainers don't endorse any anonymous records library over
+others (we are pretty sure you can write `servant-server-*` for `vinyl`,
+`bookkeeper`, `rawr` or `labels`)
+
+```haskell
+appSR :: Application
+appSR = serveWithContext api ctx server where
+    ctx = #upload := uploadOpts
+        & #users  := check ["alice", "bob"]
+        & #admin  := check ["alice"]
+        & rnil
+```
+
+Note: nice type errors in superrecord
+
+```
+    • Could not find label users
+```
+
+--
 
 ```haskell
 main :: IO ()
-main = run 8000 appGL
+main = do
+    args <- getArgs
+    case args of
+        ("manual":_) -> do
+            putStrLn "Starting cookbook-multiple-contexts manual at http://localhost:8000"
+            run 8000 app
+        ("generic-lens":_) -> do
+            putStrLn "Starting cookbook-multiple-contexts generic-lens at http://localhost:8000"
+            run 8000 appGL
+        ("superrecord":_) -> do
+            putStrLn "Starting cookbook-multiple-contexts superrecord at http://localhost:8000"
+            run 8000 appSR
+        _ -> do
+            putStrLn "Try:"
+            putStrLn "cabal new-run cookbook-multiple-contexts manual"
+            putStrLn "cabal new-run cookbook-multiple-contexts generic-lens"
+            putStrLn "cabal new-run cookbook-multiple-contexts superrecord"
 ```

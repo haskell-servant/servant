@@ -6,6 +6,8 @@ packages: servant/
   servant-server/
   doc/tutorial/
 
+  servant-server-superrecord/
+
   -- doc/cookbook/*/*.cabal
 
   doc/cookbook/basic-auth
