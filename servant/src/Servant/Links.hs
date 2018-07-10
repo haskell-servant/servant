@@ -521,8 +521,8 @@ instance HasLink sub => HasLink (IsSecure :> sub) where
     type MkLink (IsSecure :> sub) a = MkLink sub a
     toLink = simpleToLink (Proxy :: Proxy sub)
 
-instance HasLink sub => HasLink (WithNamedContext name context sub) where
-    type MkLink (WithNamedContext name context sub) a = MkLink sub a
+instance HasLink sub => HasLink (WithNamedContext name sub) where
+    type MkLink (WithNamedContext name sub) a = MkLink sub a
     toLink toA _ = toLink toA (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (RemoteHost :> sub) where

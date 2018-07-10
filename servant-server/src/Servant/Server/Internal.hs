@@ -731,7 +731,7 @@ ct_wildcard = "*" <> "/" <> "*" -- Because CPP
 -- * contexts
 
 -- | This is an example of how to change the context.
-class GetNamedContext context name sub where
+class GetNamedContext context name sub | context name -> sub where
     getNamedContext :: Proxy name -> context -> sub
 
 -- write instances for vinyl, extensible-records, etc.
@@ -739,9 +739,9 @@ class GetNamedContext context name sub where
 instance
   ( GetNamedContext context name subContext
   , HasServer subApi subContext
-  ) => HasServer (WithNamedContext name subContext subApi) context where
+  ) => HasServer (WithNamedContext name subApi) context where
 
-  type ServerT (WithNamedContext name subContext subApi) m =
+  type ServerT (WithNamedContext name subApi) m =
     ServerT subApi m
 
   route Proxy context delayed =

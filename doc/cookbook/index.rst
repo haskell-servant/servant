@@ -28,3 +28,4 @@ you name it!
   jwt-and-basic-auth/JWTAndBasicAuth.lhs
   file-upload/FileUpload.lhs
   pagination/Pagination.lhs
+  multiple-contexts/MultipleContexts.lhs

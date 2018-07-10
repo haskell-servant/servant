@@ -9,7 +9,7 @@ import           GHC.TypeLits
 -- combinators in the API. (See also in @servant-server@,
 -- @Servant.Server.Context@.) For example:
 --
--- > type UseNamedContextAPI = WithNamedContext "myContext" '[String] (
+-- > type UseNamedContextAPI = WithNamedContext "myContext" (
 -- >     ReqBody '[JSON] Int :> Get '[JSON] Int)
 --
 -- Both the 'ReqBody' and 'Get' combinators will use the 'WithNamedContext' with
@@ -18,4 +18,4 @@ import           GHC.TypeLits
 -- 'Context's are only relevant for @servant-server@.
 --
 -- For more information, see the tutorial.
-data WithNamedContext (name :: Symbol) (subContext :: *) subApi
+data WithNamedContext (name :: Symbol) (subApi :: *)

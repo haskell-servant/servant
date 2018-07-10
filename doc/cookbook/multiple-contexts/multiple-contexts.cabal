@@ -1,0 +1,28 @@
+name:                cookbook-multiple-contexts
+version:             0.1
+synopsis:            Using multiple contexts
+homepage:            http://haskell-servant.readthedocs.org/
+license:             BSD3
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+build-type:          Simple
+cabal-version:       >=1.10
+tested-with:         GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
+
+executable cookbook-multiple-contexts
+  main-is:             MultipleContexts.lhs
+  build-depends:       base          >=4.9 && <4.12
+                     , base-compat   >= 0.10.4 && <0.11
+                     , bytestring
+                     , generic-lens  >=1.0.0.1 && <1.1
+                     , lens
+                     , text          >= 1.2.3.0 && <1.3
+                     , servant
+                     , servant-server
+                     , servant-multipart
+                     , warp >= 3.2
+                     , wai-extra
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit >= 0.4
