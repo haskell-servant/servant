@@ -16,7 +16,7 @@ packages: servant/
   doc/cookbook/file-upload
   doc/cookbook/generic
   doc/cookbook/https
-  doc/cookbook/jwt-and-basic-auth
+  -- doc/cookbook/jwt-and-basic-auth
   doc/cookbook/multiple-contexts
   doc/cookbook/pagination
   doc/cookbook/structuring-apis

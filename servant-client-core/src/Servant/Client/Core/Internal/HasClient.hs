@@ -610,9 +610,9 @@ instance HasClient m api => HasClient m (IsSecure :> api) where
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
 instance HasClient m subapi =>
-  HasClient m (WithNamedContext name context subapi) where
+  HasClient m (WithNamedContext name subapi) where
 
-  type Client m (WithNamedContext name context subapi) = Client m subapi
+  type Client m (WithNamedContext name subapi) = Client m subapi
   clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl

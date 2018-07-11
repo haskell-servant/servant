@@ -132,7 +132,7 @@ newtype BasicAuthCheck usr = BasicAuthCheck
   deriving (Generic, Typeable, Functor)
 ```
 
-This is all great, but how is our `BasicAuth` combinator supposed to know
+**FIXME** This is all great, but how is our `BasicAuth` combinator supposed to know
 that it should use our `checkBasicAuth` from above? The answer is that it
 simply expects to find a `BasicAuthCheck` value for the right user type in
 the `Context` with which we serve the application, where `Context` is just
@@ -144,8 +144,7 @@ code:
 ``` haskell
 runApp :: UserDB -> IO ()
 runApp db = run 8080 (serveWithContext api ctx server)
-
-  where ctx = checkBasicAuth db :. EmptyContext
+    where ctx = checkBasicAuth db
 ```
 
 `ctx` above is just a context with one element, `checkBasicAuth db`,

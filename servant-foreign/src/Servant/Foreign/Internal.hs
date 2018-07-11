@@ -354,9 +354,9 @@ instance HasForeign lang ftype api => HasForeign lang ftype (Vault :> api) where
     foreignFor lang ftype (Proxy :: Proxy api) req
 
 instance HasForeign lang ftype api =>
-  HasForeign lang ftype (WithNamedContext name context api) where
+  HasForeign lang ftype (WithNamedContext name api) where
 
-  type Foreign ftype (WithNamedContext name context api) = Foreign ftype api
+  type Foreign ftype (WithNamedContext name api) = Foreign ftype api
 
   foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 

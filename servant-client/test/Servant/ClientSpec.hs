@@ -217,8 +217,8 @@ basicAuthHandler =
         else return Unauthorized
   in BasicAuthCheck check
 
-basicServerContext :: Context '[ BasicAuthCheck () ]
-basicServerContext = basicAuthHandler :. EmptyContext
+basicServerContext :: BasicAuthCheck ()
+basicServerContext = basicAuthHandler
 
 basicAuthServer :: Application
 basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (return alice))
@@ -241,8 +241,8 @@ genAuthHandler =
         Just _ -> return ()
   in mkAuthHandler handler
 
-genAuthServerContext :: Context '[ AuthHandler Wai.Request () ]
-genAuthServerContext = genAuthHandler :. EmptyContext
+genAuthServerContext :: AuthHandler Wai.Request ()
+genAuthServerContext = genAuthHandler
 
 genAuthServer :: Application
 genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
@@ -431,7 +431,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
-  WrappedApi :: (HasServer (api :: *) '[], Server api ~ Handler a,
+  WrappedApi :: (HasServer (api :: *) (), Server api ~ Handler a,
                  HasClient ClientM api, Client ClientM api ~ ClientM ()) =>
     Proxy api -> WrappedApi
 

@@ -63,7 +63,6 @@ import Servant.Server                   (BasicAuthCheck (BasicAuthCheck),
                                          BasicAuthResult( Authorized
                                                         , Unauthorized
                                                         ),
-                                         Context ((:.), EmptyContext),
                                          err401, err403, errBody, Server,
                                          serveWithContext, Handler)
 import Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
@@ -169,15 +168,15 @@ authCheck =
   in BasicAuthCheck check
 ```
 
-And now we create the `Context` used by servant to find `BasicAuthCheck`:
+**FIXME** And now we create the `Context` used by servant to find `BasicAuthCheck`:
 
 ```haskell
 -- | We need to supply our handlers with the right Context. In this case,
 -- Basic Authentication requires a Context Entry with the 'BasicAuthCheck' value
 -- tagged with "foo-tag" This context is then supplied to 'server' and threaded
 -- to the BasicAuth HasServer handlers.
-basicAuthServerContext :: Context (BasicAuthCheck User ': '[])
-basicAuthServerContext = authCheck :. EmptyContext
+basicAuthServerContext :: BasicAuthCheck User
+basicAuthServerContext = authCheck
 ```
 
 We're now ready to write our `server` method that will tie everything together:
@@ -341,8 +340,8 @@ value of type `Server AuthGenAPI`, in addition to the server value:
 -- | The context that will be made available to request handlers. We supply the
 -- "cookie-auth"-tagged request handler defined above, so that the 'HasServer' instance
 -- of 'AuthProtect' can extract the handler and run it on the request.
-genAuthServerContext :: Context (AuthHandler Request Account ': '[])
-genAuthServerContext = authHandler :. EmptyContext
+genAuthServerContext :: AuthHandler Request Account
+genAuthServerContext = authHandler
 
 -- | Our API, where we provide all the author-supplied handlers for each end
 -- point. Note that 'privateDataFunc' is a function that takes 'Account' as an
