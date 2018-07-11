@@ -49,7 +49,7 @@
     [persistent](https://www.stackage.org/package/persistent) for writing data
     into a database.
 
-- [`import Servant` github search](https://github.com/search?l=Haskell&o=desc&q=%22import+Servant%22&s=indexed&type=Code)
+- [`import Servant` github search](https://github.com/search?q=%22import+Servant%22+language%3AHaskell&type=Code)
 
     It has thousands of results and can be a good way to see how people use servant in their projects or even to discover
     servant-related libraries.
