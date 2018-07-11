@@ -1,12 +1,8 @@
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
-#if __GLASGOW_HASKELL__ < 709
-{-# OPTIONS_GHC -fcontext-stack=41 #-}
-#endif
 module Servant.LinksSpec where
 
 import           Data.Proxy

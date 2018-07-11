@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -12,7 +11,6 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-#include "overlapping-compat.h"
 module Servant.Client.Core.Internal.HasClient where
 
 import           Prelude ()
@@ -209,7 +207,7 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy sublayout) f (cl as)
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
   -- Note [Non-Empty Content Types]
   ( RunClient m, MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient m (Verb method status cts' a) where
@@ -226,7 +224,7 @@ instance OVERLAPPABLE_
 
   hoistClientMonad _ _ f ma = f ma
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
   ( RunClient m, ReflectMethod method
   ) => HasClient m (Verb method status cts NoContent) where
   type Client m (Verb method status cts NoContent)
@@ -238,7 +236,7 @@ instance OVERLAPPING_
 
   hoistClientMonad _ _ f ma = f ma
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
   -- Note [Non-Empty Content Types]
   ( RunClient m, MimeUnrender ct a, BuildHeadersTo ls
   , ReflectMethod method, cts' ~ (ct ': cts)
@@ -261,7 +259,7 @@ instance OVERLAPPING_
 
   hoistClientMonad _ _ f ma = f ma
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
   ( RunClient m, BuildHeadersTo ls, ReflectMethod method
   ) => HasClient m (Verb method status cts (Headers ls NoContent)) where
   type Client m (Verb method status cts (Headers ls NoContent))
@@ -275,7 +273,7 @@ instance OVERLAPPING_
 
   hoistClientMonad _ _ f ma = f ma
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
   ( RunClient m, MonadIO m, MimeUnrender ct a, ReflectMethod method,
     FramingUnrender framing a, FromResultStream a b
   ) => HasClient m (Stream method status framing ct b) where

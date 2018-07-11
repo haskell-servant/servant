@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveDataTypeable     #-}
 {-# LANGUAGE DeriveFunctor          #-}
@@ -15,7 +14,6 @@
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_HADDOCK not-home        #-}
 
-#include "overlapping-compat.h"
 -- | This module provides facilities for adding headers to a response.
 --
 -- >>> let headerVal = addHeader "some-url" 5 :: Headers '[Header "Location" String] Int
@@ -80,10 +78,10 @@ class BuildHeadersTo hs where
     -- the values are interspersed with commas before deserialization (see
     -- <http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2 RFC2616 Sec 4.2>)
 
-instance OVERLAPPING_ BuildHeadersTo '[] where
+instance {-# OVERLAPPING #-} BuildHeadersTo '[] where
     buildHeadersTo _ = HNil
 
-instance OVERLAPPABLE_ ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
+instance {-# OVERLAPPABLE #-} ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
          => BuildHeadersTo (Header h v ': xs) where
     buildHeadersTo headers =
       let wantedHeader = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
@@ -144,11 +142,11 @@ class AddHeader h v orig new
   addOptionalHeader :: ResponseHeader h v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
 
 
-instance OVERLAPPING_ ( KnownSymbol h, ToHttpApiData v )
+instance {-# OVERLAPPING #-} ( KnownSymbol h, ToHttpApiData v )
          => AddHeader h v (Headers (fst ': rest)  a) (Headers (Header h v  ': fst ': rest) a) where
     addOptionalHeader hdr (Headers resp heads) = Headers resp (HCons hdr heads)
 
-instance OVERLAPPABLE_ ( KnownSymbol h, ToHttpApiData v
+instance {-# OVERLAPPABLE #-} ( KnownSymbol h, ToHttpApiData v
                        , new ~ (Headers '[Header h v] a) )
          => AddHeader h v a new where
     addOptionalHeader hdr resp = Headers resp (HCons hdr HNil)

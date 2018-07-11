@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DefaultSignatures     #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -7,8 +6,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-
-#include "overlapping-compat.h"
 
 module Servant.Client.Core.Internal.Generic where
 
@@ -142,7 +139,7 @@ instance (GClientList b acc, GClientList a (ClientList b acc))
   => GClientList (a :<|> b) acc where
   gClientList (a :<|> b) acc = gClientList a (gClientList b acc)
 
-instance OVERLAPPABLE_ (ClientList client acc ~ (client ': acc))
+instance {-# OVERLAPPABLE #-} (ClientList client acc ~ (client ': acc))
   => GClientList client acc where
   gClientList c acc = I c :* acc
 

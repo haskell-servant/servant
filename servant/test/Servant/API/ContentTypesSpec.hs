@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -195,7 +194,6 @@ spec = describe "Servant.API.ContentTypes" $ do
                 handleCTypeH (Proxy :: Proxy '[JSONorText]) "image/jpeg"
                     "foobar" `shouldBe` (Nothing :: Maybe (Either String Int))
 
-#if MIN_VERSION_aeson(0,9,0)
     -- aeson >= 0.9 decodes top-level strings
     describe "eitherDecodeLenient" $ do
 
@@ -204,7 +202,6 @@ spec = describe "Servant.API.ContentTypes" $ do
             -- The Left messages differ, so convert to Maybe
             property $ \x -> toMaybe (eitherDecodeLenient x)
                 `shouldBe` (decode x :: Maybe String)
-#endif
 
 
 data SomeData = SomeData { record1 :: String, record2 :: Int }

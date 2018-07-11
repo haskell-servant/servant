@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -7,8 +6,6 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeOperators              #-}
-
-#include "overlapping-compat.h"
 
 module Servant.Server.Internal.Context where
 
@@ -64,11 +61,11 @@ instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
 class HasContextEntry (context :: [*]) (val :: *) where
     getContextEntry :: Context context -> val
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
          HasContextEntry xs val => HasContextEntry (notIt ': xs) val where
     getContextEntry (_ :. xs) = getContextEntry xs
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
          HasContextEntry (val ': xs) val where
     getContextEntry (x :. _) = x
 

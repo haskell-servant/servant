@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
@@ -13,8 +12,6 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_HADDOCK not-home       #-}
-
-#include "overlapping-compat.h"
 
 -- | A collection of basic Content-Types (also known as Internet Media
 -- Types, or MIME types). Additionally, this module provides classes that
@@ -98,15 +95,12 @@ import qualified Data.Text.Lazy.Encoding          as TextL
 import           Data.Typeable
 import           GHC.Generics
                  (Generic)
+import qualified GHC.TypeLits                     as TL
 import qualified Network.HTTP.Media               as M
 import           Prelude ()
 import           Prelude.Compat
 import           Web.FormUrlEncoded
                  (FromForm, ToForm, urlDecodeAsForm, urlEncodeAsForm)
-
-#if MIN_VERSION_base(4,9,0)
-import qualified GHC.TypeLits                     as TL
-#endif
 
 -- * Provided content types
 data JSON deriving Typeable
@@ -185,18 +179,16 @@ class (AllMime list) => AllCTRender (list :: [*]) a where
     -- mimetype).
     handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
          (Accept ct, AllMime cts, AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
     handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
       where pctyps = Proxy :: Proxy (ct ': cts)
             amrs = allMimeRender pctyps val
             lkup = fmap (\(a,b) -> (a, (fromStrict $ M.renderHeader a, b))) amrs
 
-#if MIN_VERSION_base(4,9,0)
 instance TL.TypeError ('TL.Text "No instance for (), use NoContent instead.")
   => AllCTRender '[] () where
   handleAcceptH _ _ _ = error "unreachable"
-#endif
 
 --------------------------------------------------------------------------
 -- * Unrender
@@ -277,13 +269,13 @@ class (AllMime list) => AllMimeRender (list :: [*]) a where
                   -> a                              -- value to serialize
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
 
-instance OVERLAPPABLE_ ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
+instance {-# OVERLAPPABLE #-} ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
     allMimeRender _ a = map (, bs) $ NE.toList $ contentTypes pctyp
       where
         bs    = mimeRender pctyp a
         pctyp = Proxy :: Proxy ctyp
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
          ( MimeRender ctyp a
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
@@ -299,12 +291,12 @@ instance OVERLAPPABLE_
 -- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
 -- then this would be taken care of. However there is no more specific instance
 -- between that and 'MimeRender JSON a', so we do this instead
-instance OVERLAPPING_ ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
+instance {-# OVERLAPPING #-} ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
     allMimeRender _ _ = map (, "") $ NE.toList $ contentTypes pctyp
       where
         pctyp = Proxy :: Proxy ctyp
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
          ( AllMime (ctyp ': ctyp' ': ctyps)
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) NoContent where
     allMimeRender p _ = zip (allMime p) (repeat "")
@@ -334,14 +326,14 @@ instance ( MimeUnrender ctyp a
 -- * MimeRender Instances
 
 -- | `encode`
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
          ToJSON a => MimeRender JSON a where
     mimeRender _ = encode
 
 -- | @urlEncodeAsForm@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
 -- holds if every element of x is non-null (i.e., not @("", "")@)
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
          ToForm a => MimeRender FormUrlEncoded a where
     mimeRender _ = urlEncodeAsForm
 
