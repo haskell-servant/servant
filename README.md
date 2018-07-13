@@ -16,25 +16,6 @@ Other blog posts, videos and slides can be found on the
 If you need help, drop by the IRC channel (#servant on freenode) or [mailing
 list](https://groups.google.com/forum/#!forum/haskell-servant).
 
-## Version history
-
-This table lists the versions of some `servant-` libraries at the point of
-release of `servant` package.
-
-|                     | **0.10** | **0.11** | **0.12** |
-| ------------------- | -------- |----------|----------|
-| servant             | 0.10     | 0.11     | 0.12     |
-| servant-blaze       | 0.7.1    | ?        | ?        |
-| servant-cassava     | 0.7      | ?        | ?        |
-| servant-client      | 0.10     | 0.11     | 0.12     |
-| servant-docs        | 0.10     | 0.11     | 0.11.1   |
-| servant-foreign     | 0.10     | 0.10.0.1 | 0.10.2   |
-| servant-js          | 0.9.1    | ?        | ?        |
-| servant-lucid       | 0.7.1    | ?        | ?        |
-| servant-mock        | 0.8.1.1  | ?        | ?        |
-| servant-server      | 0.10     | 0.11     | 0.12     |
-| servant-swagger     | 1.1.2.1  | ?        | ?        |
-
 ## Contributing
 
 See `CONTRIBUTING.md`
