@@ -9,7 +9,7 @@ really-all :
 	 $(MAKE) build-ghc
 	 $(MAKE) build-ghc HC=ghc-8.0.2
 	 $(MAKE) build-ghc HC=ghc-8.2.2
-	 $(MAKE) build-ghc HC=ghc-8.6.3
+	 $(MAKE) build-ghc HC=ghc-8.6.5
 	 $(MAKE) build-ghcjs
 
 build-ghc :

@@ -1,6 +1,8 @@
 folds: all-but-test
 branches: master
 jobs-selection: any
+google-chrome: True
+ghcjs-tests: True
 
 -- https://github.com/haskell/cabal/issues/6176
 ghcjs-tools: hspec-discover
