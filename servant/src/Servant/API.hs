@@ -127,7 +127,7 @@ import           Servant.API.Verbs
                  (Delete, DeleteAccepted, DeleteNoContent,
                  DeleteNonAuthoritative, Get, GetAccepted, GetNoContent,
                  GetNonAuthoritative, GetPartialContent, GetResetContent,
-                 Patch, PatchAccepted, PatchNoContent, PatchNonAuthoritative,C
+                 Patch, PatchAccepted, PatchNoContent, PatchNonAuthoritative,
                  Post, PostAccepted, PostCreated, PostNoContent,
                  PostNonAuthoritative, PostResetContent, Put, PutAccepted,
                  PutCreated, PutNoContent, PutNonAuthoritative,
