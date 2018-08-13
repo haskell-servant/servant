@@ -56,14 +56,17 @@ type Patch  = Verb 'PATCH  200
 -- Indicates that a new resource has been created. The URI corresponding to the
 -- resource should be given in the @Location@ header field.
 --
+-- If the operation is idempotent, use 'PutCreated'. If not, use 'PostCreated'
+--
 -- If the resource cannot be created immediately, use 'PostAccepted'.
 --
 -- Consider using 'Servant.Links.safeLink' for the @Location@ header
 -- field.
 
 -- | 'POST' with 201 status code.
---
 type PostCreated = Verb 'POST 201
+-- | 'PUT' with 201 status code.
+type PutCreated = Verb 'PUT 201
 
 
 -- ** 202 Accepted
