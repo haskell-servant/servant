@@ -130,7 +130,7 @@ import           Servant.API.Verbs
                  Patch, PatchAccepted, PatchNoContent, PatchNonAuthoritative,
                  Post, PostAccepted, PostCreated, PostNoContent,
                  PostNonAuthoritative, PostResetContent, Put, PutAccepted,
-                 PutNoContent, PutNonAuthoritative,
+                 PutCreated, PutNoContent, PutNonAuthoritative,
                  ReflectMethod (reflectMethod), StdMethod (..), Verb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
