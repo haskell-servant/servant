@@ -84,15 +84,13 @@ notLongerThan maxAllowed
 -- /Since 0.0.0.0/
 onlyJsonObjects :: ResponsePredicate
 onlyJsonObjects
-  = ResponsePredicate (\resp -> case go resp of
-      Nothing -> throw $ PredicateFailure "onlyJsonObjects" Nothing resp
-      Just () -> return ())
-    where
-      go r = do
-        ctyp <- lookup "content-type" (first foldedCase <$> responseHeaders r)
-        when ("application/json" `SBS.isPrefixOf` ctyp) $ do
-          (_ :: Object) <- decode (responseBody r)
-          return ()
+  = ResponsePredicate (\resp -> do
+    case lookup "content-type" (first foldedCase <$> responseHeaders resp) of
+      Nothing    -> return ()
+      Just ctype -> when ("application/json" `SBS.isPrefixOf` ctype) $ do
+        case (decode (responseBody resp) :: Maybe Object) of
+          Nothing -> throw $ PredicateFailure "onlyJsonObjects" Nothing resp
+          Just _  -> return ())
 
 -- | __Optional__
 --
