@@ -133,6 +133,10 @@ onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
     withServantServerAndContext octetAPI ctx serverOctetAPI $ \burl ->
       serverSatisfies octetAPI burl args (onlyJsonObjects <%> mempty)
 
+  it "does not fail when there is no content-type" $ do
+    withServantServerAndContext api2 ctx serverFailing $ \burl ->
+        serverSatisfies api2 burl args (onlyJsonObjects <%> mempty)
+
 notLongerThanSpec :: Spec
 notLongerThanSpec = describe "notLongerThan" $ do
 
@@ -273,6 +277,9 @@ server2 = return $ return 1
 
 server3 :: IO (Server API2)
 server3 = return $ return 2
+
+serverFailing :: IO (Server API2)
+serverFailing = return . throwError $ err405
 
 -- With Doctypes
 type HtmlDoctype = Get '[HTML] Blaze.Html
