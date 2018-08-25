@@ -930,6 +930,17 @@ instance HasDocs Raw where
   docsFor _proxy (endpoint, action) _ =
     single endpoint action
 
+instance (KnownSymbol summ, KnownSymbol desc, HasDocs api)
+  => HasDocs (Summary summ :> Description desc :> api) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          action' = over notes (|> note) action
+          note = DocNote title body
+          title = symbolVal (Proxy :: Proxy summ)
+          body = lines $ symbolVal (Proxy :: Proxy desc)
 
 instance (KnownSymbol desc, HasDocs api)
   => HasDocs (Description desc :> api) where
@@ -939,17 +950,20 @@ instance (KnownSymbol desc, HasDocs api)
 
     where subApiP = Proxy :: Proxy api
           action' = over notes (|> note) action
-          note = DocNote (symbolVal (Proxy :: Proxy desc)) []
+          description = symbolVal (Proxy :: Proxy desc)
+          note = mkNote $ lines $ description
+          mkNote (x:xs) = DocNote x xs
+          mkNote []     = DocNote description []
 
-instance (KnownSymbol desc, HasDocs api)
-  => HasDocs (Summary desc :> api) where
+instance (KnownSymbol summ, HasDocs api)
+  => HasDocs (Summary summ :> api) where
 
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
 
     where subApiP = Proxy :: Proxy api
           action' = over notes (|> note) action
-          note = DocNote (symbolVal (Proxy :: Proxy desc)) []
+          note = DocNote (symbolVal (Proxy :: Proxy summ)) []
 
 -- TODO: We use 'AllMimeRender' here because we need to be able to show the
 -- example data. However, there's no reason to believe that the instances of
