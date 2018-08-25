@@ -866,7 +866,6 @@ instance {-# OVERLAPPABLE #-}
           t = Proxy :: Proxy '[ct]
           method' = reflectMethod (Proxy :: Proxy method)
           status = fromInteger $ natVal (Proxy :: Proxy status)
-          p = Proxy :: Proxy a
 
 instance {-# OVERLAPPING #-}
         (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
