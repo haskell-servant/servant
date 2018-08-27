@@ -189,14 +189,15 @@ getsHaveLastModifiedHeader
 notAllowedContainsAllowHeader :: RequestPredicate
 notAllowedContainsAllowHeader
   = RequestPredicate $ \req mgr -> do
-      resp <- mapM (flip httpLbs mgr) $ [ req { method = renderStdMethod m }
-                                        | m <- [minBound .. maxBound ]
-                                        , renderStdMethod m /= method req ]
-      case filter pred' resp of
-        (x:_) -> throw $ PredicateFailure "notAllowedContainsAllowHeader" (Just req) x
+      let reqs = [ req { method = renderStdMethod m } | m <- [minBound .. maxBound]
+                                                      , renderStdMethod m /= method req ]
+      resp <- mapM (flip httpLbs mgr) reqs
+
+      case filter pred' (zip reqs resp) of
+        (x:_) -> throw $ PredicateFailure "notAllowedContainsAllowHeader" (Just $ fst x) (snd x)
         []     -> return resp
     where
-      pred' resp = responseStatus resp == status405 && not (hasValidHeader "Allow" go resp)
+      pred' (_, resp) = responseStatus resp == status405 && not (hasValidHeader "Allow" go resp)
         where
           go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
                $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
