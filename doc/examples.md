@@ -49,6 +49,11 @@
     [persistent](https://www.stackage.org/package/persistent) for writing data
     into a database.
 
+- **[full-example-servant-elm-auth-yeshql-postgresql](https://github.com/aRkadeFR/FlashCard)**:
+
+    A full open source website written with **servant-server**, yeshql, postgresql and elm 0.19.
+
+
 - [`import Servant` github search](https://github.com/search?q=%22import+Servant%22+language%3AHaskell&type=Code)
 
     It has thousands of results and can be a good way to see how people use servant in their projects or even to discover
