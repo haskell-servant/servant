@@ -92,7 +92,10 @@ serversEqual api burl1 burl2 args req = do
           expectationFailure $ "We failed to record a reason for failure: " <> show r
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     NoExpectedFailure {} -> expectationFailure "No expected failure"
+#if MIN_VERSION_QuickCheck(2,12,0)
+#else
     InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
+#endif
 
 -- | Check that a server satisfies the set of properties specified.
 --
@@ -145,7 +148,10 @@ serverSatisfiesMgr api manager burl args preds = do
           expectationFailure $ "We failed to record a reason for failure: " <> show r
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
-    InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
+#if MIN_VERSION_QuickCheck(2,12,0)
+#else
+    InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
+#endif
 
 serverDoesntSatisfy :: (HasGenRequest a) =>
   Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
@@ -163,7 +169,10 @@ serverDoesntSatisfyMgr api manager burl args preds = do
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     Failure { output = m } -> expectationFailure $ "Failed:\n" ++ show m
     NoExpectedFailure {} -> expectationFailure $ "No expected failure"
-    InsufficientCoverage {} -> expectationFailure $ "Insufficient coverage"
+#if MIN_VERSION_QuickCheck(2,12,0)
+#else
+    InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
+#endif
 
 noCheckStatus :: C.Request -> C.Request
 #if MIN_VERSION_http_client(0,5,0)

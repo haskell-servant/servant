@@ -44,14 +44,15 @@ library
                      , case-insensitive == 1.2.*
                      , clock >= 0.7 && < 0.8
                      , data-default-class >= 0.0 && < 0.2
-                     , hspec >= 2.5 && < 2.6
+                     , hspec >= 2.5.5 && < 2.6
+
                      , http-client >= 0.4.30 && < 0.6
                      , http-media >= 0.6 && <0.8
                      , http-types > 0.8 && < 0.13
                      , mtl > 2.1 && < 2.3
                      , pretty == 1.1.*
                      , process >= 1.2 && < 1.7
-                     , QuickCheck > 2.7 && < 2.12
+                     , QuickCheck > 2.7 && < 2.13
                      , servant >= 0.13 && < 0.15
                      , servant-client >= 0.13 && < 0.15
                      , servant-server >= 0.13 && < 0.15
@@ -99,7 +100,7 @@ test-suite spec
                      , servant-quickcheck
                      , bytestring
                      , hspec
-                     , hspec-core
+                     , hspec-core >= 2.5.5 && < 2.6
                      , http-client
                      , blaze-html
                      , warp
