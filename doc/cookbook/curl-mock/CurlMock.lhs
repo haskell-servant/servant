@@ -4,7 +4,7 @@ In this example we will generate curl requests with mock post data from a servan
 This may be usefull for testing and development purposes.
 Especially post requests with a request body are tedious to send manually.
 
-Also, we will learn how to use the servant-forein library to generate stuff from servant APIs.
+Also, we will learn how to use the servant-foreign library to generate stuff from servant APIs.
 
 
 Language extensions and imports:
@@ -134,7 +134,7 @@ generateCurl p host =
     $ listFromAPI (Proxy :: Proxy NoLang) (Proxy :: Proxy Mocked) p
 ```
 
-To understand the, better start at the end:
+To understand this function, better start at the end:
 
 `listFromAPI` gives us a list of endpoints. We iterate over them (`foldr`) and call `generateEndpoint` for every endpoint.
 
