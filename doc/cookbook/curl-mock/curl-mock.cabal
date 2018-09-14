@@ -1,0 +1,27 @@
+name:                cookbook-curl-mock
+version:             0.1
+synopsis:            Generate curl mock requests cookbook example
+homepage:            http://haskell-servant.readthedocs.org
+license:             BSD3
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+build-type:          Simple
+cabal-version:       >=1.10
+tested-with:         GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
+
+executable cookbock-curl-mock
+  main-is:             CurlMock.lhs
+  build-depends:       base == 4.*
+                     , aeson
+                     , aeson-compat
+                     , lens
+                     , text
+                     , servant
+                     , servant-server
+                     , servant-foreign
+                     , QuickCheck
+                     , generic-arbitrary
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit
