@@ -21,6 +21,7 @@ module Servant.Foreign
   , reqMethod
   , reqHeaders
   , reqBody
+  , reqBodyIsJSON
   , reqReturnType
   , reqFuncName
   , path

@@ -1,5 +1,5 @@
 name:                servant-foreign
-version:             0.11.1
+version:             0.11.2
 x-revision:          3
 synopsis:            Helpers for generating clients for servant APIs in any programming language
 description:

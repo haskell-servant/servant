@@ -130,13 +130,14 @@ data Req f = Req
   , _reqBody       :: Maybe f
   , _reqReturnType :: Maybe f
   , _reqFuncName   :: FunctionName
+  , _reqBodyIsJSON :: Bool
   }
   deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Req
 
 defReq :: Req ftype
-defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName [])
+defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName []) True
 
 -- | 'HasForeignType' maps Haskell types with types in the target
 -- language of your backend. For example, let's say you're
