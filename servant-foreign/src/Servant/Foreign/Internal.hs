@@ -123,21 +123,24 @@ defUrl = Url [] []
 
 makeLenses ''Url
 
+data ReqBodyContentType = ReqBodyJSON | ReqBodyMultipart
+  deriving (Data, Eq, Show, Read)
+
 data Req f = Req
-  { _reqUrl        :: Url f
-  , _reqMethod     :: HTTP.Method
-  , _reqHeaders    :: [HeaderArg f]
-  , _reqBody       :: Maybe f
-  , _reqReturnType :: Maybe f
-  , _reqFuncName   :: FunctionName
-  , _reqBodyIsJSON :: Bool
+  { _reqUrl             :: Url f
+  , _reqMethod          :: HTTP.Method
+  , _reqHeaders         :: [HeaderArg f]
+  , _reqBody            :: Maybe f
+  , _reqReturnType      :: Maybe f
+  , _reqFuncName        :: FunctionName
+  , _reqBodyContentType :: ReqBodyContentType
   }
   deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Req
 
 defReq :: Req ftype
-defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName []) True
+defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName []) ReqBodyJSON
 
 -- | 'HasForeignType' maps Haskell types with types in the target
 -- language of your backend. For example, let's say you're
