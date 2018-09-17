@@ -34,8 +34,7 @@ Some things we like:
 Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
 files in the repository provide a good baseline for consistency.
 
-Please include a description of the changes in your PR in the `CHANGELOG.md` of
-the packages you've changed. And of course, write tests!
+**Important**: please do not modify the changelog files nor the versions of the servant packages you are sending patches for. We take care of this before every release and do it uniformly for all the servant packages, so there's no need to worry about this for your pull requests.
 
 ## PR process
 
