@@ -58,6 +58,10 @@ fully-fledged webserver. This means that in your applications, you can just add
 **servant-server** as a dependency, import `Servant` and not worry about anything
 else.
 
+The dependencies to compile this example can be found in the 
+(cabal file)[https://github.com/haskell-servant/servant/blob/v0.8/doc/tutorial/tutorial.cabal] 
+of the tutorial.
+
 We will write a server that will serve the following API.
 
 ``` haskell
