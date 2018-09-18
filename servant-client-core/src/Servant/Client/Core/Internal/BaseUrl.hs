@@ -1,14 +1,24 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DeriveLift         #-}
 {-# LANGUAGE ViewPatterns       #-}
 module Servant.Client.Core.Internal.BaseUrl where
 
 import           Control.Monad.Catch
                  (Exception, MonadThrow, throwM)
+import           Data.Aeson
+                 (FromJSON (..), FromJSONKey (..), ToJSON (..), ToJSONKey (..))
+import           Data.Aeson.Types
+                 (FromJSONKeyFunction (..), contramapToJSONKeyFunction,
+                 withText)
+import           Data.Data
+                 (Data)
 import           Data.List
-import           Data.Typeable
+import qualified Data.Text                  as T
 import           GHC.Generics
-import           Network.URI         hiding
+import           Language.Haskell.TH.Syntax
+                 (Lift)
+import           Network.URI                hiding
                  (path)
 import           Safe
 import           Text.Read
@@ -17,16 +27,18 @@ import           Text.Read
 data Scheme =
     Http  -- ^ http://
   | Https -- ^ https://
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Ord, Generic, Lift, Data)
 
 -- | Simple data type to represent the target of HTTP requests
 --   for servant's automatically-generated clients.
 data BaseUrl = BaseUrl
-  { baseUrlScheme :: Scheme -- ^ URI scheme to use
+  { baseUrlScheme :: Scheme   -- ^ URI scheme to use
   , baseUrlHost   :: String   -- ^ host (eg "haskell.org")
   , baseUrlPort   :: Int      -- ^ port (eg 80)
   , baseUrlPath   :: String   -- ^ path (eg "/a/b/c")
-  } deriving (Show, Ord, Generic)
+  } deriving (Show, Ord, Generic, Lift, Data)
+-- TODO: Ord is more precise than Eq
+-- TODO: Add Hashable instance?
 
 instance Eq BaseUrl where
     BaseUrl a b c path == BaseUrl a' b' c' path'
@@ -34,6 +46,36 @@ instance Eq BaseUrl where
         where s ('/':x) = x
               s x       = x
 
+-- | >>> traverse_ (LBS8.putStrLn . encode) $ parseBaseUrl "api.example.com"
+-- "http://api.example.com"
+instance ToJSON BaseUrl where
+    toJSON     = toJSON . showBaseUrl
+    toEncoding = toEncoding . showBaseUrl
+
+-- | >>> parseBaseUrl "api.example.com" >>= decode . encode :: Maybe BaseUrl
+-- Just (BaseUrl {baseUrlScheme = Http, baseUrlHost = "api.example.com", baseUrlPort = 80, baseUrlPath = ""})
+instance FromJSON BaseUrl where
+    parseJSON = withText "BaseUrl" $ \t -> case parseBaseUrl (T.unpack t) of
+        Just u  -> return u
+        Nothing -> fail $ "Invalid base url: " ++ T.unpack t
+
+-- | >>> :{
+-- traverse_ (LBS8.putStrLn . encode) $ do
+--   u1 <- parseBaseUrl "api.example.com"
+--   u2 <- parseBaseUrl "example.com"
+--   return $ Map.fromList [(u1, 'x'), (u2, 'y')]
+-- :}
+-- {"http://api.example.com":"x","http://example.com":"y"}
+instance ToJSONKey BaseUrl where
+    toJSONKey = contramapToJSONKeyFunction showBaseUrl toJSONKey
+
+instance FromJSONKey BaseUrl where
+    fromJSONKey = FromJSONKeyTextParser $ \t -> case parseBaseUrl (T.unpack t) of
+        Just u  -> return u
+        Nothing -> fail $ "Invalid base url: " ++ T.unpack t
+
+-- | >>> showBaseUrl <$> parseBaseUrl "api.example.com"
+-- "http://api.example.com"
 showBaseUrl :: BaseUrl -> String
 showBaseUrl (BaseUrl urlscheme host port path) =
   schemeString ++ "//" ++ host ++ (portString </> path)
@@ -47,9 +89,22 @@ showBaseUrl (BaseUrl urlscheme host port path) =
         (Https, 443) -> ""
         _ -> ":" ++ show port
 
-data InvalidBaseUrlException = InvalidBaseUrlException String deriving (Show, Typeable)
+newtype InvalidBaseUrlException = InvalidBaseUrlException String deriving (Show)
 instance Exception InvalidBaseUrlException
 
+-- |
+--
+-- >>> parseBaseUrl "api.example.com"
+-- BaseUrl {baseUrlScheme = Http, baseUrlHost = "api.example.com", baseUrlPort = 80, baseUrlPath = ""}
+--
+-- /Note:/ trailing slash is removed
+--
+-- >>> parseBaseUrl "api.example.com/"
+-- BaseUrl {baseUrlScheme = Http, baseUrlHost = "api.example.com", baseUrlPort = 80, baseUrlPath = ""}
+--
+-- >>> parseBaseUrl "api.example.com/dir/"
+-- BaseUrl {baseUrlScheme = Http, baseUrlHost = "api.example.com", baseUrlPort = 80, baseUrlPath = "/dir"}
+--
 parseBaseUrl :: MonadThrow m => String -> m BaseUrl
 parseBaseUrl s = case parseURI (removeTrailingSlash s) of
   -- This is a rather hacky implementation and should be replaced with something
@@ -69,3 +124,10 @@ parseBaseUrl s = case parseURI (removeTrailingSlash s) of
   removeTrailingSlash str = case lastMay str of
     Just '/' -> init str
     _ -> str
+
+-- $setup
+--
+-- >>> import Data.Aeson
+-- >>> import Data.Foldable (traverse_)
+-- >>> import qualified Data.ByteString.Lazy.Char8 as LBS8
+-- >>> import qualified Data.Map.Strict as Map
