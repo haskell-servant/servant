@@ -9,6 +9,7 @@ packages:
   structuring-apis/
   https/
   pagination/
+  sentry/
   ../../servant
   ../../servant-server
   ../../servant-client-core

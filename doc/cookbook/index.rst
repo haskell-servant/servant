@@ -29,3 +29,4 @@ you name it!
   file-upload/FileUpload.lhs
   pagination/Pagination.lhs
   curl-mock/CurlMock.lhs
+  sentry/Sentry.lhs
