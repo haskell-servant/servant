@@ -21,7 +21,7 @@ executable cookbook-pagination
 
   if impl(ghc >= 8.0)
     hs-source-dirs: .
-    build-depends:       base >= 4.8 && <4.12
+    build-depends:       base >= 4.8
                        , aeson
                        , servant
                        , servant-server

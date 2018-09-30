@@ -14,8 +14,8 @@ packages: servant/
   doc/cookbook/file-upload
   doc/cookbook/generic
   doc/cookbook/https
-  doc/cookbook/jwt-and-basic-auth
-  doc/cookbook/pagination
+  -- doc/cookbook/jwt-and-basic-auth
+  -- doc/cookbook/pagination
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
 
@@ -28,6 +28,26 @@ constraints:
   foundation >=0.0.14,
   memory <0.14.12 || >0.14.12
 
+constraints: containers installed
+
 allow-newer:
+  servant:base,
+  servant:containers,
+  servant-server:base,
+  servant-server:containers,
+  http-media:base,
+  http-media:containers,
+  servant-client:base,
+  servant-client:containers,
+  servant-client-core:base,
+  servant-client-core:containers,
+  servant-client:stm,
+  servant-docs:base,
+  servant-docs:containers,
+  servant-foreign:base,
+  servant-foreign:containers,
+  tutorial:base,
+  servant-js:base,
+
   servant-pagination:servant,
   servant-pagination:servant-server
