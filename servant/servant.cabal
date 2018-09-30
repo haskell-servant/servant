@@ -23,6 +23,7 @@ tested-with:
   GHC==8.0.2
   GHC==8.2.2
   GHC==8.4.3
+  GHC==8.6.1
 extra-source-files:
   include/*.h
   CHANGELOG.md
@@ -75,7 +76,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                  >= 4.7      && < 4.12
+      base                  >= 4.7      && < 4.13
     , bytestring            >= 0.10.4.0 && < 0.11
     , mtl                   >= 2.1      && < 2.3
     , text                  >= 1.2.3.0  && < 1.3
