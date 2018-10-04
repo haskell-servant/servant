@@ -5,6 +5,7 @@ packages:
   db-postgres-pool/
   using-custom-monad/
   jwt-and-basic-auth/
+  hoist-server-with-context/
   file-upload/
   structuring-apis/
   https/

@@ -118,6 +118,9 @@ install:
   - if [ -f "doc/cookbook/jwt-and-basic-auth/configure.ac" ]; then
       (cd "doc/cookbook/jwt-and-basic-auth" && autoreconf -i);
     fi
+  - if [ -f "doc/cookbook/hoist-server-with-context/configure.ac" ]; then
+      (cd "doc/cookbook/hoist-server-with-context" && autoreconf -i);
+    fi
   - if [ -f "doc/cookbook/pagination/configure.ac" ]; then
       (cd "doc/cookbook/pagination" && autoreconf -i);
     fi
@@ -157,6 +160,7 @@ script:
   - (cd "doc/cookbook/generic" && cabal sdist)
   - (cd "doc/cookbook/https" && cabal sdist)
   - (cd "doc/cookbook/jwt-and-basic-auth" && cabal sdist)
+  - (cd "doc/cookbook/hoist-server-with-context" && cabal sdist)
   - (cd "doc/cookbook/pagination" && cabal sdist)
   - (cd "doc/cookbook/structuring-apis" && cabal sdist)
   - (cd "doc/cookbook/using-custom-monad" && cabal sdist)
