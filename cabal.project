@@ -14,13 +14,14 @@ packages: servant/
   doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
+  doc/cookbook/hoist-server-with-context
   doc/cookbook/https
-  doc/cookbook/jwt-and-basic-auth
+  doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/pagination
+  doc/cookbook/sentry
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
-  doc/cookbook/sentry
 
 allow-newer:
   servant-auth-server:http-types,
