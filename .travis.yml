@@ -69,11 +69,11 @@ install:
   - rm -fv cabal.project cabal.project.local
   - "if [ $HCNUMVER -ge 70800 ]; then sed -i.bak 's/-- ghc-options:.*/ghc-options: -j2/' ${HOME}/.cabal/config; fi"
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
-  - "printf 'packages: \"servant\" \"servant-client\" \"servant-client-core\" \"servant-docs\" \"servant-foreign\" \"servant-server\" \"doc/tutorial\" \"doc/cookbook/basic-auth\" \"doc/cookbook/curl-mock\" \"doc/cookbook/db-postgres-pool\" \"doc/cookbook/db-sqlite-simple\" \"doc/cookbook/file-upload\" \"doc/cookbook/generic\" \"doc/cookbook/https\" \"doc/cookbook/jwt-and-basic-auth\" \"doc/cookbook/pagination\" \"doc/cookbook/sentry\" \"doc/cookbook/structuring-apis\" \"doc/cookbook/using-custom-monad\" \"doc/cookbook/using-free-client\"\\n' > cabal.project"
+  - "printf 'packages: \"servant\" \"servant-client\" \"servant-client-core\" \"servant-docs\" \"servant-foreign\" \"servant-server\" \"doc/tutorial\" \"doc/cookbook/basic-auth\" \"doc/cookbook/curl-mock\" \"doc/cookbook/db-postgres-pool\" \"doc/cookbook/db-sqlite-simple\" \"doc/cookbook/file-upload\" \"doc/cookbook/generic\" \"doc/cookbook/https\" \"doc/cookbook/pagination\" \"doc/cookbook/sentry\" \"doc/cookbook/structuring-apis\" \"doc/cookbook/using-custom-monad\" \"doc/cookbook/using-free-client\"\\n' > cabal.project"
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-auth-server:http-types,servant-auth-server:servant-server, servant-pagination:servant,servant-pagination:servant-server' >> cabal.project"
   - touch cabal.project.local
-  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- servant | grep -vw -- servant-client | grep -vw -- servant-client-core | grep -vw -- servant-docs | grep -vw -- servant-foreign | grep -vw -- servant-server | grep -vw -- tutorial | grep -vw -- cookbook-basic-auth | grep -vw -- cookbook-curl-mock | grep -vw -- cookbook-db-postgres-pool | grep -vw -- cookbook-db-sqlite-simple | grep -vw -- cookbook-file-upload | grep -vw -- cookbook-generic | grep -vw -- cookbook-https | grep -vw -- cookbook-jwt-and-basic-auth | grep -vw -- cookbook-pagination | grep -vw -- cookbook-sentry | grep -vw -- cookbook-structuring-apis | grep -vw -- cookbook-using-custom-monad | grep -vw -- cookbook-using-free-client | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
+  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- servant | grep -vw -- servant-client | grep -vw -- servant-client-core | grep -vw -- servant-docs | grep -vw -- servant-foreign | grep -vw -- servant-server | grep -vw -- tutorial | grep -vw -- cookbook-basic-auth | grep -vw -- cookbook-curl-mock | grep -vw -- cookbook-db-postgres-pool | grep -vw -- cookbook-db-sqlite-simple | grep -vw -- cookbook-file-upload | grep -vw -- cookbook-generic | grep -vw -- cookbook-https | grep -vw -- cookbook-pagination | grep -vw -- cookbook-sentry | grep -vw -- cookbook-structuring-apis | grep -vw -- cookbook-using-custom-monad | grep -vw -- cookbook-using-free-client | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then
@@ -118,9 +118,6 @@ install:
   - if [ -f "doc/cookbook/https/configure.ac" ]; then
       (cd "doc/cookbook/https" && autoreconf -i);
     fi
-  - if [ -f "doc/cookbook/jwt-and-basic-auth/configure.ac" ]; then
-      (cd "doc/cookbook/jwt-and-basic-auth" && autoreconf -i);
-    fi
   - if [ -f "doc/cookbook/pagination/configure.ac" ]; then
       (cd "doc/cookbook/pagination" && autoreconf -i);
     fi
@@ -137,7 +134,7 @@ install:
       (cd "doc/cookbook/using-free-client" && autoreconf -i);
     fi
   - rm -f cabal.project.freeze
-  - rm -rf .ghc.environment.* "servant"/dist "servant-client"/dist "servant-client-core"/dist "servant-docs"/dist "servant-foreign"/dist "servant-server"/dist "doc/tutorial"/dist "doc/cookbook/basic-auth"/dist "doc/cookbook/curl-mock"/dist "doc/cookbook/db-postgres-pool"/dist "doc/cookbook/db-sqlite-simple"/dist "doc/cookbook/file-upload"/dist "doc/cookbook/generic"/dist "doc/cookbook/https"/dist "doc/cookbook/jwt-and-basic-auth"/dist "doc/cookbook/pagination"/dist "doc/cookbook/sentry"/dist "doc/cookbook/structuring-apis"/dist "doc/cookbook/using-custom-monad"/dist "doc/cookbook/using-free-client"/dist
+  - rm -rf .ghc.environment.* "servant"/dist "servant-client"/dist "servant-client-core"/dist "servant-docs"/dist "servant-foreign"/dist "servant-server"/dist "doc/tutorial"/dist "doc/cookbook/basic-auth"/dist "doc/cookbook/curl-mock"/dist "doc/cookbook/db-postgres-pool"/dist "doc/cookbook/db-sqlite-simple"/dist "doc/cookbook/file-upload"/dist "doc/cookbook/generic"/dist "doc/cookbook/https"/dist "doc/cookbook/pagination"/dist "doc/cookbook/sentry"/dist "doc/cookbook/structuring-apis"/dist "doc/cookbook/using-custom-monad"/dist "doc/cookbook/using-free-client"/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
 # Here starts the actual work to be performed for the package under test;
@@ -159,7 +156,6 @@ script:
   - (cd "doc/cookbook/file-upload" && cabal sdist)
   - (cd "doc/cookbook/generic" && cabal sdist)
   - (cd "doc/cookbook/https" && cabal sdist)
-  - (cd "doc/cookbook/jwt-and-basic-auth" && cabal sdist)
   - (cd "doc/cookbook/pagination" && cabal sdist)
   - (cd "doc/cookbook/sentry" && cabal sdist)
   - (cd "doc/cookbook/structuring-apis" && cabal sdist)
@@ -167,14 +163,14 @@ script:
   - (cd "doc/cookbook/using-free-client" && cabal sdist)
   - echo -en 'travis_fold:end:sdist\\r'
   - echo Unpacking... && echo -en 'travis_fold:start:unpack\\r'
-  - mv "servant"/dist/servant-*.tar.gz "servant-client"/dist/servant-client-*.tar.gz "servant-client-core"/dist/servant-client-core-*.tar.gz "servant-docs"/dist/servant-docs-*.tar.gz "servant-foreign"/dist/servant-foreign-*.tar.gz "servant-server"/dist/servant-server-*.tar.gz "doc/tutorial"/dist/tutorial-*.tar.gz "doc/cookbook/basic-auth"/dist/cookbook-basic-auth-*.tar.gz "doc/cookbook/curl-mock"/dist/cookbook-curl-mock-*.tar.gz "doc/cookbook/db-postgres-pool"/dist/cookbook-db-postgres-pool-*.tar.gz "doc/cookbook/db-sqlite-simple"/dist/cookbook-db-sqlite-simple-*.tar.gz "doc/cookbook/file-upload"/dist/cookbook-file-upload-*.tar.gz "doc/cookbook/generic"/dist/cookbook-generic-*.tar.gz "doc/cookbook/https"/dist/cookbook-https-*.tar.gz "doc/cookbook/jwt-and-basic-auth"/dist/cookbook-jwt-and-basic-auth-*.tar.gz "doc/cookbook/pagination"/dist/cookbook-pagination-*.tar.gz "doc/cookbook/sentry"/dist/cookbook-sentry-*.tar.gz "doc/cookbook/structuring-apis"/dist/cookbook-structuring-apis-*.tar.gz "doc/cookbook/using-custom-monad"/dist/cookbook-using-custom-monad-*.tar.gz "doc/cookbook/using-free-client"/dist/cookbook-using-free-client-*.tar.gz ${DISTDIR}/
+  - mv "servant"/dist/servant-*.tar.gz "servant-client"/dist/servant-client-*.tar.gz "servant-client-core"/dist/servant-client-core-*.tar.gz "servant-docs"/dist/servant-docs-*.tar.gz "servant-foreign"/dist/servant-foreign-*.tar.gz "servant-server"/dist/servant-server-*.tar.gz "doc/tutorial"/dist/tutorial-*.tar.gz "doc/cookbook/basic-auth"/dist/cookbook-basic-auth-*.tar.gz "doc/cookbook/curl-mock"/dist/cookbook-curl-mock-*.tar.gz "doc/cookbook/db-postgres-pool"/dist/cookbook-db-postgres-pool-*.tar.gz "doc/cookbook/db-sqlite-simple"/dist/cookbook-db-sqlite-simple-*.tar.gz "doc/cookbook/file-upload"/dist/cookbook-file-upload-*.tar.gz "doc/cookbook/generic"/dist/cookbook-generic-*.tar.gz "doc/cookbook/https"/dist/cookbook-https-*.tar.gz "doc/cookbook/pagination"/dist/cookbook-pagination-*.tar.gz "doc/cookbook/sentry"/dist/cookbook-sentry-*.tar.gz "doc/cookbook/structuring-apis"/dist/cookbook-structuring-apis-*.tar.gz "doc/cookbook/using-custom-monad"/dist/cookbook-using-custom-monad-*.tar.gz "doc/cookbook/using-free-client"/dist/cookbook-using-free-client-*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
-  - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal cookbook-basic-auth-*/*.cabal cookbook-curl-mock-*/*.cabal cookbook-db-postgres-pool-*/*.cabal cookbook-db-sqlite-simple-*/*.cabal cookbook-file-upload-*/*.cabal cookbook-generic-*/*.cabal cookbook-https-*/*.cabal cookbook-jwt-and-basic-auth-*/*.cabal cookbook-pagination-*/*.cabal cookbook-sentry-*/*.cabal cookbook-structuring-apis-*/*.cabal cookbook-using-custom-monad-*/*.cabal cookbook-using-free-client-*/*.cabal\\n' > cabal.project"
+  - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal cookbook-basic-auth-*/*.cabal cookbook-curl-mock-*/*.cabal cookbook-db-postgres-pool-*/*.cabal cookbook-db-sqlite-simple-*/*.cabal cookbook-file-upload-*/*.cabal cookbook-generic-*/*.cabal cookbook-https-*/*.cabal cookbook-pagination-*/*.cabal cookbook-sentry-*/*.cabal cookbook-structuring-apis-*/*.cabal cookbook-using-custom-monad-*/*.cabal cookbook-using-free-client-*/*.cabal\\n' > cabal.project"
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-auth-server:http-types,servant-auth-server:servant-server, servant-pagination:servant,servant-pagination:servant-server' >> cabal.project"
   - touch cabal.project.local
-  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- servant | grep -vw -- servant-client | grep -vw -- servant-client-core | grep -vw -- servant-docs | grep -vw -- servant-foreign | grep -vw -- servant-server | grep -vw -- tutorial | grep -vw -- cookbook-basic-auth | grep -vw -- cookbook-curl-mock | grep -vw -- cookbook-db-postgres-pool | grep -vw -- cookbook-db-sqlite-simple | grep -vw -- cookbook-file-upload | grep -vw -- cookbook-generic | grep -vw -- cookbook-https | grep -vw -- cookbook-jwt-and-basic-auth | grep -vw -- cookbook-pagination | grep -vw -- cookbook-sentry | grep -vw -- cookbook-structuring-apis | grep -vw -- cookbook-using-custom-monad | grep -vw -- cookbook-using-free-client | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
+  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- servant | grep -vw -- servant-client | grep -vw -- servant-client-core | grep -vw -- servant-docs | grep -vw -- servant-foreign | grep -vw -- servant-server | grep -vw -- tutorial | grep -vw -- cookbook-basic-auth | grep -vw -- cookbook-curl-mock | grep -vw -- cookbook-db-postgres-pool | grep -vw -- cookbook-db-sqlite-simple | grep -vw -- cookbook-file-upload | grep -vw -- cookbook-generic | grep -vw -- cookbook-https | grep -vw -- cookbook-pagination | grep -vw -- cookbook-sentry | grep -vw -- cookbook-structuring-apis | grep -vw -- cookbook-using-custom-monad | grep -vw -- cookbook-using-free-client | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - echo -en 'travis_fold:end:unpack\\r'
