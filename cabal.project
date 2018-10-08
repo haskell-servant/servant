@@ -14,10 +14,10 @@ packages: servant/
   doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
-  doc/cookbook/hoist-server-with-context
+  -- doc/cookbook/hoist-server-with-context
   doc/cookbook/https
-  doc/cookbook/jwt-and-basic-auth/
-  doc/cookbook/pagination
+  -- doc/cookbook/jwt-and-basic-auth/
+  -- doc/cookbook/pagination
   doc/cookbook/sentry
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
@@ -25,7 +25,8 @@ packages: servant/
 
 allow-newer:
   servant-auth-server:http-types,
-  servant-auth-server:servant-server
+  servant-auth-server:servant-server,
+  servant-js:base
 
 constraints:
   -- see https://github.com/haskell-infra/hackage-trustees/issues/119
