@@ -1,7 +1,7 @@
 # How To Test Servant Applications
 
 Even with a nicely structured API that passes Haskell's strict type checker,
-it's a good idea to write some tests for your application. 
+it's a good idea to write some tests for your application.
 
 In this recipe we'll work through some common testing strategies and provide
 examples of utlizing these testing strategies in order to test Servant
@@ -13,17 +13,27 @@ This recipe uses the following ingredients:
 {-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds,
   DeriveGeneric, TypeOperators #-}
 import qualified Control.Concurrent               as C
+import           Control.Concurrent.MVar
+import           Control.Exception                (bracket)
+import           Control.Lens              hiding (Context)
 import           Data.Aeson
 import           Data.Aeson.Lens
+import qualified Data.HashMap.Strict              as HM
 import           Data.Text
+import           GHC.Generics
+import           Network.HTTP.Client      hiding (Proxy)
+import           Network.HTTP.Types
 import           Network.Wai
 import qualified Network.Wai.Handler.Warp         as Warp
+
 import           Servant
 import           Servant.Client
 import           Servant.Server
+import           Servant.QuickCheck
+import           Servant.QuickCheck.Internal (serverDoesntSatisfy)
 
 import           Test.Hspec
-import           Test.Hspec.Wai                                                    
+import           Test.Hspec.Wai
 import           Test.Hspec.Wai.Matcher
 ```
 
@@ -33,13 +43,13 @@ aspects of our application, and we'll ask `hspec` to run all of our different
 
 ```haskell
 spec :: Spec
-spec =
+spec = do
   businessLogicSpec
   thirdPartyResourcesSpec
   servantQuickcheckSpec
 ```
 
-Often, codebases will use `hspec`'s 
+Often, codebases will use `hspec`'s
 [autodiscover pragma](http://hspec.github.io/hspec-discover.html)
 to find all testing modules and `Spec`s inside, but we're going to
 explicitly make a `main` function to run our tests because we have only one
@@ -55,15 +65,15 @@ main = hspec spec
 Let's say we have an API that looks something like this:
 
 ```haskell
-data User = User { 
-  name :: Text 
-  , user_id :: Integer 
+data User = User {
+  name :: Text
+  , user_id :: Integer
   } deriving (Eq, Show, Generic)
 
 instance FromJSON User
 instance ToJSON User
 
-type UserApi = 
+type UserApi =
   -- One endpoint: create a user
   "user" :> Capture "userId" Integer :> Post '[JSON] User
 ```
@@ -74,11 +84,14 @@ to test. With that said, here's a sample handler for the endpoint described
 above:
 
 ```haskell
-userServer :: Server UserApi Handler
+userServer :: Server UserApi
 userServer = createUser
-  where creatUser userId
-  | userId > 5000 = pure $ User { name = "some user", user_id = userId }
-  | otherwise = throwError $ err400 { errBody = "userId is too small" }
+
+createUser :: Integer -> Handler User
+createUser userId = do
+  if userId > 5000
+    then pure $ User { name = "some user", user_id = userId }
+    else throwError $ err400 { errBody = "userId is too small" }
 ```
 
 ### Strategy 1: Spin Up a Server, Create a Client, Make Some Requests
@@ -97,23 +110,23 @@ Let's write some tests:
 businessLogicSpec :: Spec
 businessLogicSpec = do
   -- create a test client function
-  createUser = client (Proxy :: Proxy UserApi)
+  let createUser = client (Proxy :: Proxy UserApi)
   -- create a servant-client ClientEnv
-  baseUrl <- parseBaseUrl "http://localhost:8888"
-  manager <- newManager defaultManagerSettings
+  baseUrl <- runIO $ parseBaseUrl "http://localhost:8888"
+  manager <- runIO $ newManager defaultManagerSettings
   let clientEnv = mkClientEnv manager baseUrl
 
-  -- Run the server in another thread.
-  liftIO $ C.forkIO $ Warp.run 8888 (server userServer)
+  -- Run the server in another thread (`runIO` is from `hspec`)
+  runIO $ C.forkIO $ Warp.run 8888 (serve (Proxy :: Proxy UserApi) userServer)
 
   -- testing scenarios start here
   describe "POST /user" $ do
-    it "should create a user with a high enough ID" $
-      result <- runClientM clientEnv (createUser 50001)
-      result `shouldEqual` Right $ User { name = "some_user", user_id = "5001 "}
-    it "should fail with a too-small ID" $
-      result <- runClientM clientEnv (createUser 4999)
-      result `shouldEqual` Right $ User { name = "some_user", user_id = "5001 "}
+    it "should create a user with a high enough ID" $ do
+      result <- runClientM (createUser 50001) clientEnv
+      result `shouldBe` (Right $ User { name = "some user", user_id = 50001})
+    it "will it fail with a too-small ID?" $ do
+      result <- runClientM (createUser 4999) clientEnv
+      result `shouldBe` (Right $ User { name = "some user", user_id = 50001})
 ```
 
 ### Running These Tests
@@ -122,13 +135,26 @@ Let's run our tests and see what happens:
 
 ```
 $ cabal new-test all
+POST /user
+  should create a user with a high enough ID
+  should fail with a too-small ID FAILED [1]
+
+  Failures:
+
+  Testing.lhs:129:7:
+  1) POST /user should fail with a too-small ID
+       expected: Right (User {name = "some user", user_id = 50001})
+        but got: Left (FailureResponse (Response {responseStatusCode = Status {statusCode = 400, statusMessage = "Bad Request"}, responseHeaders = fromList [("Transfer-Encoding","chunked"),("Date","Fri, 12 Oct 2018 04:36:22 GMT"),("Server","Warp/3.2.25")], responseHttpVersion = HTTP/1.1, responseBody = "userId is too small"}))
+
+  To rerun use: --match "/POST /user/should fail with a too-small ID/"
 ```
 
-Great: we passed! Servers obviously get more complex, though, and we may not
-wish to create a whole suite of clients for our server every time. In our next
-scenario we're going to mock out a 3rd-party resource that our server talks to
-and we're going to be using `hspec-wai` to run our `Application` instance and
-to make requests.
+Hmm. One passed and one failed! It looks like I *was* expecting a success
+response in the second test, but I actually got a failure. We should fix that,
+but first I'd like to introduce `hspec-wai`, which will give us different
+mechanisms for making requests of our application and validating the responses
+we get.
+
 
 ## *Mocking* 3rd Party Resources
 
@@ -147,7 +173,7 @@ to get data out of Elasticsearch. Let's first define the Elasticsearch server
 and client using Servant API descriptions:
 
 ```haskell
-type SearchAPI = 
+type SearchAPI =
   -- We're using Aeson's Generic JSON `Value` to make things easier on
   -- ourselves. We're also representing only one Elasticsearch endpoint:
   -- get item by id
@@ -156,11 +182,11 @@ type SearchAPI =
 -- Here's our Servant Client function
 getDocument = client (Proxy :: Proxy SearchAPI)
 
--- We can use these helpers when we want to make requests 
+-- We can use these helpers when we want to make requests
 -- using our client function
 clientEnv :: Text -> Text -> IO ClientEnv
 clientEnv esHost esPort = do
-  baseUrl <- parseBaseUrl $ T.unpack $ esHost <> ":" <> esPort
+  baseUrl <- parseBaseUrl $ unpack $ esHost <> ":" <> esPort
   manager <- newManager defaultManagerSettings
   pure $ mkClientEnv manager baseUrl
 
@@ -170,22 +196,21 @@ runSearchClient esHost esPort = (clientEnv esHost esPort >>=) . runClientM
 
 ### Servant Server Example Using this 3rd-Party Resource
 
-So we've got an Elasticsearch server and a client to talk to it with one
-function that retrieves a document by its id. Let's now build a simple app 
-server that uses this client to retrieve documents. This is somewhat
-contrived, but hopefully it illustrates the typical three-tier application
-architecture.
+So we've got an Elasticsearch server and a client to talk to it. Let's now
+build a simple app server that uses this client to retrieve documents. This
+is somewhat contrived, but hopefully it illustrates the typical three-tier
+application architecture.
 
 One note: we're also going to take advantage of `aeson-lens` here, which may
-look a bit foreign. The gist of it is that we're going to traverse a JSON 
+look a bit foreign. The gist of it is that we're going to traverse a JSON
 `Value` from Elasticsearch and try to extract some  kind of document to
 return.
 
 ```haskell
-type DocApi = 
+type DocApi =
   "docs" :> Capture "docId" Integer :> Get '[JSON] Value
 
-docServer :: Text -> Text -> Server DocApi Handler
+docServer :: Text -> Text -> Server DocApi
 docServer esHost esPort = getDocById esHost esPort
 
 -- Our Handler tries to get a doc from Elasticsearch and then tries to parse
@@ -206,9 +231,11 @@ getDocById esHost esPort docId = do
 
 ### Testing Our Backend
 
-So the above represents our application. How shall we test this application?
-Ideally, we'd like it to make requests of a real Elasticsearch server, but we
-certainly don't want our tests to trigger requests to a live, production
+So the above represents our application and is close to a server we may
+actually deploy. How shall we test this application?
+
+Ideally, we'd like it to make requests of a *real* Elasticsearch server, but
+we certainly don't want our tests to trigger requests to a live, production
 database. In addition, we don't want to depend on our real Elasticsearch
 server having specific, consistent results for us to test against, because
 that would make our tests flaky (and flaky tests are sometimes described as
@@ -234,30 +261,34 @@ withElasticsearch action =
 esTestApp :: Application
 esTestApp = serve (Proxy :: Proxy SearchAPI) esTestServer
 
-esTestServer :: Server SearchAPI Handler
+esTestServer :: Server SearchAPI
 esTestServer = getESDocument
 
 getESDocument :: Integer -> Handler Value
 getESDocument docId
   -- arbitrary things we can trigger in our tests to check for failure
   -- We want to try to trigger different code paths
-  | docId > 1000 = pure . Left $ ConnectionError "Bad connection!"
+  | docId > 1000 = throwError err500
   | docId > 500 = pure . Object $ HM.fromList [("bad", String "data")]
-  | otherwise = pure $ Object $ HM.fromList [("_source", defaultDocument)] 
+  | otherwise = pure $ Object $ HM.fromList [("_source", Object $ HM.fromList [("a", String "b")])]
 ```
 
-Now, we should be ready to write some tests. As mentioned above we're going
-to use `hspec-wai` in this example to make test requests and to run our own
-application. This should simplify our testing code somewhat:
+Now, we should be ready to write some tests.
+
+In this case, we're going to use `hspec-wai`, which will give us a simple way
+to run our application, make requests, and make assertions against the
+responses we receive.
+
+Hopefully, this will simplify our testing code:
 
 ```haskell
 thirdPartyResourcesSpec :: Spec
 thirdPartyResourcesSpec = around_ withElasticsearch $ do
   -- we call `with` and pass  our servant-server `Application`
-  with (pure $ serve $ docServer "localhost" "9999") $ do
+  with (pure $ serve (Proxy :: Proxy DocApi) $ docServer "localhost" "9999") $ do
     describe "GET /docs" $ do
       it "should be able to get a document" $
-        -- `get` is a function from hspec-wai`. 
+        -- `get` is a function from hspec-wai`.
         get "/docs/1" `shouldRespondWith` 200
       it "should be able to handle connection failures" $
         -- We can also make custom HTTP requests with the  `request` function
@@ -267,11 +298,36 @@ thirdPartyResourcesSpec = around_ withElasticsearch $ do
       it "should be able to handle odd HTTP requests" $
         -- we can also make all kinds of arbitrary custom requests to see how
         -- our server responds using the `request` function:
-        -- request :: Method -> ByteString -> [Header] 
+        -- request :: Method -> ByteString -> [Header]
         --   -> LB.ByteString -> WaiSession SResponse
-        request methodPost "/docs/501" [] "{" `shouldRespondWith` 415
+        request methodPost "/docs/501" [] "{" `shouldRespondWith` 405
+      it "we can also do more with the Response using hspec-wai's matchers" $
+        -- see also `MatchHeader` and JSON-matching tools as well...
+        get "/docs/1" `shouldRespondWith` 200 { matchBody = MatchBody bodyMatcher }
+
+bodyMatcher :: [Network.HTTP.Types.Header] -> Body -> Maybe String
+bodyMatcher _ body = case (decode body :: Maybe Value) of
+  -- success in this case means we return `Nothing`
+  Just val | val == (Object $ HM.fromList [("a", String "b")]) -> Nothing
+  _ -> Just "This is how we represent failure: this message will be printed"
+
 ```
 
+What happens when we run these tests?
+
+```
+$ cabal new-test all
+...
+
+GET /docs
+  should be able to get a document
+  should be able to handle connection failures
+  should be able to handle parsing failures
+  should be able to handle odd HTTP requests
+  we can also do more with the Response using hspec-wai's matchers
+```
+
+Fortunately, they all passed!
 
 ## Servant Quickcheck
 
@@ -284,6 +340,8 @@ endpoint throws a 500" or "all 301 status codes also come with a Location
 header". The project even comes with a number of predicates that reference
 the [RFCs they originate from](https://github.com/haskell-servant/servant-quickcheck/blob/master/src/Servant/QuickCheck/Internal/Predicates.hs).
 
+Thus, it's one way to assert that your APIs conform to specs and best
+practices.
 
 ### Quickcheckable API
 
@@ -301,31 +359,94 @@ server :: IO (Server API)
 server = do
     mvar <- newMVar ""
     return $ (\x -> liftIO $ swapMVar mvar x)
-        :<|> (liftIO $ readMVar mvar >>= return . length)
+        :<|> (liftIO $ readMVar mvar >>= return . Prelude.length)
         :<|> (const $ return ())
 ```
 
 ### Using `servant-quickcheck`
 
-`servant-quickcheck` also has a cool mechanism where you can compare two API
-servers to demonstrate that they respond identically to requests. This may be
-useful if you are planning to rewrite one API in another language or with
-another web framework. You have to specify whether you're looking for
-`jsonEquality` vs regular `ByteString` equality, though:
+Let's build some tests for our API using `servant-quickcheck`.
+
+Similar to the above examples, we're going to create `Spec`s, but in this
+case, we'll rely on a number of predicates available from `servant-quickcheck`
+to see if our API server conforms to best practices:
 
 ```haskell
+-- Let's set some QuickCheck values
+args :: Args
+args = defaultArgs { maxSuccess = 500 }
+
+-- Here's a Servant Context object we'll use
+ctx :: Context '[BasicAuthCheck ()]
+ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
+
+
 servantQuickcheckSpec :: Spec
 servantQuickcheckSpec = describe "" $ do
   it "API demonstrates best practices" $
-    withServantServer api server $ \burl ->
+    -- `withServerServer` and `withServantServerAndContext` come from `servant-quickcheck`
+    withServantServerAndContext api ctx server $ \burl ->
+      -- `serverSatisfies` and the predicates also come from `servant-quickcheck`
       serverSatisfies api burl args (unauthorizedContainsWWWAuthenticate
                                  <%> not500
                                  <%> onlyJsonObjects
                                  <%> mempty)
 
   it "API doesn't have these things implemented yet" $
-    withServantServer api server $ \burl -> do
+    withServantServerAndContext api ctx server $ \burl -> do
       serverDoesntSatisfy api burl args (getsHaveCacheControlHeader
                                     <%> notAllowedContainsAllowHeader
                                     <%> mempty)
 ```
+
+Let's see what happens when we run these tests:
+
+
+```
+  API demonstrates best practices FAILED [2]
++++ OK, passed 500 tests.
+  API doesn't have these things implemented yet
+
+  src/Servant/QuickCheck/Internal/QuickCheck.hs:143:11:
+  2) Main[339:25] API demonstrates best practices
+       Failed:
+       Just Predicate failed
+            Predicate: onlyJsonObjects
+
+            Response:
+                 Status code: 200
+                 Headers:  "Transfer-Encoding": "chunked"
+                           "Date": "Fri, 12 Oct 2018 04:36:22 GMT"
+                           "Server": "Warp/3.2.25"
+                           "Content-Type": "application/json;charset=utf-8"
+                 Body: ""
+
+  To rerun use: --match "/Main[339:25]/API demonstrates best practices/"
+
+Randomized with seed 1046277487
+
+Finished in 0.4306 seconds
+```
+
+Hmm. It looks like we *thought* our API only return JSON objects, which is a
+best practice, but in fact, we *did* have an endpoint that returned an empty
+body, which you can see in the printed response above: `Body: ""`. We should
+consider revising our API to only return top-level JSON Objects in the future!
+
+### Other Cool Things
+
+`servant-quickcheck` also has a cool mechanism where you can compare two API
+servers to demonstrate that they respond identically to requests. This may be
+useful if you are planning to rewrite one API in another language or with
+another web framework. You have to specify whether you're looking for
+`jsonEquality` vs regular `ByteString` equality, though.
+
+## Conclusion
+
+There are lots of techniques for testing and we only covered a few here.
+
+Useful libraries such as `hspec-wai` have ways of testing Wai `Application`s
+and sending requests to them, while Servant's type-level DSL for defining APIs
+allows us to more easily mock out servers. Lastly, if you want a broad
+overview of where your application fits in with regard to best practices,
+consider using `servant-quickcheck`.

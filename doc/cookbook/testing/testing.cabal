@@ -17,14 +17,18 @@ executable cookbook-testing
   build-depends:       base == 4.*
                      , text >= 1.2
                      , aeson >= 1.2
+                     , lens-aeson
+                     , lens
                      , servant
                      , servant-client
                      , servant-server
                      , servant-quickcheck
+                     , http-client
                      , http-types >= 0.12
                      , hspec
                      , hspec-wai
                      , QuickCheck
+                     , unordered-containers
                      , warp >= 3.2
                      , wai >= 3.2
                      , wai-extra
