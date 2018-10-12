@@ -11,6 +11,7 @@ packages:
   https/
   pagination/
   sentry/
+  testing/
   ../../servant
   ../../servant-server
   ../../servant-client-core
