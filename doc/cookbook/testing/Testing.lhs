@@ -267,10 +267,12 @@ esTestApp = serve (Proxy :: Proxy SearchAPI) esTestServer
 esTestServer :: Server SearchAPI
 esTestServer = getESDocument
 
+-- This is the *mock* handler we're going to use. We create it
+-- here specifically to trigger different behavior in our tests.
 getESDocument :: Integer -> Handler Value
 getESDocument docId
-  -- arbitrary things we can trigger in our tests to check for failure
-  -- We want to try to trigger different code paths
+  -- arbitrary things we can use in our tests to simulate failure
+  -- We want to trigger different code paths
   | docId > 1000 = throwError err500
   | docId > 500 = pure . Object $ HM.fromList [("bad", String "data")]
   | otherwise = pure $ Object $ HM.fromList [("_source", Object $ HM.fromList [("a", String "b")])]
@@ -294,7 +296,6 @@ thirdPartyResourcesSpec = around_ withElasticsearch $ do
         -- `get` is a function from hspec-wai`.
         get "/docs/1" `shouldRespondWith` 200
       it "should be able to handle connection failures" $
-        -- We can also make custom HTTP requests with the  `request` function
         get "/docs/1001" `shouldRespondWith` 404
       it "should be able to handle parsing failures" $
         get "/docs/501" `shouldRespondWith` 400
