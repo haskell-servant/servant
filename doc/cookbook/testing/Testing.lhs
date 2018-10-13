@@ -153,7 +153,8 @@ Hmm. One passed and one failed! It looks like I *was* expecting a success
 response in the second test, but I actually got a failure. We should fix that,
 but first I'd like to introduce `hspec-wai`, which will give us different
 mechanisms for making requests of our application and validating the responses
-we get.
+we get. We're also going to spin up a fake Elasticsearch server, so that our
+server can think it's talking to a real database.
 
 
 ## *Mocking* 3rd Party Resources
@@ -201,10 +202,12 @@ build a simple app server that uses this client to retrieve documents. This
 is somewhat contrived, but hopefully it illustrates the typical three-tier
 application architecture.
 
-One note: we're also going to take advantage of `aeson-lens` here, which may
+One note: we're also going to take advantage of `lens-aeson` here, which may
 look a bit foreign. The gist of it is that we're going to traverse a JSON
 `Value` from Elasticsearch and try to extract some  kind of document to
 return.
+
+Imagine, then, that this is our real server implementation:
 
 ```haskell
 type DocApi =
@@ -232,7 +235,7 @@ getDocById esHost esPort docId = do
 ### Testing Our Backend
 
 So the above represents our application and is close to a server we may
-actually deploy. How shall we test this application?
+actually deploy. How then shall we test this application?
 
 Ideally, we'd like it to make requests of a *real* Elasticsearch server, but
 we certainly don't want our tests to trigger requests to a live, production
@@ -284,7 +287,7 @@ Hopefully, this will simplify our testing code:
 ```haskell
 thirdPartyResourcesSpec :: Spec
 thirdPartyResourcesSpec = around_ withElasticsearch $ do
-  -- we call `with` and pass  our servant-server `Application`
+  -- we call `with` and pass  our own servant-server `Application`
   with (pure $ serve (Proxy :: Proxy DocApi) $ docServer "localhost" "9999") $ do
     describe "GET /docs" $ do
       it "should be able to get a document" $
@@ -310,10 +313,10 @@ bodyMatcher _ body = case (decode body :: Maybe Value) of
   -- success in this case means we return `Nothing`
   Just val | val == (Object $ HM.fromList [("a", String "b")]) -> Nothing
   _ -> Just "This is how we represent failure: this message will be printed"
-
 ```
 
-What happens when we run these tests?
+Out of the box, `hspec-wai` provides a lot of useful tools for us to run tests
+against our application. What happens when we run these tests?
 
 ```
 $ cabal new-test all
@@ -327,7 +330,8 @@ GET /docs
   we can also do more with the Response using hspec-wai's matchers
 ```
 
-Fortunately, they all passed!
+Fortunately, they all passed! Let's move to another strategy: whole-API
+testing.
 
 ## Servant Quickcheck
 
@@ -335,13 +339,13 @@ Fortunately, they all passed!
 is a project that allows users to write tests for whole Servant APIs using
 quickcheck-style property-checking mechanisms.
 
-`servant-quickcheck` is great for asserting whole-API rules, such as "no
+`servant-quickcheck` is great for asserting API-wide rules, such as "no
 endpoint throws a 500" or "all 301 status codes also come with a Location
 header". The project even comes with a number of predicates that reference
 the [RFCs they originate from](https://github.com/haskell-servant/servant-quickcheck/blob/master/src/Servant/QuickCheck/Internal/Predicates.hs).
 
-Thus, it's one way to assert that your APIs conform to specs and best
-practices.
+In other words, it's one way to assert that your APIs conform to specs and
+best practices.
 
 ### Quickcheckable API
 
@@ -389,7 +393,7 @@ servantQuickcheckSpec = describe "" $ do
       -- `serverSatisfies` and the predicates also come from `servant-quickcheck`
       serverSatisfies api burl args (unauthorizedContainsWWWAuthenticate
                                  <%> not500
-                                 <%> onlyJsonObjects
+                                 <%> onlyJsonObjects  -- this one isn't true!
                                  <%> mempty)
 
   it "API doesn't have these things implemented yet" $
@@ -428,7 +432,7 @@ Randomized with seed 1046277487
 Finished in 0.4306 seconds
 ```
 
-Hmm. It looks like we *thought* our API only return JSON objects, which is a
+Hmm. It looks like we *thought* our API only returned JSON objects, which is a
 best practice, but in fact, we *did* have an endpoint that returned an empty
 body, which you can see in the printed response above: `Body: ""`. We should
 consider revising our API to only return top-level JSON Objects in the future!
