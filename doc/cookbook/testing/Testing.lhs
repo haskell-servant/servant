@@ -12,8 +12,8 @@ applications.
 There are many testing strategies you may wish to employ when testing your
 Servant application, but included below are three common testing patterns:
 
-- We'll use `servant-client` to derive client functions and then make valid
-requests of our API, running in another thread. This is great for testing
+- We'll use `servant-client` to derive client functions and then send valid
+requests to our API, running in another thread. This is great for testing
 that our **business logic** is correctly implemented with only valid HTTP
 requests.
 
@@ -36,7 +36,7 @@ Servant applications:
 
 ## Imports and Our Testing Module
 
-This recipe starts the following ingredients:
+This recipe starts with the following ingredients:
 
 ```haskell
 {-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds,
@@ -150,7 +150,7 @@ withUserApp action =
 
 businessLogicSpec :: Spec
 businessLogicSpec =
-  -- `around` will our Server before the tests and turn it off after
+  -- `around` will start our Server before the tests and turn it off after
   around_ withUserApp $ do
     -- create a test client function
     let createUser = client (Proxy :: Proxy UserApi)
