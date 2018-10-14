@@ -11,7 +11,13 @@ cabal-version:       >=1.10
 extra-source-files:
   Pagination.lhs
   dummy/Pagination.lhs
-tested-with:         GHC==7.8.4, GHC==7.10.3, GHC==8.0.2, GHC==8.2.2, GHC==8.4.3
+tested-with:
+  GHC==7.8.4
+  GHC==7.10.3
+  GHC==8.0.2
+  GHC==8.2.2
+  GHC==8.4.3
+  GHC==8.6.1
 
 executable cookbook-pagination
   main-is:             Pagination.lhs
@@ -21,7 +27,7 @@ executable cookbook-pagination
 
   if impl(ghc >= 8.0)
     hs-source-dirs: .
-    build-depends:       base >= 4.8 && <4.12
+    build-depends:       base >= 4.8
                        , aeson
                        , servant
                        , servant-server
