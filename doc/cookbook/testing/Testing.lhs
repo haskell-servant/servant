@@ -7,7 +7,36 @@ In this recipe we'll work through some common testing strategies and provide
 examples of utlizing these testing strategies in order to test Servant
 applications.
 
-This recipe uses the following ingredients:
+## Testing strategies
+
+There are many testing strategies you may wish to employ when testing your
+Servant application, but included below are three common testing patterns:
+
+- We'll use `servant-client` to derive client functions and then make valid
+requests of our API, running in another thread. This is great for testing
+that our **business logic** is correctly implemented with only valid HTTP
+requests.
+
+- We'll also use `hspec-wai` to make **arbitrary HTTP requests**, in order to
+test how our application may respond to invalid or otherwise unexpected
+requests.
+
+- Finally, we can also use `servant-quickcheck` for **whole-API tests**, in order
+to assert that our entire application conforms to **best practices**.
+
+## Useful Libraries
+
+The following libraries will often come in handy when we decide to test our
+Servant applications:
+
+- [hspec](https://hspec.github.io/)
+- [hspec-wai](http://hackage.haskell.org/package/hspec-wai)
+- [QuickCheck](http://hackage.haskell.org/package/QuickCheck)
+- [servant-quickcheck](https://hackage.haskell.org/package/servant-quickcheck)
+
+## Imports and Our Testing Module
+
+This recipe starts the following ingredients:
 
 ```haskell
 {-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds,
@@ -80,10 +109,13 @@ type UserApi =
 
 A real server would likely use a database to store, retrieve, and validate
 users, but we're going to do something really simple merely to have something
-to test. With that said, here's a sample handler for the endpoint described
-above:
+to test. With that said, here's a sample handler, server, and `Application`
+for the endpoint described above:
 
 ```haskell
+userApp :: Application
+userApp = serve (Proxy :: Proxy UserApi) userServer
+
 userServer :: Server UserApi
 userServer = createUser
 
@@ -107,26 +139,34 @@ of it and see how it responds.
 Let's write some tests:
 
 ```haskell
+withUserApp :: IO () -> IO ()
+withUserApp action =
+  -- we can spin up a server in another thread and kill that thread when done
+  -- in an exception-safe way
+  bracket (liftIO $ C.forkIO $ Warp.run 8888 userApp)
+    C.killThread
+    (const action)
+
+
 businessLogicSpec :: Spec
-businessLogicSpec = do
-  -- create a test client function
-  let createUser = client (Proxy :: Proxy UserApi)
-  -- create a servant-client ClientEnv
-  baseUrl <- runIO $ parseBaseUrl "http://localhost:8888"
-  manager <- runIO $ newManager defaultManagerSettings
-  let clientEnv = mkClientEnv manager baseUrl
+businessLogicSpec =
+  -- `around` will our Server before the tests and turn it off after
+  around_ withUserApp $ do
+    -- create a test client function
+    let createUser = client (Proxy :: Proxy UserApi)
+    -- create a servant-client ClientEnv
+    baseUrl <- runIO $ parseBaseUrl "http://localhost:8888"
+    manager <- runIO $ newManager defaultManagerSettings
+    let clientEnv = mkClientEnv manager baseUrl
 
-  -- Run the server in another thread (`runIO` is from `hspec`)
-  runIO $ C.forkIO $ Warp.run 8888 (serve (Proxy :: Proxy UserApi) userServer)
-
-  -- testing scenarios start here
-  describe "POST /user" $ do
-    it "should create a user with a high enough ID" $ do
-      result <- runClientM (createUser 50001) clientEnv
-      result `shouldBe` (Right $ User { name = "some user", user_id = 50001})
-    it "will it fail with a too-small ID?" $ do
-      result <- runClientM (createUser 4999) clientEnv
-      result `shouldBe` (Right $ User { name = "some user", user_id = 50001})
+    -- testing scenarios start here
+    describe "POST /user" $ do
+      it "should create a user with a high enough ID" $ do
+        result <- runClientM (createUser 50001) clientEnv
+        result `shouldBe` (Right $ User { name = "some user", user_id = 50001})
+      it "will it fail with a too-small ID?" $ do
+        result <- runClientM (createUser 4999) clientEnv
+        result `shouldBe` (Right $ User { name = "some user", user_id = 50001})
 ```
 
 ### Running These Tests
@@ -271,8 +311,8 @@ esTestServer = getESDocument
 -- here specifically to trigger different behavior in our tests.
 getESDocument :: Integer -> Handler Value
 getESDocument docId
-  -- arbitrary things we can use in our tests to simulate failure
-  -- We want to trigger different code paths
+  -- arbitrary things we can use in our tests to simulate failure:
+  -- we want to trigger different code paths.
   | docId > 1000 = throwError err500
   | docId > 500 = pure . Object $ HM.fromList [("bad", String "data")]
   | otherwise = pure $ Object $ HM.fromList [("_source", Object $ HM.fromList [("a", String "b")])]
@@ -289,7 +329,7 @@ Hopefully, this will simplify our testing code:
 ```haskell
 thirdPartyResourcesSpec :: Spec
 thirdPartyResourcesSpec = around_ withElasticsearch $ do
-  -- we call `with` and pass  our own servant-server `Application`
+  -- we call `with` from `hspec-wai` and pass *real* `Application`
   with (pure $ serve (Proxy :: Proxy DocApi) $ docServer "localhost" "9999") $ do
     describe "GET /docs" $ do
       it "should be able to get a document" $
@@ -450,8 +490,13 @@ another web framework. You have to specify whether you're looking for
 
 There are lots of techniques for testing and we only covered a few here.
 
-Useful libraries such as `hspec-wai` have ways of testing Wai `Application`s
+Useful libraries such as `hspec-wai` have ways of running Wai `Application`s
 and sending requests to them, while Servant's type-level DSL for defining APIs
-allows us to more easily mock out servers. Lastly, if you want a broad
-overview of where your application fits in with regard to best practices,
-consider using `servant-quickcheck`.
+allows us to more easily mock out servers and to derive clients, which will
+only craft valid requests.
+
+Lastly, if you want a broad overview of where your application fits in with
+regard to best practices, consider using `servant-quickcheck`.
+
+This program is available as a cabal project
+[here](https://github.com/haskell-servant/servant/tree/master/doc/cookbook/testing).
