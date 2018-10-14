@@ -253,6 +253,9 @@ Imagine, then, that this is our real server implementation:
 type DocApi =
   "docs" :> Capture "docId" Integer :> Get '[JSON] Value
 
+docsApp :: Text -> Text -> Application
+docsApp esHost esPort = serve (Proxy :: Proxy DocApi) $ docServer esHost esPort
+
 docServer :: Text -> Text -> Server DocApi
 docServer esHost esPort = getDocById esHost esPort
 
@@ -330,7 +333,7 @@ Hopefully, this will simplify our testing code:
 thirdPartyResourcesSpec :: Spec
 thirdPartyResourcesSpec = around_ withElasticsearch $ do
   -- we call `with` from `hspec-wai` and pass *real* `Application`
-  with (pure $ serve (Proxy :: Proxy DocApi) $ docServer "localhost" "9999") $ do
+  with (pure $ docsApp "localhost" "9999") $ do
     describe "GET /docs" $ do
       it "should be able to get a document" $
         -- `get` is a function from hspec-wai`.
