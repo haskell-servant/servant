@@ -16,10 +16,12 @@ cabal-version:       >=1.10
 extra-source-files:
   CHANGELOG.yaml
 tested-with:
-  GHC==7.10.3,
-  GHC==8.0.2,
-  GHC==8.2.2,
-  GHC==8.4.3
+  GHC ==7.10.3
+   || ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.1
+
 
 source-repository head
   type: git
@@ -37,7 +39,7 @@ library
                      , Servant.QuickCheck.Internal.QuickCheck
                      , Servant.QuickCheck.Internal.Equality
                      , Servant.QuickCheck.Internal.ErrorTypes
-  build-depends:       base >=4.8 && <4.12
+  build-depends:       base >=4.8 && <4.13
                      , base-compat-batteries >= 0.10.1 && <0.11
                      , aeson > 0.8 && < 2
                      , bytestring == 0.10.*
