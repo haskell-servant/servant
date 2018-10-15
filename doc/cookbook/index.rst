@@ -31,3 +31,4 @@ you name it!
   pagination/Pagination.lhs
   curl-mock/CurlMock.lhs
   sentry/Sentry.lhs
+  testing/Testing.lhs
