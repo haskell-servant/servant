@@ -20,7 +20,7 @@ cabal-version:       >=1.10
 tested-with:
   GHC==8.0.2
   GHC==8.2.2
-  GHC==8.4.3
+  GHC==8.4.4
   GHC==8.6.1
 extra-source-files:
   CHANGELOG.md
