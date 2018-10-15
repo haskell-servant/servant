@@ -1,19 +1,21 @@
 name:                servant-docs
 version:             0.11.2
-x-revision:          5
+x-revision:          6
+
 synopsis:            generate API docs for your servant webservice
+category:            Servant, Web
 description:
   Library for generating API docs from a servant API definition.
   .
   Runnable example <https://github.com/haskell-servant/servant/blob/master/servant-docs/example/greet.hs here>.
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md CHANGELOG>
+
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
-category:            Servant, Web
 build-type:          Simple
 cabal-version:       >=1.10
 tested-with:
@@ -21,8 +23,9 @@ tested-with:
   GHC==7.10.3
   GHC==8.0.2
   GHC==8.2.2
-  GHC==8.4.3
+  GHC==8.4.4
   GHC==8.6.1
+
 homepage:            http://haskell-servant.readthedocs.org/
 Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:

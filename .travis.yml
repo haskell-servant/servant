@@ -36,9 +36,9 @@ matrix:
     - compiler: "ghc-8.6.1"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.1], sources: [hvr-ghc]}}
-    - compiler: "ghc-8.4.3"
+    - compiler: "ghc-8.4.4"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.4.3], sources: [hvr-ghc]}}
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.4.4], sources: [hvr-ghc]}}
     - compiler: "ghc-8.2.2"
     # env: TEST=--disable-tests BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.2.2], sources: [hvr-ghc]}}
@@ -137,24 +137,10 @@ install:
 script:
   # test that source-distributions can be generated
   - echo Packaging... && echo -en 'travis_fold:start:sdist\\r'
-  - (cd "servant" && cabal sdist)
-  - (cd "servant-client" && cabal sdist)
-  - (cd "servant-client-core" && cabal sdist)
-  - (cd "servant-docs" && cabal sdist)
-  - (cd "servant-foreign" && cabal sdist)
-  - (cd "servant-server" && cabal sdist)
-  - (cd "doc/tutorial" && cabal sdist)
-  - (cd "doc/cookbook/basic-auth" && cabal sdist)
-  - (cd "doc/cookbook/db-postgres-pool" && cabal sdist)
-  - (cd "doc/cookbook/db-sqlite-simple" && cabal sdist)
-  - (cd "doc/cookbook/file-upload" && cabal sdist)
-  - (cd "doc/cookbook/generic" && cabal sdist)
-  - (cd "doc/cookbook/https" && cabal sdist)
-  - (cd "doc/cookbook/structuring-apis" && cabal sdist)
-  - (cd "doc/cookbook/using-custom-monad" && cabal sdist)
+  - cabal new-sdist all
   - echo -en 'travis_fold:end:sdist\\r'
   - echo Unpacking... && echo -en 'travis_fold:start:unpack\\r'
-  - mv "servant"/dist/servant-*.tar.gz "servant-client"/dist/servant-client-*.tar.gz "servant-client-core"/dist/servant-client-core-*.tar.gz "servant-docs"/dist/servant-docs-*.tar.gz "servant-foreign"/dist/servant-foreign-*.tar.gz "servant-server"/dist/servant-server-*.tar.gz "doc/tutorial"/dist/tutorial-*.tar.gz "doc/cookbook/basic-auth"/dist/cookbook-basic-auth-*.tar.gz "doc/cookbook/db-postgres-pool"/dist/cookbook-db-postgres-pool-*.tar.gz "doc/cookbook/db-sqlite-simple"/dist/cookbook-db-sqlite-simple-*.tar.gz "doc/cookbook/file-upload"/dist/cookbook-file-upload-*.tar.gz "doc/cookbook/generic"/dist/cookbook-generic-*.tar.gz "doc/cookbook/https"/dist/cookbook-https-*.tar.gz "doc/cookbook/structuring-apis"/dist/cookbook-structuring-apis-*.tar.gz "doc/cookbook/using-custom-monad"/dist/cookbook-using-custom-monad-*.tar.gz ${DISTDIR}/
+  - mv dist-newstyle/sdist/*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: servant-*/*.cabal servant-client-*/*.cabal servant-client-core-*/*.cabal servant-docs-*/*.cabal servant-foreign-*/*.cabal servant-server-*/*.cabal tutorial-*/*.cabal cookbook-basic-auth-*/*.cabal cookbook-db-postgres-pool-*/*.cabal cookbook-db-sqlite-simple-*/*.cabal cookbook-file-upload-*/*.cabal cookbook-generic-*/*.cabal cookbook-https-*/*.cabal cookbook-structuring-apis-*/*.cabal cookbook-using-custom-monad-*/*.cabal\\n' > cabal.project"
