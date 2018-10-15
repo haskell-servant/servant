@@ -215,17 +215,19 @@ instance TL.TypeError ('TL.Text "No instance for (), use NoContent instead.")
 -- >>> type MyAPI = "path" :> ReqBody '[MyContentType] Int :> Get '[JSON] Int
 --
 class Accept ctype => MimeUnrender ctype a where
-    mimeUnrender :: Proxy ctype -> ByteString -> Either String a
+    mimeUnrender :: Proxy ctype -> ByteString -> Either BodyDecodingError a
     mimeUnrender p = mimeUnrenderWithType p (contentType p)
 
     -- | Variant which is given the actual 'M.MediaType' provided by the other party.
     --
     -- In the most cases you don't want to branch based on the 'M.MediaType'.
     -- See <https://github.com/haskell-servant/servant/pull/552 pr552> for a motivating example.
-    mimeUnrenderWithType :: Proxy ctype -> M.MediaType -> ByteString -> Either String a
+    mimeUnrenderWithType :: Proxy ctype -> M.MediaType -> ByteString -> Either BodyDecodingError a
     mimeUnrenderWithType p _ = mimeUnrender p
 
     {-# MINIMAL mimeUnrender | mimeUnrenderWithType #-}
+
+type BodyDecodingError = String
 
 class AllCTUnrender (list :: [*]) a where
     canHandleCTypeH

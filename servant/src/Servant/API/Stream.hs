@@ -94,7 +94,9 @@ instance ToStreamGenerator [a] a where
 -- @ResultStream@ that captures the setup, takedown, and incremental logic for
 -- a read, being an IO continuation that takes a producer of Just either values
 -- or errors that terminates with a Nothing.
-newtype ResultStream a = ResultStream { runResultStream :: forall b. (IO (Maybe (Either String a)) -> IO b) -> IO b }
+newtype ResultStream a = ResultStream { runResultStream :: forall b. (IO (Maybe (Either BodyDecodingError a)) -> IO b) -> IO b }
+
+type BodyDecodingError = String
 
 -- | FromResultStream is intended to be implemented for types such as Conduit, Pipe, etc. By implementing this class, all such streaming abstractions can be used directly on the client side for talking to streaming endpoints.
 class FromResultStream a b | b -> a where
