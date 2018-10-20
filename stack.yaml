@@ -7,6 +7,8 @@ packages:
 - servant-foreign/
 - servant-server/
 - servant/
+extra-deps:
+- aeson-1.4.1.0
 
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/
