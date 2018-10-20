@@ -5,7 +5,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RankNTypes    #-}
 {-# LANGUAGE TypeOperators #-}
-module Main (main, api, getLink, routesLinks, cliGet) where
+module Main (main, api, getLink, routesLinks, cliGet, mainMyMonad) where
 
 import Control.Exception        (throwIO)
 import Data.Proxy               (Proxy (..))
@@ -103,4 +103,45 @@ main = do
             putStrLn "Starting cookbook-generic at http://localhost:8000"
             run 8000 app
         _ -> putStrLn "To run, pass 'run' argument: cabal new-run cookbook-generic run"
+```
+
+## Using generics together with a custom monad
+
+If your app uses a custom monad, here's how you can combine it with
+generics.
+
+```haskell
+data AppCustomState =
+  AppCustomState
+
+type AppM = ReaderT AppCustomState Handler
+
+apiMyMonad :: Proxy (ToServantApi Routes)
+apiMyMonad = genericApi (Proxy :: Proxy Routes)
+
+getRouteMyMonad :: Int -> AppM String
+getRouteMyMonad = return . show
+
+putRouteMyMonad :: Int -> AppM Bool
+putRouteMyMonad = return . odd
+
+recordMyMonad :: Routes (AsServerT AppM)
+recordMyMonad = Routes {_get = getRouteMyMonad, _put = putRouteMyMonad}
+
+-- natural transformation
+nt :: AppCustomState -> AppM a -> Handler a
+nt s x = runReaderT x s
+
+appMyMonad :: AppCustomState -> Application
+appMyMonad state = genericServeT (nt state) recordMyMonad
+
+mainMyMonad :: IO ()
+mainMyMonad = do
+  args <- getArgs
+  case args of
+    ("run":_) -> do
+      putStrLn "Starting cookbook-generic at http://localhost:8000"
+      run 8000 (appMyMonad AppCustomState)
+    _ ->
+      putStrLn "To run, pass 'run' argument: cabal new-run cookbook-generic run"
 ```
