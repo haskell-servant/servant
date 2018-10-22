@@ -5,7 +5,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RankNTypes    #-}
 {-# LANGUAGE TypeOperators #-}
-module Main (main, api, getLink, routesLinks, cliGet, mainMyMonad) where
+module Main (main, api, getLink, routesLinks, cliGet) where
 
 import Control.Exception        (throwIO)
 import Data.Proxy               (Proxy (..))
@@ -102,6 +102,10 @@ main = do
         ("run":_) -> do
             putStrLn "Starting cookbook-generic at http://localhost:8000"
             run 8000 app
+        -- see this cookbook below for custom-monad explanation
+        ("run-custom-monad":_) -> do
+            putStrLn "Starting cookbook-generic with a custom monad at http://localhost:8000"
+            run 8000 (appMyMonad AppCustomState)
         _ -> putStrLn "To run, pass 'run' argument: cabal new-run cookbook-generic run"
 ```
 
@@ -134,14 +138,3 @@ nt s x = runReaderT x s
 
 appMyMonad :: AppCustomState -> Application
 appMyMonad state = genericServeT (nt state) recordMyMonad
-
-mainMyMonad :: IO ()
-mainMyMonad = do
-  args <- getArgs
-  case args of
-    ("run":_) -> do
-      putStrLn "Starting cookbook-generic at http://localhost:8000"
-      run 8000 (appMyMonad AppCustomState)
-    _ ->
-      putStrLn "To run, pass 'run' argument: cabal new-run cookbook-generic run"
-```

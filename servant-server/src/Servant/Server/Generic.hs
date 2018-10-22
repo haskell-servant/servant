@@ -13,7 +13,7 @@ module Servant.Server.Generic (
     AsServer,
     genericServe,
     genericServeT,
-    genericServeT',
+    genericServeTWithContext,
     genericServer,
     genericServerT,
   ) where
@@ -62,7 +62,7 @@ genericServeT f server = serve p $ hoistServer p f (genericServerT server)
 --   while using the given 'Context' to serve the application (contexts are typically
 --   used by auth-related combinators in servant, e.g to hold auth checks) and the given
 --   transformation to map all the handlers back to the 'Handler' monad.
-genericServeT'
+genericServeTWithContext
   :: forall (routes :: * -> *) (m :: * -> *) (ctx :: [*]).
      ( GenericServant routes (AsServerT m)
      , GenericServant routes AsApi
@@ -73,7 +73,7 @@ genericServeT'
   -> routes (AsServerT m)         -- ^ your record full of request handlers
   -> Context ctx                  -- ^ the 'Context' to serve the application with
   -> Application
-genericServeT' f server ctx =
+genericServeTWithContext f server ctx =
   serveWithContext p ctx $
   hoistServerWithContext p pctx f (genericServerT server)
   where
