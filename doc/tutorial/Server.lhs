@@ -632,7 +632,7 @@ kind and abort early. The next two sections cover how to do just that.
 ### Performing IO
 
 Another important instances from the list above are `MonadIO m => MonadIO
-(ExceptT e m)`, and therefore also `MonadIO Handler` as there is `MonadIO IO` instance..
+(ExceptT e m)`, and therefore also `MonadIO Handler` as there is `MonadIO IO` instance.
 [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html)
 is a class from the **transformers** package defined as:
 
