@@ -7,10 +7,11 @@
 {-# LANGUAGE TypeOperators #-}
 module Main (main, api, getLink, routesLinks, cliGet) where
 
-import Control.Exception        (throwIO)
-import Data.Proxy               (Proxy (..))
-import Network.Wai.Handler.Warp (run)
-import System.Environment       (getArgs)
+import Control.Exception          (throwIO)
+import Control.Monad.Trans.Reader (ReaderT, runReaderT)
+import Data.Proxy                 (Proxy (..))
+import Network.Wai.Handler.Warp   (run)
+import System.Environment         (getArgs)
 
 import Servant
 import Servant.Client
