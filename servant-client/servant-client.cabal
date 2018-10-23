@@ -1,6 +1,6 @@
 name:                servant-client
 version:             0.14
-x-revision:          2
+x-revision:          3
 
 synopsis: automatical derivation of querying functions for servant webservices
 category:            Servant, Web
@@ -117,7 +117,7 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      generics-sop      >= 0.3.2.0 && < 0.4
+      generics-sop      >= 0.3.2.0 && < 0.5
     , hspec             >= 2.5.1   && < 2.6
     , HUnit             >= 1.6     && < 1.7
     , network           >= 2.6.3.2 && < 2.9
