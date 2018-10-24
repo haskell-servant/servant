@@ -1,5 +1,32 @@
 releases:
 
+  - version: "0.0.7.3"
+    changes:
+      - description: Support for servant-0.14
+        issue: 53
+        authors: phadej
+        date: 2018-06-12
+
+      - description: Fix a failure from OnlyJsonObjects when there is no content-type.
+        issue: 55
+        authors: Phenitei
+        date: 2018-08-27
+
+      - description: A bug fix where notAllowedContainsAllowHeader would print the initial request alongside the failure instead of the request causing the failure when it failed.
+        issue: 57
+        authors: Phenitei
+        date: 2018-08-29
+
+      - description: QuickCheck 2.12 compatibility
+        issue: 58
+        authors: parsonsmatt
+        date: 2018-10-12
+
+      - description: GHC 8.6 compatibility
+        issue: 59
+        authors: phadej
+        date: 2018-10-15
+
   - version: "0.0.7.2"
     changes:
 
