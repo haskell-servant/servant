@@ -1,6 +1,6 @@
 name:                servant-client-core
 version:             0.14.1
-x-revision:          1
+x-revision:          2
 
 synopsis:            Core functionality and class for client function generation for servant APIs
 category:            Web, Servant
@@ -73,7 +73,7 @@ library
     , base64-bytestring     >= 1.0.0.1  && < 1.1
     , exceptions            >= 0.10.0   && < 0.11
     , free                  >= 5.0.2    && < 5.2
-    , generics-sop          >= 0.3.2.0  && < 0.4
+    , generics-sop          >= 0.3.2.0  && < 0.5
     , http-api-data         >= 0.3.8.1  && < 0.4
     , http-media            >= 0.7.1.2  && < 0.8
     , http-types            >= 0.12.1   && < 0.13
