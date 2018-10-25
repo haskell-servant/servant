@@ -41,6 +41,9 @@ This recipe starts with the following ingredients:
 ```haskell
 {-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds,
   DeriveGeneric, TypeOperators #-}
+import           Prelude ()
+import           Prelude.Compat
+
 import qualified Control.Concurrent               as C
 import           Control.Concurrent.MVar
 import           Control.Exception                (bracket)
@@ -48,9 +51,9 @@ import           Control.Lens              hiding (Context)
 import           Data.Aeson
 import           Data.Aeson.Lens
 import qualified Data.HashMap.Strict              as HM
-import           Data.Text
+import           Data.Text                        (Text, unpack)
 import           GHC.Generics
-import           Network.HTTP.Client      hiding (Proxy)
+import           Network.HTTP.Client       hiding (Proxy)
 import           Network.HTTP.Types
 import           Network.Wai
 import qualified Network.Wai.Handler.Warp         as Warp
@@ -407,7 +410,7 @@ server :: IO (Server API)
 server = do
     mvar <- newMVar ""
     return $ (\x -> liftIO $ swapMVar mvar x)
-        :<|> (liftIO $ readMVar mvar >>= return . Prelude.length)
+        :<|> (liftIO $ readMVar mvar >>= return . length)
         :<|> (const $ return ())
 ```
 

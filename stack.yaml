@@ -1,5 +1,5 @@
 # Let's try to keep resolver at the first day of the month
-resolver: nightly-2018-07-08
+resolver: nightly-2018-09-28 # Last nightly with GHC-8.4.3
 packages:
 - servant-client/
 - servant-client-core/
@@ -10,3 +10,7 @@ packages:
 
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/
+
+extra-deps:
+- generics-sop-0.4.0.1
+- sop-core-0.4.0.0

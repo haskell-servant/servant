@@ -100,11 +100,11 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      generics-sop      >= 0.3.2.0 && < 0.4
-    , hspec             >= 2.5.1   && < 2.6
-    , HUnit             >= 1.6     && < 1.7
-    , network           >= 2.6.3.2 && < 2.8
-    , QuickCheck        >= 2.10.1  && < 2.12
+      generics-sop      >= 0.4.0.1  && < 0.5
+    , hspec             >= 2.5.1    && < 2.6
+    , HUnit             >= 1.6      && < 1.7
+    , network           >= 2.8.0.0  && < 2.9
+    , QuickCheck        >= 2.12.6.1 && < 2.13
     , servant           == 0.14.*
     , servant-server    == 0.14.*
 
