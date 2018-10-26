@@ -14,3 +14,8 @@ packages:
 extra-deps:
 - generics-sop-0.4.0.1
 - sop-core-0.4.0.0
+- QuickCheck-2.12.6.1
+- network-2.8.0.0
+- hspec-2.5.8
+- hspec-core-2.5.8
+- hspec-discover-2.5.8
