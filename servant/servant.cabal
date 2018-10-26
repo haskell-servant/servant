@@ -146,10 +146,10 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      aeson-compat         >= 0.3.8   && < 0.4
-    , hspec                >= 2.5.4   && < 2.6
-    , QuickCheck           >= 2.11.3  && < 2.12
-    , quickcheck-instances >= 0.3.18  && < 0.4
+      aeson-compat         >= 0.3.8    && < 0.4
+    , hspec                >= 2.5.4    && < 2.6
+    , QuickCheck           >= 2.12.6.1 && < 2.13
+    , quickcheck-instances >= 0.3.19   && < 0.4
 
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.5.4 && < 2.6
