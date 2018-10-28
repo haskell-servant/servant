@@ -112,7 +112,7 @@ import           Servant.API.ResponseHeaders
                  (AddHeader, BuildHeadersTo (buildHeadersTo),
                  GetHeaders (getHeaders), HList (..), Headers (..),
                  ResponseHeader (..), addHeader, getHeadersHList, getResponse,
-                 noHeader)
+                 noHeader, HasResponseHeader, lookupResponseHeader)
 import           Servant.API.Stream
                  (BoundaryStrategy (..), ByteStringParser (..),
                  FramingRender (..), FramingUnrender (..),
