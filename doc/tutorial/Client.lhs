@@ -21,7 +21,8 @@ import Network.HTTP.Client (newManager, defaultManagerSettings)
 import Servant.API
 import Servant.Client
 import Servant.Types.SourceT (foreach)
-import Control.Monad.Codensity (Codensity)
+
+import qualified Servant.Client.Streaming as S
 ```
 
 Also, we need examples for some domain specific data types:
@@ -224,6 +225,8 @@ type StreamAPI = "positionStream" :> StreamGet NewlineFraming JSON (SourceIO Pos
 
 Note that we use the same `SourceIO` type as on the server-side 
 (this is different from `servant-0.14`).
+However, we have to use different client, `Servant.Client.Streaming`,
+which can stream (but has different API).
 
 In any case, here's how we write a function to query our API:
 
@@ -231,21 +234,18 @@ In any case, here's how we write a function to query our API:
 streamAPI :: Proxy StreamAPI
 streamAPI = Proxy
 
-posStream :: ClientM (Codensity IO (SourceIO Position))
-posStream = client streamAPI
+posStream :: S.ClientM (SourceIO Position)
+posStream = S.client streamAPI
 ```
 
-We'll get back a `Codensity IO (SourceIO Position)`. The wrapping in
-`Codensity` is generally necessary, as `Codensity` lets us `bracket` things
-properly.  This is best explained by an example. To consume `ClientM (Codentity
-IO ...)` we can use `withClientM` helper: the underlying HTTP connection is
-open only until the inner functions exits.  Inside the block we can e.g just
-print out all elements from a `SourceIO`, to give some idea of how to work with
-them.
+We'll get back a `SourceIO Position`. Instead of `runClientM`, the streaming
+client provides `withClientM`: the underlying HTTP connection is open only
+until the inner functions exits.  Inside the block we can e.g just print out
+all elements from a `SourceIO`, to give some idea of how to work with them.
 
 ``` haskell
-printSourceIO :: Show a => ClientEnv -> ClientM (Codensity IO (SourceIO a)) -> IO ()
-printSourceIO env c = withClientM c env $ \e -> case e of
+printSourceIO :: Show a => ClientEnv -> S.ClientM (SourceIO a) -> IO ()
+printSourceIO env c = S.withClientM c env $ \e -> case e of
     Left err -> putStrLn $ "Error: " ++ show err
     Right rs -> foreach fail print rs
 ```

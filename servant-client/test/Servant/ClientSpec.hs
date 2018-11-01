@@ -72,7 +72,7 @@ import           Servant.Server
 import           Servant.Server.Experimental.Auth
 
 -- This declaration simply checks that all instances are in place.
-_ = client comprehensiveAPI
+_ = client comprehensiveAPIWithoutStreaming
 
 spec :: Spec
 spec = describe "Servant.Client" $ do

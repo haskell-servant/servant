@@ -27,7 +27,7 @@ import           Text.Read
 import           Data.Conduit
 import qualified Data.Conduit.Combinators     as C
 import           Servant
-import           Servant.Client
+import           Servant.Client.Streaming
 import           Servant.Conduit ()
 
 import qualified Network.Wai.Handler.Warp     as Warp

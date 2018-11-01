@@ -7,7 +7,6 @@ module Servant.Client
   ( client
   , ClientM
   , runClientM
-  , withClientM
   , ClientEnv(..)
   , mkClientEnv
   , hoistClient

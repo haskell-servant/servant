@@ -19,18 +19,19 @@ import           Network.Wai
                  (Application)
 import           System.Environment
                  (getArgs, lookupEnv)
-import System.IO (IOMode (..))
+import           System.IO
+                 (IOMode (..))
 import           Text.Read
                  (readMaybe)
 
 import qualified Pipes                    as P
+import           Pipes.ByteString         as PBS
 import qualified Pipes.Prelude            as P
 import           Pipes.Safe
                  (SafeT)
 import qualified Pipes.Safe.Prelude       as P
 import           Servant
-import Pipes.ByteString as PBS
-import           Servant.Client
+import           Servant.Client.Streaming
 import           Servant.Pipes ()
 
 import qualified Network.Wai.Handler.Warp as Warp

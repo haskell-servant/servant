@@ -70,7 +70,6 @@ library
     , http-api-data         >= 0.3.8.1  && < 0.4
     , http-media            >= 0.7.1.2  && < 0.8
     , http-types            >= 0.12.1   && < 0.13
-    , kan-extensions        >= 5.2      && < 5.3
     , network-uri           >= 2.6.1.0  && < 2.7
     , safe                  >= 0.3.17   && < 0.4
 

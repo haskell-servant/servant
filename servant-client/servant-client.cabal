@@ -33,7 +33,9 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
+    Servant.Client.Streaming
     Servant.Client.Internal.HttpClient
+    Servant.Client.Internal.HttpClient.Streaming
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4

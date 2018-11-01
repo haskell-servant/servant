@@ -46,7 +46,6 @@ library
     , http-client
     , http-media
     , http-types
-    , kan-extensions
     , mtl
     , string-conversions
     , text

@@ -38,7 +38,7 @@ import           Text.Read
                  (readMaybe)
 
 import           Servant
-import           Servant.Client
+import           Servant.Client.Streaming
 import qualified Servant.Types.SourceT as S
 
 import qualified Network.Wai.Handler.Warp     as Warp

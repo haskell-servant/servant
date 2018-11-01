@@ -89,7 +89,7 @@ spec = describe "Servant.Links" $ do
         allNames ["Seneca", "Aurelius"] `shouldBeLink` "all/Seneca/Aurelius"
 
     it "can generate all links for ComprehensiveAPIWithoutRaw" $ do
-        let (firstLink :<|> _) = allLinks comprehensiveAPIWithoutRaw
+        let firstLink :<|> _ = allLinks comprehensiveAPIWithoutRaw
         firstLink `shouldBeLink` ""
 
 -- |

@@ -31,8 +31,10 @@ import           Servant.Client.Core.Internal.Request
 class Monad m => RunClient m where
   -- | How to make a request.
   runRequest :: Request -> m Response
-  streamingRequest :: Request -> m StreamingResponse
   throwServantError :: ServantError -> m a
+
+class RunClient m =>  RunStreamingClient m where
+    withStreamingRequest :: Request -> (StreamingResponse -> IO a) ->  m a
 
 checkContentTypeHeader :: RunClient m => Response -> m MediaType
 checkContentTypeHeader response =
@@ -56,5 +58,10 @@ decodedAs response contentType = do
 
 instance ClientF ~ f => RunClient (Free f) where
     runRequest req  = liftF (RunRequest req id)
-    streamingRequest req = liftF (StreamingRequest req id)
     throwServantError = liftF . Throw
+
+{-
+Free and streaming?
+instance ClientF ~ f => RunStreamingClient (Free f) where
+    streamingRequest req = liftF (StreamingRequest req id)
+-}

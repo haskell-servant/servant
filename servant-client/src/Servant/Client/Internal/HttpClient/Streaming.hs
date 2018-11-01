@@ -1,15 +1,20 @@
 {-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
-module Servant.Client.Internal.HttpClient where
+module Servant.Client.Internal.HttpClient.Streaming (
+    module Servant.Client.Internal.HttpClient.Streaming,
+    ClientEnv (..),
+    mkClientEnv,
+    clientResponseToResponse,
+    requestToClientRequest,
+    catchConnectionError,
+    ) where
 
 import           Prelude ()
 import           Prelude.Compat
@@ -19,56 +24,34 @@ import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Base
                  (MonadBase (..))
-import           Control.Monad.Catch
-                 (MonadCatch, MonadThrow)
+import           Control.Monad.Codensity
+                 (Codensity (..))
 import           Control.Monad.Error.Class
                  (MonadError (..))
 import           Control.Monad.Reader
 import           Control.Monad.STM
                  (atomically)
-import           Control.Monad.Trans.Control
-                 (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
-import           Data.ByteString.Builder
-                 (toLazyByteString)
-import qualified Data.ByteString.Lazy        as BSL
+import qualified Data.ByteString.Lazy               as BSL
 import           Data.Foldable
-                 (for_, toList)
+                 (for_)
 import           Data.Functor.Alt
                  (Alt (..))
-import           Data.Maybe
-                 (maybeToList)
 import           Data.Proxy
                  (Proxy (..))
-import           Data.Semigroup
-                 ((<>))
-import           Data.Sequence
-                 (fromList)
-import           Data.String
-                 (fromString)
-import qualified Data.Text                   as T
 import           Data.Time.Clock
                  (getCurrentTime)
 import           GHC.Generics
-import           Network.HTTP.Media
-                 (renderHeader)
 import           Network.HTTP.Types
-                 (hContentType, renderQuery, statusCode)
+                 (statusCode)
+
+import qualified Network.HTTP.Client                as Client
+
 import           Servant.Client.Core
+import           Servant.Client.Internal.HttpClient
+                 (ClientEnv (..), catchConnectionError,
+                 clientResponseToResponse, mkClientEnv, requestToClientRequest)
 
-import qualified Network.HTTP.Client         as Client
-
--- | The environment in which a request is run.
-data ClientEnv
-  = ClientEnv
-  { manager :: Client.Manager
-  , baseUrl :: BaseUrl
-  , cookieJar :: Maybe (TVar Client.CookieJar)
-  }
-
--- | 'ClientEnv' smart constructor.
-mkClientEnv :: Client.Manager -> BaseUrl -> ClientEnv
-mkClientEnv mgr burl = ClientEnv mgr burl Nothing
 
 -- | Generates a set of client functions for an API.
 --
@@ -111,20 +94,12 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
-  { unClientM :: ReaderT ClientEnv (ExceptT ServantError IO) a }
+  { unClientM :: ReaderT ClientEnv (ExceptT ServantError (Codensity IO)) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ServantError, MonadThrow
-           , MonadCatch)
+           , MonadReader ClientEnv, MonadError ServantError)
 
 instance MonadBase IO ClientM where
-  liftBase = ClientM . liftBase
-
-instance MonadBaseControl IO ClientM where
-  type StM ClientM a = Either ServantError a
-
-  liftBaseWith f = ClientM (liftBaseWith (\g -> f (g . unClientM)))
-
-  restoreM st = ClientM (restoreM st)
+  liftBase = ClientM . liftIO
 
 -- | Try clients in order, last error is preserved.
 instance Alt ClientM where
@@ -134,14 +109,20 @@ instance RunClient ClientM where
   runRequest = performRequest
   throwServantError = throwError
 
+instance RunStreamingClient ClientM where
+  withStreamingRequest = performWithStreamingRequest
+
 instance ClientLike (ClientM a) (ClientM a) where
   mkClient = id
 
-runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
-runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
+withClientM :: ClientM a -> ClientEnv -> (Either ServantError a -> IO b) -> IO b
+withClientM cm env k =
+    let Codensity f = runExceptT $ flip runReaderT env $ unClientM cm
+    in f k
 
 performRequest :: Request -> ClientM Response
 performRequest req = do
+    -- TODO: should use Client.withResponse here too
   ClientEnv m burl cookieJar' <- ask
   let clientRequest = requestToClientRequest burl req
   request <- case cookieJar' of
@@ -172,57 +153,20 @@ performRequest req = do
         throwError $ FailureResponse ourResponse
       return ourResponse
 
-clientResponseToResponse :: Client.Response a -> GenResponse a
-clientResponseToResponse r = Response
-  { responseStatusCode = Client.responseStatus r
-  , responseBody = Client.responseBody r
-  , responseHeaders = fromList $ Client.responseHeaders r
-  , responseHttpVersion = Client.responseVersion r
-  }
+performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a
+performWithStreamingRequest req k = do
+  m <- asks manager
+  burl <- asks baseUrl
+  let request = requestToClientRequest burl req
+  ClientM $ lift $ lift $ Codensity $ \k1 ->
+      Client.withResponse request m $ \res -> do
+          let status = Client.responseStatus res
+              status_code = statusCode status
 
-requestToClientRequest :: BaseUrl -> Request -> Client.Request
-requestToClientRequest burl r = Client.defaultRequest
-  { Client.method = requestMethod r
-  , Client.host = fromString $ baseUrlHost burl
-  , Client.port = baseUrlPort burl
-  , Client.path = BSL.toStrict
-                $ fromString (baseUrlPath burl)
-               <> toLazyByteString (requestPath r)
-  , Client.queryString = renderQuery True . toList $ requestQueryString r
-  , Client.requestHeaders =
-    maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
-  , Client.requestBody = body
-  , Client.secure = isSecure
-  }
-  where
-    -- Content-Type and Accept are specified by requestBody and requestAccept
-    headers = filter (\(h, _) -> h /= "Accept" && h /= "Content-Type") $
-        toList $requestHeaders r
+          -- we throw FailureResponse in IO :(
+          unless (status_code >= 200 && status_code < 300) $ do
+              b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody res)
+              throwIO $ FailureResponse $ clientResponseToResponse res { Client.responseBody = b }
 
-    acceptHdr
-        | null hs   = Nothing
-        | otherwise = Just ("Accept", renderHeader hs)
-      where
-        hs = toList $ requestAccept r
-
-    convertBody bd = case bd of
-      RequestBodyLBS body' -> Client.RequestBodyLBS body'
-      RequestBodyBS body' -> Client.RequestBodyBS body'
-      RequestBodyBuilder size body' -> Client.RequestBodyBuilder size body'
-      RequestBodyStream size body' -> Client.RequestBodyStream size body'
-      RequestBodyStreamChunked body' -> Client.RequestBodyStreamChunked body'
-      RequestBodyIO body' -> Client.RequestBodyIO (convertBody <$> body')
-
-    (body, contentTypeHdr) = case requestBody r of
-      Nothing -> (Client.RequestBodyLBS "", Nothing)
-      Just (body', typ)
-        -> (convertBody body', Just (hContentType, renderHeader typ))
-
-    isSecure = case baseUrlScheme burl of
-      Http -> False
-      Https -> True
-
-catchConnectionError :: IO a -> IO (Either ServantError a)
-catchConnectionError action =
-  catch (Right <$> action) $ \e ->
-    pure . Left . ConnectionError . T.pack $ show (e :: Client.HttpException)
+          x <- k (clientResponseToResponse res)
+          k1 x

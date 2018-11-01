@@ -28,20 +28,21 @@ import           Control.Monad.Codensity
 import           Control.Monad.IO.Class
                  (MonadIO (..))
 import           Control.Monad.Trans.Except
-import qualified Data.ByteString            as BS
+import qualified Data.ByteString               as BS
 import           Data.Proxy
-import qualified Data.TDigest               as TD
-import qualified Network.HTTP.Client        as C
+import qualified Data.TDigest                  as TD
+import qualified Network.HTTP.Client           as C
 import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), JSON, NetstringFraming,
                  NewlineFraming, NoFraming, OctetStream, SourceIO, StreamGet)
-import           Servant.Client
+import           Servant.Client.Streaming
 import           Servant.ClientSpec
                  (Person (..))
-import qualified Servant.ClientSpec         as CS
+import qualified Servant.ClientSpec            as CS
 import           Servant.Server
+import           Servant.Test.ComprehensiveAPI
 import           Servant.Types.SourceT
 import           System.Entropy
                  (getEntropy, getHardwareEntropy)
@@ -59,8 +60,12 @@ import           GHC.Stats
                  (currentBytesUsed, getGCStats)
 #endif
 
+-- This declaration simply checks that all instances are in place.
+-- Note: this is streaming client
+_ = client comprehensiveAPI
+
 spec :: Spec
-spec = describe "Servant.Stream" $ do
+spec = describe "Servant.Client.Streaming" $ do
     streamSpec
 
 type StreamApi =
@@ -71,8 +76,8 @@ type StreamApi =
 api :: Proxy StreamApi
 api = Proxy
 
-getGetNL, getGetNS :: ClientM (Codensity IO (SourceIO Person))
-getGetALot :: ClientM (Codensity IO (SourceIO BS.ByteString))
+getGetNL, getGetNS :: ClientM (SourceIO Person)
+getGetALot :: ClientM (SourceIO BS.ByteString)
 getGetNL :<|> getGetNS :<|> getGetALot = client api
 
 alice :: Person
@@ -104,28 +109,22 @@ powerOfTwo = (2 ^)
 manager' :: C.Manager
 manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
-runClient :: ClientM a -> BaseUrl -> IO (Either ServantError a)
-runClient x baseUrl' = runClientM x (mkClientEnv manager' baseUrl')
+withClient :: ClientM a -> BaseUrl -> (Either ServantError a -> IO r) -> IO r
+withClient x baseUrl' = withClientM x (mkClientEnv manager' baseUrl')
 
-testRunSourceIO :: Codensity IO (SourceIO a)
+testRunSourceIO :: SourceIO a
     -> IO (Either String [a])
-testRunSourceIO = runExceptT . runSourceT . joinCodensitySourceT
-
-joinCodensitySourceT :: Codensity m (SourceT m a) -> SourceT m a
-joinCodensitySourceT cod =
-    SourceT $ \r ->
-    runCodensity cod $ \src ->
-    unSourceT src r
+testRunSourceIO = runExceptT . runSourceT
 
 streamSpec :: Spec
 streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
     it "works with Servant.API.StreamGet.Newline" $ \(_, baseUrl) -> do
-        Right res <- runClient getGetNL baseUrl
-        testRunSourceIO res `shouldReturn` Right [alice, bob, alice]
+        withClient getGetNL baseUrl $ \(Right res) ->
+            testRunSourceIO res `shouldReturn` Right [alice, bob, alice]
 
     it "works with Servant.API.StreamGet.Netstring" $ \(_, baseUrl) -> do
-        Right res <- runClient getGetNS baseUrl
-        testRunSourceIO res `shouldReturn` Right [alice, bob, alice]
+        withClient getGetNS baseUrl $ \(Right res) ->
+            testRunSourceIO res `shouldReturn` Right [alice, bob, alice]
 
 {-
     it "streams in constant memory" $ \(_, baseUrl) -> do
