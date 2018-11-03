@@ -11,7 +11,7 @@ import           Prelude.Compat
 import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Catch
-                 (MonadCatch, MonadThrow)
+                 (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Error.Class
                  (MonadError)
 import           Control.Monad.IO.Class
@@ -29,7 +29,7 @@ newtype Handler a = Handler { runHandler' :: ExceptT ServantErr IO a }
   deriving
     ( Functor, Applicative, Monad, MonadIO, Generic
     , MonadError ServantErr
-    , MonadThrow, MonadCatch
+    , MonadThrow, MonadCatch, MonadMask
     )
 
 instance MonadBase IO Handler where
