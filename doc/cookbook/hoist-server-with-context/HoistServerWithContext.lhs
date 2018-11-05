@@ -25,8 +25,15 @@ for our logging example below.
 This recipe uses the following ingredients:
 
 ```haskell
-{-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds,
-  DeriveGeneric, TypeOperators #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+
+import Prelude ()
+import Prelude.Compat
+
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader
 import Data.Aeson
