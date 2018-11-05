@@ -16,6 +16,7 @@ tested-with:         GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.1
 executable cookbook-hoist-server-with-context
   main-is:             HoistServerWithContext.lhs
   build-depends:       base == 4.*
+                     , base-compat
                      , text >= 1.2
                      , aeson >= 1.2
                      , data-default
