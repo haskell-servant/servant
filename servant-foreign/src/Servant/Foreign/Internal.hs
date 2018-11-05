@@ -322,6 +322,14 @@ instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype api
     foreignFor lang ftype (Proxy :: Proxy api) $
       req & reqBody .~ (Just $ typeFor lang ftype (Proxy :: Proxy a))
 
+instance
+    ( HasForeign lang ftype api
+    ) =>  HasForeign lang ftype (StreamBody framing ctype a :> api)
+  where
+    type Foreign ftype (StreamBody framing ctype a :> api) = Foreign ftype api
+
+    foreignFor _lang Proxy Proxy _req = error "HasForeign @StreamBody"
+
 instance (KnownSymbol path, HasForeign lang ftype api)
       => HasForeign lang ftype (path :> api) where
   type Foreign ftype (path :> api) = Foreign ftype api

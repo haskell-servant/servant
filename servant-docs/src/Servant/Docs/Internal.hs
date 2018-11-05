@@ -853,9 +853,10 @@ instance {-# OVERLAPPABLE #-}
 -- | TODO: mention the endpoint is streaming, its framing strategy
 --
 -- Also there are no samples.
+--
+-- TODO: AcceptFraming for content-type
 instance {-# OVERLAPPABLE #-}
-        (MimeRender ct a, KnownNat status
-        , ReflectMethod method)
+        (Accept ct, KnownNat status, ReflectMethod method)
     => HasDocs (Stream method status framing ct a) where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
@@ -967,6 +968,9 @@ instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
                            & rqtypes .~ allMime t
           t = Proxy :: Proxy (ct ': cts)
           p = Proxy :: Proxy a
+
+instance HasDocs api => HasDocs (StreamBody framing ctype a :> api) where
+    docsFor Proxy _ _ = error "HasDocs @StreamBody"
 
 instance (KnownSymbol path, HasDocs api) => HasDocs (path :> api) where
 

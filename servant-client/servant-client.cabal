@@ -50,7 +50,8 @@ library
 
   -- Servant dependencies
   build-depends:
-      servant-client-core   == 0.14.*
+      servant               == 0.14.*
+    , servant-client-core   == 0.14.*
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
@@ -60,6 +61,7 @@ library
     , http-media            >= 0.7.1.2  && < 0.8
     , http-types            >= 0.12.1   && < 0.13
     , exceptions            >= 0.10.0   && < 0.11
+    , kan-extensions        >= 5.2      && < 5.3
     , monad-control         >= 1.0.2.3  && < 1.1
     , semigroupoids         >= 5.2.2    && < 5.4
     , stm                   >= 2.4.5.0  && < 2.6
@@ -72,7 +74,7 @@ library
 
 test-suite spec
   type: exitcode-stdio-1.0
-  ghc-options: -Wall -rtsopts -with-rtsopts=-T
+  ghc-options: -Wall -rtsopts -threaded "-with-rtsopts=-T -N2"
   default-language: Haskell2010
   hs-source-dirs: test
   main-is: Spec.hs
@@ -90,6 +92,7 @@ test-suite spec
     , http-client
     , http-types
     , mtl
+    , kan-extensions
     , servant-client
     , servant-client-core
     , text
@@ -100,16 +103,18 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      generics-sop      >= 0.4.0.1  && < 0.5
-    , hspec             >= 2.5.1    && < 2.6
+      entropy           >= 0.4.1.3  && < 0.5
+    , generics-sop      >= 0.4.0.1  && < 0.5
+    , hspec             >= 2.5.8    && < 2.6
     , HUnit             >= 1.6      && < 1.7
     , network           >= 2.8.0.0  && < 2.9
     , QuickCheck        >= 2.12.6.1 && < 2.13
     , servant           == 0.14.*
     , servant-server    == 0.14.*
+    , tdigest           >= 0.2     && < 0.3
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.5.1 && < 2.6
+    hspec-discover:hspec-discover >= 2.5.8 && < 2.6
 
 test-suite readme
   type:           exitcode-stdio-1.0

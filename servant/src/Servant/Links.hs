@@ -170,7 +170,7 @@ import           Servant.API.RemoteHost
 import           Servant.API.ReqBody
                  (ReqBody')
 import           Servant.API.Stream
-                 (Stream)
+                 (Stream, StreamBody)
 import           Servant.API.Sub
                  (type (:>))
 import           Servant.API.TypeLevel
@@ -480,6 +480,10 @@ instance (HasLink a, HasLink b) => HasLink (a :<|> b) where
 -- Misc instances
 instance HasLink sub => HasLink (ReqBody' mods ct a :> sub) where
     type MkLink (ReqBody' mods ct a :> sub) r = MkLink sub r
+    toLink toA _ = toLink toA (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (StreamBody framing ct a :> sub) where
+    type MkLink (StreamBody framing ct a :> sub) r = MkLink sub r
     toLink toA _ = toLink toA (Proxy :: Proxy sub)
 
 instance (ToHttpApiData v, HasLink sub)

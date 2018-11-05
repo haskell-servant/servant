@@ -44,7 +44,7 @@ module Servant.Client.Core
   , GenResponse (..)
   , RunClient(..)
   , module Servant.Client.Core.Internal.BaseUrl
-  , StreamingResponse(..)
+  , StreamingResponse
 
   -- * Writing HasClient instances
   -- | These functions need not be re-exported by backend libraries.

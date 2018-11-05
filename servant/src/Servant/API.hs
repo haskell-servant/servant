@@ -114,11 +114,10 @@ import           Servant.API.ResponseHeaders
                  ResponseHeader (..), addHeader, getHeadersHList, getResponse,
                  noHeader)
 import           Servant.API.Stream
-                 (BoundaryStrategy (..), ByteStringParser (..),
-                 FramingRender (..), FramingUnrender (..),
-                 FromResultStream (..), NetstringFraming, NewlineFraming,
-                 NoFraming, ResultStream (..), Stream, StreamGenerator (..),
-                 StreamGet, StreamPost, ToStreamGenerator (..))
+                 (FramingRender (..), FramingUnrender (..),
+                 FromSourceIO (..), NetstringFraming, NewlineFraming,
+                 NoFraming, SourceIO, Stream, StreamBody, SourceIO,
+                 StreamGet, StreamPost, ToSourceIO (..))
 import           Servant.API.Sub
                  ((:>))
 import           Servant.API.Vault

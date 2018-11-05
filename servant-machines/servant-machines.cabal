@@ -1,0 +1,56 @@
+name:                servant-machines
+version:             1
+synopsis:            Servant Stream support for machines
+description:         Servant Stream support for machines.
+homepage:            http://haskell-servant.readthedocs.org/
+license:             BSD3
+license-file:        LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2018 Servant Contributors
+category:            Web, Servant, Enumerator
+build-type:          Simple
+cabal-version:       >=1.10
+bug-reports:         http://github.com/haskell-servant/servant-machines/issues
+tested-with:
+  GHC ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.1
+
+source-repository head
+  type: git
+  location: http://github.com/haskell-servant/servant-machines.git
+
+library
+  exposed-modules:     Servant.Machines
+  build-depends:
+      base          >=4.9      && <5
+    , bytestring    >=0.10.4.0 && <0.11
+    , machines      >=0.6.3    && <0.7
+    , mtl           >=2.1      && <2.3
+    , servant       >=0.14     && <0.15
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options: -Wall
+
+test-suite example
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs:
+    example
+  ghc-options: -Wall -rtsopts -threaded
+  build-depends:
+      base
+    , base-compat
+    , bytestring
+    , http-media
+    , servant
+    , machines
+    , servant-machines
+    , servant-server >=0.14     && <0.15
+    , servant-client >=0.14     && <0.15
+    , wai            >=3.0.3.0  && <3.3
+    , warp           >=3.0.13.1 && <3.3
+    , http-client
+  default-language: Haskell2010
