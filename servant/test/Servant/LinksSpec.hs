@@ -13,7 +13,7 @@ import           Test.Hspec
                  (Expectation, Spec, describe, it, shouldBe)
 
 import           Servant.API
-import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.Test.ComprehensiveAPI
                  (comprehensiveAPIWithoutRaw)
 import           Servant.Links
 

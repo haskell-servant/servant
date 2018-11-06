@@ -64,7 +64,7 @@ import           Servant.API
                  DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
                  Headers, JSON, NoContent (NoContent), Post, Put, QueryFlag,
                  QueryParam, QueryParams, Raw, ReqBody, addHeader, getHeaders)
-import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.Test.ComprehensiveAPI
 import           Servant.Client
 import qualified Servant.Client.Core.Internal.Auth          as Auth
 import qualified Servant.Client.Core.Internal.Request       as Req

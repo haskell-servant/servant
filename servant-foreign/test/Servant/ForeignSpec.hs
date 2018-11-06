@@ -14,7 +14,7 @@ module Servant.ForeignSpec where
 import           Data.Monoid
                  ((<>))
 import           Data.Proxy
-import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.Test.ComprehensiveAPI
 import           Servant.Foreign
 import           Servant.Types.SourceT
                  (SourceT)

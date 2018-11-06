@@ -48,7 +48,6 @@ library
     Servant.API.Generic
     Servant.API.Header
     Servant.API.HttpVersion
-    Servant.API.Internal.Test.ComprehensiveAPI
     Servant.API.IsSecure
     Servant.API.Modifiers
     Servant.API.QueryParam
@@ -67,6 +66,10 @@ library
   exposed-modules:
     Servant.Types.SourceT
 
+  -- Test stuff
+  exposed-modules:
+    Servant.Test.ComprehensiveAPI
+
   -- Safe links
   exposed-modules:
     Servant.Links
@@ -74,6 +77,7 @@ library
   -- Deprecated modules, to be removed in late 2019
   exposed-modules:
     Servant.Utils.Links
+    Servant.API.Internal.Test.ComprehensiveAPI
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
