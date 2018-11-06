@@ -51,7 +51,7 @@ import           Servant.API
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
                  RemoteHost, ReqBody, StdMethod (..), Stream,
                  SourceIO, Verb, addHeader)
-import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.Test.ComprehensiveAPI
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, serve, serveWithContext)

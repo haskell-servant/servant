@@ -21,7 +21,7 @@ import           GHC.Generics
 import           Test.Hspec
 
 import           Servant.API
-import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.Test.ComprehensiveAPI
 import           Servant.Docs.Internal
 
 -- * comprehensive api
