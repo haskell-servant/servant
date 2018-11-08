@@ -16,37 +16,37 @@ type GET = Get '[JSON] NoContent
 
 type ComprehensiveAPI =
   ComprehensiveAPIWithoutRaw :<|>
-  Raw
+  "raw" :> Raw
 
 comprehensiveAPI :: Proxy ComprehensiveAPI
 comprehensiveAPI = Proxy
 
 type ComprehensiveAPIWithoutRaw =
   GET :<|>
-  Get '[JSON] Int :<|>
-  Capture' '[Description "example description"] "foo" Int :> GET :<|>
-  Header "foo" Int :> GET :<|>
-  Header' '[Required, Lenient] "bar" Int :> GET :<|>
-  HttpVersion :> GET :<|>
-  IsSecure :> GET :<|>
-  QueryParam "foo" Int :> GET :<|>
-  QueryParam' '[Required, Lenient] "bar" Int :> GET :<|>
-  QueryParams "foo" Int :> GET :<|>
-  QueryFlag "foo" :> GET :<|>
-  RemoteHost :> GET :<|>
-  ReqBody '[JSON] Int :> GET :<|>
-  ReqBody' '[Lenient] '[JSON] Int :> GET :<|>
-  Get '[JSON] (Headers '[Header "foo" Int] NoContent) :<|>
-  "foo" :> GET :<|>
-  Vault :> GET :<|>
-  Verb 'POST 204 '[JSON] NoContent :<|>
-  Verb 'POST 204 '[JSON] Int :<|>
-  StreamBody NetstringFraming JSON (SourceT IO Int) :> Stream 'GET 200 NetstringFraming JSON (SourceT IO Int) :<|>
-  WithNamedContext "foo" '[] GET :<|>
-  CaptureAll "foo" Int :> GET :<|>
-  Summary "foo" :> GET :<|>
-  Description "foo" :> GET :<|>
-  EmptyAPI
+  "get-int"          :> Get '[JSON] Int :<|>
+  "capture"          :> Capture' '[Description "example description"] "foo" Int :> GET :<|>
+  "header"           :> Header "foo" Int :> GET :<|>
+  "header-lenient"   :> Header' '[Required, Lenient] "bar" Int :> GET :<|>
+  "http-version"     :> HttpVersion :> GET :<|>
+  "is-secure"        :> IsSecure :> GET :<|>
+  "param"            :> QueryParam "foo" Int :> GET :<|>
+  "param-lenient"    :>  QueryParam' '[Required, Lenient] "bar" Int :> GET :<|>
+  "params"           :> QueryParams "foo" Int :> GET :<|>
+  "flag"             :> QueryFlag "foo" :> GET :<|>
+  "remote-host"      :> RemoteHost :> GET :<|>
+  "req-body"         :> ReqBody '[JSON] Int :> GET :<|>
+  "req-body-lenient" :> ReqBody' '[Lenient] '[JSON] Int :> GET :<|>
+  "res-headers"      :> Get '[JSON] (Headers '[Header "foo" Int] NoContent) :<|>
+  "foo"              :> GET :<|>
+  "vault"            :> Vault :> GET :<|>
+  "post-no-content"  :> Verb 'POST 204 '[JSON] NoContent :<|>
+  "post-int"         :> Verb 'POST 204 '[JSON] Int :<|>
+  "streaming"        :> StreamBody NetstringFraming JSON (SourceT IO Int) :> Stream 'GET 200 NetstringFraming JSON (SourceT IO Int) :<|>
+  "named-context"    :> WithNamedContext "foo" '[] GET :<|>
+  "capture-all"      :>  CaptureAll "foo" Int :> GET :<|>
+  "summary"          :> Summary "foo" :> GET :<|>
+  "description"      :> Description "foo" :> GET :<|>
+  "empty-api"        :> EmptyAPI
 
 comprehensiveAPIWithoutRaw :: Proxy ComprehensiveAPIWithoutRaw
 comprehensiveAPIWithoutRaw = Proxy

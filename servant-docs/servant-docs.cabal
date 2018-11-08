@@ -26,6 +26,8 @@ Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
   CHANGELOG.md
   README.md
+  golden/comprehensive.md
+
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git
@@ -93,6 +95,7 @@ test-suite spec
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
       base
+    , base-compat
     , aeson
     , lens
     , servant
@@ -101,7 +104,8 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      hspec                >= 2.4.4    && < 2.6
+      tasty         >= 1.1.0.4  && < 1.2,
+      tasty-golden  >= 2.3.2    && < 2.4,
+      tasty-hunit   >= 0.10.0.1 && < 0.11,
+      transformers  >= 0.5.2.0  && < 0.6
 
-  build-tool-depends:
-    hspec-discover:hspec-discover >=2.4.4 && <2.6
