@@ -33,6 +33,8 @@ import           Data.ByteString.Lazy.Char8
                  (ByteString)
 import qualified Data.CaseInsensitive       as CI
 import           Data.Foldable
+                 (toList)
+import           Data.Foldable
                  (fold)
 import           Data.Hashable
                  (Hashable)
@@ -958,7 +960,6 @@ instance (KnownSymbol desc, HasDocs api)
 -- both are even defined) for any particular type.
 instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
       => HasDocs (ReqBody' mods (ct ': cts) a :> api) where
-
   docsFor Proxy (endpoint, action) opts@DocOptions{..} =
     docsFor subApiP (endpoint, action') opts
 
@@ -969,8 +970,17 @@ instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
           t = Proxy :: Proxy (ct ': cts)
           p = Proxy :: Proxy a
 
-instance HasDocs api => HasDocs (StreamBody framing ctype a :> api) where
-    docsFor Proxy _ _ = error "HasDocs @StreamBody"
+-- | TODO: this instance is incomplete.
+instance (HasDocs api, Accept ctype) => HasDocs (StreamBody framing ctype a :> api) where
+    docsFor Proxy (endpoint, action) opts =
+        docsFor subApiP (endpoint, action') opts
+      where
+        subApiP = Proxy :: Proxy api
+
+        action' :: Action
+        action' = action & rqtypes .~ toList (contentTypes t)
+
+        t = Proxy :: Proxy ctype
 
 instance (KnownSymbol path, HasDocs api) => HasDocs (path :> api) where
 

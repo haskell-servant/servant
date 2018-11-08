@@ -15,6 +15,7 @@
 module Servant.DocsSpec where
 
 import           Control.Lens
+                 ((&), (<>~))
 import           Control.Monad
                  (unless)
 import           Control.Monad.Trans.Writer
@@ -22,7 +23,6 @@ import           Control.Monad.Trans.Writer
 import           Data.Aeson
 import           Data.List
                  (isInfixOf)
-import           Data.Monoid
 import           Data.Proxy
 import           Data.String.Conversions
                  (cs)
@@ -31,6 +31,8 @@ import           Prelude ()
 import           Prelude.Compat
 import           Test.Tasty
                  (TestName, TestTree, testGroup)
+import           Test.Tasty.Golden
+                 (goldenVsString)
 import           Test.Tasty.HUnit
                  (Assertion, HasCallStack, assertFailure, testCase, (@?=))
 
@@ -41,25 +43,27 @@ import           Servant.Test.ComprehensiveAPI
 -- * comprehensive api
 
 -- This declaration simply checks that all instances are in place.
-_ = docs comprehensiveAPI
+comprehensiveDocs :: API
+comprehensiveDocs = docs comprehensiveAPI
 
 instance ToParam (QueryParam' mods "foo" Int) where
-  toParam = error "unused"
+  toParam _ = DocQueryParam "foo" ["1","2","3"] "QueryParams Int" Normal
 instance ToParam (QueryParam' mods "bar" Int) where
-  toParam = error "unused"
+  toParam _ = DocQueryParam "bar" ["1","2","3"] "QueryParams Int" Normal
 instance ToParam (QueryParams "foo" Int) where
-  toParam = error "unused"
+  toParam _ = DocQueryParam "foo" ["1","2","3"] "QueryParams Int" List
 instance ToParam (QueryFlag "foo") where
-  toParam = error "unused"
+  toParam _ = DocQueryParam "foo" [] "QueryFlag" Flag
 instance ToCapture (Capture "foo" Int) where
-  toCapture = error "unused"
+  toCapture _ = DocCapture "foo" "Capture foo Int"
 instance ToCapture (CaptureAll "foo" Int) where
-  toCapture = error "unused"
+  toCapture _ = DocCapture "foo" "Capture all foo Int"
 
 -- * specs
 
 spec :: TestTree
 spec = describe "Servant.Docs" $ do
+  golden "comprehensive API" "golden/comprehensive.md" (markdown comprehensiveDocs)
 
   describe "markdown" $ do
     let md = markdown (docs (Proxy :: Proxy TestApi1))
@@ -195,3 +199,7 @@ shouldNotContain = compareWith (\x y -> not (isInfixOf y x)) "contains"
 compareWith :: (Show a, Show b, HasCallStack) => (a -> b -> Bool) -> String -> a -> b -> Assertion
 compareWith f msg x y = unless (f x y) $ assertFailure $
     show x ++ " " ++ msg ++ " " ++ show y
+
+golden :: TestName -> FilePath -> String -> TestTreeM ()
+golden n fp contents = TestTreeM $ tell
+    [ goldenVsString n fp (return (cs contents)) ]

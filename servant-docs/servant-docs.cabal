@@ -26,6 +26,8 @@ Bug-reports:         http://github.com/haskell-servant/servant/issues
 extra-source-files:
   CHANGELOG.md
   README.md
+  golden/comprehensive.md
+
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git
