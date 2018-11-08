@@ -76,14 +76,15 @@ import qualified Network.HTTP.Types         as HTTP
 -- or any 'Endpoint' value you want using the 'path' and 'method'
 -- lenses to tweak.
 --
--- @
--- λ> 'defEndpoint'
--- GET /
--- λ> 'defEndpoint' & 'path' '<>~' ["foo"]
--- GET /foo
--- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'HTTP.methodPost'
--- POST /foo
--- @
+-- >>> defEndpoint
+-- "GET" /
+--
+-- >>> defEndpoint & path <>~ ["foo"]
+-- "GET" /foo
+--
+-- >>> defEndpoint & path <>~ ["foo"] & method .~ HTTP.methodPost
+-- "POST" /foo
+--
 data Endpoint = Endpoint
   { _path   :: [String]      -- type collected
   , _method :: HTTP.Method   -- type collected
@@ -104,14 +105,15 @@ showPath ps = concatMap ('/' :) ps
 --
 -- Here's how you can modify it:
 --
--- @
--- λ> 'defEndpoint'
--- GET /
--- λ> 'defEndpoint' & 'path' '<>~' ["foo"]
--- GET /foo
--- λ> 'defEndpoint' & 'path' '<>~' ["foo"] & 'method' '.~' 'HTTP.methodPost'
--- POST /foo
--- @
+-- >>> defEndpoint
+-- "GET" /
+--
+-- >>> defEndpoint & path <>~ ["foo"]
+-- "GET" /foo
+--
+-- >>> defEndpoint & path <>~ ["foo"] & method .~ HTTP.methodPost
+-- "POST" /foo
+--
 defEndpoint :: Endpoint
 defEndpoint = Endpoint [] HTTP.methodGet
 
@@ -222,12 +224,14 @@ data ParamKind = Normal | List | Flag
 -- want to write a 'ToSample' instance for the type that'll be represented
 -- as encoded data in the response.
 --
--- Can be tweaked with three lenses.
+-- Can be tweaked with four lenses.
 --
--- > λ> defResponse
--- > Response {_respStatus = 200, _respTypes = [], _respBody = []}
--- > λ> defResponse & respStatus .~ 204 & respBody .~ [("If everything goes well", "{ \"status\": \"ok\" }")]
--- > Response {_respStatus = 204, _respTypes = [], _respBody = [("If everything goes well", "{ \"status\": \"ok\" }")]}
+-- >>> defResponse
+-- Response {_respStatus = 200, _respTypes = [], _respBody = [], _respHeaders = []}
+--
+-- >>> defResponse & respStatus .~ 204 & respBody .~ [("If everything goes well", "application/json", "{ \"status\": \"ok\" }")]
+-- Response {_respStatus = 204, _respTypes = [], _respBody = [("If everything goes well",application/json,"{ \"status\": \"ok\" }")], _respHeaders = []}
+--
 data Response = Response
   { _respStatus  :: Int
   , _respTypes   :: [M.MediaType]
@@ -237,12 +241,14 @@ data Response = Response
 
 -- | Default response: status code 200, no response body.
 --
--- Can be tweaked with two lenses.
+-- Can be tweaked with four lenses.
 --
--- > λ> defResponse
--- > Response {_respStatus = 200, _respBody = Nothing}
--- > λ> defResponse & respStatus .~ 204 & respBody .~ Just "[]"
--- > Response {_respStatus = 204, _respBody = Just "[]"}
+-- >>> defResponse
+-- Response {_respStatus = 200, _respTypes = [], _respBody = [], _respHeaders = []}
+--
+-- >>> defResponse & respStatus .~ 204
+-- Response {_respStatus = 204, _respTypes = [], _respBody = [], _respHeaders = []}
+--
 defResponse :: Response
 defResponse = Response
   { _respStatus  = 200
@@ -288,10 +294,12 @@ Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
 --
 -- Tweakable with lenses.
 --
--- > λ> defAction
--- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 200, _respBody = Nothing}}
--- > λ> defAction & response.respStatus .~ 201
--- > Action {_captures = [], _headers = [], _params = [], _mxParams = [], _rqbody = Nothing, _response = Response {_respStatus = 201, _respBody = Nothing}}
+-- >>> defAction
+-- Action {_authInfo = [], _captures = [], _headers = [], _params = [], _notes = [], _mxParams = [], _rqtypes = [], _rqbody = [], _response = Response {_respStatus = 200, _respTypes = [], _respBody = [], _respHeaders = []}}
+--
+-- >>> defAction & response.respStatus .~ 201
+-- Action {_authInfo = [], _captures = [], _headers = [], _params = [], _notes = [], _mxParams = [], _rqtypes = [], _rqbody = [], _response = Response {_respStatus = 201, _respTypes = [], _respBody = [], _respHeaders = []}}
+--
 defAction :: Action
 defAction =
   Action []
@@ -359,7 +367,8 @@ makeLenses ''RenderingOptions
 -- | Generate the docs for a given API that implements 'HasDocs'. This is the
 -- default way to create documentation.
 --
--- prop> docs == docsWithOptions defaultDocOptions
+-- > docs == docsWithOptions defaultDocOptions
+--
 docs :: HasDocs api => Proxy api -> API
 docs p = docsWithOptions p defaultDocOptions
 
@@ -1046,3 +1055,6 @@ instance ToSample a => ToSample (Product a)
 instance ToSample a => ToSample (First a)
 instance ToSample a => ToSample (Last a)
 instance ToSample a => ToSample (Dual a)
+
+-- $setup
+-- >>> :set -XOverloadedStrings
