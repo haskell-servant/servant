@@ -1,28 +1,42 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 
 module Servant.DocsSpec where
 
 import           Control.Lens
+import           Control.Monad
+                 (unless)
+import           Control.Monad.Trans.Writer
+                 (Writer, runWriter, tell)
 import           Data.Aeson
+import           Data.List
+                 (isInfixOf)
 import           Data.Monoid
 import           Data.Proxy
 import           Data.String.Conversions
                  (cs)
 import           GHC.Generics
-import           Test.Hspec
+import           Prelude ()
+import           Prelude.Compat
+import           Test.Tasty
+                 (TestName, TestTree, testGroup)
+import           Test.Tasty.HUnit
+                 (Assertion, HasCallStack, assertFailure, testCase, (@?=))
 
 import           Servant.API
-import           Servant.Test.ComprehensiveAPI
 import           Servant.Docs.Internal
+import           Servant.Test.ComprehensiveAPI
 
 -- * comprehensive api
 
@@ -44,7 +58,7 @@ instance ToCapture (CaptureAll "foo" Int) where
 
 -- * specs
 
-spec :: Spec
+spec :: TestTree
 spec = describe "Servant.Docs" $ do
 
   describe "markdown" $ do
@@ -146,3 +160,38 @@ instance ToSample TT where
 
 instance ToSample UT where
   toSamples _ = [("yks", UT1), ("kaks", UT2)]
+
+-------------------------------------------------------------------------------
+-- HSpec like DSL for tasty
+-------------------------------------------------------------------------------
+
+newtype TestTreeM a = TestTreeM (Writer [TestTree] a)
+  deriving (Functor, Applicative, Monad)
+
+runTestTreeM :: TestTreeM () -> [TestTree]
+runTestTreeM (TestTreeM m) = snd (runWriter m)
+
+class Describe r where
+    describe :: TestName -> TestTreeM () -> r
+
+instance a ~ () =>  Describe (TestTreeM a) where
+    describe n t = TestTreeM $ tell [ describe n t ]
+
+instance Describe TestTree where
+    describe n t = testGroup n $ runTestTreeM t
+
+it :: TestName -> Assertion -> TestTreeM ()
+it n assertion = TestTreeM $ tell [ testCase n assertion ]
+
+shouldBe :: (Eq a, Show a, HasCallStack) => a -> a -> Assertion
+shouldBe = (@?=)
+
+shouldContain :: (Eq a, Show a, HasCallStack) => [a] -> [a] -> Assertion
+shouldContain = compareWith (flip isInfixOf) "does not contain"
+
+shouldNotContain :: (Eq a, Show a, HasCallStack) => [a] -> [a] -> Assertion
+shouldNotContain = compareWith (\x y -> not (isInfixOf y x)) "contains"
+
+compareWith :: (Show a, Show b, HasCallStack) => (a -> b -> Bool) -> String -> a -> b -> Assertion
+compareWith f msg x y = unless (f x y) $ assertFailure $
+    show x ++ " " ++ msg ++ " " ++ show y
