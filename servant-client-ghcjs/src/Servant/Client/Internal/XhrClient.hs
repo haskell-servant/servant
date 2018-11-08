@@ -108,7 +108,6 @@ instance Exception StreamingNotSupportedException where
 
 instance RunClient ClientM where
   runRequest = performRequest
-  streamingRequest _ = liftIO $ throwIO StreamingNotSupportedException
   throwServantError = throwError
 
 instance ClientLike (ClientM a) (ClientM a) where
