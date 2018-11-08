@@ -201,18 +201,27 @@ instance {-# OVERLAPPABLE #-} (HasResponseHeader h a rest) => HasResponseHeader 
 -- >>> let example2 = addHeader True example1 :: Headers '[Header "1st" Bool, Header "someheader" Int] String
 -- >>> lookupResponseHeader example2 :: ResponseHeader "someheader" Int
 -- Header 5
+--
 -- >>> lookupResponseHeader example2 :: ResponseHeader "1st" Bool
 -- Header True
 --
 -- Usage of this function relies on an explicit type annotation of the header to be looked up.
 -- This can be done with type annotations on the result, or with an explicit type application.
--- e.g.
--- @lookupResponseHeader \@"someheader" example2@
+-- In this example, the type of header value is determined by the type-inference,
+-- we only specify the name of the header:
+--
+-- >>> :set -XTypeApplications
+-- >>> case lookupResponseHeader @"1st" example2 of { Header b -> b ; _ -> False }
+-- True
+--
+-- @since 0.15
+--
 lookupResponseHeader :: (HasResponseHeader h a headers)
   => Headers headers r -> ResponseHeader h a
 lookupResponseHeader = hlistLookupHeader . getHeadersHList
 
 -- $setup
+-- >>> :set -XFlexibleContexts
 -- >>> import Servant.API
 -- >>> import Data.Aeson
 -- >>> import Data.Text
