@@ -7,6 +7,7 @@ module Servant.Client.Streaming
     ( client
     , ClientM
     , withClientM
+    , runClientM
     , ClientEnv(..)
     , mkClientEnv
     , hoistClient
