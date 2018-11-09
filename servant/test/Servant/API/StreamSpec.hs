@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Servant.API.StreamSpec where
 
+import           Control.Monad.Except
+                 (runExcept)
 import qualified Data.Aeson                as Aeson
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Lazy      as LBS
@@ -32,6 +34,11 @@ spec = describe "Servant.API.Stream" $ do
 
     describe "NewlineFraming" $ do
         let tp = framingUnrender (Proxy :: Proxy NewlineFraming) (Right . LBS.toStrict)
+        let re = framingRender (Proxy :: Proxy NewlineFraming) id
+
+        it "framingRender examples" $ do
+            runRenderFrames re [] `shouldBe` Right ""
+            runRenderFrames re ["foo", "bar", "baz"] `shouldBe` Right "foo\nbar\nbaz"
 
         it "framingUnrender examples" $ do
             let expected n = map Right [fromString ("foo" ++ show (n :: Int)), "bar", "baz"]
@@ -51,6 +58,11 @@ spec = describe "Servant.API.Stream" $ do
 
     describe "NetstringFraming" $ do
         let tp = framingUnrender (Proxy :: Proxy NetstringFraming) (Right . LBS.toStrict)
+        let re = framingRender (Proxy :: Proxy NetstringFraming) id
+
+        it "framingRender examples" $ do
+            runRenderFrames re [] `shouldBe` Right ""
+            runRenderFrames re ["foo", "bar", "baz"] `shouldBe` Right "3:foo,3:bar,3:baz,"
 
         it "framingUnrender examples" $ do
             let expected n = map Right [fromString ("foo" ++ show (n :: Int)), "bar", "baz"]
@@ -73,6 +85,9 @@ roundtrip
     -> Property
 roundtrip render unrender xs =
     map Right xs === runUnrenderFrames (unrender . fmap LBS.toStrict . render) xs
+
+runRenderFrames :: (SourceT Identity a -> SourceT Identity LBS.ByteString) -> [a] -> Either String LBS.ByteString
+runRenderFrames f = fmap mconcat . runExcept . runSourceT . f . source
 
 runUnrenderFrames :: (SourceT Identity b -> SourceT Identity a) -> [b] -> [Either String a]
 runUnrenderFrames f = go . Effect . flip unSourceT return . f . source where
