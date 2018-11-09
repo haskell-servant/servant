@@ -38,8 +38,6 @@ import           Network.HTTP.Media
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion, Method, QueryItem, Status,
                  http11, methodGet)
-import           Control.Monad.Codensity
-                 (Codensity (..))
 import           Web.HttpApiData
                  (ToHttpApiData, toEncodedUrlPiece, toHeader)
 
@@ -91,7 +89,7 @@ data GenResponse a = Response
   } deriving (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
 
 type Response = GenResponse LBS.ByteString
-type StreamingResponse = Codensity IO (GenResponse (IO BS.ByteString))
+type StreamingResponse = GenResponse (IO BS.ByteString)
 
 -- A GET request to the top-level path
 defaultRequest :: Request

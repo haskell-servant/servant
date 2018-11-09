@@ -44,6 +44,8 @@ module Servant.Client.Core
   , GenResponse (..)
   , RunClient(..)
   , module Servant.Client.Core.Internal.BaseUrl
+  -- ** Streaming
+  , RunStreamingClient(..)
   , StreamingResponse
 
   -- * Writing HasClient instances

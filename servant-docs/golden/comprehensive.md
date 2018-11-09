@@ -16,6 +16,42 @@
 
 ```
 
+## GET /alternative/left
+
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+```javascript
+
+```
+
+## GET /alternative/right
+
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+```javascript
+
+```
+
 ## GET /capture/:foo
 
 ### Captures:

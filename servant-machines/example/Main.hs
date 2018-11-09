@@ -26,7 +26,7 @@ import           Text.Read
 
 import           Data.Machine
 import           Servant
-import           Servant.Client
+import           Servant.Client.Streaming
 import           Servant.Machines ()
 
 import qualified Network.Wai.Handler.Warp as Warp

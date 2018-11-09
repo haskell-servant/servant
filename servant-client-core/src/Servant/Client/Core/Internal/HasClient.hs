@@ -36,20 +36,17 @@ import qualified Network.HTTP.Types                     as H
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
                  BuildHeadersTo (..), Capture', CaptureAll, Description,
-                 EmptyAPI, FramingUnrender (..), FromSourceIO (..),
-                 Header', Headers (..), HttpVersion, IsSecure,
-                 MimeRender (mimeRender), MimeUnrender (mimeUnrender),
-                 NoContent (NoContent), QueryFlag, QueryParam', QueryParams,
-                 Raw, ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
-                 StreamBody, Summary, ToHttpApiData, Vault, Verb,
-                 WithNamedContext, contentType, getHeadersHList, getResponse,
-                 toQueryParam, toUrlPiece)
+                 EmptyAPI, FramingUnrender (..), FromSourceIO (..), Header',
+                 Headers (..), HttpVersion, IsSecure, MimeRender (mimeRender),
+                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
+                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
+                 ReqBody', SBoolI, Stream, StreamBody, Summary, ToHttpApiData,
+                 Vault, Verb, WithNamedContext, contentType, getHeadersHList,
+                 getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
-import           Control.Monad.Codensity
-                 (Codensity (..))
 import qualified Servant.Types.SourceT                  as S
 
 import           Servant.Client.Core.Internal.Auth
@@ -272,25 +269,23 @@ instance {-# OVERLAPPING #-}
   hoistClientMonad _ _ f ma = f ma
 
 instance {-# OVERLAPPABLE #-}
-  ( RunClient m, MimeUnrender ct chunk, ReflectMethod method,
+  ( RunStreamingClient m, MimeUnrender ct chunk, ReflectMethod method,
     FramingUnrender framing, FromSourceIO chunk a
   ) => HasClient m (Stream method status framing ct a) where
 
-  type Client m (Stream method status framing ct a) = m (Codensity IO a)
+  type Client m (Stream method status framing ct a) = m a
 
   hoistClientMonad _ _ f ma = f ma
 
-  clientWithRoute _pm Proxy req = do
-    sresp <- streamingRequest req
-      { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
-      , requestMethod = reflectMethod (Proxy :: Proxy method)
-      }
-    return $ do
-        let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
-            framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-        gres <- sresp
-        return $ fromSourceIO $ framingUnrender' $ S.fromAction BS.null (responseBody gres)
-
+  clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
+      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
+          framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
+      return $ fromSourceIO $ framingUnrender' $ S.fromAction BS.null (responseBody gres)
+    where
+      req' = req
+          { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
+          , requestMethod = reflectMethod (Proxy :: Proxy method)
+          }
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
