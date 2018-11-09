@@ -6,11 +6,11 @@
 ### Significant changes
 
 - Streaming refactoring. [#991](https://github.com/haskell-servant/servant/pull/991)
-  
+
   The streaming functionality (`Servant.API.Stream`) is refactored to use
   `servant` own `SourceIO` type (see `Servant.Types.SourceT` documentation),
   which replaces both `StreamGenerator` and `ResultStream` types.
-  
+
   New conversion type-classes are `ToSourceIO` and `FromSourceIO`
   (replacing `ToStreamGenerator` and `BuildFromStream`).
   There are instances for *conduit*, *pipes* and *machines* in new packages:
@@ -36,13 +36,21 @@
   - `Servant.Client.Streaming` is *used* by CPSised
     `withClientM :: ClientM a -> ClientEnv -> (Either ServantError a -> IO b) -> IO b`
 
-  If you need to access `Stream` endpoints use `Servant.Client.Streaming` with
+  To access `Stream` endpoints use `Servant.Client.Streaming` with
   `withClientM`; otherwise you can continue using `Servant.Client` with `runClientM`.
   You can use both too, `ClientEnv` and `BaseUrl` types are same for both.
 
   **Note:** `Servant.Client.Streaming` doesn't *stream* non-`Stream` endpoints.
   Requesting ordinary `Verb` endpoints (e.g. `Get`) will block until
   the whole response is received.
+
+  There is `Servant.Client.Streaming.runClientM` function, but it has
+  restricted type. `NFData a` constraint prevents using it with
+  `SourceT`, `Conduit` etc. response types.
+
+  ```haskell
+  runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ServantError a)
+  ```
 
   This change shouldn't affect you, if you don't use streaming endpoints.
 
@@ -51,7 +59,7 @@
   [#1009](https://github.com/haskell-servant/servant/pull/1009)
 
 - `ComprehensiveAPI` is a part of public API in `Servant.Test.ComprehensiveAPI`` module.
-  This API type is used to verify that libraries implement all core combinators. 
+  This API type is used to verify that libraries implement all core combinators.
   Now we won't change this type between major versions.
   (This has been true for some time already).
   [#1070](https://github.com/haskell-servant/servant/pull/1070)
@@ -61,6 +69,9 @@
   [#996](https://github.com/haskell-servant/servant/pull/996)
 
 ### Other changes
+
+- *servant-client-core* Add `NFData (GenResponse a)` and `NFData ServantError` instances.
+  [#1076](https://github.com/haskell-servant/servant/pull/1076)
 
 - *servant* Add `lookupResponseHeader :: ... => Headers headers r -> ResponseHeader h a`
   [#1064](https://github.com/haskell-servant/servant/pull/1064)
