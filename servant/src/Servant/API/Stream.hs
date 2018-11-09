@@ -17,6 +17,7 @@ module Servant.API.Stream (
     StreamGet,
     StreamPost,
     StreamBody,
+    StreamBody',
     -- * Source
     --
     -- | 'SourceIO' are equivalent to some *source* in streaming libraries.
@@ -71,9 +72,9 @@ type StreamGet  = Stream 'GET 200
 type StreamPost = Stream 'POST 200
 
 -- | A stream request body.
---
--- TODO: add mods
-data StreamBody (framing :: *) (contentType :: *) (a :: *)
+type StreamBody = StreamBody' '[]
+
+data StreamBody' (mods :: [*]) (framing :: *) (contentType :: *) (a :: *)
   deriving (Typeable, Generic)
 
 -------------------------------------------------------------------------------

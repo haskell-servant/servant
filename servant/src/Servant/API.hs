@@ -110,14 +110,14 @@ import           Servant.API.ReqBody
                  (ReqBody, ReqBody')
 import           Servant.API.ResponseHeaders
                  (AddHeader, BuildHeadersTo (buildHeadersTo),
-                 GetHeaders (getHeaders), HList (..), Headers (..),
-                 ResponseHeader (..), addHeader, getHeadersHList, getResponse,
-                 noHeader, HasResponseHeader, lookupResponseHeader)
+                 GetHeaders (getHeaders), HList (..), HasResponseHeader,
+                 Headers (..), ResponseHeader (..), addHeader, getHeadersHList,
+                 getResponse, lookupResponseHeader, noHeader)
 import           Servant.API.Stream
-                 (FramingRender (..), FramingUnrender (..),
-                 FromSourceIO (..), NetstringFraming, NewlineFraming,
-                 NoFraming, SourceIO, Stream, StreamBody, SourceIO,
-                 StreamGet, StreamPost, ToSourceIO (..))
+                 (FramingRender (..), FramingUnrender (..), FromSourceIO (..),
+                 NetstringFraming, NewlineFraming, NoFraming, SourceIO, Stream,
+                 StreamBody, StreamBody', StreamGet, StreamPost,
+                 ToSourceIO (..))
 import           Servant.API.Sub
                  ((:>))
 import           Servant.API.Vault
