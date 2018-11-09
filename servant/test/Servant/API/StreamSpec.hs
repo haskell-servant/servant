@@ -38,7 +38,7 @@ spec = describe "Servant.API.Stream" $ do
 
         it "framingRender examples" $ do
             runRenderFrames re [] `shouldBe` Right ""
-            runRenderFrames re ["foo", "bar", "baz"] `shouldBe` Right "foo\nbar\nbaz"
+            runRenderFrames re ["foo", "bar", "baz"] `shouldBe` Right "foo\nbar\nbaz\n"
 
         it "framingUnrender examples" $ do
             let expected n = map Right [fromString ("foo" ++ show (n :: Int)), "bar", "baz"]
