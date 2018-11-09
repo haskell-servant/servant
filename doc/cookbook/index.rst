@@ -24,8 +24,6 @@ you name it!
   db-postgres-pool/PostgresPool.lhs
   using-custom-monad/UsingCustomMonad.lhs
   using-free-client/UsingFreeClient.lhs
-  basic-auth/BasicAuth.lhs
-  jwt-and-basic-auth/JWTAndBasicAuth.lhs
   hoist-server-with-context/HoistServerWithContext.lhs
   file-upload/FileUpload.lhs
   pagination/Pagination.lhs

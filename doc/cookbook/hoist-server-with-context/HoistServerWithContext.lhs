@@ -13,11 +13,7 @@ We'll create an `AppCtx` to represent our `env` and include some logging utiliti
 other variables we'd like to have available.
 
 In addition, in order to demonstrate a custom `Context`, we'll also include authentication in
-our example. As noted previously (in [jwt-and-basic-auth](../jwt-and-basic-auth/JWTAndBasicAuth.lhs)),
-while basic authentication comes with Servant itself,
-[servant-auth](https://hackage.haskell.org/package/servant-auth) and
-[servant-auth-server](https://hackage.haskell.org/package/servant-auth-server)
-packages are needed for JWT-based authentication.
+our example. 
 
 Finally, we're going to use [fast-logger](http://hackage.haskell.org/package/fast-logger)
 for our logging example below.

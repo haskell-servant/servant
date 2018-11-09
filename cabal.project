@@ -12,7 +12,6 @@ packages: servant/
 
   -- doc/cookbook/*/*.cabal
 
-  doc/cookbook/basic-auth
   doc/cookbook/curl-mock
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
@@ -21,7 +20,6 @@ packages: servant/
   doc/cookbook/generic
   doc/cookbook/hoist-server-with-context
   doc/cookbook/https
-  doc/cookbook/jwt-and-basic-auth/
   -- doc/cookbook/pagination
   doc/cookbook/sentry
   doc/cookbook/testing
