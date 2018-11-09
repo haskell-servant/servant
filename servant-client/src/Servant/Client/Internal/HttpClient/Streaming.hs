@@ -20,8 +20,11 @@ import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Concurrent.STM.TVar
+import           Control.DeepSeq
+                 (NFData, force)
 import           Control.Exception
-import           Control.Monad
+                 (evaluate, throwIO)
+import           Control.Monad ()
 import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Codensity
@@ -119,6 +122,19 @@ withClientM :: ClientM a -> ClientEnv -> (Either ServantError a -> IO b) -> IO b
 withClientM cm env k =
     let Codensity f = runExceptT $ flip runReaderT env $ unClientM cm
     in f k
+
+-- | A 'runClientM' variant for streaming client.
+--
+-- It allows using this module's 'ClientM' in a direct style.
+-- The 'NFData' constraint however prevents using this function with genuine
+-- streaming response types ('SourceT', 'Conduit', pipes 'Proxy' or 'Machine').
+-- For those you have to use 'withClientM'.
+--
+-- /Note:/ we 'force' the result, so the likehood of accidentally leaking a
+-- connection is smaller. Use with care.
+--
+runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientM cm env = withClientM cm env (evaluate . force)
 
 performRequest :: Request -> ClientM Response
 performRequest req = do

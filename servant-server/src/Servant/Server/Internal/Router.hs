@@ -4,10 +4,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Servant.Server.Internal.Router where
 
+import           Prelude ()
+import           Prelude.Compat
+
 import           Data.Map
                  (Map)
 import qualified Data.Map                                   as M
-import           Data.Monoid
 import           Data.Text
                  (Text)
 import qualified Data.Text                                  as T

@@ -14,7 +14,6 @@ executable cookbock-curl-mock
   main-is:             CurlMock.lhs
   build-depends:       base == 4.*
                      , aeson
-                     , aeson-compat
                      , lens
                      , text
                      , servant

@@ -15,6 +15,8 @@ module Servant.Client.Core.Internal.Request where
 import           Prelude ()
 import           Prelude.Compat
 
+import           Control.DeepSeq
+                 (NFData (..))
 import           Control.Monad.Catch
                  (Exception)
 import qualified Data.ByteString         as BS
@@ -34,10 +36,10 @@ import           Data.Typeable
 import           GHC.Generics
                  (Generic)
 import           Network.HTTP.Media
-                 (MediaType)
+                 (MediaType, mainType, parameters, subType)
 import           Network.HTTP.Types
-                 (Header, HeaderName, HttpVersion, Method, QueryItem, Status,
-                 http11, methodGet)
+                 (Header, HeaderName, HttpVersion (..), Method, QueryItem,
+                 Status (..), http11, methodGet)
 import           Web.HttpApiData
                  (ToHttpApiData, toEncodedUrlPiece, toHeader)
 
@@ -58,6 +60,20 @@ data ServantError =
   deriving (Eq, Show, Generic, Typeable)
 
 instance Exception ServantError
+
+instance NFData ServantError where
+    rnf (FailureResponse res)            = rnf res
+    rnf (DecodeFailure err res)          = rnf err `seq` rnf res
+    rnf (UnsupportedContentType mt' res) =
+        mediaTypeRnf mt' `seq`
+        rnf res
+      where
+        mediaTypeRnf mt =
+            rnf (mainType mt) `seq`
+            rnf (subType mt) `seq`
+            rnf (parameters mt)
+    rnf (InvalidContentTypeHeader res)   = rnf res
+    rnf (ConnectionError err)            = rnf err
 
 data RequestF a = Request
   { requestPath        :: a
@@ -87,6 +103,16 @@ data GenResponse a = Response
   , responseHttpVersion :: HttpVersion
   , responseBody        :: a
   } deriving (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
+
+instance NFData a => NFData (GenResponse a) where
+    rnf (Response sc hs hv body) =
+        rnfStatus sc `seq`
+        rnf hs `seq`
+        rnfHttpVersion hv `seq`
+        rnf body
+      where
+        rnfStatus (Status code msg) = rnf code `seq` rnf msg
+        rnfHttpVersion (HttpVersion _ _) = () -- HttpVersion fields are strict
 
 type Response = GenResponse LBS.ByteString
 type StreamingResponse = GenResponse (IO BS.ByteString)

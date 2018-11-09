@@ -22,7 +22,7 @@ Language extensions and imports:
 {-# LANGUAGE TypeOperators              #-}
 
 import           Control.Lens                      ((^.))
-import           Data.Aeson.Compat
+import           Data.Aeson
 import           Data.Aeson.Text
 import           Data.Monoid                       ((<>))
 import           Data.Proxy                        (Proxy (Proxy))
