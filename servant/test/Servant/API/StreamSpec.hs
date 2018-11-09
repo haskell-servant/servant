@@ -77,6 +77,27 @@ spec = describe "Servant.API.Stream" $ do
 
             property $ roundtrip framingRender' framingUnrender'
 
+    describe "JSONFraming" $ do
+        -- let tp = framingUnrender (Proxy :: Proxy JSONFraming) (Aeson.eitherDecode :: LBS.ByteString -> Either String [Int])
+        let re = framingRender (Proxy :: Proxy JSONFraming) (Aeson.encode :: [Int] -> LBS.ByteString)
+
+        it "framingRender examples" $ do
+            runRenderFrames re [] `shouldBe` Right "[]"
+            runRenderFrames re [[1,2,3], [4,5,6], [7,8,9]] `shouldBe` Right "[[1,2,3],[4,5,6],[7,8,9]]"
+
+        -- it "framingUnrender examples" $ do
+        --     let expected n = map Right [fromString ("foo" ++ show (n :: Int)), "bar", "baz"]
+
+        --     runUnrenderFrames tp ["4:foo1,3:bar,3:baz,"]         `shouldBe` [Right [1]]
+        --     runUnrenderFrames tp ["4:foo2,", "3:bar,", "3:baz,"] `shouldBe` [Right [2]]
+        --     runUnrenderFrames tp ["4:foo3,3:b", "ar,3:baz,"]     `shouldBe` [Right [3]]
+
+        -- it "roundtrip" $ do
+        --     let framingUnrender' = framingUnrender (Proxy :: Proxy JSONFraming) Aeson.eitherDecode
+        --     let framingRender'  = framingRender (Proxy :: Proxy JSONFraming) (Aeson.encode :: Int -> LBS.ByteString)
+
+        --     property $ roundtrip framingRender' framingUnrender'
+
 roundtrip
     :: (Eq a, Show a)
     => (SourceT Identity a -> SourceT Identity LBS.ByteString)

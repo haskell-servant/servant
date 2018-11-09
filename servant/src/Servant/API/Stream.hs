@@ -33,6 +33,7 @@ module Servant.API.Stream (
     NoFraming,
     NewlineFraming,
     NetstringFraming,
+    JSONFraming,
     ) where
 
 
@@ -205,6 +206,7 @@ instance FramingRender NewlineFraming where
 instance FramingUnrender NewlineFraming where
     framingUnrender _ f = transformWithAtto $ do
         bs <- A.takeWhile (/= 10)
+        -- we are lenient, last element don't need to be terminated by '\n'
         () <$ A.word8 10 <|> A.endOfInput
         either fail pure (f (LBS.fromStrict bs))
 
@@ -241,3 +243,40 @@ instance FramingUnrender NetstringFraming where
         bs <- A.take len
         _ <- A8.char ','
         either fail pure (f (LBS.fromStrict bs))
+
+-------------------------------------------------------------------------------
+-- JSONFraming
+-------------------------------------------------------------------------------
+
+-- | A framing strategy which starts with @[@, ends with @]@ and inserts
+-- @,@ between elements; therefore creating a valid JSON document,
+-- if elements are.
+--
+-- TODO: there are no @'FramingUnrender' 'JSONFraming'@ instance.
+data JSONFraming
+
+instance FramingRender JSONFraming where
+    framingRender _ f = mapStepT (Yield "[" . go0) where
+        go0 Stop        = Yield "]" Stop
+        go0 (Error err) = Error err
+        go0 (Skip s)    = Skip (go0 s)
+        go0 (Yield x s) = Yield (f x) (go s)
+        go0 (Effect ms) = Effect (fmap go0 ms)
+
+        go Stop        = Yield "]" Stop
+        go (Error err) = Error err
+        go (Yield x s) = Yield ("," <> f x) (go s)
+        go (Skip s)    = Skip (go s)
+        go (Effect ms) = Effect (fmap go ms)
+
+{-
+-- | Assumes elements are valid JSON.
+instance FramingUnrender JSONFraming where
+    framingUnrender _ _f = start where
+        start (Error err)   = Error err
+        start (Skip s)      = Skip (start s)
+        start (Effect ms)   = Effect (fmap start ms)
+        start Stop          = Error "unexpected end-of-input; expecting first ["
+        start (Yield bs0 s)
+            | BS.null bs = Skip (start s)
+-}
