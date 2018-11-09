@@ -1,5 +1,5 @@
 name:                servant-client-core
-version:             0.14.1
+version:             0.15
 synopsis:            Core functionality and class for client function generation for servant APIs
 description:
   This library provides backend-agnostic generation of client functions. For
@@ -56,20 +56,20 @@ library
 
   -- Servant dependencies
   build-depends:
-        servant            >= 0.14.1 && <0.15
+        servant            >= 0.15 && <0.16
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson                 >= 1.4.0.0  && < 1.5
-    , base-compat           >= 0.10.1   && < 0.11
+      aeson                 >= 1.4.1.0  && < 1.5
+    , base-compat           >= 0.10.5   && < 0.11
     , base64-bytestring     >= 1.0.0.1  && < 1.1
     , exceptions            >= 0.10.0   && < 0.11
-    , free                  >= 5.0.2    && < 5.2
+    , free                  >= 5.1      && < 5.2
     , generics-sop          >= 0.4.0.1  && < 0.5
-    , http-api-data         >= 0.3.8.1  && < 0.4
-    , http-media            >= 0.7.1.2  && < 0.8
-    , http-types            >= 0.12.1   && < 0.13
+    , http-api-data         >= 0.3.10   && < 0.4
+    , http-media            >= 0.7.1.3  && < 0.8
+    , http-types            >= 0.12.2   && < 0.13
     , network-uri           >= 2.6.1.0  && < 2.7
     , safe                  >= 0.3.17   && < 0.4
 
@@ -94,9 +94,9 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      deepseq    >= 1.3.0.2  && < 1.5
-    , hspec      >= 2.4.1    && < 2.6
+      deepseq    >= 1.4.2.0  && < 1.5
+    , hspec      >= 2.6.0    && < 2.7
     , QuickCheck >= 2.12.6.1 && < 2.13
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.5.1 && <2.6
+    hspec-discover:hspec-discover >= 2.6.0 && <2.7

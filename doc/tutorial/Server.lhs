@@ -29,7 +29,7 @@ import Prelude.Compat
 
 import Control.Monad.Except
 import Control.Monad.Reader
-import Data.Aeson.Compat
+import Data.Aeson
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
 import Data.ByteString (ByteString)

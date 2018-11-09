@@ -26,10 +26,10 @@ library
   exposed-modules:     Servant.Machines
   build-depends:
       base          >=4.9      && <5
-    , bytestring    >=0.10.4.0 && <0.11
-    , machines      >=0.6.3    && <0.7
-    , mtl           >=2.1      && <2.3
-    , servant       >=0.14     && <0.15
+    , bytestring    >=0.10.8.1 && <0.11
+    , machines      >=0.6.4    && <0.7
+    , mtl           >=2.2.2    && <2.3
+    , servant       >=0.15     && <0.16
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options: -Wall
@@ -48,9 +48,9 @@ test-suite example
     , servant
     , machines
     , servant-machines
-    , servant-server >=0.14     && <0.15
-    , servant-client >=0.14     && <0.15
-    , wai            >=3.0.3.0  && <3.3
-    , warp           >=3.0.13.1 && <3.3
+    , servant-server >=0.15     && <0.16
+    , servant-client >=0.15     && <0.16
+    , wai            >=3.2.1.2  && <3.3
+    , warp           >=3.2.25   && <3.3
     , http-client
   default-language: Haskell2010

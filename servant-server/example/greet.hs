@@ -5,8 +5,10 @@
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
 
+import           Prelude ()
+import           Prelude.Compat
+
 import           Data.Aeson
-import           Data.Monoid
 import           Data.Proxy
 import           Data.Text
 import           GHC.Generics

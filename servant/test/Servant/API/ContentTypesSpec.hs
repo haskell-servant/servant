@@ -10,7 +10,8 @@ module Servant.API.ContentTypesSpec where
 import           Prelude ()
 import           Prelude.Compat
 
-import           Data.Aeson.Compat
+import           Data.Aeson
+                 (FromJSON, ToJSON (..), Value, decode, encode, object, (.=))
 import           Data.ByteString.Char8
                  (ByteString, append, pack)
 import qualified Data.ByteString.Lazy                             as BSL

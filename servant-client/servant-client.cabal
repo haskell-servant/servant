@@ -1,5 +1,5 @@
 name:                servant-client
-version:             0.14
+version:             0.15
 synopsis: automatical derivation of querying functions for servant webservices
 description:
   This library lets you derive automatically Haskell functions that
@@ -39,34 +39,33 @@ library
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
-  --
-  -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                  >= 4.7      && < 4.13
-    , bytestring            >= 0.10.4.0 && < 0.11
-    , containers            >= 0.5.5.1  && < 0.7
-    , mtl                   >= 2.1      && < 2.3
+      base                  >= 4.9      && < 4.13
+    , bytestring            >= 0.10.8.1 && < 0.11
+    , containers            >= 0.5.7.1  && < 0.7
+    , mtl                   >= 2.2.2    && < 2.3
+    , stm                   >= 2.4.5.1  && < 2.6
     , text                  >= 1.2.3.0  && < 1.3
-    , time                  >= 1.4.2    && < 1.9
-    , transformers          >= 0.3.0.0  && < 0.6
+    , time                  >= 1.6.0.1  && < 1.9
+    , transformers          >= 0.5.2.0  && < 0.6
 
-  -- Servant dependencies
+  -- Servant dependencies.
+  -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
-      servant               == 0.14.*
-    , servant-client-core   == 0.14.*
+      servant               == 0.15.*
+    , servant-client-core   == 0.15
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat           >= 0.10.1   && < 0.11
-    , http-client           >= 0.5.12   && < 0.6
-    , http-media            >= 0.7.1.2  && < 0.8
-    , http-types            >= 0.12.1   && < 0.13
+      base-compat           >= 0.10.5   && < 0.11
+    , http-client           >= 0.5.13.1 && < 0.6
+    , http-media            >= 0.7.1.3  && < 0.8
+    , http-types            >= 0.12.2   && < 0.13
     , exceptions            >= 0.10.0   && < 0.11
     , kan-extensions        >= 5.2      && < 5.3
     , monad-control         >= 1.0.2.3  && < 1.1
-    , semigroupoids         >= 5.2.2    && < 5.4
-    , stm                   >= 2.4.5.0  && < 2.6
+    , semigroupoids         >= 5.3.1    && < 5.4
     , transformers-base     >= 0.4.5.2  && < 0.5
     , transformers-compat   >= 0.6.2    && < 0.7
 
@@ -107,16 +106,16 @@ test-suite spec
   build-depends:
       entropy           >= 0.4.1.3  && < 0.5
     , generics-sop      >= 0.4.0.1  && < 0.5
-    , hspec             >= 2.5.8    && < 2.6
-    , HUnit             >= 1.6      && < 1.7
+    , hspec             >= 2.6.0    && < 2.7
+    , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 2.8.0.0  && < 2.9
     , QuickCheck        >= 2.12.6.1 && < 2.13
-    , servant           == 0.14.*
-    , servant-server    == 0.14.*
+    , servant           == 0.15.*
+    , servant-server    == 0.15.*
     , tdigest           >= 0.2     && < 0.3
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.5.8 && < 2.6
+    hspec-discover:hspec-discover >= 2.6.0 && < 2.7
 
 test-suite readme
   type:           exitcode-stdio-1.0
