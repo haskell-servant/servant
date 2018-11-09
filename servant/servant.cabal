@@ -1,27 +1,31 @@
+cabal-version:       >=1.10
 name:                servant
 version:             0.15
+
 synopsis:            A family of combinators for defining webservices APIs
+category:            Servant, Web
 description:
   A family of combinators for defining webservices APIs and serving them
   .
   You can learn about the basics in the <http://haskell-servant.readthedocs.org/en/stable/tutorial/index.html tutorial>.
   .
   <https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md CHANGELOG>
+
 homepage:            http://haskell-servant.readthedocs.org/
-Bug-reports:         http://github.com/haskell-servant/servant/issues
+bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
-category:            Servant, Web
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2018 Servant Contributors
 build-type:          Custom
-cabal-version:       >=1.10
+
 tested-with:
   GHC==8.0.2
   GHC==8.2.2
   GHC==8.4.4
   GHC==8.6.2
+
 extra-source-files:
   CHANGELOG.md
 
@@ -103,6 +107,7 @@ library
     , http-types             >= 0.12.2   && < 0.13
     , mmorph                 >= 1.1.2    && < 1.2
     , network-uri            >= 2.6.1.0  && < 2.7
+    , QuickCheck             >= 2.12.6.1 && <2.13
     , singleton-bool         >= 0.1.4    && < 0.2
     , string-conversions     >= 0.4.0.1  && < 0.5
     , tagged                 >= 0.8.6    && < 0.9
