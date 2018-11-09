@@ -5,7 +5,10 @@
 
 ### Significant changes
 
-- Streaming refactoring. [#991](https://github.com/haskell-servant/servant/pull/991)
+- Streaming refactoring.
+  [#991](https://github.com/haskell-servant/servant/pull/991)
+  [#1076](https://github.com/haskell-servant/servant/pull/1076)
+  [#1077](https://github.com/haskell-servant/servant/pull/1077)
 
   The streaming functionality (`Servant.API.Stream`) is refactored to use
   `servant` own `SourceIO` type (see `Servant.Types.SourceT` documentation),
@@ -23,7 +26,8 @@
 
   This change shouldn't affect you, if you don't use streaming endpoints.
 
-- *servant-client* Separate streaming client. [#1066](https://github.com/haskell-servant/servant/pull/1066)
+- *servant-client* Separate streaming client.
+  [#1066](https://github.com/haskell-servant/servant/pull/1066)
 
   We now have two `http-client` based clients,
   in `Servant.Client` and `Servant.Client.Streaming`.
