@@ -980,7 +980,7 @@ instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
           p = Proxy :: Proxy a
 
 -- | TODO: this instance is incomplete.
-instance (HasDocs api, Accept ctype) => HasDocs (StreamBody framing ctype a :> api) where
+instance (HasDocs api, Accept ctype) => HasDocs (StreamBody' mods framing ctype a :> api) where
     docsFor Proxy (endpoint, action) opts =
         docsFor subApiP (endpoint, action') opts
       where

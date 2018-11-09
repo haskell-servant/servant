@@ -328,9 +328,9 @@ instance (Elem JSON list, HasForeignType lang ftype a, HasForeign lang ftype api
 
 instance
     ( HasForeign lang ftype api
-    ) =>  HasForeign lang ftype (StreamBody framing ctype a :> api)
+    ) =>  HasForeign lang ftype (StreamBody' mods framing ctype a :> api)
   where
-    type Foreign ftype (StreamBody framing ctype a :> api) = Foreign ftype api
+    type Foreign ftype (StreamBody' mods framing ctype a :> api) = Foreign ftype api
 
     foreignFor _lang Proxy Proxy _req = error "HasForeign @StreamBody"
 

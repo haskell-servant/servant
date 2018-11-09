@@ -40,7 +40,7 @@ import           Servant.API
                  Headers (..), HttpVersion, IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
                  QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
-                 ReqBody', SBoolI, Stream, StreamBody, Summary, ToHttpApiData,
+                 ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
                  Vault, Verb, WithNamedContext, contentType, getHeadersHList,
                  getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
@@ -539,10 +539,10 @@ instance (MimeRender ct a, HasClient m api)
 
 instance
     ( HasClient m api
-    ) => HasClient m (StreamBody framing ctype a :> api)
+    ) => HasClient m (StreamBody' mods framing ctype a :> api)
   where
 
-    type Client m (StreamBody framing ctype a :> api) = a -> Client m api
+    type Client m (StreamBody' mods framing ctype a :> api) = a -> Client m api
 
     hoistClientMonad pm _ f cl = \a ->
       hoistClientMonad pm (Proxy :: Proxy api) f (cl a)

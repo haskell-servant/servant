@@ -71,7 +71,7 @@ import           Servant.API
                  FramingUnrender (..), FromSourceIO (..), Header', If,
                  IsSecure (..), QueryFlag, QueryParam', QueryParams, Raw,
                  ReflectMethod (reflectMethod), RemoteHost, ReqBody',
-                 SBool (..), SBoolI (..), SourceIO, Stream, StreamBody,
+                 SBool (..), SBoolI (..), SourceIO, Stream, StreamBody',
                  Summary, ToSourceIO (..), Vault, Verb, WithNamedContext)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
@@ -610,9 +610,9 @@ instance ( AllCTUnrender list a, HasServer api context, SBoolI (FoldLenient mods
 instance
     ( FramingUnrender framing, FromSourceIO chunk a, MimeUnrender ctype chunk
     , HasServer api context
-    ) => HasServer (StreamBody framing ctype a :> api) context
+    ) => HasServer (StreamBody' mods framing ctype a :> api) context
   where
-    type ServerT (StreamBody framing ctype a :> api) m = a -> ServerT api m
+    type ServerT (StreamBody' mods framing ctype a :> api) m = a -> ServerT api m
 
     hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 

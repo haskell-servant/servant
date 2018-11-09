@@ -22,7 +22,7 @@ type RawEndpoint =
     "raw" :> Raw
 
 type StreamingEndpoint =
-    "streaming" :> StreamBody NetstringFraming JSON (SourceT IO Int) :> Stream 'GET 200 NetstringFraming JSON (SourceT IO Int)
+    "streaming" :> StreamBody' '[Description "netstring"] NetstringFraming JSON (SourceT IO Int) :> Stream 'GET 200 NetstringFraming JSON (SourceT IO Int)
 
 type EmptyEndpoint =
     "empty-api" :> EmptyAPI
