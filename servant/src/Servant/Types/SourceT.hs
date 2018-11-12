@@ -16,10 +16,12 @@ import           Data.Functor.Classes
                  (Show1 (..), showsBinaryWith, showsPrec1, showsUnaryWith)
 import           Data.Functor.Identity
                  (Identity (..))
-import           Prelude                    hiding
+import           Prelude ()
+import           Prelude.Compat             hiding
                  (readFile)
 import           System.IO
                  (Handle, IOMode (..), withFile)
+import qualified Test.QuickCheck            as QC
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -28,6 +30,9 @@ import           System.IO
 -- >>> import qualified Data.Attoparsec.ByteString.Char8 as A8
 
 -- | This is CPSised ListT.
+--
+-- @since 0.15
+--
 newtype SourceT m a = SourceT
     { unSourceT :: forall b. (StepT m a -> m b) -> m b
     }
@@ -37,6 +42,9 @@ mapStepT f (SourceT m) = SourceT $ \k -> m (k . f)
 {-# INLINE mapStepT #-}
 
 -- | @ListT@ with additional constructors.
+--
+-- @since 0.15
+--
 data StepT m a
     = Stop
     | Error String      -- we can this argument configurable.
@@ -80,6 +88,20 @@ instance (Applicative m, Show1 m, Show a) => Show (SourceT m a) where
 instance MFunctor SourceT where
     hoist f (SourceT m) = SourceT $ \k -> k $
         Effect $ f $ fmap (hoist f) $ m return
+
+-- | Doesn't generate 'Error' constructors. 'SourceT' doesn't shrink.
+instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (SourceT m a) where
+    arbitrary = fromStepT <$> QC.arbitrary
+
+-- An example of above instance. Not doctested because it's volatile.
+--
+-- >>> import Test.QuickCheck as QC
+-- >>> import Test.QuickCheck.Gen as QC
+-- >>> import Test.QuickCheck.Random as QC
+-- >>> let generate (QC.MkGen g) = g (QC.mkQCGen 44) 10
+--
+-- >>> generate (arbitrary :: QC.Gen (SourceT Identity Int))
+-- fromStepT (Effect (Identity (Yield (-10) (Yield 3 (Skip (Yield 1 Stop))))))
 
 -------------------------------------------------------------------------------
 -- StepT instances
@@ -127,6 +149,27 @@ instance MFunctor StepT where
         go (Skip s)    = Skip (go s)
         go (Yield x s) = Yield x (go s)
         go (Effect ms) = Effect (f (fmap go ms))
+
+-- | Doesn't generate 'Error' constructors.
+instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
+    arbitrary = QC.sized arb where
+        arb n | n <= 0    = pure Stop
+              | otherwise = QC.frequency
+                  [ (1, pure Stop)
+                  , (1, Skip <$> arb')
+                  , (1, Effect . return <$> arb')
+                  , (8, Yield <$> QC.arbitrary <*> arb')
+                  ]
+          where
+            arb' = arb (n - 1)
+
+    shrink Stop        = []
+    shrink (Error _)   = [Stop]
+    shrink (Skip s)    = [s]
+    shrink (Effect _)  = []
+    shrink (Yield x s) =
+        [ Yield x' s | x' <- QC.shrink x ] ++
+        [ Yield x s' | s' <- QC.shrink s ]
 
 -------------------------------------------------------------------------------
 -- Operations
@@ -244,6 +287,7 @@ fromActionStep stop action = loop where
 -- | Read file.
 --
 -- >>> foreach fail BS.putStr (readFile "servant.cabal")
+-- cabal-version:       >=1.10
 -- name:                servant
 -- ...
 --
