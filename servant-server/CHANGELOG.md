@@ -1,6 +1,56 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.15
+----
+
+- Streaming refactoring.
+  [#991](https://github.com/haskell-servant/servant/pull/991)
+  [#1076](https://github.com/haskell-servant/servant/pull/1076)
+  [#1077](https://github.com/haskell-servant/servant/pull/1077)
+
+  The streaming functionality (`Servant.API.Stream`) is refactored to use
+  `servant`'s own `SourceIO` type (see `Servant.Types.SourceT` documentation),
+  which replaces both `StreamGenerator` and `ResultStream` types.
+
+  New conversion type-classes are `ToSourceIO` and `FromSourceIO`
+  (replacing `ToStreamGenerator` and `BuildFromStream`).
+  There are instances for *conduit*, *pipes* and *machines* in new packages:
+  [servant-conduit](https://hackage.haskell.org/package/servant-conduit)
+  [servant-pipes](https://hackage.haskell.org/package/servant-pipes) and
+  [servant-machines](https://hackage.haskell.org/package/servant-machines)
+  respectively.
+
+  Writing new framing strategies is simpler. Check existing strategies for examples.
+
+  This change shouldn't affect you, if you don't use streaming endpoints.
+
+- Drop support for GHC older than 8.0
+  [#1008](https://github.com/haskell-servant/servant/pull/1008)
+  [#1009](https://github.com/haskell-servant/servant/pull/1009)
+
+- *servant* NewlineFraming encodes newline after each element (i.e last)
+  [#1079](https://github.com/haskell-servant/servant/pull/1079)
+  [#1011](https://github.com/haskell-servant/servant/issues/1011)
+
+- *servant* Add `lookupResponseHeader :: ... => Headers headers r -> ResponseHeader h a`
+  [#1064](https://github.com/haskell-servant/servant/pull/1064)
+
+- *servant-server* Add `MonadMask Handler`
+  [#1068](https://github.com/haskell-servant/servant/pull/1068)
+
+- *servant* Export `GetHeaders'`
+  [#1052](https://github.com/haskell-servant/servant/pull/1052)
+
+- *servant* Add `Bitraversable` and other `Bi-` instances for `:<|>`
+  [#1032](https://github.com/haskell-servant/servant/pull/1032)
+
+- *servant* Add `PutCreated` method type alias
+  [#1024](https://github.com/haskell-servant/servant/pull/1024)
+
+- *servant* Add `ToSourceIO (NonEmpty a)` instance
+  [#988](https://github.com/haskell-servant/servant/pull/988)
+
 0.14.1
 ------
 

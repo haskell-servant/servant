@@ -21,10 +21,10 @@ copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2018 Servant
 build-type:          Custom
 
 tested-with:
-  GHC==8.0.2
-  GHC==8.2.2
-  GHC==8.4.4
-  GHC==8.6.2
+  GHC ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.2
 
 extra-source-files:
   CHANGELOG.md

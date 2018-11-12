@@ -1,22 +1,29 @@
+cabal-version:       >=1.10
 name:                servant-conduit
-version:             1
+version:             0.15
+
 synopsis:            Servant Stream support for conduit.
+category:            Servant, Web, Enumerator
 description:         Servant Stream support for conduit.
+  .
+  Provides 'ToSourceIO' and 'FromSourceIO' instances for 'ConduitT'.
+
 homepage:            http://haskell-servant.readthedocs.org/
+bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2018 Servant Contributors
-category:            Web, Servant, Enumerator
 build-type:          Simple
-cabal-version:       >=1.10
-bug-reports:         http://github.com/haskell-servant/servant-conduit/issues
 tested-with:
   GHC ==8.0.2
    || ==8.2.2
    || ==8.4.4
    || ==8.6.2
+
+extra-source-files:
+  CHANGELOG.md
 
 source-repository head
   type: git

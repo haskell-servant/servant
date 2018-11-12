@@ -5,9 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
--- | TBW
---
--- This module exports 'ToSourceIO' and 'FromSourceIO' instances.
+-- | This module exports 'ToSourceIO' and 'FromSourceIO' for 'MachineT' instances.
 module Servant.Machines (
     MachineToSourceIO (..),
     ) where
