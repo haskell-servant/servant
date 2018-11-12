@@ -155,6 +155,7 @@ test-suite spec
     , base-compat
     , aeson
     , bytestring
+    , mtl
     , servant
     , string-conversions
     , text

@@ -187,20 +187,13 @@ instance FramingUnrender NoFraming where
 -- NewlineFraming
 -------------------------------------------------------------------------------
 
--- | A simple framing strategy that has no header or termination, and inserts a
--- newline character between each frame.  This assumes that it is used with a
+-- | A simple framing strategy that has no header, and inserts a
+-- newline character after each frame.  This assumes that it is used with a
 -- Content-Type that encodes without newlines (e.g. JSON).
 data NewlineFraming
 
 instance FramingRender NewlineFraming where
-    framingRender _ f = mapStepT go0 where
-        go0 Stop        = Stop
-        go0 (Error err) = Error err
-        go0 (Skip s)    = Skip (go0 s)
-        go0 (Yield x s) = Yield (f x) (go s)
-        go0 (Effect ms) = Effect (fmap go0 ms)
-
-        go = fmap (\x -> "\n" <> f x)
+    framingRender _ f = fmap (\x -> f x <> "\n")
 
 instance FramingUnrender NewlineFraming where
     framingUnrender _ f = transformWithAtto $ do
