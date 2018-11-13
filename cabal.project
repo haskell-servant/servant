@@ -41,6 +41,6 @@ allow-newer:
   servant-pagination:servant, servant-pagination:servant-server,
   servant-multipart:servant, servant-multipart:servant-server,
   servant-quickcheck:servant, servant-quickcheck:servant-client, servant-quickcheck:servant-server,
-  servant-auth-server:servant, servant-auth-server:servant-server,
+  servant-auth-server:servant, servant-auth-server:servant-server, servant-auth-server:http-api-data,
   servant-js:servant, servant-js:servant-foreign,
   servant-quickcheck:hspec
