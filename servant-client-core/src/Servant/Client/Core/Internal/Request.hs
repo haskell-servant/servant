@@ -40,7 +40,7 @@ import           Network.HTTP.Media
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
                  Status (..), http11, methodGet)
-import           Web.HttpApiData
+import           Servant.API
                  (ToHttpApiData, toEncodedUrlPiece, toHeader)
 
 -- | A type representing possible errors in a request

@@ -1,6 +1,9 @@
+cabal-version:       >=1.10
 name:                servant-client
 version:             0.15
-synopsis: automatical derivation of querying functions for servant webservices
+
+synopsis:            Automatic derivation of querying functions for servant
+category:            Servant, Web
 description:
   This library lets you derive automatically Haskell functions that
   let you query each endpoint of a <http://hackage.haskell.org/package/servant servant> webservice.
@@ -8,24 +11,25 @@ description:
   See <http://haskell-servant.readthedocs.org/en/stable/tutorial/Client.html the client section of the tutorial>.
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md CHANGELOG>
+
+homepage:            http://haskell-servant.readthedocs.org/
+bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2017 Servant Contributors
-category:            Servant, Web
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2018 Servant Contributors
 build-type:          Simple
-cabal-version:       >=1.10
 tested-with:
-  GHC==8.0.2
-  GHC==8.2.2
-  GHC==8.4.4
-  GHC==8.6.2
-homepage:            http://haskell-servant.readthedocs.org/
-Bug-reports:         http://github.com/haskell-servant/servant/issues
+  GHC ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.2
+
 extra-source-files:
   CHANGELOG.md
   README.md
+
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git
@@ -54,7 +58,7 @@ library
   -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
       servant               == 0.15.*
-    , servant-client-core   == 0.15
+    , servant-client-core   >= 0.15 && <0.15.1
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.

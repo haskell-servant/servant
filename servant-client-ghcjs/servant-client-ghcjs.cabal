@@ -1,6 +1,9 @@
+cabal-version:       >=1.10
 name:                servant-client-ghcjs
 version:             0.14
-synopsis: automatical derivation of querying functions for servant webservices for ghcjs
+
+synopsis:            Automatic derivation of querying functions for servant webservices for GHCJS
+category:            Servant, Web
 description:
   This library lets you automatically derive Haskell functions that
   let you query each endpoint of a <http://hackage.haskell.org/package/servant servant> webservice.
@@ -8,20 +11,22 @@ description:
   See <http://haskell-servant.readthedocs.org/en/stable/tutorial/Client.html the client section of the tutorial>.
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md CHANGELOG>
+
+homepage:            http://haskell-servant.readthedocs.org/
+bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2017 Servant Contributors
-category:            Servant, Web
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2018 Servant Contributors
 build-type:          Simple
-cabal-version:       >=1.10
-tested-with:         GHC >= 7.8
-homepage:            http://haskell-servant.readthedocs.org/
-Bug-reports:         http://github.com/haskell-servant/servant/issues
+tested-with:
+  GHC >= 7.8
+
 extra-source-files:
   CHANGELOG.md
   README.md
+
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git

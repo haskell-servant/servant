@@ -1,22 +1,29 @@
 name:                servant-pipes
-version:             1
+version:             0.15
+cabal-version:       >=1.10
+
 synopsis:            Servant Stream support for pipes
+category:            Servant, Web, Pipes
 description:         Servant Stream support for pipes.
+  .
+  Provides 'ToSourceIO' and 'FromSourceIO' instances for 'Proxy' and 'SafeT'.
+
 homepage:            http://haskell-servant.readthedocs.org/
+bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2018 Servant Contributors
-category:            Web, Servant, Pipes
 build-type:          Simple
-cabal-version:       >=1.10
-bug-reports:         http://github.com/haskell-servant/servant-pipes/issues
 tested-with:
   GHC ==8.0.2
    || ==8.2.2
    || ==8.4.4
    || ==8.6.2
+
+extra-source-files:
+  CHANGELOG.md
 
 source-repository head
   type: git

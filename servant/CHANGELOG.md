@@ -11,7 +11,7 @@
   [#1077](https://github.com/haskell-servant/servant/pull/1077)
 
   The streaming functionality (`Servant.API.Stream`) is refactored to use
-  `servant` own `SourceIO` type (see `Servant.Types.SourceT` documentation),
+  `servant`'s own `SourceIO` type (see `Servant.Types.SourceT` documentation),
   which replaces both `StreamGenerator` and `ResultStream` types.
 
   New conversion type-classes are `ToSourceIO` and `FromSourceIO`
@@ -58,31 +58,44 @@
 
   This change shouldn't affect you, if you don't use streaming endpoints.
 
+- *servant-client-core* Related to the previous:
+  `streamingResponse` is removed from `RunClient`.
+  We have a new type-class:
+
+  ```haskell
+  class RunClient m =>  RunStreamingClient m where
+      withStreamingRequest :: Request -> (StreamingResponse -> IO a) ->  m a
+  ```
+
 - Drop support for GHC older than 8.0
   [#1008](https://github.com/haskell-servant/servant/pull/1008)
   [#1009](https://github.com/haskell-servant/servant/pull/1009)
 
-- `ComprehensiveAPI` is a part of public API in `Servant.Test.ComprehensiveAPI`` module.
+- *servant* `ComprehensiveAPI` is a part of public API in `Servant.Test.ComprehensiveAPI` module.
   This API type is used to verify that libraries implement all core combinators.
   Now we won't change this type between major versions.
   (This has been true for some time already).
   [#1070](https://github.com/haskell-servant/servant/pull/1070)
 
-- Remove `Servant.Utils.Enter` module
+- *servant* Remove `Servant.Utils.Enter` module
   (deprecated in `servant-0.12` in favour of `hoistServer`)
   [#996](https://github.com/haskell-servant/servant/pull/996)
+
+- *servant-foreign* Add support so `HasForeign` can be implemented for
+  `MultipartForm` from [`servant-multipart`](http://hackage.haskell.org/package/servant-multipart)
+  [#1035](https://github.com/haskell-servant/servant/pull/1035)
 
 ### Other changes
 
 - *servant-client-core* Add `NFData (GenResponse a)` and `NFData ServantError` instances.
   [#1076](https://github.com/haskell-servant/servant/pull/1076)
 
+- *servant* NewlineFraming encodes newline after each element (i.e last)
+  [#1079](https://github.com/haskell-servant/servant/pull/1079)
+  [#1011](https://github.com/haskell-servant/servant/issues/1011)
+
 - *servant* Add `lookupResponseHeader :: ... => Headers headers r -> ResponseHeader h a`
   [#1064](https://github.com/haskell-servant/servant/pull/1064)
-
-- *servant-foreign* Add support so `HasForeign` can be implemented for
-  `MultipartForm` from [`servant-multipart`](http://hackage.haskell.org/package/servant-multipart)
-  [#1035](https://github.com/haskell-servant/servant/pull/1035)
 
 - *servant-server* Add `MonadMask Handler`
   [#1068](https://github.com/haskell-servant/servant/pull/1068)
@@ -102,7 +115,7 @@
 - *servant-client-core* Add `aeson` and `Lift BaseUrl` instances
   [#1037](https://github.com/haskell-servant/servant/pull/1037)
 
-- Add `ToSourceIO (NonEmpty a)` instance
+- *servant* Add `ToSourceIO (NonEmpty a)` instance
   [#988](https://github.com/haskell-servant/servant/pull/988)
 
 - Development process improvements

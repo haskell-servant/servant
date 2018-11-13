@@ -1,6 +1,9 @@
+cabal-version:       >=1.10
 name:                servant-foreign
 version:             0.15
+
 synopsis:            Helpers for generating clients for servant APIs in any programming language
+category:            Servant, Web
 description:
   Helper types and functions for generating client functions for servant APIs in any programming language
   .
@@ -9,23 +12,24 @@ description:
   See the servant-js package for an example
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-foreign/CHANGELOG.md CHANGELOG>
+
+homepage:            http://haskell-servant.readthedocs.org/
+bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2015-2016 Servant Contributors
-category:            Servant, Web
+copyright:           2015-2018 Servant Contributors
 build-type:          Simple
-cabal-version:       >=1.10
+tested-with:
+  GHC ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.2
+
 extra-source-files:
   CHANGELOG.md
   README.md
-bug-reports:         http://github.com/haskell-servant/servant/issues
-tested-with:
-  GHC==8.0.2
-  GHC==8.2.2
-  GHC==8.4.4
-  GHC==8.6.2
 
 source-repository head
   type: git
