@@ -115,3 +115,6 @@ Running cookbook-using-custom-monad...
 [Book "To Kill a Mockingbird",Book "Harry Potter and the Order of the Phoenix"]
 [Book "The Picture of Dorian Gray",Book "To Kill a Mockingbird",Book "Harry Potter and the Order of the Phoenix"]
 ```
+
+To use `Raw` endpoints, look at the
+[servant-rawm](http://hackage.haskell.org/package/servant-rawm) package.
