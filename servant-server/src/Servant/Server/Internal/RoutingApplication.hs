@@ -10,6 +10,8 @@
 {-# LANGUAGE UndecidableInstances       #-}
 module Servant.Server.Internal.RoutingApplication where
 
+import           Control.DeepSeq
+                 (force)
 import           Control.Monad
                  (ap, liftM)
 import           Control.Monad.Base
@@ -93,13 +95,20 @@ instance MonadTransControl RouteResultT where
 instance MonadThrow m => MonadThrow (RouteResultT m) where
     throwM = lift . throwM
 
-toApplication :: RoutingApplication -> Application
-toApplication ra request respond = ra request routingRespond
- where
-  routingRespond :: RouteResult Response -> IO ResponseReceived
-  routingRespond (Fail err)      = respond $ responseServantErr err
-  routingRespond (FailFatal err) = respond $ responseServantErr err
-  routingRespond (Route v)       = respond v
+toApplication :: Evaluate -> RoutingApplication -> Application
+toApplication fullyEvaluate ra request respond =
+  ra request (maybeEval routingRespond)
+  where
+    maybeEval :: (RouteResult Response -> IO ResponseReceived)
+              -> RouteResult Response -> IO ResponseReceived
+    maybeEval resp =
+      case fullyEvaluate of
+        Force -> force resp
+        Lazy  -> resp
+    routingRespond :: RouteResult Response -> IO ResponseReceived
+    routingRespond (Fail err)      = respond $ responseServantErr err
+    routingRespond (FailFatal err) = respond $ responseServantErr err
+    routingRespond (Route v)       = respond v
 
 -- | A 'Delayed' is a representation of a handler with scheduled
 -- delayed checks that can trigger errors.
