@@ -30,6 +30,7 @@ packages:
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
+  doc/cookbook/open-id-connect
 
 tests: True
 optimization: False

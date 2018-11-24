@@ -32,3 +32,4 @@ you name it!
   curl-mock/CurlMock.lhs
   sentry/Sentry.lhs
   testing/Testing.lhs
+  open-id-connect/OpenIdConnect.lhs

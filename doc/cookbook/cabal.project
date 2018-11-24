@@ -12,6 +12,7 @@ packages:
   pagination/
   sentry/
   testing/
+  open-id-connect/
   ../../servant
   ../../servant-server
   ../../servant-client-core
