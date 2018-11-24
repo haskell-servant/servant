@@ -26,7 +26,6 @@ Workflow:
 First, let's put the import behind us:
 
 ``` haskell
-{-# OPTIONS_GHC -fno-warn-orphans  #-} -- See: https://github.com/haskell-servant/servant/issues/498 https://github.com/haskell-servant/servant/issues/683
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -41,7 +40,6 @@ First, let's put the import behind us:
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE Strict                #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
