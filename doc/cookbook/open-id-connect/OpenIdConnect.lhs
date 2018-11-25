@@ -1,7 +1,7 @@
-[OpenId Connect](https://openid.net/connect/)
+[OpenID Connect](https://openid.net/connect/)
 =============================================
 
-Use OpenId Connect to authenticate your users. In this example, we'll
+Use OpenID Connect to authenticate your users. In this example, we'll
 only focus on google OIDC provider.
 
 Mainly the workflow use the OAuth2 Workflow and focus on providing
@@ -12,18 +12,18 @@ some login token would be saved in the user agent local storage.
 
 Workflow:
 
-1.  user is presentend with a login button
+1.  user is presentend with a login button,
 2.  when the user click on the button it is redirected to the OIDC
-    provider
-3.  the user login in the OIDC provider
-4.  the OIDC provider will redirect the user and provide a `code`
+    provider,
+3.  the user login in the OIDC provider,
+4.  the OIDC provider will redirect the user and provide a `code`,
 5.  the server will use this code to make a POST to the OIDC provider
-    and will get back authentication infos
+    and will get back authentication infos,
 6.  The user will get display an HTML page that will save a secret
     identifying him in the local storage, then it will be redirected to
     /.
 
-First, let's put the import behind us:
+Let's put the imports behind us:
 
 ``` haskell
 {-# LANGUAGE DataKinds             #-}
@@ -84,17 +84,37 @@ import           Text.Blaze.Renderer.Utf8
 import qualified Web.OIDC.Client                  as O
 ```
 
-First you'll need to create a new application in Google. Then you should
-fill that OIDCConf for your specific web app.
+You'll need to create a new OpenID Connect client in an OpenID Provider.
+This example was tested with Google.
+
+Still you can find a list of public OIDC provider here:
+https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/openid-connect-providers
+
+I copied some here:
+
+- Google: https://developers.google.com/identity/protocols/OpenIDConnect
+- Microsoft: https://docs.microsoft.com/en-us/previous-versions/azure/dn645541(v=azure.100)
+- Yahoo: https://developer.yahoo.com/oauth2/guide/openid_connect/
+- PayPal: https://developer.paypal.com/docs/integration/direct/identity/log-in-with-paypal/
+
+During the configuration you'll need to provide a redirect uri.
+The redirect_uri should correspond to the uri user will be redirected to
+after a successful login into the OpenID provider.
+
+So during your test, you should certainly just use `http://localhost:3000/login/cb`.
+In general you should use your own domain name.
+
+You'll then be given a `client_id` and a `client_password`.
+Fill those values in here:
 
 ``` haskell
 oidcConf :: OIDCConf
-oidcConf = OIDCConf { redirectUri = "https://example.org/oauth2/callback"
+oidcConf = OIDCConf { redirectUri = "http://localhost:3000/login/cb"
                     , clientId = "client-id:xxx-xxx-xxx"
                     , clientPassword = "****" }
 ```
 
-So here is how to use declare it:
+Then we declare our main server:
 
 ``` haskell
 main :: IO ()
@@ -134,6 +154,14 @@ data OIDCConf =
 ```
 
 First we need to initialize OIDC.
+A short explanation about what some detail is:
+
+- to complete the workflow we need to make a POST request to the OIDC provider.
+  So we need to create an http manager to make those call properly.
+- Then in order to prevent replay attack, each time an user want to login we
+  should provide a random string called the `state`. When the user is
+  redirected to the redirect_uri, the OIDC provider should provide the same `state`
+  along a `code` parameter.
 
 ``` haskell
 initOIDC :: OIDCConf -> IO OIDCEnv
@@ -141,10 +169,9 @@ initOIDC OIDCConf{..} = do
   mgr  <- newManager tlsManagerSettings
   prov <- O.discover "https://accounts.google.com" mgr
   let oidc     = O.setCredentials clientId clientPassword redirectUri (O.newOIDC prov)
-      genState = return "whatever"
   return OIDCEnv { oidc = oidc
                  , mgr = mgr
-                 , genState = genState
+                 , genState = genRandomBS
                  , prov = prov
                  , redirectUri = redirectUri
                  , clientId = clientId
@@ -166,7 +193,7 @@ redirect, and the other one the user will come back after login.
 
 ``` haskell
 type IdentityRoutes a =
-  "login" :> ( -- redirect User to IdP
+  "login" :> ( -- redirect User to the OpenID Provider
               Get '[JSON] NoContent
                -- render the page that will save the user creds in the user-agent
               :<|> "cb" :> QueryParam "error" Text
@@ -180,6 +207,8 @@ redirects url = throwError err302 { errHeaders = [("Location",toS url)]}
 
 That function will generate the URL to redirect the users to when
 they'll click on the login button.
+Concretely, you should provide a link on your web page to `https://yourdomain/login`
+and when the user will click on it, it will be redirected to the OpenID provider.
 
 ``` haskell
 genOIDCURL :: OIDCEnv -> IO ByteString
@@ -297,8 +326,8 @@ data Customer = Customer {
 
 -- | generate a random API Key, not necessarily extremely good randomness
 -- still the password will be long enough to be very difficult to crack
-genAPIKey :: IO APIKey
-genAPIKey = do
+genRandomBS :: IO ByteString
+genRandomBS = do
   g <- Random.newStdGen
   Random.randomRs (0, n) g & take 42 & fmap toChar & readable 0 & toS & return
   where
@@ -322,7 +351,7 @@ genAPIKey = do
 
 customerFromAuthInfo :: AuthInfo -> IO Customer
 customerFromAuthInfo authinfo = do
-  apikey <- genAPIKey
+  apikey <- genRandomBS
   return Customer { account = toS (email authinfo)
                   , apiKey = apikey
                   , mail = Just (toS (email authinfo))
