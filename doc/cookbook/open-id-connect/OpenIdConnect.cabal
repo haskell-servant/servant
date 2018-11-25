@@ -3,6 +3,7 @@ version:        0.1
 synopsis:       OpenId Connect with Servant example
 homepage:       http://haskell-servant.readthedocs.org/
 license:        BSD3
+license-file:   ../../servant/LICENSE
 author:         Servant Contributors
 maintainer:     haskell-servant-maintainers@googlegroups.com
 build-type:     Simple
@@ -10,11 +11,9 @@ cabal-version:  >= 1.10
 
 executable cookbook-openidconnect
   main-is: OpenIdConnect.lhs
-  ghc-options: -Wall -Wcompat -Wincomplete-uni-patterns -Wredundant-constraints -Wnoncanonical-monad-instances
-  build-depends:
+  build-depends: base ==4.*
     , aeson
     , aeson-pretty
-    , base >=4.8 && <5
     , binary
     , blaze-html
     , blaze-markup
@@ -39,5 +38,7 @@ executable cookbook-openidconnect
     , time
     , vector
     , wai
-    , warp
+    , warp >= 3.2
   default-language: Haskell2010
+  ghc-options: -Wall -Wcompat -Wincomplete-uni-patterns -Wredundant-constraints -Wnoncanonical-monad-instances -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit >= 0.4
