@@ -149,7 +149,7 @@ repo](http://github.com/haskell-servant/servant) and look at the
 *doc/tutorial* directory. This code (the source of this web page) is in
 *doc/tutorial/Server.lhs*.
 
-If you run it, you can go to `http://localhost:8081/users` in your browser or
+If you run it (using `ghci -pgmL markdown-unlit` or `stack exec -- ghci -pgmL markdown-unlit` and then evaluating `main` into the repl), you can go to `http://localhost:8081/users` in your browser or
 query it with curl and you see:
 
 ``` bash
