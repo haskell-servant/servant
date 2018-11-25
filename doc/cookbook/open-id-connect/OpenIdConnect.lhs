@@ -1,13 +1,9 @@
 [OpenID Connect](https://openid.net/connect/)
 =============================================
 
-Use OpenID Connect to authenticate your users. In this example, we'll
-only focus on google OIDC provider.
-
-Mainly the workflow use the OAuth2 Workflow and focus on providing
-authentication infos.
-
-That example was made for a working with single page application where
+Use OpenID Connect to authenticate your users.
+This example use google OIDC provider.
+It was made for a working with single page application where
 some login token would be saved in the user agent local storage.
 
 Workflow:
@@ -82,7 +78,7 @@ import qualified Web.OIDC.Client                  as O
 You'll need to create a new OpenID Connect client in an OpenID Provider.
 This example was tested with Google.
 
-Still you can find a list of public OIDC provider here:
+You can find a list of public OIDC provider here:
 https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/openid-connect-providers
 
 I copied some here:
@@ -107,7 +103,7 @@ Fill those values in here:
 oidcConf :: OIDCConf
 oidcConf = OIDCConf { redirectUri = "http://localhost:3000/login/cb"
                     , clientId = "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
-                    , clientPassword = "xxxx" }
+                    , clientPassword = "************************" }
 ```
 
 Then we declare our main server:
@@ -141,9 +137,7 @@ application that should be in its distinct module.
 
 ``` haskell
 -- * OIDC
-```
 
-``` haskell
 data OIDCConf =
   OIDCConf { redirectUri    :: ByteString
            , clientId       :: ByteString
@@ -152,14 +146,14 @@ data OIDCConf =
 ```
 
 First we need to initialize OIDC.
-A short explanation about what some detail is:
+A short explanation about it:
 
 - to complete the workflow we need to make a POST request to the OIDC provider.
   So we need to create an http manager to make those call properly.
-- Then in order to prevent replay attack, each time an user want to login we
+- Then in order to prevent replay attack, each time an user wants to login we
   should provide a random string called the `state`. When the user is
-  redirected to the redirect_uri, the OIDC provider should provide the same `state`
-  along a `code` parameter.
+  redirected to the `redirect_uri`, the OIDC provider should provide the same
+ `state` along a `code` parameter.
 
 ``` haskell
 initOIDC :: OIDCConf -> IO OIDCEnv
@@ -186,8 +180,10 @@ data OIDCEnv = OIDCEnv { oidc           :: O.OIDC
                        }
 ```
 
-We see here how `IdentityRoutes` are about two routes. The one to
-redirect, and the other one the user will come back after login.
+The `IdentityRoutes` are two endpoints:
+
+- an endpoint to redirect the users to the OIDC Provider,
+- another one the user will be redirected to from the OIDC Provider.
 
 ``` haskell
 type IdentityRoutes a =
@@ -204,14 +200,12 @@ redirects url = throwError err302 { errHeaders = [("Location",toS url)]}
 ```
 
 That function will generate the URL to redirect the users to when
-they'll click on the login button.
-Concretely, you should provide a link on your web page to `https://yourdomain/login`
-and when the user will click on it, it will be redirected to the OpenID provider.
+they'll click on the login link: `https://yourdomain/login`.
 
 ``` haskell
 genOIDCURL :: OIDCEnv -> IO ByteString
 genOIDCURL OIDCEnv{..} = do
-  st <- genState
+  st <- genState -- generate a random string
   let oidcCreds = O.setCredentials clientId clientPassword redirectUri (O.newOIDC prov)
   loc <- O.getAuthenticationRequestUrl oidcCreds [O.openId, O.email, O.profile] (Just st) []
   return (show loc)
@@ -226,7 +220,7 @@ handleLogin oidcenv = do
 The `AuthInfo` is about the infos we can grab from OIDC provider.
 
 To be more precise, the user should come with a `code` (a token) and
-POSTing that code to the OIDC provider we should be returned with a JSON
+POSTing that code to the correct OIDC provider endpoint should return a JSON
 object. One of the field should be named `id_token` which should be a
 JWT containing all the informations we need. Depending on the scopes we
 asked we might get more informations.
@@ -254,10 +248,27 @@ instance JSON.ToJSON AuthInfo where
 type LoginHandler = AuthInfo -> IO (Either Text User)
 ```
 
-The handleLoggedIn is that part that will retrieve the informations from
-the user once he comes to us with a code.
+The `handleLoggedIn` is that part that will retrieve the informations from
+the user once he is redirected from the OIDC Provider after login.
+
+If the user is redirected to the `redirect_uri` but with an `error` query
+parameter then it means something goes wrong.
+If there is no error query param but a `code` query param it means the user
+sucessfully logged in. From there we need to make a request to the token
+endpoint of the OIDC provider. Its a POST that should contains the code
+as well as the client id & secret.
+This is the role of the `requestTokens` to make this HTTP POST.
+
+From there we extract the `claims` of the JWT contained in one of the value
+of the JSON returned by the POST HTTP Request.
 
 ``` haskell
+data User = User { userId          :: Text
+                 , userSecret      :: Text
+                 , localStorageKey :: Text
+                 , redirectUrl     :: Maybe Text
+                 } deriving (Show,Eq,Ord)
+
 handleLoggedIn :: OIDCEnv
                -> LoginHandler -- ^ handle successful id
                -> Maybe Text -- ^ error
@@ -283,15 +294,9 @@ handleLoggedIn oidcenv handleSuccessfulId err mcode =
       Nothing -> do
         liftIO $ putText "No code param"
         forbidden "no code parameter given"
-
-data User = User { userId          :: Text
-                 , userSecret      :: Text
-                 , localStorageKey :: Text
-                 , redirectUrl     :: Maybe Text
-                 } deriving (Show,Eq,Ord)
 ```
 
-When you render a User with blaze, it will generate a page with a js
+When you render a User with blaze-html, it will generate a page with a js
 that will put a secret for that user in the local storage. And it will
 redirect the user to /.
 
@@ -358,9 +363,10 @@ instance ToMarkup Homepage where
           H.script (H.toHtml ("document.write(localStorage.getItem('user-id'));" :: Text.Text))
 ```
 
+We need some helpers to generate random string for generating state and API Keys.
 
 ``` haskell
--- | generate a random API Key, not necessarily extremely good randomness
+-- | generate a random Bystestring, not necessarily extremely good randomness
 -- still the password will be long enough to be very difficult to crack
 genRandomBS :: IO ByteString
 genRandomBS = do
