@@ -52,7 +52,6 @@ import           Data.Aeson
                  (FromJSON (..), (.:))
 import qualified Data.Aeson                       as JSON
 import qualified Data.Aeson.Types                 as AeT
-import qualified Data.ByteString                  as BS
 import qualified Data.ByteString.Lazy             as LBS
 import qualified Data.List                        as List
 import qualified Data.Text                        as Text
@@ -62,15 +61,11 @@ import           Network.HTTP.Client
                  (Manager, newManager)
 import           Network.HTTP.Client.TLS
                  (tlsManagerSettings)
-import           Network.Wai
-                 (Request, requestHeaders)
 import           Network.Wai.Handler.Warp
                  (run)
 import           Servant
 import           Servant.HTML.Blaze
                  (HTML)
-import           Servant.Server.Experimental.Auth
-                 (AuthHandler, AuthServerData, mkAuthHandler)
 import qualified System.Random                    as Random
 import           Text.Blaze
                  (ToMarkup (..))
@@ -93,6 +88,7 @@ https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/openid-connect-p
 I copied some here:
 
 - Google: https://developers.google.com/identity/protocols/OpenIDConnect
+  more precisely: https://console.developers.google.com/apis/credentials
 - Microsoft: https://docs.microsoft.com/en-us/previous-versions/azure/dn645541(v=azure.100)
 - Yahoo: https://developer.yahoo.com/oauth2/guide/openid_connect/
 - PayPal: https://developer.paypal.com/docs/integration/direct/identity/log-in-with-paypal/
@@ -110,8 +106,8 @@ Fill those values in here:
 ``` haskell
 oidcConf :: OIDCConf
 oidcConf = OIDCConf { redirectUri = "http://localhost:3000/login/cb"
-                    , clientId = "client-id:xxx-xxx-xxx"
-                    , clientPassword = "****" }
+                    , clientId = "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+                    , clientPassword = "xxxx" }
 ```
 
 Then we declare our main server:
@@ -123,12 +119,14 @@ main = do
   run 3000 (app oidcEnv)
 
 type API = IdentityRoutes Customer
+         :<|> Get '[HTML] Homepage
 
 api :: Proxy API
 api = Proxy
 
 server :: OIDCEnv -> Server API
 server oidcEnv = serveOIDC oidcEnv handleOIDCLogin
+               :<|> return Homepage
 
 -- | Then main app
 app :: OIDCEnv -> Application
@@ -306,6 +304,7 @@ instance ToMarkup User where
       H.h1 "Logged In"
       H.p (H.toHtml ("Successful login with id " <> userId))
       H.script (H.toHtml ("localStorage.setItem('" <> localStorageKey <> "','" <> userSecret <> "');"
+                          <> "localStorage.setItem('user-id','" <> userId <> "');"
                          <> "window.location='" <> fromMaybe "/" redirectUrl <> "';" -- redirect the user to /
                          ));
 
@@ -323,7 +322,44 @@ data Customer = Customer {
   , mail :: Maybe Text
   , fullname :: Maybe Text
   }
+```
 
+Here is the code that display the homepage.
+It should contain a link to the the `/login` URL.
+When the user will click on this link it will be redirected to Google login page
+with some generated informations.
+
+The page also display the content of the local storage.
+And in particular the items `api-key` and `user-id`.
+Those items should be set after a successful login when the user is redirected to
+`/login/cb`.
+
+The logic used generally is to use that api-key to uniquely identify an user.
+Another option would have been to set a cookie.
+
+``` haskell
+data Homepage = Homepage
+
+instance ToMarkup Homepage where
+  toMarkup Homepage = H.docTypeHtml $ do
+    H.head $ do
+      H.title "OpenID Connect Servant Example"
+      H.style (H.toHtml ("body { font-family: monospace; font-size: 18px; }" :: Text.Text))
+    H.body $ do
+      H.h1 "OpenID Connect Servant Example"
+      H.div $
+        H.a ! HA.href "/login" $ "Click here to login"
+      H.ul $ do
+        H.li $ do
+          H.span "API Key in Local storage: "
+          H.script (H.toHtml ("document.write(localStorage.getItem('api-key'));" :: Text.Text))
+        H.li $ do
+          H.span "User ID in Local storage: "
+          H.script (H.toHtml ("document.write(localStorage.getItem('user-id'));" :: Text.Text))
+```
+
+
+``` haskell
 -- | generate a random API Key, not necessarily extremely good randomness
 -- still the password will be long enough to be very difficult to crack
 genRandomBS :: IO ByteString
