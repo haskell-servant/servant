@@ -71,6 +71,8 @@ module Servant.API.ContentTypes
 import           Control.Arrow
                  (left)
 import           Control.Monad.Compat
+import           Control.DeepSeq
+                 (NFData)
 import           Data.Aeson
                  (FromJSON (..), ToJSON (..), encode)
 import           Data.Aeson.Parser
@@ -360,6 +362,8 @@ instance MimeRender OctetStream BS.ByteString where
 -- | A type for responses without content-body.
 data NoContent = NoContent
   deriving (Show, Eq, Read, Generic)
+
+instance NFData NoContent
 
 
 --------------------------------------------------------------------------
