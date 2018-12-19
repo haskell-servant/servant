@@ -1128,8 +1128,8 @@ This is the webservice in action:
 ``` bash
 $ curl http://localhost:8081/a
 1797
-$ curl http://localhost:8081/b
-"hi"
+$ curl http://localhost:8081/b -X GET -d '42.0' -H 'Content-Type: application/json'
+true
 ```
 
 ### An arrow is a reader too.
