@@ -43,4 +43,6 @@ allow-newer:
   servant-quickcheck:servant, servant-quickcheck:servant-client, servant-quickcheck:servant-server,
   servant-auth-server:servant, servant-auth-server:servant-server, servant-auth-server:http-api-data,
   servant-js:servant, servant-js:servant-foreign,
-  servant-quickcheck:hspec
+  servant-quickcheck:hspec,
+
+  servant-quickcheck:http-client
