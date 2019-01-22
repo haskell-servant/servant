@@ -114,7 +114,7 @@ test-suite spec
     , generics-sop      >= 0.4.0.1  && < 0.5
     , hspec             >= 2.6.0    && < 2.7
     , HUnit             >= 1.6.0.0  && < 1.7
-    , network           >= 2.8.0.0  && < 2.9
+    , network           >= 2.8.0.0  && < 3.1
     , QuickCheck        >= 2.12.6.1 && < 2.13
     , servant           == 0.15.*
     , servant-server    == 0.15.*

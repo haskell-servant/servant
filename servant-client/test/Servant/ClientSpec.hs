@@ -523,8 +523,8 @@ endWaiApp (thread, _) = killThread thread
 openTestSocket :: IO (Port, Socket)
 openTestSocket = do
   s <- socket AF_INET Stream defaultProtocol
-  localhost <- inet_addr "127.0.0.1"
-  bind s (SockAddrInet aNY_PORT localhost)
+  let localhost = tupleToHostAddress (127, 0, 0, 1)
+  bind s (SockAddrInet defaultPort localhost)
   listen s 1
   port <- socketPort s
   return (fromIntegral port, s)
