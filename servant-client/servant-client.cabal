@@ -101,6 +101,7 @@ test-suite spec
     , kan-extensions
     , servant-client
     , servant-client-core
+    , stm
     , text
     , transformers
     , transformers-compat
