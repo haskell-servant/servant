@@ -27,7 +27,7 @@ import           Control.Monad.IO.Class
                  (liftIO)
 import           Control.Monad.Reader
 import           Control.Monad.STM
-                 (atomically)
+                 (STM, atomically)
 import           Control.Monad.Trans.Control
                  (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
@@ -185,11 +185,11 @@ performRequest req = do
         now <- getCurrentTime
         bss <- Client.brConsume $ Client.responseBody fRes
         let fRes' = fRes { Client.responseBody = BSL.fromChunks bss }
-        mapM_ (updateCookieJar now) $ Client.hrRedirects responses <> [(fReq, fRes')]
+        mapM_ (atomically . updateCookieJar now) $ Client.hrRedirects responses <> [(fReq, fRes')]
         return fRes'
       where
-          updateCookieJar :: UTCTime -> (Client.Request, Client.Response BSL.ByteString) -> IO ()
-          updateCookieJar now' (req', res') = atomically $ modifyTVar' cj (fst . Client.updateCookieJar res' req' now')
+          updateCookieJar :: UTCTime -> (Client.Request, Client.Response BSL.ByteString) -> STM ()
+          updateCookieJar now' (req', res') = modifyTVar' cj (fst . Client.updateCookieJar res' req' now')
 
           fReq = Client.hrFinalRequest responses
           fRes = Client.hrFinalResponse responses
