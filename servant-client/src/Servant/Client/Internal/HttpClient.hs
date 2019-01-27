@@ -184,8 +184,9 @@ performRequest req = do
     updateWithResponseCookies cj responses = do
         now <- getCurrentTime
         bss <- Client.brConsume $ Client.responseBody fRes
-        let fRes' = fRes { Client.responseBody = BSL.fromChunks bss }
-        mapM_ (atomically . updateCookieJar now) $ Client.hrRedirects responses <> [(fReq, fRes')]
+        let fRes'        = fRes { Client.responseBody = BSL.fromChunks bss }
+            allResponses = Client.hrRedirects responses <> [(fReq, fRes')]
+        atomically $ mapM_ (updateCookieJar now) allResponses
         return fRes'
       where
           updateCookieJar :: UTCTime -> (Client.Request, Client.Response BSL.ByteString) -> STM ()
