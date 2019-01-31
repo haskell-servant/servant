@@ -17,6 +17,8 @@ import           Prelude.Compat
 
 import           Control.DeepSeq
                  (NFData (..))
+import           Control.Exception
+                 (SomeException)
 import           Control.Monad.Catch
                  (Exception)
 import           Data.Bifoldable
@@ -66,19 +68,33 @@ data ServantError =
   -- | The content-type header is invalid
   | InvalidContentTypeHeader Response
   -- | There was a connection error, and no response was received
-  | ConnectionError Text
-  deriving (Eq, Show, Generic, Typeable)
+  | ConnectionError SomeException
+  deriving (Show, Generic, Typeable)
+
+instance Eq ServantError where
+  FailureResponse req res     == FailureResponse req' res'     = req == req' && res == res'
+  DecodeFailure t r           == DecodeFailure t' r'           = t == t' && r == r'
+  UnsupportedContentType mt r == UnsupportedContentType mt' r' = mt == mt' && r == r'
+  InvalidContentTypeHeader r  == InvalidContentTypeHeader r'   = r == r'
+  ConnectionError _           == ConnectionError _             = True
+
+  -- prevent wild card blindness
+  FailureResponse          {} == _ = False
+  DecodeFailure            {} == _ = False
+  UnsupportedContentType   {} == _ = False
+  InvalidContentTypeHeader {} == _ = False
+  ConnectionError          {} == _ = False
 
 instance Exception ServantError
 
+-- | Note: an exception in 'ConnectionError' might not be evaluated fully,
+-- We only 'rnf' its 'show'ed value.
 instance NFData ServantError where
     rnf (FailureResponse req res)        = rnf req `seq` rnf res
     rnf (DecodeFailure err res)          = rnf err `seq` rnf res
-    rnf (UnsupportedContentType mt' res) =
-        mediaTypeRnf mt' `seq`
-        rnf res
+    rnf (UnsupportedContentType mt' res) = mediaTypeRnf mt' `seq` rnf res
     rnf (InvalidContentTypeHeader res)   = rnf res
-    rnf (ConnectionError err)            = rnf err
+    rnf (ConnectionError err)            = err `seq` rnf (show err)
 
 mediaTypeRnf :: MediaType -> ()
 mediaTypeRnf mt =
