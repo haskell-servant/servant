@@ -1,5 +1,6 @@
 packages: servant/
   servant-client/
+  servant-client-jsaddle/
   servant-client-core/
   servant-docs/
   servant-foreign/
