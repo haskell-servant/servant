@@ -248,4 +248,4 @@ requestToClientRequest burl r = Client.defaultRequest
 catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =
   catch (Right <$> action) $ \e ->
-    pure . Left . ConnectionError . T.pack $ show (e :: Client.HttpException)
+    pure . Left . ConnectionError $ SomeException (e :: Client.HttpException)

@@ -12,6 +12,7 @@
 {-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -33,7 +34,7 @@ import           Control.Concurrent.STM
 import           Control.Concurrent.STM.TVar
                  (newTVar, readTVar)
 import           Control.Exception
-                 (bracket)
+                 (bracket, fromException)
 import           Control.Monad.Error.Class
                  (throwError)
 import           Data.Aeson
@@ -42,7 +43,7 @@ import           Data.Char
 import           Data.Foldable
                  (forM_)
 import           Data.Maybe
-                 (listToMaybe)
+                 (isJust, listToMaybe)
 import           Data.Monoid ()
 import           Data.Proxy
 import           Data.Semigroup
@@ -89,6 +90,7 @@ spec = describe "Servant.Client" $ do
     genAuthSpec
     genericClientSpec
     hoistClientSpec
+    connectionErrorSpec
 
 -- * test data types
 
@@ -523,6 +525,21 @@ hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp
 
       getInt `shouldReturn` 5
       postInt 5 `shouldReturn` 5
+
+-- * ConnectionError
+type ConnectionErrorAPI = Get '[JSON] Int
+
+connectionErrorAPI :: Proxy ConnectionErrorAPI
+connectionErrorAPI = Proxy
+
+connectionErrorSpec :: Spec
+connectionErrorSpec = describe "Servant.Client.ServantError" $
+    it "correctly catches ConnectionErrors when the HTTP request can't go through" $ do
+        let getInt = client connectionErrorAPI
+        let baseUrl' = BaseUrl Http "example.invalid" 80 ""
+        let isHttpError (Left (ConnectionError e)) = isJust $ fromException @C.HttpException e
+            isHttpError _ = False
+        (isHttpError <$> runClient getInt baseUrl') `shouldReturn` True
 
 -- * utils
 

@@ -17,6 +17,8 @@ import           Prelude.Compat
 
 import           Control.DeepSeq
                  (NFData (..))
+import           Control.Exception
+                 (SomeException)
 import           Control.Monad.Catch
                  (Exception)
 import qualified Data.ByteString         as BS
@@ -56,8 +58,16 @@ data ServantError =
   -- | The content-type header is invalid
   | InvalidContentTypeHeader Response
   -- | There was a connection error, and no response was received
-  | ConnectionError Text
-  deriving (Eq, Show, Generic, Typeable)
+  | ConnectionError SomeException
+  deriving (Show, Generic, Typeable)
+
+instance Eq ServantError where
+  (FailureResponse r)                  == (FailureResponse r')            = r == r'
+  (DecodeFailure t r)                  == (DecodeFailure t' r')           = t == t' && r == r'
+  (UnsupportedContentType mt r)        == (UnsupportedContentType mt' r') = mt == mt' && r == r'
+  (InvalidContentTypeHeader r)         == (InvalidContentTypeHeader r')   = r == r'
+  (ConnectionError _)                  == (ConnectionError _)             = True
+  _                                    == _                               = False
 
 instance Exception ServantError
 
@@ -73,7 +83,7 @@ instance NFData ServantError where
             rnf (subType mt) `seq`
             rnf (parameters mt)
     rnf (InvalidContentTypeHeader res)   = rnf res
-    rnf (ConnectionError err)            = rnf err
+    rnf (ConnectionError err)            = rnf $ show err
 
 data RequestF a = Request
   { requestPath        :: a
