@@ -39,9 +39,6 @@ data TestResponse = TestResponse { byteList :: [Word8] }
 
 testServer :: Server TestApi
 testServer x = do
-  liftIO $ putStrLn "Hello tehre"
-  liftIO $ print x
-  liftIO $ hFlush stdout
   pure . TestResponse . B.unpack $ x
 
 testClient :: Client ClientM TestApi
