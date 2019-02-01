@@ -172,6 +172,7 @@ script:
   - "echo 'constraints: foundation >=0.0.14,memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-js:base, servant-quickcheck:servant, servant-quickcheck:servant-client, servant-quickcheck:servant-server,servant-quickcheck:hspec,servant-quickcheck:http-client' >> cabal.project"
   - touch cabal.project.local
+
   - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- servant | grep -vw -- servant-client | grep -vw -- servant-client-jsaddle | grep -vw -- servant-client-core | grep -vw -- servant-docs | grep -vw -- servant-foreign | grep -vw -- servant-server | grep -vw -- tutorial | grep -vw -- servant-machines | grep -vw -- servant-conduit | grep -vw -- servant-pipes | grep -vw -- cookbook-basic-auth | grep -vw -- cookbook-curl-mock | grep -vw -- cookbook-basic-streaming | grep -vw -- cookbook-db-postgres-pool | grep -vw -- cookbook-db-sqlite-simple | grep -vw -- cookbook-file-upload | grep -vw -- cookbook-generic | grep -vw -- cookbook-hoist-server-with-context | grep -vw -- cookbook-https | grep -vw -- cookbook-jwt-and-basic-auth | grep -vw -- cookbook-testing | grep -vw -- cookbook-structuring-apis | grep -vw -- cookbook-using-custom-monad | grep -vw -- cookbook-using-free-client | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
   - cat cabal.project.local || true

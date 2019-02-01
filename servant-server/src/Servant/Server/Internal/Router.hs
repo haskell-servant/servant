@@ -1,15 +1,20 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Servant.Server.Internal.Router where
 
-import           Data.Map                                   (Map)
+import           Prelude ()
+import           Prelude.Compat
+
+import           Data.Map
+                 (Map)
 import qualified Data.Map                                   as M
-import           Data.Monoid
-import           Data.Text                                  (Text)
+import           Data.Text
+                 (Text)
 import qualified Data.Text                                  as T
-import           Network.Wai                                (Response, pathInfo)
+import           Network.Wai
+                 (Response, pathInfo)
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServantErr
 

@@ -1,12 +1,17 @@
 packages:
   basic-auth/
+  curl-mock/
   db-sqlite-simple/
   db-postgres-pool/
   using-custom-monad/
   jwt-and-basic-auth/
+  hoist-server-with-context/
   file-upload/
   structuring-apis/
   https/
+  pagination/
+  sentry/
+  testing/
   ../../servant
   ../../servant-server
   ../../servant-client-core

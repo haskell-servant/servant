@@ -28,6 +28,6 @@ module Servant.Client.Core.Reexport
 
 
 import           Servant.Client.Core.Internal.BaseUrl
-import           Servant.Client.Core.Internal.HasClient
 import           Servant.Client.Core.Internal.Generic
+import           Servant.Client.Core.Internal.HasClient
 import           Servant.Client.Core.Internal.Request

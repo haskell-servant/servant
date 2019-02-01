@@ -1,27 +1,25 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-#if __GLASGOW_HASKELL__ < 709
-{-# OPTIONS_GHC -fcontext-stack=41 #-}
-#endif
-#include "overlapping-compat.h"
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Servant.ForeignSpec where
 
-import Data.Monoid ((<>))
-import Data.Proxy
-import Servant.Foreign
-import Servant.API.Internal.Test.ComprehensiveAPI
+import           Data.Monoid
+                 ((<>))
+import           Data.Proxy
+import           Servant.Test.ComprehensiveAPI
+import           Servant.Foreign
+import           Servant.Types.SourceT
+                 (SourceT)
 
-import Test.Hspec
+import           Test.Hspec
 
 
 spec :: Spec
@@ -55,13 +53,16 @@ instance HasForeignType LangX String (Headers ctyps NoContent) where
 instance HasForeignType LangX String Int where
   typeFor _ _ _ = "intX"
 
+instance HasForeignType LangX String (SourceT m a) where
+  typeFor _ _ _ = "streamTX"
+
 instance HasForeignType LangX String Bool where
   typeFor _ _ _ = "boolX"
 
-instance OVERLAPPING_ HasForeignType LangX String String where
+instance {-# OVERLAPPING #-} HasForeignType LangX String String where
   typeFor _ _ _ = "stringX"
 
-instance OVERLAPPABLE_ HasForeignType LangX String a => HasForeignType LangX String [a] where
+instance {-# OVERLAPPABLE #-} HasForeignType LangX String a => HasForeignType LangX String [a] where
   typeFor lang ftype _ = "listX of " <> typeFor lang ftype (Proxy :: Proxy a)
 
 instance (HasForeignType LangX String a) => HasForeignType LangX String (Maybe a) where

@@ -41,9 +41,6 @@ module Servant.API.TypeLevel (
     -- ** Logic
     Or,
     And,
-    -- * Custom type errors
-    -- | Before @base-4.9.0.0@ we use non-exported 'ElemNotFoundIn' class,
-    -- which cannot be instantiated.
     ) where
 
 
@@ -63,10 +60,8 @@ import           Servant.API.Sub
                  (type (:>))
 import           Servant.API.Verbs
                  (Verb)
-#if MIN_VERSION_base(4,9,0)
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
-#endif
 
 
 
@@ -222,14 +217,10 @@ type Elem e es = ElemGo e es es
 type family ElemGo e es orig :: Constraint where
   ElemGo x (x ': xs) orig = ()
   ElemGo y (x ': xs) orig = ElemGo y xs orig
-#if MIN_VERSION_base(4,9,0)
   -- Note [Custom Errors]
   ElemGo x '[] orig       = TypeError ('ShowType x
                                  ':<>: 'Text " expected in list "
                                  ':<>: 'ShowType orig)
-#else
-  ElemGo x '[] orig       = ElemNotFoundIn x orig
-#endif
 
 -- ** Logic
 
@@ -243,12 +234,6 @@ type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
 -- | If both a or b produce an empty constraint, produce an empty constraint.
 type family And (a :: Constraint) (b :: Constraint) :: Constraint where
   And () ()     = ()
-
--- * Custom type errors
-
-#if !MIN_VERSION_base(4,9,0)
-class ElemNotFoundIn val list
-#endif
 
 {- Note [Custom Errors]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

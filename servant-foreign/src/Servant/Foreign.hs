@@ -5,6 +5,7 @@ module Servant.Foreign
   , HeaderArg(..)
   , QueryArg(..)
   , Req(..)
+  , ReqBodyContentType(..)
   , Segment(..)
   , SegmentType(..)
   , Url(..)
@@ -21,6 +22,7 @@ module Servant.Foreign
   , reqMethod
   , reqHeaders
   , reqBody
+  , reqBodyContentType
   , reqReturnType
   , reqFuncName
   , path
@@ -51,6 +53,6 @@ module Servant.Foreign
   , module Servant.Foreign.Inflections
   ) where
 
-import Servant.API
-import Servant.Foreign.Internal
-import Servant.Foreign.Inflections
+import           Servant.API
+import           Servant.Foreign.Inflections
+import           Servant.Foreign.Internal

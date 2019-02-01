@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -6,61 +5,49 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-#include "overlapping-compat.h"
 module Servant.Client.Core.Internal.HasClient where
 
-import           Prelude                                ()
+import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Concurrent                     (newMVar, modifyMVar)
-import           Data.Foldable                          (toList)
+import qualified Data.ByteString                        as BS
 import qualified Data.ByteString.Lazy                   as BL
-import           Data.List                              (foldl')
-import           Data.Monoid                            ((<>))
-import           Data.Proxy                             (Proxy (Proxy))
-import           Data.Sequence                          (fromList)
-import           Data.String                            (fromString)
-import           Data.Text                              (Text, pack)
-import           GHC.TypeLits                           (KnownSymbol, symbolVal)
+import           Data.Foldable
+                 (toList)
+import           Data.List
+                 (foldl')
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Data.Sequence
+                 (fromList)
+import           Data.String
+                 (fromString)
+import           Data.Text
+                 (Text, pack)
+import           GHC.TypeLits
+                 (KnownSymbol, symbolVal)
 import qualified Network.HTTP.Types                     as H
-import           Servant.API                            ((:<|>) ((:<|>)), (:>),
-                                                         AuthProtect, BasicAuth,
-                                                         BasicAuthData,
-                                                         BuildHeadersTo (..),
-                                                         BuildFromStream (..),
-                                                         ByteStringParser (..),
-                                                         Capture', CaptureAll,
-                                                         Description, EmptyAPI,
-                                                         FramingUnrender (..),
-                                                         Header', Headers (..),
-                                                         HttpVersion, IsSecure,
-                                                         MimeRender (mimeRender),
-                                                         MimeUnrender (mimeUnrender),
-                                                         NoContent (NoContent),
-                                                         QueryFlag, QueryParam',
-                                                         QueryParams, Raw,
-                                                         ReflectMethod (..),
-                                                         RemoteHost, ReqBody',
-                                                         ResultStream(..),
-                                                         SBoolI,
-                                                         Stream,
-                                                         Summary, ToHttpApiData,
-                                                         Vault, Verb,
-                                                         WithNamedContext,
-                                                         contentType,
-                                                         getHeadersHList,
-                                                         getResponse,
-                                                         toQueryParam,
-                                                         toUrlPiece)
-import           Servant.API.ContentTypes               (contentTypes)
-import           Servant.API.Modifiers                  (FoldRequired,
-                                                         RequiredArgument,
-                                                         foldRequiredArgument)
+import           Servant.API
+                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
+                 BuildHeadersTo (..), Capture', CaptureAll, Description,
+                 EmptyAPI, FramingUnrender (..), FromSourceIO (..), Header',
+                 Headers (..), HttpVersion, IsSecure, MimeRender (mimeRender),
+                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
+                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
+                 ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
+                 Vault, Verb, WithNamedContext, contentType, getHeadersHList,
+                 getResponse, toQueryParam, toUrlPiece)
+import           Servant.API.ContentTypes
+                 (contentTypes)
+import           Servant.API.Modifiers
+                 (FoldRequired, RequiredArgument, foldRequiredArgument)
+import qualified Servant.Types.SourceT                  as S
 
 import           Servant.Client.Core.Internal.Auth
 import           Servant.Client.Core.Internal.BasicAuth
@@ -97,6 +84,12 @@ clientIn p pm = clientWithRoute pm p defaultRequest
 class RunClient m => HasClient m api where
   type Client (m :: * -> *) (api :: *) :: *
   clientWithRoute :: Proxy m -> Proxy api -> Request -> Client m api
+  hoistClientMonad
+    :: Proxy m
+    -> Proxy api
+    -> (forall x. mon x -> mon' x)
+    -> Client mon api
+    -> Client mon' api
 
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
@@ -118,6 +111,10 @@ instance (HasClient m a, HasClient m b) => HasClient m (a :<|> b) where
     clientWithRoute pm (Proxy :: Proxy a) req :<|>
     clientWithRoute pm (Proxy :: Proxy b) req
 
+  hoistClientMonad pm _ f (ca :<|> cb) =
+    hoistClientMonad pm (Proxy :: Proxy a) f ca :<|>
+    hoistClientMonad pm (Proxy :: Proxy b) f cb
+
 -- | Singleton type representing a client for an empty API.
 data EmptyClient = EmptyClient deriving (Eq, Show, Bounded, Enum)
 
@@ -134,6 +131,7 @@ data EmptyClient = EmptyClient deriving (Eq, Show, Bounded, Enum)
 instance RunClient m => HasClient m EmptyAPI where
   type Client m EmptyAPI = EmptyClient
   clientWithRoute _pm Proxy _ = EmptyClient
+  hoistClientMonad _ _ _ EmptyClient = EmptyClient
 
 -- | If you use a 'Capture' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -165,6 +163,9 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m api)
                     (appendToPath p req)
 
     where p = (toUrlPiece val)
+
+  hoistClientMonad pm _ f cl = \a ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
 
 -- | If you use a 'CaptureAll' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take an
@@ -198,7 +199,10 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
 
     where ps = map (toUrlPiece) vals
 
-instance OVERLAPPABLE_
+  hoistClientMonad pm _ f cl = \as ->
+    hoistClientMonad pm (Proxy :: Proxy sublayout) f (cl as)
+
+instance {-# OVERLAPPABLE #-}
   -- Note [Non-Empty Content Types]
   ( RunClient m, MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient m (Verb method status cts' a) where
@@ -213,7 +217,9 @@ instance OVERLAPPABLE_
       accept = contentTypes (Proxy :: Proxy ct)
       method = reflectMethod (Proxy :: Proxy method)
 
-instance OVERLAPPING_
+  hoistClientMonad _ _ f ma = f ma
+
+instance {-# OVERLAPPING #-}
   ( RunClient m, ReflectMethod method
   ) => HasClient m (Verb method status cts NoContent) where
   type Client m (Verb method status cts NoContent)
@@ -223,7 +229,9 @@ instance OVERLAPPING_
     return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
 
-instance OVERLAPPING_
+  hoistClientMonad _ _ f ma = f ma
+
+instance {-# OVERLAPPING #-}
   -- Note [Non-Empty Content Types]
   ( RunClient m, MimeUnrender ct a, BuildHeadersTo ls
   , ReflectMethod method, cts' ~ (ct ': cts)
@@ -244,7 +252,9 @@ instance OVERLAPPING_
       where method = reflectMethod (Proxy :: Proxy method)
             accept = contentTypes (Proxy :: Proxy ct)
 
-instance OVERLAPPING_
+  hoistClientMonad _ _ f ma = f ma
+
+instance {-# OVERLAPPING #-}
   ( RunClient m, BuildHeadersTo ls, ReflectMethod method
   ) => HasClient m (Verb method status cts (Headers ls NoContent)) where
   type Client m (Verb method status cts (Headers ls NoContent))
@@ -256,54 +266,26 @@ instance OVERLAPPING_
                      , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
 
-instance OVERLAPPABLE_
-  ( RunClient m, MimeUnrender ct a, ReflectMethod method,
-    FramingUnrender framing a, BuildFromStream a (f a)
-  ) => HasClient m (Stream method framing ct (f a)) where
+  hoistClientMonad _ _ f ma = f ma
 
-  type Client m (Stream method framing ct (f a)) = m (f a)
+instance {-# OVERLAPPABLE #-}
+  ( RunStreamingClient m, MimeUnrender ct chunk, ReflectMethod method,
+    FramingUnrender framing, FromSourceIO chunk a
+  ) => HasClient m (Stream method status framing ct a) where
 
-  clientWithRoute _pm Proxy req = do
-   sresp <- streamingRequest req
-      { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
-      , requestMethod = reflectMethod (Proxy :: Proxy method)
-      }
-   return . buildFromStream $ ResultStream $ \k ->
-     runStreamingResponse sresp $ \gres -> do
-      let  reader   = responseBody gres
-      let  unrender = unrenderFrames (Proxy :: Proxy framing) (Proxy :: Proxy a)
-           loop bs = do
-             res <- BL.fromStrict <$> reader
-             if BL.null res
-              then return $ parseEOF unrender res
-              else let sofar = (bs <> res)
-                   in case parseIncremental unrender sofar of
-                     Just x -> return x
-                     Nothing -> loop sofar
-      (frameParser, remainder) <- loop BL.empty
-      state <- newMVar remainder
-      let frameLoop bs = do
-              res <- BL.fromStrict <$> reader
-              let addIsEmptyInfo (a, r) = (r, (a, BL.null r && BL.null res))
-              if BL.null res
-                   then if BL.null bs
-                           then return ("", (Right "", True))
-                           else return . addIsEmptyInfo $ parseEOF frameParser bs
-                   else let sofar = (bs <> res)
-                        in case parseIncremental frameParser sofar of
-                          Just x ->  return $ addIsEmptyInfo x
-                          Nothing -> frameLoop sofar
+  type Client m (Stream method status framing ct a) = m a
 
-          go = processResult <$> modifyMVar state frameLoop
-          processResult (Right bs,isDone) =
-               if BL.null bs && isDone
-                    then Nothing
-                    else Just $ case mimeUnrender (Proxy :: Proxy ct) bs :: Either String a of
-                                  Left err -> Left err
-                                  Right x -> Right x
-          processResult (Left err, _) = Just (Left err)
-      k go
+  hoistClientMonad _ _ f ma = f ma
 
+  clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
+      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
+          framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
+      return $ fromSourceIO $ framingUnrender' $ S.fromAction BS.null (responseBody gres)
+    where
+      req' = req
+          { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
+          , requestMethod = reflectMethod (Proxy :: Proxy method)
+          }
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -345,6 +327,9 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequire
       add :: a -> Request
       add value = addHeader hname value req
 
+  hoistClientMonad pm _ f cl = \arg ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
+
 -- | Using a 'HttpVersion' combinator in your API doesn't affect the client
 -- functions.
 instance HasClient m api
@@ -356,17 +341,23 @@ instance HasClient m api
   clientWithRoute pm Proxy =
     clientWithRoute pm (Proxy :: Proxy api)
 
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
 -- | Ignore @'Summary'@ in client functions.
 instance HasClient m api => HasClient m (Summary desc :> api) where
   type Client m (Summary desc :> api) = Client m api
 
   clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
 
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
 -- | Ignore @'Description'@ in client functions.
 instance HasClient m api => HasClient m (Description desc :> api) where
   type Client m (Description desc :> api) = Client m api
 
   clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -409,6 +400,9 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequire
 
       pname :: Text
       pname  = pack $ symbolVal (Proxy :: Proxy sym)
+
+  hoistClientMonad pm _ f cl = \arg ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
 
 -- | If you use a 'QueryParams' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -453,6 +447,9 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
     where pname = pack $ symbolVal (Proxy :: Proxy sym)
           paramlist' = map (Just . toQueryParam) paramlist
 
+  hoistClientMonad pm _ f cl = \as ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl as)
+
 -- | If you use a 'QueryFlag' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
 -- an additional 'Bool' argument.
@@ -489,6 +486,8 @@ instance (KnownSymbol sym, HasClient m api)
 
     where paramname = pack $ symbolVal (Proxy :: Proxy sym)
 
+  hoistClientMonad pm _ f cl = \b ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl b)
 
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
@@ -499,6 +498,8 @@ instance RunClient m => HasClient m Raw where
   clientWithRoute :: Proxy m -> Proxy Raw -> Request -> Client m Raw
   clientWithRoute _pm Proxy req httpMethod = do
     runRequest req { requestMethod = httpMethod }
+
+  hoistClientMonad _ _ f cl = \meth -> f (cl meth)
 
 -- | If you use a 'ReqBody' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -533,6 +534,21 @@ instance (MimeRender ct a, HasClient m api)
                                           req
                     )
 
+  hoistClientMonad pm _ f cl = \a ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
+
+instance
+    ( HasClient m api
+    ) => HasClient m (StreamBody' mods framing ctype a :> api)
+  where
+
+    type Client m (StreamBody' mods framing ctype a :> api) = a -> Client m api
+
+    hoistClientMonad pm _ f cl = \a ->
+      hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
+
+    clientWithRoute _pm Proxy _req _body = error "HasClient @StreamBody"
+
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where
   type Client m (path :> api) = Client m api
@@ -543,11 +559,15 @@ instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where
 
     where p = pack $ symbolVal (Proxy :: Proxy path)
 
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
 instance HasClient m api => HasClient m (Vault :> api) where
   type Client m (Vault :> api) = Client m api
 
   clientWithRoute pm Proxy req =
     clientWithRoute pm (Proxy :: Proxy api) req
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
 instance HasClient m api => HasClient m (RemoteHost :> api) where
   type Client m (RemoteHost :> api) = Client m api
@@ -555,17 +575,23 @@ instance HasClient m api => HasClient m (RemoteHost :> api) where
   clientWithRoute pm Proxy req =
     clientWithRoute pm (Proxy :: Proxy api) req
 
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
 instance HasClient m api => HasClient m (IsSecure :> api) where
   type Client m (IsSecure :> api) = Client m api
 
   clientWithRoute pm Proxy req =
     clientWithRoute pm (Proxy :: Proxy api) req
 
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
 instance HasClient m subapi =>
   HasClient m (WithNamedContext name context subapi) where
 
   type Client m (WithNamedContext name context subapi) = Client m subapi
   clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl
 
 instance ( HasClient m api
          ) => HasClient m (AuthProtect tag :> api) where
@@ -575,6 +601,9 @@ instance ( HasClient m api
   clientWithRoute pm Proxy req (AuthenticatedRequest (val,func)) =
     clientWithRoute pm (Proxy :: Proxy api) (func val req)
 
+  hoistClientMonad pm _ f cl = \authreq ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl authreq)
+
 -- * Basic Authentication
 
 instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
@@ -582,6 +611,9 @@ instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
 
   clientWithRoute pm Proxy req val =
     clientWithRoute pm (Proxy :: Proxy api) (basicAuthReq val req)
+
+  hoistClientMonad pm _ f cl = \bauth ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl bauth)
 
 
 {- Note [Non-Empty Content Types]

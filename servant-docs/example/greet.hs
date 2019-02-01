@@ -5,14 +5,15 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-import Control.Lens
-import Data.Aeson
-import Data.Proxy
-import Data.String.Conversions
-import Data.Text (Text)
-import GHC.Generics
-import Servant.API
-import Servant.Docs
+import           Control.Lens
+import           Data.Aeson
+import           Data.Proxy
+import           Data.String.Conversions
+import           Data.Text
+                 (Text)
+import           GHC.Generics
+import           Servant.API
+import           Servant.Docs
 
 -- * Example
 

@@ -1,6 +1,12 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.11.3
+------
+
+- Support `servant-0.15`
+   - Instances for 'Stream' and 'StreamBody'
+
 0.11.2
 ------
 

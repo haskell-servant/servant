@@ -1,0 +1,24 @@
+name:                cookbook-sentry
+version:             0.1
+synopsis:            Collecting runtime exceptions using Sentry
+homepage:            http://haskell-servant.readthedocs.org/
+license:             BSD3
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+build-type:          Simple
+cabal-version:       >=1.10
+tested-with:         GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.2
+
+executable cookbook-sentry
+  main-is:             Sentry.lhs
+  build-depends:       base == 4.*
+                     , bytestring
+                     , markdown-unlit >= 0.4
+                     , raven-haskell >= 0.1.2
+                     , servant-server
+                     , warp >= 3.2
+                     , wai >= 3.2
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit

@@ -1,3 +1,0 @@
-dependencies:
-  - name: servant
-    path: ../servant

@@ -4,16 +4,20 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Servant.Docs.Internal.Pretty where
 
-import Data.Aeson               (ToJSON(..))
-import Data.Aeson.Encode.Pretty (encodePretty)
-import Data.Proxy               (Proxy(Proxy))
-import Network.HTTP.Media       ((//))
-import Servant.API
+import           Data.Aeson
+                 (ToJSON (..))
+import           Data.Aeson.Encode.Pretty
+                 (encodePretty)
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Network.HTTP.Media
+                 ((//))
+import           Servant.API
 
 -- | PrettyJSON content type.
 data PrettyJSON

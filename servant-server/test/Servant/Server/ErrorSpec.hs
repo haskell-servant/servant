@@ -6,16 +6,20 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.Server.ErrorSpec (spec) where
 
-import           Control.Monad              (when)
-import           Data.Aeson                 (encode)
+import           Control.Monad
+                 (when)
+import           Data.Aeson
+                 (encode)
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.ByteString.Lazy.Char8 as BCL
-import           Data.Monoid                ((<>))
+import           Data.Monoid
+                 ((<>))
 import           Data.Proxy
-import           Network.HTTP.Types         (hAccept, hAuthorization,
-                                             hContentType, methodGet,
-                                             methodPost, methodPut)
-import           Safe                       (readMay)
+import           Network.HTTP.Types
+                 (hAccept, hAuthorization, hContentType, methodGet, methodPost,
+                 methodPut)
+import           Safe
+                 (readMay)
 import           Test.Hspec
 import           Test.Hspec.Wai
 
@@ -247,6 +251,8 @@ type ErrorChoiceApi
   :<|> "path3" :> ReqBody '[JSON] Int :> Post '[PlainText] Int        -- 3
   :<|> "path4" :> (ReqBody '[PlainText] Int :> Post '[PlainText] Int  -- 4
              :<|>  ReqBody '[PlainText] Int :> Post '[JSON] Int)      -- 5
+  :<|> "path5" :> (ReqBody '[JSON] Int      :> Post '[PlainText] Int  -- 6
+             :<|>  ReqBody '[PlainText] Int :> Post '[PlainText] Int) -- 7
 
 errorChoiceApi :: Proxy ErrorChoiceApi
 errorChoiceApi = Proxy
@@ -256,8 +262,8 @@ errorChoiceServer = return 0
                :<|> return 1
                :<|> return 2
                :<|> (\_ -> return 3)
-               :<|> (\_ -> return 4)
-               :<|> (\_ -> return 5)
+               :<|> ((\_ -> return 4) :<|> (\_ -> return 5))
+               :<|> ((\_ -> return 6) :<|> (\_ -> return 7))
 
 
 errorChoiceSpec :: Spec
@@ -278,6 +284,13 @@ errorChoiceSpec = describe "Multiple handlers return errors"
     request methodPost "path4" [(hContentType, "text/plain;charset=utf-8"),
                                 (hAccept, "blah")] "5"
       `shouldRespondWith` 406
+  it "should respond with 415 only if none of the subservers supports the request's content type" $ do
+    request methodPost "path5" [(hContentType, "text/plain;charset=utf-8")] "1"
+      `shouldRespondWith` 200
+    request methodPost "path5" [(hContentType, "application/json")] "1"
+      `shouldRespondWith` 200
+    request methodPost "path5" [(hContentType, "application/not-supported")] ""
+      `shouldRespondWith` 415
 
 
 -- }}}

@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -11,26 +10,34 @@ module Servant.API.ContentTypesSpec where
 import           Prelude ()
 import           Prelude.Compat
 
-import           Data.Aeson.Compat
-import           Data.ByteString.Char8     (ByteString, append, pack)
-import qualified Data.ByteString.Lazy      as BSL
-import qualified Data.ByteString.Lazy.Char8 as BSL8
+import           Data.Aeson
+                 (FromJSON, ToJSON (..), Value, decode, encode, object, (.=))
+import           Data.ByteString.Char8
+                 (ByteString, append, pack)
+import qualified Data.ByteString.Lazy                             as BSL
+import qualified Data.ByteString.Lazy.Char8                       as BSL8
 import           Data.Either
-import           Data.Function             (on)
-import           Data.List                 (maximumBy)
-import qualified Data.List.NonEmpty        as NE
-import           Data.Maybe                (fromJust, isJust, isNothing)
+import           Data.Function
+                 (on)
+import           Data.List
+                 (maximumBy)
+import qualified Data.List.NonEmpty                               as NE
+import           Data.Maybe
+                 (fromJust, isJust, isNothing)
 import           Data.Proxy
-import           Data.String               (IsString (..))
-import           Data.String.Conversions   (cs)
-import qualified Data.Text                 as TextS
-import qualified Data.Text.Encoding        as TextSE
-import qualified Data.Text.Lazy            as TextL
+import           Data.String
+                 (IsString (..))
+import           Data.String.Conversions
+                 (cs)
+import qualified Data.Text                                        as TextS
+import qualified Data.Text.Encoding                               as TextSE
+import qualified Data.Text.Lazy                                   as TextL
 import           GHC.Generics
 import           Test.Hspec
 import           Test.QuickCheck
-import           Text.Read                 (readMaybe)
-import "quickcheck-instances" Test.QuickCheck.Instances ()
+import           "quickcheck-instances" Test.QuickCheck.Instances ()
+import           Text.Read
+                 (readMaybe)
 
 import           Servant.API.ContentTypes
 
@@ -188,7 +195,6 @@ spec = describe "Servant.API.ContentTypes" $ do
                 handleCTypeH (Proxy :: Proxy '[JSONorText]) "image/jpeg"
                     "foobar" `shouldBe` (Nothing :: Maybe (Either String Int))
 
-#if MIN_VERSION_aeson(0,9,0)
     -- aeson >= 0.9 decodes top-level strings
     describe "eitherDecodeLenient" $ do
 
@@ -197,7 +203,6 @@ spec = describe "Servant.API.ContentTypes" $ do
             -- The Left messages differ, so convert to Maybe
             property $ \x -> toMaybe (eitherDecodeLenient x)
                 `shouldBe` (decode x :: Maybe String)
-#endif
 
 
 data SomeData = SomeData { record1 :: String, record2 :: Int }

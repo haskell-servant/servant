@@ -1,6 +1,23 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-foreign/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.15
+----
+
+- *servant-foreign* Add support so `HasForeign` can be implemented for
+  `MultipartForm` from [`servant-multipart`](http://hackage.haskell.org/package/servant-multipart)
+  [#1035](https://github.com/haskell-servant/servant/pull/1035)
+
+- Drop support for GHC older than 8.0
+  [#1008](https://github.com/haskell-servant/servant/pull/1008)
+  [#1009](https://github.com/haskell-servant/servant/pull/1009)
+
+
+0.11.1
+------
+
+- Add missing `Semigroup` instances
+
 0.11
 ----
 

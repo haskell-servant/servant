@@ -1,33 +1,37 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE PolyKinds                  #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Servant.Server.Experimental.Auth where
 
-import           Control.Monad.Trans                        (liftIO)
-import           Data.Proxy                                 (Proxy (Proxy))
-import           Data.Typeable                              (Typeable)
-import           GHC.Generics                               (Generic)
-import           Network.Wai                                (Request)
+import           Control.Monad.Trans
+                 (liftIO)
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Data.Typeable
+                 (Typeable)
+import           GHC.Generics
+                 (Generic)
+import           Network.Wai
+                 (Request)
 
-import           Servant                                    ((:>))
+import           Servant
+                 ((:>))
 import           Servant.API.Experimental.Auth
-import           Servant.Server.Internal                    (HasContextEntry,
-                                                             HasServer (..),
-                                                             getContextEntry)
-import           Servant.Server.Internal.RoutingApplication (addAuthCheck,
-                                                             delayedFailFatal,
-                                                             DelayedIO,
-                                                             withRequest)
-import           Servant.Server.Internal.Handler            (Handler, runHandler)
+import           Servant.Server.Internal
+                 (HasContextEntry, HasServer (..), getContextEntry)
+import           Servant.Server.Internal.Handler
+                 (Handler, runHandler)
+import           Servant.Server.Internal.RoutingApplication
+                 (DelayedIO, addAuthCheck, delayedFailFatal, withRequest)
 
 -- * General Auth
 

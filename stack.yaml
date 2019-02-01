@@ -1,5 +1,5 @@
 # Let's try to keep resolver at the first day of the month
-resolver: nightly-2018-03-01
+resolver: nightly-2018-09-28 # Last nightly with GHC-8.4.3
 packages:
 - servant-client/
 - servant-client-core/
@@ -8,16 +8,26 @@ packages:
 - servant-server/
 - servant/
 
-extra-deps:
-- cabal-doctest-1.0.6
-- http-api-data-0.3.7.2
-- http-types-0.12
-- text-1.2.3.0
-- aeson-1.3.0.0
-- exceptions-0.10.0
-- aeson-compat-0.3.7.1
-- free-5.0.1
-- lens-4.16
+- servant-conduit
+- servant-machines/
+- servant-pipes/
 
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/
+
+extra-deps:
+- base-compat-0.10.5
+- conduit-1.3.1
+- generics-sop-0.4.0.1
+- hspec-2.6.0
+- hspec-core-2.6.0
+- hspec-discover-2.6.0
+- http-api-data-0.4
+- http-media-0.7.1.3
+- network-2.8.0.0
+- pipes-safe-2.3.1
+- QuickCheck-2.12.6.1
+- resourcet-1.2.2
+- sop-core-0.4.0.0
+- wai-extra-3.0.24.3
+- tasty-1.1.0.4

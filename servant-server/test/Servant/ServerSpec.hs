@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleContexts     #-}
@@ -9,65 +8,69 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=100 #-}
-#else
-{-# OPTIONS_GHC -fcontext-stack=100 #-}
-#endif
 
 module Servant.ServerSpec where
 
-import           Control.Monad              (forM_, when, unless)
-import           Control.Monad.Error.Class  (MonadError (..))
-import           Data.Aeson                 (FromJSON, ToJSON, decode', encode)
-import qualified Data.ByteString.Base64     as Base64
-import           Data.Char                  (toUpper)
-import           Data.Monoid
-import           Data.Proxy                 (Proxy (Proxy))
-import           Data.String                (fromString)
-import           Data.String.Conversions    (cs)
-import qualified Data.Text                  as T
-import           GHC.Generics               (Generic)
-import           Network.HTTP.Types         (Status (..), hAccept, hContentType,
-                                             methodDelete, methodGet,
-                                             methodHead, methodPatch,
-                                             methodPost, methodPut, ok200,
-                                             imATeapot418,
-                                             parseQuery)
-import           Network.Wai                (Application, Request, requestHeaders, pathInfo,
-                                             queryString, rawQueryString,
-                                             responseLBS)
-import           Network.Wai.Test           (defaultRequest, request,
-                                             runSession, simpleBody,
-                                             simpleHeaders, simpleStatus)
-import           Servant.API                ((:<|>) (..), (:>), AuthProtect,
-                                             BasicAuth, BasicAuthData(BasicAuthData),
-                                             Capture, CaptureAll, Delete, Get, Header,
-                                             Headers, HttpVersion,
-                                             IsSecure (..), JSON,
-                                             NoContent (..), Patch, PlainText,
-                                             Post, Put, EmptyAPI,
-                                             QueryFlag, QueryParam, QueryParams,
-                                             Raw, RemoteHost, ReqBody,
-                                             StdMethod (..), Verb, addHeader)
-import           Servant.API.Internal.Test.ComprehensiveAPI
-import           Servant.Server             (Server, Handler, Tagged (..), err401, err403,
-                                             err404, serve, serveWithContext,
-                                             Context((:.), EmptyContext), emptyServer)
-import           Test.Hspec                 (Spec, context, describe, it,
-                                             shouldBe, shouldContain)
-import qualified Test.Hspec.Wai             as THW
-import           Test.Hspec.Wai             (get, liftIO, matchHeaders,
-                                             matchStatus, shouldRespondWith,
-                                             with, (<:>))
+import           Prelude ()
+import           Prelude.Compat
 
-import           Servant.Server.Internal.BasicAuth (BasicAuthCheck(BasicAuthCheck),
-                                                    BasicAuthResult(Authorized,Unauthorized))
+import           Control.Monad
+                 (forM_, unless, when)
+import           Control.Monad.Error.Class
+                 (MonadError (..))
+import           Data.Aeson
+                 (FromJSON, ToJSON, decode', encode)
+import qualified Data.ByteString                   as BS
+import qualified Data.ByteString.Base64            as Base64
+import           Data.Char
+                 (toUpper)
+import           Data.Proxy
+                 (Proxy (Proxy))
+import           Data.String
+                 (fromString)
+import           Data.String.Conversions
+                 (cs)
+import qualified Data.Text                         as T
+import           GHC.Generics
+                 (Generic)
+import           Network.HTTP.Types
+                 (Status (..), hAccept, hContentType, imATeapot418,
+                 methodDelete, methodGet, methodHead, methodPatch, methodPost,
+                 methodPut, ok200, parseQuery)
+import           Network.Wai
+                 (Application, Request, pathInfo, queryString, rawQueryString,
+                 requestHeaders, responseLBS)
+import           Network.Wai.Test
+                 (defaultRequest, request, runSession, simpleBody,
+                 simpleHeaders, simpleStatus)
+import           Servant.API
+                 ((:<|>) (..), (:>), AuthProtect, BasicAuth,
+                 BasicAuthData (BasicAuthData), Capture, CaptureAll, Delete,
+                 EmptyAPI, Get, Header, Headers, HttpVersion, IsSecure (..),
+                 JSON, NoContent (..), NoFraming, OctetStream, Patch,
+                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
+                 RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Verb,
+                 addHeader)
+import           Servant.Server
+                 (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
+                 emptyServer, err401, err403, err404, serve, serveWithContext)
+import           Servant.Test.ComprehensiveAPI
+import qualified Servant.Types.SourceT             as S
+import           Test.Hspec
+                 (Spec, context, describe, it, shouldBe, shouldContain)
+import           Test.Hspec.Wai
+                 (get, liftIO, matchHeaders, matchStatus, shouldRespondWith,
+                 with, (<:>))
+import qualified Test.Hspec.Wai                    as THW
+
 import           Servant.Server.Experimental.Auth
-                                            (AuthHandler, AuthServerData,
-                                             mkAuthHandler)
+                 (AuthHandler, AuthServerData, mkAuthHandler)
+import           Servant.Server.Internal.BasicAuth
+                 (BasicAuthCheck (BasicAuthCheck),
+                 BasicAuthResult (Authorized, Unauthorized))
 import           Servant.Server.Internal.Context
-                                            (NamedContext(..))
+                 (NamedContext (..))
 
 -- * comprehensive api test
 
@@ -83,6 +86,7 @@ spec :: Spec
 spec = do
   verbSpec
   captureSpec
+  captureAllSpec
   queryParamSpec
   reqBodySpec
   headerSpec
@@ -105,6 +109,7 @@ type VerbApi method status
  :<|> "accept"    :> (    Verb method status '[JSON] Person
                      :<|> Verb method status '[PlainText] String
                      )
+ :<|> "stream"    :> Stream method status NoFraming OctetStream (SourceIO BS.ByteString)
 
 verbSpec :: Spec
 verbSpec = describe "Servant.API.Verb" $ do
@@ -114,6 +119,8 @@ verbSpec = describe "Servant.API.Verb" $ do
           :<|> return (addHeader 5 alice)
           :<|> return (addHeader 10 NoContent)
           :<|> (return alice :<|> return "B")
+          :<|> return (S.source ["bytestring"])
+
       get200     = Proxy :: Proxy (VerbApi 'GET 200)
       post210    = Proxy :: Proxy (VerbApi 'POST 210)
       put203     = Proxy :: Proxy (VerbApi 'PUT 203)
@@ -178,6 +185,11 @@ verbSpec = describe "Servant.API.Verb" $ do
             response <- THW.request method "" [] ""
             liftIO $ simpleHeaders response `shouldContain`
               [("Content-Type", "application/json;charset=utf-8")]
+
+          it "works for Stream as for Result" $ do
+              response <- THW.request method "/stream" [] ""
+              liftIO $ statusCode (simpleStatus response) `shouldBe` status
+              liftIO $ simpleBody response `shouldBe` "bytestring"
 
   test "GET 200" get200 methodGet 200
   test "POST 210" post210 methodPost 210

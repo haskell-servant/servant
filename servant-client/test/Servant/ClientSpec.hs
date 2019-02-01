@@ -15,71 +15,64 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=100 #-}
-#else
-{-# OPTIONS_GHC -fcontext-stack=100 #-}
-#endif
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
-#include "overlapping-compat.h"
 module Servant.ClientSpec (spec, Person(..), startWaiApp, endWaiApp) where
 
-import           Prelude                                    ()
+import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Arrow                              (left)
-import           Control.Concurrent                         (ThreadId, forkIO,
-                                                             killThread)
-import           Control.Exception                          (bracket)
-import           Control.Monad.Error.Class                  (throwError)
+import           Control.Arrow
+                 (left)
+import           Control.Concurrent
+                 (ThreadId, forkIO, killThread)
+import           Control.Exception
+                 (bracket)
+import           Control.Monad.Error.Class
+                 (throwError)
 import           Data.Aeson
-import           Data.Char                                  (chr, isPrint)
-import           Data.Foldable                              (forM_)
-import           Data.Monoid                                hiding (getLast)
+import           Data.Char
+                 (chr, isPrint)
+import           Data.Foldable
+                 (forM_)
+import           Data.Monoid ()
 import           Data.Proxy
+import           Data.Semigroup
+                 ((<>))
 import qualified Generics.SOP                               as SOP
-import           GHC.Generics                               (Generic)
+import           GHC.Generics
+                 (Generic)
 import qualified Network.HTTP.Client                        as C
 import qualified Network.HTTP.Types                         as HTTP
 import           Network.Socket
 import qualified Network.Wai                                as Wai
 import           Network.Wai.Handler.Warp
-import           System.IO.Unsafe                           (unsafePerformIO)
+import           System.IO.Unsafe
+                 (unsafePerformIO)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
 import           Test.QuickCheck
-import           Web.FormUrlEncoded                         (FromForm, ToForm)
+import           Web.FormUrlEncoded
+                 (FromForm, ToForm)
 
-import           Servant.API                                ((:<|>) ((:<|>)),
-                                                             (:>), AuthProtect,
-                                                             BasicAuth,
-                                                             BasicAuthData (..),
-                                                             Capture,
-                                                             CaptureAll, Delete,
-                                                             DeleteNoContent,
-                                                             EmptyAPI, addHeader,
-                                                             FormUrlEncoded,
-                                                             Get, Header,
-                                                             Headers, JSON,
-                                                             NoContent (NoContent),
-                                                             Post, Put, Raw,
-                                                             QueryFlag,
-                                                             QueryParam,
-                                                             QueryParams,
-                                                             ReqBody,
-                                                             getHeaders)
-import           Servant.API.Internal.Test.ComprehensiveAPI
+import           Servant.API
+                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
+                 BasicAuthData (..), Capture, CaptureAll, Delete,
+                 DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
+                 Headers, JSON, NoContent (NoContent), Post, Put, QueryFlag,
+                 QueryParam, QueryParams, Raw, ReqBody, addHeader, getHeaders)
+import           Servant.Test.ComprehensiveAPI
 import           Servant.Client
-import qualified Servant.Client.Core.Internal.Request as Req
-import qualified Servant.Client.Core.Internal.Auth as Auth
+import qualified Servant.Client.Core.Internal.Auth          as Auth
+import qualified Servant.Client.Core.Internal.Request       as Req
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 
 -- This declaration simply checks that all instances are in place.
-_ = client comprehensiveAPI
+_ = client comprehensiveAPIWithoutStreaming
 
 spec :: Spec
 spec = describe "Servant.Client" $ do
@@ -89,6 +82,7 @@ spec = describe "Servant.Client" $ do
     basicAuthSpec
     genAuthSpec
     genericClientSpec
+    hoistClientSpec
 
 -- * test data types
 
@@ -102,6 +96,9 @@ instance FromJSON Person
 
 instance ToForm Person
 instance FromForm Person
+
+instance Arbitrary Person where
+  arbitrary = Person <$> arbitrary <*> arbitrary
 
 alice :: Person
 alice = Person "Alice" 42
@@ -488,6 +485,28 @@ genericClientSpec = beforeAll (startWaiApp genericClientServer) $ afterAll endWa
       left show <$> runClient (getSum 3 4) baseUrl `shouldReturn` Right 7
       left show <$> runClient doNothing baseUrl `shouldReturn` Right ()
 
+-- * hoistClient
+
+type HoistClientAPI = Get '[JSON] Int :<|> Capture "n" Int :> Post '[JSON] Int
+
+hoistClientAPI :: Proxy HoistClientAPI
+hoistClientAPI = Proxy
+
+hoistClientServer :: Application -- implements HoistClientAPI
+hoistClientServer = serve hoistClientAPI $ return 5 :<|> (\n -> return n)
+
+hoistClientSpec :: Spec
+hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp $ do
+  describe "Servant.Client.hoistClient" $ do
+    it "allows us to GET/POST/... requests in IO instead of ClientM" $ \(_, baseUrl) -> do
+      let (getInt :<|> postInt)
+            = hoistClient hoistClientAPI
+                          (fmap (either (error . show) id) . flip runClient baseUrl)
+                          (client hoistClientAPI)
+
+      getInt `shouldReturn` 5
+      postInt 5 `shouldReturn` 5
+
 -- * utils
 
 startWaiApp :: Application -> IO (ThreadId, BaseUrl)
@@ -504,8 +523,8 @@ endWaiApp (thread, _) = killThread thread
 openTestSocket :: IO (Port, Socket)
 openTestSocket = do
   s <- socket AF_INET Stream defaultProtocol
-  localhost <- inet_addr "127.0.0.1"
-  bind s (SockAddrInet aNY_PORT localhost)
+  let localhost = tupleToHostAddress (127, 0, 0, 1)
+  bind s (SockAddrInet defaultPort localhost)
   listen s 1
   port <- socketPort s
   return (fromIntegral port, s)

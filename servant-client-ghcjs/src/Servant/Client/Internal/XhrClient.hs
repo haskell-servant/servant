@@ -15,7 +15,6 @@
 module Servant.Client.Internal.XhrClient where
 
 import           Control.Arrow
-import           Data.ByteString.Builder     (toLazyByteString)
 import           Control.Concurrent
 import           Control.Exception
 import           Control.Monad
@@ -25,36 +24,62 @@ import           Control.Monad.Error.Class   (MonadError (..))
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Control (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
-import qualified Data.ByteString.Char8 as BS
+import           Data.ByteString.Builder     (toLazyByteString)
+import qualified Data.ByteString.Char8       as BS
+import qualified Data.ByteString.Lazy        as BL
 import           Data.CaseInsensitive
 import           Data.Char
 import           Data.Foldable               (toList)
 import           Data.Functor.Alt            (Alt (..))
+import           Data.IORef                  (modifyIORef, newIORef, readIORef)
 import           Data.Proxy                  (Proxy (..))
-import qualified Data.Sequence           as Seq
+import qualified Data.Sequence               as Seq
 import           Data.String.Conversions
+import           Data.Typeable           (Typeable)
 import           Foreign.StablePtr
 import           GHC.Generics
+import qualified GHCJS.Buffer as Buffer
 import           GHCJS.Foreign.Callback
 import           GHCJS.Prim
 import           GHCJS.Types
+import           JavaScript.TypedArray.ArrayBuffer ( ArrayBuffer )
 import           JavaScript.Web.Location
+import           Network.HTTP.Media          (renderHeader)
 import           Network.HTTP.Types
-import           Network.HTTP.Media (renderHeader)
 import           Servant.Client.Core
 
 newtype JSXMLHttpRequest = JSXMLHttpRequest JSVal
 
 newtype JSXMLHttpRequestClass = JSXMLHttpRequestClass JSVal
 
+-- | The environment in which a request is run.
 newtype ClientEnv
    = ClientEnv
    { baseUrl :: BaseUrl }
    deriving (Eq, Show)
 
+-- | Generates a set of client functions for an API.
+--
+-- Example:
+--
+-- > type API = Capture "no" Int :> Get '[JSON] Int
+-- >        :<|> Get '[JSON] [Bool]
+-- >
+-- > api :: Proxy API
+-- > api = Proxy
+-- >
+-- > getInt :: Int -> ClientM Int
+-- > getBools :: ClientM [Bool]
+-- > getInt :<|> getBools = client api
+--
+-- NOTE: Does not support constant space streaming of the request body!
 client :: HasClient ClientM api => Proxy api -> Client ClientM api
 client api = api `clientIn` (Proxy :: Proxy ClientM)
 
+-- | @ClientM@ is the monad in which client functions run. Contains the
+-- 'BaseUrl' used for requests in the reader environment.
+--
+-- NOTE: Does not support constant space streaming of the request body!
 newtype ClientM a = ClientM
   { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
@@ -74,6 +99,12 @@ instance MonadBaseControl IO ClientM where
 -- | Try clients in order, last error is preserved.
 instance Alt ClientM where
   a <!> b = a `catchError` const b
+
+data StreamingNotSupportedException = StreamingNotSupportedException
+  deriving ( Typeable, Show )
+
+instance Exception StreamingNotSupportedException where
+  displayException _ = "streamingRequest: streaming is not supported!"
 
 instance RunClient ClientM where
   runRequest = performRequest
@@ -152,7 +183,9 @@ performXhr xhr burl request = do
 
         openXhr xhr (cs $ requestMethod request) (toUrl burl request) True
         setHeaders xhr request
-        sendXhr xhr (toBody request)
+        js_setResponseType xhr "arraybuffer"
+        body <- toBody request
+        sendXhr xhr body
         takeMVar waiter
 
         freeStablePtr s
@@ -185,6 +218,9 @@ openXhr xhr method url =
 foreign import javascript unsafe "$1.open($2, $3, $4)"
   js_openXhr :: JSXMLHttpRequest -> JSVal -> JSVal -> Bool -> IO ()
 
+foreign import javascript unsafe "$1.responseType = $2;"
+  js_setResponseType :: JSXMLHttpRequest -> JSString -> IO ()
+
 toUrl :: BaseUrl -> Request -> String
 toUrl burl request =
   let pathS = cs $ toLazyByteString $ requestPath request
@@ -215,22 +251,47 @@ setHeaders xhr request = do
 foreign import javascript unsafe "$1.setRequestHeader($2, $3)"
   js_setRequestHeader :: JSXMLHttpRequest -> JSVal -> JSVal -> IO ()
 
-sendXhr :: JSXMLHttpRequest -> Maybe String -> IO ()
+sendXhr :: JSXMLHttpRequest -> Maybe ArrayBuffer -> IO ()
 sendXhr xhr Nothing = js_sendXhr xhr
 sendXhr xhr (Just body) =
-  js_sendXhrWithBody xhr (toJSString body)
+  js_sendXhrWithBody xhr body
 
 foreign import javascript unsafe "$1.send()"
   js_sendXhr :: JSXMLHttpRequest -> IO ()
 
 foreign import javascript unsafe "$1.send($2)"
-  js_sendXhrWithBody :: JSXMLHttpRequest -> JSVal -> IO ()
+  js_sendXhrWithBody :: JSXMLHttpRequest -> ArrayBuffer -> IO ()
 
-toBody :: Request -> Maybe String
+toBody :: Request -> IO (Maybe ArrayBuffer)
 toBody request = case requestBody request of
-  Nothing -> Nothing
-  Just (RequestBodyLBS "", _) -> Nothing
-  Just (RequestBodyLBS x, _) -> Just $ cs x
+  Nothing -> return Nothing
+  Just (a, _) -> Just <$> go a
+
+  where
+    go :: RequestBody -> IO ArrayBuffer
+    go x = case x of
+      RequestBodyLBS x -> return $ mBody $ BL.toStrict x
+      RequestBodyBS x -> return $ mBody x
+      RequestBodyBuilder _ x -> return $ mBody $ BL.toStrict $ toLazyByteString x
+      RequestBodyStream _ x -> mBody <$> readBody x
+      RequestBodyStreamChunked x -> mBody <$> readBody x
+      RequestBodyIO x -> x >>= go
+
+    mBody :: BS.ByteString -> ArrayBuffer
+    mBody bs = js_bufferSlice offset len $ Buffer.getArrayBuffer buffer
+      where
+        (buffer, offset, len) = Buffer.fromByteString bs
+
+    readBody :: ((IO BS.ByteString -> IO ()) -> IO a) -> IO BS.ByteString
+    readBody writer = do
+      m <- newIORef mempty
+      _ <- writer (\bsAct -> do
+        bs <- bsAct
+        modifyIORef m (<> bs))
+      readIORef m
+
+foreign import javascript unsafe "$3.slice($1, $1 + $2)"
+  js_bufferSlice :: Int -> Int -> ArrayBuffer -> ArrayBuffer
 
 -- * inspecting the xhr response
 
@@ -244,10 +305,10 @@ toResponse xhr = do
     _ -> liftIO $ do
       statusText <- cs <$> getStatusText xhr
       headers <- parseHeaders <$> getAllResponseHeaders xhr
-      responseText <- cs <$> getResponseText xhr
+      response <- getResponse xhr
       pure Response
         { responseStatusCode = mkStatus status statusText
-        , responseBody = responseText
+        , responseBody = response
         , responseHeaders = Seq.fromList headers
         , responseHttpVersion = http11 -- this is made up
         }
@@ -266,14 +327,19 @@ getAllResponseHeaders xhr =
 foreign import javascript unsafe "$1.getAllResponseHeaders()"
   js_getAllResponseHeaders :: JSXMLHttpRequest -> IO JSVal
 
-getResponseText :: JSXMLHttpRequest -> IO String
-getResponseText xhr = fromJSString <$> js_responseText xhr
-foreign import javascript unsafe "$1.responseText"
-  js_responseText :: JSXMLHttpRequest -> IO JSVal
+getResponse :: JSXMLHttpRequest -> IO BL.ByteString
+getResponse xhr =
+    BL.fromStrict
+  . Buffer.toByteString 0 Nothing
+  . Buffer.createFromArrayBuffer
+  <$> js_response xhr
+
+foreign import javascript unsafe "$1.response"
+  js_response :: JSXMLHttpRequest -> IO ArrayBuffer
 
 parseHeaders :: String -> ResponseHeaders
 parseHeaders s =
-  (first mk . first strip . second strip . parseHeader) <$>
+  first mk . first strip . second strip . parseHeader <$>
   splitOn "\r\n" (cs s)
   where
     parseHeader :: BS.ByteString -> (BS.ByteString, BS.ByteString)

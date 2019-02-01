@@ -44,7 +44,9 @@ module Servant.Client.Core
   , GenResponse (..)
   , RunClient(..)
   , module Servant.Client.Core.Internal.BaseUrl
-  , StreamingResponse(..)
+  -- ** Streaming
+  , RunStreamingClient(..)
+  , StreamingResponse
 
   -- * Writing HasClient instances
   -- | These functions need not be re-exported by backend libraries.
@@ -55,13 +57,11 @@ module Servant.Client.Core
   , setRequestBody
   ) where
 import           Servant.Client.Core.Internal.Auth
-import           Servant.Client.Core.Internal.BaseUrl   (BaseUrl (..),
-                                                         InvalidBaseUrlException,
-                                                         Scheme (..),
-                                                         parseBaseUrl,
-                                                         showBaseUrl)
+import           Servant.Client.Core.Internal.BaseUrl
+                 (BaseUrl (..), InvalidBaseUrlException, Scheme (..),
+                 parseBaseUrl, showBaseUrl)
 import           Servant.Client.Core.Internal.BasicAuth
-import           Servant.Client.Core.Internal.HasClient
 import           Servant.Client.Core.Internal.Generic
+import           Servant.Client.Core.Internal.HasClient
 import           Servant.Client.Core.Internal.Request
 import           Servant.Client.Core.Internal.RunClient

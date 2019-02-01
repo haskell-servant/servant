@@ -6,6 +6,11 @@
     including a test-suite using [**hspec**](http://hspec.github.io/) and
     **servant-client**.
 
+- **[servant-examples](https://github.com/sras/servant-examples)**:
+
+    Similar to [the cookbook](https://haskell-servant.readthedocs.io/en/latest/cookbook/index.html) but
+    with no explanations, for developers who just want to look at code examples to find out how to do X or Y
+    with servant.
 
 - **[stack-templates](https://github.com/commercialhaskell/stack-templates)**
 
@@ -32,7 +37,7 @@
 
     An example consisting of
 
-    - a backend in uses `haskell-servant`
+    - a backend that uses `servant`
     - a frontend written in [PureScript](http://www.purescript.org/) using
       [servant-purescript](https://github.com/eskimor/servant-purescript) to generate
       an API wrapper in PureScript to interface the web API with
@@ -43,3 +48,13 @@
     An example for a web server written with **servant-server** and
     [persistent](https://www.stackage.org/package/persistent) for writing data
     into a database.
+
+- **[full-example-servant-elm-auth-yeshql-postgresql](https://github.com/aRkadeFR/FlashCard)**:
+
+    A full open source website written with **servant-server**, yeshql, postgresql and elm 0.19.
+
+
+- [`import Servant` github search](https://github.com/search?q=%22import+Servant%22+language%3AHaskell&type=Code)
+
+    It has thousands of results and can be a good way to see how people use servant in their projects or even to discover
+    servant-related libraries.

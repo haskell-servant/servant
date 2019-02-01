@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 module Servant.Client.Core.Internal.ClientF where
 
-import Servant.Client.Core.Internal.Request
+import           Servant.Client.Core.Internal.Request
 
 data ClientF a
     = RunRequest Request (Response -> a)

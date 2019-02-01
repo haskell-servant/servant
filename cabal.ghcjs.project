@@ -1,0 +1,24 @@
+-- Using https://launchpad.net/~hvr/+archive/ubuntu/ghcjs
+--
+-- $ cabal new-build --project-file cabal.ghcjs.project all -w /opt/ghcjs/8.4/bin/ghcjs
+
+packages:
+  servant/
+  servant-client-core/
+  servant-client-ghcjs/
+
+-- we need to tell cabal we are using GHCJS
+compiler: ghcjs
+
+-- https://github.com/ghcjs/ghcjs/issues/665
+constraints: primitive <0.6.4
+
+-- ghcjs-base wants old aeson
+allow-newer: ghcjs-base:aeson
+
+-- https://github.com/nomeata/hackage-ghcjs-overlay
+repository ghcjs-overlay
+  url: http://hackage-ghcjs-overlay.nomeata.de/
+  secure: True
+  root-keys:
+  key-threshold: 0

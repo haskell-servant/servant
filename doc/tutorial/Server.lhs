@@ -29,7 +29,7 @@ import Prelude.Compat
 
 import Control.Monad.Except
 import Control.Monad.Reader
-import Data.Aeson.Compat
+import Data.Aeson
 import Data.Aeson.Types
 import Data.Attoparsec.ByteString
 import Data.ByteString (ByteString)
@@ -46,6 +46,7 @@ import Servant
 import System.Directory
 import Text.Blaze
 import Text.Blaze.Html.Renderer.Utf8
+import Servant.Types.SourceT (source)
 import qualified Data.Aeson.Parser
 import qualified Text.Blaze.Html
 ```
@@ -93,12 +94,6 @@ users1 =
   [ User "Isaac Newton"    372 "isaac@newton.co.uk" (fromGregorian 1683  3 1)
   , User "Albert Einstein" 136 "ae@mc2.org"         (fromGregorian 1905 12 1)
   ]
-```
-
-Let's also write our API type.
-
-``` haskell ignore
-type UserAPI1 = "users" :> Get '[JSON] [User]
 ```
 
 We can now take care of writing the actual webservice that will handle requests
@@ -638,7 +633,7 @@ kind and abort early. The next two sections cover how to do just that.
 ### Performing IO
 
 Another important instances from the list above are `MonadIO m => MonadIO
-(ExceptT e m)`, and therefore also `MonadIO Handler` as there is `MonadIO IO` instance..
+(ExceptT e m)`, and therefore also `MonadIO Handler` as there is `MonadIO IO` instance.
 [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html)
 is a class from the **transformers** package defined as:
 
@@ -1133,8 +1128,8 @@ This is the webservice in action:
 ``` bash
 $ curl http://localhost:8081/a
 1797
-$ curl http://localhost:8081/b
-"hi"
+$ curl http://localhost:8081/b -X GET -d '42.0' -H 'Content-Type: application/json'
+true
 ```
 
 ### An arrow is a reader too.
@@ -1166,24 +1161,37 @@ app5 = serve readerAPI (hoistServer readerAPI funToHandler funServerT)
 
 ## Streaming endpoints
 
-We can create endpoints that don't just give back a single result, but give back a *stream* of results, served one at a time. Stream endpoints only provide a single content type, and also specify what framing strategy is used to delineate the results. To serve these results, we need to give back a stream producer. Adapters can be written to `Pipes`, `Conduit` and the like, or written directly as `StreamGenerator`s. StreamGenerators are IO-based continuations that are handed two functions -- the first to write the first result back, and the second to write all subsequent results back. (This is to allow handling of situations where the entire stream is prefixed by a header, or where a boundary is written between elements, but not prior to the first element). The API of a streaming endpoint needs to explicitly specify which sort of generator it produces. Note that the generator itself is returned by a `Handler` action, so that additional IO may be done in the creation of one.
+We can create endpoints that don't just give back a single result, but give
+back a *stream* of results, served one at a time. Stream endpoints only provide
+a single content type, and also specify what framing strategy is used to
+delineate the results. To serve these results, we need to give back a stream
+producer. Adapters can be written to *Pipes*, *Conduit* and the like, or
+written directly as `SourceIO`s. SourceIO builts upon servant's own `SourceT`
+stream type (it's simpler than *Pipes* or *Conduit*).
+The API of a streaming endpoint needs to explicitly specify which sort of
+generator it produces. Note that the generator itself is returned by a
+`Handler` action, so that additional IO may be done in the creation of one.
 
 ``` haskell
-type StreamAPI = "userStream" :> StreamGet NewlineFraming JSON (StreamGenerator User)
+type StreamAPI = "userStream" :> StreamGet NewlineFraming JSON (SourceIO User)
 streamAPI :: Proxy StreamAPI
 streamAPI = Proxy
 
-streamUsers :: StreamGenerator User
-streamUsers = StreamGenerator $ \sendFirst sendRest -> do
-                       sendFirst isaac
-                       sendRest  albert
-                       sendRest  albert
+streamUsers :: SourceIO User
+streamUsers = source [isaac, albert, albert]
 
 app6 :: Application
 app6 = serve streamAPI (return streamUsers)
 ```
 
-This simple application returns a stream of `User` values encoded in JSON format, with each value separated by a newline. In this case, the stream will consist of the value of `isaac`, followed by the value of `albert`, then the value of `albert` a third time. Importantly, the stream is written back as results are produced, rather than all at once. This means first that results are delivered when they are available, and second, that if an exception interrupts production of the full stream, nonetheless partial results have already been written back.
+This simple application returns a stream of `User` values encoded in JSON
+format, with each value separated by a newline. In this case, the stream will
+consist of the value of `isaac`, followed by the value of `albert`, then the
+value of `albert` a second time. Importantly, the stream is written back as
+results are produced, rather than all at once. This means first that results
+are delivered when they are available, and second, that if an exception
+interrupts production of the full stream, nonetheless partial results have
+already been written back.
 
 ## Conclusion
 

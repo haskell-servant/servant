@@ -17,7 +17,7 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Text.Encoding (encodeUtf8)
-import Network (withSocketsDo)
+import Network.Socket (withSocketsDo)
 import Network.HTTP.Client hiding (Proxy)
 import Network.HTTP.Client.MultipartFormData
 import Network.Wai.Handler.Warp

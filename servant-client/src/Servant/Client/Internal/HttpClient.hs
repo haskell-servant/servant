@@ -6,38 +6,54 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 module Servant.Client.Internal.HttpClient where
 
-import           Prelude                     ()
+import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Concurrent.STM.TVar
 import           Control.Exception
 import           Control.Monad
-import           Control.Monad.Base          (MonadBase (..))
-import           Control.Monad.Catch         (MonadCatch, MonadThrow)
-import           Control.Monad.Error.Class   (MonadError (..))
+import           Control.Monad.Base
+                 (MonadBase (..))
+import           Control.Monad.Catch
+                 (MonadCatch, MonadThrow)
+import           Control.Monad.Error.Class
+                 (MonadError (..))
 import           Control.Monad.Reader
-import           Control.Monad.STM           (atomically)
-import           Control.Monad.Trans.Control (MonadBaseControl (..))
+import           Control.Monad.STM
+                 (atomically)
+import           Control.Monad.Trans.Control
+                 (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
-import           Data.ByteString.Builder     (toLazyByteString)
+import           Data.ByteString.Builder
+                 (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
-import           Data.Foldable               (toList, for_)
-import           Data.Functor.Alt            (Alt (..))
-import           Data.Maybe                  (maybeToList)
-import           Data.Semigroup              ((<>))
-import           Data.Proxy                  (Proxy (..))
-import           Data.Sequence               (fromList)
-import           Data.String                 (fromString)
+import           Data.Foldable
+                 (for_, toList)
+import           Data.Functor.Alt
+                 (Alt (..))
+import           Data.Maybe
+                 (maybeToList)
+import           Data.Proxy
+                 (Proxy (..))
+import           Data.Semigroup
+                 ((<>))
+import           Data.Sequence
+                 (fromList)
+import           Data.String
+                 (fromString)
 import qualified Data.Text                   as T
-import           Data.Time.Clock             (getCurrentTime)
+import           Data.Time.Clock
+                 (getCurrentTime)
 import           GHC.Generics
-import           Network.HTTP.Media          (renderHeader)
-import           Network.HTTP.Types          (hContentType, renderQuery,
-                                              statusCode)
+import           Network.HTTP.Media
+                 (renderHeader)
+import           Network.HTTP.Types
+                 (hContentType, renderQuery, statusCode)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
@@ -70,6 +86,28 @@ mkClientEnv mgr burl = ClientEnv mgr burl Nothing
 client :: HasClient ClientM api => Proxy api -> Client ClientM api
 client api = api `clientIn` (Proxy :: Proxy ClientM)
 
+-- | Change the monad the client functions live in, by
+--   supplying a conversion function
+--   (a natural transformation to be precise).
+--
+--   For example, assuming you have some @manager :: 'Manager'@ and
+--   @baseurl :: 'BaseUrl'@ around:
+--
+--   > type API = Get '[JSON] Int :<|> Capture "n" Int :> Post '[JSON] Int
+--   > api :: Proxy API
+--   > api = Proxy
+--   > getInt :: IO Int
+--   > postInt :: Int -> IO Int
+--   > getInt :<|> postInt = hoistClient api (flip runClientM cenv) (client api)
+--   >   where cenv = mkClientEnv manager baseurl
+hoistClient
+  :: HasClient ClientM api
+  => Proxy api
+  -> (forall a. m a -> n a)
+  -> Client m api
+  -> Client n api
+hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
+
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
@@ -94,7 +132,6 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
   runRequest = performRequest
-  streamingRequest = performStreamingRequest
   throwServantError = throwError
 
 instance ClientLike (ClientM a) (ClientM a) where
@@ -135,21 +172,6 @@ performRequest req = do
         throwError $ FailureResponse ourResponse
       return ourResponse
 
-performStreamingRequest :: Request -> ClientM StreamingResponse
-performStreamingRequest req = do
-  m <- asks manager
-  burl <- asks baseUrl
-  let request = requestToClientRequest burl req
-  return $ StreamingResponse $
-    \k -> Client.withResponse request m $
-    \r -> do
-      let status = Client.responseStatus r
-          status_code = statusCode status
-      unless (status_code >= 200 && status_code < 300) $ do
-        b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody r)
-        throw $ FailureResponse $ clientResponseToResponse r { Client.responseBody = b }
-      k (clientResponseToResponse r)
-
 clientResponseToResponse :: Client.Response a -> GenResponse a
 clientResponseToResponse r = Response
   { responseStatusCode = Client.responseStatus r
@@ -183,10 +205,18 @@ requestToClientRequest burl r = Client.defaultRequest
       where
         hs = toList $ requestAccept r
 
+    convertBody bd = case bd of
+      RequestBodyLBS body' -> Client.RequestBodyLBS body'
+      RequestBodyBS body' -> Client.RequestBodyBS body'
+      RequestBodyBuilder size body' -> Client.RequestBodyBuilder size body'
+      RequestBodyStream size body' -> Client.RequestBodyStream size body'
+      RequestBodyStreamChunked body' -> Client.RequestBodyStreamChunked body'
+      RequestBodyIO body' -> Client.RequestBodyIO (convertBody <$> body')
+
     (body, contentTypeHdr) = case requestBody r of
       Nothing -> (Client.RequestBodyLBS "", Nothing)
-      Just (RequestBodyLBS body', typ)
-        -> (Client.RequestBodyLBS body', Just (hContentType, renderHeader typ))
+      Just (body', typ)
+        -> (convertBody body', Just (hContentType, renderHeader typ))
 
     isSecure = case baseUrlScheme burl of
       Http -> False

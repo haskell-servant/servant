@@ -1,5 +1,304 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.15
+----
+
+### Significant changes
+
+- Streaming refactoring.
+  [#991](https://github.com/haskell-servant/servant/pull/991)
+  [#1076](https://github.com/haskell-servant/servant/pull/1076)
+  [#1077](https://github.com/haskell-servant/servant/pull/1077)
+
+  The streaming functionality (`Servant.API.Stream`) is refactored to use
+  `servant`'s own `SourceIO` type (see `Servant.Types.SourceT` documentation),
+  which replaces both `StreamGenerator` and `ResultStream` types.
+
+  New conversion type-classes are `ToSourceIO` and `FromSourceIO`
+  (replacing `ToStreamGenerator` and `BuildFromStream`).
+  There are instances for *conduit*, *pipes* and *machines* in new packages:
+  [servant-conduit](https://hackage.haskell.org/package/servant-conduit)
+  [servant-pipes](https://hackage.haskell.org/package/servant-pipes) and
+  [servant-machines](https://hackage.haskell.org/package/servant-machines)
+  respectively.
+
+  Writing new framing strategies is simpler. Check existing strategies for examples.
+
+  This change shouldn't affect you, if you don't use streaming endpoints.
+
+- *servant-client* Separate streaming client.
+  [#1066](https://github.com/haskell-servant/servant/pull/1066)
+
+  We now have two `http-client` based clients,
+  in `Servant.Client` and `Servant.Client.Streaming`.
+
+  Their API is the same, except for
+  - `Servant.Client` **cannot** request `Stream` endpoints.
+  - `Servant.Client` is *run* by direct
+    `runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)`
+  - `Servant.Client.Streaming` **can** request `Stream` endpoints.
+  - `Servant.Client.Streaming` is *used* by CPSised
+    `withClientM :: ClientM a -> ClientEnv -> (Either ServantError a -> IO b) -> IO b`
+
+  To access `Stream` endpoints use `Servant.Client.Streaming` with
+  `withClientM`; otherwise you can continue using `Servant.Client` with `runClientM`.
+  You can use both too, `ClientEnv` and `BaseUrl` types are same for both.
+
+  **Note:** `Servant.Client.Streaming` doesn't *stream* non-`Stream` endpoints.
+  Requesting ordinary `Verb` endpoints (e.g. `Get`) will block until
+  the whole response is received.
+
+  There is `Servant.Client.Streaming.runClientM` function, but it has
+  restricted type. `NFData a` constraint prevents using it with
+  `SourceT`, `Conduit` etc. response types.
+
+  ```haskell
+  runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ServantError a)
+  ```
+
+  This change shouldn't affect you, if you don't use streaming endpoints.
+
+- *servant-client-core* Related to the previous:
+  `streamingResponse` is removed from `RunClient`.
+  We have a new type-class:
+
+  ```haskell
+  class RunClient m =>  RunStreamingClient m where
+      withStreamingRequest :: Request -> (StreamingResponse -> IO a) ->  m a
+  ```
+
+- Drop support for GHC older than 8.0
+  [#1008](https://github.com/haskell-servant/servant/pull/1008)
+  [#1009](https://github.com/haskell-servant/servant/pull/1009)
+
+- *servant* `ComprehensiveAPI` is a part of public API in `Servant.Test.ComprehensiveAPI` module.
+  This API type is used to verify that libraries implement all core combinators.
+  Now we won't change this type between major versions.
+  (This has been true for some time already).
+  [#1070](https://github.com/haskell-servant/servant/pull/1070)
+
+- *servant* Remove `Servant.Utils.Enter` module
+  (deprecated in `servant-0.12` in favour of `hoistServer`)
+  [#996](https://github.com/haskell-servant/servant/pull/996)
+
+- *servant-foreign* Add support so `HasForeign` can be implemented for
+  `MultipartForm` from [`servant-multipart`](http://hackage.haskell.org/package/servant-multipart)
+  [#1035](https://github.com/haskell-servant/servant/pull/1035)
+
+### Other changes
+
+- *servant-client-core* Add `NFData (GenResponse a)` and `NFData ServantError` instances.
+  [#1076](https://github.com/haskell-servant/servant/pull/1076)
+
+- *servant* NewlineFraming encodes newline after each element (i.e last)
+  [#1079](https://github.com/haskell-servant/servant/pull/1079)
+  [#1011](https://github.com/haskell-servant/servant/issues/1011)
+
+- *servant* Add `lookupResponseHeader :: ... => Headers headers r -> ResponseHeader h a`
+  [#1064](https://github.com/haskell-servant/servant/pull/1064)
+
+- *servant-server* Add `MonadMask Handler`
+  [#1068](https://github.com/haskell-servant/servant/pull/1068)
+
+- *servant-docs* Fix markdown indentation
+  [#1043](https://github.com/haskell-servant/servant/pull/1043)
+
+- *servant* Export `GetHeaders'`
+  [#1052](https://github.com/haskell-servant/servant/pull/1052)
+
+- *servant* Add `Bitraversable` and other `Bi-` instances for `:<|>`
+  [#1032](https://github.com/haskell-servant/servant/pull/1032)
+
+- *servant* Add `PutCreated` method type alias
+  [#1024](https://github.com/haskell-servant/servant/pull/1024)
+
+- *servant-client-core* Add `aeson` and `Lift BaseUrl` instances
+  [#1037](https://github.com/haskell-servant/servant/pull/1037)
+
+- *servant* Add `ToSourceIO (NonEmpty a)` instance
+  [#988](https://github.com/haskell-servant/servant/pull/988)
+
+- Development process improvements
+    - Apply `stylish-haskell` to all modules
+      [#1001](https://github.com/haskell-servant/servant/pull/1001)
+    - Amend `CONTRIBUTING.md`
+      [#1036](https://github.com/haskell-servant/servant/pull/1036)
+    - `servant-docs` has golden tests for `ComprehensiveAPI`
+      [#1071](https://github.com/haskell-servant/servant/pull/1071)
+    - Other
+      [#1039](https://github.com/haskell-servant/servant/pull/1039)
+      [#1046](https://github.com/haskell-servant/servant/pull/1046)
+      [#1062](https://github.com/haskell-servant/servant/pull/1062)
+      [#1069](https://github.com/haskell-servant/servant/pull/1069)
+      [#985](https://github.com/haskell-servant/servant/pull/985)
+
+- *Documentation* Tutorial and new recipes
+    - [Using free client](https://haskell-servant.readthedocs.io/en/latest/cookbook/using-free-client/UsingFreeClient.html)
+      [#1005](https://github.com/haskell-servant/servant/pull/1005)
+    - [Generating mock curl calls](https://haskell-servant.readthedocs.io/en/latest/cookbook/curl-mock/CurlMock.html)
+      [#1033](https://github.com/haskell-servant/servant/pull/1033)
+    - [Error logging with Sentry](https://haskell-servant.readthedocs.io/en/latest/cookbook/sentry/Sentry.html)
+      [#987](https://github.com/haskell-servant/servant/pull/987)
+    - [Hoist Server With Context for Custom Monads](https://haskell-servant.readthedocs.io/en/latest/cookbook/hoist-server-with-context/HoistServerWithContext.html)
+      [#1044](https://github.com/haskell-servant/servant/pull/1044)
+    - [How To Test Servant Applications](https://haskell-servant.readthedocs.io/en/latest/cookbook/testing/Testing.html)
+      [#1050](https://github.com/haskell-servant/servant/pull/1050)
+    - `genericServeT`: using custom monad with `Servant.API.Generic`
+      in [Using generics](https://haskell-servant.readthedocs.io/en/latest/cookbook/generic/Generic.html)
+      [#1058](https://github.com/haskell-servant/servant/pull/1058)
+    - Tutorial
+      [#974](https://github.com/haskell-servant/servant/pull/974)
+      [#1007](https://github.com/haskell-servant/servant/pull/1007)
+    - miscellanea: fixed typos etc.
+      [#1030](https://github.com/haskell-servant/servant/pull/1030)
+      [#1020](https://github.com/haskell-servant/servant/pull/1020)
+      [#1059](https://github.com/haskell-servant/servant/pull/1059)
+
+- *Documentation* README
+  [#1010](https://github.com/haskell-servant/servant/pull/1010)
+
+- *servant-client-ghcjs* updates. **note** package is not released on Hackage
+  [#938](https://github.com/haskell-servant/servant/pull/938)
+
+0.14.1
+------
+
+- Merge in (and slightly refactor) `servant-generic`
+  (by [Patrick Chilton](https://github.com/chpatrick))
+  into `servant` (`Servant.API.Generic`),
+  `servant-client-code` (`Servant.Client.Generic`)
+  and `servant-server` (`Servant.Server.Generic`).
+
+- Deprecate `Servant.Utils.Links`, use `Servant.Links`.
+  [#998](https://github.com/haskell-servant/servant/pull/998)
+
+- *servant-server* Deprecate `Servant.Utils.StaticUtils`, use `Servant.Server.StaticUtils`.
+
+0.14
+----
+
+### Signifacant changes
+
+- `Stream` takes a status code argument
+
+  ```diff
+  -Stream method        framing ctype a
+  +Stream method status framing ctype a
+  ```
+
+  ([#966](https://github.com/haskell-servant/servant/pull/966)
+   [#972](https://github.com/haskell-servant/servant/pull/972))
+
+- `ToStreamGenerator` definition changed, so it's possible to write an instance
+  for conduits.
+
+  ```diff
+  -class ToStreamGenerator f a where
+  -   toStreamGenerator :: f a -> StreamGenerator a
+  +class ToStreamGenerator a b | a -> b where
+  +   toStreamGenerator :: a -> StreamGenerator b
+  ```
+
+  ([#959](https://github.com/haskell-servant/servant/pull/959))
+
+- Added `NoFraming` streaming strategy
+  ([#959](https://github.com/haskell-servant/servant/pull/959))
+
+- *servant-client-core* Free `Client` implementation.
+  Useful for testing `HasClient` instances.
+  ([#920](https://github.com/haskell-servant/servant/pull/920))
+
+- *servant-client-core* Add `hoistClient` to `HasClient`.
+  Just like `hoistServer` allows us to change the monad in which request handlers
+  of a web application live in, we also have `hoistClient` for changing the monad
+  in which *client functions* live.
+  Read [tutorial section for more information](https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
+  ([#936](https://github.com/haskell-servant/servant/pull/936))
+
+  iF you have own combinators, you'll need to define a new method of
+  `HasClient` class, for example:
+
+  ```haskell
+  type Client m (MyCombinator :> api) = MyValue :> Client m api
+  hoistClientMonad pm _ nt cl = hoistClientMonad pm (Proxy :: Proxy api) nt . cl
+  ```
+
+- *servant* Add `safeLink' :: (Link -> a) -> ... -> MkLink endpoint a`,
+  which allows to create helpers returning something else than `Link`.
+  ([#968](https://github.com/haskell-servant/servant/pull/968))
+
+- *servant-server* File serving in polymorphic monad.
+  i.e. Generalised types of `serveDirectoryFileServer` etc functions in
+  `Servant.Utils.StaticFiles`
+  ([#953](https://github.com/haskell-servant/servant/pull/953))
+
+- *servant-server* `ReqBody` content type check is recoverable.
+  This allows writing APIs like:
+
+  ```haskell
+        ReqBody '[JSON] Int      :> Post '[PlainText] Int
+  :<|>  ReqBody '[PlainText] Int :> Post '[PlainText] Int
+  ```
+
+  which is useful when handlers are subtly different,
+  for example may do less work.
+  ([#937](https://github.com/haskell-servant/servant/pull/937))
+
+- *servant-client* Add more constructors to `RequestBody`, including
+  `RequestBodyStream`.
+  *Note:* we are looking for http-library agnostic API,
+  so the might change again soon.
+  Tell us which constructors are useful for you!
+  ([#913](https://github.com/haskell-servant/servant/pull/913))
+
+### Other changes
+
+- `GetHeaders` instances implemented without `OverlappingInstances`
+  ([#971](https://github.com/haskell-servant/servant/pull/971))
+
+- Added tests or enabled tests
+  ([#975](https://github.com/haskell-servant/servant/pull/975))
+
+- Add [pagination cookbook recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/pagination/Pagination.html)
+  ([#946](https://github.com/haskell-servant/servant/pull/946))
+
+- Add [`servant-flatten` "spice" to the structuring api recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/structuring-apis/StructuringApis.html)
+  ([#929](https://github.com/haskell-servant/servant/pull/929))
+
+- Dependency updates
+  ([#900](https://github.com/haskell-servant/servant/pull/900)
+   [#919](https://github.com/haskell-servant/servant/pull/919)
+   [#924](https://github.com/haskell-servant/servant/pull/924)
+   [#943](https://github.com/haskell-servant/servant/pull/943)
+   [#964](https://github.com/haskell-servant/servant/pull/964)
+   [#967](https://github.com/haskell-servant/servant/pull/967)
+   [#976](https://github.com/haskell-servant/servant/pull/976))
+
+- Documentation updates
+   [#963](https://github.com/haskell-servant/servant/pull/963)
+   [#960](https://github.com/haskell-servant/servant/pull/960)
+   [#908](https://github.com/haskell-servant/servant/pull/908)
+   [#958](https://github.com/haskell-servant/servant/pull/958)
+   [#948](https://github.com/haskell-servant/servant/pull/948)
+   [#928](https://github.com/haskell-servant/servant/pull/928)
+   [#921](https://github.com/haskell-servant/servant/pull/921))
+
+- Development process improvements
+  ([#680](https://github.com/haskell-servant/servant/pull/680)
+   [#917](https://github.com/haskell-servant/servant/pull/917)
+   [#923](https://github.com/haskell-servant/servant/pull/923)
+   [#961](https://github.com/haskell-servant/servant/pull/961)
+   [#973](https://github.com/haskell-servant/servant/pull/973))
+
+### Note
+
+(VIM) Regular-expression to link PR numbers: `s/\v#(\d+)/[#\1](https:\/\/github.com\/haskell-servant\/servant/pull\/\1)/`
+
+0.13.0.1
+--------
+
+- Support `base-compat-0.10`
+
 0.13
 ----
 

@@ -1,6 +1,9 @@
+cabal-version:       >=1.10
 name:                servant-server
-version:             0.13
+version:             0.15
+
 synopsis:            A family of combinators for defining webservices APIs and serving them
+category:            Servant, Web
 description:
   A family of combinators for defining webservices APIs and serving them
   .
@@ -11,23 +14,22 @@ description:
   a webserver that serves this API, using this package.
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md CHANGELOG>
+
 homepage:            http://haskell-servant.readthedocs.org/
-Bug-reports:         http://github.com/haskell-servant/servant/issues
+bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, Servant Contributors
-category:            Servant, Web
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2018 Servant Contributors
 build-type:          Custom
-cabal-version:       >=1.10
 tested-with:
-  GHC==7.8.4
-  GHC==7.10.3
-  GHC==8.0.2
-  GHC==8.2.2
+  GHC ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.2
+
 extra-source-files:
-  include/*.h
   CHANGELOG.md
   README.md
 
@@ -39,13 +41,14 @@ custom-setup
   setup-depends:
     base >= 4 && <5,
     Cabal,
-    cabal-doctest >= 1.0.1 && <1.1
+    cabal-doctest >= 1.0.6 && <1.1
 
 library
   exposed-modules:
     Servant
     Servant.Server
     Servant.Server.Experimental.Auth
+    Servant.Server.Generic
     Servant.Server.Internal
     Servant.Server.Internal.BasicAuth
     Servant.Server.Internal.Context
@@ -53,58 +56,51 @@ library
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServantErr
+    Servant.Server.StaticFiles
+
+  -- deprecated
+  exposed-modules:
     Servant.Utils.StaticFiles
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
-  --
-  -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base               >= 4.7      && < 4.11
-    , bytestring         >= 0.10.4.0 && < 0.11
-    , containers         >= 0.5.5.1  && < 0.6
-    , mtl                >= 2.1      && < 2.3
-    , text               >= 1.2.3.0  && < 1.3
-    , transformers       >= 0.3.0.0  && < 0.6
-    , filepath           >= 1.3.0.2  && < 1.5
+      base                >= 4.9      && < 4.13
+    , bytestring          >= 0.10.8.1 && < 0.11
+    , containers          >= 0.5.7.1  && < 0.7
+    , mtl                 >= 2.2.2    && < 2.3
+    , text                >= 1.2.3.0  && < 1.3
+    , transformers        >= 0.5.2.0  && < 0.6
+    , filepath            >= 1.4.1.1  && < 1.5
 
   -- Servant dependencies
+  -- strict dependency as we re-export 'servant' things.
   build-depends:
-      servant            == 0.13.*
+      servant             >= 0.15     && < 0.15.1
+    , http-api-data       >= 0.4      && < 0.4.1
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson               >= 1.2.3.0  && < 1.4
-    , base-compat         >= 0.9.3    && < 0.10
-    , attoparsec          >= 0.13.2.0 && < 0.14
+      base-compat         >= 0.10.5   && < 0.11
     , base64-bytestring   >= 1.0.0.1  && < 1.1
-    , exceptions          >= 0.8.3    && < 0.11
-    , http-api-data       >= 0.3.7.1  && < 0.4
-    , http-media          >= 0.7.1.1  && < 0.8
-    , http-types          >= 0.12     && < 0.13
-    , network-uri         >= 2.6.1.0  && < 2.7
-    , monad-control       >= 1.0.0.4  && < 1.1
-    , network             >= 2.6.3.2  && < 2.7
-    , safe                >= 0.3.15   && < 0.4
-    , split               >= 0.2.3.2  && < 0.3
+    , exceptions          >= 0.10.0   && < 0.11
+    , http-media          >= 0.7.1.3  && < 0.8
+    , http-types          >= 0.12.2   && < 0.13
+    , network-uri         >= 2.6.1.0  && < 2.8
+    , monad-control       >= 1.0.2.3  && < 1.1
+    , network             >= 2.8      && < 3.1
     , string-conversions  >= 0.4.0.1  && < 0.5
-    , system-filepath     >= 0.4      && < 0.5
-    , resourcet           >= 1.1.9    && < 1.3
-    , tagged              >= 0.8.5    && < 0.9
-    , transformers-base   >= 0.4.4    && < 0.5
-    , transformers-compat >= 0.5.1    && < 0.6
-    , wai                 >= 3.2.1.1  && < 3.3
-    , wai-app-static      >= 3.1.6.1  && < 3.2
-    , warp                >= 3.2.13   && < 3.3
+    , resourcet           >= 1.2.2    && < 1.3
+    , tagged              >= 0.8.6    && < 0.9
+    , transformers-base   >= 0.4.5.2  && < 0.5
+    , wai                 >= 3.2.1.2  && < 3.3
+    , wai-app-static      >= 3.1.6.2  && < 3.2
     , word8               >= 0.1.3    && < 0.2
 
   hs-source-dirs: src
   default-language: Haskell2010
-  ghc-options: -Wall
-  if impl(ghc >= 8.0)
-    ghc-options: -Wno-redundant-constraints
-  include-dirs: include
+  ghc-options: -Wall -Wno-redundant-constraints
 
 executable greet
   main-is: greet.hs
@@ -113,12 +109,15 @@ executable greet
   default-language: Haskell2010
   build-depends:
       base
+    , base-compat
     , servant
     , servant-server
-    , aeson
-    , warp
     , wai
     , text
+
+  build-depends:
+      aeson               >= 1.4.1.0  && < 1.5
+    , warp                >= 3.2.25   && < 3.3
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -132,24 +131,21 @@ test-suite spec
       Servant.Server.Internal.ContextSpec
       Servant.Server.Internal.RoutingApplicationSpec
       Servant.Server.RouterSpec
+      Servant.Server.StaticFilesSpec
       Servant.Server.StreamingSpec
       Servant.Server.UsingContextSpec
       Servant.Server.UsingContextSpec.TestCombinators
       Servant.HoistSpec
       Servant.ServerSpec
-      Servant.Utils.StaticFilesSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
       base
     , base-compat
-    , aeson
     , base64-bytestring
     , bytestring
-    , exceptions
     , http-types
     , mtl
-    , network
     , resourcet
     , safe
     , servant
@@ -159,27 +155,26 @@ test-suite spec
     , transformers
     , transformers-compat
     , wai
-    , warp
 
   -- Additonal dependencies
   build-depends:
-      directory            >= 1.2.1.0  && < 1.4
-    , hspec                >= 2.4.4    && < 2.5
-    , hspec-wai            >= 0.9      && < 0.10
+      aeson                >= 1.4.1.0  && < 1.5
+    , directory            >= 1.3.0.0  && < 1.4
+    , hspec                >= 2.6.0    && < 2.8
+    , hspec-wai            >= 0.9.0    && < 0.10
+    , QuickCheck           >= 2.12.6.1 && < 2.13
     , should-not-typecheck >= 2.1.0    && < 2.2
-    , parsec               >= 3.1.11   && < 3.2
-    , QuickCheck           >= 2.10.1   && < 2.12
-    , wai-extra            >= 3.0.21.0 && < 3.1
-    , temporary            >= 1.2.0.3  && < 1.3
+    , temporary            >= 1.3      && < 1.4
+    , wai-extra            >= 3.0.24.3 && < 3.1
 
   build-tool-depends:
-    hspec-discover:hspec-discover >=2.4.4 && <2.5
+    hspec-discover:hspec-discover >= 2.6.0 && <2.8
 
 test-suite doctests
   build-depends:
       base
     , servant-server
-    , doctest >= 0.13.0 && <0.14
+    , doctest >= 0.16.0 && <0.17
   type: exitcode-stdio-1.0
   main-is: test/doctests.hs
   buildable: True
@@ -187,4 +182,3 @@ test-suite doctests
   ghc-options: -Wall -threaded
   if impl(ghc >= 8.2)
     x-doctest-options: -fdiagnostics-color=never
-  include-dirs: include

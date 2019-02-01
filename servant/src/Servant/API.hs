@@ -63,8 +63,8 @@ module Servant.API (
   module Servant.API.Experimental.Auth,
   -- | General Authentication
 
-  -- * Utilities
-  module Servant.Utils.Links,
+  -- * Links
+  module Servant.Links,
   -- | Type-safe internal URIs
 
   -- * Re-exports
@@ -110,15 +110,14 @@ import           Servant.API.ReqBody
                  (ReqBody, ReqBody')
 import           Servant.API.ResponseHeaders
                  (AddHeader, BuildHeadersTo (buildHeadersTo),
-                 GetHeaders (getHeaders), HList (..), Headers (..),
-                 ResponseHeader (..), addHeader, getHeadersHList, getResponse,
-                 noHeader)
+                 GetHeaders (getHeaders), HList (..), HasResponseHeader,
+                 Headers (..), ResponseHeader (..), addHeader, getHeadersHList,
+                 getResponse, lookupResponseHeader, noHeader)
 import           Servant.API.Stream
-                 (BoundaryStrategy (..), BuildFromStream (..),
-                 ByteStringParser (..), FramingRender (..),
-                 FramingUnrender (..), NetstringFraming, NewlineFraming,
-                 ResultStream (..), Stream, StreamGenerator (..), StreamGet,
-                 StreamPost, ToStreamGenerator (..))
+                 (FramingRender (..), FramingUnrender (..), FromSourceIO (..),
+                 NetstringFraming, NewlineFraming, NoFraming, SourceIO, Stream,
+                 StreamBody, StreamBody', StreamGet, StreamPost,
+                 ToSourceIO (..))
 import           Servant.API.Sub
                  ((:>))
 import           Servant.API.Vault
@@ -130,11 +129,11 @@ import           Servant.API.Verbs
                  Patch, PatchAccepted, PatchNoContent, PatchNonAuthoritative,
                  Post, PostAccepted, PostCreated, PostNoContent,
                  PostNonAuthoritative, PostResetContent, Put, PutAccepted,
-                 PutNoContent, PutNonAuthoritative,
+                 PutCreated, PutNoContent, PutNonAuthoritative,
                  ReflectMethod (reflectMethod), StdMethod (..), Verb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
-import           Servant.Utils.Links
+import           Servant.Links
                  (HasLink (..), IsElem, IsElem', Link, URI (..), safeLink)
 import           Web.HttpApiData
                  (FromHttpApiData (..), ToHttpApiData (..))

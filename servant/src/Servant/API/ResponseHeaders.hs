@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DeriveDataTypeable     #-}
 {-# LANGUAGE DeriveFunctor          #-}
@@ -15,7 +14,6 @@
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_HADDOCK not-home        #-}
 
-#include "overlapping-compat.h"
 -- | This module provides facilities for adding headers to a response.
 --
 -- >>> let headerVal = addHeader "some-url" 5 :: Headers '[Header "Location" String] Int
@@ -28,8 +26,11 @@ module Servant.API.ResponseHeaders
     , AddHeader
     , addHeader
     , noHeader
+    , HasResponseHeader
+    , lookupResponseHeader
     , BuildHeadersTo(buildHeadersTo)
     , GetHeaders(getHeaders)
+    , GetHeaders'
     , HeaderValMap
     , HList(..)
     ) where
@@ -80,10 +81,10 @@ class BuildHeadersTo hs where
     -- the values are interspersed with commas before deserialization (see
     -- <http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2 RFC2616 Sec 4.2>)
 
-instance OVERLAPPING_ BuildHeadersTo '[] where
+instance {-# OVERLAPPING #-} BuildHeadersTo '[] where
     buildHeadersTo _ = HNil
 
-instance OVERLAPPABLE_ ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
+instance {-# OVERLAPPABLE #-} ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
          => BuildHeadersTo (Header h v ': xs) where
     buildHeadersTo headers =
       let wantedHeader = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
@@ -100,23 +101,41 @@ instance OVERLAPPABLE_ ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
 class GetHeaders ls where
     getHeaders :: ls -> [HTTP.Header]
 
-instance OVERLAPPING_ GetHeaders (HList '[]) where
-    getHeaders _ = []
+-- | Auxiliary class for @'GetHeaders' ('HList' hs)@ instance
+class GetHeadersFromHList hs where
+    getHeadersFromHList :: HList hs  -> [HTTP.Header]
 
-instance OVERLAPPABLE_ ( KnownSymbol h, ToHttpApiData x, GetHeaders (HList xs) )
-         => GetHeaders (HList (Header h x ': xs)) where
-    getHeaders hdrs = case hdrs of
-        Header val `HCons` rest -> (headerName , toHeader val):getHeaders rest
-        UndecodableHeader h `HCons` rest -> (headerName,  h)  :getHeaders rest
-        MissingHeader `HCons` rest -> getHeaders rest
-      where headerName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
+instance GetHeadersFromHList hs => GetHeaders (HList hs) where
+    getHeaders = getHeadersFromHList
 
-instance OVERLAPPING_ GetHeaders (Headers '[] a) where
-    getHeaders _ = []
+instance GetHeadersFromHList '[] where
+    getHeadersFromHList _ = []
 
-instance OVERLAPPABLE_ ( KnownSymbol h, GetHeaders (HList rest), ToHttpApiData v )
-         => GetHeaders (Headers (Header h v ': rest) a) where
-    getHeaders hs = getHeaders $ getHeadersHList hs
+instance (KnownSymbol h, ToHttpApiData x, GetHeadersFromHList xs)
+    => GetHeadersFromHList (Header h x ': xs)
+  where
+    getHeadersFromHList hdrs = case hdrs of
+        Header val `HCons` rest          -> (headerName , toHeader val) : getHeadersFromHList rest
+        UndecodableHeader h `HCons` rest -> (headerName,  h) : getHeadersFromHList rest
+        MissingHeader `HCons` rest       -> getHeadersFromHList rest
+      where
+        headerName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
+
+-- | Auxiliary class for @'GetHeaders' ('Headers' hs a)@ instance
+class GetHeaders' hs where
+    getHeaders' :: Headers hs a -> [HTTP.Header]
+
+instance GetHeaders' hs => GetHeaders (Headers hs a) where
+    getHeaders = getHeaders'
+
+-- | This instance is an optimisation
+instance GetHeaders' '[] where
+    getHeaders' _ = []
+
+instance (KnownSymbol h, GetHeadersFromHList rest, ToHttpApiData v)
+    => GetHeaders' (Header h v ': rest)
+  where
+    getHeaders' hs = getHeadersFromHList $ getHeadersHList hs
 
 -- * Adding
 
@@ -126,11 +145,11 @@ class AddHeader h v orig new
   addOptionalHeader :: ResponseHeader h v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
 
 
-instance OVERLAPPING_ ( KnownSymbol h, ToHttpApiData v )
+instance {-# OVERLAPPING #-} ( KnownSymbol h, ToHttpApiData v )
          => AddHeader h v (Headers (fst ': rest)  a) (Headers (Header h v  ': fst ': rest) a) where
     addOptionalHeader hdr (Headers resp heads) = Headers resp (HCons hdr heads)
 
-instance OVERLAPPABLE_ ( KnownSymbol h, ToHttpApiData v
+instance {-# OVERLAPPABLE #-} ( KnownSymbol h, ToHttpApiData v
                        , new ~ (Headers '[Header h v] a) )
          => AddHeader h v a new where
     addOptionalHeader hdr resp = Headers resp (HCons hdr HNil)
@@ -166,7 +185,43 @@ addHeader = addOptionalHeader . Header
 noHeader :: AddHeader h v orig new => orig -> new
 noHeader = addOptionalHeader MissingHeader
 
+class HasResponseHeader h a headers where
+  hlistLookupHeader :: HList headers -> ResponseHeader h a
+
+instance {-# OVERLAPPING #-} HasResponseHeader h a (Header h a ': rest) where
+  hlistLookupHeader (HCons ha _) = ha
+
+instance {-# OVERLAPPABLE #-} (HasResponseHeader h a rest) => HasResponseHeader h a (first ': rest) where
+  hlistLookupHeader (HCons _ hs) = hlistLookupHeader hs
+
+-- | Look up a specific ResponseHeader,
+-- without having to know what position it is in the HList.
+--
+-- >>> let example1 = addHeader 5 "hi" :: Headers '[Header "someheader" Int] String
+-- >>> let example2 = addHeader True example1 :: Headers '[Header "1st" Bool, Header "someheader" Int] String
+-- >>> lookupResponseHeader example2 :: ResponseHeader "someheader" Int
+-- Header 5
+--
+-- >>> lookupResponseHeader example2 :: ResponseHeader "1st" Bool
+-- Header True
+--
+-- Usage of this function relies on an explicit type annotation of the header to be looked up.
+-- This can be done with type annotations on the result, or with an explicit type application.
+-- In this example, the type of header value is determined by the type-inference,
+-- we only specify the name of the header:
+--
+-- >>> :set -XTypeApplications
+-- >>> case lookupResponseHeader @"1st" example2 of { Header b -> b ; _ -> False }
+-- True
+--
+-- @since 0.15
+--
+lookupResponseHeader :: (HasResponseHeader h a headers)
+  => Headers headers r -> ResponseHeader h a
+lookupResponseHeader = hlistLookupHeader . getHeadersHList
+
 -- $setup
+-- >>> :set -XFlexibleContexts
 -- >>> import Servant.API
 -- >>> import Data.Aeson
 -- >>> import Data.Text

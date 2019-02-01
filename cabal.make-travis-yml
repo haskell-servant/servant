@@ -1,12 +1,12 @@
 folds: all-but-test
-branches: master release-0.12
+branches: master
 
 -- We have inplace packages (servant-js) so we skip installing dependencies in a separate step
 install-dependencies-step: False
 
 -- this speed-ups the build a little, but we have to check these for release
 no-tests-no-benchmarks: False
-build-with-installed-step: False
+unconstrained-step: False
 
 -- Don't run cabal check, as cookbook examples won't pass it
 cabal-check: False

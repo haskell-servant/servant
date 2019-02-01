@@ -1,0 +1,67 @@
+name:                servant-pipes
+version:             0.15
+cabal-version:       >=1.10
+
+synopsis:            Servant Stream support for pipes
+category:            Servant, Web, Pipes
+description:         Servant Stream support for pipes.
+  .
+  Provides 'ToSourceIO' and 'FromSourceIO' instances for 'Proxy' and 'SafeT'.
+
+homepage:            http://haskell-servant.readthedocs.org/
+bug-reports:         http://github.com/haskell-servant/servant/issues
+license:             BSD3
+license-file:        LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+copyright:           2018 Servant Contributors
+build-type:          Simple
+tested-with:
+  GHC ==8.0.2
+   || ==8.2.2
+   || ==8.4.4
+   || ==8.6.2
+
+extra-source-files:
+  CHANGELOG.md
+
+source-repository head
+  type: git
+  location: http://github.com/haskell-servant/servant-pipes.git
+
+library
+  exposed-modules:     Servant.Pipes
+  build-depends:
+      base          >=4.9      && <5
+    , bytestring    >=0.10.8.1 && <0.11
+    , pipes         >=4.3.9    && <4.4
+    , pipes-safe    >=2.3.1    && <2.4
+    , mtl           >=2.2.2    && <2.3
+    , monad-control >=1.0.2.3  && <1.1
+    , servant       >=0.15     && <0.16
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options: -Wall
+
+test-suite example
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  hs-source-dirs:
+    example
+  ghc-options: -Wall -rtsopts -threaded
+  build-depends:
+      base
+    , base-compat
+    , bytestring
+    , http-media
+    , servant
+    , pipes 
+    , pipes-safe
+    , servant-pipes
+    , pipes-bytestring  >=2.1.6    && <2.2
+    , servant-server    >=0.15     && <0.16
+    , servant-client    >=0.15     && <0.16
+    , wai               >=3.2.1.2  && <3.3
+    , warp              >=3.2.25   && <3.3
+    , http-client
+  default-language: Haskell2010
