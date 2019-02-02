@@ -28,6 +28,10 @@ import           Control.Arrow
                  (left)
 import           Control.Concurrent
                  (ThreadId, forkIO, killThread)
+import           Control.Concurrent.STM
+                 (atomically)
+import           Control.Concurrent.STM.TVar
+                 (newTVar, readTVar)
 import           Control.Exception
                  (bracket)
 import           Control.Monad.Error.Class
@@ -37,17 +41,19 @@ import           Data.Char
                  (chr, isPrint)
 import           Data.Foldable
                  (forM_)
+import           Data.Maybe
+                 (listToMaybe)
 import           Data.Monoid ()
 import           Data.Proxy
 import           Data.Semigroup
                  ((<>))
-import qualified Generics.SOP                               as SOP
+import qualified Generics.SOP                         as SOP
 import           GHC.Generics
                  (Generic)
-import qualified Network.HTTP.Client                        as C
-import qualified Network.HTTP.Types                         as HTTP
+import qualified Network.HTTP.Client                  as C
+import qualified Network.HTTP.Types                   as HTTP
 import           Network.Socket
-import qualified Network.Wai                                as Wai
+import qualified Network.Wai                          as Wai
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe
                  (unsafePerformIO)
@@ -64,12 +70,12 @@ import           Servant.API
                  DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
                  Headers, JSON, NoContent (NoContent), Post, Put, QueryFlag,
                  QueryParam, QueryParams, Raw, ReqBody, addHeader, getHeaders)
-import           Servant.Test.ComprehensiveAPI
 import           Servant.Client
-import qualified Servant.Client.Core.Internal.Auth          as Auth
-import qualified Servant.Client.Core.Internal.Request       as Req
+import qualified Servant.Client.Core.Internal.Auth    as Auth
+import qualified Servant.Client.Core.Internal.Request as Req
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
+import           Servant.Test.ComprehensiveAPI
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -128,6 +134,7 @@ type Api =
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
   :<|> "deleteContentType" :> DeleteNoContent '[JSON] NoContent
+  :<|> "redirectWithCookie" :> Raw
   :<|> "empty" :> EmptyAPI
 
 api :: Proxy Api
@@ -148,6 +155,7 @@ getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
 getDeleteContentType :: ClientM NoContent
+getRedirectWithCookie :: HTTP.Method -> ClientM Response
 
 getRoot
   :<|> getGet
@@ -163,6 +171,7 @@ getRoot
   :<|> getMultiple
   :<|> getRespHeaders
   :<|> getDeleteContentType
+  :<|> getRedirectWithCookie
   :<|> EmptyClient = client api
 
 server :: Application
@@ -184,8 +193,8 @@ server = serve api (
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
+  :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
   :<|> emptyServer)
-
 
 type FailApi =
        "get" :> Raw
@@ -363,6 +372,14 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       case res of
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
+
+    it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
+      mgr <- C.newManager C.defaultManagerSettings
+      cj <- atomically . newTVar $ C.createCookieJar []
+      _ <- runClientM (getRedirectWithCookie HTTP.methodGet) (ClientEnv mgr baseUrl (Just cj))
+      cookie <- listToMaybe . C.destroyCookieJar <$> atomically (readTVar cj)
+      C.cookie_name <$> cookie `shouldBe` Just "testcookie"
+      C.cookie_value <$> cookie `shouldBe` Just "test"
 
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
