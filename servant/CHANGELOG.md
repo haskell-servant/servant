@@ -1,5 +1,13 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+next
+----
+
+- *servant-client* Update CookieJar with intermediate request/responses (redirects)
+  [#1104](https://github.com/haskell-servant/servant/pull/1104)
+- *servant-server* Reorder HTTP failure code priorities
+  [#1103](https://github.com/haskell-servant/servant/pull/1103)
+
 0.15
 ----
 
