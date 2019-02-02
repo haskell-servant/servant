@@ -130,10 +130,11 @@ streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
             testRunSourceIO res `shouldReturn` Right [alice, bob, alice]
 
     it "works with Servant.API.StreamBody" $ \(_, baseUrl) -> do
-        withClient (getStreamBody (source inout)) baseUrl $ \(Right res) ->
-            testRunSourceIO res `shouldReturn` Right inout
+        withClient (getStreamBody (source input)) baseUrl $ \(Right res) ->
+            testRunSourceIO res `shouldReturn` Right output
         where
-          inout = ["foo", "bar"]
+          input = ["foo", "", "bar"]
+          output = ["foo", "bar"]
 
 {-
     it "streams in constant memory" $ \(_, baseUrl) -> do
