@@ -7,6 +7,8 @@ module Servant.Server.Internal.Router where
 import           Prelude ()
 import           Prelude.Compat
 
+import           Data.Function
+                 (on)
 import           Data.Map
                  (Map)
 import qualified Data.Map                                   as M
@@ -208,7 +210,14 @@ runChoice ls =
 
 -- Priority on HTTP codes.
 --
--- It just so happens that 404 < 405 < 406 as far as
--- we are concerned here, so we can use (<).
 worseHTTPCode :: Int -> Int -> Bool
-worseHTTPCode = (<)
+worseHTTPCode = on (<) toPriority
+  where
+    toPriority :: Int -> Int
+    toPriority 404 = 0 -- not found
+    toPriority 405 = 1 -- method not allowed
+    toPriority 401 = 2 -- unauthorized
+    toPriority 415 = 3 -- unsupported media type
+    toPriority 406 = 4 -- not acceptable
+    toPriority 400 = 6 -- bad request
+    toPriority _   = 5
