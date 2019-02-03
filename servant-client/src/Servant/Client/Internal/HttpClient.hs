@@ -167,7 +167,7 @@ performRequest req = do
       status_code = statusCode status
       ourResponse = clientResponseToResponse response
   unless (status_code >= 200 && status_code < 300) $
-      throwError $ FailureResponse ourResponse
+      throwError $ mkFailureResponse burl req ourResponse
   return ourResponse
   where
     requestWithoutCookieJar :: Client.Manager -> Client.Request -> ClientM (Client.Response BSL.ByteString)
@@ -194,6 +194,11 @@ performRequest req = do
 
           fReq = Client.hrFinalRequest responses
           fRes = Client.hrFinalResponse responses
+
+mkFailureResponse :: BaseUrl -> Request -> GenResponse BSL.ByteString -> ServantError
+mkFailureResponse burl request ourResponse =
+  FailureResponse (request {requestPath = (burl, path), requestBody = ()}) ourResponse
+  where path = BSL.toStrict $ toLazyByteString $ requestPath request
 
 clientResponseToResponse :: Client.Response a -> GenResponse a
 clientResponseToResponse r = Response

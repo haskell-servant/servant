@@ -53,7 +53,8 @@ import qualified Network.HTTP.Client                as Client
 import           Servant.Client.Core
 import           Servant.Client.Internal.HttpClient
                  (ClientEnv (..), catchConnectionError,
-                 clientResponseToResponse, mkClientEnv, requestToClientRequest)
+                 clientResponseToResponse, mkClientEnv, requestToClientRequest,
+                 mkFailureResponse)
 
 
 -- | Generates a set of client functions for an API.
@@ -166,7 +167,7 @@ performRequest req = do
           status_code = statusCode status
           ourResponse = clientResponseToResponse response
       unless (status_code >= 200 && status_code < 300) $
-        throwError $ FailureResponse ourResponse
+        throwError $ mkFailureResponse burl req ourResponse
       return ourResponse
 
 performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a
@@ -182,7 +183,7 @@ performWithStreamingRequest req k = do
           -- we throw FailureResponse in IO :(
           unless (status_code >= 200 && status_code < 300) $ do
               b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody res)
-              throwIO $ FailureResponse $ clientResponseToResponse res { Client.responseBody = b }
+              throwIO $ mkFailureResponse burl req (clientResponseToResponse res { Client.responseBody = b })
 
           x <- k (clientResponseToResponse res)
           k1 x

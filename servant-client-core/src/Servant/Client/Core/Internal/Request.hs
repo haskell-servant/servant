@@ -40,6 +40,8 @@ import           Network.HTTP.Media
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
                  Status (..), http11, methodGet)
+import           Servant.Client.Core.Internal.BaseUrl
+                 (BaseUrl)
 import           Servant.API
                  (ToHttpApiData, toEncodedUrlPiece, toHeader)
 
@@ -47,8 +49,10 @@ import           Servant.API
 --
 -- Note that this type substantially changed in 0.12.
 data ServantError =
-  -- | The server returned an error response
-    FailureResponse Response
+  -- | The server returned an error response including the
+  -- failing request. 'requestPath' includes the 'BaseUrl' and the
+  -- path of the request.
+    FailureResponse (RequestF () (BaseUrl, BS.ByteString)) Response
   -- | The body could not be decoded at the expected type
   | DecodeFailure Text Response
   -- | The content-type of the response is not supported
@@ -62,40 +66,41 @@ data ServantError =
 instance Exception ServantError
 
 instance NFData ServantError where
-    rnf (FailureResponse res)            = rnf res
+    rnf (FailureResponse req res)        = rnf req `seq` rnf res
     rnf (DecodeFailure err res)          = rnf err `seq` rnf res
     rnf (UnsupportedContentType mt' res) =
         mediaTypeRnf mt' `seq`
         rnf res
-      where
-        mediaTypeRnf mt =
-            rnf (mainType mt) `seq`
-            rnf (subType mt) `seq`
-            rnf (parameters mt)
     rnf (InvalidContentTypeHeader res)   = rnf res
     rnf (ConnectionError err)            = rnf err
+
+mediaTypeRnf :: MediaType -> ()
+mediaTypeRnf mt =
+    rnf (mainType mt) `seq`
+    rnf (subType mt) `seq`
+    rnf (parameters mt)
 
 data RequestF body path = Request
   { requestPath        :: path
   , requestQueryString :: Seq.Seq QueryItem
-  , requestBody        :: Maybe (body, MediaType)
+  , requestBody        :: body
   , requestAccept      :: Seq.Seq MediaType
   , requestHeaders     :: Seq.Seq Header
   , requestHttpVersion :: HttpVersion
   , requestMethod      :: Method
-  } deriving (Generic, Typeable)
+  } deriving (Generic, Typeable, Eq, Show)
 
-instance (NFData path, NFData body) => NFData (Request body path) where
+instance (NFData path, NFData body) => NFData (RequestF body path) where
   rnf r =
     rnf (requestPath r)
     `seq` rnf (requestQueryString r)
     `seq` rnf (requestBody r)
-    `seq` rnf (requestAccept r)
+    `seq` rnf (fmap mediaTypeRnf (requestAccept r))
     `seq` rnf (requestHeaders r)
-    `seq` rnf (requestHttpVersion r)
+    `seq` requestHttpVersion r
     `seq` rnf (requestMethod r)
 
-type Request = RequestF RequestBody Builder.Builder
+type Request = RequestF (Maybe (RequestBody, MediaType)) Builder.Builder
 
 -- | The request body. A replica of the @http-client@ @RequestBody@.
 data RequestBody

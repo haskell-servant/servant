@@ -4,6 +4,8 @@
 {-# LANGUAGE ViewPatterns       #-}
 module Servant.Client.Core.Internal.BaseUrl where
 
+import           Control.DeepSeq
+                 (NFData (..))
 import           Control.Monad.Catch
                  (Exception, MonadThrow, throwM)
 import           Data.Aeson
@@ -39,6 +41,9 @@ data BaseUrl = BaseUrl
   } deriving (Show, Ord, Generic, Lift, Data)
 -- TODO: Ord is more precise than Eq
 -- TODO: Add Hashable instance?
+--
+instance NFData BaseUrl where
+  rnf (BaseUrl a b c d) = a `seq` rnf b `seq` rnf c `seq` rnf d
 
 instance Eq BaseUrl where
     BaseUrl a b c path == BaseUrl a' b' c' path'

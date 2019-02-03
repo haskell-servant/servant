@@ -7,6 +7,9 @@
 - `RequestF` is now parametrized on the request body type as well as the path
   type.
 
+- `ServantError`'s `FailureResponse` constructor now carries the `Request` that
+  caused the failure.
+
 
 0.15
 ----
