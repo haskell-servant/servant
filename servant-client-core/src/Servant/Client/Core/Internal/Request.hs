@@ -75,17 +75,27 @@ instance NFData ServantError where
     rnf (InvalidContentTypeHeader res)   = rnf res
     rnf (ConnectionError err)            = rnf err
 
-data RequestF a = Request
-  { requestPath        :: a
+data RequestF body path = Request
+  { requestPath        :: path
   , requestQueryString :: Seq.Seq QueryItem
-  , requestBody        :: Maybe (RequestBody, MediaType)
+  , requestBody        :: Maybe (body, MediaType)
   , requestAccept      :: Seq.Seq MediaType
   , requestHeaders     :: Seq.Seq Header
   , requestHttpVersion :: HttpVersion
   , requestMethod      :: Method
   } deriving (Generic, Typeable)
 
-type Request = RequestF Builder.Builder
+instance (NFData path, NFData body) => NFData (Request body path) where
+  rnf r =
+    rnf (requestPath r)
+    `seq` rnf (requestQueryString r)
+    `seq` rnf (requestBody r)
+    `seq` rnf (requestAccept r)
+    `seq` rnf (requestHeaders r)
+    `seq` rnf (requestHttpVersion r)
+    `seq` rnf (requestMethod r)
+
+type Request = RequestF RequestBody Builder.Builder
 
 -- | The request body. A replica of the @http-client@ @RequestBody@.
 data RequestBody
