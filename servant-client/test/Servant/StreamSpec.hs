@@ -35,8 +35,9 @@ import qualified Network.HTTP.Client           as C
 import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
-                 ((:<|>) ((:<|>)), (:>), JSON, NetstringFraming,
-                 NewlineFraming, NoFraming, OctetStream, SourceIO, StreamGet)
+                 ((:<|>) ((:<|>)), (:>), JSON, NetstringFraming, StreamBody,
+                 NewlineFraming, NoFraming, OctetStream, SourceIO, StreamGet,
+                 )
 import           Servant.Client.Streaming
 import           Servant.ClientSpec
                  (Person (..))
@@ -72,13 +73,15 @@ type StreamApi =
          "streamGetNewline" :> StreamGet NewlineFraming JSON (SourceIO Person)
     :<|> "streamGetNetstring" :> StreamGet NetstringFraming JSON (SourceIO Person)
     :<|> "streamALot" :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
+    :<|> "streamBody" :> StreamBody NoFraming OctetStream (SourceIO BS.ByteString) :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
 
 api :: Proxy StreamApi
 api = Proxy
 
 getGetNL, getGetNS :: ClientM (SourceIO Person)
 getGetALot :: ClientM (SourceIO BS.ByteString)
-getGetNL :<|> getGetNS :<|> getGetALot = client api
+getStreamBody :: SourceT IO BS.ByteString -> ClientM (SourceIO BS.ByteString)
+getGetNL :<|> getGetNS :<|> getGetALot :<|> getStreamBody = client api
 
 alice :: Person
 alice = Person "Alice" 42
@@ -90,9 +93,9 @@ server :: Application
 server = serve api
     $    return (source [alice, bob, alice])
     :<|> return (source [alice, bob, alice])
-
     -- 2 ^ (18 + 10) = 256M
     :<|> return (SourceT ($ lots (powerOfTwo 18)))
+    :<|> return
   where
     lots n
         | n < 0     = Stop
@@ -125,6 +128,13 @@ streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
     it "works with Servant.API.StreamGet.Netstring" $ \(_, baseUrl) -> do
         withClient getGetNS baseUrl $ \(Right res) ->
             testRunSourceIO res `shouldReturn` Right [alice, bob, alice]
+
+    it "works with Servant.API.StreamBody" $ \(_, baseUrl) -> do
+        withClient (getStreamBody (source input)) baseUrl $ \(Right res) ->
+            testRunSourceIO res `shouldReturn` Right output
+        where
+          input = ["foo", "", "bar"]
+          output = ["foo", "bar"]
 
 {-
     it "streams in constant memory" $ \(_, baseUrl) -> do
