@@ -31,6 +31,8 @@ import           Control.Monad.STM
 import           Control.Monad.Trans.Control
                  (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
+import           Data.Bifunctor
+                 (bimap)
 import           Data.ByteString.Builder
                  (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
@@ -196,9 +198,10 @@ performRequest req = do
           fRes = Client.hrFinalResponse responses
 
 mkFailureResponse :: BaseUrl -> Request -> GenResponse BSL.ByteString -> ServantError
-mkFailureResponse burl request ourResponse =
-  FailureResponse (request {requestPath = (burl, path), requestBody = ()}) ourResponse
-  where path = BSL.toStrict $ toLazyByteString $ requestPath request
+mkFailureResponse burl request =
+    FailureResponse (bimap (const ()) f request)
+  where
+    f b = (burl, BSL.toStrict $ toLazyByteString b)
 
 clientResponseToResponse :: Client.Response a -> GenResponse a
 clientResponseToResponse r = Response

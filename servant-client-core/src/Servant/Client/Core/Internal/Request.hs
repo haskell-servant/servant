@@ -19,14 +19,20 @@ import           Control.DeepSeq
                  (NFData (..))
 import           Control.Monad.Catch
                  (Exception)
-import qualified Data.ByteString         as BS
-import qualified Data.ByteString.Builder as Builder
-import qualified Data.ByteString.Lazy    as LBS
+import           Data.Bifoldable
+                 (Bifoldable (..))
+import           Data.Bifunctor
+                 (Bifunctor (..))
+import           Data.Bitraversable
+                 (Bitraversable (..), bifoldMapDefault, bimapDefault)
+import qualified Data.ByteString                      as BS
+import qualified Data.ByteString.Builder              as Builder
+import qualified Data.ByteString.Lazy                 as LBS
 import           Data.Int
                  (Int64)
 import           Data.Semigroup
                  ((<>))
-import qualified Data.Sequence           as Seq
+import qualified Data.Sequence                        as Seq
 import           Data.Text
                  (Text)
 import           Data.Text.Encoding
@@ -40,10 +46,10 @@ import           Network.HTTP.Media
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
                  Status (..), http11, methodGet)
-import           Servant.Client.Core.Internal.BaseUrl
-                 (BaseUrl)
 import           Servant.API
                  (ToHttpApiData, toEncodedUrlPiece, toHeader)
+import           Servant.Client.Core.Internal.BaseUrl
+                 (BaseUrl)
 
 -- | A type representing possible errors in a request
 --
@@ -83,24 +89,36 @@ mediaTypeRnf mt =
 data RequestF body path = Request
   { requestPath        :: path
   , requestQueryString :: Seq.Seq QueryItem
-  , requestBody        :: body
+  , requestBody        :: Maybe (body, MediaType)
   , requestAccept      :: Seq.Seq MediaType
   , requestHeaders     :: Seq.Seq Header
   , requestHttpVersion :: HttpVersion
   , requestMethod      :: Method
-  } deriving (Generic, Typeable, Eq, Show)
+  } deriving (Generic, Typeable, Eq, Show, Functor, Foldable, Traversable)
+
+instance Bifunctor RequestF where bimap = bimapDefault
+instance Bifoldable RequestF where bifoldMap = bifoldMapDefault
+instance Bitraversable RequestF where
+    bitraverse f g r = mk
+        <$> traverse (bitraverse f pure) (requestBody r)
+        <*> g (requestPath r)
+      where
+        mk b p = r { requestBody = b, requestPath = p }
 
 instance (NFData path, NFData body) => NFData (RequestF body path) where
-  rnf r =
-    rnf (requestPath r)
-    `seq` rnf (requestQueryString r)
-    `seq` rnf (requestBody r)
-    `seq` rnf (fmap mediaTypeRnf (requestAccept r))
-    `seq` rnf (requestHeaders r)
-    `seq` requestHttpVersion r
-    `seq` rnf (requestMethod r)
+    rnf r =
+        rnf (requestPath r)
+        `seq` rnf (requestQueryString r)
+        `seq` rnfB (requestBody r)
+        `seq` rnf (fmap mediaTypeRnf (requestAccept r))
+        `seq` rnf (requestHeaders r)
+        `seq` requestHttpVersion r
+        `seq` rnf (requestMethod r)
+      where
+        rnfB Nothing        = ()
+        rnfB (Just (b, mt)) = rnf b `seq` mediaTypeRnf mt
 
-type Request = RequestF (Maybe (RequestBody, MediaType)) Builder.Builder
+type Request = RequestF RequestBody Builder.Builder
 
 -- | The request body. A replica of the @http-client@ @RequestBody@.
 data RequestBody

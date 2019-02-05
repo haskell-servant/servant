@@ -55,6 +55,10 @@ library
     , time                  >= 1.6.0.1  && < 1.9
     , transformers          >= 0.5.2.0  && < 0.6
 
+  if !impl(ghc >= 8.2)
+    build-depends:
+      bifunctors >= 5.5.3 && < 5.6
+
   -- Servant dependencies.
   -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
