@@ -1,5 +1,5 @@
 name:                servant-client-jsaddle
-version:             0.13
+version:             0.15
 synopsis: automatic derivation of querying functions for servant webservices for jsaddle (GHCJS, GHC + WebKit, GHC + websockets, etc)
 description:
   This library lets you automatically derive Haskell functions that
@@ -47,7 +47,7 @@ library
     , monad-control         >= 1.0.0.4  && < 1.1
     , mtl                   >= 2.1      && < 2.3
     , semigroupoids         >= 4.3      && < 5.4
-    , servant-client-core   == 0.13.*
+    , servant-client-core   == 0.15.*
     , string-conversions    >= 0.3      && < 0.5
     , text
     , transformers          >= 0.3      && < 0.6
