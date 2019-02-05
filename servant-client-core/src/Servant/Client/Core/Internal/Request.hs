@@ -18,7 +18,7 @@ import           Prelude.Compat
 import           Control.DeepSeq
                  (NFData (..))
 import           Control.Exception
-                 (SomeException)
+                 (SomeException (..))
 import           Control.Monad.Catch
                  (Exception)
 import           Data.Bifoldable
@@ -40,7 +40,7 @@ import           Data.Text
 import           Data.Text.Encoding
                  (encodeUtf8)
 import           Data.Typeable
-                 (Typeable)
+                 (Typeable, typeOf)
 import           GHC.Generics
                  (Generic)
 import           Network.HTTP.Media
@@ -76,7 +76,10 @@ instance Eq ServantError where
   DecodeFailure t r           == DecodeFailure t' r'           = t == t' && r == r'
   UnsupportedContentType mt r == UnsupportedContentType mt' r' = mt == mt' && r == r'
   InvalidContentTypeHeader r  == InvalidContentTypeHeader r'   = r == r'
-  ConnectionError _           == ConnectionError _             = True
+  ConnectionError exc         == ConnectionError exc'          = eqSomeException exc exc'
+    where
+      -- returns true, if type of exception is the same
+      eqSomeException (SomeException a) (SomeException b) = typeOf a == typeOf b
 
   -- prevent wild card blindness
   FailureResponse          {} == _ = False
