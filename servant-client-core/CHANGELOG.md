@@ -1,16 +1,6 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-client-core/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
-0.15.1
-------
-
-- `RequestF` is now parametrized on the request body type as well as the path
-  type.
-
-- `ServantError`'s `FailureResponse` constructor now carries the `Request` that
-  caused the failure.
-
-
 0.15
 ----
 
