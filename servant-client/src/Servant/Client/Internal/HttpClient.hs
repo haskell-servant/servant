@@ -31,6 +31,8 @@ import           Control.Monad.STM
 import           Control.Monad.Trans.Control
                  (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
+import           Data.Bifunctor
+                 (bimap)
 import           Data.ByteString.Builder
                  (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
@@ -167,7 +169,7 @@ performRequest req = do
       status_code = statusCode status
       ourResponse = clientResponseToResponse response
   unless (status_code >= 200 && status_code < 300) $
-      throwError $ FailureResponse ourResponse
+      throwError $ mkFailureResponse burl req ourResponse
   return ourResponse
   where
     requestWithoutCookieJar :: Client.Manager -> Client.Request -> ClientM (Client.Response BSL.ByteString)
@@ -194,6 +196,12 @@ performRequest req = do
 
           fReq = Client.hrFinalRequest responses
           fRes = Client.hrFinalResponse responses
+
+mkFailureResponse :: BaseUrl -> Request -> GenResponse BSL.ByteString -> ServantError
+mkFailureResponse burl request =
+    FailureResponse (bimap (const ()) f request)
+  where
+    f b = (burl, BSL.toStrict $ toLazyByteString b)
 
 clientResponseToResponse :: Client.Response a -> GenResponse a
 clientResponseToResponse r = Response

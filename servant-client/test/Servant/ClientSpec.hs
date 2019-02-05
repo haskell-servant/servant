@@ -40,7 +40,7 @@ import           Data.Aeson
 import           Data.Char
                  (chr, isPrint)
 import           Data.Foldable
-                 (forM_)
+                 (forM_, toList)
 import           Data.Maybe
                  (listToMaybe)
 import           Data.Monoid ()
@@ -336,9 +336,16 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       let p = Person "Clara" 42
       left show <$> runClient (getBody p) baseUrl `shouldReturn` Right p
 
+    it "Servant.API FailureResponse" $ \(_, baseUrl) -> do
+      left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
+      Left (FailureResponse req _) <- runClient (getQueryParam (Just "bob")) baseUrl
+      Req.requestPath req `shouldBe` (baseUrl, "/param")
+      toList (Req.requestQueryString req) `shouldBe` [("name", Just "bob")]
+      Req.requestMethod req `shouldBe` HTTP.methodGet
+
     it "Servant.API.QueryParam" $ \(_, baseUrl) -> do
       left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
-      Left (FailureResponse r) <- runClient (getQueryParam (Just "bob")) baseUrl
+      Left (FailureResponse _ r) <- runClient (getQueryParam (Just "bob")) baseUrl
       responseStatusCode r `shouldBe` HTTP.Status 400 "bob not found"
 
     it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
@@ -362,7 +369,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       res <- runClient (getRawFailure HTTP.methodGet) baseUrl
       case res of
         Right _ -> assertFailure "expected Left, but got Right"
-        Left (FailureResponse r) -> do
+        Left (FailureResponse _ r) -> do
           responseStatusCode r `shouldBe` HTTP.status400
           responseBody r `shouldBe` "rawFailure"
         Left e -> assertFailure $ "expected FailureResponse, but got " ++ show e
@@ -399,7 +406,7 @@ wrappedApiSpec = describe "error status codes" $ do
           it desc $ bracket (startWaiApp $ serveW api) endWaiApp $ \(_, baseUrl) -> do
             let getResponse :: ClientM ()
                 getResponse = client api
-            Left (FailureResponse r) <- runClient getResponse baseUrl
+            Left (FailureResponse _ r) <- runClient getResponse baseUrl
             responseStatusCode r `shouldBe` (HTTP.Status 500 "error message")
     in mapM_ test $
         (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete") :
@@ -416,7 +423,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
         let (_ :<|> _ :<|> getDeleteEmpty :<|> _) = client api
         Left res <- runClient getDeleteEmpty baseUrl
         case res of
-          FailureResponse r | responseStatusCode r == HTTP.status404 -> return ()
+          FailureResponse _ r | responseStatusCode r == HTTP.status404 -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \(_, baseUrl) -> do
@@ -466,7 +473,7 @@ basicAuthSpec = beforeAll (startWaiApp basicAuthServer) $ afterAll endWaiApp $ d
     it "Authenticates a BasicAuth protected server appropriately" $ \(_,baseUrl) -> do
       let getBasic = client basicAuthAPI
       let basicAuthData = BasicAuthData "not" "password"
-      Left (FailureResponse r) <- runClient (getBasic basicAuthData) baseUrl
+      Left (FailureResponse _ r) <- runClient (getBasic basicAuthData) baseUrl
       responseStatusCode r `shouldBe` HTTP.Status 403 "Forbidden"
 
 genAuthSpec :: Spec
@@ -483,7 +490,7 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
     it "Authenticates a AuthProtect protected server appropriately" $ \(_, baseUrl) -> do
       let getProtected = client genAuthAPI
       let authRequest = Auth.mkAuthenticatedRequest () (\_ req -> Req.addHeader "Wrong" ("header" :: String) req)
-      Left (FailureResponse r) <- runClient (getProtected authRequest) baseUrl
+      Left (FailureResponse _ r) <- runClient (getProtected authRequest) baseUrl
       responseStatusCode r `shouldBe` (HTTP.Status 401 "Unauthorized")
 
 genericClientSpec :: Spec
