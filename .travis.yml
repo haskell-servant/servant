@@ -7,6 +7,8 @@
 language: c
 sudo: false
 
+dist: xenial
+
 git:
   submodules: false  # whether to recursively clone submodules
 
