@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveFoldable        #-}
 {-# LANGUAGE DeriveFunctor         #-}
@@ -17,10 +16,6 @@ import           Prelude.Compat
 
 import           Control.DeepSeq
                  (NFData (..))
-import           Control.Exception
-                 (SomeException (..))
-import           Control.Monad.Catch
-                 (Exception)
 import           Data.Bifoldable
                  (Bifoldable (..))
 import           Data.Bifunctor
@@ -30,8 +25,6 @@ import           Data.Bitraversable
 import qualified Data.ByteString                      as BS
 import qualified Data.ByteString.Builder              as Builder
 import qualified Data.ByteString.Lazy                 as LBS
-import           Data.Int
-                 (Int64)
 import           Data.Semigroup
                  ((<>))
 import qualified Data.Sequence                        as Seq
@@ -40,64 +33,16 @@ import           Data.Text
 import           Data.Text.Encoding
                  (encodeUtf8)
 import           Data.Typeable
-                 (Typeable, typeOf)
+                 (Typeable)
 import           GHC.Generics
                  (Generic)
 import           Network.HTTP.Media
                  (MediaType, mainType, parameters, subType)
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
-                 Status (..), http11, methodGet)
+                 http11, methodGet)
 import           Servant.API
-                 (ToHttpApiData, toEncodedUrlPiece, toHeader)
-import           Servant.Client.Core.Internal.BaseUrl
-                 (BaseUrl)
-
--- | A type representing possible errors in a request
---
--- Note that this type substantially changed in 0.12.
-data ServantError =
-  -- | The server returned an error response including the
-  -- failing request. 'requestPath' includes the 'BaseUrl' and the
-  -- path of the request.
-    FailureResponse (RequestF () (BaseUrl, BS.ByteString)) Response
-  -- | The body could not be decoded at the expected type
-  | DecodeFailure Text Response
-  -- | The content-type of the response is not supported
-  | UnsupportedContentType MediaType Response
-  -- | The content-type header is invalid
-  | InvalidContentTypeHeader Response
-  -- | There was a connection error, and no response was received
-  | ConnectionError SomeException
-  deriving (Show, Generic, Typeable)
-
-instance Eq ServantError where
-  FailureResponse req res     == FailureResponse req' res'     = req == req' && res == res'
-  DecodeFailure t r           == DecodeFailure t' r'           = t == t' && r == r'
-  UnsupportedContentType mt r == UnsupportedContentType mt' r' = mt == mt' && r == r'
-  InvalidContentTypeHeader r  == InvalidContentTypeHeader r'   = r == r'
-  ConnectionError exc         == ConnectionError exc'          = eqSomeException exc exc'
-    where
-      -- returns true, if type of exception is the same
-      eqSomeException (SomeException a) (SomeException b) = typeOf a == typeOf b
-
-  -- prevent wild card blindness
-  FailureResponse          {} == _ = False
-  DecodeFailure            {} == _ = False
-  UnsupportedContentType   {} == _ = False
-  InvalidContentTypeHeader {} == _ = False
-  ConnectionError          {} == _ = False
-
-instance Exception ServantError
-
--- | Note: an exception in 'ConnectionError' might not be evaluated fully,
--- We only 'rnf' its 'show'ed value.
-instance NFData ServantError where
-    rnf (FailureResponse req res)        = rnf req `seq` rnf res
-    rnf (DecodeFailure err res)          = rnf err `seq` rnf res
-    rnf (UnsupportedContentType mt' res) = mediaTypeRnf mt' `seq` rnf res
-    rnf (InvalidContentTypeHeader res)   = rnf res
-    rnf (ConnectionError err)            = err `seq` rnf (show err)
+                 (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
 
 mediaTypeRnf :: MediaType -> ()
 mediaTypeRnf mt =
@@ -143,31 +88,13 @@ type Request = RequestF RequestBody Builder.Builder
 data RequestBody
   = RequestBodyLBS LBS.ByteString
   | RequestBodyBS BS.ByteString
-  | RequestBodyBuilder Int64 Builder.Builder
-  | RequestBodyStream Int64 ((IO BS.ByteString -> IO ()) -> IO ())
-  | RequestBodyStreamChunked ((IO BS.ByteString -> IO ()) -> IO ())
-  | RequestBodyIO (IO RequestBody)
+  | RequestBodySource (SourceIO LBS.ByteString)
   deriving (Generic, Typeable)
 
-data GenResponse a = Response
-  { responseStatusCode  :: Status
-  , responseHeaders     :: Seq.Seq Header
-  , responseHttpVersion :: HttpVersion
-  , responseBody        :: a
-  } deriving (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
-
-instance NFData a => NFData (GenResponse a) where
-    rnf (Response sc hs hv body) =
-        rnfStatus sc `seq`
-        rnf hs `seq`
-        rnfHttpVersion hv `seq`
-        rnf body
-      where
-        rnfStatus (Status code msg) = rnf code `seq` rnf msg
-        rnfHttpVersion (HttpVersion _ _) = () -- HttpVersion fields are strict
-
-type Response = GenResponse LBS.ByteString
-type StreamingResponse = GenResponse (IO BS.ByteString)
+instance Show RequestBody where
+    showsPrec d (RequestBodyLBS lbs) = showParen (d > 10)
+        $ showString "RequestBodyLBS "
+        . showsPrec 11 lbs
 
 -- A GET request to the top-level path
 defaultRequest :: Request

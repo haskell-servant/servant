@@ -39,10 +39,12 @@ library
       Servant.Client.Core.Internal.Auth
       Servant.Client.Core.Internal.BaseUrl
       Servant.Client.Core.Internal.BasicAuth
+      Servant.Client.Core.Internal.ClientError
       Servant.Client.Core.Internal.ClientF
       Servant.Client.Core.Internal.Generic
       Servant.Client.Core.Internal.HasClient
       Servant.Client.Core.Internal.Request
+      Servant.Client.Core.Internal.Response
       Servant.Client.Core.Internal.RunClient
 
   -- Bundled with GHC: Lower bound to not force re-installs

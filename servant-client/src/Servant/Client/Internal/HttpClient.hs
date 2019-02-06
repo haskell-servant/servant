@@ -14,6 +14,9 @@ module Servant.Client.Internal.HttpClient where
 import           Prelude ()
 import           Prelude.Compat
 
+import           Control.Concurrent.MVar
+                 (modifyMVar, newMVar)
+import qualified Data.ByteString                          as BS
 import           Control.Concurrent.STM.TVar
 import           Control.Exception
 import           Control.Monad
@@ -52,7 +55,6 @@ import           Data.Sequence
                  (fromList)
 import           Data.String
                  (fromString)
-import qualified Data.Text                   as T
 import           Data.Time.Clock
                  (UTCTime, getCurrentTime)
 import           GHC.Generics
@@ -62,6 +64,7 @@ import           Network.HTTP.Types
                  (hContentType, renderQuery, statusCode)
 import           Servant.Client.Core
 
+import qualified Servant.Types.SourceT                    as S
 import qualified Network.HTTP.Client         as Client
 
 -- | The environment in which a request is run.
@@ -167,7 +170,7 @@ performRequest req = do
   response <- maybe (requestWithoutCookieJar m request) (requestWithCookieJar m request) cookieJar'
   let status = Client.responseStatus response
       status_code = statusCode status
-      ourResponse = clientResponseToResponse response
+      ourResponse = clientResponseToResponse id response
   unless (status_code >= 200 && status_code < 300) $
       throwError $ mkFailureResponse burl req ourResponse
   return ourResponse
@@ -197,34 +200,34 @@ performRequest req = do
           fReq = Client.hrFinalRequest responses
           fRes = Client.hrFinalResponse responses
 
-mkFailureResponse :: BaseUrl -> Request -> GenResponse BSL.ByteString -> ServantError
+mkFailureResponse :: BaseUrl -> Request -> ResponseF BSL.ByteString -> ServantError
 mkFailureResponse burl request =
     FailureResponse (bimap (const ()) f request)
   where
     f b = (burl, BSL.toStrict $ toLazyByteString b)
 
-clientResponseToResponse :: Client.Response a -> GenResponse a
-clientResponseToResponse r = Response
-  { responseStatusCode = Client.responseStatus r
-  , responseBody = Client.responseBody r
-  , responseHeaders = fromList $ Client.responseHeaders r
-  , responseHttpVersion = Client.responseVersion r
-  }
+clientResponseToResponse :: (a -> b) -> Client.Response a -> ResponseF b
+clientResponseToResponse f r = Response
+    { responseStatusCode  = Client.responseStatus r
+    , responseBody        = f (Client.responseBody r)
+    , responseHeaders     = fromList $ Client.responseHeaders r
+    , responseHttpVersion = Client.responseVersion r
+    }
 
 requestToClientRequest :: BaseUrl -> Request -> Client.Request
 requestToClientRequest burl r = Client.defaultRequest
-  { Client.method = requestMethod r
-  , Client.host = fromString $ baseUrlHost burl
-  , Client.port = baseUrlPort burl
-  , Client.path = BSL.toStrict
-                $ fromString (baseUrlPath burl)
-               <> toLazyByteString (requestPath r)
-  , Client.queryString = renderQuery True . toList $ requestQueryString r
-  , Client.requestHeaders =
-    maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
-  , Client.requestBody = body
-  , Client.secure = isSecure
-  }
+    { Client.method = requestMethod r
+    , Client.host = fromString $ baseUrlHost burl
+    , Client.port = baseUrlPort burl
+    , Client.path = BSL.toStrict
+                  $ fromString (baseUrlPath burl)
+                 <> toLazyByteString (requestPath r)
+    , Client.queryString = renderQuery True . toList $ requestQueryString r
+    , Client.requestHeaders =
+      maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
+    , Client.requestBody = body
+    , Client.secure = isSecure
+    }
   where
     -- Content-Type and Accept are specified by requestBody and requestAccept
     headers = filter (\(h, _) -> h /= "Accept" && h /= "Content-Type") $
@@ -237,21 +240,38 @@ requestToClientRequest burl r = Client.defaultRequest
         hs = toList $ requestAccept r
 
     convertBody bd = case bd of
-      RequestBodyLBS body' -> Client.RequestBodyLBS body'
-      RequestBodyBS body' -> Client.RequestBodyBS body'
-      RequestBodyBuilder size body' -> Client.RequestBodyBuilder size body'
-      RequestBodyStream size body' -> Client.RequestBodyStream size body'
-      RequestBodyStreamChunked body' -> Client.RequestBodyStreamChunked body'
-      RequestBodyIO body' -> Client.RequestBodyIO (convertBody <$> body')
+        RequestBodyLBS body'       -> Client.RequestBodyLBS body'
+        RequestBodyBS body'        -> Client.RequestBodyBS body'
+        RequestBodySource sourceIO -> Client.RequestBodyStreamChunked givesPopper
+          where
+            givesPopper :: (IO BS.ByteString -> IO ()) -> IO ()
+            givesPopper needsPopper = S.unSourceT sourceIO $ \step0 -> do
+                ref <- newMVar step0
+
+                -- Note sure we need locking, but it's feels safer.
+                let popper :: IO BS.ByteString
+                    popper = modifyMVar ref nextBs
+
+                needsPopper popper
+
+            nextBs S.Stop          = return (S.Stop, BS.empty)
+            nextBs (S.Error err)   = fail err
+            nextBs (S.Skip s)      = nextBs s
+            nextBs (S.Effect ms)   = ms >>= nextBs
+            nextBs (S.Yield lbs s) = case BSL.toChunks lbs of
+                []     -> nextBs s
+                (x:xs) | BS.null x -> nextBs step'
+                       | otherwise -> return (step', x)
+                    where
+                      step' = S.Yield (BSL.fromChunks xs) s
 
     (body, contentTypeHdr) = case requestBody r of
-      Nothing -> (Client.RequestBodyLBS "", Nothing)
-      Just (body', typ)
-        -> (convertBody body', Just (hContentType, renderHeader typ))
+        Nothing           -> (Client.RequestBodyBS "", Nothing)
+        Just (body', typ) -> (convertBody body', Just (hContentType, renderHeader typ))
 
     isSecure = case baseUrlScheme burl of
-      Http -> False
-      Https -> True
+        Http -> False
+        Https -> True
 
 catchConnectionError :: IO a -> IO (Either ServantError a)
 catchConnectionError action =

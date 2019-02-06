@@ -16,10 +16,7 @@ module Servant.Client.Core.Internal.HasClient where
 import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Concurrent.MVar
-                 (modifyMVar, newMVar)
-import qualified Data.ByteString                        as BS
-import qualified Data.ByteString.Lazy                   as BL
+import qualified Data.ByteString.Lazy                     as BL
 import           Data.Foldable
                  (toList)
 import           Data.List
@@ -34,7 +31,7 @@ import           Data.Text
                  (Text, pack)
 import           GHC.TypeLits
                  (KnownSymbol, symbolVal)
-import qualified Network.HTTP.Types                     as H
+import qualified Network.HTTP.Types                       as H
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
                  BuildHeadersTo (..), Capture', CaptureAll, Description,
@@ -50,11 +47,12 @@ import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
-import qualified Servant.Types.SourceT                  as S
 
 import           Servant.Client.Core.Internal.Auth
 import           Servant.Client.Core.Internal.BasicAuth
+import           Servant.Client.Core.Internal.ClientError
 import           Servant.Client.Core.Internal.Request
+import           Servant.Client.Core.Internal.Response
 import           Servant.Client.Core.Internal.RunClient
 
 -- * Accessing APIs as a Client
@@ -283,7 +281,7 @@ instance {-# OVERLAPPABLE #-}
   clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
       let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-      return $ fromSourceIO $ framingUnrender' $ S.fromAction BS.null (responseBody gres)
+      return $ fromSourceIO $ framingUnrender' $ responseBody gres
     where
       req' = req
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
@@ -552,7 +550,7 @@ instance
 
     clientWithRoute pm Proxy req body
         = clientWithRoute pm (Proxy :: Proxy api)
-        $ setRequestBody (RequestBodyStreamChunked givesPopper) (contentType ctypeP) req
+        $ setRequestBody (RequestBodySource sourceIO) (contentType ctypeP) req
       where
         ctypeP   = Proxy :: Proxy ctype
         framingP = Proxy :: Proxy framing
@@ -561,28 +559,6 @@ instance
             framingP
             (mimeRender ctypeP :: chunk -> BL.ByteString)
             (toSourceIO body)
-
-        -- not pretty.
-        givesPopper :: (IO BS.ByteString -> IO ()) -> IO ()
-        givesPopper needsPopper = S.unSourceT sourceIO $ \step0 -> do
-            ref <- newMVar step0
-
-            -- Note sure we need locking, but it's feels safer.
-            let popper :: IO BS.ByteString
-                popper = modifyMVar ref nextBs
-
-            needsPopper popper
-
-        nextBs S.Stop          = return (S.Stop, BS.empty)
-        nextBs (S.Error err)   = fail err
-        nextBs (S.Skip s)      = nextBs s
-        nextBs (S.Effect ms)   = ms >>= nextBs
-        nextBs (S.Yield lbs s) = case BL.toChunks lbs of
-            []     -> nextBs s
-            (x:xs) | BS.null x -> nextBs step'
-                   | otherwise -> return (step', x)
-                where
-                  step' = S.Yield (BL.fromChunks xs) s
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where

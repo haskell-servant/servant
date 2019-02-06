@@ -25,8 +25,8 @@ import           Servant.API
 
 import           Servant.Client.Core.Internal.ClientF
 import           Servant.Client.Core.Internal.Request
-                 (GenResponse (..), Request, Response, ServantError (..),
-                 StreamingResponse)
+import           Servant.Client.Core.Internal.Response
+import           Servant.Client.Core.Internal.ClientError
 
 class Monad m => RunClient m where
   -- | How to make a request.
