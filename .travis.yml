@@ -9,6 +9,9 @@ sudo: false
 
 dist: xenial
 
+services:
+  - xvfb
+
 git:
   submodules: false  # whether to recursively clone submodules
 
