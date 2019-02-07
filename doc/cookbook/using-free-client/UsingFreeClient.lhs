@@ -137,7 +137,7 @@ And we continue by turning http-client's `Response` into servant's `Response`,
 and calling the continuation. We should get a `Pure` value.
 
 ```haskell
-        let res = I.clientResponseToResponse res'
+        let res = I.clientResponseToResponse id res'
         
         case k res of
             Pure n ->

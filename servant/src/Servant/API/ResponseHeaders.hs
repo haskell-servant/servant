@@ -35,6 +35,8 @@ module Servant.API.ResponseHeaders
     , HList(..)
     ) where
 
+import           Control.DeepSeq
+                 (NFData (..))
 import           Data.ByteString.Char8     as BS
                  (ByteString, init, pack, unlines)
 import qualified Data.CaseInsensitive      as CI
@@ -60,15 +62,31 @@ data Headers ls a = Headers { getResponse :: a
                             -- ^ HList of headers.
                             } deriving (Functor)
 
+instance (NFDataHList ls, NFData a) => NFData (Headers ls a) where
+    rnf (Headers x hdrs) = rnf x `seq` rnf hdrs
+
 data ResponseHeader (sym :: Symbol) a
     = Header a
     | MissingHeader
     | UndecodableHeader ByteString
   deriving (Typeable, Eq, Show, Functor)
 
+instance NFData a => NFData (ResponseHeader sym a) where
+    rnf MissingHeader          = ()
+    rnf (UndecodableHeader bs) = rnf bs
+    rnf (Header x)             = rnf x
+
 data HList a where
     HNil  :: HList '[]
     HCons :: ResponseHeader h x -> HList xs -> HList (Header h x ': xs)
+
+class NFDataHList xs where rnfHList :: HList xs -> ()
+instance NFDataHList '[] where rnfHList HNil = ()
+instance (y ~ Header h x, NFData x, NFDataHList xs) => NFDataHList (y ': xs) where
+    rnfHList (HCons h xs) = rnf h `seq` rnfHList xs
+
+instance NFDataHList xs => NFData (HList xs) where
+    rnf = rnfHList
 
 type family HeaderValMap (f :: * -> *) (xs :: [*]) where
     HeaderValMap f '[]                = '[]

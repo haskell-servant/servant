@@ -41,7 +41,7 @@ module Servant.Client.Core
 
   -- * Response
   , Response
-  , GenResponse (..)
+  , ResponseF (..)
   , RunClient(..)
   , module Servant.Client.Core.Internal.BaseUrl
   -- ** Streaming
@@ -64,4 +64,6 @@ import           Servant.Client.Core.Internal.BasicAuth
 import           Servant.Client.Core.Internal.Generic
 import           Servant.Client.Core.Internal.HasClient
 import           Servant.Client.Core.Internal.Request
+import           Servant.Client.Core.Internal.Response
+import           Servant.Client.Core.Internal.ClientError
 import           Servant.Client.Core.Internal.RunClient
