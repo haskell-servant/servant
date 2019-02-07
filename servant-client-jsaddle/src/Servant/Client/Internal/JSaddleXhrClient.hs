@@ -15,8 +15,11 @@
 module Servant.Client.Internal.JSaddleXhrClient where
 
 import           Control.Arrow
+import           Data.Bifunctor              (bimap)
 import           Data.ByteString.Builder     (toLazyByteString)
+import qualified Data.ByteString.Lazy       as BSL
 import           Control.Concurrent
+import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Catch         (MonadCatch, MonadThrow)
 import           Control.Monad.Error.Class   (MonadError (..))
@@ -56,6 +59,11 @@ data ClientEnv
      -- | Modify the XMLHttpRequest at will, right before sending.
    , fixUpXhr :: JS.XMLHttpRequest -> DOM ()
    }
+
+data JSaddleConnectionError = JSaddleConnectionError
+  deriving (Eq, Show)
+
+instance Exception JSaddleConnectionError
 
 -- | Default 'ClientEnv'
 mkClientEnv :: BaseUrl -> ClientEnv
@@ -136,7 +144,7 @@ performRequest domc req = do
 
   let status = statusCode (responseStatusCode resp)
   unless (status >= 200 && status < 300) $
-        throwError $ FailureResponse resp
+        throwError $ mkFailureResponse burl req resp
 
   pure resp
 
@@ -204,6 +212,12 @@ castMutableArrayBufferToArrayBufferView :: ArrayBuffer.MutableArrayBuffer -> DOM
 castMutableArrayBufferToArrayBufferView x = JS.liftJSM $ do
   JS.fromJSValUnchecked $ JS.pToJSVal x
 
+mkFailureResponse :: BaseUrl -> Request -> ResponseF BSL.ByteString -> ServantError
+mkFailureResponse burl request =
+    FailureResponse (bimap (const ()) f request)
+  where
+    f b = (burl, BSL.toStrict $ toLazyByteString b)
+
 sendXhr :: JS.XMLHttpRequest -> Maybe L.ByteString -> DOM ()
 sendXhr xhr Nothing = JS.send xhr
 sendXhr xhr (Just body) = do
@@ -230,7 +244,7 @@ toResponse domc xhr = do
       inDom = flip runDOM domc
   status <- inDom $ JS.getStatus xhr
   case status of
-    0 -> throwError $ ConnectionError "connection error"
+    0 -> throwError $ ConnectionError $ toException JSaddleConnectionError
     _ -> inDom $ do
       statusText <- BS.pack <$> JS.getStatusText xhr
       headers <- parseHeaders <$> JS.getAllResponseHeaders xhr
