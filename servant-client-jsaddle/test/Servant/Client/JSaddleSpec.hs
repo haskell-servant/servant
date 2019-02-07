@@ -4,7 +4,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Servant.Client.JsSpec where
+module Servant.Client.JSaddleSpec where
 
 import           Servant.API
 import           Servant.Server
@@ -21,7 +21,7 @@ import qualified Language.Javascript.JSaddle.WebKitGTK as WK
 import qualified Language.Javascript.JSaddle.Monad as JSaddle
 import           Language.Javascript.JSaddle.Monad(JSM)
 import           Control.Concurrent
-import           Servant.Client.Js
+import           Servant.Client.JSaddle
 import qualified JSDOM
 import qualified JSDOM.Window as Window
 import qualified Network.Wai as Wai
@@ -82,7 +82,7 @@ addCors app request respond =
 
 spec :: Spec
 spec = do
-  describe "Servant.Client.Js" $ do
+  describe "Servant.Client.JSaddle" $ do
     it "Receive a properly encoded response" $ do
       Warp.testWithApplication (pure $ logRequest $ addCors $ serve testApi testServer) $ \portNr -> do
         let clientEnv = mkClientEnv BaseUrl { baseUrlScheme = Http
