@@ -39,10 +39,12 @@ library
       Servant.Client.Core.Internal.Auth
       Servant.Client.Core.Internal.BaseUrl
       Servant.Client.Core.Internal.BasicAuth
+      Servant.Client.Core.Internal.ClientError
       Servant.Client.Core.Internal.ClientF
       Servant.Client.Core.Internal.Generic
       Servant.Client.Core.Internal.HasClient
       Servant.Client.Core.Internal.Request
+      Servant.Client.Core.Internal.Response
       Servant.Client.Core.Internal.RunClient
 
   -- Bundled with GHC: Lower bound to not force re-installs
@@ -58,9 +60,13 @@ library
     , transformers          >= 0.5.2.0  && < 0.6
     , template-haskell      >= 2.11.1.0 && < 2.15
 
+  if !impl(ghc >= 8.2)
+    build-depends:
+      bifunctors >= 5.5.3 && < 5.6
+
   -- Servant dependencies
   build-depends:
-        servant            >= 0.15 && <0.16
+      servant            >= 0.15 && <0.16
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.

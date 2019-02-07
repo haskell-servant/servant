@@ -1,7 +1,9 @@
-packages: servant/
+packages:
+  servant/
   servant-client/
   servant-client-jsaddle/
   servant-client-core/
+  servant-http-streams/
   servant-docs/
   servant-foreign/
   servant-server/

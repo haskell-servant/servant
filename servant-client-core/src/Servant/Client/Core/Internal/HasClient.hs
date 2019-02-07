@@ -16,8 +16,7 @@ module Servant.Client.Core.Internal.HasClient where
 import           Prelude ()
 import           Prelude.Compat
 
-import qualified Data.ByteString                        as BS
-import qualified Data.ByteString.Lazy                   as BL
+import qualified Data.ByteString.Lazy                     as BL
 import           Data.Foldable
                  (toList)
 import           Data.List
@@ -32,26 +31,28 @@ import           Data.Text
                  (Text, pack)
 import           GHC.TypeLits
                  (KnownSymbol, symbolVal)
-import qualified Network.HTTP.Types                     as H
+import qualified Network.HTTP.Types                       as H
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
                  BuildHeadersTo (..), Capture', CaptureAll, Description,
-                 EmptyAPI, FramingUnrender (..), FromSourceIO (..), Header',
-                 Headers (..), HttpVersion, IsSecure, MimeRender (mimeRender),
+                 EmptyAPI, FramingRender (..), FramingUnrender (..),
+                 FromSourceIO (..), Header', Headers (..), HttpVersion,
+                 IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
                  QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
                  ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
-                 Vault, Verb, WithNamedContext, contentType, getHeadersHList,
-                 getResponse, toQueryParam, toUrlPiece)
+                 ToSourceIO (..), Vault, Verb, WithNamedContext, contentType,
+                 getHeadersHList, getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
-import qualified Servant.Types.SourceT                  as S
 
 import           Servant.Client.Core.Internal.Auth
 import           Servant.Client.Core.Internal.BasicAuth
+import           Servant.Client.Core.Internal.ClientError
 import           Servant.Client.Core.Internal.Request
+import           Servant.Client.Core.Internal.Response
 import           Servant.Client.Core.Internal.RunClient
 
 -- * Accessing APIs as a Client
@@ -280,7 +281,7 @@ instance {-# OVERLAPPABLE #-}
   clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
       let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-      return $ fromSourceIO $ framingUnrender' $ S.fromAction BS.null (responseBody gres)
+      return $ fromSourceIO $ framingUnrender' $ responseBody gres
     where
       req' = req
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
@@ -538,7 +539,7 @@ instance (MimeRender ct a, HasClient m api)
     hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
 
 instance
-    ( HasClient m api
+    ( HasClient m api, MimeRender ctype chunk, FramingRender framing, ToSourceIO chunk a
     ) => HasClient m (StreamBody' mods framing ctype a :> api)
   where
 
@@ -547,7 +548,17 @@ instance
     hoistClientMonad pm _ f cl = \a ->
       hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
 
-    clientWithRoute _pm Proxy _req _body = error "HasClient @StreamBody"
+    clientWithRoute pm Proxy req body
+        = clientWithRoute pm (Proxy :: Proxy api)
+        $ setRequestBody (RequestBodySource sourceIO) (contentType ctypeP) req
+      where
+        ctypeP   = Proxy :: Proxy ctype
+        framingP = Proxy :: Proxy framing
+
+        sourceIO = framingRender
+            framingP
+            (mimeRender ctypeP :: chunk -> BL.ByteString)
+            (toSourceIO body)
 
 -- | Make the querying function append @path@ to the request path.
 instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where

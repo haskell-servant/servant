@@ -1,7 +1,6 @@
 cabal-version:       >=1.10
-name:                servant-client
+name:                servant-http-streams
 version:             0.15
-x-revision:          1
 
 synopsis:            Automatic derivation of querying functions for servant
 category:            Servant, Web
@@ -37,10 +36,8 @@ source-repository head
 
 library
   exposed-modules:
-    Servant.Client
-    Servant.Client.Streaming
-    Servant.Client.Internal.HttpClient
-    Servant.Client.Internal.HttpClient.Streaming
+    Servant.HttpStreams
+    Servant.HttpStreams.Internal
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
@@ -50,7 +47,6 @@ library
     , containers            >= 0.5.7.1  && < 0.7
     , deepseq               >= 1.4.2.0  && < 1.5
     , mtl                   >= 2.2.2    && < 2.3
-    , stm                   >= 2.4.5.1  && < 2.6
     , text                  >= 1.2.3.0  && < 1.3
     , time                  >= 1.6.0.1  && < 1.9
     , transformers          >= 0.5.2.0  && < 0.6
@@ -69,9 +65,12 @@ library
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
       base-compat           >= 0.10.5   && < 0.11
-    , http-client           >= 0.5.13.1 && < 0.7
+    , case-insensitive
+    , http-streams          >= 0.8.6.1  && < 0.9
     , http-media            >= 0.7.1.3  && < 0.8
+    , io-streams            >=1.5.0.1   && < 1.6
     , http-types            >= 0.12.2   && < 0.13
+    , http-common           >= 0.8.2.0  && < 0.9
     , exceptions            >= 0.10.0   && < 0.11
     , kan-extensions        >= 5.2      && < 5.3
     , monad-control         >= 1.0.2.3  && < 1.1
@@ -100,11 +99,12 @@ test-suite spec
     , base-compat
     , bytestring
     , http-api-data
-    , http-client
+    , http-streams
+    , deepseq
     , http-types
     , mtl
     , kan-extensions
-    , servant-client
+    , servant-http-streams
     , servant-client-core
     , stm
     , text
@@ -131,7 +131,7 @@ test-suite spec
 test-suite readme
   type:           exitcode-stdio-1.0
   main-is:        README.lhs
-  build-depends:  base, servant, http-client, text, servant-client, markdown-unlit
+  build-depends:  base, servant, http-streams, text, servant-http-streams, markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit
   ghc-options:    -pgmL markdown-unlit
   default-language: Haskell2010

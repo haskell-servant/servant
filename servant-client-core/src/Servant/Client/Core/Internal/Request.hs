@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveFoldable        #-}
 {-# LANGUAGE DeriveFunctor         #-}
@@ -17,16 +16,18 @@ import           Prelude.Compat
 
 import           Control.DeepSeq
                  (NFData (..))
-import           Control.Monad.Catch
-                 (Exception)
-import qualified Data.ByteString         as BS
-import qualified Data.ByteString.Builder as Builder
-import qualified Data.ByteString.Lazy    as LBS
-import           Data.Int
-                 (Int64)
+import           Data.Bifoldable
+                 (Bifoldable (..))
+import           Data.Bifunctor
+                 (Bifunctor (..))
+import           Data.Bitraversable
+                 (Bitraversable (..), bifoldMapDefault, bimapDefault)
+import qualified Data.ByteString                      as BS
+import qualified Data.ByteString.Builder              as Builder
+import qualified Data.ByteString.Lazy                 as LBS
 import           Data.Semigroup
                  ((<>))
-import qualified Data.Sequence           as Seq
+import qualified Data.Sequence                        as Seq
 import           Data.Text
                  (Text)
 import           Data.Text.Encoding
@@ -39,83 +40,61 @@ import           Network.HTTP.Media
                  (MediaType, mainType, parameters, subType)
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
-                 Status (..), http11, methodGet)
+                 http11, methodGet)
 import           Servant.API
-                 (ToHttpApiData, toEncodedUrlPiece, toHeader)
+                 (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
 
--- | A type representing possible errors in a request
---
--- Note that this type substantially changed in 0.12.
-data ServantError =
-  -- | The server returned an error response
-    FailureResponse Response
-  -- | The body could not be decoded at the expected type
-  | DecodeFailure Text Response
-  -- | The content-type of the response is not supported
-  | UnsupportedContentType MediaType Response
-  -- | The content-type header is invalid
-  | InvalidContentTypeHeader Response
-  -- | There was a connection error, and no response was received
-  | ConnectionError Text
-  deriving (Eq, Show, Generic, Typeable)
+mediaTypeRnf :: MediaType -> ()
+mediaTypeRnf mt =
+    rnf (mainType mt) `seq`
+    rnf (subType mt) `seq`
+    rnf (parameters mt)
 
-instance Exception ServantError
-
-instance NFData ServantError where
-    rnf (FailureResponse res)            = rnf res
-    rnf (DecodeFailure err res)          = rnf err `seq` rnf res
-    rnf (UnsupportedContentType mt' res) =
-        mediaTypeRnf mt' `seq`
-        rnf res
-      where
-        mediaTypeRnf mt =
-            rnf (mainType mt) `seq`
-            rnf (subType mt) `seq`
-            rnf (parameters mt)
-    rnf (InvalidContentTypeHeader res)   = rnf res
-    rnf (ConnectionError err)            = rnf err
-
-data RequestF a = Request
-  { requestPath        :: a
+data RequestF body path = Request
+  { requestPath        :: path
   , requestQueryString :: Seq.Seq QueryItem
-  , requestBody        :: Maybe (RequestBody, MediaType)
+  , requestBody        :: Maybe (body, MediaType)
   , requestAccept      :: Seq.Seq MediaType
   , requestHeaders     :: Seq.Seq Header
   , requestHttpVersion :: HttpVersion
   , requestMethod      :: Method
-  } deriving (Generic, Typeable)
+  } deriving (Generic, Typeable, Eq, Show, Functor, Foldable, Traversable)
 
-type Request = RequestF Builder.Builder
+instance Bifunctor RequestF where bimap = bimapDefault
+instance Bifoldable RequestF where bifoldMap = bifoldMapDefault
+instance Bitraversable RequestF where
+    bitraverse f g r = mk
+        <$> traverse (bitraverse f pure) (requestBody r)
+        <*> g (requestPath r)
+      where
+        mk b p = r { requestBody = b, requestPath = p }
+
+instance (NFData path, NFData body) => NFData (RequestF body path) where
+    rnf r =
+        rnf (requestPath r)
+        `seq` rnf (requestQueryString r)
+        `seq` rnfB (requestBody r)
+        `seq` rnf (fmap mediaTypeRnf (requestAccept r))
+        `seq` rnf (requestHeaders r)
+        `seq` requestHttpVersion r
+        `seq` rnf (requestMethod r)
+      where
+        rnfB Nothing        = ()
+        rnfB (Just (b, mt)) = rnf b `seq` mediaTypeRnf mt
+
+type Request = RequestF RequestBody Builder.Builder
 
 -- | The request body. A replica of the @http-client@ @RequestBody@.
 data RequestBody
   = RequestBodyLBS LBS.ByteString
   | RequestBodyBS BS.ByteString
-  | RequestBodyBuilder Int64 Builder.Builder
-  | RequestBodyStream Int64 ((IO BS.ByteString -> IO ()) -> IO ())
-  | RequestBodyStreamChunked ((IO BS.ByteString -> IO ()) -> IO ())
-  | RequestBodyIO (IO RequestBody)
+  | RequestBodySource (SourceIO LBS.ByteString)
   deriving (Generic, Typeable)
 
-data GenResponse a = Response
-  { responseStatusCode  :: Status
-  , responseHeaders     :: Seq.Seq Header
-  , responseHttpVersion :: HttpVersion
-  , responseBody        :: a
-  } deriving (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
-
-instance NFData a => NFData (GenResponse a) where
-    rnf (Response sc hs hv body) =
-        rnfStatus sc `seq`
-        rnf hs `seq`
-        rnfHttpVersion hv `seq`
-        rnf body
-      where
-        rnfStatus (Status code msg) = rnf code `seq` rnf msg
-        rnfHttpVersion (HttpVersion _ _) = () -- HttpVersion fields are strict
-
-type Response = GenResponse LBS.ByteString
-type StreamingResponse = GenResponse (IO BS.ByteString)
+instance Show RequestBody where
+    showsPrec d (RequestBodyLBS lbs) = showParen (d > 10)
+        $ showString "RequestBodyLBS "
+        . showsPrec 11 lbs
 
 -- A GET request to the top-level path
 defaultRequest :: Request

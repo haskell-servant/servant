@@ -29,12 +29,10 @@ import           Control.Arrow
                  (left)
 import           Control.Concurrent
                  (ThreadId, forkIO, killThread)
-import           Control.Concurrent.STM
-                 (atomically)
-import           Control.Concurrent.STM.TVar
-                 (newTVar, readTVar)
+import           Control.DeepSeq
+                 (NFData (..))
 import           Control.Exception
-                 (bracket, fromException)
+                 (bracket, fromException, IOException)
 import           Control.Monad.Error.Class
                  (throwError)
 import           Data.Aeson
@@ -43,7 +41,7 @@ import           Data.Char
 import           Data.Foldable
                  (forM_, toList)
 import           Data.Maybe
-                 (isJust, listToMaybe)
+                 (isJust)
 import           Data.Monoid ()
 import           Data.Proxy
 import           Data.Semigroup
@@ -51,13 +49,10 @@ import           Data.Semigroup
 import qualified Generics.SOP                         as SOP
 import           GHC.Generics
                  (Generic)
-import qualified Network.HTTP.Client                  as C
 import qualified Network.HTTP.Types                   as HTTP
 import           Network.Socket
 import qualified Network.Wai                          as Wai
 import           Network.Wai.Handler.Warp
-import           System.IO.Unsafe
-                 (unsafePerformIO)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
@@ -71,9 +66,9 @@ import           Servant.API
                  DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
                  Headers, JSON, NoContent (NoContent), Post, Put, QueryFlag,
                  QueryParam, QueryParams, Raw, ReqBody, addHeader, getHeaders)
-import           Servant.Client
 import qualified Servant.Client.Core.Internal.Auth    as Auth
 import qualified Servant.Client.Core.Internal.Request as Req
+import           Servant.HttpStreams
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
@@ -82,7 +77,7 @@ import           Servant.Test.ComprehensiveAPI
 _ = client comprehensiveAPIWithoutStreaming
 
 spec :: Spec
-spec = describe "Servant.Client" $ do
+spec = describe "Servant.HttpStreams" $ do
     sucessSpec
     failSpec
     wrappedApiSpec
@@ -98,6 +93,9 @@ data Person = Person
   { _name :: String
   , _age  :: Integer
   } deriving (Eq, Show, Generic)
+
+instance NFData Person where
+    rnf (Person n a) = rnf n `seq` rnf a
 
 instance ToJSON Person
 instance FromJSON Person
@@ -157,7 +155,7 @@ getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
 getDeleteContentType :: ClientM NoContent
-getRedirectWithCookie :: HTTP.Method -> ClientM Response
+_getRedirectWithCookie :: HTTP.Method -> ClientM Response
 
 getRoot
   :<|> getGet
@@ -173,7 +171,7 @@ getRoot
   :<|> getMultiple
   :<|> getRespHeaders
   :<|> getDeleteContentType
-  :<|> getRedirectWithCookie
+  :<|> _getRedirectWithCookie
   :<|> EmptyClient = client api
 
 server :: Application
@@ -305,12 +303,13 @@ genericClientServer = serve (Proxy :: Proxy GenericClientAPI) (
     nestedServer1 _str = nestedServer2 :<|> (maybe (throwError $ ServantErr 400 "missing parameter" "" []) return)
     nestedServer2 _int = (\ x y -> return (x + y)) :<|> return ()
 
-{-# NOINLINE manager' #-}
-manager' :: C.Manager
-manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
+runClient :: NFData a => ClientM a -> BaseUrl -> IO (Either ServantError a)
+runClient x burl = withClientEnvIO burl (runClientM x)
 
-runClient :: ClientM a -> BaseUrl -> IO (Either ServantError a)
-runClient x baseUrl' = runClientM x (mkClientEnv manager' baseUrl')
+runClientUnsafe :: ClientM a -> BaseUrl -> IO (Either ServantError a)
+runClientUnsafe x burl = withClientEnvIO burl (runClientMUnsafe x)
+  where
+    runClientMUnsafe x env = withClientM x env return
 
 sucessSpec :: Spec
 sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
@@ -382,14 +381,6 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
 
-    it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
-      mgr <- C.newManager C.defaultManagerSettings
-      cj <- atomically . newTVar $ C.createCookieJar []
-      _ <- runClientM (getRedirectWithCookie HTTP.methodGet) (ClientEnv mgr baseUrl (Just cj))
-      cookie <- listToMaybe . C.destroyCookieJar <$> atomically (readTVar cj)
-      C.cookie_name <$> cookie `shouldBe` Just "testcookie"
-      C.cookie_value <$> cookie `shouldBe` Just "test"
-
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
         property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
@@ -435,7 +426,8 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           DecodeFailure _ _ -> return ()
           _ -> fail $ "expected DecodeFailure, but got " <> show res
 
-      it "reports ConnectionError" $ \_ -> do
+      -- we don't catch IOException's
+      xit "reports ConnectionError" $ \_ -> do
         let (getGetWrongHost :<|> _) = client api
         Left res <- runClient getGetWrongHost (BaseUrl Http "127.0.0.1" 19872 "")
         case res of
@@ -527,7 +519,7 @@ hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp
     it "allows us to GET/POST/... requests in IO instead of ClientM" $ \(_, baseUrl) -> do
       let (getInt :<|> postInt)
             = hoistClient hoistClientAPI
-                          (fmap (either (error . show) id) . flip runClient baseUrl)
+                          (fmap (either (error . show) id) . flip runClientUnsafe baseUrl)
                           (client hoistClientAPI)
 
       getInt `shouldReturn` 5
@@ -541,10 +533,10 @@ connectionErrorAPI = Proxy
 
 connectionErrorSpec :: Spec
 connectionErrorSpec = describe "Servant.Client.ServantError" $
-    it "correctly catches ConnectionErrors when the HTTP request can't go through" $ do
+    xit "correctly catches ConnectionErrors when the HTTP request can't go through" $ do
         let getInt = client connectionErrorAPI
         let baseUrl' = BaseUrl Http "example.invalid" 80 ""
-        let isHttpError (Left (ConnectionError e)) = isJust $ fromException @C.HttpException e
+        let isHttpError (Left (ConnectionError e)) = isJust $ fromException @IOException e
             isHttpError _ = False
         (isHttpError <$> runClient getInt baseUrl') `shouldReturn` True
 

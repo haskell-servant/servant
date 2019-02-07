@@ -30,20 +30,45 @@ spec = describe "Servant.Server.Internal.Router" $ do
 
 routerSpec :: Spec
 routerSpec = do
-  let app' :: Application
-      app' = toApplication $ runRouter router'
+  describe "tweakResponse" $ do
+    let app' :: Application
+        app' = toApplication $ runRouter router'
 
-      router', router :: Router ()
-      router' = tweakResponse (fmap twk) router
-      router = leafRouter $ \_ _ cont -> cont (Route $ responseBuilder (Status 201 "") [] "")
+        router', router :: Router ()
+        router' = tweakResponse (fmap twk) router
+        router = leafRouter $ \_ _ cont -> cont (Route $ responseBuilder (Status 201 "") [] "")
 
-      twk :: Response -> Response
-      twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b
-      twk b = b
+        twk :: Response -> Response
+        twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b
+        twk b = b
 
-  describe "tweakResponse" . with (return app') $ do
-    it "calls f on route result" $ do
-      get "" `shouldRespondWith` 202
+    with (return app') $ do
+      it "calls f on route result" $ do
+        get "" `shouldRespondWith` 202
+
+  describe "runRouter" $ do
+    let toApp :: Router () -> Application
+        toApp = toApplication . runRouter
+
+        cap :: Router ()
+        cap = CaptureRouter $
+          let delayed = addCapture (emptyDelayed $ Route pure) (const $ delayedFail err400)
+          in leafRouter
+             $ \env req res ->
+                 runAction delayed env req res
+                 . const
+                 $ Route success
+
+        router :: Router ()
+        router = leafRouter (\_ _ res -> res $ Route success)
+          `Choice` cap
+
+        success :: Response
+        success = responseBuilder (Status 200 "") [] ""
+
+    with (pure $ toApp router) $ do
+      it "capture failure returns a 400 response" $ do
+        get "/badcapture" `shouldRespondWith` 400
 
 distributivitySpec :: Spec
 distributivitySpec =
