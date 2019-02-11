@@ -83,7 +83,7 @@ test-suite spec
     , http-types
     , jsaddle
     , jsaddle-webkit2gtk
-    , jsaddle-dom
+    , ghcjs-dom
     , monad-control
     , mtl
     , semigroupoids
