@@ -22,8 +22,8 @@ import qualified Language.Javascript.JSaddle.Monad as JSaddle
 import           Language.Javascript.JSaddle.Monad(JSM)
 import           Control.Concurrent
 import           Servant.Client.Js
-import qualified JSDOM
-import qualified JSDOM.Window as Window
+import qualified GHCJS.DOM
+import qualified GHCJS.DOM.Window as Window
 import qualified Network.Wai as Wai
 import           Network.Wai.Middleware.AddHeaders
 import qualified Network.HTTP.Types as Http
@@ -51,7 +51,7 @@ jsaddleFinally handler m = JSaddle.bracket (pure ()) (const handler) (const m)
 
 close :: JSM ()
 close = do
-  mw <- JSDOM.currentWindow
+  mw <- GHCJS.DOM.currentWindow
   case mw of
     Just w -> do
       liftIO $ putStrLn "Closing window..."
@@ -90,7 +90,7 @@ spec = do
                                             , baseUrlPort = fromIntegral portNr
                                             , baseUrlPath = "/"
                                             }
-        
+
         WK.run $ JSaddle.liftJSM $ jsaddleFinally close $ do
           liftIO $ threadDelay $ 1000 * 1000
           -- a mix of valid utf-8 and non-utf8 bytes
