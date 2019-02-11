@@ -31,7 +31,8 @@ packages:
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
 
-tests: true
+tests: True
+optimization: False
 
 allow-newer:
   servant-js:base
