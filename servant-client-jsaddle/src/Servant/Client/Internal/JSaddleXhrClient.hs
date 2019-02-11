@@ -6,46 +6,54 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE ViewPatterns               #-}
-{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 module Servant.Client.Internal.JSaddleXhrClient where
 
 import           Control.Arrow
-import           Data.ByteString.Builder     (toLazyByteString)
 import           Control.Concurrent
 import           Control.Monad
-import           Control.Monad.Catch         (MonadCatch, MonadThrow)
-import           Control.Monad.Error.Class   (MonadError (..))
+import           Control.Monad.Catch
+                 (MonadCatch, MonadThrow)
+import           Control.Monad.Error.Class
+                 (MonadError (..))
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Except
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Lazy as L
+import           Data.ByteString.Builder
+                 (toLazyByteString)
+import qualified Data.ByteString.Char8             as BS
+import qualified Data.ByteString.Lazy              as L
 import           Data.CaseInsensitive
 import           Data.Char
-import           Data.Foldable               (toList)
-import           Data.Functor.Alt            (Alt (..))
-import           Data.Proxy                  (Proxy (..))
-import qualified Data.Sequence           as Seq
+import           Data.Foldable
+                 (toList)
+import           Data.Functor.Alt
+                 (Alt (..))
+import           Data.Proxy
+                 (Proxy (..))
+import qualified Data.Sequence                     as Seq
 import           Data.String.Conversions
-import qualified Data.Text.Encoding as T
-import qualified Data.Text.Encoding.Error as T
+import qualified Data.Text.Encoding                as T
+import qualified Data.Text.Encoding.Error          as T
 import           GHC.Generics
-import qualified JSDOM.Types                     as JS
-import qualified JSDOM.Custom.XMLHttpRequest     as JS
-import qualified JSDOM.Generated.Window          as Window
-import qualified JSDOM.Generated.Location        as Location
-import qualified JSDOM
-import           JSDOM.Types (DOM, askDOM, runDOM, DOMContext)
-import qualified JSDOM.EventM as JSDOM
-import qualified Language.Javascript.JSaddle.Types as JSaddle
+import qualified GHCJS.Buffer                      as Buffer
+import qualified GHCJS.DOM
+import qualified GHCJS.DOM.EventM                  as JSDOM
+import qualified GHCJS.DOM.Location                as Location
+import           GHCJS.DOM.Types
+                 (DOM, DOMContext, askDOM, runDOM)
+import qualified GHCJS.DOM.Types                   as JS
+import qualified GHCJS.DOM.Window                  as Window
+import qualified GHCJS.DOM.XMLHttpRequest          as JS
 import qualified JavaScript.TypedArray.ArrayBuffer as ArrayBuffer
-import qualified GHCJS.Buffer as Buffer
+import qualified Language.Javascript.JSaddle.Types as JSaddle
+import           Network.HTTP.Media
+                 (renderHeader)
 import           Network.HTTP.Types
-import           Network.HTTP.Media (renderHeader)
 import           Servant.Client.Core
 
 -- Note: assuming encoding UTF-8
@@ -104,7 +112,7 @@ runClientM' m = do
 
 getDefaultBaseUrl :: DOM BaseUrl
 getDefaultBaseUrl = do
-    win <- JSDOM.currentWindow >>= \mw -> case mw of
+    win <- GHCJS.DOM.currentWindow >>= \mw -> case mw of
       Just x -> pure x
       Nothing -> fail "Can not determine default base url without window."
     curLoc <- Window.getLocation win
@@ -151,7 +159,7 @@ performXhr xhr burl request fixUp = do
     JS.open xhr (decodeUtf8Lenient $ requestMethod request) (toUrl burl request) True username password
     setHeaders xhr request
     fixUp xhr
-  
+
     waiter <- liftIO $ newEmptyMVar
 
     cleanup <- JSDOM.on xhr JS.readyStateChange $ do
@@ -166,11 +174,11 @@ performXhr xhr burl request fixUp = do
         _ -> return ()
 
     sendXhr xhr (toBody request)
-    
+
     liftIO $ takeMVar waiter
-    
+
     cleanup
-    
+
 toUrl :: BaseUrl -> Request -> JS.JSString
 toUrl burl request =
   let pathS = JS.toJSString $ decodeUtf8Lenient $ L.toStrict $ toLazyByteString $
@@ -219,6 +227,11 @@ toBody request = case requestBody request of
   Nothing -> Nothing
   Just (RequestBodyLBS "", _) -> Nothing
   Just (RequestBodyLBS x, _) -> Just x
+  Just (RequestBodyBS "", _) -> Nothing
+  Just (RequestBodyBS x, _)  -> Just $ L.fromStrict x
+  -- TODO: There are some constructors which we have not implemented yet.
+  -- I won't handle them with `error` or something so the compiler continues to
+  -- warn about this.
 
 -- * inspecting the xhr response
 
