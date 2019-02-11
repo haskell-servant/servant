@@ -21,7 +21,7 @@ import qualified Language.Javascript.JSaddle.WebKitGTK as WK
 import qualified Language.Javascript.JSaddle.Monad as JSaddle
 import           Language.Javascript.JSaddle.Monad(JSM)
 import           Control.Concurrent
-import           Servant.Client.Js
+import           Servant.Client.JSaddle
 import qualified GHCJS.DOM
 import qualified GHCJS.DOM.Window as Window
 import qualified Network.Wai as Wai
