@@ -21,6 +21,7 @@ Or `nix`:
 ./scripts/generate-nix-files.sh   # Get up-to-date shell.nix files
 ```
 
+To build the docs, see `doc/README.md`.
 
 ## General
 

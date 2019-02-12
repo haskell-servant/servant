@@ -167,7 +167,6 @@ texinfo_documents = [
 # -- Markdown -------------------------------------------------------------
 
 source_parsers = {
-    '.md': CommonMarkParser,
     '.lhs': CommonMarkParser,
 }
 
