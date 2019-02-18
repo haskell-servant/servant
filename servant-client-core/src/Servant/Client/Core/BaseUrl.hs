@@ -2,7 +2,13 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DeriveLift         #-}
 {-# LANGUAGE ViewPatterns       #-}
-module Servant.Client.Core.Internal.BaseUrl where
+module Servant.Client.Core.BaseUrl (
+    BaseUrl (..),
+    Scheme (..),
+    showBaseUrl,
+    parseBaseUrl,
+    InvalidBaseUrlException (..),
+    ) where
 
 import           Control.DeepSeq
                  (NFData (..))

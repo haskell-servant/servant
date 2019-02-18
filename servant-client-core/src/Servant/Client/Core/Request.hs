@@ -8,8 +8,18 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-
-module Servant.Client.Core.Internal.Request where
+module Servant.Client.Core.Request (
+    Request,
+    RequestF (..),
+    RequestBody (..),
+    defaultRequest,
+    -- ** Modifiers
+    addHeader,
+    appendToPath,
+    appendToQueryString,
+    setRequestBody,
+    setRequestBodyLBS,
+    ) where
 
 import           Prelude ()
 import           Prelude.Compat
@@ -37,18 +47,14 @@ import           Data.Typeable
 import           GHC.Generics
                  (Generic)
 import           Network.HTTP.Media
-                 (MediaType, mainType, parameters, subType)
+                 (MediaType)
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
                  http11, methodGet)
 import           Servant.API
                  (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
 
-mediaTypeRnf :: MediaType -> ()
-mediaTypeRnf mt =
-    rnf (mainType mt) `seq`
-    rnf (subType mt) `seq`
-    rnf (parameters mt)
+import Servant.Client.Core.Internal (mediaTypeRnf)
 
 data RequestF body path = Request
   { requestPath        :: path
@@ -84,7 +90,7 @@ instance (NFData path, NFData body) => NFData (RequestF body path) where
 
 type Request = RequestF RequestBody Builder.Builder
 
--- | The request body. A replica of the @http-client@ @RequestBody@.
+-- | The request body. R replica of the @http-client@ @RequestBody@.
 data RequestBody
   = RequestBodyLBS LBS.ByteString
   | RequestBodyBS BS.ByteString
@@ -95,6 +101,11 @@ instance Show RequestBody where
     showsPrec d (RequestBodyLBS lbs) = showParen (d > 10)
         $ showString "RequestBodyLBS "
         . showsPrec 11 lbs
+    showsPrec d (RequestBodyBS bs) = showParen (d > 10)
+        $ showString "RequestBodyBS "
+        . showsPrec 11 bs
+    showsPrec d (RequestBodySource _) = showParen (d > 10)
+        $ showString "RequestBodySource <IO>"
 
 -- A GET request to the top-level path
 defaultRequest :: Request

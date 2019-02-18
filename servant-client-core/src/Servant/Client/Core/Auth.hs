@@ -4,9 +4,13 @@
 
 -- | Authentication for clients
 
-module Servant.Client.Core.Internal.Auth where
+module Servant.Client.Core.Auth (
+    AuthClientData,
+    AuthenticatedRequest (..),
+    mkAuthenticatedRequest,
+    ) where
 
-import           Servant.Client.Core.Internal.Request
+import           Servant.Client.Core.Request
                  (Request)
 
 -- | For a resource protected by authentication (e.g. AuthProtect), we need

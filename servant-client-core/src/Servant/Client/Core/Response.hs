@@ -8,7 +8,11 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Servant.Client.Core.Internal.Response where
+module Servant.Client.Core.Response (
+    Response,
+    StreamingResponse,
+    ResponseF (..),
+    ) where
 
 import           Prelude ()
 import           Prelude.Compat

@@ -36,16 +36,17 @@ library
       Servant.Client.Free
       Servant.Client.Generic
       Servant.Client.Core.Reexport
-      Servant.Client.Core.Internal.Auth
-      Servant.Client.Core.Internal.BaseUrl
-      Servant.Client.Core.Internal.BasicAuth
-      Servant.Client.Core.Internal.ClientError
-      Servant.Client.Core.Internal.ClientF
-      Servant.Client.Core.Internal.Generic
-      Servant.Client.Core.Internal.HasClient
-      Servant.Client.Core.Internal.Request
-      Servant.Client.Core.Internal.Response
-      Servant.Client.Core.Internal.RunClient
+      Servant.Client.Core.Auth
+      Servant.Client.Core.BaseUrl
+      Servant.Client.Core.BasicAuth
+      Servant.Client.Core.ClientError
+      Servant.Client.Core.HasClient
+      Servant.Client.Core.Request
+      Servant.Client.Core.Response
+      Servant.Client.Core.RunClient
+
+  other-modules:
+      Servant.Client.Core.Internal
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
@@ -76,7 +77,6 @@ library
     , base64-bytestring     >= 1.0.0.1  && < 1.1
     , exceptions            >= 0.10.0   && < 0.11
     , free                  >= 5.1      && < 5.2
-    , generics-sop          >= 0.4.0.1  && < 0.5
     , http-media            >= 0.7.1.3  && < 0.8
     , http-types            >= 0.12.2   && < 0.13
     , network-uri           >= 2.6.1.0  && < 2.7

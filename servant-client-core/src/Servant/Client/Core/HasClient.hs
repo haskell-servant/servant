@@ -11,11 +11,17 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Servant.Client.Core.Internal.HasClient where
+module Servant.Client.Core.HasClient (
+    clientIn,
+    HasClient (..),
+    EmptyClient (..),
+    ) where
 
 import           Prelude ()
 import           Prelude.Compat
 
+import           Control.Monad
+                 (unless)
 import qualified Data.ByteString.Lazy                     as BL
 import           Data.Foldable
                  (toList)
@@ -25,6 +31,9 @@ import           Data.Proxy
                  (Proxy (Proxy))
 import           Data.Sequence
                  (fromList)
+import qualified Data.Text                       as T
+import           Network.HTTP.Media
+                 (MediaType, matches, parseAccept, (//))
 import           Data.String
                  (fromString)
 import           Data.Text
@@ -48,12 +57,12 @@ import           Servant.API.ContentTypes
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 
-import           Servant.Client.Core.Internal.Auth
-import           Servant.Client.Core.Internal.BasicAuth
-import           Servant.Client.Core.Internal.ClientError
-import           Servant.Client.Core.Internal.Request
-import           Servant.Client.Core.Internal.Response
-import           Servant.Client.Core.Internal.RunClient
+import           Servant.Client.Core.Auth
+import           Servant.Client.Core.BasicAuth
+import           Servant.Client.Core.ClientError
+import           Servant.Client.Core.Request
+import           Servant.Client.Core.Response
+import           Servant.Client.Core.RunClient
 
 -- * Accessing APIs as a Client
 
@@ -627,6 +636,7 @@ instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
     hoistClientMonad pm (Proxy :: Proxy api) f (cl bauth)
 
 
+
 {- Note [Non-Empty Content Types]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Rather than have
@@ -642,3 +652,27 @@ non-empty lists, but is otherwise more specific, no instance will be overall
 more specific. This in turn generally means adding yet another instance (one
 for empty and one for non-empty lists).
 -}
+
+-------------------------------------------------------------------------------
+-- helpers
+-------------------------------------------------------------------------------
+
+checkContentTypeHeader :: RunClient m => Response -> m MediaType
+checkContentTypeHeader response =
+  case lookup "Content-Type" $ toList $ responseHeaders response of
+    Nothing -> return $ "application"//"octet-stream"
+    Just t -> case parseAccept t of
+      Nothing -> throwServantError $ InvalidContentTypeHeader response
+      Just t' -> return t'
+
+decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
+  => Response -> Proxy ct -> m a
+decodedAs response ct = do
+  responseContentType <- checkContentTypeHeader response
+  unless (any (matches responseContentType) accept) $
+    throwServantError $ UnsupportedContentType responseContentType response
+  case mimeUnrender ct $ responseBody response of
+    Left err -> throwServantError $ DecodeFailure (T.pack err) response
+    Right val -> return val
+  where
+    accept = toList $ contentTypes ct 

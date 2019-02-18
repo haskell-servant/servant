@@ -8,7 +8,9 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-module Servant.Client.Core.Internal.ClientError where
+module Servant.Client.Core.ClientError (
+    ServantError (..),
+    ) where
 
 import           Prelude ()
 import           Prelude.Compat
@@ -19,20 +21,22 @@ import           Control.Exception
                  (SomeException (..))
 import           Control.Monad.Catch
                  (Exception)
-import qualified Data.ByteString                       as BS
+import qualified Data.ByteString              as BS
 import           Data.Text
                  (Text)
 import           Data.Typeable
                  (Typeable, typeOf)
 import           GHC.Generics
                  (Generic)
-import           Network.HTTP.Media (MediaType)
+import           Network.HTTP.Media
+                 (MediaType)
 import           Network.HTTP.Types ()
 
-import           Servant.Client.Core.Internal.BaseUrl
-import           Servant.Client.Core.Internal.Request
-import           Servant.Client.Core.Internal.Response
-
+import           Servant.Client.Core.BaseUrl
+import           Servant.Client.Core.Internal
+                 (mediaTypeRnf)
+import           Servant.Client.Core.Request
+import           Servant.Client.Core.Response
 
 
 -- | A type representing possible errors in a request

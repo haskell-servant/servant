@@ -103,6 +103,7 @@ install:
   - "echo 'allow-newer: servant-quickcheck:servant-server' >> cabal.project"
   - "echo 'allow-newer: servant-quickcheck:hspec' >> cabal.project"
   - "echo 'allow-newer: servant-quickcheck:http-client' >> cabal.project"
+  - "echo 'reorder-goals: True' >> cabal.project"
   - "echo 'optimization: False' >> cabal.project "
   - touch cabal.project.local
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-hoist-server-with-context|cookbook-https|cookbook-jwt-and-basic-auth|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
@@ -184,6 +185,7 @@ script:
   - "echo 'allow-newer: servant-quickcheck:servant-server' >> cabal.project"
   - "echo 'allow-newer: servant-quickcheck:hspec' >> cabal.project"
   - "echo 'allow-newer: servant-quickcheck:http-client' >> cabal.project"
+  - "echo 'reorder-goals: True' >> cabal.project"
   - "echo 'optimization: False' >> cabal.project "
   - touch cabal.project.local
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-hoist-server-with-context|cookbook-https|cookbook-jwt-and-basic-auth|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"

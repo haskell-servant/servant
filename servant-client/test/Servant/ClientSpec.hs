@@ -48,7 +48,6 @@ import           Data.Monoid ()
 import           Data.Proxy
 import           Data.Semigroup
                  ((<>))
-import qualified Generics.SOP                         as SOP
 import           GHC.Generics
                  (Generic)
 import qualified Network.HTTP.Client                  as C
@@ -72,8 +71,8 @@ import           Servant.API
                  Headers, JSON, NoContent (NoContent), Post, Put, QueryFlag,
                  QueryParam, QueryParams, Raw, ReqBody, addHeader, getHeaders)
 import           Servant.Client
-import qualified Servant.Client.Core.Internal.Auth    as Auth
-import qualified Servant.Client.Core.Internal.Request as Req
+import qualified Servant.Client.Core.Auth    as Auth
+import qualified Servant.Client.Core.Request as Req
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
@@ -88,7 +87,6 @@ spec = describe "Servant.Client" $ do
     wrappedApiSpec
     basicAuthSpec
     genAuthSpec
-    genericClientSpec
     hoistClientSpec
     connectionErrorSpec
 
@@ -257,53 +255,6 @@ genAuthServerContext = genAuthHandler :. EmptyContext
 
 genAuthServer :: Application
 genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
-
--- * generic client stuff
-
-type GenericClientAPI
-    = QueryParam "sqr" Int :> Get '[JSON] Int
- :<|> Capture "foo" String :> NestedAPI1
-
-data GenericClient = GenericClient
-  { getSqr          :: Maybe Int -> ClientM Int
-  , mkNestedClient1 :: String -> NestedClient1
-  } deriving Generic
-instance SOP.Generic GenericClient
-instance (Client ClientM GenericClientAPI ~ client) => ClientLike client GenericClient
-
-type NestedAPI1
-    = QueryParam "int" Int :> NestedAPI2
- :<|> QueryParam "id" Char :> Get '[JSON] Char
-
-data NestedClient1 = NestedClient1
-  { mkNestedClient2 :: Maybe Int -> NestedClient2
-  , idChar          :: Maybe Char -> ClientM Char
-  } deriving Generic
-instance SOP.Generic NestedClient1
-instance (Client ClientM NestedAPI1 ~ client) => ClientLike client NestedClient1
-
-type NestedAPI2
-    = "sum"  :> Capture "first" Int :> Capture "second" Int :> Get '[JSON] Int
- :<|> "void" :> Post '[JSON] ()
-
-data NestedClient2 = NestedClient2
-  { getSum    :: Int -> Int -> ClientM Int
-  , doNothing :: ClientM ()
-  } deriving Generic
-instance SOP.Generic NestedClient2
-instance (Client ClientM NestedAPI2 ~ client) => ClientLike client NestedClient2
-
-genericClientServer :: Application
-genericClientServer = serve (Proxy :: Proxy GenericClientAPI) (
-       (\ mx -> case mx of
-                  Just x -> return (x*x)
-                  Nothing -> throwError $ ServantErr 400 "missing parameter" "" []
-       )
-  :<|> nestedServer1
- )
-  where
-    nestedServer1 _str = nestedServer2 :<|> (maybe (throwError $ ServantErr 400 "missing parameter" "" []) return)
-    nestedServer2 _int = (\ x y -> return (x + y)) :<|> return ()
 
 {-# NOINLINE manager' #-}
 manager' :: C.Manager
@@ -494,22 +445,6 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
       let authRequest = Auth.mkAuthenticatedRequest () (\_ req -> Req.addHeader "Wrong" ("header" :: String) req)
       Left (FailureResponse _ r) <- runClient (getProtected authRequest) baseUrl
       responseStatusCode r `shouldBe` (HTTP.Status 401 "Unauthorized")
-
-genericClientSpec :: Spec
-genericClientSpec = beforeAll (startWaiApp genericClientServer) $ afterAll endWaiApp $ do
-  describe "Servant.Client.Generic" $ do
-
-    let GenericClient{..} = mkClient (client (Proxy :: Proxy GenericClientAPI))
-        NestedClient1{..} = mkNestedClient1 "example"
-        NestedClient2{..} = mkNestedClient2 (Just 42)
-
-    it "works for top-level client inClientM function" $ \(_, baseUrl) -> do
-      left show <$> runClient (getSqr (Just 5)) baseUrl `shouldReturn` Right 25
-
-    it "works for nested clients" $ \(_, baseUrl) -> do
-      left show <$> runClient (idChar (Just 'c')) baseUrl `shouldReturn` Right 'c'
-      left show <$> runClient (getSum 3 4) baseUrl `shouldReturn` Right 7
-      left show <$> runClient doNothing baseUrl `shouldReturn` Right ()
 
 -- * hoistClient
 

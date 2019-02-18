@@ -118,9 +118,6 @@ instance RunClient ClientM where
 instance RunStreamingClient ClientM where
   withStreamingRequest = performWithStreamingRequest
 
-instance ClientLike (ClientM a) (ClientM a) where
-  mkClient = id
-
 withClientM :: ClientM a -> ClientEnv -> (Either ServantError a -> IO b) -> IO b
 withClientM cm env k =
     let Codensity f = runExceptT $ flip runReaderT env $ unClientM cm

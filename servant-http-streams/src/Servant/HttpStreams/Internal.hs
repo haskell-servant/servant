@@ -141,9 +141,6 @@ instance RunClient ClientM where
 instance RunStreamingClient ClientM where
     withStreamingRequest = performWithStreamingRequest
 
-instance ClientLike (ClientM a) (ClientM a) where
-    mkClient = id
-
 runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientM cm env = withClientM cm env (evaluate . force)
 
