@@ -87,9 +87,7 @@ install:
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/db-sqlite-simple\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/file-upload\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/generic\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/hoist-server-with-context\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/https\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/jwt-and-basic-auth\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/testing\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/structuring-apis\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/using-custom-monad\"\\n' >> cabal.project ; fi"
@@ -106,7 +104,7 @@ install:
   - "echo 'reorder-goals: True' >> cabal.project"
   - "echo 'optimization: False' >> cabal.project "
   - touch cabal.project.local
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-hoist-server-with-context|cookbook-https|cookbook-jwt-and-basic-auth|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then (cd "servant" && autoreconf -i); fi
@@ -127,15 +125,13 @@ install:
   - if [ -f "doc/cookbook/db-sqlite-simple/configure.ac" ]; then (cd "doc/cookbook/db-sqlite-simple" && autoreconf -i); fi
   - if [ -f "doc/cookbook/file-upload/configure.ac" ]; then (cd "doc/cookbook/file-upload" && autoreconf -i); fi
   - if [ -f "doc/cookbook/generic/configure.ac" ]; then (cd "doc/cookbook/generic" && autoreconf -i); fi
-  - if [ -f "doc/cookbook/hoist-server-with-context/configure.ac" ]; then (cd "doc/cookbook/hoist-server-with-context" && autoreconf -i); fi
   - if [ -f "doc/cookbook/https/configure.ac" ]; then (cd "doc/cookbook/https" && autoreconf -i); fi
-  - if [ -f "doc/cookbook/jwt-and-basic-auth/configure.ac" ]; then (cd "doc/cookbook/jwt-and-basic-auth" && autoreconf -i); fi
   - if [ -f "doc/cookbook/testing/configure.ac" ]; then (cd "doc/cookbook/testing" && autoreconf -i); fi
   - if [ -f "doc/cookbook/structuring-apis/configure.ac" ]; then (cd "doc/cookbook/structuring-apis" && autoreconf -i); fi
   - if [ -f "doc/cookbook/using-custom-monad/configure.ac" ]; then (cd "doc/cookbook/using-custom-monad" && autoreconf -i); fi
   - if [ -f "doc/cookbook/using-free-client/configure.ac" ]; then (cd "doc/cookbook/using-free-client" && autoreconf -i); fi
   - rm -f cabal.project.freeze
-  - rm -rf .ghc.environment.* "servant"/dist "servant-client"/dist "servant-client-core"/dist "servant-http-streams"/dist "servant-docs"/dist "servant-foreign"/dist "servant-server"/dist "doc/tutorial"/dist "servant-machines"/dist "servant-conduit"/dist "servant-pipes"/dist "doc/cookbook/basic-auth"/dist "doc/cookbook/curl-mock"/dist "doc/cookbook/basic-streaming"/dist "doc/cookbook/db-postgres-pool"/dist "doc/cookbook/db-sqlite-simple"/dist "doc/cookbook/file-upload"/dist "doc/cookbook/generic"/dist "doc/cookbook/hoist-server-with-context"/dist "doc/cookbook/https"/dist "doc/cookbook/jwt-and-basic-auth"/dist "doc/cookbook/testing"/dist "doc/cookbook/structuring-apis"/dist "doc/cookbook/using-custom-monad"/dist "doc/cookbook/using-free-client"/dist
+  - rm -rf .ghc.environment.* "servant"/dist "servant-client"/dist "servant-client-core"/dist "servant-http-streams"/dist "servant-docs"/dist "servant-foreign"/dist "servant-server"/dist "doc/tutorial"/dist "servant-machines"/dist "servant-conduit"/dist "servant-pipes"/dist "doc/cookbook/basic-auth"/dist "doc/cookbook/curl-mock"/dist "doc/cookbook/basic-streaming"/dist "doc/cookbook/db-postgres-pool"/dist "doc/cookbook/db-sqlite-simple"/dist "doc/cookbook/file-upload"/dist "doc/cookbook/generic"/dist "doc/cookbook/https"/dist "doc/cookbook/testing"/dist "doc/cookbook/structuring-apis"/dist "doc/cookbook/using-custom-monad"/dist "doc/cookbook/using-free-client"/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
 # Here starts the actual work to be performed for the package under test;
@@ -169,9 +165,7 @@ script:
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-db-sqlite-simple-*/*.cabal\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-file-upload-*/*.cabal\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-generic-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-hoist-server-with-context-*/*.cabal\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-https-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-jwt-and-basic-auth-*/*.cabal\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-testing-*/*.cabal\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-structuring-apis-*/*.cabal\"\\n' >> cabal.project ; fi"
   - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-using-custom-monad-*/*.cabal\"\\n' >> cabal.project ; fi"
@@ -188,7 +182,7 @@ script:
   - "echo 'reorder-goals: True' >> cabal.project"
   - "echo 'optimization: False' >> cabal.project "
   - touch cabal.project.local
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-hoist-server-with-context|cookbook-https|cookbook-jwt-and-basic-auth|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - echo -en 'travis_fold:end:unpack\\r'

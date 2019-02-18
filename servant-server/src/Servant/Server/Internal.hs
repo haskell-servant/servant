@@ -25,7 +25,7 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.Handler
   , module Servant.Server.Internal.Router
   , module Servant.Server.Internal.RoutingApplication
-  , module Servant.Server.Internal.ServantErr
+  , module Servant.Server.Internal.ServerError
   ) where
 
 import           Control.Monad
@@ -91,7 +91,7 @@ import           Servant.Server.Internal.Context
 import           Servant.Server.Internal.Handler
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RoutingApplication
-import           Servant.Server.Internal.ServantErr
+import           Servant.Server.Internal.ServerError
 
 #ifdef HAS_TYPE_ERROR
 import           GHC.TypeLits

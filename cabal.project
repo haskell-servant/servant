@@ -21,11 +21,11 @@ packages:
   doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
-  doc/cookbook/hoist-server-with-context
+  -- doc/cookbook/hoist-server-with-context
   doc/cookbook/https
-  doc/cookbook/jwt-and-basic-auth/
+  -- doc/cookbook/jwt-and-basic-auth/
   -- doc/cookbook/pagination
-  --  doc/cookbook/sentry
+  -- doc/cookbook/sentry
   doc/cookbook/testing
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad

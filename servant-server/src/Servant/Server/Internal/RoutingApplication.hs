@@ -31,7 +31,7 @@ import           Network.Wai
 import           Prelude ()
 import           Prelude.Compat
 import           Servant.Server.Internal.Handler
-import           Servant.Server.Internal.ServantErr
+import           Servant.Server.Internal.ServerError
 
 type RoutingApplication =
      Request -- ^ the request, the field 'pathInfo' may be modified by url routing
@@ -39,9 +39,9 @@ type RoutingApplication =
 
 -- | The result of matching against a path in the route tree.
 data RouteResult a =
-    Fail ServantErr           -- ^ Keep trying other paths. The @ServantErr@
+    Fail ServerError           -- ^ Keep trying other paths. The @ServantErr@
                               -- should only be 404, 405 or 406.
-  | FailFatal !ServantErr     -- ^ Don't try other paths.
+  | FailFatal !ServerError     -- ^ Don't try other paths.
   | Route !a
   deriving (Eq, Show, Read, Functor)
 
@@ -97,8 +97,8 @@ toApplication :: RoutingApplication -> Application
 toApplication ra request respond = ra request routingRespond
  where
   routingRespond :: RouteResult Response -> IO ResponseReceived
-  routingRespond (Fail err)      = respond $ responseServantErr err
-  routingRespond (FailFatal err) = respond $ responseServantErr err
+  routingRespond (Fail err)      = respond $ responseServerError err
+  routingRespond (FailFatal err) = respond $ responseServerError err
   routingRespond (Route v)       = respond v
 
 -- | A 'Delayed' is a representation of a handler with scheduled
@@ -235,11 +235,11 @@ emptyDelayed result =
     r = return ()
 
 -- | Fail with the option to recover.
-delayedFail :: ServantErr -> DelayedIO a
+delayedFail :: ServerError -> DelayedIO a
 delayedFail err = liftRouteResult $ Fail err
 
 -- | Fail fatally, i.e., without any option to recover.
-delayedFailFatal :: ServantErr -> DelayedIO a
+delayedFailFatal :: ServerError -> DelayedIO a
 delayedFailFatal err = liftRouteResult $ FailFatal err
 
 -- | Gain access to the incoming request.
@@ -388,7 +388,7 @@ runAction action env req respond k = runResourceT $
     go (Route a)     = liftIO $ do
       e <- runHandler a
       case e of
-        Left err -> return . Route $ responseServantErr err
+        Left err -> return . Route $ responseServerError err
         Right x  -> return $! k x
 
 {- Note [Existential Record Update]

@@ -254,7 +254,7 @@ instance {-# OVERLAPPING #-}
        , requestAccept = fromList $ toList accept
        }
     case mimeUnrender (Proxy :: Proxy ct) $ responseBody response of
-      Left err -> throwServantError $ DecodeFailure (pack err) response
+      Left err -> throwClientError $ DecodeFailure (pack err) response
       Right val -> return $ Headers
         { getResponse = val
         , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
@@ -662,7 +662,7 @@ checkContentTypeHeader response =
   case lookup "Content-Type" $ toList $ responseHeaders response of
     Nothing -> return $ "application"//"octet-stream"
     Just t -> case parseAccept t of
-      Nothing -> throwServantError $ InvalidContentTypeHeader response
+      Nothing -> throwClientError $ InvalidContentTypeHeader response
       Just t' -> return t'
 
 decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
@@ -670,9 +670,9 @@ decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
 decodedAs response ct = do
   responseContentType <- checkContentTypeHeader response
   unless (any (matches responseContentType) accept) $
-    throwServantError $ UnsupportedContentType responseContentType response
+    throwClientError $ UnsupportedContentType responseContentType response
   case mimeUnrender ct $ responseBody response of
-    Left err -> throwServantError $ DecodeFailure (T.pack err) response
+    Left err -> throwClientError $ DecodeFailure (T.pack err) response
     Right val -> return val
   where
     accept = toList $ contentTypes ct 

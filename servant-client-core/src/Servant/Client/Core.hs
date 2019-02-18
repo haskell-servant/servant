@@ -32,7 +32,7 @@ module Servant.Client.Core
   , AuthClientData
 
   -- * Generic Client
-  , ServantError(..)
+  , ClientError(..)
   , EmptyClient(..)
 
   -- * Response

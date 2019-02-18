@@ -24,7 +24,7 @@ import           Servant.Client.Core.Response
 class Monad m => RunClient m where
   -- | How to make a request.
   runRequest :: Request -> m Response
-  throwServantError :: ServantError -> m a
+  throwClientError :: ClientError -> m a
 
 class RunClient m =>  RunStreamingClient m where
     withStreamingRequest :: Request -> (StreamingResponse -> IO a) ->  m a
@@ -38,9 +38,9 @@ class RunClient m =>  RunStreamingClient m where
 -- Compare to 'RunClient'.
 data ClientF a
     = RunRequest Request (Response -> a)
-    | Throw ServantError
+    | Throw ClientError
   deriving (Functor)
 
 instance ClientF ~ f => RunClient (Free f) where
     runRequest req  = liftF (RunRequest req id)
-    throwServantError = liftF . Throw
+    throwClientError = liftF . Throw

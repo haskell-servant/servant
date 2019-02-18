@@ -12,7 +12,7 @@ module Servant.Client.Core.Reexport
   , ResponseF(..)
 
   -- * Data types
-  , ServantError(..)
+  , ClientError(..)
   , EmptyClient(..)
 
   -- * BaseUrl

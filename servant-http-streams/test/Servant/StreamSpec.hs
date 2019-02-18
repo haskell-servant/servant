@@ -84,7 +84,7 @@ server = serve api
 powerOfTwo :: Int -> Int
 powerOfTwo = (2 ^)
 
-withClient :: ClientM a -> BaseUrl -> (Either ServantError a -> IO r) -> IO r
+withClient :: ClientM a -> BaseUrl -> (Either ClientError a -> IO r) -> IO r
 withClient x burl k = do
     withClientEnvIO burl $ \env -> withClientM x env k
 

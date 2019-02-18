@@ -123,9 +123,9 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
-    { unClientM :: ReaderT ClientEnv (ExceptT ServantError (Codensity IO)) a }
+    { unClientM :: ReaderT ClientEnv (ExceptT ClientError (Codensity IO)) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ServantError)
+           , MonadReader ClientEnv, MonadError ClientError)
 
 instance MonadBase IO ClientM where
     liftBase = ClientM . liftIO
@@ -136,15 +136,15 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
     runRequest = performRequest
-    throwServantError = throwError
+    throwClientError = throwError
 
 instance RunStreamingClient ClientM where
     withStreamingRequest = performWithStreamingRequest
 
-runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ClientError a)
 runClientM cm env = withClientM cm env (evaluate . force)
 
-withClientM :: ClientM a -> ClientEnv -> (Either ServantError a -> IO b) -> IO b
+withClientM :: ClientM a -> ClientEnv -> (Either ClientError a -> IO b) -> IO b
 withClientM cm env k =
     let Codensity f = runExceptT $ flip runReaderT env $ unClientM cm
     in f k
@@ -181,7 +181,7 @@ performWithStreamingRequest req k = do
             x <- k (clientResponseToResponse res' (fromInputStream body'))
             k1 x
 
-mkFailureResponse :: BaseUrl -> Request -> ResponseF BSL.ByteString -> ServantError
+mkFailureResponse :: BaseUrl -> Request -> ResponseF BSL.ByteString -> ClientError
 mkFailureResponse burl request =
     FailureResponse (bimap (const ()) f request)
   where
@@ -233,7 +233,7 @@ requestToClientRequest burl r = (request, body)
         Nothing           -> (Client.emptyBody, Nothing)
         Just (body', typ) -> (convertBody body', Just (hContentType, renderHeader typ))
 
-catchConnectionError :: IO a -> IO (Either ServantError a)
+catchConnectionError :: IO a -> IO (Either ClientError a)
 catchConnectionError action =
   catch (Right <$> action) $ \e ->
     pure . Left . ConnectionError $ SomeException (e :: IOException)

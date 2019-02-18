@@ -49,7 +49,7 @@ module Servant.Server
   -- , mkAuthHandler
 
     -- * Default error type
-  , ServantErr(..)
+  , ServerError(..)
     -- ** 3XX
   , err300
   , err301
