@@ -27,7 +27,7 @@ import           Network.Wai
 import           Servant.API.BasicAuth
                  (BasicAuthData (BasicAuthData))
 import           Servant.Server.Internal.RoutingApplication
-import           Servant.Server.Internal.ServantErr
+import           Servant.Server.Internal.ServerError
 
 -- * Basic Auth
 

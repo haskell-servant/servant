@@ -112,7 +112,7 @@ powerOfTwo = (2 ^)
 manager' :: C.Manager
 manager' = unsafePerformIO $ C.newManager C.defaultManagerSettings
 
-withClient :: ClientM a -> BaseUrl -> (Either ServantError a -> IO r) -> IO r
+withClient :: ClientM a -> BaseUrl -> (Either ClientError a -> IO r) -> IO r
 withClient x baseUrl' = withClientM x (mkClientEnv manager' baseUrl')
 
 testRunSourceIO :: SourceIO a

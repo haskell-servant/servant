@@ -18,7 +18,7 @@ import qualified Data.Text                                  as T
 import           Network.Wai
                  (Response, pathInfo)
 import           Servant.Server.Internal.RoutingApplication
-import           Servant.Server.Internal.ServantErr
+import           Servant.Server.Internal.ServerError
 
 type Router env = Router' env RoutingApplication
 

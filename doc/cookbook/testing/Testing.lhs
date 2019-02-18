@@ -234,7 +234,7 @@ clientEnv esHost esPort = do
   manager <- newManager defaultManagerSettings
   pure $ mkClientEnv manager baseUrl
 
-runSearchClient :: Text -> Text -> ClientM a -> IO (Either ServantError a)
+runSearchClient :: Text -> Text -> ClientM a -> IO (Either ClientError a)
 runSearchClient esHost esPort = (clientEnv esHost esPort >>=) . runClientM
 ```
 
@@ -267,7 +267,7 @@ docServer esHost esPort = getDocById esHost esPort
 -- actions
 getDocById :: Text -> Text -> Integer -> Handler Value
 getDocById esHost esPort docId = do
-  -- Our Servant Client function returns Either ServantError Value here:
+  -- Our Servant Client function returns Either ClientError Value here:
   docRes <- liftIO $ runSearchClient esHost esPort (getDocument docId)
   case docRes of
     Left err -> throwError $ err404 { errBody = "Failed looking up content" }

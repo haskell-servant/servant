@@ -94,16 +94,16 @@ client api = api `clientIn` (Proxy :: Proxy ClientM)
 --
 -- NOTE: Does not support constant space streaming of the request body!
 newtype ClientM a = ClientM
-  { runClientM' :: ReaderT ClientEnv (ExceptT ServantError IO) a }
+  { runClientM' :: ReaderT ClientEnv (ExceptT ClientError IO) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ServantError, MonadThrow
+           , MonadReader ClientEnv, MonadError ClientError, MonadThrow
            , MonadCatch)
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftBase
 
 instance MonadBaseControl IO ClientM where
-  type StM ClientM a = Either ServantError a
+  type StM ClientM a = Either ClientError a
 
   liftBaseWith f = ClientM (liftBaseWith (\g -> f (g . runClientM')))
 
@@ -121,12 +121,12 @@ instance Exception StreamingNotSupportedException where
 
 instance RunClient ClientM where
   runRequest = performRequest
-  throwServantError = throwError
+  throwClientError = throwError
 
-runClientMOrigin :: ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientMOrigin :: ClientM a -> ClientEnv -> IO (Either ClientError a)
 runClientMOrigin cm env = runExceptT $ flip runReaderT env $ runClientM' cm
 
-runClientM :: ClientM a -> IO (Either ServantError a)
+runClientM :: ClientM a -> IO (Either ClientError a)
 runClientM m = do
     curLoc <- getWindowLocation
 
@@ -298,7 +298,7 @@ foreign import javascript unsafe "$3.slice($1, $1 + $2)"
 -- * inspecting the xhr response
 
 -- This function is only supposed to handle 'ConnectionError's. Other
--- 'ServantError's are created in Servant.Client.Req.
+-- 'ClientError's are created in Servant.Client.Req.
 toResponse :: JSXMLHttpRequest -> ClientM Response
 toResponse xhr = do
   status <- liftIO $ getStatus xhr

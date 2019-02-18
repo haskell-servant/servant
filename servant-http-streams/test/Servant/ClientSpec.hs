@@ -182,8 +182,8 @@ server = serve api (
   :<|> return
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
-                   Just n -> throwError $ ServantErr 400 (n ++ " not found") "" []
-                   Nothing -> throwError $ ServantErr 400 "missing parameter" "" [])
+                   Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
+                   Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
@@ -254,10 +254,10 @@ genAuthServerContext = genAuthHandler :. EmptyContext
 genAuthServer :: Application
 genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
 
-runClient :: NFData a => ClientM a -> BaseUrl -> IO (Either ServantError a)
+runClient :: NFData a => ClientM a -> BaseUrl -> IO (Either ClientError a)
 runClient x burl = withClientEnvIO burl (runClientM x)
 
-runClientUnsafe :: ClientM a -> BaseUrl -> IO (Either ServantError a)
+runClientUnsafe :: ClientM a -> BaseUrl -> IO (Either ClientError a)
 runClientUnsafe x burl = withClientEnvIO burl (runClientMUnsafe x)
   where
     runClientMUnsafe x env = withClientM x env return
@@ -343,7 +343,7 @@ sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
 wrappedApiSpec :: Spec
 wrappedApiSpec = describe "error status codes" $ do
-  let serveW api = serve api $ throwError $ ServantErr 500 "error message" "" []
+  let serveW api = serve api $ throwError $ ServerError 500 "error message" "" []
   context "are correctly handled by the client" $
     let test :: (WrappedApi, String) -> Spec
         test (WrappedApi api, desc) =
@@ -467,7 +467,7 @@ connectionErrorAPI :: Proxy ConnectionErrorAPI
 connectionErrorAPI = Proxy
 
 connectionErrorSpec :: Spec
-connectionErrorSpec = describe "Servant.Client.ServantError" $
+connectionErrorSpec = describe "Servant.Client.ClientError" $
     xit "correctly catches ConnectionErrors when the HTTP request can't go through" $ do
         let getInt = client connectionErrorAPI
         let baseUrl' = BaseUrl Http "example.invalid" 80 ""

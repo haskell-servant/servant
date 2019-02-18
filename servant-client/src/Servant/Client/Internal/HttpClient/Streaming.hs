@@ -100,9 +100,9 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
-  { unClientM :: ReaderT ClientEnv (ExceptT ServantError (Codensity IO)) a }
+  { unClientM :: ReaderT ClientEnv (ExceptT ClientError (Codensity IO)) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ServantError)
+           , MonadReader ClientEnv, MonadError ClientError)
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftIO
@@ -113,12 +113,12 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
   runRequest = performRequest
-  throwServantError = throwError
+  throwClientError = throwError
 
 instance RunStreamingClient ClientM where
   withStreamingRequest = performWithStreamingRequest
 
-withClientM :: ClientM a -> ClientEnv -> (Either ServantError a -> IO b) -> IO b
+withClientM :: ClientM a -> ClientEnv -> (Either ClientError a -> IO b) -> IO b
 withClientM cm env k =
     let Codensity f = runExceptT $ flip runReaderT env $ unClientM cm
     in f k
@@ -133,7 +133,7 @@ withClientM cm env k =
 -- /Note:/ we 'force' the result, so the likehood of accidentally leaking a
 -- connection is smaller. Use with care.
 --
-runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ClientError a)
 runClientM cm env = withClientM cm env (evaluate . force)
 
 performRequest :: Request -> ClientM Response

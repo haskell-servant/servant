@@ -599,7 +599,7 @@ $ curl -H 'Accept: text/html' http://localhost:8081/persons
 
 ## The `Handler` monad
 
-At the heart of the handlers is the monad they run in, namely a newtype `Handler` around `ExceptT ServantErr IO`
+At the heart of the handlers is the monad they run in, namely a newtype `Handler` around `ExceptT ServerErroror IO`
 ([haddock documentation for `ExceptT`](http://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)).
 One might wonder: why this monad? The answer is that it is the
 simplest monad with the following properties:
@@ -617,7 +617,7 @@ newtype ExceptT e m a = ExceptT (m (Either e a))
 ```
 
 In short, this means that a handler of type `Handler a` is simply
-equivalent to a computation of type `IO (Either ServantErr a)`, that is, an IO
+equivalent to a computation of type `IO (Either ServerError a)`, that is, an IO
 action that either returns an error or a result.
 
 The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)
@@ -660,16 +660,16 @@ server5 = do
   return (FileContent filecontent)
 ```
 
-### Failing, through `ServantErr`
+### Failing, through `ServerError`
 
 If you want to explicitly fail at providing the result promised by an endpoint
 using the appropriate HTTP status code (not found, unauthorized, etc) and some
 error message, all you have to do is use the `throwError` function mentioned above
-and provide it with the appropriate value of type `ServantErr`, which is
+and provide it with the appropriate value of type `ServerError`, which is
 defined as:
 
 ``` haskell ignore
-data ServantErr = ServantErr
+data ServerError = ServerError
     { errHTTPCode     :: Int
     , errReasonPhrase :: String
     , errBody         :: ByteString -- lazy bytestring
@@ -685,7 +685,7 @@ use record update syntax:
 failingHandler :: Handler ()
 failingHandler = throwError myerr
 
-  where myerr :: ServantErr
+  where myerr :: ServerError
         myerr = err503 { errBody = "Sorry dear user." }
 ```
 

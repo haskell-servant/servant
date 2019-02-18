@@ -120,16 +120,16 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
-  { unClientM :: ReaderT ClientEnv (ExceptT ServantError IO) a }
+  { unClientM :: ReaderT ClientEnv (ExceptT ClientError IO) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ServantError, MonadThrow
+           , MonadReader ClientEnv, MonadError ClientError, MonadThrow
            , MonadCatch)
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftBase
 
 instance MonadBaseControl IO ClientM where
-  type StM ClientM a = Either ServantError a
+  type StM ClientM a = Either ClientError a
 
   liftBaseWith f = ClientM (liftBaseWith (\g -> f (g . unClientM)))
 
@@ -141,9 +141,9 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
   runRequest = performRequest
-  throwServantError = throwError
+  throwClientError = throwError
 
-runClientM :: ClientM a -> ClientEnv -> IO (Either ServantError a)
+runClientM :: ClientM a -> ClientEnv -> IO (Either ClientError a)
 runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
 
 performRequest :: Request -> ClientM Response
@@ -197,7 +197,7 @@ performRequest req = do
           fReq = Client.hrFinalRequest responses
           fRes = Client.hrFinalResponse responses
 
-mkFailureResponse :: BaseUrl -> Request -> ResponseF BSL.ByteString -> ServantError
+mkFailureResponse :: BaseUrl -> Request -> ResponseF BSL.ByteString -> ClientError
 mkFailureResponse burl request =
     FailureResponse (bimap (const ()) f request)
   where
@@ -270,7 +270,7 @@ requestToClientRequest burl r = Client.defaultRequest
         Http -> False
         Https -> True
 
-catchConnectionError :: IO a -> IO (Either ServantError a)
+catchConnectionError :: IO a -> IO (Either ClientError a)
 catchConnectionError action =
   catch (Right <$> action) $ \e ->
     pure . Left . ConnectionError $ SomeException (e :: Client.HttpException)
