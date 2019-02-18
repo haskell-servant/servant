@@ -24,7 +24,7 @@ See `CONTRIBUTING.md`
 
 - Update changelog and bump versions in `master`
     - `git log --oneline v0.12.. | grep 'Merge pull request'` is a good starting point (use correct previous release tag)
-- Create a release branch, e.g. `release-0.13`, and *protect it* from accidental force pushes.
+- Create a release branch, e.g. `release-0.13`
     - Release branch is useful for backporting fixes from `master`
 - Smoke test in [`servant-universe`](https://github.com/phadej/servant-universe)
     - `git submodule foreach git checkout master` and `git submodule foreach git pull` to get newest of everything.
