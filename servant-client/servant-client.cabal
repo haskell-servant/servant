@@ -116,7 +116,6 @@ test-suite spec
   -- Additonal dependencies
   build-depends:
       entropy           >= 0.4.1.3  && < 0.5
-    , generics-sop      >= 0.4.0.1  && < 0.5
     , hspec             >= 2.6.0    && < 2.7
     , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 2.8.0.0  && < 3.1

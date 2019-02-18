@@ -32,18 +32,20 @@ module Servant.Client.Core
   , AuthClientData
 
   -- * Generic Client
-  , ClientLike(..)
-  , genericMkClientL
-  , genericMkClientP
   , ServantError(..)
   , EmptyClient(..)
-
 
   -- * Response
   , Response
   , ResponseF (..)
   , RunClient(..)
-  , module Servant.Client.Core.Internal.BaseUrl
+  -- * BaseUrl
+  , BaseUrl (..)
+  , Scheme (..)
+  , showBaseUrl
+  , parseBaseUrl
+  , InvalidBaseUrlException (..)
+
   -- ** Streaming
   , RunStreamingClient(..)
   , StreamingResponse
@@ -56,14 +58,13 @@ module Servant.Client.Core
   , setRequestBodyLBS
   , setRequestBody
   ) where
-import           Servant.Client.Core.Internal.Auth
-import           Servant.Client.Core.Internal.BaseUrl
-                 (BaseUrl (..), InvalidBaseUrlException, Scheme (..),
+import           Servant.Client.Core.Auth
+import           Servant.Client.Core.BaseUrl
+                 (BaseUrl (..), InvalidBaseUrlException (..), Scheme (..),
                  parseBaseUrl, showBaseUrl)
-import           Servant.Client.Core.Internal.BasicAuth
-import           Servant.Client.Core.Internal.Generic
-import           Servant.Client.Core.Internal.HasClient
-import           Servant.Client.Core.Internal.Request
-import           Servant.Client.Core.Internal.Response
-import           Servant.Client.Core.Internal.ClientError
-import           Servant.Client.Core.Internal.RunClient
+import           Servant.Client.Core.BasicAuth
+import           Servant.Client.Core.ClientError
+import           Servant.Client.Core.HasClient
+import           Servant.Client.Core.Request
+import           Servant.Client.Core.Response
+import           Servant.Client.Core.RunClient

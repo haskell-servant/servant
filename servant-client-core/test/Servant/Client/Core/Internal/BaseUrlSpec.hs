@@ -8,7 +8,7 @@ import           Prelude.Compat
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           Servant.Client.Core.Internal.BaseUrl
+import           Servant.Client.Core.BaseUrl
 
 spec :: Spec
 spec = do

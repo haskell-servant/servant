@@ -3,8 +3,9 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 -- | Basic Authentication for clients
-
-module Servant.Client.Core.Internal.BasicAuth where
+module Servant.Client.Core.BasicAuth (
+    basicAuthReq,
+    ) where
 
 import           Data.ByteString.Base64
                  (encode)
@@ -14,7 +15,7 @@ import           Data.Text.Encoding
                  (decodeUtf8)
 import           Servant.API.BasicAuth
                  (BasicAuthData (BasicAuthData))
-import           Servant.Client.Core.Internal.Request
+import           Servant.Client.Core.Request
                  (Request, addHeader)
 
 -- | Authenticate a request using Basic Authentication

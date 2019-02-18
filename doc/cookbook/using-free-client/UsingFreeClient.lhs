@@ -99,8 +99,6 @@ test = case getSquare 42 of
         putStrLn $ "ERROR: got pure result: " ++ show n
     Free (Throw err) ->
         putStrLn $ "ERROR: got error right away: " ++ show err
-    Free (StreamingRequest _req _k) ->
-        putStrLn $ "ERROR: need to do streaming request" -- TODO: no Show Req :(
 ```
 
 We are interested in `RunRequest`, that's what client should block on:

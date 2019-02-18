@@ -18,35 +18,48 @@ import           Control.Arrow
 import           Control.Concurrent
 import           Control.Exception
 import           Control.Monad
-import           Control.Monad.Base          (MonadBase (..))
-import           Control.Monad.Catch         (MonadCatch, MonadThrow)
-import           Control.Monad.Error.Class   (MonadError (..))
+import           Control.Monad.Base
+                 (MonadBase (..))
+import           Control.Monad.Catch
+                 (MonadCatch, MonadThrow)
+import           Control.Monad.Error.Class
+                 (MonadError (..))
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Control (MonadBaseControl (..))
+import           Control.Monad.Trans.Control
+                 (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
-import           Data.ByteString.Builder     (toLazyByteString)
-import qualified Data.ByteString.Char8       as BS
-import qualified Data.ByteString.Lazy        as BL
+import           Data.Bifunctor
+                 (bimap)
+import           Data.ByteString.Builder
+                 (toLazyByteString)
+import qualified Data.ByteString.Char8             as BS
+import qualified Data.ByteString.Lazy              as BL
 import           Data.CaseInsensitive
 import           Data.Char
-import           Data.Foldable               (toList)
-import           Data.Functor.Alt            (Alt (..))
-import           Data.IORef                  (modifyIORef, newIORef, readIORef)
-import           Data.Proxy                  (Proxy (..))
-import qualified Data.Sequence               as Seq
+import           Data.Foldable
+                 (toList)
+import           Data.Functor.Alt
+                 (Alt (..))
+import           Data.Proxy
+                 (Proxy (..))
+import qualified Data.Sequence                     as Seq
 import           Data.String.Conversions
-import           Data.Typeable           (Typeable)
+import           Data.Typeable
+                 (Typeable)
 import           Foreign.StablePtr
 import           GHC.Generics
-import qualified GHCJS.Buffer as Buffer
+import qualified GHCJS.Buffer                      as Buffer
 import           GHCJS.Foreign.Callback
 import           GHCJS.Prim
 import           GHCJS.Types
-import           JavaScript.TypedArray.ArrayBuffer ( ArrayBuffer )
+import           JavaScript.TypedArray.ArrayBuffer
+                 (ArrayBuffer)
 import           JavaScript.Web.Location
-import           Network.HTTP.Media          (renderHeader)
+import           Network.HTTP.Media
+                 (renderHeader)
 import           Network.HTTP.Types
 import           Servant.Client.Core
+import qualified Servant.Types.SourceT as S
 
 newtype JSXMLHttpRequest = JSXMLHttpRequest JSVal
 
@@ -110,9 +123,6 @@ instance RunClient ClientM where
   runRequest = performRequest
   throwServantError = throwError
 
-instance ClientLike (ClientM a) (ClientM a) where
-  mkClient = id
-
 runClientMOrigin :: ClientM a -> ClientEnv -> IO (Either ServantError a)
 runClientMOrigin cm env = runExceptT $ flip runReaderT env $ runClientM' cm
 
@@ -150,8 +160,9 @@ performRequest req = do
   resp <- toResponse xhr
 
   let status = statusCode (responseStatusCode resp)
-  unless (status >= 200 && status < 300) $
-        throwError $ FailureResponse resp
+  unless (status >= 200 && status < 300) $ do
+    let f b = (burl, BL.toStrict $ toLazyByteString b)
+    throwError $ FailureResponse (bimap (const ()) f req) resp
 
   pure resp
 
@@ -270,25 +281,16 @@ toBody request = case requestBody request of
   where
     go :: RequestBody -> IO ArrayBuffer
     go x = case x of
-      RequestBodyLBS x -> return $ mBody $ BL.toStrict x
-      RequestBodyBS x -> return $ mBody x
-      RequestBodyBuilder _ x -> return $ mBody $ BL.toStrict $ toLazyByteString x
-      RequestBodyStream _ x -> mBody <$> readBody x
-      RequestBodyStreamChunked x -> mBody <$> readBody x
-      RequestBodyIO x -> x >>= go
+      RequestBodyLBS x     -> return $ mBody $ BL.toStrict x
+      RequestBodyBS x      -> return $ mBody x
+      RequestBodySource xs -> runExceptT (S.runSourceT xs) >>= \e -> case e of
+        Left err  -> fail err
+        Right bss -> return $ mBody $ BL.toStrict $ mconcat bss
 
     mBody :: BS.ByteString -> ArrayBuffer
     mBody bs = js_bufferSlice offset len $ Buffer.getArrayBuffer buffer
       where
         (buffer, offset, len) = Buffer.fromByteString bs
-
-    readBody :: ((IO BS.ByteString -> IO ()) -> IO a) -> IO BS.ByteString
-    readBody writer = do
-      m <- newIORef mempty
-      _ <- writer (\bsAct -> do
-        bs <- bsAct
-        modifyIORef m (<> bs))
-      readIORef m
 
 foreign import javascript unsafe "$3.slice($1, $1 + $2)"
   js_bufferSlice :: Int -> Int -> ArrayBuffer -> ArrayBuffer
@@ -301,7 +303,7 @@ toResponse :: JSXMLHttpRequest -> ClientM Response
 toResponse xhr = do
   status <- liftIO $ getStatus xhr
   case status of
-    0 -> throwError $ ConnectionError "connection error"
+    0 -> throwError $ ConnectionError (SomeException (userError "connection error"))
     _ -> liftIO $ do
       statusText <- cs <$> getStatusText xhr
       headers <- parseHeaders <$> getAllResponseHeaders xhr
