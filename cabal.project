@@ -33,6 +33,7 @@ packages:
 
 tests: True
 optimization: False
+reorder-goals: True
 
 allow-newer:
   servant-js:base
