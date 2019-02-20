@@ -44,10 +44,10 @@ constraints:
   memory <0.14.12 || >0.14.12
 
 allow-newer:
---   servant-pagination:servant, servant-pagination:servant-server,
---   servant-multipart:servant, servant-multipart:servant-server,
---   servant-auth-server:servant, servant-auth-server:servant-server, servant-auth-server:http-api-data,
---   servant-js:servant, servant-js:servant-foreign,
+   servant-pagination:servant, servant-pagination:servant-server,
+   servant-multipart:servant, servant-multipart:servant-server,
+   servant-auth-server:servant, servant-auth-server:servant-server, servant-auth-server:http-api-data,
+   servant-js:servant, servant-js:servant-foreign
 
 -- servant-quickcheck
 allow-newer:

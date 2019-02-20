@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                servant-client-core
-version:             0.15
+version:             0.16
 
 synopsis:            Core functionality and class for client function generation for servant APIs
 category:            Servant, Web
@@ -67,7 +67,7 @@ library
 
   -- Servant dependencies
   build-depends:
-      servant            >= 0.15 && <0.16
+      servant            >= 0.16 && <0.17
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
