@@ -1,6 +1,7 @@
 cabal-version:       >=1.10
 name:                servant-docs
 version:             0.11.3
+x-revision:          1
 
 synopsis:            generate API docs for your servant webservice
 category:            Servant, Web
@@ -51,7 +52,7 @@ library
 
   -- Servant dependencies
   build-depends:
-      servant            == 0.15.*
+      servant            >= 0.15 && <0.17
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
