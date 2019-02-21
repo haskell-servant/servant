@@ -169,12 +169,12 @@ test-suite spec
 
   -- Additonal dependencies
   build-depends:
-      hspec                >= 2.6.0    && < 2.7
+      hspec                >= 2.6.0    && < 2.8
     , QuickCheck           >= 2.12.6.1 && < 2.13
     , quickcheck-instances >= 0.3.19   && < 0.4
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && < 2.7
+    hspec-discover:hspec-discover >= 2.6.0 && < 2.8
 
 test-suite doctests
   build-depends:
@@ -184,7 +184,7 @@ test-suite doctests
 
   -- We test Links failure with doctest, so we need extra dependencies
   build-depends:
-      hspec                >= 2.6.0  && < 2.7
+      hspec                >= 2.6.0  && < 2.8
 
   type: exitcode-stdio-1.0
   main-is: test/doctests.hs
