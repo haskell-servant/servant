@@ -1,6 +1,16 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.16
+----
+
+- Rename `ServantError` to `ClientError`, `ServantErr` to `ServerError`
+  [#1131](https://github.com/haskell-servant/pull/1131)
+- *servant-server* Reorder HTTP failure code priorities
+  [#1103](https://github.com/haskell-servant/servant/pull/1103)
+- Allow `network-3.0`
+  [#1107](https://github.com/haskell-servant/pull/1107)
+
 0.15
 ----
 

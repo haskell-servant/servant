@@ -6,12 +6,12 @@
 ### Significant changes
 
 - Rename `ServantError` to `ClientError`, `ServantErr` to `ServerError`
-  [#1131](https://github.com/haskell-servant/pull/1131)
+  [#1131](https://github.com/haskell-servant/servant/pull/1131)
 - *servant-client-core* Rearrange modules. No more `Internal` modules, whole
   API is versioned.
-  [#1130](https://github.com/haskell-servant/pull/1130)
+  [#1130](https://github.com/haskell-servant/servant/pull/1130)
 - *servant-http-streams* New package
-  [#1117](https://github.com/haskell-servant/pull/1117)
+  [#1117](https://github.com/haskell-servant/servant/pull/1117)
 - *servant-client-core* `RequestBody` is now
 
     ```haskell
@@ -21,11 +21,11 @@
     ```
 
   i.e. no more replicates `http-client`s API.
-  [#1117](https://github.com/haskell-servant/pull/1117)
+  [#1117](https://github.com/haskell-servant/servant/pull/1117)
 
 - *servant-client-core* Keep structured exceptions in `ConnectionError`
   constructor of `ClientError`
-  [#1115](https://github.com/haskell-servant/pull/1115)
+  [#1115](https://github.com/haskell-servant/servant/pull/1115)
 
     ```diff
     -| ConnectionError Text
@@ -34,7 +34,7 @@
 
 - *servant-client-core* Preserve failing request in `FailureResponse`
   constructor of `ClientError`
-  [#1114](https://github.com/haskell-servant/pull/1114)
+  [#1114](https://github.com/haskell-servant/servant/pull/1114)
 
     ```diff
     -FailureResponse Response
@@ -44,8 +44,8 @@
     +FailureResponse (RequestF () (BaseUrl, BS.ByteString)) Response
     ```
 
-- *servant-client* Fix (implement) `StreamBody`instance
-  [#1110](https://github.com/haskell-servant/pull/1110)
+- *servant-client* Fix (implement) `StreamBody` instance
+  [#1110](https://github.com/haskell-servant/servant/pull/1110)
 
 ### Other changes
 
@@ -54,19 +54,19 @@
 - *servant-server* Reorder HTTP failure code priorities
   [#1103](https://github.com/haskell-servant/servant/pull/1103)
 - Allow `network-3.0`
-  [#1107](https://github.com/haskell-servant/pull/1107)
+  [#1107](https://github.com/haskell-servant/servant/pull/1107)
 - Add `NFData NoContent` instance
-  [#1090](https://github.com/haskell-servant/pull/1090)
+  [#1090](https://github.com/haskell-servant/servant/pull/1090)
 
 - Documentation updates
-  [#1127](https://github.com/haskell-servant/pull/1127)
-  [#1124](https://github.com/haskell-servant/pull/1124)
-  [#1098](https://github.com/haskell-servant/pull/1098)
+  [#1127](https://github.com/haskell-servant/servant/pull/1127)
+  [#1124](https://github.com/haskell-servant/servant/pull/1124)
+  [#1098](https://github.com/haskell-servant/servant/pull/1098)
 
 - CI updates
-  [#1123](https://github.com/haskell-servant/pull/1123)
-  [#1121](https://github.com/haskell-servant/pull/1121)
-  [#1119](https://github.com/haskell-servant/pull/1119)
+  [#1123](https://github.com/haskell-servant/servant/pull/1123)
+  [#1121](https://github.com/haskell-servant/servant/pull/1121)
+  [#1119](https://github.com/haskell-servant/servant/pull/1119)
 
 0.15
 ----
