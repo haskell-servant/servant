@@ -1,6 +1,54 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.16
+----
+
+- Rename `ServantError` to `ClientError`, `ServantErr` to `ServerError`
+  [#1131](https://github.com/haskell-servant/servant/pull/1131)
+
+- *servant-client-core* Rearrange modules. No more `Internal` modules, whole
+  API is versioned.
+  [#1130](https://github.com/haskell-servant/servant/pull/1130)
+
+- *servant-client-core* `RequestBody` is now
+
+    ```haskell
+    = RequestBodyLBS LBS.ByteString
+    | RequestBodyBS BS.ByteString
+    | RequestBodySource (SourceIO LBS.ByteString)
+    ```
+
+  i.e. no more replicates `http-client`s API.
+  [#1117](https://github.com/haskell-servant/servant/pull/1117)
+
+- *servant-client-core* Keep structured exceptions in `ConnectionError`
+  constructor of `ClientError`
+  [#1115](https://github.com/haskell-servant/servant/pull/1115)
+
+    ```diff
+    -| ConnectionError Text
+    +| ConnectionError SomeException
+    ```
+
+- *servant-client-core* Preserve failing request in `FailureResponse`
+  constructor of `ClientError`
+  [#1114](https://github.com/haskell-servant/servant/pull/1114)
+
+    ```diff
+    -FailureResponse Response
+    +-- | The server returned an error response including the
+    +-- failing request. 'requestPath' includes the 'BaseUrl' and the
+    +-- path of the request.
+    +FailureResponse (RequestF () (BaseUrl, BS.ByteString)) Response
+    ```
+
+- *servant-client* Fix (implement) `StreamBody` instance
+  [#1110](https://github.com/haskell-servant/servant/pull/1110)
+
+- *servant-client* Update CookieJar with intermediate request/responses (redirects)
+  [#1104](https://github.com/haskell-servant/servant/pull/1104)
+
 0.15
 ----
 
