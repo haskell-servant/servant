@@ -17,6 +17,7 @@ packages:
 
   doc/cookbook/basic-auth
   doc/cookbook/curl-mock
+  doc/cookbook/current-route
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
   doc/cookbook/db-sqlite-simple
