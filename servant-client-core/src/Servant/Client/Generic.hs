@@ -16,7 +16,7 @@ import           Data.Proxy
 import           Servant.API.Generic
 import           Servant.Client.Core
 
--- | A type that specifies that an API reocrd contains a client implementation.
+-- | A type that specifies that an API record contains a client implementation.
 data AsClientT (m :: * -> *)
 instance GenericMode (AsClientT m) where
     type AsClientT m :- api = Client m api
