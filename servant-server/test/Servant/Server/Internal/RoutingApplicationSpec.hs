@@ -23,7 +23,7 @@ import           GHC.TypeLits
 import           Network.Wai
                  (defaultRequest)
 import           Servant
-import           Servant.Server.Internal.RoutingApplication
+import           Servant.Server.Internal
 import           Test.Hspec
 import           Test.Hspec.Wai
                  (request, shouldRespondWith, with)

@@ -27,11 +27,9 @@ import           Servant
                  ((:>))
 import           Servant.API.Experimental.Auth
 import           Servant.Server.Internal
-                 (HasContextEntry, HasServer (..), getContextEntry)
-import           Servant.Server.Internal.Handler
-                 (Handler, runHandler)
-import           Servant.Server.Internal.RoutingApplication
-                 (DelayedIO, addAuthCheck, delayedFailFatal, withRequest)
+                 (DelayedIO, Handler, HasContextEntry, HasServer (..),
+                 addAuthCheck, delayedFailFatal, getContextEntry, runHandler,
+                 withRequest)
 
 -- * General Auth
 

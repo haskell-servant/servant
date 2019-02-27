@@ -22,8 +22,11 @@ module Servant.Server.Internal
   ( module Servant.Server.Internal
   , module Servant.Server.Internal.BasicAuth
   , module Servant.Server.Internal.Context
+  , module Servant.Server.Internal.Delayed
+  , module Servant.Server.Internal.DelayedIO
   , module Servant.Server.Internal.Handler
   , module Servant.Server.Internal.Router
+  , module Servant.Server.Internal.RouteResult
   , module Servant.Server.Internal.RoutingApplication
   , module Servant.Server.Internal.ServerError
   ) where
@@ -88,8 +91,11 @@ import           Web.HttpApiData
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
+import           Servant.Server.Internal.Delayed
+import           Servant.Server.Internal.DelayedIO
 import           Servant.Server.Internal.Handler
 import           Servant.Server.Internal.Router
+import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
 
