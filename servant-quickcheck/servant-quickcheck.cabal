@@ -1,29 +1,22 @@
-name:                servant-quickcheck
-version:             0.0.7.3
-synopsis:            QuickCheck entire APIs
+name:               servant-quickcheck
+version:            0.0.7.3
+synopsis:           QuickCheck entire APIs
 description:
- This packages provides QuickCheck properties that are tested across an entire
- API.
+  This packages provides QuickCheck properties that are tested across an entire
+  API.
 
-license:             BSD3
-license-file:        LICENSE
-author:              Julian K. Arni
-maintainer:          jkarni@gmail.com
-category:            Web
-build-type:          Simple
-cabal-version:       >=1.10
-extra-source-files:
-  CHANGELOG.yaml
-tested-with:
-  GHC ==7.10.3
-   || ==8.0.2
-   || ==8.2.2
-   || ==8.4.4
-   || ==8.6.1
-
+license:            BSD3
+license-file:       LICENSE
+author:             Julian K. Arni
+maintainer:         jkarni@gmail.com
+category:           Web
+build-type:         Simple
+cabal-version:      >=1.10
+extra-source-files: CHANGELOG.yaml
+tested-with:        GHC ==7.10.3 || ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.3
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/haskell-servant/servant-quickcheck
 
 flag long-tests
@@ -31,108 +24,115 @@ flag long-tests
   default:     False
 
 library
-  exposed-modules:     Servant.QuickCheck
-                     , Servant.QuickCheck.Internal
-                     , Servant.QuickCheck.Internal.Predicates
-                     , Servant.QuickCheck.Internal.HasGenRequest
-                     , Servant.QuickCheck.Internal.QuickCheck
-                     , Servant.QuickCheck.Internal.Equality
-                     , Servant.QuickCheck.Internal.ErrorTypes
-  build-depends:       base >=4.8 && <4.13
-                     , base-compat-batteries >= 0.10.1 && <0.11
-                     , aeson > 0.8 && < 2
-                     , bytestring == 0.10.*
-                     , case-insensitive == 1.2.*
-                     , clock >= 0.7 && < 0.8
-                     , data-default-class >= 0.0 && < 0.2
-                     , hspec >= 2.5.6 && < 2.6
+  exposed-modules:
+    Servant.QuickCheck
+    Servant.QuickCheck.Internal
+    Servant.QuickCheck.Internal.Equality
+    Servant.QuickCheck.Internal.ErrorTypes
+    Servant.QuickCheck.Internal.HasGenRequest
+    Servant.QuickCheck.Internal.Predicates
+    Servant.QuickCheck.Internal.QuickCheck
 
-                     , http-client >= 0.4.30 && < 0.6
-                     , http-media >= 0.6 && <0.8
-                     , http-types > 0.8 && < 0.13
-                     , mtl > 2.1 && < 2.3
-                     , pretty == 1.1.*
-                     , process >= 1.2 && < 1.7
-                     , QuickCheck > 2.7 && < 2.13
-                     , servant >= 0.13 && < 0.15
-                     , servant-client >= 0.13 && < 0.15
-                     , servant-server >= 0.13 && < 0.15
-                     , split == 0.2.*
-                     , string-conversions > 0.3 && < 0.5
-                     , temporary >= 1.2 && <1.4
-                     , text == 1.*
-                     , time >= 1.5 && < 1.9
-                     , warp >= 3.2.4 && < 3.3
+  build-depends:
+      aeson                  >=0.8    && <2
+    , base                   >=4.8    && <4.13
+    , base-compat-batteries  >=0.10.1 && <0.11
+    , bytestring             >=0.10   && <0.11
+    , case-insensitive       >=1.2    && <1.3
+    , clock                  >=0.7    && <0.8
+    , data-default-class     >=0.0    && <0.2
+    , hspec                  >=2.5.6  && <2.8
+    , http-client            >=0.4.30 && <0.7
+    , http-media             >=0.6    && <0.8
+    , http-types             >=0.8    && <0.13
+    , mtl                    >=2.1    && <2.3
+    , pretty                 >=1.1    && <1.2
+    , process                >=1.2    && <1.7
+    , QuickCheck             >=2.7    && <2.13
+    , servant                >=0.13   && <0.15
+    , servant-client         >=0.13   && <0.15
+    , servant-server         >=0.13   && <0.15
+    , split                  >=0.2    && <0.3
+    , string-conversions     >=0.3    && <0.5
+    , temporary              >=1.2    && <1.4
+    , text                   >=1      && <2
+    , time                   >=1.5    && <1.9
+    , warp                   >=3.2.4  && <3.3
 
-  if !impl(ghc >= 8.0)
-    build-depends:
-      semigroups >= 0.18.3 && <0.19
+  if !impl(ghc >=8.0)
+    build-depends: semigroups >=0.18.3 && <0.19
 
-  hs-source-dirs:      src
-  default-extensions:  TypeOperators
-                     , FlexibleInstances
-                     , FlexibleContexts
-                     , DataKinds
-                     , GADTs
-                     , MultiParamTypeClasses
-                     , DeriveFunctor
-                     , KindSignatures
-                     , RankNTypes
-                     , ConstraintKinds
-                     , DeriveGeneric
-                     , ScopedTypeVariables
-                     , OverloadedStrings
-                     , FunctionalDependencies
-                     , NoImplicitPrelude
-                     , DeriveDataTypeable
-  default-language:    Haskell2010
+  hs-source-dirs:     src
+  default-extensions:
+    NoImplicitPrelude
+    ConstraintKinds
+    DataKinds
+    DeriveDataTypeable
+    DeriveFunctor
+    DeriveGeneric
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    KindSignatures
+    MultiParamTypeClasses
+    OverloadedStrings
+    RankNTypes
+    ScopedTypeVariables
+    TypeOperators
+
+  default-language:   Haskell2010
 
 test-suite spec
-  type:                exitcode-stdio-1.0
-  ghc-options:         -Wall -threaded
-  default-language:    Haskell2010
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  other-modules:       Servant.QuickCheck.InternalSpec
-  build-tool-depends:  hspec-discover:hspec-discover
-  build-depends:       base
-                     , base-compat-batteries
-                     , aeson
-                     , servant-quickcheck
-                     , bytestring
-                     , hspec
-                     , hspec-core >= 2.5.5 && < 2.6
-                     , http-client
-                     , blaze-html
-                     , warp
-                     , servant-server
-                     , servant-client
-                     , servant
-                     , servant-blaze
-                     , transformers
-                     , QuickCheck
-                     , quickcheck-io
-  default-extensions:  TypeOperators
-                     , FlexibleInstances
-                     , FlexibleContexts
-                     , GADTs
-                     , DataKinds
-                     , NoImplicitPrelude
-                     , OverloadedStrings
-                     , ScopedTypeVariables
+  type:               exitcode-stdio-1.0
+  ghc-options:        -Wall -threaded
+  default-language:   Haskell2010
+  hs-source-dirs:     test
+  main-is:            Spec.hs
+  other-modules:      Servant.QuickCheck.InternalSpec
+  build-tool-depends: hspec-discover:hspec-discover -any
+  build-depends:
+      aeson
+    , base
+    , base-compat-batteries
+    , blaze-html
+    , bytestring
+    , hspec
+    , hspec-core             >=2.5.5 && <2.8
+    , http-client
+    , QuickCheck
+    , quickcheck-io
+    , servant
+    , servant-blaze
+    , servant-client
+    , servant-quickcheck
+    , servant-server
+    , transformers
+    , warp
+
+  default-extensions:
+    NoImplicitPrelude
+    DataKinds
+    FlexibleContexts
+    FlexibleInstances
+    GADTs
+    OverloadedStrings
+    ScopedTypeVariables
+    TypeOperators
+
   if flag(long-tests)
-      cpp-options: -DLONG_TESTS
+    cpp-options: -DLONG_TESTS
 
 test-suite example
-  type: exitcode-stdio-1.0
-  main-is: Main.hs
-  hs-source-dirs:
-    example
-  ghc-options: -Wall
+  type:             exitcode-stdio-1.0
+  main-is:          Main.hs
+  hs-source-dirs:   example
+  ghc-options:      -Wall
   build-depends:
       base
     , hspec
-    , servant-server
     , servant-quickcheck
+    , servant-server
     , text
+
   default-language: Haskell2010
