@@ -76,7 +76,7 @@ api = Proxy
 ```
 
 
-## servant-forgein and the HasForeignType Class
+## servant-foreign and the HasForeignType Class
 
 Servant-foreign allows us to look into the API we designed.
 The entry point is `listFromAPI` which takes three types and returns a list of endpoints:
