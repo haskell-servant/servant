@@ -53,6 +53,8 @@
   [#1104](https://github.com/haskell-servant/servant/pull/1104)
 - *servant-server* Reorder HTTP failure code priorities
   [#1103](https://github.com/haskell-servant/servant/pull/1103)
+- *servant-server* Re-organise internal modules
+  [#1139](https://github.com/haskell-servant/servant/pull/1139)
 - Allow `network-3.0`
   [#1107](https://github.com/haskell-servant/servant/pull/1107)
 - Add `NFData NoContent` instance

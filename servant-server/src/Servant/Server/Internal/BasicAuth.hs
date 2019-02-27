@@ -9,7 +9,7 @@ import           Control.Monad
                  (guard)
 import           Control.Monad.Trans
                  (liftIO)
-import qualified Data.ByteString                            as BS
+import qualified Data.ByteString                     as BS
 import           Data.ByteString.Base64
                  (decodeLenient)
 import           Data.Monoid
@@ -26,7 +26,7 @@ import           Network.Wai
 
 import           Servant.API.BasicAuth
                  (BasicAuthData (BasicAuthData))
-import           Servant.Server.Internal.RoutingApplication
+import           Servant.Server.Internal.DelayedIO
 import           Servant.Server.Internal.ServerError
 
 -- * Basic Auth

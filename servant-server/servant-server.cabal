@@ -52,8 +52,11 @@ library
     Servant.Server.Internal
     Servant.Server.Internal.BasicAuth
     Servant.Server.Internal.Context
+    Servant.Server.Internal.Delayed
+    Servant.Server.Internal.DelayedIO
     Servant.Server.Internal.Handler
     Servant.Server.Internal.Router
+    Servant.Server.Internal.RouteResult
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServerError
     Servant.Server.StaticFiles
