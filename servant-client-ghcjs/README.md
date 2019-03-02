@@ -4,12 +4,12 @@ Type safe querying of servant APIs from the browser.
 
 `servant-client-ghcjs` is much like `servant-client`, as both packages allow you to generate functions that query the endpoints of your servant API. Both packages should feel the same in usage. The big difference lies in how they perform the actual requests. `servant-client` (indirectly) uses your operating system's socket mechanisms, whereas `servant-client-ghcjs` uses your browser's [XHR](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest) mechanisms to send requests.
 
-This guide assumes knowledge of servant. Reading its [documentation](http://haskell-servant.readthedocs.io) is recommended if you're new to the subject.
+This guide assumes knowledge of servant. Reading its [documentation](http://docs.servant.dev) is recommended if you're new to the subject.
 
 ## Using servant-client-ghcjs
 `servant-client-ghcjs` should feel familiar if you've worked with `servant-client`.
 
-Take the following API (taken from the [Querying an API](http://haskell-servant.readthedocs.io/en/stable/tutorial/Client.html) section in the servant documentation)
+Take the following API (taken from the [Querying an API](http://docs.servant.dev/en/stable/tutorial/Client.html) section in the servant documentation)
 
 ```haskell
 {-# LANGUAGE DataKinds      #-}

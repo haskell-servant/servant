@@ -3,8 +3,8 @@ version:             0.10
 synopsis:            The servant tutorial
 description:
   The servant tutorial can be found at
-  <http://haskell-servant.readthedocs.org/>
-homepage:            http://haskell-servant.readthedocs.org/
+  <http://docs.servant.dev/>
+homepage:            http://docs.servant.dev/
 category:            Servant, Documentation
 license:             BSD3
 license-file:        LICENSE

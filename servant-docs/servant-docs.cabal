@@ -12,7 +12,7 @@ description:
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md CHANGELOG>
 
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE

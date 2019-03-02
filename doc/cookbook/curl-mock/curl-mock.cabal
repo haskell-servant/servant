@@ -1,7 +1,7 @@
 name:                cookbook-curl-mock
 version:             0.1
 synopsis:            Generate curl mock requests cookbook example
-homepage:            http://haskell-servant.readthedocs.org
+homepage:            http://docs.servant.dev
 license:             BSD3
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors

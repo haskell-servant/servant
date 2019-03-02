@@ -126,7 +126,7 @@ Content of "README.md"
 
 ## Getting Started
 
-We have a [tutorial](http://haskell-servant.readthedocs.org/en/stable/tutorial/index.html) that
+We have a [tutorial](http://docs.servant.dev/en/stable/tutorial/index.html) that
 introduces the core features of servant. After this article, you should be able
 to write your first servant webservices, learning the rest from the haddocks'
 examples.

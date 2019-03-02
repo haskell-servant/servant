@@ -8,7 +8,7 @@
 
 - **[servant-examples](https://github.com/sras/servant-examples)**:
 
-    Similar to [the cookbook](https://haskell-servant.readthedocs.io/en/latest/cookbook/index.html) but
+    Similar to [the cookbook](https://docs.servant.dev/en/latest/cookbook/index.html) but
     with no explanations, for developers who just want to look at code examples to find out how to do X or Y
     with servant.
 

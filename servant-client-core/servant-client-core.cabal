@@ -8,7 +8,7 @@ description:
   This library provides backend-agnostic generation of client functions. For
   more information, see the README.
 
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
