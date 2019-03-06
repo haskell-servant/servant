@@ -203,18 +203,18 @@
       [#985](https://github.com/haskell-servant/servant/pull/985)
 
 - *Documentation* Tutorial and new recipes
-    - [Using free client](https://haskell-servant.readthedocs.io/en/latest/cookbook/using-free-client/UsingFreeClient.html)
+    - [Using free client](https://docs.servant.dev/en/latest/cookbook/using-free-client/UsingFreeClient.html)
       [#1005](https://github.com/haskell-servant/servant/pull/1005)
-    - [Generating mock curl calls](https://haskell-servant.readthedocs.io/en/latest/cookbook/curl-mock/CurlMock.html)
+    - [Generating mock curl calls](https://docs.servant.dev/en/latest/cookbook/curl-mock/CurlMock.html)
       [#1033](https://github.com/haskell-servant/servant/pull/1033)
-    - [Error logging with Sentry](https://haskell-servant.readthedocs.io/en/latest/cookbook/sentry/Sentry.html)
+    - [Error logging with Sentry](https://docs.servant.dev/en/latest/cookbook/sentry/Sentry.html)
       [#987](https://github.com/haskell-servant/servant/pull/987)
-    - [Hoist Server With Context for Custom Monads](https://haskell-servant.readthedocs.io/en/latest/cookbook/hoist-server-with-context/HoistServerWithContext.html)
+    - [Hoist Server With Context for Custom Monads](https://docs.servant.dev/en/latest/cookbook/hoist-server-with-context/HoistServerWithContext.html)
       [#1044](https://github.com/haskell-servant/servant/pull/1044)
-    - [How To Test Servant Applications](https://haskell-servant.readthedocs.io/en/latest/cookbook/testing/Testing.html)
+    - [How To Test Servant Applications](https://docs.servant.dev/en/latest/cookbook/testing/Testing.html)
       [#1050](https://github.com/haskell-servant/servant/pull/1050)
     - `genericServeT`: using custom monad with `Servant.API.Generic`
-      in [Using generics](https://haskell-servant.readthedocs.io/en/latest/cookbook/generic/Generic.html)
+      in [Using generics](https://docs.servant.dev/en/latest/cookbook/generic/Generic.html)
       [#1058](https://github.com/haskell-servant/servant/pull/1058)
     - Tutorial
       [#974](https://github.com/haskell-servant/servant/pull/974)
@@ -282,7 +282,7 @@
   Just like `hoistServer` allows us to change the monad in which request handlers
   of a web application live in, we also have `hoistClient` for changing the monad
   in which *client functions* live.
-  Read [tutorial section for more information](https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
+  Read [tutorial section for more information](https://docs.servant.dev/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
   ([#936](https://github.com/haskell-servant/servant/pull/936))
 
   iF you have own combinators, you'll need to define a new method of
@@ -329,10 +329,10 @@
 - Added tests or enabled tests
   ([#975](https://github.com/haskell-servant/servant/pull/975))
 
-- Add [pagination cookbook recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/pagination/Pagination.html)
+- Add [pagination cookbook recipe](https://docs.servant.dev/en/release-0.14/cookbook/pagination/Pagination.html)
   ([#946](https://github.com/haskell-servant/servant/pull/946))
 
-- Add [`servant-flatten` "spice" to the structuring api recipe](https://haskell-servant.readthedocs.io/en/release-0.14/cookbook/structuring-apis/StructuringApis.html)
+- Add [`servant-flatten` "spice" to the structuring api recipe](https://docs.servant.dev/en/release-0.14/cookbook/structuring-apis/StructuringApis.html)
   ([#929](https://github.com/haskell-servant/servant/pull/929))
 
 - Dependency updates
@@ -382,9 +382,9 @@
   ```
 
   See tutorial for more details
-  - [A web API as a type - StreamGet and StreamPost](http://haskell-servant.readthedocs.io/en/release-0.13/tutorial/ApiType.html#streamget-and-streampost)
-  - [Serving an API - streaming endpoints](http://haskell-servant.readthedocs.io/en/release-0.13/tutorial/Server.html#streaming-endpoints)
-  - [Querying an API - Querying Streaming APIs](http://haskell-servant.readthedocs.io/en/release-0.13/tutorial/Client.html#querying-streaming-apis)
+  - [A web API as a type - StreamGet and StreamPost](http://docs.servant.dev/en/release-0.13/tutorial/ApiType.html#streamget-and-streampost)
+  - [Serving an API - streaming endpoints](http://docs.servant.dev/en/release-0.13/tutorial/Server.html#streaming-endpoints)
+  - [Querying an API - Querying Streaming APIs](http://docs.servant.dev/en/release-0.13/tutorial/Client.html#querying-streaming-apis)
 
 - *servant* Add `Servant.API.Modifiers`
   ([#873](https://github.com/haskell-servant/servant/pull/873)
@@ -415,7 +415,7 @@
   ([#893](https://github.com/haskell-servant/servant/pull/893))
 
 - *Cookbook* example projects at
-  http://haskell-servant.readthedocs.io/en/master/cookbook/index.html
+  http://docs.servant.dev/en/master/cookbook/index.html
   ([#867](https://github.com/haskell-servant/servant/pull/867)
    [#892](https://github.com/haskell-servant/servant/pull/882))
 

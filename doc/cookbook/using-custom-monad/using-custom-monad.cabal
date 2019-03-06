@@ -1,7 +1,7 @@
 name:                cookbook-using-custom-monad
 version:             0.1
 synopsis:            Using custom monad to pass a state between handlers
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 license:             BSD3
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors

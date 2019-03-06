@@ -9,7 +9,7 @@ description:         Servant Stream support for conduit.
   .
   Provides 'ToSourceIO' and 'FromSourceIO' instances for 'ConduitT'.
 
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE

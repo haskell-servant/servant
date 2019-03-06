@@ -3,7 +3,7 @@ Helpful Links
 -------------
 
 - the central documentation (this site):
-  `haskell-servant.readthedocs.org <http://haskell-servant.readthedocs.org/>`_
+  `docs.servant.dev <http://docs.servant.dev/>`_
 
 - the github repo:
   `github.com/haskell-servant/servant <https://github.com/haskell-servant/servant>`_
@@ -18,7 +18,7 @@ Helpful Links
   `groups.google.com/forum/#!forum/haskell-servant <https://groups.google.com/forum/#!forum/haskell-servant>`_
 
 - blog posts and videos and slides of some talks on servant:
-  `haskell-servant.github.io <http://haskell-servant.github.io>`_
+  `www.servant.dev <http://www.servant.dev>`_
 
 - the servant packages on hackage:
 

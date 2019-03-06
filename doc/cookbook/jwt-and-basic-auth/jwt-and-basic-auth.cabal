@@ -3,7 +3,7 @@ version:             0.0.1
 synopsis:            JWT and basic access authentication cookbook example
 description:         Using servant-auth to support both JWT-based and basic
                      authentication.
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 license:             BSD3
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors

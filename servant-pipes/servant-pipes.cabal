@@ -9,7 +9,7 @@ description:         Servant Stream support for pipes.
   .
   Provides 'ToSourceIO' and 'FromSourceIO' instances for 'Proxy' and 'SafeT'.
 
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 bug-reports:         http://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE

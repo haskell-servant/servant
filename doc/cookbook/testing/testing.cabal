@@ -2,7 +2,7 @@ name:                cookbook-testing
 version:             0.0.1
 synopsis:            Common testing patterns in Servant apps
 description:         This recipe includes various strategies for writing tests for Servant.
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 license:             BSD3
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors

@@ -1,7 +1,7 @@
 name:                cookbook-sentry
 version:             0.1
 synopsis:            Collecting runtime exceptions using Sentry
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 license:             BSD3
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors

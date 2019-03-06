@@ -1,7 +1,7 @@
 name:                cookbook-structuring-apis
 version:             0.1
 synopsis:            Example that shows how APIs can be structured
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 license:             BSD3
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors

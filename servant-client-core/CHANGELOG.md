@@ -168,7 +168,7 @@
   Just like `hoistServer` allows us to change the monad in which request handlers
   of a web application live in, we also have `hoistClient` for changing the monad
   in which *client functions* live.
-  Read [tutorial section for more information](https://haskell-servant.readthedocs.io/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
+  Read [tutorial section for more information](https://docs.servant.dev/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
   ([#936](https://github.com/haskell-servant/servant/pull/936))
 
   iF you have own combinators, you'll need to define a new method of

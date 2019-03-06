@@ -1,7 +1,7 @@
 name:                cookbook-pagination
 version:             2.1
 synopsis:            Pagination with Servant example
-homepage:            http://haskell-servant.readthedocs.org/
+homepage:            http://docs.servant.dev/
 license:             BSD3
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
