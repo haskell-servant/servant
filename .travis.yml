@@ -4,6 +4,8 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
+# version: 0.2.1
+#
 language: c
 dist: xenial
 
@@ -32,8 +34,8 @@ before_cache:
 
 matrix:
   include:
-    - compiler: "ghc-8.6.3"
-      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.3], sources: [hvr-ghc]}}
+    - compiler: "ghc-8.6.4"
+      addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.6.4], sources: [hvr-ghc]}}
     - compiler: "ghc-8.4.4"
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-2.4,ghc-8.4.4], sources: [hvr-ghc]}}
     - compiler: "ghc-8.2.2"
@@ -43,8 +45,6 @@ matrix:
 
 before_install:
   - HC=/opt/ghc/bin/${CC}
-  - HCVER=$(echo "$TRAVIS_COMPILER" | sed 's/ghc-//')
-  - echo $HCVER
   - HCPKG=${HC/ghc/ghc-pkg}
   - unset CC
   - CABAL=/opt/ghc/bin/cabal
@@ -78,19 +78,19 @@ install:
   - "printf 'packages: \"servant-machines\"\\n' >> cabal.project"
   - "printf 'packages: \"servant-conduit\"\\n' >> cabal.project"
   - "printf 'packages: \"servant-pipes\"\\n' >> cabal.project"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/basic-auth\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/curl-mock\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/basic-streaming\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/db-postgres-pool\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/db-sqlite-simple\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/file-upload\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/generic\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/https\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/pagination\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/testing\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/structuring-apis\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/using-custom-monad\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"doc/cookbook/using-free-client\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/basic-auth\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/curl-mock\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/basic-streaming\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/db-postgres-pool\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/db-sqlite-simple\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/file-upload\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/generic\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/https\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/pagination\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/testing\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/structuring-apis\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/using-custom-monad\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"doc/cookbook/using-free-client\"\\n' >> cabal.project ; fi"
   - "echo 'constraints: foundation >=0.0.14' >> cabal.project"
   - "echo 'constraints: memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-quickcheck:servant' >> cabal.project"
@@ -156,19 +156,19 @@ script:
   - "printf 'packages: \"servant-machines-*/*.cabal\"\\n' >> cabal.project"
   - "printf 'packages: \"servant-conduit-*/*.cabal\"\\n' >> cabal.project"
   - "printf 'packages: \"servant-pipes-*/*.cabal\"\\n' >> cabal.project"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-basic-auth-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-curl-mock-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-basic-streaming-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-db-postgres-pool-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-db-sqlite-simple-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-file-upload-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-generic-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-https-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-pagination-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-testing-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-structuring-apis-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-using-custom-monad-*/*.cabal\"\\n' >> cabal.project ; fi"
-  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80603 ] ; then printf 'packages: \"cookbook-using-free-client-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-basic-auth-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-curl-mock-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-basic-streaming-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-db-postgres-pool-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-db-sqlite-simple-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-file-upload-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-generic-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-https-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-pagination-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-testing-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-structuring-apis-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-using-custom-monad-*/*.cabal\"\\n' >> cabal.project ; fi"
+  - "if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then printf 'packages: \"cookbook-using-free-client-*/*.cabal\"\\n' >> cabal.project ; fi"
   - "echo 'constraints: foundation >=0.0.14' >> cabal.project"
   - "echo 'constraints: memory <0.14.12 || >0.14.12' >> cabal.project"
   - "echo 'allow-newer: servant-quickcheck:servant' >> cabal.project"
