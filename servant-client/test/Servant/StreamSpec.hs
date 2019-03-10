@@ -1,17 +1,13 @@
 {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -40,9 +36,9 @@ import           Servant.API
                  NewlineFraming, NoFraming, OctetStream, ResultStream (..),
                  StreamGenerator (..), StreamGet)
 import           Servant.Client
-import           Servant.ClientSpec
+import           Servant.TestUtils
                  (Person (..))
-import qualified Servant.ClientSpec  as CS
+import qualified Servant.TestUtils  as TU
 import           Servant.Server
 
 #if MIN_VERSION_base(4,10,0)
@@ -116,7 +112,7 @@ testRunResultStream (ResultStream k)
   = k $ \act -> (,,,) <$> act <*> act <*> act <*> act
 
 streamSpec :: Spec
-streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
+streamSpec = beforeAll (TU.startWaiApp server) $ afterAll TU.endWaiApp $ do
 
     it "works with Servant.API.StreamGet.Newline" $ \(_, baseUrl) -> do
        Right res <- runClient getGetNL baseUrl

@@ -76,8 +76,15 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules:
-      Servant.ClientSpec
+      Servant.BasicAuthSpec
+      Servant.FailSpec
+      Servant.GenAuthSpec
+      Servant.GenericClientSpec
+      Servant.HoistClientSpec
       Servant.StreamSpec
+      Servant.SuccessSpec
+      Servant.TestUtils
+      Servant.WrappedApiSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
