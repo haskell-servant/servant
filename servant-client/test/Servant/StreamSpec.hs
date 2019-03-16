@@ -39,9 +39,6 @@ import           Servant.API
                  NewlineFraming, NoFraming, OctetStream, SourceIO, StreamGet,
                  )
 import           Servant.Client.Streaming
-import           Servant.ClientSpec
-                 (Person (..))
-import qualified Servant.ClientSpec            as CS
 import           Servant.Server
 import           Servant.Test.ComprehensiveAPI
 import           Servant.Types.SourceT
@@ -52,6 +49,8 @@ import           System.IO.Unsafe
 import           System.Mem
                  (performGC)
 import           Test.Hspec
+import           Servant.ClientTestUtils (Person(..))
+import qualified Servant.ClientTestUtils as CT
 
 #if MIN_VERSION_base(4,10,0)
 import           GHC.Stats
@@ -120,7 +119,7 @@ testRunSourceIO :: SourceIO a
 testRunSourceIO = runExceptT . runSourceT
 
 streamSpec :: Spec
-streamSpec = beforeAll (CS.startWaiApp server) $ afterAll CS.endWaiApp $ do
+streamSpec = beforeAll (CT.startWaiApp server) $ afterAll CT.endWaiApp $ do
     it "works with Servant.API.StreamGet.Newline" $ \(_, baseUrl) -> do
         withClient getGetNL baseUrl $ \(Right res) ->
             testRunSourceIO res `shouldReturn` Right [alice, bob, alice]
