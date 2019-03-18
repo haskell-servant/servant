@@ -46,7 +46,7 @@ import           Network.Wai.Test
                  simpleHeaders, simpleStatus)
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
-                 BasicAuthData (BasicAuthData), Capture, CaptureAll, Delete,
+                 BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll, Lenient, Strict, Delete,
                  EmptyAPI, Get, Header, Headers, HttpVersion, IsSecure (..),
                  JSON, NoContent (..), NoFraming, OctetStream, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
@@ -54,7 +54,7 @@ import           Servant.API
                  addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
-                 emptyServer, err401, err403, err404, serve, serveWithContext)
+                 emptyServer, err400, err401, err403, err404, serve, serveWithContext)
 import           Servant.Test.ComprehensiveAPI
 import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
@@ -204,13 +204,27 @@ verbSpec = describe "Servant.API.Verb" $ do
 ------------------------------------------------------------------------------
 
 type CaptureApi = Capture "legs" Integer :> Get '[JSON] Animal
+                :<|> "ears" :> Capture' '[Lenient] "ears" Integer :> Get '[JSON] Animal
+                :<|> "eyes" :> Capture' '[Strict] "eyes" Integer :> Get '[JSON] Animal
 captureApi :: Proxy CaptureApi
 captureApi = Proxy
-captureServer :: Integer -> Handler Animal
-captureServer legs = case legs of
-  4 -> return jerry
-  2 -> return tweety
-  _ -> throwError err404
+
+captureServer :: Server CaptureApi
+captureServer = getLegs :<|> getEars :<|> getEyes
+  where getLegs :: Integer -> Handler Animal
+        getLegs legs = case legs of
+          4 -> return jerry
+          2 -> return tweety
+          _ -> throwError err404
+
+        getEars :: Either String Integer -> Handler Animal
+        getEars (Left e) = return chimera -- ignore integer parse error, return weird animal
+        getEars (Right 2) = return jerry
+        getEars (Right _) = throwError err404
+
+        getEyes :: Integer -> Handler Animal
+        getEyes 2 = return jerry
+        getEyes _ = throwError err404
 
 captureSpec :: Spec
 captureSpec = do
@@ -223,6 +237,17 @@ captureSpec = do
 
       it "returns 400 if the decoding fails" $ do
         get "/notAnInt" `shouldRespondWith` 400
+
+      it "returns an animal if eyes or ears are 2" $ do
+        get "/ears/2" `shouldRespondWith` 200
+        get "/eyes/2" `shouldRespondWith` 200
+
+      it "returns a weird animal on Lenient Capture" $ do
+        response <- get "/ears/bla"
+        liftIO $ decode' (simpleBody response) `shouldBe` Just chimera
+
+      it "returns 400 if parsing integer fails on Strict Capture" $ do
+        get "/eyes/bla" `shouldRespondWith` 400
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))
@@ -779,6 +804,10 @@ jerry = Animal "Mouse" 4
 
 tweety :: Animal
 tweety = Animal "Bird" 2
+
+-- weird animal with non-integer amount of ears
+chimera :: Animal
+chimera = Animal "Chimera" (-1)
 
 beholder :: Animal
 beholder = Animal "Beholder" 0
