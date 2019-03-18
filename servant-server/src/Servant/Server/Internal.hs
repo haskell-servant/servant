@@ -87,7 +87,7 @@ import           Servant.API.ResponseHeaders
 import qualified Servant.Types.SourceT                      as S
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam,
-                 parseUrlPieceMaybe, parseUrlPieces)
+                 parseUrlPieceMaybe, parseUrlPieces, parseUrlPiece)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -166,11 +166,11 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
 -- > server = getBook
 -- >   where getBook :: Text -> Handler Book
 -- >         getBook isbn = ...
-instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
+instance (KnownSymbol capture, FromHttpApiData a, HasServer api context, SBoolI (FoldLenient mods))
       => HasServer (Capture' mods capture a :> api) context where
 
   type ServerT (Capture' mods capture a :> api) m =
-     a -> ServerT api m
+     If (FoldLenient mods) (Either String a) a -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
@@ -178,9 +178,11 @@ instance (KnownSymbol capture, FromHttpApiData a, HasServer api context)
     CaptureRouter $
         route (Proxy :: Proxy api)
               context
-              (addCapture d $ \ txt -> case parseUrlPieceMaybe txt of
-                 Nothing -> delayedFail err400
-                 Just v  -> return v
+              (addCapture d $ \ txt -> case ( sbool :: SBool (FoldLenient mods)
+                                            , parseUrlPiece txt :: Either T.Text a) of
+                 (SFalse, Left e) -> delayedFail err400 { errBody = cs e }
+                 (SFalse, Right v) -> return v
+                 (STrue, piece) -> return $ (either (Left . cs) Right) piece
               )
 
 -- | If you use 'CaptureAll' in one of the endpoints for your API,
