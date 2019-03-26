@@ -90,7 +90,7 @@ instance MFunctor SourceT where
         Effect $ f $ fmap (hoist f) $ m return
 
 instance (Monad m) => Semigroup (SourceT m a) where
-    (SourceT l) <> (SourceT r) = SourceT $ \k -> l k >> r k
+    (SourceT l) <> (SourceT r) = SourceT $ \k -> l $ k . (<> Effect (r (pure . id)))
 
 instance (Monad m) => Monoid (SourceT m a) where
     mempty = SourceT ($ mempty)
