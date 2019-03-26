@@ -89,6 +89,12 @@ instance MFunctor SourceT where
     hoist f (SourceT m) = SourceT $ \k -> k $
         Effect $ f $ fmap (hoist f) $ m return
 
+instance (Monad m) => Semigroup (SourceT m a) where
+    (SourceT l) <> (SourceT r) = SourceT $ \k -> l k >> r k
+
+instance (Monad m) => Monoid (SourceT m a) where
+    mempty = SourceT ($ Stop)
+
 -- | Doesn't generate 'Error' constructors. 'SourceT' doesn't shrink.
 instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (SourceT m a) where
     arbitrary = fromStepT <$> QC.arbitrary
