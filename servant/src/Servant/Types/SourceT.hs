@@ -93,7 +93,7 @@ instance (Monad m) => Semigroup (SourceT m a) where
     (SourceT l) <> (SourceT r) = SourceT $ \k -> l k >> r k
 
 instance (Monad m) => Monoid (SourceT m a) where
-    mempty = SourceT ($ Stop)
+    mempty = SourceT ($ mempty)
 
 -- | Doesn't generate 'Error' constructors. 'SourceT' doesn't shrink.
 instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (SourceT m a) where
@@ -155,6 +155,16 @@ instance MFunctor StepT where
         go (Skip s)    = Skip (go s)
         go (Yield x s) = Yield x (go s)
         go (Effect ms) = Effect (f (fmap go ms))
+
+instance (Functor m) => Semigroup (StepT m a) where
+    Stop      <> r = r
+    Error err <> _ = Error err
+    Skip s    <> r = Skip (s <> r)
+    Yield x s <> r = Yield x (s <> r)
+    Effect ms <> r = Effect ((<> r) <$> ms)
+
+instance (Functor m) => Monoid (StepT m a) where
+    mempty = Stop
 
 -- | Doesn't generate 'Error' constructors.
 instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
