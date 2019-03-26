@@ -89,6 +89,20 @@ instance MFunctor SourceT where
     hoist f (SourceT m) = SourceT $ \k -> k $
         Effect $ f $ fmap (hoist f) $ m return
 
+-- | >>> source "xy" <> source "z" :: SourceT Identity Char
+-- fromStepT (Effect (Identity (Yield 'x' (Yield 'y' (Yield 'z' Stop)))))
+--
+instance Functor m => Semigroup (SourceT m a) where
+    SourceT withL <> SourceT withR = SourceT $ \ret ->
+        withL $ \l ->
+        withR $ \r ->
+        ret $ l <> r
+
+-- | >>> mempty :: SourceT Maybe Int
+-- fromStepT (Effect (Just Stop))
+instance Functor m => Monoid (SourceT m a) where
+    mempty = fromStepT mempty
+
 -- | Doesn't generate 'Error' constructors. 'SourceT' doesn't shrink.
 instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (SourceT m a) where
     arbitrary = fromStepT <$> QC.arbitrary
@@ -149,6 +163,22 @@ instance MFunctor StepT where
         go (Skip s)    = Skip (go s)
         go (Yield x s) = Yield x (go s)
         go (Effect ms) = Effect (f (fmap go ms))
+
+instance Functor m => Semigroup (StepT m a) where
+    Stop      <> r = r
+    Error err <> _ = Error err
+    Skip s    <> r = Skip (s <> r)
+    Yield x s <> r = Yield x (s <> r)
+    Effect ms <> r = Effect ((<> r) <$> ms)
+
+-- | >>> mempty :: StepT [] Int
+-- Stop
+--
+-- >>> mempty :: StepT Identity Int
+-- Stop
+--
+instance Functor m => Monoid (StepT m a) where
+    mempty = Stop
 
 -- | Doesn't generate 'Error' constructors.
 instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
