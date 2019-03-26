@@ -96,6 +96,28 @@
 
 ```
 
+## GET /capture-lenient/:foo
+
+### Captures:
+
+- *foo*: Capture foo Int
+
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+```javascript
+
+```
+
 ## GET /description
 
 ### foo
