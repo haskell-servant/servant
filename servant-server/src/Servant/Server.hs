@@ -110,7 +110,7 @@ import           Servant.Server.Internal
 -- Example:
 --
 -- > type MyApi = "books" :> Get '[JSON] [Book] -- GET /books
--- >         :<|> "books" :> ReqBody Book :> Post '[JSON] Book -- POST /books
+-- >         :<|> "books" :> ReqBody '[JSON] Book :> Post '[JSON] Book -- POST /books
 -- >
 -- > server :: Server MyApi
 -- > server = listAllBooks :<|> postBook
