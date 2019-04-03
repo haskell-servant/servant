@@ -1,0 +1,232 @@
+{-# START_FILE package.yaml #-}
+name:                {{name}}
+version:             0.1.0.0
+github:              "{{github-username}}{{^github-username}}githubuser{{/github-username}}/{{name}}"
+license:             BSD3
+author:              "{{author-name}}{{^author-name}}Author name here{{/author-name}}"
+maintainer:          "{{author-email}}{{^author-email}}example@example.com{{/author-email}}"
+copyright:           "{{copyright}}{{^copyright}}{{year}}{{^year}}2019{{/year}} {{author-name}}{{^author-name}}Author name here{{/author-name}}{{/copyright}}"
+
+extra-source-files:
+  - README.md
+  - ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            {{category}}{{^category}}Web{{/category}}
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/{{github-username}}{{^github-username}}githubuser{{/github-username}}/{{name}}#readme>
+
+dependencies:
+  - base >= 4.7 && < 5
+  - aeson
+  - servant-server
+  - wai
+  - warp
+
+library:
+  source-dirs: src
+
+executables:
+  {{name}}-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - {{name}}
+
+tests:
+  {{name}}-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - {{name}}
+      # Property based testing
+      - QuickCheck
+      - quickcheck-instances
+      # Unit testing
+      - HUnit
+      # Test framework (aggregation and discovery)
+      - tasty
+      - tasty-quickcheck
+      - tasty-hunit
+      - tasty-discover
+
+{-# START_FILE Setup.hs #-}
+import           Distribution.Simple
+
+main = defaultMain
+
+{-# START_FILE test/Spec.hs #-}
+{-# OPTIONS_GHC -F -pgmF tasty-discover -optF --tree-display
+ #-}
+-- Driver module responsible for discovering all other modules, and tests inside modules, using tasty-discover preprocessor.
+
+{-# START_FILE test/LibSpec.hs #-}
+module LibSpec where
+
+import           Data.Aeson
+import           Lib
+import           Test.QuickCheck
+import           Test.QuickCheck.Instances ()
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
+
+-- Property test
+test_findById_no_user =
+  testProperty "findById for non existing users" $ \(User uid _ _) -> uid /= 1 && uid /= 2 ==> findById uid === Nothing
+
+-- Unit test
+test_findById_users =
+  testCase "findById for existing users" $ do
+    findById (userId albert) @?= Just albert
+    findById (userId isaac) @?= Just isaac
+
+instance Arbitrary User where
+  arbitrary = User <$> arbitrary <*> arbitrary <*> arbitrary
+
+{-# START_FILE src/Lib.hs #-}
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeOperators   #-}
+
+module Lib
+  ( startApp
+  , app
+  , findById
+  , isaac
+  , albert
+  , User(..)
+  ) where
+
+import           Data.Aeson
+import           Data.Aeson.TH
+import           Data.List
+import           Data.Maybe
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           Servant
+
+data User = User
+  { userId        :: Int
+  , userFirstName :: String
+  , userLastName  :: String
+  } deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''User)
+
+-- GET http://localhost:8080/users
+type API
+   = "ping" :> Get '[ JSON] String
+     :<|> "users" :> QueryParam "userId" Int :> Get '[ JSON] [User]
+
+startApp :: IO ()
+startApp = run 8080 app
+
+app :: Application
+app = serve api server
+
+api :: Proxy API
+api = Proxy
+
+server :: Server API
+server = return "pong" :<|> handleUsers
+
+handleUsers :: Maybe Int -> Handler [User]
+handleUsers Nothing    = return users
+handleUsers (Just uid) = return . maybeToList . findById $ uid
+
+isaac = User 1 "Isaac" "Newton"
+
+albert = User 2 "Albert" "Einstein"
+
+users :: [User]
+users = [isaac, albert]
+
+findById :: Int -> Maybe User
+findById requestedId = find (\user -> userId user == requestedId) users
+
+{-# START_FILE app/Main.hs #-}
+module Main where
+
+import           Lib
+
+main :: IO ()
+main = startApp
+
+{-# START_FILE README.md #-}
+# {{name}}
+
+## Build
+`stack build`
+
+## Test
+`stack test`
+
+## Run the server:
+`stack exec {{name}}-exe`
+
+## Try the application
+
+### Ping
+http://localhost:8080/ping
+
+### Users
+http://localhost:8080/users
+http://localhost:8080/users?userId=1
+
+{-# START_FILE ChangeLog.md #-}
+# Changelog for {{name}}
+
+## Unreleased changes
+
+{-# START_FILE .hindent.yaml #-}
+# For Servant API declaration
+line-breaks: [":<|>"]
+
+{-# START_FILE LICENSE #-}
+Copyright {{author-name}}{{^author-name}}Author name here{{/author-name}} (c) {{year}}{{^year}}2019{{/year}}
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+
+    * Neither the name of {{author-name}}{{^author-name}}Author name here{{/author-name}} nor the names of other
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+{-# START_FILE .gitignore #-}
+.stack-work/
+{{name}}.cabal
+*~
