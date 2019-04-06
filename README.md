@@ -9,7 +9,7 @@ introduces the core features of servant. After this article, you should be able
 to write your first servant webservices, learning the rest from the haddocks'
 examples.
 
-If you want to test and see for yourself, create a new project using `stack new <your project name> https://github.com/haskell-servant/servant/servant-minimalist.hsfiles`
+If you want to test and see for yourself, create a new project using `stack new <your project name> https://raw.githubusercontent.com/haskell-servant/servant/master/servant-minimalist.hsfiles`
 
 The central documentation can be found [here](http://docs.servant.dev/).
 Other blog posts, videos and slides can be found on the
