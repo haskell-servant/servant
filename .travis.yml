@@ -4,7 +4,7 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.3.20190326
+# version: 0.3.20190413
 #
 language: c
 dist: xenial
@@ -122,6 +122,7 @@ install:
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/structuring-apis"' >> cabal.project ; fi
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/using-custom-monad"' >> cabal.project ; fi
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/using-free-client"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/open-id-connect"' >> cabal.project ; fi
   - |
     echo "constraints:                 foundation >=0.0.14"               >> cabal.project
     echo "constraints:                 memory <0.14.12 || >0.14.12"       >> cabal.project
@@ -132,7 +133,7 @@ install:
     echo "allow-newer:                 servant-quickcheck:http-client"    >> cabal.project
     echo "optimization:                False"                             >> cabal.project
     echo "write-ghc-environment-files: always"                            >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|open-id-connect|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then (cd "servant" && autoreconf -i); fi
@@ -159,6 +160,10 @@ install:
   - if [ -f "doc/cookbook/structuring-apis/configure.ac" ]; then (cd "doc/cookbook/structuring-apis" && autoreconf -i); fi
   - if [ -f "doc/cookbook/using-custom-monad/configure.ac" ]; then (cd "doc/cookbook/using-custom-monad" && autoreconf -i); fi
   - if [ -f "doc/cookbook/using-free-client/configure.ac" ]; then (cd "doc/cookbook/using-free-client" && autoreconf -i); fi
+  - if [ -f "doc/cookbook/open-id-connect/configure.ac" ]; then (cd "doc/cookbook/open-id-connect" && autoreconf -i); fi
+  - ${CABAL} v2-freeze -w ${HC} ${TEST} ${BENCH} | color_cabal_output
+  - "cat cabal.project.freeze | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
+  - rm  cabal.project.freeze
 script:
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
   # Packaging...
@@ -198,6 +203,7 @@ script:
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-structuring-apis-*/*.cabal"' >> cabal.project ; fi
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-using-custom-monad-*/*.cabal"' >> cabal.project ; fi
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-using-free-client-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "open-id-connect-*/*.cabal"' >> cabal.project ; fi
   - |
     echo "constraints:                 foundation >=0.0.14"               >> cabal.project
     echo "constraints:                 memory <0.14.12 || >0.14.12"       >> cabal.project
@@ -208,7 +214,7 @@ script:
     echo "allow-newer:                 servant-quickcheck:http-client"    >> cabal.project
     echo "optimization:                False"                             >> cabal.project
     echo "write-ghc-environment-files: always"                            >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|open-id-connect|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - echo -en 'travis_fold:end:unpack\\r'
