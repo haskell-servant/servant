@@ -23,12 +23,7 @@ import           Test.QuickCheck.Gen     (generate, unGen)
 import           Test.QuickCheck.Random  (mkQCGen)
 
 
-#if MIN_VERSION_servant(0,8,0)
-import Servant.API.Internal.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
-#else
-import Servant.API.Internal.Test.ComprehensiveAPI (ComprehensiveAPI,
-                                                   comprehensiveAPI)
-#endif
+import Servant.Test.ComprehensiveAPI (comprehensiveAPIWithoutStreamingOrRaw)
 
 import Servant.QuickCheck
 import Servant.QuickCheck.Internal (genRequest, runGenRequest,
@@ -154,7 +149,7 @@ isComprehensiveSpec :: Spec
 isComprehensiveSpec = describe "HasGenRequest" $ do
 
   it "has instances for all 'servant' combinators" $ do
-    let _g = genRequest comprehensiveAPIWithoutRaw
+    let _g = genRequest comprehensiveAPIWithoutStreamingOrRaw
     True `shouldBe` True -- This is a type-level check
 
 deepPathSpec :: Spec
@@ -373,9 +368,4 @@ noOfTestCases :: Int
 noOfTestCases = 20000
 #else
 noOfTestCases = 1000
-#endif
-
-#if !MIN_VERSION_servant(0,8,0)
-comprehensiveAPIWithoutRaw :: Proxy ComprehensiveAPI
-comprehensiveAPIWithoutRaw = comprehensiveAPI
 #endif

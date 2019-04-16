@@ -1,5 +1,5 @@
 name:               servant-quickcheck
-version:            0.0.7.3
+version:            0.0.7.4
 synopsis:           QuickCheck entire APIs
 description:
   This packages provides QuickCheck properties that are tested across an entire
@@ -43,15 +43,15 @@ library
     , data-default-class     >=0.0    && <0.2
     , hspec                  >=2.5.6  && <2.8
     , http-client            >=0.4.30 && <0.7
-    , http-media             >=0.6    && <0.8
+    , http-media             >=0.6    && <0.9
     , http-types             >=0.8    && <0.13
     , mtl                    >=2.1    && <2.3
     , pretty                 >=1.1    && <1.2
     , process                >=1.2    && <1.7
-    , QuickCheck             >=2.7    && <2.13
-    , servant                >=0.13   && <0.15
-    , servant-client         >=0.13   && <0.15
-    , servant-server         >=0.13   && <0.15
+    , QuickCheck             >=2.7    && <2.14
+    , servant                >=0.16   && <0.17
+    , servant-client         >=0.16   && <0.17
+    , servant-server         >=0.16   && <0.17
     , split                  >=0.2    && <0.3
     , string-conversions     >=0.3    && <0.5
     , temporary              >=1.2    && <1.4
