@@ -102,6 +102,7 @@ instance Functor m => Semigroup (SourceT m a) where
 -- fromStepT (Effect (Just Stop))
 instance Functor m => Monoid (SourceT m a) where
     mempty = fromStepT mempty
+    mappend = (<>)
 
 -- | Doesn't generate 'Error' constructors. 'SourceT' doesn't shrink.
 instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (SourceT m a) where
@@ -179,6 +180,7 @@ instance Functor m => Semigroup (StepT m a) where
 --
 instance Functor m => Monoid (StepT m a) where
     mempty = Stop
+    mappend = (<>)
 
 -- | Doesn't generate 'Error' constructors.
 instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
