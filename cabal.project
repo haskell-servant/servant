@@ -51,3 +51,5 @@ allow-newer:
   servant-quickcheck:servant, servant-quickcheck:servant-client, servant-quickcheck:servant-server,
   servant-quickcheck:hspec,
   servant-quickcheck:http-client
+
+allow-newer: http-media
