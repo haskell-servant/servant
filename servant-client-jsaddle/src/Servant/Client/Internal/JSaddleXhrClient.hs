@@ -15,10 +15,11 @@
 module Servant.Client.Internal.JSaddleXhrClient where
 
 import           Control.Arrow
+import           System.IO (stderr, hPutStrLn)
 import           Control.Concurrent
 import           Control.Monad
 import           Control.Monad.Catch
-                 (MonadCatch, MonadThrow)
+                 (MonadCatch, MonadThrow, catch)
 import           Control.Monad.Error.Class
                  (MonadError (..))
 import           Control.Monad.Reader
@@ -55,6 +56,7 @@ import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
 import           Servant.Client.Core
+import qualified Language.Javascript.JSaddle.Exception as JS
 
 -- Note: assuming encoding UTF-8
 
@@ -148,6 +150,7 @@ performRequest domc req = do
 
   pure resp
 
+
 -- * performing requests
 -- Performs the xhr and blocks until the response was received
 performXhr :: JS.XMLHttpRequest -> BaseUrl -> Request -> (JS.XMLHttpRequest -> DOM ()) -> DOM ()
@@ -173,11 +176,27 @@ performXhr xhr burl request fixUp = do
         4 -> void $ liftIO $ tryPutMVar waiter ()
         _ -> return ()
 
-    sendXhr xhr (toBody request)
+    catchJSExceptions $ sendXhr xhr (toBody request) -- We handle any errors in `toResponse`.
 
     liftIO $ takeMVar waiter
 
     cleanup
+  where
+    catchJSExceptions x = catch (catch x ignoreJSException) ignoreXHRError
+
+    -- On ghcjs we get a JSException.
+    ignoreJSException :: JS.JSException -> DOM ()
+    ignoreJSException = ignoreAny
+
+    -- For jsaddle we get an XHRError - sigh.
+    ignoreXHRError :: JS.XHRError -> DOM ()
+    ignoreXHRError = ignoreAny
+
+    ignoreAny :: Show e => e -> DOM ()
+    ignoreAny e = do
+      liftIO $ hPutStrLn stderr $ "servant-client-jsaddle: Ignoring exception in `sendXhr`: " <> show e
+      pure ()
+
 
 toUrl :: BaseUrl -> Request -> JS.JSString
 toUrl burl request =
