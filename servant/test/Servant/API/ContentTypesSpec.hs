@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -20,7 +21,7 @@ import           Data.Either
 import           Data.Function
                  (on)
 import           Data.List
-                 (maximumBy)
+                 (sortBy)
 import qualified Data.List.NonEmpty                               as NE
 import           Data.Maybe
                  (fromJust, isJust, isNothing)
@@ -134,17 +135,29 @@ spec = describe "Servant.API.ContentTypes" $ do
                 == Just ("application/json;charset=utf-8", encode x)
 
         it "respects the Accept spec ordering" $ do
-            let highest a b c = maximumBy (compare `on` snd)
+            let highest a b c = last $ sortBy (compare `on` snd)
+-- when qualities are same, http-media-0.8 picks first; 0.7 last.
+#if MIN_VERSION_http_media(0,8,0)
+                        [ ("text/plain;charset=utf-8", c)
+                        , ("application/json;charset=utf-8", b)
+                        , ("application/octet-stream", a)
+                        ]
+#else
                         [ ("application/octet-stream", a)
                         , ("application/json;charset=utf-8", b)
                         , ("text/plain;charset=utf-8", c)
                         ]
+#endif
             let acceptH a b c = addToAccept (Proxy :: Proxy OctetStream) a $
-                                    addToAccept (Proxy :: Proxy JSON) b $
-                                    addToAccept (Proxy :: Proxy PlainText ) c ""
+                                addToAccept (Proxy :: Proxy JSON)        b $
+                                addToAccept (Proxy :: Proxy PlainText )  c $
+                                ""
             let val a b c i = handleAcceptH (Proxy :: Proxy '[OctetStream, JSON, PlainText])
                                             (acceptH a b c) (i :: Int)
-            property $ \a b c i -> fst (fromJust $ val a b c i) == fst (highest a b c)
+            property $ \a b c i ->
+                let acc = acceptH a b c
+                in counterexample (show acc) $
+                    fst (fromJust $ val a b c i) === fst (highest a b c)
 
     describe "handleCTypeH" $ do
 
