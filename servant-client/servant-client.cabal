@@ -69,7 +69,7 @@ library
   build-depends:
       base-compat           >= 0.10.5   && < 0.11
     , http-client           >= 0.5.13.1 && < 0.7
-    , http-media            >= 0.7.1.3  && < 0.8
+    , http-media            >= 0.7.1.3  && < 0.9
     , http-types            >= 0.12.2   && < 0.13
     , exceptions            >= 0.10.0   && < 0.11
     , kan-extensions        >= 5.2      && < 5.3
@@ -125,7 +125,7 @@ test-suite spec
     , hspec             >= 2.6.0    && < 2.8
     , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 2.8.0.0  && < 3.1
-    , QuickCheck        >= 2.12.6.1 && < 2.13
+    , QuickCheck        >= 2.12.6.1 && < 2.14
     , servant           == 0.16.*
     , servant-server    == 0.16.*
     , tdigest           >= 0.2     && < 0.3
