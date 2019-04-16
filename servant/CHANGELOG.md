@@ -1,5 +1,10 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.16.0.1
+--------
+
+- Make tests work with `http-media-0.8`
+
 0.16
 ----
 
