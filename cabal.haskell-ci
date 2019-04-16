@@ -1,5 +1,5 @@
 folds: all-but-test
-branches: master
+branches: master release-0.16
 jobs-selection: any
 
 -- We have inplace packages (servant-js) so we skip installing dependencies in a separate step
@@ -14,3 +14,9 @@ cabal-check: False
 
 -- ghc-options: -j2
 jobs: :2
+
+constraint-set http-media-0.8
+  constraints: http-media ==0.8.*
+
+constraint-set http-media-0.7
+  constraints: http-media ==0.7.*
