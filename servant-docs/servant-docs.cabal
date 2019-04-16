@@ -1,7 +1,7 @@
 cabal-version:       >=1.10
 name:                servant-docs
 version:             0.11.3
-x-revision:          1
+x-revision:          2
 
 synopsis:            generate API docs for your servant webservice
 category:            Servant, Web

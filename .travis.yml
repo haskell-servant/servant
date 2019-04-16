@@ -15,6 +15,7 @@ git:
 branches:
   only:
     - master
+    - release-0.16
 
 cache:
   directories:
