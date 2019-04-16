@@ -56,7 +56,6 @@ import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
 import           Servant.Client.Core
-import qualified Language.Javascript.JSaddle.Exception as JS
 
 -- Note: assuming encoding UTF-8
 
@@ -176,24 +175,17 @@ performXhr xhr burl request fixUp = do
         4 -> void $ liftIO $ tryPutMVar waiter ()
         _ -> return ()
 
-    catchJSExceptions $ sendXhr xhr (toBody request) -- We handle any errors in `toResponse`.
+    sendXhr xhr (toBody request) `catch` ignoreXHRError -- We handle any errors in `toResponse`.
 
     liftIO $ takeMVar waiter
 
     cleanup
-  where
-    catchJSExceptions x = catch (catch x ignoreJSException) ignoreXHRError
 
-    -- On ghcjs we get a JSException.
-    ignoreJSException :: JS.JSException -> DOM ()
-    ignoreJSException = ignoreAny
+  where
 
     -- For jsaddle we get an XHRError - sigh.
     ignoreXHRError :: JS.XHRError -> DOM ()
-    ignoreXHRError = ignoreAny
-
-    ignoreAny :: Show e => e -> DOM ()
-    ignoreAny e = do
+    ignoreXHRError e = do
       liftIO $ hPutStrLn stderr $ "servant-client-jsaddle: Ignoring exception in `sendXhr`: " <> show e
       pure ()
 
