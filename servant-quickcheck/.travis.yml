@@ -29,16 +29,14 @@ before_cache:
   - rm -rfv $CABALHOME/packages/head.hackage
 matrix:
   include:
-    - compiler: ghc-8.6.3
-      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.3","cabal-install-2.4"]}}
+    - compiler: ghc-8.6.4
+      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.4","cabal-install-2.4"]}}
     - compiler: ghc-8.4.4
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.4.4","cabal-install-2.4"]}}
     - compiler: ghc-8.2.2
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.2.2","cabal-install-2.4"]}}
     - compiler: ghc-8.0.2
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.0.2","cabal-install-2.4"]}}
-    - compiler: ghc-7.10.3
-      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-7.10.3","cabal-install-2.4"]}}
 before_install:
   - HC=$(echo "/opt/$CC/bin/ghc" | sed 's/-/\//')
   - HCPKG="$HC-pkg"
