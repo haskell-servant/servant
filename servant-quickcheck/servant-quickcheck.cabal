@@ -13,7 +13,7 @@ category:           Web
 build-type:         Simple
 cabal-version:      >=1.10
 extra-source-files: CHANGELOG.yaml
-tested-with:        GHC ==7.10.3 || ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.3
+tested-with:        GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.4
 
 source-repository head
   type:     git
@@ -35,7 +35,7 @@ library
 
   build-depends:
       aeson                  >=0.8    && <2
-    , base                   >=4.8    && <4.13
+    , base                   >=4.9    && <4.13
     , base-compat-batteries  >=0.10.1 && <0.11
     , bytestring             >=0.10   && <0.11
     , case-insensitive       >=1.2    && <1.3
