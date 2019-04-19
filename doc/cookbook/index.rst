@@ -25,6 +25,7 @@ you name it!
   using-custom-monad/UsingCustomMonad.lhs
   using-free-client/UsingFreeClient.lhs
   basic-auth/BasicAuth.lhs
+  basic-streaming/Streaming.lhs
   jwt-and-basic-auth/JWTAndBasicAuth.lhs
   hoist-server-with-context/HoistServerWithContext.lhs
   file-upload/FileUpload.lhs
