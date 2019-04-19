@@ -183,7 +183,6 @@ performXhr xhr burl request fixUp = do
 
   where
 
-    -- For jsaddle we get an XHRError - sigh.
     ignoreXHRError :: JS.XHRError -> DOM ()
     ignoreXHRError e = do
       liftIO $ hPutStrLn stderr $ "servant-client-jsaddle: Ignoring exception in `sendXhr`: " <> show e
