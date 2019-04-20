@@ -599,7 +599,7 @@ $ curl -H 'Accept: text/html' http://localhost:8081/persons
 
 ## The `Handler` monad
 
-At the heart of the handlers is the monad they run in, namely a newtype `Handler` around `ExceptT ServerErroror IO`
+At the heart of the handlers is the monad they run in, namely a newtype `Handler` around `ExceptT ServerError IO`
 ([haddock documentation for `ExceptT`](http://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)).
 One might wonder: why this monad? The answer is that it is the
 simplest monad with the following properties:
@@ -622,7 +622,7 @@ action that either returns an error or a result.
 
 The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)
 from which `ExceptT` comes is worth looking at.
-Perhaps most importantly, `ExceptT` and `Handler` are an instances of `MonadError`, so
+Perhaps most importantly, `ExceptT` and `Handler` are instances of `MonadError`, so
 `throwError` can be used to return an error from your handler (whereas `return`
         is enough to return a success).
 
@@ -632,8 +632,8 @@ kind and abort early. The next two sections cover how to do just that.
 
 ### Performing IO
 
-Another important instances from the list above are `MonadIO m => MonadIO
-(ExceptT e m)`, and therefore also `MonadIO Handler` as there is `MonadIO IO` instance.
+Other important instances from the list above are `MonadIO m => MonadIO
+(ExceptT e m)`, and therefore also `MonadIO Handler` as there is a `MonadIO IO` instance.
 [`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html)
 is a class from the **transformers** package defined as:
 
