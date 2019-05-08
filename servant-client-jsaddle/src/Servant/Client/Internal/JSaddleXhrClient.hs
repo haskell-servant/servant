@@ -182,7 +182,7 @@ performXhr xhr burl request fixUp = do
         4 -> void $ liftIO $ tryPutMVar waiter ()
         _ -> return ()
 
-    sendXhr xhr (toBody request) `catch` ignoreXHRError -- We handle any errors in `toResponse`.
+    sendXhr xhr (toBody request) `catch` handleXHRError waiter -- We handle any errors in `toResponse`.
 
     liftIO $ takeMVar waiter
 
@@ -190,10 +190,10 @@ performXhr xhr burl request fixUp = do
 
   where
 
-    ignoreXHRError :: JS.XHRError -> DOM ()
-    ignoreXHRError e = do
-      liftIO $ hPutStrLn stderr $ "servant-client-jsaddle: Ignoring exception in `sendXhr`: " <> show e
-      pure ()
+    handleXHRError :: MVar () -> JS.XHRError -> DOM ()
+    handleXHRError waiter e = do
+      liftIO $ hPutStrLn stderr $ "servant-client-jsaddle: exception in `sendXhr` (should get handled in response handling): " <> show e
+      void $ liftIO $ tryPutMVar waiter ()
 
 
 toUrl :: BaseUrl -> Request -> JS.JSString
