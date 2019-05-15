@@ -6,31 +6,32 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Servant.Client.JsSpec where
 
-import           Servant.API
-import           Servant.Server
-import           Network.Wai.Handler.Warp as Warp
-import qualified Data.ByteString as B
-import           Data.ByteString(ByteString)
-import           Test.Hspec
-import           Data.Proxy
+import           Control.Concurrent
 import           Control.Monad.Trans
 import           Data.Aeson
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString as B
+import           Data.Proxy
+import           Data.String
 import           Data.Word
 import           GHC.Generics
-import qualified Language.Javascript.JSaddle.WebKitGTK as WK
-import qualified Language.Javascript.JSaddle.Monad as JSaddle
-import           Language.Javascript.JSaddle.Monad(JSM)
-import           Control.Concurrent
-import           Servant.Client.Js
 import qualified JSDOM
 import qualified JSDOM.Window as Window
-import qualified Network.Wai as Wai
-import           Network.Wai.Middleware.AddHeaders
+import           Language.Javascript.JSaddle.Monad (JSM)
+import qualified Language.Javascript.JSaddle.Monad as JSaddle
+import qualified Language.Javascript.JSaddle.Warp as JW
 import qualified Network.HTTP.Types as Http
-import           Data.String
-import           System.IO
+import qualified Network.Wai as Wai
+import           Network.Wai.Handler.Warp as Warp
+import           Network.Wai.Middleware.AddHeaders
+import           Servant.API
+import           Servant.Client.Core
+import           Servant.Client.Internal.JSaddleXhrClient
+import           Servant.Server
+import           Test.Hspec
 
 type TestApi = ReqBody '[OctetStream] ByteString :> Post '[JSON] TestResponse
+
 testApi :: Proxy TestApi
 testApi = Proxy
 
@@ -90,8 +91,8 @@ spec = do
                                             , baseUrlPort = fromIntegral portNr
                                             , baseUrlPath = "/"
                                             }
-        
-        WK.run $ JSaddle.liftJSM $ jsaddleFinally close $ do
+
+        JW.run 3072 $ jsaddleFinally close $ do
           liftIO $ threadDelay $ 1000 * 1000
           -- a mix of valid utf-8 and non-utf8 bytes
           let bytes = [0x01, 0xff, 0x02, 0xfe, 0x03, 0xfd, 0x00, 0x64, 0xc3, 0xbb, 0x68, 0xc3]

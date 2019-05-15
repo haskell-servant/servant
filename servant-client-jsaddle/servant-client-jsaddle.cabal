@@ -1,5 +1,5 @@
 name:                servant-client-jsaddle
-version:             0.13
+version:             0.16
 synopsis: automatic derivation of querying functions for servant webservices for jsaddle (GHCJS, GHC + WebKit, GHC + websockets, etc)
 description:
   This library lets you automatically derive Haskell functions that
@@ -12,7 +12,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2017 Servant Contributors
+copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 category:            Servant, Web
 build-type:          Simple
 cabal-version:       >=1.10
@@ -52,7 +52,8 @@ library
   -- Servant dependencies.
   -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
-      servant-client-core   == 0.15.*
+      servant               == 0.16.*
+    , servant-client-core   == 0.16.*
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
@@ -96,7 +97,7 @@ test-suite spec
     , http-media
     , http-types
     , jsaddle
-    , jsaddle-webkit2gtk
+    , jsaddle-warp
     , jsaddle-dom
     , monad-control
     , mtl

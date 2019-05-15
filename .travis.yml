@@ -8,6 +8,8 @@
 #
 language: c
 dist: xenial
+# services:
+#   - xvfb
 git:
   # whether to recursively clone submodules
   submodules: false
@@ -190,6 +192,7 @@ script:
     echo 'packages: "servant-machines-*/*.cabal"' >> cabal.project
     echo 'packages: "servant-conduit-*/*.cabal"' >> cabal.project
     echo 'packages: "servant-pipes-*/*.cabal"' >> cabal.project
+    echo 'packages: "servant-client-jsaddle-*/*.cabal"' >> cabal.project
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-basic-auth-*/*.cabal"' >> cabal.project ; fi
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-curl-mock-*/*.cabal"' >> cabal.project ; fi
     if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-basic-streaming-*/*.cabal"' >> cabal.project ; fi

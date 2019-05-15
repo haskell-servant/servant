@@ -14,39 +14,41 @@
 
 module Servant.Client.Internal.JSaddleXhrClient where
 
-import           Control.Arrow
-import           Data.ByteString.Builder     (toLazyByteString)
 import           Control.Concurrent
+import           Control.Exception
 import           Control.Monad
-import           Control.Monad.Catch         (MonadCatch, MonadThrow)
-import           Control.Monad.Error.Class   (MonadError (..))
+import           Control.Monad.Catch (MonadCatch, MonadThrow)
+import           Control.Monad.Error.Class (MonadError (..))
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Except
+import           Data.Bifunctor
+import           Data.ByteString.Builder (toLazyByteString)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as L
 import           Data.CaseInsensitive
 import           Data.Char
-import           Data.Foldable               (toList)
-import           Data.Functor.Alt            (Alt (..))
-import           Data.Proxy                  (Proxy (..))
-import qualified Data.Sequence           as Seq
+import           Data.Foldable (toList)
+import           Data.Functor.Alt (Alt (..))
+import           Data.Proxy (Proxy (..))
+import qualified Data.Sequence as Seq
 import           Data.String.Conversions
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Encoding.Error as T
 import           GHC.Generics
-import qualified JSDOM.Types                     as JS
-import qualified JSDOM.Custom.XMLHttpRequest     as JS
-import qualified JSDOM.Generated.Window          as Window
-import qualified JSDOM.Generated.Location        as Location
-import qualified JSDOM
-import           JSDOM.Types (DOM, askDOM, runDOM, DOMContext)
-import qualified JSDOM.EventM as JSDOM
-import qualified Language.Javascript.JSaddle.Types as JSaddle
-import qualified JavaScript.TypedArray.ArrayBuffer as ArrayBuffer
 import qualified GHCJS.Buffer as Buffer
-import           Network.HTTP.Types
+import qualified JSDOM
+import qualified JSDOM.Custom.XMLHttpRequest as JS
+import qualified JSDOM.EventM as JSDOM
+import qualified JSDOM.Generated.Location as Location
+import qualified JSDOM.Generated.Window as Window
+import           JSDOM.Types (DOM, askDOM, runDOM, DOMContext)
+import qualified JSDOM.Types as JS
+import qualified JavaScript.TypedArray.ArrayBuffer as ArrayBuffer
+import qualified Language.Javascript.JSaddle.Types as JSaddle
 import           Network.HTTP.Media (renderHeader)
+import           Network.HTTP.Types
 import           Servant.Client.Core
+
 
 -- Note: assuming encoding UTF-8
 
@@ -75,9 +77,9 @@ client :: HasClient ClientM api => Proxy api -> Client ClientM api
 client api = api `clientIn` (Proxy :: Proxy ClientM)
 
 newtype ClientM a = ClientM
-  { fromClientM :: ReaderT ClientEnv (ExceptT ServantError DOM) a }
+  { fromClientM :: ReaderT ClientEnv (ExceptT ClientError DOM) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ServantError)
+           , MonadReader ClientEnv, MonadError ClientError)
 deriving instance MonadThrow DOM => MonadThrow ClientM
 deriving instance MonadCatch DOM => MonadCatch ClientM
 
@@ -86,18 +88,15 @@ instance Alt ClientM where
   a <!> b = a `catchError` const b
 
 instance RunClient ClientM where
-  throwServantError = throwError
+  throwClientError = throwError
   runRequest r = do
     d <- ClientM askDOM
     performRequest d r
 
-instance ClientLike (ClientM a) (ClientM a) where
-  mkClient = id
-
-runClientM :: ClientM a -> ClientEnv -> DOM (Either ServantError a)
+runClientM :: ClientM a -> ClientEnv -> DOM (Either ClientError a)
 runClientM cm env = runExceptT $ flip runReaderT env $ fromClientM cm
 
-runClientM' :: ClientM a -> DOM (Either ServantError a)
+runClientM' :: ClientM a -> DOM (Either ClientError a)
 runClientM' m = do
     burl <- getDefaultBaseUrl
     runClientM m (mkClientEnv burl)
@@ -135,8 +134,9 @@ performRequest domc req = do
   resp <- toResponse domc xhr
 
   let status = statusCode (responseStatusCode resp)
-  unless (status >= 200 && status < 300) $
-        throwError $ FailureResponse resp
+  unless (status >= 200 && status < 300) $ do
+        let f b = (burl, L.toStrict $ toLazyByteString b)
+        throwError $ FailureResponse (bimap (const ()) f req) resp
 
   pure resp
 
@@ -151,7 +151,7 @@ performXhr xhr burl request fixUp = do
     JS.open xhr (decodeUtf8Lenient $ requestMethod request) (toUrl burl request) True username password
     setHeaders xhr request
     fixUp xhr
-  
+
     waiter <- liftIO $ newEmptyMVar
 
     cleanup <- JSDOM.on xhr JS.readyStateChange $ do
@@ -166,11 +166,11 @@ performXhr xhr burl request fixUp = do
         _ -> return ()
 
     sendXhr xhr (toBody request)
-    
+
     liftIO $ takeMVar waiter
-    
+
     cleanup
-    
+
 toUrl :: BaseUrl -> Request -> JS.JSString
 toUrl burl request =
   let pathS = JS.toJSString $ decodeUtf8Lenient $ L.toStrict $ toLazyByteString $
@@ -223,14 +223,14 @@ toBody request = case requestBody request of
 -- * inspecting the xhr response
 
 -- This function is only supposed to handle 'ConnectionError's. Other
--- 'ServantError's are created in Servant.Client.Req.
+-- 'ClientError's are created in Servant.Client.Req.
 toResponse :: DOMContext -> JS.XMLHttpRequest -> ClientM Response
 toResponse domc xhr = do
   let inDom :: DOM a -> ClientM a
       inDom = flip runDOM domc
   status <- inDom $ JS.getStatus xhr
   case status of
-    0 -> throwError $ ConnectionError "connection error"
+    0 -> throwError $ ConnectionError $ SomeException $ userError "connection error"
     _ -> inDom $ do
       statusText <- BS.pack <$> JS.getStatusText xhr
       headers <- parseHeaders <$> JS.getAllResponseHeaders xhr
