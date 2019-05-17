@@ -217,8 +217,12 @@ sendXhr xhr (Just body) = do
 toBody :: Request -> Maybe L.ByteString
 toBody request = case requestBody request of
   Nothing -> Nothing
-  Just (RequestBodyLBS "", _) -> Nothing
-  Just (RequestBodyLBS x, _) -> Just x
+  Just (RequestBodyBS ""    , _) -> Nothing
+  Just (RequestBodyBS x     , _) -> Just $ L.fromStrict x
+  -- FIXME: not implemented
+  Just (RequestBodySource _ , _) -> Nothing
+  Just (RequestBodyLBS ""   , _) -> Nothing
+  Just (RequestBodyLBS x    , _) -> Just x
 
 -- * inspecting the xhr response
 
