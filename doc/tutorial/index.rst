@@ -6,11 +6,11 @@ This is an introductory tutorial to **servant**. Whilst browsing is fine, it mak
 Any comments, issues or feedback about the tutorial can be submitted
 to `servant's issue tracker <http://github.com/haskell-servant/servant/issues>`_.
 
-Cabal
+cabal-install
 --------
 
 The whole tutorial is a `cabal <https://cabal.readthedocs.io/en/latest/>`_
-project and can be built and played with locally as follows:
+project and can be built locally as follows:
 
 .. code-block:: bash
 
@@ -21,10 +21,10 @@ project and can be built and played with locally as follows:
    # load in ghci to play with it
    $ cabal new-repl tutorial
 
-Stack
+stack
 --------
 
-To build the tutorial using `stack <https://docs.haskellstack.org/en/stable/README/>`_ you can run the following:
+The servant `stack <https://docs.haskellstack.org/en/stable/README/>`_ template includes the working tutorial. To initialize this template, run:
 
 .. code-block:: bash
 
