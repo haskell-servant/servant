@@ -4,7 +4,7 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.3.20190413
+# version: 0.3.20190521
 #
 language: c
 dist: xenial
@@ -30,8 +30,8 @@ before_cache:
   - rm -rfv $CABALHOME/packages/head.hackage
 matrix:
   include:
-    - compiler: ghc-8.6.4
-      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.4","cabal-install-2.4"]}}
+    - compiler: ghc-8.6.5
+      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.5","cabal-install-2.4"]}}
     - compiler: ghc-8.4.4
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.4.4","cabal-install-2.4"]}}
     - compiler: ghc-8.2.2
@@ -83,6 +83,7 @@ install:
     echo "world-file:        $CABALHOME/world"          >> $CABALHOME/config
     echo "extra-prog-path:   $CABALHOME/bin"            >> $CABALHOME/config
     echo "symlink-bindir:    $CABALHOME/bin"            >> $CABALHOME/config
+    echo "installdir:        $CABALHOME/bin"            >> $CABALHOME/config
     echo "build-summary:     $CABALHOME/logs/build.log" >> $CABALHOME/config
     echo "store-dir:         $CABALHOME/store"          >> $CABALHOME/config
     echo "install-dirs user"                            >> $CABALHOME/config
@@ -110,19 +111,19 @@ install:
     echo 'packages: "servant-machines"' >> cabal.project
     echo 'packages: "servant-conduit"' >> cabal.project
     echo 'packages: "servant-pipes"' >> cabal.project
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/basic-auth"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/curl-mock"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/basic-streaming"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/db-postgres-pool"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/db-sqlite-simple"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/file-upload"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/generic"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/https"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/pagination"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/testing"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/structuring-apis"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/using-custom-monad"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "doc/cookbook/using-free-client"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/basic-auth"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/curl-mock"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/basic-streaming"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/db-postgres-pool"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/db-sqlite-simple"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/file-upload"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/generic"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/https"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/pagination"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/testing"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/structuring-apis"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/using-custom-monad"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "doc/cookbook/using-free-client"' >> cabal.project ; fi
   - |
     echo "constraints:                 foundation >=0.0.14"               >> cabal.project
     echo "constraints:                 memory <0.14.12 || >0.14.12"       >> cabal.project
@@ -131,10 +132,15 @@ install:
     echo "allow-newer:                 servant-quickcheck:servant-server" >> cabal.project
     echo "allow-newer:                 servant-quickcheck:hspec"          >> cabal.project
     echo "allow-newer:                 servant-quickcheck:http-client"    >> cabal.project
-    echo "allow-newer:                 http-media"                        >> cabal.project
+    echo "allow-newer:                 vault-0.3.1.2:hashable"            >> cabal.project
+    echo "allow-newer:                 psqueues-0.2.7.1:hashable"         >> cabal.project
+    echo "allow-newer:                 sqlite-simple-0.4.16.0:semigroups" >> cabal.project
+    echo "allow-newer:                 direct-sqlite-2.3.24:semigroups"   >> cabal.project
+    echo "allow-newer:                 io-streams-1.5.1.0:network"        >> cabal.project
+    echo "allow-newer:                 openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization:                False"                             >> cabal.project
     echo "write-ghc-environment-files: always"                            >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then (cd "servant" && autoreconf -i); fi
@@ -190,19 +196,19 @@ script:
     echo 'packages: "servant-machines-*/*.cabal"' >> cabal.project
     echo 'packages: "servant-conduit-*/*.cabal"' >> cabal.project
     echo 'packages: "servant-pipes-*/*.cabal"' >> cabal.project
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-basic-auth-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-curl-mock-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-basic-streaming-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-db-postgres-pool-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-db-sqlite-simple-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-file-upload-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-generic-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-https-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-pagination-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-testing-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-structuring-apis-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-using-custom-monad-*/*.cabal"' >> cabal.project ; fi
-    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80604 ] ; then echo 'packages: "cookbook-using-free-client-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-basic-auth-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-curl-mock-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-basic-streaming-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-db-postgres-pool-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-db-sqlite-simple-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-file-upload-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-generic-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-https-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-pagination-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-testing-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-structuring-apis-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-using-custom-monad-*/*.cabal"' >> cabal.project ; fi
+    if [ $HCNUMVER -eq 80404 ]  ||  [ $HCNUMVER -eq 80605 ] ; then echo 'packages: "cookbook-using-free-client-*/*.cabal"' >> cabal.project ; fi
   - |
     echo "constraints:                 foundation >=0.0.14"               >> cabal.project
     echo "constraints:                 memory <0.14.12 || >0.14.12"       >> cabal.project
@@ -211,10 +217,15 @@ script:
     echo "allow-newer:                 servant-quickcheck:servant-server" >> cabal.project
     echo "allow-newer:                 servant-quickcheck:hspec"          >> cabal.project
     echo "allow-newer:                 servant-quickcheck:http-client"    >> cabal.project
-    echo "allow-newer:                 http-media"                        >> cabal.project
+    echo "allow-newer:                 vault-0.3.1.2:hashable"            >> cabal.project
+    echo "allow-newer:                 psqueues-0.2.7.1:hashable"         >> cabal.project
+    echo "allow-newer:                 sqlite-simple-0.4.16.0:semigroups" >> cabal.project
+    echo "allow-newer:                 direct-sqlite-2.3.24:semigroups"   >> cabal.project
+    echo "allow-newer:                 io-streams-1.5.1.0:network"        >> cabal.project
+    echo "allow-newer:                 openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization:                False"                             >> cabal.project
     echo "write-ghc-environment-files: always"                            >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - echo -en 'travis_fold:end:unpack\\r'
