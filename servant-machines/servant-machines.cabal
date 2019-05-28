@@ -1,7 +1,7 @@
 cabal-version:       >=1.10
 name:                servant-machines
 version:             0.15
-x-revision:          1
+x-revision:          2
 
 synopsis:            Servant Stream support for machines
 category:            Servant, Web, Enumerator
@@ -21,7 +21,7 @@ tested-with:
   GHC ==8.0.2
    || ==8.2.2
    || ==8.4.4
-   || ==8.6.4
+   || ==8.6.5
 
 extra-source-files:
   CHANGELOG.md

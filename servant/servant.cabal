@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                servant
-version:             0.16.0.1
+version:             0.16.1
 
 synopsis:            A family of combinators for defining webservices APIs
 category:            Servant, Web
@@ -24,7 +24,7 @@ tested-with:
   GHC ==8.0.2
    || ==8.2.2
    || ==8.4.4
-   || ==8.6.4
+   || ==8.6.5
 
 extra-source-files:
   CHANGELOG.md

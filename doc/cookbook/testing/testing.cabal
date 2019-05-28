@@ -10,7 +10,7 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 category:            Servant
 build-type:          Simple
 cabal-version:       >=1.10
-tested-with:         GHC==8.4.4, GHC==8.6.4
+tested-with:         GHC==8.4.4, GHC==8.6.5
 
 executable cookbook-testing
   main-is:             Testing.lhs
