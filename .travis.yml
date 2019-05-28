@@ -131,6 +131,12 @@ install:
     echo "allow-newer:                 servant-quickcheck:servant-server" >> cabal.project
     echo "allow-newer:                 servant-quickcheck:hspec"          >> cabal.project
     echo "allow-newer:                 servant-quickcheck:http-client"    >> cabal.project
+    echo "allow-newer:                 vault-0.3.1.2:hashable"            >> cabal.project
+    echo "allow-newer:                 psqueues-0.2.7.1:hashable"         >> cabal.project
+    echo "allow-newer:                 sqlite-simple-0.4.16.0:semigroups" >> cabal.project
+    echo "allow-newer:                 direct-sqlite-2.3.24:semigroups"   >> cabal.project
+    echo "allow-newer:                 io-streams-1.5.1.0:network"        >> cabal.project
+    echo "allow-newer:                 openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization:                False"                             >> cabal.project
     echo "write-ghc-environment-files: always"                            >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
@@ -210,6 +216,12 @@ script:
     echo "allow-newer:                 servant-quickcheck:servant-server" >> cabal.project
     echo "allow-newer:                 servant-quickcheck:hspec"          >> cabal.project
     echo "allow-newer:                 servant-quickcheck:http-client"    >> cabal.project
+    echo "allow-newer:                 vault-0.3.1.2:hashable"            >> cabal.project
+    echo "allow-newer:                 psqueues-0.2.7.1:hashable"         >> cabal.project
+    echo "allow-newer:                 sqlite-simple-0.4.16.0:semigroups" >> cabal.project
+    echo "allow-newer:                 direct-sqlite-2.3.24:semigroups"   >> cabal.project
+    echo "allow-newer:                 io-streams-1.5.1.0:network"        >> cabal.project
+    echo "allow-newer:                 openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization:                False"                             >> cabal.project
     echo "write-ghc-environment-files: always"                            >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
