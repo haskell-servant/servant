@@ -1,6 +1,12 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.16.1
+------
+
+* Use `http-api-data-0.4.1` (a part of its API is re-exported)
+  [#1181](https://github.com/haskell-servant/servant/pull/1181)
+
 0.16
 ----
 
