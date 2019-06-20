@@ -14,6 +14,7 @@ import qualified Data.ByteString as B
 import           Data.Proxy
 import           Data.String
 import           Data.Word
+import           Debug.Trace
 import           GHC.Generics
 import qualified JSDOM
 import qualified JSDOM.Window as Window
@@ -92,7 +93,7 @@ spec = do
                                             , baseUrlPath = "/"
                                             }
 
-        JW.run 3072 $ jsaddleFinally close $ do
+        JW.run portNr $ jsaddleFinally close $ do
           liftIO $ threadDelay $ 1000 * 1000
           -- a mix of valid utf-8 and non-utf8 bytes
           let bytes = [0x01, 0xff, 0x02, 0xfe, 0x03, 0xfd, 0x00, 0x64, 0xc3, 0xbb, 0x68, 0xc3]

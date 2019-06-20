@@ -76,6 +76,47 @@ library
   if impl(ghc >= 8.0)
     ghc-options: -Wno-redundant-constraints
 
+executable spec-test
+  type: exitcode-stdio-1.0
+  ghc-options: -Wall
+  default-language: Haskell2010
+  main-is: Main.hs
+
+  -- Dependencies inherited from the library. No need to specify bounds.
+  build-depends:
+      base
+    , aeson
+    , bytestring
+    , case-insensitive
+    , containers
+    , exceptions
+    , http-media
+    , http-types
+    , jsaddle
+    , jsaddle-warp
+    , jsaddle-dom
+    , monad-control
+    , mtl
+    , semigroupoids
+    , servant
+    , servant-client-core
+    , servant-client-jsaddle
+    , servant-server
+    , string-conversions
+    , text
+    , transformers
+    , transformers-base
+    , wai
+    , wai-extra
+    , warp
+
+  -- Additonal dependencies
+  build-depends:
+      hspec
+    , QuickCheck
+
+  build-tool-depends:
+    hspec-discover:hspec-discover >=2.4.4 && <2.5
 
 test-suite spec
   type: exitcode-stdio-1.0
