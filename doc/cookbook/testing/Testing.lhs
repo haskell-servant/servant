@@ -142,33 +142,31 @@ of it and see how it responds.
 Let's write some tests:
 
 ```haskell
-withUserApp :: IO () -> IO ()
+withUserApp :: (Warp.Port -> IO ()) -> IO ()
 withUserApp action =
-  -- we can spin up a server in another thread and kill that thread when done
-  -- in an exception-safe way
-  bracket (liftIO $ C.forkIO $ Warp.run 8888 userApp)
-    C.killThread
-    (const action)
+  -- testWithApplication makes sure the action is executed after the server has
+  -- started and is being properly shutdown.
+  Warp.testWithApplication (pure userApp) action
 
 
 businessLogicSpec :: Spec
 businessLogicSpec =
   -- `around` will start our Server before the tests and turn it off after
-  around_ withUserApp $ do
+  around withUserApp $ do
     -- create a test client function
     let createUser = client (Proxy :: Proxy UserApi)
     -- create a servant-client ClientEnv
-    baseUrl <- runIO $ parseBaseUrl "http://localhost:8888"
+    baseUrl <- runIO $ parseBaseUrl "http://localhost"
     manager <- runIO $ newManager defaultManagerSettings
-    let clientEnv = mkClientEnv manager baseUrl
+    let clientEnv port = mkClientEnv manager (baseUrl { baseUrlPort = port })
 
     -- testing scenarios start here
     describe "POST /user" $ do
-      it "should create a user with a high enough ID" $ do
-        result <- runClientM (createUser 50001) clientEnv
+      it "should create a user with a high enough ID" $ \port -> do
+        result <- runClientM (createUser 50001) (clientEnv port)
         result `shouldBe` (Right $ User { name = "some user", user_id = 50001})
-      it "will it fail with a too-small ID?" $ do
-        result <- runClientM (createUser 4999) clientEnv
+      it "will it fail with a too-small ID?" $ \port -> do
+        result <- runClientM (createUser 4999) (clientEnv port)
         result `shouldBe` (Right $ User { name = "some user", user_id = 50001})
 ```
 
