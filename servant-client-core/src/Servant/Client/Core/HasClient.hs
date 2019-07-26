@@ -297,6 +297,31 @@ instance {-# OVERLAPPABLE #-}
           , requestMethod = reflectMethod (Proxy :: Proxy method)
           }
 
+instance {-# OVERLAPPING #-}
+  ( RunStreamingClient m, MimeUnrender ct chunk, ReflectMethod method,
+    FramingUnrender framing, FromSourceIO chunk a,
+    BuildHeadersTo hs
+  ) => HasClient m (Stream method status framing ct (Headers hs a)) where
+
+  type Client m (Stream method status framing ct (Headers hs a)) = m (Headers hs a)
+
+  hoistClientMonad _ _ f ma = f ma
+
+  clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
+      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
+          framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
+          val = fromSourceIO $ framingUnrender' $ responseBody gres
+      return $ Headers
+        { getResponse = val
+        , getHeadersHList = buildHeadersTo . toList $ responseHeaders gres
+        }
+
+    where
+      req' = req
+          { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
+          , requestMethod = reflectMethod (Proxy :: Proxy method)
+          }
+
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
 -- an additional argument of the type specified by your 'Header',
