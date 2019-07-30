@@ -1,6 +1,7 @@
 packages:
   basic-auth/
   curl-mock/
+  db-mysql-basics/
   db-sqlite-simple/
   db-postgres-pool/
   using-custom-monad/

@@ -20,6 +20,7 @@ you name it!
   structuring-apis/StructuringApis.lhs
   generic/Generic.lhs
   https/Https.lhs
+  db-mysql-basics/MysqlBasics.lhs
   db-sqlite-simple/DBConnection.lhs
   db-postgres-pool/PostgresPool.lhs
   using-custom-monad/UsingCustomMonad.lhs
