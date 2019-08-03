@@ -1,6 +1,20 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.16.2
+------
+
+* `singleton-bool-0.1.5` (`SBool` is re-exported)
+    - Add `discreteBool :: Dec (a :~: b)` (GHC-7.8+)
+    - Add `Show`, `Eq`, `Ord` `SBool b` instances.
+* dependencies update
+
+0.16.1
+------
+
+* Use `http-api-data-0.4.1` (a part of its API is re-exported)
+  [#1181](https://github.com/haskell-servant/servant/pull/1181)
+
 0.16
 ----
 

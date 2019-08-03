@@ -1,5 +1,28 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.16.2
+------
+
+* `singleton-bool-0.1.5` (`SBool` is re-exported)
+    - Add `discreteBool :: Dec (a :~: b)` (GHC-7.8+)
+    - Add `Show`, `Eq`, `Ord` `SBool b` instances.
+* dependencies update
+
+0.16.1
+------
+
+* Add `Semigroup` and `Monoid` `SourceT` instances
+  [#1158](https://github.com/haskell-servant/servant/pull/1158)
+  [#1159](https://github.com/haskell-servant/servant/pull/1159)
+* Use `http-api-data-0.4.1`
+  [#1181](https://github.com/haskell-servant/servant/pull/1181)
+* Allow newer dependencies
+
+0.16.0.1
+--------
+
+- Make tests work with `http-media-0.8`
+
 0.16
 ----
 
