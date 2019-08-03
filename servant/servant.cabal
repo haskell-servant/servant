@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                servant
-version:             0.16.1
+version:             0.16.2
 
 synopsis:            A family of combinators for defining webservices APIs
 category:            Servant, Web
@@ -100,7 +100,7 @@ library
   -- i.e. re-export, or allow using without direct dependency
   build-depends:
       http-api-data          >= 0.4.1    && < 0.4.2
-    , singleton-bool         >= 0.1.4    && < 0.1.5
+    , singleton-bool         >= 0.1.5    && < 0.1.6
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.

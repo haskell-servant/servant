@@ -20,3 +20,5 @@ constraint-set http-media-0.8
 
 constraint-set http-media-0.7
   constraints: http-media ==0.7.*
+
+head-hackage: >= 8.8
