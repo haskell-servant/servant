@@ -133,10 +133,8 @@ library
                   , OverlappingInstances
                   , OverloadedStrings
                   , PolyKinds
-                  , QuasiQuotes
                   , RecordWildCards
                   , ScopedTypeVariables
-                  , TemplateHaskell
                   , TypeFamilies
                   , TypeOperators
                   , TypeSynonymInstances
