@@ -253,12 +253,10 @@ instance {-# OVERLAPPING #-}
        { requestMethod = method
        , requestAccept = fromList $ toList accept
        }
-    case mimeUnrender (Proxy :: Proxy ct) $ responseBody response of
-      Left err -> throwClientError $ DecodeFailure (pack err) response
-      Right val -> return $ Headers
-        { getResponse = val
-        , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
-        }
+    val <- response `decodedAs` (Proxy :: Proxy ct)
+    return $ Headers { getResponse = val
+                     , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
+                     }
       where method = reflectMethod (Proxy :: Proxy method)
             accept = contentTypes (Proxy :: Proxy ct)
 
