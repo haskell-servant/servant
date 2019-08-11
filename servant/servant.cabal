@@ -125,6 +125,8 @@ library
                   , ConstraintKinds
                   , DataKinds
                   , DeriveDataTypeable
+                  , DeriveGeneric
+                  , FlexibleContexts
                   , FlexibleInstances
                   , FunctionalDependencies
                   , GADTs
@@ -133,6 +135,7 @@ library
                   , OverloadedStrings
                   , PolyKinds
                   , ScopedTypeVariables
+                  , TupleSections
                   , TypeFamilies
                   , TypeOperators
                   , UndecidableInstances
