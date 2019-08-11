@@ -130,14 +130,11 @@ library
                   , GADTs
                   , KindSignatures
                   , MultiParamTypeClasses
-                  , OverlappingInstances
                   , OverloadedStrings
                   , PolyKinds
-                  , RecordWildCards
                   , ScopedTypeVariables
                   , TypeFamilies
                   , TypeOperators
-                  , TypeSynonymInstances
                   , UndecidableInstances
   ghc-options: -Wall -Wno-redundant-constraints
 
