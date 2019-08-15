@@ -125,19 +125,19 @@ library
                   , ConstraintKinds
                   , DataKinds
                   , DeriveDataTypeable
+                  , DeriveGeneric
+                  , FlexibleContexts
                   , FlexibleInstances
                   , FunctionalDependencies
                   , GADTs
                   , KindSignatures
                   , MultiParamTypeClasses
-                  , OverlappingInstances
                   , OverloadedStrings
                   , PolyKinds
-                  , RecordWildCards
                   , ScopedTypeVariables
+                  , TupleSections
                   , TypeFamilies
                   , TypeOperators
-                  , TypeSynonymInstances
                   , UndecidableInstances
   ghc-options: -Wall -Wno-redundant-constraints
 
