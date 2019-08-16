@@ -168,6 +168,7 @@ type FailApi =
        "get" :> Raw
   :<|> "capture" :> Capture "name" String :> Raw
   :<|> "body" :> Raw
+  :<|> "headers" :> Raw
 failApi :: Proxy FailApi
 failApi = Proxy
 
@@ -176,6 +177,7 @@ failServer = serve failApi (
        (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
   :<|> (\ _capture -> Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/json")] "")
   :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
+  :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/x-www-form-urlencoded"), ("X-Example1", "1"), ("X-Example2", "foo")] "")
  )
 
 -- * basic auth stuff

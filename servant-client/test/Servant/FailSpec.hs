@@ -67,6 +67,12 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           UnsupportedContentType "application/octet-stream" _ -> return ()
           _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
+      it "reports UnsupportedContentType when there are response headers" $ \(_, baseUrl) -> do
+        Left res <- runClient getRespHeaders baseUrl
+        case res of
+          UnsupportedContentType "application/x-www-form-urlencoded" _ -> return ()
+          _ -> fail $ "expected UnsupportedContentType, but got " <> show res
+
       it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
         let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
         Left res <- runClient (getBody alice) baseUrl
