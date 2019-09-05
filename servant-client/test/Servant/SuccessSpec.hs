@@ -42,6 +42,7 @@ import           Servant.API
                  (NoContent (NoContent), getHeaders)
 import           Servant.Client
 import qualified Servant.Client.Core.Request as Req
+import           Servant.Client.Internal.HttpClient (defaultMakeClientRequest)
 import           Servant.Test.ComprehensiveAPI
 import           Servant.ClientTestUtils
 
@@ -125,10 +126,21 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
       mgr <- C.newManager C.defaultManagerSettings
       cj <- atomically . newTVar $ C.createCookieJar []
-      _ <- runClientM (getRedirectWithCookie HTTP.methodGet) (ClientEnv mgr baseUrl (Just cj))
+      _ <- runClientM (getRedirectWithCookie HTTP.methodGet) (ClientEnv mgr baseUrl (Just cj) defaultMakeClientRequest)
       cookie <- listToMaybe . C.destroyCookieJar <$> atomically (readTVar cj)
       C.cookie_name <$> cookie `shouldBe` Just "testcookie"
       C.cookie_value <$> cookie `shouldBe` Just "test"
+
+    it "Can modify the outgoing Request using the ClientEnv" $ \(_, baseUrl) -> do
+      mgr <- C.newManager C.defaultManagerSettings
+      let createClientRequest url r = (defaultMakeClientRequest url r) { C.requestHeaders = [("X-Added-Header", "XXX")] }
+      let clientEnv = ClientEnv mgr baseUrl Nothing createClientRequest
+      res <- runClientM (getRawSuccessPassHeaders HTTP.methodGet) clientEnv
+      case res of
+        Left e ->
+          assertFailure $ show e
+        Right r ->
+          ("X-Added-Header", "XXX") `elem` toList (responseHeaders r) `shouldBe` True
 
     modifyMaxSuccess (const 20) $ do
       it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
@@ -137,4 +149,3 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
             return $
               result === Right (cap, num, flag, body)
-

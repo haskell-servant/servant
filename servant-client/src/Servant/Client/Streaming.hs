@@ -10,6 +10,7 @@ module Servant.Client.Streaming
     , runClientM
     , ClientEnv(..)
     , mkClientEnv
+    , defaultMakeClientRequest
     , hoistClient
     , module Servant.Client.Core.Reexport
     ) where

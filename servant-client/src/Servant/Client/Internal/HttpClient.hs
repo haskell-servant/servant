@@ -68,16 +68,23 @@ import qualified Servant.Types.SourceT                    as S
 import qualified Network.HTTP.Client         as Client
 
 -- | The environment in which a request is run.
+--   The baseUrl and makeClientRequest function are used to create a `http-client` request.
+--   Cookies are then added to that request if a CookieJar is set on the environment.
+--   Finally the request is executed with the manager.
+--   The 'makeClientRequest' function can be used to modify the request to execute and set values which
+--   are not specified on a `servant` Request like the `responseTimeout` or the `redirectCount`
 data ClientEnv
   = ClientEnv
   { manager :: Client.Manager
   , baseUrl :: BaseUrl
   , cookieJar :: Maybe (TVar Client.CookieJar)
+  , makeClientRequest :: BaseUrl -> Request -> Client.Request
+  -- ^ this function can be used to customize the creation of `http-client` requests from `servant` requests. Default value: 'defaultMakeClientRequest'
   }
 
 -- | 'ClientEnv' smart constructor.
 mkClientEnv :: Client.Manager -> BaseUrl -> ClientEnv
-mkClientEnv mgr burl = ClientEnv mgr burl Nothing
+mkClientEnv mgr burl = ClientEnv mgr burl Nothing defaultMakeClientRequest
 
 -- | Generates a set of client functions for an API.
 --
@@ -148,8 +155,8 @@ runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
 
 performRequest :: Request -> ClientM Response
 performRequest req = do
-  ClientEnv m burl cookieJar' <- ask
-  let clientRequest = requestToClientRequest burl req
+  ClientEnv m burl cookieJar' createClientRequest <- ask
+  let clientRequest = createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest
     Just cj -> liftIO $ do
@@ -158,7 +165,7 @@ performRequest req = do
         oldCookieJar <- readTVar cj
         let (newRequest, newCookieJar) =
               Client.insertCookiesIntoRequest
-                (requestToClientRequest burl req)
+                clientRequest
                 oldCookieJar
                 now
         writeTVar cj newCookieJar
@@ -211,8 +218,11 @@ clientResponseToResponse f r = Response
     , responseHttpVersion = Client.responseVersion r
     }
 
-requestToClientRequest :: BaseUrl -> Request -> Client.Request
-requestToClientRequest burl r = Client.defaultRequest
+-- | Create a `http-client` Request from a `servant` Request
+--    The host, path and port fields are extracted from the BaseUrl
+--    otherwise the body, headers and query string are derived from the `servant` Request
+defaultMakeClientRequest :: BaseUrl -> Request -> Client.Request
+defaultMakeClientRequest burl r = Client.defaultRequest
     { Client.method = requestMethod r
     , Client.host = fromString $ baseUrlHost burl
     , Client.port = baseUrlPort burl

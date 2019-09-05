@@ -93,6 +93,7 @@ type Api =
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
   :<|> "rawSuccess" :> Raw
+  :<|> "rawSuccessPassHeaders" :> Raw
   :<|> "rawFailure" :> Raw
   :<|> "multiple" :>
             Capture "first" String :>
@@ -118,6 +119,7 @@ getQueryParam   :: Maybe String -> ClientM Person
 getQueryParams  :: [String] -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
 getRawSuccess   :: HTTP.Method -> ClientM Response
+getRawSuccessPassHeaders :: HTTP.Method -> ClientM Response
 getRawFailure   :: HTTP.Method -> ClientM Response
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
@@ -135,6 +137,7 @@ getRoot
   :<|> getQueryParams
   :<|> getQueryFlag
   :<|> getRawSuccess
+  :<|> getRawSuccessPassHeaders
   :<|> getRawFailure
   :<|> getMultiple
   :<|> getRespHeaders
@@ -157,6 +160,7 @@ server = serve api (
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
+  :<|> (Tagged $ \ request respond -> (respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders $ request) "rawSuccess"))
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
