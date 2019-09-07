@@ -2,6 +2,9 @@ folds: all-but-test
 branches: master
 jobs-selection: any
 
+-- https://github.com/haskell/cabal/issues/6176
+ghcjs-tools: hspec-discover
+
 -- We have inplace packages (servant-js) so we skip installing dependencies in a separate step
 install-dependencies: False
 
