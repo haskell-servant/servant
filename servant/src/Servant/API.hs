@@ -130,7 +130,8 @@ import           Servant.API.Verbs
                  Post, PostAccepted, PostCreated, PostNoContent,
                  PostNonAuthoritative, PostResetContent, Put, PutAccepted,
                  PutCreated, PutNoContent, PutNonAuthoritative,
-                 ReflectMethod (reflectMethod), StdMethod (..), Verb)
+                 ReflectMethod (reflectMethod), StdMethod (..),
+                 Verb, NoContentVerb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Servant.Links

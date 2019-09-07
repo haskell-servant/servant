@@ -177,7 +177,7 @@ import           Servant.API.TypeLevel
 import           Servant.API.Vault
                  (Vault)
 import           Servant.API.Verbs
-                 (Verb)
+                 (Verb, NoContentVerb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Web.HttpApiData
@@ -544,6 +544,10 @@ instance HasLink EmptyAPI where
 -- Verb (terminal) instances
 instance HasLink (Verb m s ct a) where
     type MkLink (Verb m s ct a) r = r
+    toLink toA _ = toA
+
+instance HasLink (NoContentVerb m) where
+    type MkLink (NoContentVerb m) r = r
     toLink toA _ = toA
 
 instance HasLink Raw where
