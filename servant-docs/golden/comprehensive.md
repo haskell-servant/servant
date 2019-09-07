@@ -399,16 +399,7 @@
 - Status code 204
 - Headers: []
 
-- Supported content types are:
-
-    - `application/json;charset=utf-8`
-    - `application/json`
-
-- Example (`application/json;charset=utf-8`, `application/json`):
-
-```javascript
-
-```
+- No response body
 
 ## GET /raw
 
