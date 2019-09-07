@@ -244,6 +244,19 @@ instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
       method   = reflectMethod (Proxy :: Proxy method)
       methodLC = toLower $ decodeUtf8 method
 
+instance (HasForeignType lang ftype NoContent, ReflectMethod method)
+  => HasForeign lang ftype (NoContentVerb method) where
+  type Foreign ftype (NoContentVerb method) = Req ftype
+
+  foreignFor lang Proxy Proxy req =
+    req & reqFuncName . _FunctionName %~ (methodLC :)
+        & reqMethod .~ method
+        & reqReturnType .~ Just retType
+    where
+      retType  = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy NoContent)
+      method   = reflectMethod (Proxy :: Proxy method)
+      methodLC = toLower $ decodeUtf8 method
+
 -- | TODO: doesn't taking framing into account.
 instance (ct ~ JSON, HasForeignType lang ftype a, ReflectMethod method)
   => HasForeign lang ftype (Stream method status framing ct a) where
