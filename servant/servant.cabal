@@ -24,7 +24,8 @@ tested-with:
   GHC ==8.0.2
    || ==8.2.2
    || ==8.4.4
-   || ==8.6.4
+   || ==8.6.5
+  , GHCJS == 8.4
 
 extra-source-files:
   CHANGELOG.md
@@ -176,6 +177,9 @@ test-suite spec
     hspec-discover:hspec-discover >= 2.6.0 && < 2.8
 
 test-suite doctests
+  if impl(ghcjs)
+    buildable: False
+
   build-depends:
       base
     , servant

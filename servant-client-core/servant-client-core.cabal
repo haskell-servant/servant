@@ -20,7 +20,8 @@ tested-with:
   GHC ==8.0.2
    || ==8.2.2
    || ==8.4.4
-   || ==8.6.4
+   || ==8.6.5
+  , GHCJS == 8.4
 
 extra-source-files:
   CHANGELOG.md
