@@ -50,8 +50,9 @@ import           Servant.API
                  MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
                  QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
                  ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
-                 ToSourceIO (..), Vault, Verb, WithNamedContext, contentType,
-                 getHeadersHList, getResponse, toQueryParam, toUrlPiece)
+                 ToSourceIO (..), Vault, Verb, NoContentVerb, WithNamedContext,
+                 contentType, getHeadersHList, getResponse, toQueryParam,
+                 toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
@@ -233,6 +234,18 @@ instance {-# OVERLAPPING #-}
   ( RunClient m, ReflectMethod method
   ) => HasClient m (Verb method status cts NoContent) where
   type Client m (Verb method status cts NoContent)
+    = m NoContent
+  clientWithRoute _pm Proxy req = do
+    _response <- runRequest req { requestMethod = method }
+    return NoContent
+      where method = reflectMethod (Proxy :: Proxy method)
+
+  hoistClientMonad _ _ f ma = f ma
+
+instance {-# OVERLAPPING #-}
+  ( RunClient m, ReflectMethod method
+  ) => HasClient m (NoContentVerb method) where
+  type Client m (NoContentVerb method)
     = m NoContent
   clientWithRoute _pm Proxy req = do
     _response <- runRequest req { requestMethod = method }
