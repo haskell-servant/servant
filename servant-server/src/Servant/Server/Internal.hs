@@ -298,9 +298,8 @@ instance {-# OVERLAPPING #-}
     where method = reflectMethod (Proxy :: Proxy method)
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
-instance {-# OVERLAPPABLE #-}
-         (ReflectMethod method
-         ) => HasServer (NoContentVerb method) context where
+instance (ReflectMethod method) =>
+         HasServer (NoContentVerb method) context where
 
   type ServerT (NoContentVerb method) m = m NoContent
   hoistServerWithContext _ _ nt s = nt s
