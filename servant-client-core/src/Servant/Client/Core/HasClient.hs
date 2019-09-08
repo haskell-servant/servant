@@ -242,9 +242,8 @@ instance {-# OVERLAPPING #-}
 
   hoistClientMonad _ _ f ma = f ma
 
-instance {-# OVERLAPPING #-}
-  ( RunClient m, ReflectMethod method
-  ) => HasClient m (NoContentVerb method) where
+instance (RunClient m, ReflectMethod method) =>
+         HasClient m (NoContentVerb method) where
   type Client m (NoContentVerb method)
     = m NoContent
   clientWithRoute _pm Proxy req = do
