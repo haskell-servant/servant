@@ -4,7 +4,7 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.5.20180907
+# version: 0.5.20190908
 #
 language: c
 dist: xenial
@@ -14,6 +14,8 @@ git:
 branches:
   only:
     - master
+addons:
+  google: stable
 cache:
   directories:
     - $HOME/.cabal/packages
@@ -115,12 +117,14 @@ install:
     echo "  prefix: $CABALHOME"                         >> $CABALHOME/config
     echo "repository hackage.haskell.org"               >> $CABALHOME/config
     echo "  url: http://hackage.haskell.org/"           >> $CABALHOME/config
+  - GHCJOBS=-j2
   - |
-    echo "program-default-options" >> $CABALHOME/config
-    echo "  ghc-options: -j2"      >> $CABALHOME/config
+    echo "program-default-options"                >> $CABALHOME/config
+    echo "  ghc-options: $GHCJOBS +RTS -M6G -RTS" >> $CABALHOME/config
   - cat $CABALHOME/config
   - rm -fv cabal.project cabal.project.local cabal.project.freeze
   - travis_retry ${CABAL} v2-update -v
+  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 cabal-plan | color_cabal_output) ; fi
   - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 hspec-discover | color_cabal_output) ; fi
   # Generate cabal.project
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
@@ -128,6 +132,7 @@ install:
   - |
     echo "packages: servant" >> cabal.project
     if ! $GHCJS ; then echo "packages: servant-client" >> cabal.project ; fi
+    echo "packages: servant-jsaddle" >> cabal.project
     echo "packages: servant-client-core" >> cabal.project
     if ! $GHCJS ; then echo "packages: servant-http-streams" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: servant-docs" >> cabal.project ; fi
@@ -165,11 +170,12 @@ install:
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization: False"                             >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then (cd "servant" && autoreconf -i); fi
   - if [ -f "servant-client/configure.ac" ]; then (cd "servant-client" && autoreconf -i); fi
+  - if [ -f "servant-jsaddle/configure.ac" ]; then (cd "servant-jsaddle" && autoreconf -i); fi
   - if [ -f "servant-client-core/configure.ac" ]; then (cd "servant-client-core" && autoreconf -i); fi
   - if [ -f "servant-http-streams/configure.ac" ]; then (cd "servant-http-streams" && autoreconf -i); fi
   - if [ -f "servant-docs/configure.ac" ]; then (cd "servant-docs" && autoreconf -i); fi
@@ -209,6 +215,7 @@ script:
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec rm       '{}' \;
   - PKGDIR_servant="$(find . -maxdepth 1 -type d -regex '.*/servant-[0-9.]*')"
   - PKGDIR_servant_client="$(find . -maxdepth 1 -type d -regex '.*/servant-client-[0-9.]*')"
+  - PKGDIR_servant_jsaddle="$(find . -maxdepth 1 -type d -regex '.*/servant-jsaddle-[0-9.]*')"
   - PKGDIR_servant_client_core="$(find . -maxdepth 1 -type d -regex '.*/servant-client-core-[0-9.]*')"
   - PKGDIR_servant_http_streams="$(find . -maxdepth 1 -type d -regex '.*/servant-http-streams-[0-9.]*')"
   - PKGDIR_servant_docs="$(find . -maxdepth 1 -type d -regex '.*/servant-docs-[0-9.]*')"
@@ -237,6 +244,7 @@ script:
   - |
     echo "packages: ${PKGDIR_servant}" >> cabal.project
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_client}" >> cabal.project ; fi
+    echo "packages: ${PKGDIR_servant_jsaddle}" >> cabal.project
     echo "packages: ${PKGDIR_servant_client_core}" >> cabal.project
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_http_streams}" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_docs}" >> cabal.project ; fi
@@ -274,7 +282,7 @@ script:
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization: False"                             >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - echo -en 'travis_fold:end:unpack\\r'
@@ -285,6 +293,7 @@ script:
   - echo -en 'travis_fold:end:build-everything\\r'
   # Testing...
   - if ! $GHCJS ; then ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} all | color_cabal_output ; fi
+  - if $GHCJS ; then for testexe in $(cabal-plan list-bins '*:test:*' | awk '{ print $2 }'); do echo $testexe; nodejs ${testexe}.jsexe/all.js; done ; fi
   # haddock...
   - echo 'haddock...' && echo -en 'travis_fold:start:haddock\\r'
   - if ! $GHCJS ; then ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all | color_cabal_output ; fi

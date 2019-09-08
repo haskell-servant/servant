@@ -1,6 +1,7 @@
 packages:
   servant/
   servant-client/
+  servant-jsaddle/
   servant-client-core/
   servant-http-streams/
   servant-docs/
@@ -31,6 +32,8 @@ packages:
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
   -- doc/cookbook/open-id-connect
+
+
 
 tests: True
 optimization: False
