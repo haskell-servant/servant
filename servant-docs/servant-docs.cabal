@@ -24,6 +24,7 @@ tested-with:
    || ==8.2.2
    || ==8.4.4
    || ==8.6.5
+   || ==8.8.1
 
 extra-source-files:
   CHANGELOG.md
@@ -45,7 +46,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base       >= 4.9      && < 4.13
+      base       >= 4.9      && < 4.14
     , bytestring >= 0.10.8.1 && < 0.11
     , text       >= 1.2.3.0  && < 1.3
 
@@ -58,12 +59,12 @@ library
   build-depends:
       aeson                >= 1.4.1.0  && < 1.5
     , aeson-pretty         >= 0.8.5    && < 0.9
-    , base-compat          >= 0.10.5   && < 0.11
+    , base-compat          >= 0.10.5   && < 0.12
     , case-insensitive     >= 1.2.0.11 && < 1.3
     , hashable             >= 1.2.7.0  && < 1.4
     , http-media           >= 0.7.1.3  && < 0.9
     , http-types           >= 0.12.2   && < 0.13
-    , lens                 >= 4.17     && < 4.18
+    , lens                 >= 4.17     && < 4.19
     , string-conversions   >= 0.4.0.1  && < 0.5
     , universe-base        >= 1.1.1    && < 1.2
     , unordered-containers >= 0.2.9.0  && < 0.3

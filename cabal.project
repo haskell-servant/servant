@@ -16,7 +16,7 @@ packages:
 
 -- servant GHCJS
 packages:
---  servant-jsaddle/
+  servant-jsaddle/
 
 -- Cookbooks
 packages:
