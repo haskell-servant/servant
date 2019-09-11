@@ -18,7 +18,7 @@ packages:
   doc/cookbook/curl-mock
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
-  doc/cookbook/db-sqlite-simple
+--  doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
   -- doc/cookbook/hoist-server-with-context
@@ -85,3 +85,7 @@ source-repository-package
   type:     git
   location: https://github.com/luqui/control-monad-omega.git
   tag:      76c71e8917eec275ba423959f00a34583b5c7215
+
+-- MonadFail
+-- https://github.com/nurpax/sqlite-simple/issues/74
+constraints: sqlite-simple < 0
