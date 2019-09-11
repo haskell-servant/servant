@@ -8,7 +8,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 build-type:          Simple
 cabal-version:       >=1.10
-tested-with:         GHC==8.4.4, GHC==8.6.5
+tested-with:         GHC==8.4.4, GHC==8.6.5, GHC==8.8.1
 
 executable cookbook-basic-streaming
   main-is:             Streaming.lhs
@@ -17,7 +17,7 @@ executable cookbook-basic-streaming
   ghc-options:         -Wall -pgmL markdown-unlit -threaded -rtsopts
 
   hs-source-dirs: .
-  build-depends:       base >= 4.8 && <4.13
+  build-depends:       base >= 4.8 && <5
                      , aeson
                      , bytestring
                      , servant

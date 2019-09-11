@@ -22,9 +22,9 @@ packages:
   doc/cookbook/file-upload
   doc/cookbook/generic
   -- doc/cookbook/hoist-server-with-context
-  doc/cookbook/https
+--  doc/cookbook/https
   -- doc/cookbook/jwt-and-basic-auth/
-  doc/cookbook/pagination
+--  doc/cookbook/pagination
   -- doc/cookbook/sentry
   doc/cookbook/testing
   doc/cookbook/structuring-apis
@@ -41,6 +41,14 @@ constraints:
   memory <0.14.12 || >0.14.12
 
 allow-newer:
+  servant-multipart:http-media,
+  servant-multipart:lens
+
+allow-newer:
+  servant-js:base,
+  servant-js:lens
+
+allow-newer:
 --   servant-pagination:servant, servant-pagination:servant-server,
 --   servant-multipart:servant, servant-multipart:servant-server,
 --   servant-auth-server:servant, servant-auth-server:servant-server,
@@ -48,11 +56,15 @@ allow-newer:
 
 -- servant-quickcheck
 allow-newer:
+  servant-quickcheck:base,
+  servant-quickcheck:hspec,
+  servant-quickcheck:http-client,
+  servant-quickcheck:http-media,
+  servant-quickcheck:QuickCheck,
   servant-quickcheck:servant,
   servant-quickcheck:servant-client,
   servant-quickcheck:servant-server,
-  servant-quickcheck:hspec,
-  servant-quickcheck:http-client,
+  servant-quickcheck:time,
   servant-quickcheck:warp
 
 -- constraints: semigroups ^>=0.19
@@ -66,4 +78,10 @@ allow-newer: psqueues-0.2.7.1:hashable
 allow-newer: sqlite-simple-0.4.16.0:semigroups
 allow-newer: direct-sqlite-2.3.24:semigroups
 allow-newer: io-streams-1.5.1.0:network
+allow-newer: io-streams:primitive
 allow-newer: openssl-streams-1.2.2.0:network
+
+source-repository-package
+  type:     git
+  location: https://github.com/luqui/control-monad-omega.git
+  tag:      76c71e8917eec275ba423959f00a34583b5c7215

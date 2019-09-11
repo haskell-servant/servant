@@ -17,6 +17,7 @@ tested-with:
   GHC==8.2.2
   GHC==8.4.4
   GHC==8.6.5
+  GHC==8.8.1
 extra-source-files:
   static/index.html
   static/ui.js
@@ -34,7 +35,7 @@ library
   -- Packages `servant` depends on.
   -- We don't need to specify bounds here as this package is never released.
   build-depends:
-      base >= 4.7 && <4.13
+      base >= 4.7 && <5
     , aeson
     , attoparsec
     , base-compat
@@ -69,7 +70,7 @@ library
     , lucid        >= 2.9.11  && < 2.10
     , random       >= 1.1     && < 1.2
     , servant-js   >= 0.9     && < 0.10
-    , time         >= 1.6.0.1 && < 1.9
+    , time         >= 1.6.0.1 && < 1.10
 
   -- For legacy tools, we need to specify build-depends too
   build-depends: markdown-unlit >= 0.5.0 && <0.6
