@@ -65,7 +65,7 @@ instance (MonadIO m, a' ~ X, a ~ (), b' ~ (), r ~ ())
     fromSourceIO src = M $ liftIO $ S.unSourceT src (return . go) where
         go :: S.StepT IO b -> Proxy X () () b m ()
         go S.Stop        = Pure ()
-        go (S.Error err) = M (fail err)
+        go (S.Error err) = M (liftIO (fail err))
         go (S.Skip s)    = go s -- drives
         go (S.Effect ms) = M (liftIO (fmap go ms))
         go (S.Yield x s) = Respond x (const (go s))

@@ -89,7 +89,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                   >= 4.9      && < 4.13
+      base                   >= 4.9      && < 4.14
     , bytestring             >= 0.10.8.1 && < 0.11
     , mtl                    >= 2.2.2    && < 2.3
     , transformers           >= 0.5.2.0  && < 0.6
@@ -105,7 +105,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat            >= 0.10.5   && < 0.11
+      base-compat            >= 0.10.5   && < 0.12
     , aeson                  >= 1.4.1.0  && < 1.5
     , attoparsec             >= 0.13.2.2 && < 0.14
     , bifunctors             >= 5.5.3    && < 5.6
