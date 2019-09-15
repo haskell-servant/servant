@@ -158,19 +158,31 @@ install:
   - |
     echo "constraints:  foundation >=0.0.14"               >> cabal.project
     echo "constraints:  memory <0.14.12 || >0.14.12"       >> cabal.project
+<<<<<<< HEAD
     echo "allow-newer:  servant-quickcheck:servant"        >> cabal.project
     echo "allow-newer:  servant-quickcheck:servant-client" >> cabal.project
     echo "allow-newer:  servant-quickcheck:servant-server" >> cabal.project
     echo "allow-newer:  servant-quickcheck:hspec"          >> cabal.project
     echo "allow-newer:  servant-quickcheck:http-client"    >> cabal.project
+=======
+    echo "constraints:  sqlite-simple < 0"                 >> cabal.project
+    echo "allow-newer:  aeson-pretty-0.8.7:base-compat"    >> cabal.project
+>>>>>>> 8ed0e9e2... Less allow-newer
     echo "allow-newer:  vault-0.3.1.2:hashable"            >> cabal.project
     echo "allow-newer:  psqueues-0.2.7.1:hashable"         >> cabal.project
     echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups" >> cabal.project
     echo "allow-newer:  direct-sqlite-2.3.24:semigroups"   >> cabal.project
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
+<<<<<<< HEAD
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization: False"                             >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+=======
+    echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
+    echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
+    echo "optimization: False"                             >> cabal.project
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+>>>>>>> 8ed0e9e2... Less allow-newer
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then (cd "servant" && autoreconf -i); fi
@@ -270,19 +282,31 @@ script:
   - |
     echo "constraints:  foundation >=0.0.14"               >> cabal.project
     echo "constraints:  memory <0.14.12 || >0.14.12"       >> cabal.project
+<<<<<<< HEAD
     echo "allow-newer:  servant-quickcheck:servant"        >> cabal.project
     echo "allow-newer:  servant-quickcheck:servant-client" >> cabal.project
     echo "allow-newer:  servant-quickcheck:servant-server" >> cabal.project
     echo "allow-newer:  servant-quickcheck:hspec"          >> cabal.project
     echo "allow-newer:  servant-quickcheck:http-client"    >> cabal.project
+=======
+    echo "constraints:  sqlite-simple < 0"                 >> cabal.project
+    echo "allow-newer:  aeson-pretty-0.8.7:base-compat"    >> cabal.project
+>>>>>>> 8ed0e9e2... Less allow-newer
     echo "allow-newer:  vault-0.3.1.2:hashable"            >> cabal.project
     echo "allow-newer:  psqueues-0.2.7.1:hashable"         >> cabal.project
     echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups" >> cabal.project
     echo "allow-newer:  direct-sqlite-2.3.24:semigroups"   >> cabal.project
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
+<<<<<<< HEAD
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization: False"                             >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+=======
+    echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
+    echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
+    echo "optimization: False"                             >> cabal.project
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+>>>>>>> 8ed0e9e2... Less allow-newer
   - cat cabal.project || true
   - cat cabal.project.local || true
   - echo -en 'travis_fold:end:unpack\\r'
