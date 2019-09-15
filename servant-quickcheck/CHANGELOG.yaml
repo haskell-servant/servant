@@ -1,5 +1,11 @@
 releases:
 
+  - version: "0.8"
+    changes:
+      - description: Support GHC-8.8. Allow newer versions of other dependencies.
+        authors: phadej
+        date: 2019-09-15
+
   - version: "0.0.7.3"
     changes:
       - description: Support for servant-0.14
