@@ -18,6 +18,8 @@ import           Control.DeepSeq
                  (NFData, force)
 import           Control.Exception
                  (IOException, SomeException (..), catch, evaluate, throwIO)
+import           Control.Monad
+                 (unless)
 import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Codensity
@@ -25,9 +27,13 @@ import           Control.Monad.Codensity
 import           Control.Monad.Error.Class
                  (MonadError (..))
 import           Control.Monad.IO.Class
-                 (liftIO)
+                 (MonadIO (..))
 import           Control.Monad.Reader
+                 (MonadReader, ReaderT, ask, runReaderT)
+import           Control.Monad.Trans.Class
+                 (lift)
 import           Control.Monad.Trans.Except
+                 (ExceptT, runExceptT)
 import           Data.Bifunctor
                  (bimap, first)
 import           Data.ByteString.Builder
