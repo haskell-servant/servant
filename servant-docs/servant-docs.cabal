@@ -1,7 +1,6 @@
 cabal-version:       >=1.10
 name:                servant-docs
-version:             0.11.3
-x-revision:          1
+version:             0.11.4
 
 synopsis:            generate API docs for your servant webservice
 category:            Servant, Web
@@ -61,12 +60,12 @@ library
     , aeson-pretty         >= 0.8.5    && < 0.9
     , base-compat          >= 0.10.5   && < 0.11
     , case-insensitive     >= 1.2.0.11 && < 1.3
-    , control-monad-omega  >= 0.3.1    && < 0.4
     , hashable             >= 1.2.7.0  && < 1.4
     , http-media           >= 0.7.1.3  && < 0.9
     , http-types           >= 0.12.2   && < 0.13
     , lens                 >= 4.17     && < 4.18
     , string-conversions   >= 0.4.0.1  && < 0.5
+    , universe-base        >= 1.1.1    && < 1.2
     , unordered-containers >= 0.2.9.0  && < 0.3
 
   hs-source-dirs: src

@@ -58,3 +58,7 @@ allow-newer: direct-sqlite-2.3.24:semigroups
 allow-newer: io-streams-1.5.1.0:network
 allow-newer: io-streams-1.5.1.0:primitive
 allow-newer: openssl-streams-1.2.2.0:network
+
+-- MonadFail
+-- https://github.com/nurpax/sqlite-simple/issues/74
+constraints: sqlite-simple < 0
