@@ -40,8 +40,6 @@ matrix:
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.2.2","cabal-install-3.0"]}}
     - compiler: ghc-8.0.2
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.0.2","cabal-install-3.0"]}}
-  allow_failures:
-    - compiler: ghc-8.8.1
 before_install:
   - HC=$(echo "/opt/$CC/bin/ghc" | sed 's/-/\//')
   - WITHCOMPILER="-w $HC"
@@ -80,7 +78,6 @@ install:
   - TEST=--enable-tests
   - BENCH=--enable-benchmarks
   - HEADHACKAGE=false
-  - if [ $HCNUMVER -ge 80800 ] ; then HEADHACKAGE=true ; fi
   - rm -f $CABALHOME/config
   - |
     echo "verbose: normal +nowrap +markoutput"          >> $CABALHOME/config
@@ -98,17 +95,6 @@ install:
     echo "  prefix: $CABALHOME"                         >> $CABALHOME/config
     echo "repository hackage.haskell.org"               >> $CABALHOME/config
     echo "  url: http://hackage.haskell.org/"           >> $CABALHOME/config
-  - |
-    if $HEADHACKAGE; then
-    echo "allow-newer: $($HCPKG list --simple-output | sed -E 's/([a-zA-Z-]+)-[0-9.]+/*:\1/g')" >> $CABALHOME/config
-    echo "repository head.hackage.ghc.haskell.org"                                        >> $CABALHOME/config
-    echo "   url: https://ghc.gitlab.haskell.org/head.hackage/"                           >> $CABALHOME/config
-    echo "   secure: True"                                                                >> $CABALHOME/config
-    echo "   root-keys: 7541f32a4ccca4f97aea3b22f5e593ba2c0267546016b992dfadcd2fe944e55d" >> $CABALHOME/config
-    echo "              26021a13b401500c8eb2761ca95c61f2d625bfef951b939a8124ed12ecf07329" >> $CABALHOME/config
-    echo "              f76d08be13e9a61a377a85e2fb63f4c5435d40f8feb3e12eb05905edb8cdea89" >> $CABALHOME/config
-    echo "   key-threshold: 3"                                                            >> $CABALHOME/config
-    fi
   - GHCJOBS=-j2
   - |
     echo "program-default-options"                >> $CABALHOME/config
@@ -142,36 +128,34 @@ install:
     if [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/using-custom-monad" >> cabal.project ; fi
     if [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/using-free-client" >> cabal.project ; fi
   - |
-    echo "constraints:  foundation >=0.0.14"                            >> cabal.project
-    echo "constraints:  memory <0.14.12 || >0.14.12"                    >> cabal.project
-    echo "constraints:  sqlite-simple < 0"                              >> cabal.project
-    echo "allow-newer:  servant-multipart:http-media"                   >> cabal.project
-    echo "allow-newer:  servant-multipart:lens"                         >> cabal.project
-    echo "allow-newer:  servant-js:base"                                >> cabal.project
-    echo "allow-newer:  servant-js:lens"                                >> cabal.project
-    echo "allow-newer:  servant-quickcheck:base"                        >> cabal.project
-    echo "allow-newer:  servant-quickcheck:hspec"                       >> cabal.project
-    echo "allow-newer:  servant-quickcheck:http-client"                 >> cabal.project
-    echo "allow-newer:  servant-quickcheck:http-media"                  >> cabal.project
-    echo "allow-newer:  servant-quickcheck:QuickCheck"                  >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant"                     >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant-client"              >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant-server"              >> cabal.project
-    echo "allow-newer:  servant-quickcheck:time"                        >> cabal.project
-    echo "allow-newer:  servant-quickcheck:warp"                        >> cabal.project
-    echo "allow-newer:  vault-0.3.1.2:hashable"                         >> cabal.project
-    echo "allow-newer:  psqueues-0.2.7.1:hashable"                      >> cabal.project
-    echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups"              >> cabal.project
-    echo "allow-newer:  direct-sqlite-2.3.24:semigroups"                >> cabal.project
-    echo "allow-newer:  io-streams-1.5.1.0:network"                     >> cabal.project
-    echo "allow-newer:  io-streams:primitive"                           >> cabal.project
-    echo "allow-newer:  openssl-streams-1.2.2.0:network"                >> cabal.project
-    echo "optimization: False"                                          >> cabal.project
-    echo ""                                                             >> cabal.project
-    echo "source-repository-package"                                    >> cabal.project
-    echo "  type:     git"                                              >> cabal.project
-    echo "  location: https://github.com/luqui/control-monad-omega.git" >> cabal.project
-    echo "  tag:      76c71e8917eec275ba423959f00a34583b5c7215"         >> cabal.project
+    echo "constraints:  foundation >=0.0.14"                              >> cabal.project
+    echo "constraints:  memory <0.14.12 || >0.14.12"                      >> cabal.project
+    echo "constraints:  sqlite-simple < 0"                                >> cabal.project
+    echo "allow-newer:  servant-multipart-0.11.4:http-media"              >> cabal.project
+    echo "allow-newer:  servant-multipart-0.11.4:lens"                    >> cabal.project
+    echo "allow-newer:  servant-js-0.9.4:base"                            >> cabal.project
+    echo "allow-newer:  servant-js-0.9.4:base-compat"                     >> cabal.project
+    echo "allow-newer:  servant-js-0.9.4:lens"                            >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:base"                  >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:base-compat-batteries" >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:hspec"                 >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:http-client"           >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:http-media"            >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:QuickCheck"            >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:servant"               >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:servant-client"        >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:servant-server"        >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:time"                  >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:warp"                  >> cabal.project
+    echo "allow-newer:  aeson-pretty-0.8.7:base-compat"                   >> cabal.project
+    echo "allow-newer:  vault-0.3.1.2:hashable"                           >> cabal.project
+    echo "allow-newer:  psqueues-0.2.7.1:hashable"                        >> cabal.project
+    echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups"                >> cabal.project
+    echo "allow-newer:  direct-sqlite-2.3.24:semigroups"                  >> cabal.project
+    echo "allow-newer:  io-streams-1.5.1.0:network"                       >> cabal.project
+    echo "allow-newer:  io-streams-1.5.1.0:primitive"                     >> cabal.project
+    echo "allow-newer:  openssl-streams-1.2.2.0:network"                  >> cabal.project
+    echo "optimization: False"                                            >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
@@ -202,11 +186,8 @@ install:
 script:
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
   # Packaging...
-  - echo 'Packaging...' && echo -en 'travis_fold:start:sdist\\r'
   - ${CABAL} v2-sdist all | color_cabal_output
-  - echo -en 'travis_fold:end:sdist\\r'
   # Unpacking...
-  - echo 'Unpacking...' && echo -en 'travis_fold:start:unpack\\r'
   - mv dist-newstyle/sdist/*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec tar -xvf '{}' \;
@@ -258,61 +239,54 @@ script:
     if [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_using_custom_monad}" >> cabal.project ; fi
     if [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_using_free_client}" >> cabal.project ; fi
   - |
-    echo "constraints:  foundation >=0.0.14"                            >> cabal.project
-    echo "constraints:  memory <0.14.12 || >0.14.12"                    >> cabal.project
-    echo "constraints:  sqlite-simple < 0"                              >> cabal.project
-    echo "allow-newer:  servant-multipart:http-media"                   >> cabal.project
-    echo "allow-newer:  servant-multipart:lens"                         >> cabal.project
-    echo "allow-newer:  servant-js:base"                                >> cabal.project
-    echo "allow-newer:  servant-js:lens"                                >> cabal.project
-    echo "allow-newer:  servant-quickcheck:base"                        >> cabal.project
-    echo "allow-newer:  servant-quickcheck:hspec"                       >> cabal.project
-    echo "allow-newer:  servant-quickcheck:http-client"                 >> cabal.project
-    echo "allow-newer:  servant-quickcheck:http-media"                  >> cabal.project
-    echo "allow-newer:  servant-quickcheck:QuickCheck"                  >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant"                     >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant-client"              >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant-server"              >> cabal.project
-    echo "allow-newer:  servant-quickcheck:time"                        >> cabal.project
-    echo "allow-newer:  servant-quickcheck:warp"                        >> cabal.project
-    echo "allow-newer:  vault-0.3.1.2:hashable"                         >> cabal.project
-    echo "allow-newer:  psqueues-0.2.7.1:hashable"                      >> cabal.project
-    echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups"              >> cabal.project
-    echo "allow-newer:  direct-sqlite-2.3.24:semigroups"                >> cabal.project
-    echo "allow-newer:  io-streams-1.5.1.0:network"                     >> cabal.project
-    echo "allow-newer:  io-streams:primitive"                           >> cabal.project
-    echo "allow-newer:  openssl-streams-1.2.2.0:network"                >> cabal.project
-    echo "optimization: False"                                          >> cabal.project
-    echo ""                                                             >> cabal.project
-    echo "source-repository-package"                                    >> cabal.project
-    echo "  type:     git"                                              >> cabal.project
-    echo "  location: https://github.com/luqui/control-monad-omega.git" >> cabal.project
-    echo "  tag:      76c71e8917eec275ba423959f00a34583b5c7215"         >> cabal.project
+    echo "constraints:  foundation >=0.0.14"                              >> cabal.project
+    echo "constraints:  memory <0.14.12 || >0.14.12"                      >> cabal.project
+    echo "constraints:  sqlite-simple < 0"                                >> cabal.project
+    echo "allow-newer:  servant-multipart-0.11.4:http-media"              >> cabal.project
+    echo "allow-newer:  servant-multipart-0.11.4:lens"                    >> cabal.project
+    echo "allow-newer:  servant-js-0.9.4:base"                            >> cabal.project
+    echo "allow-newer:  servant-js-0.9.4:base-compat"                     >> cabal.project
+    echo "allow-newer:  servant-js-0.9.4:lens"                            >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:base"                  >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:base-compat-batteries" >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:hspec"                 >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:http-client"           >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:http-media"            >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:QuickCheck"            >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:servant"               >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:servant-client"        >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:servant-server"        >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:time"                  >> cabal.project
+    echo "allow-newer:  servant-quickcheck-0.0.7.4:warp"                  >> cabal.project
+    echo "allow-newer:  aeson-pretty-0.8.7:base-compat"                   >> cabal.project
+    echo "allow-newer:  vault-0.3.1.2:hashable"                           >> cabal.project
+    echo "allow-newer:  psqueues-0.2.7.1:hashable"                        >> cabal.project
+    echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups"                >> cabal.project
+    echo "allow-newer:  direct-sqlite-2.3.24:semigroups"                  >> cabal.project
+    echo "allow-newer:  io-streams-1.5.1.0:network"                       >> cabal.project
+    echo "allow-newer:  io-streams-1.5.1.0:primitive"                     >> cabal.project
+    echo "allow-newer:  openssl-streams-1.2.2.0:network"                  >> cabal.project
+    echo "optimization: False"                                            >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
-  - echo -en 'travis_fold:end:unpack\\r'
   # Building with tests and benchmarks...
-  - echo 'Building with tests and benchmarks...' && echo -en 'travis_fold:start:build-everything\\r'
   # build & run tests, build benchmarks
   - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} all | color_cabal_output
-  - echo -en 'travis_fold:end:build-everything\\r'
   # Testing...
   - ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} all | color_cabal_output
   # haddock...
-  - echo 'haddock...' && echo -en 'travis_fold:start:haddock\\r'
   - ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all | color_cabal_output
-  - echo -en 'travis_fold:end:haddock\\r'
   # Constraint sets
   - rm -rf cabal.project.local
   # Constraint set http-media-0.8
-  - echo 'Constraint set http-media-0.8' && echo -en 'travis_fold:start:constraint-sets-http-media-0.8\\r'
   - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --constraint='http-media ==0.8.*' all | color_cabal_output
-  - echo -en 'travis_fold:end:constraint-sets-http-media-0.8\\r'
   # Constraint set http-media-0.7
-  - echo 'Constraint set http-media-0.7' && echo -en 'travis_fold:start:constraint-sets-http-media-0.7\\r'
-  - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --constraint='http-media ==0.7.*' all | color_cabal_output
-  - echo -en 'travis_fold:end:constraint-sets-http-media-0.7\\r'
+  - if [ $HCNUMVER -lt 80800 ] ; then ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --constraint='http-media ==0.7.*' all | color_cabal_output ; fi
+  # Constraint set base-compat-0.10
+  - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --constraint='base-compat ==0.10.*' all | color_cabal_output
+  # Constraint set base-compat-0.11
+  - ${CABAL} v2-build $WITHCOMPILER --disable-tests --disable-benchmarks --constraint='base-compat ==0.11.*' all | color_cabal_output
 
 # REGENDATA ["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"]
 # EOF
