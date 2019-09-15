@@ -1,4 +1,3 @@
-folds: all-but-test
 branches: master release-0.16
 jobs-selection: any
 
@@ -19,6 +18,11 @@ constraint-set http-media-0.8
   constraints: http-media ==0.8.*
 
 constraint-set http-media-0.7
+  ghc: <8.8
   constraints: http-media ==0.7.*
 
-head-hackage: >= 8.8
+constraint-set base-compat-0.10
+  constraints: base-compat ==0.10.*
+
+constraint-set base-compat-0.11
+  constraints: base-compat ==0.11.*

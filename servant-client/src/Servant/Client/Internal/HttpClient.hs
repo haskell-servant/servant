@@ -16,10 +16,11 @@ import           Prelude.Compat
 
 import           Control.Concurrent.MVar
                  (modifyMVar, newMVar)
-import qualified Data.ByteString                          as BS
 import           Control.Concurrent.STM.TVar
 import           Control.Exception
+                 (SomeException (..), catch)
 import           Control.Monad
+                 (unless)
 import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Catch
@@ -27,15 +28,18 @@ import           Control.Monad.Catch
 import           Control.Monad.Error.Class
                  (MonadError (..))
 import           Control.Monad.IO.Class
-                 (liftIO)
+                 (MonadIO (..))
 import           Control.Monad.Reader
+                 (MonadReader, ReaderT, ask, runReaderT)
 import           Control.Monad.STM
                  (STM, atomically)
 import           Control.Monad.Trans.Control
                  (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
+                 (ExceptT, runExceptT)
 import           Data.Bifunctor
                  (bimap)
+import qualified Data.ByteString             as BS
 import           Data.ByteString.Builder
                  (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
@@ -64,8 +68,8 @@ import           Network.HTTP.Types
                  (hContentType, renderQuery, statusCode)
 import           Servant.Client.Core
 
-import qualified Servant.Types.SourceT                    as S
 import qualified Network.HTTP.Client         as Client
+import qualified Servant.Types.SourceT       as S
 
 -- | The environment in which a request is run.
 data ClientEnv

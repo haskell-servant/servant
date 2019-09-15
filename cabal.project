@@ -41,12 +41,13 @@ constraints:
   memory <0.14.12 || >0.14.12
 
 allow-newer:
-  servant-multipart:http-media,
-  servant-multipart:lens
+  servant-multipart-0.11.4:http-media,
+  servant-multipart-0.11.4:lens
 
 allow-newer:
-  servant-js:base,
-  servant-js:lens
+  servant-js-0.9.4:base,
+  servant-js-0.9.4:base-compat,
+  servant-js-0.9.4:lens
 
 allow-newer:
 --   servant-pagination:servant, servant-pagination:servant-server,
@@ -56,35 +57,27 @@ allow-newer:
 
 -- servant-quickcheck
 allow-newer:
-  servant-quickcheck:base,
-  servant-quickcheck:hspec,
-  servant-quickcheck:http-client,
-  servant-quickcheck:http-media,
-  servant-quickcheck:QuickCheck,
-  servant-quickcheck:servant,
-  servant-quickcheck:servant-client,
-  servant-quickcheck:servant-server,
-  servant-quickcheck:time,
-  servant-quickcheck:warp
+  servant-quickcheck-0.0.7.4:base,
+  servant-quickcheck-0.0.7.4:base-compat-batteries,
+  servant-quickcheck-0.0.7.4:hspec,
+  servant-quickcheck-0.0.7.4:http-client,
+  servant-quickcheck-0.0.7.4:http-media,
+  servant-quickcheck-0.0.7.4:QuickCheck,
+  servant-quickcheck-0.0.7.4:servant,
+  servant-quickcheck-0.0.7.4:servant-client,
+  servant-quickcheck-0.0.7.4:servant-server,
+  servant-quickcheck-0.0.7.4:time,
+  servant-quickcheck-0.0.7.4:warp
 
--- constraints: semigroups ^>=0.19
--- constraints: hashable ^>=1.3
--- constraints: network ^>=3.1
--- constraints: machines ^>=0.7
--- constraints: http-media ^>=0.8
+allow-newer: aeson-pretty-0.8.7:base-compat
 
 allow-newer: vault-0.3.1.2:hashable
 allow-newer: psqueues-0.2.7.1:hashable
 allow-newer: sqlite-simple-0.4.16.0:semigroups
 allow-newer: direct-sqlite-2.3.24:semigroups
 allow-newer: io-streams-1.5.1.0:network
-allow-newer: io-streams:primitive
+allow-newer: io-streams-1.5.1.0:primitive
 allow-newer: openssl-streams-1.2.2.0:network
-
-source-repository-package
-  type:     git
-  location: https://github.com/luqui/control-monad-omega.git
-  tag:      76c71e8917eec275ba423959f00a34583b5c7215
 
 -- MonadFail
 -- https://github.com/nurpax/sqlite-simple/issues/74

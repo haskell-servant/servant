@@ -1,0 +1,51 @@
+# Control which extensions/flags/modules/functions can be used
+#
+- extensions:
+  - default: false # all extension are banned by default
+  - name:
+    - CPP
+    - DataKinds
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - FlexibleContexts
+    - FlexibleInstances
+    - FunctionalDependencies
+    - GADTs
+    - KindSignatures
+    - MultiParamTypeClasses
+    - OverloadedStrings
+    - PolyKinds
+    - RankNTypes
+    - ScopedTypeVariables
+    - TypeFamilies
+    - TypeOperators
+    - UndecidableInstances
+
+- modules:
+  - {name: [Data.Set], as: Set}
+  - {name: Control.Arrow, within: []} # Certain modules are banned entirely
+
+- functions:
+  - {name: unsafePerformIO, within: []} # unsafePerformIO can only appear in no modules
+
+# Turn on hints that are off by default
+#
+# Ban "module X(module X) where", to require a real export list
+- warn: {name: Use explicit module export list}
+
+# Ignore some builtin hints
+- ignore: {name: Redundant do}
+- ignore: {name: Parse error}
+- ignore: {name: Use fmap}
+- ignore: {name: "Use <$>"}
+- ignore: {name: Use list comprehension}
+- ignore: {name: Use lambda-case}
+- ignore: {name: Eta reduce}
+
+# Add custom hints for this project
+#
+# Will suggest replacing "wibbleMany [myvar]" with "wibbleOne myvar"
+# - error: {lhs: "wibbleMany [x]", rhs: wibbleOne x}
