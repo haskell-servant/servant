@@ -1,7 +1,7 @@
 cabal-version:       >=1.10
 name:                servant-client-core
 version:             0.16
-x-revision:          1
+x-revision:          2
 
 synopsis:            Core functionality and class for client function generation for servant APIs
 category:            Servant, Web
