@@ -133,8 +133,10 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     it "Can modify the outgoing Request using the ClientEnv" $ \(_, baseUrl) -> do
       mgr <- C.newManager C.defaultManagerSettings
+      -- In proper situation, extra headers should probably be visible in API type.
+      -- However, testing for response timeout is difficult, so we test with something which is easy to observe
       let createClientRequest url r = (defaultMakeClientRequest url r) { C.requestHeaders = [("X-Added-Header", "XXX")] }
-      let clientEnv = ClientEnv mgr baseUrl Nothing createClientRequest
+      let clientEnv = (mkClientEnv mgr baseUrl) { makeClientRequest = createClientRequest }
       res <- runClientM (getRawSuccessPassHeaders HTTP.methodGet) clientEnv
       case res of
         Left e ->

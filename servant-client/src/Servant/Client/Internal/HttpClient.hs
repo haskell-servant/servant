@@ -80,6 +80,10 @@ data ClientEnv
   , cookieJar :: Maybe (TVar Client.CookieJar)
   , makeClientRequest :: BaseUrl -> Request -> Client.Request
   -- ^ this function can be used to customize the creation of @http-client@ requests from @servant@ requests. Default value: 'defaultMakeClientRequest'
+  --   Note that:
+  --      1. 'makeClientRequest' exists to allow overriding operational semantics e.g. 'responseTimeout' per request,
+  --          If you need global modifications, you should use 'managerModifyRequest'
+  --      2. the 'cookieJar', if defined, is being applied after 'makeClientRequest' is called.
   }
 
 -- | 'ClientEnv' smart constructor.
