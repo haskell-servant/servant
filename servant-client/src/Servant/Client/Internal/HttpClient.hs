@@ -68,18 +68,18 @@ import qualified Servant.Types.SourceT                    as S
 import qualified Network.HTTP.Client         as Client
 
 -- | The environment in which a request is run.
---   The baseUrl and makeClientRequest function are used to create a `http-client` request.
---   Cookies are then added to that request if a CookieJar is set on the environment.
---   Finally the request is executed with the manager.
+--   The 'baseUrl' and 'makeClientRequest' function are used to create a @http-client@ request.
+--   Cookies are then added to that request if a 'CookieJar' is set on the environment.
+--   Finally the request is executed with the 'manager'.
 --   The 'makeClientRequest' function can be used to modify the request to execute and set values which
---   are not specified on a `servant` Request like the `responseTimeout` or the `redirectCount`
+--   are not specified on a @servant@ 'Request' like 'responseTimeout' or 'redirectCount'
 data ClientEnv
   = ClientEnv
   { manager :: Client.Manager
   , baseUrl :: BaseUrl
   , cookieJar :: Maybe (TVar Client.CookieJar)
   , makeClientRequest :: BaseUrl -> Request -> Client.Request
-  -- ^ this function can be used to customize the creation of `http-client` requests from `servant` requests. Default value: 'defaultMakeClientRequest'
+  -- ^ this function can be used to customize the creation of @http-client@ requests from @servant@ requests. Default value: 'defaultMakeClientRequest'
   }
 
 -- | 'ClientEnv' smart constructor.
@@ -218,9 +218,9 @@ clientResponseToResponse f r = Response
     , responseHttpVersion = Client.responseVersion r
     }
 
--- | Create a `http-client` Request from a `servant` Request
---    The host, path and port fields are extracted from the BaseUrl
---    otherwise the body, headers and query string are derived from the `servant` Request
+-- | Create a @http-client@ 'Client.Request' from a @servant@ 'Request'
+--    The 'Client.host', 'Client.path' and 'Client.port' fields are extracted from the 'BaseUrl'
+--    otherwise the body, headers and query string are derived from the @servant@ 'Request'
 defaultMakeClientRequest :: BaseUrl -> Request -> Client.Request
 defaultMakeClientRequest burl r = Client.defaultRequest
     { Client.method = requestMethod r
