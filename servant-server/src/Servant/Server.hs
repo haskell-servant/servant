@@ -126,11 +126,11 @@ import           Servant.Server.Internal
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
 --
-serve :: (HasServer api '[]) => Proxy api -> Server api -> Application
+serve :: forall api. (HasServer api '[]) => Server api -> Application
 serve p = serveWithContext p EmptyContext
 
-serveWithContext :: (HasServer api context)
-    => Proxy api -> Context context -> Server api -> Application
+serveWithContext :: forall api context. (HasServer api context)
+    => Context context -> Server api -> Application
 serveWithContext p context server =
   toApplication (runRouter (route p context (emptyDelayed (Route server))))
 
@@ -154,8 +154,8 @@ serveWithContext p context server =
 -- >>> let nt x = return (runReader x "hi")
 -- >>> let mainServer = hoistServer readerApi nt readerServer :: Server ReaderAPI
 --
-hoistServer :: (HasServer api '[]) => Proxy api
-            -> (forall x. m x -> n x) -> ServerT api m -> ServerT api n
+hoistServer :: forall api m n. (HasServer api '[])
+            => (forall x. m x -> n x) -> ServerT api m -> ServerT api n
 hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
 
 -- | The function 'layout' produces a textual description of the internal
@@ -209,12 +209,12 @@ hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
 -- that one takes precedence. If both parts fail, the \"better\" error
 -- code will be returned.
 --
-layout :: (HasServer api '[]) => Proxy api -> Text
+layout :: forall api. (HasServer api '[]) => Text
 layout p = layoutWithContext p EmptyContext
 
 -- | Variant of 'layout' that takes an additional 'Context'.
-layoutWithContext :: (HasServer api context)
-    => Proxy api -> Context context -> Text
+layoutWithContext :: forall api context. (HasServer api context)
+                  => Context context -> Text
 layoutWithContext p context =
   routerLayout (route p context (emptyDelayed (FailFatal err501)))
 
