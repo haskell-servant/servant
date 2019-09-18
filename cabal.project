@@ -40,35 +40,6 @@ constraints:
   foundation >=0.0.14,
   memory <0.14.12 || >0.14.12
 
-allow-newer:
-  servant-multipart-0.11.4:http-media,
-  servant-multipart-0.11.4:lens
-
-allow-newer:
-  servant-js-0.9.4:base,
-  servant-js-0.9.4:base-compat,
-  servant-js-0.9.4:lens
-
-allow-newer:
---   servant-pagination:servant, servant-pagination:servant-server,
---   servant-multipart:servant, servant-multipart:servant-server,
---   servant-auth-server:servant, servant-auth-server:servant-server,
---   servant-js:servant, servant-js:servant-foreign
-
--- servant-quickcheck
-allow-newer:
-  servant-quickcheck-0.0.7.4:base,
-  servant-quickcheck-0.0.7.4:base-compat-batteries,
-  servant-quickcheck-0.0.7.4:hspec,
-  servant-quickcheck-0.0.7.4:http-client,
-  servant-quickcheck-0.0.7.4:http-media,
-  servant-quickcheck-0.0.7.4:QuickCheck,
-  servant-quickcheck-0.0.7.4:servant,
-  servant-quickcheck-0.0.7.4:servant-client,
-  servant-quickcheck-0.0.7.4:servant-server,
-  servant-quickcheck-0.0.7.4:time,
-  servant-quickcheck-0.0.7.4:warp
-
 allow-newer: aeson-pretty-0.8.7:base-compat
 
 allow-newer: vault-0.3.1.2:hashable
