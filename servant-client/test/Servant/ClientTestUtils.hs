@@ -85,7 +85,7 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 type Api =
   Get '[JSON] Person
   :<|> "get" :> Get '[JSON] Person
-  :<|> "deleteEmpty" :> DeleteNoContent '[JSON] NoContent
+  :<|> "deleteEmpty" :> DeleteNoContent
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
@@ -101,7 +101,7 @@ type Api =
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
-  :<|> "deleteContentType" :> DeleteNoContent '[JSON] NoContent
+  :<|> "deleteContentType" :> DeleteNoContent
   :<|> "redirectWithCookie" :> Raw
   :<|> "empty" :> EmptyAPI
 

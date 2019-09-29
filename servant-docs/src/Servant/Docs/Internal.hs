@@ -862,6 +862,18 @@ instance {-# OVERLAPPABLE #-}
           status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
+instance (ReflectMethod method) =>
+         HasDocs (NoContentVerb method) where
+  docsFor Proxy (endpoint, action) DocOptions{..} =
+    single endpoint' action'
+
+    where endpoint' = endpoint & method .~ method'
+          action' = action & response.respStatus .~ 204
+                           & response.respTypes .~ []
+                           & response.respBody .~ []
+                           & response.respHeaders .~ []
+          method' = reflectMethod (Proxy :: Proxy method)
+
 -- | TODO: mention the endpoint is streaming, its framing strategy
 --
 -- Also there are no samples.

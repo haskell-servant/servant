@@ -75,10 +75,12 @@ import           Servant.API
                  IsSecure (..), QueryFlag, QueryParam', QueryParams, Raw,
                  ReflectMethod (reflectMethod), RemoteHost, ReqBody',
                  SBool (..), SBoolI (..), SourceIO, Stream, StreamBody',
-                 Summary, ToSourceIO (..), Vault, Verb, WithNamedContext)
+                 Summary, ToSourceIO (..), Vault, Verb, NoContentVerb,
+                 WithNamedContext)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
-                 AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH)
+                 AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH,
+                 NoContent (NoContent))
 import           Servant.API.Modifiers
                  (FoldLenient, FoldRequired, RequestArgument,
                  unfoldRequestArgument)
@@ -262,6 +264,17 @@ methodRouter splitHeaders method proxy status action = leafRouter route'
                       let bdy = if allowedMethodHead method request then "" else body
                       in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
 
+noContentRouter :: Method
+             -> Status
+             -> Delayed env (Handler b)
+             -> Router env
+noContentRouter method status action = leafRouter route'
+  where
+    route' env request respond =
+          runAction (action `addMethodCheck` methodCheck method request)
+                    env request respond $ \ output ->
+                      Route $ responseLBS status [] ""
+
 instance {-# OVERLAPPABLE #-}
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
          ) => HasServer (Verb method status ctypes a) context where
@@ -285,6 +298,14 @@ instance {-# OVERLAPPING #-}
     where method = reflectMethod (Proxy :: Proxy method)
           status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
 
+instance (ReflectMethod method) =>
+         HasServer (NoContentVerb method) context where
+
+  type ServerT (NoContentVerb method) m = m NoContent
+  hoistServerWithContext _ _ nt s = nt s
+
+  route Proxy _ = noContentRouter method status204
+    where method = reflectMethod (Proxy :: Proxy method)
 
 instance {-# OVERLAPPABLE #-}
          ( MimeRender ctype chunk, ReflectMethod method, KnownNat status,

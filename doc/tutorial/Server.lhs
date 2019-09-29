@@ -830,7 +830,7 @@ type UserAPI3 = -- view the user with given userid, in JSON
                 Capture "userid" Int :> Get '[JSON] User
 
            :<|> -- delete the user with given userid. empty response
-                Capture "userid" Int :> DeleteNoContent '[JSON] NoContent
+                Capture "userid" Int :> DeleteNoContent
 ```
 
 We can instead factor out the `userid`:
@@ -838,7 +838,7 @@ We can instead factor out the `userid`:
 ``` haskell
 type UserAPI4 = Capture "userid" Int :>
   (    Get '[JSON] User
-  :<|> DeleteNoContent '[JSON] NoContent
+  :<|> DeleteNoContent
   )
 ```
 
@@ -896,13 +896,13 @@ type API1 = "users" :>
 -- we factor out the Request Body
 type API2 = ReqBody '[JSON] User :>
   (    Get '[JSON] User -- just display the same user back, don't register it
-  :<|> PostNoContent '[JSON] NoContent  -- register the user. empty response
+  :<|> PostNoContent -- register the user. empty response
   )
 
 -- we factor out a Header
 type API3 = Header "Authorization" Token :>
   (    Get '[JSON] SecretData -- get some secret data, if authorized
-  :<|> ReqBody '[JSON] SecretData :> PostNoContent '[JSON] NoContent -- add some secret data, if authorized
+  :<|> ReqBody '[JSON] SecretData :> PostNoContent -- add some secret data, if authorized
   )
 
 newtype Token = Token ByteString
@@ -915,11 +915,11 @@ API type only at the end.
 ``` haskell
 type UsersAPI =
        Get '[JSON] [User] -- list users
-  :<|> ReqBody '[JSON] User :> PostNoContent '[JSON] NoContent -- add a user
+  :<|> ReqBody '[JSON] User :> PostNoContent -- add a user
   :<|> Capture "userid" Int :>
          ( Get '[JSON] User -- view a user
-      :<|> ReqBody '[JSON] User :> PutNoContent '[JSON] NoContent -- update a user
-      :<|> DeleteNoContent '[JSON] NoContent -- delete a user
+      :<|> ReqBody '[JSON] User :> PutNoContent -- update a user
+      :<|> DeleteNoContent -- delete a user
          )
 
 usersServer :: Server UsersAPI
@@ -948,11 +948,11 @@ usersServer = getUsers :<|> newUser :<|> userOperations
 ``` haskell
 type ProductsAPI =
        Get '[JSON] [Product] -- list products
-  :<|> ReqBody '[JSON] Product :> PostNoContent '[JSON] NoContent -- add a product
+  :<|> ReqBody '[JSON] Product :> PostNoContent -- add a product
   :<|> Capture "productid" Int :>
          ( Get '[JSON] Product -- view a product
-      :<|> ReqBody '[JSON] Product :> PutNoContent '[JSON] NoContent -- update a product
-      :<|> DeleteNoContent '[JSON] NoContent -- delete a product
+      :<|> ReqBody '[JSON] Product :> PutNoContent -- update a product
+      :<|> DeleteNoContent -- delete a product
          )
 
 data Product = Product { productId :: Int }
@@ -996,11 +996,11 @@ abstract that away:
 -- indexed by values of type 'i'
 type APIFor a i =
        Get '[JSON] [a] -- list 'a's
-  :<|> ReqBody '[JSON] a :> PostNoContent '[JSON] NoContent -- add an 'a'
+  :<|> ReqBody '[JSON] a :> PostNoContent -- add an 'a'
   :<|> Capture "id" i :>
          ( Get '[JSON] a -- view an 'a' given its "identifier" of type 'i'
-      :<|> ReqBody '[JSON] a :> PutNoContent '[JSON] NoContent -- update an 'a'
-      :<|> DeleteNoContent '[JSON] NoContent -- delete an 'a'
+      :<|> ReqBody '[JSON] a :> PutNoContent -- update an 'a'
+      :<|> DeleteNoContent -- delete an 'a'
          )
 
 -- Build the appropriate 'Server'

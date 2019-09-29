@@ -64,7 +64,7 @@ type ComprehensiveAPIWithoutStreamingOrRaw' endpoint =
     :<|> "res-headers"      :> Get '[JSON] (Headers '[Header "foo" Int] NoContent)
     :<|> "foo"              :> GET
     :<|> "vault"            :> Vault :> GET
-    :<|> "post-no-content"  :> Verb 'POST 204 '[JSON] NoContent
+    :<|> "post-no-content"  :> PostNoContent
     :<|> "post-int"         :> Verb 'POST 204 '[JSON] Int
     :<|> "named-context"    :> WithNamedContext "foo" '[] GET
     :<|> "capture-all"      :> CaptureAll "foo" Int :> GET

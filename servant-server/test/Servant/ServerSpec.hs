@@ -51,7 +51,7 @@ import           Servant.API
                  JSON, NoContent (..), NoFraming, OctetStream, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
                  RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Verb,
-                 addHeader)
+                 NoContentVerb, addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
                  emptyServer, err400, err401, err403, err404, serve, serveWithContext)
@@ -103,7 +103,7 @@ spec = do
 
 type VerbApi method status
     =                Verb method status '[JSON] Person
- :<|> "noContent" :> Verb method status '[JSON] NoContent
+ :<|> "noContent" :> NoContentVerb method
  :<|> "header"    :> Verb method status '[JSON] (Headers '[Header "H" Int] Person)
  :<|> "headerNC"  :> Verb method status '[JSON] (Headers '[Header "H" Int] NoContent)
  :<|> "accept"    :> (    Verb method status '[JSON] Person
@@ -140,7 +140,7 @@ verbSpec = describe "Servant.API.Verb" $ do
 
           it "returns no content on NoContent" $ do
               response <- THW.request method "/noContent" [] ""
-              liftIO $ statusCode (simpleStatus response) `shouldBe` status
+              liftIO $ statusCode (simpleStatus response) `shouldBe` 204
               liftIO $ simpleBody response `shouldBe` ""
 
           -- HEAD should not return body

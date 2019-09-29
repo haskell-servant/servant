@@ -29,6 +29,12 @@ import           Network.HTTP.Types.Method
 data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
   deriving (Typeable, Generic)
 
+-- | @NoContentVerb@ is a specific type to represent 'NoContent' responses.
+-- It does not require either a list of content types (because there's
+-- no content) or a status code (because it should always be 204).
+data NoContentVerb  (method :: k1)
+  deriving (Typeable, Generic)
+
 -- * 200 responses
 --
 -- The 200 response is the workhorse of web servers, but also fairly generic.
@@ -113,15 +119,15 @@ type PutNonAuthoritative    = Verb 'PUT 203
 -- If the document view should be reset, use @205 Reset Content@.
 
 -- | 'GET' with 204 status code.
-type GetNoContent    = Verb 'GET 204
+type GetNoContent    = NoContentVerb 'GET
 -- | 'POST' with 204 status code.
-type PostNoContent   = Verb 'POST 204
+type PostNoContent   = NoContentVerb 'POST
 -- | 'DELETE' with 204 status code.
-type DeleteNoContent = Verb 'DELETE 204
+type DeleteNoContent = NoContentVerb 'DELETE
 -- | 'PATCH' with 204 status code.
-type PatchNoContent  = Verb 'PATCH 204
+type PatchNoContent  = NoContentVerb 'PATCH
 -- | 'PUT' with 204 status code.
-type PutNoContent    = Verb 'PUT 204
+type PutNoContent    = NoContentVerb 'PUT
 
 
 -- ** 205 Reset Content
