@@ -62,3 +62,15 @@ allow-newer: openssl-streams-1.2.2.0:network
 -- MonadFail
 -- https://github.com/nurpax/sqlite-simple/issues/74
 constraints: sqlite-simple < 0
+
+-- jsaddle
+allow-newer: jsaddle-0.9.6.0:lens
+allow-newer: jsaddle-0.9.6.0:primitive
+allow-newer: jsaddle-0.9.6.0:time
+allow-newer: jsaddle-dom-0.9.3.2:base
+allow-newer: jsaddle-dom-0.9.3.2:base-compat
+allow-newer: jsaddle-dom-0.9.3.2:Cabal
+allow-newer: jsaddle-dom-0.9.3.2:lens
+allow-newer: jsaddle-warp-0.9.6.0:time
+
+constraints: base-compat ^>=0.11
