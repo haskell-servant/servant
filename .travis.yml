@@ -4,7 +4,7 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.5.20190908
+# version: 0.5.20190916
 #
 language: c
 dist: xenial
@@ -33,6 +33,8 @@ matrix:
   include:
     - compiler: ghcjs-8.4
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["cabal-install-3.0"]}}
+    - compiler: ghc-8.8.1
+      addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.8.1","cabal-install-3.0"]}}
     - compiler: ghc-8.6.5
       addons: {"apt":{"sources":["hvr-ghc"],"packages":["ghc-8.6.5","cabal-install-3.0"]}}
     - compiler: ghc-8.4.4
@@ -124,7 +126,7 @@ install:
   - cat $CABALHOME/config
   - rm -fv cabal.project cabal.project.local cabal.project.freeze
   - travis_retry ${CABAL} v2-update -v
-  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 cabal-plan | color_cabal_output) ; fi
+  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe' | color_cabal_output) ; fi
   - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 hspec-discover | color_cabal_output) ; fi
   # Generate cabal.project
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
@@ -132,7 +134,6 @@ install:
   - |
     echo "packages: servant" >> cabal.project
     if ! $GHCJS ; then echo "packages: servant-client" >> cabal.project ; fi
-    echo "packages: servant-jsaddle" >> cabal.project
     echo "packages: servant-client-core" >> cabal.project
     if ! $GHCJS ; then echo "packages: servant-http-streams" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: servant-docs" >> cabal.project ; fi
@@ -142,14 +143,13 @@ install:
     if ! $GHCJS ; then echo "packages: servant-machines" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: servant-conduit" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: servant-pipes" >> cabal.project ; fi
+    if $GHCJS || ! $GHCJS && [ $HCNUMVER -lt 80800 ] ; then echo "packages: servant-jsaddle" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/basic-auth" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/curl-mock" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/basic-streaming" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/db-postgres-pool" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/db-sqlite-simple" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/file-upload" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/generic" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/https" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/pagination" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/testing" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/structuring-apis" >> cabal.project ; fi
@@ -158,24 +158,21 @@ install:
   - |
     echo "constraints:  foundation >=0.0.14"               >> cabal.project
     echo "constraints:  memory <0.14.12 || >0.14.12"       >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant"        >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant-client" >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant-server" >> cabal.project
-    echo "allow-newer:  servant-quickcheck:hspec"          >> cabal.project
-    echo "allow-newer:  servant-quickcheck:http-client"    >> cabal.project
+    echo "constraints:  sqlite-simple < 0"                 >> cabal.project
+    echo "allow-newer:  aeson-pretty-0.8.7:base-compat"    >> cabal.project
     echo "allow-newer:  vault-0.3.1.2:hashable"            >> cabal.project
     echo "allow-newer:  psqueues-0.2.7.1:hashable"         >> cabal.project
     echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups" >> cabal.project
     echo "allow-newer:  direct-sqlite-2.3.24:semigroups"   >> cabal.project
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
+    echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization: False"                             >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then (cd "servant" && autoreconf -i); fi
   - if [ -f "servant-client/configure.ac" ]; then (cd "servant-client" && autoreconf -i); fi
-  - if [ -f "servant-jsaddle/configure.ac" ]; then (cd "servant-jsaddle" && autoreconf -i); fi
   - if [ -f "servant-client-core/configure.ac" ]; then (cd "servant-client-core" && autoreconf -i); fi
   - if [ -f "servant-http-streams/configure.ac" ]; then (cd "servant-http-streams" && autoreconf -i); fi
   - if [ -f "servant-docs/configure.ac" ]; then (cd "servant-docs" && autoreconf -i); fi
@@ -185,14 +182,13 @@ install:
   - if [ -f "servant-machines/configure.ac" ]; then (cd "servant-machines" && autoreconf -i); fi
   - if [ -f "servant-conduit/configure.ac" ]; then (cd "servant-conduit" && autoreconf -i); fi
   - if [ -f "servant-pipes/configure.ac" ]; then (cd "servant-pipes" && autoreconf -i); fi
+  - if [ -f "servant-jsaddle/configure.ac" ]; then (cd "servant-jsaddle" && autoreconf -i); fi
   - if [ -f "doc/cookbook/basic-auth/configure.ac" ]; then (cd "doc/cookbook/basic-auth" && autoreconf -i); fi
   - if [ -f "doc/cookbook/curl-mock/configure.ac" ]; then (cd "doc/cookbook/curl-mock" && autoreconf -i); fi
   - if [ -f "doc/cookbook/basic-streaming/configure.ac" ]; then (cd "doc/cookbook/basic-streaming" && autoreconf -i); fi
   - if [ -f "doc/cookbook/db-postgres-pool/configure.ac" ]; then (cd "doc/cookbook/db-postgres-pool" && autoreconf -i); fi
-  - if [ -f "doc/cookbook/db-sqlite-simple/configure.ac" ]; then (cd "doc/cookbook/db-sqlite-simple" && autoreconf -i); fi
   - if [ -f "doc/cookbook/file-upload/configure.ac" ]; then (cd "doc/cookbook/file-upload" && autoreconf -i); fi
   - if [ -f "doc/cookbook/generic/configure.ac" ]; then (cd "doc/cookbook/generic" && autoreconf -i); fi
-  - if [ -f "doc/cookbook/https/configure.ac" ]; then (cd "doc/cookbook/https" && autoreconf -i); fi
   - if [ -f "doc/cookbook/pagination/configure.ac" ]; then (cd "doc/cookbook/pagination" && autoreconf -i); fi
   - if [ -f "doc/cookbook/testing/configure.ac" ]; then (cd "doc/cookbook/testing" && autoreconf -i); fi
   - if [ -f "doc/cookbook/structuring-apis/configure.ac" ]; then (cd "doc/cookbook/structuring-apis" && autoreconf -i); fi
@@ -215,7 +211,6 @@ script:
   - find . -maxdepth 1 -type f -name '*.tar.gz' -exec rm       '{}' \;
   - PKGDIR_servant="$(find . -maxdepth 1 -type d -regex '.*/servant-[0-9.]*')"
   - PKGDIR_servant_client="$(find . -maxdepth 1 -type d -regex '.*/servant-client-[0-9.]*')"
-  - PKGDIR_servant_jsaddle="$(find . -maxdepth 1 -type d -regex '.*/servant-jsaddle-[0-9.]*')"
   - PKGDIR_servant_client_core="$(find . -maxdepth 1 -type d -regex '.*/servant-client-core-[0-9.]*')"
   - PKGDIR_servant_http_streams="$(find . -maxdepth 1 -type d -regex '.*/servant-http-streams-[0-9.]*')"
   - PKGDIR_servant_docs="$(find . -maxdepth 1 -type d -regex '.*/servant-docs-[0-9.]*')"
@@ -225,14 +220,13 @@ script:
   - PKGDIR_servant_machines="$(find . -maxdepth 1 -type d -regex '.*/servant-machines-[0-9.]*')"
   - PKGDIR_servant_conduit="$(find . -maxdepth 1 -type d -regex '.*/servant-conduit-[0-9.]*')"
   - PKGDIR_servant_pipes="$(find . -maxdepth 1 -type d -regex '.*/servant-pipes-[0-9.]*')"
+  - PKGDIR_servant_jsaddle="$(find . -maxdepth 1 -type d -regex '.*/servant-jsaddle-[0-9.]*')"
   - PKGDIR_cookbook_basic_auth="$(find . -maxdepth 1 -type d -regex '.*/cookbook-basic-auth-[0-9.]*')"
   - PKGDIR_cookbook_curl_mock="$(find . -maxdepth 1 -type d -regex '.*/cookbook-curl-mock-[0-9.]*')"
   - PKGDIR_cookbook_basic_streaming="$(find . -maxdepth 1 -type d -regex '.*/cookbook-basic-streaming-[0-9.]*')"
   - PKGDIR_cookbook_db_postgres_pool="$(find . -maxdepth 1 -type d -regex '.*/cookbook-db-postgres-pool-[0-9.]*')"
-  - PKGDIR_cookbook_db_sqlite_simple="$(find . -maxdepth 1 -type d -regex '.*/cookbook-db-sqlite-simple-[0-9.]*')"
   - PKGDIR_cookbook_file_upload="$(find . -maxdepth 1 -type d -regex '.*/cookbook-file-upload-[0-9.]*')"
   - PKGDIR_cookbook_generic="$(find . -maxdepth 1 -type d -regex '.*/cookbook-generic-[0-9.]*')"
-  - PKGDIR_cookbook_https="$(find . -maxdepth 1 -type d -regex '.*/cookbook-https-[0-9.]*')"
   - PKGDIR_cookbook_pagination="$(find . -maxdepth 1 -type d -regex '.*/cookbook-pagination-[0-9.]*')"
   - PKGDIR_cookbook_testing="$(find . -maxdepth 1 -type d -regex '.*/cookbook-testing-[0-9.]*')"
   - PKGDIR_cookbook_structuring_apis="$(find . -maxdepth 1 -type d -regex '.*/cookbook-structuring-apis-[0-9.]*')"
@@ -244,7 +238,6 @@ script:
   - |
     echo "packages: ${PKGDIR_servant}" >> cabal.project
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_client}" >> cabal.project ; fi
-    echo "packages: ${PKGDIR_servant_jsaddle}" >> cabal.project
     echo "packages: ${PKGDIR_servant_client_core}" >> cabal.project
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_http_streams}" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_docs}" >> cabal.project ; fi
@@ -254,14 +247,13 @@ script:
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_machines}" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_conduit}" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_pipes}" >> cabal.project ; fi
+    if $GHCJS || ! $GHCJS && [ $HCNUMVER -lt 80800 ] ; then echo "packages: ${PKGDIR_servant_jsaddle}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_basic_auth}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_curl_mock}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_basic_streaming}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_db_postgres_pool}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_db_sqlite_simple}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_file_upload}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_generic}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_https}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_pagination}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_testing}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_structuring_apis}" >> cabal.project ; fi
@@ -270,21 +262,47 @@ script:
   - |
     echo "constraints:  foundation >=0.0.14"               >> cabal.project
     echo "constraints:  memory <0.14.12 || >0.14.12"       >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant"        >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant-client" >> cabal.project
-    echo "allow-newer:  servant-quickcheck:servant-server" >> cabal.project
-    echo "allow-newer:  servant-quickcheck:hspec"          >> cabal.project
-    echo "allow-newer:  servant-quickcheck:http-client"    >> cabal.project
+    echo "constraints:  sqlite-simple < 0"                 >> cabal.project
+    echo "allow-newer:  aeson-pretty-0.8.7:base-compat"    >> cabal.project
     echo "allow-newer:  vault-0.3.1.2:hashable"            >> cabal.project
     echo "allow-newer:  psqueues-0.2.7.1:hashable"         >> cabal.project
     echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups" >> cabal.project
     echo "allow-newer:  direct-sqlite-2.3.24:semigroups"   >> cabal.project
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
+    echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
     echo "optimization: False"                             >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-db-sqlite-simple|cookbook-file-upload|cookbook-generic|cookbook-https|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
+  - |
+    pkgdir() {
+      case $1 in
+        servant) echo ${PKGDIR_servant} ;;
+        servant-client) echo ${PKGDIR_servant_client} ;;
+        servant-client-core) echo ${PKGDIR_servant_client_core} ;;
+        servant-http-streams) echo ${PKGDIR_servant_http_streams} ;;
+        servant-docs) echo ${PKGDIR_servant_docs} ;;
+        servant-foreign) echo ${PKGDIR_servant_foreign} ;;
+        servant-server) echo ${PKGDIR_servant_server} ;;
+        tutorial) echo ${PKGDIR_tutorial} ;;
+        servant-machines) echo ${PKGDIR_servant_machines} ;;
+        servant-conduit) echo ${PKGDIR_servant_conduit} ;;
+        servant-pipes) echo ${PKGDIR_servant_pipes} ;;
+        servant-jsaddle) echo ${PKGDIR_servant_jsaddle} ;;
+        cookbook-basic-auth) echo ${PKGDIR_cookbook_basic_auth} ;;
+        cookbook-curl-mock) echo ${PKGDIR_cookbook_curl_mock} ;;
+        cookbook-basic-streaming) echo ${PKGDIR_cookbook_basic_streaming} ;;
+        cookbook-db-postgres-pool) echo ${PKGDIR_cookbook_db_postgres_pool} ;;
+        cookbook-file-upload) echo ${PKGDIR_cookbook_file_upload} ;;
+        cookbook-generic) echo ${PKGDIR_cookbook_generic} ;;
+        cookbook-pagination) echo ${PKGDIR_cookbook_pagination} ;;
+        cookbook-testing) echo ${PKGDIR_cookbook_testing} ;;
+        cookbook-structuring-apis) echo ${PKGDIR_cookbook_structuring_apis} ;;
+        cookbook-using-custom-monad) echo ${PKGDIR_cookbook_using_custom_monad} ;;
+        cookbook-using-free-client) echo ${PKGDIR_cookbook_using_free_client} ;;
+      esac
+    }
   - echo -en 'travis_fold:end:unpack\\r'
   # Building with tests and benchmarks...
   - echo 'Building with tests and benchmarks...' && echo -en 'travis_fold:start:build-everything\\r'
@@ -293,7 +311,7 @@ script:
   - echo -en 'travis_fold:end:build-everything\\r'
   # Testing...
   - if ! $GHCJS ; then ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} all | color_cabal_output ; fi
-  - if $GHCJS ; then for testexe in $(cabal-plan list-bins '*:test:*' | awk '{ print $2 }'); do echo $testexe; nodejs ${testexe}.jsexe/all.js; done ; fi
+  - if $GHCJS ; then cabal-plan list-bins '*:test:*' | while read -r line; do testpkg=$(echo "$line" | perl -pe 's/:.*//'); testexe=$(echo "$line" | awk '{ print $2 }'); echo "testing $textexe in package $textpkg"; (cd "$(pkgdir $testpkg)" && nodejs "$testexe".jsexe/all.js); done ; fi
   # haddock...
   - echo 'haddock...' && echo -en 'travis_fold:start:haddock\\r'
   - if ! $GHCJS ; then ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all | color_cabal_output ; fi

@@ -27,7 +27,6 @@ import           Control.Arrow
 import           Control.Lens
                  (makeLenses, mapped, over, traversed, view, (%~), (&), (.~),
                  (<>~), (^.), (|>))
-import qualified Control.Monad.Omega        as Omega
 import qualified Data.ByteString.Char8      as BSC
 import           Data.ByteString.Lazy.Char8
                  (ByteString)
@@ -64,6 +63,8 @@ import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
 import           Servant.API.TypeLevel
+
+import qualified Data.Universe.Helpers as U
 
 import qualified Data.HashMap.Strict        as HM
 import qualified Data.Text                  as T
@@ -479,22 +480,22 @@ samples = map ("",)
 
 -- | Default sample Generic-based inputs/outputs.
 defaultSamples :: forall a. (Generic a, GToSample (Rep a)) => Proxy a -> [(Text, a)]
-defaultSamples _ = Omega.runOmega $ second to <$> gtoSamples (Proxy :: Proxy (Rep a))
+defaultSamples _ = second to <$> gtoSamples (Proxy :: Proxy (Rep a))
 
 -- | @'ToSample'@ for Generics.
 --
--- The use of @'Omega'@ allows for more productive sample generation.
+-- Note: we use combinators from "Universe.Data.Helpers" for more productive sample generation.
 class GToSample t where
-  gtoSamples :: proxy t -> Omega.Omega (Text, t x)
+  gtoSamples :: proxy t -> [(Text, t x)]
 
 instance GToSample U1 where
-  gtoSamples _ = Omega.each (singleSample U1)
+  gtoSamples _ = singleSample U1
 
 instance GToSample V1 where
   gtoSamples _ = empty
 
 instance (GToSample p, GToSample q) => GToSample (p :*: q) where
-  gtoSamples _ = render <$> ps <*> qs
+  gtoSamples _ = U.cartesianProduct render ps qs
     where
       ps = gtoSamples (Proxy :: Proxy p)
       qs = gtoSamples (Proxy :: Proxy q)
@@ -503,13 +504,13 @@ instance (GToSample p, GToSample q) => GToSample (p :*: q) where
         | otherwise              = (ta <> ", " <> tb, a :*: b)
 
 instance (GToSample p, GToSample q) => GToSample (p :+: q) where
-  gtoSamples _ = lefts <|> rights
+  gtoSamples _ = lefts U.+++ rights
     where
       lefts  = second L1 <$> gtoSamples (Proxy :: Proxy p)
       rights = second R1 <$> gtoSamples (Proxy :: Proxy q)
 
 instance ToSample a => GToSample (K1 i a) where
-  gtoSamples _ = second K1 <$> Omega.each (toSamples (Proxy :: Proxy a))
+  gtoSamples _ = second K1 <$> toSamples (Proxy :: Proxy a)
 
 instance (GToSample f) => GToSample (M1 i a f) where
   gtoSamples _ = second M1 <$> gtoSamples (Proxy :: Proxy f)
