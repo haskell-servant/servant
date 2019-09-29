@@ -47,7 +47,7 @@ See `CONTRIBUTING.md`
 
 To regenerate the script use (*note:* atm you need to comment `doc/cookbook/` packages).
 
-```
+```sh
 runghc ~/Documents/other-haskell/multi-ghc-travis/make_travis_yml_2.hs regenerate
 ```
 
@@ -59,3 +59,27 @@ For example, the following will disallow single `troublemaker-13.37` package ver
 constraints:
   troublemaker <13.37 && > 13.37
 ```
+
+## TechEmpower framework bechmarks
+
+We develop & maintain the servant TFB entry in https://github.com/haskell-servant/FrameworkBenchmarks/
+
+To verify (i.e. compile and test that it works)
+
+```sh
+./tfb --mode verify --test servant servant-beam servant-psql-simple --type json plaintext db fortune
+```
+
+To compare with  `warp`
+
+```sh
+./tfb --mode benchmark --test warp servant servant-beam servant-psql-simple --type json plaintext db fortune
+```
+
+To compare with `reitit` (Clojure framework)
+
+```sh
+./tfb --mode benchmark --test reitit reitit-async reitit-jdbc servant servant-beam servant-psql-simple --type json plaintext db fortune
+```
+
+And visualise the results at https://www.techempower.com/benchmarks/#section=test
