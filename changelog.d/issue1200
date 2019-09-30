@@ -1,0 +1,10 @@
+synopsis: Fix Verb with headers checking content type differently
+prs: #1204
+issues: #1200
+packages: servant-client servant-client-core servant-http-streams
+
+description: {
+
+TBW
+
+}

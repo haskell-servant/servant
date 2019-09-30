@@ -35,7 +35,34 @@ Some things we like:
 Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
 files in the repository provide a good baseline for consistency.
 
-**Important**: please do not modify the changelog files nor the versions of the servant packages you are sending patches for. We take care of this before every release and do it uniformly for all the servant packages, so there's no need to worry about this for your pull requests.
+**Important**: please do not modify the versions of the servant packages you are sending patches for.
+
+## Changelog entries
+
+We experiment with using [changelog-d tool](https://github.com/phadej/changelog-d) to assemble changelogs.
+You are not required to install it.
+
+In each PR please add a file to `changelog.d` directory named after issue you are solving or the pull request itself (in a separate commit after you know the pull request number). For example
+
+```cabal
+synopsis: One sentence summary of the change.
+prs: #1219
+issues: #1028
+
+description: {
+
+A longer description. Small changes don't need this.
+Bigger ones definitely do, for example we try to include migration hints
+for breaking changes.
+
+However if you don't know what to write, that's ok too.
+
+By the way, the braces around are omitted when the file is parsed.
+They can be used so the field doesn't need to be indented, which is handy
+for prose.
+
+}
+```
 
 ## PR process
 
