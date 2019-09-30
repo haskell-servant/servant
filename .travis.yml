@@ -171,6 +171,10 @@ install:
     echo "allow-newer:  jsaddle-0.9.6.0:lens"              >> cabal.project
     echo "allow-newer:  jsaddle-0.9.6.0:primitive"         >> cabal.project
     echo "allow-newer:  jsaddle-0.9.6.0:time"              >> cabal.project
+    echo "allow-newer:  jsaddle-dom-0.9.3.1:base"          >> cabal.project
+    echo "allow-newer:  jsaddle-dom-0.9.3.1:base-compat"   >> cabal.project
+    echo "allow-newer:  jsaddle-dom-0.9.3.1:Cabal"         >> cabal.project
+    echo "allow-newer:  jsaddle-dom-0.9.3.1:lens"          >> cabal.project
     echo "allow-newer:  jsaddle-dom-0.9.3.2:base"          >> cabal.project
     echo "allow-newer:  jsaddle-dom-0.9.3.2:base-compat"   >> cabal.project
     echo "allow-newer:  jsaddle-dom-0.9.3.2:Cabal"         >> cabal.project
@@ -284,6 +288,10 @@ script:
     echo "allow-newer:  jsaddle-0.9.6.0:lens"              >> cabal.project
     echo "allow-newer:  jsaddle-0.9.6.0:primitive"         >> cabal.project
     echo "allow-newer:  jsaddle-0.9.6.0:time"              >> cabal.project
+    echo "allow-newer:  jsaddle-dom-0.9.3.1:base"          >> cabal.project
+    echo "allow-newer:  jsaddle-dom-0.9.3.1:base-compat"   >> cabal.project
+    echo "allow-newer:  jsaddle-dom-0.9.3.1:Cabal"         >> cabal.project
+    echo "allow-newer:  jsaddle-dom-0.9.3.1:lens"          >> cabal.project
     echo "allow-newer:  jsaddle-dom-0.9.3.2:base"          >> cabal.project
     echo "allow-newer:  jsaddle-dom-0.9.3.2:base-compat"   >> cabal.project
     echo "allow-newer:  jsaddle-dom-0.9.3.2:Cabal"         >> cabal.project

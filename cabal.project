@@ -65,6 +65,10 @@ constraints: sqlite-simple < 0
 allow-newer: jsaddle-0.9.6.0:lens
 allow-newer: jsaddle-0.9.6.0:primitive
 allow-newer: jsaddle-0.9.6.0:time
+allow-newer: jsaddle-dom-0.9.3.1:base
+allow-newer: jsaddle-dom-0.9.3.1:base-compat
+allow-newer: jsaddle-dom-0.9.3.1:Cabal
+allow-newer: jsaddle-dom-0.9.3.1:lens
 allow-newer: jsaddle-dom-0.9.3.2:base
 allow-newer: jsaddle-dom-0.9.3.2:base-compat
 allow-newer: jsaddle-dom-0.9.3.2:Cabal
