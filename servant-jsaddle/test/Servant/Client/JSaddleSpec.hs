@@ -105,16 +105,18 @@ spec = do
           serverApp = pure $ logRequest $ addCors $ serve testApi testServer
 
       Warp.testWithApplication serverApp $ \serverPort -> do
+          threadDelay $ 500 * 1000
 
           let clientApp :: IO Application
               clientApp = WS.jsaddleOr defaultConnectionOptions (action serverPort >> Run.syncPoint) WS.jsaddleApp
 
           Warp.testWithApplication (simpleCors <$> clientApp) $ \clientPort -> do
+              threadDelay $ 500 * 1000
+
               putStrLn $ "server http://localhost:" ++ show serverPort
               putStrLn $ "client http://localhost:" ++ show clientPort
               putStrLn $ "google-chrome-stable --headless --disable-gpu --screenshot http://localhost:" ++ show clientPort
 
-              -- threadDelay $ 1000 * 1000 * 1000
 
               -- Run headless chrome
               -- https://docs.travis-ci.com/user/gui-and-headless-browsers/#using-the-chrome-addon-in-the-headless-mode
