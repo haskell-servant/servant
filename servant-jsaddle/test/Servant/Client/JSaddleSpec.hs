@@ -8,7 +8,10 @@ module Servant.Client.JSaddleSpec where
 
 import           Control.Concurrent
                  (threadDelay)
-import           Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
+import           Control.Concurrent.MVar
+                 (newEmptyMVar, putMVar, takeMVar)
+import           Control.Exception
+                 (handle, throwIO)
 import           Control.Monad.Trans
 import           Data.Aeson
 import           Data.ByteString
@@ -28,15 +31,16 @@ import qualified Language.Javascript.JSaddle.WebSockets as WS
 import qualified Network.HTTP.Types                     as Http
 import qualified Network.Wai                            as Wai
 import           Network.Wai.Handler.Warp               as Warp
-import qualified System.Process as P
 import           Network.Wai.Middleware.AddHeaders
 import           Network.Wai.Middleware.Cors
                  (simpleCors)
 import           Network.WebSockets
                  (defaultConnectionOptions)
+import qualified Network.WebSockets                     as WS
 import           Servant.API
 import           Servant.Client.JSaddle
 import           Servant.Server
+import qualified System.Process                         as P
 import           Test.Hspec
 
 type TestApi = ReqBody '[OctetStream] ByteString :> Post '[JSON] TestResponse
@@ -104,17 +108,23 @@ spec = do
       let serverApp :: IO Application
           serverApp = pure $ logRequest $ addCors $ serve testApi testServer
 
-      Warp.testWithApplication serverApp $ \serverPort -> do
+      let handler :: WS.ConnectionException -> IO ()
+          handler WS.ConnectionClosed = return ()
+          handler e                   = throwIO e
+
+      handle handler $ Warp.testWithApplication serverApp $ \serverPort -> do
+          threadDelay $ 500 * 1000
 
           let clientApp :: IO Application
               clientApp = WS.jsaddleOr defaultConnectionOptions (action serverPort >> Run.syncPoint) WS.jsaddleApp
 
           Warp.testWithApplication (simpleCors <$> clientApp) $ \clientPort -> do
+              threadDelay $ 500 * 1000
+
               putStrLn $ "server http://localhost:" ++ show serverPort
               putStrLn $ "client http://localhost:" ++ show clientPort
               putStrLn $ "google-chrome-stable --headless --disable-gpu --screenshot http://localhost:" ++ show clientPort
 
-              -- threadDelay $ 1000 * 1000 * 1000
 
               -- Run headless chrome
               -- https://docs.travis-ci.com/user/gui-and-headless-browsers/#using-the-chrome-addon-in-the-headless-mode
