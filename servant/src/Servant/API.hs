@@ -101,7 +101,8 @@ import           Servant.API.IsSecure
 import           Servant.API.Modifiers
                  (Lenient, Optional, Required, Strict)
 import           Servant.API.QueryParam
-                 (QueryFlag, QueryParam, QueryParam', QueryParams)
+                 (QueryFlag, QueryParam, QueryParam', QueryParams,
+                 QueryParamForm, QueryParamForm')
 import           Servant.API.Raw
                  (Raw)
 import           Servant.API.RemoteHost

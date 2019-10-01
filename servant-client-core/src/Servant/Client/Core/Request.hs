@@ -17,6 +17,7 @@ module Servant.Client.Core.Request (
     addHeader,
     appendToPath,
     appendToQueryString,
+    concatQueryString,
     setRequestBody,
     setRequestBodyLBS,
     ) where
@@ -50,9 +51,11 @@ import           Network.HTTP.Media
                  (MediaType)
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
-                 http11, methodGet)
+                 http11, methodGet, parseQuery)
 import           Servant.API
                  (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
+import           Web.FormUrlEncoded
+                 (ToForm (..), urlEncodeAsForm)
 
 import Servant.Client.Core.Internal (mediaTypeRnf)
 
@@ -134,6 +137,14 @@ appendToQueryString pname pvalue req
 addHeader :: ToHttpApiData a => HeaderName -> a -> Request -> Request
 addHeader name val req
   = req { requestHeaders = requestHeaders req Seq.|> (name, toHeader val)}
+
+concatQueryString :: ToForm a
+                  => a
+                  -> Request
+                  -> Request
+concatQueryString form req
+  = let querySeq = Seq.fromList . parseQuery . LBS.toStrict . urlEncodeAsForm $ form
+    in req { requestQueryString = requestQueryString req Seq.>< querySeq }
 
 -- | Set body and media type of the request being constructed.
 --

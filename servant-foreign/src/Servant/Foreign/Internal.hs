@@ -88,6 +88,7 @@ data ArgType
   = Normal
   | Flag
   | List
+  | Form
   deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''ArgType
@@ -323,6 +324,19 @@ instance
       arg = Arg
         { _argName = PathSegment str
         , _argType = typeFor lang ftype (Proxy :: Proxy Bool) }
+
+instance (KnownSymbol sym, HasForeignType lang ftype (RequiredArgument mods a), HasForeign lang ftype api)
+  => HasForeign lang ftype (QueryParamForm' mods sym a :> api) where
+  type Foreign ftype (QueryParamForm' mods sym a :> api) = Foreign ftype api
+
+  foreignFor lang Proxy Proxy req =
+    foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
+      req & reqUrl.queryStr <>~ [QueryArg arg Form]
+    where
+      arg = Arg
+        { _argName = PathSegment ""
+        , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy (RequiredArgument mods a)) }
+      
 
 instance HasForeign lang ftype Raw where
   type Foreign ftype Raw = HTTP.Method -> Req ftype

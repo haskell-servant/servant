@@ -53,7 +53,7 @@ import           Servant.API.Capture
 import           Servant.API.Header
                  (Header)
 import           Servant.API.QueryParam
-                 (QueryFlag, QueryParam, QueryParams)
+                 (QueryFlag, QueryParam, QueryParams, QueryParamForm)
 import           Servant.API.ReqBody
                  (ReqBody)
 import           Servant.API.Sub
@@ -127,6 +127,7 @@ type family IsElem endpoint api :: Constraint where
                                           = IsElem sa sb
   IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
   IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
+  IsElem sa (QueryParamForm x :> sb)      = IsElem sa sb
   IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
   IsElem (Verb m s ct typ) (Verb m s ct' typ)
                                           = IsSubList ct ct'

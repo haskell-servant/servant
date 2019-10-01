@@ -68,9 +68,21 @@ instance {-# OVERLAPPABLE #-} HasForeignType LangX String a => HasForeignType La
 instance (HasForeignType LangX String a) => HasForeignType LangX String (Maybe a) where
   typeFor lang ftype _ = "maybe " <> typeFor lang ftype (Proxy :: Proxy a)
 
+data ContactForm = ContactForm {
+  name      :: String
+  , message :: String
+  , email   :: String
+} deriving (Eq, Show)
+
+instance HasForeignType LangX String ContactForm where
+  typeFor _ _ _ = "contactFormX"
+
+
+
 type TestApi
     = "test" :> Header "header" [String] :> QueryFlag "flag" :> Get '[JSON] Int
  :<|> "test" :> QueryParam "param" Int :> ReqBody '[JSON] [String] :> Post '[JSON] NoContent
+ :<|> "test" :> QueryParamForm "contact" ContactForm :> Post '[JSON] NoContent
  :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] NoContent
  :<|> "test" :> Capture "id" Int :> Delete '[JSON] NoContent
  :<|> "test" :> CaptureAll "ids" Int :> Get '[JSON] [Int]
@@ -82,9 +94,9 @@ testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: P
 listFromAPISpec :: Spec
 listFromAPISpec = describe "listFromAPI" $ do
   it "generates 5 endpoints for TestApi" $ do
-    length testApi `shouldBe` 5
+    length testApi `shouldBe` 6
 
-  let [getReq, postReq, putReq, deleteReq, captureAllReq] = testApi
+  let [getReq, postReq, contactReq, putReq, deleteReq, captureAllReq] = testApi
 
   it "collects all info for get request" $ do
     shouldBe getReq $ defReq
@@ -106,6 +118,17 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqMethod     = "POST"
       , _reqHeaders    = []
       , _reqBody       = Just "listX of stringX"
+      , _reqReturnType = Just "voidX"
+      , _reqFuncName   = FunctionName ["post", "test"]
+      }
+
+  it "collects all info for a queryparamform" $ do
+    shouldBe contactReq $ defReq
+      { _reqUrl        = Url
+          [ Segment $ Static "test" ]
+          [ QueryArg (Arg "" "maybe contactFormX") Form ]
+      , _reqMethod     = "POST"
+      , _reqHeaders    = []
       , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["post", "test"]
       }
@@ -148,3 +171,4 @@ listFromAPISpec = describe "listFromAPI" $ do
       , _reqReturnType = Just "listX of intX"
       , _reqFuncName   = FunctionName ["get", "test", "by", "ids"]
       }
+

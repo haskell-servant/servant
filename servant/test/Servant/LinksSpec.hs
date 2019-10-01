@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
@@ -9,8 +10,11 @@ import           Data.Proxy
                  (Proxy (..))
 import           Data.String
                  (fromString)
+import           GHC.Generics
 import           Test.Hspec
                  (Expectation, Spec, describe, it, shouldBe)
+import           Web.FormUrlEncoded
+                 (ToForm(..))
 
 import           Servant.API
 import           Servant.Test.ComprehensiveAPI
@@ -21,6 +25,8 @@ type TestApi =
   -- Capture and query params
        "hello" :> Capture "name" String :> QueryParam "capital" Bool :> Delete '[JSON] NoContent
   :<|> "hi"    :> Capture "name" String :> QueryParam' '[Required] "capital" Bool :> Delete '[JSON] NoContent
+  :<|> "formR" :> QueryParamForm'  '[Required, Strict] "someform" TestForm :> Delete '[JSON] NoContent
+  :<|> "form-opt" :> QueryParamForm  "someform" TestForm :> Delete '[JSON] NoContent
   :<|> "all" :> CaptureAll "names" String :> Get '[JSON] NoContent
 
   -- Flags
@@ -43,6 +49,13 @@ apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
          => Proxy endpoint -> MkLink endpoint Link
 apiLink = safeLink (Proxy :: Proxy TestApi)
 
+data TestForm = TestForm {
+    testing :: String
+    , time :: String
+} deriving (Eq, Generic)
+
+instance ToForm TestForm
+
 -- | Convert a link to a URI and ensure that this maps to the given string
 -- given string
 shouldBeLink :: Link -> String -> Expectation
@@ -64,6 +77,17 @@ spec = describe "Servant.Links" $ do
                                       :> QueryParam' '[Required] "capital" Bool
                                       :> Delete '[JSON] NoContent)
         apiLink l4 "privet" False `shouldBeLink` "hi/privet?capital=false"
+
+    it "generates query param form links" $ do
+        -- most who use QueryParamForm are not going to use it Required, Strict, so we'll test it both ways
+        let l3 = Proxy :: Proxy ("formR" :> QueryParamForm'  '[Required, Strict] "someform" TestForm
+                                         :> Delete '[JSON] NoContent)
+        -- We allow `urlEncodeAsFormStable` to uri Escape for us. Validating that assumption here:
+        apiLink l3 (TestForm "sure" "später") `shouldBeLink` "formR?testing=sure&time=sp%C3%A4ter"
+
+        let l4 = Proxy :: Proxy ("form-opt" :> QueryParamForm  "someform" TestForm
+                                            :> Delete '[JSON] NoContent)
+        apiLink l4 (Just $ TestForm "sure" "später") `shouldBeLink` "form-opt?testing=sure&time=sp%C3%A4ter"
 
     it "generates correct links for CaptureAll" $ do
         apiLink (Proxy :: Proxy ("all" :> CaptureAll "names" String :> Get '[JSON] NoContent))

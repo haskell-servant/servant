@@ -28,9 +28,12 @@ import           Control.Lens
                  (makeLenses, mapped, over, traversed, view, (%~), (&), (.~),
                  (<>~), (^.), (|>))
 import qualified Data.ByteString.Char8      as BSC
+import qualified Data.ByteString.Lazy.Char8 as LBSC
 import           Data.ByteString.Lazy.Char8
                  (ByteString)
 import qualified Data.CaseInsensitive       as CI
+import           Data.Data
+                 (Data, toConstr, constrFields)
 import           Data.Foldable
                  (toList)
 import           Data.Foldable
@@ -63,6 +66,8 @@ import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
 import           Servant.API.TypeLevel
+import           Web.FormUrlEncoded
+                 (ToForm(..), urlEncodeAsForm)
 
 import qualified Data.Universe.Helpers as U
 
@@ -950,6 +955,27 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs api)
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
 
+-- | The docs for a @'QueryParamForm' sym a'@
+--   require the following instances for the `a`:
+--   'Data', 'ToSample'
+instance (KnownSymbol sym, Data a, ToForm a, ToSample a, HasDocs api)
+      => HasDocs (QueryParamForm' mods sym a :> api) where
+    
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          action' =
+            let (Just sampleForm) = toSample (Proxy :: Proxy a)
+                paramNames = constrFields (toConstr sampleForm)
+                sampleEncoding = LBSC.unpack . urlEncodeAsForm . toForm $ sampleForm
+            in action & params <>~ (fmap (qParamMaker sampleEncoding) paramNames)
+          qParamMaker formEncodedSample pName = DocQueryParam {
+            _paramName = pName
+            , _paramValues = [formEncodedSample]
+            , _paramDesc = "Query parameter"
+            , _paramKind = Normal
+          }
 
 instance HasDocs Raw where
   docsFor _proxy (endpoint, action) _ =

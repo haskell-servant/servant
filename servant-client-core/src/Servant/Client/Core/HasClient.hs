@@ -48,7 +48,7 @@ import           Servant.API
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
+                 QueryParam', QueryParams, QueryParamForm', Raw, ReflectMethod (..), RemoteHost,
                  ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
                  ToSourceIO (..), Vault, Verb, NoContentVerb, WithNamedContext,
                  contentType, getHeadersHList, getResponse, toQueryParam,
@@ -57,6 +57,8 @@ import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
+import           Web.FormUrlEncoded
+                 (ToForm (..))
 
 import           Servant.Client.Core.Auth
 import           Servant.Client.Core.BasicAuth
@@ -534,6 +536,55 @@ instance (KnownSymbol sym, HasClient m api)
   hoistClientMonad pm _ f cl = \b ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl b)
 
+-- | If you use a 'QueryParamForm' in one of your endpoints in your API,
+-- the corresponding querying function will automatically take
+-- an additional argument of the type specified by your 'QueryParamForm',
+-- enclosed in Maybe.
+--
+-- If you give Nothing, nothing will be added to the query string.
+--
+-- If you give a non-'Nothing' value, this function will take care
+-- of inserting a textual representation of your form in the query string.
+--
+-- You can control how values for your type are turned into
+-- text by specifying a 'ToForm' instance for your type.
+-- Example:
+--
+-- > data BookSearchParams = BookSearchParams
+-- >   { title :: Text
+-- >   , authors :: [Text]
+-- >   , page :: Maybe Int
+-- >   } deriving (Eq, Show, Generic)
+-- > instance ToForm BookSearchParams
+--
+-- > type MyApi = "books" :> QueryParamForm "searchQ" BookSearchParams :> Get '[JSON] [Book]
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > getBooks :: Bool -> ClientM [Book]
+-- > getBooks = client myApi
+-- > -- then you can just use "getBooks" to query that endpoint.
+-- > -- 'getBooksBy Nothing' for all books
+-- > -- 'getBooksBy (Just $ BookSearchParams "white noise" ["DeLillo"] Nothing)'
+instance (KnownSymbol sym, ToForm a, HasClient m api, SBoolI (FoldRequired mods))
+      => HasClient m (QueryParamForm' mods sym a :> api) where
+
+  type Client m (QueryParamForm' mods sym a :> api) =
+    RequiredArgument mods a -> Client m api
+
+  -- if mparam = Nothing, we don't add it to the query string
+  clientWithRoute pm Proxy req mparam =
+    clientWithRoute pm (Proxy :: Proxy api) $ foldRequiredArgument
+      (Proxy :: Proxy mods) add (maybe req add) mparam
+    where
+      add :: ToForm a => a -> Request
+      add qForm = concatQueryString qForm req
+
+  hoistClientMonad pm _ f cl = \arg ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
+
+
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
 instance RunClient m => HasClient m Raw where
@@ -710,4 +761,4 @@ decodedAs response ct = do
     Left err -> throwClientError $ DecodeFailure (T.pack err) response
     Right val -> return val
   where
-    accept = toList $ contentTypes ct 
+    accept = toList $ contentTypes ct

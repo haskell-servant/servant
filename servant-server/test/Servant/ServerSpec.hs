@@ -49,7 +49,7 @@ import           Servant.API
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll, Lenient, Strict, Delete,
                  EmptyAPI, Get, Header, Headers, HttpVersion, IsSecure (..),
                  JSON, NoContent (..), NoFraming, OctetStream, Patch,
-                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
+                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, QueryParamForm, Raw,
                  RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Verb,
                  NoContentVerb, addHeader)
 import           Servant.Server
@@ -63,6 +63,8 @@ import           Test.Hspec.Wai
                  (get, liftIO, matchHeaders, matchStatus, shouldRespondWith,
                  with, (<:>))
 import qualified Test.Hspec.Wai                    as THW
+import           Web.FormUrlEncoded
+                 (FromForm)
 
 import           Servant.Server.Experimental.Auth
                  (AuthHandler, AuthServerData, mkAuthHandler)
@@ -88,6 +90,7 @@ spec = do
   captureSpec
   captureAllSpec
   queryParamSpec
+  queryParamFormSpec
   reqBodySpec
   headerSpec
   rawSpec
@@ -451,6 +454,124 @@ queryParamSpec = do
               name = "Alice"
              }
 
+------------------------------------------------------------------------------
+-- * queryParamFormSpec {{{
+------------------------------------------------------------------------------
+
+data AnimalSearch = AnimalSearch {
+  sName       :: String
+  , sLegs       :: Integer
+} deriving (Eq, Show, Generic)
+
+instance FromForm AnimalSearch
+
+type QueryParamFormApi =
+  QueryParamForm "octopus" AnimalSearch :> Get '[JSON] Animal
+  :<|> "before-param"
+        :> QueryParam "before" Bool
+        :> QueryParamForm "before" AnimalSearch
+        :> Get '[JSON] Animal
+  :<|> "mixed-param"
+        :> QueryParam "before" Bool
+        :> QueryParamForm "multiple" AnimalSearch
+        :> QueryParam "after" Bool
+        :> Get '[JSON] Animal
+
+queryParamFormApi :: Proxy QueryParamFormApi
+queryParamFormApi = Proxy
+
+qpFormServer :: Server QueryParamFormApi
+qpFormServer = searchAnimal :<|> searchWithBeforeParms :<|> searchWithAroundParms
+
+  where searchAnimal (Just (Right search)) = return $ Animal { species = sName search, numberOfLegs = sLegs search}
+        searchAnimal (Just (Left _))       = return $ Animal { species = "broken", numberOfLegs = 0}
+        searchAnimal Nothing       = return bimac
+
+        searchWithBeforeParms (Just _) (Just (Right search)) = return $ Animal { species = sName search, numberOfLegs = sLegs search}
+        searchWithBeforeParms _ _ = return bimac
+
+        searchWithAroundParms (Just _) (Just (Right search)) (Just True) = return $ Animal { species = sName search, numberOfLegs = sLegs search}
+        searchWithAroundParms _ _ _ = return bimac
+
+
+queryParamFormSpec :: Spec
+queryParamFormSpec = do
+  describe "Servant.API.QueryParamForm" $ do
+      it "allows query params into form" $
+        (flip runSession) (serve queryParamFormApi qpFormServer) $ do
+          let params1 = "?sName=bimac&sLegs=7"
+          response1 <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params1,
+            queryString = parseQuery params1
+           }
+          liftIO $ do
+            decode' (simpleBody response1) `shouldBe` (Just $ Animal { species = "bimac", numberOfLegs = 7})
+      it "allows no query params at all" $
+        (flip runSession) (serve queryParamFormApi qpFormServer) $ do
+          response1 <- Network.Wai.Test.request defaultRequest
+          liftIO $ do
+            decode' (simpleBody response1) `shouldBe` Just bimac
+      it "does not generate an error for incomplete form" $
+        (flip runSession) (serve queryParamFormApi qpFormServer) $ do
+          let paramsBork = "?sName=bimac"
+          responseBork <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = paramsBork,
+            queryString = parseQuery paramsBork
+           }
+          liftIO $ do
+            decode' (simpleBody responseBork) `shouldBe`  (Just $ Animal { species = "broken", numberOfLegs = 0})
+          return ()
+      it "does not generate an error for duplicated keys" $
+        (flip runSession) (serve queryParamFormApi qpFormServer) $ do
+          let paramsBork = "?sName=bimac&sName=dup&sLegs=12"
+          responseBork <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = paramsBork,
+            queryString = parseQuery paramsBork
+            }
+          liftIO $ do
+            decode' (simpleBody responseBork) `shouldBe`  (Just $ Animal { species = "broken", numberOfLegs = 0})
+          return ()
+      it "does not generate an error for form with bad input types" $
+        (flip runSession) (serve queryParamFormApi qpFormServer) $ do
+          let paramsBork = "?sName=bimac&sLegs=ocean"
+          responseBork <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = paramsBork,
+            queryString = parseQuery paramsBork
+            }
+          liftIO $ do
+            decode' (simpleBody responseBork) `shouldBe`  (Just $ Animal { species = "broken", numberOfLegs = 0})
+          return ()
+
+      it "allows query params into form even with other params" $
+        (flip runSession) (serve queryParamFormApi qpFormServer) $ do
+          let params1 = "?before=true&sName=bimac&sLegs=6"
+          response1 <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params1,
+            queryString = parseQuery params1,
+            pathInfo = ["before-param"]
+            }
+          liftIO $ do
+            decode' (simpleBody response1) `shouldBe` (Just $ Animal { species = "bimac", numberOfLegs = 6})
+
+          let params2 = "?sName=bimac&before=true&sLegs=5"
+          response2 <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params2,
+            queryString = parseQuery params2,
+            pathInfo = ["before-param"]
+            }
+          liftIO $ do
+            decode' (simpleBody response2) `shouldBe` (Just $ Animal { species = "bimac", numberOfLegs = 5})
+      it "allows completely mixed up params with QueryParamForm" $
+        (flip runSession) (serve queryParamFormApi qpFormServer) $ do
+          let params1 = "?sLegs=1&before=true&sName=bimac&after=true&unknown=ignoreThis"
+          response1 <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params1,
+            queryString = parseQuery params1,
+            pathInfo = ["mixed-param"]
+            }
+          liftIO $ do
+            decode' (simpleBody response1) `shouldBe` (Just $ Animal { species = "bimac", numberOfLegs = 1})
+
 -- }}}
 ------------------------------------------------------------------------------
 -- * reqBodySpec {{{
@@ -811,4 +932,8 @@ chimera = Animal "Chimera" (-1)
 
 beholder :: Animal
 beholder = Animal "Beholder" 0
+
+bimac :: Animal
+bimac = Animal { species = "Octopus bimaculoides" , numberOfLegs = 8}
+
 -- }}}
