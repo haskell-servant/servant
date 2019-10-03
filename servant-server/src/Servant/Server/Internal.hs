@@ -558,9 +558,9 @@ instance (KnownSymbol sym, HasServer api context)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
 
--- | If you define a custom record type, for example @BookSearchParams@, then you can use 
--- @'QueryParamForm' "formName" BookSearchParams@ in one of the endpoints for your API
--- to translate a collection of query-string parameters into a value of your record type. 
+-- | If you define a custom record type, for example @BookSearchParams@, then you can use
+-- @'QueryParamForm' BookSearchParams@ in one of the endpoints for your API
+-- to translate a collection of query-string parameters into a value of your record type.
 --
 -- Your server-side handler must be a function that takes an argument of type
 -- @'Maybe' ('Either' BookSearchParams)@.
@@ -582,26 +582,24 @@ instance (KnownSymbol sym, HasServer api context)
 -- >   , page :: Maybe Int
 -- >   } deriving (Eq, Show, Generic)
 -- > instance FromForm BookSearchParams
--- > type MyApi = "books" :> QueryParamForm "searchQ" BookSearchParams :> Get '[JSON] [Book]
--- 
+-- > type MyApi = "books" :> QueryParamForm BookSearchParams :> Get '[JSON] [Book]
+--
 -- Example Handler Signature:
 -- Maybe (Either Text BookSearchParams) -> Handler [Book]
 instance
-  ( KnownSymbol sym, FromForm a, HasServer api context
+  (FromForm a, HasServer api context
   , SBoolI (FoldRequired mods), SBoolI (FoldLenient mods)
   )
-  => HasServer (QueryParamForm' mods sym a :> api) context where
+  => HasServer (QueryParamForm' mods a :> api) context where
 ------
-  type ServerT (QueryParamForm' mods sym a :> api) m =
+  type ServerT (QueryParamForm' mods a :> api) m =
     RequestArgument mods a -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
-  route Proxy context subserver = 
-    
-    let formName = cs $ symbolVal (Proxy :: Proxy sym)
+  route Proxy context subserver =
 
-        parseParamForm req =
+    let parseParamForm req =
             unfoldRequestArgument (Proxy :: Proxy mods) errReq errSt mev
           where
             rawQS = rawQueryString req
@@ -612,12 +610,11 @@ instance
               _ -> Just $ urlDecodeAsForm (BL.drop 1 . BL.fromStrict $ rawQS)
 
             errReq = delayedFailFatal err400
-              { errBody = cs $ "Query parameter form " <> formName <> " is required"
+              { errBody = "Query parameter form is required"
               }
 
             errSt e = delayedFailFatal err400
-              { errBody = cs $ "Error parsing query parameter form "
-                                <> formName <> " failed: " <> e
+              { errBody = cs $ "Error: parsing query parameter form failed. " <> e
               }
 
         delayed = addParameterCheck subserver . withRequest $ \req ->

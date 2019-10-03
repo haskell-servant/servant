@@ -82,7 +82,7 @@ instance HasForeignType LangX String ContactForm where
 type TestApi
     = "test" :> Header "header" [String] :> QueryFlag "flag" :> Get '[JSON] Int
  :<|> "test" :> QueryParam "param" Int :> ReqBody '[JSON] [String] :> Post '[JSON] NoContent
- :<|> "test" :> QueryParamForm "contact" ContactForm :> Post '[JSON] NoContent
+ :<|> "test" :> QueryParamForm ContactForm :> Post '[JSON] NoContent
  :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] NoContent
  :<|> "test" :> Capture "id" Int :> Delete '[JSON] NoContent
  :<|> "test" :> CaptureAll "ids" Int :> Get '[JSON] [Int]

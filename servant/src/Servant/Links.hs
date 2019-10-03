@@ -142,7 +142,7 @@ import           Network.URI
 import           Prelude ()
 import           Prelude.Compat
 import           Web.FormUrlEncoded
-                 (ToForm(..), urlEncodeAsFormStable)
+                 (ToForm(..), urlEncodeAsForm)
 
 import           Servant.API.Alternative
                  ((:<|>) ((:<|>)))
@@ -478,15 +478,15 @@ instance (KnownSymbol sym, HasLink sub)
       where
         k = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, ToForm v, HasLink sub, SBoolI (FoldRequired mods))
-    => HasLink (QueryParamForm' mods sym v :> sub)
+instance (ToForm v, HasLink sub, SBoolI (FoldRequired mods))
+    => HasLink (QueryParamForm' mods v :> sub)
   where
-    type MkLink (QueryParamForm' mods sym v :> sub) a = If (FoldRequired mods) v (Maybe v) -> MkLink sub a
+    type MkLink (QueryParamForm' mods v :> sub) a = If (FoldRequired mods) v (Maybe v) -> MkLink sub a
     toLink toA _ l mv =
         toLink toA (Proxy :: Proxy sub) $
             case sbool :: SBool (FoldRequired mods) of
-                STrue  -> (addQueryParam . FormParam . urlEncodeAsFormStable) mv l
-                SFalse -> maybe id (addQueryParam . FormParam . urlEncodeAsFormStable) mv l
+                STrue  -> (addQueryParam . FormParam . urlEncodeAsForm) mv l
+                SFalse -> maybe id (addQueryParam . FormParam . urlEncodeAsForm) mv l
 
 -- :<|> instance - Generate all links at once
 instance (HasLink a, HasLink b) => HasLink (a :<|> b) where

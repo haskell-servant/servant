@@ -50,7 +50,7 @@ data QueryParams (sym :: Symbol) (a :: *)
 -- of type (Maybe (Either Text a)). This also means that in a server implementation
 -- if there as a query string of any length (even just a "?"), we'll try to parse
 -- the 'QueryParamForm' into the custom type specified.
--- 
+--
 -- Example:
 --
 -- > data BookSearchParams = BookSearchParams
@@ -59,15 +59,15 @@ data QueryParams (sym :: Symbol) (a :: *)
 -- >   , page :: Maybe Int
 -- >   } deriving (Eq, Show, Generic)
 -- > instance FromForm BookSearchParams
--- > type MyApi = "books" :> QueryParamForm "searchQ" BookSearchParams :> Get '[JSON] [Book]
--- 
+-- > type MyApi = "books" :> QueryParamForm BookSearchParams :> Get '[JSON] [Book]
+--
 -- Example Handler Signature:
 -- Maybe (Either Text BookSearchParams) -> Handler [Book]
 
 type QueryParamForm = QueryParamForm' '[Optional, Lenient]
 
 -- | 'QueryParamForm' which can be 'Required', 'Lenient', or modified otherwise.
-data QueryParamForm' (mods :: [*]) (sym :: Symbol) (a :: *)
+data QueryParamForm' (mods :: [*]) (a :: *)
     deriving Typeable
 
 

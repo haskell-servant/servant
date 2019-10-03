@@ -466,14 +466,14 @@ data AnimalSearch = AnimalSearch {
 instance FromForm AnimalSearch
 
 type QueryParamFormApi =
-  QueryParamForm "octopus" AnimalSearch :> Get '[JSON] Animal
+  QueryParamForm AnimalSearch :> Get '[JSON] Animal
   :<|> "before-param"
         :> QueryParam "before" Bool
-        :> QueryParamForm "before" AnimalSearch
+        :> QueryParamForm AnimalSearch
         :> Get '[JSON] Animal
   :<|> "mixed-param"
         :> QueryParam "before" Bool
-        :> QueryParamForm "multiple" AnimalSearch
+        :> QueryParamForm AnimalSearch
         :> QueryParam "after" Bool
         :> Get '[JSON] Animal
 

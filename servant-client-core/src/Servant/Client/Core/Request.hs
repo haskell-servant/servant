@@ -51,11 +51,11 @@ import           Network.HTTP.Media
                  (MediaType)
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
-                 http11, methodGet, parseQuery)
+                 http11, methodGet)
 import           Servant.API
                  (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
 import           Web.FormUrlEncoded
-                 (ToForm (..), urlEncodeAsForm)
+                 (ToForm (..), toListStable)
 
 import Servant.Client.Core.Internal (mediaTypeRnf)
 
@@ -143,14 +143,16 @@ concatQueryString :: ToForm a
                   -> Request
                   -> Request
 concatQueryString form req
-  = let querySeq = Seq.fromList . parseQuery . LBS.toStrict . urlEncodeAsForm $ form
+  = let
+      queryEncoder = map (bimap encodeUtf8 (Just . encodeUtf8))
+      querySeq = Seq.fromList . queryEncoder . toListStable . toForm $ form
     in req { requestQueryString = requestQueryString req Seq.>< querySeq }
+
 
 -- | Set body and media type of the request being constructed.
 --
 -- The body is set to the given bytestring using the 'RequestBodyLBS'
 -- constructor.
---
 -- @since 0.12
 --
 setRequestBodyLBS :: LBS.ByteString -> MediaType -> Request -> Request

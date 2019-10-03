@@ -557,7 +557,7 @@ instance (KnownSymbol sym, HasClient m api)
 -- >   } deriving (Eq, Show, Generic)
 -- > instance ToForm BookSearchParams
 --
--- > type MyApi = "books" :> QueryParamForm "searchQ" BookSearchParams :> Get '[JSON] [Book]
+-- > type MyApi = "books" :> QueryParamForm BookSearchParams :> Get '[JSON] [Book]
 -- >
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
@@ -567,10 +567,10 @@ instance (KnownSymbol sym, HasClient m api)
 -- > -- then you can just use "getBooks" to query that endpoint.
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just $ BookSearchParams "white noise" ["DeLillo"] Nothing)'
-instance (KnownSymbol sym, ToForm a, HasClient m api, SBoolI (FoldRequired mods))
-      => HasClient m (QueryParamForm' mods sym a :> api) where
+instance (ToForm a, HasClient m api, SBoolI (FoldRequired mods))
+      => HasClient m (QueryParamForm' mods a :> api) where
 
-  type Client m (QueryParamForm' mods sym a :> api) =
+  type Client m (QueryParamForm' mods a :> api) =
     RequiredArgument mods a -> Client m api
 
   -- if mparam = Nothing, we don't add it to the query string

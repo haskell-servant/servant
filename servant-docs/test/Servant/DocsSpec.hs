@@ -58,7 +58,7 @@ instance ToParam (QueryParam' mods "bar" Int) where
 instance ToParam (QueryParams "foo" Int) where
   toParam _ = DocQueryParam "foo" ["1","2","3"] "QueryParams Int" List
 instance ToParam (QueryParam "query" String) where
-    toParam _ = DocQueryParam "query" ["a","b","c"] "QueryParams String" Normal  
+    toParam _ = DocQueryParam "query" ["a","b","c"] "QueryParams String" Normal
 instance ToParam (QueryFlag "foo") where
   toParam _ = DocQueryParam "foo" [] "QueryFlag" Flag
 instance ToCapture (Capture "foo" Int) where
@@ -143,10 +143,7 @@ spec = describe "Servant.Docs" $ do
     it "mentions optional query-param" $ do
       md `shouldContain` "### GET Parameters:"
       md `shouldContain` "- query"
-    it "mentions optional query-param-form params from QueryParamForm" $ do
-      md `shouldContain` "- dt1field1"
-      md `shouldContain` "- dt1field2"
-      -- contains sample url-encoded form
+    it "mentions optional query-param-form params from QueryParamForm" $
       md `shouldContain` "- **Values**: *dt1field1=field%201&dt1field2=13*"
 
     it "does not generate any docs mentioning the 'empty-api' path" $
@@ -177,7 +174,7 @@ instance MimeRender PlainText Int where
 type TestApi1 = Get '[JSON, PlainText] (Headers '[Header "Location" String] Int)
            :<|> "postJson"   :> ReqBody '[JSON] String          :> Post '[JSON] Datatype1
            :<|> "qparam"     :> QueryParam "query" String       :> Get '[JSON] Datatype1
-           :<|> "qparamform" :> QueryParamForm "form" Datatype1 :> Get '[JSON] Datatype1
+           :<|> "qparamform" :> QueryParamForm Datatype1 :> Get '[JSON] Datatype1
            :<|> "header"     :> Header "X-Test" Int             :> Put '[JSON] Int
            :<|> "empty-api"                                     :> EmptyAPI
 
