@@ -318,7 +318,7 @@ genAuthAPI = Proxy
 
 Now we need to bring everything together for the server. We have the
 `AuthHandler Request Account` value and an `AuthProtected` endpoint. To bind these
-together, we need to provide a [Type Family](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/type-families.html)
+together, we need to provide a [Type Family](https://downloads.haskell.org/~ghc/8.8.1/docs/html/users_guide/glasgow_exts.html#type-families)
 instance that tells the `HasServer` instance that our `Context` will supply a
 `Account` (via `AuthHandler Request Account`) and that downstream combinators will
 have access to this `Account` value (or an error will be thrown if authentication
