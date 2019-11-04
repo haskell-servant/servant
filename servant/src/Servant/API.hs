@@ -42,6 +42,9 @@ module Servant.API (
   -- * Endpoints description
   module Servant.API.Description,
 
+  -- * Endpoints operation id
+  module Servant.API.OperationId,
+
   -- * Content Types
   module Servant.API.ContentTypes,
   -- | Serializing and deserializing types based on @Accept@ and
@@ -102,6 +105,8 @@ import           Servant.API.Modifiers
                  (Lenient, Optional, Required, Strict)
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam, QueryParam', QueryParams)
+import           Servant.API.OperationId
+                 (OperationId)
 import           Servant.API.Raw
                  (Raw)
 import           Servant.API.RemoteHost
