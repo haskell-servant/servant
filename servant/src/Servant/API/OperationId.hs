@@ -15,7 +15,7 @@ import           Data.Typeable
 import           GHC.TypeLits
                  (Symbol)
 
--- | Add an operationId for a specific endpoint of an API.
+-- | Add an operation Id for (part of) API.
 --
 -- Example:
 --

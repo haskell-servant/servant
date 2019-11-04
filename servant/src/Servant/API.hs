@@ -45,6 +45,9 @@ module Servant.API (
   -- * Endpoints operation id
   module Servant.API.OperationId,
 
+  -- * Endpoints tags
+  module Servant.API.Tags,
+
   -- * Content Types
   module Servant.API.ContentTypes,
   -- | Serializing and deserializing types based on @Accept@ and
@@ -103,10 +106,10 @@ import           Servant.API.IsSecure
                  (IsSecure (..))
 import           Servant.API.Modifiers
                  (Lenient, Optional, Required, Strict)
-import           Servant.API.QueryParam
-                 (QueryFlag, QueryParam, QueryParam', QueryParams)
 import           Servant.API.OperationId
                  (OperationId)
+import           Servant.API.QueryParam
+                 (QueryFlag, QueryParam, QueryParam', QueryParams)
 import           Servant.API.Raw
                  (Raw)
 import           Servant.API.RemoteHost
@@ -125,6 +128,8 @@ import           Servant.API.Stream
                  ToSourceIO (..))
 import           Servant.API.Sub
                  ((:>))
+import           Servant.API.Tags
+                 (SymbolVals(..), Tags)
 import           Servant.API.Vault
                  (Vault)
 import           Servant.API.Verbs

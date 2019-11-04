@@ -76,7 +76,7 @@ import           Servant.API
                  QueryParams, Raw, ReflectMethod (reflectMethod), RemoteHost,
                  ReqBody', SBool (..), SBoolI (..), SourceIO, Stream, 
                  StreamBody', Summary, ToSourceIO (..), Vault, Verb, 
-                 NoContentVerb, WithNamedContext)
+                 NoContentVerb, Tags, WithNamedContext)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
                  AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH,
@@ -721,6 +721,13 @@ instance HasServer api ctx => HasServer (Description desc :> api) ctx where
 -- | Ignore @'OperationId'@ in server handlers.
 instance HasServer api ctx => HasServer (OperationId desc :> api) ctx where
   type ServerT (OperationId desc :> api) m = ServerT api m
+
+  route _ = route (Proxy :: Proxy api)
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+
+-- | Ignore @'Tags'@ in server handlers.
+instance HasServer api ctx => HasServer (Tags tags :> api) ctx where
+  type ServerT (Tags tags :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s

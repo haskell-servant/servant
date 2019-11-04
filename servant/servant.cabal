@@ -64,6 +64,7 @@ library
     Servant.API.ResponseHeaders
     Servant.API.Stream
     Servant.API.Sub
+    Servant.API.Tags
     Servant.API.TypeLevel
     Servant.API.Vault
     Servant.API.Verbs

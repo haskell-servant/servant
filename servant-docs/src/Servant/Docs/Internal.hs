@@ -986,6 +986,16 @@ instance (KnownSymbol desc, HasDocs api)
           action' = over notes (|> note) action
           note = DocNote (symbolVal (Proxy :: Proxy desc)) []
 
+instance (SymbolVals tags, HasDocs api)
+  => HasDocs (Tags tags :> api) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          action' = over notes (|> note) action
+          note = DocNote "Tags" (symbolVals (Proxy :: Proxy tags))
+
 -- TODO: We use 'AllMimeRender' here because we need to be able to show the
 -- example data. However, there's no reason to believe that the instances of
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
