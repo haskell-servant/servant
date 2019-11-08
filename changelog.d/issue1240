@@ -1,0 +1,15 @@
+synopsis: Merge documentation from duplicate routes
+prs: #1241
+issues: #1240
+
+description: {
+
+Servant supports defining the same route multiple times with different
+content-types and result-types, but servant-docs was only documenting
+the first of copy of such duplicated routes. It now combines the
+documentation from all the copies.
+
+Unfortunately, it is not yet possible for the documentation to specify
+multiple status codes.
+
+}
