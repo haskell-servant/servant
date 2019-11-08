@@ -20,7 +20,6 @@
 #include "overlapping-compat.h"
 module Servant.Docs.Internal where
 
-import Debug.Trace
 import           Prelude                    ()
 import           Prelude.Compat
 
@@ -118,7 +117,7 @@ instance Semigroup API where
 
 instance Monoid API where
     API a1 b1 `mappend` API a2 b2 = API (a1 `mappend` a2)
-                                        (HM.unionWith combineAction b1 (traceShowId b2))
+                                        (HM.unionWith combineAction b1 b2)
     mempty = API mempty mempty
 
 -- | An empty 'API'
