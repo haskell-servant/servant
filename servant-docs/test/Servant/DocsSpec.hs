@@ -52,8 +52,10 @@ spec :: Spec
 spec = describe "Servant.Docs" $ do
 
   describe "markdown" $ do
-    let md = markdown (docs (Proxy :: Proxy TestApi1))
-    tests md
+    let md1 = markdown (docs (Proxy :: Proxy TestApi1))
+    tests1 md1
+    let md2 = markdown (docs (Proxy :: Proxy TestApi2))
+    tests2 md2
 
   describe "markdown with extra info" $ do
     let
@@ -65,7 +67,7 @@ spec = describe "Servant.Docs" $ do
               (Proxy :: Proxy (ReqBody '[JSON] String :> Post '[JSON] Datatype1))
               (defAction & notes <>~ [DocNote "Post data" ["Posts some Json data"]])
       md = markdown (docsWith defaultDocOptions [] extra (Proxy :: Proxy TestApi1))
-    tests md
+    tests1 md
     it "contains the extra info provided" $ do
       md `shouldContain` "Get an Integer"
       md `shouldContain` "Post data"
@@ -93,7 +95,7 @@ spec = describe "Servant.Docs" $ do
 
 
  where
-   tests md = do
+   tests1 md = do
     it "mentions supported content-types" $ do
       md `shouldContain` "application/json"
       md `shouldContain` "text/plain;charset=utf-8"
@@ -115,6 +117,11 @@ spec = describe "Servant.Docs" $ do
 
     it "does not generate any docs mentioning the 'empty-api' path" $
       md `shouldNotContain` "empty-api"
+
+   tests2 md = do
+    it "mentions the content-types from both copies of the route" $ do
+      md `shouldContain` "application/json"
+      md `shouldContain` "text/plain;charset=utf-8"
 
 
 -- * APIs
@@ -141,6 +148,10 @@ type TestApi1 = Get '[JSON, PlainText] (Headers '[Header "Location" String] Int)
            :<|> ReqBody '[JSON] String :> Post '[JSON] Datatype1
            :<|> Header "X-Test" Int :> Put '[JSON] Int
            :<|> "empty-api" :> EmptyAPI
+
+type TestApi2 = "duplicate-endpoint" :> Get '[JSON]      Datatype1
+           :<|> "duplicate-endpoint" :> Get '[PlainText] Int
+
 
 data TT = TT1 | TT2 deriving (Show, Eq)
 data UT = UT1 | UT2 deriving (Show, Eq)
