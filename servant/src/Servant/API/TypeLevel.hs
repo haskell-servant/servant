@@ -178,7 +178,7 @@ type family IsStrictSubAPI sub api :: Constraint where
 
 -- | Check that every element of @xs@ is an endpoint of @api@ (using @'IsIn'@).
 --
--- ok (Proxy :: Proxy (AllIsIn (Endpoints SampleAPI) SampleAPI))
+-- >>> ok (Proxy :: Proxy (AllIsIn (Endpoints SampleAPI) SampleAPI))
 -- OK
 type family AllIsIn xs api :: Constraint where
   AllIsIn '[] api = ()
