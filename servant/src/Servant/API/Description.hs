@@ -39,14 +39,14 @@ data Summary (sym :: Symbol)
 --type MyApi = Description
 --  "This comment is visible in multiple Servant interpretations \
 --  \and can be really long if necessary. \
---  \Haskell multiline support is not perfect \
+--  \Haskell multiline String support is not perfect \
 --  \but it's still very readable."
 -- :> Get '[JSON] Book
 -- :}
 data Description (sym :: Symbol)
     deriving (Typeable)
 
--- | Fold modifier list to decide whether argument should be parsed strictly or leniently.
+-- | Fold list of modifiers to extract description as a type-level String.
 --
 -- >>> :kind! FoldDescription '[]
 -- FoldDescription '[] :: Symbol

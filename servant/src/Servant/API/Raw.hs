@@ -11,6 +11,7 @@ import           Data.Typeable
 -- a modified (stripped) 'pathInfo' if the 'Application' is being routed with 'Servant.API.Sub.:>'.
 --
 -- In addition to just letting you plug in your existing WAI 'Application's,
--- this can also be used with <https://hackage.haskell.org/package/servant-server/docs/Servant-Utils-StaticFiles.html#v:serveDirectory serveDirectory> to serve
--- static files stored in a particular directory on your filesystem
+-- this can also be used with functions from
+-- <https://hackage.haskell.org/package/servant-server/docs/Servant-Server-StaticFiles.html Servant.Server.StaticFiles>
+-- to serve static files stored in a particular directory on your filesystem
 data Raw deriving Typeable
