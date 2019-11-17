@@ -1,3 +1,4 @@
+distribution: bionic
 folds: all-but-test
 branches: master
 jobs-selection: any

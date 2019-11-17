@@ -122,4 +122,4 @@ test-suite spec
       , jsaddle-warp
       , QuickCheck
 
-    build-tool-depends: hspec-discover:hspec-discover >=2.4.4 && <2.5
+    build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.8
