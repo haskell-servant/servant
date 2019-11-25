@@ -88,11 +88,16 @@ data ClientEnv
   --      1. 'makeClientRequest' exists to allow overriding operational semantics e.g. 'responseTimeout' per request,
   --          If you need global modifications, you should use 'managerModifyRequest'
   --      2. the 'cookieJar', if defined, is being applied after 'makeClientRequest' is called.
+  , acceptStatusCode :: Int -> Bool
   }
 
 -- | 'ClientEnv' smart constructor.
 mkClientEnv :: Client.Manager -> BaseUrl -> ClientEnv
-mkClientEnv mgr burl = ClientEnv mgr burl Nothing defaultMakeClientRequest
+mkClientEnv mgr burl = ClientEnv mgr burl Nothing defaultMakeClientRequest defaultAcceptStatusCode
+
+-- | 'True' for status codes of 2XX.
+defaultAcceptStatusCode :: Int -> Bool
+defaultAcceptStatusCode s = s >= 200 && s < 300
 
 -- | Generates a set of client functions for an API.
 --
@@ -163,7 +168,7 @@ runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
 
 performRequest :: Request -> ClientM Response
 performRequest req = do
-  ClientEnv m burl cookieJar' createClientRequest <- ask
+  ClientEnv m burl cookieJar' createClientRequest acceptStatus <- ask
   let clientRequest = createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest
@@ -181,9 +186,8 @@ performRequest req = do
 
   response <- maybe (requestWithoutCookieJar m request) (requestWithCookieJar m request) cookieJar'
   let status = Client.responseStatus response
-      status_code = statusCode status
       ourResponse = clientResponseToResponse id response
-  unless (status_code >= 200 && status_code < 300) $
+  unless (acceptStatus (statusCode status)) $
       throwError $ mkFailureResponse burl req ourResponse
   return ourResponse
   where

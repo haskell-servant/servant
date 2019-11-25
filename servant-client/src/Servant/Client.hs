@@ -10,6 +10,7 @@ module Servant.Client
   , ClientEnv(..)
   , mkClientEnv
   , defaultMakeClientRequest
+  , defaultAcceptStatusCode
   , hoistClient
   , module Servant.Client.Core.Reexport
   ) where

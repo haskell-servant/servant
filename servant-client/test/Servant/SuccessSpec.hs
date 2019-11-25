@@ -126,7 +126,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
       mgr <- C.newManager C.defaultManagerSettings
       cj <- atomically . newTVar $ C.createCookieJar []
-      _ <- runClientM (getRedirectWithCookie HTTP.methodGet) (ClientEnv mgr baseUrl (Just cj) defaultMakeClientRequest)
+      _ <- runClientM (getRedirectWithCookie HTTP.methodGet) (ClientEnv mgr baseUrl (Just cj) defaultMakeClientRequest defaultAcceptStatusCode)
       cookie <- listToMaybe . C.destroyCookieJar <$> atomically (readTVar cj)
       C.cookie_name <$> cookie `shouldBe` Just "testcookie"
       C.cookie_value <$> cookie `shouldBe` Just "test"

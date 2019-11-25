@@ -13,6 +13,7 @@ module Servant.Client.Internal.HttpClient.Streaming (
     mkClientEnv,
     clientResponseToResponse,
     defaultMakeClientRequest,
+    defaultAcceptStatusCode,
     catchConnectionError,
     ) where
 
@@ -55,7 +56,7 @@ import           Servant.Client.Core
 import           Servant.Client.Internal.HttpClient
                  (ClientEnv (..), catchConnectionError,
                  clientResponseToResponse, mkClientEnv, mkFailureResponse,
-                 defaultMakeClientRequest)
+                 defaultMakeClientRequest, defaultAcceptStatusCode)
 import qualified Servant.Types.SourceT              as S
 
 
@@ -139,7 +140,7 @@ runClientM cm env = withClientM cm env (evaluate . force)
 performRequest :: Request -> ClientM Response
 performRequest req = do
     -- TODO: should use Client.withResponse here too
-  ClientEnv m burl cookieJar' createClientRequest <- ask
+  ClientEnv m burl cookieJar' createClientRequest acceptStatus <- ask
   let clientRequest = createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest
@@ -163,9 +164,8 @@ performRequest req = do
         now' <- getCurrentTime
         atomically $ modifyTVar' cj (fst . Client.updateCookieJar response request now')
       let status = Client.responseStatus response
-          status_code = statusCode status
           ourResponse = clientResponseToResponse id response
-      unless (status_code >= 200 && status_code < 300) $
+      unless (acceptStatus (statusCode status)) $
         throwError $ mkFailureResponse burl req ourResponse
       return ourResponse
 

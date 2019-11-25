@@ -11,6 +11,7 @@ module Servant.Client.Streaming
     , ClientEnv(..)
     , mkClientEnv
     , defaultMakeClientRequest
+    , defaultAcceptStatusCode
     , hoistClient
     , module Servant.Client.Core.Reexport
     ) where
