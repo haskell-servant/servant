@@ -28,5 +28,6 @@ extra-deps:
 - QuickCheck-2.12.6.1
 - resourcet-1.2.2
 - sop-core-0.4.0.0
-- wai-extra-3.0.24.3
 - tasty-1.1.0.4
+- universe-base-1.1.1
+- wai-extra-3.0.24.3
