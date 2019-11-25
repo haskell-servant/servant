@@ -3,6 +3,7 @@ resolver: nightly-2018-09-28 # Last nightly with GHC-8.4.3
 packages:
 - servant-client/
 - servant-client-core/
+- servant-http-streams/
 - servant-docs/
 - servant-foreign/
 - servant-server/
