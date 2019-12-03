@@ -80,7 +80,7 @@ import           Servant.API
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
                  AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH,
-                 NoContent (NoContent))
+                 NoContent)
 import           Servant.API.Modifiers
                  (FoldLenient, FoldRequired, RequestArgument,
                  unfoldRequestArgument)
@@ -89,7 +89,7 @@ import           Servant.API.ResponseHeaders
 import qualified Servant.Types.SourceT                      as S
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam,
-                 parseUrlPieceMaybe, parseUrlPieces, parseUrlPiece)
+                 parseUrlPieces, parseUrlPiece)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -272,7 +272,7 @@ noContentRouter method status action = leafRouter route'
   where
     route' env request respond =
           runAction (action `addMethodCheck` methodCheck method request)
-                    env request respond $ \ output ->
+                    env request respond $ \ _output ->
                       Route $ responseLBS status [] ""
 
 instance {-# OVERLAPPABLE #-}
