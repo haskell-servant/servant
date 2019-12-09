@@ -4,9 +4,11 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.7.20191106
+# version: 0.9.20191209
 #
+version: ~> 1.0
 language: c
+os: linux
 dist: bionic
 git:
   # whether to recursively clone submodules
@@ -30,20 +32,26 @@ before_cache:
   - rm -fv $CABALHOME/packages/hackage.haskell.org/01-index.tar
   - rm -fv $CABALHOME/packages/hackage.haskell.org/01-index.tar.idx
   - rm -rfv $CABALHOME/packages/head.hackage
-matrix:
+jobs:
   include:
     - compiler: ghcjs-8.4
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"},{"sourceline":"deb http://ppa.launchpad.net/hvr/ghcjs/ubuntu bionic main"}],"packages":["ghcjs-8.4","cabal-install-3.0","ghc-8.4.4","nodejs"]}}
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"},{"sourceline":"deb http://ppa.launchpad.net/hvr/ghcjs/ubuntu bionic main"},{"sourceline":"deb https://deb.nodesource.com/node_10.x bionic main","key_url":"https://deb.nodesource.com/gpgkey/nodesource.gpg.key"}],"packages":["ghcjs-8.4","cabal-install-3.0","ghc-8.4.4","nodejs"]}}
+      os: linux
     - compiler: ghc-8.8.1
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.8.1","cabal-install-3.0"]}}
+      os: linux
     - compiler: ghc-8.6.5
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.6.5","cabal-install-3.0"]}}
+      os: linux
     - compiler: ghc-8.4.4
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.4.4","cabal-install-3.0"]}}
+      os: linux
     - compiler: ghc-8.2.2
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.2.2","cabal-install-3.0"]}}
+      os: linux
     - compiler: ghc-8.0.2
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.0.2","cabal-install-3.0"]}}
+      os: linux
 before_install:
   - |
     if echo $CC | grep -q ghcjs; then
@@ -142,7 +150,6 @@ install:
     if ! $GHCJS ; then echo "packages: servant-machines" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: servant-conduit" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: servant-pipes" >> cabal.project ; fi
-    echo "packages: servant-jsaddle" >> cabal.project
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/basic-auth" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/curl-mock" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/basic-streaming" >> cabal.project ; fi
@@ -180,7 +187,7 @@ install:
     echo "allow-newer:  jsaddle-dom-0.9.3.2:lens"          >> cabal.project
     echo "allow-newer:  jsaddle-warp-0.9.6.0:time"         >> cabal.project
     echo "optimization: False"                             >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then (cd "servant" && autoreconf -i); fi
@@ -194,7 +201,6 @@ install:
   - if [ -f "servant-machines/configure.ac" ]; then (cd "servant-machines" && autoreconf -i); fi
   - if [ -f "servant-conduit/configure.ac" ]; then (cd "servant-conduit" && autoreconf -i); fi
   - if [ -f "servant-pipes/configure.ac" ]; then (cd "servant-pipes" && autoreconf -i); fi
-  - if [ -f "servant-jsaddle/configure.ac" ]; then (cd "servant-jsaddle" && autoreconf -i); fi
   - if [ -f "doc/cookbook/basic-auth/configure.ac" ]; then (cd "doc/cookbook/basic-auth" && autoreconf -i); fi
   - if [ -f "doc/cookbook/curl-mock/configure.ac" ]; then (cd "doc/cookbook/curl-mock" && autoreconf -i); fi
   - if [ -f "doc/cookbook/basic-streaming/configure.ac" ]; then (cd "doc/cookbook/basic-streaming" && autoreconf -i); fi
@@ -232,7 +238,6 @@ script:
   - PKGDIR_servant_machines="$(find . -maxdepth 1 -type d -regex '.*/servant-machines-[0-9.]*')"
   - PKGDIR_servant_conduit="$(find . -maxdepth 1 -type d -regex '.*/servant-conduit-[0-9.]*')"
   - PKGDIR_servant_pipes="$(find . -maxdepth 1 -type d -regex '.*/servant-pipes-[0-9.]*')"
-  - PKGDIR_servant_jsaddle="$(find . -maxdepth 1 -type d -regex '.*/servant-jsaddle-[0-9.]*')"
   - PKGDIR_cookbook_basic_auth="$(find . -maxdepth 1 -type d -regex '.*/cookbook-basic-auth-[0-9.]*')"
   - PKGDIR_cookbook_curl_mock="$(find . -maxdepth 1 -type d -regex '.*/cookbook-curl-mock-[0-9.]*')"
   - PKGDIR_cookbook_basic_streaming="$(find . -maxdepth 1 -type d -regex '.*/cookbook-basic-streaming-[0-9.]*')"
@@ -259,7 +264,6 @@ script:
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_machines}" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_conduit}" >> cabal.project ; fi
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_pipes}" >> cabal.project ; fi
-    echo "packages: ${PKGDIR_servant_jsaddle}" >> cabal.project
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_basic_auth}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_curl_mock}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_basic_streaming}" >> cabal.project ; fi
@@ -297,7 +301,7 @@ script:
     echo "allow-newer:  jsaddle-dom-0.9.3.2:lens"          >> cabal.project
     echo "allow-newer:  jsaddle-warp-0.9.6.0:time"         >> cabal.project
     echo "optimization: False"                             >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-jsaddle|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - |
@@ -314,7 +318,6 @@ script:
         servant-machines) echo ${PKGDIR_servant_machines} ;;
         servant-conduit) echo ${PKGDIR_servant_conduit} ;;
         servant-pipes) echo ${PKGDIR_servant_pipes} ;;
-        servant-jsaddle) echo ${PKGDIR_servant_jsaddle} ;;
         cookbook-basic-auth) echo ${PKGDIR_cookbook_basic_auth} ;;
         cookbook-curl-mock) echo ${PKGDIR_cookbook_curl_mock} ;;
         cookbook-basic-streaming) echo ${PKGDIR_cookbook_basic_streaming} ;;
@@ -342,5 +345,5 @@ script:
   - if ! $GHCJS ; then ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all | color_cabal_output ; fi
   - echo -en 'travis_fold:end:haddock\\r'
 
-# REGENDATA ("0.7.20191106",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
+# REGENDATA ("0.9.20191209",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
 # EOF
