@@ -1,5 +1,6 @@
 synopsis: Added a function to create Client.Request in ClientEnv
 packages: servant-client
+significance: significant
 prs: #1213 #1255
 description: {
 

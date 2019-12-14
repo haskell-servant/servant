@@ -1,2 +1,3 @@
 synopsis: Redact the authorization header in Show and exceptions
+packages: servant-client
 prs: #1238
