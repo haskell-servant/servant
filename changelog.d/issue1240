@@ -1,4 +1,5 @@
 synopsis: Merge documentation from duplicate routes
+packages: servant-docs
 prs: #1241
 issues: #1240
 

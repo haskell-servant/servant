@@ -1,0 +1,17 @@
+synopsis: CI and testing tweaks.
+prs:
+  #1154
+  #1157
+  #1182
+  #1214
+  #1229
+  #1233
+  #1242
+  #1250
+
+description: {
+
+We are experiencing some bitrotting of cookbook recipe dependencies,
+therefore some of them aren't build as part of our CI anymore.
+
+}

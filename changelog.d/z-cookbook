@@ -1,0 +1,9 @@
+synopsis: New cookbook recipes
+prs: #1171 #1088 #1198
+
+description: {
+
+- [OIDC Recipe](#TODO)
+- [MySQL Recipe](#TODO)
+
+}
