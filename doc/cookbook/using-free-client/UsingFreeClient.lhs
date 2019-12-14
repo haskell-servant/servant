@@ -2,7 +2,7 @@
 
 or simply put: _a practical introduction to `Servant.Client.Free`_.
 
-Someone asked on IRC how one could access the intermediate Requests (resp. Responses) 
+Someone asked on IRC how one could access the intermediate Requests (resp. Responses)
 produced (resp. received) by client functions derived using servant-client.
 My response to such inquiries is: to extend `servant-client` in an ad-hoc way (e.g for testing or debugging
 purposes), use `Servant.Client.Free`. This recipe shows how.
@@ -119,7 +119,7 @@ Now we can use `servant-client`'s internals to convert servant's `Request`
 to http-client's `Request`, and we can inspect it:
 
 ```haskell
-        let req' = I.requestToClientRequest burl req
+        let req' = I.defaultMakeClientRequest burl req
         putStrLn $ "Making request: " ++ show req'
 ```
 
@@ -136,11 +136,11 @@ and calling the continuation. We should get a `Pure` value.
 
 ```haskell
         let res = I.clientResponseToResponse id res'
-        
+
         case k res of
             Pure n ->
                 putStrLn $ "Expected 1764, got " ++ show n
-            _ -> 
+            _ ->
                 putStrLn "ERROR: didn't got a response"
 ```
 
@@ -153,7 +153,7 @@ and responses available for us to inspect, since `RunClient` only gives us
 access to one `Request` or `Response` at a time.
 
 On the other hand, a "batch collection" of requests and/or responses can be achieved
-with both free clients and a custom `RunClient` instance rather easily, for example 
+with both free clients and a custom `RunClient` instance rather easily, for example
 by using a `Writer [(Request, Response)]` monad.
 
 Here is an example of running our small `test` against a running server:

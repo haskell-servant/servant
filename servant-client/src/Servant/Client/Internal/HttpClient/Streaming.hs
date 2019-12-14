@@ -12,7 +12,7 @@ module Servant.Client.Internal.HttpClient.Streaming (
     ClientEnv (..),
     mkClientEnv,
     clientResponseToResponse,
-    requestToClientRequest,
+    defaultMakeClientRequest,
     catchConnectionError,
     ) where
 
@@ -55,7 +55,7 @@ import           Servant.Client.Core
 import           Servant.Client.Internal.HttpClient
                  (ClientEnv (..), catchConnectionError,
                  clientResponseToResponse, mkClientEnv, mkFailureResponse,
-                 requestToClientRequest)
+                 defaultMakeClientRequest)
 import qualified Servant.Types.SourceT              as S
 
 
@@ -139,8 +139,8 @@ runClientM cm env = withClientM cm env (evaluate . force)
 performRequest :: Request -> ClientM Response
 performRequest req = do
     -- TODO: should use Client.withResponse here too
-  ClientEnv m burl cookieJar' <- ask
-  let clientRequest = requestToClientRequest burl req
+  ClientEnv m burl cookieJar' createClientRequest <- ask
+  let clientRequest = createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest
     Just cj -> liftIO $ do
@@ -149,7 +149,7 @@ performRequest req = do
         oldCookieJar <- readTVar cj
         let (newRequest, newCookieJar) =
               Client.insertCookiesIntoRequest
-                (requestToClientRequest burl req)
+                clientRequest
                 oldCookieJar
                 now
         writeTVar cj newCookieJar
@@ -173,7 +173,8 @@ performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM
 performWithStreamingRequest req k = do
   m <- asks manager
   burl <- asks baseUrl
-  let request = requestToClientRequest burl req
+  createClientRequest <- asks makeClientRequest
+  let request = createClientRequest burl req
   ClientM $ lift $ lift $ Codensity $ \k1 ->
       Client.withResponse request m $ \res -> do
           let status = Client.responseStatus res
