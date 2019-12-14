@@ -60,6 +60,6 @@ test-suite example
     , servant-server >=0.15     && <0.17
     , servant-client >=0.15     && <0.17
     , wai            >=3.2.1.2  && <3.3
-    , warp           >=3.2.25   && <3.3
+    , warp           >=3.2.25   && <3.4
     , http-client
   default-language: Haskell2010

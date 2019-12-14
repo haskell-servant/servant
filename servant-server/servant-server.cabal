@@ -121,7 +121,7 @@ executable greet
 
   build-depends:
       aeson               >= 1.4.1.0  && < 1.5
-    , warp                >= 3.2.25   && < 3.3
+    , warp                >= 3.2.25   && < 3.4
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -165,7 +165,7 @@ test-suite spec
       aeson                >= 1.4.1.0  && < 1.5
     , directory            >= 1.3.0.0  && < 1.4
     , hspec                >= 2.6.0    && < 2.8
-    , hspec-wai            >= 0.9.0    && < 0.10
+    , hspec-wai            >= 0.10.1   && < 0.11
     , QuickCheck           >= 2.12.6.1 && < 2.14
     , should-not-typecheck >= 2.1.0    && < 2.2
     , temporary            >= 1.3      && < 1.4
