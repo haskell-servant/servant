@@ -368,10 +368,10 @@ genAuthMain = run 8080 (serveWithContext genAuthAPI genAuthServerContext genAuth
 $ curl -XGET localhost:8080/private
 Missing auth header
 
-$ curl -XGET localhost:8080/private -H "servant-auth-cookie: key3"
+$ curl -XGET localhost:8080/private -H "Cookie: servant-auth-cookie=key3"
 [{"ssshhh":"this is a secret: Ghédalia Tazartès"}]
 
-$ curl -XGET localhost:8080/private -H "servant-auth-cookie: bad-key"
+$ curl -XGET localhost:8080/private -H "Cookie: servant-auth-cookie=bad-key"
 Invalid Cookie
 
 $ curl -XGET localhost:8080/public
