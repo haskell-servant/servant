@@ -64,8 +64,32 @@ data RequestF body path = Request
   , requestHeaders     :: Seq.Seq Header
   , requestHttpVersion :: HttpVersion
   , requestMethod      :: Method
-  } deriving (Generic, Typeable, Eq, Show, Functor, Foldable, Traversable)
+  } deriving (Generic, Typeable, Eq, Functor, Foldable, Traversable)
 
+instance (Show a, Show b) =>
+           Show (Servant.Client.Core.Request.RequestF a b) where
+    showsPrec p req
+      = showParen
+        (p >= 11)
+        ( showString "Request {requestPath = "
+        . showsPrec 0 (requestPath req)
+        . showString ", requestQueryString = "
+        . showsPrec 0 (requestQueryString req)
+        . showString ", requestBody = "
+        . showsPrec 0 (requestBody req)
+        . showString ", requestAccept = "
+        . showsPrec 0 (requestAccept req)
+        . showString ", requestHeaders = "
+        . showsPrec 0 (redactSensitiveHeader <$> requestHeaders req))
+        . showString ", requestHttpVersion = "
+        . showsPrec 0 (requestHttpVersion req)
+        . showString ", requestMethod = "
+        . showsPrec 0 (requestMethod req)
+        . showString "}"
+       where
+        redactSensitiveHeader :: Header -> Header
+        redactSensitiveHeader ("Authorization", _) = ("Authorization", "<REDACTED>")
+        redactSensitiveHeader h = h
 instance Bifunctor RequestF where bimap = bimapDefault
 instance Bifoldable RequestF where bifoldMap = bifoldMapDefault
 instance Bitraversable RequestF where

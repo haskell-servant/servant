@@ -96,6 +96,7 @@ test-suite spec
   main-is:             Spec.hs
   other-modules:
       Servant.Client.Core.Internal.BaseUrlSpec
+      Servant.Client.Core.RequestSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
