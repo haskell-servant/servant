@@ -47,12 +47,12 @@ import           Servant.API
                  EmptyAPI, FramingRender (..), FramingUnrender (..),
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
-                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
-                 ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
-                 ToSourceIO (..), Vault, Verb, NoContentVerb, WithNamedContext,
-                 contentType, getHeadersHList, getResponse, toQueryParam,
-                 toUrlPiece)
+                 MimeUnrender (mimeUnrender), NoContent (NoContent), OperationId,
+                 QueryFlag, QueryParam', QueryParams, Raw, ReflectMethod (..),
+                 RemoteHost, ReqBody', SBoolI, Stream, StreamBody', Summary,
+                 ToHttpApiData, ToSourceIO (..), Vault, Verb, NoContentVerb,
+                 WithNamedContext, contentType, getHeadersHList, getResponse,
+                 Tags, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
@@ -403,6 +403,24 @@ instance HasClient m api => HasClient m (Description desc :> api) where
   clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
+-- | Ignore @'OperationId'@ in client functions.
+instance HasClient m api => HasClient m (OperationId desc :> api) where
+  type Client m (OperationId desc :> api) = Client m api
+
+  clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
+-- | Ignore @'Tags'@ in client functions.
+instance HasClient m api => HasClient m (Tags tags :> api) where
+  type Client m (Tags tags :> api) = Client m api
+
+  clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
+
 
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take

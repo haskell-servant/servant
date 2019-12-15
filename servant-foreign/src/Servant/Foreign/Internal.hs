@@ -406,6 +406,22 @@ instance HasForeign lang ftype api
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) req
 
+instance HasForeign lang ftype api
+  => HasForeign lang ftype (OperationId desc :> api) where
+  type Foreign ftype (OperationId desc :> api) = Foreign ftype api
+
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) req
+
+instance HasForeign lang ftype api
+  => HasForeign lang ftype (Tags tags :> api) where
+  type Foreign ftype (Tags tags :> api) = Foreign ftype api
+
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) req
+
+
+
 -- | Utility class used by 'listFromAPI' which computes
 --   the data needed to generate a function for each endpoint
 --   and hands it all back in a list.

@@ -57,12 +57,14 @@ library
     Servant.API.IsSecure
     Servant.API.Modifiers
     Servant.API.QueryParam
+    Servant.API.OperationId
     Servant.API.Raw
     Servant.API.RemoteHost
     Servant.API.ReqBody
     Servant.API.ResponseHeaders
     Servant.API.Stream
     Servant.API.Sub
+    Servant.API.Tags
     Servant.API.TypeLevel
     Servant.API.Vault
     Servant.API.Verbs
