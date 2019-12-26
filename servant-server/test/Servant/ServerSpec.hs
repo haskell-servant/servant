@@ -318,13 +318,12 @@ type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
                 :<|> "b" :> QueryFlag "capitalize" :> Get '[JSON] Person
                 :<|> "param" :> QueryParam "age" Integer :> Get '[JSON] Person
                 :<|> "multiparam" :> QueryParams "ages" Integer :> Get '[JSON] Person
-                :<|> "rewrite" :> QueryParam "name" String :> Get '[JSON] Person
 
 queryParamApi :: Proxy QueryParamApi
 queryParamApi = Proxy
 
 qpServer :: Server QueryParamApi
-qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges :<|> qpRewrite
+qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges
 
   where qpNames (_:name2:_) = return alice { name = name2 }
         qpNames _           = return alice
@@ -336,9 +335,6 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAge
         qpAge (Just age') = return alice{ age = age'}
 
         qpAges ages = return alice{ age = sum ages}
-
-        qpRewrite Nothing = return alice
-        qpRewrite (Just name_) = return alice {name = name_}
 
         queryParamServer (Just name_) = return alice{name = name_}
         queryParamServer Nothing = return alice
@@ -469,8 +465,7 @@ queryParamSpec = do
         let params1 = "?person_name=bob"
         response1 <- Network.Wai.Test.request defaultRequest{
           rawQueryString = params1,
-          queryString = sampleRewrite $ parseQuery params1,
-          pathInfo = ["rewrite"]
+          queryString = sampleRewrite $ parseQuery params1
         }
         liftIO $ do
           decode' (simpleBody response1) `shouldBe` Just alice{
