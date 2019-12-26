@@ -35,7 +35,7 @@ import qualified Data.Text                         as T
 import           GHC.Generics
                  (Generic)
 import           Network.HTTP.Types
-                 (Status (..), hAccept, hContentType, imATeapot418,
+                 (Status (..), Query, QueryItem, hAccept, hContentType, imATeapot418,
                  methodDelete, methodGet, methodHead, methodPatch, methodPost,
                  methodPut, ok200, parseQuery)
 import           Network.Wai
@@ -54,7 +54,7 @@ import           Servant.API
                  NoContentVerb, addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
-                 emptyServer, err400, err401, err403, err404, serve, serveWithContext)
+                 emptyServer, err401, err403, err404, serve, serveWithContext)
 import           Servant.Test.ComprehensiveAPI
 import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
@@ -218,7 +218,7 @@ captureServer = getLegs :<|> getEars :<|> getEyes
           _ -> throwError err404
 
         getEars :: Either String Integer -> Handler Animal
-        getEars (Left e) = return chimera -- ignore integer parse error, return weird animal
+        getEars (Left _) = return chimera -- ignore integer parse error, return weird animal
         getEars (Right 2) = return jerry
         getEars (Right _) = throwError err404
 
@@ -318,12 +318,13 @@ type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
                 :<|> "b" :> QueryFlag "capitalize" :> Get '[JSON] Person
                 :<|> "param" :> QueryParam "age" Integer :> Get '[JSON] Person
                 :<|> "multiparam" :> QueryParams "ages" Integer :> Get '[JSON] Person
+                :<|> "rewrite" :> QueryParam "name" String :> Get '[JSON] Person
 
 queryParamApi :: Proxy QueryParamApi
 queryParamApi = Proxy
 
 qpServer :: Server QueryParamApi
-qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges
+qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges :<|> qpRewrite
 
   where qpNames (_:name2:_) = return alice { name = name2 }
         qpNames _           = return alice
@@ -336,8 +337,20 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAge
 
         qpAges ages = return alice{ age = sum ages}
 
+        qpRewrite Nothing = return alice
+        qpRewrite (Just name_) = return alice {name = name_}
+
         queryParamServer (Just name_) = return alice{name = name_}
         queryParamServer Nothing = return alice
+
+-- test query parameters rewriter, commonly implemented using WAI Middleware
+sampleRewrite :: Query -> Query
+sampleRewrite = fmap mapper where 
+  mapper :: QueryItem -> QueryItem
+  mapper (k,v) = (k',v) where 
+    k' = case (BS.stripPrefix "person_" k) of
+      (Just r) -> r
+      Nothing    -> k
 
 queryParamSpec :: Spec
 queryParamSpec = do
@@ -451,6 +464,80 @@ queryParamSpec = do
               name = "Alice"
              }
 
+      it "allows rewriting for simple GET/query parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params1 = "?person_name=bob"
+        response1 <- Network.Wai.Test.request defaultRequest{
+          rawQueryString = params1,
+          queryString = sampleRewrite $ parseQuery params1,
+          pathInfo = ["rewrite"]
+        }
+        liftIO $ do
+          decode' (simpleBody response1) `shouldBe` Just alice{
+            name = "bob"
+          }
+
+      it "allows rewriting for lists in GET parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params2 = "?person_names[]=bob&person_names[]=john"
+        response2 <- Network.Wai.Test.request defaultRequest{
+          rawQueryString = params2,
+          queryString = sampleRewrite $ parseQuery params2,
+          pathInfo = ["a"]
+          }
+        liftIO $
+          decode' (simpleBody response2) `shouldBe` Just alice{
+            name = "john"
+            }
+
+      it "allows rewriting when parsing multiple query parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params = "?person_ages=10&person_ages=22"
+        response <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = params,
+            queryString = sampleRewrite $ parseQuery params,
+            pathInfo = ["multiparam"]
+            }
+        liftIO $
+            decode' (simpleBody response) `shouldBe` Just alice{
+              age = 32
+            }
+
+      it "allows retrieving value-less GET parameters" $
+        (flip runSession) (serve queryParamApi qpServer) $ do
+        let params3 = "?person_capitalize"
+        response3 <- Network.Wai.Test.request defaultRequest{
+          rawQueryString = params3,
+          queryString = sampleRewrite $ parseQuery params3,
+          pathInfo = ["b"]
+          }
+        liftIO $
+          decode' (simpleBody response3) `shouldBe` Just alice{
+            name = "ALICE"
+            }
+
+        let params3' = "?person_capitalize="
+        response3' <- Network.Wai.Test.request defaultRequest{
+          rawQueryString = params3',
+          queryString = sampleRewrite $ parseQuery params3',
+          pathInfo = ["b"]
+          }
+        liftIO $
+          decode' (simpleBody response3') `shouldBe` Just alice{
+            name = "ALICE"
+            }
+
+        let params3'' = "?person_unknown="
+        response3'' <- Network.Wai.Test.request defaultRequest{
+          rawQueryString = params3'',
+          queryString = sampleRewrite $ parseQuery params3'',
+          pathInfo = ["b"]
+          }
+        liftIO $
+          decode' (simpleBody response3'') `shouldBe` Just alice{
+            name = "Alice"
+            }            
+     
 -- }}}
 ------------------------------------------------------------------------------
 -- * reqBodySpec {{{
