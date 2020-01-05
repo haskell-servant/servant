@@ -63,8 +63,8 @@ import           Network.HTTP.Types                         hiding
 import           Network.Socket
                  (SockAddr)
 import           Network.Wai
-                 (Application, Request, httpVersion, isSecure, lazyRequestBody,
-                 rawQueryString, remoteHost, requestBody, requestHeaders,
+                 (Application, Request, getRequestBodyChunk, httpVersion, isSecure,
+                 lazyRequestBody, rawQueryString, remoteHost, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
 import           Prelude.Compat
@@ -656,7 +656,7 @@ instance
         bodyCheck fromRS = withRequest $ \req -> do
             let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ctype) :: BL.ByteString -> Either String chunk
             let framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender' :: SourceIO B.ByteString ->  SourceIO chunk
-            let body = requestBody req
+            let body = getRequestBodyChunk req
             let rs = S.fromAction B.null body
             let rs' = fromRS $ framingUnrender' rs
             return rs'
