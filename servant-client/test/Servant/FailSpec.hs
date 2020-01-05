@@ -27,7 +27,7 @@ import qualified Network.HTTP.Types                   as HTTP
 import           Test.Hspec
 
 import           Servant.API
-                 ((:<|>) ((:<|>)))
+                 ((:<|>) ((:<|>)), NoContent(NoContent))
 import           Servant.Client
 import           Servant.ClientTestUtils
 
@@ -79,3 +79,18 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
         case res of
           InvalidContentTypeHeader _ -> return ()
           _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
+
+    context "client allows specifying response status codes to handle" $ do
+      it "reports FailureResponse on 200" $ \(_, baseUrl) -> do
+        let env = (mkClientEnv manager' baseUrl) { acceptStatusCode = (== 404) }
+        Left res <- runClientM getGet env
+        case res of
+          FailureResponse _ r | responseStatusCode r == HTTP.status200 -> return ()
+          _ -> fail $ "expected 200 response, but got " <> show res
+
+      it "parses 404" $ \(_, baseUrl) -> do
+        let env = (mkClientEnv manager' baseUrl) { acceptStatusCode = (== 404) }
+        res <- runClientM getDeleteEmpty env
+        case res of
+          Right NoContent -> return ()
+          _ -> fail $ "expected successfully parsed 404 response, but got " <> show res
