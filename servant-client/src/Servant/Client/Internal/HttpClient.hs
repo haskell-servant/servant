@@ -73,8 +73,12 @@ import qualified Servant.Types.SourceT       as S
 
 -- | The environment in which a request is run.
 --   The 'baseUrl' and 'makeClientRequest' function are used to create a @http-client@ request.
---   Cookies are then added to that request if a 'CookieJar' is set on the environment.
---   Finally the request is executed with the 'manager'.
+--   Cookies are then added to that request if a 'CookieJar' is set on the environment
+--   and the request is executed with the 'manager'.
+--   Finally, 'acceptStatusCode' decides which response status codes are considered successful
+--   and get parsed/handled according to the API definition.
+--   All responses with other status codes get returned as a 'FailureResponse'.
+--
 --   The 'makeClientRequest' function can be used to modify the request to execute and set values which
 --   are not specified on a @servant@ 'Request' like 'responseTimeout' or 'redirectCount'
 data ClientEnv
@@ -89,6 +93,7 @@ data ClientEnv
   --          If you need global modifications, you should use 'managerModifyRequest'
   --      2. the 'cookieJar', if defined, is being applied after 'makeClientRequest' is called.
   , acceptStatusCode :: Int -> Bool
+  -- Default value: 'defaultAcceptStatusCode'
   }
 
 -- | 'ClientEnv' smart constructor.
