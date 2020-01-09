@@ -157,18 +157,6 @@ install:
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
     echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
-    echo "allow-newer:  jsaddle-0.9.6.0:lens"              >> cabal.project
-    echo "allow-newer:  jsaddle-0.9.6.0:primitive"         >> cabal.project
-    echo "allow-newer:  jsaddle-0.9.6.0:time"              >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.1:base"          >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.1:base-compat"   >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.1:Cabal"         >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.1:lens"          >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.2:base"          >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.2:base-compat"   >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.2:Cabal"         >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.2:lens"          >> cabal.project
-    echo "allow-newer:  jsaddle-warp-0.9.6.0:time"         >> cabal.project
     echo "optimization: False"                             >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
@@ -271,18 +259,6 @@ script:
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
     echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
-    echo "allow-newer:  jsaddle-0.9.6.0:lens"              >> cabal.project
-    echo "allow-newer:  jsaddle-0.9.6.0:primitive"         >> cabal.project
-    echo "allow-newer:  jsaddle-0.9.6.0:time"              >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.1:base"          >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.1:base-compat"   >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.1:Cabal"         >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.1:lens"          >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.2:base"          >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.2:base-compat"   >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.2:Cabal"         >> cabal.project
-    echo "allow-newer:  jsaddle-dom-0.9.3.2:lens"          >> cabal.project
-    echo "allow-newer:  jsaddle-warp-0.9.6.0:time"         >> cabal.project
     echo "optimization: False"                             >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
