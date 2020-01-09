@@ -20,3 +20,13 @@ build-ghcjs :
 
 packdeps :
 	packdeps */*.cabal
+
+doctest : doctest-servant doctest-servant-server
+	perl -i -e 'while (<ARGV>) { print unless /package-id\s+base-compat-\d+(\.\d+)*/; }' .ghc.environment.*
+
+doctest-servant :
+	(cd servant && doctest src)
+	(cd servant && doctest test/Servant/LinksSpec.hs)
+
+doctest-servant-server :
+	(cd servant-server && doctest src)

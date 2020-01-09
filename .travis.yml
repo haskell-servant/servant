@@ -4,7 +4,7 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.9.20191209
+# version: 0.9.20200110
 #
 version: ~> 1.0
 language: c
@@ -73,26 +73,8 @@ before_install:
   - TOP=$(pwd)
   - "HCNUMVER=$(${HC} --numeric-version|perl -ne '/^(\\d+)\\.(\\d+)\\.(\\d+)(\\.(\\d+))?$/; print(10000 * $1 + 100 * $2 + ($3 == 0 ? $5 != 1 : $3))')"
   - echo $HCNUMVER
-  - CABAL="$CABAL -vnormal+nowrap+markoutput"
+  - CABAL="$CABAL -vnormal+nowrap"
   - set -o pipefail
-  - |
-    echo 'function blue(s) { printf "\033[0;34m" s "\033[0m " }'           >> .colorful.awk
-    echo 'BEGIN { state = "output"; }'                                     >> .colorful.awk
-    echo '/^-----BEGIN CABAL OUTPUT-----$/ { state = "cabal" }'            >> .colorful.awk
-    echo '/^-----END CABAL OUTPUT-----$/ { state = "output" }'             >> .colorful.awk
-    echo '!/^(-----BEGIN CABAL OUTPUT-----|-----END CABAL OUTPUT-----)/ {' >> .colorful.awk
-    echo '  if (state == "cabal") {'                                       >> .colorful.awk
-    echo '    print blue($0)'                                              >> .colorful.awk
-    echo '  } else {'                                                      >> .colorful.awk
-    echo '    print $0'                                                    >> .colorful.awk
-    echo '  }'                                                             >> .colorful.awk
-    echo '}'                                                               >> .colorful.awk
-  - cat .colorful.awk
-  - |
-    color_cabal_output () {
-      awk -f $TOP/.colorful.awk
-    }
-  - echo text | color_cabal_output
 install:
   - ${CABAL} --version
   - echo "$(${HC} --version) [$(${HC} --print-project-git-commit-id 2> /dev/null || echo '?')]"
@@ -133,8 +115,9 @@ install:
   - cat $CABALHOME/config
   - rm -fv cabal.project cabal.project.local cabal.project.freeze
   - travis_retry ${CABAL} v2-update -v
-  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe' | color_cabal_output) ; fi
-  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 hspec-discover | color_cabal_output) ; fi
+  - if ! $GHCJS ; then (cd /tmp && ${CABAL} v2-install $WITHCOMPILER -j2 doctest --constraint='doctest ==0.16.2.*') ; fi
+  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe') ; fi
+  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 hspec-discover) ; fi
   # Generate cabal.project
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
@@ -212,14 +195,14 @@ install:
   - if [ -f "doc/cookbook/structuring-apis/configure.ac" ]; then (cd "doc/cookbook/structuring-apis" && autoreconf -i); fi
   - if [ -f "doc/cookbook/using-custom-monad/configure.ac" ]; then (cd "doc/cookbook/using-custom-monad" && autoreconf -i); fi
   - if [ -f "doc/cookbook/using-free-client/configure.ac" ]; then (cd "doc/cookbook/using-free-client" && autoreconf -i); fi
-  - ${CABAL} v2-freeze $WITHCOMPILER ${TEST} ${BENCH} | color_cabal_output
+  - ${CABAL} v2-freeze $WITHCOMPILER ${TEST} ${BENCH}
   - "cat cabal.project.freeze | sed -E 's/^(constraints: *| *)//' | sed 's/any.//'"
   - rm  cabal.project.freeze
 script:
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
   # Packaging...
   - echo 'Packaging...' && echo -en 'travis_fold:start:sdist\\r'
-  - ${CABAL} v2-sdist all | color_cabal_output
+  - ${CABAL} v2-sdist all
   - echo -en 'travis_fold:end:sdist\\r'
   # Unpacking...
   - echo 'Unpacking...' && echo -en 'travis_fold:start:unpack\\r'
@@ -335,15 +318,29 @@ script:
   # Building with tests and benchmarks...
   - echo 'Building with tests and benchmarks...' && echo -en 'travis_fold:start:build-everything\\r'
   # build & run tests, build benchmarks
-  - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} all | color_cabal_output
+  - ${CABAL} v2-build $WITHCOMPILER ${TEST} ${BENCH} all
   - echo -en 'travis_fold:end:build-everything\\r'
   # Testing...
-  - if ! $GHCJS ; then ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} all | color_cabal_output ; fi
+  - if ! $GHCJS ; then ${CABAL} v2-test $WITHCOMPILER ${TEST} ${BENCH} all ; fi
   - if $GHCJS ; then cabal-plan list-bins '*:test:*' | while read -r line; do testpkg=$(echo "$line" | perl -pe 's/:.*//'); testexe=$(echo "$line" | awk '{ print $2 }'); echo "testing $textexe in package $textpkg"; (cd "$(pkgdir $testpkg)" && nodejs "$testexe".jsexe/all.js); done ; fi
+  # Doctest...
+  - echo 'Doctest...' && echo -en 'travis_fold:start:doctest\\r'
+  - perl -i -e 'while (<ARGV>) { print unless /package-id\s+(base-compat-batteries)-\d+(\.\d+)*/; }' .ghc.environment.*
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_client} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_client_core} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_http_streams} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_docs} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_foreign} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_server} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_machines} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_conduit} && doctest  src) ; fi
+  - if ! $GHCJS ; then (cd ${PKGDIR_servant_pipes} && doctest  src) ; fi
+  - echo -en 'travis_fold:end:doctest\\r'
   # haddock...
   - echo 'haddock...' && echo -en 'travis_fold:start:haddock\\r'
-  - if ! $GHCJS ; then ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all | color_cabal_output ; fi
+  - if ! $GHCJS ; then ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all ; fi
   - echo -en 'travis_fold:end:haddock\\r'
 
-# REGENDATA ("0.9.20191209",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
+# REGENDATA ("0.9.20200110",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
 # EOF
