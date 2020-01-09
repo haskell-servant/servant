@@ -64,7 +64,7 @@ import           Network.Socket
                  (SockAddr)
 import           Network.Wai
                  (Application, Request, httpVersion, isSecure, lazyRequestBody,
-                 rawQueryString, remoteHost, requestBody, requestHeaders,
+                 queryString, remoteHost, requestBody, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
 import           Prelude.Compat
@@ -452,7 +452,7 @@ instance
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
-    let querytext req = parseQueryText $ rawQueryString req
+    let querytext = queryToQueryText . queryString
         paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
         parseParam :: Request -> DelayedIO (RequestArgument mods a)
@@ -519,8 +519,8 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
           params :: [T.Text]
           params = mapMaybe snd
                  . filter (looksLikeParam . fst)
-                 . parseQueryText
-                 . rawQueryString
+                 . queryToQueryText 
+                 . queryString                 
                  $ req
 
           looksLikeParam name = name == paramname || name == (paramname <> "[]")
@@ -546,7 +546,7 @@ instance (KnownSymbol sym, HasServer api context)
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
-    let querytext r = parseQueryText $ rawQueryString r
+    let querytext = queryToQueryText . queryString
         param r = case lookup paramname (querytext r) of
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value
