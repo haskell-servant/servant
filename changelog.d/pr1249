@@ -1,6 +1,7 @@
 synopsis: use queryString to parse QueryParam, QueryParams and QueryFlag
 packages: servant-server
-prs: #1249
+prs: #1249 #1262
+significance: significant
 description: {
 
 Some APIs need query parameters rewriting, e.g. in order to support

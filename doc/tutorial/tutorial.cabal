@@ -83,8 +83,6 @@ test-suite spec
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules: JavascriptSpec
-  build-tool-depends:
-    hspec-discover:hspec-discover
   build-depends: base
                , tutorial
                , hspec

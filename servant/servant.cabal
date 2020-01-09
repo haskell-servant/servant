@@ -18,7 +18,7 @@ license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
-build-type:          Custom
+build-type:          Simple
 
 tested-with:
   GHC ==8.0.2
@@ -34,12 +34,6 @@ extra-source-files:
 source-repository head
   type: git
   location: http://github.com/haskell-servant/servant.git
-
-custom-setup
-  setup-depends:
-    base >= 4 && <5,
-    Cabal,
-    cabal-doctest >= 1.0.6 && <1.1
 
 library
   exposed-modules:
@@ -176,26 +170,3 @@ test-suite spec
 
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.6.0 && < 2.8
-
-test-suite doctests
-  if impl(ghcjs)
-    buildable: False
-
-  build-depends:
-      base
-    , servant
-    , doctest >= 0.16.0 && <0.17
-
-  -- We test Links failure with doctest, so we need extra dependencies
-  build-depends:
-      hspec                >= 2.6.0  && < 2.8
-
-  type: exitcode-stdio-1.0
-  main-is: test/doctests.hs
-  buildable: True
-  default-language: Haskell2010
-  ghc-options: -Wall -threaded
-  if impl(ghc >= 8.2)
-    x-doctest-options: -fdiagnostics-color=never
-  x-doctest-source-dirs: test
-  x-doctest-modules: Servant.LinksSpec

@@ -92,6 +92,9 @@ spec = describe "Servant.Links" $ do
         let firstLink :<|> _ = allLinks comprehensiveAPIWithoutRaw
         firstLink `shouldBeLink` ""
 
+-- The doctests below aren't run on CI, setting that up is tricky.
+-- They are run by makefile rule, however.
+
 -- |
 -- Before https://github.com/CRogers/should-not-typecheck/issues/5 is fixed,
 -- we'll just use doctest

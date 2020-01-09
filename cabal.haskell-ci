@@ -4,6 +4,9 @@ branches: master
 jobs-selection: any
 google-chrome: True
 ghcjs-tests: True
+doctest: True
+doctest-filter-packages: base-compat-batteries
+doctest-skip:            tutorial
 
 -- https://github.com/haskell/cabal/issues/6176
 ghcjs-tools: hspec-discover

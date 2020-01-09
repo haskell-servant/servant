@@ -76,3 +76,6 @@ allow-newer: jsaddle-dom-0.9.3.2:lens
 allow-newer: jsaddle-warp-0.9.6.0:time
 
 constraints: base-compat ^>=0.11
+
+-- needed for doctests
+write-ghc-environment-files: always
