@@ -1,4 +1,0 @@
-X.Y
-----
-
-Initial release
