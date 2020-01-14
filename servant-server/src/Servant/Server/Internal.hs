@@ -64,7 +64,7 @@ import           Network.Socket
                  (SockAddr)
 import           Network.Wai
                  (Application, Request, httpVersion, isSecure, lazyRequestBody,
-                 rawQueryString, remoteHost, requestBody, requestHeaders,
+                 queryString, rawQueryString, remoteHost, requestBody, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
 import           Prelude.Compat
@@ -80,7 +80,7 @@ import           Servant.API
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
                  AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH,
-                 NoContent (NoContent))
+                 NoContent)
 import           Servant.API.Modifiers
                  (FoldLenient, FoldRequired, RequestArgument,
                  unfoldRequestArgument)
@@ -91,7 +91,7 @@ import           Web.FormUrlEncoded
 import qualified Servant.Types.SourceT                      as S
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam,
-                 parseUrlPieceMaybe, parseUrlPieces, parseUrlPiece)
+                 parseUrlPieces, parseUrlPiece)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -274,7 +274,7 @@ noContentRouter method status action = leafRouter route'
   where
     route' env request respond =
           runAction (action `addMethodCheck` methodCheck method request)
-                    env request respond $ \ output ->
+                    env request respond $ \ _output ->
                       Route $ responseLBS status [] ""
 
 instance {-# OVERLAPPABLE #-}
@@ -454,7 +454,7 @@ instance
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
-    let querytext req = parseQueryText $ rawQueryString req
+    let querytext = queryToQueryText . queryString
         paramname = cs $ symbolVal (Proxy :: Proxy sym)
 
         parseParam :: Request -> DelayedIO (RequestArgument mods a)
@@ -521,8 +521,8 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context)
           params :: [T.Text]
           params = mapMaybe snd
                  . filter (looksLikeParam . fst)
-                 . parseQueryText
-                 . rawQueryString
+                 . queryToQueryText
+                 . queryString
                  $ req
 
           looksLikeParam name = name == paramname || name == (paramname <> "[]")
@@ -548,7 +548,7 @@ instance (KnownSymbol sym, HasServer api context)
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
-    let querytext r = parseQueryText $ rawQueryString r
+    let querytext = queryToQueryText . queryString
         param r = case lookup paramname (querytext r) of
           Just Nothing  -> True  -- param is there, with no value
           Just (Just v) -> examine v -- param with a value

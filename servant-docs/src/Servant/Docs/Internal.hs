@@ -134,7 +134,8 @@ instance Semigroup API where
     (<>) = mappend
 
 instance Monoid API where
-    API a1 b1 `mappend` API a2 b2 = API (a1 `mappend` a2) (b1 `mappend` b2)
+    API a1 b1 `mappend` API a2 b2 = API (a1 `mappend` a2)
+                                        (HM.unionWith combineAction b1 b2)
     mempty = API mempty mempty
 
 -- | An empty 'API'
@@ -243,6 +244,15 @@ data Response = Response
   , _respHeaders :: [HTTP.Header]
   } deriving (Eq, Ord, Show)
 
+-- | Combine two Responses, we can't make a monoid because merging Status breaks
+-- the laws.
+--
+-- As such, we invent a non-commutative, left associative operation
+-- 'combineResponse' to mush two together taking the status from the very left.
+combineResponse :: Response -> Response -> Response
+Response s ts bs hs `combineResponse` Response _ ts' bs' hs'
+  = Response s (ts <> ts') (bs <> bs') (hs <> hs')
+
 -- | Default response: status code 200, no response body.
 --
 -- Can be tweaked with four lenses.
@@ -287,11 +297,10 @@ data Action = Action
 -- laws.
 --
 -- As such, we invent a non-commutative, left associative operation
--- 'combineAction' to mush two together taking the response, body and content
--- types from the very left.
+-- 'combineAction' to mush two together taking the response from the very left.
 combineAction :: Action -> Action -> Action
-Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' _ _ _ =
-        Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') ts body resp
+Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' ts' body' resp' =
+        Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') (ts <> ts') (body <> body') (resp `combineResponse` resp')
 
 -- | Default 'Action'. Has no 'captures', no query 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.

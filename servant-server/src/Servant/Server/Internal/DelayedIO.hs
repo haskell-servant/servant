@@ -12,13 +12,12 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans
                  (MonadIO (..), MonadTrans (..))
 import           Control.Monad.Trans.Control
-                 (ComposeSt, MonadBaseControl (..), MonadTransControl (..),
-                 defaultLiftBaseWith, defaultRestoreM)
+                 (MonadBaseControl (..))
 import           Control.Monad.Trans.Resource
                  (MonadResource (..), ResourceT, runInternalState,
-                 runResourceT, transResourceT, withInternalState)
+                 transResourceT, withInternalState)
 import           Network.Wai
-                 (Application, Request, Response, ResponseReceived)
+                 (Request)
 
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.ServerError

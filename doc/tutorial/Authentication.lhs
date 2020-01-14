@@ -318,7 +318,7 @@ genAuthAPI = Proxy
 
 Now we need to bring everything together for the server. We have the
 `AuthHandler Request Account` value and an `AuthProtected` endpoint. To bind these
-together, we need to provide a [Type Family](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/type-families.html)
+together, we need to provide a [Type Family](https://downloads.haskell.org/~ghc/8.8.1/docs/html/users_guide/glasgow_exts.html#type-families)
 instance that tells the `HasServer` instance that our `Context` will supply a
 `Account` (via `AuthHandler Request Account`) and that downstream combinators will
 have access to this `Account` value (or an error will be thrown if authentication
@@ -368,10 +368,10 @@ genAuthMain = run 8080 (serveWithContext genAuthAPI genAuthServerContext genAuth
 $ curl -XGET localhost:8080/private
 Missing auth header
 
-$ curl -XGET localhost:8080/private -H "servant-auth-cookie: key3"
+$ curl -XGET localhost:8080/private -H "Cookie: servant-auth-cookie=key3"
 [{"ssshhh":"this is a secret: Ghédalia Tazartès"}]
 
-$ curl -XGET localhost:8080/private -H "servant-auth-cookie: bad-key"
+$ curl -XGET localhost:8080/private -H "Cookie: servant-auth-cookie=bad-key"
 Invalid Cookie
 
 $ curl -XGET localhost:8080/public

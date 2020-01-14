@@ -1,0 +1,12 @@
+synopsis: Added a function to create Client.Request in ClientEnv
+packages: servant-client
+significance: significant
+prs: #1213 #1255
+description: {
+
+The new member `makeClientRequest` of `ClientEnv` is used to create
+`http-client` `Request` from `servant-client-core` `Request`.
+This functionality can be used for example to set
+dynamic timeouts for each request.
+
+}

@@ -15,8 +15,8 @@ packages:
   servant-pipes/
 
 -- servant GHCJS
-packages:
-  servant-jsaddle/
+-- packages:
+--   servant-jsaddle/
 
 -- Cookbooks
 packages:
@@ -37,8 +37,6 @@ packages:
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
   -- doc/cookbook/open-id-connect
-
-
 
 tests: True
 optimization: False
@@ -62,3 +60,8 @@ allow-newer: openssl-streams-1.2.2.0:network
 -- MonadFail
 -- https://github.com/nurpax/sqlite-simple/issues/74
 constraints: sqlite-simple < 0
+
+constraints: base-compat ^>=0.11
+
+-- needed for doctests
+write-ghc-environment-files: always

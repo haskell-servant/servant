@@ -25,6 +25,8 @@ import qualified Data.ByteString                   as BS
 import qualified Data.ByteString.Base64            as Base64
 import           Data.Char
                  (toUpper)
+import           Data.Maybe
+                 (fromMaybe)
 import           Data.Proxy
                  (Proxy (Proxy))
 import           Data.String
@@ -35,26 +37,26 @@ import qualified Data.Text                         as T
 import           GHC.Generics
                  (Generic)
 import           Network.HTTP.Types
-                 (Status (..), hAccept, hContentType, imATeapot418,
+                 (QueryItem, Status (..), hAccept, hContentType, imATeapot418,
                  methodDelete, methodGet, methodHead, methodPatch, methodPost,
                  methodPut, ok200, parseQuery)
 import           Network.Wai
-                 (Application, Request, pathInfo, queryString, rawQueryString,
-                 requestHeaders, responseLBS)
+                 (Application, Middleware, Request, pathInfo, queryString,
+                 rawQueryString, requestHeaders, responseLBS)
 import           Network.Wai.Test
                  (defaultRequest, request, runSession, simpleBody,
                  simpleHeaders, simpleStatus)
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
-                 BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll, Lenient, Strict, Delete,
-                 EmptyAPI, Get, Header, Headers, HttpVersion, IsSecure (..),
-                 JSON, NoContent (..), NoFraming, OctetStream, Patch,
-                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, QueryParamForm, Raw,
-                 RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Verb,
-                 NoContentVerb, addHeader)
+                 BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
+                 Delete, EmptyAPI, Get, Header, Headers, HttpVersion,
+                 IsSecure (..), JSON, Lenient, NoContent (..), NoContentVerb,
+                 NoFraming, OctetStream, Patch, PlainText, Post, Put,
+                 QueryFlag, QueryParam, QueryParams, QueryParamForm, Raw, RemoteHost, ReqBody,
+                 SourceIO, StdMethod (..), Stream, Strict, Verb, addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
-                 emptyServer, err400, err401, err403, err404, serve, serveWithContext)
+                 emptyServer, err401, err403, err404, serve, serveWithContext)
 import           Servant.Test.ComprehensiveAPI
 import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
@@ -221,7 +223,7 @@ captureServer = getLegs :<|> getEars :<|> getEyes
           _ -> throwError err404
 
         getEars :: Either String Integer -> Handler Animal
-        getEars (Left e) = return chimera -- ignore integer parse error, return weird animal
+        getEars (Left _) = return chimera -- ignore integer parse error, return weird animal
         getEars (Right 2) = return jerry
         getEars (Right _) = throwError err404
 
@@ -342,117 +344,123 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAge
         queryParamServer (Just name_) = return alice{name = name_}
         queryParamServer Nothing = return alice
 
+
+
 queryParamSpec :: Spec
 queryParamSpec = do
+  let mkRequest params pinfo = Network.Wai.Test.request defaultRequest
+        { rawQueryString = params
+        , queryString    = parseQuery params
+        , pathInfo       = pinfo
+        }
+
   describe "Servant.API.QueryParam" $ do
       it "allows retrieving simple GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
-          let params1 = "?name=bob"
-          response1 <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params1,
-            queryString = parseQuery params1
-           }
-          liftIO $ do
-            decode' (simpleBody response1) `shouldBe` Just alice{
-              name = "bob"
-             }
-
-      it "allows retrieving lists in GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
-          let params2 = "?names[]=bob&names[]=john"
-          response2 <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params2,
-            queryString = parseQuery params2,
-            pathInfo = ["a"]
-           }
-          liftIO $
-            decode' (simpleBody response2) `shouldBe` Just alice{
-              name = "john"
-             }
-
-      it "parses a query parameter" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
-        let params = "?age=55"
-        response <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params,
-            queryString = parseQuery params,
-            pathInfo = ["param"]
-           }
-        liftIO $
-            decode' (simpleBody response) `shouldBe` Just alice{
-              age = 55
+        flip runSession (serve queryParamApi qpServer) $ do
+          response1 <- mkRequest "?name=bob" []
+          liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
+            { name = "bob"
             }
 
+      it "allows retrieving lists in GET parameters" $
+        flip runSession (serve queryParamApi qpServer) $ do
+          response2 <- mkRequest "?names[]=bob&names[]=john" ["a"]
+          liftIO $ decode' (simpleBody response2) `shouldBe` Just alice
+            { name = "john"
+            }
+
+      it "parses a query parameter" $
+        flip runSession (serve queryParamApi qpServer) $ do
+        response <- mkRequest "?age=55" ["param"]
+        liftIO $ decode' (simpleBody response) `shouldBe` Just alice
+          { age = 55
+          }
+
       it "generates an error on query parameter parse failure" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
-        let params = "?age=foo"
-        response <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params,
-            queryString = parseQuery params,
-            pathInfo = ["param"]
-           }
+        flip runSession (serve queryParamApi qpServer) $ do
+        response <- mkRequest "?age=foo" ["param"]
         liftIO $ statusCode (simpleStatus response) `shouldBe` 400
         return ()
 
       it "parses multiple query parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
-        let params = "?ages=10&ages=22"
-        response <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params,
-            queryString = parseQuery params,
-            pathInfo = ["multiparam"]
-           }
-        liftIO $
-            decode' (simpleBody response) `shouldBe` Just alice{
-              age = 32
-            }
+        flip runSession (serve queryParamApi qpServer) $ do
+        response <- mkRequest "?ages=10&ages=22" ["multiparam"]
+        liftIO $ decode' (simpleBody response) `shouldBe` Just alice
+          { age = 32
+          }
 
       it "generates an error on parse failures of multiple parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
-        let params = "?ages=2&ages=foo"
-        response <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params,
-            queryString = parseQuery params,
-            pathInfo = ["multiparam"]
-           }
+        flip runSession (serve queryParamApi qpServer) $ do
+        response <- mkRequest "?ages=2&ages=foo" ["multiparam"]
         liftIO $ statusCode (simpleStatus response) `shouldBe` 400
         return ()
 
-
       it "allows retrieving value-less GET parameters" $
-        (flip runSession) (serve queryParamApi qpServer) $ do
-          let params3 = "?capitalize"
-          response3 <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params3,
-            queryString = parseQuery params3,
-            pathInfo = ["b"]
-           }
-          liftIO $
-            decode' (simpleBody response3) `shouldBe` Just alice{
-              name = "ALICE"
-             }
+        flip runSession (serve queryParamApi qpServer) $ do
+          response3 <- mkRequest "?capitalize" ["b"]
+          liftIO $ decode' (simpleBody response3) `shouldBe` Just alice
+            { name = "ALICE"
+            }
 
-          let params3' = "?capitalize="
-          response3' <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params3',
-            queryString = parseQuery params3',
-            pathInfo = ["b"]
-           }
-          liftIO $
-            decode' (simpleBody response3') `shouldBe` Just alice{
-              name = "ALICE"
-             }
+          response3' <- mkRequest "?capitalize=" ["b"]
+          liftIO $ decode' (simpleBody response3') `shouldBe` Just alice
+            { name = "ALICE"
+            }
 
-          let params3'' = "?unknown="
-          response3'' <- Network.Wai.Test.request defaultRequest{
-            rawQueryString = params3'',
-            queryString = parseQuery params3'',
-            pathInfo = ["b"]
-           }
-          liftIO $
-            decode' (simpleBody response3'') `shouldBe` Just alice{
-              name = "Alice"
-             }
+          response3'' <- mkRequest "?unknown=" ["b"]
+          liftIO $ decode' (simpleBody response3'') `shouldBe` Just alice
+            { name = "Alice"
+            }
+
+      describe "Uses queryString instead of rawQueryString" $ do
+        -- test query parameters rewriter
+        let queryRewriter :: Middleware
+            queryRewriter app req = app req
+                { queryString = fmap rewrite $ queryString req
+                }
+              where
+                rewrite :: QueryItem -> QueryItem
+                rewrite (k, v) = (fromMaybe k (BS.stripPrefix "person_" k), v)
+
+        let app = queryRewriter $ serve queryParamApi qpServer
+
+        it "allows rewriting for simple GET/query parameters" $
+          flip runSession app $ do
+            response1 <- mkRequest "?person_name=bob" []
+            liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
+              { name = "bob"
+              }
+
+        it "allows rewriting for lists in GET parameters" $
+          flip runSession app $ do
+            response2 <- mkRequest "?person_names[]=bob&person_names[]=john" ["a"]
+            liftIO $ decode' (simpleBody response2) `shouldBe` Just alice
+              { name = "john"
+              }
+
+        it "allows rewriting when parsing multiple query parameters" $
+          flip runSession app $ do
+            response <- mkRequest "?person_ages=10&person_ages=22" ["multiparam"]
+            liftIO $ decode' (simpleBody response) `shouldBe` Just alice
+              { age = 32
+              }
+
+        it "allows retrieving value-less GET parameters" $
+          flip runSession app $ do
+            response3 <- mkRequest "?person_capitalize" ["b"]
+            liftIO $ decode' (simpleBody response3) `shouldBe` Just alice
+              { name = "ALICE"
+              }
+
+            response3' <- mkRequest "?person_capitalize=" ["b"]
+            liftIO $ decode' (simpleBody response3') `shouldBe` Just alice
+              { name = "ALICE"
+              }
+
+            response3'' <- mkRequest "?person_unknown=" ["b"]
+            liftIO $ decode' (simpleBody response3'') `shouldBe` Just alice
+              { name = "Alice"
+              }
 
 ------------------------------------------------------------------------------
 -- * queryParamFormSpec {{{
@@ -665,7 +673,7 @@ rawSpec :: Spec
 rawSpec = do
   describe "Servant.API.Raw" $ do
     it "runs applications" $ do
-      (flip runSession) (serve rawApi (rawApplication (const (42 :: Integer)))) $ do
+      flip runSession (serve rawApi (rawApplication (const (42 :: Integer)))) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo"]
          }
@@ -673,7 +681,7 @@ rawSpec = do
           simpleBody response `shouldBe` "42"
 
     it "gets the pathInfo modified" $ do
-      (flip runSession) (serve rawApi (rawApplication pathInfo)) $ do
+      flip runSession (serve rawApi (rawApplication pathInfo)) $ do
         response <- Network.Wai.Test.request defaultRequest{
           pathInfo = ["foo", "bar"]
          }

@@ -1,0 +1,18 @@
+synopsis: Add NoContentVerb
+prs: #1228 #1219
+issues: #1028
+significance: significant
+
+description: {
+
+The `NoContent` API endpoints should now use `NoContentVerb` combinator.
+The API type changes are usually of the kind 
+
+```diff
+- :<|> PostNoContent '[JSON] NoContent
++ :<|> PostNoContent 
+```
+
+i.e. one doesn't need to specify the content-type anymore. There is no content.
+
+}
