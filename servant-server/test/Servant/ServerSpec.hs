@@ -514,6 +514,15 @@ queryParamFormSpec = do
            }
           liftIO $ do
             decode' (simpleBody response1) `shouldBe` (Just $ Animal { species = "bimac", numberOfLegs = 7})
+      it "Just a question mark will match but return a Left" $
+        (flip runSession) (serve queryParamFormApi qpFormServer) $ do
+          let paramsQ = "?"
+          response1 <- Network.Wai.Test.request defaultRequest{
+            rawQueryString = paramsQ,
+            queryString = parseQuery paramsQ
+           }
+          liftIO $ do
+            decode' (simpleBody response1) `shouldBe` (Just $ Animal { species = "broken", numberOfLegs = 0})
       it "allows no query params at all" $
         (flip runSession) (serve queryParamFormApi qpFormServer) $ do
           response1 <- Network.Wai.Test.request defaultRequest

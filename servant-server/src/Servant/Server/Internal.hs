@@ -607,7 +607,7 @@ instance
             mev :: Maybe (Either T.Text a)
             mev = case B.length rawQS of
               0 -> Nothing
-              _ -> Just $ urlDecodeAsForm (BL.drop 1 . BL.fromStrict $ rawQS)
+              _ -> Just $ urlDecodeAsForm $ BL.drop 1 $ BL.fromStrict rawQS
 
             errReq = delayedFailFatal err400
               { errBody = "Query parameter form is required"

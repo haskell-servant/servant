@@ -22,8 +22,6 @@ import           Control.Monad
 import           Control.Monad.Trans.Writer
                  (Writer, runWriter, tell)
 import           Data.Aeson
-import           Data.Data
-                 (Data)
 import           Data.List
                  (isInfixOf)
 import           Data.Proxy
@@ -161,7 +159,7 @@ spec = describe "Servant.Docs" $ do
 
 data Datatype1 = Datatype1 { dt1field1 :: String
                            , dt1field2 :: Int
-                           } deriving (Eq, Show, Data, Generic)
+                           } deriving (Eq, Show, Generic)
 
 instance ToJSON Datatype1
 instance ToForm Datatype1
