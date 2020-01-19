@@ -64,8 +64,6 @@ import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
 import           Servant.API.TypeLevel
-import           Web.FormUrlEncoded
-                 (ToForm(..), urlEncodeAsForm)
 
 import qualified Data.Universe.Helpers as U
 

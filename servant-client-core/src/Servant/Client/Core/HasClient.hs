@@ -49,7 +49,7 @@ import           Servant.API
                  IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
                  QueryParam', QueryParams, QueryParamForm', Raw, ReflectMethod (..), RemoteHost,
-                 ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
+                 ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData, ToForm (..),
                  ToSourceIO (..), Vault, Verb, NoContentVerb, WithNamedContext,
                  contentType, getHeadersHList, getResponse, toQueryParam,
                  toUrlPiece)
@@ -57,8 +57,6 @@ import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
-import           Web.FormUrlEncoded
-                 (ToForm (..))
 
 import           Servant.Client.Core.Auth
 import           Servant.Client.Core.BasicAuth

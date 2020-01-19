@@ -53,9 +53,8 @@ import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
                  http11, methodGet)
 import           Servant.API
-                 (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
-import           Web.FormUrlEncoded
-                 (ToForm (..), toListStable)
+                 (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO,
+                 ToForm (..), toListStable)
 
 import Servant.Client.Core.Internal (mediaTypeRnf)
 

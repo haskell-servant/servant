@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -36,8 +35,6 @@ import           Test.Tasty.Golden
                  (goldenVsString)
 import           Test.Tasty.HUnit
                  (Assertion, HasCallStack, assertFailure, testCase, (@?=))
-import           Web.FormUrlEncoded
-                 (ToForm)
 
 import           Servant.API
 import           Servant.Docs.Internal
