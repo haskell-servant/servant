@@ -1,8 +1,0 @@
-synopsis: Try changelog-d for changelog management
-prs: #1230
-
-description: {
-
-Check the [CONTRIBUTING.md](https://github.com/haskell-servant/servant/blob/master/CONTRIBUTING.md) for details
-
-}

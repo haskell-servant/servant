@@ -1,3 +1,0 @@
-synopsis: Prevent race-conditions in testing
-packages: servant-docs
-prs: #1194

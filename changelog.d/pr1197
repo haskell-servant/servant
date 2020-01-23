@@ -1,4 +1,0 @@
-synopsis: `HasClient` instance for `Stream` with `Headers`
-packages: servant-client servant-client servant-http-streams
-prs: #1197
-issues: #1170

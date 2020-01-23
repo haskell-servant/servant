@@ -1,3 +1,0 @@
-synopsis: Remove unused extensions from cabal file
-packages: servant
-prs: #1201
