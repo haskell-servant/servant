@@ -4,7 +4,7 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.9.20200110
+# version: 0.9.20200121
 #
 version: ~> 1.0
 language: c
@@ -75,39 +75,31 @@ before_install:
   - echo $HCNUMVER
   - CABAL="$CABAL -vnormal+nowrap"
   - set -o pipefail
-install:
-  - ${CABAL} --version
-  - echo "$(${HC} --version) [$(${HC} --print-project-git-commit-id 2> /dev/null || echo '?')]"
-  - node --version
-  - echo $GHCJS
   - TEST=--enable-tests
   - BENCH=--enable-benchmarks
   - HEADHACKAGE=false
   - rm -f $CABALHOME/config
   - |
-    echo "verbose: normal +nowrap +markoutput"                                  >> $CABALHOME/config
-    echo "remote-build-reporting: anonymous"                                    >> $CABALHOME/config
-    echo "write-ghc-environment-files: always"                                  >> $CABALHOME/config
-    echo "remote-repo-cache: $CABALHOME/packages"                               >> $CABALHOME/config
-    echo "logs-dir:          $CABALHOME/logs"                                   >> $CABALHOME/config
-    echo "world-file:        $CABALHOME/world"                                  >> $CABALHOME/config
-    echo "extra-prog-path:   $CABALHOME/bin"                                    >> $CABALHOME/config
-    echo "symlink-bindir:    $CABALHOME/bin"                                    >> $CABALHOME/config
-    echo "installdir:        $CABALHOME/bin"                                    >> $CABALHOME/config
-    echo "build-summary:     $CABALHOME/logs/build.log"                         >> $CABALHOME/config
-    echo "store-dir:         $CABALHOME/store"                                  >> $CABALHOME/config
-    echo "install-dirs user"                                                    >> $CABALHOME/config
-    echo "  prefix: $CABALHOME"                                                 >> $CABALHOME/config
-    echo "repository hackage.haskell.org"                                       >> $CABALHOME/config
-    echo "  url: http://hackage.haskell.org/"                                   >> $CABALHOME/config
-    echo "  secure: True"                                                       >> $CABALHOME/config
-    echo "  key-threshold: 3"                                                   >> $CABALHOME/config
-    echo "  root-keys:"                                                         >> $CABALHOME/config
-    echo "    fe331502606802feac15e514d9b9ea83fee8b6ffef71335479a2e68d84adc6b0" >> $CABALHOME/config
-    echo "    1ea9ba32c526d1cc91ab5e5bd364ec5e9e8cb67179a471872f6e26f0ae773d42" >> $CABALHOME/config
-    echo "    2c6c3627bd6c982990239487f1abd02e08a02e6cf16edb105a8012d444d870c3" >> $CABALHOME/config
-    echo "    0a5c7ea47cd1b15f01f5f51a33adda7e655bc0f0b0615baa8e271f4c3351e21d" >> $CABALHOME/config
-    echo "    51f0161b906011b52c6613376b1ae937670da69322113a246a09f807c62f6921" >> $CABALHOME/config
+    echo "verbose: normal +nowrap +markoutput"          >> $CABALHOME/config
+    echo "remote-build-reporting: anonymous"            >> $CABALHOME/config
+    echo "write-ghc-environment-files: always"          >> $CABALHOME/config
+    echo "remote-repo-cache: $CABALHOME/packages"       >> $CABALHOME/config
+    echo "logs-dir:          $CABALHOME/logs"           >> $CABALHOME/config
+    echo "world-file:        $CABALHOME/world"          >> $CABALHOME/config
+    echo "extra-prog-path:   $CABALHOME/bin"            >> $CABALHOME/config
+    echo "symlink-bindir:    $CABALHOME/bin"            >> $CABALHOME/config
+    echo "installdir:        $CABALHOME/bin"            >> $CABALHOME/config
+    echo "build-summary:     $CABALHOME/logs/build.log" >> $CABALHOME/config
+    echo "store-dir:         $CABALHOME/store"          >> $CABALHOME/config
+    echo "install-dirs user"                            >> $CABALHOME/config
+    echo "  prefix: $CABALHOME"                         >> $CABALHOME/config
+    echo "repository hackage.haskell.org"               >> $CABALHOME/config
+    echo "  url: http://hackage.haskell.org/"           >> $CABALHOME/config
+install:
+  - ${CABAL} --version
+  - echo "$(${HC} --version) [$(${HC} --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - node --version
+  - echo $GHCJS
   - GHCJOBS=-j2
   - |
     echo "program-default-options"                >> $CABALHOME/config
@@ -157,6 +149,9 @@ install:
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
     echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
+    echo "allow-newer:  servant"                           >> cabal.project
+    echo "allow-newer:  servant-server"                    >> cabal.project
+    echo "allow-newer:  servant-client"                    >> cabal.project
     echo "optimization: False"                             >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
@@ -259,6 +254,9 @@ script:
     echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
     echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
     echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
+    echo "allow-newer:  servant"                           >> cabal.project
+    echo "allow-newer:  servant-server"                    >> cabal.project
+    echo "allow-newer:  servant-client"                    >> cabal.project
     echo "optimization: False"                             >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
@@ -318,5 +316,5 @@ script:
   - if ! $GHCJS ; then ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all ; fi
   - echo -en 'travis_fold:end:haddock\\r'
 
-# REGENDATA ("0.9.20200110",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
+# REGENDATA ("0.9.20200121",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
 # EOF

@@ -1,6 +1,7 @@
 cabal-version:       >=1.10
 name:                servant-pipes
 version:             0.15.1
+x-revision:          1
 
 synopsis:            Servant Stream support for pipes
 category:            Servant, Web, Pipes
@@ -39,7 +40,7 @@ library
     , pipes-safe    >=2.3.1    && <2.4
     , mtl           >=2.2.2    && <2.3
     , monad-control >=1.0.2.3  && <1.1
-    , servant       >=0.15     && <0.17
+    , servant       >=0.15     && <0.18
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options: -Wall
@@ -60,8 +61,8 @@ test-suite example
     , pipes-safe
     , servant-pipes
     , pipes-bytestring  >=2.1.6    && <2.2
-    , servant-server    >=0.15     && <0.17
-    , servant-client    >=0.15     && <0.17
+    , servant-server    >=0.15     && <0.18
+    , servant-client    >=0.15     && <0.18
     , wai               >=3.2.1.2  && <3.3
     , warp              >=3.2.25   && <3.4
     , http-client

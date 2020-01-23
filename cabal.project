@@ -65,3 +65,8 @@ constraints: base-compat ^>=0.11
 
 -- needed for doctests
 write-ghc-environment-files: always
+
+-- servant-0.17
+allow-newer: servant
+allow-newer: servant-server
+allow-newer: servant-client
