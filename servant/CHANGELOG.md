@@ -52,6 +52,11 @@
   for cross-compiling. The benefit is small, as the doctests
   can be run other ways too (though not so conviniently).
 
+- *servant* Remove deprecated modules [1268#](https://github.com/haskell-servant/servant/pull/1268)
+  
+  - `Servant.Utils.Links` is `Servant.Links`
+  - `Servant.API.Internal.Test.ComprehensiveAPI` is `Servant.Test.ComprehensiveAPI`
+
 ### Other changes
 
 - *servant-client* *servant-client-core* *servant-http-streams* Fix Verb with headers checking content type differently [#1200](https://github.com/haskell-servant/servant/issues/1200) [#1204](https://github.com/haskell-servant/servant/pull/1204)
