@@ -1,5 +1,107 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.17
+----
+
+### Significant changes
+
+- Add NoContentVerb [#1028](https://github.com/haskell-servant/servant/issues/1028) [#1219](https://github.com/haskell-servant/servant/pull/1219) [#1228](https://github.com/haskell-servant/servant/pull/1228)
+
+  The `NoContent` API endpoints should now use `NoContentVerb` combinator.
+  The API type changes are usually of the kind
+
+  ```diff
+  - :<|> PostNoContent '[JSON] NoContent
+  + :<|> PostNoContent
+  ```
+
+  i.e. one doesn't need to specify the content-type anymore. There is no content.
+
+- `Capture` can be `Lenient` [#1155](https://github.com/haskell-servant/servant/issues/1155) [#1156](https://github.com/haskell-servant/servant/pull/1156)
+
+  You can specify a lenient capture as
+
+  ```haskell
+  :<|> "capture-lenient"  :> Capture' '[Lenient] "foo" Int :> GET
+  ```
+
+  which will make the capture always succeed. Handlers will be of the
+  type `Either String CapturedType`, where `Left err` represents
+  the possible parse failure.
+
+- *servant-client* Added a function to create Client.Request in ClientEnv [#1213](https://github.com/haskell-servant/servant/pull/1213) [#1255](https://github.com/haskell-servant/servant/pull/1255)
+
+  The new member `makeClientRequest` of `ClientEnv` is used to create
+  `http-client` `Request` from `servant-client-core` `Request`.
+  This functionality can be used for example to set
+  dynamic timeouts for each request.
+
+- *servant-server* use queryString to parse QueryParam, QueryParams and QueryFlag [#1249](https://github.com/haskell-servant/servant/pull/1249) [#1262](https://github.com/haskell-servant/servant/pull/1262)
+
+  Some APIs need query parameters rewriting, e.g. in order to support
+   for multiple casing (camel, snake, etc) or something to that effect.
+
+  This could be easily achieved by using WAI Middleware and modyfing
+  request's `Query`. But QueryParam, QueryParams and QueryFlag use
+  `rawQueryString`. By using `queryString` rather then `rawQueryString`
+  we can enable such rewritings.
+
+- *servant* *servant-server* Make packages `build-type: Simple` [#1263](https://github.com/haskell-servant/servant/pull/1263)
+
+  We used `build-type: Custom`, but it's problematic e.g.
+  for cross-compiling. The benefit is small, as the doctests
+  can be run other ways too (though not so conviniently).
+
+- *servant* Remove deprecated modules [1268#](https://github.com/haskell-servant/servant/pull/1268)
+  
+  - `Servant.Utils.Links` is `Servant.Links`
+  - `Servant.API.Internal.Test.ComprehensiveAPI` is `Servant.Test.ComprehensiveAPI`
+
+### Other changes
+
+- *servant-client* *servant-client-core* *servant-http-streams* Fix Verb with headers checking content type differently [#1200](https://github.com/haskell-servant/servant/issues/1200) [#1204](https://github.com/haskell-servant/servant/pull/1204)
+
+  For `Verb`s with response `Headers`, the implementation didn't check
+  for the content-type of the response. Now it does.
+
+- *servant-docs* Merge documentation from duplicate routes [#1240](https://github.com/haskell-servant/servant/issues/1240) [#1241](https://github.com/haskell-servant/servant/pull/1241)
+
+  Servant supports defining the same route multiple times with different
+  content-types and result-types, but servant-docs was only documenting
+  the first of copy of such duplicated routes. It now combines the
+  documentation from all the copies.
+
+  Unfortunately, it is not yet possible for the documentation to specify
+  multiple status codes.
+
+- Add sponsorship button [#1190](https://github.com/haskell-servant/servant/pull/1190)
+
+  [Well-Typed](https://www.well-typed.com/) is a consultancy which could help you with `servant` issues
+  (See consultancies section on https://www.servant.dev/).
+
+- Try changelog-d for changelog management [#1230](https://github.com/haskell-servant/servant/pull/1230)
+
+  Check the [CONTRIBUTING.md](https://github.com/haskell-servant/servant/blob/master/CONTRIBUTING.md) for details
+
+- CI and testing tweaks. [#1154](https://github.com/haskell-servant/servant/pull/1154) [#1157](https://github.com/haskell-servant/servant/pull/1157) [#1182](https://github.com/haskell-servant/servant/pull/1182) [#1214](https://github.com/haskell-servant/servant/pull/1214) [#1229](https://github.com/haskell-servant/servant/pull/1229) [#1233](https://github.com/haskell-servant/servant/pull/1233) [#1242](https://github.com/haskell-servant/servant/pull/1242) [#1247](https://github.com/haskell-servant/servant/pull/1247) [#1250](https://github.com/haskell-servant/servant/pull/1250) [#1258](https://github.com/haskell-servant/servant/pull/1258)
+
+  We are experiencing some bitrotting of cookbook recipe dependencies,
+  therefore some of them aren't build as part of our CI anymore.
+
+- New cookbook recipes [#1088](https://github.com/haskell-servant/servant/pull/1088) [#1171](https://github.com/haskell-servant/servant/pull/1171) [#1198](https://github.com/haskell-servant/servant/pull/1198)
+
+  - [OIDC Recipe](#TODO)
+  - [MySQL Recipe](#TODO)
+
+- *servant-jsaddle* Progress on servant-jsaddle [#1216](https://github.com/haskell-servant/servant/pull/1216)
+- *servant-docs* Prevent race-conditions in testing [#1194](https://github.com/haskell-servant/servant/pull/1194)
+- *servant-client* *servant-http-streams* `HasClient` instance for `Stream` with `Headers` [#1170](https://github.com/haskell-servant/servant/issues/1170) [#1197](https://github.com/haskell-servant/servant/pull/1197)
+- *servant* Remove unused extensions from cabal file [#1201](https://github.com/haskell-servant/servant/pull/1201)
+- *servant-client* Redact the authorization header in Show and exceptions [#1238](https://github.com/haskell-servant/servant/pull/1238)
+- Dependency upgrades [#1173](https://github.com/haskell-servant/servant/pull/1173) [#1181](https://github.com/haskell-servant/servant/pull/1181) [#1183](https://github.com/haskell-servant/servant/pull/1183) [#1188](https://github.com/haskell-servant/servant/pull/1188) [#1224](https://github.com/haskell-servant/servant/pull/1224) [#1245](https://github.com/haskell-servant/servant/pull/1245) [#1257](https://github.com/haskell-servant/servant/pull/1257)
+- Documentation updates [#1162](https://github.com/haskell-servant/servant/pull/1162) [#1174](https://github.com/haskell-servant/servant/pull/1174) [#1175](https://github.com/haskell-servant/servant/pull/1175) [#1234](https://github.com/haskell-servant/servant/pull/1234) [#1244](https://github.com/haskell-servant/servant/pull/1244) [#1247](https://github.com/haskell-servant/servant/pull/1247)
+
+
 0.16.2
 ------
 

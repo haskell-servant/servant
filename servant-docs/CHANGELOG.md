@@ -1,6 +1,46 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.14.2
+----
+
+
+- Add NoContentVerb [#1028](https://github.com/haskell-servant/servant/issues/1028) [#1219](https://github.com/haskell-servant/servant/pull/1219) [#1228](https://github.com/haskell-servant/servant/pull/1228)
+
+  The `NoContent` API endpoints should now use `NoContentVerb` combinator.
+  The API type changes are usually of the kind
+
+  ```diff
+  - :<|> PostNoContent '[JSON] NoContent
+  + :<|> PostNoContent
+  ```
+
+  i.e. one doesn't need to specify the content-type anymore. There is no content.
+
+- `Capture` can be `Lenient` [#1155](https://github.com/haskell-servant/servant/issues/1155) [#1156](https://github.com/haskell-servant/servant/pull/1156)
+
+  You can specify a lenient capture as
+
+  ```haskell
+  :<|> "capture-lenient"  :> Capture' '[Lenient] "foo" Int :> GET
+  ```
+
+  which will make the capture always succeed. Handlers will be of the
+  type `Either String CapturedType`, where `Left err` represents
+  the possible parse failure.
+
+- *servant-docs* Merge documentation from duplicate routes [#1240](https://github.com/haskell-servant/servant/issues/1240) [#1241](https://github.com/haskell-servant/servant/pull/1241)
+
+  Servant supports defining the same route multiple times with different
+  content-types and result-types, but servant-docs was only documenting
+  the first of copy of such duplicated routes. It now combines the
+  documentation from all the copies.
+
+  Unfortunately, it is not yet possible for the documentation to specify
+  multiple status codes.
+
+- *servant-docs* Prevent race-conditions in testing [#1194](https://github.com/haskell-servant/servant/pull/1194)
+
 0.11.4
 ------
 

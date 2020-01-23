@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                servant
-version:             0.16
+version:             0.17
 
 synopsis:            A family of combinators for defining webservices APIs
 category:            Servant, Web
@@ -73,11 +73,6 @@ library
   -- Safe links
   exposed-modules:
     Servant.Links
-
-  -- Deprecated modules, to be removed in late 2019
-  exposed-modules:
-    Servant.Utils.Links
-    Servant.API.Internal.Test.ComprehensiveAPI
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
