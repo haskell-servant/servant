@@ -137,22 +137,14 @@ install:
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/using-custom-monad" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/using-free-client" >> cabal.project ; fi
   - |
-    echo "constraints:  foundation >=0.0.14"               >> cabal.project
-    echo "constraints:  memory <0.14.12 || >0.14.12"       >> cabal.project
-    echo "constraints:  sqlite-simple < 0"                 >> cabal.project
-    echo "constraints:  base-compat ^>=0.11"               >> cabal.project
-    echo "allow-newer:  aeson-pretty-0.8.7:base-compat"    >> cabal.project
-    echo "allow-newer:  vault-0.3.1.2:hashable"            >> cabal.project
-    echo "allow-newer:  psqueues-0.2.7.1:hashable"         >> cabal.project
-    echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups" >> cabal.project
-    echo "allow-newer:  direct-sqlite-2.3.24:semigroups"   >> cabal.project
-    echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
-    echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
-    echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
-    echo "allow-newer:  servant"                           >> cabal.project
-    echo "allow-newer:  servant-server"                    >> cabal.project
-    echo "allow-newer:  servant-client"                    >> cabal.project
-    echo "optimization: False"                             >> cabal.project
+    echo "constraints:  foundation >=0.0.14"                     >> cabal.project
+    echo "constraints:  memory <0.14.12 || >0.14.12"             >> cabal.project
+    echo "constraints:  base-compat ^>=0.11"                     >> cabal.project
+    echo "constraints:  semigroups ^>=0.19"                      >> cabal.project
+    echo "constraints:  sqlite-simple < 0"                       >> cabal.project
+    echo "allow-newer:  servant-pagination-2.2.2:servant"        >> cabal.project
+    echo "allow-newer:  servant-pagination-2.2.2:servant-server" >> cabal.project
+    echo "optimization: False"                                   >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
@@ -242,22 +234,14 @@ script:
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_using_custom_monad}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_using_free_client}" >> cabal.project ; fi
   - |
-    echo "constraints:  foundation >=0.0.14"               >> cabal.project
-    echo "constraints:  memory <0.14.12 || >0.14.12"       >> cabal.project
-    echo "constraints:  sqlite-simple < 0"                 >> cabal.project
-    echo "constraints:  base-compat ^>=0.11"               >> cabal.project
-    echo "allow-newer:  aeson-pretty-0.8.7:base-compat"    >> cabal.project
-    echo "allow-newer:  vault-0.3.1.2:hashable"            >> cabal.project
-    echo "allow-newer:  psqueues-0.2.7.1:hashable"         >> cabal.project
-    echo "allow-newer:  sqlite-simple-0.4.16.0:semigroups" >> cabal.project
-    echo "allow-newer:  direct-sqlite-2.3.24:semigroups"   >> cabal.project
-    echo "allow-newer:  io-streams-1.5.1.0:network"        >> cabal.project
-    echo "allow-newer:  io-streams-1.5.1.0:primitive"      >> cabal.project
-    echo "allow-newer:  openssl-streams-1.2.2.0:network"   >> cabal.project
-    echo "allow-newer:  servant"                           >> cabal.project
-    echo "allow-newer:  servant-server"                    >> cabal.project
-    echo "allow-newer:  servant-client"                    >> cabal.project
-    echo "optimization: False"                             >> cabal.project
+    echo "constraints:  foundation >=0.0.14"                     >> cabal.project
+    echo "constraints:  memory <0.14.12 || >0.14.12"             >> cabal.project
+    echo "constraints:  base-compat ^>=0.11"                     >> cabal.project
+    echo "constraints:  semigroups ^>=0.19"                      >> cabal.project
+    echo "constraints:  sqlite-simple < 0"                       >> cabal.project
+    echo "allow-newer:  servant-pagination-2.2.2:servant"        >> cabal.project
+    echo "allow-newer:  servant-pagination-2.2.2:servant-server" >> cabal.project
+    echo "optimization: False"                                   >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true

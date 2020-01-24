@@ -47,26 +47,18 @@ constraints:
   foundation >=0.0.14,
   memory <0.14.12 || >0.14.12
 
-allow-newer: aeson-pretty-0.8.7:base-compat
-
-allow-newer: vault-0.3.1.2:hashable
-allow-newer: psqueues-0.2.7.1:hashable
-allow-newer: sqlite-simple-0.4.16.0:semigroups
-allow-newer: direct-sqlite-2.3.24:semigroups
-allow-newer: io-streams-1.5.1.0:network
-allow-newer: io-streams-1.5.1.0:primitive
-allow-newer: openssl-streams-1.2.2.0:network
+constraints: base-compat ^>=0.11
+constraints: semigroups ^>=0.19
 
 -- MonadFail
 -- https://github.com/nurpax/sqlite-simple/issues/74
 constraints: sqlite-simple < 0
-
-constraints: base-compat ^>=0.11
+-- allow-newer: sqlite-simple-0.4.16.0:semigroups
+-- allow-newer: direct-sqlite-2.3.24:semigroups
 
 -- needed for doctests
 write-ghc-environment-files: always
 
--- servant-0.17
-allow-newer: servant
-allow-newer: servant-server
-allow-newer: servant-client
+-- https://github.com/chordify/haskell-servant-pagination/pull/12
+allow-newer: servant-pagination-2.2.2:servant
+allow-newer: servant-pagination-2.2.2:servant-server
