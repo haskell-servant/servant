@@ -262,7 +262,9 @@ methodRouter splitHeaders method proxy status action = leafRouter route'
                  Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
                  Just (contentT, body) ->
                       let bdy = if allowedMethodHead method request then "" else body
-                      in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
+                          isWildcard = BL.isPrefixOf "*/" contentT || BL.isPrefixOf "*/*" contentT
+                          headers' = if isWildcard then headers else ((hContentType, cs contentT) : headers)
+                      in Route $ responseLBS status headers' bdy
 
 noContentRouter :: Method
              -> Status
@@ -353,7 +355,10 @@ streamRouter splitHeaders method status framingproxy ctypeproxy action = leafRou
                 let (headers, fa) = splitHeaders output
                     sourceT = toSourceIO fa
                     S.SourceT kStepLBS = framingRender framingproxy (mimeRender ctypeproxy :: chunk -> BL.ByteString) sourceT
-                in Route $ responseStream status (contentHeader : headers) $ \write flush -> do
+                    contentT = snd contentHeader
+                    isWildcard = BC8.isPrefixOf "*/" contentT || BC8.isPrefixOf "*/*" contentT
+                    headers' = if isWildcard then headers else (contentHeader : headers)
+                in Route $ responseStream status headers' $ \write flush -> do
                     let loop S.Stop          = flush
                         loop (S.Error err)   = fail err -- TODO: throw better error
                         loop (S.Skip s)      = loop s
