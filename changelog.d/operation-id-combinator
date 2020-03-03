@@ -1,0 +1,9 @@
+synopsis: Add OperationId combinator.
+prs: #1277
+issues: #1276
+
+description: {
+
+Adds a combinator that allows overriding the `operationId` field of a Swagger entry.
+
+}
