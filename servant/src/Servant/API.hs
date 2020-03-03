@@ -87,7 +87,7 @@ import           Servant.API.ContentTypes
                  MimeUnrender (..), NoContent (NoContent), OctetStream,
                  PlainText)
 import           Servant.API.Description
-                 (Description, Summary)
+                 (Description, OperationId, Summary)
 import           Servant.API.Empty
                  (EmptyAPI (..))
 import           Servant.API.Experimental.Auth

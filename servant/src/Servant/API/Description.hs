@@ -10,6 +10,7 @@ module Servant.API.Description (
     -- * Combinators
     Description,
     Summary,
+    OperationId,
     -- * Used as modifiers
     FoldDescription,
     FoldDescription',
@@ -44,6 +45,17 @@ data Summary (sym :: Symbol)
 -- :> Get '[JSON] Book
 -- :}
 data Description (sym :: Symbol)
+    deriving (Typeable)
+
+-- | Specify the operation ID used by swagger.
+--
+-- Example:
+--
+-- >>> :{
+--type MyApi = OperationId "getBooks"
+-- :> Get '[JSON] Book
+-- :}
+data OperationId (sym :: Symbol)
     deriving (Typeable)
 
 -- | Fold list of modifiers to extract description as a type-level String.

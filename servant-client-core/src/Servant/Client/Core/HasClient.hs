@@ -47,12 +47,12 @@ import           Servant.API
                  EmptyAPI, FramingRender (..), FramingUnrender (..),
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
-                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
-                 ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
-                 ToSourceIO (..), Vault, Verb, NoContentVerb, WithNamedContext,
-                 contentType, getHeadersHList, getResponse, toQueryParam,
-                 toUrlPiece)
+                 MimeUnrender (mimeUnrender), NoContent (NoContent), OperationId, 
+                 QueryFlag, QueryParam', QueryParams, Raw, ReflectMethod (..), 
+                 RemoteHost, ReqBody', SBoolI, Stream, StreamBody', Summary, 
+                 ToHttpApiData, ToSourceIO (..), Vault, Verb, NoContentVerb, 
+                 WithNamedContext, contentType, getHeadersHList, getResponse, 
+                 toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes)
 import           Servant.API.Modifiers
@@ -401,6 +401,14 @@ instance HasClient m api => HasClient m (Description desc :> api) where
   type Client m (Description desc :> api) = Client m api
 
   clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
+-- | Ignore @'Description'@ in client functions.
+instance (KnownSymbol opid, HasClient m api) => HasClient m (OperationId opid :> api) where
+  type Client m (OperationId opid :> api) = Client m api
+
+  clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy api)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 

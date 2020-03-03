@@ -72,11 +72,11 @@ import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
                  CaptureAll, Description, EmptyAPI, FramingRender (..),
                  FramingUnrender (..), FromSourceIO (..), Header', If,
-                 IsSecure (..), QueryFlag, QueryParam', QueryParams, Raw,
-                 ReflectMethod (reflectMethod), RemoteHost, ReqBody',
-                 SBool (..), SBoolI (..), SourceIO, Stream, StreamBody',
-                 Summary, ToSourceIO (..), Vault, Verb, NoContentVerb,
-                 WithNamedContext)
+                 IsSecure (..), OperationId, QueryFlag, QueryParam', 
+                 QueryParams, Raw, ReflectMethod (reflectMethod), RemoteHost, 
+                 ReqBody', SBool (..), SBoolI (..), SourceIO, Stream, 
+                 StreamBody', Summary, ToSourceIO (..), Vault, Verb, 
+                 NoContentVerb, WithNamedContext)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
                  AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH,
@@ -714,6 +714,13 @@ instance HasServer api ctx => HasServer (Summary desc :> api) ctx where
 -- | Ignore @'Description'@ in server handlers.
 instance HasServer api ctx => HasServer (Description desc :> api) ctx where
   type ServerT (Description desc :> api) m = ServerT api m
+
+  route _ = route (Proxy :: Proxy api)
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+
+-- | Ignore @'OperationId'@ in server handlers.
+instance HasServer api ctx => HasServer (OperationId opid :> api) ctx where
+  type ServerT (OperationId opid :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
