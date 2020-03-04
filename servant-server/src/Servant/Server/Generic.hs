@@ -31,7 +31,7 @@ instance GenericMode (AsServerT m) where
 
 type AsServer = AsServerT Handler
 
--- | Transform record of routes into a WAI 'Application'.
+-- | Transform a record of routes into a WAI 'Application'.
 genericServe
     :: forall routes.
        ( HasServer (ToServantApi routes) '[]
@@ -80,13 +80,17 @@ genericServeTWithContext f server ctx =
     p = genericApi (Proxy :: Proxy routes)
     pctx = Proxy :: Proxy ctx
 
--- | Transform record of endpoints into a 'Server'.
+-- | Transform a record of endpoints into a 'Server'.
 genericServer
     :: GenericServant routes AsServer
     => routes AsServer
     -> ToServant routes AsServer
 genericServer = toServant
 
+-- | Transform a record of endpoints into a @'ServerT' m@.
+--
+--  You can see an example usage of this function
+--  <https://docs.servant.dev/en/stable/cookbook/generic/Generic.html#using-generics-together-with-a-custom-monad in the Servant Cookbook>.
 genericServerT
     :: GenericServant routes (AsServerT m)
     => routes (AsServerT m)
