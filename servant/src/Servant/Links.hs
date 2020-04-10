@@ -648,7 +648,6 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 -- $setup
 -- >>> import Servant.API
 -- >>> import Data.Text (Text)
-
 -- Erroring instance for 'HasLink' when a combinator is not fully applied
 instance TypeError (PartialApplication 
 #if __GLASGOW_HASKELL__ >= 904
