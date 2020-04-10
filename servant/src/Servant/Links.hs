@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleContexts       #-}
@@ -134,7 +135,7 @@ import qualified Data.Text.Encoding            as TE
 import           Data.Type.Bool
                  (If)
 import           GHC.TypeLits
-                 (KnownSymbol, symbolVal)
+                 (KnownSymbol, TypeError, symbolVal)
 import           Network.URI
                  (URI (..), escapeURIString, isUnreserved)
 import           Prelude ()
@@ -175,6 +176,7 @@ import           Servant.API.Stream
                  (Stream, StreamBody')
 import           Servant.API.Sub
                  (type (:>))
+import           Servant.API.TypeErrors
 import           Servant.API.TypeLevel
 import           Servant.API.UVerb
 import           Servant.API.Vault
@@ -608,3 +610,14 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 -- $setup
 -- >>> import Servant.API
 -- >>> import Data.Text (Text)
+
+-- Erroring instance for 'HasLink' when a combinator is not fully applied
+instance TypeError (PartialApplication HasLink arr) => HasLink ((arr :: a -> b) :> sub)
+  where
+    type MkLink (arr :> _) _ = TypeError (PartialApplication HasLink arr)
+    toLink = error "unreachable"
+
+-- Erroring instances for 'HasLink' for unknown API combinators
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub HasLink ty) => HasLink (ty :> sub)
+
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasLink api)) => HasLink api
