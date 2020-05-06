@@ -110,7 +110,7 @@ install:
   - cat $CABALHOME/config
   - rm -fv cabal.project cabal.project.local cabal.project.freeze
   - travis_retry ${CABAL} v2-update -v
-  - if ! $GHCJS ; then (cd /tmp && ${CABAL} v2-install $WITHCOMPILER -j2 doctest --constraint='doctest ==0.16.2.*') ; fi
+  - if ! $GHCJS ; then (cd /tmp && ${CABAL} v2-install $WITHCOMPILER -j2 doctest --constraint='doctest ==0.16.3.*') ; fi
   - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe') ; fi
   - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 hspec-discover) ; fi
   # Generate cabal.project
