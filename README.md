@@ -9,7 +9,7 @@ introduces the core features of servant. After this article, you should be able
 to write your first servant webservices, learning the rest from the haddocks'
 examples.
 
-The central documentation can be found [here](http://docs.servant.dev/).
+The core documentation can be found [here](http://docs.servant.dev/).
 Other blog posts, videos and slides can be found on the
 [website](http://www.servant.dev/).
 
@@ -51,9 +51,9 @@ To regenerate the script use (*note:* atm you need to comment `doc/cookbook/` pa
 runghc ~/Documents/other-haskell/multi-ghc-travis/make_travis_yml_2.hs regenerate
 ```
 
-In case Travis jobs fail due failing build of dependency, you can temporarily
-add `constraints` to the `cabal.project`, and regenerate the `.travis.yml`.
-For example, the following will disallow single `troublemaker-13.37` package version:
+In case Travis jobs fail due to a dependency failing to build, you can temporarily
+add `constraints` to the `cabal.project` file, and regenerate the `.travis.yml`.
+For example, the following will disallow a single `troublemaker-13.37` package version:
 
 ```
 constraints:
@@ -62,7 +62,7 @@ constraints:
 
 ## TechEmpower framework bechmarks
 
-We develop & maintain the servant TFB entry in https://github.com/haskell-servant/FrameworkBenchmarks/
+We develop and maintain the servant TFB entry in https://github.com/haskell-servant/FrameworkBenchmarks/
 
 To verify (i.e. compile and test that it works)
 
@@ -82,4 +82,4 @@ To compare with `reitit` (Clojure framework)
 ./tfb --mode benchmark --test reitit reitit-async reitit-jdbc servant servant-beam servant-psql-simple --type json plaintext db fortune
 ```
 
-And visualise the results at https://www.techempower.com/benchmarks/#section=test
+You can see the visualised results at https://www.techempower.com/benchmarks/#section=test
