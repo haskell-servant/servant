@@ -157,7 +157,7 @@ test-suite spec
     , text
     , transformers
 
-  -- Additonal dependencies
+  -- Additional dependencies
   build-depends:
       hspec                >= 2.6.0    && < 2.8
     , QuickCheck           >= 2.12.6.1 && < 2.15

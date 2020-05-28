@@ -127,7 +127,7 @@ defaultRange =
   getDefaultRange (Proxy @Color)
 ```
 
-Note that `getFieldValue :: Proxy "name" -> Color -> String` is the minimal complete definintion
+Note that `getFieldValue :: Proxy "name" -> Color -> String` is the minimal complete definition
 of the class. Yet, you can define `getRangeOptions` to provide different parsing options (see
 the last section of this guide). In the meantime, we've also defined a `defaultRange` as it will
 come in handy when defining our handler.
@@ -148,7 +148,7 @@ type MyHeaders =
 ```
 
 `PageHeaders` is a type alias provided by the library to declare the necessary response headers
-we mentionned in introduction. Expanding the alias boils down to the following:
+we mentioned in introduction. Expanding the alias boils down to the following:
 
 ``` haskell
 -- type MyHeaders =

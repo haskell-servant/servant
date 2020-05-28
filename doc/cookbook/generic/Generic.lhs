@@ -43,13 +43,13 @@ api :: Proxy (ToServantApi Routes)
 api = genericApi (Proxy :: Proxy Routes)
 ```
 
-It's recommented to use `genericApi` function, as then you'll get
+It's recommended to use `genericApi` function, as then you'll get
 better error message, for example if you forget to `derive Generic`.
 
 ## Links
 
 The clear advantage of record-based generics approach, is that
-we can get safe links very conviently. We don't need to define endpoint types,
+we can get safe links very conveniently. We don't need to define endpoint types,
 as field accessors work as proxies:
 
 ```haskell

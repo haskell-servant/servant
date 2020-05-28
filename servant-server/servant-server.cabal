@@ -155,7 +155,7 @@ test-suite spec
     , transformers-compat
     , wai
 
-  -- Additonal dependencies
+  -- Additional dependencies
   build-depends:
       aeson                >= 1.4.1.0  && < 1.5
     , directory            >= 1.3.0.0  && < 1.4

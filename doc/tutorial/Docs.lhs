@@ -77,7 +77,7 @@ instance ToSample HelloMessage where
     [ ("When a value is provided for 'name'", HelloMessage "Hello, Alp")
     , ("When 'name' is not specified", HelloMessage "Hello, anonymous coward")
     ]
-    -- mutliple examples to display this time
+    -- multiple examples to display this time
 
 ci :: ClientInfo
 ci = ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]

@@ -183,7 +183,7 @@ users2 = [isaac, albert]
 
 Now, just like we separate the various endpoints in `UserAPI` with `:<|>`, we
 are going to separate the handlers with `:<|>` too! They must be provided in
-the same order as in in the API type.
+the same order as in the API type.
 
 ``` haskell
 server2 :: Server UserAPI2
@@ -716,7 +716,7 @@ $ curl --verbose http://localhost:8081/myfile.txt
 >
 < HTTP/1.1 404 Not Found
 [snip]
-myfile.txt just isnt there, please leave this server alone.
+myfile.txt just isn't there, please leave this server alone.
 
 $ echo Hello > myfile.txt
 
@@ -818,7 +818,7 @@ If it doesn't exist, the handler will fail with a `404` status code.
 
 `serveDirectoryWebApp` uses some standard settings that fit the use case of
 serving static files for most web apps. You can find out about the other
-options in the documentation of the `Servant.Utils.StaticFiles` module.
+options in the documentation of the `Servant.Server.StaticFiles` module.
 
 ## Nested APIs
 
@@ -1166,7 +1166,7 @@ back a *stream* of results, served one at a time. Stream endpoints only provide
 a single content type, and also specify what framing strategy is used to
 delineate the results. To serve these results, we need to give back a stream
 producer. Adapters can be written to *Pipes*, *Conduit* and the like, or
-written directly as `SourceIO`s. SourceIO builts upon servant's own `SourceT`
+written directly as `SourceIO`s. SourceIO builds upon servant's own `SourceT`
 stream type (it's simpler than *Pipes* or *Conduit*).
 The API of a streaming endpoint needs to explicitly specify which sort of
 generator it produces. Note that the generator itself is returned by a

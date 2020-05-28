@@ -254,7 +254,7 @@ loginHandler cookieSettings jwtSettings form = do
           liftIO $ pushLogStrLn logset $ toLogStr logMsg
           throwError err401
         Just applyCookies -> do
-          let successMsg = logMsg{message = "AdminUser succesfully authenticated!"}
+          let successMsg = logMsg{message = "AdminUser successfully authenticated!"}
           liftIO $ pushLogStrLn logset $ toLogStr successMsg
           pure $ applyCookies successMsg
 loginHandler _ _ _ = throwError err401

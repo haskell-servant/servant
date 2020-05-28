@@ -32,7 +32,7 @@ See `CONTRIBUTING.md`
         - It's a good idea to separate these steps, as tests often pass, if they compile :)
     - See `cabal.project` to selectively `allow-newer`
     - If some packages are broken, on your discretisation there are two options:
-        - Fix them and make PRs: it's good idea to test against older `servant` version too.
+        - Fix them and make PRs: it's a good idea to test against older `servant` version too.
         - Temporarily comment out broken package
     - If you make a commit for `servant-universe`, you can use it as submodule in private projects to test even more
 - When ripples are cleared out:
@@ -60,7 +60,7 @@ constraints:
   troublemaker <13.37 && > 13.37
 ```
 
-## TechEmpower framework bechmarks
+## TechEmpower framework benchmarks
 
 We develop & maintain the servant TFB entry in https://github.com/haskell-servant/FrameworkBenchmarks/
 

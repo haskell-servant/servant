@@ -563,7 +563,7 @@ instance HasLink sub => HasLink (AuthProtect tag :> sub) where
   type MkLink (AuthProtect tag :> sub) a = MkLink sub a
   toLink = simpleToLink (Proxy :: Proxy sub)
 
--- | Helper for implemneting 'toLink' for combinators not affecting link
+-- | Helper for implementing 'toLink' for combinators not affecting link
 -- structure.
 simpleToLink
     :: forall sub a combinator.

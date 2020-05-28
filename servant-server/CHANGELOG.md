@@ -35,7 +35,7 @@
   Some APIs need query parameters rewriting, e.g. in order to support
    for multiple casing (camel, snake, etc) or something to that effect.
 
-  This could be easily achieved by using WAI Middleware and modyfing
+  This could be easily achieved by using WAI Middleware and modifying
   request's `Query`. But QueryParam, QueryParams and QueryFlag use
   `rawQueryString`. By using `queryString` rather then `rawQueryString`
   we can enable such rewritings.
@@ -44,7 +44,7 @@
 
   We used `build-type: Custom`, but it's problematic e.g.
   for cross-compiling. The benefit is small, as the doctests
-  can be run other ways too (though not so conviniently).
+  can be run other ways too (though not so conveniently).
 
 0.16.2
 ------

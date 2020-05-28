@@ -77,7 +77,7 @@ test-suite spec
     , servant
     , servant-foreign
 
-  -- Additonal dependencies
+  -- Additional dependencies
   build-depends:
     hspec >= 2.6.0 && <2.8
 
