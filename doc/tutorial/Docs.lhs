@@ -108,7 +108,7 @@ apiDocs = docs exampleAPI
 markdown :: API -> String
 ```
 
-That lets us see what our API docs look down in markdown, by looking at `markdown apiDocs`.
+That lets us see what our API docs look like in markdown, by looking at `markdown apiDocs`.
 
 ````````` text
 ## GET /hello

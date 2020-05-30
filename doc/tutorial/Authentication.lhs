@@ -274,7 +274,7 @@ database = fromList [ ("key1", Account "Anne Briggs")
                     , ("key3", Account "Ghédalia Tazartès")
                     ]
 
--- | A method that, when given a password, will return a Account.
+-- | A method that, when given a password, will return an Account.
 -- This is our bespoke (and bad) authentication logic.
 lookupAccount :: ByteString -> Handler Account
 lookupAccount key = case Map.lookup key database of
@@ -385,7 +385,7 @@ Creating a generalized, ad-hoc authentication scheme was fairly straight
 forward:
 
 1. use the `AuthProtect` combinator to protect your API.
-2. choose a application-specific data type used by your server when
+2. choose an application-specific data type used by your server when
 authentication is successful (in our case this was `Account`).
 3. Create a value of `AuthHandler Request Account` which encapsulates the
 authentication logic (`Request -> Handler Account`). This function

@@ -1135,7 +1135,7 @@ true
 ### An arrow is a reader too.
 
 In previous versions of `servant` we had an `enter` to do what `hoistServer`
-does now. `enter` had a ambitious design goals, but was problematic in practice.
+does now. `enter` had an ambitious design goals, but was problematic in practice.
 
 One problematic situation was when the source monad was `(->) r`, yet it's
 handy in practice, because `(->) r` is isomorphic to `Reader r`.
