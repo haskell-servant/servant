@@ -260,7 +260,7 @@ this.
 
 Let's implement a trivial authentication scheme. We will protect our API by
 looking for a cookie named `"servant-auth-cookie"`. This cookie's value will
-contain a key from which we can lookup a `Account`.
+contain a key from which we can lookup an `Account`.
 
 ```haskell
 -- | An account type that we "fetch from the database" after

@@ -67,7 +67,7 @@ routesLinks = allFieldLinks
 ## Client
 
 Even more power starts to show when we generate a record of client functions.
-Here we use `genericClientHoist` function, which let us simultaneously
+Here we use `genericClientHoist` function, which lets us simultaneously
 hoist the monad, in this case from `ClientM` to `IO`.
 
 ```haskell

@@ -54,7 +54,7 @@
 -- >>> toUrlPiece $ safeLink api without
 -- "bye"
 --
--- If you would like create a helper for generating links only within that API,
+-- If you would like to create a helper for generating links only within that API,
 -- you can partially apply safeLink if you specify a correct type signature
 -- like so:
 --
@@ -65,7 +65,7 @@
 -- >>>     apiLink = safeLink api
 -- >>> :}
 --
--- `safeLink'` allows to make specialise the output:
+-- `safeLink'` allows you to specialise the output:
 --
 -- >>> safeLink' toUrlPiece api without
 -- "bye"
