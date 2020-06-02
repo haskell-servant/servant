@@ -18,7 +18,7 @@ For example: `Range: createdAt 2017-01-15T23:14:67.000Z; offset 5; order desc` i
 the client is willing to retrieve the next batch of document in descending order that were
 created after the fifteenth of January, skipping the first 5.
 
-As a response, the server may return the list of corresponding document, and augment the
+As a response, the server may return the list of corresponding documents, and augment the
 response with 3 headers:
 
 - `Accept-Ranges`: A comma-separated list of fields upon which a range can be defined
@@ -165,7 +165,7 @@ not, _servant-pagination_ provides an easy way to lift a collection of resources
 #### Server
 
 Time to connect the last bits by defining the server implementation of our colorful API. The `Ranges`
-type we've defined above (tight to the `Range` HTTP header) indicates the server to parse any `Range`
+type we've defined above (tied to the `Range` HTTP header) indicates the server to parse any `Range`
 header, looking for the format defined in introduction with fields and target types we have just declared.
 If no such header is provided, we will end up receiving `Nothing`. Otherwise, it will be possible
 to _extract_ a `Range` from our `Ranges`.
@@ -192,7 +192,7 @@ the format we defined, where `<field>` here can only be `name` and `<value>` mus
 - `Range: <field> [<value>][; offset <o>][; limit <l>][; order <asc|desc>]`
 
 Beside the target field, everything is pretty much optional in the `Range` HTTP header. Missing parts
-are deducted from the `RangeOptions` that are part of the `HasPagination` instance. Therefore, all
+are deduced from the `RangeOptions` that are part of the `HasPagination` instance. Therefore, all
 following examples are valid requests to send to our server:
 
 - 1 - `curl http://localhost:1442/colors -vH 'Range: name'`
@@ -219,7 +219,7 @@ The previous ranges reads as follows:
 Note that in the simple above scenario, there's no ambiguity with `extractRange` and `returnRange`
 because there's only one possible `Range` defined on our resource. Yet, as you've most probably
 noticed, the `Ranges` combinator accepts a list of fields, each of which must declare a `HasPagination`
-instance. Doing so will make the other helper functions more ambiguous and type annotation are
+instance. Doing so will make the other helper functions more ambiguous and type annotations are
 highly likely to be needed.
 
 
@@ -235,8 +235,8 @@ instance HasPagination Color "hex" where
 #### Parsing Options
 
 By default, `servant-pagination` provides an implementation of `getRangeOptions` for each
-`HasPagination` instance. However, this can be overwritten when defining the instance to provide
-your own options. This options come into play when a `Range` header is received and isn't fully
+`HasPagination` instance. However, this can be overridden when defining the instance to provide
+your own options. These options come into play when a `Range` header is received and isn't fully
 specified (`limit`, `offset`, `order` are all optional) to provide default fallback values for those.
 
 For instance, let's say we wanted to change the default limit to `5` in a new range on

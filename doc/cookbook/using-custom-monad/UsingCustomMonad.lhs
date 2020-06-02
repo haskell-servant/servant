@@ -1,6 +1,6 @@
 # Using a custom monad
 
-In this section we will create and API for a book shelf without any backing DB storage.
+In this section we will create an API for a book shelf without any backing DB storage.
 We will keep state in memory and share it between requests using `Reader` monad and `STM`.
 
 We start with a pretty standard set of imports and definition of the model:

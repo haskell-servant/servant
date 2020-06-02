@@ -141,7 +141,7 @@ and calling the continuation. We should get a `Pure` value.
             Pure n ->
                 putStrLn $ "Expected 1764, got " ++ show n
             _ ->
-                putStrLn "ERROR: didn't got a response"
+                putStrLn "ERROR: didn't get a response"
 ```
 
 So that's it. Using `Free` we can evaluate servant clients step-by-step, and
