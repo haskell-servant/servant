@@ -108,7 +108,7 @@ API with "private." Additionally, the private parts of our API use the
 realm for this authentication is `"foo-realm"`).
 
 Unfortunately we're not done. When someone makes a request to our `"private"`
-API, we're going to need to provide to servant the logic for validifying
+API, we're going to need to provide to servant the logic for validating
 usernames and passwords. This adds a certain conceptual wrinkle in servant's
 design that we'll briefly discuss. If you want the **TL;DR**: we supply a lookup
 function to servant's new `Context` primitive.
@@ -260,7 +260,7 @@ this.
 
 Let's implement a trivial authentication scheme. We will protect our API by
 looking for a cookie named `"servant-auth-cookie"`. This cookie's value will
-contain a key from which we can lookup a `Account`.
+contain a key from which we can lookup an `Account`.
 
 ```haskell
 -- | An account type that we "fetch from the database" after
@@ -274,7 +274,7 @@ database = fromList [ ("key1", Account "Anne Briggs")
                     , ("key3", Account "Ghédalia Tazartès")
                     ]
 
--- | A method that, when given a password, will return a Account.
+-- | A method that, when given a password, will return an Account.
 -- This is our bespoke (and bad) authentication logic.
 lookupAccount :: ByteString -> Handler Account
 lookupAccount key = case Map.lookup key database of
@@ -346,7 +346,7 @@ genAuthServerContext = authHandler :. EmptyContext
 
 -- | Our API, where we provide all the author-supplied handlers for each end
 -- point. Note that 'privateDataFunc' is a function that takes 'Account' as an
--- argument. We dont' worry about the authentication instrumentation here,
+-- argument. We don't worry about the authentication instrumentation here,
 -- that is taken care of by supplying context
 genAuthServer :: Server AuthGenAPI
 genAuthServer =
@@ -385,11 +385,11 @@ Creating a generalized, ad-hoc authentication scheme was fairly straight
 forward:
 
 1. use the `AuthProtect` combinator to protect your API.
-2. choose a application-specific data type used by your server when
+2. choose an application-specific data type used by your server when
 authentication is successful (in our case this was `Account`).
 3. Create a value of `AuthHandler Request Account` which encapsulates the
 authentication logic (`Request -> Handler Account`). This function
-will be executed everytime a request matches a protected route.
+will be executed every time a request matches a protected route.
 4. Provide an instance of the `AuthServerData` type family, specifying your
 application-specific data type returned when authentication is successful (in
 our case this was `Account`).

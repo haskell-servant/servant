@@ -114,7 +114,7 @@ listFromAPISpec = describe "listFromAPI" $ do
     shouldBe putReq $ defReq
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
-          -- Shoud this be |intX| or |listX of intX| ?
+          -- Should this be |intX| or |listX of intX| ?
           [ QueryArg (Arg "params" "listX of intX") List ]
       , _reqMethod     = "PUT"
       , _reqHeaders    = []

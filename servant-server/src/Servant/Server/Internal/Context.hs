@@ -20,7 +20,7 @@ import           GHC.TypeLits
 --
 -- If you are using combinators that require a non-empty 'Context' you have to
 -- use 'Servant.Server.serveWithContext' and pass it a 'Context' that contains all
--- the values your combinators need. A 'Context' is essentially a heterogenous
+-- the values your combinators need. A 'Context' is essentially a heterogeneous
 -- list and accessing the elements is being done by type (see 'getContextEntry').
 -- The parameter of the type 'Context' is a type-level list reflecting the types
 -- of the contained context entries. To create a 'Context' with entries, use the

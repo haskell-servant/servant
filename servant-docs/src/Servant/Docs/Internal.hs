@@ -396,7 +396,7 @@ docsWithOptions p = docsFor p (defEndpoint, defAction)
 -- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
 -- >              defAction & headers <>~ ["unicorns"]
 -- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
--- >                                      , DocNote "Second secton" ["And some more"]
+-- >                                      , DocNote "Second section" ["And some more"]
 -- >                                      ]
 
 extraInfo :: (IsIn endpoint api, HasLink endpoint, HasDocs endpoint)

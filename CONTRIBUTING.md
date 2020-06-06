@@ -103,7 +103,7 @@ the `news` label if you make a new package so we can know about it!
 
 ## Release policy
 
-We are currently moving to a more aggresive release policy, so that you can get
+We are currently moving to a more aggressive release policy, so that you can get
 what you contribute from Hackage fairly soon. However, note that prior to major
 releases it may take some time in between releases.
 

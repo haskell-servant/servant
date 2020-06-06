@@ -808,7 +808,7 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 instance TypeError (HasServerArrowKindError arr) => HasServer ((arr :: k -> l) :> api) context
   where
     type ServerT (arr :> api) m = TypeError (HasServerArrowKindError arr)
-    -- it doens't really matter what sub route we peak
+    -- it doesn't really matter what sub route we peak
     route _ _ _ = error "servant-server panic: impossible happened in HasServer (arr :> api)"
     hoistServerWithContext _ _ _ = id
 

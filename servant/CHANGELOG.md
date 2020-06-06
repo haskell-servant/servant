@@ -41,7 +41,7 @@
   Some APIs need query parameters rewriting, e.g. in order to support
    for multiple casing (camel, snake, etc) or something to that effect.
 
-  This could be easily achieved by using WAI Middleware and modyfing
+  This could be easily achieved by using WAI Middleware and modifying
   request's `Query`. But QueryParam, QueryParams and QueryFlag use
   `rawQueryString`. By using `queryString` rather then `rawQueryString`
   we can enable such rewritings.
@@ -50,7 +50,7 @@
 
   We used `build-type: Custom`, but it's problematic e.g.
   for cross-compiling. The benefit is small, as the doctests
-  can be run other ways too (though not so conviniently).
+  can be run other ways too (though not so conveniently).
 
 - *servant* Remove deprecated modules [1268#](https://github.com/haskell-servant/servant/pull/1268)
   
@@ -405,7 +405,7 @@
 
 - *servant-client-core* Add `hoistClient` to `HasClient`.
   Just like `hoistServer` allows us to change the monad in which request handlers
-  of a web application live in, we also have `hoistClient` for changing the monad
+  of a web application live, we also have `hoistClient` for changing the monad
   in which *client functions* live.
   Read [tutorial section for more information](https://docs.servant.dev/en/release-0.14/tutorial/Client.html#changing-the-monad-the-client-functions-live-in).
   ([#936](https://github.com/haskell-servant/servant/pull/936))
@@ -612,7 +612,7 @@
 
   `enter` isn't exported from `Servant` module anymore. You can change
   `enter` to `hoistServer` in a straight forward way.
-  Unwrap natural transformation and add a api type `Proxy`:
+  Unwrap natural transformation and add an api type `Proxy`:
 
   ```diff
   -server = enter (NT nt) impl

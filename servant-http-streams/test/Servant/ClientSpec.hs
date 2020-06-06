@@ -77,7 +77,7 @@ _ = client comprehensiveAPIWithoutStreaming
 
 spec :: Spec
 spec = describe "Servant.HttpStreams" $ do
-    sucessSpec
+    successSpec
     failSpec
     wrappedApiSpec
     basicAuthSpec
@@ -262,8 +262,8 @@ runClientUnsafe x burl = withClientEnvIO burl (runClientMUnsafe x)
   where
     runClientMUnsafe x env = withClientM x env return
 
-sucessSpec :: Spec
-sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+successSpec :: Spec
+successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     it "Servant.API.Get root" $ \(_, baseUrl) -> do
       left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
 

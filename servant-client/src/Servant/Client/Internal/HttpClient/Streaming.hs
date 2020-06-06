@@ -130,7 +130,7 @@ withClientM cm env k =
 -- streaming response types ('SourceT', 'Conduit', pipes 'Proxy' or 'Machine').
 -- For those you have to use 'withClientM'.
 --
--- /Note:/ we 'force' the result, so the likehood of accidentally leaking a
+-- /Note:/ we 'force' the result, so the likelihood of accidentally leaking a
 -- connection is smaller. Use with care.
 --
 runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ClientError a)

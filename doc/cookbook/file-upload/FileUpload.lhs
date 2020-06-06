@@ -90,8 +90,8 @@ startServer = run 8080 (serve api upload)
 
 Finally, a main function that brings up our server and
 sends some test request with `http-client` (and not
-servant-client this time, has servant-multipart does not
-yet have support for client generation.
+servant-client this time, as servant-multipart does not
+yet have support for client generation).
 
 ``` haskell
 main :: IO ()

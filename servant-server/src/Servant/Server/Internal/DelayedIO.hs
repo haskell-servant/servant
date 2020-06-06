@@ -24,7 +24,7 @@ import           Servant.Server.Internal.ServerError
 
 -- | Computations used in a 'Delayed' can depend on the
 -- incoming 'Request', may perform 'IO', and result in a
--- 'RouteResult', meaning they can either suceed, fail
+-- 'RouteResult', meaning they can either succeed, fail
 -- (with the possibility to recover), or fail fatally.
 --
 newtype DelayedIO a = DelayedIO { runDelayedIO' :: ReaderT Request (ResourceT (RouteResultT IO)) a }

@@ -268,5 +268,5 @@ runAction action env req respond k = runResourceT $
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Due to GHC issue <https://ghc.haskell.org/trac/ghc/ticket/2595 2595>, we cannot
-do the more succint thing - just update the records we actually change.
+do the more succinct thing - just update the records we actually change.
 -}

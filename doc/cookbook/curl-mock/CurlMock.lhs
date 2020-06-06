@@ -1,7 +1,7 @@
 # Generating mock curl calls
 
 In this example we will generate curl requests with mock post data from a servant API.
-This may be usefull for testing and development purposes.
+This may be useful for testing and development purposes.
 Especially post requests with a request body are tedious to send manually.
 
 Also, we will learn how to use the servant-foreign library to generate stuff from servant APIs.

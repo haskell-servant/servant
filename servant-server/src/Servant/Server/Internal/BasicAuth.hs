@@ -32,7 +32,7 @@ import           Servant.Server.Internal.ServerError
 -- * Basic Auth
 
 -- | servant-server's current implementation of basic authentication is not
--- immune to certian kinds of timing attacks. Decoding payloads does not take
+-- immune to certain kinds of timing attacks. Decoding payloads does not take
 -- a fixed amount of time.
 
 -- | The result of authentication/authorization

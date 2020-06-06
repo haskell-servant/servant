@@ -57,7 +57,7 @@ You'll also note that multiple intros are possible.
 
 This is some text
 
-### Second secton
+### Second section
 
 And some more
 
