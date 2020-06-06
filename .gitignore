@@ -1,4 +1,5 @@
 **/*/dist
+*~
 dist-*
 .ghc.environment.*
 /bin
@@ -29,6 +30,9 @@ doc/_build
 doc/venv
 doc/tutorial/static/api.js
 doc/tutorial/static/jq.js
+
+# nix
+result*
 
 # local versions of things
 servant-multipart
