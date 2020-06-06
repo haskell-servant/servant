@@ -620,7 +620,7 @@ In short, this means that a handler of type `Handler a` is simply
 equivalent to a computation of type `IO (Either ServerError a)`, that is, an IO
 action that either returns an error or a result.
 
-The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)
+The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl/docs/Control-Monad-Except.html#t:ExceptT)
 from which `ExceptT` comes is worth looking at.
 Perhaps most importantly, `ExceptT` and `Handler` are instances of `MonadError`, so
 `throwError` can be used to return an error from your handler (whereas `return`
@@ -634,7 +634,7 @@ kind and abort early. The next two sections cover how to do just that.
 
 Other important instances from the list above are `MonadIO m => MonadIO
 (ExceptT e m)`, and therefore also `MonadIO Handler` as there is a `MonadIO IO` instance.
-[`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html)
+[`MonadIO`](http://hackage.haskell.org/package/base/docs/Control-Monad-IO-Class.html#t:MonadIO)
 is a class from the **transformers** package defined as:
 
 ``` haskell ignore
