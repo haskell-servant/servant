@@ -86,7 +86,7 @@ listFromAPI :: (HasForeign lang ftype api, GenerateList ftype (Foreign ftype api
 ```
 
 This looks a bit confusing...
-[Here](https://hackage.haskell.org/package/servant-foreign/docs/Servant-Foreign.html#t:HasForeignType) is the documentation for the `HasForeign` typeclass.
+[Here](https://hackage.haskell.org/package/servant-foreign/docs/Servant-Foreign.html#t:HasForeign) is the documentation for the `HasForeign` typeclass.
 We will not go into details here, but this allows us to create a value of type `ftype` for any type `a` in our API.
 
 In our case we want to create a mock of every type `a`.
