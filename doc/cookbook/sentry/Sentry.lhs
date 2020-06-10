@@ -86,7 +86,7 @@ In the second step it actually sends our message to Sentry with the `register` f
 
 - the configured Sentry service which we just created
 - the name of the logger
-- the error level (see [SentryLevel](https://hackage.haskell.org/package/raven-haskell-0.1.2.0/docs/System-Log-Raven-Types.html#t:SentryLevel) for the possible options)
+- the error level (see [SentryLevel](https://hackage.haskell.org/package/raven-haskell/docs/System-Log-Raven-Types.html#t:SentryLevel) for the possible options)
 - the message we want to send
 - an update function to handle the specific `SentryRecord`
 

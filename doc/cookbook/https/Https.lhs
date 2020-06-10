@@ -34,16 +34,16 @@ app = serve api server
 ```
 
 It's now time to actually run the `Application`.
-The [`warp-tls`](https://hackage.haskell.org/package/warp-tls-3.2.4/docs/Network-Wai-Handler-WarpTLS.html)
+The [`warp-tls`](https://hackage.haskell.org/package/warp-tls/docs/Network-Wai-Handler-WarpTLS.html)
 package provides two functions for running an `Application`, called
-[`runTLS`](https://hackage.haskell.org/package/warp-tls-3.2.4/docs/Network-Wai-Handler-WarpTLS.html#v:runTLS)
-and [`runTLSSocket`](https://hackage.haskell.org/package/warp-tls-3.2.4/docs/Network-Wai-Handler-WarpTLS.html#v:runTLSSocket).
+[`runTLS`](https://hackage.haskell.org/package/warp-tls/docs/Network-Wai-Handler-WarpTLS.html#v:runTLS)
+and [`runTLSSocket`](https://hackage.haskell.org/package/warp-tls/docs/Network-Wai-Handler-WarpTLS.html#v:runTLSSocket).
 We will be using the first one.
 
 It takes two arguments,
-[the TLS settings](https://hackage.haskell.org/package/warp-tls-3.2.4/docs/Network-Wai-Handler-WarpTLS.html#t:TLSSettings)
+[the TLS settings](https://hackage.haskell.org/package/warp-tls/docs/Network-Wai-Handler-WarpTLS.html#t:TLSSettings)
 (certificates, keys, ciphers, etc)
-and [the warp settings](https://hackage.haskell.org/package/warp-3.2.12/docs/Network-Wai-Handler-Warp-Internal.html#t:Settings)
+and [the warp settings](https://hackage.haskell.org/package/warp/docs/Network-Wai-Handler-Warp-Internal.html#t:Settings)
 (port, logger, etc).
 
 We will be using very simple settings for this example but you are of
