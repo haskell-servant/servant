@@ -55,6 +55,7 @@ library
     Servant.API.RemoteHost
     Servant.API.ReqBody
     Servant.API.ResponseHeaders
+    Servant.API.Status
     Servant.API.Stream
     Servant.API.Sub
     Servant.API.TypeLevel
