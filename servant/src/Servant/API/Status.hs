@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+-- Flexible instances is necessary on GHC 8.4 and earlier
+{-# LANGUAGE FlexibleInstances #-}
 module Servant.API.Status where
 
 import Network.HTTP.Types.Status
