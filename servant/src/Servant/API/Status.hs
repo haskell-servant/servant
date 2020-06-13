@@ -4,7 +4,7 @@
 module Servant.API.Status where
 
 import Network.HTTP.Types.Status
-import GHC.TypeNats
+import GHC.TypeLits
 
 -- | Witness that a type-level natural number corresponds to a HTTP status code
 class KnownNat n => KnownStatus n where
