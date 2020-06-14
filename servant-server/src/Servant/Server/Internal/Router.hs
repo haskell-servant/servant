@@ -17,8 +17,9 @@ import           Data.Text
 import qualified Data.Text                                  as T
 import           Network.Wai
                  (Response, pathInfo)
-import           Servant.Server.Internal.RoutingApplication
+import           Servant.Server.Internal.ErrorFormatter
 import           Servant.Server.Internal.RouteResult
+import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
 
 type Router env = Router' env RoutingApplication
@@ -153,52 +154,52 @@ tweakResponse :: (RouteResult Response -> RouteResult Response) -> Router env ->
 tweakResponse f = fmap (\a -> \req cont -> a req (cont . f))
 
 -- | Interpret a router as an application.
-runRouter :: Router () -> RoutingApplication
-runRouter r = runRouterEnv r ()
+runRouter :: NotFoundErrorFormatter -> Router () -> RoutingApplication
+runRouter fmt r = runRouterEnv fmt r ()
 
-runRouterEnv :: Router env -> env -> RoutingApplication
-runRouterEnv router env request respond =
+runRouterEnv :: NotFoundErrorFormatter -> Router env -> env -> RoutingApplication
+runRouterEnv fmt router env request respond  =
   case router of
     StaticRouter table ls ->
       case pathInfo request of
-        []   -> runChoice ls env request respond
+        []   -> runChoice fmt ls env request respond
         -- This case is to handle trailing slashes.
-        [""] -> runChoice ls env request respond
+        [""] -> runChoice fmt ls env request respond
         first : rest | Just router' <- M.lookup first table
           -> let request' = request { pathInfo = rest }
-             in  runRouterEnv router' env request' respond
-        _ -> respond $ Fail err404
+             in  runRouterEnv fmt router' env request' respond
+        _ -> respond $ Fail $ fmt request
     CaptureRouter router' ->
       case pathInfo request of
-        []   -> respond $ Fail err404
+        []   -> respond $ Fail $ fmt request
         -- This case is to handle trailing slashes.
-        [""] -> respond $ Fail err404
+        [""] -> respond $ Fail $ fmt request
         first : rest
           -> let request' = request { pathInfo = rest }
-             in  runRouterEnv router' (first, env) request' respond
+             in  runRouterEnv fmt router' (first, env) request' respond
     CaptureAllRouter router' ->
       let segments = pathInfo request
           request' = request { pathInfo = [] }
-      in runRouterEnv router' (segments, env) request' respond
+      in runRouterEnv fmt router' (segments, env) request' respond
     RawRouter app ->
       app env request respond
     Choice r1 r2 ->
-      runChoice [runRouterEnv r1, runRouterEnv r2] env request respond
+      runChoice fmt [runRouterEnv fmt r1, runRouterEnv fmt r2] env request respond
 
 -- | Try a list of routing applications in order.
 -- We stop as soon as one fails fatally or succeeds.
 -- If all fail normally, we pick the "best" error.
 --
-runChoice :: [env -> RoutingApplication] -> env -> RoutingApplication
-runChoice ls =
+runChoice :: NotFoundErrorFormatter -> [env -> RoutingApplication] -> env -> RoutingApplication
+runChoice fmt ls =
   case ls of
-    []       -> \ _ _ respond -> respond (Fail err404)
+    []       -> \ _ request respond -> respond (Fail $ fmt request)
     [r]      -> r
     (r : rs) ->
       \ env request respond ->
       r env request $ \ response1 ->
       case response1 of
-        Fail _ -> runChoice rs env request $ \ response2 ->
+        Fail _ -> runChoice fmt rs env request $ \ response2 ->
           respond $ highestPri response1 response2
         _      -> respond response1
   where

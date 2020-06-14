@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes       #-}
 {-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE TypeOperators    #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
@@ -35,6 +36,8 @@ module Servant.Server
   -- * Context
   , Context(..)
   , HasContextEntry(getContextEntry)
+  , type (.++)
+  , (.++)
   -- ** NamedContext
   , NamedContext(..)
   , descendIntoNamedContext
@@ -86,6 +89,24 @@ module Servant.Server
   , err504
   , err505
 
+  -- * Formatting of errors from combinators
+  --
+  -- | You can configure how Servant will render errors that occur while parsing the request.
+
+  , ErrorFormatter
+  , NotFoundErrorFormatter
+  , ErrorFormatters
+
+  , bodyParserErrorFormatter
+  , urlParseErrorFormatter
+  , headerParseErrorFormatter
+  , notFoundErrorFormatter
+
+  , DefaultErrorFormatters
+  , defaultErrorFormatters
+
+  , getAcceptHeader
+
   -- * Re-exports
   , Application
   , Tagged (..)
@@ -129,10 +150,17 @@ import           Servant.Server.Internal
 serve :: (HasServer api '[]) => Proxy api -> Server api -> Application
 serve p = serveWithContext p EmptyContext
 
-serveWithContext :: (HasServer api context)
+-- | Like 'serve', but allows you to pass custom context.
+--
+-- 'defaultErrorFormatters' will always be appended to the end of the passed context,
+-- but if you pass your own formatter, it will override the default one.
+serveWithContext :: ( HasServer api context
+                    , HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters )
     => Proxy api -> Context context -> Server api -> Application
 serveWithContext p context server =
-  toApplication (runRouter (route p context (emptyDelayed (Route server))))
+  toApplication (runRouter format404 (route p context (emptyDelayed (Route server))))
+  where
+    format404 = notFoundErrorFormatter . getContextEntry . mkContextWithErrorFormatter $ context
 
 -- | Hoist server implementation.
 --

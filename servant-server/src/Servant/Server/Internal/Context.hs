@@ -1,11 +1,12 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Servant.Server.Internal.Context where
 
@@ -44,6 +45,20 @@ instance Eq (Context '[]) where
     _ == _ = True
 instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
     x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
+
+-- | Append two type-level lists.
+--
+-- Hint: import it as
+--
+-- > import Servant.Server (type (.++))
+type family (.++) (l1 :: [*]) (l2 :: [*]) where
+  '[] .++ a = a
+  (a ': as) .++ b = a ': (as .++ b)
+
+-- | Append two contexts.
+(.++) :: Context l1 -> Context l2 -> Context (l1 .++ l2)
+EmptyContext .++ a = a
+(a :. as) .++ b = a :. (as .++ b)
 
 -- | This class is used to access context entries in 'Context's. 'getContextEntry'
 -- returns the first value where the type matches:
