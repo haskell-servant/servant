@@ -27,6 +27,7 @@ import GHC.TypeLits (KnownNat, Nat)
 import Network.HTTP.Types (Status, StdMethod, status201, status203, status204, status303)
 import Servant.API.UVerb.OpenUnion
 import Servant.API.ContentTypes (NoContent)
+import Servant.API.Status (KnownStatus)
 
 class KnownStatus (StatusOf a) => HasStatus (a :: *) where
   type StatusOf (a :: *) :: Nat
@@ -59,21 +60,3 @@ instance HasStatus NoContent where
 data UVerb (method :: StdMethod) (contentTypes :: [*]) (as :: [*])
 
 type Union = NS Identity
-
--- this just went into master on servant: https://github.com/haskell-servant/servant/pull/1310
--- "Servant.API.Status"
-
-class KnownNat n => KnownStatus n where
-  statusVal :: proxy n -> Status
-
-instance KnownStatus 201 where
-  statusVal = const status201
-
-instance KnownStatus 203 where
-  statusVal = const status203
-
-instance KnownStatus 204 where
-  statusVal = const status204
-
-instance KnownStatus 303 where
-  statusVal = const status303
