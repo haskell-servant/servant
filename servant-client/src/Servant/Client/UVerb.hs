@@ -24,11 +24,11 @@ import Data.Typeable (Proxy (Proxy), Typeable, cast)
 import qualified GHC.Generics as GHC
 import Network.HTTP.Media ((//), MediaType, matches, parseAccept)
 import Network.HTTP.Types (Status)
-import Servant (ReflectMethod, reflectMethod)
+import Servant.API (ReflectMethod, reflectMethod)
 import Servant.API.ContentTypes (AllMime (allMime), AllMimeUnrender (allMimeUnrender))
 import Servant.API.UVerb (HasStatus, Statuses, UVerb, Union, Unique, inject, statusOf)
-import Servant.Client (ClientError (..), HasClient (..), Response, responseBody, responseHeaders, responseStatusCode)
 import Servant.Client.Core (RunClient (..), requestAccept, requestMethod, runRequest)
+import Servant.Client.Core.Reexport (ClientError (..), HasClient (..), Response, responseBody, responseHeaders, responseStatusCode)
 
 -- | convenience function to extract an unknown union element using a type class.
 collapseUResp ::

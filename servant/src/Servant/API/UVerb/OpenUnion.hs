@@ -1,3 +1,5 @@
+{-# LANGUAGE ExplicitNamespaces #-}
+
 -- | Type-level code for implementing and using 'UVerb'.
 module Servant.API.UVerb.OpenUnion
 ( IsMember
@@ -8,9 +10,9 @@ where
 
 import Data.SOP.Constraint
 import Data.SOP.NS
-import GHC.TypeLits
-import Servant.API (If)
+import Data.Type.Bool (If)
 import Data.Type.Equality (type (==))
+import GHC.TypeLits
 
 
 -- * Stuff stolen from 'Data.WorldPeace" but for generics-sop

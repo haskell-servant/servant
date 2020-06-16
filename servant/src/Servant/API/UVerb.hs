@@ -27,7 +27,7 @@ import GHC.TypeLits (KnownNat, Nat)
 import Network.HTTP.Types (Status, StdMethod, status201, status203, status204, status303)
 import Servant.API.UVerb.OpenUnion
 import Servant.API.ContentTypes (NoContent)
-import Servant.API.Status (KnownStatus)
+import Servant.API.Status (KnownStatus, statusVal)
 
 class KnownStatus (StatusOf a) => HasStatus (a :: *) where
   type StatusOf (a :: *) :: Nat
