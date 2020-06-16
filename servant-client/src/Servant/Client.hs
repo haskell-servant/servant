@@ -12,7 +12,9 @@ module Servant.Client
   , defaultMakeClientRequest
   , hoistClient
   , module Servant.Client.Core.Reexport
+  , module Servant.Client.UVerb
   ) where
 
 import           Servant.Client.Core.Reexport
 import           Servant.Client.Internal.HttpClient
+import           Servant.Client.UVerb

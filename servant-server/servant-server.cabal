@@ -57,6 +57,7 @@ library
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServerError
     Servant.Server.StaticFiles
+    Servant.Server.UVerb
 
   -- deprecated
   exposed-modules:

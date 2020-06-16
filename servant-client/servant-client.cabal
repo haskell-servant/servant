@@ -39,6 +39,7 @@ source-repository head
 library
   exposed-modules:
     Servant.Client
+    Servant.Client.UVerb
     Servant.Client.Streaming
     Servant.Client.Internal.HttpClient
     Servant.Client.Internal.HttpClient.Streaming

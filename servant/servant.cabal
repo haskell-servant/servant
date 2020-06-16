@@ -60,6 +60,8 @@ library
     Servant.API.Stream
     Servant.API.Sub
     Servant.API.TypeLevel
+    Servant.API.UVerb
+    Servant.API.UVerb.OpenUnion
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext
