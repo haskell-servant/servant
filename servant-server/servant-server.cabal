@@ -103,33 +103,6 @@ library
   hs-source-dirs: src
   default-language: Haskell2010
 
-  default-extensions: ConstraintKinds
-                    , DataKinds
-                    , DeriveFunctor
-                    , DeriveGeneric
-                    , DerivingStrategies
-                    , DerivingVia
-                    , DuplicateRecordFields
-                    , FlexibleContexts
-                    , FlexibleInstances
-                    , GeneralizedNewtypeDeriving
-                    , InstanceSigs
-                    , KindSignatures
-                    , LambdaCase
-                    , MultiParamTypeClasses
-                    , OverloadedStrings
-                    , PolyKinds
-                    , RankNTypes
-                    , RecordWildCards
-                    , ScopedTypeVariables
-                    , StandaloneDeriving
-                    , TupleSections
-                    , TypeApplications
-                    , TypeOperators
-                    , TypeFamilies
-                    , UndecidableInstances
-                    , ViewPatterns
-
   ghc-options: -Wall -Wno-redundant-constraints
 
 executable greet

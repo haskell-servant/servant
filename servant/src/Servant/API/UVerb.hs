@@ -1,3 +1,13 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+
 -- | An alternative to 'Verb' for end-points that respond with a resource value of any of an
 -- open union of types, and specific status codes for each type in this union.  (`UVerb` is
 -- short for `UnionVerb`)
@@ -23,8 +33,8 @@ import Data.Functor.Identity (Identity)
 import Data.SOP.NS (NS)
 import Data.Typeable (Proxy (Proxy))
 import qualified GHC.Generics as GHC
-import GHC.TypeLits (KnownNat, Nat)
-import Network.HTTP.Types (Status, StdMethod, status201, status203, status204, status303)
+import GHC.TypeLits (Nat)
+import Network.HTTP.Types (Status, StdMethod)
 import Servant.API.UVerb.OpenUnion
 import Servant.API.ContentTypes (NoContent)
 import Servant.API.Status (KnownStatus, statusVal)
