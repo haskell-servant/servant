@@ -1,0 +1,7 @@
+branches: master
+
+constraint-set base-compat-0.10
+  constraints: base-compat ==0.10.*
+
+constraint-set base-compat-0.11
+  constraints: base-compat ==0.11.*

@@ -63,18 +63,14 @@ instance (KnownSymbol path, HasGenRequest b) => HasGenRequest (path :> b) where
         (oldf, old) = genRequest (Proxy :: Proxy b)
         new = cs $ symbolVal (Proxy :: Proxy path)
 
-#if MIN_VERSION_servant(0,11,0)
 instance HasGenRequest EmptyAPI where
   genRequest _ = (0, error "EmptyAPIs cannot be queried.")
-#endif
 
-#if MIN_VERSION_servant(0,12,0)
 instance HasGenRequest api => HasGenRequest (Summary d :> api) where
   genRequest _ = genRequest (Proxy :: Proxy api)
 
 instance HasGenRequest api => HasGenRequest (Description d :> api) where
   genRequest _ = genRequest (Proxy :: Proxy api)
-#endif
 
 instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
     => HasGenRequest (Capture' mods x c :> b) where
@@ -86,7 +82,6 @@ instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
         (oldf, old) = genRequest (Proxy :: Proxy b)
         new = arbitrary :: Gen c
 
-#if MIN_VERSION_servant(0,8,0)
 instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
     => HasGenRequest (CaptureAll x c :> b) where
     genRequest _ = (oldf, do
@@ -97,7 +92,6 @@ instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
       where
         (oldf, old) = genRequest (Proxy :: Proxy b)
         new = arbitrary :: Gen [c]
-#endif
 
 instance (Arbitrary c, KnownSymbol h, HasGenRequest b, ToHttpApiData c)
     => HasGenRequest (Header' mods h c :> b) where
@@ -167,6 +161,15 @@ instance (KnownSymbol x, HasGenRequest b)
 
 instance (ReflectMethod method)
     => HasGenRequest (Verb (method :: k) (status :: Nat) (cts :: [*]) a) where
+    genRequest _ = (1, return $ \burl -> defaultRequest
+       { host = cs $ baseUrlHost burl
+       , port = baseUrlPort burl
+       , secure = baseUrlScheme burl == Https
+       , method = reflectMethod (Proxy :: Proxy method)
+       })
+
+instance (ReflectMethod method)
+    => HasGenRequest (NoContentVerb (method :: k)) where
     genRequest _ = (1, return $ \burl -> defaultRequest
        { host = cs $ baseUrlHost burl
        , port = baseUrlPort burl
