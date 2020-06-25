@@ -1,4 +1,9 @@
 releases:
+  - version: "0.0.8.0"
+    changes:
+      - description: Support for servant-0.17
+        authors: phadej
+        date: 2019-01-23
 
   - version: "0.0.7.3"
     changes:
