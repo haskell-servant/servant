@@ -111,4 +111,3 @@ test-suite spec
       tasty-golden  >= 2.3.2    && < 2.4,
       tasty-hunit   >= 0.10.0.1 && < 0.11,
       transformers  >= 0.5.2.0  && < 0.6
-
