@@ -129,6 +129,47 @@ main = do
   pure ()
 ```
 
+## Idiomatic exceptions
+
+Since `UVerb` (probably) will mostly be used for error-like responses, it may be desirable to be able to early abort handler, like with current servant one would use `throwError` with `ServerError`.
+
+```haskell
+newtype UVerbT xs m a = UVerbT { unUVerbT :: ExceptT (Union xs) m a }
+  deriving newtype (Functor, Applicative, Monad, MonadTrans)
+
+-- | Deliberately hide 'ExceptT's 'MonadError' instance to be able to use
+-- underlying monad's instance.
+instance MonadError e m => MonadError e (UVerbT xs m) where
+  throwError = lift . throwError
+  catchError (UVerbT act) h = UVerbT $ ExceptT $
+    runExceptT act `catchError` (runExceptT . unUVerbT . h)
+
+-- | This combinator runs 'UVerbT'. It applies 'respond' internally, so the handler
+-- may use the usual 'return'.
+runUVerbT :: (Monad m, HasStatus x, IsMember x xs) => UVerbT xs m x -> m (Union xs)
+runUVerbT (UVerbT act) = either id id <$> runExceptT (act >>= respond)
+
+-- | Short-circuit 'UVerbT' computation returning one of the response types.
+throwUVerb :: (Monad m, HasStatus x, IsMember x xs) => x -> UVerbT xs m a
+throwUVerb = UVerbT . ExceptT . fmap Left . respond
+```
+
+Example usage:
+
+```haskell
+h :: Handler (Union '[Foo, WithStatus 400 Bar])
+h = runUVerbT $
+  when (something bad) $
+    throwUVerb $ WithStatus @400 Bar
+
+  when (really bad) $
+    throwError $ err500
+
+  -- a lot of code here...
+
+  return $ Foo 1 2 3
+```
+
 ## Related Work
 
 There is the [issue from
