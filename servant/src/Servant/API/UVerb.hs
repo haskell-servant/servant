@@ -17,7 +17,9 @@
 -- @'[Report, WaiError]@; or responding with either a 303 forward with a location header, or
 -- 201 created with a different body type, depending on the circumstances.  (All of this can
 -- be done with vanilla servant-server by throwing exceptions, but it can't be represented in
--- the API types.)
+-- the API types without something like `UVerb`.)
+--
+-- See <https://docs.servant.dev/en/stable/cookbook/uverb/UVerb.html> for a working example.
 module Servant.API.UVerb
   ( UVerb,
     Union,

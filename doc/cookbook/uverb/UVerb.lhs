@@ -128,3 +128,38 @@ main = do
   print $ extractUResp @(WithStatus 303 String) <$> result
   pure ()
 ```
+
+## Related Work
+
+There is the [issue from
+2017](https://github.com/haskell-servant/servant/issues/841) that was
+resolved by the introduction of `UVerb`, with a long discussion on
+alternative designs.
+
+[servant-checked-exceptions](https://hackage.haskell.org/package/servant-checked-exceptions)
+is a good solution to the problem, but it restricts the user to JSON
+and a very specific envelop encoding for the union type, which is
+often not acceptable.  (One good reason for this design choice is that
+it makes writing clients easier, where you need to get to the union
+type from one representative, and you don't want to run several
+parsers in the hope that the ones that should will always error out so
+you can try until the right one returns a value.)
+
+[servant-exceptions](https://github.com/ch1bo/servant-exceptions) is
+another shot at at the problem.  It is inspired by
+servant-checked-exceptions, so it may be worth taking a closer look.
+The README claims that
+[cardano-sl](https://github.com/input-output-hk/cardano-sl) also has
+some code for generalized error handling.
+
+In an earier version of the `UVerb` implementation, we have used some
+code from
+[world-peace](https://hackage.haskell.org/package/world-peace), but
+that package itself wasn't flexible enough, and we had to use
+[sop-core](https://hackage.haskell.org/package/sop-core) to implement
+the `HasServer` instance.
+
+Here is a blog post we found on the subject:
+https://lukwagoallan.com/posts/unifying-servant-server-error-responses
+
+(If you have anything else, please add it here or let us know.)
