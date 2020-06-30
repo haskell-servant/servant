@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | An alternative to 'Verb' for end-points that respond with a resource value of any of an
 -- open union of types, and specific status codes for each type in this union.  (`UVerb` is
@@ -29,15 +30,16 @@ module Servant.API.UVerb
   )
 where
 
+import Data.Aeson (FromJSON, ToJSON)
 import Data.Functor.Identity (Identity)
 import Data.SOP.NS (NS)
 import Data.Typeable (Proxy (Proxy))
 import qualified GHC.Generics as GHC
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
-import Servant.API.UVerb.OpenUnion
 import Servant.API.ContentTypes (NoContent)
 import Servant.API.Status (KnownStatus, statusVal)
+import Servant.API.UVerb.OpenUnion
 
 class KnownStatus (StatusOf a) => HasStatus (a :: *) where
   type StatusOf (a :: *) :: Nat
@@ -53,6 +55,10 @@ type instance Statuses (a ': as) = StatusOf a ': Statuses as
 
 newtype WithStatus (k :: Nat) a = WithStatus a
   deriving (Eq, Show, GHC.Generic)
+
+instance (GHC.Generic (WithStatus n a), ToJSON a) => ToJSON (WithStatus n a)
+
+instance (GHC.Generic (WithStatus n a), FromJSON a) => FromJSON (WithStatus n a)
 
 instance KnownStatus n => HasStatus (WithStatus n a) where
   type StatusOf (WithStatus n a) = n
