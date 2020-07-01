@@ -42,6 +42,9 @@ module Servant.API (
   -- * Streaming endpoints, distinguished by HTTP method
   module Servant.API.Stream,
 
+  -- * Server-sent events (SSE)
+  module Servant.API.ServerSentEvents,
+
   -- * Authentication
   module Servant.API.BasicAuth,
 
@@ -121,6 +124,8 @@ import           Servant.API.ResponseHeaders
                  GetHeaders (getHeaders), HList (..), HasResponseHeader,
                  Headers (..), ResponseHeader (..), addHeader, getHeadersHList,
                  getResponse, lookupResponseHeader, noHeader)
+import           Servant.API.ServerSentEvents
+                 (EventKind (..), ServerSentEvents, ServerSentEvents')
 import           Servant.API.Stream
                  (FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  NetstringFraming, NewlineFraming, NoFraming, SourceIO, Stream,

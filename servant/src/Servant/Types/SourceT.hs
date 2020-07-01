@@ -296,6 +296,22 @@ foreachStep f g = go where
     go (Error err) = f err
     go (Effect ms) = ms >>= go
 
+-- | Traverse the 'StepT' and call the given function for each 'Yield'.
+foreachYieldStep
+    :: Functor m
+    => (a -> StepT m b -> StepT m b)
+    -> StepT m a
+    -> StepT m b
+foreachYieldStep f =
+    go
+    where
+        go step = case step of
+            Error msg -> Error msg
+            Stop -> Stop
+            Skip next -> Skip (go next)
+            Yield val next -> f val (go next)
+            Effect eff -> Effect (go <$> eff)
+
 -------------------------------------------------------------------------------
 -- Monadic
 -------------------------------------------------------------------------------
