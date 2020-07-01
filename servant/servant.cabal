@@ -101,6 +101,7 @@ library
     Servant.API.RemoteHost
     Servant.API.ReqBody
     Servant.API.ResponseHeaders
+    Servant.API.ServerSentEvents
     Servant.API.Status
     Servant.API.Stream
     Servant.API.Sub

@@ -92,6 +92,7 @@ library
     Servant.Client.Core.Response
     Servant.Client.Core.MultiVerb.ResponseUnrender
     Servant.Client.Core.RunClient
+    Servant.Client.Core.ServerSentEvents
     Servant.Client.Free
     Servant.Client.Generic
 
@@ -102,6 +103,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
+    , attoparsec        >= 0.13.2.2 && < 0.15
     , base              >= 4.16.4.0 && < 4.22
     , bytestring        >=0.11 && <0.13
     , constraints       >=0.2      && <0.15
@@ -138,11 +140,15 @@ test-suite spec
   other-modules:
     Servant.Client.Core.Internal.BaseUrlSpec
     Servant.Client.Core.RequestSpec
+    Servant.Client.Core.ServerSentEventsSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
     , base
     , base-compat
+    , bytestring
+    , transformers
+    , servant
     , servant-client-core
 
   -- Additional dependencies

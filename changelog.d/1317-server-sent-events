@@ -1,0 +1,11 @@
+synopsis: Server-sent events (SSE) for client-side
+prs: #1317
+issues: #1317
+
+description: {
+
+Implement Server-sent events (SSE) for the Servant client using a new
+combinator "ServerSentEvents". The raw event messages, accumulated events and
+JSON-processed events can be exposed.
+
+}

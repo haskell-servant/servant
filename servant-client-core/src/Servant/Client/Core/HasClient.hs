@@ -71,7 +71,7 @@ import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
                  , GenericServant, toServant, fromServant)
 import           Servant.API.ContentTypes
-                 (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
+                 (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender), EventStream)
 import           Servant.API.QueryString (ToDeepQuery(..), generateDeepParam)
 import           Servant.API.Status
                  (statusFromNat)
@@ -81,6 +81,10 @@ import           Servant.API.Modifiers
 import           Servant.API.TypeErrors
 import           Servant.API.UVerb
                  (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf, foldMapUnion, matchUnion)
+import           Servant.API.ServerSentEvents
+                 (EventKind (JsonEvent, RawEvent), ServerSentEvents')
+import           Servant.API.Stream
+                 (NoFraming)
 
 import           Servant.Client.Core.Auth
 import           Servant.Client.Core.BasicAuth
@@ -90,6 +94,7 @@ import           Servant.Client.Core.Response
 import           Servant.Client.Core.MultiVerb.ResponseUnrender
 import qualified Servant.Client.Core.Response as Response
 import           Servant.Client.Core.RunClient
+import           Servant.Client.Core.ServerSentEvents
 import           Servant.API.MultiVerb
 import qualified Network.HTTP.Media as M
 import           Data.Typeable
@@ -450,6 +455,63 @@ instance {-# OVERLAPPING #-}
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
           , requestMethod = reflectMethod (Proxy :: Proxy method)
           }
+
+type SseClientDelegate method status =
+  Stream method status NoFraming EventStream
+
+instance
+  ( RunClient m
+  , HasClient m (SseClientDelegate method status (EventMessageStreamT IO))
+  )
+  => HasClient m (ServerSentEvents' method status 'RawEvent EventMessage) where
+    type Client m (ServerSentEvents' method status 'RawEvent EventMessage) =
+      Client m (SseClientDelegate method status (EventMessageStreamT IO))
+
+    hoistClientMonad p _ =
+      hoistClientMonad
+        p
+        (Proxy :: Proxy (SseClientDelegate method status (EventMessageStreamT IO)))
+
+    clientWithRoute p _ =
+      clientWithRoute
+        p
+        (Proxy :: Proxy (SseClientDelegate method status (EventMessageStreamT IO)))
+
+instance
+  ( RunClient m
+  , HasClient m (SseClientDelegate method status (EventStreamT IO))
+  )
+  => HasClient m (ServerSentEvents' method status 'RawEvent (Event a)) where
+    type Client m (ServerSentEvents' method status 'RawEvent (Event a)) =
+      Client m (SseClientDelegate method status (EventStreamT IO))
+
+    hoistClientMonad p _ =
+      hoistClientMonad
+        p
+        (Proxy :: Proxy (SseClientDelegate method status (EventStreamT IO)))
+
+    clientWithRoute p _ =
+      clientWithRoute
+        p
+        (Proxy :: Proxy (SseClientDelegate method status (EventStreamT IO)))
+
+instance
+  ( RunClient m
+  , HasClient m (SseClientDelegate method status (JsonEventStreamT IO a))
+  )
+  => HasClient m (ServerSentEvents' method status 'JsonEvent a) where
+    type Client m (ServerSentEvents' method status 'JsonEvent a) =
+      Client m (SseClientDelegate method status (JsonEventStreamT IO a))
+
+    hoistClientMonad p _ =
+      hoistClientMonad
+        p
+        (Proxy :: Proxy (SseClientDelegate method status (JsonEventStreamT IO a)))
+
+    clientWithRoute p _ =
+      clientWithRoute
+        p
+        (Proxy :: Proxy (SseClientDelegate method status (JsonEventStreamT IO a)))
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
