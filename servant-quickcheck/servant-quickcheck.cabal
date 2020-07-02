@@ -1,5 +1,5 @@
 name:               servant-quickcheck
-version:            0.0.8.0
+version:            0.0.9.0
 synopsis:           QuickCheck entire APIs
 description:
   This packages provides QuickCheck properties that are tested across an entire
