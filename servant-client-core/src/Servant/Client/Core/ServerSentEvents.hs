@@ -51,6 +51,10 @@ import           Servant.Types.SourceT
                  (SourceT, StepT (..), foreachYieldStep, mapStepT,
                  transformStepWithAtto)
 
+-- For compatibility with GHC <= 8.2
+import           Data.Semigroup
+                 (Semigroup (..))
+
 -- | Line (or frame) of an event stream
 newtype EventStreamLine = EventStreamLine
     { unEventStreamLine :: ByteString.ByteString }
