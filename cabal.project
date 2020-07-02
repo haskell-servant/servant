@@ -34,6 +34,7 @@ packages:
   doc/cookbook/pagination
   -- doc/cookbook/sentry
   doc/cookbook/testing
+  doc/cookbook/uverb
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
