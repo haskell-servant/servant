@@ -37,6 +37,9 @@ jobs:
     - compiler: ghcjs-8.4
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"},{"sourceline":"deb http://ppa.launchpad.net/hvr/ghcjs/ubuntu bionic main"},{"sourceline":"deb https://deb.nodesource.com/node_10.x bionic main","key_url":"https://deb.nodesource.com/gpgkey/nodesource.gpg.key"}],"packages":["ghcjs-8.4","cabal-install-3.0","ghc-8.4.4","nodejs"]}}
       os: linux
+    - compiler: ghc-8.10.1
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.10.1","cabal-install-3.2"]}}
+      os: linux
     - compiler: ghc-8.8.2
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.8.2","cabal-install-3.0"]}}
       os: linux
@@ -107,7 +110,7 @@ install:
   - cat $CABALHOME/config
   - rm -fv cabal.project cabal.project.local cabal.project.freeze
   - travis_retry ${CABAL} v2-update -v
-  - if ! $GHCJS ; then (cd /tmp && ${CABAL} v2-install $WITHCOMPILER -j2 doctest --constraint='doctest ==0.16.2.*') ; fi
+  - if ! $GHCJS ; then (cd /tmp && ${CABAL} v2-install $WITHCOMPILER -j2 doctest --constraint='doctest ==0.16.3.*') ; fi
   - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe') ; fi
   - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 hspec-discover) ; fi
   # Generate cabal.project
