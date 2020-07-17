@@ -22,6 +22,7 @@ packages:
 packages:
   doc/cookbook/basic-auth
   doc/cookbook/curl-mock
+  doc/cookbook/custom-errors
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
 --  doc/cookbook/db-sqlite-simple
