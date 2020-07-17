@@ -32,7 +32,7 @@ packages:
   -- doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/pagination
   -- doc/cookbook/sentry
-  doc/cookbook/testing
+--  doc/cookbook/testing
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
