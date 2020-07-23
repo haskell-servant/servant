@@ -9,6 +9,7 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -26,10 +27,14 @@ import           Control.Concurrent
 import           Control.Monad.Error.Class
                  (throwError)
 import           Data.Aeson
+import qualified Data.ByteString.Lazy as LazyByteString
 import           Data.Char
                  (chr, isPrint)
 import           Data.Monoid ()
 import           Data.Proxy
+import           Data.Text (Text)
+import qualified Data.Text as Text
+import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import           GHC.Generics
                  (Generic)
 import qualified Network.HTTP.Client                  as C
@@ -47,8 +52,11 @@ import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (..), Capture, CaptureAll,
                  DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
-                 Headers, JSON, NoContent (NoContent), Post, QueryFlag,
-                 QueryParam, QueryParams, Raw, ReqBody, addHeader)
+                 Headers, JSON, MimeRender(mimeRender),
+                 MimeUnrender(mimeUnrender), NoContent (NoContent), PlainText,
+                 Post, QueryFlag, QueryParam, QueryParams, Raw, ReqBody,
+                 StdMethod(GET), Union, UVerb, WithStatus(WithStatus),
+                 addHeader)
 import           Servant.Client
 import qualified Servant.Client.Core.Auth    as Auth
 import           Servant.Server
@@ -63,7 +71,7 @@ _ = client comprehensiveAPIWithoutStreaming
 data Person = Person
   { _name :: String
   , _age  :: Integer
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Read, Generic)
 
 instance ToJSON Person
 instance FromJSON Person
@@ -73,6 +81,22 @@ instance FromForm Person
 
 instance Arbitrary Person where
   arbitrary = Person <$> arbitrary <*> arbitrary
+
+instance MimeRender PlainText Person where
+  mimeRender _ = LazyByteString.fromStrict . encodeUtf8 . Text.pack . show
+
+instance MimeRender ctype a => MimeRender ctype (WithStatus _status a) where
+  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
+
+instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
+  mimeUnrender contentTypeProxy input =
+    WithStatus <$> mimeUnrender contentTypeProxy input
+
+instance MimeUnrender PlainText Person where
+  mimeUnrender _ =
+    -- This does not handle any errors, but it should be fine for tests
+    Right . read . Text.unpack . decodeUtf8 . LazyByteString.toStrict
+
 
 alice :: Person
 alice = Person "Alice" 42
@@ -105,6 +129,12 @@ type Api =
   :<|> "deleteContentType" :> DeleteNoContent
   :<|> "redirectWithCookie" :> Raw
   :<|> "empty" :> EmptyAPI
+  :<|> "uverb-success-or-redirect" :>
+            Capture "bool" Bool :>
+            UVerb 'GET '[PlainText] '[WithStatus 200 Person,
+                                      WithStatus 301 Text]
+  :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
+
 
 api :: Proxy Api
 api = Proxy
@@ -126,6 +156,10 @@ getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
 getDeleteContentType :: ClientM NoContent
 getRedirectWithCookie :: HTTP.Method -> ClientM Response
+uverbGetSuccessOrRedirect :: Bool
+                          -> ClientM (Union '[WithStatus 200 Person,
+                                              WithStatus 301 Text])
+uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
 
 getRoot
   :<|> getGet
@@ -143,7 +177,9 @@ getRoot
   :<|> getRespHeaders
   :<|> getDeleteContentType
   :<|> getRedirectWithCookie
-  :<|> EmptyClient = client api
+  :<|> EmptyClient
+  :<|> uverbGetSuccessOrRedirect
+  :<|> uverbGetCreated = client api
 
 server :: Application
 server = serve api (
@@ -166,7 +202,12 @@ server = serve api (
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
-  :<|> emptyServer)
+  :<|> emptyServer
+  :<|> (\shouldRedirect -> if shouldRedirect
+                              then respond (WithStatus @301 ("redirecting" :: Text))
+                              else respond (WithStatus @200 alice ))
+  :<|> respond (WithStatus @201 carol)
+  )
 
 type FailApi =
        "get" :> Raw

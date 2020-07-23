@@ -28,18 +28,24 @@ import           Control.Concurrent.STM.TVar
                  (newTVar, readTVar)
 import           Data.Foldable
                  (forM_, toList)
+import           Data.Functor.Identity
+                 (Identity(Identity))
 import           Data.Maybe
                  (listToMaybe)
 import           Data.Monoid ()
+import           Data.SOP.NS
+                 (NS(Z))
 import qualified Network.HTTP.Client                  as C
 import qualified Network.HTTP.Types                   as HTTP
+import           Network.HTTP.Types.Status
+                 (status301)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
-                 (NoContent (NoContent), getHeaders)
+                 (NoContent (NoContent), WithStatus(WithStatus), getHeaders)
 import           Servant.Client
 import qualified Servant.Client.Core.Request as Req
 import           Servant.Client.Internal.HttpClient (defaultMakeClientRequest)
@@ -151,3 +157,44 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
             return $
               result === Right (cap, num, flag, body)
+
+    context "With a route that can either return success or redirect" $ do
+      it "Redirects when appropriate" $ \(_, baseUrl) -> do
+        eitherResponse <- runClient (uverbGetSuccessOrRedirect True) baseUrl
+
+        -- This is what we would actually want, since the 301 is part of the
+        -- declared api:
+        --   case eitherResponse of
+        --     Left clientError -> fail $ show clientError
+        --     Right response ->
+        --       case response of
+        --         Z (Identity (WithStatus person :: WithStatus 200 Person)) ->
+        --           fail "Expected to be redirected"
+        --         S (last) ->
+        --           let Identity (WithStatus message :: WithStatus 301 Text)
+        --                 = unZ last
+        --           in message `shouldBe` "redirecting"
+        --
+        -- But since servant-client interprets the 301 as an error, this is the
+        -- behaviour we actually have
+        case eitherResponse of
+          Left clientError ->
+            case clientError of
+              FailureResponse _request response -> do
+                responseStatusCode response `shouldBe` status301
+                responseBody response `shouldBe` "redirecting"
+              r ->
+                fail $ "Expected FailureResponse, got: " <> show r
+          Right r ->
+            fail $ "Expected a ClientError, got: " <> show r
+
+      it "Returns a proper response when appropriate" $ \(_, baseUrl) -> do
+        Right response <- runClient (uverbGetSuccessOrRedirect False) baseUrl
+        let Z (Identity (WithStatus person :: WithStatus 200 Person)) = response
+        person `shouldBe` alice
+
+    context "with a route that uses uverb but only has a single response" $
+      it "returns the expected response" $ \(_, baseUrl) -> do
+        Right response <- runClient (uverbGetCreated) baseUrl
+        let Z (Identity (WithStatus person :: WithStatus 201 Person)) = response
+        person `shouldBe` carol

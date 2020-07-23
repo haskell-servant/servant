@@ -7,7 +7,6 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 
 module Servant.ServerSpec where
@@ -49,14 +48,16 @@ import           Network.Wai.Test
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
-                 Delete, EmptyAPI, Get, Header, Headers, HttpVersion,
-                 IsSecure (..), JSON, Lenient, NoContent (..), NoContentVerb,
-                 NoFraming, OctetStream, Patch, PlainText, Post, Put,
-                 QueryFlag, QueryParam, QueryParams, Raw, RemoteHost, ReqBody,
-                 SourceIO, StdMethod (..), Stream, Strict, Verb, addHeader)
+                 Delete, EmptyAPI, Get, HasStatus(StatusOf), Header, Headers,
+                 HttpVersion, IsSecure (..), JSON, Lenient, NoContent (..),
+                 NoContentVerb, NoFraming, OctetStream, Patch, PlainText, Post,
+                 Put, QueryFlag, QueryParam, QueryParams, Raw, RemoteHost,
+                 ReqBody, SourceIO, StdMethod (..), Stream, Strict, Union,
+                 UVerb, Verb, addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
-                 emptyServer, err401, err403, err404, serve, serveWithContext)
+                 emptyServer, err401, err403, err404, respond, serve,
+                 serveWithContext)
 import           Servant.Test.ComprehensiveAPI
 import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
@@ -87,6 +88,7 @@ comprehensiveApiContext = NamedContext EmptyContext :. EmptyContext
 spec :: Spec
 spec = do
   verbSpec
+  uverbSpec
   captureSpec
   captureAllSpec
   queryParamSpec
@@ -253,8 +255,8 @@ captureSpec = do
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))
-        (\ "captured" -> Tagged $ \request_ respond ->
-            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+        (\ "captured" -> Tagged $ \request_ sendResponse ->
+            sendResponse $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
@@ -305,8 +307,8 @@ captureAllSpec = do
 
     with (return (serve
         (Proxy :: Proxy (CaptureAll "segments" String :> Raw))
-        (\ _captured -> Tagged $ \request_ respond ->
-            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+        (\ _captured -> Tagged $ \request_ sendResponse ->
+            sendResponse $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "consumes everything from pathInfo" $ do
         get "/captured/foo/bar/baz" `shouldRespondWith` (fromString (show ([] :: [Int])))
 
@@ -544,8 +546,8 @@ rawApi :: Proxy RawApi
 rawApi = Proxy
 
 rawApplication :: Show a => (Request -> a) -> Tagged m Application
-rawApplication f = Tagged $ \request_ respond ->
-    respond $ responseLBS ok200 []
+rawApplication f = Tagged $ \request_ sendResponse ->
+    sendResponse $ responseLBS ok200 []
         (cs $ show $ f request_)
 
 rawSpec :: Spec
@@ -706,7 +708,7 @@ basicAuthApi = Proxy
 basicAuthServer :: Server BasicAuthAPI
 basicAuthServer =
   const (return jerry) :<|>
-  (Tagged $ \ _ respond -> respond $ responseLBS imATeapot418 [] "")
+  (Tagged $ \ _ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
@@ -751,7 +753,7 @@ genAuthApi = Proxy
 
 genAuthServer :: Server GenAuthAPI
 genAuthServer = const (return tweety)
-           :<|> (Tagged $ \ _ respond -> respond $ responseLBS imATeapot418 [] "")
+           :<|> (Tagged $ \ _ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
 
 type instance AuthServerData (AuthProtect "auth") = ()
 
@@ -780,6 +782,73 @@ genAuthSpec = do
 
         it "plays nice with subsequent Raw endpoints" $ do
           get "/foo" `shouldRespondWith` 418
+
+-- }}}
+------------------------------------------------------------------------------
+-- * UVerb {{{
+------------------------------------------------------------------------------
+
+newtype PersonResponse = PersonResponse Person
+  deriving Generic
+instance ToJSON PersonResponse
+instance HasStatus PersonResponse where
+  type StatusOf PersonResponse = 200
+
+newtype RedirectResponse = RedirectResponse String
+  deriving Generic
+instance ToJSON RedirectResponse
+instance HasStatus RedirectResponse where
+  type StatusOf RedirectResponse = 301
+
+newtype AnimalResponse = AnimalResponse Animal
+  deriving Generic
+instance ToJSON AnimalResponse
+instance HasStatus AnimalResponse where
+  type StatusOf AnimalResponse = 203
+
+
+type UVerbApi
+  = "person" :> Capture "shouldRedirect" Bool :> UVerb 'GET '[JSON] '[PersonResponse, RedirectResponse]
+  :<|> "animal" :> UVerb 'GET '[JSON] '[AnimalResponse]
+
+uverbSpec :: Spec
+uverbSpec = describe "Servant.API.UVerb " $ do
+  let
+      joe = Person "joe" 42
+      mouse = Animal "Mouse" 7
+
+      personHandler
+        :: Bool
+        -> Handler (Union '[PersonResponse
+                           ,RedirectResponse])
+      personHandler True = respond $ RedirectResponse "over there!"
+      personHandler False = respond $ PersonResponse joe
+
+      animalHandler = respond $ AnimalResponse mouse
+
+      server :: Server UVerbApi
+      server = personHandler :<|> animalHandler
+
+  with (pure $ serve (Proxy :: Proxy UVerbApi) server) $ do
+    context "A route returning either 301/String or 200/Person" $ do
+      context "when requesting the person" $ do
+        let theRequest = THW.get "/person/false"
+        it "returns status 200" $
+            theRequest `shouldRespondWith` 200
+        it "returns a person" $ do
+            response <- theRequest
+            liftIO $ decode' (simpleBody response) `shouldBe` Just joe
+      context "requesting the redirect" $
+        it "returns a message and status 301" $
+          THW.get "/person/true"
+            `shouldRespondWith` "\"over there!\"" {matchStatus = 301}
+    context "a route with a single response type" $ do
+      let theRequest = THW.get "/animal"
+      it "should return the defined status code" $
+         theRequest `shouldRespondWith` 203
+      it "should return the expected response" $ do
+        response <- theRequest
+        liftIO $ decode' (simpleBody response) `shouldBe` Just mouse
 
 -- }}}
 ------------------------------------------------------------------------------
