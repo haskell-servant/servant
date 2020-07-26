@@ -13,6 +13,10 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
+#if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
+#define HAS_TYPE_ERROR
+#endif
+
 module Servant.Client.Core.HasClient (
     clientIn,
     HasClient (..),
@@ -63,15 +67,15 @@ import qualified Network.HTTP.Types                       as H
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
                  BuildHeadersTo (..), Capture', CaptureAll, Description,
-                 EmptyAPI, FramingRender (..), FramingUnrender (..),
+                 EmptyAPI, Fragment, FramingRender (..), FramingUnrender (..),
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
-                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
-                 ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
-                 ToSourceIO (..), Vault, Verb, NoContentVerb, WithNamedContext,
-                 contentType, getHeadersHList, getResponse, toQueryParam,
-                 toUrlPiece)
+                 MimeUnrender (mimeUnrender), NoContent (NoContent),
+                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
+                 ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
+                 StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
+                 Verb, WithNamedContext, contentType, getHeadersHList,
+                 getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
 import           Servant.API.Modifiers
@@ -744,6 +748,22 @@ instance ( HasClient m api
 
   hoistClientMonad pm _ f cl = \authreq ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl authreq)
+
+#ifdef HAS_TYPE_ERROR
+instance ( OnlyOneFragment api, HasClient m api, ToHttpApiData a
+#else
+instance ( HasClient m api, ToHttpApiData a
+#endif
+         ) => HasClient m (Fragment a :> api) where
+
+  type Client m (Fragment a :> api) =
+    Maybe a -> Client m api
+
+  clientWithRoute pm Proxy req fragment =
+    clientWithRoute pm (Proxy :: Proxy api) (appendFragment fragment req)
+
+  hoistClientMonad pm _ f cl = \ma ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl ma)
 
 -- * Basic Authentication
 

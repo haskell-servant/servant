@@ -19,6 +19,8 @@ module Servant.API (
   -- | Retrieving the HTTP version of the request
   module Servant.API.QueryParam,
   -- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@
+  module Servant.API.Fragment,
+  -- | Retrieving parameter from the fragment of the 'URI': @'Fragment'@
   module Servant.API.ReqBody,
   -- | Accessing the request body as a JSON-encoded type: @'ReqBody'@
   module Servant.API.RemoteHost,
@@ -93,6 +95,8 @@ import           Servant.API.Empty
                  (EmptyAPI (..))
 import           Servant.API.Experimental.Auth
                  (AuthProtect)
+import           Servant.API.Fragment
+                 (Fragment)
 import           Servant.API.Header
                  (Header, Header')
 import           Servant.API.HttpVersion
@@ -121,21 +125,20 @@ import           Servant.API.Stream
                  ToSourceIO (..))
 import           Servant.API.Sub
                  ((:>))
+import           Servant.API.UVerb
+                 (HasStatus, IsMember, StatusOf, Statuses, UVerb, Union,
+                 Unique, WithStatus (..), inject, statusOf)
 import           Servant.API.Vault
                  (Vault)
 import           Servant.API.Verbs
                  (Delete, DeleteAccepted, DeleteNoContent,
                  DeleteNonAuthoritative, Get, GetAccepted, GetNoContent,
                  GetNonAuthoritative, GetPartialContent, GetResetContent,
-                 Patch, PatchAccepted, PatchNoContent, PatchNonAuthoritative,
-                 Post, PostAccepted, PostCreated, PostNoContent,
-                 PostNonAuthoritative, PostResetContent, Put, PutAccepted,
-                 PutCreated, PutNoContent, PutNonAuthoritative,
-                 ReflectMethod (reflectMethod), StdMethod (..),
-                 Verb, NoContentVerb)
-import           Servant.API.UVerb
-                 (UVerb, Union, HasStatus, StatusOf, statusOf, Statuses,
-                 WithStatus (..), IsMember, Unique, inject)
+                 NoContentVerb, Patch, PatchAccepted, PatchNoContent,
+                 PatchNonAuthoritative, Post, PostAccepted, PostCreated,
+                 PostNoContent, PostNonAuthoritative, PostResetContent, Put,
+                 PutAccepted, PutCreated, PutNoContent, PutNonAuthoritative,
+                 ReflectMethod (reflectMethod), StdMethod (..), Verb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Servant.Links

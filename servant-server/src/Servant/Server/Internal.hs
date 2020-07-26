@@ -55,6 +55,7 @@ import           Data.String.Conversions
 import           Data.Tagged
                  (Tagged (..), retag, untag)
 import qualified Data.Text                                  as T
+import qualified Data.Text.Encoding                         as T
 import           Data.Typeable
 import           GHC.TypeLits
                  (KnownNat, KnownSymbol, natVal, symbolVal)
@@ -71,17 +72,17 @@ import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
-                 CaptureAll, Description, EmptyAPI, FramingRender (..),
-                 FramingUnrender (..), FromSourceIO (..), Header', If,
-                 IsSecure (..), QueryFlag, QueryParam', QueryParams, Raw,
-                 ReflectMethod (reflectMethod), RemoteHost, ReqBody',
-                 SBool (..), SBoolI (..), SourceIO, Stream, StreamBody',
-                 Summary, ToSourceIO (..), Vault, Verb, NoContentVerb,
+                 CaptureAll, Description, EmptyAPI, Fragment,
+                 FramingRender (..), FramingUnrender (..), FromSourceIO (..),
+                 Header', If, IsSecure (..), NoContentVerb, QueryFlag,
+                 QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
+                 RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
+                 Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
                  WithNamedContext)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
-                 AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH,
-                 NoContent)
+                 AllMime, MimeRender (..), MimeUnrender (..), NoContent,
+                 canHandleAcceptH)
 import           Servant.API.Modifiers
                  (FoldLenient, FoldRequired, RequestArgument,
                  unfoldRequestArgument)
@@ -89,8 +90,8 @@ import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
 import qualified Servant.Types.SourceT                      as S
 import           Web.HttpApiData
-                 (FromHttpApiData, parseHeader, parseQueryParam,
-                 parseUrlPieces, parseUrlPiece)
+                 (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
+                 parseUrlPieces)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -106,6 +107,8 @@ import           Servant.Server.Internal.ServerError
 #ifdef HAS_TYPE_ERROR
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
+import           Servant.API.TypeLevel
+                 (OnlyOneFragment)
 #endif
 
 class HasServer api context where
@@ -879,6 +882,33 @@ type HasServerArrowTypeError a b =
     ':$$: 'Text "and"
     ':$$: 'ShowType b
 #endif
+
+-- | Server for 'Fragment'. Documentation TBD.
+#ifdef HAS_TYPE_ERROR
+instance (OnlyOneFragment api, HasServer api context, FromHttpApiData a1 )
+#else
+instance (HasServer api context, FromHttpApiData a1 )
+#endif
+    => HasServer (Fragment a1 :> api) context where
+  type ServerT (Fragment a1 :> api) m = Maybe a1 -> ServerT api m
+
+  route Proxy context subserver =
+    let parseFragment = either (const Nothing) Just . parseQueryParam
+          . either (const mempty) id . T.decodeUtf8'
+          . identifyFragment (not . BC8.null) (crop . rawPathInfo) (crop . rawQueryString)
+
+        crop = BC8.drop 1 . BC8.dropWhile (/= '#')
+
+        identifyFragment test getPath getQuery req =
+          case (test (getPath req), test (getQuery req)) of
+            (_result, True) -> getQuery req
+            (False, False)  -> ""
+            (True, False)   -> getPath req
+
+    in  route (Proxy :: Proxy api) context (passToServer subserver parseFragment)
+
+  hoistServerWithContext _ pc nt s =
+    hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
 -- $setup
 -- >>> import Servant

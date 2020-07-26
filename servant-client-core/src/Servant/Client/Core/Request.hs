@@ -17,6 +17,7 @@ module Servant.Client.Core.Request (
     addHeader,
     appendToPath,
     appendToQueryString,
+    appendFragment,
     setRequestBody,
     setRequestBodyLBS,
     ) where
@@ -32,16 +33,16 @@ import           Data.Bifunctor
                  (Bifunctor (..))
 import           Data.Bitraversable
                  (Bitraversable (..), bifoldMapDefault, bimapDefault)
-import qualified Data.ByteString                      as BS
-import qualified Data.ByteString.Builder              as Builder
-import qualified Data.ByteString.Lazy                 as LBS
+import qualified Data.ByteString              as BS
+import qualified Data.ByteString.Builder      as Builder
+import qualified Data.ByteString.Lazy         as LBS
 import           Data.Semigroup
                  ((<>))
-import qualified Data.Sequence                        as Seq
+import qualified Data.Sequence                as Seq
 import           Data.Text
                  (Text)
 import           Data.Text.Encoding
-                 (encodeUtf8)
+                 (encodeUtf8, encodeUtf8Builder)
 import           Data.Typeable
                  (Typeable)
 import           GHC.Generics
@@ -52,13 +53,15 @@ import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
                  http11, methodGet)
 import           Servant.API
-                 (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
+                 (SourceIO, ToHttpApiData, toEncodedUrlPiece, toHeader)
 
-import Servant.Client.Core.Internal (mediaTypeRnf)
+import           Servant.Client.Core.Internal
+                 (mediaTypeRnf)
 
 data RequestF body path = Request
   { requestPath        :: path
   , requestQueryString :: Seq.Seq QueryItem
+  , requestFragment    :: Maybe path
   , requestBody        :: Maybe (body, MediaType)
   , requestAccept      :: Seq.Seq MediaType
   , requestHeaders     :: Seq.Seq Header
@@ -75,6 +78,8 @@ instance (Show a, Show b) =>
         . showsPrec 0 (requestPath req)
         . showString ", requestQueryString = "
         . showsPrec 0 (requestQueryString req)
+        . showString ", requestFragment = "
+        . showsPrec 0 (requestFragment req)
         . showString ", requestBody = "
         . showsPrec 0 (requestBody req)
         . showString ", requestAccept = "
@@ -96,13 +101,15 @@ instance Bitraversable RequestF where
     bitraverse f g r = mk
         <$> traverse (bitraverse f pure) (requestBody r)
         <*> g (requestPath r)
+        <*> traverse g (requestFragment r)
       where
-        mk b p = r { requestBody = b, requestPath = p }
+        mk b p fr = r { requestBody = b, requestPath = p, requestFragment = fr }
 
 instance (NFData path, NFData body) => NFData (RequestF body path) where
     rnf r =
         rnf (requestPath r)
         `seq` rnf (requestQueryString r)
+        `seq` rnf (requestFragment r)
         `seq` rnfB (requestBody r)
         `seq` rnf (fmap mediaTypeRnf (requestAccept r))
         `seq` rnf (requestHeaders r)
@@ -136,6 +143,7 @@ defaultRequest :: Request
 defaultRequest = Request
   { requestPath = ""
   , requestQueryString = Seq.empty
+  , requestFragment = Nothing
   , requestBody = Nothing
   , requestAccept = Seq.empty
   , requestHeaders = Seq.empty
@@ -154,6 +162,10 @@ appendToQueryString :: Text       -- ^ param name
 appendToQueryString pname pvalue req
   = req { requestQueryString = requestQueryString req
                         Seq.|> (encodeUtf8 pname, encodeUtf8 <$> pvalue)}
+
+appendFragment :: ToHttpApiData a => a -> Request -> Request
+appendFragment frag req
+  = req { requestFragment = Just (toEncodedUrlPiece frag) }
 
 addHeader :: ToHttpApiData a => HeaderName -> a -> Request -> Request
 addHeader name val req

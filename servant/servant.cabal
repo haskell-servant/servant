@@ -40,6 +40,7 @@ library
     Servant.API.Description
     Servant.API.Empty
     Servant.API.Experimental.Auth
+    Servant.API.Fragment
     Servant.API.Generic
     Servant.API.Header
     Servant.API.HttpVersion

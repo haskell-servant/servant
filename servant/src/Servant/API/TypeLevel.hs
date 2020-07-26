@@ -1,12 +1,16 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE CPP                      #-}
+{-# LANGUAGE ConstraintKinds          #-}
+{-# LANGUAGE DataKinds                #-}
+{-# LANGUAGE FlexibleInstances        #-}
+{-# LANGUAGE KindSignatures           #-}
+{-# LANGUAGE MultiParamTypeClasses    #-}
+{-# LANGUAGE PolyKinds                #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
+{-# LANGUAGE TypeFamilies             #-}
+{-# LANGUAGE TypeOperators            #-}
+{-# LANGUAGE RankNTypes               #-}
+{-# LANGUAGE UndecidableInstances     #-}
+{-# LANGUAGE UndecidableSuperClasses  #-}
 
 {-|
 This module collects utilities for manipulating @servant@ API types. The
@@ -41,6 +45,8 @@ module Servant.API.TypeLevel (
     -- ** Logic
     Or,
     And,
+    -- ** Fragment
+    OnlyOneFragment
     ) where
 
 
@@ -50,6 +56,7 @@ import           Servant.API.Alternative
                  (type (:<|>))
 import           Servant.API.Capture
                  (Capture, CaptureAll)
+import           Servant.API.Fragment
 import           Servant.API.Header
                  (Header)
 import           Servant.API.QueryParam
@@ -128,10 +135,33 @@ type family IsElem endpoint api :: Constraint where
   IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
   IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
   IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
+  IsElem sa (Fragment x :> sb)            = IsElem sa sb
   IsElem (Verb m s ct typ) (Verb m s ct' typ)
                                           = IsSubList ct ct'
   IsElem e e                              = ()
   IsElem e a                              = IsElem' e a
+
+class FragmentUnique api => OnlyOneFragment api
+
+type family FragmentUnique api :: Constraint where
+  FragmentUnique (sa :<|> sb)       = Or (FragmentUnique sa) (FragmentUnique sb)
+  FragmentUnique (Fragment a :> sa) = FragmentNotIn sa (Fragment a :> sa)
+  FragmentUnique (x :> sa)          = FragmentUnique sa
+  FragmentUnique (Fragment a)       = ()
+  FragmentUnique x                  = ()
+
+type family FragmentNotIn api orig :: Constraint where
+  FragmentNotIn (sa :<|> sb)       orig =
+    And (FragmentNotIn sa orig) (FragmentNotIn sb orig)
+  FragmentNotIn (Fragment c :> sa) orig = TypeError (NotUniqueFragmentInApi orig)
+  FragmentNotIn (x :> sa)          orig = FragmentNotIn sa orig
+  FragmentNotIn (Fragment c)       orig = TypeError (NotUniqueFragmentInApi orig)
+  FragmentNotIn x                  orig = ()
+
+type NotUniqueFragmentInApi api =
+    'Text "Only one Fragment allowed per endpoint in api ‘"
+    ':<>: 'ShowType api
+    ':<>: 'Text "’."
 
 -- | Check whether @sub@ is a sub-API of @api@.
 --
