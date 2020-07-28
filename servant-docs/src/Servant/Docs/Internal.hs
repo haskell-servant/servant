@@ -25,8 +25,8 @@ import           Control.Applicative
 import           Control.Arrow
                  (second)
 import           Control.Lens
-                 (makeLenses, mapped, over, traversed, view, (%~), (&), (.~),
-                 (<>~), (^.), (|>))
+                 (makeLenses, mapped, over, set, traversed, view, (%~), (&),
+                 (.~), (<>~), (^.), (|>))
 import qualified Data.ByteString.Char8      as BSC
 import           Data.ByteString.Lazy.Char8
                  (ByteString)
@@ -64,7 +64,7 @@ import           Servant.API
 import           Servant.API.ContentTypes
 import           Servant.API.TypeLevel
 
-import qualified Data.Universe.Helpers as U
+import qualified Data.Universe.Helpers      as U
 
 import qualified Data.HashMap.Strict        as HM
 import qualified Data.Text                  as T
@@ -160,6 +160,22 @@ data DocQueryParam = DocQueryParam
   , _paramDesc   :: String   -- user supplied
   , _paramKind   :: ParamKind
   } deriving (Eq, Ord, Show)
+
+-- | A type to represent fragment. Holds the name of the fragment and its description.
+--
+-- Write a 'ToFragment' instance for your fragment types.
+data DocFragment = DocFragment
+  { _fragSymbol :: String -- type supplied
+  , _fragDesc   :: String -- user supplied
+  } deriving (Eq, Ord, Show)
+
+-- | Combine two Fragments, we can't make a monoid because merging Fragments breaks
+-- the laws.
+--
+-- As such, we invent a non-commutative, left associative operation
+-- 'combineFragment' to mush two together taking the info from the very left.
+combineFragment :: Maybe DocFragment -> Maybe DocFragment -> Maybe DocFragment
+mdocFragment `combineFragment` _ = mdocFragment
 
 -- | An introductory paragraph for your documentation. You can pass these to
 -- 'docsWithIntros'.
@@ -283,6 +299,7 @@ data Action = Action
   , _captures :: [DocCapture]                -- type collected + user supplied info
   , _headers  :: [Text]                      -- type collected
   , _params   :: [DocQueryParam]             -- type collected + user supplied info
+  , _fragment :: Maybe DocFragment           -- type collected + user supplied info
   , _notes    :: [DocNote]                   -- user supplied
   , _mxParams :: [(String, [DocQueryParam])] -- type collected + user supplied info
   , _rqtypes  :: [M.MediaType]               -- type collected
@@ -296,8 +313,9 @@ data Action = Action
 -- As such, we invent a non-commutative, left associative operation
 -- 'combineAction' to mush two together taking the response from the very left.
 combineAction :: Action -> Action -> Action
-Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' ts' body' resp' =
-        Action (a <> a') (c <> c') (h <> h') (p <> p') (n <> n') (m <> m') (ts <> ts') (body <> body') (resp `combineResponse` resp')
+Action a c h p f n m ts body resp
+  `combineAction` Action a' c' h' p' f' n' m' ts' body' resp' =
+        Action (a <> a') (c <> c') (h <> h') (p <> p') (f `combineFragment` f') (n <> n') (m <> m') (ts <> ts') (body <> body') (resp `combineResponse` resp')
 
 -- | Default 'Action'. Has no 'captures', no query 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -305,10 +323,10 @@ Action a c h p n m ts body resp `combineAction` Action a' c' h' p' n' m' ts' bod
 -- Tweakable with lenses.
 --
 -- >>> defAction
--- Action {_authInfo = [], _captures = [], _headers = [], _params = [], _notes = [], _mxParams = [], _rqtypes = [], _rqbody = [], _response = Response {_respStatus = 200, _respTypes = [], _respBody = [], _respHeaders = []}}
+-- Action {_authInfo = [], _captures = [], _headers = [], _params = [], _fragment = Nothing, _notes = [], _mxParams = [], _rqtypes = [], _rqbody = [], _response = Response {_respStatus = 200, _respTypes = [], _respBody = [], _respHeaders = []}}
 --
 -- >>> defAction & response.respStatus .~ 201
--- Action {_authInfo = [], _captures = [], _headers = [], _params = [], _notes = [], _mxParams = [], _rqtypes = [], _rqbody = [], _response = Response {_respStatus = 201, _respTypes = [], _respBody = [], _respHeaders = []}}
+-- Action {_authInfo = [], _captures = [], _headers = [], _params = [], _fragment = Nothing, _notes = [], _mxParams = [], _rqtypes = [], _rqbody = [], _response = Response {_respStatus = 201, _respTypes = [], _respBody = [], _respHeaders = []}}
 --
 defAction :: Action
 defAction =
@@ -316,6 +334,7 @@ defAction =
          []
          []
          []
+         Nothing
          []
          []
          []
@@ -368,6 +387,7 @@ makeLenses ''API
 makeLenses ''Endpoint
 makeLenses ''DocCapture
 makeLenses ''DocQueryParam
+makeLenses ''DocFragment
 makeLenses ''DocIntro
 makeLenses ''DocNote
 makeLenses ''Response
@@ -587,6 +607,15 @@ class ToCapture c where
 class ToAuthInfo a where
       toAuthInfo :: Proxy a -> DocAuthentication
 
+-- | The class that helps us get documentation for URL fragments.
+--
+-- Example of an instance:
+--
+-- > instance ToFragment (Fragment a) where
+-- >   toFragment _ = DocFragment "fragment" "fragment description"
+class ToFragment t where
+  toFragment :: Proxy t -> DocFragment
+
 -- | Generate documentation in Markdown format for
 --   the given 'API'.
 --
@@ -629,6 +658,7 @@ markdownWith RenderingOptions{..}  api = unlines $
           capturesStr (action ^. captures) ++
           headersStr (action ^. headers) ++
           paramsStr meth (action ^. params) ++
+          fragmentStr (action ^. fragment) ++
           rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
           responseStr (action ^. response) ++
           []
@@ -729,6 +759,14 @@ markdownWith RenderingOptions{..}  api = unlines $
           []
 
           where values = param ^. paramValues
+
+        fragmentStr :: Maybe DocFragment -> [String]
+        fragmentStr Nothing = []
+        fragmentStr (Just frag) =
+          [ "### Fragment:", ""
+          , "- *" ++ (frag ^. fragSymbol) ++ "*: " ++ (frag ^. fragDesc)
+          , ""
+          ]
 
         rqbodyStr :: [M.MediaType] -> [(Text, M.MediaType, ByteString)]-> [String]
         rqbodyStr [] [] = []
@@ -959,6 +997,15 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs api)
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
 
+instance (ToFragment (Fragment a), HasDocs api)
+      => HasDocs (Fragment a :> api) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          fragmentP = Proxy :: Proxy (Fragment a)
+          action' = set fragment (Just (toFragment fragmentP)) action
 
 instance HasDocs Raw where
   docsFor _proxy (endpoint, action) _ =

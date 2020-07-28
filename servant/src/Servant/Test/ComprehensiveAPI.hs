@@ -71,6 +71,7 @@ type ComprehensiveAPIWithoutStreamingOrRaw' endpoint =
     :<|> "summary"          :> Summary "foo" :> GET
     :<|> "description"      :> Description "foo" :> GET
     :<|> "alternative"      :> ("left" :> GET :<|> "right" :> GET)
+    :<|> "fragment"         :> Fragment Int :> GET
     :<|> endpoint
 
 type ComprehensiveAPIWithoutStreamingOrRaw = ComprehensiveAPIWithoutStreamingOrRaw' EmptyEndpoint

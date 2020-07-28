@@ -84,6 +84,11 @@ captureArg                 _ = error "captureArg called on non capture"
 
 type Path f = [Segment f]
 
+newtype Frag f = Frag { unFragment :: Arg f }
+  deriving (Data, Eq, Show, Typeable)
+
+makePrisms ''Frag
+
 data ArgType
   = Normal
   | Flag
@@ -115,11 +120,12 @@ makePrisms ''HeaderArg
 data Url f = Url
   { _path     :: Path f
   , _queryStr :: [QueryArg f]
+  , _frag     :: Maybe f
   }
   deriving (Data, Eq, Show, Typeable)
 
 defUrl :: Url f
-defUrl = Url [] []
+defUrl = Url [] [] Nothing
 
 makeLenses ''Url
 
@@ -323,6 +329,16 @@ instance
       arg = Arg
         { _argName = PathSegment str
         , _argType = typeFor lang ftype (Proxy :: Proxy Bool) }
+
+instance
+  (HasForeignType lang ftype (Maybe a), HasForeign lang ftype api)
+  => HasForeign lang ftype (Fragment a :> api) where
+  type Foreign ftype (Fragment a :> api) = Foreign ftype api
+  foreignFor lang Proxy Proxy req =
+    foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
+      req & reqUrl . frag .~ (Just argT)
+    where
+      argT = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy (Maybe a))
 
 instance HasForeign lang ftype Raw where
   type Foreign ftype Raw = HTTP.Method -> Req ftype

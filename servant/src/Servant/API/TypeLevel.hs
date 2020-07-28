@@ -141,28 +141,6 @@ type family IsElem endpoint api :: Constraint where
   IsElem e e                              = ()
   IsElem e a                              = IsElem' e a
 
-class FragmentUnique api => OnlyOneFragment api
-
-type family FragmentUnique api :: Constraint where
-  FragmentUnique (sa :<|> sb)       = Or (FragmentUnique sa) (FragmentUnique sb)
-  FragmentUnique (Fragment a :> sa) = FragmentNotIn sa (Fragment a :> sa)
-  FragmentUnique (x :> sa)          = FragmentUnique sa
-  FragmentUnique (Fragment a)       = ()
-  FragmentUnique x                  = ()
-
-type family FragmentNotIn api orig :: Constraint where
-  FragmentNotIn (sa :<|> sb)       orig =
-    And (FragmentNotIn sa orig) (FragmentNotIn sb orig)
-  FragmentNotIn (Fragment c :> sa) orig = TypeError (NotUniqueFragmentInApi orig)
-  FragmentNotIn (x :> sa)          orig = FragmentNotIn sa orig
-  FragmentNotIn (Fragment c)       orig = TypeError (NotUniqueFragmentInApi orig)
-  FragmentNotIn x                  orig = ()
-
-type NotUniqueFragmentInApi api =
-    'Text "Only one Fragment allowed per endpoint in api ‘"
-    ':<>: 'ShowType api
-    ':<>: 'Text "’."
-
 -- | Check whether @sub@ is a sub-API of @api@.
 --
 -- >>> ok (Proxy :: Proxy (IsSubAPI SampleAPI (SampleAPI :<|> Get '[JSON] Int)))
@@ -271,6 +249,31 @@ We might try to factor these our more cleanly, but the type synonyms and type
 families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 -}
 
+-- ** Fragment
+
+class FragmentUnique api => OnlyOneFragment api
+
+instance OnlyOneFragment (Verb m s ct typ)
+
+type family FragmentUnique api :: Constraint where
+  FragmentUnique (sa :<|> sb)       = Or (FragmentUnique sa) (FragmentUnique sb)
+  FragmentUnique (Fragment a :> sa) = FragmentNotIn sa (Fragment a :> sa)
+  FragmentUnique (x :> sa)          = FragmentUnique sa
+  FragmentUnique (Fragment a)       = ()
+  FragmentUnique x                  = ()
+
+type family FragmentNotIn api orig :: Constraint where
+  FragmentNotIn (sa :<|> sb)       orig =
+    And (FragmentNotIn sa orig) (FragmentNotIn sb orig)
+  FragmentNotIn (Fragment c :> sa) orig = TypeError (NotUniqueFragmentInApi orig)
+  FragmentNotIn (x :> sa)          orig = FragmentNotIn sa orig
+  FragmentNotIn (Fragment c)       orig = TypeError (NotUniqueFragmentInApi orig)
+  FragmentNotIn x                  orig = ()
+
+type NotUniqueFragmentInApi api =
+    'Text "Only one Fragment allowed per endpoint in api ‘"
+    ':<>: 'ShowType api
+    ':<>: 'Text "’."
 
 -- $setup
 --

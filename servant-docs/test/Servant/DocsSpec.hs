@@ -58,6 +58,8 @@ instance ToCapture (Capture "foo" Int) where
   toCapture _ = DocCapture "foo" "Capture foo Int"
 instance ToCapture (CaptureAll "foo" Int) where
   toCapture _ = DocCapture "foo" "Capture all foo Int"
+instance ToFragment (Fragment Int) where
+  toFragment _ = DocFragment "foo" "Fragment Int"
 
 -- * specs
 
