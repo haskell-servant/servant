@@ -257,7 +257,7 @@ addFragment fr l = l { _fragment = fr }
 -- >>> type SomeRoute = "abc" :> Capture "email" String :> Put '[JSON] ()
 -- >>> let someRoute = Proxy :: Proxy SomeRoute
 -- >>> safeLink someRoute someRoute "test@example.com"
--- Link {_segments = ["abc","test%40example.com"], _queryParams = []}
+-- Link {_segments = ["abc","test%40example.com"], _queryParams = [], _fragment = Nothing}
 --
 -- >>> linkURI $ safeLink someRoute someRoute "test@example.com"
 -- abc/test%40example.com
