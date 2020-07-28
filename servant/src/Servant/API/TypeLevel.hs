@@ -255,7 +255,7 @@ class FragmentUnique api => OnlyOneFragment api
 
 -- | If fragment appeared in API endpoint twice, compile-time error would be raised.
 --
--- >>> type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
+-- >>> -- type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
 -- >>> instance OnlyOneFragment FailAPI
 -- ...Only one Fragment allowed per endpoint in api...
 -- ...
@@ -287,6 +287,7 @@ type NotUniqueFragmentInApi api =
 --
 -- >>> :set -XPolyKinds
 -- >>> :set -XGADTs
+-- >>> :set -XTypeSynonymInstances -XFlexibleInstances
 -- >>> import Data.Proxy
 -- >>> import Data.Type.Equality
 -- >>> import Servant.API
@@ -294,4 +295,5 @@ type NotUniqueFragmentInApi api =
 -- >>> instance Show (OK ctx) where show _ = "OK"
 -- >>> let ok :: ctx => Proxy ctx -> OK ctx; ok _ = OK
 -- >>> type SampleAPI = "hello" :> Get '[JSON] Int :<|> "bye" :> Capture "name" String :> Post '[JSON, PlainText] Bool
+-- >>> type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
 -- >>> let sampleAPI = Proxy :: Proxy SampleAPI
