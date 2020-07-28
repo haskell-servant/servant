@@ -253,6 +253,12 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 
 class FragmentUnique api => OnlyOneFragment api
 
+-- | If fragment appeared in API endpoint twice, compile-time error would be raised.
+--
+-- >>> type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
+-- >>> instance OnlyOneFragment FailAPI
+-- ...Only one Fragment allowed per endpoint in api...
+-- ...
 instance OnlyOneFragment (Verb m s ct typ)
 
 type family FragmentUnique api :: Constraint where
