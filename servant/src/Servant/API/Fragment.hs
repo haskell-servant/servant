@@ -17,3 +17,10 @@ import           Data.Typeable
 -- >>> type MyApi = "post" :> Fragment Text :> Get '[JSON] Tracking
 data Fragment (a :: *)
     deriving Typeable
+
+-- $setup
+-- >>> import Servant.API
+-- >>> import Data.Aeson
+-- >>> import Data.Text
+-- >>> data Tracking
+-- >>> instance ToJSON Tracking where { toJSON = undefined }
