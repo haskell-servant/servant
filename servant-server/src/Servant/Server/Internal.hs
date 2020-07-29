@@ -883,7 +883,27 @@ type HasServerArrowTypeError a b =
     ':$$: 'ShowType b
 #endif
 
--- | Server for 'Fragment'. Documentation TBD.
+-- | If you use @'Fragment' Text@ in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a function
+-- that takes an argument of type @'Maybe' 'Text'@.
+--
+-- This lets servant worry about looking it up in the URI fragment
+-- and turning it into a value of the type you specify, enclosed
+-- in 'Maybe', because it may not be there and servant would then
+-- hand you 'Nothing'.
+--
+-- You can control how it'll be converted from 'Text' to your type
+-- by simply providing an instance of 'FromHttpApiData' for your type.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> Fragment Text :> Get '[JSON] [Book]
+-- >
+-- > server :: Server MyApi
+-- > server = getBooksBy
+-- >   where getBooksBy :: Maybe Text -> Handler [Book]
+-- >         getBooksBy Nothing       = ...return all books...
+-- >         getBooksBy (Just author) = ...return books by the given author...
 #ifdef HAS_TYPE_ERROR
 instance (OnlyOneFragment api, HasServer api context, FromHttpApiData a1 )
 #else

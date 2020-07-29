@@ -749,6 +749,31 @@ instance ( HasClient m api
   hoistClientMonad pm _ f cl = \authreq ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl authreq)
 
+-- | If you use a 'Fragment' in one of your endpoints in your API,
+-- the corresponding querying function will automatically take
+-- an additional argument of the type specified by your 'Fragment',
+-- enclosed in Maybe.
+--
+-- If you give Nothing, nothing will be added to the query string.
+--
+-- If you give a non-'Nothing' value, this function will take care
+-- of inserting a textual representation of this value in the end of URL as fragment.
+--
+-- You can control how values for your type are turned into
+-- text by specifying a 'ToHttpApiData' instance for your type.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> Fragment Text :> Get '[JSON] [Book]
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > getBooksBy :: Maybe Text -> ClientM [Book]
+-- > getBooksBy = client myApi
+-- > -- then you can just use "getBooksBy" to query that endpoint.
+-- > -- 'getBooksBy Nothing' for all books
+-- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
 #ifdef HAS_TYPE_ERROR
 instance ( OnlyOneFragment api, HasClient m api, ToHttpApiData a
 #else
