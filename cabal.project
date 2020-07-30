@@ -22,6 +22,7 @@ packages:
 packages:
   doc/cookbook/basic-auth
   doc/cookbook/curl-mock
+  doc/cookbook/custom-errors
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
 --  doc/cookbook/db-sqlite-simple
@@ -32,7 +33,7 @@ packages:
   -- doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/pagination
   -- doc/cookbook/sentry
-  doc/cookbook/testing
+--  doc/cookbook/testing
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client

@@ -2,9 +2,13 @@
 #
 #   haskell-ci '--config=cabal.haskell-ci' '--output=.travis.yml' 'cabal.project'
 #
+# To regenerate the script (for example after adjusting tested-with) run
+#
+#   haskell-ci regenerate
+#
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.9.20200121
+# version: 0.10.1
 #
 version: ~> 1.0
 language: c
@@ -40,20 +44,20 @@ jobs:
     - compiler: ghc-8.10.1
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.10.1","cabal-install-3.2"]}}
       os: linux
-    - compiler: ghc-8.8.2
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.8.2","cabal-install-3.0"]}}
+    - compiler: ghc-8.8.3
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.8.3","cabal-install-3.2"]}}
       os: linux
     - compiler: ghc-8.6.5
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.6.5","cabal-install-3.0"]}}
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.6.5","cabal-install-3.2"]}}
       os: linux
     - compiler: ghc-8.4.4
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.4.4","cabal-install-3.0"]}}
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.4.4","cabal-install-3.2"]}}
       os: linux
     - compiler: ghc-8.2.2
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.2.2","cabal-install-3.0"]}}
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.2.2","cabal-install-3.2"]}}
       os: linux
     - compiler: ghc-8.0.2
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.0.2","cabal-install-3.0"]}}
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.0.2","cabal-install-3.2"]}}
       os: linux
 before_install:
   - |
@@ -110,9 +114,9 @@ install:
   - cat $CABALHOME/config
   - rm -fv cabal.project cabal.project.local cabal.project.freeze
   - travis_retry ${CABAL} v2-update -v
-  - if ! $GHCJS ; then (cd /tmp && ${CABAL} v2-install $WITHCOMPILER -j2 doctest --constraint='doctest ==0.16.3.*') ; fi
-  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe') ; fi
-  - if $GHCJS ; then (cd /tmp && ${CABAL} v2-install -w ghc-8.4.4 hspec-discover) ; fi
+  - if ! $GHCJS ; then ${CABAL} v2-install $WITHCOMPILER --ignore-project -j2 doctest --constraint='doctest ^>=0.16.3' ; fi
+  - if $GHCJS ; then ${CABAL} v2-install -w ghc-8.4.4 --ignore-project cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe' ; fi
+  - if $GHCJS ; then ${CABAL} v2-install -w ghc-8.4.4 --ignore-project hspec-discover ; fi
   # Generate cabal.project
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
@@ -130,15 +134,59 @@ install:
     if ! $GHCJS ; then echo "packages: servant-pipes" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/basic-auth" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/curl-mock" >> cabal.project ; fi
+    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/custom-errors" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/basic-streaming" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/db-postgres-pool" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/file-upload" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/generic" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/pagination" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/testing" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/structuring-apis" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/using-custom-monad" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/using-free-client" >> cabal.project ; fi
+  - if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant' >> cabal.project ; fi
+  - "if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-client' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-client-core' >> cabal.project ; fi
+  - "if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-http-streams' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-docs' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-foreign' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-server' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package tutorial' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-machines' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-conduit' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-pipes' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-basic-auth' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-curl-mock' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-custom-errors' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-basic-streaming' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-db-postgres-pool' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-file-upload' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-generic' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-pagination' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-structuring-apis' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-using-custom-monad' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-using-free-client' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |
     echo "constraints:  foundation >=0.0.14"                     >> cabal.project
     echo "constraints:  memory <0.14.12 || >0.14.12"             >> cabal.project
@@ -148,7 +196,7 @@ install:
     echo "allow-newer:  servant-pagination-2.2.2:servant"        >> cabal.project
     echo "allow-newer:  servant-pagination-2.2.2:servant-server" >> cabal.project
     echo "optimization: False"                                   >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-custom-errors|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "servant/configure.ac" ]; then (cd "servant" && autoreconf -i); fi
@@ -164,12 +212,12 @@ install:
   - if [ -f "servant-pipes/configure.ac" ]; then (cd "servant-pipes" && autoreconf -i); fi
   - if [ -f "doc/cookbook/basic-auth/configure.ac" ]; then (cd "doc/cookbook/basic-auth" && autoreconf -i); fi
   - if [ -f "doc/cookbook/curl-mock/configure.ac" ]; then (cd "doc/cookbook/curl-mock" && autoreconf -i); fi
+  - if [ -f "doc/cookbook/custom-errors/configure.ac" ]; then (cd "doc/cookbook/custom-errors" && autoreconf -i); fi
   - if [ -f "doc/cookbook/basic-streaming/configure.ac" ]; then (cd "doc/cookbook/basic-streaming" && autoreconf -i); fi
   - if [ -f "doc/cookbook/db-postgres-pool/configure.ac" ]; then (cd "doc/cookbook/db-postgres-pool" && autoreconf -i); fi
   - if [ -f "doc/cookbook/file-upload/configure.ac" ]; then (cd "doc/cookbook/file-upload" && autoreconf -i); fi
   - if [ -f "doc/cookbook/generic/configure.ac" ]; then (cd "doc/cookbook/generic" && autoreconf -i); fi
   - if [ -f "doc/cookbook/pagination/configure.ac" ]; then (cd "doc/cookbook/pagination" && autoreconf -i); fi
-  - if [ -f "doc/cookbook/testing/configure.ac" ]; then (cd "doc/cookbook/testing" && autoreconf -i); fi
   - if [ -f "doc/cookbook/structuring-apis/configure.ac" ]; then (cd "doc/cookbook/structuring-apis" && autoreconf -i); fi
   - if [ -f "doc/cookbook/using-custom-monad/configure.ac" ]; then (cd "doc/cookbook/using-custom-monad" && autoreconf -i); fi
   - if [ -f "doc/cookbook/using-free-client/configure.ac" ]; then (cd "doc/cookbook/using-free-client" && autoreconf -i); fi
@@ -201,12 +249,12 @@ script:
   - PKGDIR_servant_pipes="$(find . -maxdepth 1 -type d -regex '.*/servant-pipes-[0-9.]*')"
   - PKGDIR_cookbook_basic_auth="$(find . -maxdepth 1 -type d -regex '.*/cookbook-basic-auth-[0-9.]*')"
   - PKGDIR_cookbook_curl_mock="$(find . -maxdepth 1 -type d -regex '.*/cookbook-curl-mock-[0-9.]*')"
+  - PKGDIR_cookbook_custom_errors="$(find . -maxdepth 1 -type d -regex '.*/cookbook-custom-errors-[0-9.]*')"
   - PKGDIR_cookbook_basic_streaming="$(find . -maxdepth 1 -type d -regex '.*/cookbook-basic-streaming-[0-9.]*')"
   - PKGDIR_cookbook_db_postgres_pool="$(find . -maxdepth 1 -type d -regex '.*/cookbook-db-postgres-pool-[0-9.]*')"
   - PKGDIR_cookbook_file_upload="$(find . -maxdepth 1 -type d -regex '.*/cookbook-file-upload-[0-9.]*')"
   - PKGDIR_cookbook_generic="$(find . -maxdepth 1 -type d -regex '.*/cookbook-generic-[0-9.]*')"
   - PKGDIR_cookbook_pagination="$(find . -maxdepth 1 -type d -regex '.*/cookbook-pagination-[0-9.]*')"
-  - PKGDIR_cookbook_testing="$(find . -maxdepth 1 -type d -regex '.*/cookbook-testing-[0-9.]*')"
   - PKGDIR_cookbook_structuring_apis="$(find . -maxdepth 1 -type d -regex '.*/cookbook-structuring-apis-[0-9.]*')"
   - PKGDIR_cookbook_using_custom_monad="$(find . -maxdepth 1 -type d -regex '.*/cookbook-using-custom-monad-[0-9.]*')"
   - PKGDIR_cookbook_using_free_client="$(find . -maxdepth 1 -type d -regex '.*/cookbook-using-free-client-[0-9.]*')"
@@ -227,15 +275,59 @@ script:
     if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_pipes}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_basic_auth}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_curl_mock}" >> cabal.project ; fi
+    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_custom_errors}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_basic_streaming}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_db_postgres_pool}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_file_upload}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_generic}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_pagination}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_testing}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_structuring_apis}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_using_custom_monad}" >> cabal.project ; fi
     if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_using_free_client}" >> cabal.project ; fi
+  - if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant' >> cabal.project ; fi
+  - "if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-client' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-client-core' >> cabal.project ; fi
+  - "if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-http-streams' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-docs' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-foreign' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-server' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package tutorial' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-machines' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-conduit' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-pipes' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-basic-auth' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-curl-mock' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-custom-errors' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-basic-streaming' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-db-postgres-pool' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-file-upload' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-generic' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-pagination' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-structuring-apis' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-using-custom-monad' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-using-free-client' >> cabal.project ; fi
+  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |
     echo "constraints:  foundation >=0.0.14"                     >> cabal.project
     echo "constraints:  memory <0.14.12 || >0.14.12"             >> cabal.project
@@ -245,7 +337,7 @@ script:
     echo "allow-newer:  servant-pagination-2.2.2:servant"        >> cabal.project
     echo "allow-newer:  servant-pagination-2.2.2:servant-server" >> cabal.project
     echo "optimization: False"                                   >> cabal.project
-  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-testing|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
+  - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-custom-errors|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - |
@@ -264,12 +356,12 @@ script:
         servant-pipes) echo ${PKGDIR_servant_pipes} ;;
         cookbook-basic-auth) echo ${PKGDIR_cookbook_basic_auth} ;;
         cookbook-curl-mock) echo ${PKGDIR_cookbook_curl_mock} ;;
+        cookbook-custom-errors) echo ${PKGDIR_cookbook_custom_errors} ;;
         cookbook-basic-streaming) echo ${PKGDIR_cookbook_basic_streaming} ;;
         cookbook-db-postgres-pool) echo ${PKGDIR_cookbook_db_postgres_pool} ;;
         cookbook-file-upload) echo ${PKGDIR_cookbook_file_upload} ;;
         cookbook-generic) echo ${PKGDIR_cookbook_generic} ;;
         cookbook-pagination) echo ${PKGDIR_cookbook_pagination} ;;
-        cookbook-testing) echo ${PKGDIR_cookbook_testing} ;;
         cookbook-structuring-apis) echo ${PKGDIR_cookbook_structuring_apis} ;;
         cookbook-using-custom-monad) echo ${PKGDIR_cookbook_using_custom_monad} ;;
         cookbook-using-free-client) echo ${PKGDIR_cookbook_using_free_client} ;;
@@ -303,5 +395,5 @@ script:
   - if ! $GHCJS ; then ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all ; fi
   - echo -en 'travis_fold:end:haddock\\r'
 
-# REGENDATA ("0.9.20200121",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
+# REGENDATA ("0.10.1",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
 # EOF

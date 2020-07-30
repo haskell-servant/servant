@@ -15,6 +15,8 @@ import qualified Data.ByteString.Lazy.Char8 as BCL
 import           Data.Monoid
                  ((<>))
 import           Data.Proxy
+import           Data.String.Conversions
+                 (cs)
 import           Network.HTTP.Types
                  (hAccept, hAuthorization, hContentType, methodGet, methodPost,
                  methodPut)
@@ -31,6 +33,7 @@ spec = describe "HTTP Errors" $ do
     prioErrorsSpec
     errorRetrySpec
     errorChoiceSpec
+    customFormattersSpec
 
 -- * Auth machinery (reused throughout)
 
@@ -292,6 +295,61 @@ errorChoiceSpec = describe "Multiple handlers return errors"
     request methodPost "path5" [(hContentType, "application/not-supported")] ""
       `shouldRespondWith` 415
 
+
+-- }}}
+------------------------------------------------------------------------------
+-- * Custom errors {{{
+
+customFormatter :: ErrorFormatter
+customFormatter _ _ err = err400 { errBody = "CUSTOM! " <> cs err }
+
+customFormatters :: ErrorFormatters
+customFormatters = defaultErrorFormatters
+  { bodyParserErrorFormatter = customFormatter
+  , urlParseErrorFormatter = customFormatter
+  , notFoundErrorFormatter = const $ err404 { errBody = "CUSTOM! Not Found" }
+  }
+
+type CustomFormatterAPI
+     = "query" :> QueryParam' '[Required, Strict] "param" Int :> Get '[PlainText] String
+  :<|> "capture" :> Capture "cap" Bool :> Get '[PlainText] String
+  :<|> "body" :> ReqBody '[JSON] Int :> Post '[PlainText] String
+
+customFormatterAPI :: Proxy CustomFormatterAPI
+customFormatterAPI = Proxy
+
+customFormatterServer :: Server CustomFormatterAPI
+customFormatterServer = (\_ -> return "query")
+                   :<|> (\_ -> return "capture")
+                   :<|> (\_ -> return "body")
+
+customFormattersSpec :: Spec
+customFormattersSpec = describe "Custom errors from combinators"
+                 $ with (return $ serveWithContext customFormatterAPI (customFormatters :. EmptyContext) customFormatterServer) $ do
+
+  let startsWithCustom = ResponseMatcher
+        { matchStatus = 400
+        , matchHeaders = []
+        , matchBody = MatchBody $ \_ body -> if "CUSTOM!" `BCL.isPrefixOf` body
+            then Nothing
+            else Just $ show body <> " does not start with \"CUSTOM!\""
+        }
+
+  it "formats query parse error" $ do
+    request methodGet "query?param=false" [] ""
+      `shouldRespondWith` startsWithCustom
+
+  it "formats query parse error with missing param" $ do
+    request methodGet "query" [] ""
+      `shouldRespondWith` startsWithCustom
+
+  it "formats capture parse error" $ do
+    request methodGet "capture/42" [] ""
+      `shouldRespondWith` startsWithCustom
+
+  it "formats body parse error" $ do
+    request methodPost "body" [(hContentType, "application/json")] "foo"
+      `shouldRespondWith` startsWithCustom
 
 -- }}}
 ------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
-name:                cookbook-using-custom-monad
+name:                cookbook-custom-errors
 version:             0.1
-synopsis:            Using custom monad to pass a state between handlers
-homepage:            http://docs.servant.dev/
+synopsis:            Return custom error messages from combinators
+homepage:            http://docs.servant.dev
 license:             BSD3
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
@@ -10,19 +10,16 @@ build-type:          Simple
 cabal-version:       >=1.10
 tested-with:         GHC==8.4.4, GHC==8.6.5, GHC==8.8.3, GHC ==8.10.1
 
-executable cookbook-using-custom-monad
-  main-is:             UsingCustomMonad.lhs
+executable cookbook-custom-errors
+  main-is:             CustomErrors.lhs
   build-depends:       base == 4.*
-                     , aeson >= 1.2
+                     , aeson
                      , servant
-                     , servant-client
                      , servant-server
-                     , warp >= 3.2
-                     , wai >= 3.2
-                     , http-client >= 0.5
-                     , markdown-unlit >= 0.4
-                     , stm >= 2.4
-                     , transformers >= 0.3
+                     , string-conversions
+                     , text
+                     , wai
+                     , warp
   default-language:    Haskell2010
   ghc-options:         -Wall -pgmL markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit
