@@ -1,2 +1,4 @@
 packages: .
 tests: true
+
+allow-newer: servant-blaze:servant
