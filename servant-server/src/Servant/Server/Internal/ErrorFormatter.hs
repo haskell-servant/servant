@@ -1,11 +1,19 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE PolyKinds     #-}
+{-# LANGUAGE RankNTypes    #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Servant.Server.Internal.ErrorFormatter
-  where
+  ( ErrorFormatters(..)
+  , ErrorFormatter
+  , NotFoundErrorFormatter
+
+  , DefaultErrorFormatters
+  , defaultErrorFormatters
+
+  , MkContextWithErrorFormatter
+  , mkContextWithErrorFormatter
+  ) where
 
 import           Data.String.Conversions
                  (cs)
@@ -72,8 +80,8 @@ err400Formatter _ _ e = err400 { errBody = cs e }
 -- These definitions suppress "unused import" warning.
 -- The imorts are needed for Haddock to correctly link to them.
 _RB :: Proxy ReqBody
-_RB = undefined
+_RB = Proxy
 _C :: Proxy Capture
-_C = undefined
+_C = Proxy
 _CT :: Proxy Context
-_CT = undefined
+_CT = Proxy
