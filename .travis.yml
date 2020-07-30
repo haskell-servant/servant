@@ -195,6 +195,10 @@ install:
     echo "constraints:  sqlite-simple < 0"                       >> cabal.project
     echo "allow-newer:  servant-pagination-2.2.2:servant"        >> cabal.project
     echo "allow-newer:  servant-pagination-2.2.2:servant-server" >> cabal.project
+    echo "allow-newer:  servant-multipart:servant"               >> cabal.project
+    echo "allow-newer:  servant-multipart:servant-server"        >> cabal.project
+    echo "allow-newer:  servant-multipart:servant-client-core"   >> cabal.project
+    echo "allow-newer:  servant-js:servant"                      >> cabal.project
     echo "optimization: False"                                   >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-custom-errors|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
@@ -336,6 +340,10 @@ script:
     echo "constraints:  sqlite-simple < 0"                       >> cabal.project
     echo "allow-newer:  servant-pagination-2.2.2:servant"        >> cabal.project
     echo "allow-newer:  servant-pagination-2.2.2:servant-server" >> cabal.project
+    echo "allow-newer:  servant-multipart:servant"               >> cabal.project
+    echo "allow-newer:  servant-multipart:servant-server"        >> cabal.project
+    echo "allow-newer:  servant-multipart:servant-client-core"   >> cabal.project
+    echo "allow-newer:  servant-js:servant"                      >> cabal.project
     echo "optimization: False"                                   >> cabal.project
   - "for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/-[^-]*$//' | (grep -vE -- '^(cookbook-basic-auth|cookbook-basic-streaming|cookbook-curl-mock|cookbook-custom-errors|cookbook-db-postgres-pool|cookbook-file-upload|cookbook-generic|cookbook-pagination|cookbook-structuring-apis|cookbook-using-custom-monad|cookbook-using-free-client|servant|servant-client|servant-client-core|servant-conduit|servant-docs|servant-foreign|servant-http-streams|servant-machines|servant-pipes|servant-server|tutorial)$' || true) | sed 's/^/constraints: /' | sed 's/$/ installed/' >> cabal.project.local; done"
   - cat cabal.project || true
