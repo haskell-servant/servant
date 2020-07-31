@@ -42,11 +42,10 @@ withServantServer api = withServantServerAndContext api EmptyContext
 -- /Since 0.0.0.0/
 #if MIN_VERSION_servant_server(0,18,0)
 withServantServerAndContext :: (HasServer a ctx, HasContextEntry (ctx .++ DefaultErrorFormatters) ErrorFormatters)
-   => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
 #else
 withServantServerAndContext :: HasServer a ctx
-  => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
 #endif
+  => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
 withServantServerAndContext api ctx server t
   = withApplication (return . serveWithContext api ctx =<< server) $ \port ->
       t (BaseUrl Http "localhost" port "")
