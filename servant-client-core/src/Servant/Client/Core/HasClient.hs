@@ -824,4 +824,4 @@ decodedAs response ct = do
     Left err -> throwClientError $ DecodeFailure (T.pack err) response
     Right val -> return val
   where
-    accept = toList $ contentTypes ct 
+    accept = toList $ contentTypes ct
