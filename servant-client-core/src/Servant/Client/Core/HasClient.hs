@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -7,6 +8,7 @@
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -15,16 +17,24 @@ module Servant.Client.Core.HasClient (
     clientIn,
     HasClient (..),
     EmptyClient (..),
+    collapseUResp,
+    extractUResp,
     ) where
 
 import           Prelude ()
 import           Prelude.Compat
 
+import           Control.Arrow
+                 (left, (+++))
 import           Control.Monad
                  (unless)
 import qualified Data.ByteString.Lazy                     as BL
+import           Data.Either
+                 (partitionEithers)
 import           Data.Foldable
                  (toList)
+import           Data.Functor.Identity
+                 (Identity (Identity), runIdentity)
 import           Data.List
                  (foldl')
 import           Data.Proxy
@@ -34,12 +44,28 @@ import           Data.Sequence
 import qualified Data.Text                       as T
 import           Network.HTTP.Media
                  (MediaType, matches, parseAccept, (//))
+import qualified Data.Sequence as Seq
+import           Data.SOP.BasicFunctors
+                 (K (K), (:.:) (Comp))
+import           Data.SOP.Constraint
+                 (All, Constraint)
+import           Data.SOP.NP
+                 (NP (..), cpure_NP)
+import           Data.SOP.NS
+                 (NS (S), cmap_NS, collapse_NS)
 import           Data.String
                  (fromString)
 import           Data.Text
                  (Text, pack)
+import           Data.Typeable
+                 (Proxy (Proxy), Typeable, cast)
+import qualified GHC.Generics as GHC
 import           GHC.TypeLits
                  (KnownSymbol, symbolVal)
+import           Network.HTTP.Media
+                 (MediaType, matches, parseAccept, (//))
+import           Network.HTTP.Types
+                 (Status)
 import qualified Network.HTTP.Types                       as H
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
@@ -54,9 +80,11 @@ import           Servant.API
                  contentType, getHeadersHList, getResponse, toQueryParam,
                  toUrlPiece)
 import           Servant.API.ContentTypes
-                 (contentTypes)
+                 (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
+import           Servant.API.UVerb
+                 (HasStatus, Statuses, UVerb, Union, Unique, inject, statusOf)
 
 import           Servant.Client.Core.Auth
 import           Servant.Client.Core.BasicAuth
@@ -287,6 +315,92 @@ instance {-# OVERLAPPING #-}
                      }
 
   hoistClientMonad _ _ f ma = f ma
+
+-- | convenience function to extract an unknown union element using a type class.
+collapseUResp ::
+  forall c a as.
+  All c as =>
+  Proxy (c :: * -> Constraint) ->
+  (forall x. c x => x -> a) ->
+  Union as ->
+  a
+collapseUResp proxy render = collapse_NS . cmap_NS proxy (K . render . runIdentity)
+
+-- | convenience function to extract an unknown union element using 'cast'.
+extractUResp :: forall a as. (All Typeable as, Typeable a) => Union as -> Maybe a
+extractUResp = collapse_NS . cmap_NS (Proxy @Typeable) (K . cast . runIdentity)
+
+data ClientParseError = ClientParseError MediaType String | ClientStatusMismatch | ClientNoMatchingStatus
+  deriving (Eq, Show)
+
+instance {-# OVERLAPPING #-}
+  ( RunClient m,
+    contentTypes ~ (contentType ': contentTypes'), -- TODO: can we to _ instead of contentTypes'?  probably not.
+    as ~ (a ': as'),
+    AllMime contentTypes,
+    ReflectMethod method,
+    All (AllMimeUnrender contentTypes) as,
+    All HasStatus as,
+    Unique (Statuses as)
+  ) =>
+  HasClient m (UVerb method contentTypes as)
+  where
+  type Client m (UVerb method contentTypes as) = m (Union as)
+
+  clientWithRoute _ _ request = do
+    let accept = Seq.fromList . allMime $ Proxy @contentTypes
+        -- TODO(fisx): we want to send an accept header with, say, the first content type
+        -- supported by the api, so we don't have to parse all of them, no?  not sure i'm
+        -- missing anything here.
+
+        method = reflectMethod $ Proxy @method
+    response <- runRequest request {requestMethod = method, requestAccept = accept}
+    responseContentType <- checkContentTypeHeader response
+    unless (any (matches responseContentType) accept)
+      $ throwClientError
+      $ UnsupportedContentType responseContentType response
+
+    let status = responseStatusCode response
+        body = responseBody response
+        res = tryParsers status $ mimeUnrenders (Proxy @contentTypes) body
+    case res of
+      Left errors -> throwClientError $ DecodeFailure (T.pack (show errors)) response
+      Right x -> return x
+    where
+      -- | Copied from "Servant.Client.Core.HasClient".
+      checkContentTypeHeader :: forall m. RunClient m => Response -> m MediaType
+      checkContentTypeHeader response =
+        case lookup "Content-Type" $ toList $ responseHeaders response of
+          Nothing -> return $ "application" // "octet-stream"
+          Just t -> case parseAccept t of
+            Nothing -> throwClientError $ InvalidContentTypeHeader response
+            Just t' -> return t'
+
+      -- | Given a list of parsers of 'mkres', returns the first one that succeeds and all the
+      -- failures it encountered along the way
+      -- TODO; better name, rewrite haddocs.
+      tryParsers :: forall as. All HasStatus as => Status -> NP ([] :.: Either (MediaType, String)) as -> Either [ClientParseError] (Union as)
+      tryParsers _ Nil = Left [ClientNoMatchingStatus]
+      tryParsers status (Comp x :* xs)
+        | status == statusOf (Comp x) =
+          case partitionEithers x of
+            (err', []) -> (map (uncurry ClientParseError) err' ++) +++ S $ tryParsers status xs
+            (_, (res : _)) -> Right . inject . Identity $ res
+        | otherwise = -- no reason to parse in the first place. This ain't the one we're looking for
+          (ClientStatusMismatch :) +++ S $ tryParsers status xs
+
+      -- | Given a list of types, parses the given response body as each type
+      mimeUnrenders ::
+        forall contentTypes as.
+        All (AllMimeUnrender contentTypes) as =>
+        Proxy contentTypes ->
+        BL.ByteString ->
+        NP ([] :.: Either (MediaType, String)) as
+      mimeUnrenders ctp body = cpure_NP
+        (Proxy @(AllMimeUnrender contentTypes))
+        (Comp . map (\(mediaType, parser) -> left ((,) mediaType) (parser body)) . allMimeUnrender $ ctp)
+
+  hoistClientMonad _ _ nt s = nt s
 
 instance {-# OVERLAPPABLE #-}
   ( RunStreamingClient m, MimeUnrender ct chunk, ReflectMethod method,
