@@ -63,3 +63,9 @@ write-ghc-environment-files: always
 -- https://github.com/chordify/haskell-servant-pagination/pull/12
 allow-newer: servant-pagination-2.2.2:servant
 allow-newer: servant-pagination-2.2.2:servant-server
+
+-- https://github.com/haskell-servant/servant-multipart/pull/41
+allow-newer: servant-multipart:servant
+allow-newer: servant-multipart:servant-server
+allow-newer: servant-multipart:servant-client-core
+allow-newer: servant-js:servant
