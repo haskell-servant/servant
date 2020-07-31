@@ -1,6 +1,17 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.18
+----
+
+### Significant changes
+
+- Support for ghc8.8 (#1318, #1326, #1327)
+
+- Configurable error messages for automatic errors thrown by servant,
+  like "no route" or "could not parse json body" (#1312, #1326, #1327)
+
+
 0.17
 ----
 

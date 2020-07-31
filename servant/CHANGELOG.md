@@ -1,5 +1,25 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.18
+----
+
+### Significant changes
+
+- Support for ghc8.8 (#1318, #1326, #1327)
+
+- Configurable error messages for automatic errors thrown by servant,
+  like "no route" or "could not parse json body" (#1312, #1326, #1327)
+
+### Other changes
+
+- Witness that a type-level natural number corresponds to a HTTP
+  status code (#1310)
+
+- Improve haddocs (#1279)
+
+- Dependency management (#1269, #1293, #1286, #1287)
+
+
 0.17
 ----
 
@@ -53,7 +73,7 @@
   can be run other ways too (though not so conveniently).
 
 - *servant* Remove deprecated modules [1268#](https://github.com/haskell-servant/servant/pull/1268)
-  
+
   - `Servant.Utils.Links` is `Servant.Links`
   - `Servant.API.Internal.Test.ComprehensiveAPI` is `Servant.Test.ComprehensiveAPI`
 
