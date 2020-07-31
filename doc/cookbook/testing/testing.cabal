@@ -23,7 +23,7 @@ executable cookbook-testing
                      , servant
                      , servant-client
                      , servant-server
-                     , servant-quickcheck
+                     , servant-quickcheck >= 0.0.10
                      , http-client
                      , http-types >= 0.12
                      , hspec
