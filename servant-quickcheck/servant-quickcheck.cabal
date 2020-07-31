@@ -13,7 +13,7 @@ category:           Web
 build-type:         Simple
 cabal-version:      >=1.10
 extra-source-files: CHANGELOG.yaml
-tested-with:        GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || == 8.8.1
+tested-with:        GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || == 8.8.3
 
 source-repository head
   type:     git
@@ -49,9 +49,9 @@ library
     , pretty                 >=1.1    && <1.2
     , process                >=1.2    && <1.7
     , QuickCheck             >=2.7    && <2.15
-    , servant                >=0.17   && <0.18
-    , servant-client         >=0.17   && <0.18
-    , servant-server         >=0.17   && <0.18
+    , servant                >=0.17   && <0.19
+    , servant-client         >=0.17   && <0.19
+    , servant-server         >=0.17   && <0.19
     , split                  >=0.2    && <0.3
     , string-conversions     >=0.3    && <0.5
     , temporary              >=1.2    && <1.4
