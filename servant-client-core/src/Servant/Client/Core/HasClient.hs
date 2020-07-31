@@ -37,8 +37,6 @@ import           Data.Functor.Identity
                  (Identity (Identity), runIdentity)
 import           Data.List
                  (foldl')
-import           Data.Proxy
-                 (Proxy (Proxy))
 import           Data.Sequence
                  (fromList)
 import qualified Data.Text                       as T
@@ -59,11 +57,8 @@ import           Data.Text
                  (Text, pack)
 import           Data.Typeable
                  (Proxy (Proxy), Typeable, cast)
-import qualified GHC.Generics as GHC
 import           GHC.TypeLits
                  (KnownSymbol, symbolVal)
-import           Network.HTTP.Media
-                 (MediaType, matches, parseAccept, (//))
 import           Network.HTTP.Types
                  (Status)
 import qualified Network.HTTP.Types                       as H
@@ -377,19 +372,10 @@ instance {-# OVERLAPPING #-}
       Left errors -> throwClientError $ DecodeFailure (T.pack (show errors)) response
       Right x -> return x
     where
-      -- | Copied from "Servant.Client.Core.HasClient".
-      checkContentTypeHeader :: forall m. RunClient m => Response -> m MediaType
-      checkContentTypeHeader response =
-        case lookup "Content-Type" $ toList $ responseHeaders response of
-          Nothing -> return $ "application" // "octet-stream"
-          Just t -> case parseAccept t of
-            Nothing -> throwClientError $ InvalidContentTypeHeader response
-            Just t' -> return t'
-
       -- | Given a list of parsers of 'mkres', returns the first one that succeeds and all the
       -- failures it encountered along the way
       -- TODO; better name, rewrite haddocs.
-      tryParsers :: forall as. All HasStatus as => Status -> NP ([] :.: Either (MediaType, String)) as -> Either [ClientParseError] (Union as)
+      tryParsers :: forall xs. All HasStatus xs => Status -> NP ([] :.: Either (MediaType, String)) xs -> Either [ClientParseError] (Union xs)
       tryParsers _ Nil = Left [ClientNoMatchingStatus]
       tryParsers status (Comp x :* xs)
         | status == statusOf (Comp x) =
@@ -401,13 +387,13 @@ instance {-# OVERLAPPING #-}
 
       -- | Given a list of types, parses the given response body as each type
       mimeUnrenders ::
-        forall contentTypes as.
-        All (AllMimeUnrender contentTypes) as =>
-        Proxy contentTypes ->
+        forall cts xs.
+        All (AllMimeUnrender cts) xs =>
+        Proxy cts ->
         BL.ByteString ->
-        NP ([] :.: Either (MediaType, String)) as
+        NP ([] :.: Either (MediaType, String)) xs
       mimeUnrenders ctp body = cpure_NP
-        (Proxy @(AllMimeUnrender contentTypes))
+        (Proxy @(AllMimeUnrender cts))
         (Comp . map (\(mediaType, parser) -> left ((,) mediaType) (parser body)) . allMimeUnrender $ ctp)
 
   hoistClientMonad _ _ nt s = nt s
