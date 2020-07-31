@@ -11,6 +11,9 @@ import           Network.Wai.Handler.Warp (withApplication)
 import           Prelude.Compat
 import           Servant                  (Context (EmptyContext), HasServer,
                                            Server, serveWithContext)
+#if MIN_VERSION_servant_server(0,18,0)
+import           Servant                  (DefaultErrorFormatters, ErrorFormatters, HasContextEntry, type (.++))
+#endif
 import           Servant.Client           (BaseUrl (..), Scheme (..))
 import           System.IO.Unsafe         (unsafePerformIO)
 import           Test.Hspec               (Expectation, expectationFailure)
@@ -37,7 +40,11 @@ withServantServer api = withServantServerAndContext api EmptyContext
 -- application.
 --
 -- /Since 0.0.0.0/
+#if MIN_VERSION_servant_server(0,18,0)
+withServantServerAndContext :: (HasServer a ctx, HasContextEntry (ctx .++ DefaultErrorFormatters) ErrorFormatters)
+#else
 withServantServerAndContext :: HasServer a ctx
+#endif
   => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
 withServantServerAndContext api ctx server t
   = withApplication (return . serveWithContext api ctx =<< server) $ \port ->
