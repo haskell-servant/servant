@@ -76,8 +76,8 @@ instance
     where
       method = reflectMethod (Proxy @method)
       route' env request cont = do
-        let accH :: ByteString -- for picking the content type.
-            accH = fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
+        let accH :: AcceptHeader -- for picking the content type.
+            accH = AcceptHeader $ fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
             action' :: Delayed env (Handler (Union as))
             action' =
               action
@@ -91,7 +91,7 @@ instance
               encodeResource (Identity res) =
                 K
                   ( statusOf $ mkProxy res,
-                    handleAcceptH (Proxy @contentTypes) (AcceptHeader accH) res
+                    handleAcceptH (Proxy @contentTypes) accH res
                   )
               pickResource :: Union as -> (Status, Maybe (LBS, LBS))
               pickResource = collapse_NS . cmap_NS (Proxy @(IsServerResource contentTypes)) encodeResource
