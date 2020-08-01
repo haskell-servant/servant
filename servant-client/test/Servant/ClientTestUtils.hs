@@ -1,18 +1,18 @@
-{-# LANGUAGE CPP                    #-}
-{-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
@@ -27,20 +27,22 @@ import           Control.Concurrent
 import           Control.Monad.Error.Class
                  (throwError)
 import           Data.Aeson
-import qualified Data.ByteString.Lazy as LazyByteString
+import qualified Data.ByteString.Lazy             as LazyByteString
 import           Data.Char
                  (chr, isPrint)
 import           Data.Monoid ()
 import           Data.Proxy
-import           Data.Text (Text)
-import qualified Data.Text as Text
-import           Data.Text.Encoding (encodeUtf8, decodeUtf8)
+import           Data.Text
+                 (Text)
+import qualified Data.Text                        as Text
+import           Data.Text.Encoding
+                 (decodeUtf8, encodeUtf8)
 import           GHC.Generics
                  (Generic)
-import qualified Network.HTTP.Client                  as C
-import qualified Network.HTTP.Types                   as HTTP
+import qualified Network.HTTP.Client              as C
+import qualified Network.HTTP.Types               as HTTP
 import           Network.Socket
-import qualified Network.Wai                          as Wai
+import qualified Network.Wai                      as Wai
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe
                  (unsafePerformIO)
@@ -50,15 +52,14 @@ import           Web.FormUrlEncoded
 
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
-                 BasicAuthData (..), Capture, CaptureAll,
-                 DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
-                 Headers, JSON, MimeRender(mimeRender),
-                 MimeUnrender(mimeUnrender), NoContent (NoContent), PlainText,
-                 Post, QueryFlag, QueryParam, QueryParams, Raw, ReqBody,
-                 StdMethod(GET), Union, UVerb, WithStatus(WithStatus),
-                 addHeader)
+                 BasicAuthData (..), Capture, CaptureAll, DeleteNoContent,
+                 EmptyAPI, FormUrlEncoded, Get, Header, Headers, JSON,
+                 MimeRender (mimeRender), MimeUnrender (mimeUnrender),
+                 NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
+                 QueryParams, Raw, ReqBody, StdMethod (GET), UVerb, Union,
+                 WithStatus (WithStatus), addHeader)
 import           Servant.Client
-import qualified Servant.Client.Core.Auth    as Auth
+import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
@@ -109,6 +110,7 @@ type Api =
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
+  :<|> "fragment" :> Fragment String :> Get '[JSON] Person
   :<|> "rawSuccess" :> Raw
   :<|> "rawSuccessPassHeaders" :> Raw
   :<|> "rawFailure" :> Raw
@@ -141,6 +143,7 @@ getBody         :: Person -> ClientM Person
 getQueryParam   :: Maybe String -> ClientM Person
 getQueryParams  :: [String] -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
+getFragment     :: Maybe String -> ClientM Person
 getRawSuccess   :: HTTP.Method -> ClientM Response
 getRawSuccessPassHeaders :: HTTP.Method -> ClientM Response
 getRawFailure   :: HTTP.Method -> ClientM Response
@@ -163,6 +166,7 @@ getRoot
   :<|> getQueryParam
   :<|> getQueryParams
   :<|> getQueryFlag
+  :<|> getFragment
   :<|> getRawSuccess
   :<|> getRawSuccessPassHeaders
   :<|> getRawFailure
@@ -188,6 +192,10 @@ server = serve api (
                    Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
+  :<|> (\ name -> case name of
+                    Just "alice" -> return alice
+                    Just n       -> return (Person n 0)
+                    Nothing      -> return alice)
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
   :<|> (Tagged $ \ request respond -> (respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders $ request) "rawSuccess"))
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")

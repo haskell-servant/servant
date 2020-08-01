@@ -221,7 +221,7 @@ instance ToHttpApiData Link where
     toHeader   = TE.encodeUtf8 . toUrlPiece
     toUrlPiece l =
         let uri = linkURI l
-        in Text.pack $ uriPath uri ++ uriQuery uri
+        in Text.pack $ uriPath uri ++ uriQuery uri ++ uriFragment uri
 
 -- | Query parameter.
 data Param

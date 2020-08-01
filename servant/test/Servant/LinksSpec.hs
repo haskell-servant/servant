@@ -13,9 +13,9 @@ import           Test.Hspec
                  (Expectation, Spec, describe, it, shouldBe)
 
 import           Servant.API
+import           Servant.Links
 import           Servant.Test.ComprehensiveAPI
                  (comprehensiveAPIWithoutRaw)
-import           Servant.Links
 
 type TestApi =
   -- Capture and query params
@@ -25,6 +25,9 @@ type TestApi =
 
   -- Flags
   :<|> "balls" :> QueryFlag "bouncy" :> QueryFlag "fast" :> Delete '[JSON] NoContent
+
+  -- Fragment
+  :<|> "say" :> Fragment String :> Get '[JSON] NoContent
 
   -- All of the verbs
   :<|> "get" :> Get '[JSON] NoContent
@@ -75,6 +78,10 @@ spec = describe "Servant.Links" $ do
                                          :> QueryFlag "fast" :> Delete '[JSON] NoContent)
         apiLink l1 True True `shouldBeLink` "balls?bouncy&fast"
         apiLink l1 False True `shouldBeLink` "balls?fast"
+
+    it "generates correct link for fragment" $ do
+        let l1 = Proxy :: Proxy ("say" :> Fragment String :> Get '[JSON] NoContent)
+        apiLink l1 "something" `shouldBeLink` "say#something"
 
     it "generates correct links for all of the verbs" $ do
         apiLink (Proxy :: Proxy ("get" :> Get '[JSON] NoContent)) `shouldBeLink` "get"

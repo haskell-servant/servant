@@ -913,17 +913,18 @@ instance (HasServer api context, FromHttpApiData a1 )
   type ServerT (Fragment a1 :> api) m = Maybe a1 -> ServerT api m
 
   route Proxy context subserver =
-    let parseFragment = either (const Nothing) Just . parseQueryParam
-          . either (const mempty) id . T.decodeUtf8'
+    let parseFragment = join . fmap (either (const Nothing) Just)
+          . join . fmap (either (const Nothing) Just)
+          . fmap (fmap parseQueryParam . T.decodeUtf8')
           . identifyFragment (not . BC8.null) (crop . rawPathInfo) (crop . rawQueryString)
 
         crop = BC8.drop 1 . BC8.dropWhile (/= '#')
 
         identifyFragment test getPath getQuery req =
           case (test (getPath req), test (getQuery req)) of
-            (_result, True) -> getQuery req
-            (False, False)  -> ""
-            (True, False)   -> getPath req
+            (_result, True) -> Just (getQuery req)
+            (False, False)  -> Nothing
+            (True, False)   -> Just (getPath req)
 
     in  route (Proxy :: Proxy api) context (passToServer subserver parseFragment)
 
