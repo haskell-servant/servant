@@ -313,8 +313,8 @@ For reference, here's a list of some combinators from **servant**:
 ## The `FromHttpApiData`/`ToHttpApiData` classes
 
 Wait... How does **servant** know how to decode the `Int`s from the URL? Or how
-to decode a `ClientInfo` value from the request body? This is what this and the
-following two sections address.
+to decode a `ClientInfo` value from the request body? The following three sections will
+help us answer these questions.
 
 `Capture`s and `QueryParam`s are represented by some textual value in URLs.
 `Header`s are similarly represented by a pair of a header name and a
