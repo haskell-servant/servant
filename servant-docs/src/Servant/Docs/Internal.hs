@@ -169,13 +169,11 @@ data DocFragment = DocFragment
   , _fragDesc   :: String -- user supplied
   } deriving (Eq, Ord, Show)
 
--- | Combine two Fragments, we can't make a monoid because merging Fragments breaks
--- the laws.
---
--- As such, we invent a non-commutative, left associative operation
--- 'combineFragment' to mush two together taking the info from the very left.
+-- | There should be at most one `Fragment` per API endpoint.
+-- So here we are keeping the first occurrence.
 combineFragment :: Maybe DocFragment -> Maybe DocFragment -> Maybe DocFragment
-mdocFragment `combineFragment` _ = mdocFragment
+Nothing `combineFragment` mdocFragment = mdocFragment
+Just docFragment `combineFragment` _ = Just docFragment
 
 -- | An introductory paragraph for your documentation. You can pass these to
 -- 'docsWithIntros'.
@@ -997,14 +995,14 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs api)
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
 
-instance (ToFragment (Fragment a), HasDocs api)
-      => HasDocs (Fragment a :> api) where
+instance (ToFragment (Fragment' mods a), HasDocs api)
+      => HasDocs (Fragment' mods a :> api) where
 
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
 
     where subApiP = Proxy :: Proxy api
-          fragmentP = Proxy :: Proxy (Fragment a)
+          fragmentP = Proxy :: Proxy (Fragment' mods a)
           action' = set fragment (Just (toFragment fragmentP)) action
 
 instance HasDocs Raw where

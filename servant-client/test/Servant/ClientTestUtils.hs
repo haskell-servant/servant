@@ -193,9 +193,9 @@ server = serve api (
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> (\ name -> case name of
-                    Just "alice" -> return alice
-                    Just n       -> return (Person n 0)
-                    Nothing      -> return alice)
+                    Just (Right "alice") -> return alice
+                    Just (Right n)       -> return (Person n 0)
+                    _                    -> return alice)
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
   :<|> (Tagged $ \ request respond -> (respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders $ request) "rawSuccess"))
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")

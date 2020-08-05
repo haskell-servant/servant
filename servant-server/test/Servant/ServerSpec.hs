@@ -477,11 +477,13 @@ fragServer :: Server FragmentApi
 fragServer = fragmentServer :<|> fragAge
 
   where
-    fragmentServer (Just name_) = return alice { name = name_ }
-    fragmentServer Nothing = return alice
+    fragmentServer (Just (Right name_))
+      = return alice { name = name_ }
+    fragmentServer _ = return alice
 
-    fragAge (Just age') = return alice { age = age' }
-    fragAge Nothing = return alice
+    fragAge (Just (Right age'))
+      = return alice { age = age' }
+    fragAge _ = return alice
 
 fragmentSpec :: Spec
 fragmentSpec = do
@@ -504,13 +506,13 @@ fragmentSpec = do
           { age = 43
           }
 
-    it "ignore an error on fragment parse failure (status)" $ do
+    it "allows ignoring an error on fragment parse failure (status)" $ do
         flip runSession (serve fragmentApi fragServer) $ do
           response <- mkRequest "#foo" ["age"]
           liftIO $ statusCode (simpleStatus response) `shouldBe` 200
           return ()
 
-    it "ignore an error on fragment parse failure (default response)" $ do
+    it "allows ignoring an error on fragment parse failure (default response)" $ do
         flip runSession (serve fragmentApi fragServer) $ do
           response <- mkRequest "#foo" ["age"]
           liftIO $ decode' (simpleBody response) `shouldBe` Just alice

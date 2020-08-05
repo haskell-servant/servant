@@ -3,19 +3,24 @@
 {-# LANGUAGE PolyKinds          #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_HADDOCK not-home    #-}
-module Servant.API.Fragment (Fragment) where
+module Servant.API.Fragment (Fragment, Fragment') where
 
 import           Data.Typeable
                  (Typeable)
+import           Servant.API.Modifiers
 
 -- | Lookup the value associated to the URI fragment
 -- and try to extract it as a value of type @a@.
+-- Lenient by default.
 --
 -- Example:
 --
 -- >>> -- /post#TRACKING
 -- >>> type MyApi = "post" :> Fragment Text :> Get '[JSON] Tracking
-data Fragment (a :: *)
+type Fragment a = Fragment' '[Lenient] a
+
+-- | 'Fragment' which can be 'Lenient' or 'Strict'.
+data Fragment' (mods :: [*]) (a :: *)
     deriving Typeable
 
 -- $setup

@@ -96,7 +96,7 @@ import           Servant.API.Empty
 import           Servant.API.Experimental.Auth
                  (AuthProtect)
 import           Servant.API.Fragment
-                 (Fragment)
+                 (Fragment, Fragment')
 import           Servant.API.Header
                  (Header, Header')
 import           Servant.API.HttpVersion

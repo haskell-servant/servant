@@ -72,7 +72,7 @@ import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
-                 CaptureAll, Description, EmptyAPI, Fragment,
+                 CaptureAll, Description, EmptyAPI, Fragment',
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  Header', If, IsSecure (..), NoContentVerb, QueryFlag,
                  QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
@@ -84,7 +84,7 @@ import           Servant.API.ContentTypes
                  AllMime, MimeRender (..), MimeUnrender (..), NoContent,
                  canHandleAcceptH)
 import           Servant.API.Modifiers
-                 (FoldLenient, FoldRequired, RequestArgument,
+                 (FoldLenient, FoldRequired, LenientArgument, RequestArgument,
                  unfoldRequestArgument)
 import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
@@ -905,28 +905,51 @@ type HasServerArrowTypeError a b =
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
 #ifdef HAS_TYPE_ERROR
-instance (OnlyOneFragment api, HasServer api context, FromHttpApiData a1 )
+instance ( OnlyOneFragment api, HasServer api context, FromHttpApiData a1
+         , SBoolI (FoldLenient mods)
+         )
 #else
-instance (HasServer api context, FromHttpApiData a1 )
+instance (HasServer api context, FromHttpApiData a1, SBoolI (FoldLenient mods))
 #endif
-    => HasServer (Fragment a1 :> api) context where
-  type ServerT (Fragment a1 :> api) m = Maybe a1 -> ServerT api m
+    => HasServer (Fragment' mods a1 :> api) context where
+  type ServerT (Fragment' mods a1 :> api) m =
+    LenientArgument mods a1 -> ServerT api m
 
   route Proxy context subserver =
-    let parseFragment = join . fmap (either (const Nothing) Just)
-          . join . fmap (either (const Nothing) Just)
-          . fmap (fmap parseQueryParam . T.decodeUtf8')
-          . identifyFragment (not . BC8.null) (crop . rawPathInfo) (crop . rawQueryString)
+    let parseFragment req = do
+          bsFragment <- identifyFragment
+            (not . BC8.null) (crop . rawPathInfo) (crop . rawQueryString) req
+          textFragment <- either (const Nothing) Just (T.decodeUtf8' bsFragment)
+          pure (parseQueryParam textFragment)
 
-        crop = BC8.drop 1 . BC8.dropWhile (/= '#')
+        parseFragmentDelayed
+          :: (SBoolI (FoldLenient mods))
+          => Request
+          -> DelayedIO (LenientArgument mods a1)
+        parseFragmentDelayed req = do
+          case (mev, sbool :: SBool (FoldLenient mods)) of
+            (ex, STrue)  -> return ex
+            (Just ex, SFalse) -> either errSt (return . Just) ex
+            (Nothing, SFalse) -> return Nothing
+
+          where
+            mev :: Maybe (Either T.Text a1)
+            mev = parseFragment req
+
+            errSt e = delayedFailFatal err400
+              { errBody = cs $ "Error parsing fragment failed:  " <> e }
+
+        crop = BC8.dropWhile (/= '#') -- keep '#' to handle empty fragment
 
         identifyFragment test getPath getQuery req =
           case (test (getPath req), test (getQuery req)) of
-            (_result, True) -> Just (getQuery req)
+            (_result, True) -> Just (BC8.drop 1 $ getQuery req)
             (False, False)  -> Nothing
-            (True, False)   -> Just (getPath req)
+            (True, False)   -> Just (BC8.drop 1 $ getPath req)
 
-    in  route (Proxy :: Proxy api) context (passToServer subserver parseFragment)
+        delayed = addFragmentCheck subserver . withRequest $ \req -> parseFragmentDelayed req
+
+    in  route (Proxy :: Proxy api) context delayed 
 
   hoistServerWithContext _ pc nt s =
     hoistServerWithContext (Proxy :: Proxy api) pc nt . s

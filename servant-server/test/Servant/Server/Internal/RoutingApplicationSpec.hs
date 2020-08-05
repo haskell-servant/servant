@@ -11,7 +11,7 @@ module Servant.Server.Internal.RoutingApplicationSpec (spec) where
 import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Exception                          hiding
+import           Control.Exception            hiding
                  (Handler)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
@@ -28,7 +28,7 @@ import           Test.Hspec
 import           Test.Hspec.Wai
                  (request, shouldRespondWith, with)
 
-import qualified Data.Text                                  as T
+import qualified Data.Text                    as T
 
 import           System.IO.Unsafe
                  (unsafePerformIO)
@@ -69,12 +69,13 @@ delayed body srv = Delayed
   , acceptD   = return ()
   , contentD  = return ()
   , paramsD   = return ()
+  , fragmentD = return ()
   , headersD   = return ()
   , bodyD     = \() -> do
       liftIO (writeTestResource "hia" >> putStrLn "garbage created")
       _ <- register (freeTestResource >> putStrLn "garbage collected")
       body
-  , serverD   = \() () () () _body _req -> srv
+  , serverD   = \() () () () () _body _req -> srv
   }
 
 simpleRun :: Delayed () (Handler ())
