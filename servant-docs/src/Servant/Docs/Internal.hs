@@ -1064,6 +1064,7 @@ instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e, ToSample f
 instance ToSample a => ToSample (Maybe a)
 instance (ToSample a, ToSample b) => ToSample (Either a b)
 instance ToSample a => ToSample [a]
+instance ToSample a => ToSample (NonEmpty a)
 
 -- ToSample instances for Control.Applicative types
 instance ToSample a => ToSample (Const a b)
