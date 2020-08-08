@@ -163,9 +163,9 @@ appendToQueryString pname pvalue req
   = req { requestQueryString = requestQueryString req
                         Seq.|> (encodeUtf8 pname, encodeUtf8 <$> pvalue)}
 
-appendFragment :: ToHttpApiData a => a -> Request -> Request
+appendFragment :: ToHttpApiData a => Maybe a -> Request -> Request
 appendFragment frag req
-  = req { requestFragment = Just (toEncodedUrlPiece frag) }
+  = req { requestFragment = toEncodedUrlPiece <$> frag }
 
 addHeader :: ToHttpApiData a => HeaderName -> a -> Request -> Request
 addHeader name val req
