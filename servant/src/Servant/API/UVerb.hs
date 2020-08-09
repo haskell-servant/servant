@@ -23,10 +23,9 @@
 module Servant.API.UVerb
   ( UVerb,
     Union,
-    HasStatus,
-    StatusOf,
+    HasStatus (StatusOf),
     statusOf,
-    Statuses,
+    HasStatuses (Statuses, statuses),
     WithStatus (..),
     module Servant.API.UVerb.OpenUnion,
   )
@@ -49,11 +48,17 @@ class KnownStatus (StatusOf a) => HasStatus (a :: *) where
 statusOf :: forall a proxy. HasStatus a => proxy a -> Status
 statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
 
-type family Statuses (as :: [*]) :: [Nat]
+class HasStatuses (as :: [*]) where
+  type Statuses (as :: [*]) :: [Nat]
+  statuses :: Proxy as -> [Status]
 
-type instance Statuses '[] = '[]
+instance HasStatuses '[] where
+  type Statuses '[] = '[]
+  statuses _ = []
 
-type instance Statuses (a ': as) = StatusOf a ': Statuses as
+instance (HasStatus a, HasStatuses as) => HasStatuses (a ': as) where
+  type Statuses (a ': as) = StatusOf a ': Statuses as
+  statuses _ = statusOf (Proxy :: Proxy a) : statuses (Proxy :: Proxy as)
 
 newtype WithStatus (k :: Nat) a = WithStatus a
   deriving (Eq, Show, GHC.Generic)

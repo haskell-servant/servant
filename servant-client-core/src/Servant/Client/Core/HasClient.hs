@@ -79,7 +79,7 @@ import           Servant.API.ContentTypes
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.UVerb
-                 (HasStatus, Statuses, UVerb, Union, Unique, inject, statusOf)
+                 (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf)
 import           Servant.API.UVerb.OpenUnion
                  (IsMember)
 
@@ -347,7 +347,7 @@ instance {-# OVERLAPPING #-}
     AllMime contentTypes,
     ReflectMethod method,
     All (AllMimeUnrender contentTypes) as,
-    All HasStatus as,
+    All HasStatus as, HasStatuses as',
     Unique (Statuses as)
   ) =>
   HasClient m (UVerb method contentTypes as)
@@ -361,7 +361,8 @@ instance {-# OVERLAPPING #-}
         -- only part of the api.
 
         method = reflectMethod $ Proxy @method
-    response <- runRequest request {requestMethod = method, requestAccept = accept}
+        acceptStatus = statuses (Proxy @as)
+    response <- runRequestAcceptStatus (Just acceptStatus) request {requestMethod = method, requestAccept = accept}
     responseContentType <- checkContentTypeHeader response
     unless (any (matches responseContentType) accept) $ do
       throwClientError $ UnsupportedContentType responseContentType response
