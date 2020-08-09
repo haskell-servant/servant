@@ -340,7 +340,9 @@ data ClientParseError = ClientParseError MediaType String | ClientStatusMismatch
 
 instance {-# OVERLAPPING #-}
   ( RunClient m,
-    contentTypes ~ (contentType ': contentTypes'), -- TODO: can we to _ instead of contentTypes'?  probably not.
+    contentTypes ~ (contentType ': otherContentTypes),
+    -- ('otherContentTypes' should be '_', but even -XPartialTypeSignatures does not seem
+    -- allow this in instance types as of 8.8.3.)
     as ~ (a ': as'),
     AllMime contentTypes,
     ReflectMethod method,
@@ -354,16 +356,15 @@ instance {-# OVERLAPPING #-}
 
   clientWithRoute _ _ request = do
     let accept = Seq.fromList . allMime $ Proxy @contentTypes
-        -- TODO(fisx): we want to send an accept header with, say, the first content type
-        -- supported by the api, so we don't have to parse all of them, no?  not sure i'm
-        -- missing anything here.
+        -- offering to accept all mime types listed in the api gives best compatibility.  eg.,
+        -- we might not own the server implementation, and the server may choose to support
+        -- only part of the api.
 
         method = reflectMethod $ Proxy @method
     response <- runRequest request {requestMethod = method, requestAccept = accept}
     responseContentType <- checkContentTypeHeader response
-    unless (any (matches responseContentType) accept)
-      $ throwClientError
-      $ UnsupportedContentType responseContentType response
+    unless (any (matches responseContentType) accept) $ do
+      throwClientError $ UnsupportedContentType responseContentType response
 
     let status = responseStatusCode response
         body = responseBody response
