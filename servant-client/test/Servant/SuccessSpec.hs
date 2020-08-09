@@ -174,6 +174,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     context "with a route that uses uverb but only has a single response" $
       it "returns the expected response" $ \(_, baseUrl) -> do
-        Right response <- runClient (uverbGetCreated) baseUrl
-        let Z (Identity (WithStatus person :: WithStatus 201 Person)) = response
-        person `shouldBe` carol
+        eitherResponse <- runClient (uverbGetCreated) baseUrl
+        case eitherResponse of
+          Left clientError -> fail $ show clientError
+          Right response -> extractUResp response `shouldBe` Just (WithStatus @201 carol)
