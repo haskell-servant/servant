@@ -32,7 +32,6 @@ module Servant.API (
 
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Verbs,
-  -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.UVerb,
 
   -- * Streaming endpoints, distinguished by HTTP method

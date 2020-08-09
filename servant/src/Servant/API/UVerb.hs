@@ -48,6 +48,15 @@ class KnownStatus (StatusOf a) => HasStatus (a :: *) where
 statusOf :: forall a proxy. HasStatus a => proxy a -> Status
 statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
 
+instance KnownStatus n => HasStatus (WithStatus n a) where
+  type StatusOf (WithStatus n a) = n
+
+-- | If an API can respond with 'NoContent' we assume that this will happen
+-- with the status code 204 No Content. If this needs to be overridden,
+-- 'WithStatus' can be used.
+instance HasStatus NoContent where
+  type StatusOf NoContent = 204
+
 class HasStatuses (as :: [*]) where
   type Statuses (as :: [*]) :: [Nat]
   statuses :: Proxy as -> [Status]
@@ -66,15 +75,6 @@ newtype WithStatus (k :: Nat) a = WithStatus a
 instance (GHC.Generic (WithStatus n a), ToJSON a) => ToJSON (WithStatus n a)
 
 instance (GHC.Generic (WithStatus n a), FromJSON a) => FromJSON (WithStatus n a)
-
-instance KnownStatus n => HasStatus (WithStatus n a) where
-  type StatusOf (WithStatus n a) = n
-
--- | If an API can respond with 'NoContent' we assume that this will happen
--- with the status code 204 No Content. If this needs to be overridden,
--- 'WithStatus' can be used.
-instance HasStatus NoContent where
-  type StatusOf NoContent = 204
 
 -- FUTUREWORK:
 -- @type Verb method statusCode contentTypes a = UVerb method contentTypes [WithStatus statusCode a]@
