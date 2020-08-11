@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -7,6 +8,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -30,13 +32,18 @@ module Servant.API.UVerb
     HasStatuses (Statuses, statuses),
     WithStatus (..),
     module Servant.API.UVerb.OpenUnion,
+    collapseUResp,
+    extractUResp,
   )
 where
 
+import Control.Monad.Identity
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Functor.Identity (Identity)
-import Data.SOP.NS (NS)
-import Data.Typeable (Proxy (Proxy))
+import Data.SOP.BasicFunctors (K (K))
+import Data.SOP.Constraint (Constraint, All)
+import Data.SOP.NS (NS, cmap_NS, collapse_NS)
+import Data.Typeable (Typeable, Proxy (Proxy), cast)
 import qualified GHC.Generics as GHC
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
@@ -92,3 +99,25 @@ instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
 data UVerb (method :: StdMethod) (contentTypes :: [*]) (as :: [*])
 
 type Union = NS Identity
+
+-- | Convenience function to apply a function to an unknown union element using a type class.
+-- All elements of the union must have instances in the type class, and the function is
+-- applied unconditionally.
+--
+-- See also: 'extractUResp'.
+collapseUResp ::
+  forall (c :: * -> Constraint) (a :: *) (as :: [*]).
+  All c as =>
+  Proxy c -> (forall x. c x => x -> a) -> Union as -> a
+collapseUResp proxy render = collapse_NS . cmap_NS proxy (K . render . runIdentity)
+
+-- | Convenience function to extract a union element using 'cast', ie. return the value if the
+-- selected type happens to be the actual type of the union in this value, or 'Nothing'
+-- otherwise.
+--
+-- See also: 'collapseUResp'.
+extractUResp ::
+  forall (a :: *) (as :: [*]).
+  (All Typeable as, Typeable a, IsMember a as) =>
+  Union as -> Maybe a
+extractUResp = collapse_NS . cmap_NS (Proxy @Typeable) (K . cast . runIdentity)

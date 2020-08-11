@@ -79,7 +79,7 @@ import           Servant.API.ContentTypes
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.UVerb
-                 (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf)
+                 (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf, collapseUResp, extractUResp)
 import           Servant.API.UVerb.OpenUnion
                  (IsMember)
 
@@ -312,28 +312,6 @@ instance {-# OVERLAPPING #-}
                      }
 
   hoistClientMonad _ _ f ma = f ma
-
--- | Convenience function to apply a function to an unknown union element using a type class.
--- All elements of the union must have instances in the type class, and the function is
--- applied unconditionally.
---
--- See also: 'extractUResp'.
-collapseUResp ::
-  forall (c :: * -> Constraint) (a :: *) (as :: [*]).
-  All c as =>
-  Proxy c -> (forall x. c x => x -> a) -> Union as -> a
-collapseUResp proxy render = collapse_NS . cmap_NS proxy (K . render . runIdentity)
-
--- | Convenience function to extract a union element using 'cast', ie. return the value if the
--- selected type happens to be the actual type of the union in this value, or 'Nothing'
--- otherwise.
---
--- See also: 'collapseUResp'.
-extractUResp ::
-  forall (a :: *) (as :: [*]).
-  (All Typeable as, Typeable a, IsMember a as) =>
-  Union as -> Maybe a
-extractUResp = collapse_NS . cmap_NS (Proxy @Typeable) (K . cast . runIdentity)
 
 data ClientParseError = ClientParseError MediaType String | ClientStatusMismatch | ClientNoMatchingStatus
   deriving (Eq, Show)

@@ -22,18 +22,16 @@ module Servant.Server.UVerb
   )
 where
 
-import Data.Functor.Identity (Identity(Identity))
-import Data.SOP.BasicFunctors (K(K))
+import Data.Functor.Identity (Identity (Identity))
+import Data.Proxy (Proxy (Proxy))
 import Data.SOP.Constraint (All, And)
-import Data.SOP.NS (cmap_NS, collapse_NS)
 import Data.String.Conversions (LBS, cs)
-import Data.Proxy (Proxy(Proxy))
 import Network.HTTP.Types (Status, hContentType)
 import Network.Wai (responseLBS)
 import Servant.API (ReflectMethod, reflectMethod)
-import Servant.API.ContentTypes (AllCTRender(handleAcceptH), AllMime)
-import Servant.API.UVerb (HasStatus, IsMember, Statuses, Union, Unique, UVerb, inject, statusOf)
-import Servant.Server.Internal (Context, Delayed, Handler, HasServer(..), RouteResult(FailFatal, Route), Router, Server, ServerT, acceptCheck, addAcceptCheck, addMethodCheck, allowedMethodHead, err406, leafRouter, methodCheck, runAction, getAcceptHeader)
+import Servant.API.ContentTypes (AllCTRender (handleAcceptH), AllMime)
+import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, collapseUResp, inject, statusOf)
+import Servant.Server.Internal (Context, Delayed, Handler, HasServer (..), RouteResult (FailFatal, Route), Router, Server, ServerT, acceptCheck, addAcceptCheck, addMethodCheck, allowedMethodHead, err406, getAcceptHeader, leafRouter, methodCheck, runAction)
 
 
 -- | 'return' for 'UVerb' handlers.  Takes a value of any of the members of the open union,
@@ -83,14 +81,13 @@ instance
             mkProxy _ = Proxy
 
         runAction action' env request cont $ \(output :: Union as) -> do
-          let encodeResource :: (AllCTRender contentTypes a, HasStatus a) => Identity a -> K (Status, Maybe (LBS, LBS)) a
-              encodeResource (Identity res) =
-                K
-                  ( statusOf $ mkProxy res,
-                    handleAcceptH (Proxy @contentTypes) (getAcceptHeader request) res
-                  )
+          let encodeResource :: (AllCTRender contentTypes a, HasStatus a) => a -> (Status, Maybe (LBS, LBS))
+              encodeResource res =
+                ( statusOf $ mkProxy res,
+                  handleAcceptH (Proxy @contentTypes) (getAcceptHeader request) res
+                )
               pickResource :: Union as -> (Status, Maybe (LBS, LBS))
-              pickResource = collapse_NS . cmap_NS (Proxy @(IsServerResource contentTypes)) encodeResource
+              pickResource = collapseUResp (Proxy @(IsServerResource contentTypes)) encodeResource
 
           case pickResource output of
             (_, Nothing) -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
