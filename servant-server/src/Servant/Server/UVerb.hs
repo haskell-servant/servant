@@ -22,20 +22,18 @@ module Servant.Server.UVerb
   )
 where
 
-import Data.ByteString (ByteString)
 import Data.Functor.Identity (Identity(Identity))
-import Data.Maybe (fromMaybe)
 import Data.SOP.BasicFunctors (K(K))
 import Data.SOP.Constraint (All, And)
 import Data.SOP.NS (cmap_NS, collapse_NS)
 import Data.String.Conversions (LBS, cs)
 import Data.Proxy (Proxy(Proxy))
-import Network.HTTP.Types (Status, hAccept, hContentType)
-import Network.Wai (requestHeaders, responseLBS)
+import Network.HTTP.Types (Status, hContentType)
+import Network.Wai (responseLBS)
 import Servant.API (ReflectMethod, reflectMethod)
-import Servant.API.ContentTypes (AcceptHeader(AcceptHeader), AllCTRender(handleAcceptH), AllMime)
+import Servant.API.ContentTypes (AllCTRender(handleAcceptH), AllMime)
 import Servant.API.UVerb (HasStatus, IsMember, Statuses, Union, Unique, UVerb, inject, statusOf)
-import Servant.Server.Internal (Context, Delayed, Handler, HasServer(..), RouteResult(FailFatal, Route), Router, Server, ServerT, acceptCheck, addAcceptCheck, addMethodCheck, allowedMethodHead, ct_wildcard, err406, leafRouter, methodCheck, runAction)
+import Servant.Server.Internal (Context, Delayed, Handler, HasServer(..), RouteResult(FailFatal, Route), Router, Server, ServerT, acceptCheck, addAcceptCheck, addMethodCheck, allowedMethodHead, err406, leafRouter, methodCheck, runAction, getAcceptHeader)
 
 
 -- | 'return' for 'UVerb' handlers.  Takes a value of any of the members of the open union,
@@ -76,13 +74,11 @@ instance
     where
       method = reflectMethod (Proxy @method)
       route' env request cont = do
-        let accH :: AcceptHeader -- for picking the content type.
-            accH = AcceptHeader $ fromMaybe ct_wildcard $ lookup hAccept $ requestHeaders request
-            action' :: Delayed env (Handler (Union as))
+        let action' :: Delayed env (Handler (Union as))
             action' =
               action
                 `addMethodCheck` methodCheck method request
-                `addAcceptCheck` acceptCheck (Proxy @contentTypes) accH
+                `addAcceptCheck` acceptCheck (Proxy @contentTypes) (getAcceptHeader request)
             mkProxy :: a -> Proxy a
             mkProxy _ = Proxy
 
@@ -91,7 +87,7 @@ instance
               encodeResource (Identity res) =
                 K
                   ( statusOf $ mkProxy res,
-                    handleAcceptH (Proxy @contentTypes) accH res
+                    handleAcceptH (Proxy @contentTypes) (getAcceptHeader request) res
                   )
               pickResource :: Union as -> (Status, Maybe (LBS, LBS))
               pickResource = collapse_NS . cmap_NS (Proxy @(IsServerResource contentTypes)) encodeResource
