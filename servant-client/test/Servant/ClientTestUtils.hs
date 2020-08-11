@@ -85,13 +85,6 @@ instance Arbitrary Person where
 instance MimeRender PlainText Person where
   mimeRender _ = LazyByteString.fromStrict . encodeUtf8 . Text.pack . show
 
-instance MimeRender ctype a => MimeRender ctype (WithStatus _status a) where
-  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
-
-instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
-  mimeUnrender contentTypeProxy input =
-    WithStatus <$> mimeUnrender contentTypeProxy input
-
 instance MimeUnrender PlainText Person where
   mimeUnrender _ =
     -- This does not handle any errors, but it should be fine for tests

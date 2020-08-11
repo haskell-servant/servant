@@ -2,7 +2,9 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -38,7 +40,7 @@ import Data.Typeable (Proxy (Proxy))
 import qualified GHC.Generics as GHC
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
-import Servant.API.ContentTypes (NoContent)
+import Servant.API.ContentTypes (MimeRender (mimeRender), MimeUnrender (mimeUnrender), NoContent)
 import Servant.API.Status (KnownStatus, statusVal)
 import Servant.API.UVerb.OpenUnion
 
@@ -75,6 +77,13 @@ newtype WithStatus (k :: Nat) a = WithStatus a
 instance (GHC.Generic (WithStatus n a), ToJSON a) => ToJSON (WithStatus n a)
 
 instance (GHC.Generic (WithStatus n a), FromJSON a) => FromJSON (WithStatus n a)
+
+instance MimeRender ctype a => MimeRender ctype (WithStatus _status a) where
+  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
+
+instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
+  mimeUnrender contentTypeProxy input =
+    WithStatus <$> mimeUnrender contentTypeProxy input
 
 -- FUTUREWORK:
 -- @type Verb method statusCode contentTypes a = UVerb method contentTypes [WithStatus statusCode a]@
