@@ -91,7 +91,7 @@ library
   -- We depend (heavily) on the API of these packages:
   -- i.e. re-export, or allow using without direct dependency
   build-depends:
-      http-api-data          >= 0.4.1    && < 0.4.2
+      http-api-data          >= 0.4.1    && < 0.4.3
     , singleton-bool         >= 0.1.4    && < 0.1.6
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
