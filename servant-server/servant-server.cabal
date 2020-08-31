@@ -77,7 +77,7 @@ library
   -- strict dependency as we re-export 'servant' things.
   build-depends:
       servant             >= 0.18     && < 0.19.1
-    , http-api-data       >= 0.4.1    && < 0.4.2
+    , http-api-data       >= 0.4.1    && < 0.4.3
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
