@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                servant-conduit
-version:             0.15
+version:             0.15.1
 x-revision:          3
 
 synopsis:            Servant Stream support for conduit.
