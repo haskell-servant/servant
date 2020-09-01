@@ -1,7 +1,6 @@
 cabal-version:       >=1.10
 name:                servant-machines
-version:             0.15
-x-revision:          4
+version:             0.15.1
 
 synopsis:            Servant Stream support for machines
 category:            Servant, Web, Enumerator
