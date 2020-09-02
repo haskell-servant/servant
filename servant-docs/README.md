@@ -2,24 +2,56 @@
 
 ![servant](https://raw.githubusercontent.com/haskell-servant/servant/master/servant.png)
 
-Generate API docs for your *servant* webservice. Feel free to also take a look at [servant-pandoc](https://github.com/mpickering/servant-pandoc) which uses this package to target a broad range of output formats using the excellent **pandoc**.
+Generate API docs for your _servant_ webservice. Feel free to also take a look at [servant-pandoc](https://github.com/mpickering/servant-pandoc) which uses this package to target a broad range of output formats using the excellent **pandoc**.
 
 ## Example
 
 See [here](https://github.com/haskell-servant/servant/blob/master/servant-docs/example/greet.md) for the output of the following program.
 
-``` haskell
+```haskell
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
 
-import Data.Proxy
-import Data.Text
+import Data.Aeson (FromJSON, ToJSON)
+import Data.Proxy (Proxy (..))
+import Data.String.Conversions (cs)
+import Data.Text (Text)
+import GHC.Generics (Generic)
+import Servant.API
+  ( (:<|>),
+    (:>),
+    Capture,
+    Delete,
+    Get,
+    JSON,
+    MimeRender,
+    PlainText,
+    Post,
+    QueryParam,
+    ReqBody,
+    mimeRender,
+  )
 import Servant.Docs
+  ( API,
+    DocCapture (..),
+    DocQueryParam (..),
+    ParamKind (..),
+    ToCapture,
+    ToParam,
+    ToSample,
+    docs,
+    markdown,
+    singleSample,
+    toCapture,
+    toParam,
+    toSamples,
+  )
 
 -- our type for a Greeting message
 data Greet = Greet { _msg :: Text }
@@ -36,8 +68,7 @@ instance MimeRender PlainText Greet where
 
 -- we provide a sample value for the 'Greet' type
 instance ToSample Greet where
-  toSample = Just g
-
+  toSamples _ = singleSample g
     where g = Greet "Hello, haskeller!"
 
 instance ToParam (QueryParam "capital" Bool) where
@@ -45,6 +76,7 @@ instance ToParam (QueryParam "capital" Bool) where
     DocQueryParam "capital"
                   ["true", "false"]
                   "Get the greeting message in uppercase (true) or not (false). Default is false."
+                  Normal
 
 instance ToCapture (Capture "name" Text) where
   toCapture _ = DocCapture "name" "name of the person to greet"
@@ -55,7 +87,7 @@ instance ToCapture (Capture "greetid" Text) where
 -- API specification
 type TestApi =
        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON,PlainText] Greet
-  :<|> "greet" :> RQBody '[JSON] Greet :> Post '[JSON] Greet
+  :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
   :<|> "delete" :> Capture "greetid" Text :> Delete '[] ()
 
 testApi :: Proxy TestApi
