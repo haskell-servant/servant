@@ -61,6 +61,7 @@ data Greet = Greet { _msg :: Text }
 -- 'MimeRender' instance for 'JSON'.
 instance FromJSON Greet
 instance ToJSON Greet
+instance ToSample ()
 
 -- We can also implement 'MimeRender' explicitly for additional formats.
 instance MimeRender PlainText Greet where
@@ -88,7 +89,7 @@ instance ToCapture (Capture "greetid" Text) where
 type TestApi =
        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON,PlainText] Greet
   :<|> "greet" :> ReqBody '[JSON] Greet :> Post '[JSON] Greet
-  :<|> "delete" :> Capture "greetid" Text :> Delete '[] ()
+  :<|> "delete" :> Capture "greetid" Text :> Delete '[JSON] ()
 
 testApi :: Proxy TestApi
 testApi = Proxy
