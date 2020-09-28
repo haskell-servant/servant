@@ -750,12 +750,12 @@ data EmptyServer = EmptyServer deriving (Typeable, Eq, Show, Bounded, Enum)
 emptyServer :: ServerT EmptyAPI m
 emptyServer = Tagged EmptyServer
 
--- | The server for an `EmptyAPI` is `emptyAPIServer`.
+-- | The server for an `EmptyAPI` is `emptyServer`.
 --
 -- > type MyApi = "nothing" :> EmptyApi
 -- >
 -- > server :: Server MyApi
--- > server = emptyAPIServer
+-- > server = emptyServer
 instance HasServer EmptyAPI context where
   type ServerT EmptyAPI m = Tagged m EmptyServer
 
