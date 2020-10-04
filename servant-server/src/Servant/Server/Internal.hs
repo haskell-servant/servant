@@ -49,8 +49,6 @@ import qualified Data.ByteString.Lazy                       as BL
 import           Data.Constraint (Constraint, Dict(..))
 import           Data.Either
                  (partitionEithers)
-import           Data.Function
-                 ((&))
 import           Data.Maybe
                  (fromMaybe, isNothing, mapMaybe, maybeToList)
 import           Data.String
@@ -681,9 +679,7 @@ instance ( AllCTUnrender list a, HasServer api context
             Just f  -> return f
 
       -- Body check, we get a body parsing functions as the first argument.
-      bodyCheck f = withRequest $ \ request -> do
-        mrqbody <- f <$> liftIO (lazyRequestBody request)
-
+      bodyCheck f = withRequest $ \ request ->
         let
           hasReqBody =
             case requestBodyLength request of
@@ -692,13 +688,15 @@ instance ( AllCTUnrender list a, HasServer api context
 
           serverErr :: String -> ServerError
           serverErr = formatError rep request . cs
-
-        mrqbody & case (sbool :: SBool (FoldRequired mods), sbool :: SBool (FoldLenient mods), hasReqBody) of
-          (STrue,  STrue,  _)     -> return . bimap cs id
-          (STrue,  SFalse, _)     -> either (delayedFailFatal . serverErr) return
-          (SFalse, _,      False) -> return . const Nothing
-          (SFalse, STrue,  True)  -> return . Just . bimap cs id
-          (SFalse, SFalse, True)  -> either (delayedFailFatal . serverErr) (return . Just)
+        in
+          fmap f (liftIO $ lazyRequestBody request) >>=
+            case (sbool :: SBool (FoldRequired mods), sbool :: SBool (FoldLenient mods), hasReqBody) of
+              (STrue,  STrue,  _)     -> return . bimap cs id
+              (STrue,  SFalse, _)     -> either (delayedFailFatal . serverErr) return
+              (SFalse, STrue,  False) -> return . either (const Nothing) (Just . Right)
+              (SFalse, SFalse, False) -> return . either (const Nothing) Just
+              (SFalse, STrue,  True)  -> return . Just . bimap cs id
+              (SFalse, SFalse, True)  -> either (delayedFailFatal . serverErr) (return . Just)
 
 instance
     ( FramingUnrender framing, FromSourceIO chunk a, MimeUnrender ctype chunk
