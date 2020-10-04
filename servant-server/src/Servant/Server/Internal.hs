@@ -41,7 +41,7 @@ import           Control.Monad.Trans
 import           Control.Monad.Trans.Resource
                  (runResourceT)
 import           Data.Bifunctor
-                 (bimap)
+                 (first)
 import qualified Data.ByteString                            as B
 import qualified Data.ByteString.Builder                    as BB
 import qualified Data.ByteString.Char8                      as BC8
@@ -691,11 +691,11 @@ instance ( AllCTUnrender list a, HasServer api context
         in
           fmap f (liftIO $ lazyRequestBody request) >>=
             case (sbool :: SBool (FoldRequired mods), sbool :: SBool (FoldLenient mods), hasReqBody) of
-              (STrue,  STrue,  _)     -> return . bimap cs id
+              (STrue,  STrue,  _)     -> return . first cs
               (STrue,  SFalse, _)     -> either (delayedFailFatal . serverErr) return
               (SFalse, STrue,  False) -> return . either (const Nothing) (Just . Right)
               (SFalse, SFalse, False) -> return . either (const Nothing) Just
-              (SFalse, STrue,  True)  -> return . Just . bimap cs id
+              (SFalse, STrue,  True)  -> return . Just . first cs
               (SFalse, SFalse, True)  -> either (delayedFailFatal . serverErr) (return . Just)
 
 instance
