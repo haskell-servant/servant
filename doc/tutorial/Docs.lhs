@@ -264,7 +264,7 @@ api :: Proxy DocsAPI
 api = Proxy
 
 server :: Server DocsAPI
-server = Server.server3 :<|> Tagged serveDocs where
+server = Server.server3 :<|> return serveDocs where
     serveDocs _ respond =
         respond $ responseLBS ok200 [plain] docsBS
     plain = ("Content-Type", "text/plain")

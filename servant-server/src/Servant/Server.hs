@@ -173,12 +173,10 @@ serveWithContext p context server =
 -- to convert any number of endpoints from one type constructor to
 -- another. For example
 --
--- /Note:/ 'Server' 'Raw' can also be entered. It will be retagged.
---
 -- >>> import Control.Monad.Reader
 -- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String :<|> Raw :<|> EmptyAPI
 -- >>> let readerApi = Proxy :: Proxy ReaderAPI
--- >>> let readerServer = return 1797 :<|> ask :<|> Tagged (error "raw server") :<|> emptyServer :: ServerT ReaderAPI (Reader String)
+-- >>> let readerServer = return 1797 :<|> ask :<|> return (error "raw server") :<|> emptyServer :: ServerT ReaderAPI (Reader String)
 -- >>> let nt x = return (runReader x "hi")
 -- >>> let mainServer = hoistServer readerApi nt readerServer :: Server ReaderAPI
 --

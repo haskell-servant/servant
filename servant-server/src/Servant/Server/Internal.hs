@@ -53,7 +53,7 @@ import           Data.String
 import           Data.String.Conversions
                  (cs)
 import           Data.Tagged
-                 (Tagged (..), retag, untag)
+                 (Tagged (..), retag)
 import qualified Data.Text                                  as T
 import           Data.Typeable
 import           GHC.TypeLits
@@ -587,9 +587,9 @@ instance (KnownSymbol sym, HasServer api context)
 -- > server = serveDirectory "/var/www/images"
 instance HasServer Raw context where
 
-  type ServerT Raw m = Tagged m Application
+  type ServerT Raw m = m Application
 
-  hoistServerWithContext _ _ _ = retag
+  hoistServerWithContext _ _ nt s = nt s
 
   route Proxy _ rawApplication = RawRouter $ \ env request respond -> runResourceT $ do
     -- note: a Raw application doesn't register any cleanup
@@ -599,7 +599,11 @@ instance HasServer Raw context where
     liftIO $ go r request respond
 
     where go r request respond = case r of
-            Route app   -> untag app request (respond . Route)
+            Route appH  -> do
+              r' <- runHandler appH
+              case r' of
+                Left e    -> respond $ FailFatal e
+                Right app -> app request (respond . Route)
             Fail a      -> respond $ Fail a
             FailFatal e -> respond $ FailFatal e
 

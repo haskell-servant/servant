@@ -21,7 +21,7 @@ import           Network.Wai.Application.Static
 import           Servant.API.Raw
                  (Raw)
 import           Servant.Server
-                 (ServerT, Tagged (..))
+                 (ServerT)
 import           System.FilePath
                  (addTrailingPathSeparator)
 import           WaiAppStatic.Storage.Filesystem
@@ -49,33 +49,33 @@ import           WaiAppStatic.Storage.Filesystem
 -- in order.
 --
 -- Corresponds to the `defaultWebAppSettings` `StaticSettings` value.
-serveDirectoryWebApp :: FilePath -> ServerT Raw m
+serveDirectoryWebApp :: Monad m => FilePath -> ServerT Raw m
 serveDirectoryWebApp = serveDirectoryWith . defaultWebAppSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses `defaultFileServerSettings`.
-serveDirectoryFileServer :: FilePath -> ServerT Raw m
+serveDirectoryFileServer :: Monad m => FilePath -> ServerT Raw m
 serveDirectoryFileServer = serveDirectoryWith . defaultFileServerSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses 'webAppSettingsWithLookup'.
-serveDirectoryWebAppLookup :: ETagLookup -> FilePath -> ServerT Raw m
+serveDirectoryWebAppLookup :: Monad m => ETagLookup -> FilePath -> ServerT Raw m
 serveDirectoryWebAppLookup etag =
   serveDirectoryWith . flip webAppSettingsWithLookup etag . fixPath
 
 -- | Uses 'embeddedSettings'.
-serveDirectoryEmbedded :: [(FilePath, ByteString)] -> ServerT Raw m
+serveDirectoryEmbedded :: Monad m => [(FilePath, ByteString)] -> ServerT Raw m
 serveDirectoryEmbedded files = serveDirectoryWith (embeddedSettings files)
 
 -- | Alias for 'staticApp'. Lets you serve a directory
 --   with arbitrary 'StaticSettings'. Useful when you want
 --   particular settings not covered by the four other
 --   variants. This is the most flexible method.
-serveDirectoryWith :: StaticSettings -> ServerT Raw m
-serveDirectoryWith = Tagged . staticApp
+serveDirectoryWith :: Monad m => StaticSettings -> ServerT Raw m
+serveDirectoryWith = return . staticApp
 
 -- | Same as 'serveDirectoryFileServer'. It used to be the only
 --   file serving function in servant pre-0.10 and will be kept
 --   around for a few versions, but is deprecated.
-serveDirectory :: FilePath -> ServerT Raw m
+serveDirectory :: Monad m => FilePath -> ServerT Raw m
 serveDirectory = serveDirectoryFileServer
 {-# DEPRECATED serveDirectory "Use serveDirectoryFileServer instead" #-}
 
