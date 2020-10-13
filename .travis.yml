@@ -8,7 +8,7 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.10.1
+# version: 0.10.3
 #
 version: ~> 1.0
 language: c
@@ -41,11 +41,11 @@ jobs:
     - compiler: ghcjs-8.4
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"},{"sourceline":"deb http://ppa.launchpad.net/hvr/ghcjs/ubuntu bionic main"},{"sourceline":"deb https://deb.nodesource.com/node_10.x bionic main","key_url":"https://deb.nodesource.com/gpgkey/nodesource.gpg.key"}],"packages":["ghcjs-8.4","cabal-install-3.0","ghc-8.4.4","nodejs"]}}
       os: linux
-    - compiler: ghc-8.10.1
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.10.1","cabal-install-3.2"]}}
+    - compiler: ghc-8.10.2
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.10.2","cabal-install-3.2"]}}
       os: linux
-    - compiler: ghc-8.8.3
-      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.8.3","cabal-install-3.2"]}}
+    - compiler: ghc-8.8.4
+      addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.8.4","cabal-install-3.2"]}}
       os: linux
     - compiler: ghc-8.6.5
       addons: {"apt":{"sources":[{"sourceline":"deb http://ppa.launchpad.net/hvr/ghc/ubuntu bionic main","key_url":"https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x063dab2bdc0b3f9fcebc378bff3aeacef6f88286"}],"packages":["ghc-8.6.5","cabal-install-3.2"]}}
@@ -114,82 +114,82 @@ install:
   - cat $CABALHOME/config
   - rm -fv cabal.project cabal.project.local cabal.project.freeze
   - travis_retry ${CABAL} v2-update -v
-  - if ! $GHCJS ; then ${CABAL} v2-install $WITHCOMPILER --ignore-project -j2 doctest --constraint='doctest ^>=0.16.3' ; fi
+  - if ! $GHCJS ; then ${CABAL} v2-install $WITHCOMPILER --ignore-project -j2 doctest --constraint='doctest ^>=0.17' ; fi
   - if $GHCJS ; then ${CABAL} v2-install -w ghc-8.4.4 --ignore-project cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe' ; fi
   - if $GHCJS ; then ${CABAL} v2-install -w ghc-8.4.4 --ignore-project hspec-discover ; fi
   # Generate cabal.project
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
   - |
-    echo "packages: servant" >> cabal.project
-    if ! $GHCJS ; then echo "packages: servant-client" >> cabal.project ; fi
-    echo "packages: servant-client-core" >> cabal.project
-    if ! $GHCJS ; then echo "packages: servant-http-streams" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: servant-docs" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: servant-foreign" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: servant-server" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: doc/tutorial" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: servant-machines" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: servant-conduit" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: servant-pipes" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/basic-auth" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/curl-mock" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/custom-errors" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/basic-streaming" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/db-postgres-pool" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/file-upload" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/generic" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/pagination" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/testing" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/structuring-apis" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/using-custom-monad" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: doc/cookbook/using-free-client" >> cabal.project ; fi
-  - if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant' >> cabal.project ; fi
-  - "if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-client' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-client-core' >> cabal.project ; fi
-  - "if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-http-streams' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-docs' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-foreign' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-server' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package tutorial' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-machines' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-conduit' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-pipes' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-basic-auth' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-curl-mock' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-custom-errors' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-basic-streaming' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-db-postgres-pool' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-file-upload' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-generic' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-pagination' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-testing' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-structuring-apis' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-using-custom-monad' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-using-free-client' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+    if $GHCJS || ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-client" >> cabal.project ; fi
+    if $GHCJS || ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-client-core" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-http-streams" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-docs" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-foreign" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-server" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/tutorial" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-machines" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-conduit" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: servant-pipes" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/basic-auth" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/curl-mock" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/custom-errors" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/basic-streaming" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/db-postgres-pool" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/file-upload" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/generic" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/pagination" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/testing" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/structuring-apis" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/using-custom-monad" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: doc/cookbook/using-free-client" >> cabal.project ; fi
+  - if $GHCJS || ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant' >> cabal.project ; fi
+  - "if $GHCJS || ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-client' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if $GHCJS || ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-client-core' >> cabal.project ; fi
+  - "if $GHCJS || ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-http-streams' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-docs' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-foreign' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-server' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package tutorial' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-machines' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-conduit' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-pipes' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-basic-auth' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-curl-mock' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-custom-errors' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-basic-streaming' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-db-postgres-pool' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-file-upload' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-generic' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-pagination' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-testing' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-structuring-apis' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-using-custom-monad' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-using-free-client' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |
     echo "constraints:  foundation >=0.0.14"                     >> cabal.project
     echo "constraints:  memory <0.14.12 || >0.14.12"             >> cabal.project
@@ -271,75 +271,75 @@ script:
   - rm -rf cabal.project cabal.project.local cabal.project.freeze
   - touch cabal.project
   - |
-    echo "packages: ${PKGDIR_servant}" >> cabal.project
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_client}" >> cabal.project ; fi
-    echo "packages: ${PKGDIR_servant_client_core}" >> cabal.project
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_http_streams}" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_docs}" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_foreign}" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_server}" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_tutorial}" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_machines}" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_conduit}" >> cabal.project ; fi
-    if ! $GHCJS ; then echo "packages: ${PKGDIR_servant_pipes}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_basic_auth}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_curl_mock}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_custom_errors}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_basic_streaming}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_db_postgres_pool}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_file_upload}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_generic}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_pagination}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_testing}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_structuring_apis}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_using_custom_monad}" >> cabal.project ; fi
-    if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo "packages: ${PKGDIR_cookbook_using_free_client}" >> cabal.project ; fi
-  - if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant' >> cabal.project ; fi
-  - "if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-client' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-client-core' >> cabal.project ; fi
-  - "if $GHCJS || ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-http-streams' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-docs' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-foreign' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-server' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package tutorial' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-machines' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-conduit' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo 'package servant-pipes' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80200 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-basic-auth' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-curl-mock' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-custom-errors' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-basic-streaming' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-db-postgres-pool' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-file-upload' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-generic' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-pagination' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-testing' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-structuring-apis' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-using-custom-monad' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
-  - if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo 'package cookbook-using-free-client' >> cabal.project ; fi
-  - "if ! $GHCJS && [ $HCNUMVER -ge 80400 ] ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+    if $GHCJS || ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_client}" >> cabal.project ; fi
+    if $GHCJS || ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_client_core}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_http_streams}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_docs}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_foreign}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_server}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_tutorial}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_machines}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_conduit}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo "packages: ${PKGDIR_servant_pipes}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_basic_auth}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_curl_mock}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_custom_errors}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_basic_streaming}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_db_postgres_pool}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_file_upload}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_generic}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_pagination}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_testing}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_structuring_apis}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_using_custom_monad}" >> cabal.project ; fi
+    if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo "packages: ${PKGDIR_cookbook_using_free_client}" >> cabal.project ; fi
+  - if $GHCJS || ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant' >> cabal.project ; fi
+  - "if $GHCJS || ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-client' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if $GHCJS || ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-client-core' >> cabal.project ; fi
+  - "if $GHCJS || ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-http-streams' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-docs' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-foreign' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-server' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package tutorial' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-machines' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-conduit' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo 'package servant-pipes' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80200 ] && [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-basic-auth' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-curl-mock' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-custom-errors' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-basic-streaming' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-db-postgres-pool' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-file-upload' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-generic' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-pagination' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-testing' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-structuring-apis' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-using-custom-monad' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
+  - if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo 'package cookbook-using-free-client' >> cabal.project ; fi
+  - "if ! $GHCJS && { [ $HCNUMVER -ge 80400 ] && [ $HCNUMVER -lt 80804 ] || [ $HCNUMVER -ge 81000 ] && [ $HCNUMVER -lt 81002 ]; } ; then echo '  ghc-options: -Werror=missing-methods' >> cabal.project ; fi"
   - |
     echo "constraints:  foundation >=0.0.14"                     >> cabal.project
     echo "constraints:  memory <0.14.12 || >0.14.12"             >> cabal.project
@@ -396,21 +396,21 @@ script:
   # Doctest...
   - echo 'Doctest...' && echo -en 'travis_fold:start:doctest\\r'
   - perl -i -e 'while (<ARGV>) { print unless /package-id\s+(base-compat-batteries)-\d+(\.\d+)*/; }' .ghc.environment.*
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_client} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_client_core} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_http_streams} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_docs} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_foreign} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_server} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_machines} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_conduit} && doctest  src) ; fi
-  - if ! $GHCJS ; then (cd ${PKGDIR_servant_pipes} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_client} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_client_core} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_http_streams} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_docs} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_foreign} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_server} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_machines} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_conduit} && doctest  src) ; fi
+  - if ! $GHCJS && { [ $HCNUMVER -lt 80800 ] || [ $HCNUMVER -ge 80804 ] && [ $HCNUMVER -lt 81000 ] || [ $HCNUMVER -ge 81002 ]; } ; then (cd ${PKGDIR_servant_pipes} && doctest  src) ; fi
   - echo -en 'travis_fold:end:doctest\\r'
   # haddock...
   - echo 'haddock...' && echo -en 'travis_fold:start:haddock\\r'
   - if ! $GHCJS ; then ${CABAL} v2-haddock $WITHCOMPILER --with-haddock $HADDOCK ${TEST} ${BENCH} all ; fi
   - echo -en 'travis_fold:end:haddock\\r'
 
-# REGENDATA ("0.10.1",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
+# REGENDATA ("0.10.3",["--config=cabal.haskell-ci","--output=.travis.yml","cabal.project"])
 # EOF
