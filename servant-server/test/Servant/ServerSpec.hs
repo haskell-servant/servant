@@ -19,6 +19,8 @@ import           Control.Monad
                  (forM_, unless, when)
 import           Control.Monad.Error.Class
                  (MonadError (..))
+import           Control.Monad.IO.Class
+                 (MonadIO (..))
 import           Data.Aeson
                  (FromJSON, ToJSON, decode', encode)
 import qualified Data.ByteString                   as BS
@@ -41,8 +43,8 @@ import           Network.HTTP.Types
                  methodDelete, methodGet, methodHead, methodPatch, methodPost,
                  methodPut, ok200, parseQuery)
 import           Network.Wai
-                 (Application, Middleware, Request, pathInfo, queryString,
-                 rawQueryString, requestHeaders, responseLBS)
+                 (Middleware, Request, Response, ResponseReceived,
+                 pathInfo, queryString, rawQueryString, requestHeaders, responseLBS)
 import           Network.Wai.Test
                  (defaultRequest, request, runSession, simpleBody,
                  simpleHeaders, simpleStatus)
@@ -62,7 +64,7 @@ import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
                  (Spec, context, describe, it, shouldBe, shouldContain)
 import           Test.Hspec.Wai
-                 (get, liftIO, matchHeaders, matchStatus, shouldRespondWith,
+                 (get, matchHeaders, matchStatus, shouldRespondWith,
                  with, (<:>))
 import qualified Test.Hspec.Wai                    as THW
 
@@ -253,8 +255,8 @@ captureSpec = do
 
     with (return (serve
         (Proxy :: Proxy (Capture "captured" String :> Raw))
-        (\ "captured" -> return $ \request_ respond ->
-            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+        (\ "captured" -> \request_ respond ->
+            liftIO $ respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "strips the captured path snippet from pathInfo" $ do
         get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
@@ -305,8 +307,8 @@ captureAllSpec = do
 
     with (return (serve
         (Proxy :: Proxy (CaptureAll "segments" String :> Raw))
-        (\ _captured -> return $ \request_ respond ->
-            respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
+        (\ _captured -> \request_ respond ->
+            liftIO $ respond $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
       it "consumes everything from pathInfo" $ do
         get "/captured/foo/bar/baz" `shouldRespondWith` (fromString (show ([] :: [Int])))
 
@@ -543,9 +545,9 @@ type RawApi = "foo" :> Raw
 rawApi :: Proxy RawApi
 rawApi = Proxy
 
-rawApplication :: (Show a, Monad m) => (Request -> a) -> m Application
-rawApplication f = return $ \request_ respond ->
-    respond $ responseLBS ok200 []
+rawApplication :: (Show a, Monad m, MonadIO m) => (Request -> a) -> Request -> (Response -> IO ResponseReceived) -> m ResponseReceived
+rawApplication f = \request_ respond ->
+    liftIO $ respond $ responseLBS ok200 []
         (cs $ show $ f request_)
 
 rawSpec :: Spec
@@ -706,7 +708,7 @@ basicAuthApi = Proxy
 basicAuthServer :: Server BasicAuthAPI
 basicAuthServer =
   const (return jerry) :<|>
-  (return $ \ _ respond -> respond $ responseLBS imATeapot418 [] "")
+  (\ _ respond -> liftIO $ respond $ responseLBS imATeapot418 [] "")
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
@@ -751,7 +753,7 @@ genAuthApi = Proxy
 
 genAuthServer :: Server GenAuthAPI
 genAuthServer = const (return tweety)
-           :<|> (return $ \ _ respond -> respond $ responseLBS imATeapot418 [] "")
+           :<|> (\ _ respond -> liftIO $ respond $ responseLBS imATeapot418 [] "")
 
 type instance AuthServerData (AuthProtect "auth") = ()
 

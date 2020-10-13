@@ -17,6 +17,8 @@ module Servant.Server.StaticFiles
 
 import           Data.ByteString
                  (ByteString)
+import           Control.Monad.IO.Class
+                 (MonadIO(..))
 import           Network.Wai.Application.Static
 import           Servant.API.Raw
                  (Raw)
@@ -49,33 +51,33 @@ import           WaiAppStatic.Storage.Filesystem
 -- in order.
 --
 -- Corresponds to the `defaultWebAppSettings` `StaticSettings` value.
-serveDirectoryWebApp :: Monad m => FilePath -> ServerT Raw m
+serveDirectoryWebApp :: MonadIO m => FilePath -> ServerT Raw m
 serveDirectoryWebApp = serveDirectoryWith . defaultWebAppSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses `defaultFileServerSettings`.
-serveDirectoryFileServer :: Monad m => FilePath -> ServerT Raw m
+serveDirectoryFileServer :: MonadIO m => FilePath -> ServerT Raw m
 serveDirectoryFileServer = serveDirectoryWith . defaultFileServerSettings . fixPath
 
 -- | Same as 'serveDirectoryWebApp', but uses 'webAppSettingsWithLookup'.
-serveDirectoryWebAppLookup :: Monad m => ETagLookup -> FilePath -> ServerT Raw m
+serveDirectoryWebAppLookup :: MonadIO m => ETagLookup -> FilePath -> ServerT Raw m
 serveDirectoryWebAppLookup etag =
   serveDirectoryWith . flip webAppSettingsWithLookup etag . fixPath
 
 -- | Uses 'embeddedSettings'.
-serveDirectoryEmbedded :: Monad m => [(FilePath, ByteString)] -> ServerT Raw m
+serveDirectoryEmbedded :: MonadIO m => [(FilePath, ByteString)] -> ServerT Raw m
 serveDirectoryEmbedded files = serveDirectoryWith (embeddedSettings files)
 
 -- | Alias for 'staticApp'. Lets you serve a directory
 --   with arbitrary 'StaticSettings'. Useful when you want
 --   particular settings not covered by the four other
 --   variants. This is the most flexible method.
-serveDirectoryWith :: Monad m => StaticSettings -> ServerT Raw m
-serveDirectoryWith = return . staticApp
+serveDirectoryWith :: MonadIO m => StaticSettings -> ServerT Raw m
+serveDirectoryWith settings request respond = liftIO $ staticApp settings request respond --
 
 -- | Same as 'serveDirectoryFileServer'. It used to be the only
 --   file serving function in servant pre-0.10 and will be kept
 --   around for a few versions, but is deprecated.
-serveDirectory :: Monad m => FilePath -> ServerT Raw m
+serveDirectory :: MonadIO m => FilePath -> ServerT Raw m
 serveDirectory = serveDirectoryFileServer
 {-# DEPRECATED serveDirectory "Use serveDirectoryFileServer instead" #-}
 

@@ -176,7 +176,7 @@ serveWithContext p context server =
 -- >>> import Control.Monad.Reader
 -- >>> type ReaderAPI = "ep1" :> Get '[JSON] Int :<|> "ep2" :> Get '[JSON] String :<|> Raw :<|> EmptyAPI
 -- >>> let readerApi = Proxy :: Proxy ReaderAPI
--- >>> let readerServer = return 1797 :<|> ask :<|> return (error "raw server") :<|> emptyServer :: ServerT ReaderAPI (Reader String)
+-- >>> let readerServer = return 1797 :<|> ask :<|> error "raw server" :<|> emptyServer :: ServerT ReaderAPI (Reader String)
 -- >>> let nt x = return (runReader x "hi")
 -- >>> let mainServer = hoistServer readerApi nt readerServer :: Server ReaderAPI
 --

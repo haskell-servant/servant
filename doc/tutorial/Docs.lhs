@@ -18,6 +18,7 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Proxy
 import Data.Text.Lazy.Encoding (encodeUtf8)
 import Data.Text.Lazy (pack)
+import Control.Monad.IO.Class
 import Network.HTTP.Types
 import Network.Wai
 import Servant.API
@@ -264,9 +265,9 @@ api :: Proxy DocsAPI
 api = Proxy
 
 server :: Server DocsAPI
-server = Server.server3 :<|> return serveDocs where
+server = Server.server3 :<|> serveDocs where
     serveDocs _ respond =
-        respond $ responseLBS ok200 [plain] docsBS
+        liftIO $ respond $ responseLBS ok200 [plain] docsBS
     plain = ("Content-Type", "text/plain")
 
 app :: Application

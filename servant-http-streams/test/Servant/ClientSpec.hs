@@ -35,6 +35,8 @@ import           Control.Exception
                  (bracket, fromException, IOException)
 import           Control.Monad.Error.Class
                  (throwError)
+import           Control.Monad.IO.Class
+                 (liftIO)
 import           Data.Aeson
 import           Data.Char
                  (chr, isPrint)
@@ -186,12 +188,12 @@ server = serve api (
                    Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
-  :<|> (return $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
-  :<|> (return $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
+  :<|> (\ _request respond -> liftIO $ respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
+  :<|> (\ _request respond -> liftIO $ respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
-  :<|> (return $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
+  :<|> (\ _request respond -> liftIO $ respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
   :<|> emptyServer)
 
 type FailApi =
@@ -203,9 +205,9 @@ failApi = Proxy
 
 failServer :: Application
 failServer = serve failApi (
-       (return $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
-  :<|> (\ _capture -> return $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/json")] "")
-  :<|> (return $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
+       (\ _request respond -> liftIO $ respond $ Wai.responseLBS HTTP.ok200 [] "")
+  :<|> (\ _capture -> \_request respond -> liftIO $ respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/json")] "")
+  :<|> (\_request respond -> liftIO $ respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
  )
 
 -- * basic auth stuff
