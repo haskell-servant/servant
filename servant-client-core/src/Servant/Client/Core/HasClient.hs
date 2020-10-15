@@ -33,8 +33,6 @@ import           Data.Either
                  (partitionEithers)
 import           Data.Foldable
                  (toList)
-import           Data.Functor.Identity
-                 (Identity (Identity), runIdentity)
 import           Data.List
                  (foldl')
 import           Data.Sequence
@@ -44,7 +42,7 @@ import           Network.HTTP.Media
                  (MediaType, matches, parseAccept, (//))
 import qualified Data.Sequence as Seq
 import           Data.SOP.BasicFunctors
-                 (K (K), (:.:) (Comp))
+                 (I (I), K (K), (:.:) (Comp))
 import           Data.SOP.Constraint
                  (All, Constraint)
 import           Data.SOP.NP
@@ -361,7 +359,7 @@ instance {-# OVERLAPPING #-}
         | status == statusOf (Comp x) =
           case partitionEithers x of
             (err', []) -> (map (uncurry ClientParseError) err' ++) +++ S $ tryParsers status xs
-            (_, (res : _)) -> Right . inject . Identity $ res
+            (_, (res : _)) -> Right . inject . I $ res
         | otherwise = -- no reason to parse in the first place. This ain't the one we're looking for
           (ClientStatusMismatch :) +++ S $ tryParsers status xs
 

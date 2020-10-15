@@ -22,8 +22,8 @@ module Servant.Server.UVerb
   )
 where
 
-import Data.Functor.Identity (Identity (Identity))
 import Data.Proxy (Proxy (Proxy))
+import Data.SOP (I (I))
 import Data.SOP.Constraint (All, And)
 import Data.String.Conversions (LBS, cs)
 import Network.HTTP.Types (Status, hContentType)
@@ -41,7 +41,7 @@ respond ::
   (Applicative f, HasStatus x, IsMember x xs) =>
   x ->
   f (Union xs)
-respond = pure . inject . Identity
+respond = pure . inject . I
 
 -- | Helper constraint used in @instance 'HasServer' 'UVerb'@.
 type IsServerResource contentTypes = AllCTRender contentTypes `And` HasStatus
