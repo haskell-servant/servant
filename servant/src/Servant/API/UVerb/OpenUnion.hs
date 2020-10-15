@@ -16,6 +16,7 @@ module Servant.API.UVerb.OpenUnion
 ( IsMember
 , Unique
 , inject
+, match
 )
 where
 

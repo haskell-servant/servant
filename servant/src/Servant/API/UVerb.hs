@@ -41,7 +41,7 @@ import Data.Aeson (FromJSON, ToJSON)
 import Data.SOP.BasicFunctors (I, K (K), unI)
 import Data.SOP.Constraint (All, Constraint)
 import Data.SOP.NS (NS, cmap_NS, collapse_NS)
-import Data.Typeable (Proxy (Proxy), Typeable, cast)
+import Data.Proxy (Proxy (Proxy))
 import qualified GHC.Generics as GHC
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
@@ -114,8 +114,5 @@ collapseUResp proxy render = collapse_NS . cmap_NS proxy (K . render . unI)
 -- otherwise.
 --
 -- See also: 'collapseUResp'.
-extractUResp ::
-  forall (a :: *) (as :: [*]).
-  (All Typeable as, Typeable a, IsMember a as) =>
-  Union as -> Maybe a
-extractUResp = collapse_NS . cmap_NS (Proxy @Typeable) (K . cast . unI)
+extractUResp :: forall (a :: *) (as :: [*]). (IsMember a as) => Union as -> Maybe a
+extractUResp = fmap unI . match
