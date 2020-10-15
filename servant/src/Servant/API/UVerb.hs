@@ -121,4 +121,4 @@ collapseUResp proxy go = cfoldMap_NS proxy (go . unI)
 --
 -- See also: 'collapseUResp'.
 extractUResp :: forall (a :: *) (as :: [*]). (IsMember a as) => Union as -> Maybe a
-extractUResp = fmap unI . match
+extractUResp = fmap unI . eject

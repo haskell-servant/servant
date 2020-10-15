@@ -16,7 +16,7 @@ module Servant.API.UVerb.OpenUnion
 ( IsMember
 , Unique
 , inject
-, match
+, eject
 )
 where
 
@@ -30,44 +30,33 @@ import GHC.TypeLits
 -- * Stuff stolen from 'Data.WorldPeace" but for generics-sop
 -- TODO: could much of this go into sop-core?
 
-type IsMember (a :: u) (as :: [u]) = (CheckElemIsMember a as, UElem a as (RIndex a as))
+type IsMember (a :: u) (as :: [u]) = (CheckElemIsMember a as, UElem a as)
 
 type family Contains (as :: [k]) (bs :: [k]) :: Constraint where
   Contains '[] _ = ()
   Contains (a ': as) bs = (IsMember a bs, Contains as bs)
 
-data Nat_ = S_ Nat_ | Z_
-
-
--- | TODO: we probably can make do without this.
-type family RIndex (r :: k) (rs :: [k]) :: Nat_ where
-  RIndex r (r ': rs) = 'Z_
-  RIndex r (s ': rs) = 'S_ (RIndex r rs)
-
 type family Elem (x :: k) (xs :: [k]) :: Bool where
-    Elem _ '[]       = 'False
-    Elem x (x ': xs) = 'True
-    Elem x (y ': xs) = Elem x xs
+  Elem _ '[] = 'False
+  Elem x (x' ': xs) =
+    If (x == x') 'True (Elem x xs)
 
+class UElem x xs where
+  inject :: f x -> NS f xs
+  eject :: NS f xs -> Maybe (f x)
 
-class i ~ RIndex a as => UElem (a :: k) (as :: [k]) (i :: Nat_) where
-  inject :: f a -> NS f as
-  match  :: NS f as -> Maybe (f a)
+instance {-# OVERLAPPING #-} UElem x (x ': xs) where
+  inject = Z
+  eject (Z x) = Just x
+  eject _ = Nothing
 
-instance UElem a (a ': as) 'Z_ where
-  inject x = Z x
-  match y = case y of
-    Z x -> Just x
-    _ -> Nothing
-
-instance ( RIndex a (b ': as) ~ ('S_ i) , UElem a as i) => UElem a (b ': as) ('S_ i) where
-  inject x = S (inject x)
-  match y = case y of
-    Z _ -> Nothing
-    S z -> match z
+instance {-# OVERLAPPING #-} UElem x xs => UElem x (x' ': xs) where
+  inject = S . inject
+  eject (Z _) = Nothing
+  eject (S ns) = eject ns
 
 type family Unique xs :: Constraint where
-  Unique xs = If (Nubbed xs == 'True) (() ~ ()) (TypeError (DuplicateElementError xs))
+  Unique xs = If (Nubbed xs == 'True) (() :: Constraint) (TypeError (DuplicateElementError xs))
 
 type family Nubbed xs :: Bool where
   Nubbed '[] = 'True
