@@ -38,9 +38,9 @@ module Servant.API.UVerb
 where
 
 import Data.Aeson (FromJSON, ToJSON)
-import Data.SOP.BasicFunctors (I, K (K), unI)
+import Data.SOP.BasicFunctors (I, unI)
 import Data.SOP.Constraint (All, Constraint)
-import Data.SOP.NS (NS, cmap_NS, collapse_NS)
+import Data.SOP.NS (NS, cfoldMap_NS)
 import Data.Proxy (Proxy (Proxy))
 import qualified GHC.Generics as GHC
 import GHC.TypeLits (Nat)
@@ -107,7 +107,7 @@ collapseUResp ::
   forall (c :: * -> Constraint) (a :: *) (as :: [*]).
   All c as =>
   Proxy c -> (forall x. c x => x -> a) -> Union as -> a
-collapseUResp proxy render = collapse_NS . cmap_NS proxy (K . render . unI)
+collapseUResp proxy go = cfoldMap_NS proxy (go . unI)
 
 -- | Convenience function to extract a union element using 'cast', ie. return the value if the
 -- selected type happens to be the actual type of the union in this value, or 'Nothing'
