@@ -12,6 +12,7 @@ handlers that respond with arbitrary open unions of types.
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -28,6 +29,8 @@ handlers that respond with arbitrary open unions of types.
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async)
+import Control.Monad (when)
+import Control.Monad.Except (ExceptT (..), MonadError (..), MonadTrans (..), runExceptT)
 import Data.Aeson (FromJSON (..), ToJSON (..))
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.String.Conversions (cs)
@@ -37,13 +40,9 @@ import qualified GHC.Generics as GHC
 import qualified Network.HTTP.Client as Client
 import qualified Network.Wai.Handler.Warp as Warp
 import Servant.API
-import Servant.API.UVerb
 import Servant.Client
-import Servant.Client.UVerb
 import Servant.Server
-import Servant.Server.UVerb
 import Servant.Swagger
-import Servant.Swagger.UVerb ()
 ```
 
 ## The API
@@ -157,12 +156,19 @@ throwUVerb = UVerbT . ExceptT . fmap Left . respond
 Example usage:
 
 ```haskell
+data Foo = Foo Int Int Int
+  deriving (Show, Eq, GHC.Generic, ToJSON)
+  deriving HasStatus via WithStatus 200 Foo
+
+data Bar = Bar
+  deriving (Show, Eq, GHC.Generic, ToJSON)
+
 h :: Handler (Union '[Foo, WithStatus 400 Bar])
-h = runUVerbT $
-  when (something bad) $
+h = runUVerbT $ do
+  when ({- something bad -} True) $
     throwUVerb $ WithStatus @400 Bar
 
-  when (really bad) $
+  when ({- really bad -} False) $
     throwError $ err500
 
   -- a lot of code here...
@@ -204,3 +210,8 @@ Here is a blog post we found on the subject:
 https://lukwagoallan.com/posts/unifying-servant-server-error-responses
 
 (If you have anything else, please add it here or let us know.)
+
+```haskell
+main :: IO ()
+main = return ()
+```

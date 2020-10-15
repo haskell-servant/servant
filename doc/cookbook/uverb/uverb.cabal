@@ -12,21 +12,22 @@ build-type:          Simple
 cabal-version:       >=1.10
 tested-with:         GHC==8.4.4, GHC==8.6.5, GHC==8.8.2
 
-executable cookbook-testing
+executable cookbook-uverb
   main-is:             UVerb.lhs
   build-depends:       base == 4.*
-                     , async
                      , aeson >= 1.2
                      , aeson-pretty >= 0.8.8
-                     , string-conversions
-                     , swagger2
+                     , async
                      , http-client
-                     , warp
-                     , wai
+                     , mtl
                      , servant
                      , servant-client
                      , servant-server
                      , servant-swagger
+                     , string-conversions
+                     , swagger2
+                     , wai
+                     , warp
   default-language:    Haskell2010
   ghc-options:         -Wall -pgmL markdown-unlit
   build-tool-depends:  markdown-unlit:markdown-unlit
