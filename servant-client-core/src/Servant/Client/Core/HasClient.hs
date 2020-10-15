@@ -42,19 +42,19 @@ import           Network.HTTP.Media
                  (MediaType, matches, parseAccept, (//))
 import qualified Data.Sequence as Seq
 import           Data.SOP.BasicFunctors
-                 (I (I), K (K), (:.:) (Comp))
+                 (I (I), (:.:) (Comp))
 import           Data.SOP.Constraint
-                 (All, Constraint)
+                 (All)
 import           Data.SOP.NP
                  (NP (..), cpure_NP)
 import           Data.SOP.NS
-                 (NS (S), cmap_NS, collapse_NS)
+                 (NS (S))
 import           Data.String
                  (fromString)
 import           Data.Text
                  (Text, pack)
-import           Data.Typeable
-                 (Proxy (Proxy), Typeable, cast)
+import           Data.Proxy
+                 (Proxy (Proxy))
 import           GHC.TypeLits
                  (KnownSymbol, symbolVal)
 import           Network.HTTP.Types
@@ -78,8 +78,6 @@ import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.UVerb
                  (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf, collapseUResp, extractUResp)
-import           Servant.API.UVerb.OpenUnion
-                 (IsMember)
 
 import           Servant.Client.Core.Auth
 import           Servant.Client.Core.BasicAuth
