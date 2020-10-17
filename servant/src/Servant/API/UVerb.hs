@@ -90,10 +90,16 @@ instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
   mimeUnrender contentTypeProxy input =
     WithStatus <$> mimeUnrender contentTypeProxy input
 
--- FUTUREWORK:
+-- | A variant of 'Verb' that can have any of a number of response values and status codes.
+--
+-- FUTUREWORK: it would be nice to make 'Verb' a special case of 'UVerb', and only write
+-- instances for 'HasServer' etc. for the latter, getting them for the former for free.
+-- Something like:
+--
 -- @type Verb method statusCode contentTypes a = UVerb method contentTypes [WithStatus statusCode a]@
--- no, wait, this is not the same.  this would mean people would have to use 'respond' instead
--- of 'pure' or 'return'.
+--
+-- Backwards compatibility is tricky, though: this type alias would mean people would have to
+-- use 'respond' instead of 'pure' or 'return', so all old handlers would have to be rewritten.
 data UVerb (method :: StdMethod) (contentTypes :: [*]) (as :: [*])
 
 type Union = NS I
