@@ -32,10 +32,6 @@ import GHC.TypeLits
 
 type IsMember (a :: u) (as :: [u]) = (CheckElemIsMember a as, UElem a as)
 
-type family Contains (as :: [k]) (bs :: [k]) :: Constraint where
-  Contains '[] _ = ()
-  Contains (a ': as) bs = (IsMember a bs, Contains as bs)
-
 type family Elem (x :: k) (xs :: [k]) :: Bool where
   Elem _ '[] = 'False
   Elem x (x' ': xs) =
