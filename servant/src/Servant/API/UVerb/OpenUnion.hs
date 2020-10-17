@@ -30,7 +30,7 @@ import GHC.TypeLits
 -- * Stuff stolen from 'Data.WorldPeace" but for generics-sop
 -- TODO: could much of this go into sop-core?
 
-type IsMember (a :: u) (as :: [u]) = (CheckElemIsMember a as, UElem a as)
+type IsMember (a :: u) (as :: [u]) = (Unique as, CheckElemIsMember a as, UElem a as)
 
 class UElem x xs where
   inject :: f x -> NS f xs
@@ -50,11 +50,7 @@ instance {-# OVERLAPPING #-} UElem x xs => UElem x (x' ': xs) where
 -- list, or if there is a duplicate in the list.
 type family CheckElemIsMember (a :: k) (as :: [k]) :: Constraint where
     CheckElemIsMember a as =
-      If (Elem a as)
-        (If (Nubbed as)
-          (() :: Constraint)
-          (TypeError (DuplicateElementError as)))
-        (TypeError (NoElementError a as))
+      If (Elem a as) (() :: Constraint) (TypeError (NoElementError a as))
 
 type NoElementError (r :: k) (rs :: [k]) =
           'Text "Expected one of:"
