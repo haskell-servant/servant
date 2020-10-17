@@ -28,7 +28,7 @@ import GHC.TypeLits
 
 
 -- * Stuff stolen from 'Data.WorldPeace" but for generics-sop
--- TODO: could much of this go into sop-core?
+-- (this could to go sop-core, except it's probably too specialized to the servant use-case.)
 
 type IsMember (a :: u) (as :: [u]) = (Unique as, CheckElemIsMember a as, UElem a as)
 
