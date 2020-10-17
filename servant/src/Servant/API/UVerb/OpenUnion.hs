@@ -32,11 +32,6 @@ import GHC.TypeLits
 
 type IsMember (a :: u) (as :: [u]) = (CheckElemIsMember a as, UElem a as)
 
-type family Elem (x :: k) (xs :: [k]) :: Bool where
-  Elem _ '[] = 'False
-  Elem x (x' ': xs) =
-    If (x == x') 'True (Elem x xs)
-
 class UElem x xs where
   inject :: f x -> NS f xs
   eject :: NS f xs -> Maybe (f x)
@@ -50,20 +45,6 @@ instance {-# OVERLAPPING #-} UElem x xs => UElem x (x' ': xs) where
   inject = S . inject
   eject (Z _) = Nothing
   eject (S ns) = eject ns
-
-type family Unique xs :: Constraint where
-  Unique xs = If (Nubbed xs == 'True) (() :: Constraint) (TypeError (DuplicateElementError xs))
-
-type family Nubbed xs :: Bool where
-  Nubbed '[] = 'True
-  Nubbed (x ': xs) = If (Elem x xs) 'False (Nubbed xs)
-
-_testNubbed :: ( ( Nubbed '[Bool, Int, Int] ~ 'False
-                 , Nubbed '[Int, Int, Bool] ~ 'False
-                 , Nubbed '[Int, Bool] ~ 'True
-                 )
-               => a) -> a
-_testNubbed = id
 
 -- | Check whether @a@ is in list.  This will throw nice errors if the element is not in the
 -- list, or if there is a duplicate in the list.
@@ -84,3 +65,22 @@ type NoElementError (r :: k) (rs :: [k]) =
 type DuplicateElementError (rs :: [k]) =
           'Text "Duplicate element in list:"
     ':$$: 'Text "    " ':<>: 'ShowType rs
+
+type family Elem (x :: k) (xs :: [k]) :: Bool where
+  Elem _ '[] = 'False
+  Elem x (x' ': xs) =
+    If (x == x') 'True (Elem x xs)
+
+type family Unique xs :: Constraint where
+  Unique xs = If (Nubbed xs == 'True) (() :: Constraint) (TypeError (DuplicateElementError xs))
+
+type family Nubbed xs :: Bool where
+  Nubbed '[] = 'True
+  Nubbed (x ': xs) = If (Elem x xs) 'False (Nubbed xs)
+
+_testNubbed :: ( ( Nubbed '[Bool, Int, Int] ~ 'False
+                 , Nubbed '[Int, Int, Bool] ~ 'False
+                 , Nubbed '[Int, Bool] ~ 'True
+                 )
+               => a) -> a
+_testNubbed = id
