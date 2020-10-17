@@ -29,13 +29,9 @@ import           Control.Concurrent.STM.TVar
                  (newTVar, readTVar)
 import           Data.Foldable
                  (forM_, toList)
-import           Data.Functor.Identity
-                 (Identity(Identity))
 import           Data.Maybe
                  (listToMaybe)
 import           Data.Monoid ()
-import           Data.SOP.NS
-                 (NS(Z))
 import           Data.Text
                  (Text)
 import qualified Network.HTTP.Client                  as C
