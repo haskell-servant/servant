@@ -20,14 +20,8 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 build-type:          Simple
 
-tested-with:
-  GHC ==8.0.2
-   || ==8.2.2
-   || ==8.4.4
-   || ==8.6.5
-   || ==8.8.3
-   || ==8.10.1
-  , GHCJS == 8.4
+tested-with: GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.2
+           , GHCJS == 8.4
 
 extra-source-files:
   CHANGELOG.md
