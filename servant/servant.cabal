@@ -61,7 +61,7 @@ library
     Servant.API.Sub
     Servant.API.TypeLevel
     Servant.API.UVerb
-    Servant.API.UVerb.OpenUnion
+    Servant.API.UVerb.Union
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext

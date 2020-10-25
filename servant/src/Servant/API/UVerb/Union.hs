@@ -48,7 +48,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -- | Type-level code for implementing and using 'UVerb'.  Heavily inspired by
 -- [world-piece](https://github.com/cdepillabout/world-peace).
-module Servant.API.UVerb.OpenUnion
+module Servant.API.UVerb.Union
 ( IsMember
 , Unique
 , Union

@@ -30,7 +30,7 @@ module Servant.API.UVerb
     statusOf,
     HasStatuses (Statuses, statuses),
     WithStatus (..),
-    module Servant.API.UVerb.OpenUnion,
+    module Servant.API.UVerb.Union,
   )
 where
 
@@ -41,7 +41,7 @@ import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
 import Servant.API.ContentTypes (MimeRender (mimeRender), MimeUnrender (mimeUnrender), NoContent)
 import Servant.API.Status (KnownStatus, statusVal)
-import Servant.API.UVerb.OpenUnion
+import Servant.API.UVerb.Union
 
 class KnownStatus (StatusOf a) => HasStatus (a :: *) where
   type StatusOf (a :: *) :: Nat
