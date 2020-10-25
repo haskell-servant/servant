@@ -51,19 +51,48 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module Servant.API.UVerb.OpenUnion
 ( IsMember
 , Unique
+, Union
 , inject
 , eject
+, foldMapUnion
+, matchUnion
 )
 where
 
+import Data.Proxy (Proxy)
+import Data.SOP.BasicFunctors (I, unI)
 import Data.SOP.Constraint
 import Data.SOP.NS
 import Data.Type.Bool (If)
 import Data.Type.Equality (type (==))
 import GHC.TypeLits
 
+type Union = NS I
+
+-- | Convenience function to apply a function to an unknown union element using a type class.
+-- All elements of the union must have instances in the type class, and the function is
+-- applied unconditionally.
+--
+-- See also: 'matchUnion'.
+foldMapUnion ::
+  forall (c :: * -> Constraint) (a :: *) (as :: [*]).
+  All c as =>
+  Proxy c ->
+  (forall x. c x => x -> a) ->
+  Union as ->
+  a
+foldMapUnion proxy go = cfoldMap_NS proxy (go . unI)
+
+-- | Convenience function to extract a union element using 'cast', ie. return the value if the
+-- selected type happens to be the actual type of the union in this value, or 'Nothing'
+-- otherwise.
+--
+-- See also: 'foldMapUnion'.
+matchUnion :: forall (a :: *) (as :: [*]). (IsMember a as) => Union as -> Maybe a
+matchUnion = fmap unI . eject
 
 -- * Stuff stolen from 'Data.WorldPeace" but for generics-sop
+
 -- (this could to go sop-core, except it's probably too specialized to the servant use-case.)
 
 type IsMember (a :: u) (as :: [u]) = (Unique as, CheckElemIsMember a as, UElem a as)

@@ -122,9 +122,9 @@ main = do
   mgr <- Client.newManager Client.defaultManagerSettings
   let cenv = mkClientEnv mgr (BaseUrl Http "localhost" 8080 "")
   result <- runClientM (fisxClient True) cenv
-  print $ collapseUResp (Proxy @Show) show <$> result
-  print $ extractUResp @FisxUser <$> result
-  print $ extractUResp @(WithStatus 303 String) <$> result
+  print $ foldMapUnion (Proxy @Show) show <$> result
+  print $ matchUnion @FisxUser <$> result
+  print $ matchUnion @(WithStatus 303 String) <$> result
   pure ()
 ```
 

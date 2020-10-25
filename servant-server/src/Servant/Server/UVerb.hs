@@ -30,7 +30,7 @@ import Network.HTTP.Types (Status, hContentType)
 import Network.Wai (responseLBS)
 import Servant.API (ReflectMethod, reflectMethod)
 import Servant.API.ContentTypes (AllCTRender (handleAcceptH), AllMime)
-import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, collapseUResp, inject, statusOf)
+import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, foldMapUnion, inject, statusOf)
 import Servant.Server.Internal (Context, Delayed, Handler, HasServer (..), RouteResult (FailFatal, Route), Router, Server, ServerT, acceptCheck, addAcceptCheck, addMethodCheck, allowedMethodHead, err406, getAcceptHeader, leafRouter, methodCheck, runAction)
 
 
@@ -87,7 +87,7 @@ instance
                   handleAcceptH (Proxy @contentTypes) (getAcceptHeader request) res
                 )
               pickResource :: Union as -> (Status, Maybe (LBS, LBS))
-              pickResource = collapseUResp (Proxy @(IsServerResource contentTypes)) encodeResource
+              pickResource = foldMapUnion (Proxy @(IsServerResource contentTypes)) encodeResource
 
           case pickResource output of
             (_, Nothing) -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does

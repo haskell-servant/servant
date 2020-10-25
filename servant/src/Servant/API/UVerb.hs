@@ -26,21 +26,15 @@
 -- See <https://docs.servant.dev/en/stable/cookbook/uverb/UVerb.html> for a working example.
 module Servant.API.UVerb
   ( UVerb,
-    Union,
     HasStatus (StatusOf),
     statusOf,
     HasStatuses (Statuses, statuses),
     WithStatus (..),
     module Servant.API.UVerb.OpenUnion,
-    collapseUResp,
-    extractUResp,
   )
 where
 
 import Data.Aeson (FromJSON, ToJSON)
-import Data.SOP.BasicFunctors (I, unI)
-import Data.SOP.Constraint (All, Constraint)
-import Data.SOP.NS (NS, cfoldMap_NS)
 import Data.Proxy (Proxy (Proxy))
 import qualified GHC.Generics as GHC
 import GHC.TypeLits (Nat)
@@ -101,24 +95,3 @@ instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
 -- Backwards compatibility is tricky, though: this type alias would mean people would have to
 -- use 'respond' instead of 'pure' or 'return', so all old handlers would have to be rewritten.
 data UVerb (method :: StdMethod) (contentTypes :: [*]) (as :: [*])
-
-type Union = NS I
-
--- | Convenience function to apply a function to an unknown union element using a type class.
--- All elements of the union must have instances in the type class, and the function is
--- applied unconditionally.
---
--- See also: 'extractUResp'.
-collapseUResp ::
-  forall (c :: * -> Constraint) (a :: *) (as :: [*]).
-  All c as =>
-  Proxy c -> (forall x. c x => x -> a) -> Union as -> a
-collapseUResp proxy go = cfoldMap_NS proxy (go . unI)
-
--- | Convenience function to extract a union element using 'cast', ie. return the value if the
--- selected type happens to be the actual type of the union in this value, or 'Nothing'
--- otherwise.
---
--- See also: 'collapseUResp'.
-extractUResp :: forall (a :: *) (as :: [*]). (IsMember a as) => Union as -> Maybe a
-extractUResp = fmap unI . eject

@@ -17,8 +17,8 @@ module Servant.Client.Core.HasClient (
     clientIn,
     HasClient (..),
     EmptyClient (..),
-    collapseUResp,
-    extractUResp,
+    foldMapUnion,
+    matchUnion,
     ) where
 
 import           Prelude ()
@@ -77,7 +77,7 @@ import           Servant.API.ContentTypes
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.UVerb
-                 (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf, collapseUResp, extractUResp)
+                 (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf, foldMapUnion, matchUnion)
 
 import           Servant.Client.Core.Auth
 import           Servant.Client.Core.BasicAuth

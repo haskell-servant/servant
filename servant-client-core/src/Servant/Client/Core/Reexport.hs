@@ -5,8 +5,8 @@ module Servant.Client.Core.Reexport
   (
     -- * HasClient
     HasClient(..)
-  , collapseUResp
-  , extractUResp
+  , foldMapUnion
+  , matchUnion
 
     -- * Response (for @Raw@)
   , Response

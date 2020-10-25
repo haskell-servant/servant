@@ -160,17 +160,17 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         eitherResponse <- runClient (uverbGetSuccessOrRedirect True) baseUrl
         case eitherResponse of
           Left clientError -> fail $ show clientError
-          Right response -> extractUResp response `shouldBe` Just (WithStatus @301 @Text "redirecting")
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @301 @Text "redirecting")
 
       it "Returns a proper response when appropriate" $ \(_, baseUrl) -> do
         eitherResponse <- runClient (uverbGetSuccessOrRedirect False) baseUrl
         case eitherResponse of
           Left clientError -> fail $ show clientError
-          Right response -> extractUResp response `shouldBe` Just (WithStatus @200 alice)
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @200 alice)
 
     context "with a route that uses uverb but only has a single response" $
       it "returns the expected response" $ \(_, baseUrl) -> do
         eitherResponse <- runClient (uverbGetCreated) baseUrl
         case eitherResponse of
           Left clientError -> fail $ show clientError
-          Right response -> extractUResp response `shouldBe` Just (WithStatus @201 carol)
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @201 carol)

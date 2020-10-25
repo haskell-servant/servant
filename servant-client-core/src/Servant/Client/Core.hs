@@ -18,8 +18,8 @@ module Servant.Client.Core
   -- * Client generation
     clientIn
   , HasClient(..)
-  , collapseUResp
-  , extractUResp
+  , foldMapUnion
+  , matchUnion
 
   -- * Request
   , Request
