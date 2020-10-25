@@ -53,7 +53,7 @@ import           Data.String
 import           Data.String.Conversions
                  (cs)
 import           Data.Tagged
-                 (Tagged (..), retag, untag)
+                 (Tagged (..), retag)
 import qualified Data.Text                                  as T
 import           Data.Typeable
 import           GHC.TypeLits
@@ -64,7 +64,7 @@ import           Network.HTTP.Types                         hiding
 import           Network.Socket
                  (SockAddr)
 import           Network.Wai
-                 (Application, Request, httpVersion, isSecure, lazyRequestBody,
+                 (Response, ResponseReceived, Request, httpVersion, isSecure, lazyRequestBody,
                  queryString, remoteHost, requestBody, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
@@ -585,11 +585,14 @@ instance (KnownSymbol sym, HasServer api context)
 -- >
 -- > server :: Server MyApi
 -- > server = serveDirectory "/var/www/images"
+--
+-- Note that it is possible to call @respond@, drop its result, then fail in 'Handler'.
+-- In this case the resulting response will be invalid, so do not do that.
 instance HasServer Raw context where
 
-  type ServerT Raw m = Tagged m Application
+  type ServerT Raw m = Request -> (Response -> IO ResponseReceived) -> m ResponseReceived
 
-  hoistServerWithContext _ _ _ = retag
+  hoistServerWithContext _ _ nt s = \ request respond -> nt $ s request respond
 
   route Proxy _ rawApplication = RawRouter $ \ env request respond -> runResourceT $ do
     -- note: a Raw application doesn't register any cleanup
@@ -599,7 +602,13 @@ instance HasServer Raw context where
     liftIO $ go r request respond
 
     where go r request respond = case r of
-            Route app   -> untag app request (respond . Route)
+            Route appH  -> do
+              -- appH may return result with 'Right' _only_ by calling smth like @liftIO . respond@,
+              -- so in case of 'Left' we may suppose that 'respond' was never called.
+              r' <- runHandler $ appH request (respond . Route)
+              case r' of
+                Left e  -> respond $ FailFatal e
+                Right x -> return x
             Fail a      -> respond $ Fail a
             FailFatal e -> respond $ FailFatal e
 
