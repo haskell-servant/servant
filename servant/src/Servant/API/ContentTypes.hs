@@ -419,7 +419,6 @@ instance MimeUnrender OctetStream BS.ByteString where
     mimeUnrender _ = Right . toStrict
 
 
-
 -- $setup
 -- >>> :set -XFlexibleInstances
 -- >>> :set -XMultiParamTypeClasses

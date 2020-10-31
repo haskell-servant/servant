@@ -32,6 +32,7 @@ module Servant.API (
 
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Verbs,
+  module Servant.API.UVerb,
 
   -- * Streaming endpoints, distinguished by HTTP method
   module Servant.API.Stream,
@@ -132,6 +133,9 @@ import           Servant.API.Verbs
                  PutCreated, PutNoContent, PutNonAuthoritative,
                  ReflectMethod (reflectMethod), StdMethod (..),
                  Verb, NoContentVerb)
+import           Servant.API.UVerb
+                 (UVerb, Union, HasStatus, StatusOf, statusOf, Statuses,
+                 WithStatus (..), IsMember, Unique, inject)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Servant.Links

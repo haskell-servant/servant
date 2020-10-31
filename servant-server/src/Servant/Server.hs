@@ -110,6 +110,7 @@ module Servant.Server
   -- * Re-exports
   , Application
   , Tagged (..)
+  , module Servant.Server.UVerb
 
   ) where
 
@@ -122,6 +123,7 @@ import           Data.Text
 import           Network.Wai
                  (Application)
 import           Servant.Server.Internal
+import           Servant.Server.UVerb
 
 
 -- * Implementing Servers

@@ -25,15 +25,16 @@ packages:
   doc/cookbook/custom-errors
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
---  doc/cookbook/db-sqlite-simple
+  -- doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
   -- doc/cookbook/hoist-server-with-context
---  doc/cookbook/https
+  -- doc/cookbook/https
   -- doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/pagination
   -- doc/cookbook/sentry
   doc/cookbook/testing
+  doc/cookbook/uverb
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client

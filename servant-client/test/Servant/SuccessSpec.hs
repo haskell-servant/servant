@@ -8,6 +8,7 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -31,6 +32,8 @@ import           Data.Foldable
 import           Data.Maybe
                  (listToMaybe)
 import           Data.Monoid ()
+import           Data.Text
+                 (Text)
 import qualified Network.HTTP.Client                  as C
 import qualified Network.HTTP.Types                   as HTTP
 import           Test.Hspec
@@ -39,7 +42,7 @@ import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
-                 (NoContent (NoContent), getHeaders)
+                 (NoContent (NoContent), WithStatus(WithStatus), getHeaders)
 import           Servant.Client
 import qualified Servant.Client.Core.Request as Req
 import           Servant.Client.Internal.HttpClient (defaultMakeClientRequest)
@@ -151,3 +154,23 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
             return $
               result === Right (cap, num, flag, body)
+
+    context "With a route that can either return success or redirect" $ do
+      it "Redirects when appropriate" $ \(_, baseUrl) -> do
+        eitherResponse <- runClient (uverbGetSuccessOrRedirect True) baseUrl
+        case eitherResponse of
+          Left clientError -> fail $ show clientError
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @301 @Text "redirecting")
+
+      it "Returns a proper response when appropriate" $ \(_, baseUrl) -> do
+        eitherResponse <- runClient (uverbGetSuccessOrRedirect False) baseUrl
+        case eitherResponse of
+          Left clientError -> fail $ show clientError
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @200 alice)
+
+    context "with a route that uses uverb but only has a single response" $
+      it "returns the expected response" $ \(_, baseUrl) -> do
+        eitherResponse <- runClient (uverbGetCreated) baseUrl
+        case eitherResponse of
+          Left clientError -> fail $ show clientError
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @201 carol)

@@ -65,7 +65,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (hContentType, renderQuery, statusCode)
+                 (hContentType, renderQuery, statusCode, Status)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
@@ -155,14 +155,14 @@ instance Alt ClientM where
   a <!> b = a `catchError` \_ -> b
 
 instance RunClient ClientM where
-  runRequest = performRequest
+  runRequestAcceptStatus = performRequest
   throwClientError = throwError
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ClientError a)
 runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
 
-performRequest :: Request -> ClientM Response
-performRequest req = do
+performRequest :: Maybe [Status] -> Request -> ClientM Response
+performRequest acceptStatus req = do
   ClientEnv m burl cookieJar' createClientRequest <- ask
   let clientRequest = createClientRequest burl req
   request <- case cookieJar' of
@@ -183,8 +183,11 @@ performRequest req = do
   let status = Client.responseStatus response
       status_code = statusCode status
       ourResponse = clientResponseToResponse id response
-  unless (status_code >= 200 && status_code < 300) $
-      throwError $ mkFailureResponse burl req ourResponse
+      goodStatus = case acceptStatus of
+        Nothing -> status_code >= 200 && status_code < 300
+        Just good -> status `elem` good
+  unless goodStatus $ do
+    throwError $ mkFailureResponse burl req ourResponse
   return ourResponse
   where
     requestWithoutCookieJar :: Client.Manager -> Client.Request -> ClientM (Client.Response BSL.ByteString)
