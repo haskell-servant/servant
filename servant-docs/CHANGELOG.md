@@ -1,6 +1,18 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.11.7
+------
+
+### Significant changes
+
+- Add instance for ToSample NonEmpty
+
+### Other changes
+
+- Bump "tested-with" ghc versions
+- Fix servant-docs code sample in README
+
 0.11.5
 ----
 

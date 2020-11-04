@@ -1,5 +1,17 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.18.1
+------
+
+### Significant changes
+
+- Union verbs
+
+### Other changes
+
+- Bump "tested-with" ghc versions
+- Allow newer dependencies
+
 0.18
 ----
 
