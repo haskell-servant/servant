@@ -66,7 +66,8 @@ import           Network.Socket
                  (SockAddr)
 import           Network.Wai
                  (Application, Request, httpVersion, isSecure, lazyRequestBody,
-                 queryString, remoteHost, getRequestBodyChunk, requestHeaders,
+                 queryString, remoteHost, getRequestBodyChunk, rawPathInfo,
+                 rawQueryString, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
 import           Prelude.Compat

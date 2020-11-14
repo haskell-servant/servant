@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -78,6 +79,7 @@ import           Servant.API
                  getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
+import           Servant.API.TypeLevel (OnlyOneFragment)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.UVerb

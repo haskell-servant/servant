@@ -48,12 +48,12 @@ import           Network.Wai.Test
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
-                 Delete, EmptyAPI, Get, HasStatus (StatusOf), Header, Headers,
-                 HttpVersion, IsSecure (..), JSON, Lenient, NoContent (..),
-                 NoContentVerb, NoFraming, OctetStream, Patch, PlainText, Post,
-                 Put, QueryFlag, QueryParam, QueryParams, Raw, RemoteHost,
-                 ReqBody, SourceIO, StdMethod (..), Stream, Strict, UVerb,
-                 Union, Verb, addHeader)
+                 Delete, EmptyAPI, Fragment, Get, HasStatus (StatusOf), Header,
+                 Headers, HttpVersion, IsSecure (..), JSON, Lenient,
+                 NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
+                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
+                 RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
+                 UVerb, Union, Verb, addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, respond, serve,

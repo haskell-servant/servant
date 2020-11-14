@@ -53,8 +53,8 @@ import           Web.FormUrlEncoded
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (..), Capture, CaptureAll, DeleteNoContent,
-                 EmptyAPI, FormUrlEncoded, Get, Header, Headers, JSON,
-                 MimeRender (mimeRender), MimeUnrender (mimeUnrender),
+                 EmptyAPI, FormUrlEncoded, Fragment, Get, Header, Headers,
+                 JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
                  QueryParams, Raw, ReqBody, StdMethod (GET), UVerb, Union,
                  WithStatus (WithStatus), addHeader)
