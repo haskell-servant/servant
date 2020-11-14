@@ -96,12 +96,10 @@ data Delayed env c where
              , acceptD   :: DelayedIO ()
              , contentD  :: DelayedIO contentType
              , paramsD   :: DelayedIO params
-             , fragmentD :: DelayedIO fragment
              , headersD  :: DelayedIO headers
              , bodyD     :: contentType -> DelayedIO body
              , serverD   :: captures
                          -> params
-                         -> fragment
                          -> headers
                          -> auth
                          -> body
@@ -112,14 +110,14 @@ data Delayed env c where
 instance Functor (Delayed env) where
   fmap f Delayed{..} =
     Delayed
-      { serverD = \ c p fr h a b req -> f <$> serverD c p fr h a b req
+      { serverD = \ c p h a b req -> f <$> serverD c p h a b req
       , ..
       } -- Note [Existential Record Update]
 
 -- | A 'Delayed' without any stored checks.
 emptyDelayed :: RouteResult a -> Delayed env a
 emptyDelayed result =
-  Delayed (const r) r r r r r r r (const r) (\ _ _ _ _ _ _ _ -> result)
+  Delayed (const r) r r r r r r (const r) (\ _ _ _ _ _ _ -> result)
   where
     r = return ()
 
@@ -130,7 +128,7 @@ addCapture :: Delayed env (a -> b)
 addCapture Delayed{..} new =
   Delayed
     { capturesD = \ (txt, env) -> (,) <$> capturesD env <*> new txt
-    , serverD   = \ (x, v) p f h a b req -> ($ v) <$> serverD x p f h a b req
+    , serverD   = \ (x, v) p h a b req -> ($ v) <$> serverD x p h a b req
     , ..
     } -- Note [Existential Record Update]
 
@@ -141,19 +139,7 @@ addParameterCheck :: Delayed env (a -> b)
 addParameterCheck Delayed {..} new =
   Delayed
     { paramsD = (,) <$> paramsD <*> new
-    , serverD = \c (p, pNew) f h a b req -> ($ pNew) <$> serverD c p f h a b req
-    , ..
-    }
-
--- | Add a fragment check to the end of the fragment block
-addFragmentCheck
-  :: Delayed env (a -> b)
-  -> DelayedIO a
-  -> Delayed env b
-addFragmentCheck Delayed {..} new =
-  Delayed
-    { fragmentD = (,) <$> fragmentD <*> new
-    , serverD = \c p (fr, frNew) h a b req -> ($ frNew) <$> serverD c p fr h a b req
+    , serverD = \c (p, pNew) h a b req -> ($ pNew) <$> serverD c p h a b req
     , ..
     }
 
@@ -164,7 +150,7 @@ addHeaderCheck :: Delayed env (a -> b)
 addHeaderCheck Delayed {..} new =
   Delayed
     { headersD = (,) <$> headersD <*> new
-    , serverD = \c p f (h, hNew) a b req -> ($ hNew) <$> serverD c p f h a b req
+    , serverD = \c p (h, hNew) a b req -> ($ hNew) <$> serverD c p h a b req
     , ..
     }
 
@@ -185,7 +171,7 @@ addAuthCheck :: Delayed env (a -> b)
 addAuthCheck Delayed{..} new =
   Delayed
     { authD   = (,) <$> authD <*> new
-    , serverD = \ c p f h (y, v) b req -> ($ v) <$> serverD c p f h y b req
+    , serverD = \ c p h (y, v) b req -> ($ v) <$> serverD c p h y b req
     , ..
     } -- Note [Existential Record Update]
 
@@ -201,7 +187,7 @@ addBodyCheck Delayed{..} newContentD newBodyD =
   Delayed
     { contentD = (,) <$> contentD <*> newContentD
     , bodyD    = \(content, c) -> (,) <$> bodyD content <*> newBodyD c
-    , serverD  = \ c p f h a (z, v) req -> ($ v) <$> serverD c p f h a z req
+    , serverD  = \ c p h a (z, v) req -> ($ v) <$> serverD c p h a z req
     , ..
     } -- Note [Existential Record Update]
 
@@ -231,7 +217,7 @@ addAcceptCheck Delayed{..} new =
 passToServer :: Delayed env (a -> b) -> (Request -> a) -> Delayed env b
 passToServer Delayed{..} x =
   Delayed
-    { serverD = \ c p f h a b req -> ($ x req) <$> serverD c p f h a b req
+    { serverD = \ c p h a b req -> ($ x req) <$> serverD c p h a b req
     , ..
     } -- Note [Existential Record Update]
 
@@ -255,8 +241,7 @@ runDelayed Delayed{..} env = runDelayedIO $ do
     p <- paramsD       -- Has to be before body parsing, but after content-type checks
     h <- headersD
     b <- bodyD content
-    f <- fragmentD
-    liftRouteResult (serverD c p f h a b r)
+    liftRouteResult (serverD c p h a b r)
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.

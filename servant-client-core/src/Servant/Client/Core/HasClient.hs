@@ -751,19 +751,9 @@ instance ( HasClient m api
   hoistClientMonad pm _ f cl = \authreq ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl authreq)
 
--- | If you use a 'Fragment' in one of your endpoints in your API,
--- the corresponding querying function will automatically take
--- an additional argument of the type specified by your 'Fragment',
--- enclosed in Maybe.
---
--- If you give Nothing, nothing will be added to the query string.
---
--- If you give a non-'Nothing' value, this function will take care
--- of inserting a textual representation of this value in the end of URL as fragment.
---
--- You can control how values for your type are turned into
--- text by specifying a 'ToHttpApiData' instance for your type.
---
+-- | Ignore @'Fragment'@ in client functions.
+-- See <https://ietf.org/rfc/rfc2616.html#section-15.1.3> for more details.
+-- 
 -- Example:
 --
 -- > type MyApi = "books" :> Fragment Text :> Get '[JSON] [Book]
@@ -783,14 +773,11 @@ instance ( HasClient m api, ToHttpApiData a
 #endif
          ) => HasClient m (Fragment' mods a :> api) where
 
-  type Client m (Fragment' mods a :> api) =
-    Maybe a -> Client m api
+  type Client m (Fragment' mods a :> api) = Client m api
 
-  clientWithRoute pm Proxy req fragment =
-    clientWithRoute pm (Proxy :: Proxy api) (appendFragment fragment req)
+  clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api) 
 
-  hoistClientMonad pm _ f cl = \ma ->
-    hoistClientMonad pm (Proxy :: Proxy api) f (cl ma)
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
 -- * Basic Authentication
 

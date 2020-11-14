@@ -143,7 +143,7 @@ getBody         :: Person -> ClientM Person
 getQueryParam   :: Maybe String -> ClientM Person
 getQueryParams  :: [String] -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
-getFragment     :: Maybe String -> ClientM Person
+getFragment     :: ClientM Person
 getRawSuccess   :: HTTP.Method -> ClientM Response
 getRawSuccessPassHeaders :: HTTP.Method -> ClientM Response
 getRawFailure   :: HTTP.Method -> ClientM Response
@@ -192,10 +192,7 @@ server = serve api (
                    Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
-  :<|> (\ name -> case name of
-                    Just (Right "alice") -> return alice
-                    Just (Right n)       -> return (Person n 0)
-                    _                    -> return alice)
+  :<|> return alice
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
   :<|> (Tagged $ \ request respond -> (respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders $ request) "rawSuccess"))
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")

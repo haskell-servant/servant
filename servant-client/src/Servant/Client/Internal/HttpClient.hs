@@ -65,7 +65,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (hContentType, renderQuery, statusCode, Status)
+                 (Status, hContentType, renderQuery, statusCode)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
@@ -240,9 +240,7 @@ defaultMakeClientRequest burl r = Client.defaultRequest
     , Client.path = BSL.toStrict
                   $ fromString (baseUrlPath burl)
                  <> toLazyByteString (requestPath r)
-    , Client.queryString
-        = renderFragment (requestFragment r)
-        . renderQuery True . toList $ requestQueryString r
+    , Client.queryString = renderQuery True . toList $ requestQueryString r
     , Client.requestHeaders =
       maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
     , Client.requestBody = body
@@ -292,10 +290,6 @@ defaultMakeClientRequest burl r = Client.defaultRequest
     isSecure = case baseUrlScheme burl of
         Http -> False
         Https -> True
-
-    renderFragment Nothing queryStr = queryStr
-    renderFragment (Just frag) queryStr
-      = queryStr <> "#" <> BSL.toStrict (toLazyByteString frag)
 
 catchConnectionError :: IO a -> IO (Either ClientError a)
 catchConnectionError action =

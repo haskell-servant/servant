@@ -55,7 +55,6 @@ import           Data.String.Conversions
 import           Data.Tagged
                  (Tagged (..), retag, untag)
 import qualified Data.Text                                  as T
-import qualified Data.Text.Encoding                         as T
 import           Data.Typeable
 import           GHC.TypeLits
                  (KnownNat, KnownSymbol, natVal, symbolVal)
@@ -66,8 +65,7 @@ import           Network.Socket
                  (SockAddr)
 import           Network.Wai
                  (Application, Request, httpVersion, isSecure, lazyRequestBody,
-                 queryString, remoteHost, getRequestBodyChunk, rawPathInfo,
-                 rawQueryString, requestHeaders,
+                 queryString, remoteHost, getRequestBodyChunk, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
 import           Prelude.Compat
@@ -85,7 +83,7 @@ import           Servant.API.ContentTypes
                  AllMime, MimeRender (..), MimeUnrender (..), NoContent,
                  canHandleAcceptH)
 import           Servant.API.Modifiers
-                 (FoldLenient, FoldRequired, LenientArgument, RequestArgument,
+                 (FoldLenient, FoldRequired, RequestArgument,
                  unfoldRequestArgument)
 import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
@@ -884,17 +882,8 @@ type HasServerArrowTypeError a b =
     ':$$: 'ShowType b
 #endif
 
--- | If you use @'Fragment' Text@ in one of the endpoints for your API,
--- this automatically requires your server-side handler to be a function
--- that takes an argument of type @'Maybe' 'Text'@.
---
--- This lets servant worry about looking it up in the URI fragment
--- and turning it into a value of the type you specify, enclosed
--- in 'Maybe', because it may not be there and servant would then
--- hand you 'Nothing'.
---
--- You can control how it'll be converted from 'Text' to your type
--- by simply providing an instance of 'FromHttpApiData' for your type.
+-- | Ignore @'Fragment'@ in server handlers.
+-- See <https://ietf.org/rfc/rfc2616.html#section-15.1.3> for more details.
 --
 -- Example:
 --
@@ -902,9 +891,8 @@ type HasServerArrowTypeError a b =
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: Maybe Text -> Handler [Book]
--- >         getBooksBy Nothing       = ...return all books...
--- >         getBooksBy (Just author) = ...return books by the given author...
+-- >   where getBooksBy :: Handler [Book]
+-- >         getBooksBy = ...return all books...
 #ifdef HAS_TYPE_ERROR
 instance ( OnlyOneFragment api, HasServer api context, FromHttpApiData a1
          , SBoolI (FoldLenient mods)
@@ -913,47 +901,12 @@ instance ( OnlyOneFragment api, HasServer api context, FromHttpApiData a1
 instance (HasServer api context, FromHttpApiData a1, SBoolI (FoldLenient mods))
 #endif
     => HasServer (Fragment' mods a1 :> api) context where
-  type ServerT (Fragment' mods a1 :> api) m =
-    LenientArgument mods a1 -> ServerT api m
+  type ServerT (Fragment' mods a1 :> api) m = ServerT api m
 
-  route Proxy context subserver =
-    let parseFragment req = do
-          bsFragment <- identifyFragment
-            (not . BC8.null) (crop . rawPathInfo) (crop . rawQueryString) req
-          textFragment <- either (const Nothing) Just (T.decodeUtf8' bsFragment)
-          pure (parseQueryParam textFragment)
-
-        parseFragmentDelayed
-          :: (SBoolI (FoldLenient mods))
-          => Request
-          -> DelayedIO (LenientArgument mods a1)
-        parseFragmentDelayed req = do
-          case (mev, sbool :: SBool (FoldLenient mods)) of
-            (ex, STrue)  -> return ex
-            (Just ex, SFalse) -> either errSt (return . Just) ex
-            (Nothing, SFalse) -> return Nothing
-
-          where
-            mev :: Maybe (Either T.Text a1)
-            mev = parseFragment req
-
-            errSt e = delayedFailFatal err400
-              { errBody = cs $ "Error parsing fragment failed:  " <> e }
-
-        crop = BC8.dropWhile (/= '#') -- keep '#' to handle empty fragment
-
-        identifyFragment test getPath getQuery req =
-          case (test (getPath req), test (getQuery req)) of
-            (_result, True) -> Just (BC8.drop 1 $ getQuery req)
-            (False, False)  -> Nothing
-            (True, False)   -> Just (BC8.drop 1 $ getPath req)
-
-        delayed = addFragmentCheck subserver . withRequest $ \req -> parseFragmentDelayed req
-
-    in  route (Proxy :: Proxy api) context delayed 
+  route Proxy context subserver = route (Proxy :: Proxy api) context subserver 
 
   hoistServerWithContext _ pc nt s =
-    hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+    hoistServerWithContext (Proxy :: Proxy api) pc nt s
 
 -- $setup
 -- >>> import Servant

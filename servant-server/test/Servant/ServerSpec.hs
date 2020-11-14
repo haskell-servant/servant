@@ -475,15 +475,9 @@ fragmentApi = Proxy
 
 fragServer :: Server FragmentApi
 fragServer = fragmentServer :<|> fragAge
-
   where
-    fragmentServer (Just (Right name_))
-      = return alice { name = name_ }
-    fragmentServer _ = return alice
-
-    fragAge (Just (Right age'))
-      = return alice { age = age' }
-    fragAge _ = return alice
+    fragmentServer = return alice
+    fragAge = return alice
 
 fragmentSpec :: Spec
 fragmentSpec = do
@@ -494,39 +488,9 @@ fragmentSpec = do
         }
 
   describe "Servant.API.Fragment" $ do
-    it "allows retrieving simple GET query with fragment" $ do
+    it "ignores fragment even if it is present in query" $ do
       flip runSession (serve fragmentApi fragServer) $ do
         response1 <- mkRequest "#Alice" ["name"]
-        liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
-
-    it "parses a query parameter" $ do
-      flip runSession (serve fragmentApi fragServer) $ do
-        response1 <- mkRequest "#43" ["age"]
-        liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
-          { age = 43
-          }
-
-    it "allows ignoring an error on fragment parse failure (status)" $ do
-        flip runSession (serve fragmentApi fragServer) $ do
-          response <- mkRequest "#foo" ["age"]
-          liftIO $ statusCode (simpleStatus response) `shouldBe` 200
-          return ()
-
-    it "allows ignoring an error on fragment parse failure (default response)" $ do
-        flip runSession (serve fragmentApi fragServer) $ do
-          response <- mkRequest "#foo" ["age"]
-          liftIO $ decode' (simpleBody response) `shouldBe` Just alice
-
-    it "allows rewriting for simple GET query with fragment" $ do
-      flip runSession (serve fragmentApi fragServer) $ do
-          response1 <- mkRequest "#bob" ["name"]
-          liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
-            { name = "bob"
-            }
-
-    it "allows retrieving value-less GET query (w/o fragment)" $ do
-      flip runSession (serve fragmentApi fragServer) $ do
-        response1 <- mkRequest "" ["name"]
         liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
 
 -- }}}

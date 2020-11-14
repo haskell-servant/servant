@@ -105,11 +105,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         left show <$> runClient (getQueryFlag flag) baseUrl `shouldReturn` Right flag
 
     it "Servant.API.Fragment" $ \(_, baseUrl) -> do
-      left id <$> runClient (getFragment (Just "alice")) baseUrl `shouldReturn` Right alice
-      let bob = Person "bob" 0
-      left id <$> runClient (getFragment (Just "bob")) baseUrl `shouldReturn` Right bob
-      left id <$> runClient (getFragment Nothing) baseUrl `shouldReturn` Right alice
-
+      left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
       res <- runClient (getRawSuccess HTTP.methodGet) baseUrl
       case res of
