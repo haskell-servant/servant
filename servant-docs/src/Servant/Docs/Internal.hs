@@ -169,7 +169,7 @@ data DocFragment = DocFragment
   , _fragDesc   :: String -- user supplied
   } deriving (Eq, Ord, Show)
 
--- | There should be at most one `Fragment` per API endpoint.
+-- | There should be at most one 'Fragment' per API endpoint.
 -- So here we are keeping the first occurrence.
 combineFragment :: Maybe DocFragment -> Maybe DocFragment -> Maybe DocFragment
 Nothing `combineFragment` mdocFragment = mdocFragment
@@ -995,14 +995,14 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs api)
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
 
-instance (ToFragment (Fragment' mods a), HasDocs api)
-      => HasDocs (Fragment' mods a :> api) where
+instance (ToFragment (Fragment a), HasDocs api)
+      => HasDocs (Fragment a :> api) where
 
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
 
     where subApiP = Proxy :: Proxy api
-          fragmentP = Proxy :: Proxy (Fragment' mods a)
+          fragmentP = Proxy :: Proxy (Fragment a)
           action' = set fragment (Just (toFragment fragmentP)) action
 
 instance HasDocs Raw where

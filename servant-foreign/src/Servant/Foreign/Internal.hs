@@ -332,8 +332,8 @@ instance
 
 instance
   (HasForeignType lang ftype (Maybe a), HasForeign lang ftype api)
-  => HasForeign lang ftype (Fragment' mods a :> api) where
-  type Foreign ftype (Fragment' mods a :> api) = Foreign ftype api
+  => HasForeign lang ftype (Fragment a :> api) where
+  type Foreign ftype (Fragment a :> api) = Foreign ftype api
   foreignFor lang Proxy Proxy req =
     foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
       req & reqUrl . frag .~ Just argT

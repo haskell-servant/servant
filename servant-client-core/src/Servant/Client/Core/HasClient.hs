@@ -68,7 +68,7 @@ import qualified Network.HTTP.Types                       as H
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
                  BuildHeadersTo (..), Capture', CaptureAll, Description,
-                 EmptyAPI, Fragment', FramingRender (..), FramingUnrender (..),
+                 EmptyAPI, Fragment, FramingRender (..), FramingUnrender (..),
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent),
@@ -771,9 +771,9 @@ instance ( OnlyOneFragment api, HasClient m api, ToHttpApiData a
 #else
 instance ( HasClient m api, ToHttpApiData a
 #endif
-         ) => HasClient m (Fragment' mods a :> api) where
+         ) => HasClient m (Fragment a :> api) where
 
-  type Client m (Fragment' mods a :> api) = Client m api
+  type Client m (Fragment a :> api) = Client m api
 
   clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api) 
 

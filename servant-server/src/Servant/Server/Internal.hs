@@ -71,7 +71,7 @@ import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
-                 CaptureAll, Description, EmptyAPI, Fragment',
+                 CaptureAll, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  Header', If, IsSecure (..), NoContentVerb, QueryFlag,
                  QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
@@ -894,14 +894,12 @@ type HasServerArrowTypeError a b =
 -- >   where getBooksBy :: Handler [Book]
 -- >         getBooksBy = ...return all books...
 #ifdef HAS_TYPE_ERROR
-instance ( OnlyOneFragment api, HasServer api context, FromHttpApiData a1
-         , SBoolI (FoldLenient mods)
-         )
+instance (OnlyOneFragment api, HasServer api context, FromHttpApiData a1)
 #else
-instance (HasServer api context, FromHttpApiData a1, SBoolI (FoldLenient mods))
+instance (HasServer api context, FromHttpApiData a1)
 #endif
-    => HasServer (Fragment' mods a1 :> api) context where
-  type ServerT (Fragment' mods a1 :> api) m = ServerT api m
+    => HasServer (Fragment a1 :> api) context where
+  type ServerT (Fragment a1 :> api) m = ServerT api m
 
   route Proxy context subserver = route (Proxy :: Proxy api) context subserver 
 

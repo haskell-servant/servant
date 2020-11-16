@@ -20,7 +20,7 @@ module Servant.API (
   module Servant.API.QueryParam,
   -- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@
   module Servant.API.Fragment,
-  -- | Retrieving parameter from the fragment of the 'URI': @'Fragment'@
+  -- | Documenting the fragment of the 'URI': @'Fragment'@
   module Servant.API.ReqBody,
   -- | Accessing the request body as a JSON-encoded type: @'ReqBody'@
   module Servant.API.RemoteHost,
@@ -96,7 +96,7 @@ import           Servant.API.Empty
 import           Servant.API.Experimental.Auth
                  (AuthProtect)
 import           Servant.API.Fragment
-                 (Fragment, Fragment')
+                 (Fragment)
 import           Servant.API.Header
                  (Header, Header')
 import           Servant.API.HttpVersion

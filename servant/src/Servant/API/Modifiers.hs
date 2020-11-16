@@ -12,7 +12,6 @@ module Servant.API.Modifiers (
     Lenient, Strict,
     FoldLenient, FoldLenient',
     -- * Utilities
-    LenientArgument,
     RequiredArgument,
     foldRequiredArgument,
     unfoldRequiredArgument,
@@ -131,9 +130,6 @@ type RequestArgument mods a =
     If (FoldRequired mods)
        (If (FoldLenient mods) (Either Text a) a)
        (Maybe (If (FoldLenient mods) (Either Text a) a))
-
-type LenientArgument mods a =
-  If (FoldLenient mods) (Maybe (Either Text a)) (Maybe a)
 
 -- | Unfold a value into a 'RequestArgument'.
 unfoldRequestArgument
