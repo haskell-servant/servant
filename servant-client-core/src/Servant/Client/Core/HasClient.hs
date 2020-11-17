@@ -79,7 +79,7 @@ import           Servant.API
                  getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
-import           Servant.API.TypeLevel (OnlyOneFragment)
+import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.UVerb
@@ -767,9 +767,9 @@ instance ( HasClient m api
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
 #ifdef HAS_TYPE_ERROR
-instance ( OnlyOneFragment api, HasClient m api, ToHttpApiData a
+instance (AtLeastOneFragment api, FragmentUnique (Fragment a :> api), HasClient m api
 #else
-instance ( HasClient m api, ToHttpApiData a
+instance ( HasClient m api
 #endif
          ) => HasClient m (Fragment a :> api) where
 
@@ -777,7 +777,7 @@ instance ( HasClient m api, ToHttpApiData a
 
   clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api) 
 
-  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+  hoistClientMonad pm _ = hoistClientMonad pm (Proxy :: Proxy api)
 
 -- * Basic Authentication
 

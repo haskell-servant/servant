@@ -46,7 +46,8 @@ module Servant.API.TypeLevel (
     Or,
     And,
     -- ** Fragment
-    OnlyOneFragment
+    FragmentUnique,
+    AtLeastOneFragment
     ) where
 
 
@@ -67,6 +68,8 @@ import           Servant.API.Sub
                  (type (:>))
 import           Servant.API.Verbs
                  (Verb)
+import           Servant.API.UVerb
+                 (UVerb)
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
 
@@ -251,20 +254,24 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 
 -- ** Fragment
 
-class FragmentUnique api => OnlyOneFragment api
+class FragmentUnique api => AtLeastOneFragment api
 
 -- | If fragment appeared in API endpoint twice, compile-time error would be raised.
 --
 -- >>> -- type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
--- >>> instance OnlyOneFragment FailAPI
+-- >>> instance AtLeastOneFragment FailAPI
 -- ...
 -- ...Only one Fragment allowed per endpoint in api...
 -- ...
 -- ...In the instance declaration for...
-instance OnlyOneFragment (Verb m s ct typ)
+instance AtLeastOneFragment (Verb m s ct typ)
+
+instance AtLeastOneFragment (UVerb m cts as)
+
+instance AtLeastOneFragment (Fragment a)
 
 type family FragmentUnique api :: Constraint where
-  FragmentUnique (sa :<|> sb)       = Or (FragmentUnique sa) (FragmentUnique sb)
+  FragmentUnique (sa :<|> sb)       = And (FragmentUnique sa) (FragmentUnique sb)
   FragmentUnique (Fragment a :> sa) = FragmentNotIn sa (Fragment a :> sa)
   FragmentUnique (x :> sa)          = FragmentUnique sa
   FragmentUnique (Fragment a)       = ()

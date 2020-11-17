@@ -107,7 +107,7 @@ import           Servant.Server.Internal.ServerError
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
 import           Servant.API.TypeLevel
-                 (OnlyOneFragment)
+                 (AtLeastOneFragment, FragmentUnique)
 #endif
 
 class HasServer api context where
@@ -894,17 +894,16 @@ type HasServerArrowTypeError a b =
 -- >   where getBooksBy :: Handler [Book]
 -- >         getBooksBy = ...return all books...
 #ifdef HAS_TYPE_ERROR
-instance (OnlyOneFragment api, HasServer api context, FromHttpApiData a1)
+instance (AtLeastOneFragment api, FragmentUnique (Fragment a1 :> api), HasServer api context)
 #else
-instance (HasServer api context, FromHttpApiData a1)
+instance (HasServer api context)
 #endif
     => HasServer (Fragment a1 :> api) context where
   type ServerT (Fragment a1 :> api) m = ServerT api m
 
-  route Proxy context subserver = route (Proxy :: Proxy api) context subserver 
+  route _ = route (Proxy :: Proxy api)
 
-  hoistServerWithContext _ pc nt s =
-    hoistServerWithContext (Proxy :: Proxy api) pc nt s
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 -- $setup
 -- >>> import Servant
