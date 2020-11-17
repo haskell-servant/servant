@@ -32,12 +32,12 @@ import           Data.Bifunctor
                  (Bifunctor (..))
 import           Data.Bitraversable
                  (Bitraversable (..), bifoldMapDefault, bimapDefault)
-import qualified Data.ByteString              as BS
-import qualified Data.ByteString.Builder      as Builder
-import qualified Data.ByteString.Lazy         as LBS
+import qualified Data.ByteString                      as BS
+import qualified Data.ByteString.Builder              as Builder
+import qualified Data.ByteString.Lazy                 as LBS
 import           Data.Semigroup
                  ((<>))
-import qualified Data.Sequence                as Seq
+import qualified Data.Sequence                        as Seq
 import           Data.Text
                  (Text)
 import           Data.Text.Encoding
