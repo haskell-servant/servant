@@ -33,12 +33,10 @@ module Servant.API.UVerb
   )
 where
 
-import Data.Aeson (FromJSON, ToJSON)
-import Web.FormUrlEncoded(FromForm, ToForm)
 import Data.Proxy (Proxy (Proxy))
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
-import Servant.API.ContentTypes (NoContent)
+import Servant.API.ContentTypes (NoContent, MimeRender(mimeRender), MimeUnrender(mimeUnrender))
 import Servant.API.Status (KnownStatus, statusVal)
 import Servant.API.UVerb.Union
 
@@ -47,24 +45,6 @@ class KnownStatus (StatusOf a) => HasStatus (a :: *) where
 
 statusOf :: forall a proxy. HasStatus a => proxy a -> Status
 statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
-
--- | an instance of this typeclass assigns a HTTP status code to a return type
---
--- Example:
---
--- @
---    data NotFoundError = NotFoundError String
---
---    instance HasStatus NotFoundError where
---      type StatusOf NotFoundError = 404
--- @
---
--- You can also use the convience newtype wrapper 'WithStatus' if you want to
--- avoid writing a 'HasStatus' instance manually. It also has the benefit of
--- showing the status code in the type; which might aid in readability.
---
-instance KnownStatus n => HasStatus (WithStatus n a) where
-  type StatusOf (WithStatus n a) = n
 
 -- | If an API can respond with 'NoContent' we assume that this will happen
 -- with the status code 204 No Content. If this needs to be overridden,
@@ -86,20 +66,33 @@ instance (HasStatus a, HasStatuses as) => HasStatuses (a ': as) where
 
 -- | A simple newtype wrapper that pairs a type with its status code.  It
 -- implements all the content types that Servant ships with by default.
---
--- If you're using Servant with a content type that is not in the core servant
--- packages, and you want to avoid orphan instances you can very easily define
--- your own newtype instead.
---
--- @
---    newtype MyWithStatus (k :: Nat) a = MyWithStaus a
---      deriving (ToProtobuf a, FromProtobuf a)
---
---    instance KnownStatus n => HasStatus (MyWithStatus n a) where
---      type StatusOf (MyWithStatus n a) = n
--- @
 newtype WithStatus (k :: Nat) a = WithStatus a
-  deriving (Eq, Show, ToJSON, FromJSON, ToForm, FromForm)
+  deriving (Eq, Show)
+
+instance MimeRender ctype a => MimeRender ctype (WithStatus _status a) where
+  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
+
+instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
+  mimeUnrender contentTypeProxy input =
+    WithStatus <$> mimeUnrender contentTypeProxy input
+
+-- | an instance of this typeclass assigns a HTTP status code to a return type
+--
+-- Example:
+--
+-- @
+--    data NotFoundError = NotFoundError String
+--
+--    instance HasStatus NotFoundError where
+--      type StatusOf NotFoundError = 404
+-- @
+--
+-- You can also use the convience newtype wrapper 'WithStatus' if you want to
+-- avoid writing a 'HasStatus' instance manually. It also has the benefit of
+-- showing the status code in the type; which might aid in readability.
+instance KnownStatus n => HasStatus (WithStatus n a) where
+  type StatusOf (WithStatus n a) = n
+
 
 -- | A variant of 'Verb' that can have any of a number of response values and status codes.
 --
