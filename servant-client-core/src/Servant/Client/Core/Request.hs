@@ -41,7 +41,7 @@ import qualified Data.Sequence                as Seq
 import           Data.Text
                  (Text)
 import           Data.Text.Encoding
-                 (encodeUtf8, encodeUtf8Builder)
+                 (encodeUtf8)
 import           Data.Typeable
                  (Typeable)
 import           GHC.Generics
@@ -52,10 +52,9 @@ import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
                  http11, methodGet)
 import           Servant.API
-                 (SourceIO, ToHttpApiData, toEncodedUrlPiece, toHeader)
+                 (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
 
-import           Servant.Client.Core.Internal
-                 (mediaTypeRnf)
+import           Servant.Client.Core.Internal (mediaTypeRnf)
 
 data RequestF body path = Request
   { requestPath        :: path

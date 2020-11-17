@@ -65,7 +65,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (Status, hContentType, renderQuery, statusCode)
+                 (hContentType, renderQuery, statusCode, Status)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
