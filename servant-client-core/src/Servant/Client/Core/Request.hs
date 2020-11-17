@@ -54,7 +54,7 @@ import           Network.HTTP.Types
 import           Servant.API
                  (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
 
-import           Servant.Client.Core.Internal (mediaTypeRnf)
+import Servant.Client.Core.Internal (mediaTypeRnf)
 
 data RequestF body path = Request
   { requestPath        :: path
