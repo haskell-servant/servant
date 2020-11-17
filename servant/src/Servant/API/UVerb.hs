@@ -4,14 +4,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- | An alternative to 'Verb' for end-points that respond with a resource value of any of an
 -- open union of types, and specific status codes for each type in this union.  (`UVerb` is
@@ -35,11 +34,11 @@ module Servant.API.UVerb
 where
 
 import Data.Aeson (FromJSON, ToJSON)
+import Web.FormUrlEncoded(FromForm, ToForm)
 import Data.Proxy (Proxy (Proxy))
-import qualified GHC.Generics as GHC
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
-import Servant.API.ContentTypes (MimeRender (mimeRender), MimeUnrender (mimeUnrender), NoContent)
+import Servant.API.ContentTypes (NoContent)
 import Servant.API.Status (KnownStatus, statusVal)
 import Servant.API.UVerb.Union
 
@@ -49,6 +48,21 @@ class KnownStatus (StatusOf a) => HasStatus (a :: *) where
 statusOf :: forall a proxy. HasStatus a => proxy a -> Status
 statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
 
+-- | an instance of this typeclass assigns a HTTP status code to a return type
+--
+-- Example:
+--
+-- @
+--    data NotFoundError = NotFoundError String
+--
+--    instance HasStatus NotFoundError where
+--      type StatusOf NotFoundError = 404
+-- @
+--
+-- You can also use the convience newtype wrapper 'WithStatus' if you want to
+-- avoid writing a 'HasStatus' instance manually. It also has the benefit of
+-- showing the status code in the type; which might aid in readability.
+--
 instance KnownStatus n => HasStatus (WithStatus n a) where
   type StatusOf (WithStatus n a) = n
 
@@ -70,19 +84,22 @@ instance (HasStatus a, HasStatuses as) => HasStatuses (a ': as) where
   type Statuses (a ': as) = StatusOf a ': Statuses as
   statuses _ = statusOf (Proxy :: Proxy a) : statuses (Proxy :: Proxy as)
 
+-- | A simple newtype wrapper that pairs a type with its status code.  It
+-- implements all the content types that Servant ships with by default.
+--
+-- If you're using Servant with a content type that is not in the core servant
+-- packages, and you want to avoid orphan instances you can very easily define
+-- your own newtype instead.
+--
+-- @
+--    newtype MyWithStatus (k :: Nat) a = MyWithStaus a
+--      deriving (ToProtobuf a, FromProtobuf a)
+--
+--    instance KnownStatus n => HasStatus (MyWithStatus n a) where
+--      type StatusOf (MyWithStatus n a) = n
+-- @
 newtype WithStatus (k :: Nat) a = WithStatus a
-  deriving (Eq, Show, GHC.Generic)
-
-instance (GHC.Generic (WithStatus n a), ToJSON a) => ToJSON (WithStatus n a)
-
-instance (GHC.Generic (WithStatus n a), FromJSON a) => FromJSON (WithStatus n a)
-
-instance MimeRender ctype a => MimeRender ctype (WithStatus _status a) where
-  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
-
-instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
-  mimeUnrender contentTypeProxy input =
-    WithStatus <$> mimeUnrender contentTypeProxy input
+  deriving (Eq, Show, ToJSON, FromJSON, ToForm, FromForm)
 
 -- | A variant of 'Verb' that can have any of a number of response values and status codes.
 --
