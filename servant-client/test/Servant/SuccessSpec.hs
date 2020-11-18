@@ -1,17 +1,17 @@
-{-# LANGUAGE CPP                    #-}
-{-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
@@ -34,20 +34,21 @@ import           Data.Maybe
 import           Data.Monoid ()
 import           Data.Text
                  (Text)
-import qualified Network.HTTP.Client                  as C
-import qualified Network.HTTP.Types                   as HTTP
+import qualified Network.HTTP.Client                as C
+import qualified Network.HTTP.Types                 as HTTP
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
-                 (NoContent (NoContent), WithStatus(WithStatus), getHeaders)
+                 (NoContent (NoContent), WithStatus (WithStatus), getHeaders)
 import           Servant.Client
-import qualified Servant.Client.Core.Request as Req
-import           Servant.Client.Internal.HttpClient (defaultMakeClientRequest)
-import           Servant.Test.ComprehensiveAPI
+import qualified Servant.Client.Core.Request        as Req
+import           Servant.Client.Internal.HttpClient
+                 (defaultMakeClientRequest)
 import           Servant.ClientTestUtils
+import           Servant.Test.ComprehensiveAPI
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -103,6 +104,8 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
         left show <$> runClient (getQueryFlag flag) baseUrl `shouldReturn` Right flag
 
+    it "Servant.API.Fragment" $ \(_, baseUrl) -> do
+      left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
       res <- runClient (getRawSuccess HTTP.methodGet) baseUrl
       case res of

@@ -120,6 +120,7 @@ module Servant.Links (
   , Param (..)
   , linkSegments
   , linkQueryParams
+  , linkFragment
 ) where
 
 import           Data.List
@@ -152,6 +153,8 @@ import           Servant.API.Empty
                  (EmptyAPI (..))
 import           Servant.API.Experimental.Auth
                  (AuthProtect)
+import           Servant.API.Fragment
+                 (Fragment)
 import           Servant.API.Generic
 import           Servant.API.Header
                  (Header')
@@ -188,9 +191,12 @@ import           Web.HttpApiData
 data Link = Link
   { _segments    :: [Escaped]
   , _queryParams :: [Param]
+  , _fragment    :: Fragment'
   } deriving Show
 
 newtype Escaped = Escaped String
+
+type Fragment' = Maybe String
 
 escaped :: String -> Escaped
 escaped = Escaped . escapeURIString isUnreserved
@@ -208,11 +214,14 @@ linkSegments = map getEscaped . _segments
 linkQueryParams :: Link -> [Param]
 linkQueryParams = _queryParams
 
+linkFragment :: Link -> Fragment'
+linkFragment = _fragment
+
 instance ToHttpApiData Link where
     toHeader   = TE.encodeUtf8 . toUrlPiece
     toUrlPiece l =
         let uri = linkURI l
-        in Text.pack $ uriPath uri ++ uriQuery uri
+        in Text.pack $ uriPath uri ++ uriQuery uri ++ uriFragment uri
 
 -- | Query parameter.
 data Param
@@ -227,6 +236,9 @@ addSegment seg l = l { _segments = _segments l <> [seg] }
 addQueryParam :: Param -> Link -> Link
 addQueryParam qp l =
     l { _queryParams = _queryParams l <> [qp] }
+
+addFragment :: Fragment' -> Link -> Link
+addFragment fr l = l { _fragment = fr }
 
 -- | Transform 'Link' into 'URI'.
 --
@@ -245,7 +257,7 @@ addQueryParam qp l =
 -- >>> type SomeRoute = "abc" :> Capture "email" String :> Put '[JSON] ()
 -- >>> let someRoute = Proxy :: Proxy SomeRoute
 -- >>> safeLink someRoute someRoute "test@example.com"
--- Link {_segments = ["abc","test%40example.com"], _queryParams = []}
+-- Link {_segments = ["abc","test%40example.com"], _queryParams = [], _fragment = Nothing}
 --
 -- >>> linkURI $ safeLink someRoute someRoute "test@example.com"
 -- abc/test%40example.com
@@ -269,11 +281,12 @@ data LinkArrayElementStyle
 -- sum?x=1&x=2&x=3
 --
 linkURI' :: LinkArrayElementStyle -> Link -> URI
-linkURI' addBrackets (Link segments q_params) =
+linkURI' addBrackets (Link segments q_params mfragment) =
     URI mempty  -- No scheme (relative)
         Nothing -- Or authority (relative)
         (intercalate "/" $ map getEscaped segments)
-        (makeQueries q_params) mempty
+        (makeQueries q_params)
+        (makeFragment mfragment)
   where
     makeQueries :: [Param] -> String
     makeQueries [] = ""
@@ -284,6 +297,10 @@ linkURI' addBrackets (Link segments q_params) =
     makeQuery (ArrayElemParam k v) = escape k <> style <> escape (Text.unpack v)
     makeQuery (SingleParam k v)    = escape k <> "=" <> escape (Text.unpack v)
     makeQuery (FlagParam k)        = escape k
+
+    makeFragment :: Fragment' -> String
+    makeFragment Nothing = ""
+    makeFragment (Just fr) = "#" <> escape fr
 
     style = case addBrackets of
         LinkArrayElementBracket -> "[]="
@@ -310,7 +327,7 @@ safeLink'
     -> Proxy api      -- ^ The whole API that this endpoint is a part of
     -> Proxy endpoint -- ^ The API endpoint you would like to point to
     -> MkLink endpoint a
-safeLink' toA _ endpoint = toLink toA endpoint (Link mempty mempty)
+safeLink' toA _ endpoint = toLink toA endpoint (Link mempty mempty mempty)
 
 -- | Create all links in an API.
 --
@@ -341,7 +358,7 @@ allLinks'
     => (Link -> a)
     -> Proxy api
     -> MkLink api a
-allLinks' toA api = toLink toA api (Link mempty mempty)
+allLinks' toA api = toLink toA api (Link mempty mempty mempty)
 
 -------------------------------------------------------------------------------
 -- Generics
@@ -562,6 +579,13 @@ instance HasLink (Stream m status fr ct a) where
 instance HasLink sub => HasLink (AuthProtect tag :> sub) where
   type MkLink (AuthProtect tag :> sub) a = MkLink sub a
   toLink = simpleToLink (Proxy :: Proxy sub)
+
+instance (HasLink sub, ToHttpApiData v)
+    => HasLink (Fragment v :> sub) where
+  type MkLink (Fragment v :> sub) a = v -> MkLink sub a
+  toLink toA _ l mv =
+      toLink toA (Proxy :: Proxy sub) $
+         addFragment ((Just . Text.unpack . toQueryParam) mv) l
 
 -- | Helper for implementing 'toLink' for combinators not affecting link
 -- structure.

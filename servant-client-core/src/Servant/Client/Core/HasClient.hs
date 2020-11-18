@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -12,6 +13,10 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+
+#if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
+#define HAS_TYPE_ERROR
+#endif
 
 module Servant.Client.Core.HasClient (
     clientIn,
@@ -63,17 +68,18 @@ import qualified Network.HTTP.Types                       as H
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
                  BuildHeadersTo (..), Capture', CaptureAll, Description,
-                 EmptyAPI, FramingRender (..), FramingUnrender (..),
+                 EmptyAPI, Fragment, FramingRender (..), FramingUnrender (..),
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
-                 MimeUnrender (mimeUnrender), NoContent (NoContent), QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (..), RemoteHost,
-                 ReqBody', SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
-                 ToSourceIO (..), Vault, Verb, NoContentVerb, WithNamedContext,
-                 contentType, getHeadersHList, getResponse, toQueryParam,
-                 toUrlPiece)
+                 MimeUnrender (mimeUnrender), NoContent (NoContent),
+                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
+                 ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
+                 StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
+                 Verb, WithNamedContext, contentType, getHeadersHList,
+                 getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
+import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.UVerb
@@ -744,6 +750,34 @@ instance ( HasClient m api
 
   hoistClientMonad pm _ f cl = \authreq ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl authreq)
+
+-- | Ignore @'Fragment'@ in client functions.
+-- See <https://ietf.org/rfc/rfc2616.html#section-15.1.3> for more details.
+-- 
+-- Example:
+--
+-- > type MyApi = "books" :> Fragment Text :> Get '[JSON] [Book]
+-- >
+-- > myApi :: Proxy MyApi
+-- > myApi = Proxy
+-- >
+-- > getBooksBy :: Maybe Text -> ClientM [Book]
+-- > getBooksBy = client myApi
+-- > -- then you can just use "getBooksBy" to query that endpoint.
+-- > -- 'getBooksBy Nothing' for all books
+-- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
+#ifdef HAS_TYPE_ERROR
+instance (AtLeastOneFragment api, FragmentUnique (Fragment a :> api), HasClient m api
+#else
+instance ( HasClient m api
+#endif
+         ) => HasClient m (Fragment a :> api) where
+
+  type Client m (Fragment a :> api) = Client m api
+
+  clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api) 
+
+  hoistClientMonad pm _ = hoistClientMonad pm (Proxy :: Proxy api)
 
 -- * Basic Authentication
 

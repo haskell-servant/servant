@@ -71,17 +71,17 @@ import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
-                 CaptureAll, Description, EmptyAPI, FramingRender (..),
-                 FramingUnrender (..), FromSourceIO (..), Header', If,
-                 IsSecure (..), QueryFlag, QueryParam', QueryParams, Raw,
-                 ReflectMethod (reflectMethod), RemoteHost, ReqBody',
-                 SBool (..), SBoolI (..), SourceIO, Stream, StreamBody',
-                 Summary, ToSourceIO (..), Vault, Verb, NoContentVerb,
+                 CaptureAll, Description, EmptyAPI, Fragment,
+                 FramingRender (..), FramingUnrender (..), FromSourceIO (..),
+                 Header', If, IsSecure (..), NoContentVerb, QueryFlag,
+                 QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
+                 RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
+                 Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
                  WithNamedContext)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
-                 AllMime, MimeRender (..), MimeUnrender (..), canHandleAcceptH,
-                 NoContent)
+                 AllMime, MimeRender (..), MimeUnrender (..), NoContent,
+                 canHandleAcceptH)
 import           Servant.API.Modifiers
                  (FoldLenient, FoldRequired, RequestArgument,
                  unfoldRequestArgument)
@@ -89,8 +89,8 @@ import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
 import qualified Servant.Types.SourceT                      as S
 import           Web.HttpApiData
-                 (FromHttpApiData, parseHeader, parseQueryParam,
-                 parseUrlPieces, parseUrlPiece)
+                 (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
+                 parseUrlPieces)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -106,6 +106,8 @@ import           Servant.Server.Internal.ServerError
 #ifdef HAS_TYPE_ERROR
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
+import           Servant.API.TypeLevel
+                 (AtLeastOneFragment, FragmentUnique)
 #endif
 
 class HasServer api context where
@@ -879,6 +881,29 @@ type HasServerArrowTypeError a b =
     ':$$: 'Text "and"
     ':$$: 'ShowType b
 #endif
+
+-- | Ignore @'Fragment'@ in server handlers.
+-- See <https://ietf.org/rfc/rfc2616.html#section-15.1.3> for more details.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> Fragment Text :> Get '[JSON] [Book]
+-- >
+-- > server :: Server MyApi
+-- > server = getBooksBy
+-- >   where getBooksBy :: Handler [Book]
+-- >         getBooksBy = ...return all books...
+#ifdef HAS_TYPE_ERROR
+instance (AtLeastOneFragment api, FragmentUnique (Fragment a1 :> api), HasServer api context)
+#else
+instance (HasServer api context)
+#endif
+    => HasServer (Fragment a1 :> api) context where
+  type ServerT (Fragment a1 :> api) m = ServerT api m
+
+  route _ = route (Proxy :: Proxy api)
+
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 -- $setup
 -- >>> import Servant

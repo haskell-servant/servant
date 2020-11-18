@@ -1,12 +1,12 @@
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE DeriveGeneric        #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE PolyKinds            #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 
 module Servant.ServerSpec where
@@ -48,12 +48,12 @@ import           Network.Wai.Test
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
-                 Delete, EmptyAPI, Get, HasStatus(StatusOf), Header, Headers,
-                 HttpVersion, IsSecure (..), JSON, Lenient, NoContent (..),
-                 NoContentVerb, NoFraming, OctetStream, Patch, PlainText, Post,
-                 Put, QueryFlag, QueryParam, QueryParams, Raw, RemoteHost,
-                 ReqBody, SourceIO, StdMethod (..), Stream, Strict, Union,
-                 UVerb, Verb, addHeader)
+                 Delete, EmptyAPI, Fragment, Get, HasStatus (StatusOf), Header,
+                 Headers, HttpVersion, IsSecure (..), JSON, Lenient,
+                 NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
+                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
+                 RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
+                 UVerb, Union, Verb, addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, respond, serve,
@@ -92,6 +92,7 @@ spec = do
   captureSpec
   captureAllSpec
   queryParamSpec
+  fragmentSpec
   reqBodySpec
   headerSpec
   rawSpec
@@ -460,6 +461,37 @@ queryParamSpec = do
             liftIO $ decode' (simpleBody response3'') `shouldBe` Just alice
               { name = "Alice"
               }
+
+-- }}}
+------------------------------------------------------------------------------
+-- * fragmentSpec {{{
+------------------------------------------------------------------------------
+
+type FragmentApi = "name" :> Fragment String :> Get '[JSON] Person
+              :<|> "age"  :> Fragment Integer :> Get '[JSON] Person
+
+fragmentApi :: Proxy FragmentApi
+fragmentApi = Proxy
+
+fragServer :: Server FragmentApi
+fragServer = fragmentServer :<|> fragAge
+  where
+    fragmentServer = return alice
+    fragAge = return alice
+
+fragmentSpec :: Spec
+fragmentSpec = do
+  let mkRequest params pinfo = Network.Wai.Test.request defaultRequest
+        { rawQueryString = params
+        , queryString    = parseQuery params
+        , pathInfo       = pinfo
+        }
+
+  describe "Servant.API.Fragment" $ do
+    it "ignores fragment even if it is present in query" $ do
+      flip runSession (serve fragmentApi fragServer) $ do
+        response1 <- mkRequest "#Alice" ["name"]
+        liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
 
 -- }}}
 ------------------------------------------------------------------------------

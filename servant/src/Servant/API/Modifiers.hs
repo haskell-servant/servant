@@ -131,8 +131,6 @@ type RequestArgument mods a =
        (If (FoldLenient mods) (Either Text a) a)
        (Maybe (If (FoldLenient mods) (Either Text a) a))
 
-
-
 -- | Unfold a value into a 'RequestArgument'.
 unfoldRequestArgument
     :: forall mods m a. (Monad m, SBoolI (FoldRequired mods), SBoolI (FoldLenient mods))

@@ -1,12 +1,16 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE CPP                      #-}
+{-# LANGUAGE ConstraintKinds          #-}
+{-# LANGUAGE DataKinds                #-}
+{-# LANGUAGE FlexibleInstances        #-}
+{-# LANGUAGE KindSignatures           #-}
+{-# LANGUAGE MultiParamTypeClasses    #-}
+{-# LANGUAGE PolyKinds                #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
+{-# LANGUAGE TypeFamilies             #-}
+{-# LANGUAGE TypeOperators            #-}
+{-# LANGUAGE RankNTypes               #-}
+{-# LANGUAGE UndecidableInstances     #-}
+{-# LANGUAGE UndecidableSuperClasses  #-}
 
 {-|
 This module collects utilities for manipulating @servant@ API types. The
@@ -41,6 +45,9 @@ module Servant.API.TypeLevel (
     -- ** Logic
     Or,
     And,
+    -- ** Fragment
+    FragmentUnique,
+    AtLeastOneFragment
     ) where
 
 
@@ -50,6 +57,7 @@ import           Servant.API.Alternative
                  (type (:<|>))
 import           Servant.API.Capture
                  (Capture, CaptureAll)
+import           Servant.API.Fragment
 import           Servant.API.Header
                  (Header)
 import           Servant.API.QueryParam
@@ -60,6 +68,8 @@ import           Servant.API.Sub
                  (type (:>))
 import           Servant.API.Verbs
                  (Verb)
+import           Servant.API.UVerb
+                 (UVerb)
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
 
@@ -128,6 +138,7 @@ type family IsElem endpoint api :: Constraint where
   IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
   IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
   IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
+  IsElem sa (Fragment x :> sb)            = IsElem sa sb
   IsElem (Verb m s ct typ) (Verb m s ct' typ)
                                           = IsSubList ct ct'
   IsElem e e                              = ()
@@ -241,6 +252,43 @@ We might try to factor these our more cleanly, but the type synonyms and type
 families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 -}
 
+-- ** Fragment
+
+class FragmentUnique api => AtLeastOneFragment api
+
+-- | If fragment appeared in API endpoint twice, compile-time error would be raised.
+--
+-- >>> -- type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
+-- >>> instance AtLeastOneFragment FailAPI
+-- ...
+-- ...Only one Fragment allowed per endpoint in api...
+-- ...
+-- ...In the instance declaration for...
+instance AtLeastOneFragment (Verb m s ct typ)
+
+instance AtLeastOneFragment (UVerb m cts as)
+
+instance AtLeastOneFragment (Fragment a)
+
+type family FragmentUnique api :: Constraint where
+  FragmentUnique (sa :<|> sb)       = And (FragmentUnique sa) (FragmentUnique sb)
+  FragmentUnique (Fragment a :> sa) = FragmentNotIn sa (Fragment a :> sa)
+  FragmentUnique (x :> sa)          = FragmentUnique sa
+  FragmentUnique (Fragment a)       = ()
+  FragmentUnique x                  = ()
+
+type family FragmentNotIn api orig :: Constraint where
+  FragmentNotIn (sa :<|> sb)       orig =
+    And (FragmentNotIn sa orig) (FragmentNotIn sb orig)
+  FragmentNotIn (Fragment c :> sa) orig = TypeError (NotUniqueFragmentInApi orig)
+  FragmentNotIn (x :> sa)          orig = FragmentNotIn sa orig
+  FragmentNotIn (Fragment c)       orig = TypeError (NotUniqueFragmentInApi orig)
+  FragmentNotIn x                  orig = ()
+
+type NotUniqueFragmentInApi api =
+    'Text "Only one Fragment allowed per endpoint in api ‘"
+    ':<>: 'ShowType api
+    ':<>: 'Text "’."
 
 -- $setup
 --
@@ -248,6 +296,7 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 --
 -- >>> :set -XPolyKinds
 -- >>> :set -XGADTs
+-- >>> :set -XTypeSynonymInstances -XFlexibleInstances
 -- >>> import Data.Proxy
 -- >>> import Data.Type.Equality
 -- >>> import Servant.API
@@ -255,4 +304,5 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 -- >>> instance Show (OK ctx) where show _ = "OK"
 -- >>> let ok :: ctx => Proxy ctx -> OK ctx; ok _ = OK
 -- >>> type SampleAPI = "hello" :> Get '[JSON] Int :<|> "bye" :> Capture "name" String :> Post '[JSON, PlainText] Bool
+-- >>> type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
 -- >>> let sampleAPI = Proxy :: Proxy SampleAPI
