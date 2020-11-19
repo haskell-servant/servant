@@ -761,11 +761,10 @@ instance ( HasClient m api
 -- > myApi :: Proxy MyApi
 -- > myApi = Proxy
 -- >
--- > getBooksBy :: Maybe Text -> ClientM [Book]
--- > getBooksBy = client myApi
+-- > getBooks :: ClientM [Book]
+-- > getBooks = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
--- > -- 'getBooksBy Nothing' for all books
--- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
+-- > -- 'getBooks' for all books.
 #ifdef HAS_TYPE_ERROR
 instance (AtLeastOneFragment api, FragmentUnique (Fragment a :> api), HasClient m api
 #else
