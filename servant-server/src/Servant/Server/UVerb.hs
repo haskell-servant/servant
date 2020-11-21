@@ -51,7 +51,7 @@ instance
     AllMime contentTypes,
     All (IsServerResource contentTypes) as,
     Unique (Statuses as) -- for consistency with servant-swagger (server would work fine
-        -- wihtout; client is a bit of a corner case, because it dispatches
+        -- without; client is a bit of a corner case, because it dispatches
         -- the parser based on the status code.  with this uniqueness
         -- constraint it won't have to run more than one parser in weird
         -- corner cases.
