@@ -1,5 +1,13 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.18.2
+------
+
+### Significant changes
+
+- Introduce `Fragment` combinator.
+- Fix `MimeRender` and `MimeUnrender` instances for `WithStatus`.
+
 0.18.1
 ------
 
