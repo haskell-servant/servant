@@ -890,9 +890,9 @@ type HasServerArrowTypeError a b =
 -- > type MyApi = "books" :> Fragment Text :> Get '[JSON] [Book]
 -- >
 -- > server :: Server MyApi
--- > server = getBooksBy
--- >   where getBooksBy :: Handler [Book]
--- >         getBooksBy = ...return all books...
+-- > server = getBooks
+-- >   where getBooks :: Handler [Book]
+-- >         getBooks = ...return all books...
 #ifdef HAS_TYPE_ERROR
 instance (AtLeastOneFragment api, FragmentUnique (Fragment a1 :> api), HasServer api context)
 #else
