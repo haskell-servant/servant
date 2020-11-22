@@ -26,6 +26,7 @@ you name it!
   using-custom-monad/UsingCustomMonad.lhs
   using-free-client/UsingFreeClient.lhs
   custom-errors/CustomErrors.lhs
+  uverb/UVerb.lhs
   basic-auth/BasicAuth.lhs
   basic-streaming/Streaming.lhs
   jwt-and-basic-auth/JWTAndBasicAuth.lhs
