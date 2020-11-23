@@ -177,6 +177,7 @@ import           Servant.API.Stream
 import           Servant.API.Sub
                  (type (:>))
 import           Servant.API.TypeLevel
+import           Servant.API.UVerb
 import           Servant.API.Vault
                  (Vault)
 import           Servant.API.Verbs
@@ -573,6 +574,11 @@ instance HasLink Raw where
 
 instance HasLink (Stream m status fr ct a) where
     type MkLink (Stream m status fr ct a) r = r
+    toLink toA _ = toA
+
+-- UVerb instances
+instance HasLink (UVerb m ct a) where
+    type MkLink (UVerb m ct a) r = r
     toLink toA _ = toA
 
 -- AuthProtext instances

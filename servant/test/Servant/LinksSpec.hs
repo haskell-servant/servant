@@ -29,6 +29,9 @@ type TestApi =
   -- Fragment
   :<|> "say" :> Fragment String :> Get '[JSON] NoContent
 
+  -- UVerb
+  :<|> "uverb-example" :> UVerb 'GET '[JSON] '[WithStatus 200 NoContent]
+
   -- All of the verbs
   :<|> "get" :> Get '[JSON] NoContent
   :<|> "put" :> Put '[JSON] NoContent
@@ -72,6 +75,10 @@ spec = describe "Servant.Links" $ do
         apiLink (Proxy :: Proxy ("all" :> CaptureAll "names" String :> Get '[JSON] NoContent))
           ["roads", "lead", "to", "rome"]
           `shouldBeLink` "all/roads/lead/to/rome"
+
+    it "generated correct links for UVerbs" $ do
+      apiLink (Proxy :: Proxy ("uverb-example" :> UVerb 'GET '[JSON] '[WithStatus 200 NoContent]))
+        `shouldBeLink` "uverb-example"
 
     it "generates correct links for query flags" $ do
         let l1 = Proxy :: Proxy ("balls" :> QueryFlag "bouncy"
