@@ -53,7 +53,7 @@ import           Servant.API
                  NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
                  RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
-                 UVerb, Union, Verb, addHeader)
+                 UVerb, Union, Verb, WithStatus (..), addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, respond, serve,
@@ -841,7 +841,7 @@ instance HasStatus AnimalResponse where
 
 type UVerbApi
   = "person" :> Capture "shouldRedirect" Bool :> UVerb 'GET '[JSON] '[PersonResponse, RedirectResponse]
-  :<|> "animal" :> UVerb 'GET '[JSON] '[AnimalResponse]
+  :<|> "animal" :> UVerb 'GET '[JSON] '[WithStatus 203 AnimalResponse]
 
 uverbSpec :: Spec
 uverbSpec = describe "Servant.API.UVerb " $ do
@@ -856,7 +856,9 @@ uverbSpec = describe "Servant.API.UVerb " $ do
       personHandler True = respond $ RedirectResponse "over there!"
       personHandler False = respond $ PersonResponse joe
 
-      animalHandler = respond $ AnimalResponse mouse
+      animalHandler :: Handler (Union '[WithStatus 203 AnimalResponse])
+      animalHandler = respond $
+        (WithStatus $ AnimalResponse mouse :: WithStatus 203 AnimalResponse)
 
       server :: Server UVerbApi
       server = personHandler :<|> animalHandler
