@@ -17,6 +17,7 @@
 -- >>> :set -XDataKinds -XTypeFamilies -XTypeOperators
 -- >>> import Servant.API
 -- >>> import Servant.Links
+-- >>> import Web.HttpApiData (toUrlPiece)
 -- >>> import Data.Proxy
 -- >>>
 -- >>> type Hello = "hello" :> Get '[JSON] Int
