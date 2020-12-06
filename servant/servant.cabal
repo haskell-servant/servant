@@ -154,7 +154,6 @@ test-suite spec
     , base-compat
     , aeson
     , bytestring
-    , http-api-data
     , http-media
     , mtl
     , servant

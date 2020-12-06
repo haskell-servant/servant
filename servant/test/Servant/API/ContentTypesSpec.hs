@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PackageImports        #-}
@@ -40,8 +39,6 @@ import           Test.QuickCheck
 import           "quickcheck-instances" Test.QuickCheck.Instances ()
 import           Text.Read
                  (readMaybe)
-import           Web.FormUrlEncoded
-                 (ToForm, urlEncodeAsForm)
 
 import           Servant.API.ContentTypes
 
@@ -274,19 +271,3 @@ addToAccept p (ZeroToOne f) (AcceptHeader h) = AcceptHeader (cont h)
     where new = cs (show $ contentType p) `append` "; q=" `append` pack (show f)
           cont "" = new
           cont old = old `append` ", " `append` new
-
--- | `encode`
---
--- This instance is not provided with the library to avoid unsolvable ambiguous instance
--- problems.  Example: @instance MimeRender a => MimeRender (WithStatus n a)@
-instance {-# OVERLAPPABLE #-} ToJSON a => MimeRender JSON a where
-  mimeRender _ = encode
-
--- | @urlEncodeAsForm@
--- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
--- holds if every element of x is non-null (i.e., not @("", "")@)
---
--- This instance is not provided with the library to avoid unsolvable ambiguous instance
--- problems.
-instance {-# OVERLAPPABLE #-} ToForm a => MimeRender FormUrlEncoded a where
-  mimeRender _ = urlEncodeAsForm

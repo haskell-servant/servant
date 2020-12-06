@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE OverloadedStrings   #-}
@@ -51,7 +50,6 @@ import           Servant.API
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
                  Delete, EmptyAPI, Fragment, Get, HasStatus (StatusOf), Header,
                  Headers, HttpVersion, IsSecure (..), JSON, Lenient,
-                 MimeRender (..),
                  NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
                  RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
@@ -107,8 +105,6 @@ spec = do
 ------------------------------------------------------------------------------
 -- * verbSpec {{{
 ------------------------------------------------------------------------------
-
-instance {-# OVERLAPPABLE #-} ToJSON a => MimeRender JSON a where mimeRender _ = encode
 
 type VerbApi method status
     =                Verb method status '[JSON] Person

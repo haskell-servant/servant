@@ -1,7 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds         #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -27,8 +25,6 @@ newtype Greet = Greet { _msg :: Text }
 
 instance FromJSON Greet
 instance ToJSON Greet
-
-instance ToJSON a => MimeRender JSON a where mimeRender _ = encode
 
 -- API specification
 type TestApi =

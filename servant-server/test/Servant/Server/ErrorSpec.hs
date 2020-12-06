@@ -360,7 +360,4 @@ instance MimeUnrender PlainText Int where
 
 instance MimeRender PlainText Int where
     mimeRender _ = BCL.pack . show
-
-instance MimeRender JSON Integer where mimeRender _ = encode
-instance MimeRender JSON Int where mimeRender _ = encode
 -- }}}
