@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds #-}
-{-# OPTIONS_GHC -fdefer-type-errors -Wwarn #-}
+{-# OPTIONS_GHC -fdefer-type-errors -Wwarn -Wno-deferred-type-errors #-}
 module Servant.Server.Internal.ContextSpec (spec) where
 
 import           Data.Proxy
