@@ -36,7 +36,7 @@ where
 import Data.Proxy (Proxy (Proxy))
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
-import Servant.API.ContentTypes (NoContent, MimeRender(mimeRender), MimeUnrender(mimeUnrender))
+import Servant.API.ContentTypes (JSON, PlainText, FormUrlEncoded, OctetStream, NoContent, MimeRender(mimeRender), MimeUnrender(mimeUnrender))
 import Servant.API.Status (KnownStatus, statusVal)
 import Servant.API.UVerb.Union
 
@@ -69,13 +69,6 @@ instance (HasStatus a, HasStatuses as) => HasStatuses (a ': as) where
 newtype WithStatus (k :: Nat) a = WithStatus a
   deriving (Eq, Show)
 
-instance MimeRender ctype a => MimeRender ctype (WithStatus _status a) where
-  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
-
-instance MimeUnrender ctype a => MimeUnrender ctype (WithStatus _status a) where
-  mimeUnrender contentTypeProxy input =
-    WithStatus <$> mimeUnrender contentTypeProxy input
-
 -- | an instance of this typeclass assigns a HTTP status code to a return type
 --
 -- Example:
@@ -105,3 +98,27 @@ instance KnownStatus n => HasStatus (WithStatus n a) where
 -- Backwards compatibility is tricky, though: this type alias would mean people would have to
 -- use 'respond' instead of 'pure' or 'return', so all old handlers would have to be rewritten.
 data UVerb (method :: StdMethod) (contentTypes :: [*]) (as :: [*])
+
+instance {-# OVERLAPPING #-} MimeRender JSON a => MimeRender JSON (WithStatus _status a) where
+  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
+
+instance {-# OVERLAPPING #-} MimeRender PlainText a => MimeRender PlainText (WithStatus _status a) where
+  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
+
+instance {-# OVERLAPPING #-} MimeRender FormUrlEncoded a => MimeRender FormUrlEncoded (WithStatus _status a) where
+  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
+
+instance {-# OVERLAPPING #-} MimeRender OctetStream a => MimeRender OctetStream (WithStatus _status a) where
+  mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a
+
+instance {-# OVERLAPPING #-} MimeUnrender JSON a => MimeUnrender JSON (WithStatus _status a) where
+  mimeUnrender contentTypeProxy input = WithStatus <$> mimeUnrender contentTypeProxy input
+
+instance {-# OVERLAPPING #-} MimeUnrender PlainText a => MimeUnrender PlainText (WithStatus _status a) where
+  mimeUnrender contentTypeProxy input = WithStatus <$> mimeUnrender contentTypeProxy input
+
+instance {-# OVERLAPPING #-} MimeUnrender FormUrlEncoded a => MimeUnrender FormUrlEncoded (WithStatus _status a) where
+  mimeUnrender contentTypeProxy input = WithStatus <$> mimeUnrender contentTypeProxy input
+
+instance {-# OVERLAPPING #-} MimeUnrender OctetStream a => MimeUnrender OctetStream (WithStatus _status a) where
+  mimeUnrender contentTypeProxy input = WithStatus <$> mimeUnrender contentTypeProxy input
