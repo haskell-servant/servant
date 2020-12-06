@@ -216,3 +216,6 @@ compareWith f msg x y = unless (f x y) $ assertFailure $
 golden :: TestName -> FilePath -> String -> TestTreeM ()
 golden n fp contents = TestTreeM $ tell
     [ goldenVsString n fp (return (cs contents)) ]
+
+instance ToJSON a => MimeRender JSON a where
+  mimeRender _ = encode

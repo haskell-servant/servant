@@ -1,10 +1,14 @@
-{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Servant.Server.UsingContextSpec where
 
+import           Data.Aeson
+                 (encode)
 import           Network.Wai
 import           Test.Hspec
                  (Spec, describe, it)
@@ -19,6 +23,8 @@ spec = do
   spec2
   spec3
   spec4
+
+instance MimeRender JSON String where mimeRender _ = encode
 
 -- * API
 

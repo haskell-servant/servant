@@ -74,7 +74,7 @@ import           Control.Monad.Compat
 import           Control.DeepSeq
                  (NFData)
 import           Data.Aeson
-                 (FromJSON (..), ToJSON (..), encode)
+                 (FromJSON (..))
 import           Data.Aeson.Parser
                  (value)
 import           Data.Aeson.Types
@@ -102,7 +102,7 @@ import qualified Network.HTTP.Media               as M
 import           Prelude ()
 import           Prelude.Compat
 import           Web.FormUrlEncoded
-                 (FromForm, ToForm, urlDecodeAsForm, urlEncodeAsForm)
+                 (FromForm, urlDecodeAsForm)
 
 -- * Provided content types
 data JSON deriving Typeable
@@ -327,18 +327,6 @@ instance ( MimeUnrender ctyp a
 --------------------------------------------------------------------------
 -- * MimeRender Instances
 
--- | `encode`
-instance {-# OVERLAPPABLE #-}
-         ToJSON a => MimeRender JSON a where
-    mimeRender _ = encode
-
--- | @urlEncodeAsForm@
--- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
--- holds if every element of x is non-null (i.e., not @("", "")@)
-instance {-# OVERLAPPABLE #-}
-         ToForm a => MimeRender FormUrlEncoded a where
-    mimeRender _ = urlEncodeAsForm
-
 -- | `TextL.encodeUtf8`
 instance MimeRender PlainText TextL.Text where
     mimeRender _ = TextL.encodeUtf8
@@ -387,16 +375,6 @@ eitherDecodeLenient input =
           *> Data.Aeson.Parser.value
           <* skipSpace
           <* (endOfInput <?> "trailing junk after valid JSON")
-
--- | `eitherDecode`
-instance FromJSON a => MimeUnrender JSON a where
-    mimeUnrender _ = eitherDecodeLenient
-
--- | @urlDecodeAsForm@
--- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
--- holds if every element of x is non-null (i.e., not @("", "")@)
-instance FromForm a => MimeUnrender FormUrlEncoded a where
-    mimeUnrender _ = left TextS.unpack . urlDecodeAsForm
 
 -- | @left show . TextL.decodeUtf8'@
 instance MimeUnrender PlainText TextL.Text where

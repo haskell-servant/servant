@@ -30,6 +30,9 @@ instance ToJSON Greet
 instance MimeRender PlainText Greet where
     mimeRender Proxy (Greet s) = "\"" <> cs s <> "\""
 
+instance MimeRender JSON Greet where
+    mimeRender Proxy = encode
+
 -- We add some useful annotations to our captures,
 -- query parameters and request body to make the docs
 -- really helpful.

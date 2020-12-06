@@ -1,7 +1,13 @@
-{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Servant.HoistSpec where
 
+import           Data.Aeson
+                 (ToJSON, encode)
 import           Test.Hspec
                  (Spec)
 
@@ -30,6 +36,8 @@ f = id
 
 server' :: App Int :<|> (String -> App Bool)
 server' = hoistServer api f server
+
+instance ToJSON a => MimeRender JSON a where mimeRender _ = encode
 
 -------------------------------------------------------------------------------
 -- Spec

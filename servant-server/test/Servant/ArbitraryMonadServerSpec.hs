@@ -1,9 +1,14 @@
-{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Servant.ArbitraryMonadServerSpec where
 
 import           Control.Monad.Reader
+import           Data.Aeson
+                 (encode)
 import           Data.Functor.Identity
 import           Data.Proxy
 import           Servant.API
@@ -60,3 +65,7 @@ enterSpec = describe "Enter" $ do
   with (return (serve combinedAPI combinedReaderServer)) $ do
     it "allows combnation of enters" $ do
       get "bool" `shouldRespondWith` "true"
+
+instance MimeRender JSON Bool where mimeRender _ = encode
+instance MimeRender JSON Int where mimeRender _ = encode
+instance MimeRender JSON String where mimeRender _ = encode
