@@ -70,6 +70,7 @@ type ComprehensiveAPIWithoutStreamingOrRaw' endpoint =
     :<|> "capture-all"      :> CaptureAll "foo" Int :> GET
     :<|> "summary"          :> Summary "foo" :> GET
     :<|> "description"      :> Description "foo" :> GET
+    :<|> "operation-id"     :> OperationId "getFoo" :> GET
     :<|> "alternative"      :> ("left" :> GET :<|> "right" :> GET)
     :<|> "fragment"         :> Fragment Int :> GET
     :<|> endpoint

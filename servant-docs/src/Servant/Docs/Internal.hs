@@ -1020,6 +1020,16 @@ instance (KnownSymbol desc, HasDocs api)
           action' = over notes (|> note) action
           note = DocNote (symbolVal (Proxy :: Proxy desc)) []
 
+instance (KnownSymbol opid, HasDocs api)
+  => HasDocs (OperationId opid :> api) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          action' = over notes (|> note) action
+          note = DocNote (symbolVal (Proxy :: Proxy opid)) []
+
 instance (KnownSymbol desc, HasDocs api)
   => HasDocs (Summary desc :> api) where
 

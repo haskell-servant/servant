@@ -72,11 +72,11 @@ import           Servant.API
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent),
-                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
-                 ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
-                 StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
-                 Verb, WithNamedContext, contentType, getHeadersHList,
-                 getResponse, toQueryParam, toUrlPiece)
+                 NoContentVerb, OperationId, QueryFlag, QueryParam',
+                 QueryParams, Raw, ReflectMethod (..), RemoteHost, ReqBody',
+                 SBoolI, Stream, StreamBody', Summary, ToHttpApiData,
+                 ToSourceIO (..), Vault, Verb, WithNamedContext, contentType,
+                 getHeadersHList, getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
 import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
@@ -496,6 +496,14 @@ instance HasClient m api => HasClient m (Description desc :> api) where
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
+-- | Ignore @'OperationId'@ in client functions.
+instance HasClient m api => HasClient m (OperationId opid :> api) where
+  type Client m (OperationId opid :> api) = Client m api
+
+  clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
+
 -- | If you use a 'QueryParam' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
 -- an additional argument of the type specified by your 'QueryParam',
@@ -753,7 +761,7 @@ instance ( HasClient m api
 
 -- | Ignore @'Fragment'@ in client functions.
 -- See <https://ietf.org/rfc/rfc2616.html#section-15.1.3> for more details.
--- 
+--
 -- Example:
 --
 -- > type MyApi = "books" :> Fragment Text :> Get '[JSON] [Book]
@@ -774,7 +782,7 @@ instance ( HasClient m api
 
   type Client m (Fragment a :> api) = Client m api
 
-  clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api) 
+  clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
 
   hoistClientMonad pm _ = hoistClientMonad pm (Proxy :: Proxy api)
 
