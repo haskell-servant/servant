@@ -29,7 +29,7 @@ library
   exposed-modules:     Servant.Machines
   build-depends:
       base          >=4.9      && <5
-    , bytestring    >=0.10.8.1 && <0.11
+    , bytestring    >=0.10.8.1 && <0.12
     , machines      >=0.6.4    && <0.8
     , mtl           >=2.2.2    && <2.3
     , servant       >=0.15     && <0.19
