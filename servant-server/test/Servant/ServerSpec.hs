@@ -744,7 +744,7 @@ basicAuthServer =
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
-  let basicHandler = BasicAuthCheck $ \(BasicAuthData usr pass) ->
+  let basicHandler = BasicAuthCheck True $ \(BasicAuthData usr pass) ->
         if usr == "servant" && pass == "server"
           then return (Authorized ())
           else return Unauthorized

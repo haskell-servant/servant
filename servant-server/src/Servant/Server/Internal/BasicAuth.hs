@@ -44,9 +44,12 @@ data BasicAuthResult usr
   deriving (Eq, Show, Read, Generic, Typeable, Functor)
 
 -- | Datatype wrapping a function used to check authentication.
-newtype BasicAuthCheck usr = BasicAuthCheck
-  { unBasicAuthCheck :: BasicAuthData
-                     -> IO (BasicAuthResult usr)
+data BasicAuthCheck usr 
+  = BasicAuthCheck
+  { basicAuthPresentChallenge :: Bool
+    -- ^ Decides if we'll send a @WWW-Authenticate@ HTTP header. Sending the header causes browser to 
+    -- surface a prompt for user name and password, which may be undesirable for APIs.
+  , basicAuthRunCheck :: BasicAuthData -> IO (BasicAuthResult usr)
   }
   deriving (Generic, Typeable, Functor)
 
@@ -68,7 +71,7 @@ decodeBAHdr req = do
 -- | Run and check basic authentication, returning the appropriate http error per
 -- the spec.
 runBasicAuth :: Request -> BS.ByteString -> BasicAuthCheck usr -> DelayedIO usr
-runBasicAuth req realm (BasicAuthCheck ba) =
+runBasicAuth req realm (BasicAuthCheck presentChallenge ba) =
   case decodeBAHdr req of
      Nothing -> plzAuthenticate
      Just e  -> liftIO (ba e) >>= \res -> case res of
@@ -76,4 +79,6 @@ runBasicAuth req realm (BasicAuthCheck ba) =
        NoSuchUser     -> plzAuthenticate
        Unauthorized   -> delayedFailFatal err403
        Authorized usr -> return usr
-  where plzAuthenticate = delayedFailFatal err401 { errHeaders = [mkBAChallengerHdr realm] }
+  where 
+    plzAuthenticate = 
+      delayedFailFatal err401 { errHeaders = [mkBAChallengerHdr realm | presentChallenge] }
