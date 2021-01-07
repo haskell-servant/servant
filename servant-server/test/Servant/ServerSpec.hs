@@ -63,7 +63,7 @@ import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
                  (Spec, context, describe, it, shouldBe, shouldContain)
 import           Test.Hspec.Wai
-                 (get, liftIO, matchHeaders, matchStatus, shouldRespondWith,
+                 (get, liftIO, matchHeaders, MatchHeader(..), matchStatus, shouldRespondWith,
                  with, (<:>))
 import qualified Test.Hspec.Wai                    as THW
 
@@ -742,9 +742,9 @@ basicAuthServer =
   const (return jerry) :<|>
   (Tagged $ \ _ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
 
-basicAuthContext :: Context '[ BasicAuthCheck () ]
-basicAuthContext =
-  let basicHandler = BasicAuthCheck True $ \(BasicAuthData usr pass) ->
+basicAuthContext :: Bool -> Context '[ BasicAuthCheck () ]
+basicAuthContext withRealm =
+  let basicHandler = BasicAuthCheck withRealm $ \(BasicAuthData usr pass) ->
         if usr == "servant" && pass == "server"
           then return (Authorized ())
           else return Unauthorized
@@ -753,13 +753,26 @@ basicAuthContext =
 basicAuthSpec :: Spec
 basicAuthSpec = do
   describe "Servant.API.BasicAuth" $ do
-    with (return (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ do
+    with (return (serveWithContext basicAuthApi (basicAuthContext False) basicAuthServer)) $ do
+      context "Basic Authentication without realm" $ do
+        it "does not send WWW-Authenticate headers on 401" $ do
+          let noWWW = 
+                MatchHeader $ \headers _ ->
+                if "WWW-Authenticate" `elem` map fst headers
+                then Just "WWW-Authenticate header is unexpected, "
+                else Nothing
+          get "/basic" `shouldRespondWith` "" {matchStatus = 401, matchHeaders = [noWWW]}
+
+    with (return (serveWithContext basicAuthApi (basicAuthContext True) basicAuthServer)) $ do
 
       context "Basic Authentication" $ do
         let basicAuthHeaders user password =
               [("Authorization", "Basic " <> Base64.encode (user <> ":" <> password))]
         it "returns 401 when no credentials given" $ do
           get "/basic" `shouldRespondWith` 401
+
+        it "returns 401 WWW-Authenticate headers" $ do
+          get "/basic" `shouldRespondWith` "" {matchStatus = 401, matchHeaders = ["WWW-Authenticate" <:> "Basic realm=\"foo\""]}
 
         it "returns 403 when invalid credentials given" $ do
           THW.request methodGet "/basic" (basicAuthHeaders "servant" "wrong") ""
