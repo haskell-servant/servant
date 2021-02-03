@@ -13,8 +13,6 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
--- | Generalizes all the data needed to make code generation work with
--- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
 import           Prelude ()
@@ -40,6 +38,9 @@ import           Servant.API.Modifiers
                  (RequiredArgument)
 import           Servant.API.TypeLevel
 
+-- | Canonical name of the endpoint, can be used to generate a function name.
+--
+-- You can use the functions in "Servant.Foreign.Inflections", like 'Servant.Foreign.Inflections.camelCase' to transform to `Text`.
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
   deriving (Data, Show, Eq, Semigroup, Monoid, Typeable)
 

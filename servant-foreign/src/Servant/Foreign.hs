@@ -1,5 +1,7 @@
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
+--
+-- See documentation of 'HasForeignType' for a simple example. 'listFromAPI' returns a list of all your endpoints and their foreign types, given a mapping from Haskell types to foreign types (conventionally called `ftypes` below).
 module Servant.Foreign
   ( ArgType(..)
   , HeaderArg(..)
