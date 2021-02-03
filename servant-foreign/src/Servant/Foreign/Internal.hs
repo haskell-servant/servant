@@ -85,11 +85,6 @@ captureArg                 _ = error "captureArg called on non capture"
 
 type Path f = [Segment f]
 
-newtype Frag f = Frag { unFragment :: Arg f }
-  deriving (Data, Eq, Show, Typeable)
-
-makePrisms ''Frag
-
 data ArgType
   = Normal
   | Flag
