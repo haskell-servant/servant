@@ -41,7 +41,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base        >= 4.9     && < 4.15
+      base        >= 4.9     && < 4.16
     , text        >= 1.2.3.0 && < 1.3
 
   -- Servant dependencies
@@ -52,7 +52,7 @@ library
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
       base-compat >= 0.10.5  && < 0.12
-    , lens        >= 4.17    && < 4.20
+    , lens        >= 4.17    && < 5.1
     , http-types  >= 0.12.2  && < 0.13
 
   hs-source-dirs:      src

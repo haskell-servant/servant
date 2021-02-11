@@ -90,7 +90,7 @@ runRenderFrames :: (SourceT Identity a -> SourceT Identity LBS.ByteString) -> [a
 runRenderFrames f = fmap mconcat . runExcept . runSourceT . f . source
 
 runUnrenderFrames :: (SourceT Identity b -> SourceT Identity a) -> [b] -> [Either String a]
-runUnrenderFrames f = go . Effect . flip unSourceT return . f . source where
+runUnrenderFrames f = go . Effect . (\s -> unSourceT s return) . f . source where
     go :: StepT Identity a -> [Either String a]
     go Stop        = []
     go (Error err) = [Left err]
