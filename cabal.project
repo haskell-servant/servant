@@ -3,7 +3,8 @@ packages:
   servant-client/
   servant-client-core/
   servant-http-streams/
-  servant-docs/
+-- Tests failing with Cabal (TODO: investigate)
+--  servant-docs/
   servant-foreign/
   servant-server/
   doc/tutorial/
@@ -33,7 +34,8 @@ packages:
   -- doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/pagination
   -- doc/cookbook/sentry
-  doc/cookbook/testing
+  -- Commented out because servant-quickcheck currently doesn't build.
+  -- doc/cookbook/testing
   doc/cookbook/uverb
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
