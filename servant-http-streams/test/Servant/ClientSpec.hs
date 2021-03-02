@@ -482,7 +482,7 @@ startWaiApp app = do
     (port, socket) <- openTestSocket
     let settings = setPort port $ defaultSettings
     thread <- forkIO $ runSettingsSocket settings socket app
-    return (thread, BaseUrl Http "localhost" port "")
+    return (thread, BaseUrl Http "127.0.0.1" port "")
 
 
 endWaiApp :: (ThreadId, BaseUrl) -> IO ()
