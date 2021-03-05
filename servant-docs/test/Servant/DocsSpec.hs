@@ -126,8 +126,11 @@ spec = describe "Servant.Docs" $ do
     it "mentions headers" $ do
       md `shouldContain` "- This endpoint is sensitive to the value of the **X-Test** HTTP header."
 
-    it "contains response samples" $
-      md `shouldContain` "{\"dt1field1\":\"field 1\",\"dt1field2\":13}"
+    it "contains response samples - dt1field1" $
+      md `shouldContain` "\"dt1field1\":\"field 1\""
+    it "contains response samples - dt1field2" $
+      md `shouldContain` "\"dt1field2\":13"
+
     it "contains request body samples" $
       md `shouldContain` "17"
 
