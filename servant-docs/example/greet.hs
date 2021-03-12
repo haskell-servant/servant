@@ -93,7 +93,7 @@ testApi = Proxy
 extra :: ExtraInfo TestApi
 extra =
     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent)) $
-             defAction & headers <>~ ["X-Num-Unicorns"]
+             defAction & headers <>~ [("X-Num-Unicorns", "1")]
                        & notes   <>~ [ DocNote "Title" ["This is some text"]
                                      , DocNote "Second section" ["And some more"]
                                      ]
@@ -109,4 +109,4 @@ docsGreet :: API
 docsGreet = docsWith defaultDocOptions [intro1, intro2] extra testApi
 
 main :: IO ()
-main = putStrLn $ markdownWith (defRenderingOptions { _renderCurl = Just "http://localhost:80" }) docsGreet
+main = putStrLn $ markdownWith (defRenderingOptions { _renderCurlBasePath = Just "http://localhost:80" }) docsGreet
