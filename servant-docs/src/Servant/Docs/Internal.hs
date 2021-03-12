@@ -367,7 +367,6 @@ data RenderingOptions = RenderingOptions
     -- ^ Optionally group all 'notes' together under a common heading.
   , _renderCurlBasePath :: !(Maybe String)
     -- ^ Optionally render example curl requests under a common base path (e.g. `http://localhost:80`).
-    -- @since 0.12.0
   } deriving (Show)
 
 -- | Default API generation options.
