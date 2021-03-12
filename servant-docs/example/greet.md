@@ -98,6 +98,7 @@ And some more
 
 ```bash
 curl -XDELETE \
+  -H 'X-Num-Unicorns: 1' \
   http://localhost:80/greet/:greetid
 ```
 
@@ -145,6 +146,7 @@ curl -XDELETE \
 
 ```bash
 curl -XGET \
+  -H 'X-Num-Fairies: 1729' \
   http://localhost:80/hello/:name
 ```
 
