@@ -1,0 +1,16 @@
+synopsis: Add sample cURL requests to generated documentation
+prs: #1401
+
+description: {
+
+Add sample cURL requests to generated documentation.
+
+Those supplying changes to the Request `header` field manually using
+lenses will need to add a sample bytestring value.
+
+`headers <>~ ["unicorn"]`
+
+becomes
+
+`headers <>~ [("unicorn", "sample value")]`
+}

@@ -418,7 +418,7 @@ docsWithOptions p = docsFor p (defEndpoint, defAction)
 -- > extra :: ExtraInfo TestApi
 -- > extra =
 -- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
--- >              defAction & headers <>~ ["unicorns"]
+-- >              defAction & headers <>~ [("X-Num-Unicorns", 1)]
 -- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
 -- >                                      , DocNote "Second section" ["And some more"]
 -- >                                      ]
