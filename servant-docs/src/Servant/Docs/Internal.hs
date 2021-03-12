@@ -362,6 +362,9 @@ data RenderingOptions = RenderingOptions
     -- ^ How many content types to display for response body examples?
   , _notesHeading     :: !(Maybe String)
     -- ^ Optionally group all 'notes' together under a common heading.
+  , _renderCurl       :: !(Maybe String)
+    -- ^ Optionally render example curl requests under a common base path (e.g. `http://localhost:80`).
+    -- @since 0.11.9
   } deriving (Show)
 
 -- | Default API generation options.
@@ -376,6 +379,7 @@ defRenderingOptions = RenderingOptions
   { _requestExamples  = AllContentTypes
   , _responseExamples = AllContentTypes
   , _notesHeading     = Nothing
+  , _renderCurl       = Nothing
   }
 
 -- gimme some lenses
@@ -643,7 +647,7 @@ markdown = markdownWith defRenderingOptions
 --
 --   @since 0.11.1
 markdownWith :: RenderingOptions -> API -> String
-markdownWith RenderingOptions{..}  api = unlines $
+markdownWith RenderingOptions{..} api = unlines $
        introsStr (api ^. apiIntros)
     ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
 
@@ -659,6 +663,7 @@ markdownWith RenderingOptions{..}  api = unlines $
           fragmentStr (action ^. fragment) ++
           rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
           responseStr (action ^. response) ++
+          maybe [] (curlStr endpoint (action ^. rqbody)) _renderCurl ++
           []
 
           where str = "## " ++ BSC.unpack meth
@@ -814,7 +819,6 @@ markdownWith RenderingOptions{..}  api = unlines $
                 ("text", "css") -> "css"
                 (_, _) -> ""
 
-
         contentStr mime_type body =
           "" :
           "```" <> markdownForType mime_type :
@@ -838,6 +842,21 @@ markdownWith RenderingOptions{..}  api = unlines $
                   [("", t, r)] -> "- Response body as below." : contentStr t r
                   xs        ->
                     formatBodies _responseExamples xs
+
+        curlStr :: Endpoint -> [(Text, M.MediaType, ByteString)] -> String -> [String]
+        curlStr endpoint bds basePath =
+          let firstBodyMay = NE.head <$> NE.nonEmpty bds
+          in catMaybes $
+            (Just "### Sample Request:") :
+            (Just "") :
+            (Just "```bash") :
+            (Just $ "curl -X" ++ BSC.unpack (endpoint ^. method) ++ " \\") :
+            ((\(_, media_type, _) -> "  -H 'Content-Type: " ++ show media_type ++ " '\\") <$> firstBodyMay) :
+            ((\(_, _, body) -> "  -d " ++ cs body ++ " \\") <$> firstBodyMay) :
+            (Just $ "  " ++ basePath ++ showPath (endpoint ^. path)) :
+            (Just "```") :
+            (Just "") :
+            []
 
 -- * Instances
 

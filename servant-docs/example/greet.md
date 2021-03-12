@@ -51,6 +51,15 @@ You'll also note that multiple intros are possible.
 "Hello, haskeller"
 ```
 
+### Sample Request:
+
+```bash
+curl -XPOST \
+  -H 'Content-Type: application/json;charset=utf-8 '\
+  -d "HELLO, HASKELLER" \
+  http://localhost:80/greet
+```
+
 ## DELETE /greet/:greetid
 
 ### Title
@@ -67,7 +76,7 @@ And some more
 
 ### Headers:
 
-- This endpoint is sensitive to the value of the **unicorns** HTTP header.
+- This endpoint is sensitive to the value of the **X-Num-Unicorns** HTTP header.
 
 ### Response:
 
@@ -85,11 +94,22 @@ And some more
 
 ```
 
+### Sample Request:
+
+```bash
+curl -XDELETE \
+  http://localhost:80/greet/:greetid
+```
+
 ## GET /hello/:name
 
 ### Captures:
 
 - *name*: name of the person to greet
+
+### Headers:
+
+- This endpoint is sensitive to the value of the **X-Num-Fairies** HTTP header.
 
 ### GET Parameters:
 
@@ -120,3 +140,12 @@ And some more
 ```javascript
 "Hello, haskeller"
 ```
+
+### Sample Request:
+
+```bash
+curl -XGET \
+  http://localhost:80/hello/:name
+```
+
+

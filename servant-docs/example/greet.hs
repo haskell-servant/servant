@@ -75,7 +75,7 @@ intro2 = DocIntro "This title is below the last"
 -- API specification
 type TestApi =
        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON or PlainText
-       "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON, PlainText] Greet
+       "hello" :> Capture "name" Text :> Header "X-Num-Fairies" Int :> QueryParam "capital" Bool :> Get '[JSON, PlainText] Greet
 
        -- POST /greet with a Greet as JSON in the request body,
        --             returns a Greet as JSON
@@ -93,9 +93,9 @@ testApi = Proxy
 extra :: ExtraInfo TestApi
 extra =
     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent)) $
-             defAction & headers <>~ ["unicorns"]
+             defAction & headers <>~ ["X-Num-Unicorns"]
                        & notes   <>~ [ DocNote "Title" ["This is some text"]
-                                     , DocNote "Second secton" ["And some more"]
+                                     , DocNote "Second section" ["And some more"]
                                      ]
 
 -- Generate the data that lets us have API docs. This
@@ -109,4 +109,4 @@ docsGreet :: API
 docsGreet = docsWith defaultDocOptions [intro1, intro2] extra testApi
 
 main :: IO ()
-main = putStrLn $ markdown docsGreet
+main = putStrLn $ markdownWith (defRenderingOptions { _renderCurl = Just "http://localhost:80" }) docsGreet
