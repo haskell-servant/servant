@@ -40,6 +40,7 @@ jobs:
     - name: Configure
       run: |
         cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
+        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.17'
 
     - name: Freeze
       run: |
@@ -58,6 +59,13 @@ jobs:
     - name: Test
       run: |
         cabal test all
+
+    - name: Run doctests
+      run: |
+        # Necessary for doctest to be found in $PATH
+        export PATH="$HOME/.cabal/bin:$PATH"
+        echo $PATH
+        (cd servant && doctest src)
 
   stack:
     name: stack / ghc ${{ matrix.ghc }}
