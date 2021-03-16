@@ -20,6 +20,7 @@ Extensions and imports:
 import           Data.Aeson
 import           Data.Proxy
 import           Data.Text
+import           Data.Semigroup
 import           GHC.Generics
 import           Network.Wai
 import           Network.Wai.Handler.Warp
