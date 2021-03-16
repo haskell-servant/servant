@@ -64,8 +64,13 @@ jobs:
       run: |
         # Necessary for doctest to be found in $PATH
         export PATH="$HOME/.cabal/bin:$PATH"
-        echo $PATH
-        (cd servant && doctest src)
+        # Filter out base-compat-batteries from .ghc.environment.*
+        # TODO: This is an ugly hack.
+        pwd
+        ls .ghc.environment.*
+        perl -i -e 'while (<ARGV>) { print unless /package-id\s+(base-compat-batteries)-\d+(\.\d+)*/; }' .ghc.environment.*
+        cat .ghc.environment.*
+        (cd servant && rm -f .ghc.environment.* && doctest src)
 
   stack:
     name: stack / ghc ${{ matrix.ghc }}
