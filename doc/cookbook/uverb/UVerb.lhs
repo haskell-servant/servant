@@ -9,9 +9,7 @@ handlers that respond with arbitrary open unions of types.
 ```haskell
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -133,7 +131,7 @@ Since `UVerb` (probably) will mostly be used for error-like responses, it may be
 
 ```haskell
 newtype UVerbT xs m a = UVerbT { unUVerbT :: ExceptT (Union xs) m a }
-  deriving newtype (Functor, Applicative, Monad, MonadTrans)
+  deriving (Functor, Applicative, Monad, MonadTrans)
 
 -- | Deliberately hide 'ExceptT's 'MonadError' instance to be able to use
 -- underlying monad's instance.
@@ -156,13 +154,17 @@ Example usage:
 
 ```haskell
 data Foo = Foo Int Int Int
-  deriving (Show, Eq, GHC.Generic, ToJSON)
+  deriving (Show, Eq, GHC.Generic)
+
+instance ToJSON Foo
 
 instance HasStatus Foo where
   type StatusOf Foo = 200
 
 data Bar = Bar
-  deriving (Show, Eq, GHC.Generic, ToJSON)
+  deriving (Show, Eq, GHC.Generic)
+
+instance ToJSON Bar
 
 h :: Handler (Union '[Foo, WithStatus 400 Bar])
 h = runUVerbT $ do
