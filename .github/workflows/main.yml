@@ -1,6 +1,6 @@
 name: CI
 
-# Trigger the workflow on push or pull request, but only for the main branch
+# Trigger the workflow on push or pull request, but only for the master branch
 on:
   pull_request:
   push:
@@ -21,15 +21,6 @@ jobs:
           - "8.6.5"
           - "8.8.4"
           - "8.10.2"
-        # exclude:
-        #   - os: macOS-latest
-        #     ghc: 8.8.4
-        #   - os: macOS-latest
-        #     ghc: 8.6.5
-        #   - os: windows-latest
-        #     ghc: 8.10.2
-        #   - os: windows-latest
-        #     ghc: 8.6.5
 
     steps:
     - uses: actions/checkout@v2
@@ -124,39 +115,38 @@ jobs:
         stack test --system-ghc
 
   ghcjs:
-    name: stack / ghcjs 8.4
+    name: cabal / ghcjs 8.4
     runs-on: "ubuntu-18.04"
 
     steps:
     - uses: actions/checkout@v2
+    - name: "Setup PATH"
+      run: |
+        echo "PATH=$HOME/.cabal/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Install ghcjs and tools
+    - name: Install tools
       run: |
         sudo add-apt-repository ppa:hvr/ghcjs
         sudo apt-get update -y
         sudo apt-get install ghcjs-8.4
         sudo apt-get install cabal-install
-        cabal --version
+
         # Override cabal.project with the lightweight GHCJS one
         cp cabal.ghcjs.project cabal.project
         cat cabal.project
 
-        export PATH=/opt/ghcjs/8.4.4/bin:$PATH
-        export PATH="$HOME/.cabal/bin:$PATH"
         cabal v2-update
-        ls /opt
-        ls /opt/ghcjs/8.4/bin
-        # cabal v2-install --ghcjs -w /opt/ghcjs/8.4/bin/ghcjs --ignore-project hspec-discover
         cabal v2-install -w /opt/ghc/8.4.4/bin/ghc --ignore-project cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe'
         cabal v2-install -w /opt/ghc/8.4.4/bin/ghc --ignore-project hspec-discover
 
     - name: Build
       run: |
-        export PATH=/opt/ghcjs/8.4.4/bin:$PATH
-        export PATH="$HOME/.cabal/bin:$PATH"
         cabal v2-build --ghcjs -w /opt/ghcjs/8.4/bin/ghcjs --enable-tests --enable-benchmarks all
 
     - name: Run tests
       run: |
-        export PATH="$HOME/.cabal/bin:$PATH"
+        # cabal v2-test does not work with GHCJS
+        # See: https://github.com/haskell/cabal/issues/6175
+        #
+        # This invokes cabal-plan to figure out test binaries, and invokes them with node.
         cabal-plan list-bins '*:test:*' | while read -r line; do testpkg=$(echo "$line" | perl -pe 's/:.*//'); testexe=$(echo "$line" | awk '{ print $2 }'); echo "testing $textexe in package $textpkg"; (cd "$(pkgdir $testpkg)" && nodejs "$testexe".jsexe/all.js); done
