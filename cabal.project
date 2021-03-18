@@ -3,7 +3,8 @@ packages:
   servant-client/
   servant-client-core/
   servant-http-streams/
-  servant-docs/
+-- Tests failing with Cabal (TODO: investigate)
+--  servant-docs/
   servant-foreign/
   servant-server/
   doc/tutorial/
@@ -25,7 +26,7 @@ packages:
   doc/cookbook/custom-errors
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
-  -- doc/cookbook/db-sqlite-simple
+  doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
   -- doc/cookbook/hoist-server-with-context
@@ -33,7 +34,8 @@ packages:
   -- doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/pagination
   -- doc/cookbook/sentry
-  doc/cookbook/testing
+  -- Commented out because servant-quickcheck currently doesn't build.
+  -- doc/cookbook/testing
   doc/cookbook/uverb
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
@@ -52,9 +54,6 @@ constraints:
 constraints: base-compat ^>=0.11
 constraints: semigroups ^>=0.19
 
--- MonadFail
--- https://github.com/nurpax/sqlite-simple/issues/74
-constraints: sqlite-simple < 0
 -- allow-newer: sqlite-simple-0.4.16.0:semigroups
 -- allow-newer: direct-sqlite-2.3.24:semigroups
 

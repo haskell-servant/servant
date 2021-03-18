@@ -40,26 +40,6 @@ See `CONTRIBUTING.md`
     - `git push --tags`
     - `cabal sdist` and `cabal upload`
 
-## travis
-
-`.travis.yml` is generated using `make-travis-yml` tool, in
-[multi-ghc-travis](https://github.com/haskell-hvr/multi-ghc-travis) repository.
-
-To regenerate the script use (*note:* atm you need to comment `doc/cookbook/` packages).
-
-```sh
-runghc ~/Documents/other-haskell/multi-ghc-travis/make_travis_yml_2.hs regenerate
-```
-
-In case Travis jobs fail due to a dependency failing to build, you can temporarily
-add `constraints` to the `cabal.project` file, and regenerate the `.travis.yml`.
-For example, the following will disallow a single `troublemaker-13.37` package version:
-
-```
-constraints:
-  troublemaker <13.37 && > 13.37
-```
-
 ## TechEmpower framework benchmarks
 
 We develop and maintain the servant TFB entry in https://github.com/haskell-servant/FrameworkBenchmarks/

@@ -130,6 +130,7 @@ spec = describe "Servant.Docs" $ do
       md `shouldContain` "\"dt1field1\":\"field 1\""
     it "contains response samples - dt1field2" $
       md `shouldContain` "\"dt1field2\":13"
+
     it "contains request body samples" $
       md `shouldContain` "17"
 

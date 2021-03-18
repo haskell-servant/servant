@@ -3,7 +3,6 @@
 packages:
   servant/
   servant-client-core/
-  servant-jsaddle/
 
 -- we need to tell cabal we are using GHCJS
 compiler: ghcjs
