@@ -32,20 +32,24 @@ jobs:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
 
-    - name: Configure
-      run: |
-        cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
-        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.17'
-
     - name: Freeze
       run: |
+        cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
         cabal freeze
 
     - uses: actions/cache@v2.1.3
-      name: Cache ~/.cabal/store
+      name: Cache ~/.cabal/store and dist-newstyle
       with:
-        path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+        path: |
+          ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          dist-newstyle
         key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.ghc }}-
+
+    - name: Configure
+      run: |
+        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.17'
 
     - name: Build
       run: |
@@ -115,16 +119,17 @@ jobs:
         stack test --system-ghc
 
   ghcjs:
-    name: cabal / ghcjs 8.4
+    name: ubuntu-18.04 / ghcjs 8.4
     runs-on: "ubuntu-18.04"
 
     steps:
     - uses: actions/checkout@v2
+
     - name: "Setup PATH"
       run: |
-        echo "PATH=$HOME/.cabal/bin:$PATH" >> $GITHUB_ENV
+        echo "PATH=$HOME/.cabal/bin:/opt/ghcjs/8.4/bin:$PATH" >> $GITHUB_ENV
 
-    - name: Install tools
+    - name: Install ghcjs and cabal
       run: |
         sudo add-apt-repository ppa:hvr/ghcjs
         sudo apt-get update -y
@@ -135,7 +140,23 @@ jobs:
         cp cabal.ghcjs.project cabal.project
         cat cabal.project
 
+    - name: Cabal update and freeze
+      run: |
         cabal v2-update
+        cabal v2-freeze
+
+    - uses: actions/cache@v2.1.3
+      name: Cache ~/.cabal/store and dist-newstyle
+      with:
+        path: |
+          ~/.cabal/store
+          dist-newstyle
+        key: ubuntu-18.04-ghcjs8.4-${{ hashFiles('cabal.project.freeze') }}
+        restore-keys: |
+          ubuntu-18.04-ghcjs8.4-
+
+    - name: Install cabal-plan and hspec-discover
+      run: |
         cabal v2-install -w /opt/ghc/8.4.4/bin/ghc --ignore-project cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe'
         cabal v2-install -w /opt/ghc/8.4.4/bin/ghc --ignore-project hspec-discover
 
