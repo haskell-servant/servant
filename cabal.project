@@ -26,7 +26,7 @@ packages:
   doc/cookbook/custom-errors
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
-  -- doc/cookbook/db-sqlite-simple
+  doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
   -- doc/cookbook/hoist-server-with-context
@@ -54,9 +54,6 @@ constraints:
 constraints: base-compat ^>=0.11
 constraints: semigroups ^>=0.19
 
--- MonadFail
--- https://github.com/nurpax/sqlite-simple/issues/74
-constraints: sqlite-simple < 0
 -- allow-newer: sqlite-simple-0.4.16.0:semigroups
 -- allow-newer: direct-sqlite-2.3.24:semigroups
 
