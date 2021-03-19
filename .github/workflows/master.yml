@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        cabal: ["3.2"]
+        cabal: ["3.4"]
         ghc:
           - "8.0.2"
           - "8.2.2"
@@ -21,7 +21,7 @@ jobs:
           - "8.6.5"
           - "8.8.4"
           - "8.10.2"
-
+          - "9.0.1"
     steps:
     - uses: actions/checkout@v2
 
@@ -34,6 +34,7 @@ jobs:
 
     - name: Freeze
       run: |
+        if [[ ${{ matrix.ghc }} == "9.0.1" ]]; then cat cabal.project.ghc-9.0 >> cabal.project; fi
         cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
         cabal freeze
 
@@ -49,7 +50,7 @@ jobs:
 
     - name: Configure
       run: |
-        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.17'
+        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.18'
 
     - name: Build
       run: |
