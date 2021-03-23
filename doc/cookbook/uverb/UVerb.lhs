@@ -4,6 +4,10 @@ Servant allows you to talk about the exceptions you throw in your API
 types.  This is not limited to actual exceptions, you can write
 handlers that respond with arbitrary open unions of types.
 
+## Compatibility
+
+:warning: This cookbook is compatible with GHC 8.6.1 or higher :warning:
+
 ## Preliminaries
 
 ```haskell
