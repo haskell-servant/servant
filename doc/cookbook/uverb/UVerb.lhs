@@ -10,6 +10,8 @@ handlers that respond with arbitrary open unions of types.
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -154,12 +156,8 @@ Example usage:
 
 ```haskell
 data Foo = Foo Int Int Int
-  deriving (Show, Eq, GHC.Generic)
-
-instance ToJSON Foo
-
-instance HasStatus Foo where
-  type StatusOf Foo = 200
+  deriving (Show, Eq, GHC.Generic, ToJSON)
+  deriving HasStatus via WithStatus 200 Foo
 
 data Bar = Bar
   deriving (Show, Eq, GHC.Generic)
