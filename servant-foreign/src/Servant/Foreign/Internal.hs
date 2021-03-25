@@ -13,8 +13,6 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
--- | Generalizes all the data needed to make code generation work with
--- arbitrary programming languages.
 module Servant.Foreign.Internal where
 
 import           Prelude ()
@@ -40,55 +38,75 @@ import           Servant.API.Modifiers
                  (RequiredArgument)
 import           Servant.API.TypeLevel
 
+-- | Canonical name of the endpoint, can be used to generate a function name.
+--
+-- You can use the functions in "Servant.Foreign.Inflections", like 'Servant.Foreign.Inflections.camelCase' to transform to `Text`.
 newtype FunctionName = FunctionName { unFunctionName :: [Text] }
   deriving (Data, Show, Eq, Semigroup, Monoid, Typeable)
 
 makePrisms ''FunctionName
 
+-- | See documentation of 'Arg'
 newtype PathSegment = PathSegment { unPathSegment :: Text }
   deriving (Data, Show, Eq, IsString, Semigroup, Monoid, Typeable)
 
 makePrisms ''PathSegment
 
-data Arg f = Arg
+-- | Maps a name to the foreign type that belongs to the annotated value.
+--
+-- Used for header args, query args, and capture args.
+data Arg ftype = Arg
   { _argName :: PathSegment
-  , _argType :: f }
+  -- ^ The name to be captured.
+  --
+  -- Only for capture args it really denotes a path segment.
+  , _argType :: ftype
+  -- ^ Foreign type the associated value will have
+  }
   deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''Arg
 
-argPath :: Getter (Arg f) Text
+argPath :: Getter (Arg ftype) Text
 argPath = argName . _PathSegment
 
-data SegmentType f
+data SegmentType ftype
   = Static PathSegment
-    -- ^ a static path segment. like "/foo"
-  | Cap (Arg f)
-    -- ^ a capture. like "/:userid"
+    -- ^ Static path segment.
+    --
+    -- @"foo\/bar\/baz"@
+    --
+    -- contains the static segments @"foo"@, @"bar"@ and @"baz"@.
+  | Cap (Arg ftype)
+    -- ^ A capture.
+    --
+    -- @"user\/{userid}\/name"@
+    --
+    -- would capture the arg @userid@ with type @ftype@.
   deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''SegmentType
 
-newtype Segment f = Segment { unSegment :: SegmentType f }
+-- | A part of the Url’s path.
+newtype Segment ftype = Segment { unSegment :: SegmentType ftype }
   deriving (Data, Eq, Show, Typeable)
 
 makePrisms ''Segment
 
-isCapture :: Segment f -> Bool
+-- | Whether a segment is a 'Cap'.
+isCapture :: Segment ftype -> Bool
 isCapture (Segment (Cap _)) = True
 isCapture                _  = False
 
-captureArg :: Segment f -> Arg f
+-- | Crashing Arg extraction from segment, TODO: remove
+captureArg :: Segment ftype -> Arg ftype
 captureArg (Segment (Cap s)) = s
 captureArg                 _ = error "captureArg called on non capture"
 
-type Path f = [Segment f]
+-- TODO: remove, unnecessary indirection
+type Path ftype = [Segment ftype]
 
-newtype Frag f = Frag { unFragment :: Arg f }
-  deriving (Data, Eq, Show, Typeable)
-
-makePrisms ''Frag
-
+-- | Type of a 'QueryArg'.
 data ArgType
   = Normal
   | Flag
@@ -97,18 +115,41 @@ data ArgType
 
 makePrisms ''ArgType
 
-data QueryArg f = QueryArg
-  { _queryArgName :: Arg f
+-- | Url Query argument.
+--
+-- Urls can contain query arguments, which is a list of key-value pairs.
+-- In a typical url, query arguments look like this:
+--
+-- @?foo=bar&alist[]=el1&alist[]=el2&aflag@
+--
+-- Each pair can be
+--
+-- * @?foo=bar@: a plain key-val pair, either optional or required ('QueryParam')
+-- * @?aflag@: a flag (no value, implicitly Bool with default `false` if it’s missing) ('QueryFlag')
+-- * @?alist[]=el1&alist[]=el2@: list of values ('QueryParams')
+--
+-- @_queryArgType@ will be set accordingly.
+--
+-- For the plain key-val pairs ('QueryParam'), @_queryArgName@’s @ftype@ will be wrapped in a @Maybe@ if the argument is optional.
+data QueryArg ftype = QueryArg
+  { _queryArgName :: Arg ftype
+  -- ^ Name and foreign type of the argument. Will be wrapped in `Maybe` if the query is optional and in a `[]` if the query is a list
   , _queryArgType :: ArgType
+  -- ^ one of normal/plain, list or flag
   }
   deriving (Data, Eq, Show, Typeable)
 
 makeLenses ''QueryArg
 
-data HeaderArg f = HeaderArg
-  { _headerArg :: Arg f }
+data HeaderArg ftype =
+  -- | The name of the header and the foreign type of its value.
+  HeaderArg
+  { _headerArg :: Arg ftype }
+  -- | Unused, will never be set.
+  --
+  -- TODO: remove
   | ReplaceHeaderArg
-  { _headerArg     :: Arg f
+  { _headerArg     :: Arg ftype
   , _headerPattern :: Text
   }
   deriving (Data, Eq, Show, Typeable)
@@ -117,29 +158,71 @@ makeLenses ''HeaderArg
 
 makePrisms ''HeaderArg
 
-data Url f = Url
-  { _path     :: Path f
-  , _queryStr :: [QueryArg f]
-  , _frag     :: Maybe f
+-- | Full endpoint url, with all captures and parameters
+data Url ftype = Url
+  { _path     :: Path ftype
+  -- ^ Url path, list of either static segments or captures
+  --
+  -- @"foo\/{id}\/bar"@
+  , _queryStr :: [QueryArg ftype]
+  -- ^ List of query args
+  --
+  -- @"?foo=bar&a=b"@
+  , _frag     :: Maybe ftype
+  -- ^ Url fragment.
+  --
+  -- Not sent to the HTTP server, so only useful for frontend matters (e.g. inter-page linking).
+  --
+  -- @#fragmentText@
   }
   deriving (Data, Eq, Show, Typeable)
 
-defUrl :: Url f
+defUrl :: Url ftype
 defUrl = Url [] [] Nothing
 
 makeLenses ''Url
 
+-- | See documentation of '_reqBodyContentType'
 data ReqBodyContentType = ReqBodyJSON | ReqBodyMultipart
   deriving (Data, Eq, Show, Read)
 
-data Req f = Req
-  { _reqUrl             :: Url f
+-- | Full description of an endpoint in your API, generated by 'listFromAPI'. It should give you all the information needed to generate foreign language bindings.
+--
+-- Every field containing @ftype@ will use the foreign type mapping specified via 'HasForeignType' (see its docstring on how to set that up).
+--
+-- See https://docs.servant.dev/en/stable/tutorial/ApiType.html for accessible documentation of the possible content of an endpoint.
+data Req ftype = Req
+  { _reqUrl             :: Url ftype
+  -- ^ Full list of URL segments, including captures
   , _reqMethod          :: HTTP.Method
-  , _reqHeaders         :: [HeaderArg f]
-  , _reqBody            :: Maybe f
-  , _reqReturnType      :: Maybe f
+  -- ^ @\"GET\"@\/@\"POST\"@\/@\"PUT\"@\/…
+  , _reqHeaders         :: [HeaderArg ftype]
+  -- ^ Headers required by this endpoint, with their type
+  , _reqBody            :: Maybe ftype
+  -- ^ Foreign type of the expected request body ('ReqBody'), if any
+  , _reqReturnType      :: Maybe ftype
+  -- ^ The foreign type of the response, if any
   , _reqFuncName        :: FunctionName
+  -- ^ The URL segments rendered in a way that they can be easily concatenated into a canonical function name
   , _reqBodyContentType :: ReqBodyContentType
+  -- ^ The content type the request body is transferred as.
+  --
+  -- This is a severe limitation of @servant-foreign@ currently,
+  -- as we only allow the content type to be `JSON`
+  -- no user-defined content types. ('ReqBodyMultipart' is not
+  -- actually implemented.)
+  --
+  -- Thus, any routes looking like this will work:
+  --
+  -- @"foo" :> Get '[JSON] Foo@
+  --
+  -- while routes like
+  --
+  -- @"foo" :> Get '[MyFancyContentType] Foo@
+  --
+  -- will fail with an error like
+  --
+  -- @• JSON expected in list '[MyFancyContentType]@
   }
   deriving (Data, Eq, Show, Typeable)
 
@@ -183,11 +266,16 @@ defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName []) ReqBodyJSON
 class HasForeignType lang ftype a where
   typeFor :: Proxy lang -> Proxy ftype -> Proxy a -> ftype
 
+-- | The language definition without any foreign types. It can be used for dynamic languages which do not /do/ type annotations.
 data NoTypes
 
-instance HasForeignType NoTypes NoContent ftype where
+-- | Use if the foreign language does not have any types.
+instance HasForeignType NoTypes NoContent a where
   typeFor _ _ _ = NoContent
 
+-- | Implementation of the Servant framework types.
+--
+-- Relevant instances: Everything containing 'HasForeignType'.
 class HasForeign lang ftype (api :: *) where
   type Foreign ftype api :: *
   foreignFor :: Proxy lang -> Proxy ftype -> Proxy api -> Req ftype -> Foreign ftype api

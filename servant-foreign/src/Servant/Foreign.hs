@@ -1,20 +1,32 @@
 -- | Generalizes all the data needed to make code generation work with
 -- arbitrary programming languages.
+--
+-- See documentation of 'HasForeignType' for a simple example. 'listFromAPI' returns a list of all your endpoints and their foreign types, given a mapping from Haskell types to foreign types (conventionally called `ftypes` below).
 module Servant.Foreign
-  ( ArgType(..)
-  , HeaderArg(..)
-  , QueryArg(..)
+  (
+  -- * Main API
+    listFromAPI
   , Req(..)
-  , ReqBodyContentType(..)
+  , defReq
+  , HasForeignType(..)
+  , GenerateList(..)
+  , HasForeign(..)
+  , NoTypes
+  -- * Subtypes of 'Req'
+  , Url(..)
+  , Path
   , Segment(..)
   , SegmentType(..)
-  , Url(..)
-    -- aliases
-  , Path
+  , isCapture
+  , captureArg
+  , QueryArg(..)
+  , ArgType(..)
+  , HeaderArg(..)
   , Arg(..)
   , FunctionName(..)
+  , ReqBodyContentType(..)
   , PathSegment(..)
-    -- lenses
+    -- * Lenses
   , argName
   , argType
   , argPath
@@ -30,7 +42,7 @@ module Servant.Foreign
   , queryArgName
   , queryArgType
   , headerArg
-    -- prisms
+    -- * Prisms
   , _PathSegment
   , _HeaderArg
   , _ReplaceHeaderArg
@@ -39,16 +51,7 @@ module Servant.Foreign
   , _Normal
   , _Flag
   , _List
-    -- rest of it
-  , HasForeign(..)
-  , HasForeignType(..)
-  , GenerateList(..)
-  , NoTypes
-  , captureArg
-  , isCapture
-  , defReq
-  , listFromAPI
-    -- re-exports
+    -- * Re-exports
   , module Servant.API
   , module Servant.Foreign.Inflections
   ) where
