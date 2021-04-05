@@ -3,8 +3,7 @@ packages:
   servant-client/
   servant-client-core/
   servant-http-streams/
--- Tests failing with Cabal (TODO: investigate)
---  servant-docs/
+  servant-docs/
   servant-foreign/
   servant-server/
   doc/tutorial/
@@ -26,7 +25,8 @@ packages:
   doc/cookbook/custom-errors
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
-  doc/cookbook/db-sqlite-simple
+  --doc/cookbook/db-sqlite-simple
+  -- ^ BROKEN blaze-textual
   doc/cookbook/file-upload
   doc/cookbook/generic
   doc/cookbook/hoist-server-with-context
@@ -36,7 +36,8 @@ packages:
   -- doc/cookbook/sentry
   -- Commented out because servant-quickcheck currently doesn't build.
   -- doc/cookbook/testing
-  doc/cookbook/uverb
+  --doc/cookbook/uverb
+  -- ^ BROKEN servant-swagger -> optics-th
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
@@ -64,8 +65,7 @@ write-ghc-environment-files: always
 allow-newer: servant-pagination-2.2.2:servant
 allow-newer: servant-pagination-2.2.2:servant-server
 
--- https://github.com/haskell-servant/servant-multipart/pull/41
-allow-newer: servant-multipart:servant
-allow-newer: servant-multipart:servant-server
-allow-newer: servant-multipart:servant-client-core
 allow-newer: servant-js:servant
+
+-- ghc 9
+allow-newer: tdigest:base

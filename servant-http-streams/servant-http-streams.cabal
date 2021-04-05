@@ -20,7 +20,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2019 Servant Contributors
 build-type:          Simple
-tested-with: GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.2
+tested-with: GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
 
 extra-source-files:
   CHANGELOG.md
@@ -38,7 +38,7 @@ library
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   build-depends:
-      base                  >= 4.9      && < 4.15
+      base                  >= 4.9      && < 4.16
     , bytestring            >= 0.10.8.1 && < 0.12
     , containers            >= 0.5.7.1  && < 0.7
     , deepseq               >= 1.4.2.0  && < 1.5

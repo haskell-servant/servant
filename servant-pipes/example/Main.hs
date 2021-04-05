@@ -64,7 +64,7 @@ server = fast :<|> slow :<|> readme :<|> proxy
 
     readme = liftIO $ do
         putStrLn "/readme"
-        return $ P.withFile "README.md" ReadMode PBS.fromHandle
+        return $ P.withFile "README.md" ReadMode $ \h -> PBS.fromHandle h
 
     proxy c = liftIO $ do
         putStrLn "/proxy"
