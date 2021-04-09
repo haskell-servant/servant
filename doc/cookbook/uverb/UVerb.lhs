@@ -4,12 +4,19 @@ Servant allows you to talk about the exceptions you throw in your API
 types.  This is not limited to actual exceptions, you can write
 handlers that respond with arbitrary open unions of types.
 
+## Compatibility
+
+:warning: This cookbook is compatible with GHC 8.6.1 or higher :warning:
+
 ## Preliminaries
 
 ```haskell
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -154,12 +161,8 @@ Example usage:
 
 ```haskell
 data Foo = Foo Int Int Int
-  deriving (Show, Eq, GHC.Generic)
-
-instance ToJSON Foo
-
-instance HasStatus Foo where
-  type StatusOf Foo = 200
+  deriving (Show, Eq, GHC.Generic, ToJSON)
+  deriving HasStatus via WithStatus 200 Foo
 
 data Bar = Bar
   deriving (Show, Eq, GHC.Generic)
