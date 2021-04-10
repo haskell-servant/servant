@@ -17,7 +17,7 @@ executable cookbook-https
                      , servant-server
                      , wai >= 3.2
                      , warp >= 3.2
-                     , warp-tls >= 3.2
+                     , warp-tls >= 3.2.9
                      , markdown-unlit >= 0.4
   default-language:    Haskell2010
   ghc-options:         -Wall -pgmL markdown-unlit
