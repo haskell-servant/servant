@@ -23,7 +23,7 @@ executable cookbook-jwt-and-basic-auth
                      , servant-client
                      , servant-server
                      , servant-auth ==0.3.*
-                     , servant-auth-server >= 0.3.1.0
+                     , servant-auth-server >= 0.4.4.0
                      , warp >= 3.2
                      , wai >= 3.2
                      , http-types >= 0.12
