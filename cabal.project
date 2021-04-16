@@ -29,7 +29,7 @@ packages:
   doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
-  -- doc/cookbook/hoist-server-with-context
+  doc/cookbook/hoist-server-with-context
   doc/cookbook/https
   -- doc/cookbook/jwt-and-basic-auth/
   doc/cookbook/pagination
