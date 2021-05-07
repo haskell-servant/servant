@@ -53,7 +53,7 @@ instance {-# OVERLAPPABLE #-} HasResponseHeaders a where
 
 instance {-# OVERLAPPING #-} (HasResponseHeaders a, GetHeaders (Headers h a))
   => HasResponseHeaders (Headers h a) where
-  getResponseHeaders x = getHeaders x <> getResponseHeaders (getResponse x)
+  getResponseHeaders x = getHeaders x ++ getResponseHeaders (getResponse x)
 
 instance {-# OVERLAPPING #-} HasResponseHeaders a
   => HasResponseHeaders (WithStatus n a) where
