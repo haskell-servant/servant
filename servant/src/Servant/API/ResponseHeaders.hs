@@ -68,18 +68,6 @@ data Headers ls a = Headers { getResponse :: a
 instance (NFDataHList ls, NFData a) => NFData (Headers ls a) where
     rnf (Headers x hdrs) = rnf x `seq` rnf hdrs
 
-instance {-# OVERLAPPING #-} MimeRender PlainText a => MimeRender PlainText (Headers _ls a) where
-  mimeRender contentTypeProxy (Headers a _) = mimeRender contentTypeProxy a
-
-instance {-# OVERLAPPING #-} MimeRender FormUrlEncoded a => MimeRender FormUrlEncoded (Headers _ls a) where
-  mimeRender contentTypeProxy (Headers a _) = mimeRender contentTypeProxy a
-
-instance {-# OVERLAPPING #-} MimeRender OctetStream a => MimeRender OctetStream (Headers _ls a) where
-  mimeRender contentTypeProxy (Headers a _) = mimeRender contentTypeProxy a
-
-instance {-# OVERLAPPING #-} MimeRender JSON a => MimeRender JSON (Headers _ls a) where
-  mimeRender contentTypeProxy (Headers a _) = mimeRender contentTypeProxy a
-
 data ResponseHeader (sym :: Symbol) a
     = Header a
     | MissingHeader

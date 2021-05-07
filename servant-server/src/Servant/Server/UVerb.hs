@@ -28,7 +28,7 @@ import Data.SOP (I (I))
 import Data.SOP.Constraint (All, And)
 import Data.String.Conversions (LBS, cs)
 import Network.HTTP.Types (Status, HeaderName, hContentType)
-import Network.Wai (responseLBS)
+import Network.Wai (responseLBS, Request)
 import Servant.API (ReflectMethod, reflectMethod)
 import Servant.API.ContentTypes (AllCTRender (handleAcceptH), AllMime)
 import Servant.API.ResponseHeaders (GetHeaders (..), Headers (..))
@@ -45,28 +45,38 @@ respond ::
   f (Union xs)
 respond = pure . inject . I
 
-class HasResponseHeaders a where
-  getResponseHeaders :: a -> [(HeaderName, B.ByteString)]
+class IsServerResource (cts :: [*]) a where
+  resourceResponse :: Request -> Proxy cts -> a -> Maybe (LBS, LBS)
+  resourceHeaders :: Proxy cts -> a -> [(HeaderName, B.ByteString)]
 
-instance {-# OVERLAPPABLE #-} HasResponseHeaders a where
-  getResponseHeaders _ = []
+instance {-# OVERLAPPABLE #-} AllCTRender cts a
+  => IsServerResource cts a where
+  resourceResponse request p res = handleAcceptH p (getAcceptHeader request) res
+  resourceHeaders _ _ = []
 
-instance {-# OVERLAPPING #-} (HasResponseHeaders a, GetHeaders (Headers h a))
-  => HasResponseHeaders (Headers h a) where
-  getResponseHeaders x = getHeaders x ++ getResponseHeaders (getResponse x)
+instance {-# OVERLAPPING #-} (IsServerResource cts a, GetHeaders (Headers h a))
+  => IsServerResource cts (Headers h a) where
+  resourceResponse request p res = resourceResponse request p (getResponse res)
+  resourceHeaders cts res = getHeaders res ++ resourceHeaders cts (getResponse res)
 
-instance {-# OVERLAPPING #-} HasResponseHeaders a
-  => HasResponseHeaders (WithStatus n a) where
-  getResponseHeaders (WithStatus x) = getResponseHeaders x
+instance {-# OVERLAPPING #-} IsServerResource cts a
+  => IsServerResource cts (WithStatus n a) where
+  resourceResponse request p (WithStatus x) = resourceResponse request p x
+  resourceHeaders cts (WithStatus x) = resourceHeaders cts x
 
--- | Helper constraint used in @instance 'HasServer' 'UVerb'@.
-type IsServerResource contentTypes =
-  AllCTRender contentTypes `And` HasStatus `And` HasResponseHeaders
+encodeResource :: forall a cts . (IsServerResource cts a, HasStatus a)
+               => Request -> Proxy cts -> a
+               -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
+encodeResource request cts res = (statusOf (Proxy @a),
+                                  resourceResponse request cts res,
+                                  resourceHeaders cts res)
+
+type IsServerResourceWithStatus cts = IsServerResource cts `And` HasStatus
 
 instance
   ( ReflectMethod method,
     AllMime contentTypes,
-    All (IsServerResource contentTypes) as,
+    All (IsServerResourceWithStatus contentTypes) as,
     Unique (Statuses as) -- for consistency with servant-swagger (server would work fine
         -- without; client is a bit of a corner case, because it dispatches
         -- the parser based on the status code.  with this uniqueness
@@ -94,20 +104,11 @@ instance
               action
                 `addMethodCheck` methodCheck method request
                 `addAcceptCheck` acceptCheck (Proxy @contentTypes) (getAcceptHeader request)
-            mkProxy :: a -> Proxy a
-            mkProxy _ = Proxy
 
         runAction action' env request cont $ \(output :: Union as) -> do
-          let encodeResource :: (AllCTRender contentTypes a, HasStatus a, HasResponseHeaders a)
-                             => a -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
-              encodeResource res =
-                ( statusOf $ mkProxy res,
-                  handleAcceptH (Proxy @contentTypes) (getAcceptHeader request) res,
-                  getResponseHeaders res
-                )
+          let cts = Proxy @contentTypes
               pickResource :: Union as -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
-              pickResource = foldMapUnion (Proxy @(IsServerResource contentTypes)) encodeResource
-
+              pickResource = foldMapUnion (Proxy @(IsServerResourceWithStatus contentTypes)) (encodeResource request cts)
           case pickResource output of
             (_, Nothing, _) -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
             (status, Just (contentT, body), headers) ->
