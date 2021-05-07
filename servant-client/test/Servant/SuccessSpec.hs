@@ -32,6 +32,7 @@ import           Data.Foldable
 import           Data.Maybe
                  (listToMaybe)
 import           Data.Monoid ()
+import           Data.SOP (NS (..), I (..))
 import           Data.Text
                  (Text)
 import qualified Network.HTTP.Client                as C
@@ -128,6 +129,14 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       case res of
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
+
+    it "Returns headers on UVerb requests" $ \(_, baseUrl) -> do
+      res <- runClient getUVerbRespHeaders baseUrl
+      case res of
+        Left e -> assertFailure $ show e
+        Right (Z (I (WithStatus val))) ->
+          getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
+        Right (S _) -> assertFailure "expected first alternative of union"
 
     it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
       mgr <- C.newManager C.defaultManagerSettings

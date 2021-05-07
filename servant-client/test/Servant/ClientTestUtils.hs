@@ -32,6 +32,7 @@ import           Data.Char
                  (chr, isPrint)
 import           Data.Monoid ()
 import           Data.Proxy
+import           Data.SOP
 import           Data.Text
                  (Text)
 import qualified Data.Text                        as Text
@@ -121,6 +122,7 @@ type Api =
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
+  :<|> "uverb-headers" :> UVerb 'GET '[JSON] '[ WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String ]
   :<|> "deleteContentType" :> DeleteNoContent
   :<|> "redirectWithCookie" :> Raw
   :<|> "empty" :> EmptyAPI
@@ -150,6 +152,7 @@ getRawFailure   :: HTTP.Method -> ClientM Response
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
+getUVerbRespHeaders  :: ClientM (Union '[ WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String ])
 getDeleteContentType :: ClientM NoContent
 getRedirectWithCookie :: HTTP.Method -> ClientM Response
 uverbGetSuccessOrRedirect :: Bool
@@ -172,6 +175,7 @@ getRoot
   :<|> getRawFailure
   :<|> getMultiple
   :<|> getRespHeaders
+  :<|> getUVerbRespHeaders
   :<|> getDeleteContentType
   :<|> getRedirectWithCookie
   :<|> EmptyClient
@@ -198,6 +202,7 @@ server = serve api (
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
+  :<|> (pure . Z . I . WithStatus $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
   :<|> emptyServer
