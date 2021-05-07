@@ -22,15 +22,17 @@ module Servant.Server.UVerb
   )
 where
 
+import qualified Data.ByteString as B
 import Data.Proxy (Proxy (Proxy))
 import Data.SOP (I (I))
 import Data.SOP.Constraint (All, And)
 import Data.String.Conversions (LBS, cs)
-import Network.HTTP.Types (Status, hContentType)
+import Network.HTTP.Types (Status, HeaderName, hContentType)
 import Network.Wai (responseLBS)
 import Servant.API (ReflectMethod, reflectMethod)
 import Servant.API.ContentTypes (AllCTRender (handleAcceptH), AllMime)
-import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, foldMapUnion, inject, statusOf)
+import Servant.API.ResponseHeaders (GetHeaders (..), Headers (..))
+import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, WithStatus (..), foldMapUnion, inject, statusOf)
 import Servant.Server.Internal (Context, Delayed, Handler, HasServer (..), RouteResult (FailFatal, Route), Router, Server, ServerT, acceptCheck, addAcceptCheck, addMethodCheck, allowedMethodHead, err406, getAcceptHeader, leafRouter, methodCheck, runAction)
 
 
@@ -43,8 +45,23 @@ respond ::
   f (Union xs)
 respond = pure . inject . I
 
+class HasResponseHeaders a where
+  getResponseHeaders :: a -> [(HeaderName, B.ByteString)]
+
+instance {-# OVERLAPPABLE #-} HasResponseHeaders a where
+  getResponseHeaders _ = []
+
+instance {-# OVERLAPPING #-} (HasResponseHeaders a, GetHeaders (Headers h a))
+  => HasResponseHeaders (Headers h a) where
+  getResponseHeaders x = getHeaders x <> getResponseHeaders (getResponse x)
+
+instance {-# OVERLAPPING #-} HasResponseHeaders a
+  => HasResponseHeaders (WithStatus n a) where
+  getResponseHeaders (WithStatus x) = getResponseHeaders x
+
 -- | Helper constraint used in @instance 'HasServer' 'UVerb'@.
-type IsServerResource contentTypes = AllCTRender contentTypes `And` HasStatus
+type IsServerResource contentTypes =
+  AllCTRender contentTypes `And` HasStatus `And` HasResponseHeaders
 
 instance
   ( ReflectMethod method,
@@ -81,16 +98,18 @@ instance
             mkProxy _ = Proxy
 
         runAction action' env request cont $ \(output :: Union as) -> do
-          let encodeResource :: (AllCTRender contentTypes a, HasStatus a) => a -> (Status, Maybe (LBS, LBS))
+          let encodeResource :: (AllCTRender contentTypes a, HasStatus a, HasResponseHeaders a)
+                             => a -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
               encodeResource res =
                 ( statusOf $ mkProxy res,
-                  handleAcceptH (Proxy @contentTypes) (getAcceptHeader request) res
+                  handleAcceptH (Proxy @contentTypes) (getAcceptHeader request) res,
+                  getResponseHeaders res
                 )
-              pickResource :: Union as -> (Status, Maybe (LBS, LBS))
+              pickResource :: Union as -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
               pickResource = foldMapUnion (Proxy @(IsServerResource contentTypes)) encodeResource
 
           case pickResource output of
-            (_, Nothing) -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
-            (status, Just (contentT, body)) ->
+            (_, Nothing, _) -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
+            (status, Just (contentT, body), headers) ->
               let bdy = if allowedMethodHead method request then "" else body
-               in Route $ responseLBS status ((hContentType, cs contentT) : []) bdy
+               in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy

@@ -28,6 +28,8 @@ import           Data.Maybe
                  (fromMaybe)
 import           Data.Proxy
                  (Proxy (Proxy))
+import           Data.SOP
+                 (I (..), NS (..))
 import           Data.String
                  (fromString)
 import           Data.String.Conversions
@@ -53,7 +55,7 @@ import           Servant.API
                  NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
                  RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
-                 UVerb, Union, Verb, addHeader)
+                 UVerb, Union, Verb, WithStatus (..), addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, respond, serve,
@@ -98,6 +100,7 @@ spec = do
   rawSpec
   alternativeSpec
   responseHeadersSpec
+  uverbResponseHeadersSpec
   miscCombinatorSpec
   basicAuthSpec
   genAuthSpec
@@ -683,6 +686,31 @@ responseHeadersSpec = describe "ResponseHeaders" $ do
       forM_ methods $ \method ->
         THW.request method "" [(hAccept, "crazy/mime")] ""
           `shouldRespondWith` 406
+
+-- }}}
+------------------------------------------------------------------------------
+-- * uverbResponseHeaderSpec {{{
+------------------------------------------------------------------------------
+type UVerbHeaderResponse = '[
+  WithStatus 200 (Headers '[Header "H1" Int] String),
+  WithStatus 404 String ]
+
+type UVerbResponseHeadersApi =
+       Capture "ok" Bool :> UVerb 'GET '[JSON] UVerbHeaderResponse
+
+uverbResponseHeadersServer :: Server UVerbResponseHeadersApi
+uverbResponseHeadersServer True = pure . Z . I . WithStatus $ addHeader 5 "foo"
+uverbResponseHeadersServer False = pure . S . Z . I . WithStatus $ "bar"
+
+uverbResponseHeadersSpec :: Spec
+uverbResponseHeadersSpec = describe "UVerbResponseHeaders" $ do
+  with (return $ serve (Proxy :: Proxy UVerbResponseHeadersApi) uverbResponseHeadersServer) $ do
+
+    it "includes the headers in the response" $
+        THW.request methodGet "/true" [] ""
+          `shouldRespondWith` "\"foo\"" { matchHeaders = ["H1" <:> "5"]
+                                        , matchStatus  = 200
+                                        }
 
 -- }}}
 ------------------------------------------------------------------------------
