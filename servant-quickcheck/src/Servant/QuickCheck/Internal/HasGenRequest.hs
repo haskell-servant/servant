@@ -195,3 +195,6 @@ instance (HasGenRequest a) => HasGenRequest (WithNamedContext x y a) where
 -- TODO: Try logging in
 instance (HasGenRequest a) => HasGenRequest (BasicAuth x y :> a) where
     genRequest _ = genRequest (Proxy :: Proxy a)
+
+instance (HasGenRequest a) => HasGenRequest (Fragment v :> a) where
+    genRequest _ = genRequest (Proxy :: Proxy a)
