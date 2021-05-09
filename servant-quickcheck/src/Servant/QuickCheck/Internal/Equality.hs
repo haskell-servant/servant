@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Servant.QuickCheck.Internal.Equality where
 
 import Data.Aeson          (Value, decode, decodeStrict)
@@ -5,6 +7,10 @@ import Data.ByteString     (ByteString)
 import qualified Data.ByteString.Lazy as LB
 import Data.Function       (on)
 import Network.HTTP.Client (Response, responseBody)
+#if MIN_VERSION_http_client(0,7,0)
+import Network.HTTP.Client (responseStatus, responseVersion, responseHeaders,
+                            responseBody, responseCookieJar, equivCookieJar)
+#endif
 import Data.Semigroup      (Semigroup (..))
 import Prelude.Compat
 
@@ -23,7 +29,17 @@ instance Monoid (ResponseEquality b) where
 --
 -- /Since 0.0.0.0/
 allEquality :: Eq b => ResponseEquality b
+#if MIN_VERSION_http_client(0,7,0)
+allEquality = ResponseEquality $ \resp resp' -> and
+  [ responseStatus resp == responseStatus resp'
+  , responseVersion resp == responseVersion resp'
+  , responseHeaders resp == responseHeaders resp'
+  , responseBody resp == responseBody resp'
+  , responseCookieJar resp `equivCookieJar` responseCookieJar resp'
+  ]
+#else
 allEquality = ResponseEquality (==)
+#endif
 
 -- | ByteString `Eq` instance over the response body.
 --
