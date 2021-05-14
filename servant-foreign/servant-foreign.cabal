@@ -74,8 +74,7 @@ test-suite spec
 
   -- Additional dependencies
   build-depends:
-    hspec >= 2.6.0 && <2.8
-
+    hspec >= 2.6.0 && <2.9
   build-tool-depends:
-    hspec-discover:hspec-discover >=2.6.0 && <2.8
+    hspec-discover:hspec-discover >=2.6.0 && <2.9
   default-language:  Haskell2010

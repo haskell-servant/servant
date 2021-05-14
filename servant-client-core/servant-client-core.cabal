@@ -103,8 +103,8 @@ test-suite spec
   -- Additional dependencies
   build-depends:
       deepseq    >= 1.4.2.0  && < 1.5
-    , hspec      >= 2.6.0    && < 2.8
+    , hspec      >= 2.6.0    && < 2.9
     , QuickCheck >= 2.12.6.1 && < 2.15
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && <2.8
+    hspec-discover:hspec-discover >= 2.6.0 && <2.9
