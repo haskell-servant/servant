@@ -131,6 +131,8 @@ jobs:
 
     - name: Install ghcjs and cabal
       run: |
+        # Default GitHub image dropped ppa:hvr/ghc, so we add it ourselves
+        sudo add-apt-repository ppa:hvr/ghc
         sudo add-apt-repository ppa:hvr/ghcjs
         sudo apt-get update -y
         sudo apt-get install ghcjs-8.4
