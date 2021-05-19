@@ -56,7 +56,7 @@
 
 ### Captures:
 
-- *foo*: Capture foo Int
+- *foo*: example description
 
 ### Response:
 
