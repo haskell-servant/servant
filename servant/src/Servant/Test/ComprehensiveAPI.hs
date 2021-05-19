@@ -48,7 +48,7 @@ comprehensiveAPIWithoutStreaming = Proxy
 type ComprehensiveAPIWithoutStreamingOrRaw' endpoint =
     GET
     :<|> "get-int"          :> Get '[JSON] Int
-    :<|> "capture"          :> Capture' '[Description "example description"] "foo" Int :> GET
+    :<|> "capture"          :> Capture' '[Description "example description"] "bar" Int :> GET
     :<|> "capture-lenient"  :> Capture' '[Lenient] "foo" Int :> GET
     :<|> "header"           :> Header "foo" Int :> GET
     :<|> "header-lenient"   :> Header' '[Required, Lenient] "bar" Int :> GET
