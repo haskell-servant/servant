@@ -9,6 +9,7 @@
 module Servant.API.Description (
     -- * Combinators
     Description,
+    OperationId,
     Summary,
     -- * Used as modifiers
     FoldDescription,
@@ -45,6 +46,13 @@ data Summary (sym :: Symbol)
 -- :}
 data Description (sym :: Symbol)
     deriving (Typeable)
+
+-- | Add a unique identifier for an endpoint
+--
+-- Example:
+--
+-- >>> type MyApi = OperationId "getBooksByISBN" :> "books" :> Capture "isbn" Text :> Get '[JSON] Book
+data OperationId (sym :: Symbol)
 
 -- | Fold list of modifiers to extract description as a type-level String.
 --

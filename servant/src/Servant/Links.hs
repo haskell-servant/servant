@@ -149,7 +149,7 @@ import           Servant.API.BasicAuth
 import           Servant.API.Capture
                  (Capture', CaptureAll)
 import           Servant.API.Description
-                 (Description, Summary)
+                 (Description, OperationId, Summary)
 import           Servant.API.Empty
                  (EmptyAPI (..))
 import           Servant.API.Experimental.Auth
@@ -530,6 +530,10 @@ instance HasLink sub => HasLink (Vault :> sub) where
 
 instance HasLink sub => HasLink (Description s :> sub) where
     type MkLink (Description s :> sub) a = MkLink sub a
+    toLink = simpleToLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (OperationId opid :> sub) where
+    type MkLink (OperationId opid :> sub) a = MkLink sub a
     toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (Summary s :> sub) where
