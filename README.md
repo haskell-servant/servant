@@ -13,7 +13,7 @@ The core documentation can be found [here](http://docs.servant.dev/).
 Other blog posts, videos and slides can be found on the
 [website](http://www.servant.dev/).
 
-If you need help, drop by the IRC channel (#servant on freenode) or [mailing
+If you need help, drop by the IRC channel (#haskell-servant on libera.chat) or [mailing
 list](https://groups.google.com/forum/#!forum/haskell-servant).
 
 ## Contributing
