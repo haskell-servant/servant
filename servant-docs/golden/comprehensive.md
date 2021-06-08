@@ -52,11 +52,11 @@
 
 ```
 
-## GET /capture/:foo
+## GET /capture/:bar
 
 ### Captures:
 
-- *foo*: Capture foo Int
+- *bar*: example description
 
 ### Response:
 

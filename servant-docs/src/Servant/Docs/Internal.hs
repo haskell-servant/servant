@@ -862,7 +862,7 @@ instance HasDocs EmptyAPI where
 -- | @"books" :> 'Capture' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
 instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)
-      => HasDocs (Capture' mods sym a :> api) where
+      => HasDocs (Capture' '[] sym a :> api) where
 
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint', action')
@@ -873,6 +873,28 @@ instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)
           action' = over captures (|> toCapture captureP) action
           endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
           symP = Proxy :: Proxy sym
+
+instance (KnownSymbol descr, KnownSymbol sym, HasDocs api)
+      => HasDocs (Capture' (Description descr ': mods) sym a :> api) where
+
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint', action')
+
+    where subApiP = Proxy :: Proxy api
+
+          docCapture = DocCapture (symbolVal symP) (symbolVal descrP)
+          action' = over captures (|> docCapture) action
+          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
+          descrP = Proxy :: Proxy descr
+          symP = Proxy :: Proxy sym
+
+instance {-# OVERLAPPABLE #-} HasDocs (Capture' mods sym a :> api)
+      => HasDocs (Capture' (mod ': mods) sym a :> api) where
+
+  docsFor Proxy =
+    docsFor apiP
+
+    where apiP = Proxy :: Proxy (Capture' mods sym a :> api)
 
 
 -- | @"books" :> 'CaptureAll' "isbn" Text@ will appear as
