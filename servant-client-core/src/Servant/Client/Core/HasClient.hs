@@ -75,7 +75,7 @@ import           Servant.API
                  NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
-                 Verb, WithNamedContext, contentType, getHeadersHList,
+                 Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
                  getResponse, toQueryParam, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
@@ -318,6 +318,25 @@ instance {-# OVERLAPPING #-}
 data ClientParseError = ClientParseError MediaType String | ClientStatusMismatch | ClientNoMatchingStatus
   deriving (Eq, Show)
 
+class UnrenderResponse (cts :: [*]) (a :: *) where
+  unrenderResponse :: Seq.Seq H.Header -> BL.ByteString -> Proxy cts
+                   -> [Either (MediaType, String) a]
+
+instance {-# OVERLAPPABLE #-} AllMimeUnrender cts a => UnrenderResponse cts a where
+  unrenderResponse _ body = map parse . allMimeUnrender
+    where parse (mediaType, parser) = left ((,) mediaType) (parser body)
+
+instance {-# OVERLAPPING #-} forall cts a h . (UnrenderResponse cts a, BuildHeadersTo h)
+  => UnrenderResponse cts (Headers h a) where
+  unrenderResponse hs body = (map . fmap) setHeaders . unrenderResponse hs body
+    where
+      setHeaders :: a -> Headers h a
+      setHeaders x = Headers x (buildHeadersTo (toList hs))
+
+instance {-# OVERLAPPING #-} UnrenderResponse cts a
+  => UnrenderResponse cts (WithStatus n a) where
+  unrenderResponse hs body = (map . fmap) WithStatus . unrenderResponse hs body
+
 instance {-# OVERLAPPING #-}
   ( RunClient m,
     contentTypes ~ (contentType ': otherContentTypes),
@@ -326,7 +345,7 @@ instance {-# OVERLAPPING #-}
     as ~ (a ': as'),
     AllMime contentTypes,
     ReflectMethod method,
-    All (AllMimeUnrender contentTypes) as,
+    All (UnrenderResponse contentTypes) as,
     All HasStatus as, HasStatuses as',
     Unique (Statuses as)
   ) =>
@@ -349,7 +368,8 @@ instance {-# OVERLAPPING #-}
 
     let status = responseStatusCode response
         body = responseBody response
-        res = tryParsers status $ mimeUnrenders (Proxy @contentTypes) body
+        headers = responseHeaders response
+        res = tryParsers status $ mimeUnrenders (Proxy @contentTypes) headers body
     case res of
       Left errors -> throwClientError $ DecodeFailure (T.pack (show errors)) response
       Right x -> return x
@@ -370,13 +390,14 @@ instance {-# OVERLAPPING #-}
       -- | Given a list of types, parses the given response body as each type
       mimeUnrenders ::
         forall cts xs.
-        All (AllMimeUnrender cts) xs =>
+        All (UnrenderResponse cts) xs =>
         Proxy cts ->
+        Seq.Seq H.Header ->
         BL.ByteString ->
         NP ([] :.: Either (MediaType, String)) xs
-      mimeUnrenders ctp body = cpure_NP
-        (Proxy @(AllMimeUnrender cts))
-        (Comp . map (\(mediaType, parser) -> left ((,) mediaType) (parser body)) . allMimeUnrender $ ctp)
+      mimeUnrenders ctp headers body = cpure_NP
+        (Proxy @(UnrenderResponse cts))
+        (Comp . unrenderResponse headers body $ ctp)
 
   hoistClientMonad _ _ nt s = nt s
 

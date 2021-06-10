@@ -147,6 +147,7 @@ test-suite spec
     , safe
     , servant
     , servant-server
+    , sop-core
     , string-conversions
     , text
     , transformers

@@ -51,6 +51,9 @@ import           Web.HttpApiData
 
 import           Prelude ()
 import           Prelude.Compat
+import           Servant.API.ContentTypes
+                 (JSON, PlainText, FormUrlEncoded, OctetStream,
+                  MimeRender(..))
 import           Servant.API.Header
                  (Header)
 
