@@ -64,6 +64,9 @@ jobs:
         cabal test all
 
     - name: Run doctests
+      # doctests are broken on GHC 9 due to compiler bug:
+      # https://gitlab.haskell.org/ghc/ghc/-/issues/19460
+      continue-on-error: ${{ matrix.ghc == '9.0.1' }}
       run: |
         # Necessary for doctest to be found in $PATH
         export PATH="$HOME/.cabal/bin:$PATH"
