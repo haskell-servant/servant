@@ -20,7 +20,7 @@
 --
 -- Content-Types are used in `ReqBody` and the method combinators:
 --
--- >>> type MyEndpoint = ReqBody '[JSON, PlainText] Book :> Get '[JSON, PlainText] Book
+-- >>> type MyEndpoint = ReqBody '[JSON, PlainText] Book :> Put '[JSON, PlainText] Book
 --
 -- Meaning the endpoint accepts requests of Content-Type @application/json@
 -- or @text/plain;charset-utf8@, and returns data in either one of those
