@@ -50,7 +50,10 @@ jobs:
 
     - name: Configure
       run: |
-        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.18'
+        # Using separate store-dir because default one already has 'ghc-paths' package installed
+        # with hardcoded path to ghcup's GHC path (which it was built with). This leads to failure in
+        # doctest, as it tries to invoke that GHC, and it doesn't exist here.
+        cabal --store-dir /tmp/cabal-store install --ignore-project -j2 doctest --constraint='doctest ^>=0.18'
 
     - name: Build
       run: |
