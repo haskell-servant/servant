@@ -68,9 +68,9 @@ library
     , cookie       >= 0.4.3   && < 0.5
     , js-jquery    >= 3.3.1   && < 3.4
     , lucid        >= 2.9.11  && < 2.10
-    , random       >= 1.1     && < 1.2
+    , random       >= 1.1     && < 1.3
     , servant-js   >= 0.9     && < 0.10
-    , time         >= 1.6.0.1 && < 1.10
+    , time         >= 1.6.0.1 && < 1.13
 
   -- For legacy tools, we need to specify build-depends too
   build-depends: markdown-unlit >= 0.5.0 && <0.6

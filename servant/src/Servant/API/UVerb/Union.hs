@@ -144,4 +144,4 @@ _testNubbed :: ( ( Nubbed '[Bool, Int, Int] ~ 'False
                  , Nubbed '[Int, Bool] ~ 'True
                  )
                => a) -> a
-_testNubbed = id
+_testNubbed a = a
