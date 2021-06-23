@@ -1,6 +1,18 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.11.9
+------
+
+### Significant changes
+
+- Use Capture Description if available (#1423).
+
+### Other changes
+
+- Support GHC-9.0.1.
+- Bump `bytestring` and `lens` dependencies.
+
 0.11.8
 ------
 

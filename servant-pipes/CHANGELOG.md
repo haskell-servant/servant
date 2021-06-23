@@ -1,3 +1,14 @@
+0.15.3
+------
+
+### Other changes
+
+- Support GHC-9.0.1.
+- Bump `bytestring` dependency.
+
+0.15.2
+------
+
 0.15.1
 ------
 

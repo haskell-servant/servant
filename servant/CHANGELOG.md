@@ -1,5 +1,18 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.18.3
+------
+
+### Significant changes
+
+- Add response header support to UVerb (#1420).
+- Use Capture Description if available (#1423).
+
+### Other changes
+
+- Support GHC-9.0.1.
+- Bump `bytestring`, `attoparsec`, `hspec` and `singleton-bool` dependencies.
+
 0.18.2
 ------
 
