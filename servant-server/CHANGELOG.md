@@ -1,6 +1,18 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.18.3
+------
+
+### Significant changes
+
+- Add response header support to UVerb (#1420)
+
+### Other changes
+
+- Support GHC-9.0.1.
+- Bump `bytestring`, `hspec` and `base64-bytestring` dependencies.
+
 0.18.2
 ------
 
