@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TypeApplications    #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 
 module Servant.ServerSpec where
@@ -28,8 +29,6 @@ import           Data.Maybe
                  (fromMaybe)
 import           Data.Proxy
                  (Proxy (Proxy))
-import           Data.SOP
-                 (I (..), NS (..))
 import           Data.String
                  (fromString)
 import           Data.String.Conversions
@@ -699,8 +698,8 @@ type UVerbResponseHeadersApi =
        Capture "ok" Bool :> UVerb 'GET '[JSON] UVerbHeaderResponse
 
 uverbResponseHeadersServer :: Server UVerbResponseHeadersApi
-uverbResponseHeadersServer True = pure . Z . I . WithStatus $ addHeader 5 "foo"
-uverbResponseHeadersServer False = pure . S . Z . I . WithStatus $ "bar"
+uverbResponseHeadersServer True = respond . WithStatus @200 . addHeader @"H1" (5 :: Int) $ ("foo" :: String)
+uverbResponseHeadersServer False = respond .  WithStatus @404 $ ("bar" :: String)
 
 uverbResponseHeadersSpec :: Spec
 uverbResponseHeadersSpec = describe "UVerbResponseHeaders" $ do
