@@ -21,3 +21,9 @@ a particular ghc version, e.g:
 ``` sh
 $ nix-shell nix/shell.nix --argstr compiler ghcHEAD
 ```
+
+**Possible GHC versions**
+-   `ghc822Binary`
+-   `ghc865`
+-   `ghc884`
+-   `ghc8102` - default

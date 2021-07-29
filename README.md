@@ -63,3 +63,9 @@ To compare with `reitit` (Clojure framework)
 ```
 
 You can see the visualised results at https://www.techempower.com/benchmarks/#section=test
+
+## Nix
+
+A developer shell.nix file is provided in the `nix` directory
+
+See  [nix/README.md](nix/README.md)

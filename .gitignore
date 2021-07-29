@@ -30,6 +30,7 @@ doc/_build
 doc/venv
 doc/tutorial/static/api.js
 doc/tutorial/static/jq.js
+shell.nix
 
 # nix
 result*

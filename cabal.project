@@ -3,8 +3,7 @@ packages:
   servant-client/
   servant-client-core/
   servant-http-streams/
--- Tests failing with Cabal (TODO: investigate)
---  servant-docs/
+  servant-docs/
   servant-foreign/
   servant-server/
   doc/tutorial/

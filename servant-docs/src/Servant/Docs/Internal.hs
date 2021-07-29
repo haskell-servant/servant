@@ -846,21 +846,30 @@ markdownWith RenderingOptions{..} api = unlines $
                     formatBodies _responseExamples xs
 
         curlStr :: Endpoint -> [HTTP.Header] -> [(Text, M.MediaType, ByteString)] -> String -> [String]
-        curlStr endpoint hdrs bds basePath =
-          let firstBodyMay = NE.head <$> NE.nonEmpty bds
-          in catMaybes $
-            ( (Just "### Sample Request:") :
-              (Just "") :
-              (Just "```bash") :
-              (Just $ "curl -X" ++ BSC.unpack (endpoint ^. method) ++ " \\") :
-              ((\(_, media_type, _) -> "  -H 'Content-Type: " ++ show media_type ++ " '\\") <$> firstBodyMay) :
-              [] ) ++
-            ((\(hdrName, hdrVal) -> Just $ "  -H '" ++ cs (CI.original hdrName) ++ ": " ++ cs hdrVal ++ "' \\") <$> hdrs) ++
-            ( ((\(_, _, body) -> "  -d " ++ cs body ++ " \\") <$> firstBodyMay) :
-              (Just $ "  " ++ basePath ++ showPath (endpoint ^. path)) :
-              (Just "```") :
-              (Just "") :
-              [] )
+        curlStr endpoint hdrs reqBodies basePath =
+          [  "### Sample Request:"
+          , ""
+          , "```bash"
+          , "curl -X" ++ BSC.unpack (endpoint ^. method) ++ " \\"
+          ] <>
+          maybe [] pure mbMediaTypeStr <>
+          headersStrs <>
+          maybe [] pure mbReqBodyStr <>
+          [  "  " ++ basePath ++ showPath (endpoint ^. path)
+          , "```"
+          , ""
+          ]
+
+          where mbReqBody = listToMaybe reqBodies
+                mbMediaTypeStr = mkMediaTypeStr <$> mbReqBody
+                headersStrs = mkHeaderStr <$> hdrs
+                mbReqBodyStr = mkReqBodyStr <$> mbReqBody
+                mkMediaTypeStr (_, media_type, _) =
+                  "  -H 'Content-Type: " ++ show media_type ++ " '\\"
+                mkHeaderStr (hdrName, hdrVal) =
+                  "  -H '" ++ cs (CI.original hdrName) ++ ": " ++
+                  cs hdrVal ++ "' \\"
+                mkReqBodyStr (_, _, body) = "  -d " ++ cs body ++ " \\"
 
 -- * Instances
 
