@@ -56,7 +56,7 @@ You'll also note that multiple intros are possible.
 ```bash
 curl -XPOST \
   -H 'Content-Type: application/json;charset=utf-8 '\
-  -d "HELLO, HASKELLER" \
+  -d '"HELLO, HASKELLER"' \
   http://localhost:80/greet
 ```
 

@@ -869,7 +869,7 @@ markdownWith RenderingOptions{..} api = unlines $
                 mkHeaderStr (hdrName, hdrVal) =
                   "  -H '" ++ cs (CI.original hdrName) ++ ": " ++
                   cs hdrVal ++ "' \\"
-                mkReqBodyStr (_, _, body) = "  -d " ++ cs body ++ " \\"
+                mkReqBodyStr (_, _, body) = "  -d '" ++ cs body ++ "' \\"
 
 -- * Instances
 
