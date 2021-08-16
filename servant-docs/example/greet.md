@@ -55,8 +55,8 @@ You'll also note that multiple intros are possible.
 
 ```bash
 curl -XPOST \
-  -H 'Content-Type: application/json;charset=utf-8 '\
-  -d '"HELLO, HASKELLER"' \
+  -H "Content-Type: application/json;charset=utf-8" \
+  -d "\"HELLO, HASKELLER\"" \
   http://localhost:80/greet
 ```
 
@@ -98,7 +98,7 @@ And some more
 
 ```bash
 curl -XDELETE \
-  -H 'X-Num-Unicorns: 1' \
+  -H "X-Num-Unicorns: 1" \
   http://localhost:80/greet/:greetid
 ```
 
@@ -146,7 +146,7 @@ curl -XDELETE \
 
 ```bash
 curl -XGET \
-  -H 'X-Num-Fairies: 1729' \
+  -H "X-Num-Fairies: 1729" \
   http://localhost:80/hello/:name
 ```
 

@@ -860,16 +860,20 @@ markdownWith RenderingOptions{..} api = unlines $
           , ""
           ]
 
-          where mbReqBody = listToMaybe reqBodies
+          where escapeQuotes :: String -> String
+                escapeQuotes = concatMap $ \c -> case c of
+                  '\"' -> "\\\""
+                  _ -> [c]
+                mbReqBody = listToMaybe reqBodies
                 mbMediaTypeStr = mkMediaTypeStr <$> mbReqBody
                 headersStrs = mkHeaderStr <$> hdrs
                 mbReqBodyStr = mkReqBodyStr <$> mbReqBody
                 mkMediaTypeStr (_, media_type, _) =
-                  "  -H 'Content-Type: " ++ show media_type ++ " '\\"
+                  "  -H \"Content-Type: " ++ show media_type ++ "\" \\"
                 mkHeaderStr (hdrName, hdrVal) =
-                  "  -H '" ++ cs (CI.original hdrName) ++ ": " ++
-                  cs hdrVal ++ "' \\"
-                mkReqBodyStr (_, _, body) = "  -d '" ++ cs body ++ "' \\"
+                  "  -H \"" ++ escapeQuotes (cs (CI.original hdrName)) ++ ": " ++
+                  escapeQuotes (cs hdrVal) ++ "\" \\"
+                mkReqBodyStr (_, _, body) = "  -d \"" ++ escapeQuotes (cs body) ++ "\" \\"
 
 -- * Instances
 
