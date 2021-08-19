@@ -25,8 +25,8 @@ import           Control.Applicative
 import           Control.Arrow
                  (second)
 import           Control.Lens
-                 (makeLenses, mapped, over, set, traversed, view, (%~), (&),
-                 (.~), (<>~), (^.), (|>))
+                 (makeLenses, mapped, each, over, set, to, toListOf, traversed, view,
+                 _1, (%~), (&), (.~), (<>~), (^.), (|>))
 import qualified Data.ByteString.Char8      as BSC
 import           Data.ByteString.Lazy.Char8
                  (ByteString)
@@ -59,6 +59,9 @@ import           Data.String.Conversions
 import           Data.Text
                  (Text, unpack)
 import           GHC.Generics
+                 (Generic, Rep, K1(K1), M1(M1), U1(U1), V1,
+                 (:*:)((:*:)), (:+:)(L1, R1))
+import qualified GHC.Generics               as G
 import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
@@ -295,7 +298,7 @@ defResponse = Response
 data Action = Action
   { _authInfo :: [DocAuthentication]         -- user supplied info
   , _captures :: [DocCapture]                -- type collected + user supplied info
-  , _headers  :: [Text]                      -- type collected
+  , _headers  :: [HTTP.Header]               -- type collected
   , _params   :: [DocQueryParam]             -- type collected + user supplied info
   , _fragment :: Maybe DocFragment           -- type collected + user supplied info
   , _notes    :: [DocNote]                   -- user supplied
@@ -356,12 +359,14 @@ data ShowContentTypes = AllContentTypes  -- ^ For each example, show each conten
 --
 --   @since 0.11.1
 data RenderingOptions = RenderingOptions
-  { _requestExamples  :: !ShowContentTypes
+  { _requestExamples    :: !ShowContentTypes
     -- ^ How many content types to display for request body examples?
-  , _responseExamples :: !ShowContentTypes
+  , _responseExamples   :: !ShowContentTypes
     -- ^ How many content types to display for response body examples?
-  , _notesHeading     :: !(Maybe String)
+  , _notesHeading       :: !(Maybe String)
     -- ^ Optionally group all 'notes' together under a common heading.
+  , _renderCurlBasePath :: !(Maybe String)
+    -- ^ Optionally render example curl requests under a common base path (e.g. `http://localhost:80`).
   } deriving (Show)
 
 -- | Default API generation options.
@@ -373,9 +378,10 @@ data RenderingOptions = RenderingOptions
 --   @since 0.11.1
 defRenderingOptions :: RenderingOptions
 defRenderingOptions = RenderingOptions
-  { _requestExamples  = AllContentTypes
-  , _responseExamples = AllContentTypes
-  , _notesHeading     = Nothing
+  { _requestExamples    = AllContentTypes
+  , _responseExamples   = AllContentTypes
+  , _notesHeading       = Nothing
+  , _renderCurlBasePath = Nothing
   }
 
 -- gimme some lenses
@@ -412,7 +418,7 @@ docsWithOptions p = docsFor p (defEndpoint, defAction)
 -- > extra :: ExtraInfo TestApi
 -- > extra =
 -- >     extraInfo (Proxy :: Proxy ("greet" :> Capture "greetid" Text :> Delete)) $
--- >              defAction & headers <>~ ["unicorns"]
+-- >              defAction & headers <>~ [("X-Num-Unicorns", 1)]
 -- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
 -- >                                      , DocNote "Second section" ["And some more"]
 -- >                                      ]
@@ -507,7 +513,7 @@ samples = map ("",)
 
 -- | Default sample Generic-based inputs/outputs.
 defaultSamples :: forall a. (Generic a, GToSample (Rep a)) => Proxy a -> [(Text, a)]
-defaultSamples _ = second to <$> gtoSamples (Proxy :: Proxy (Rep a))
+defaultSamples _ = second G.to <$> gtoSamples (Proxy :: Proxy (Rep a))
 
 -- | @'ToSample'@ for Generics.
 --
@@ -643,7 +649,7 @@ markdown = markdownWith defRenderingOptions
 --
 --   @since 0.11.1
 markdownWith :: RenderingOptions -> API -> String
-markdownWith RenderingOptions{..}  api = unlines $
+markdownWith RenderingOptions{..} api = unlines $
        introsStr (api ^. apiIntros)
     ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
 
@@ -654,11 +660,12 @@ markdownWith RenderingOptions{..}  api = unlines $
           notesStr (action ^. notes) ++
           authStr (action ^. authInfo) ++
           capturesStr (action ^. captures) ++
-          headersStr (action ^. headers) ++
+          headersStr (toListOf (headers . each . _1 . to (T.pack . BSC.unpack . CI.original)) action) ++
           paramsStr meth (action ^. params) ++
           fragmentStr (action ^. fragment) ++
           rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
           responseStr (action ^. response) ++
+          maybe [] (curlStr endpoint (action ^. headers) (action ^. rqbody)) _renderCurlBasePath ++
           []
 
           where str = "## " ++ BSC.unpack meth
@@ -814,7 +821,6 @@ markdownWith RenderingOptions{..}  api = unlines $
                 ("text", "css") -> "css"
                 (_, _) -> ""
 
-
         contentStr mime_type body =
           "" :
           "```" <> markdownForType mime_type :
@@ -838,6 +844,36 @@ markdownWith RenderingOptions{..}  api = unlines $
                   [("", t, r)] -> "- Response body as below." : contentStr t r
                   xs        ->
                     formatBodies _responseExamples xs
+
+        curlStr :: Endpoint -> [HTTP.Header] -> [(Text, M.MediaType, ByteString)] -> String -> [String]
+        curlStr endpoint hdrs reqBodies basePath =
+          [  "### Sample Request:"
+          , ""
+          , "```bash"
+          , "curl -X" ++ BSC.unpack (endpoint ^. method) ++ " \\"
+          ] <>
+          maybe [] pure mbMediaTypeStr <>
+          headersStrs <>
+          maybe [] pure mbReqBodyStr <>
+          [  "  " ++ basePath ++ showPath (endpoint ^. path)
+          , "```"
+          , ""
+          ]
+
+          where escapeQuotes :: String -> String
+                escapeQuotes = concatMap $ \c -> case c of
+                  '\"' -> "\\\""
+                  _ -> [c]
+                mbReqBody = listToMaybe reqBodies
+                mbMediaTypeStr = mkMediaTypeStr <$> mbReqBody
+                headersStrs = mkHeaderStr <$> hdrs
+                mbReqBodyStr = mkReqBodyStr <$> mbReqBody
+                mkMediaTypeStr (_, media_type, _) =
+                  "  -H \"Content-Type: " ++ show media_type ++ "\" \\"
+                mkHeaderStr (hdrName, hdrVal) =
+                  "  -H \"" ++ escapeQuotes (cs (CI.original hdrName)) ++ ": " ++
+                  escapeQuotes (cs hdrVal) ++ "\" \\"
+                mkReqBodyStr (_, _, body) = "  -d \"" ++ escapeQuotes (cs body) ++ "\" \\"
 
 -- * Instances
 
@@ -977,14 +1013,17 @@ instance {-# OVERLAPPING #-}
           status = fromInteger $ natVal (Proxy :: Proxy status)
           p = Proxy :: Proxy a
 
-instance (KnownSymbol sym, HasDocs api)
+instance (ToHttpApiData a, ToSample a, KnownSymbol sym, HasDocs api)
       => HasDocs (Header' mods sym a :> api) where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
 
     where subApiP = Proxy :: Proxy api
-          action' = over headers (|> headername) action
-          headername = T.pack $ symbolVal (Proxy :: Proxy sym)
+          action' = over headers (|> (headerName, headerVal)) action
+          headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy sym)
+          headerVal = case toSample (Proxy :: Proxy a) of
+            Just x -> cs $ toHeader x
+            Nothing -> "<no header sample provided>"
 
 instance (KnownSymbol sym, ToParam (QueryParam' mods sym a), HasDocs api)
       => HasDocs (QueryParam' mods sym a :> api) where
