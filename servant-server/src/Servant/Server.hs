@@ -1,9 +1,10 @@
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE TypeFamilies     #-}
-{-# LANGUAGE TypeOperators    #-}
+{-# LANGUAGE ConstraintKinds     #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
@@ -11,6 +12,7 @@ module Servant.Server
   ( -- * Run a wai application from an API
     serve
   , serveWithContext
+  , serveWithContextT
   , ServerContext
 
   , -- * Construct a wai Application from an API
@@ -166,9 +168,18 @@ serveWithContext :: ( HasServer api context
                     , ServerContext context
                     )
     => Proxy api -> Context context -> Server api -> Application
-serveWithContext p context server =
-  toApplication (runRouter format404 (route p context (emptyDelayed (Route server))))
+serveWithContext p context = serveWithContextT p context id
+
+-- | A general 'serve' function that allows you to pass a custom context and hoisting function to
+-- apply on all routes.
+serveWithContextT ::
+  forall api context m.
+  (HasServer api context, ServerContext context) =>
+  Proxy api -> Context context -> (forall x. m x -> Handler x) -> ServerT api m -> Application
+serveWithContextT p context toHandler server =
+  toApplication (runRouter format404 (route p context (emptyDelayed router)))
   where
+    router = Route $ hoistServerWithContext p (Proxy :: Proxy context) toHandler server
     format404 = notFoundErrorFormatter . getContextEntry . mkContextWithErrorFormatter $ context
 
 -- | Hoist server implementation.
