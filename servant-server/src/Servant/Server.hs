@@ -11,6 +11,7 @@ module Servant.Server
   ( -- * Run a wai application from an API
     serve
   , serveWithContext
+  , ServerContext
 
   , -- * Construct a wai Application from an API
     toApplication
@@ -128,6 +129,11 @@ import           Servant.Server.UVerb
 
 -- * Implementing Servers
 
+-- All constraints on a context passed to serveWithContext.
+type ServerContext context =
+  ( HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters
+  )
+
 -- | 'serve' allows you to implement an API and produce a wai 'Application'.
 --
 -- Example:
@@ -157,7 +163,8 @@ serve p = serveWithContext p EmptyContext
 -- 'defaultErrorFormatters' will always be appended to the end of the passed context,
 -- but if you pass your own formatter, it will override the default one.
 serveWithContext :: ( HasServer api context
-                    , HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters )
+                    , ServerContext context
+                    )
     => Proxy api -> Context context -> Server api -> Application
 serveWithContext p context server =
   toApplication (runRouter format404 (route p context (emptyDelayed (Route server))))
