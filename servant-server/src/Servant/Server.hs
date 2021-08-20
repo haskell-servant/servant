@@ -131,7 +131,11 @@ import           Servant.Server.UVerb
 
 -- * Implementing Servers
 
--- All constraints on a context passed to serveWithContext.
+-- | Constraints that need to be satisfied on a context for it to be passed to 'serveWithContext'.
+--
+-- Typically, this will add default context entries to the context. You shouldn't typically
+-- need to worry about these constraints, but if you write a helper function that wraps
+-- 'serveWithContext', you might need to include this constraint.
 type ServerContext context =
   ( HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters
   )
