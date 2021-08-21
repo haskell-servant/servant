@@ -1,9 +1,10 @@
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE TypeFamilies     #-}
-{-# LANGUAGE TypeOperators    #-}
+{-# LANGUAGE ConstraintKinds     #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
@@ -11,6 +12,8 @@ module Servant.Server
   ( -- * Run a wai application from an API
     serve
   , serveWithContext
+  , serveWithContextT
+  , ServerContext
 
   , -- * Construct a wai Application from an API
     toApplication
@@ -128,6 +131,15 @@ import           Servant.Server.UVerb
 
 -- * Implementing Servers
 
+-- | Constraints that need to be satisfied on a context for it to be passed to 'serveWithContext'.
+--
+-- Typically, this will add default context entries to the context. You shouldn't typically
+-- need to worry about these constraints, but if you write a helper function that wraps
+-- 'serveWithContext', you might need to include this constraint.
+type ServerContext context =
+  ( HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters
+  )
+
 -- | 'serve' allows you to implement an API and produce a wai 'Application'.
 --
 -- Example:
@@ -157,11 +169,21 @@ serve p = serveWithContext p EmptyContext
 -- 'defaultErrorFormatters' will always be appended to the end of the passed context,
 -- but if you pass your own formatter, it will override the default one.
 serveWithContext :: ( HasServer api context
-                    , HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters )
+                    , ServerContext context
+                    )
     => Proxy api -> Context context -> Server api -> Application
-serveWithContext p context server =
-  toApplication (runRouter format404 (route p context (emptyDelayed (Route server))))
+serveWithContext p context = serveWithContextT p context id
+
+-- | A general 'serve' function that allows you to pass a custom context and hoisting function to
+-- apply on all routes.
+serveWithContextT ::
+  forall api context m.
+  (HasServer api context, ServerContext context) =>
+  Proxy api -> Context context -> (forall x. m x -> Handler x) -> ServerT api m -> Application
+serveWithContextT p context toHandler server =
+  toApplication (runRouter format404 (route p context (emptyDelayed router)))
   where
+    router = Route $ hoistServerWithContext p (Proxy :: Proxy context) toHandler server
     format404 = notFoundErrorFormatter . getContextEntry . mkContextWithErrorFormatter $ context
 
 -- | Hoist server implementation.
