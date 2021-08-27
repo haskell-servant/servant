@@ -46,7 +46,7 @@ import qualified Data.ByteString.Lazy        as BSL
 import           Data.Either
                  (either)
 import           Data.Foldable
-                 (toList)
+                 (foldl',toList)
 import           Data.Functor.Alt
                  (Alt (..))
 import           Data.Maybe
@@ -63,7 +63,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (hContentType, renderQuery, statusCode, Status)
+                 (hContentType, renderQuery, statusCode, urlEncode, Status)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
@@ -238,7 +238,7 @@ defaultMakeClientRequest burl r = Client.defaultRequest
     , Client.path = BSL.toStrict
                   $ fromString (baseUrlPath burl)
                  <> toLazyByteString (requestPath r)
-    , Client.queryString = renderQuery True . toList $ requestQueryString r
+    , Client.queryString = buildQueryString . toList $ requestQueryString r
     , Client.requestHeaders =
       maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
     , Client.requestBody = body
@@ -288,6 +288,13 @@ defaultMakeClientRequest burl r = Client.defaultRequest
     isSecure = case baseUrlScheme burl of
         Http -> False
         Https -> True
+
+    -- Query string builder which does not do any encoding
+    buildQueryString = ("?" <>) . foldl' addQueryParam mempty
+
+    addQueryParam qs (k, v) =
+          qs <> (if BS.null qs then mempty else "&") <> urlEncode True k <> foldMap ("=" <>) v
+
 
 catchConnectionError :: IO a -> IO (Either ClientError a)
 catchConnectionError action =

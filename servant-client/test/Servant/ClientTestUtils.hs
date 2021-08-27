@@ -24,9 +24,15 @@ import           Prelude.Compat
 
 import           Control.Concurrent
                  (ThreadId, forkIO, killThread)
+import           Control.Monad
+                 (join)
 import           Control.Monad.Error.Class
                  (throwError)
 import           Data.Aeson
+import           Data.ByteString
+                 (ByteString)
+import           Data.ByteString.Builder
+                 (byteString)
 import qualified Data.ByteString.Lazy             as LazyByteString
 import           Data.Char
                  (chr, isPrint)
@@ -54,10 +60,10 @@ import           Web.FormUrlEncoded
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (..), Capture, CaptureAll, DeleteNoContent,
-                 EmptyAPI, FormUrlEncoded, Fragment, Get, Header, Headers,
+                 EmptyAPI, FormUrlEncoded, Fragment, FromHttpApiData (..), Get, Header, Headers,
                  JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
-                 QueryParams, Raw, ReqBody, StdMethod (GET), UVerb, Union,
+                 QueryParams, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..), UVerb, Union,
                  WithStatus (WithStatus), addHeader)
 import           Servant.Client
 import qualified Servant.Client.Core.Auth         as Auth
@@ -109,6 +115,10 @@ type Api =
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
+  -- This endpoint makes use of a 'Raw' server because it is not currently
+  -- possible to handle arbitrary binary query param values with
+  -- @servant-server@
+  :<|> "param-binary" :> QueryParam "payload" UrlEncodedByteString :> Raw
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
   :<|> "fragment" :> Fragment String :> Get '[JSON] Person
@@ -143,6 +153,7 @@ getCapture      :: String -> ClientM Person
 getCaptureAll   :: [String] -> ClientM [Person]
 getBody         :: Person -> ClientM Person
 getQueryParam   :: Maybe String -> ClientM Person
+getQueryParamBinary :: Maybe UrlEncodedByteString -> HTTP.Method -> ClientM Response
 getQueryParams  :: [String] -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
 getFragment     :: ClientM Person
@@ -167,6 +178,7 @@ getRoot
   :<|> getCaptureAll
   :<|> getBody
   :<|> getQueryParam
+  :<|> getQueryParamBinary
   :<|> getQueryParams
   :<|> getQueryFlag
   :<|> getFragment
@@ -194,6 +206,13 @@ server = serve api (
                    Just "alice" -> return alice
                    Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
                    Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
+  :<|> const (Tagged $ \request respond ->
+          respond . maybe (Wai.responseLBS HTTP.notFound404 [] "Missing: payload")
+                          (Wai.responseLBS HTTP.ok200 [] . LazyByteString.fromStrict)
+                  . join
+                  . lookup "payload"
+                  $ Wai.queryString request
+       )
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
   :<|> return alice
@@ -310,3 +329,12 @@ pathGen = fmap NonEmpty path
     filter (not . (`elem` ("?%[]/#;" :: String))) $
     filter isPrint $
     map chr [0..127]
+
+newtype UrlEncodedByteString = UrlEncodedByteString { unUrlEncodedByteString :: ByteString }
+
+instance ToHttpApiData UrlEncodedByteString where
+    toEncodedUrlPiece = byteString . HTTP.urlEncode True . unUrlEncodedByteString
+    toUrlPiece = decodeUtf8 . HTTP.urlEncode True . unUrlEncodedByteString
+
+instance FromHttpApiData UrlEncodedByteString where
+    parseUrlPiece = pure . UrlEncodedByteString . HTTP.urlDecode True . encodeUtf8
