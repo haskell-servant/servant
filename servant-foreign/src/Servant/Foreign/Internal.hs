@@ -23,8 +23,6 @@ import           Control.Lens
 import           Data.Data
                  (Data)
 import           Data.Proxy
-import           Data.Semigroup
-                 (Semigroup)
 import           Data.String
 import           Data.Text
 import           Data.Text.Encoding

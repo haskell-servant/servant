@@ -44,8 +44,6 @@ import           Data.Maybe
                  (isJust)
 import           Data.Monoid ()
 import           Data.Proxy
-import           Data.Semigroup
-                 ((<>))
 import           GHC.Generics
                  (Generic)
 import qualified Network.HTTP.Types                   as HTTP

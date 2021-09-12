@@ -52,8 +52,6 @@ import           Data.Ord
                  (comparing)
 import           Data.Proxy
                  (Proxy (Proxy))
-import           Data.Semigroup
-                 (Semigroup (..))
 import           Data.String.Conversions
                  (cs)
 import           Data.Text

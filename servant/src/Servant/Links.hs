@@ -127,8 +127,6 @@ module Servant.Links (
 import           Data.List
 import           Data.Proxy
                  (Proxy (..))
-import           Data.Semigroup
-                 ((<>))
 import           Data.Singletons.Bool
                  (SBool (..), SBoolI (..))
 import qualified Data.Text                     as Text

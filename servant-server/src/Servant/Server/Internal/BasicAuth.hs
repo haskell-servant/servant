@@ -12,8 +12,6 @@ import           Control.Monad.Trans
 import qualified Data.ByteString                     as BS
 import           Data.ByteString.Base64
                  (decodeLenient)
-import           Data.Monoid
-                 ((<>))
 import           Data.Typeable
                  (Typeable)
 import           Data.Word8

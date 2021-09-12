@@ -21,8 +21,6 @@ import           Prelude ()
 import           Prelude.Compat
 
 import           Data.Monoid ()
-import           Data.Semigroup
-                 ((<>))
 import qualified Network.HTTP.Types                   as HTTP
 import           Test.Hspec
 

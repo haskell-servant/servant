@@ -46,8 +46,6 @@ import           Data.Either
                  (partitionEithers)
 import           Data.Maybe
                  (fromMaybe, isNothing, mapMaybe, maybeToList)
-import           Data.Semigroup
-                 ((<>))
 import           Data.String
                  (IsString (..))
 import           Data.String.Conversions

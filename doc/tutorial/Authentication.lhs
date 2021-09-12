@@ -47,7 +47,6 @@ module Authentication where
 import Data.Aeson                       (ToJSON)
 import Data.ByteString                  (ByteString)
 import Data.Map                         (Map, fromList)
-import Data.Monoid                      ((<>))
 import qualified Data.Map            as Map
 import Data.Proxy                       (Proxy (Proxy))
 import Data.Text                        (Text)
