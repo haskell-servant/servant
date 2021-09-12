@@ -23,7 +23,18 @@ $ nix-shell nix/shell.nix --argstr compiler ghcHEAD
 ```
 
 **Possible GHC versions**
--   `ghc822Binary`
--   `ghc865`
+-   `ghc865Binary`
 -   `ghc884`
--   `ghc8102` - default
+-   `ghc8104` - default
+
+### Cabal users
+
+GHC version can be chosen via the nix-shell parameter
+
+`cabal build all`
+
+### Stack version
+
+Since the ghc version is set by the LTS version, it is preferable to use the `ghc8104` version parameter for the nix-shell.
+
+`stack --no-nix --system-ghc <command>`
