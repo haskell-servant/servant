@@ -1,0 +1,22 @@
+synopsis: Add a `StepT` constructor method that consumes a resource
+prs: #1533
+issues: #1448
+
+description: {
+
+`fromActionStep` always runs the same action, which makes it impossible with such monadic actions to
+"consume" a resource (that is to say to pass the modified resource to the following action), or
+"unfold" an input structure.
+
+`unfoldStep` gives this possibility.
+
+This allows for example to build a `StepT m` directly from a `Streaming.Prelude.Stream`, by passing
+`unfoldStep` the following argument:
+
+```haskell
+import Streaming.Prelude as S
+
+action :: Stream (Of a) m r -> m (Maybe ( a, Stream (Of a) m r ))
+action = S.uncons
+```
+}
