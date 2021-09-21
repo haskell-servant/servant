@@ -132,7 +132,7 @@ combinator. Using `Context`, we can supply a function of type
 handler. This will allow the handler to check authentication and return a `User`
 to downstream handlers if successful.
 
-In practice we wrap `BasicAuthData -> Handler` into a slightly
+In practice we wrap `BasicAuthData -> Handler User` into a slightly
 different function to better capture the semantics of basic authentication:
 
 ``` haskell ignore
