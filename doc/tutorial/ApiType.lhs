@@ -390,10 +390,10 @@ with the rest of your API. But you can plug in everything that is an
 `Application`, e.g. a whole web application written in any of the web
 frameworks that support `wai`.
 
-Be mindful! This library works by pattern-matching the different routes that are
-composed using `:<|>`. `Raw`, as an escape hatch, matches any route that hasn't
-been matched by previous patterns. Therefore, any subsequent route will be silently
-ignored.
+Be mindful! The `servant-server`'s router works by pattern-matching the
+different routes that are composed using `:<|>`. `Raw`, as an escape hatch,
+matches any route that hasn't been matched by previous patterns. Therefore,
+any subsequent route will be silently ignored.
 
 ``` haskell
 type UserAPI14 = Raw
@@ -403,12 +403,12 @@ type UserAPI14 = Raw
                  -- endpoint matches requests before
 ```
 A simple way to avoid this pitfall is to either use `Raw` as the last
-definition, or to always have it under a directory.
+definition, or to always have it under a static path.
 
 ``` haskell
 type UserAPI15 = "files" :> Raw
-                 -- The raw endpoint is under a directory,
-                 -- so it won't match /users.
+                 -- The raw endpoint is under the /files
+                 -- static path, so it won't match /users.
             :<|> "users" :> Get '[JSON] [User]
 
 type UserAPI16 = "users" :> Get '[JSON] [User]
