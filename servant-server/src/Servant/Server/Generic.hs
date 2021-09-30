@@ -1,12 +1,20 @@
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE KindSignatures       #-}
-{-# LANGUAGE RankNTypes           #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans   #-}
+{-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DefaultSignatures      #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE InstanceSigs           #-}
+{-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE QuantifiedConstraints  #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 -- | @since 0.14.1
 module Servant.Server.Generic (
     AsServerT,
@@ -16,13 +24,20 @@ module Servant.Server.Generic (
     genericServeTWithContext,
     genericServer,
     genericServerT,
+    -- * Internal machinery
+    GServerConstraints,
+    GServer,
+    -- * Re-exports
+    NamedRoutes
   ) where
 
+import           Data.Constraint
 import           Data.Proxy
                  (Proxy (..))
 
 import           Servant.API.Generic
 import           Servant.Server
+import           Servant.Server.Internal
 
 -- | A type that specifies that an API record contains a server implementation.
 data AsServerT (m :: * -> *)
@@ -97,3 +112,64 @@ genericServerT
     => routes (AsServerT m)
     -> ToServant routes (AsServerT m)
 genericServerT = toServant
+
+-- | Set of constraints required to convert to / from vanilla server types.
+type GServerConstraints api m =
+  ( ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
+  , GServantProduct (Rep (api (AsServerT m)))
+  )
+
+-- | This class is a necessary evil: in the implementation of 'HasServer' for
+--  @'NamedRoutes' api@, we essentially need the quantified constraint @forall
+--  m. 'GServerConstraints' m@ to hold.
+--
+-- We cannot require do that directly as the definition of 'GServerConstraints'
+-- contains type family applications ('Rep' and 'ServerT'). The trick is to hide
+-- those type family applications behind a typeclass providing evidence for
+-- @'GServerConstraints' api m@ in the form of a dictionary, and require that
+-- @forall m. 'GServer' api m@ instead.
+--
+-- Users shouldn't have to worry about this class, as the only possible instance
+-- is provided in this module for all record APIs.
+
+class GServer (api :: * -> *) (m :: * -> *) where
+  proof :: Dict (GServerConstraints api m)
+
+instance
+  ( ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
+  , GServantProduct (Rep (api (AsServerT m)))
+  ) => GServer api m where
+  proof = Dict
+
+instance
+  ( HasServer (ToServantApi api) context
+  , forall m. Generic (api (AsServerT m))
+  , forall m. GServer api m
+  ) => HasServer (NamedRoutes api) context where
+
+  type ServerT (NamedRoutes api) m = api (AsServerT m)
+
+  route
+    :: Proxy (NamedRoutes api)
+    -> Context context
+    -> Delayed env (api (AsServerT Handler))
+    -> Router env
+  route _ ctx delayed =
+    case proof @api @Handler of
+      Dict -> route (Proxy @(ToServantApi api)) ctx (toServant <$> delayed)
+
+  hoistServerWithContext
+    :: forall m n. Proxy (NamedRoutes api)
+    -> Proxy context
+    -> (forall x. m x -> n x)
+    -> api (AsServerT m)
+    -> api (AsServerT n)
+  hoistServerWithContext _ pctx nat server =
+    case (proof @api @m, proof @api @n) of
+      (Dict, Dict) ->
+        fromServant servantSrvN
+        where
+          servantSrvM :: ServerT (ToServantApi api) m =
+            toServant server
+          servantSrvN :: ServerT (ToServantApi api) n =
+            hoistServerWithContext (Proxy @(ToServantApi api)) pctx nat servantSrvM
