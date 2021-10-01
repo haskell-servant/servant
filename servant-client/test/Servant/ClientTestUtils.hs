@@ -65,9 +65,12 @@ import           Servant.API
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
                  QueryParams, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..), UVerb, Union,
                  WithStatus (WithStatus), addHeader)
+import           Servant.API.Generic
 import           Servant.Client
+import           Servant.Client.Generic
 import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
+import           Servant.Server.Generic
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
 
@@ -107,6 +110,16 @@ carol = Person "Carol" 17
 
 type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
+data RecordRoutes mode = RecordRoutes
+  { version :: mode :- "version" :> Get '[JSON] Int
+  , echo :: mode :- "echo" :> Capture "string" String :> Get '[JSON] String
+  , otherRoutes :: mode :- "other" :> NamedRoutes OtherRoutes
+  } deriving Generic
+
+data OtherRoutes mode = OtherRoutes
+  { something :: mode :- "something" :> Get '[JSON] [String]
+  } deriving Generic
+
 type Api =
   Get '[JSON] Person
   :<|> "get" :> Get '[JSON] Person
@@ -141,6 +154,7 @@ type Api =
             UVerb 'GET '[PlainText] '[WithStatus 200 Person,
                                       WithStatus 301 Text]
   :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
+  :<|> NamedRoutes RecordRoutes
 
 
 api :: Proxy Api
@@ -192,7 +206,8 @@ getRoot
   :<|> getRedirectWithCookie
   :<|> EmptyClient
   :<|> uverbGetSuccessOrRedirect
-  :<|> uverbGetCreated = client api
+  :<|> uverbGetCreated
+  :<|> recordRoutes = client api
 
 server :: Application
 server = serve api (
@@ -229,6 +244,13 @@ server = serve api (
                               then respond (WithStatus @301 ("redirecting" :: Text))
                               else respond (WithStatus @200 alice ))
   :<|> respond (WithStatus @201 carol)
+  :<|> RecordRoutes
+         { version = pure 42
+         , echo = pure
+         , otherRoutes = OtherRoutes
+             { something = pure ["foo", "bar", "pweet"]
+             }
+         }
   )
 
 type FailApi =
