@@ -90,6 +90,7 @@ test-suite spec
       Servant.ConnectionErrorSpec
       Servant.FailSpec
       Servant.GenAuthSpec
+      Servant.GenericSpec
       Servant.HoistClientSpec
       Servant.StreamSpec
       Servant.SuccessSpec
