@@ -14,7 +14,7 @@ let nixos = fetchTarball { url = "https://github.com/NixOS/nixpkgs/archive/refs/
   in
   stdenv.mkDerivation {
       name = "servant-dev";
-      buildInputs = [ ghc zlib python3 wget cabal-install postgresql openssl ]
+      buildInputs = [ ghc zlib python3 wget cabal-install postgresql openssl stack haskellPackages.hspec-discover ]
         ++ (if tutorial then [docstuffs postgresql] else []);
       shellHook = ''
         eval $(grep export ${ghc}/bin/ghc)
