@@ -16,8 +16,6 @@ import           Data.Bifunctor
                  (Bifunctor (..))
 import           Data.Bitraversable
                  (Bitraversable (..))
-import           Data.Semigroup
-                 (Semigroup (..))
 import           Data.Typeable
                  (Typeable)
 import           Prelude ()

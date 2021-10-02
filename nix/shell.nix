@@ -1,9 +1,7 @@
-let nixos = fetchTarball { 
-  url = "https://releases.nixos.org/nixos/20.09/nixos-20.09.3505.12d9950bf47/nixexprs.tar.xz";
-  sha256 = "0fsl8bsdb8i536pfs4wrp0826h5l84xqlwx32sbz66jg4ykqp9lr";
+let nixos = fetchTarball { url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/21.05.tar.gz"; 
 }; in
 
-{ compiler ? "ghc8102"
+{ compiler ? "ghc8104"
 , tutorial ? false
 , pkgs ? import nixos { config = {}; }
 }:
@@ -16,7 +14,7 @@ let nixos = fetchTarball {
   in
   stdenv.mkDerivation {
       name = "servant-dev";
-      buildInputs = [ ghc zlib python3 wget cabal-install postgresql openssl ]
+      buildInputs = [ ghc zlib python3 wget cabal-install postgresql openssl stack haskellPackages.hspec-discover ]
         ++ (if tutorial then [docstuffs postgresql] else []);
       shellHook = ''
         eval $(grep export ${ghc}/bin/ghc)

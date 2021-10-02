@@ -12,8 +12,6 @@ import           Data.Aeson
                  (encode)
 import qualified Data.ByteString.Char8      as BC
 import qualified Data.ByteString.Lazy.Char8 as BCL
-import           Data.Monoid
-                 ((<>))
 import           Data.Proxy
 import           Data.String.Conversions
                  (cs)

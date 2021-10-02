@@ -53,8 +53,6 @@ import           Data.Maybe
                  (maybe, maybeToList)
 import           Data.Proxy
                  (Proxy (..))
-import           Data.Semigroup
-                 ((<>))
 import           Data.Sequence
                  (fromList)
 import           Data.String

@@ -24,7 +24,6 @@ Language extensions and imports:
 import           Control.Lens                      ((^.))
 import           Data.Aeson
 import           Data.Aeson.Text
-import           Data.Monoid                       ((<>))
 import           Data.Proxy                        (Proxy (Proxy))
 import           Data.Text                         (Text)
 import           Data.Text.Encoding                (decodeUtf8)

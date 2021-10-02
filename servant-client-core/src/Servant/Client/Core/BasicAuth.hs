@@ -9,8 +9,6 @@ module Servant.Client.Core.BasicAuth (
 
 import           Data.ByteString.Base64
                  (encode)
-import           Data.Monoid
-                 ((<>))
 import           Data.Text.Encoding
                  (decodeUtf8)
 import           Servant.API.BasicAuth
