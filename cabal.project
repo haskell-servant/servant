@@ -25,8 +25,7 @@ packages:
   doc/cookbook/custom-errors
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
-  --doc/cookbook/db-sqlite-simple
-  -- ^ BROKEN blaze-textual
+  doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
   doc/cookbook/hoist-server-with-context
