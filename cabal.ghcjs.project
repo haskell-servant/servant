@@ -7,3 +7,5 @@ packages:
 -- we need to tell cabal we are using GHCJS
 compiler: ghcjs
 tests: True
+
+constraints: hashable <=1.3.3.0
