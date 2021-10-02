@@ -36,8 +36,7 @@ packages:
   -- doc/cookbook/sentry
   -- Commented out because servant-quickcheck currently doesn't build.
   -- doc/cookbook/testing
-  --doc/cookbook/uverb
-  -- ^ BROKEN servant-swagger -> optics-th
+  doc/cookbook/uverb
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
