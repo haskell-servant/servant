@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans   #-}
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE DefaultSignatures      #-}
 {-# LANGUAGE FlexibleContexts       #-}
@@ -15,6 +16,11 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
+
+#if __GLASGOW_HASKELL__ >= 806
+{-# LANGUAGE QuantifiedConstraints  #-}
+#endif
+
 -- | @since 0.14.1
 module Servant.Server.Generic (
     AsServerT,
@@ -113,6 +119,8 @@ genericServerT
     -> ToServant routes (AsServerT m)
 genericServerT = toServant
 
+#if __GLASGOW_HASKELL__ >= 806
+
 -- | Set of constraints required to convert to / from vanilla server types.
 type GServerConstraints api m =
   ( ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
@@ -173,3 +181,5 @@ instance
             toServant server
           servantSrvN :: ServerT (ToServantApi api) n =
             hoistServerWithContext (Proxy @(ToServantApi api)) pctx nat servantSrvM
+
+#endif

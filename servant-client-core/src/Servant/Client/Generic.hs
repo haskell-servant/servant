@@ -1,16 +1,21 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 {-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UndecidableInstances  #-}
+
+#if __GLASGOW_HASKELL__ >= 806
+{-# LANGUAGE QuantifiedConstraints  #-}
+#endif
+
 module  Servant.Client.Generic (
     AsClientT,
     genericClient,
@@ -58,6 +63,8 @@ genericClientHoist nt
     m = Proxy :: Proxy m
     api = Proxy :: Proxy (ToServantApi routes)
 
+#if __GLASGOW_HASKELL__ >= 806
+
 type GClientConstraints api m =
   ( GenericServant api (AsClientT m)
   , Client m (ToServantApi api) ~ ToServant api (AsClientT m)
@@ -95,3 +102,5 @@ instance
         fromServant @api @(AsClientT mb) $
         hoistClientMonad @m @(ToServantApi api) @ma @mb Proxy Proxy nat $
         toServant @api @(AsClientT ma) clientA
+
+#endif
