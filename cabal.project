@@ -25,8 +25,7 @@ packages:
   doc/cookbook/custom-errors
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
-  --doc/cookbook/db-sqlite-simple
-  -- ^ BROKEN blaze-textual
+  doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
   doc/cookbook/generic
   doc/cookbook/hoist-server-with-context
@@ -36,8 +35,7 @@ packages:
   -- doc/cookbook/sentry
   -- Commented out because servant-quickcheck currently doesn't build.
   -- doc/cookbook/testing
-  --doc/cookbook/uverb
-  -- ^ BROKEN servant-swagger -> optics-th
+  doc/cookbook/uverb
   doc/cookbook/structuring-apis
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
