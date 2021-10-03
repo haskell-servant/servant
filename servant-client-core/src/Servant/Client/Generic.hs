@@ -1,20 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE UndecidableInstances  #-}
-
-#if __GLASGOW_HASKELL__ >= 806
-{-# LANGUAGE QuantifiedConstraints  #-}
-#endif
 
 module  Servant.Client.Generic (
     AsClientT,
@@ -22,17 +11,12 @@ module  Servant.Client.Generic (
     genericClientHoist,
     ) where
 
-import           Data.Constraint (Dict(..))
 import           Data.Proxy
                  (Proxy (..))
 
 import           Servant.API.Generic
 import           Servant.Client.Core
-
--- | A type that specifies that an API record contains a client implementation.
-data AsClientT (m :: * -> *)
-instance GenericMode (AsClientT m) where
-    type AsClientT m :- api = Client m api
+import           Servant.Client.Core.HasClient (AsClientT)
 
 -- | Generate a record of client functions.
 genericClient
@@ -62,45 +46,3 @@ genericClientHoist nt
   where
     m = Proxy :: Proxy m
     api = Proxy :: Proxy (ToServantApi routes)
-
-#if __GLASGOW_HASKELL__ >= 806
-
-type GClientConstraints api m =
-  ( GenericServant api (AsClientT m)
-  , Client m (ToServantApi api) ~ ToServant api (AsClientT m)
-  )
-
-class GClient (api :: * -> *) m where
-  proof :: Dict (GClientConstraints api m)
-
-instance GClientConstraints api m => GClient api m where
-  proof = Dict
-
-instance
-  ( forall n. GClient api n
-  , HasClient m (ToServantApi api)
-  , RunClient m
-  )
-  => HasClient m (NamedRoutes api) where
-  type Client m (NamedRoutes api) = api (AsClientT m)
-
-  clientWithRoute :: Proxy m -> Proxy (NamedRoutes api) -> Request -> Client m (NamedRoutes api)
-  clientWithRoute pm _ request =
-    case proof @api @m of
-      Dict -> fromServant $ clientWithRoute  pm (Proxy @(ToServantApi api)) request
-
-  hoistClientMonad
-    :: forall ma mb.
-       Proxy m
-    -> Proxy (NamedRoutes api)
-    -> (forall x. ma x -> mb x)
-    -> Client ma (NamedRoutes api)
-    -> Client mb (NamedRoutes api)
-  hoistClientMonad _ _ nat clientA =
-    case (proof @api @ma, proof @api @mb) of
-      (Dict, Dict) ->
-        fromServant @api @(AsClientT mb) $
-        hoistClientMonad @m @(ToServantApi api) @ma @mb Proxy Proxy nat $
-        toServant @api @(AsClientT ma) clientA
-
-#endif

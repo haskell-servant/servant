@@ -173,6 +173,8 @@ import           Servant.API.IsSecure
                  (IsSecure)
 import           Servant.API.Modifiers
                  (FoldRequired)
+import           Servant.API.NamedRoutes
+                 (NamedRoutes)
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam', QueryParams)
 import           Servant.API.Raw

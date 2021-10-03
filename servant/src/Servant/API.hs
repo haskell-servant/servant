@@ -36,6 +36,9 @@ module Servant.API (
   module Servant.API.Verbs,
   module Servant.API.UVerb,
 
+  -- * Sub-APIs defined as records of routes
+  module Servant.API.NamedRoutes,
+
   -- * Streaming endpoints, distinguished by HTTP method
   module Servant.API.Stream,
 
@@ -130,6 +133,8 @@ import           Servant.API.UVerb
                  Unique, WithStatus (..), inject, statusOf)
 import           Servant.API.Vault
                  (Vault)
+import           Servant.API.NamedRoutes
+                 (NamedRoutes)
 import           Servant.API.Verbs
                  (Delete, DeleteAccepted, DeleteNoContent,
                  DeleteNonAuthoritative, Get, GetAccepted, GetNoContent,

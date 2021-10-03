@@ -18,10 +18,15 @@
 #define HAS_TYPE_ERROR
 #endif
 
+#if __GLASGOW_HASKELL__ >= 806
+{-# LANGUAGE QuantifiedConstraints  #-}
+#endif
+
 module Servant.Client.Core.HasClient (
     clientIn,
     HasClient (..),
     EmptyClient (..),
+    AsClientT,
     foldMapUnion,
     matchUnion,
     ) where
@@ -39,6 +44,7 @@ import           Data.ByteString.Builder
 import qualified Data.ByteString.Lazy                     as BL
 import           Data.Either
                  (partitionEithers)
+import           Data.Constraint (Dict(..))
 import           Data.Foldable
                  (toList)
 import           Data.List
@@ -79,7 +85,10 @@ import           Servant.API
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
                  Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
-                 getResponse, toEncodedUrlPiece, toUrlPiece)
+                 getResponse, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
+import           Servant.API.Generic
+                 (GenericMode(..), ToServant, ToServantApi
+                 , GenericServant, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
 import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
@@ -816,6 +825,52 @@ instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
   hoistClientMonad pm _ f cl = \bauth ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl bauth)
 
+-- | A type that specifies that an API record contains a client implementation.
+data AsClientT (m :: * -> *)
+instance GenericMode (AsClientT m) where
+    type AsClientT m :- api = Client m api
+
+#if __GLASGOW_HASKELL__ >= 806
+
+type GClientConstraints api m =
+  ( GenericServant api (AsClientT m)
+  , Client m (ToServantApi api) ~ ToServant api (AsClientT m)
+  )
+
+class GClient (api :: * -> *) m where
+  proof :: Dict (GClientConstraints api m)
+
+instance GClientConstraints api m => GClient api m where
+  proof = Dict
+
+instance
+  ( forall n. GClient api n
+  , HasClient m (ToServantApi api)
+  , RunClient m
+  )
+  => HasClient m (NamedRoutes api) where
+  type Client m (NamedRoutes api) = api (AsClientT m)
+
+  clientWithRoute :: Proxy m -> Proxy (NamedRoutes api) -> Request -> Client m (NamedRoutes api)
+  clientWithRoute pm _ request =
+    case proof @api @m of
+      Dict -> fromServant $ clientWithRoute  pm (Proxy @(ToServantApi api)) request
+
+  hoistClientMonad
+    :: forall ma mb.
+       Proxy m
+    -> Proxy (NamedRoutes api)
+    -> (forall x. ma x -> mb x)
+    -> Client ma (NamedRoutes api)
+    -> Client mb (NamedRoutes api)
+  hoistClientMonad _ _ nat clientA =
+    case (proof @api @ma, proof @api @mb) of
+      (Dict, Dict) ->
+        fromServant @api @(AsClientT mb) $
+        hoistClientMonad @m @(ToServantApi api) @ma @mb Proxy Proxy nat $
+        toServant @api @(AsClientT ma) clientA
+
+#endif
 
 
 {- Note [Non-Empty Content Types]

@@ -1,21 +1,28 @@
 {-# LANGUAGE CPP                   #-}
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
 #if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
 #define HAS_TYPE_ERROR
+#endif
+
+#if __GLASGOW_HASKELL__ >= 806
+{-# LANGUAGE QuantifiedConstraints  #-}
 #endif
 
 module Servant.Server.Internal
@@ -42,6 +49,7 @@ import qualified Data.ByteString                            as B
 import qualified Data.ByteString.Builder                    as BB
 import qualified Data.ByteString.Char8                      as BC8
 import qualified Data.ByteString.Lazy                       as BL
+import           Data.Constraint (Dict(..))
 import           Data.Either
                  (partitionEithers)
 import           Data.Maybe
@@ -54,6 +62,7 @@ import           Data.Tagged
                  (Tagged (..), retag, untag)
 import qualified Data.Text                                  as T
 import           Data.Typeable
+import           GHC.Generics
 import           GHC.TypeLits
                  (KnownNat, KnownSymbol, natVal, symbolVal)
 import qualified Network.HTTP.Media                         as NHM
@@ -75,7 +84,8 @@ import           Servant.API
                  QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
-                 WithNamedContext)
+                 WithNamedContext, NamedRoutes)
+import           Servant.API.Generic (GenericMode(..), ToServant, ToServantApi, GServantProduct, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
                  AllMime, MimeRender (..), MimeUnrender (..), NoContent,
@@ -905,3 +915,76 @@ instance (HasServer api context)
 
 -- $setup
 -- >>> import Servant
+
+-- | A type that specifies that an API record contains a server implementation.
+data AsServerT (m :: * -> *)
+instance GenericMode (AsServerT m) where
+    type AsServerT m :- api = ServerT api m
+
+type AsServer = AsServerT Handler
+
+
+#if __GLASGOW_HASKELL__ >= 806
+
+-- | Set of constraints required to convert to / from vanilla server types.
+type GServerConstraints api m =
+  ( ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
+  , GServantProduct (Rep (api (AsServerT m)))
+  )
+
+-- | This class is a necessary evil: in the implementation of 'HasServer' for
+--  @'NamedRoutes' api@, we essentially need the quantified constraint @forall
+--  m. 'GServerConstraints' m@ to hold.
+--
+-- We cannot require do that directly as the definition of 'GServerConstraints'
+-- contains type family applications ('Rep' and 'ServerT'). The trick is to hide
+-- those type family applications behind a typeclass providing evidence for
+-- @'GServerConstraints' api m@ in the form of a dictionary, and require that
+-- @forall m. 'GServer' api m@ instead.
+--
+-- Users shouldn't have to worry about this class, as the only possible instance
+-- is provided in this module for all record APIs.
+
+class GServer (api :: * -> *) (m :: * -> *) where
+  proof :: Dict (GServerConstraints api m)
+
+instance
+  ( ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
+  , GServantProduct (Rep (api (AsServerT m)))
+  ) => GServer api m where
+  proof = Dict
+
+instance
+  ( HasServer (ToServantApi api) context
+  , forall m. Generic (api (AsServerT m))
+  , forall m. GServer api m
+  ) => HasServer (NamedRoutes api) context where
+
+  type ServerT (NamedRoutes api) m = api (AsServerT m)
+
+  route
+    :: Proxy (NamedRoutes api)
+    -> Context context
+    -> Delayed env (api (AsServerT Handler))
+    -> Router env
+  route _ ctx delayed =
+    case proof @api @Handler of
+      Dict -> route (Proxy @(ToServantApi api)) ctx (toServant <$> delayed)
+
+  hoistServerWithContext
+    :: forall m n. Proxy (NamedRoutes api)
+    -> Proxy context
+    -> (forall x. m x -> n x)
+    -> api (AsServerT m)
+    -> api (AsServerT n)
+  hoistServerWithContext _ pctx nat server =
+    case (proof @api @m, proof @api @n) of
+      (Dict, Dict) ->
+        fromServant servantSrvN
+        where
+          servantSrvM :: ServerT (ToServantApi api) m =
+            toServant server
+          servantSrvN :: ServerT (ToServantApi api) n =
+            hoistServerWithContext (Proxy @(ToServantApi api)) pctx nat servantSrvM
+
+#endif

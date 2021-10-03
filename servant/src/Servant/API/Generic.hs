@@ -37,8 +37,6 @@ module Servant.API.Generic (
     ToServant,
     toServant,
     fromServant,
-    -- * NamedRoutes combinator
-    NamedRoutes,
     -- * AsApi
     AsApi,
     ToServantApi,
@@ -121,9 +119,6 @@ genericApi
     => Proxy routes
     -> Proxy (ToServantApi routes)
 genericApi _ = Proxy
-
--- | Combinator for embedding a record of named routes into a Servant API type.
-data NamedRoutes (api :: * -> *)
 
 -------------------------------------------------------------------------------
 -- Class
