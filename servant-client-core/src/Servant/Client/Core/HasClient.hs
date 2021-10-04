@@ -27,6 +27,7 @@ module Servant.Client.Core.HasClient (
     HasClient (..),
     EmptyClient (..),
     AsClientT,
+    (/:),
     foldMapUnion,
     matchUnion,
     ) where
@@ -871,6 +872,37 @@ instance
         toServant @api @(AsClientT ma) clientA
 
 #endif
+
+infixl 1 /:
+
+-- | Convenience function for working with nested record-clients.
+--
+-- Example:
+--
+-- @@
+-- type Api = NamedAPI RootApi
+--
+-- data RootApi mode = RootApi
+--   { subApi :: mode :- NamedAPI SubApi
+--   , …
+--   } deriving Generic
+--
+-- data SubAmi mode = SubApi
+--   { endpoint :: mode :- Get '[JSON] Person
+--   , …
+--   } deriving Generic
+--
+-- api :: Proxy API
+-- api = Proxy
+--
+-- rootClient :: RootApi (AsClientT ClientM)
+-- rootClient = client api
+--
+-- endpointClient :: ClientM Person
+-- endpointClient = client /: subApi /: endpoint
+-- @@
+(/:) :: a -> (a -> b) -> b
+x /: f = f x
 
 
 {- Note [Non-Empty Content Types]

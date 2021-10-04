@@ -8,6 +8,7 @@ module Servant.Client.Core.Reexport
   , foldMapUnion
   , matchUnion
   , AsClientT
+  , (/:)
 
     -- * Response (for @Raw@)
   , Response
