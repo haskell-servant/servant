@@ -1,21 +1,17 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE InstanceSigs           #-}
 {-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE QuantifiedConstraints    #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-
-#if __GLASGOW_HASKELL__ >= 806
-{-# LANGUAGE QuantifiedConstraints  #-}
-#endif
 
 {-# OPTIONS_HADDOCK not-home        #-}
 
@@ -593,7 +589,6 @@ instance HasLink (UVerb m ct a) where
     toLink toA _ = toA
 -- Instance for NamedRoutes combinator
 
-#if __GLASGOW_HASKELL__ >= 806
 type GLinkConstraints routes a =
   ( MkLink (ToServant routes AsApi) a ~ ToServant routes (AsLink a)
   , GenericServant routes (AsLink a)
@@ -620,7 +615,6 @@ instance
 
   toLink toA _ l = case proof @routes @a of
     Dict -> fromServant $ toLink toA (Proxy @(ToServantApi routes)) l
-#endif
 
 -- AuthProtext instances
 instance HasLink sub => HasLink (AuthProtect tag :> sub) where

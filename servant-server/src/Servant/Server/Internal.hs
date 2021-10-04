@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
@@ -9,6 +8,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TupleSections         #-}
@@ -16,14 +16,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-
-#if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
-#define HAS_TYPE_ERROR
-#endif
-
-#if __GLASGOW_HASKELL__ >= 806
-{-# LANGUAGE QuantifiedConstraints  #-}
-#endif
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
@@ -111,12 +103,10 @@ import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
 
-#ifdef HAS_TYPE_ERROR
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
 import           Servant.API.TypeLevel
                  (AtLeastOneFragment, FragmentUnique)
-#endif
 
 class HasServer api context where
   type ServerT api (m :: * -> *) :: *
@@ -794,7 +784,7 @@ instance ( KnownSymbol realm
 -- * helpers
 
 ct_wildcard :: B.ByteString
-ct_wildcard = "*" <> "/" <> "*" -- Because CPP
+ct_wildcard = "*" <> "/" <> "*"
 
 getAcceptHeader :: Request -> AcceptHeader
 getAcceptHeader = AcceptHeader . fromMaybe ct_wildcard . lookup hAccept . requestHeaders
@@ -825,7 +815,6 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -- TypeError helpers
 -------------------------------------------------------------------------------
 
-#ifdef HAS_TYPE_ERROR
 -- | This instance catches mistakes when there are non-saturated
 -- type applications on LHS of ':>'.
 --
@@ -888,7 +877,6 @@ type HasServerArrowTypeError a b =
     ':$$: 'ShowType a
     ':$$: 'Text "and"
     ':$$: 'ShowType b
-#endif
 
 -- | Ignore @'Fragment'@ in server handlers.
 -- See <https://ietf.org/rfc/rfc2616.html#section-15.1.3> for more details.
@@ -901,11 +889,7 @@ type HasServerArrowTypeError a b =
 -- > server = getBooks
 -- >   where getBooks :: Handler [Book]
 -- >         getBooks = ...return all books...
-#ifdef HAS_TYPE_ERROR
 instance (AtLeastOneFragment api, FragmentUnique (Fragment a1 :> api), HasServer api context)
-#else
-instance (HasServer api context)
-#endif
     => HasServer (Fragment a1 :> api) context where
   type ServerT (Fragment a1 :> api) m = ServerT api m
 
@@ -923,8 +907,6 @@ instance GenericMode (AsServerT m) where
 
 type AsServer = AsServerT Handler
 
-
-#if __GLASGOW_HASKELL__ >= 806
 
 -- | Set of constraints required to convert to / from vanilla server types.
 type GServerConstraints api m =
@@ -986,5 +968,3 @@ instance
             toServant server
           servantSrvN :: ServerT (ToServantApi api) n =
             hoistServerWithContext (Proxy @(ToServantApi api)) pctx nat servantSrvM
-
-#endif

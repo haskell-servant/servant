@@ -1,5 +1,4 @@
 {-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -7,20 +6,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-
-#if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
-#define HAS_TYPE_ERROR
-#endif
-
-#if __GLASGOW_HASKELL__ >= 806
-{-# LANGUAGE QuantifiedConstraints  #-}
-#endif
 
 module Servant.Client.Core.HasClient (
     clientIn,
@@ -804,11 +796,7 @@ instance ( HasClient m api
 -- > getBooks = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooks' for all books.
-#ifdef HAS_TYPE_ERROR
 instance (AtLeastOneFragment api, FragmentUnique (Fragment a :> api), HasClient m api
-#else
-instance ( HasClient m api
-#endif
          ) => HasClient m (Fragment a :> api) where
 
   type Client m (Fragment a :> api) = Client m api
@@ -833,7 +821,6 @@ data AsClientT (m :: * -> *)
 instance GenericMode (AsClientT m) where
     type AsClientT m :- api = Client m api
 
-#if __GLASGOW_HASKELL__ >= 806
 
 type GClientConstraints api m =
   ( GenericServant api (AsClientT m)
@@ -873,8 +860,6 @@ instance
         hoistClientMonad @m @(ToServantApi api) @ma @mb Proxy Proxy nat $
         toServant @api @(AsClientT ma) clientA
 
-#endif
-
 infixl 1 //
 infixl 2 /:
 
@@ -885,14 +870,14 @@ infixl 2 /:
 -- Example:
 --
 -- @@
--- type Api = NamedAPI RootApi
+-- type Api = NamedRoutes RootApi
 --
 -- data RootApi mode = RootApi
---   { subApi :: mode :- NamedAPI SubApi
+--   { subApi :: mode :- NamedRoutes SubApi
 --   , …
 --   } deriving Generic
 --
--- data SubAmi mode = SubApi
+-- data SubApi mode = SubApi
 --   { endpoint :: mode :- Get '[JSON] Person
 --   , …
 --   } deriving Generic
@@ -912,20 +897,20 @@ x // f = f x
 -- | Convenience function for supplying arguments to client functions when
 -- working with records of clients.
 --
--- Intended to be use in conjunction with '(//)'.
+-- Intended to be used in conjunction with '(//)'.
 --
 -- Example:
 --
 -- @@
--- type Api = NamedAPI RootApi
+-- type Api = NamedRoutes RootApi
 --
 -- data RootApi mode = RootApi
---   { subApi :: mode :- Capture "token" String :> NamedAPI SubApi
+--   { subApi :: mode :- Capture "token" String :> NamedRoutes SubApi
 --   , hello :: mode :- Capture "name" String :> Get '[JSON] String
 --   , …
 --   } deriving Generic
 --
--- data SubAmi mode = SubApi
+-- data SubApi mode = SubApi
 --   { endpoint :: mode :- Get '[JSON] Person
 --   , …
 --   } deriving Generic
