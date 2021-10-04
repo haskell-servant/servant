@@ -7,6 +7,7 @@ module Servant.Client.Core.Reexport
     HasClient(..)
   , foldMapUnion
   , matchUnion
+  , AsClientT
 
     -- * Response (for @Raw@)
   , Response
@@ -23,6 +24,7 @@ module Servant.Client.Core.Reexport
   , showBaseUrl
   , parseBaseUrl
   , InvalidBaseUrlException
+
   ) where
 
 

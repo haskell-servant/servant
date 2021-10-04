@@ -64,13 +64,11 @@ import           Servant.API
                  JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
                  QueryParams, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..), UVerb, Union,
-                 WithStatus (WithStatus), addHeader)
-import           Servant.API.Generic
+                 WithStatus (WithStatus), NamedRoutes, addHeader)
+import           Servant.API.Generic ((:-))
 import           Servant.Client
-import           Servant.Client.Generic
 import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
-import           Servant.Server.Generic
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
 
@@ -184,6 +182,7 @@ uverbGetSuccessOrRedirect :: Bool
                           -> ClientM (Union '[WithStatus 200 Person,
                                               WithStatus 301 Text])
 uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
+recordRoutes :: RecordRoutes (AsClientT ClientM)
 
 getRoot
   :<|> getGet
