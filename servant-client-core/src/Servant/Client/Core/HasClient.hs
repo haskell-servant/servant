@@ -27,6 +27,7 @@ module Servant.Client.Core.HasClient (
     HasClient (..),
     EmptyClient (..),
     AsClientT,
+    (//),
     (/:),
     foldMapUnion,
     matchUnion,
@@ -54,7 +55,8 @@ import           Data.Sequence
                  (fromList)
 import qualified Data.Text                       as T
 import           Network.HTTP.Media
-                 (MediaType, matches, parseAccept, (//))
+                 (MediaType, matches, parseAccept)
+import qualified Network.HTTP.Media as Media
 import qualified Data.Sequence as Seq
 import           Data.SOP.BasicFunctors
                  (I (I), (:.:) (Comp))
@@ -873,9 +875,12 @@ instance
 
 #endif
 
-infixl 1 /:
+infixl 1 //
+infixl 2 /:
 
--- | Convenience function for working with nested record-clients.
+-- | Helper to make code using records of clients more readable.
+--
+-- Can be mixed with (/:) for supplying arguments.
 --
 -- Example:
 --
@@ -899,10 +904,46 @@ infixl 1 /:
 -- rootClient = client api
 --
 -- endpointClient :: ClientM Person
--- endpointClient = client /: subApi /: endpoint
+-- endpointClient = client // subApi // endpoint
 -- @@
-(/:) :: a -> (a -> b) -> b
-x /: f = f x
+(//) :: a -> (a -> b) -> b
+x // f = f x
+
+-- | Convenience function for supplying arguments to client functions when
+-- working with records of clients.
+--
+-- Intended to be use in conjunction with '(//)'.
+--
+-- Example:
+--
+-- @@
+-- type Api = NamedAPI RootApi
+--
+-- data RootApi mode = RootApi
+--   { subApi :: mode :- Capture "token" String :> NamedAPI SubApi
+--   , hello :: mode :- Capture "name" String :> Get '[JSON] String
+--   , …
+--   } deriving Generic
+--
+-- data SubAmi mode = SubApi
+--   { endpoint :: mode :- Get '[JSON] Person
+--   , …
+--   } deriving Generic
+--
+-- api :: Proxy API
+-- api = Proxy
+--
+-- rootClient :: RootApi (AsClientT ClientM)
+-- rootClient = client api
+--
+-- hello :: String -> ClientM String
+-- hello name = rootClient // hello /: name
+--
+-- endpointClient :: ClientM Person
+-- endpointClient = client // subApi /: "foobar123" // endpoint
+-- @@
+(/:) :: (a -> b -> c) -> b -> a -> c
+(/:) = flip
 
 
 {- Note [Non-Empty Content Types]
@@ -928,7 +969,7 @@ for empty and one for non-empty lists).
 checkContentTypeHeader :: RunClient m => Response -> m MediaType
 checkContentTypeHeader response =
   case lookup "Content-Type" $ toList $ responseHeaders response of
-    Nothing -> return $ "application"//"octet-stream"
+    Nothing -> return $ "application" Media.// "octet-stream"
     Just t -> case parseAccept t of
       Nothing -> throwClientError $ InvalidContentTypeHeader response
       Just t' -> return t'

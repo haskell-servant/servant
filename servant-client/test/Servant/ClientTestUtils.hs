@@ -111,7 +111,7 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 data RecordRoutes mode = RecordRoutes
   { version :: mode :- "version" :> Get '[JSON] Int
   , echo :: mode :- "echo" :> Capture "string" String :> Get '[JSON] String
-  , otherRoutes :: mode :- "other" :> NamedRoutes OtherRoutes
+  , otherRoutes :: mode :- "other" :> Capture "someParam" Int :> NamedRoutes OtherRoutes
   } deriving Generic
 
 data OtherRoutes mode = OtherRoutes
@@ -246,7 +246,7 @@ server = serve api (
   :<|> RecordRoutes
          { version = pure 42
          , echo = pure
-         , otherRoutes = OtherRoutes
+         , otherRoutes = \_ -> OtherRoutes
              { something = pure ["foo", "bar", "pweet"]
              }
          }

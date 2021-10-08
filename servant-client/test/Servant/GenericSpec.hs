@@ -19,7 +19,7 @@ module Servant.GenericSpec (spec) where
 
 import           Test.Hspec
 
-import           Servant.Client ((/:))
+import           Servant.Client ((//), (/:))
 import           Servant.ClientTestUtils
 
 spec :: Spec
@@ -31,7 +31,7 @@ genericSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
   context "Record clients work as expected" $ do
 
     it "Client functions return expected values" $ \(_,baseUrl) -> do
-      runClient (recordRoutes /: version) baseUrl `shouldReturn` Right 42
-      runClient (recordRoutes /: echo $ "foo") baseUrl `shouldReturn` Right "foo"
+      runClient (recordRoutes // version) baseUrl `shouldReturn` Right 42
+      runClient (recordRoutes // echo /: "foo") baseUrl `shouldReturn` Right "foo"
     it "Clients can be nested" $ \(_,baseUrl) -> do
-      runClient (recordRoutes /: otherRoutes /: something) baseUrl `shouldReturn` Right ["foo", "bar", "pweet"]
+      runClient (recordRoutes // otherRoutes /: 42 // something) baseUrl `shouldReturn` Right ["foo", "bar", "pweet"]
