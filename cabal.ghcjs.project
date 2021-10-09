@@ -8,4 +8,6 @@ packages:
 compiler: ghcjs
 tests: True
 
-constraints: hashable <=1.3.3.0
+-- Constraints so that reflex-platform provided packages are selected.
+constraints: attoparsec == 0.13.2.2
+constraints: hashable == 1.3.0.0
