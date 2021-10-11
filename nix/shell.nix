@@ -1,10 +1,6 @@
-let nixos = fetchTarball { url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/21.05.tar.gz"; 
-                           sha256 = "sha256:1ckzhh24mgz6jd1xhfgx0i9mijk6xjqxwsshnvq789xsavrmsc36";
-}; in
-
 { compiler ? "ghc8104"
 , tutorial ? false
-, pkgs ? import nixos { config = {}; }
+, pkgs ? import ./nixpkgs.nix
 }:
   
   with pkgs;

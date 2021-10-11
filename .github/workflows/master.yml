@@ -123,33 +123,22 @@ jobs:
         stack test --system-ghc
 
   ghcjs:
-    name: ubuntu-18.04 / ghcjs 8.4
-    runs-on: "ubuntu-18.04"
+    name: ubuntu-latest / ghcjs 8.6
+    runs-on: "ubuntu-latest"
 
     steps:
     - uses: actions/checkout@v2
-
-    - name: "Setup PATH"
+    - uses: cachix/install-nix-action@v13
+      with:
+        extra_nix_config: |
+          trusted-public-keys = ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI=1aba6f367982bd6dd78ec2fda75ab246a62d32c5 cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+          substituters = https://nixcache.reflex-frp.org https://cache.nixos.org/
+    - name: Setup
       run: |
-        echo "PATH=$HOME/.cabal/bin:/opt/ghcjs/8.4/bin:$PATH" >> $GITHUB_ENV
-
-    - name: Install ghcjs and cabal
-      run: |
-        # Default GitHub image dropped ppa:hvr/ghc, so we add it ourselves
-        sudo add-apt-repository ppa:hvr/ghc
-        sudo add-apt-repository ppa:hvr/ghcjs
-        sudo apt-get update -y
-        sudo apt-get install ghcjs-8.4
-        sudo apt-get install cabal-install
-
         # Override cabal.project with the lightweight GHCJS one
         cp cabal.ghcjs.project cabal.project
         cat cabal.project
-
-    - name: Cabal update and freeze
-      run: |
-        cabal v2-update
-        cabal v2-freeze
+        nix-shell ghcjs.nix --run "cabal v2-update && cabal v2-freeze"
 
     - uses: actions/cache@v2.1.3
       name: Cache ~/.cabal/store and dist-newstyle
@@ -157,23 +146,14 @@ jobs:
         path: |
           ~/.cabal/store
           dist-newstyle
-        key: ubuntu-18.04-ghcjs8.4-${{ hashFiles('cabal.project.freeze') }}
+        key: ${{ runner.os }}-ghcjs8.6-${{ hashFiles('cabal.project.freeze') }}
         restore-keys: |
-          ubuntu-18.04-ghcjs8.4-
-
-    - name: Install cabal-plan and hspec-discover
-      run: |
-        cabal v2-install -w /opt/ghc/8.4.4/bin/ghc --ignore-project cabal-plan --constraint='cabal-plan ^>=0.6.0.0' --constraint='cabal-plan +exe'
-        cabal v2-install -w /opt/ghc/8.4.4/bin/ghc --ignore-project hspec-discover
+          ${{ runner.os }}-ghcjs8.6-
 
     - name: Build
       run: |
-        cabal v2-build --ghcjs -w /opt/ghcjs/8.4/bin/ghcjs --enable-tests --enable-benchmarks all
+        nix-shell ghcjs.nix --run "cabal v2-build --ghcjs --enable-tests --enable-benchmarks all"
 
-    - name: Run tests
+    - name: Tests
       run: |
-        # cabal v2-test does not work with GHCJS
-        # See: https://github.com/haskell/cabal/issues/6175
-        #
-        # This invokes cabal-plan to figure out test binaries, and invokes them with node.
-        cabal-plan list-bins '*:test:*' | while read -r line; do testpkg=$(echo "$line" | perl -pe 's/:.*//'); testexe=$(echo "$line" | awk '{ print $2 }'); echo "testing $textexe in package $textpkg"; (cd "$(pkgdir $testpkg)" && nodejs "$testexe".jsexe/all.js); done
+        nix-shell ghcjs.nix --run ".github/run-ghcjs-tests.sh"
