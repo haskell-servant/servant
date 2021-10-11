@@ -21,6 +21,7 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 build-type:          Simple
 tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
+           , GHCJS ==8.6.0.1
 
 extra-source-files:
   CHANGELOG.md
@@ -82,6 +83,8 @@ test-suite spec
   type: exitcode-stdio-1.0
   ghc-options: -Wall -rtsopts -threaded "-with-rtsopts=-T -N2"
   default-language: Haskell2010
+  if impl(ghcjs)
+     buildable: False
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules:
@@ -137,3 +140,5 @@ test-suite readme
   build-tool-depends: markdown-unlit:markdown-unlit
   ghc-options:    -pgmL markdown-unlit
   default-language: Haskell2010
+  if impl(ghcjs)
+     buildable: False

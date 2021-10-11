@@ -2,6 +2,7 @@
 
 packages:
   servant/
+  servant-client/
   servant-client-core/
 
 -- we need to tell cabal we are using GHCJS
