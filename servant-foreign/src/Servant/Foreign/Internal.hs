@@ -244,7 +244,7 @@ defReq = Req defUrl "GET" [] Nothing Nothing (FunctionName []) ReqBodyJSON
 -- >
 -- > -- Or for example in case of lists
 -- > instance HasForeignType LangX Text a => HasForeignType LangX Text [a] where
--- >    typeFor lang type _ = "listX of " <> typeFor lang ftype (Proxy :: Proxy a)
+-- >    typeFor lang ftype _ = "listX of " <> typeFor lang ftype (Proxy :: Proxy a)
 --
 -- Finally to generate list of information about all the endpoints for
 -- an API you create a function of a form:
