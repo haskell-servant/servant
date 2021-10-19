@@ -65,7 +65,7 @@ import           Data.Text
 import           Data.Proxy
                  (Proxy (Proxy))
 import           GHC.TypeLits
-                 (KnownSymbol, symbolVal)
+                 (KnownNat, KnownSymbol, symbolVal)
 import           Network.HTTP.Types
                  (Status)
 import qualified Network.HTTP.Types                       as H
@@ -86,13 +86,13 @@ import           Servant.API.Generic
                  , GenericServant, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
+import           Servant.API.Status
+                 (statusFromNat)
 import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.UVerb
                  (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf, foldMapUnion, matchUnion)
-import           Servant.API.Status
-                 (KnownStatus, statusVal)
 
 import           Servant.Client.Core.Auth
 import           Servant.Client.Core.BasicAuth
@@ -251,12 +251,12 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
 
 instance {-# OVERLAPPABLE #-}
   -- Note [Non-Empty Content Types]
-  ( RunClient m, MimeUnrender ct a, ReflectMethod method, KnownStatus status
-  , cts' ~ (ct ': cts)
+  ( RunClient m, MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
+  , KnownNat status
   ) => HasClient m (Verb method status cts' a) where
   type Client m (Verb method status cts' a) = m a
   clientWithRoute _pm Proxy req = do
-    response <- runRequestAcceptStatus (Just acceptStatus) req
+    response <- runRequestAcceptStatus (Just [status]) req
       { requestAccept = fromList $ toList accept
       , requestMethod = method
       }
@@ -264,20 +264,20 @@ instance {-# OVERLAPPABLE #-}
     where
       accept = contentTypes (Proxy :: Proxy ct)
       method = reflectMethod (Proxy :: Proxy method)
-      acceptStatus = [statusVal (Proxy :: Proxy status)]
+      status = statusFromNat (Proxy :: Proxy status)
 
   hoistClientMonad _ _ f ma = f ma
 
 instance {-# OVERLAPPING #-}
-  ( RunClient m, ReflectMethod method, KnownStatus status
+  ( RunClient m, ReflectMethod method, KnownNat status
   ) => HasClient m (Verb method status cts NoContent) where
   type Client m (Verb method status cts NoContent)
     = m NoContent
   clientWithRoute _pm Proxy req = do
-    _response <- runRequestAcceptStatus (Just acceptStatus) req { requestMethod = method }
+    _response <- runRequestAcceptStatus (Just [status]) req { requestMethod = method }
     return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
-            acceptStatus = [statusVal (Proxy :: Proxy status)]
+            status = statusFromNat (Proxy :: Proxy status)
 
   hoistClientMonad _ _ f ma = f ma
 
@@ -294,13 +294,13 @@ instance (RunClient m, ReflectMethod method) =>
 
 instance {-# OVERLAPPING #-}
   -- Note [Non-Empty Content Types]
-  ( RunClient m, MimeUnrender ct a, BuildHeadersTo ls, KnownStatus status
+  ( RunClient m, MimeUnrender ct a, BuildHeadersTo ls, KnownNat status
   , ReflectMethod method, cts' ~ (ct ': cts)
   ) => HasClient m (Verb method status cts' (Headers ls a)) where
   type Client m (Verb method status cts' (Headers ls a))
     = m (Headers ls a)
   clientWithRoute _pm Proxy req = do
-    response <- runRequestAcceptStatus (Just acceptStatus) req
+    response <- runRequestAcceptStatus (Just [status]) req
        { requestMethod = method
        , requestAccept = fromList $ toList accept
        }
@@ -308,24 +308,26 @@ instance {-# OVERLAPPING #-}
     return $ Headers { getResponse = val
                      , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
-      where method = reflectMethod (Proxy :: Proxy method)
-            accept = contentTypes (Proxy :: Proxy ct)
-            acceptStatus = [statusVal (Proxy :: Proxy status)]
+    where
+      method = reflectMethod (Proxy :: Proxy method)
+      accept = contentTypes (Proxy :: Proxy ct)
+      status = statusFromNat (Proxy :: Proxy status)
 
   hoistClientMonad _ _ f ma = f ma
 
 instance {-# OVERLAPPING #-}
-  ( RunClient m, BuildHeadersTo ls, ReflectMethod method, KnownStatus status
+  ( RunClient m, BuildHeadersTo ls, ReflectMethod method, KnownNat status
   ) => HasClient m (Verb method status cts (Headers ls NoContent)) where
   type Client m (Verb method status cts (Headers ls NoContent))
     = m (Headers ls NoContent)
   clientWithRoute _pm Proxy req = do
-    let method = reflectMethod (Proxy :: Proxy method)
-        acceptStatus = [statusVal (Proxy :: Proxy status)]
-    response <- runRequestAcceptStatus (Just acceptStatus) req { requestMethod = method }
+    response <- runRequestAcceptStatus (Just [status]) req { requestMethod = method }
     return $ Headers { getResponse = NoContent
                      , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
                      }
+    where
+      method = reflectMethod (Proxy :: Proxy method)
+      status = statusFromNat (Proxy :: Proxy status)
 
   hoistClientMonad _ _ f ma = f ma
 

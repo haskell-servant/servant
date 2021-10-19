@@ -56,7 +56,7 @@ import qualified Data.Text                                  as T
 import           Data.Typeable
 import           GHC.Generics
 import           GHC.TypeLits
-                 (KnownNat, KnownSymbol, natVal, symbolVal)
+                 (KnownNat, KnownSymbol, symbolVal)
 import qualified Network.HTTP.Media                         as NHM
 import           Network.HTTP.Types                         hiding
                  (Header, ResponseHeaders)
@@ -87,6 +87,8 @@ import           Servant.API.Modifiers
                  unfoldRequestArgument)
 import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
+import           Servant.API.Status
+                 (statusFromNat)
 import qualified Servant.Types.SourceT                      as S
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
@@ -298,7 +300,7 @@ instance {-# OVERLAPPABLE #-}
 
   route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
-          status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+          status = statusFromNat (Proxy :: Proxy status)
 
 instance {-# OVERLAPPING #-}
          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
@@ -310,7 +312,7 @@ instance {-# OVERLAPPING #-}
 
   route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
-          status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+          status = statusFromNat (Proxy :: Proxy status)
 
 instance (ReflectMethod method) =>
          HasServer (NoContentVerb method) context where
@@ -331,7 +333,7 @@ instance {-# OVERLAPPABLE #-}
 
   route Proxy _ = streamRouter ([],) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
       where method = reflectMethod (Proxy :: Proxy method)
-            status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+            status = statusFromNat (Proxy :: Proxy status)
 
 
 instance {-# OVERLAPPING #-}
@@ -345,7 +347,7 @@ instance {-# OVERLAPPING #-}
 
   route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
       where method = reflectMethod (Proxy :: Proxy method)
-            status = toEnum . fromInteger $ natVal (Proxy :: Proxy status)
+            status = statusFromNat (Proxy :: Proxy status)
 
 
 streamRouter :: forall ctype a c chunk env framing. (MimeRender ctype chunk, FramingRender framing, ToSourceIO chunk a) =>
