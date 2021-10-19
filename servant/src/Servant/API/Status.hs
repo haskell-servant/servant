@@ -4,8 +4,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Servant.API.Status where
 
+import GHC.TypeLits (KnownNat, natVal)
 import Network.HTTP.Types.Status
-import GHC.TypeLits
 
 -- | Retrieve a known or unknown Status from a KnownNat
 statusFromNat :: forall a proxy. KnownNat a => proxy a -> Status
