@@ -57,7 +57,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (Status (..), hContentType, http11, renderQuery)
+                 (Status (..), hContentType, http11, renderQuery, statusIsSuccessful)
 import           Servant.Client.Core
 
 import qualified Network.Http.Client        as Client
@@ -160,12 +160,12 @@ performRequest acceptStatus req = do
     x <- ClientM $ lift $ lift $ Codensity $ \k -> do
         Client.sendRequest conn req' body
         Client.receiveResponse conn $ \res' body' -> do
-            let sc = Client.getStatusCode res'
+            let status = toEnum $ Client.getStatusCode res'
             lbs <- BSL.fromChunks <$> Streams.toList body'
             let res'' = clientResponseToResponse res' lbs
                 goodStatus = case acceptStatus of
-                  Nothing -> sc >= 200 && sc < 300
-                  Just good -> sc `elem` (statusCode <$> good)
+                  Nothing -> statusIsSuccessful status
+                  Just good -> status `elem` good
             if goodStatus
             then k (Right res'')
             else k (Left (mkFailureResponse burl req res''))
@@ -180,8 +180,8 @@ performWithStreamingRequest req k = do
         Client.sendRequest conn req' body
         Client.receiveResponseRaw conn $ \res' body' -> do
             -- check status code
-            let sc = Client.getStatusCode res'
-            unless (sc >= 200 && sc < 300) $ do
+            let status = toEnum $ Client.getStatusCode res'
+            unless (statusIsSuccessful status) $ do
                 lbs <- BSL.fromChunks <$> Streams.toList body'
                 throwIO $ mkFailureResponse burl req (clientResponseToResponse res' lbs)
 
