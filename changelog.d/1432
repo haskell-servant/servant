@@ -1,0 +1,9 @@
+synopsis: Fixes encoding of URL parameters in servant-client
+prs: #1432
+issues: #1418
+description: {
+Some applications use query parameters to pass arbitrary (non-unicode) binary
+data.  This change modifies how servant-client handles query parameters, so
+that application developers can use `ToHttpApiData` to marshal binary data into
+query parameters.
+}

@@ -145,13 +145,13 @@ appendToPath :: Text -> Request -> Request
 appendToPath p req
   = req { requestPath = requestPath req <> "/" <> toEncodedUrlPiece p }
 
-appendToQueryString :: Text       -- ^ param name
-                    -> Maybe Text -- ^ param value
+appendToQueryString :: Text             -- ^ param name
+                    -> Maybe BS.ByteString -- ^ param value
                     -> Request
                     -> Request
 appendToQueryString pname pvalue req
   = req { requestQueryString = requestQueryString req
-                        Seq.|> (encodeUtf8 pname, encodeUtf8 <$> pvalue)}
+                        Seq.|> (encodeUtf8 pname, pvalue)}
 
 addHeader :: ToHttpApiData a => HeaderName -> a -> Request -> Request
 addHeader name val req

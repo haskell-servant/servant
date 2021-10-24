@@ -22,11 +22,13 @@ import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Arrow
-                 (left)
+                 ((+++), left)
 import           Control.Concurrent.STM
                  (atomically)
 import           Control.Concurrent.STM.TVar
                  (newTVar, readTVar)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
 import           Data.Foldable
                  (forM_, toList)
 import           Data.Maybe
@@ -92,6 +94,11 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
       Left (FailureResponse _ r) <- runClient (getQueryParam (Just "bob")) baseUrl
       responseStatusCode r `shouldBe` HTTP.Status 400 "bob not found"
+
+    it "Servant.API.QueryParam binary data" $ \(_, baseUrl) -> do
+      let payload = BS.pack [0, 1, 2, 4, 8, 16, 32, 64, 128]
+          apiCall = getQueryParamBinary (Just $ UrlEncodedByteString payload) HTTP.methodGet
+      (show +++ responseBody) <$> runClient apiCall baseUrl `shouldReturn` Right (BL.fromStrict payload)
 
     it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
       left show <$> runClient (getQueryParams []) baseUrl `shouldReturn` Right []

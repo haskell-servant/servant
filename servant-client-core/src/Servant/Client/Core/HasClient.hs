@@ -33,6 +33,9 @@ import           Control.Arrow
                  (left, (+++))
 import           Control.Monad
                  (unless)
+import qualified Data.ByteString as BS
+import           Data.ByteString.Builder
+                 (toLazyByteString)
 import qualified Data.ByteString.Lazy                     as BL
 import           Data.Either
                  (partitionEithers)
@@ -76,7 +79,7 @@ import           Servant.API
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
                  Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
-                 getResponse, toQueryParam, toUrlPiece)
+                 getResponse, toEncodedUrlPiece, toUrlPiece)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
 import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
@@ -554,13 +557,16 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequire
       (Proxy :: Proxy mods) add (maybe req add) mparam
     where
       add :: a -> Request
-      add param = appendToQueryString pname (Just $ toQueryParam param) req
+      add param = appendToQueryString pname (Just $ encodeQueryParam param) req
 
       pname :: Text
       pname  = pack $ symbolVal (Proxy :: Proxy sym)
 
   hoistClientMonad pm _ f cl = \arg ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
+
+encodeQueryParam :: ToHttpApiData a => a  -> BS.ByteString
+encodeQueryParam = BL.toStrict . toLazyByteString . toEncodedUrlPiece
 
 -- | If you use a 'QueryParams' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -603,7 +609,7 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
                     )
 
     where pname = pack $ symbolVal (Proxy :: Proxy sym)
-          paramlist' = map (Just . toQueryParam) paramlist
+          paramlist' = map (Just . encodeQueryParam) paramlist
 
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl as)
