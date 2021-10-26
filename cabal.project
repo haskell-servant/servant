@@ -1,5 +1,11 @@
 packages:
   servant/
+  servant-auth/servant-auth
+  servant-auth/servant-auth-client
+  servant-auth/servant-auth-docs
+  servant-auth/servant-auth-server
+  servant-auth/servant-auth-swagger
+
   servant-client/
   servant-client-core/
   servant-http-streams/

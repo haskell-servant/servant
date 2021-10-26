@@ -1,0 +1,46 @@
+name:           servant-auth
+version:        0.4.0.0
+synopsis:       Authentication combinators for servant
+description:    This package provides an @Auth@ combinator for 'servant'. This combinator
+                allows using different authentication schemes in a straightforward way,
+                and possibly in conjunction with one another.
+                .
+                'servant-auth' additionally provides concrete authentication schemes, such
+                as Basic Access Authentication, JSON Web Tokens, and Cookies.
+                .
+                For more details on how to use this, see the <http://github.com/haskell-servant/servant-auth#readme README>.
+category:       Web, Servant, Authentication
+homepage:       http://github.com/haskell-servant/servant-auth#readme
+bug-reports:    https://github.com/haskell-servant/servant-auth/issues
+author:         Julian K. Arni
+maintainer:     jkarni@gmail.com
+copyright:      (c) Julian K. Arni
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC ==8.6.5 || ==8.8.4 || ==8.10.4 || ==9.0.1
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/haskell-servant/servant-auth
+
+library
+  hs-source-dirs:
+      src
+  default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
+  ghc-options: -Wall
+  build-depends:
+      base                    >= 4.10     && < 4.16
+    , aeson                   >= 1.3.1.1  && < 1.6
+    , jose                    >= 0.7.0.0  && < 0.9
+    , lens                    >= 4.16.1   && < 5.1
+    , servant                 >= 0.15     && < 0.19
+    , text                    >= 1.2.3.0  && < 1.3
+    , unordered-containers    >= 0.2.9.0  && < 0.3
+  exposed-modules:
+      Servant.Auth
+      Servant.Auth.JWT
+  default-language: Haskell2010
