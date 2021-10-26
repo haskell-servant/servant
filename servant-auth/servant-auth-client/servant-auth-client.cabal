@@ -59,7 +59,9 @@ test-suite spec
     , servant-auth
     , servant
     , servant-auth-client
-
+  if impl(ghc >= 9)
+    buildable: False
+ 
   -- test dependencies
   build-depends:
       hspec                >= 2.5.5    && < 2.9
