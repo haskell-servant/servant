@@ -6,10 +6,10 @@ description:    This package provides the required instances for using the @Auth
                 .
                 Both cookie- and token- (REST API) based authentication is provided.
                 .
-                For a quick overview of the usage, see the <http://github.com/haskell-servant/servant-auth#readme README>.
+                For a quick overview of the usage, see the <http://github.com/haskell-servant/servant/servant-auth#readme README>.
 category:       Web, Servant, Authentication
-homepage:       http://github.com/haskell-servant/servant-auth#readme
-bug-reports:    https://github.com/haskell-servant/servant-auth/issues
+homepage:       http://github.com/haskell-servant/servant/servant-auth#readme
+bug-reports:    https://github.com/haskell-servant/servant/issues
 author:         Julian K. Arni
 maintainer:     jkarni@gmail.com
 copyright:      (c) Julian K. Arni
@@ -23,7 +23,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/haskell-servant/servant-auth
+  location: https://github.com/haskell-servant/servant
 
 library
   hs-source-dirs:

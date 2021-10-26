@@ -8,10 +8,10 @@ description:    This package provides an @Auth@ combinator for 'servant'. This c
                 'servant-auth' additionally provides concrete authentication schemes, such
                 as Basic Access Authentication, JSON Web Tokens, and Cookies.
                 .
-                For more details on how to use this, see the <http://github.com/haskell-servant/servant-auth#readme README>.
+                For more details on how to use this, see the <http://github.com/haskell-servant/servant/servant-auth#readme README>.
 category:       Web, Servant, Authentication
-homepage:       http://github.com/haskell-servant/servant-auth#readme
-bug-reports:    https://github.com/haskell-servant/servant-auth/issues
+homepage:       http://github.com/haskell-servant/servant/servant-auth#readme
+bug-reports:    https://github.com/haskell-servant/servant/issues
 author:         Julian K. Arni
 maintainer:     jkarni@gmail.com
 copyright:      (c) Julian K. Arni
@@ -25,7 +25,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/haskell-servant/servant-auth
+  location: https://github.com/haskell-servant/servant
 
 library
   hs-source-dirs:
