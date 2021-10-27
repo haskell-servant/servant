@@ -1,7 +1,5 @@
 # servant-auth
 
-[![build status](https://img.shields.io/github/workflow/status/haskell-servant/servant-auth/CI/master?style=flat-square&logo=github&label=build%20status)](https://github.com/haskell-servant/servant-auth/actions?query=workflow%3ACI)
-
 These packages provides safe and easy-to-use authentication options for
 `servant`. The same API can be protected via:
 - basicauth
