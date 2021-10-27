@@ -1,7 +1,0 @@
-resolver: lts-16.31
-packages:
-- servant-auth
-- servant-auth-server
-- servant-auth-client
-- servant-auth-docs
-- servant-auth-swagger
