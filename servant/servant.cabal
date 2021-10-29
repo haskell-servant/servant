@@ -98,7 +98,7 @@ library
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
       base-compat            >= 0.10.5   && < 0.12
-    , aeson                  >= 1.4.1.0  && < 1.6
+    , aeson                  >= 2.0.1.0  && < 3
     , attoparsec             >= 0.13.2.2 && < 0.15
     , bifunctors             >= 5.5.3    && < 5.6
     , case-insensitive       >= 1.2.0.11 && < 1.3
