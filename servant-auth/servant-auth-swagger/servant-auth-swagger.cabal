@@ -1,0 +1,74 @@
+name:           servant-auth-swagger
+version:        0.2.10.1
+synopsis:       servant-swagger/servant-auth compatibility
+description:    This package provides instances that allow generating swagger2 schemas from
+                <https://hackage.haskell.org/package/servant servant>
+                APIs that use
+                <https://hackage.haskell.org/package/servant-auth servant-auth's> @Auth@ combinator.
+                .
+                For a quick overview of the usage, see the <http://github.com/haskell-servant/servant/servant-auth#readme README>.
+category:       Web, Servant, Authentication
+homepage:       http://github.com/haskell-servant/servant/servant-auth#readme
+bug-reports:    https://github.com/haskell-servant/servant/issues
+author:         Julian K. Arni
+maintainer:     jkarni@gmail.com
+copyright:      (c) Julian K. Arni
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC ==8.6.5 || ==8.8.4 || ==8.10.4
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/haskell-servant/servant
+
+library
+  hs-source-dirs:
+      src
+  default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
+  ghc-options: -Wall
+  build-depends:
+      base            >= 4.10    && < 4.16
+    , text            >= 1.2.3.0 && < 1.3
+    , servant-swagger >= 1.1.5   && < 1.8
+    , swagger2        >= 2.2.2   && < 2.7
+    , servant         >= 0.13    && < 0.19
+    , servant-auth    == 0.4.*
+    , lens            >= 4.16.1  && < 5.1  
+  if impl(ghc >= 9)
+    buildable: False
+  exposed-modules:
+      Servant.Auth.Swagger
+  default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
+  ghc-options: -Wall
+  build-tool-depends: hspec-discover:hspec-discover >= 2.5.5 && <2.9
+  -- dependencies with bounds inherited from the library stanza
+  build-depends:
+      base
+    , text
+    , servant-swagger
+    , swagger2
+    , servant
+    , servant-auth
+    , lens
+  if impl(ghc >= 9)
+    buildable: False
+    
+  -- test dependencies
+  build-depends:
+      servant-auth-swagger
+    , hspec      >= 2.5.5  && < 2.9
+    , QuickCheck >= 2.11.3 && < 2.15
+  other-modules:
+      Servant.Auth.SwaggerSpec
+  default-language: Haskell2010
