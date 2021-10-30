@@ -36,7 +36,7 @@ packages:
   doc/cookbook/generic
   doc/cookbook/hoist-server-with-context
   doc/cookbook/https
-  -- doc/cookbook/jwt-and-basic-auth/
+  doc/cookbook/jwt-and-basic-auth
   doc/cookbook/pagination
   -- doc/cookbook/sentry
   -- Commented out because servant-quickcheck currently doesn't build.
