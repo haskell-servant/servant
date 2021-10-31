@@ -33,7 +33,7 @@ library
   build-depends:
       base                    >= 4.10     && < 4.16
     , aeson                   >= 1.3.1.1  && < 1.6
-    , base64-bytestring       >= 1.0.0.1  && < 1.2
+    , base64-bytestring       >= 1.0.0.1  && < 1.3
     , blaze-builder           >= 0.4.1.0  && < 0.5
     , bytestring              >= 0.10.6.0 && < 0.11
     , case-insensitive        >= 1.2.0.11 && < 1.3
@@ -54,6 +54,13 @@ library
     , time                    >= 1.5.0.1  && < 1.10
     , unordered-containers    >= 0.2.9.0  && < 0.3
     , wai                     >= 3.2.1.2  && < 3.3
+
+  if impl(ghc >= 9)
+    build-depends:
+      -- base64-bytestring 1.2.1.0 contains important fix for GHC-9, lower versions
+      -- produce wrong results, thus corrupring JWT via jose package.
+      -- See: https://github.com/haskell/base64-bytestring/pull/46
+      base64-bytestring       >= 1.2.1.0
 
   exposed-modules:
       Servant.Auth.Server
@@ -87,8 +94,6 @@ test-suite readme
   default-language: Haskell2010
   if impl(ghcjs)
     buildable: False
-  if impl(ghc >= 9)
-    buildable: False
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -114,8 +119,6 @@ test-suite spec
     , servant
     , servant-server
     , transformers
-  if impl(ghc >= 9)
-    buildable: False
 
   -- test dependencies
   build-depends:
