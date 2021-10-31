@@ -187,7 +187,7 @@ err403 = ServerError { errHTTPCode = 403
 -- Example:
 --
 -- > failingHandler :: Handler ()
--- > failingHandler = throwError $ err404 { errBody = "(╯°□°）╯︵ ┻━┻)." }
+-- > failingHandler = throwError $ err404 { errBody = "Are you lost?" }
 --
 err404 :: ServerError
 err404 = ServerError { errHTTPCode = 404
