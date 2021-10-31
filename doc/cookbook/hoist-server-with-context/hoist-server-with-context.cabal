@@ -4,7 +4,7 @@ synopsis:            JWT and basic access authentication with a Custom Monad coo
 description:         Using servant-auth to support both JWT-based and basic
                      authentication.
 homepage:            http://docs.servant.dev/
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com

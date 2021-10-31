@@ -3,7 +3,7 @@ version:             0.0.1
 synopsis:            Common testing patterns in Servant apps
 description:         This recipe includes various strategies for writing tests for Servant.
 homepage:            http://docs.servant.dev/
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com

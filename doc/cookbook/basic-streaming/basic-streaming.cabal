@@ -2,7 +2,7 @@ name:                cookbook-basic-streaming
 version:             2.1
 synopsis:            Streaming in servant without streaming libs
 homepage:            http://docs.servant.dev/
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
