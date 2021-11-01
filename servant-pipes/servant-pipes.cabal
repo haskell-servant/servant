@@ -10,7 +10,7 @@ description:         Servant Stream support for pipes.
 
 homepage:            http://docs.servant.dev/
 bug-reports:         http://github.com/haskell-servant/servant/issues
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com

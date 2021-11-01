@@ -3,7 +3,7 @@ version:             0.0.1
 synopsis:            How to use the 'UVerb' type.
 description:         Listing alternative responses and exceptions in your API types.
 homepage:            http://docs.servant.dev/
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com

@@ -2,7 +2,7 @@ name:                cookbook-custom-errors
 version:             0.1
 synopsis:            Return custom error messages from combinators
 homepage:            http://docs.servant.dev
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com

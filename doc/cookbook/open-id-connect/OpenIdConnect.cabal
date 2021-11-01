@@ -2,7 +2,7 @@ name:           open-id-connect
 version:        0.1
 synopsis:       OpenId Connect with Servant example
 homepage:       http://haskell-servant.readthedocs.org/
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   ../../../servant/LICENSE
 author:         Servant Contributors
 maintainer:     haskell-servant-maintainers@googlegroups.com

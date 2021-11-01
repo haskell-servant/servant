@@ -15,7 +15,7 @@ bug-reports:    https://github.com/haskell-servant/servant/issues
 author:         Julian K. Arni
 maintainer:     jkarni@gmail.com
 copyright:      (c) Julian K. Arni
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 tested-with:    GHC ==8.6.5 || ==8.8.4 || ==8.10.4 || ==9.0.1
 build-type:     Simple
