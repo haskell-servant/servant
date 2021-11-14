@@ -4,7 +4,7 @@ import           Control.Lens         ((^.))
 import qualified Crypto.JWT           as Jose
 import           Data.Aeson           (FromJSON, Result (..), ToJSON, fromJSON,
                                        toJSON)
-import qualified Data.HashMap.Strict  as HM
+import qualified Data.Map             as Map
 import qualified Data.Text            as T
 
 
@@ -17,7 +17,7 @@ import qualified Data.Text            as T
 class FromJWT a where
   decodeJWT :: Jose.ClaimsSet -> Either T.Text a
   default decodeJWT :: FromJSON a => Jose.ClaimsSet -> Either T.Text a
-  decodeJWT m = case HM.lookup "dat" (m ^. Jose.unregisteredClaims) of
+  decodeJWT m = case Map.lookup "dat" (m ^. Jose.unregisteredClaims) of
     Nothing -> Left "Missing 'dat' claim"
     Just v  -> case fromJSON v of
       Error e -> Left $ T.pack e
