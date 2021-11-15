@@ -19,6 +19,9 @@ jobs:
           - "8.8.4"
           - "8.10.7"
           - "9.0.2"
+          # can't build with GHC 9.2 until basement, hs-memory, and cryptonite
+          # are updated to work with 9.2
+          # - "9.2.1"
 
     steps:
     - uses: actions/checkout@v2
@@ -92,8 +95,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        stack: ["2.7.3"]
-        ghc: ["8.10.7"]
+        include:
+          - stack: "2.7.3"
+            ghc: "8.10.7"
+            stack-yaml: "stack.yaml"
+          - stack: "2.7.3"
+            ghc: "9.2.1"
+            stack-yaml: "stack-ghc-9.2.yaml"
+    env:
+      STACK_YAML: ${{ matrix.stack-yaml }}
 
     steps:
     - uses: actions/checkout@v2

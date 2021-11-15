@@ -41,7 +41,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base        >= 4.9     && < 4.16
+      base        >= 4.9     && < 4.17
     , text        >= 1.2.3.0 && < 2.1
 
   -- Servant dependencies
@@ -51,7 +51,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat >= 0.10.5  && < 0.12
+      base-compat >= 0.10.5  && < 0.13
     , lens        >= 4.17    && < 5.2
     , http-types  >= 0.12.2  && < 0.13
 

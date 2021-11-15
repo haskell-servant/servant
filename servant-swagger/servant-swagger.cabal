@@ -50,7 +50,7 @@ source-repository head
 custom-setup
   setup-depends:
     base >=4.9 && <5,
-    Cabal >= 1.24 && < 3.5,
+    Cabal >= 1.24 && < 3.7,
     cabal-doctest >=1.0.6 && <1.1
 
 library
@@ -72,8 +72,8 @@ library
   build-depends:       aeson                     >=1.4.2.0 && <3
                      , aeson-pretty              >=0.8.7    && <0.9
                      , base                      >=4.9.1.0  && <5
-                     , base-compat               >=0.10.5   && <0.12
-                     , bytestring                >=0.10.8.1 && <0.11
+                     , base-compat               >=0.10.5   && <0.13
+                     , bytestring                >=0.10.8.1 && <0.12
                      , http-media                >=0.7.1.3  && <0.9
                      , insert-ordered-containers >=0.2.1.0  && <0.3
                      , lens                      >=4.17     && <6
