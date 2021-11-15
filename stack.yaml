@@ -1,4 +1,5 @@
-resolver: lts-18.5
+resolver: lts-18.25
+
 packages:
 - servant-client-core/
 - servant-client/
@@ -12,9 +13,3 @@ packages:
 - servant-machines/
 - servant-pipes/
 - servant-swagger/
-
-# allow-newer: true # ignores all bounds, that's a sledgehammer
-# - doc/tutorial/
-
-extra-deps:
-- hspec-wai-0.10.1
