@@ -1,0 +1,127 @@
+name:                servant-swagger
+version:             1.1.11
+synopsis:            Generate a Swagger/OpenAPI/OAS 2.0 specification for your servant API.
+description:
+  Swagger is a project used to describe and document RESTful APIs. The core of the 
+  project is the [OpenAPI Specification (OAS)](https://swagger.io/docs/specification/about/). 
+  This library implements v2.0 of the spec. Unlike Servant it is language-agnostic and thus is 
+  quite popular among developers in different languages. It has also existed for a longer time 
+  and has more helpful tooling.
+  .
+  This package provides means to generate a Swagger/OAS specification for a Servant API
+  and also to partially test whether an API conforms with its specification.
+  .
+  Generated Swagger specification then can be used for many things such as
+  .
+  * displaying interactive documentation using [Swagger UI](http://swagger.io/swagger-ui/);
+  .
+  * generating clients and servers in many languages using [Swagger Codegen](http://swagger.io/swagger-codegen/);
+  .
+  * and [many others](http://swagger.io/open-source-integrations/).
+homepage:            https://github.com/haskell-servant/servant-swagger
+bug-reports:         https://github.com/haskell-servant/servant-swagger/issues
+license:             BSD3
+license-file:        LICENSE
+author:              David Johnson, Nickolay Kudasov
+maintainer:          nickolay.kudasov@gmail.com
+copyright:           (c) 2015-2018, Servant contributors
+category:            Web, Servant, Swagger
+build-type:          Custom
+cabal-version:       1.18
+tested-with: GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.2
+
+extra-source-files:
+    README.md
+  , CHANGELOG.md
+  , example/server/*.hs
+  , example/src/*.hs
+  , example/test/*.hs
+  , example/*.cabal
+  , example/swagger.json
+  , example/LICENSE
+extra-doc-files:
+    example/src/*.hs
+  , example/test/*.hs
+
+source-repository head
+  type:     git
+  location: https://github.com/haskell-servant/servant-swagger.git
+
+custom-setup
+  setup-depends:
+    base >=4.9 && <4.15,
+    Cabal >= 1.24 && <3.3,
+    cabal-doctest >=1.0.6 && <1.1
+
+library
+  ghc-options:         -Wall
+  exposed-modules:
+    Servant.Swagger
+    Servant.Swagger.Test
+    Servant.Swagger.TypeLevel
+
+    -- Internal modules
+    Servant.Swagger.Internal
+    Servant.Swagger.Internal.Orphans
+    Servant.Swagger.Internal.Test
+    Servant.Swagger.Internal.TypeLevel
+    Servant.Swagger.Internal.TypeLevel.API
+    Servant.Swagger.Internal.TypeLevel.Every
+    Servant.Swagger.Internal.TypeLevel.TMap
+  hs-source-dirs:      src
+  build-depends:       aeson                     >=1.4.2.0 && <1.6
+                     , aeson-pretty              >=0.8.7    && <0.9
+                     , base                      >=4.9.1.0  && <4.15
+                     , base-compat               >=0.10.5   && <0.12
+                     , bytestring                >=0.10.8.1 && <0.11
+                     , http-media                >=0.7.1.3  && <0.9
+                     , insert-ordered-containers >=0.2.1.0  && <0.3
+                     , lens                      >=4.17     && <4.20
+                     , servant                   >=0.18.1   && <0.19
+                     , singleton-bool            >=0.1.4    && <0.2
+                     , swagger2                  >=2.3.0.1  && <2.7
+                     , text                      >=1.2.3.0  && <1.3
+                     , unordered-containers      >=0.2.9.0  && <0.3
+
+                     , hspec
+                     , QuickCheck
+  default-language:    Haskell2010
+
+test-suite doctests
+  ghc-options:      -Wall
+  build-depends:
+    base,
+    directory >= 1.0,
+    doctest >= 0.18 && <0.19,
+    servant,
+    QuickCheck,
+    filepath
+  default-language: Haskell2010
+  hs-source-dirs:   test
+  main-is:          doctests.hs
+  type:             exitcode-stdio-1.0
+
+test-suite spec
+  ghc-options:      -Wall
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Spec.hs
+  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.8
+  build-depends:    base
+                  , base-compat
+                  , aeson
+                  , hspec >=2.6.0 && <2.8
+                  , QuickCheck
+                  , lens
+                  , lens-aeson >=1.0.2    && <1.2
+                  , servant
+                  , servant-swagger
+                  , swagger2
+                  , text
+                  , template-haskell
+                  , utf8-string >=1.0.1.1 && <1.1
+                  , time
+                  , vector
+  other-modules:
+    Servant.SwaggerSpec
+  default-language: Haskell2010
