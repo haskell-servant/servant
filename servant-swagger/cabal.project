@@ -1,0 +1,2 @@
+packages: .
+allow-newer: aeson-pretty-0.8.7:base-compat

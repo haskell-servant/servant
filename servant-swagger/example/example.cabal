@@ -1,0 +1,62 @@
+name:                example
+version:             1.0
+synopsis:            servant-swagger demonstration
+description:         servant-swagger demonstration
+license:             BSD3
+license-file:        LICENSE
+author:              David Johnson, Nickolay Kudasov
+maintainer:          nickolay.kudasov@gmail.com
+copyright:           (c) 2015-2016, Servant contributors
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+data-files:
+  swagger.json
+
+library
+  ghc-options:      -Wall
+  hs-source-dirs: src/
+  exposed-modules:
+    Todo
+  build-depends:  base
+                , aeson
+                , aeson-pretty
+                , bytestring
+                , lens
+                , servant
+                , servant-server
+                , servant-swagger
+                , swagger2
+                , text
+                , time
+  default-language: Haskell2010
+
+executable swagger-server
+  ghc-options:      -Wall
+  hs-source-dirs: server/
+  main-is: Main.hs
+  build-depends:  base
+                , example
+                , servant-server
+                , warp
+  default-language: Haskell2010
+
+test-suite swagger-server-spec
+  ghc-options:      -Wall
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Spec.hs
+  other-modules:
+    TodoSpec
+    Paths_example
+  build-depends:    base  == 4.*
+                  , base-compat >= 0.6.0
+                  , aeson >=0.11.2.0
+                  , bytestring
+                  , example
+                  , hspec
+                  , servant-swagger
+                  , QuickCheck
+                  , quickcheck-instances
+  default-language: Haskell2010
+
