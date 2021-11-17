@@ -614,7 +614,7 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 -- Erroring instance for 'HasLink' when a combinator is not fully applied
 instance TypeError (PartialApplication HasLink arr) => HasLink ((arr :: a -> b) :> sub)
   where
-    type MkLink (arr :> _) _ = TypeError (PartialApplication HasLink arr)
+    type MkLink (arr :> sub) _ = TypeError (PartialApplication HasLink arr)
     toLink = error "unreachable"
 
 -- Erroring instances for 'HasLink' for unknown API combinators
