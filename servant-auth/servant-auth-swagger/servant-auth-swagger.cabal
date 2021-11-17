@@ -33,8 +33,8 @@ library
   build-depends:
       base            >= 4.10    && < 4.16
     , text            >= 1.2.3.0 && < 1.3
-    , servant-swagger >= 1.1.5   && < 1.8
-    , swagger2        >= 2.2.2   && < 2.7
+    , servant-swagger >= 1.1.5   && < 2
+    , swagger2        >= 2.2.2   && < 3
     , servant         >= 0.13    && < 0.19
     , servant-auth    == 0.4.*
     , lens            >= 4.16.1  && < 5.1  
