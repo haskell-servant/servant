@@ -1,6 +1,5 @@
 # servant-swagger
 
-[![Build Status](https://travis-ci.org/haskell-servant/servant-swagger.svg?branch=master)](https://travis-ci.org/haskell-servant/servant-swagger)
 [![Hackage](https://img.shields.io/hackage/v/servant-swagger.svg)](http://hackage.haskell.org/package/servant-swagger)
 [![Stackage LTS](http://stackage.org/package/servant-swagger/badge/lts)](http://stackage.org/lts/package/servant-swagger)
 [![Stackage Nightly](http://stackage.org/package/servant-swagger/badge/nightly)](http://stackage.org/nightly/package/servant-swagger)
@@ -25,7 +24,7 @@ Generated Swagger specification then can be used for many things such as
 
 ### Usage
 
-Please refer to [haddock documentation](http://hackage.haskell.org/package/servant-swagger).
+Please refer to [haddock documentation](http://hackage.haskell.org/package/servant/servant-swagger).
 
 Some examples can be found in [`example/` directory](/example).
 
@@ -43,5 +42,5 @@ Many Swagger tools, including server and client code generation for many languag
 
 We are happy to receive bug reports, fixes, documentation enhancements, and other improvements.
 
-Please report bugs via the [github issue tracker](https://github.com/haskell-servant/servant-swagger/issues).
+Please report bugs via the [github issue tracker](https://github.com/haskell-servant/servant/issues).
 

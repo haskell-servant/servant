@@ -18,17 +18,17 @@ description:
   * generating clients and servers in many languages using [Swagger Codegen](http://swagger.io/swagger-codegen/);
   .
   * and [many others](http://swagger.io/open-source-integrations/).
-homepage:            https://github.com/haskell-servant/servant-swagger
-bug-reports:         https://github.com/haskell-servant/servant-swagger/issues
+homepage:            https://github.com/haskell-servant/servant/servant-swagger
+bug-reports:         https://github.com/haskell-servant/servant/issues
 license:             BSD3
 license-file:        LICENSE
-author:              David Johnson, Nickolay Kudasov
-maintainer:          nickolay.kudasov@gmail.com
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           (c) 2015-2018, Servant contributors
 category:            Web, Servant, Swagger
 build-type:          Custom
 cabal-version:       1.18
-tested-with: GHC ==8.0.2 || ==8.2.2 || ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.2
+tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2
 
 extra-source-files:
     README.md
@@ -45,7 +45,7 @@ extra-doc-files:
 
 source-repository head
   type:     git
-  location: https://github.com/haskell-servant/servant-swagger.git
+  location: https://github.com/haskell-servant/servant.git
 
 custom-setup
   setup-depends:
