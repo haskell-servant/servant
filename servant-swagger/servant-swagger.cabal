@@ -50,7 +50,6 @@ source-repository head
 custom-setup
   setup-depends:
     base >=4.9 && <5,
-    Cabal >= 1.24 && <3.3,
     cabal-doctest >=1.0.6 && <1.1
 
 library
@@ -69,7 +68,7 @@ library
     Servant.Swagger.Internal.TypeLevel.Every
     Servant.Swagger.Internal.TypeLevel.TMap
   hs-source-dirs:      src
-  build-depends:       aeson                     >=1.4.2.0 && <1.6
+  build-depends:       aeson                     >=2.0.1.0 && <3
                      , aeson-pretty              >=0.8.7    && <0.9
                      , base                      >=4.9.1.0  && <5
                      , base-compat               >=0.10.5   && <0.12
@@ -109,7 +108,7 @@ test-suite spec
   build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.8
   build-depends:    base
                   , base-compat
-                  , aeson
+                  , aeson >=2.0.1.0 && <3
                   , hspec >=2.6.0 && <2.8
                   , QuickCheck
                   , lens
