@@ -32,9 +32,7 @@ import           Data.ByteString.Lazy.Char8
                  (ByteString)
 import qualified Data.CaseInsensitive       as CI
 import           Data.Foldable
-                 (toList)
-import           Data.Foldable
-                 (fold)
+                 (fold, toList)
 import           Data.Hashable
                  (Hashable)
 import           Data.HashMap.Strict
