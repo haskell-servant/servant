@@ -55,6 +55,7 @@ library
     Servant.API.Status
     Servant.API.Stream
     Servant.API.Sub
+    Servant.API.TypeErrors
     Servant.API.TypeLevel
     Servant.API.UVerb
     Servant.API.UVerb.Union
