@@ -1,17 +1,18 @@
-{-# LANGUAGE CPP                    #-}
-{-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
@@ -23,19 +24,32 @@ import           Prelude.Compat
 
 import           Control.Concurrent
                  (ThreadId, forkIO, killThread)
+import           Control.Monad
+                 (join)
 import           Control.Monad.Error.Class
                  (throwError)
 import           Data.Aeson
+import           Data.ByteString
+                 (ByteString)
+import           Data.ByteString.Builder
+                 (byteString)
+import qualified Data.ByteString.Lazy             as LazyByteString
 import           Data.Char
                  (chr, isPrint)
 import           Data.Monoid ()
 import           Data.Proxy
+import           Data.SOP
+import           Data.Text
+                 (Text)
+import qualified Data.Text                        as Text
+import           Data.Text.Encoding
+                 (decodeUtf8, encodeUtf8)
 import           GHC.Generics
                  (Generic)
-import qualified Network.HTTP.Client                  as C
-import qualified Network.HTTP.Types                   as HTTP
+import qualified Network.HTTP.Client              as C
+import qualified Network.HTTP.Types               as HTTP
 import           Network.Socket
-import qualified Network.Wai                          as Wai
+import qualified Network.Wai                      as Wai
 import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe
                  (unsafePerformIO)
@@ -45,12 +59,14 @@ import           Web.FormUrlEncoded
 
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
-                 BasicAuthData (..), Capture, CaptureAll,
-                 DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
-                 Headers, JSON, NoContent (NoContent), Post, QueryFlag,
-                 QueryParam, QueryParams, Raw, ReqBody, addHeader)
+                 BasicAuthData (..), Capture, CaptureAll, DeleteNoContent,
+                 EmptyAPI, FormUrlEncoded, Fragment, FromHttpApiData (..), Get, Header, Headers,
+                 JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
+                 NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
+                 QueryParams, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..), UVerb, Union,
+                 WithStatus (WithStatus), addHeader)
 import           Servant.Client
-import qualified Servant.Client.Core.Auth    as Auth
+import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
@@ -63,7 +79,7 @@ _ = client comprehensiveAPIWithoutStreaming
 data Person = Person
   { _name :: String
   , _age  :: Integer
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Read, Generic)
 
 instance ToJSON Person
 instance FromJSON Person
@@ -73,6 +89,15 @@ instance FromForm Person
 
 instance Arbitrary Person where
   arbitrary = Person <$> arbitrary <*> arbitrary
+
+instance MimeRender PlainText Person where
+  mimeRender _ = LazyByteString.fromStrict . encodeUtf8 . Text.pack . show
+
+instance MimeUnrender PlainText Person where
+  mimeUnrender _ =
+    -- This does not handle any errors, but it should be fine for tests
+    Right . read . Text.unpack . decodeUtf8 . LazyByteString.toStrict
+
 
 alice :: Person
 alice = Person "Alice" 42
@@ -90,8 +115,13 @@ type Api =
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
+  -- This endpoint makes use of a 'Raw' server because it is not currently
+  -- possible to handle arbitrary binary query param values with
+  -- @servant-server@
+  :<|> "param-binary" :> QueryParam "payload" UrlEncodedByteString :> Raw
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
+  :<|> "fragment" :> Fragment String :> Get '[JSON] Person
   :<|> "rawSuccess" :> Raw
   :<|> "rawSuccessPassHeaders" :> Raw
   :<|> "rawFailure" :> Raw
@@ -102,9 +132,16 @@ type Api =
             ReqBody '[JSON] [(String, [Rational])] :>
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
+  :<|> "uverb-headers" :> UVerb 'GET '[JSON] '[ WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String ]
   :<|> "deleteContentType" :> DeleteNoContent
   :<|> "redirectWithCookie" :> Raw
   :<|> "empty" :> EmptyAPI
+  :<|> "uverb-success-or-redirect" :>
+            Capture "bool" Bool :>
+            UVerb 'GET '[PlainText] '[WithStatus 200 Person,
+                                      WithStatus 301 Text]
+  :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
+
 
 api :: Proxy Api
 api = Proxy
@@ -116,16 +153,23 @@ getCapture      :: String -> ClientM Person
 getCaptureAll   :: [String] -> ClientM [Person]
 getBody         :: Person -> ClientM Person
 getQueryParam   :: Maybe String -> ClientM Person
+getQueryParamBinary :: Maybe UrlEncodedByteString -> HTTP.Method -> ClientM Response
 getQueryParams  :: [String] -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
+getFragment     :: ClientM Person
 getRawSuccess   :: HTTP.Method -> ClientM Response
 getRawSuccessPassHeaders :: HTTP.Method -> ClientM Response
 getRawFailure   :: HTTP.Method -> ClientM Response
 getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
+getUVerbRespHeaders  :: ClientM (Union '[ WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String ])
 getDeleteContentType :: ClientM NoContent
 getRedirectWithCookie :: HTTP.Method -> ClientM Response
+uverbGetSuccessOrRedirect :: Bool
+                          -> ClientM (Union '[WithStatus 200 Person,
+                                              WithStatus 301 Text])
+uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
 
 getRoot
   :<|> getGet
@@ -134,16 +178,21 @@ getRoot
   :<|> getCaptureAll
   :<|> getBody
   :<|> getQueryParam
+  :<|> getQueryParamBinary
   :<|> getQueryParams
   :<|> getQueryFlag
+  :<|> getFragment
   :<|> getRawSuccess
   :<|> getRawSuccessPassHeaders
   :<|> getRawFailure
   :<|> getMultiple
   :<|> getRespHeaders
+  :<|> getUVerbRespHeaders
   :<|> getDeleteContentType
   :<|> getRedirectWithCookie
-  :<|> EmptyClient = client api
+  :<|> EmptyClient
+  :<|> uverbGetSuccessOrRedirect
+  :<|> uverbGetCreated = client api
 
 server :: Application
 server = serve api (
@@ -157,16 +206,30 @@ server = serve api (
                    Just "alice" -> return alice
                    Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
                    Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
+  :<|> const (Tagged $ \request respond ->
+          respond . maybe (Wai.responseLBS HTTP.notFound404 [] "Missing: payload")
+                          (Wai.responseLBS HTTP.ok200 [] . LazyByteString.fromStrict)
+                  . join
+                  . lookup "payload"
+                  $ Wai.queryString request
+       )
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
+  :<|> return alice
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
   :<|> (Tagged $ \ request respond -> (respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders $ request) "rawSuccess"))
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
+  :<|> (pure . Z . I . WithStatus $ addHeader 1729 $ addHeader "eg2" True)
   :<|> return NoContent
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
-  :<|> emptyServer)
+  :<|> emptyServer
+  :<|> (\shouldRedirect -> if shouldRedirect
+                              then respond (WithStatus @301 ("redirecting" :: Text))
+                              else respond (WithStatus @200 alice ))
+  :<|> respond (WithStatus @201 carol)
+  )
 
 type FailApi =
        "get" :> Raw
@@ -266,3 +329,12 @@ pathGen = fmap NonEmpty path
     filter (not . (`elem` ("?%[]/#;" :: String))) $
     filter isPrint $
     map chr [0..127]
+
+newtype UrlEncodedByteString = UrlEncodedByteString { unUrlEncodedByteString :: ByteString }
+
+instance ToHttpApiData UrlEncodedByteString where
+    toEncodedUrlPiece = byteString . HTTP.urlEncode True . unUrlEncodedByteString
+    toUrlPiece = decodeUtf8 . HTTP.urlEncode True . unUrlEncodedByteString
+
+instance FromHttpApiData UrlEncodedByteString where
+    parseUrlPiece = pure . UrlEncodedByteString . HTTP.urlDecode True . encodeUtf8

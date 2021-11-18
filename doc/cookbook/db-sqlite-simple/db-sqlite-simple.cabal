@@ -2,13 +2,13 @@ name:                cookbook-db-sqlite-simple
 version:             0.1
 synopsis:            Simple SQLite DB cookbook example
 homepage:            http://docs.servant.dev/
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 build-type:          Simple
 cabal-version:       >=1.10
-tested-with:         GHC==8.4.4, GHC==8.6.5, GHC==8.8.1
+tested-with:         GHC==8.6.5, GHC==8.8.3, GHC ==8.10.7
 
 executable cookbook-db-sqlite-simple
   main-is:             DBConnection.lhs
@@ -23,7 +23,7 @@ executable cookbook-db-sqlite-simple
                      , http-types >= 0.12
                      , markdown-unlit >= 0.4
                      , http-client >= 0.5
-                     , sqlite-simple >= 0.4
+                     , sqlite-simple >= 0.4.5.0
                      , transformers
   default-language:    Haskell2010
   ghc-options:         -Wall -pgmL markdown-unlit

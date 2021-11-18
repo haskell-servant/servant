@@ -49,8 +49,6 @@ import           Data.Maybe
                  (maybeToList)
 import           Data.Proxy
                  (Proxy (..))
-import           Data.Semigroup
-                 ((<>))
 import           Data.Sequence
                  (fromList)
 import           Data.String
@@ -141,7 +139,7 @@ instance Alt ClientM where
     a <!> b = a `catchError` \_ -> b
 
 instance RunClient ClientM where
-    runRequest = performRequest
+    runRequestAcceptStatus = performRequest
     throwClientError = throwError
 
 instance RunStreamingClient ClientM where
@@ -155,8 +153,8 @@ withClientM cm env k =
     let Codensity f = runExceptT $ flip runReaderT env $ unClientM cm
     in f k
 
-performRequest :: Request -> ClientM Response
-performRequest req = do
+performRequest :: Maybe [Status] -> Request -> ClientM Response
+performRequest acceptStatus req = do
     ClientEnv burl conn <- ask
     let (req', body) = requestToClientRequest burl req
     x <- ClientM $ lift $ lift $ Codensity $ \k -> do
@@ -165,7 +163,10 @@ performRequest req = do
             let sc = Client.getStatusCode res'
             lbs <- BSL.fromChunks <$> Streams.toList body'
             let res'' = clientResponseToResponse res' lbs
-            if sc >= 200 && sc < 300
+                goodStatus = case acceptStatus of
+                  Nothing -> sc >= 200 && sc < 300
+                  Just good -> sc `elem` (statusCode <$> good)
+            if goodStatus
             then k (Right res'')
             else k (Left (mkFailureResponse burl req res''))
 

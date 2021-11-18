@@ -9,11 +9,11 @@ introduces the core features of servant. After this article, you should be able
 to write your first servant webservices, learning the rest from the haddocks'
 examples.
 
-The central documentation can be found [here](http://docs.servant.dev/).
+The core documentation can be found [here](http://docs.servant.dev/).
 Other blog posts, videos and slides can be found on the
 [website](http://www.servant.dev/).
 
-If you need help, drop by the IRC channel (#servant on freenode) or [mailing
+If you need help, drop by the IRC channel (#haskell-servant on libera.chat) or [mailing
 list](https://groups.google.com/forum/#!forum/haskell-servant).
 
 ## Contributing
@@ -32,7 +32,7 @@ See `CONTRIBUTING.md`
         - It's a good idea to separate these steps, as tests often pass, if they compile :)
     - See `cabal.project` to selectively `allow-newer`
     - If some packages are broken, on your discretisation there are two options:
-        - Fix them and make PRs: it's good idea to test against older `servant` version too.
+        - Fix them and make PRs: it's a good idea to test against older `servant` version too.
         - Temporarily comment out broken package
     - If you make a commit for `servant-universe`, you can use it as submodule in private projects to test even more
 - When ripples are cleared out:
@@ -40,29 +40,9 @@ See `CONTRIBUTING.md`
     - `git push --tags`
     - `cabal sdist` and `cabal upload`
 
-## travis
+## TechEmpower framework benchmarks
 
-`.travis.yml` is generated using `make-travis-yml` tool, in
-[multi-ghc-travis](https://github.com/haskell-hvr/multi-ghc-travis) repository.
-
-To regenerate the script use (*note:* atm you need to comment `doc/cookbook/` packages).
-
-```sh
-runghc ~/Documents/other-haskell/multi-ghc-travis/make_travis_yml_2.hs regenerate
-```
-
-In case Travis jobs fail due failing build of dependency, you can temporarily
-add `constraints` to the `cabal.project`, and regenerate the `.travis.yml`.
-For example, the following will disallow single `troublemaker-13.37` package version:
-
-```
-constraints:
-  troublemaker <13.37 && > 13.37
-```
-
-## TechEmpower framework bechmarks
-
-We develop & maintain the servant TFB entry in https://github.com/haskell-servant/FrameworkBenchmarks/
+We develop and maintain the servant TFB entry in https://github.com/haskell-servant/FrameworkBenchmarks/
 
 To verify (i.e. compile and test that it works)
 
@@ -82,4 +62,10 @@ To compare with `reitit` (Clojure framework)
 ./tfb --mode benchmark --test reitit reitit-async reitit-jdbc servant servant-beam servant-psql-simple --type json plaintext db fortune
 ```
 
-And visualise the results at https://www.techempower.com/benchmarks/#section=test
+You can see the visualised results at https://www.techempower.com/benchmarks/#section=test
+
+## Nix
+
+A developer shell.nix file is provided in the `nix` directory
+
+See  [nix/README.md](nix/README.md)

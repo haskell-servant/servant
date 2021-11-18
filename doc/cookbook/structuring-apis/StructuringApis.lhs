@@ -144,7 +144,7 @@ simpleAPIServer
   :: m [a]
   -> (i -> m a)
   -> (a -> m NoContent)
-  -> Server (SimpleAPI name a i) m
+  -> ServerT (SimpleAPI name a i) m
 simpleAPIServer listAs getA postA =
   listAs :<|> getA :<|> postA
 

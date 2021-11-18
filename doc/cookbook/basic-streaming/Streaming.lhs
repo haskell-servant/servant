@@ -8,7 +8,10 @@ In other words, without streaming libraries.
 - Some basic usage doesn't require usage of streaming libraries,
   like `conduit`, `pipes`, `machines` or `streaming`.
   We have bindings for them though.
-- This is similar example file, which is bundled with each of the packages (TODO: links)
+- Similar example is bundled with each of our streaming library interop packages (see 
+[servant-pipes](https://github.com/haskell-servant/servant/blob/master/servant-pipes/example/Main.hs),
+[servant-conduit](https://github.com/haskell-servant/servant/blob/master/servant-conduit/example/Main.hs) and
+[servant-machines](https://github.com/haskell-servant/servant/blob/master/servant-machines/example/Main.hs))
 - `SourceT` doesn't have *Prelude* with handy combinators, so we have to write
   things ourselves. (Note to self: `mapM` and `foldM` would be handy to have). 
 

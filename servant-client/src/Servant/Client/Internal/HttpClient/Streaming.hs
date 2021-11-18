@@ -47,7 +47,7 @@ import           Data.Time.Clock
                  (getCurrentTime)
 import           GHC.Generics
 import           Network.HTTP.Types
-                 (statusCode)
+                 (Status, statusCode)
 
 import qualified Network.HTTP.Client                as Client
 
@@ -112,7 +112,7 @@ instance Alt ClientM where
   a <!> b = a `catchError` \_ -> b
 
 instance RunClient ClientM where
-  runRequest = performRequest
+  runRequestAcceptStatus = performRequest
   throwClientError = throwError
 
 instance RunStreamingClient ClientM where
@@ -130,14 +130,14 @@ withClientM cm env k =
 -- streaming response types ('SourceT', 'Conduit', pipes 'Proxy' or 'Machine').
 -- For those you have to use 'withClientM'.
 --
--- /Note:/ we 'force' the result, so the likehood of accidentally leaking a
+-- /Note:/ we 'force' the result, so the likelihood of accidentally leaking a
 -- connection is smaller. Use with care.
 --
 runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ClientError a)
 runClientM cm env = withClientM cm env (evaluate . force)
 
-performRequest :: Request -> ClientM Response
-performRequest req = do
+performRequest :: Maybe [Status] -> Request -> ClientM Response
+performRequest acceptStatus req = do
     -- TODO: should use Client.withResponse here too
   ClientEnv m burl cookieJar' createClientRequest <- ask
   let clientRequest = createClientRequest burl req
@@ -165,10 +165,14 @@ performRequest req = do
       let status = Client.responseStatus response
           status_code = statusCode status
           ourResponse = clientResponseToResponse id response
-      unless (status_code >= 200 && status_code < 300) $
+          goodStatus = case acceptStatus of
+            Nothing -> status_code >= 200 && status_code < 300
+            Just good -> status `elem` good
+      unless goodStatus $ do
         throwError $ mkFailureResponse burl req ourResponse
       return ourResponse
 
+-- | TODO: support UVerb ('acceptStatus' argument, like in 'performRequest' above).
 performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a
 performWithStreamingRequest req k = do
   m <- asks manager

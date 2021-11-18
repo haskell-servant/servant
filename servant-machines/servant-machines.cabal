@@ -1,7 +1,6 @@
 cabal-version:       >=1.10
 name:                servant-machines
-version:             0.15
-x-revision:          1
+version:             0.15.1
 
 synopsis:            Servant Stream support for machines
 category:            Servant, Web, Enumerator
@@ -11,18 +10,13 @@ description:         Servant Stream support for machines.
 
 homepage:            http://docs.servant.dev/
 bug-reports:         http://github.com/haskell-servant/servant/issues
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2018-2019 Servant Contributors
 build-type:          Simple
-tested-with:
-  GHC ==8.0.2
-   || ==8.2.2
-   || ==8.4.4
-   || ==8.6.5
-   || ==8.8.1
+tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2
 
 extra-source-files:
   CHANGELOG.md
@@ -35,10 +29,10 @@ library
   exposed-modules:     Servant.Machines
   build-depends:
       base          >=4.9      && <5
-    , bytestring    >=0.10.8.1 && <0.11
+    , bytestring    >=0.10.8.1 && <0.12
     , machines      >=0.6.4    && <0.8
     , mtl           >=2.2.2    && <2.3
-    , servant       >=0.15     && <0.17
+    , servant       >=0.15     && <0.19
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options: -Wall
@@ -57,8 +51,8 @@ test-suite example
     , servant
     , machines
     , servant-machines
-    , servant-server >=0.15     && <0.17
-    , servant-client >=0.15     && <0.17
+    , servant-server >=0.15     && <0.19
+    , servant-client >=0.15     && <0.19
     , wai            >=3.2.1.2  && <3.3
     , warp           >=3.2.25   && <3.4
     , http-client

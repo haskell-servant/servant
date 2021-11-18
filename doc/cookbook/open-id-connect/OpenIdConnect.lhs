@@ -8,8 +8,8 @@ some login token would be saved in the user agent local storage.
 
 Workflow:
 
-1.  user is presentend with a login button,
-2.  when the user click on the button it is redirected to the OIDC
+1.  user is presented with a login button,
+2.  when the user clicks on the button it is redirected to the OIDC
     provider,
 3.  the user login in the OIDC provider,
 4.  the OIDC provider will redirect the user and provide a `code`,
@@ -221,9 +221,9 @@ The `AuthInfo` is about the infos we can grab from OIDC provider.
 
 To be more precise, the user should come with a `code` (a token) and
 POSTing that code to the correct OIDC provider endpoint should return a JSON
-object. One of the field should be named `id_token` which should be a
-JWT containing all the informations we need. Depending on the scopes we
-asked we might get more informations.
+object. One of the fields should be named `id_token` which should be a
+JWT containing all the information we need. Depending on the scopes we
+asked we might get more information.
 
 ``` haskell
 -- | @AuthInfo@
@@ -248,16 +248,16 @@ instance JSON.ToJSON AuthInfo where
 type LoginHandler = AuthInfo -> IO (Either Text User)
 ```
 
-The `handleLoggedIn` is that part that will retrieve the informations from
+The `handleLoggedIn` is that part that will retrieve the information from
 the user once he is redirected from the OIDC Provider after login.
 
 If the user is redirected to the `redirect_uri` but with an `error` query
-parameter then it means something goes wrong.
+parameter then it means something went wrong.
 If there is no error query param but a `code` query param it means the user
-sucessfully logged in. From there we need to make a request to the token
-endpoint of the OIDC provider. Its a POST that should contains the code
-as well as the client id & secret.
-This is the role of the `requestTokens` to make this HTTP POST.
+successfully logged in. From there we need to make a request to the token
+endpoint of the OIDC provider. It's a POST that should contain the code
+as well as the client id and secret.
+Making this HTTP POST is the responsibility of `requestTokens`.
 
 From there we extract the `claims` of the JWT contained in one of the value
 of the JSON returned by the POST HTTP Request.
@@ -329,12 +329,12 @@ data Customer = Customer {
   }
 ```
 
-Here is the code that display the homepage.
+Here is the code that displays the homepage.
 It should contain a link to the the `/login` URL.
-When the user will click on this link it will be redirected to Google login page
-with some generated informations.
+When the user clicks on this link it will be redirected to Google login page
+with some generated information.
 
-The page also display the content of the local storage.
+The page also displays the content of the local storage.
 And in particular the items `api-key` and `user-id`.
 Those items should be set after a successful login when the user is redirected to
 `/login/cb`.
@@ -366,7 +366,7 @@ instance ToMarkup Homepage where
 We need some helpers to generate random string for generating state and API Keys.
 
 ``` haskell
--- | generate a random Bystestring, not necessarily extremely good randomness
+-- | generate a random ByteString, not necessarily extremely good randomness
 -- still the password will be long enough to be very difficult to crack
 genRandomBS :: IO ByteString
 genRandomBS = do

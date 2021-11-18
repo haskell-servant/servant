@@ -11,11 +11,9 @@
 
 module Servant.ForeignSpec where
 
-import           Data.Monoid
-                 ((<>))
 import           Data.Proxy
-import           Servant.Test.ComprehensiveAPI
 import           Servant.Foreign
+import           Servant.Test.ComprehensiveAPI
 import           Servant.Types.SourceT
                  (SourceT)
 
@@ -103,6 +101,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
           [ QueryArg (Arg "flag" "boolX") Flag ]
+          Nothing
       , _reqMethod     = "GET"
       , _reqHeaders    = [HeaderArg $ Arg "header" "maybe listX of stringX"]
       , _reqBody       = Nothing
@@ -115,6 +114,7 @@ listFromAPISpec = describe "listFromAPI" $ do
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
           [ QueryArg (Arg "param" "maybe intX") Normal ]
+          Nothing
       , _reqMethod     = "POST"
       , _reqHeaders    = []
       , _reqBody       = Just "listX of stringX"
@@ -137,8 +137,9 @@ listFromAPISpec = describe "listFromAPI" $ do
     shouldBe putReq $ defReq
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
-          -- Shoud this be |intX| or |listX of intX| ?
+          -- Should this be |intX| or |listX of intX| ?
           [ QueryArg (Arg "params" "listX of intX") List ]
+          Nothing
       , _reqMethod     = "PUT"
       , _reqHeaders    = []
       , _reqBody       = Just "stringX"
@@ -152,6 +153,7 @@ listFromAPISpec = describe "listFromAPI" $ do
           [ Segment $ Static "test"
           , Segment $ Cap (Arg "id" "intX") ]
           []
+          Nothing
       , _reqMethod     = "DELETE"
       , _reqHeaders    = []
       , _reqBody       = Nothing
@@ -165,6 +167,7 @@ listFromAPISpec = describe "listFromAPI" $ do
           [ Segment $ Static "test"
           , Segment $ Cap (Arg "ids" "listX of intX") ]
           []
+          Nothing
       , _reqMethod     = "GET"
       , _reqHeaders    = []
       , _reqBody       = Nothing

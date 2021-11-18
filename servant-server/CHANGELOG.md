@@ -1,6 +1,93 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.18.3
+------
+
+### Significant changes
+
+- Add response header support to UVerb (#1420)
+
+### Other changes
+
+- Support GHC-9.0.1.
+- Bump `bytestring`, `hspec` and `base64-bytestring` dependencies.
+
+0.18.2
+------
+
+### Significant changes
+
+- Support `Fragment` combinator.
+
+0.18.1
+------
+
+### Significant changes
+
+- Union verbs
+
+### Other changes
+
+- Bump "tested-with" ghc versions
+- Allow newer dependencies
+
+0.18
+----
+
+### Significant changes
+
+- Support for ghc8.8 (#1318, #1326, #1327)
+
+- Configurable error messages for automatic errors thrown by servant,
+  like "no route" or "could not parse json body" (#1312, #1326, #1327)
+
+
+0.17
+----
+
+### Significant changes
+
+- Add NoContentVerb [#1028](https://github.com/haskell-servant/servant/issues/1028) [#1219](https://github.com/haskell-servant/servant/pull/1219) [#1228](https://github.com/haskell-servant/servant/pull/1228)
+
+  The `NoContent` API endpoints should now use `NoContentVerb` combinator.
+  The API type changes are usually of the kind
+
+  ```diff
+  - :<|> PostNoContent '[JSON] NoContent
+  + :<|> PostNoContent
+  ```
+
+  i.e. one doesn't need to specify the content-type anymore. There is no content.
+
+- `Capture` can be `Lenient` [#1155](https://github.com/haskell-servant/servant/issues/1155) [#1156](https://github.com/haskell-servant/servant/pull/1156)
+
+  You can specify a lenient capture as
+
+  ```haskell
+  :<|> "capture-lenient"  :> Capture' '[Lenient] "foo" Int :> GET
+  ```
+
+  which will make the capture always succeed. Handlers will be of the
+  type `Either String CapturedType`, where `Left err` represents
+  the possible parse failure.
+
+- *servant-server* use queryString to parse QueryParam, QueryParams and QueryFlag [#1249](https://github.com/haskell-servant/servant/pull/1249) [#1262](https://github.com/haskell-servant/servant/pull/1262)
+
+  Some APIs need query parameters rewriting, e.g. in order to support
+   for multiple casing (camel, snake, etc) or something to that effect.
+
+  This could be easily achieved by using WAI Middleware and modifying
+  request's `Query`. But QueryParam, QueryParams and QueryFlag use
+  `rawQueryString`. By using `queryString` rather then `rawQueryString`
+  we can enable such rewritings.
+
+- *servant* *servant-server* Make packages `build-type: Simple` [#1263](https://github.com/haskell-servant/servant/pull/1263)
+
+  We used `build-type: Custom`, but it's problematic e.g.
+  for cross-compiling. The benefit is small, as the doctests
+  can be run other ways too (though not so conveniently).
+
 0.16.2
 ------
 

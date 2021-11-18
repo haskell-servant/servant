@@ -254,7 +254,7 @@ loginHandler cookieSettings jwtSettings form = do
           liftIO $ pushLogStrLn logset $ toLogStr logMsg
           throwError err401
         Just applyCookies -> do
-          let successMsg = logMsg{message = "AdminUser succesfully authenticated!"}
+          let successMsg = logMsg{message = "AdminUser successfully authenticated!"}
           liftIO $ pushLogStrLn logset $ toLogStr successMsg
           pure $ applyCookies successMsg
 loginHandler _ _ _ = throwError err401
@@ -287,7 +287,7 @@ mkApp cfg cs jwts ctx =
       (flip runReaderT ctx) (adminServer cs jwts)
 ```
 
-One footenote: because we'd like our logs to be in JSON form, we'll also create a `Middleware` object
+One footnote: because we'd like our logs to be in JSON form, we'll also create a `Middleware` object
 so that `Warp` *also* will emit logs as JSON. This will ensure *all* logs are emitted as JSON:
 
 ```haskell

@@ -1,11 +1,12 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Servant.Server.Internal.Context where
 
@@ -20,7 +21,7 @@ import           GHC.TypeLits
 --
 -- If you are using combinators that require a non-empty 'Context' you have to
 -- use 'Servant.Server.serveWithContext' and pass it a 'Context' that contains all
--- the values your combinators need. A 'Context' is essentially a heterogenous
+-- the values your combinators need. A 'Context' is essentially a heterogeneous
 -- list and accessing the elements is being done by type (see 'getContextEntry').
 -- The parameter of the type 'Context' is a type-level list reflecting the types
 -- of the contained context entries. To create a 'Context' with entries, use the
@@ -44,6 +45,20 @@ instance Eq (Context '[]) where
     _ == _ = True
 instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
     x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
+
+-- | Append two type-level lists.
+--
+-- Hint: import it as
+--
+-- > import Servant.Server (type (.++))
+type family (.++) (l1 :: [*]) (l2 :: [*]) where
+  '[] .++ a = a
+  (a ': as) .++ b = a ': (as .++ b)
+
+-- | Append two contexts.
+(.++) :: Context l1 -> Context l2 -> Context (l1 .++ l2)
+EmptyContext .++ a = a
+(a :. as) .++ b = a :. (as .++ b)
 
 -- | This class is used to access context entries in 'Context's. 'getContextEntry'
 -- returns the first value where the type matches:

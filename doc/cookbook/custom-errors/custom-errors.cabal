@@ -1,0 +1,25 @@
+name:                cookbook-custom-errors
+version:             0.1
+synopsis:            Return custom error messages from combinators
+homepage:            http://docs.servant.dev
+license:             BSD-3-Clause
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+build-type:          Simple
+cabal-version:       >=1.10
+tested-with:         GHC==8.6.5, GHC==8.8.3, GHC ==8.10.7
+
+executable cookbook-custom-errors
+  main-is:             CustomErrors.lhs
+  build-depends:       base == 4.*
+                     , aeson
+                     , servant
+                     , servant-server
+                     , string-conversions
+                     , text
+                     , wai
+                     , warp
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit

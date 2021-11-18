@@ -52,11 +52,11 @@
 
 ```
 
-## GET /capture/:foo
+## GET /capture/:bar
 
 ### Captures:
 
-- *foo*: Capture foo Int
+- *bar*: example description
 
 ### Response:
 
@@ -165,6 +165,28 @@
 ```
 
 ## GET /foo
+
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+```javascript
+
+```
+
+## GET /fragment
+
+### Fragment:
+
+- *foo*: Fragment Int
 
 ### Response:
 

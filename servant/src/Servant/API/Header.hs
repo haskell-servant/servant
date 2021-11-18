@@ -23,7 +23,7 @@ import           Servant.API.Modifiers
 -- >>> type MyApi = "view-my-referer" :> Header "from" Referer :> Get '[JSON] Referer
 type Header = Header' '[Optional, Strict]
 
-data Header' (mods :: [*]) (sym :: Symbol) a
+data Header' (mods :: [*]) (sym :: Symbol) (a :: *)
     deriving Typeable
 
 -- $setup

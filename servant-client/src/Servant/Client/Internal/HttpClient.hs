@@ -46,15 +46,13 @@ import qualified Data.ByteString.Lazy        as BSL
 import           Data.Either
                  (either)
 import           Data.Foldable
-                 (toList)
+                 (foldl',toList)
 import           Data.Functor.Alt
                  (Alt (..))
 import           Data.Maybe
                  (maybe, maybeToList)
 import           Data.Proxy
                  (Proxy (..))
-import           Data.Semigroup
-                 ((<>))
 import           Data.Sequence
                  (fromList)
 import           Data.String
@@ -65,7 +63,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (hContentType, renderQuery, statusCode)
+                 (hContentType, renderQuery, statusCode, urlEncode, Status)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
@@ -155,14 +153,14 @@ instance Alt ClientM where
   a <!> b = a `catchError` \_ -> b
 
 instance RunClient ClientM where
-  runRequest = performRequest
+  runRequestAcceptStatus = performRequest
   throwClientError = throwError
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ClientError a)
 runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
 
-performRequest :: Request -> ClientM Response
-performRequest req = do
+performRequest :: Maybe [Status] -> Request -> ClientM Response
+performRequest acceptStatus req = do
   ClientEnv m burl cookieJar' createClientRequest <- ask
   let clientRequest = createClientRequest burl req
   request <- case cookieJar' of
@@ -183,8 +181,11 @@ performRequest req = do
   let status = Client.responseStatus response
       status_code = statusCode status
       ourResponse = clientResponseToResponse id response
-  unless (status_code >= 200 && status_code < 300) $
-      throwError $ mkFailureResponse burl req ourResponse
+      goodStatus = case acceptStatus of
+        Nothing -> status_code >= 200 && status_code < 300
+        Just good -> status `elem` good
+  unless goodStatus $ do
+    throwError $ mkFailureResponse burl req ourResponse
   return ourResponse
   where
     requestWithoutCookieJar :: Client.Manager -> Client.Request -> ClientM (Client.Response BSL.ByteString)
@@ -237,7 +238,7 @@ defaultMakeClientRequest burl r = Client.defaultRequest
     , Client.path = BSL.toStrict
                   $ fromString (baseUrlPath burl)
                  <> toLazyByteString (requestPath r)
-    , Client.queryString = renderQuery True . toList $ requestQueryString r
+    , Client.queryString = buildQueryString . toList $ requestQueryString r
     , Client.requestHeaders =
       maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
     , Client.requestBody = body
@@ -287,6 +288,13 @@ defaultMakeClientRequest burl r = Client.defaultRequest
     isSecure = case baseUrlScheme burl of
         Http -> False
         Https -> True
+
+    -- Query string builder which does not do any encoding
+    buildQueryString = ("?" <>) . foldl' addQueryParam mempty
+
+    addQueryParam qs (k, v) =
+          qs <> (if BS.null qs then mempty else "&") <> urlEncode True k <> foldMap ("=" <>) v
+
 
 catchConnectionError :: IO a -> IO (Either ClientError a)
 catchConnectionError action =

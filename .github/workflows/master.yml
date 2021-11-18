@@ -1,0 +1,159 @@
+name: CI
+
+# Trigger the workflow on push or pull request, but only for the master branch
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  cabal:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        cabal: ["3.4"]
+        ghc:
+          - "8.6.5"
+          - "8.8.4"
+          - "8.10.7"
+          - "9.0.1"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: haskell/actions/setup@v1
+      id: setup-haskell-cabal
+      name: Setup Haskell
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+
+    - name: Freeze
+      run: |
+        cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
+        cabal freeze
+
+    - uses: actions/cache@v2.1.3
+      name: Cache ~/.cabal/store and dist-newstyle
+      with:
+        path: |
+          ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          dist-newstyle
+        key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.ghc }}-
+
+    - name: Configure
+      run: |
+        # Using separate store-dir because default one already has 'ghc-paths' package installed
+        # with hardcoded path to ghcup's GHC path (which it was built with). This leads to failure in
+        # doctest, as it tries to invoke that GHC, and it doesn't exist here.
+        cabal --store-dir /tmp/cabal-store install --ignore-project -j2 doctest --constraint='doctest ^>=0.18'
+
+    - name: Build
+      run: |
+        cabal build all
+
+    - name: Test
+      run: |
+        cabal test all
+
+    - name: Run doctests
+      # doctests are broken on GHC 9 due to compiler bug:
+      # https://gitlab.haskell.org/ghc/ghc/-/issues/19460
+      continue-on-error: ${{ matrix.ghc == '9.0.1' }}
+      run: |
+        # Necessary for doctest to be found in $PATH
+        export PATH="$HOME/.cabal/bin:$PATH"
+
+        # Filter out base-compat-batteries from .ghc.environment.*, as its modules
+        # conflict with those of base-compat.
+        #
+        # FIXME: This is an ugly hack. Ultimately, we'll want to use cabal-doctest
+        # (or cabal v2-doctest, if it ever lands) to provide a clean GHC environment.
+        # This might allow running doctests in GHCJS build as well.
+        perl -i -e 'while (<ARGV>) { print unless /package-id\s+(base-compat-batteries)-\d+(\.\d+)*/; }' .ghc.environment.*
+
+        (cd servant && doctest src)
+        (cd servant-client && doctest src)
+        (cd servant-client-core && doctest src)
+        (cd servant-http-streams && doctest src)
+        (cd servant-docs && doctest src)
+        (cd servant-foreign && doctest src)
+        (cd servant-server && doctest src)
+        (cd servant-machines && doctest src)
+        (cd servant-conduit && doctest src)
+        (cd servant-pipes && doctest src)
+
+  stack:
+    name: stack / ghc ${{ matrix.ghc }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        stack: ["2.7.3"]
+        ghc: ["8.10.4"]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: haskell/actions/setup@v1
+      name: Setup Haskell Stack
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        stack-version: ${{ matrix.stack }}
+
+    - uses: actions/cache@v2.1.3
+      name: Cache ~/.stack
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-${{ matrix.ghc }}-stack
+
+    - name: Install dependencies
+      run: |
+        stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks --only-dependencies
+
+    - name: Build
+      run: |
+        stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
+
+    - name: Test
+      run: |
+        stack test --system-ghc
+
+  ghcjs:
+    name: ubuntu-latest / ghcjs 8.6
+    runs-on: "ubuntu-latest"
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: cachix/install-nix-action@v13
+      with:
+        extra_nix_config: |
+          trusted-public-keys = ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI=1aba6f367982bd6dd78ec2fda75ab246a62d32c5 cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+          substituters = https://nixcache.reflex-frp.org https://cache.nixos.org/
+    - name: Setup
+      run: |
+        # Override cabal.project with the lightweight GHCJS one
+        cp cabal.ghcjs.project cabal.project
+        cat cabal.project
+        nix-shell ghcjs.nix --run "cabal v2-update && cabal v2-freeze"
+
+    - uses: actions/cache@v2.1.3
+      name: Cache ~/.cabal/store and dist-newstyle
+      with:
+        path: |
+          ~/.cabal/store
+          dist-newstyle
+        key: ${{ runner.os }}-ghcjs8.6-${{ hashFiles('cabal.project.freeze') }}
+        restore-keys: |
+          ${{ runner.os }}-ghcjs8.6-
+
+    - name: Build
+      run: |
+        nix-shell ghcjs.nix --run "cabal v2-build --ghcjs --enable-tests --enable-benchmarks all"
+
+    - name: Tests
+      run: |
+        nix-shell ghcjs.nix --run ".github/run-ghcjs-tests.sh"

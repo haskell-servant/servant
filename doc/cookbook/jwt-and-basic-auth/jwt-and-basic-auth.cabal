@@ -4,14 +4,14 @@ synopsis:            JWT and basic access authentication cookbook example
 description:         Using servant-auth to support both JWT-based and basic
                      authentication.
 homepage:            http://docs.servant.dev/
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 category:            Servant
 build-type:          Simple
 cabal-version:       >=1.10
-tested-with:         GHC==8.4.4, GHC==8.6.5, GHC==8.8.1
+tested-with:         GHC==8.6.5, GHC==8.8.3, GHC ==8.10.7
 
 executable cookbook-jwt-and-basic-auth
   main-is:             JWTAndBasicAuth.lhs
@@ -22,7 +22,7 @@ executable cookbook-jwt-and-basic-auth
                      , servant
                      , servant-client
                      , servant-server
-                     , servant-auth ==0.3.*
+                     , servant-auth == 0.4.*
                      , servant-auth-server >= 0.3.1.0
                      , warp >= 3.2
                      , wai >= 3.2

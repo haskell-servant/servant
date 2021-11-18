@@ -47,8 +47,6 @@ import qualified Data.ByteString.Lazy             as LBS
 import qualified Data.ByteString.Lazy.Char8       as LBS8
 import           Data.List.NonEmpty
                  (NonEmpty (..))
-import           Data.Monoid
-                 ((<>))
 import           Data.Proxy
                  (Proxy)
 import           Data.Typeable

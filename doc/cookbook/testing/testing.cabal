@@ -3,14 +3,14 @@ version:             0.0.1
 synopsis:            Common testing patterns in Servant apps
 description:         This recipe includes various strategies for writing tests for Servant.
 homepage:            http://docs.servant.dev/
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 category:            Servant
 build-type:          Simple
 cabal-version:       >=1.10
-tested-with:         GHC==8.4.4, GHC==8.6.5, GHC==8.8.1
+tested-with:         GHC==8.6.5, GHC==8.8.3, GHC ==8.10.7
 
 executable cookbook-testing
   main-is:             Testing.lhs
@@ -23,7 +23,7 @@ executable cookbook-testing
                      , servant
                      , servant-client
                      , servant-server
-                     , servant-quickcheck
+                     , servant-quickcheck >= 0.0.10
                      , http-client
                      , http-types >= 0.12
                      , hspec

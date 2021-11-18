@@ -44,8 +44,6 @@ import           Data.Maybe
                  (isJust)
 import           Data.Monoid ()
 import           Data.Proxy
-import           Data.Semigroup
-                 ((<>))
 import           GHC.Generics
                  (Generic)
 import qualified Network.HTTP.Types               as HTTP
@@ -78,7 +76,7 @@ _ = client comprehensiveAPIWithoutStreaming
 
 spec :: Spec
 spec = describe "Servant.HttpStreams" $ do
-    sucessSpec
+    successSpec
     failSpec
     wrappedApiSpec
     basicAuthSpec
@@ -270,8 +268,8 @@ runClientUnsafe x burl = withClientEnvIO burl (runClientMUnsafe x)
   where
     runClientMUnsafe x env = withClientM x env return
 
-sucessSpec :: Spec
-sucessSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+successSpec :: Spec
+successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     it "Servant.API.Get root" $ \(_, baseUrl) -> do
       left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
 
@@ -495,7 +493,7 @@ startWaiApp app = do
     (port, socket) <- openTestSocket
     let settings = setPort port $ defaultSettings
     thread <- forkIO $ runSettingsSocket settings socket app
-    return (thread, BaseUrl Http "localhost" port "")
+    return (thread, BaseUrl Http "127.0.0.1" port "")
 
 
 endWaiApp :: (ThreadId, BaseUrl) -> IO ()

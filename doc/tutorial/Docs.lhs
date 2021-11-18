@@ -77,7 +77,7 @@ instance ToSample HelloMessage where
     [ ("When a value is provided for 'name'", HelloMessage "Hello, Alp")
     , ("When 'name' is not specified", HelloMessage "Hello, anonymous coward")
     ]
-    -- mutliple examples to display this time
+    -- multiple examples to display this time
 
 ci :: ClientInfo
 ci = ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"]
@@ -108,7 +108,7 @@ apiDocs = docs exampleAPI
 markdown :: API -> String
 ```
 
-That lets us see what our API docs look down in markdown, by looking at `markdown apiDocs`.
+That lets us see what our API docs look like in markdown, by looking at `markdown apiDocs`.
 
 ````````` text
 ## GET /hello

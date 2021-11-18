@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                servant-server
-version:             0.16
+version:             0.18.3
 
 synopsis:            A family of combinators for defining webservices APIs and serving them
 category:            Servant, Web
@@ -17,18 +17,13 @@ description:
 
 homepage:            http://docs.servant.dev/
 bug-reports:         http://github.com/haskell-servant/servant/issues
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 build-type:          Simple
-tested-with:
-  GHC ==8.0.2
-   || ==8.2.2
-   || ==8.4.4
-   || ==8.6.5
-   || ==8.8.1
+tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
 
 extra-source-files:
   CHANGELOG.md
@@ -49,12 +44,14 @@ library
     Servant.Server.Internal.Context
     Servant.Server.Internal.Delayed
     Servant.Server.Internal.DelayedIO
+    Servant.Server.Internal.ErrorFormatter
     Servant.Server.Internal.Handler
-    Servant.Server.Internal.Router
     Servant.Server.Internal.RouteResult
+    Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServerError
     Servant.Server.StaticFiles
+    Servant.Server.UVerb
 
   -- deprecated
   exposed-modules:
@@ -63,8 +60,8 @@ library
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   build-depends:
-      base                >= 4.9      && < 4.14
-    , bytestring          >= 0.10.8.1 && < 0.11
+      base                >= 4.9      && < 4.16
+    , bytestring          >= 0.10.8.1 && < 0.12
     , containers          >= 0.5.7.1  && < 0.7
     , mtl                 >= 2.2.2    && < 2.3
     , text                >= 1.2.3.0  && < 1.3
@@ -74,20 +71,21 @@ library
   -- Servant dependencies
   -- strict dependency as we re-export 'servant' things.
   build-depends:
-      servant             >= 0.16     && < 0.17.1
-    , http-api-data       >= 0.4.1    && < 0.4.2
+      servant             >= 0.18.3   && < 0.18.4
+    , http-api-data       >= 0.4.1    && < 0.4.4
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
       base-compat         >= 0.10.5   && < 0.12
-    , base64-bytestring   >= 1.0.0.1  && < 1.1
+    , base64-bytestring   >= 1.0.0.1  && < 1.3
     , exceptions          >= 0.10.0   && < 0.11
     , http-media          >= 0.7.1.3  && < 0.9
     , http-types          >= 0.12.2   && < 0.13
     , network-uri         >= 2.6.1.0  && < 2.8
     , monad-control       >= 1.0.2.3  && < 1.1
     , network             >= 2.8      && < 3.2
+    , sop-core            >= 0.4.0.0  && < 0.6
     , string-conversions  >= 0.4.0.1  && < 0.5
     , resourcet           >= 1.2.2    && < 1.3
     , tagged              >= 0.8.6    && < 0.9
@@ -98,6 +96,7 @@ library
 
   hs-source-dirs: src
   default-language: Haskell2010
+
   ghc-options: -Wall -Wno-redundant-constraints
 
 executable greet
@@ -114,7 +113,7 @@ executable greet
     , text
 
   build-depends:
-      aeson               >= 1.4.1.0  && < 1.5
+      aeson               >= 1.4.1.0  && < 1.6
     , warp                >= 3.2.25   && < 3.4
 
 test-suite spec
@@ -149,22 +148,23 @@ test-suite spec
     , safe
     , servant
     , servant-server
+    , sop-core
     , string-conversions
     , text
     , transformers
     , transformers-compat
     , wai
 
-  -- Additonal dependencies
+  -- Additional dependencies
   build-depends:
-      aeson                >= 1.4.1.0  && < 1.5
+      aeson                >= 1.4.1.0  && < 1.6
     , directory            >= 1.3.0.0  && < 1.4
-    , hspec                >= 2.6.0    && < 2.8
-    , hspec-wai            >= 0.10.1   && < 0.11
-    , QuickCheck           >= 2.12.6.1 && < 2.14
+    , hspec                >= 2.6.0    && < 2.9
+    , hspec-wai            >= 0.10.1   && < 0.12
+    , QuickCheck           >= 2.12.6.1 && < 2.15
     , should-not-typecheck >= 2.1.0    && < 2.2
     , temporary            >= 1.3      && < 1.4
-    , wai-extra            >= 3.0.24.3 && < 3.1
+    , wai-extra            >= 3.0.24.3 && < 3.2
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && <2.8
+    hspec-discover:hspec-discover >= 2.6.0 && <2.9

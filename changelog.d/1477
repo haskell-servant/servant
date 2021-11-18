@@ -1,0 +1,9 @@
+synopsis: Enable FlexibleContexts in Servant.API.ContentTypes
+prs: #1477
+
+description: {
+
+Starting with GHC 9.2, UndecidableInstances no longer implies FlexibleContexts.
+Add this extension where it's needed to make compilation succeed.
+
+}

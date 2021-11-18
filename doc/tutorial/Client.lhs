@@ -161,7 +161,7 @@ The types of the arguments for the functions are the same as for (server-side) r
 ## Changing the monad the client functions live in
 
 Just like `hoistServer` allows us to change the monad in which request handlers
-of a web application live in, we also have `hoistClient` for changing the monad
+of a web application live, we also have `hoistClient` for changing the monad
 in which _client functions_ live. Consider the following trivial API:
 
 ``` haskell
@@ -173,7 +173,7 @@ hoistClientAPI = Proxy
 
 We already know how to derive client functions for this API, and as we have
 seen above they all return results in the `ClientM` monad when using `servant-client`.
-However, `ClientM` rarely (or never) is the actual monad we need to use the client
+However, `ClientM` is rarely (or never) the actual monad we need to use the client
 functions in. Sometimes we need to run them in IO, sometimes in a custom monad
 stack. `hoistClient` is a very simple solution to the problem of "changing" the monad
 the clients run in.

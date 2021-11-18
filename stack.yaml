@@ -1,4 +1,4 @@
-resolver: lts-14.17
+resolver: lts-18.5
 packages:
 - servant-client-core/
 - servant-client/

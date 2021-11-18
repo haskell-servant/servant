@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -20,7 +21,7 @@
 --
 -- Content-Types are used in `ReqBody` and the method combinators:
 --
--- >>> type MyEndpoint = ReqBody '[JSON, PlainText] Book :> Get '[JSON, PlainText] Book
+-- >>> type MyEndpoint = ReqBody '[JSON, PlainText] Book :> Put '[JSON, PlainText] Book
 --
 -- Meaning the endpoint accepts requests of Content-Type @application/json@
 -- or @text/plain;charset-utf8@, and returns data in either one of those
@@ -417,7 +418,6 @@ instance MimeUnrender OctetStream ByteString where
 -- | @Right . toStrict@
 instance MimeUnrender OctetStream BS.ByteString where
     mimeUnrender _ = Right . toStrict
-
 
 
 -- $setup

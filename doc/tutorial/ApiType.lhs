@@ -389,3 +389,30 @@ One example for this is if you want to serve a directory of static files along
 with the rest of your API. But you can plug in everything that is an
 `Application`, e.g. a whole web application written in any of the web
 frameworks that support `wai`.
+
+Be mindful! The `servant-server`'s router works by pattern-matching the
+different routes that are composed using `:<|>`. `Raw`, as an escape hatch,
+matches any route that hasn't been matched by previous patterns. Therefore,
+any subsequent route will be silently ignored.
+
+``` haskell
+type UserAPI14 = Raw
+            :<|> "users" :> Get '[JSON] [User]
+                 -- In this situation, the /users endpoint
+                 -- will not be reachable because the Raw
+                 -- endpoint matches requests before
+```
+A simple way to avoid this pitfall is to either use `Raw` as the last
+definition, or to always have it under a static path.
+
+``` haskell
+type UserAPI15 = "files" :> Raw
+                 -- The raw endpoint is under the /files
+                 -- static path, so it won't match /users.
+            :<|> "users" :> Get '[JSON] [User]
+
+type UserAPI16 = "users" :> Get '[JSON] [User]
+            :<|> Raw
+                 -- The Raw endpoint is matched last, so
+                 -- it won't overlap another endpoint.
+```

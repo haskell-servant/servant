@@ -79,14 +79,14 @@ It does three things. First it initializes the service which will communicate wi
 
 - the Sentry `DSN`, which is obtained when creating a new project on Sentry
 - a default way to update sentry fields, where we use the identity function
-- an event trasport, which generally would be `sendRecord`, an HTTPS capable trasport which uses http-conduit
+- an event transport, which generally would be `sendRecord`, an HTTPS capable transport which uses http-conduit
 - a fallback handler, which we choose to be `silentFallback` since later we are logging to the console anyway.
 
 In the second step it actually sends our message to Sentry with the `register` function. Its arguments are:
 
 - the configured Sentry service which we just created
 - the name of the logger
-- the error level (see [SentryLevel](https://hackage.haskell.org/package/raven-haskell-0.1.2.0/docs/System-Log-Raven-Types.html#t:SentryLevel) for the possible options)
+- the error level (see [SentryLevel](https://hackage.haskell.org/package/raven-haskell/docs/System-Log-Raven-Types.html#t:SentryLevel) for the possible options)
 - the message we want to send
 - an update function to handle the specific `SentryRecord`
 

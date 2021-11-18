@@ -1,7 +1,7 @@
 # Generating mock curl calls
 
 In this example we will generate curl requests with mock post data from a servant API.
-This may be usefull for testing and development purposes.
+This may be useful for testing and development purposes.
 Especially post requests with a request body are tedious to send manually.
 
 Also, we will learn how to use the servant-foreign library to generate stuff from servant APIs.
@@ -24,7 +24,6 @@ Language extensions and imports:
 import           Control.Lens                      ((^.))
 import           Data.Aeson
 import           Data.Aeson.Text
-import           Data.Monoid                       ((<>))
 import           Data.Proxy                        (Proxy (Proxy))
 import           Data.Text                         (Text)
 import           Data.Text.Encoding                (decodeUtf8)
@@ -86,7 +85,7 @@ listFromAPI :: (HasForeign lang ftype api, GenerateList ftype (Foreign ftype api
 ```
 
 This looks a bit confusing...
-[Here](https://hackage.haskell.org/package/servant-foreign-0.11.1/docs/Servant-Foreign.html#t:HasForeignType) is the documentation for the `HasForeign` typeclass.
+[Here](https://hackage.haskell.org/package/servant-foreign/docs/Servant-Foreign.html#t:HasForeign) is the documentation for the `HasForeign` typeclass.
 We will not go into details here, but this allows us to create a value of type `ftype` for any type `a` in our API.
 
 In our case we want to create a mock of every type `a`.
@@ -130,24 +129,12 @@ generateCurl :: (GenerateList Mocked (Foreign Mocked api), HasForeign NoLang Moc
 generateCurl p host =
   fmap T.unlines body
   where
-  body = foldr (\endp curlCalls -> mCons (generateEndpoint host endp) curlCalls) (return [])
+  body = mapM (generateEndpoint host)
     $ listFromAPI (Proxy :: Proxy NoLang) (Proxy :: Proxy Mocked) p
 ```
 
-To understand this function, better start at the end:
-
-`listFromAPI` gives us a list of endpoints. We iterate over them (`foldr`) and call `generateEndpoint` for every endpoint.
-
-As generate endpoint will not return `Text` but `IO Text` (remember we need some random bits to mock), we cannot just use the cons operator but need to build `IO [Text]` from `IO Text`s.
-
-``` haskell
-mCons :: IO a -> IO [a] -> IO [a]
-mCons ele list =
-  ele >>= \e -> list >>= \l -> return ( e : l )
-```
-
-
-Now comes the juicy part; accessing the endpoints data:
+First, `listFromAPI` gives us a list of `Req Mocked`. Each `Req` describes one endpoint from the API type.
+We generate a curl call for each of them using the following helper.
 
 ``` haskell
 generateEndpoint :: Text -> Req Mocked -> IO Text
@@ -169,7 +156,7 @@ generateEndpoint host req =
 `servant-foreign` offers a multitude of lenses to be used with `Req`-values.
 
 `reqMethod` gives us a straigthforward `Network.HTTP.Types.Method`, `reqUrl` the url part and so on.
-Just take a look at [the docs](https://hackage.haskell.org/package/servant-foreign-0.11.1/docs/Servant-Foreign.html).
+Just take a look at [the docs](https://hackage.haskell.org/package/servant-foreign/docs/Servant-Foreign.html).
 
 But how do we get our mocked json string? This seems to be a bit to short to be true:
 
@@ -201,7 +188,7 @@ And now, lets hook it all up in our main function:
 ``` haskell
 main :: IO ()
 main =
-  generateCurl api "localhost:8081" >>= (\v -> T.IO.putStrLn v)
+  generateCurl api "localhost:8081" >>= T.IO.putStrLn
 ```
 
 Done:
@@ -213,6 +200,6 @@ curl -X POST -d '{"email":"wV򝣀_b򆎘:z񁊞򲙲!(3DM V","age":10,"name":"=|W"}
 ```
 
 This is of course no complete curl call mock generator, many things including path arguments are missing.
-But it correctly generate mock calls for simple POST requests.
+But it correctly generates mock calls for simple POST requests.
 
 Also, we now know how to use `HasForeignType` and `listFromAPI` to generate anything we want.

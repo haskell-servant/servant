@@ -183,7 +183,7 @@ users2 = [isaac, albert]
 
 Now, just like we separate the various endpoints in `UserAPI` with `:<|>`, we
 are going to separate the handlers with `:<|>` too! They must be provided in
-the same order as in in the API type.
+the same order as in the API type.
 
 ``` haskell
 server2 :: Server UserAPI2
@@ -313,8 +313,8 @@ For reference, here's a list of some combinators from **servant**:
 ## The `FromHttpApiData`/`ToHttpApiData` classes
 
 Wait... How does **servant** know how to decode the `Int`s from the URL? Or how
-to decode a `ClientInfo` value from the request body? This is what this and the
-following two sections address.
+to decode a `ClientInfo` value from the request body? The following three sections will
+help us answer these questions.
 
 `Capture`s and `QueryParam`s are represented by some textual value in URLs.
 `Header`s are similarly represented by a pair of a header name and a
@@ -620,7 +620,7 @@ In short, this means that a handler of type `Handler a` is simply
 equivalent to a computation of type `IO (Either ServerError a)`, that is, an IO
 action that either returns an error or a result.
 
-The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl-2.2.1/docs/Control-Monad-Except.html#t:ExceptT)
+The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl/docs/Control-Monad-Except.html#t:ExceptT)
 from which `ExceptT` comes is worth looking at.
 Perhaps most importantly, `ExceptT` and `Handler` are instances of `MonadError`, so
 `throwError` can be used to return an error from your handler (whereas `return`
@@ -634,7 +634,7 @@ kind and abort early. The next two sections cover how to do just that.
 
 Other important instances from the list above are `MonadIO m => MonadIO
 (ExceptT e m)`, and therefore also `MonadIO Handler` as there is a `MonadIO IO` instance.
-[`MonadIO`](http://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-IO-Class.html)
+[`MonadIO`](http://hackage.haskell.org/package/base/docs/Control-Monad-IO-Class.html#t:MonadIO)
 is a class from the **transformers** package defined as:
 
 ``` haskell ignore
@@ -716,7 +716,7 @@ $ curl --verbose http://localhost:8081/myfile.txt
 >
 < HTTP/1.1 404 Not Found
 [snip]
-myfile.txt just isnt there, please leave this server alone.
+myfile.txt just isn't there, please leave this server alone.
 
 $ echo Hello > myfile.txt
 
@@ -818,7 +818,7 @@ If it doesn't exist, the handler will fail with a `404` status code.
 
 `serveDirectoryWebApp` uses some standard settings that fit the use case of
 serving static files for most web apps. You can find out about the other
-options in the documentation of the `Servant.Utils.StaticFiles` module.
+options in the documentation of the `Servant.Server.StaticFiles` module.
 
 ## Nested APIs
 
@@ -1135,7 +1135,7 @@ true
 ### An arrow is a reader too.
 
 In previous versions of `servant` we had an `enter` to do what `hoistServer`
-does now. `enter` had a ambitious design goals, but was problematic in practice.
+does now. `enter` had an ambitious design goals, but was problematic in practice.
 
 One problematic situation was when the source monad was `(->) r`, yet it's
 handy in practice, because `(->) r` is isomorphic to `Reader r`.
@@ -1166,7 +1166,7 @@ back a *stream* of results, served one at a time. Stream endpoints only provide
 a single content type, and also specify what framing strategy is used to
 delineate the results. To serve these results, we need to give back a stream
 producer. Adapters can be written to *Pipes*, *Conduit* and the like, or
-written directly as `SourceIO`s. SourceIO builts upon servant's own `SourceT`
+written directly as `SourceIO`s. SourceIO builds upon servant's own `SourceT`
 stream type (it's simpler than *Pipes* or *Conduit*).
 The API of a streaming endpoint needs to explicitly specify which sort of
 generator it produces. Note that the generator itself is returned by a

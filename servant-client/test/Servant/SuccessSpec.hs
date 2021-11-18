@@ -1,16 +1,17 @@
-{-# LANGUAGE CPP                    #-}
-{-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
@@ -21,30 +22,33 @@ import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Arrow
-                 (left)
+                 ((+++), left)
 import           Control.Concurrent.STM
                  (atomically)
 import           Control.Concurrent.STM.TVar
                  (newTVar, readTVar)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
 import           Data.Foldable
                  (forM_, toList)
 import           Data.Maybe
                  (listToMaybe)
 import           Data.Monoid ()
-import qualified Network.HTTP.Client                  as C
-import qualified Network.HTTP.Types                   as HTTP
+import           Data.Text
+                 (Text)
+import qualified Network.HTTP.Client                as C
+import qualified Network.HTTP.Types                 as HTTP
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.HUnit
 import           Test.QuickCheck
 
 import           Servant.API
-                 (NoContent (NoContent), getHeaders)
+                 (NoContent (NoContent), WithStatus (WithStatus), getHeaders, Headers(..))
 import           Servant.Client
-import qualified Servant.Client.Core.Request as Req
-import           Servant.Client.Internal.HttpClient (defaultMakeClientRequest)
-import           Servant.Test.ComprehensiveAPI
+import qualified Servant.Client.Core.Request        as Req
 import           Servant.ClientTestUtils
+import           Servant.Test.ComprehensiveAPI
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -91,6 +95,11 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       Left (FailureResponse _ r) <- runClient (getQueryParam (Just "bob")) baseUrl
       responseStatusCode r `shouldBe` HTTP.Status 400 "bob not found"
 
+    it "Servant.API.QueryParam binary data" $ \(_, baseUrl) -> do
+      let payload = BS.pack [0, 1, 2, 4, 8, 16, 32, 64, 128]
+          apiCall = getQueryParamBinary (Just $ UrlEncodedByteString payload) HTTP.methodGet
+      (show +++ responseBody) <$> runClient apiCall baseUrl `shouldReturn` Right (BL.fromStrict payload)
+
     it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
       left show <$> runClient (getQueryParams []) baseUrl `shouldReturn` Right []
       left show <$> runClient (getQueryParams ["alice", "bob"]) baseUrl
@@ -100,6 +109,8 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
         left show <$> runClient (getQueryFlag flag) baseUrl `shouldReturn` Right flag
 
+    it "Servant.API.Fragment" $ \(_, baseUrl) -> do
+      left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
       res <- runClient (getRawSuccess HTTP.methodGet) baseUrl
       case res of
@@ -122,6 +133,15 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       case res of
         Left e -> assertFailure $ show e
         Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
+
+    it "Returns headers on UVerb requests" $ \(_, baseUrl) -> do
+      res <- runClient getUVerbRespHeaders baseUrl
+      case res of
+        Left e -> assertFailure $ show e
+        Right val -> case matchUnion val of
+          Just (WithStatus val' :: WithStatus 200 (Headers TestHeaders Bool))
+            -> getHeaders val' `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
+          Nothing -> assertFailure "unexpected alternative of union"
 
     it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
       mgr <- C.newManager C.defaultManagerSettings
@@ -151,3 +171,23 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
             return $
               result === Right (cap, num, flag, body)
+
+    context "With a route that can either return success or redirect" $ do
+      it "Redirects when appropriate" $ \(_, baseUrl) -> do
+        eitherResponse <- runClient (uverbGetSuccessOrRedirect True) baseUrl
+        case eitherResponse of
+          Left clientError -> fail $ show clientError
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @301 @Text "redirecting")
+
+      it "Returns a proper response when appropriate" $ \(_, baseUrl) -> do
+        eitherResponse <- runClient (uverbGetSuccessOrRedirect False) baseUrl
+        case eitherResponse of
+          Left clientError -> fail $ show clientError
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @200 alice)
+
+    context "with a route that uses uverb but only has a single response" $
+      it "returns the expected response" $ \(_, baseUrl) -> do
+        eitherResponse <- runClient (uverbGetCreated) baseUrl
+        case eitherResponse of
+          Left clientError -> fail $ show clientError
+          Right response -> matchUnion response `shouldBe` Just (WithStatus @201 carol)

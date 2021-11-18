@@ -1,0 +1,80 @@
+name:           servant-auth-client
+version:        0.4.1.0
+synopsis:       servant-client/servant-auth compatibility
+description:    This package provides instances that allow generating clients from
+                <https://hackage.haskell.org/package/servant servant>
+                APIs that use
+                <https://hackage.haskell.org/package/servant-auth servant-auth's> @Auth@ combinator.
+                .
+                For a quick overview of the usage, see the <http://github.com/haskell-servant/servant/servant-auth#readme README>.
+category:       Web, Servant, Authentication
+homepage:       http://github.com/haskell-servant/servant/servant-auth#readme
+bug-reports:    https://github.com/haskell-servant/servant/issues
+author:         Julian K. Arni
+maintainer:     jkarni@gmail.com
+copyright:      (c) Julian K. Arni
+license:        BSD-3-Clause
+license-file:   LICENSE
+tested-with:    GHC ==8.6.5 || ==8.8.4 || ==8.10.4 || ==9.0.1
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/haskell-servant/servant
+
+library
+  hs-source-dirs:
+      src
+  default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
+  ghc-options: -Wall
+  build-depends:
+      base                >= 4.10     && < 4.16
+    , bytestring          >= 0.10.6.0 && < 0.11
+    , containers          >= 0.5.6.2  && < 0.7
+    , servant-auth        == 0.4.*
+    , servant             >= 0.13     && < 0.19
+    , servant-client-core >= 0.13     && < 0.19
+
+  exposed-modules:
+      Servant.Auth.Client
+      Servant.Auth.Client.Internal
+  default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
+  ghc-options: -Wall
+  build-tool-depends: hspec-discover:hspec-discover >=2.5.5 && <2.9
+
+  -- dependencies with bounds inherited from the library stanza
+  build-depends:
+      base
+    , servant-client
+    , servant-auth
+    , servant
+    , servant-auth-client
+ 
+  -- test dependencies
+  build-depends:
+      hspec                >= 2.5.5    && < 2.9
+    , QuickCheck           >= 2.11.3   && < 2.15
+    , aeson                >= 1.3.1.1  && < 1.6
+    , bytestring           >= 0.10.6.0 && < 0.11
+    , http-client          >= 0.5.13.1 && < 0.8
+    , http-types           >= 0.12.2   && < 0.13
+    , servant-auth-server  >= 0.4.2.0  && < 0.5
+    , servant-server       >= 0.13     && < 0.19
+    , time                 >= 1.5.0.1  && < 1.13
+    , transformers         >= 0.4.2.0  && < 0.6
+    , wai                  >= 3.2.1.2  && < 3.3
+    , warp                 >= 3.2.25   && < 3.4
+    , jose                 >= 0.7.0.0  && < 0.9
+  other-modules:
+      Servant.Auth.ClientSpec
+  default-language: Haskell2010

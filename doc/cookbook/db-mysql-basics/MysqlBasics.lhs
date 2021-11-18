@@ -2,7 +2,7 @@
 
 This doc will walk through a single-module implementation of a servant API connecting to a MySQL database. It will also include some basic CRUD operations.
 
-Once you can wrap your head around this implemenation, understanding more complex features like resource pools would be beneficial next steps.
+Once you can wrap your head around this implementation, understanding more complex features like resource pools would be beneficial next steps.
 
 The only *prerequisite* is that you have a MySQL database open on port 3306 of your machine. Docker is an easy way to manage this.
 
