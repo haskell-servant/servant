@@ -65,7 +65,7 @@ import           Data.Text
 import           Data.Proxy
                  (Proxy (Proxy))
 import           GHC.TypeLits
-                 (KnownNat, KnownSymbol, symbolVal)
+                 (KnownNat, KnownSymbol, TypeError, symbolVal)
 import           Network.HTTP.Types
                  (Status)
 import qualified Network.HTTP.Types                       as H
@@ -91,6 +91,7 @@ import           Servant.API.Status
 import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
+import           Servant.API.TypeErrors
 import           Servant.API.UVerb
                  (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf, foldMapUnion, matchUnion)
 
@@ -979,3 +980,19 @@ decodedAs response ct = do
     Right val -> return val
   where
     accept = toList $ contentTypes ct
+
+-------------------------------------------------------------------------------
+-- Custom type errors
+-------------------------------------------------------------------------------
+
+-- Erroring instance for HasClient' when a combinator is not fully applied
+instance (RunClient m, TypeError (PartialApplication HasClient arr)) => HasClient m ((arr :: a -> b) :> sub)
+  where
+    type Client m (arr :> sub) = TypeError (PartialApplication HasClient arr)
+    clientWithRoute _ _ _ = error "unreachable"
+    hoistClientMonad _ _ _ _ = error "unreachable"
+
+-- Erroring instances for 'HasClient' for unknown API combinators
+instance {-# OVERLAPPABLE #-} (RunClient m, TypeError (NoInstanceForSub (HasClient m) ty)) => HasClient m (ty :> sub)
+
+instance {-# OVERLAPPABLE #-} (RunClient m, TypeError (NoInstanceFor (HasClient m api))) => HasClient m api
