@@ -1,10 +1,17 @@
+{-# LANGUAGE CPP #-}
+
 module Servant.Auth.JWT where
 
 import           Control.Lens         ((^.))
 import qualified Crypto.JWT           as Jose
 import           Data.Aeson           (FromJSON, Result (..), ToJSON, fromJSON,
                                        toJSON)
-import qualified Data.Map             as Map
+#if MIN_VERSION_aeson(2,0,0)                                                                                    
+import qualified Data.Map as KM                                                                        
+#else                                                                                                           
+import qualified Data.HashMap.Strict as KM                                                                      
+#endif
+
 import qualified Data.Text            as T
 
 
@@ -17,7 +24,7 @@ import qualified Data.Text            as T
 class FromJWT a where
   decodeJWT :: Jose.ClaimsSet -> Either T.Text a
   default decodeJWT :: FromJSON a => Jose.ClaimsSet -> Either T.Text a
-  decodeJWT m = case Map.lookup "dat" (m ^. Jose.unregisteredClaims) of
+  decodeJWT m = case KM.lookup "dat" (m ^. Jose.unregisteredClaims) of
     Nothing -> Left "Missing 'dat' claim"
     Just v  -> case fromJSON v of
       Error e -> Left $ T.pack e

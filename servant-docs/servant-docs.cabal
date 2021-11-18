@@ -52,7 +52,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson                >= 2.0.1.0  && < 3
+      aeson                >= 1.4.1.0  && < 3
     , aeson-pretty         >= 0.8.5    && < 0.9
     , base-compat          >= 0.10.5   && < 0.12
     , case-insensitive     >= 1.2.0.11 && < 1.3
