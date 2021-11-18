@@ -828,10 +828,10 @@ type GClientConstraints api m =
   )
 
 class GClient (api :: * -> *) m where
-  proof :: Dict (GClientConstraints api m)
+  gClientProof :: Dict (GClientConstraints api m)
 
 instance GClientConstraints api m => GClient api m where
-  proof = Dict
+  gClientProof = Dict
 
 instance
   ( forall n. GClient api n
@@ -843,7 +843,7 @@ instance
 
   clientWithRoute :: Proxy m -> Proxy (NamedRoutes api) -> Request -> Client m (NamedRoutes api)
   clientWithRoute pm _ request =
-    case proof @api @m of
+    case gClientProof @api @m of
       Dict -> fromServant $ clientWithRoute  pm (Proxy @(ToServantApi api)) request
 
   hoistClientMonad
@@ -854,7 +854,7 @@ instance
     -> Client ma (NamedRoutes api)
     -> Client mb (NamedRoutes api)
   hoistClientMonad _ _ nat clientA =
-    case (proof @api @ma, proof @api @mb) of
+    case (gClientProof @api @ma, gClientProof @api @mb) of
       (Dict, Dict) ->
         fromServant @api @(AsClientT mb) $
         hoistClientMonad @m @(ToServantApi api) @ma @mb Proxy Proxy nat $
