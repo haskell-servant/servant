@@ -859,6 +859,10 @@ type HasServerArrowTypeError a b =
     ':$$: 'ShowType b
 
 -- Erroring instances for 'HasServer' for unknown API combinators
+
+-- XXX: This omits the @context@ parameter, e.g.:
+--
+-- "There is no instance for HasServer (Bool :> …)". Do we care ?
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub HasServer ty) => HasServer (ty :> sub) context
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) => HasServer api context
