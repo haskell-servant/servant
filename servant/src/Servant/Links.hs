@@ -1,13 +1,18 @@
+{-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE InstanceSigs           #-}
 {-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE QuantifiedConstraints    #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
+
 {-# OPTIONS_HADDOCK not-home        #-}
 
 -- | Type safe generation of internal links.
@@ -125,6 +130,7 @@ module Servant.Links (
 ) where
 
 import           Data.List
+import           Data.Constraint
 import           Data.Proxy
                  (Proxy (..))
 import           Data.Singletons.Bool
@@ -163,6 +169,8 @@ import           Servant.API.IsSecure
                  (IsSecure)
 import           Servant.API.Modifiers
                  (FoldRequired)
+import           Servant.API.NamedRoutes
+                 (NamedRoutes)
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam', QueryParams)
 import           Servant.API.Raw
@@ -579,6 +587,34 @@ instance HasLink (Stream m status fr ct a) where
 instance HasLink (UVerb m ct a) where
     type MkLink (UVerb m ct a) r = r
     toLink toA _ = toA
+-- Instance for NamedRoutes combinator
+
+type GLinkConstraints routes a =
+  ( MkLink (ToServant routes AsApi) a ~ ToServant routes (AsLink a)
+  , GenericServant routes (AsLink a)
+  )
+
+class GLink (routes :: * -> *) (a :: *) where
+  proof :: Dict (GLinkConstraints routes a)
+
+instance GLinkConstraints routes a => GLink routes a where
+  proof = Dict
+
+instance
+  ( HasLink (ToServantApi routes)
+  , forall a. GLink routes a
+  ) => HasLink (NamedRoutes routes) where
+
+  type MkLink (NamedRoutes routes) a = routes (AsLink a)
+
+  toLink
+    :: forall a. (Link -> a)
+    -> Proxy (NamedRoutes routes)
+    -> Link
+    -> routes (AsLink a)
+
+  toLink toA _ l = case proof @routes @a of
+    Dict -> fromServant $ toLink toA (Proxy @(ToServantApi routes)) l
 
 -- AuthProtext instances
 instance HasLink sub => HasLink (AuthProtect tag :> sub) where

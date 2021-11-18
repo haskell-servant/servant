@@ -1,12 +1,10 @@
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE KindSignatures       #-}
-{-# LANGUAGE RankNTypes           #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+
 -- | @since 0.14.1
 module Servant.Server.Generic (
     AsServerT,
@@ -15,21 +13,15 @@ module Servant.Server.Generic (
     genericServeT,
     genericServeTWithContext,
     genericServer,
-    genericServerT,
+    genericServerT
   ) where
 
 import           Data.Proxy
                  (Proxy (..))
 
-import           Servant.API.Generic
 import           Servant.Server
-
--- | A type that specifies that an API record contains a server implementation.
-data AsServerT (m :: * -> *)
-instance GenericMode (AsServerT m) where
-    type AsServerT m :- api = ServerT api m
-
-type AsServer = AsServerT Handler
+import           Servant.API.Generic
+import           Servant.Server.Internal
 
 -- | Transform a record of routes into a WAI 'Application'.
 genericServe
@@ -97,3 +89,4 @@ genericServerT
     => routes (AsServerT m)
     -> ToServant routes (AsServerT m)
 genericServerT = toServant
+

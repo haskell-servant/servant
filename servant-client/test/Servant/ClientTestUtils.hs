@@ -64,7 +64,8 @@ import           Servant.API
                  JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
                  QueryParams, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..), UVerb, Union,
-                 WithStatus (WithStatus), addHeader)
+                 WithStatus (WithStatus), NamedRoutes, addHeader)
+import           Servant.API.Generic ((:-))
 import           Servant.Client
 import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
@@ -107,6 +108,16 @@ carol = Person "Carol" 17
 
 type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
+data RecordRoutes mode = RecordRoutes
+  { version :: mode :- "version" :> Get '[JSON] Int
+  , echo :: mode :- "echo" :> Capture "string" String :> Get '[JSON] String
+  , otherRoutes :: mode :- "other" :> Capture "someParam" Int :> NamedRoutes OtherRoutes
+  } deriving Generic
+
+data OtherRoutes mode = OtherRoutes
+  { something :: mode :- "something" :> Get '[JSON] [String]
+  } deriving Generic
+
 type Api =
   Get '[JSON] Person
   :<|> "get" :> Get '[JSON] Person
@@ -141,6 +152,7 @@ type Api =
             UVerb 'GET '[PlainText] '[WithStatus 200 Person,
                                       WithStatus 301 Text]
   :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
+  :<|> NamedRoutes RecordRoutes
 
 
 api :: Proxy Api
@@ -170,6 +182,7 @@ uverbGetSuccessOrRedirect :: Bool
                           -> ClientM (Union '[WithStatus 200 Person,
                                               WithStatus 301 Text])
 uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
+recordRoutes :: RecordRoutes (AsClientT ClientM)
 
 getRoot
   :<|> getGet
@@ -192,7 +205,8 @@ getRoot
   :<|> getRedirectWithCookie
   :<|> EmptyClient
   :<|> uverbGetSuccessOrRedirect
-  :<|> uverbGetCreated = client api
+  :<|> uverbGetCreated
+  :<|> recordRoutes = client api
 
 server :: Application
 server = serve api (
@@ -229,6 +243,13 @@ server = serve api (
                               then respond (WithStatus @301 ("redirecting" :: Text))
                               else respond (WithStatus @200 alice ))
   :<|> respond (WithStatus @201 carol)
+  :<|> RecordRoutes
+         { version = pure 42
+         , echo = pure
+         , otherRoutes = \_ -> OtherRoutes
+             { something = pure ["foo", "bar", "pweet"]
+             }
+         }
   )
 
 type FailApi =

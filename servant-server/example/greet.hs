@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds         #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -16,6 +17,8 @@ import           Network.Wai
 import           Network.Wai.Handler.Warp
 
 import           Servant
+import           Servant.Server.Generic ()
+import           Servant.API.Generic
 
 -- * Example
 
@@ -38,6 +41,14 @@ type TestApi =
        -- DELETE /greet/:greetid
   :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent
 
+  :<|> NamedRoutes OtherRoutes
+
+data OtherRoutes mode = OtherRoutes
+  { version :: mode :- Get '[JSON] Int
+  , bye :: mode :- "bye" :> Capture "name" Text :> Get '[JSON] Text
+  }
+  deriving Generic
+
 testApi :: Proxy TestApi
 testApi = Proxy
 
@@ -48,9 +59,13 @@ testApi = Proxy
 --
 -- Each handler runs in the 'Handler' monad.
 server :: Server TestApi
-server = helloH :<|> postGreetH :<|> deleteGreetH
+server = helloH :<|> postGreetH :<|> deleteGreetH :<|> otherRoutes
+  where otherRoutes = OtherRoutes {..}
 
-  where helloH name Nothing = helloH name (Just False)
+        bye name = pure $ "Bye, " <> name <> " !"
+        version = pure 42
+
+        helloH name Nothing = helloH name (Just False)
         helloH name (Just False) = return . Greet $ "Hello, " <> name
         helloH name (Just True) = return . Greet . toUpper $ "Hello, " <> name
 

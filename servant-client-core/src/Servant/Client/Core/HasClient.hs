@@ -1,5 +1,4 @@
 {-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -7,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
@@ -14,14 +14,13 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-#if MIN_VERSION_base(4,9,0) && __GLASGOW_HASKELL__ >= 802
-#define HAS_TYPE_ERROR
-#endif
-
 module Servant.Client.Core.HasClient (
     clientIn,
     HasClient (..),
     EmptyClient (..),
+    AsClientT,
+    (//),
+    (/:),
     foldMapUnion,
     matchUnion,
     ) where
@@ -39,6 +38,7 @@ import           Data.ByteString.Builder
 import qualified Data.ByteString.Lazy                     as BL
 import           Data.Either
                  (partitionEithers)
+import           Data.Constraint (Dict(..))
 import           Data.Foldable
                  (toList)
 import           Data.List
@@ -47,7 +47,8 @@ import           Data.Sequence
                  (fromList)
 import qualified Data.Text                       as T
 import           Network.HTTP.Media
-                 (MediaType, matches, parseAccept, (//))
+                 (MediaType, matches, parseAccept)
+import qualified Network.HTTP.Media as Media
 import qualified Data.Sequence as Seq
 import           Data.SOP.BasicFunctors
                  (I (I), (:.:) (Comp))
@@ -79,7 +80,10 @@ import           Servant.API
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
                  Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
-                 getResponse, toEncodedUrlPiece, toUrlPiece)
+                 getResponse, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
+import           Servant.API.Generic
+                 (GenericMode(..), ToServant, ToServantApi
+                 , GenericServant, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
 import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
@@ -792,11 +796,7 @@ instance ( HasClient m api
 -- > getBooks = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooks' for all books.
-#ifdef HAS_TYPE_ERROR
 instance (AtLeastOneFragment api, FragmentUnique (Fragment a :> api), HasClient m api
-#else
-instance ( HasClient m api
-#endif
          ) => HasClient m (Fragment a :> api) where
 
   type Client m (Fragment a :> api) = Client m api
@@ -816,6 +816,119 @@ instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
   hoistClientMonad pm _ f cl = \bauth ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl bauth)
 
+-- | A type that specifies that an API record contains a client implementation.
+data AsClientT (m :: * -> *)
+instance GenericMode (AsClientT m) where
+    type AsClientT m :- api = Client m api
+
+
+type GClientConstraints api m =
+  ( GenericServant api (AsClientT m)
+  , Client m (ToServantApi api) ~ ToServant api (AsClientT m)
+  )
+
+class GClient (api :: * -> *) m where
+  proof :: Dict (GClientConstraints api m)
+
+instance GClientConstraints api m => GClient api m where
+  proof = Dict
+
+instance
+  ( forall n. GClient api n
+  , HasClient m (ToServantApi api)
+  , RunClient m
+  )
+  => HasClient m (NamedRoutes api) where
+  type Client m (NamedRoutes api) = api (AsClientT m)
+
+  clientWithRoute :: Proxy m -> Proxy (NamedRoutes api) -> Request -> Client m (NamedRoutes api)
+  clientWithRoute pm _ request =
+    case proof @api @m of
+      Dict -> fromServant $ clientWithRoute  pm (Proxy @(ToServantApi api)) request
+
+  hoistClientMonad
+    :: forall ma mb.
+       Proxy m
+    -> Proxy (NamedRoutes api)
+    -> (forall x. ma x -> mb x)
+    -> Client ma (NamedRoutes api)
+    -> Client mb (NamedRoutes api)
+  hoistClientMonad _ _ nat clientA =
+    case (proof @api @ma, proof @api @mb) of
+      (Dict, Dict) ->
+        fromServant @api @(AsClientT mb) $
+        hoistClientMonad @m @(ToServantApi api) @ma @mb Proxy Proxy nat $
+        toServant @api @(AsClientT ma) clientA
+
+infixl 1 //
+infixl 2 /:
+
+-- | Helper to make code using records of clients more readable.
+--
+-- Can be mixed with (/:) for supplying arguments.
+--
+-- Example:
+--
+-- @@
+-- type Api = NamedRoutes RootApi
+--
+-- data RootApi mode = RootApi
+--   { subApi :: mode :- NamedRoutes SubApi
+--   , …
+--   } deriving Generic
+--
+-- data SubApi mode = SubApi
+--   { endpoint :: mode :- Get '[JSON] Person
+--   , …
+--   } deriving Generic
+--
+-- api :: Proxy API
+-- api = Proxy
+--
+-- rootClient :: RootApi (AsClientT ClientM)
+-- rootClient = client api
+--
+-- endpointClient :: ClientM Person
+-- endpointClient = client // subApi // endpoint
+-- @@
+(//) :: a -> (a -> b) -> b
+x // f = f x
+
+-- | Convenience function for supplying arguments to client functions when
+-- working with records of clients.
+--
+-- Intended to be used in conjunction with '(//)'.
+--
+-- Example:
+--
+-- @@
+-- type Api = NamedRoutes RootApi
+--
+-- data RootApi mode = RootApi
+--   { subApi :: mode :- Capture "token" String :> NamedRoutes SubApi
+--   , hello :: mode :- Capture "name" String :> Get '[JSON] String
+--   , …
+--   } deriving Generic
+--
+-- data SubApi mode = SubApi
+--   { endpoint :: mode :- Get '[JSON] Person
+--   , …
+--   } deriving Generic
+--
+-- api :: Proxy API
+-- api = Proxy
+--
+-- rootClient :: RootApi (AsClientT ClientM)
+-- rootClient = client api
+--
+-- hello :: String -> ClientM String
+-- hello name = rootClient // hello /: name
+--
+-- endpointClient :: ClientM Person
+-- endpointClient = client // subApi /: "foobar123" // endpoint
+-- @@
+(/:) :: (a -> b -> c) -> b -> a -> c
+(/:) = flip
 
 
 {- Note [Non-Empty Content Types]
@@ -841,7 +954,7 @@ for empty and one for non-empty lists).
 checkContentTypeHeader :: RunClient m => Response -> m MediaType
 checkContentTypeHeader response =
   case lookup "Content-Type" $ toList $ responseHeaders response of
-    Nothing -> return $ "application"//"octet-stream"
+    Nothing -> return $ "application" Media.// "octet-stream"
     Just t -> case parseAccept t of
       Nothing -> throwClientError $ InvalidContentTypeHeader response
       Just t' -> return t'
