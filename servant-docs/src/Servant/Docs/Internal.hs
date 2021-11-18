@@ -1074,12 +1074,13 @@ instance (ToForm a, ToSample a, HasDocs api)
 
 instance (ToFragment (Fragment a), HasDocs api)
       => HasDocs (Fragment a :> api) where
+
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
+
     where subApiP = Proxy :: Proxy api
           fragmentP = Proxy :: Proxy (Fragment a)
           action' = set fragment (Just (toFragment fragmentP)) action
-
 
 instance HasDocs Raw where
   docsFor _proxy (endpoint, action) _ =

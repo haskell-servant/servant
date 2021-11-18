@@ -82,7 +82,7 @@ spec = describe "Servant.Docs" $ do
               (defAction & notes <>~ [DocNote "Get an Integer" ["get an integer in Json or plain text"]])
               <>
               extraInfo
-              (Proxy :: Proxy ("postJson" :> ReqBody '[JSON] String :> Post '[JSON] Datatype1))
+              (Proxy :: Proxy (ReqBody '[JSON] String :> Post '[JSON] Datatype1))
               (defAction & notes <>~ [DocNote "Post data" ["Posts some Json data"]])
       md = markdown (docsWith defaultDocOptions [] extra (Proxy :: Proxy TestApi1))
     tests1 md
@@ -126,10 +126,10 @@ spec = describe "Servant.Docs" $ do
       md `shouldContain` "## GET"
 
     it "should mention the endpoints" $ do
-      md `shouldContain` "## POST /postJson"
+      md `shouldContain` "## POST /"
       md `shouldContain` "## GET /qparam"
       md `shouldContain` "## GET /qparamform"
-      md `shouldContain` "## PUT /header"
+      md `shouldContain` "## PUT /"
 
     it "mentions headers" $ do
       md `shouldContain` "- This endpoint is sensitive to the value of the **X-Test** HTTP header."
@@ -145,7 +145,7 @@ spec = describe "Servant.Docs" $ do
       md `shouldContain` "### GET Parameters:"
       md `shouldContain` "- query"
     it "mentions optional query-param-form params from QueryParamForm" $
-      md `shouldContain` "- **Values**: *dt1field1=field%201&dt1field2=13*"
+      md `shouldContain` "**Values**: *dt1field2=13&dt1field1=field%201*"
 
     it "does not generate any docs mentioning the 'empty-api' path" $
       md `shouldNotContain` "empty-api"
@@ -178,11 +178,12 @@ instance MimeRender PlainText Int where
   mimeRender _ = cs . show
 
 type TestApi1 = Get '[JSON, PlainText] (Headers '[Header "Location" String] Int)
-           :<|> "postJson"   :> ReqBody '[JSON] String          :> Post '[JSON] Datatype1
+           :<|> ReqBody '[JSON] String :> Post '[JSON] Datatype1
+           :<|> Header "X-Test" Int :> Put '[JSON] Int
+           :<|> "empty-api" :> EmptyAPI
            :<|> "qparam"     :> QueryParam "query" String       :> Get '[JSON] Datatype1
            :<|> "qparamform" :> QueryParamForm Datatype1 :> Get '[JSON] Datatype1
-           :<|> "header"     :> Header "X-Test" Int             :> Put '[JSON] Int
-           :<|> "empty-api"                                     :> EmptyAPI
+
 
 type TestApi2 = "duplicate-endpoint" :> Get '[JSON]      Datatype1
            :<|> "duplicate-endpoint" :> Get '[PlainText] Int

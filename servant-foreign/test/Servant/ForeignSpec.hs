@@ -127,8 +127,10 @@ listFromAPISpec = describe "listFromAPI" $ do
       { _reqUrl        = Url
           [ Segment $ Static "test" ]
           [ QueryArg (Arg "" "maybe contactFormX") Form ]
+          Nothing
       , _reqMethod     = "POST"
       , _reqHeaders    = []
+      , _reqBody       = Nothing
       , _reqReturnType = Just "voidX"
       , _reqFuncName   = FunctionName ["post", "test"]
       }
