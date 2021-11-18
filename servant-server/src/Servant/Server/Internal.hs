@@ -928,13 +928,13 @@ type GServerConstraints api m =
 -- is provided in this module for all record APIs.
 
 class GServer (api :: * -> *) (m :: * -> *) where
-  proof :: Dict (GServerConstraints api m)
+  gServerProof :: Dict (GServerConstraints api m)
 
 instance
   ( ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
   , GServantProduct (Rep (api (AsServerT m)))
   ) => GServer api m where
-  proof = Dict
+  gServerProof = Dict
 
 instance
   ( HasServer (ToServantApi api) context
@@ -950,7 +950,7 @@ instance
     -> Delayed env (api (AsServerT Handler))
     -> Router env
   route _ ctx delayed =
-    case proof @api @Handler of
+    case gServerProof @api @Handler of
       Dict -> route (Proxy @(ToServantApi api)) ctx (toServant <$> delayed)
 
   hoistServerWithContext
@@ -960,7 +960,7 @@ instance
     -> api (AsServerT m)
     -> api (AsServerT n)
   hoistServerWithContext _ pctx nat server =
-    case (proof @api @m, proof @api @n) of
+    case (gServerProof @api @m, gServerProof @api @n) of
       (Dict, Dict) ->
         fromServant servantSrvN
         where

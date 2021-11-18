@@ -595,10 +595,10 @@ type GLinkConstraints routes a =
   )
 
 class GLink (routes :: * -> *) (a :: *) where
-  proof :: Dict (GLinkConstraints routes a)
+  gLinkProof :: Dict (GLinkConstraints routes a)
 
 instance GLinkConstraints routes a => GLink routes a where
-  proof = Dict
+  gLinkProof = Dict
 
 instance
   ( HasLink (ToServantApi routes)
@@ -613,7 +613,7 @@ instance
     -> Link
     -> routes (AsLink a)
 
-  toLink toA _ l = case proof @routes @a of
+  toLink toA _ l = case gLinkProof @routes @a of
     Dict -> fromServant $ toLink toA (Proxy @(ToServantApi routes)) l
 
 -- AuthProtext instances
