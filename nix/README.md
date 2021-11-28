@@ -27,6 +27,7 @@ $ nix-shell nix/shell.nix --argstr compiler ghcHEAD
 -   `ghc884`
 -   `ghc8104` - default
 -   `ghc901`
+-   `ghc921`
 
 ### Cabal users
 
