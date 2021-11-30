@@ -112,7 +112,7 @@ instance {-# OVERLAPPABLE #-} ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbo
              `HCons` buildHeadersTo headers
           Right h   -> Header h `HCons` buildHeadersTo headers
 
--- * Getting
+-- * Getting headers
 
 class GetHeaders ls where
     getHeaders :: ls -> [HTTP.Header]
@@ -153,7 +153,7 @@ instance (KnownSymbol h, GetHeadersFromHList rest, ToHttpApiData v)
   where
     getHeaders' hs = getHeadersFromHList $ getHeadersHList hs
 
--- * Adding headers to a response
+-- * Adding headers
 
 -- We need all these fundeps to save type inference
 class AddHeader h v orig new
