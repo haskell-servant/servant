@@ -3,10 +3,8 @@
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE KindSignatures         #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
@@ -51,9 +49,6 @@ import           Web.HttpApiData
 
 import           Prelude ()
 import           Prelude.Compat
-import           Servant.API.ContentTypes
-                 (JSON, PlainText, FormUrlEncoded, OctetStream,
-                  MimeRender(..))
 import           Servant.API.Header
                  (Header)
 
@@ -158,20 +153,20 @@ instance (KnownSymbol h, GetHeadersFromHList rest, ToHttpApiData v)
   where
     getHeaders' hs = getHeadersFromHList $ getHeadersHList hs
 
--- * Adding
+-- * Adding headers to a response
 
 -- We need all these fundeps to save type inference
 class AddHeader h v orig new
     | h v orig -> new, new -> h, new -> v, new -> orig where
   addOptionalHeader :: ResponseHeader h v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
 
-
+-- In this instance, we add a Header on top of something that is already decorated with some headers
 instance {-# OVERLAPPING #-} ( KnownSymbol h, ToHttpApiData v )
          => AddHeader h v (Headers (fst ': rest)  a) (Headers (Header h v  ': fst ': rest) a) where
     addOptionalHeader hdr (Headers resp heads) = Headers resp (HCons hdr heads)
 
-instance {-# OVERLAPPABLE #-} ( KnownSymbol h, ToHttpApiData v
-                       , new ~ (Headers '[Header h v] a) )
+-- In this instance, 'a' parameter is decorated with a Header.
+instance {-# OVERLAPPABLE #-} ( KnownSymbol h, ToHttpApiData v , new ~ Headers '[Header h v] a)
          => AddHeader h v a new where
     addOptionalHeader hdr resp = Headers resp (HCons hdr HNil)
 
