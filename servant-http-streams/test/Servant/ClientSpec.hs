@@ -32,7 +32,7 @@ import           Control.Concurrent
 import           Control.DeepSeq
                  (NFData (..))
 import           Control.Exception
-                 (bracket, fromException, IOException)
+                 (IOException, bracket, fromException)
 import           Control.Monad.Error.Class
                  (throwError)
 import           Data.Aeson
@@ -46,9 +46,9 @@ import           Data.Monoid ()
 import           Data.Proxy
 import           GHC.Generics
                  (Generic)
-import qualified Network.HTTP.Types                   as HTTP
+import qualified Network.HTTP.Types               as HTTP
 import           Network.Socket
-import qualified Network.Wai                          as Wai
+import qualified Network.Wai                      as Wai
 import           Network.Wai.Handler.Warp
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
@@ -62,9 +62,10 @@ import           Servant.API
                  BasicAuthData (..), Capture, CaptureAll, Delete,
                  DeleteNoContent, EmptyAPI, FormUrlEncoded, Get, Header,
                  Headers, JSON, NoContent (NoContent), Post, Put, QueryFlag,
-                 QueryParam, QueryParams, Raw, ReqBody, addHeader, getHeaders)
-import qualified Servant.Client.Core.Auth    as Auth
-import qualified Servant.Client.Core.Request as Req
+                 QueryParam, QueryParamForm, QueryParams, Raw, ReqBody,
+                 addHeader, getHeaders)
+import qualified Servant.Client.Core.Auth         as Auth
+import qualified Servant.Client.Core.Request      as Req
 import           Servant.HttpStreams
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
@@ -119,6 +120,7 @@ type Api =
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
+  :<|> "paramform" :> QueryParamForm Person :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
   :<|> "rawSuccess" :> Raw
   :<|> "rawFailure" :> Raw
@@ -144,6 +146,7 @@ getCaptureAll   :: [String] -> ClientM [Person]
 getBody         :: Person -> ClientM Person
 getQueryParam   :: Maybe String -> ClientM Person
 getQueryParams  :: [String] -> ClientM [Person]
+getQueryParamForm  :: Maybe Person -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
 getRawSuccess   :: HTTP.Method -> ClientM Response
 getRawFailure   :: HTTP.Method -> ClientM Response
@@ -161,6 +164,7 @@ getRoot
   :<|> getBody
   :<|> getQueryParam
   :<|> getQueryParams
+  :<|> getQueryParamForm
   :<|> getQueryFlag
   :<|> getRawSuccess
   :<|> getRawFailure
@@ -183,6 +187,10 @@ server = serve api (
                    Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
                    Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
   :<|> (\ names -> return (zipWith Person names [0..]))
+  :<|> (\ psearch -> case psearch of
+                   Just (Right _) -> return [alice, carol]
+                   Just (Left _) -> throwError $ ServerError 400 "failed to decode form" "" []
+                   Nothing -> return [])
   :<|> return
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
@@ -302,6 +310,11 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       left show <$> runClient (getQueryParams []) baseUrl `shouldReturn` Right []
       left show <$> runClient (getQueryParams ["alice", "bob"]) baseUrl
         `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
+
+    it "Servant.API.QueryParam.QueryParamForm" $ \(_, baseUrl) -> do
+      left show <$> runClient (getQueryParamForm Nothing) baseUrl `shouldReturn` Right []
+      left show <$> runClient (getQueryParamForm (Just $ Person "a" 10)) baseUrl
+        `shouldReturn` Right [alice, carol]
 
     context "Servant.API.QueryParam.QueryFlag" $
       forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do

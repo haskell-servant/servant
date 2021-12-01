@@ -129,6 +129,8 @@ module Servant.Links (
   , linkFragment
 ) where
 
+import qualified Data.ByteString.Lazy         as LBS
+import qualified Data.ByteString.Lazy.Char8   as LBSC
 import           Data.List
 import           Data.Constraint
 import           Data.Proxy
@@ -145,6 +147,8 @@ import           Network.URI
                  (URI (..), escapeURIString, isUnreserved)
 import           Prelude ()
 import           Prelude.Compat
+import           Web.FormUrlEncoded
+                 (ToForm(..), urlEncodeAsForm)
 
 import           Servant.API.Alternative
                  ((:<|>) ((:<|>)))
@@ -172,7 +176,7 @@ import           Servant.API.Modifiers
 import           Servant.API.NamedRoutes
                  (NamedRoutes)
 import           Servant.API.QueryParam
-                 (QueryFlag, QueryParam', QueryParams)
+                 (QueryFlag, QueryParam', QueryParams, QueryParamForm')
 import           Servant.API.Raw
                  (Raw)
 import           Servant.API.RemoteHost
@@ -237,6 +241,7 @@ data Param
     = SingleParam    String Text.Text
     | ArrayElemParam String Text.Text
     | FlagParam      String
+    | FormParam      LBS.ByteString
   deriving Show
 
 addSegment :: Escaped -> Link -> Link
@@ -306,6 +311,7 @@ linkURI' addBrackets (Link segments q_params mfragment) =
     makeQuery (ArrayElemParam k v) = escape k <> style <> escape (Text.unpack v)
     makeQuery (SingleParam k v)    = escape k <> "=" <> escape (Text.unpack v)
     makeQuery (FlagParam k)        = escape k
+    makeQuery (FormParam f)        = LBSC.unpack f
 
     makeFragment :: Fragment' -> String
     makeFragment Nothing = ""
@@ -497,6 +503,16 @@ instance (KnownSymbol sym, HasLink sub)
         toLink toA (Proxy :: Proxy sub) $ addQueryParam (FlagParam k) l
       where
         k = symbolVal (Proxy :: Proxy sym)
+
+instance (ToForm v, HasLink sub, SBoolI (FoldRequired mods))
+    => HasLink (QueryParamForm' mods v :> sub)
+  where
+    type MkLink (QueryParamForm' mods v :> sub) a = If (FoldRequired mods) v (Maybe v) -> MkLink sub a
+    toLink toA _ l mv =
+        toLink toA (Proxy :: Proxy sub) $
+            case sbool :: SBool (FoldRequired mods) of
+                STrue  -> (addQueryParam . FormParam . urlEncodeAsForm) mv l
+                SFalse -> maybe id (addQueryParam . FormParam . urlEncodeAsForm) mv l
 
 -- :<|> instance - Generate all links at once
 instance (HasLink a, HasLink b) => HasLink (a :<|> b) where

@@ -64,7 +64,7 @@ import           Network.Socket
                  (SockAddr)
 import           Network.Wai
                  (Application, Request, httpVersion, isSecure, lazyRequestBody,
-                 queryString, remoteHost, getRequestBodyChunk, requestHeaders,
+                 queryString, rawQueryString, remoteHost, getRequestBodyChunk, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
 import           Prelude.Compat
@@ -73,7 +73,7 @@ import           Servant.API
                  CaptureAll, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  Header', If, IsSecure (..), NoContentVerb, QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
+                 QueryParam', QueryParams, QueryParamForm', Raw, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
                  WithNamedContext, NamedRoutes)
@@ -87,6 +87,8 @@ import           Servant.API.Modifiers
                  unfoldRequestArgument)
 import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
+import           Web.FormUrlEncoded
+                 (FromForm(..), urlDecodeAsForm)
 import qualified Servant.Types.SourceT                      as S
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
@@ -576,6 +578,70 @@ instance (KnownSymbol sym, HasServer api context)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
+
+-- | If you define a custom record type, for example @BookSearchParams@, then you can use
+-- @'QueryParamForm' BookSearchParams@ in one of the endpoints for your API
+-- to translate a collection of query-string parameters into a value of your record type.
+--
+-- Your server-side handler must be a function that takes an argument of type
+-- @'Maybe' ('Either' BookSearchParams)@.
+--
+-- You can control how the individual values are converted from the query string
+-- into a value of your type by simply providing an instance of 'FromForm' for your type.
+-- All of the record's values utilize 'FromHttpApiData'.
+--
+-- Note: anytime you use a 'QueryParamForm', your server will assume it's present
+-- if the query-string is non-empty. This modifier does not check if any specific
+-- keys from the record are present: it just attempts to 'urlDecodeAsForm' the whole query
+-- string if any query-string parameters have been provided.
+--
+-- Example:
+--
+-- > data BookSearchParams = BookSearchParams
+-- >   { title :: Text
+-- >   , authors :: [Text]
+-- >   , page :: Maybe Int
+-- >   } deriving (Eq, Show, Generic)
+-- > instance FromForm BookSearchParams
+-- > type MyApi = "books" :> QueryParamForm BookSearchParams :> Get '[JSON] [Book]
+--
+-- Example Handler Signature:
+-- Maybe (Either Text BookSearchParams) -> Handler [Book]
+instance
+  (FromForm a, HasServer api context
+  , SBoolI (FoldRequired mods), SBoolI (FoldLenient mods)
+  )
+  => HasServer (QueryParamForm' mods a :> api) context where
+------
+  type ServerT (QueryParamForm' mods a :> api) m =
+    RequestArgument mods a -> ServerT api m
+
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+
+  route Proxy context subserver =
+
+    let parseParamForm req =
+            unfoldRequestArgument (Proxy :: Proxy mods) errReq errSt mev
+          where
+            rawQS = rawQueryString req
+
+            mev :: Maybe (Either T.Text a)
+            mev = case B.length rawQS of
+              0 -> Nothing
+              _ -> Just $ urlDecodeAsForm $ BL.drop 1 $ BL.fromStrict rawQS
+
+            errReq = delayedFailFatal err400
+              { errBody = "Query parameter form is required"
+              }
+
+            errSt e = delayedFailFatal err400
+              { errBody = cs $ "Error: parsing query parameter form failed. " <> e
+              }
+
+        delayed = addParameterCheck subserver . withRequest $ \req ->
+          parseParamForm req
+
+    in route (Proxy :: Proxy api) context delayed
 
 -- | Just pass the request to the underlying application and serve its response.
 --

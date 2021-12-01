@@ -64,6 +64,9 @@ module Servant.API (
   module Web.HttpApiData,
   -- | Classes and instances for types that can be converted to and from HTTP API data.
 
+  -- * ToForm and FromForm
+  module Web.FormUrlEncoded,
+  -- | Classes and instances for working with Forms
 
   -- * Experimental modules
   module Servant.API.Experimental.Auth,
@@ -109,7 +112,8 @@ import           Servant.API.IsSecure
 import           Servant.API.Modifiers
                  (Lenient, Optional, Required, Strict)
 import           Servant.API.QueryParam
-                 (QueryFlag, QueryParam, QueryParam', QueryParams)
+                 (QueryFlag, QueryParam, QueryParam', QueryParams,
+                 QueryParamForm, QueryParamForm')
 import           Servant.API.Raw
                  (Raw)
 import           Servant.API.RemoteHost
@@ -150,3 +154,5 @@ import           Servant.Links
                  (HasLink (..), IsElem, IsElem', Link, URI (..), safeLink)
 import           Web.HttpApiData
                  (FromHttpApiData (..), ToHttpApiData (..))
+import           Web.FormUrlEncoded
+                 (ToForm (..), urlEncodeAsForm, toListStable)

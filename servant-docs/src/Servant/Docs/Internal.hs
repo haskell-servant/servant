@@ -28,6 +28,7 @@ import           Control.Lens
                  (makeLenses, mapped, each, over, set, to, toListOf, traversed, view,
                  _1, (%~), (&), (.~), (<>~), (^.), (|>))
 import qualified Data.ByteString.Char8      as BSC
+import qualified Data.ByteString.Lazy.Char8 as LBSC
 import           Data.ByteString.Lazy.Char8
                  (ByteString)
 import qualified Data.CaseInsensitive       as CI
@@ -1051,6 +1052,25 @@ instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs api)
     where subApiP = Proxy :: Proxy api
           paramP = Proxy :: Proxy (QueryFlag sym)
           action' = over params (|> toParam paramP) action
+
+-- | The docs for a @'QueryParamForm' a'@
+--   require a 'ToSample a' instance
+instance (ToForm a, ToSample a, HasDocs api)
+      => HasDocs (QueryParamForm' mods a :> api) where
+  docsFor Proxy (endpoint, action) =
+    docsFor subApiP (endpoint, action')
+
+    where subApiP = Proxy :: Proxy api
+          action' =
+            let (Just sampleForm) = toSample (Proxy :: Proxy a)
+                sampleEncoding = LBSC.unpack . urlEncodeAsForm . toForm $ sampleForm
+            in action & params <>~ [qParamMaker sampleEncoding]
+          qParamMaker formEncodedSample = DocQueryParam {
+            _paramName = "Collection of Parameters"
+            , _paramValues = [formEncodedSample]
+            , _paramDesc = "Query parameters"
+            , _paramKind = Normal
+          }
 
 instance (ToFragment (Fragment a), HasDocs api)
       => HasDocs (Fragment a :> api) where

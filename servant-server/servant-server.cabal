@@ -142,6 +142,7 @@ test-suite spec
     , base-compat
     , base64-bytestring
     , bytestring
+    , http-api-data
     , http-types
     , mtl
     , resourcet

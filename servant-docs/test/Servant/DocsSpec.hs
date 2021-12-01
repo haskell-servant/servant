@@ -52,6 +52,8 @@ instance ToParam (QueryParam' mods "bar" Int) where
   toParam _ = DocQueryParam "bar" ["1","2","3"] "QueryParams Int" Normal
 instance ToParam (QueryParams "foo" Int) where
   toParam _ = DocQueryParam "foo" ["1","2","3"] "QueryParams Int" List
+instance ToParam (QueryParam "query" String) where
+    toParam _ = DocQueryParam "query" ["a","b","c"] "QueryParams String" Normal
 instance ToParam (QueryFlag "foo") where
   toParam _ = DocQueryParam "foo" [] "QueryFlag" Flag
 instance ToCapture (Capture "foo" Int) where
@@ -123,6 +125,12 @@ spec = describe "Servant.Docs" $ do
       md `shouldContain` "## POST"
       md `shouldContain` "## GET"
 
+    it "should mention the endpoints" $ do
+      md `shouldContain` "## POST /"
+      md `shouldContain` "## GET /qparam"
+      md `shouldContain` "## GET /qparamform"
+      md `shouldContain` "## PUT /"
+
     it "mentions headers" $ do
       md `shouldContain` "- This endpoint is sensitive to the value of the **X-Test** HTTP header."
 
@@ -132,6 +140,12 @@ spec = describe "Servant.Docs" $ do
       md `shouldContain` "\"dt1field2\":13"
     it "contains request body samples" $
       md `shouldContain` "17"
+
+    it "mentions optional query-param" $ do
+      md `shouldContain` "### GET Parameters:"
+      md `shouldContain` "- query"
+    it "mentions optional query-param-form params from QueryParamForm" $
+      md `shouldContain` "**Values**: *dt1field2=13&dt1field1=field%201*"
 
     it "does not generate any docs mentioning the 'empty-api' path" $
       md `shouldNotContain` "empty-api"
@@ -149,6 +163,7 @@ data Datatype1 = Datatype1 { dt1field1 :: String
                            } deriving (Eq, Show, Generic)
 
 instance ToJSON Datatype1
+instance ToForm Datatype1
 
 instance ToSample Datatype1 where
   toSamples _ = singleSample $ Datatype1 "field 1" 13
@@ -166,6 +181,9 @@ type TestApi1 = Get '[JSON, PlainText] (Headers '[Header "Location" String] Int)
            :<|> ReqBody '[JSON] String :> Post '[JSON] Datatype1
            :<|> Header "X-Test" Int :> Put '[JSON] Int
            :<|> "empty-api" :> EmptyAPI
+           :<|> "qparam"     :> QueryParam "query" String       :> Get '[JSON] Datatype1
+           :<|> "qparamform" :> QueryParamForm Datatype1 :> Get '[JSON] Datatype1
+
 
 type TestApi2 = "duplicate-endpoint" :> Get '[JSON]      Datatype1
            :<|> "duplicate-endpoint" :> Get '[PlainText] Int

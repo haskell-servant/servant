@@ -57,6 +57,7 @@ module Servant.Client.Core
   , addHeader
   , appendToQueryString
   , appendToPath
+  , concatQueryString
   , setRequestBodyLBS
   , setRequestBody
   ) where
