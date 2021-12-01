@@ -78,12 +78,13 @@ instance (Show a, Show b) =>
         . showString ", requestAccept = "
         . showsPrec 0 (requestAccept req)
         . showString ", requestHeaders = "
-        . showsPrec 0 (redactSensitiveHeader <$> requestHeaders req))
+        . showsPrec 0 (redactSensitiveHeader <$> requestHeaders req)
         . showString ", requestHttpVersion = "
         . showsPrec 0 (requestHttpVersion req)
         . showString ", requestMethod = "
         . showsPrec 0 (requestMethod req)
         . showString "}"
+        )
        where
         redactSensitiveHeader :: Header -> Header
         redactSensitiveHeader ("Authorization", _) = ("Authorization", "<REDACTED>")
