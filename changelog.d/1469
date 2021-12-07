@@ -1,0 +1,11 @@
+synopsis: Derive HasClient good response status from Verb status
+prs: #1469
+description: {
+`HasClient` instances for the `Verb` datatype use `runRequest` in
+`clientWithRoute` definitions.
+This means that a request performed with `runClientM` will be successful if and
+only if the endpoint specify a response status code >=200 and <300.
+This change replaces `runRequest` with `runRequestAcceptStatus` in `Verb`
+instances for the `HasClient` class, deriving the good response status from
+the `Verb` status.
+}
