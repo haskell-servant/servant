@@ -64,7 +64,7 @@ import           Servant.API
                  JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
                  QueryParams, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..), UVerb, Union,
-                 WithStatus (WithStatus), NamedRoutes, addHeader)
+                 Verb, WithStatus (WithStatus), NamedRoutes, addHeader)
 import           Servant.API.Generic ((:-))
 import           Servant.Client
 import qualified Servant.Client.Core.Auth         as Auth
@@ -125,6 +125,7 @@ type Api =
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
+  :<|> "redirection" :> Verb 'GET 301 '[PlainText] Text
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
   -- This endpoint makes use of a 'Raw' server because it is not currently
   -- possible to handle arbitrary binary query param values with
@@ -164,6 +165,7 @@ getDeleteEmpty  :: ClientM NoContent
 getCapture      :: String -> ClientM Person
 getCaptureAll   :: [String] -> ClientM [Person]
 getBody         :: Person -> ClientM Person
+getRedirection  :: ClientM Text
 getQueryParam   :: Maybe String -> ClientM Person
 getQueryParamBinary :: Maybe UrlEncodedByteString -> HTTP.Method -> ClientM Response
 getQueryParams  :: [String] -> ClientM [Person]
@@ -190,6 +192,7 @@ getRoot
   :<|> getCapture
   :<|> getCaptureAll
   :<|> getBody
+  :<|> getRedirection
   :<|> getQueryParam
   :<|> getQueryParamBinary
   :<|> getQueryParams
@@ -216,6 +219,7 @@ server = serve api (
   :<|> (\ name -> return $ Person name 0)
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
+  :<|> return "redirecting"
   :<|> (\ name -> case name of
                    Just "alice" -> return alice
                    Just n -> throwError $ ServerError 400 (n ++ " not found") "" []

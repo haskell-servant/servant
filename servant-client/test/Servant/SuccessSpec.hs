@@ -83,6 +83,9 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       let p = Person "Clara" 42
       left show <$> runClient (getBody p) baseUrl `shouldReturn` Right p
 
+    it "Servant.API.Get redirection" $ \(_, baseUrl) -> do
+      left show <$> runClient getRedirection baseUrl `shouldReturn` Right "redirecting"
+
     it "Servant.API FailureResponse" $ \(_, baseUrl) -> do
       left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
       Left (FailureResponse req _) <- runClient (getQueryParam (Just "bob")) baseUrl
@@ -111,6 +114,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     it "Servant.API.Fragment" $ \(_, baseUrl) -> do
       left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
+
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
       res <- runClient (getRawSuccess HTTP.methodGet) baseUrl
       case res of
@@ -156,7 +160,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       -- In proper situation, extra headers should probably be visible in API type.
       -- However, testing for response timeout is difficult, so we test with something which is easy to observe
       let createClientRequest url r = (defaultMakeClientRequest url r) { C.requestHeaders = [("X-Added-Header", "XXX")] }
-      let clientEnv = (mkClientEnv mgr baseUrl) { makeClientRequest = createClientRequest }
+          clientEnv = (mkClientEnv mgr baseUrl) { makeClientRequest = createClientRequest }
       res <- runClientM (getRawSuccessPassHeaders HTTP.methodGet) clientEnv
       case res of
         Left e ->
