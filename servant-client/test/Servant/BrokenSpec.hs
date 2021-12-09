@@ -38,9 +38,9 @@ brokenServer :: Application
 brokenServer = serve brokenApi (pure () :<|> pure ())
 
 type PublicAPI =
-  -- the client expcets 200
+  -- the client expects 200
        "get200" :> Get '[JSON] ()
-  -- the client expcets 307
+  -- the client expects 307
   :<|> "get307" :> Get307 '[JSON] ()
 
 publicApi :: Proxy PublicAPI
