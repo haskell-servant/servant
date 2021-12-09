@@ -1,10 +1,15 @@
 {-# LANGUAGE DataKinds #-}
 -- Flexible instances is necessary on GHC 8.4 and earlier
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Servant.API.Status where
 
+import GHC.TypeLits (KnownNat, natVal)
 import Network.HTTP.Types.Status
-import GHC.TypeLits
+
+-- | Retrieve a known or unknown Status from a KnownNat
+statusFromNat :: forall a proxy. KnownNat a => proxy a -> Status
+statusFromNat = toEnum . fromInteger . natVal
 
 -- | Witness that a type-level natural number corresponds to a HTTP status code
 class KnownNat n => KnownStatus n where

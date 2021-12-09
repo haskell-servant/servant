@@ -47,7 +47,7 @@ import           Data.Time.Clock
                  (getCurrentTime)
 import           GHC.Generics
 import           Network.HTTP.Types
-                 (Status, statusCode)
+                 (Status, statusIsSuccessful)
 
 import qualified Network.HTTP.Client                as Client
 
@@ -163,10 +163,9 @@ performRequest acceptStatus req = do
         now' <- getCurrentTime
         atomically $ modifyTVar' cj (fst . Client.updateCookieJar response request now')
       let status = Client.responseStatus response
-          status_code = statusCode status
           ourResponse = clientResponseToResponse id response
           goodStatus = case acceptStatus of
-            Nothing -> status_code >= 200 && status_code < 300
+            Nothing -> statusIsSuccessful status
             Just good -> status `elem` good
       unless goodStatus $ do
         throwError $ mkFailureResponse burl req ourResponse
@@ -182,10 +181,9 @@ performWithStreamingRequest req k = do
   ClientM $ lift $ lift $ Codensity $ \k1 ->
       Client.withResponse request m $ \res -> do
           let status = Client.responseStatus res
-              status_code = statusCode status
 
           -- we throw FailureResponse in IO :(
-          unless (status_code >= 200 && status_code < 300) $ do
+          unless (statusIsSuccessful status) $ do
               b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody res)
               throwIO $ mkFailureResponse burl req (clientResponseToResponse (const b) res)
 

@@ -59,11 +59,15 @@ spec = describe "Servant.SuccessSpec" $ do
 
 successSpec :: Spec
 successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
-    it "Servant.API.Get root" $ \(_, baseUrl) -> do
-      left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
+    describe "Servant.API.Get" $ do
+      it "get root endpoint" $ \(_, baseUrl) -> do
+        left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
 
-    it "Servant.API.Get" $ \(_, baseUrl) -> do
-      left show <$> runClient getGet baseUrl  `shouldReturn` Right alice
+      it "get simple endpoint" $ \(_, baseUrl) -> do
+        left show <$> runClient getGet baseUrl  `shouldReturn` Right alice
+
+      it "get redirection endpoint" $ \(_, baseUrl) -> do
+        left show <$> runClient getGet307 baseUrl `shouldReturn` Right "redirecting"
 
     describe "Servant.API.Delete" $ do
       it "allows empty content type" $ \(_, baseUrl) -> do
@@ -111,6 +115,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     it "Servant.API.Fragment" $ \(_, baseUrl) -> do
       left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
+
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
       res <- runClient (getRawSuccess HTTP.methodGet) baseUrl
       case res of
@@ -156,7 +161,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       -- In proper situation, extra headers should probably be visible in API type.
       -- However, testing for response timeout is difficult, so we test with something which is easy to observe
       let createClientRequest url r = (defaultMakeClientRequest url r) { C.requestHeaders = [("X-Added-Header", "XXX")] }
-      let clientEnv = (mkClientEnv mgr baseUrl) { makeClientRequest = createClientRequest }
+          clientEnv = (mkClientEnv mgr baseUrl) { makeClientRequest = createClientRequest }
       res <- runClientM (getRawSuccessPassHeaders HTTP.methodGet) clientEnv
       case res of
         Left e ->

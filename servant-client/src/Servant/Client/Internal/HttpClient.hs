@@ -63,7 +63,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (hContentType, renderQuery, statusCode, urlEncode, Status)
+                 (hContentType, renderQuery, statusIsSuccessful, urlEncode, Status)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
@@ -179,10 +179,9 @@ performRequest acceptStatus req = do
 
   response <- maybe (requestWithoutCookieJar m request) (requestWithCookieJar m request) cookieJar'
   let status = Client.responseStatus response
-      status_code = statusCode status
       ourResponse = clientResponseToResponse id response
       goodStatus = case acceptStatus of
-        Nothing -> status_code >= 200 && status_code < 300
+        Nothing -> statusIsSuccessful status
         Just good -> status `elem` good
   unless goodStatus $ do
     throwError $ mkFailureResponse burl req ourResponse

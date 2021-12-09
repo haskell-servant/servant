@@ -89,6 +89,7 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Servant.BasicAuthSpec
+      Servant.BrokenSpec
       Servant.ClientTestUtils
       Servant.ConnectionErrorSpec
       Servant.FailSpec

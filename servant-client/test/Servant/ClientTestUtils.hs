@@ -64,7 +64,7 @@ import           Servant.API
                  JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
                  QueryParams, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..), UVerb, Union,
-                 WithStatus (WithStatus), NamedRoutes, addHeader)
+                 Verb, WithStatus (WithStatus), NamedRoutes, addHeader)
 import           Servant.API.Generic ((:-))
 import           Servant.Client
 import qualified Servant.Client.Core.Auth         as Auth
@@ -118,9 +118,16 @@ data OtherRoutes mode = OtherRoutes
   { something :: mode :- "something" :> Get '[JSON] [String]
   } deriving Generic
 
+-- Get for HTTP 307 Temporary Redirect
+type Get307 = Verb 'GET 307
+
 type Api =
   Get '[JSON] Person
   :<|> "get" :> Get '[JSON] Person
+  -- This endpoint returns a response with status code 307 Temporary Redirect,
+  -- different from the ones in the 2xx successful class, to test derivation
+  -- of clients' api.
+  :<|> "get307" :> Get307 '[PlainText] Text
   :<|> "deleteEmpty" :> DeleteNoContent
   :<|> "capture" :> Capture "name" String :> Get '[JSON,FormUrlEncoded] Person
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
@@ -154,12 +161,12 @@ type Api =
   :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
   :<|> NamedRoutes RecordRoutes
 
-
 api :: Proxy Api
 api = Proxy
 
 getRoot         :: ClientM Person
 getGet          :: ClientM Person
+getGet307       :: ClientM Text
 getDeleteEmpty  :: ClientM NoContent
 getCapture      :: String -> ClientM Person
 getCaptureAll   :: [String] -> ClientM [Person]
@@ -186,6 +193,7 @@ recordRoutes :: RecordRoutes (AsClientT ClientM)
 
 getRoot
   :<|> getGet
+  :<|> getGet307
   :<|> getDeleteEmpty
   :<|> getCapture
   :<|> getCaptureAll
@@ -212,6 +220,7 @@ server :: Application
 server = serve api (
        return carol
   :<|> return alice
+  :<|> return "redirecting"
   :<|> return NoContent
   :<|> (\ name -> return $ Person name 0)
   :<|> (\ names -> return (zipWith Person names [0..]))
@@ -252,6 +261,8 @@ server = serve api (
          }
   )
 
+-- * api for testing failures
+
 type FailApi =
        "get" :> Raw
   :<|> "capture" :> Capture "name" String :> Raw
@@ -266,7 +277,7 @@ failServer = serve failApi (
   :<|> (\ _capture -> Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/json")] "")
   :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
   :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/x-www-form-urlencoded"), ("X-Example1", "1"), ("X-Example2", "foo")] "")
- )
+  )
 
 -- * basic auth stuff
 
