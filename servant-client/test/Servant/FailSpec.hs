@@ -38,14 +38,14 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
 
     context "client returns errors appropriately" $ do
       it "reports FailureResponse" $ \(_, baseUrl) -> do
-        let (_ :<|> _ :<|> getDeleteEmpty :<|> _) = client api
+        let (_ :<|> _ :<|> _ :<|> getDeleteEmpty :<|> _) = client api
         Left res <- runClient getDeleteEmpty baseUrl
         case res of
           FailureResponse _ r | responseStatusCode r == HTTP.status404 -> return ()
           _ -> fail $ "expected 404 response, but got " <> show res
 
       it "reports DecodeFailure" $ \(_, baseUrl) -> do
-        let (_ :<|> _ :<|> _ :<|> getCapture :<|> _) = client api
+        let (_ :<|> _ :<|> _ :<|> _ :<|> getCapture :<|> _) = client api
         Left res <- runClient (getCapture "foo") baseUrl
         case res of
           DecodeFailure _ _ -> return ()
@@ -72,7 +72,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
           _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
       it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
-        let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
+        let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
         Left res <- runClient (getBody alice) baseUrl
         case res of
           InvalidContentTypeHeader _ -> return ()

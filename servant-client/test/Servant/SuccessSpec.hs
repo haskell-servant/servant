@@ -59,11 +59,15 @@ spec = describe "Servant.SuccessSpec" $ do
 
 successSpec :: Spec
 successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
-    it "Servant.API.Get root" $ \(_, baseUrl) -> do
-      left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
+    describe "Servant.API.Get" $ do
+      it "get root endpoint" $ \(_, baseUrl) -> do
+        left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
 
-    it "Servant.API.Get" $ \(_, baseUrl) -> do
-      left show <$> runClient getGet baseUrl  `shouldReturn` Right alice
+      it "get simple endpoint" $ \(_, baseUrl) -> do
+        left show <$> runClient getGet baseUrl  `shouldReturn` Right alice
+
+      it "get redirection endpoint" $ \(_, baseUrl) -> do
+        left show <$> runClient getGet307 baseUrl `shouldReturn` Right "redirecting"
 
     describe "Servant.API.Delete" $ do
       it "allows empty content type" $ \(_, baseUrl) -> do
@@ -82,9 +86,6 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
       let p = Person "Clara" 42
       left show <$> runClient (getBody p) baseUrl `shouldReturn` Right p
-
-    it "Servant.API.Get redirection" $ \(_, baseUrl) -> do
-      left show <$> runClient getRedirection baseUrl `shouldReturn` Right "redirecting"
 
     it "Servant.API FailureResponse" $ \(_, baseUrl) -> do
       left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
