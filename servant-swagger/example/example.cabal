@@ -1,3 +1,4 @@
+cabal-version:       2.2
 name:                example
 version:             1.0
 synopsis:            servant-swagger demonstration
@@ -9,7 +10,6 @@ maintainer:          nickolay.kudasov@gmail.com
 copyright:           (c) 2015-2016, Servant contributors
 category:            Web
 build-type:          Simple
-cabal-version:       >=1.10
 data-files:
   swagger.json
 

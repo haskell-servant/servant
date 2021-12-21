@@ -1,3 +1,4 @@
+cabal-version:       2.2
 name:                servant-swagger
 version:             1.1.11
 synopsis:            Generate a Swagger/OpenAPI/OAS 2.0 specification for your servant API.
@@ -27,7 +28,6 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           (c) 2015-2018, Servant contributors
 category:            Web, Servant, Swagger
 build-type:          Custom
-cabal-version:       1.18
 tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2
 
 extra-source-files:
