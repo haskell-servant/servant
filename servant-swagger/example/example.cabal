@@ -3,7 +3,7 @@ name:                example
 version:             1.0
 synopsis:            servant-swagger demonstration
 description:         servant-swagger demonstration
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        LICENSE
 author:              David Johnson, Nickolay Kudasov
 maintainer:          nickolay.kudasov@gmail.com

@@ -21,7 +21,7 @@ description:
   * and [many others](http://swagger.io/open-source-integrations/).
 homepage:            https://github.com/haskell-servant/servant/servant-swagger
 bug-reports:         https://github.com/haskell-servant/servant/issues
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
