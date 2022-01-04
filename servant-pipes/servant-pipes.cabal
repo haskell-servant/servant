@@ -1,4 +1,4 @@
-cabal-version:       >=1.10
+cabal-version:       2.2
 name:                servant-pipes
 version:             0.15.3
 
@@ -51,7 +51,7 @@ test-suite example
     , bytestring
     , http-media
     , servant
-    , pipes 
+    , pipes
     , pipes-safe
     , servant-pipes
     , pipes-bytestring  >=2.1.6    && <2.2

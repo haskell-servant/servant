@@ -1,3 +1,4 @@
+cabal-version:       2.2
 name:                cookbook-hoist-server-with-context
 version:             0.0.1
 synopsis:            JWT and basic access authentication with a Custom Monad cookbook example
@@ -10,7 +11,6 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 category:            Servant
 build-type:          Simple
-cabal-version:       >=1.10
 tested-with:         GHC==8.6.5, GHC==8.8.3, GHC ==8.10.7
 
 executable cookbook-hoist-server-with-context

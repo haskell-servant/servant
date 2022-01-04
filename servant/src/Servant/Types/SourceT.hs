@@ -319,7 +319,7 @@ fromActionStep stop action = loop where
 -- | Read file.
 --
 -- >>> foreach fail BS.putStr (readFile "servant.cabal")
--- cabal-version:       >=1.10
+-- cabal-version:       2.2
 -- name:                servant
 -- ...
 --

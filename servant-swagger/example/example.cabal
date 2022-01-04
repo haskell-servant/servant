@@ -1,15 +1,15 @@
+cabal-version:       2.2
 name:                example
 version:             1.0
 synopsis:            servant-swagger demonstration
 description:         servant-swagger demonstration
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        LICENSE
 author:              David Johnson, Nickolay Kudasov
 maintainer:          nickolay.kudasov@gmail.com
 copyright:           (c) 2015-2016, Servant contributors
 category:            Web
 build-type:          Simple
-cabal-version:       >=1.10
 data-files:
   swagger.json
 
