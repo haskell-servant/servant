@@ -128,7 +128,8 @@ type DeleteNoContent = NoContentVerb 'DELETE
 type PatchNoContent  = NoContentVerb 'PATCH
 -- | 'PUT' with 204 status code.
 type PutNoContent    = NoContentVerb 'PUT
-
+-- | 'HEAD' with 204 status code.
+type HeadNoContent   = NoContentVerb 'HEAD
 
 -- ** 205 Reset Content
 --
