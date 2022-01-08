@@ -12,7 +12,7 @@ Helpful Links
   `https://github.com/haskell-servant/servant/issues <https://github.com/haskell-servant/servant/issues>`_
 
 - the irc channel:
-  ``#servant`` on freenode
+  `#haskell-servant on libera.chat <https://web.libera.chat/#haskell-servant>`_
 
 - the mailing list:
   `groups.google.com/forum/#!forum/haskell-servant <https://groups.google.com/forum/#!forum/haskell-servant>`_

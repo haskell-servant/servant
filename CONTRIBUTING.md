@@ -79,8 +79,10 @@ not been a timely response to a PR, you can ping the Maintainers group (with
 We encourage people to experiment with new combinators and instances - it is
 one of the most powerful ways of using `servant`, and a wonderful way of
 getting to know it better. If you do write a new combinator, we would love to
-know about it! Either hop on #servant on freenode and let us know, or open an
-issue with the `news` tag (which we will close when we read it).
+know about it! Either hop on
+[#haskell-servant on libera.chat](https://web.libera.chat/#haskell-servant) and
+let us know, or open an issue with the `news` tag (which we will close when we
+read it).
 
 As for adding them to the main repo: maintaining combinators can be expensive,
 since official combinators must have instances for all classes (and new classes
