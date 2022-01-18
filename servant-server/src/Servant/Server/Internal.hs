@@ -56,7 +56,7 @@ import qualified Data.Text                                  as T
 import           Data.Typeable
 import           GHC.Generics
 import           GHC.TypeLits
-                 (KnownNat, KnownSymbol, symbolVal)
+                 (KnownNat, KnownSymbol, TypeError, symbolVal)
 import qualified Network.HTTP.Media                         as NHM
 import           Network.HTTP.Types                         hiding
                  (Header, ResponseHeaders)
@@ -90,6 +90,7 @@ import           Servant.API.ResponseHeaders
 import           Servant.API.Status
                  (statusFromNat)
 import qualified Servant.Types.SourceT                      as S
+import           Servant.API.TypeErrors
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
                  parseUrlPieces)
@@ -814,38 +815,15 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
   hoistServerWithContext _ _ nt s = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
 
 -------------------------------------------------------------------------------
--- TypeError helpers
+-- Custom type errors
 -------------------------------------------------------------------------------
 
--- | This instance catches mistakes when there are non-saturated
--- type applications on LHS of ':>'.
---
--- >>> serve (Proxy :: Proxy (Capture "foo" :> Get '[JSON] Int)) (error "...")
--- ...
--- ...Expected something of kind Symbol or *, got: k -> l on the LHS of ':>'.
--- ...Maybe you haven't applied enough arguments to
--- ...Capture' '[] "foo"
--- ...
---
--- >>> undefined :: Server (Capture "foo" :> Get '[JSON] Int)
--- ...
--- ...Expected something of kind Symbol or *, got: k -> l on the LHS of ':>'.
--- ...Maybe you haven't applied enough arguments to
--- ...Capture' '[] "foo"
--- ...
---
-instance TypeError (HasServerArrowKindError arr) => HasServer ((arr :: k -> l) :> api) context
+-- Erroring instance for 'HasServer' when a combinator is not fully applied
+instance TypeError (PartialApplication HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
   where
-    type ServerT (arr :> api) m = TypeError (HasServerArrowKindError arr)
-    -- it doesn't really matter what sub route we peak
-    route _ _ _ = error "servant-server panic: impossible happened in HasServer (arr :> api)"
-    hoistServerWithContext _ _ _ = id
-
--- Cannot have TypeError here, otherwise use of this symbol will error :)
-type HasServerArrowKindError arr =
-    'Text "Expected something of kind Symbol or *, got: k -> l on the LHS of ':>'."
-    ':$$: 'Text "Maybe you haven't applied enough arguments to"
-    ':$$: 'ShowType arr
+    type ServerT (arr :> sub) _ = TypeError (PartialApplication HasServer arr)
+    route = error "unreachable"
+    hoistServerWithContext _ _ _ _ = error "unreachable"
 
 -- | This instance prevents from accidentally using '->' instead of ':>'
 --
@@ -879,6 +857,15 @@ type HasServerArrowTypeError a b =
     ':$$: 'ShowType a
     ':$$: 'Text "and"
     ':$$: 'ShowType b
+
+-- Erroring instances for 'HasServer' for unknown API combinators
+
+-- XXX: This omits the @context@ parameter, e.g.:
+--
+-- "There is no instance for HasServer (Bool :> …)". Do we care ?
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub HasServer ty) => HasServer (ty :> sub) context
+
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) => HasServer api context
 
 -- | Ignore @'Fragment'@ in server handlers.
 -- See <https://ietf.org/rfc/rfc2616.html#section-15.1.3> for more details.
