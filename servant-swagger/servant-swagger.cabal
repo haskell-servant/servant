@@ -50,6 +50,7 @@ source-repository head
 custom-setup
   setup-depends:
     base >=4.9 && <5,
+    Cabal >= 1.24 && < 3.5,
     cabal-doctest >=1.0.6 && <1.1
 
 library
