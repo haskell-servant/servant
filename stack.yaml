@@ -11,6 +11,7 @@ packages:
 - servant-conduit
 - servant-machines/
 - servant-pipes/
+- servant-swagger/
 
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/

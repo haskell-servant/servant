@@ -50,6 +50,7 @@ source-repository head
 custom-setup
   setup-depends:
     base >=4.9 && <5,
+    Cabal >= 1.24 && < 3.5,
     cabal-doctest >=1.0.6 && <1.1
 
 library
@@ -91,7 +92,7 @@ test-suite doctests
   build-depends:
     base,
     directory >= 1.0,
-    doctest >= 0.18 && <0.19,
+    doctest >= 0.17 && <0.19,
     servant,
     QuickCheck,
     filepath
