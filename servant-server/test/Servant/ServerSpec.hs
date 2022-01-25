@@ -268,15 +268,18 @@ captureSpec = do
 -- * captureAllSpec {{{
 ------------------------------------------------------------------------------
 
-type CaptureAllApi = CaptureAll "legs" Integer :> Get '[JSON] Animal
+type CaptureAllApi =  "legs" :> CaptureAll "legs" Integer :> Get '[JSON] Animal
+                 :<|> "arms" :> CaptureAll "arms" String :> Get '[JSON] [String]
 captureAllApi :: Proxy CaptureAllApi
 captureAllApi = Proxy
-captureAllServer :: [Integer] -> Handler Animal
-captureAllServer legs = case sum legs of
-  4 -> return jerry
-  2 -> return tweety
-  0 -> return beholder
-  _ -> throwError err404
+captureAllServer :: Server CaptureAllApi
+captureAllServer = handleLegs :<|> (return :: [String] -> Handler [String])
+  where
+    handleLegs [] = return beholder
+    handleLegs legs = case sum legs of
+      4 -> return jerry
+      2 -> return tweety
+      _ -> throwError err404
 
 captureAllSpec :: Spec
 captureAllSpec = do
@@ -284,29 +287,39 @@ captureAllSpec = do
     with (return (serve captureAllApi captureAllServer)) $ do
 
       it "can capture a single element of the 'pathInfo'" $ do
-        response <- get "/2"
+        response <- get "/legs/2"
         liftIO $ decode' (simpleBody response) `shouldBe` Just tweety
 
       it "can capture multiple elements of the 'pathInfo'" $ do
-        response <- get "/2/2"
+        response <- get "/legs/2/2"
         liftIO $ decode' (simpleBody response) `shouldBe` Just jerry
 
       it "can capture arbitrarily many elements of the 'pathInfo'" $ do
-        response <- get "/1/1/0/1/0/1"
+        response <- get "/legs/1/1/0/1/0/1"
         liftIO $ decode' (simpleBody response) `shouldBe` Just jerry
 
       it "can capture when there are no elements in 'pathInfo'" $ do
-        response <- get "/"
+        response <- get "/legs/"
         liftIO $ decode' (simpleBody response) `shouldBe` Just beholder
 
       it "returns 400 if the decoding fails" $ do
-        get "/notAnInt" `shouldRespondWith` 400
+        get "/legs/notAnInt" `shouldRespondWith` 400
 
       it "returns 400 if the decoding fails, regardless of which element" $ do
-        get "/1/0/0/notAnInt/3/" `shouldRespondWith` 400
+        get "/legs/1/0/0/notAnInt/3/" `shouldRespondWith` 400
 
       it "returns 400 if the decoding fails, even when it's multiple elements" $ do
-        get "/1/0/0/notAnInt/3/orange/" `shouldRespondWith` 400
+        get "/legs/1/0/0/notAnInt/3/orange/" `shouldRespondWith` 400
+
+      let getStringList = decode' @[String] . simpleBody
+
+      it "can capture single String" $ do
+        response <- get "/arms/jerry"
+        liftIO $ getStringList response `shouldBe` Just ["jerry"]
+
+      it "can capture when there are no elements in 'pathinfo'" $ do
+        response <- get "/arms/"
+        liftIO $ getStringList response `shouldBe` Just []
 
     with (return (serve
         (Proxy :: Proxy (CaptureAll "segments" String :> Raw))
