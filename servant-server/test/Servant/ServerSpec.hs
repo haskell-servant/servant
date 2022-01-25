@@ -273,7 +273,7 @@ type CaptureAllApi =  "legs" :> CaptureAll "legs" Integer :> Get '[JSON] Animal
 captureAllApi :: Proxy CaptureAllApi
 captureAllApi = Proxy
 captureAllServer :: Server CaptureAllApi
-captureAllServer = handleLegs :<|> (return :: [String] -> Handler [String])
+captureAllServer = handleLegs :<|> return
   where
     handleLegs [] = return beholder
     handleLegs legs = case sum legs of

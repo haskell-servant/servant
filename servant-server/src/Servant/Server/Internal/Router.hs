@@ -178,7 +178,14 @@ runRouterEnv fmt router env request respond  =
           -> let request' = request { pathInfo = rest }
              in  runRouterEnv fmt router' (first, env) request' respond
     CaptureAllRouter router' ->
-      let segments = pathInfo request
+      let segments = case pathInfo request of
+            -- This case handles empty capture alls in a sub route like:
+            -- /legs/ => [] instead of [""]
+            -- But will this break a rooted capture all? like:
+            -- // => [] instead of [""]
+            -- Maybe we should fix it in Wai first.
+            [""] -> []
+            xs -> xs
           request' = request { pathInfo = [] }
       in runRouterEnv fmt router' (segments, env) request' respond
     RawRouter app ->
