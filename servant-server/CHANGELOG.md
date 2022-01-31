@@ -1,6 +1,22 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
+
+0.19
+----
+
+### Significant changes
+
+- Drop support for GHC < 8.6.
+- Support GHC 9.0 (GHC 9.2 should work as well, but isn't fully tested yet).
+- Support Aeson 2 ([#1475](https://github.com/haskell-servant/servant/pull/1475)).
+- Add `NamedRoutes` combinator, making support for records first-class in Servant
+  ([#1388](https://github.com/haskell-servant/servant/pull/1388)).
+- Add custom type errors for partially applied combinators
+  ([#1289](https://github.com/haskell-servant/servant/pull/1289),
+  [#1486](https://github.com/haskell-servant/servant/pull/1486)).
+
 0.18.3
 ------
 

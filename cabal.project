@@ -71,6 +71,9 @@ allow-newer: servant-pagination-2.2.2:servant
 allow-newer: servant-pagination-2.2.2:servant-server
 
 allow-newer: servant-js:servant
+allow-newer: servant-multipart:servant
+allow-newer: servant-multipart:servant-server
+allow-newer: servant-multipart-api:servant
 
 -- ghc 9
 allow-newer: tdigest:base
