@@ -10,7 +10,9 @@ Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/
 
 - Drop support for GHC < 8.6.
 - Support GHC 9.0 (GHC 9.2 should work as well, but isn't fully tested yet).
-- Support Aeson 2 ([#1475](https://github.com/haskell-servant/servant/pull/1475)).
+- Support Aeson 2 ([#1475](https://github.com/haskell-servant/servant/pull/1475)),
+  which fixes a [DOS vulnerability](https://github.com/haskell/aeson/issues/864)
+  related to hash collisions.
 - Add `NamedRoutes` combinator, making support for records first-class in Servant
   ([#1388](https://github.com/haskell-servant/servant/pull/1388)).
 - Add custom type errors for partially applied combinators
