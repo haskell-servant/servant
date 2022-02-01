@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-http-streams
-version:             0.18.3
+version:             0.18.4
 
 synopsis:            Automatic derivation of querying functions for servant
 category:            Servant, Web
