@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           servant-auth
-version:        0.4.0.0
+version:        0.4.1.0
 synopsis:       Authentication combinators for servant
 description:    This package provides an @Auth@ combinator for 'servant'. This combinator
                 allows using different authentication schemes in a straightforward way,
