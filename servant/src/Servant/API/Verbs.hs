@@ -26,13 +26,13 @@ import           Network.HTTP.Types.Method
 -- provided, but you are free to define your own:
 --
 -- >>> type Post204 contentTypes a = Verb 'POST 204 contentTypes a
-data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
+data Verb (method :: StdMethod) (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
   deriving (Typeable, Generic)
 
 -- | @NoContentVerb@ is a specific type to represent 'NoContent' responses.
 -- It does not require either a list of content types (because there's
 -- no content) or a status code (because it should always be 204).
-data NoContentVerb  (method :: k1)
+data NoContentVerb  (method :: StdMethod)
   deriving (Typeable, Generic)
 
 -- * 200 responses
