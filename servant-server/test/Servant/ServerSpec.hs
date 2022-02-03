@@ -76,6 +76,8 @@ import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
                  (NamedContext (..))
 
+import           Servant.API.Status
+
 -- * comprehensive api test
 
 -- This declaration simply checks that all instances are in place.

@@ -34,17 +34,17 @@ module Servant.API.UVerb
 where
 
 import Data.Proxy (Proxy (Proxy))
-import GHC.TypeLits (Nat)
+import GHC.TypeLits (Nat, natVal, KnownNat)
 import Network.HTTP.Types (Status, StdMethod)
 import Servant.API.ContentTypes (JSON, PlainText, FormUrlEncoded, OctetStream, NoContent, MimeRender(mimeRender), MimeUnrender(mimeUnrender))
-import Servant.API.Status (KnownStatus, statusVal)
+import Servant.API.Status (KnownStatus, statusVal, statusFromNat)
 import Servant.API.UVerb.Union
 
-class KnownStatus (StatusOf a) => HasStatus (a :: *) where
+class KnownNat (StatusOf a) => HasStatus (a :: *) where
   type StatusOf (a :: *) :: Nat
 
 statusOf :: forall a proxy. HasStatus a => proxy a -> Status
-statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
+statusOf = const (statusFromNat (Proxy :: Proxy (StatusOf a)))
 
 -- | If an API can respond with 'NoContent' we assume that this will happen
 -- with the status code 204 No Content. If this needs to be overridden,
@@ -83,7 +83,7 @@ newtype WithStatus (k :: Nat) a = WithStatus a
 -- You can also use the convience newtype wrapper 'WithStatus' if you want to
 -- avoid writing a 'HasStatus' instance manually. It also has the benefit of
 -- showing the status code in the type; which might aid in readability.
-instance KnownStatus n => HasStatus (WithStatus n a) where
+instance KnownNat n => HasStatus (WithStatus n a) where
   type StatusOf (WithStatus n a) = n
 
 

@@ -52,6 +52,7 @@ module Servant.API.UVerb.Union
 ( IsMember
 , Unique
 , Union
+, Elem
 , inject
 , eject
 , foldMapUnion

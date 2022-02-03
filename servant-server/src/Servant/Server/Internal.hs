@@ -84,7 +84,7 @@ import           Servant.API
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
                  WithNamedContext, NamedRoutes, UVerb, WithStatus(..))
 
-import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, WithStatus (..), foldMapUnion, inject, statusOf)
+import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, WithStatus (..), Elem, foldMapUnion, inject, statusOf)
 import           Servant.API.Generic (GenericMode(..), ToServant, ToServantApi, GServantProduct, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
@@ -97,6 +97,7 @@ import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
 import           Servant.API.Status
                  (statusFromNat, KnownStatus)
+
 import qualified Servant.Types.SourceT                      as S
 import           Servant.API.TypeErrors
 import           Web.HttpApiData
@@ -324,11 +325,17 @@ noContentRouter method status action = leafRouter route'
 --           status = statusFromNat (Proxy :: Proxy status)
 
 instance
-  (KnownStatus statusCode, HasServer (UVerb method ctypes '[WithStatus statusCode a]) context) =>
+  ( KnownNat statusCode, HasServer (UVerb method ctypes '[WithStatus statusCode a]) context
+  , Elem (WithStatus statusCode a) '[WithStatus statusCode a] ~ True) =>
   HasServer (Verb method statusCode ctypes a) context where
 
   type ServerT (Verb method statusCode ctypes a) m = m a
-  route = undefined
+  route _ pcontext denv = route
+    (Proxy :: Proxy (UVerb method ctypes '[WithStatus statusCode a]))
+    pcontext
+    ((>>= \a -> respond $ WithStatus @statusCode a) <$> denv)
+    -- ((>>= respond . WithStatus @statusCode) <$> denv)
+
   hoistServerWithContext p1 p2 nat s = undefined
 
 instance (ReflectMethod method) =>
