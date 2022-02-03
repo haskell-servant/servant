@@ -1,4 +1,4 @@
-{ compiler ? "ghc8104"
+{ compiler ? "ghc901"
 , tutorial ? false
 , pkgs ? import ./nixpkgs.nix
 }:

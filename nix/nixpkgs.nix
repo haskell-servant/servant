@@ -1,4 +1,7 @@
-import (builtins.fetchTarball {
-  url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/21.05.tar.gz";
-  sha256 = "sha256:1ckzhh24mgz6jd1xhfgx0i9mijk6xjqxwsshnvq789xsavrmsc36";
-}) {}
+let nixpkgsSnapshot =
+  builtins.fromJSON (builtins.readFile ./nixpkgs.json); in
+import (builtins.fetchTarball 
+  { url = "https://github.com/NixOS/nixpkgs/tarball/${nixpkgsSnapshot.rev}";
+    sha256 = nixpkgsSnapshot.sha256;
+  })
+  {}

@@ -31,6 +31,12 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServerError
   ) where
 
+import Data.Proxy (Proxy (Proxy))
+import Data.SOP (I (I))
+import Data.SOP.Constraint (All, And)
+import Data.String.Conversions (LBS, cs)
+import Network.HTTP.Types (Status, HeaderName, hContentType)
+
 import           Control.Monad
                  (join, when)
 import           Control.Monad.Trans
@@ -76,7 +82,9 @@ import           Servant.API
                  QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
-                 WithNamedContext, NamedRoutes)
+                 WithNamedContext, NamedRoutes, UVerb, WithStatus(..))
+
+import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, WithStatus (..), foldMapUnion, inject, statusOf)
 import           Servant.API.Generic (GenericMode(..), ToServant, ToServantApi, GServantProduct, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
@@ -88,7 +96,7 @@ import           Servant.API.Modifiers
 import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
 import           Servant.API.Status
-                 (statusFromNat)
+                 (statusFromNat, KnownStatus)
 import qualified Servant.Types.SourceT                      as S
 import           Servant.API.TypeErrors
 import           Web.HttpApiData
@@ -292,28 +300,36 @@ noContentRouter method status action = leafRouter route'
                     env request respond $ \ _output ->
                       Route $ responseLBS status [] ""
 
-instance {-# OVERLAPPABLE #-}
-         ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
-         ) => HasServer (Verb method status ctypes a) context where
+-- instance {-# OVERLAPPABLE #-}
+--          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
+--          ) => HasServer (Verb method status ctypes a) context where
 
-  type ServerT (Verb method status ctypes a) m = m a
-  hoistServerWithContext _ _ nt s = nt s
+--   type ServerT (Verb method status ctypes a) m = m a
+--   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
-    where method = reflectMethod (Proxy :: Proxy method)
-          status = statusFromNat (Proxy :: Proxy status)
+--   route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
+--     where method = reflectMethod (Proxy :: Proxy method)
+--           status = statusFromNat (Proxy :: Proxy status)
 
-instance {-# OVERLAPPING #-}
-         ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
-         , GetHeaders (Headers h a)
-         ) => HasServer (Verb method status ctypes (Headers h a)) context where
+-- instance {-# OVERLAPPING #-}
+--          ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
+--          , GetHeaders (Headers h a)
+--          ) => HasServer (Verb method status ctypes (Headers h a)) context where
 
-  type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
-  hoistServerWithContext _ _ nt s = nt s
+--   type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
+--   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
-    where method = reflectMethod (Proxy :: Proxy method)
-          status = statusFromNat (Proxy :: Proxy status)
+--   route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
+--     where method = reflectMethod (Proxy :: Proxy method)
+--           status = statusFromNat (Proxy :: Proxy status)
+
+instance
+  (KnownStatus statusCode, HasServer (UVerb method ctypes '[WithStatus statusCode a]) context) =>
+  HasServer (Verb method statusCode ctypes a) context where
+
+  type ServerT (Verb method statusCode ctypes a) m = m a
+  route = undefined
+  hoistServerWithContext p1 p2 nat s = undefined
 
 instance (ReflectMethod method) =>
          HasServer (NoContentVerb method) context where
@@ -957,3 +973,84 @@ instance
             toServant server
           servantSrvN :: ServerT (ToServantApi api) n =
             hoistServerWithContext (Proxy @(ToServantApi api)) pctx nat servantSrvM
+
+
+
+-- | 'return' for 'UVerb' handlers.  Takes a value of any of the members of the open union,
+-- and will construct a union value in an 'Applicative' (eg. 'Server').
+respond ::
+  forall (x :: *) (xs :: [*]) (f :: * -> *).
+  (Applicative f, HasStatus x, IsMember x xs) =>
+  x ->
+  f (Union xs)
+respond = pure . inject . I
+
+class IsServerResource (cts :: [*]) a where
+  resourceResponse :: Request -> Proxy cts -> a -> Maybe (LBS, LBS)
+  resourceHeaders :: Proxy cts -> a -> [(HeaderName, B.ByteString)]
+
+instance {-# OVERLAPPABLE #-} AllCTRender cts a
+  => IsServerResource cts a where
+  resourceResponse request p res = handleAcceptH p (getAcceptHeader request) res
+  resourceHeaders _ _ = []
+
+instance {-# OVERLAPPING #-} (IsServerResource cts a, GetHeaders (Headers h a))
+  => IsServerResource cts (Headers h a) where
+  resourceResponse request p res = resourceResponse request p (getResponse res)
+  resourceHeaders cts res = getHeaders res ++ resourceHeaders cts (getResponse res)
+
+instance {-# OVERLAPPING #-} IsServerResource cts a
+  => IsServerResource cts (WithStatus n a) where
+  resourceResponse request p (WithStatus x) = resourceResponse request p x
+  resourceHeaders cts (WithStatus x) = resourceHeaders cts x
+
+encodeResource :: forall a cts . (IsServerResource cts a, HasStatus a)
+               => Request -> Proxy cts -> a
+               -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
+encodeResource request cts res = (statusOf (Proxy @a),
+                                  resourceResponse request cts res,
+                                  resourceHeaders cts res)
+
+type IsServerResourceWithStatus cts = IsServerResource cts `And` HasStatus
+
+instance
+  ( ReflectMethod method,
+    AllMime contentTypes,
+    All (IsServerResourceWithStatus contentTypes) as,
+    Unique (Statuses as) -- for consistency with servant-swagger (server would work fine
+        -- without; client is a bit of a corner case, because it dispatches
+        -- the parser based on the status code.  with this uniqueness
+        -- constraint it won't have to run more than one parser in weird
+        -- corner cases.
+  ) =>
+  HasServer (UVerb method contentTypes as) context
+  where
+  type ServerT (UVerb method contentTypes as) m = m (Union as)
+
+  hoistServerWithContext _ _ nt s = nt s
+
+  route ::
+    forall env.
+    Proxy (UVerb method contentTypes as) ->
+    Context context ->
+    Delayed env (Server (UVerb method contentTypes as)) ->
+    Router env
+  route _proxy _ctx action = leafRouter route'
+    where
+      method = reflectMethod (Proxy @method)
+      route' env request cont = do
+        let action' :: Delayed env (Handler (Union as))
+            action' =
+              action
+                `addMethodCheck` methodCheck method request
+                `addAcceptCheck` acceptCheck (Proxy @contentTypes) (getAcceptHeader request)
+
+        runAction action' env request cont $ \(output :: Union as) -> do
+          let cts = Proxy @contentTypes
+              pickResource :: Union as -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
+              pickResource = foldMapUnion (Proxy @(IsServerResourceWithStatus contentTypes)) (encodeResource request cts)
+          case pickResource output of
+            (_, Nothing, _) -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
+            (status, Just (contentT, body), headers) ->
+              let bdy = if allowedMethodHead method request then "" else body
+               in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
