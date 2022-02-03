@@ -48,11 +48,11 @@ Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/
   rootClient :: RootApi (AsClientT ClientM)
   rootClient = client (Proxy @API)
 
-  hello :: String -> ClientM String
-  hello name = rootClient // hello /: name
+  helloClient :: String -> ClientM String
+  helloClient name = rootClient // hello /: name
 
   endpointClient :: ClientM Person
-  endpointClient = client // subApi /: "foobar123" // endpoint
+  endpointClient = rootClient // subApi /: "foobar123" // endpoint
 
   type Api = NamedRoutes RootApi
 
