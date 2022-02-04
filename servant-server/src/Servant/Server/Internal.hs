@@ -41,7 +41,7 @@ import qualified Data.ByteString                            as B
 import qualified Data.ByteString.Builder                    as BB
 import qualified Data.ByteString.Char8                      as BC8
 import qualified Data.ByteString.Lazy                       as BL
-import           Data.Constraint (Dict(..))
+import           Data.Constraint (Constraint, Dict(..))
 import           Data.Either
                  (partitionEithers)
 import           Data.Maybe
@@ -821,7 +821,7 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -- Erroring instance for 'HasServer' when a combinator is not fully applied
 instance TypeError (PartialApplication HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
   where
-    type ServerT (arr :> sub) _ = TypeError (PartialApplication HasServer arr)
+    type ServerT (arr :> sub) _ = TypeError (PartialApplication (HasServer :: * -> [*] -> Constraint) arr)
     route = error "unreachable"
     hoistServerWithContext _ _ _ _ = error "unreachable"
 
