@@ -80,7 +80,7 @@ library
                      , servant                   >=0.18.1   && <0.20
                      , singleton-bool            >=0.1.4    && <0.2
                      , swagger2                  >=2.3.0.1  && <3
-                     , text                      >=1.2.3.0  && <1.3
+                     , text                      >=1.2.3.0  && <2.1
                      , unordered-containers      >=0.2.9.0  && <0.3
 
                      , hspec
