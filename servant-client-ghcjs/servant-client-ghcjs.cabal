@@ -38,7 +38,7 @@ library
     Servant.Client.Internal.XhrClient
 
   build-depends:
-      base                >=4.11    && <4.12
+      base                >=4.11    && <5
     , bytestring          >=0.10    && <0.12
     , case-insensitive    >=1.2.0.0 && <1.3.0.0
     , containers          >=0.5     && <0.7
