@@ -8,7 +8,10 @@ module Servant.Auth.Server.Internal.ThrowAll where
 
 import Control.Monad.Error.Class
 import Data.Tagged               (Tagged (..))
-import Servant                   ((:<|>) (..), ServerError(..))
+import Servant                   ((:<|>) (..), ServerError(..), NamedRoutes(..))
+import Servant.API.Generic
+import Servant.Server.Generic
+import Servant.Server
 import Network.HTTP.Types
 import Network.Wai
 
@@ -25,6 +28,12 @@ class ThrowAll a where
 
 instance (ThrowAll a, ThrowAll b) => ThrowAll (a :<|> b) where
   throwAll e = throwAll e :<|> throwAll e
+
+instance
+  ( ThrowAll (ToServant api (AsServerT m)) , GenericServant api (AsServerT m)) =>
+  ThrowAll (api (AsServerT m)) where
+
+  throwAll = fromServant . throwAll
 
 -- Really this shouldn't be necessary - ((->) a) should be an instance of
 -- MonadError, no?

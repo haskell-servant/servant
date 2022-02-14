@@ -50,6 +50,7 @@ import           Network.Wreq                        (Options, auth, basicAuth,
 import           Network.Wreq.Types                  (Postable(..))
 import           Servant                             hiding (BasicAuth,
                                                       IsSecure (..), header)
+import           Servant.API.Generic                 ((:-))
 import           Servant.Auth.Server
 import           Servant.Auth.Server.Internal.Cookie (expireTime)
 import           Servant.Auth.Server.SetCookieOrphan ()
@@ -405,6 +406,7 @@ type API auths
     = Auth auths User :>
         ( Get '[JSON] Int
        :<|> ReqBody '[JSON] Int :> Post '[JSON] Int
+       :<|> NamedRoutes DummyRoutes
        :<|> "header" :> Get '[JSON] (Headers '[Header "Blah" Int] Int)
 #if MIN_VERSION_servant_server(0,15,0)
        :<|> "stream" :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
@@ -415,6 +417,10 @@ type API auths
                                                                      , Header "Set-Cookie" SetCookie ] NoContent)
       :<|> "logout" :> Get '[JSON] (Headers '[ Header "Set-Cookie" SetCookie
                                              , Header "Set-Cookie" SetCookie ] NoContent)
+
+data DummyRoutes mode = DummyRoutes
+  { dummyInt :: mode :- "dummy" :> Get '[JSON] Int
+  } deriving Generic
 
 jwtOnlyApi :: Proxy (API '[Servant.Auth.Server.JWT])
 jwtOnlyApi = Proxy
@@ -476,6 +482,7 @@ server ccfg =
     (\authResult -> case authResult of
         Authenticated usr -> getInt usr
                         :<|> postInt usr
+                        :<|> DummyRoutes { dummyInt = getInt usr }
                         :<|> getHeaderInt
 #if MIN_VERSION_servant_server(0,15,0)
                         :<|> return (S.source ["bytestring"])
