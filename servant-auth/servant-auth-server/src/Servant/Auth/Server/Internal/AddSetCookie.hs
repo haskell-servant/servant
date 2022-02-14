@@ -11,6 +11,8 @@ import           Data.Tagged              (Tagged (..))
 import qualified Network.HTTP.Types       as HTTP
 import           Network.Wai              (mapResponseHeaders)
 import           Servant
+import           Servant.API.Generic
+import           Servant.Server.Generic
 import           Web.Cookie
 
 -- What are we doing here? Well, the idea is to add headers to the response,
@@ -34,6 +36,7 @@ type family AddSetCookieApiVerb a where
 type family AddSetCookieApi a :: *
 type instance AddSetCookieApi (a :> b) = a :> AddSetCookieApi b
 type instance AddSetCookieApi (a :<|> b) = AddSetCookieApi a :<|> AddSetCookieApi b
+type instance AddSetCookieApi (NamedRoutes api) = AddSetCookieApi (ToServantApi api)
 type instance AddSetCookieApi (Verb method stat ctyps a)
   = Verb method stat ctyps (AddSetCookieApiVerb a)
 type instance AddSetCookieApi Raw = Raw
@@ -71,6 +74,15 @@ instance {-# OVERLAPS #-}
   (AddSetCookies ('S n) a a', AddSetCookies ('S n) b b')
   => AddSetCookies ('S n) (a :<|> b) (a' :<|> b') where
   addSetCookies cookies (a :<|> b) = addSetCookies cookies a :<|> addSetCookies cookies b
+
+instance {-# OVERLAPS #-}
+  ( AddSetCookies ('S n) (ServerT (ToServantApi api) m) cookiedApi
+  , Generic (api (AsServerT m))
+  , GServantProduct (Rep (api (AsServerT m)))
+  , ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
+  )
+  => AddSetCookies ('S n) (api (AsServerT m)) cookiedApi where
+  addSetCookies cookies = addSetCookies cookies . toServant
 
 -- | for @servant <0.11@
 instance
