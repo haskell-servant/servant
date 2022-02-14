@@ -120,7 +120,7 @@ instance Exception StreamingNotSupportedException where
   displayException _ = "streamingRequest: streaming is not supported!"
 
 instance RunClient ClientM where
-  runRequest = performRequest
+  runRequestAcceptStatus = performRequest
   throwClientError = throwError
 
 runClientMOrigin :: ClientM a -> ClientEnv -> IO (Either ClientError a)
@@ -152,15 +152,18 @@ runClientM m = do
 
     runClientMOrigin m (ClientEnv (BaseUrl protocol hostname port ""))
 
-performRequest :: Request -> ClientM Response
-performRequest req = do
+performRequest :: Maybe [Status] -> Request -> ClientM Response
+performRequest acceptStatus req = do
   xhr <- liftIO initXhr
   burl <- asks baseUrl
   liftIO $ performXhr xhr burl req
   resp <- toResponse xhr
 
-  let status = statusCode (responseStatusCode resp)
-  unless (status >= 200 && status < 300) $ do
+  let status = responseStatusCode resp
+      goodStatus = case acceptStatus of
+        Nothing -> statusIsSuccessful status
+        Just good -> status `elem` good
+  unless goodStatus $ do
     let f b = (burl, BL.toStrict $ toLazyByteString b)
     throwError $ FailureResponse (bimap (const ()) f req) resp
 

@@ -1,0 +1,10 @@
+synopsis: Fix performRequest in servant-client-ghcjs
+prs: #1529
+
+description: {
+
+performRequest function in servant-client-ghcjs was not compatible with the
+latest RunClient typeclass. Added the acceptStatus parameter and fixed the
+functionality to match what servant-client provides.
+
+}
