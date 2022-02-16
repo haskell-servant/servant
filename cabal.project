@@ -52,28 +52,9 @@ tests: True
 optimization: False
 -- reorder-goals: True
 
-constraints:
-  -- see https://github.com/haskell-infra/hackage-trustees/issues/119
-  foundation >=0.0.14,
-  memory <0.14.12 || >0.14.12
-
-constraints: base-compat ^>=0.11
-constraints: semigroups ^>=0.19
-
--- allow-newer: sqlite-simple-0.4.16.0:semigroups
--- allow-newer: direct-sqlite-2.3.24:semigroups
-
 -- needed for doctests
 write-ghc-environment-files: always
 
 -- https://github.com/chordify/haskell-servant-pagination/pull/12
 allow-newer: servant-pagination-2.2.2:servant
 allow-newer: servant-pagination-2.2.2:servant-server
-
-allow-newer: servant-js:servant
-allow-newer: servant-multipart:servant
-allow-newer: servant-multipart:servant-server
-allow-newer: servant-multipart-api:servant
-
--- ghc 9
-allow-newer: tdigest:base
