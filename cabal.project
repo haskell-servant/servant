@@ -34,7 +34,6 @@ packages:
   doc/cookbook/db-postgres-pool
   doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
-  doc/cookbook/generic
   doc/cookbook/hoist-server-with-context
   doc/cookbook/https
   doc/cookbook/jwt-and-basic-auth
@@ -47,6 +46,7 @@ packages:
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
   -- doc/cookbook/open-id-connect
+  doc/cookbook/namedRoutes
 
 tests: True
 optimization: False
