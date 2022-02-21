@@ -22,12 +22,12 @@ import Servant.Server.Generic
 ```
 
 The usage is simple, if you only need a collection of routes.
-First you define a record with field types prefixed by a parameter `route`:
+First you define a record with field types prefixed by a parameter `mode`:
 
 ```haskell
-data Routes route = Routes
-    { _get :: route :- Capture "id" Int :> Get '[JSON] String
-    , _put :: route :- ReqBody '[JSON] Int :> Put '[JSON] Bool
+data Routes mode = Routes
+    { _get :: mode :- Capture "id" Int :> Get '[JSON] String
+    , _put :: mode :- ReqBody '[JSON] Int :> Put '[JSON] Bool
     }
   deriving (Generic)
 ```
