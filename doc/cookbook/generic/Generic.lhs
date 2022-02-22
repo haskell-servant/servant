@@ -1,4 +1,14 @@
-# Using generics
+# Record-based APIs: the simple case
+
+This cookbook explains how to implement an API with a simple record-based
+structure. We only deal with non-nested APIs in which every endpoint is on the same
+level.
+
+If a you need nesting because you have different branches in your API tree, you
+might want to jump directly to the [Record-based APIs: the nested records
+case](../namedRoutes/NamedRoutes.html) cookbook that broaches the subject.
+
+Shall we begin?
 
 ```haskell
 {-# LANGUAGE DataKinds     #-}
@@ -110,7 +120,7 @@ main = do
         _ -> putStrLn "To run, pass 'run' argument: cabal run cookbook-generic run"
 ```
 
-## Using generics together with a custom monad
+## Using record-based APIs together with a custom monad
 
 If your app uses a custom monad, here's how you can combine it with
 generics.
@@ -120,9 +130,6 @@ data AppCustomState =
   AppCustomState
 
 type AppM = ReaderT AppCustomState Handler
-
-apiMyMonad :: Proxy (ToServantApi Routes)
-apiMyMonad = genericApi (Proxy :: Proxy Routes)
 
 getRouteMyMonad :: Int -> AppM String
 getRouteMyMonad = return . show
@@ -139,3 +146,4 @@ nt s x = runReaderT x s
 
 appMyMonad :: AppCustomState -> Application
 appMyMonad state = genericServeT (nt state) recordMyMonad
+```

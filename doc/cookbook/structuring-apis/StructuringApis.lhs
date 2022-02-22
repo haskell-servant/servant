@@ -35,6 +35,11 @@ The first part, `FactoringAPI`, shows how we can
 endpoints, just like we turn `a * b + a * c` into
 `a * (b + c)` in algebra.
 
+(It should be noted that the `(:<|>)` operator is not the only way of combining
+endpoints with Servant. Other techniques are shown in subsequent cookbooks. See
+[record-based alternative for implementing APIs](StructuringApis.html#record-based-alternative-for-implementing-apis))
+
+
 ``` haskell
 -- Two endpoints:
 --   - GET /x/<some 'Int'>[?y=<some 'Int'>]
@@ -203,3 +208,14 @@ main = run 8080 . serve api $
 
 This program is available as a cabal project
 [here](https://github.com/haskell-servant/servant/tree/master/doc/cookbook/structuring-apis).
+
+## Record-based alternative for implementing APIs
+
+It should be noted that the `(:<|>)` is not the only way of combining endpoints.
+Servant offers a convenient way to design APIs with records avoiding the ordering constraint of the operator.
+
+A simple case is approached in the [Record-based APIs: the simple
+case](../generic/Generic.html)
+cookbook, which deals with flat APIs where every endpoint is on the same level.
+Also, a more complex example with nested record is discussed in [Record-based APIs: the nested
+records case](../namedRoutes/NamedRoutes.html) in which we implement an API tree with many branches.
