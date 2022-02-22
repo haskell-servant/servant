@@ -1,10 +1,16 @@
-# NamedRoutes - Using records to define APIs
+# Record-based APIs: the nested records case
 
 *Available in Servant 0.19 or higher*
 
 Servant offers a very natural way of constructing APIs with nested records, called `NamedRoutes`.
 
-This cookbook explains how to implement such nested-record-APIs using `NamedRoutes` through the example of a Movie Catalog.
+This cookbook explains how to implement such nested-record-based-APIs using
+`NamedRoutes` through the example of a Movie Catalog.
+If you don't need the nested aspect of the record-based API, you might want to look at [Record-based
+APIs: the simple
+case](../generic/Generic.html) cookbook
+which covers a simpler implementation in which every endpoint is on the same
+level.
 
 First, we start by constructing the domain types of our Movie Catalog.
 After, we show you how to implement the API type with the NamedRoutes records.
