@@ -133,7 +133,7 @@ import Servant.Client             ( AsClientT, ClientM, client
 import Servant.Client.Generic     ()
 
 import Servant.Server             ( Application, ServerT )
-import Servant.Server.Generic     ( AsServerT )
+import Servant.Server.Generic     ( AsServer )
 
 ```
 
@@ -298,21 +298,21 @@ deleteMovieHandler _ =
 And assemble them together with the record structure, which is the glue here.
 
 ```haskell
-server :: ServerT MovieCatalogAPI  Handler
+server ::  API AsServer
 server =
   API
     { version = versionHandler
     , movies = moviesHandler
     }
 
-moviesHandler :: MoviesAPI (AsServerT Handler)
+moviesHandler :: MoviesAPI AsServer
 moviesHandler =
   MoviesAPI
     { list = movieListHandler
     , movie = movieHandler
     }
 
-movieHandler :: MovieId -> MovieAPI (AsServerT Handler)
+movieHandler :: MovieId -> MovieAPI AsServer
 movieHandler movieId = MovieAPI
     { get = getMovieHandler movieId
     , update = updateMovieHandler movieId
@@ -322,6 +322,8 @@ movieHandler movieId = MovieAPI
 As you might have noticed, we build our handlers out of the same record types we used to define our API: `MoviesAPI` and `MovieAPI`. What kind of magic is this ?
 
 Remember the `mode` type parameter we saw earlier? Since we need to transform our API type into a _server_, we need to provide a server `mode`, which is `AsServerT Handler` here.
+
+You can alternatively use the AsServer (= AsServerT Handler) type alias. If you need to define handlers in some specific App monad from your codebase, the mode would simply be changed to AsServerT App.
 
 Finally, we can run the server and connect the API routes to the handlers as usual:
 
@@ -344,7 +346,7 @@ The client, so to speak, is very easy to implement:
 
 ``` haskell
 movieCatalogClient :: API (AsClientT ClientM)
-movieCatalogClient = client api -- remember: api: Proxy MovieCatalogAPI
+movieCatalogClient = client api -- remember: api :: Proxy MovieCatalogAPI
 ```
 
 Have you noticed the `mode` `AsClient ClientM`?
@@ -374,7 +376,7 @@ Done! We’ve got our client!
 
 ## Conclusion
 
-We hope that you found this workbook helpful, and that you now feel more confident using the `NamedRoutes` technique.
+We hope that you found this cookbook helpful, and that you now feel more confident using the record-based APIs, nested or not.
 
 If you are interested in further understanding the built-in Servant combinators, see [Structuring APIs](../structuring-apis/StructuringApis.html).
 
