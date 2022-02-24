@@ -240,10 +240,6 @@ movieHandler movieId = MovieAPI
 ```
 As you might have noticed, we build our handlers out of the same record types we used to define our API: `MoviesAPI` and `MovieAPI`. What kind of magic is this ?
 
-Remember the `mode` type parameter we saw earlier? Since we need to transform our API type into a _server_, we need to provide a server `mode`, which is `AsServerT Handler` here.
-
-You can alternatively use the AsServer (= AsServerT Handler) type alias. If you need to define handlers in some specific App monad from your codebase, the mode would simply be changed to AsServerT App.
-
 Finally, we can run the server and connect the API routes to the handlers as usual:
 
 ``` haskell
@@ -267,8 +263,6 @@ The client, so to speak, is very easy to implement:
 movieCatalogClient :: API (AsClientT ClientM)
 movieCatalogClient = client api -- remember: api :: Proxy MovieCatalogAPI
 ```
-
-Have you noticed the `mode` `AsClient ClientM`?
 
 We’ve also introduced some operators that help navigate through the nested records.
 
