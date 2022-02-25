@@ -28,6 +28,8 @@ source-repository head
   location: https://github.com/haskell-servant/servant
 
 library
+  if impl(ghc >= 9.2)
+    buildable: False
   hs-source-dirs:
       src
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators

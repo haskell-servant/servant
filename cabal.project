@@ -55,3 +55,6 @@ optimization: False
 -- https://github.com/chordify/haskell-servant-pagination/pull/12
 allow-newer: servant-pagination-2.2.2:servant
 allow-newer: servant-pagination-2.2.2:servant-server
+
+allow-newer: servant-multipart:bytestring
+allow-newer: servant-multipart-api:bytestring
