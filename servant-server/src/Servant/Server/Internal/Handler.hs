@@ -13,17 +13,19 @@ import           Control.Monad.Base
 import           Control.Monad.Catch
                  (MonadCatch, MonadMask, MonadThrow)
 import           Control.Monad.Error.Class
-                 (MonadError)
+                 (MonadError, throwError)
 import           Control.Monad.IO.Class
                  (MonadIO)
 import           Control.Monad.Trans.Control
                  (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
                  (ExceptT, runExceptT)
+import           Data.String
+                 (fromString)
 import           GHC.Generics
                  (Generic)
 import           Servant.Server.Internal.ServerError
-                 (ServerError)
+                 (ServerError, errBody, err500)
 
 newtype Handler a = Handler { runHandler' :: ExceptT ServerError IO a }
   deriving
@@ -31,6 +33,9 @@ newtype Handler a = Handler { runHandler' :: ExceptT ServerError IO a }
     , MonadError ServerError
     , MonadThrow, MonadCatch, MonadMask
     )
+
+instance MonadFail Handler where
+  fail str = throwError err500 { errBody = fromString str }
 
 instance MonadBase IO Handler where
   liftBase = Handler . liftBase
