@@ -40,3 +40,29 @@ nix
 `Nix <https://nixos.org/nix/>`_ users should feel free to take a look at
 the `nix/shell.nix` file in the repository and use it to provision a suitable
 environment to build and run the examples.
+
+Note for Ubuntu users
+--------
+
+Ubuntu's packages for `ghc`, `cabal`, and `stack` are years out of date.
+If the instructions above fail for you,
+try replacing the Ubuntu packages with up-to-date versions.
+First remove the installed versions:
+
+.. code-block:: bash
+
+   # remove the obsolete versions
+   $ sudo apt remove ghc haskell-stack cabal-install
+
+Then install fresh versions of the Haskell toolchain
+using the `ghcup <https://www.haskell.org/ghcup/install/>`_ installer.
+
+As of February 2022, one easy way to do this is by running a bootstrap script:
+
+.. code-block:: bash
+
+   $ curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+
+The script is interactive and will prompt you for details about what
+you want installed and where.  To install manually,
+see `the detailed instructions <https://www.haskell.org/ghcup/install/#manual-install>`_.
