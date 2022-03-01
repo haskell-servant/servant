@@ -3,10 +3,10 @@ name:                servant-swagger
 version:             1.1.11
 synopsis:            Generate a Swagger/OpenAPI/OAS 2.0 specification for your servant API.
 description:
-  Swagger is a project used to describe and document RESTful APIs. The core of the 
-  project is the [OpenAPI Specification (OAS)](https://swagger.io/docs/specification/about/). 
-  This library implements v2.0 of the spec. Unlike Servant it is language-agnostic and thus is 
-  quite popular among developers in different languages. It has also existed for a longer time 
+  Swagger is a project used to describe and document RESTful APIs. The core of the
+  project is the [OpenAPI Specification (OAS)](https://swagger.io/docs/specification/about/).
+  This library implements v2.0 of the spec. Unlike Servant it is language-agnostic and thus is
+  quite popular among developers in different languages. It has also existed for a longer time
   and has more helpful tooling.
   .
   This package provides means to generate a Swagger/OAS specification for a Servant API
@@ -19,7 +19,7 @@ description:
   * generating clients and servers in many languages using [Swagger Codegen](http://swagger.io/swagger-codegen/);
   .
   * and [many others](http://swagger.io/open-source-integrations/).
-homepage:            https://github.com/haskell-servant/servant/servant-swagger
+homepage:            https://github.com/haskell-servant/servant/tree/master/servant-swagger#readme
 bug-reports:         https://github.com/haskell-servant/servant/issues
 license:             BSD-3-Clause
 license-file:        LICENSE

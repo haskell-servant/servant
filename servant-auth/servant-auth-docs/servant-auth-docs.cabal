@@ -7,9 +7,9 @@ description:    This package provides instances that allow generating docs from
                 APIs that use
                 <https://hackage.haskell.org/package/servant-auth servant-auth's> @Auth@ combinator.
                 .
-                For a quick overview of the usage, see the <http://github.com/haskell-servant/servant/servant-auth#readme README>.
+                For a quick overview of the usage, see the <https://github.com/haskell-servant/servant/tree/master/servant-auth#readme README>.
 category:       Web, Servant, Authentication
-homepage:       http://github.com/haskell-servant/servant/servant-auth#readme
+homepage:       https://github.com/haskell-servant/servant/tree/master/servant-auth#readme
 bug-reports:    https://github.com/haskell-servant/servant/issues
 author:         Julian K. Arni
 maintainer:     jkarni@gmail.com
