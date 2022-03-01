@@ -17,6 +17,7 @@ module Servant.Client.Core.Request (
     addHeader,
     appendToPath,
     appendToQueryString,
+    encodeQueryParamValue,
     setRequestBody,
     setRequestBodyLBS,
     ) where
@@ -142,18 +143,29 @@ defaultRequest = Request
   , requestMethod = methodGet
   }
 
+-- | Append extra path to the request being constructed.
+--
 appendToPath :: Text -> Request -> Request
 appendToPath p req
   = req { requestPath = requestPath req <> "/" <> toEncodedUrlPiece p }
 
-appendToQueryString :: Text             -- ^ param name
-                    -> Maybe BS.ByteString -- ^ param value
+-- | Append a query parameter to the request being constructed.
+--
+appendToQueryString :: Text                -- ^ query param name
+                    -> Maybe BS.ByteString -- ^ query param value
                     -> Request
                     -> Request
 appendToQueryString pname pvalue req
   = req { requestQueryString = requestQueryString req
                         Seq.|> (encodeUtf8 pname, pvalue)}
 
+-- | Encode a query parameter value.
+--
+encodeQueryParamValue :: ToHttpApiData a => a  -> BS.ByteString
+encodeQueryParamValue = LBS.toStrict . Builder.toLazyByteString . toEncodedUrlPiece
+
+-- | Add header to the request being constructed.
+--
 addHeader :: ToHttpApiData a => HeaderName -> a -> Request -> Request
 addHeader name val req
   = req { requestHeaders = requestHeaders req Seq.|> (name, toHeader val)}
