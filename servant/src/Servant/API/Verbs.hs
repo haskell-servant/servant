@@ -29,11 +29,16 @@ import           Network.HTTP.Types.Method
 data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
   deriving (Typeable, Generic)
 
--- | @NoContentVerb@ is a specific type to represent 'NoContent' responses.
--- It does not require either a list of content types (because there's
--- no content) or a status code (because it should always be 204).
-data NoContentVerb  (method :: k1)
+-- | @NoContentVerbWithStatus@ is a specific type to represent 'NoContent' responses.
+-- It does not require either a list of content types (because there's no content).
+-- It still requires a status code, because several statuses may have no content.
+-- (e.g. 204, 301, 302, or 303).
+data NoContentVerbWithStatus (method :: k1) (statusCode :: Nat)
   deriving (Typeable, Generic)
+
+-- | @NoContentVerb@ is a specialization of type @NoContentVerbWithStatus@,
+-- which is kept for backwards compatibility.
+type NoContentVerb (method :: k1) = NoContentVerbWithStatus method 204
 
 -- * 200 responses
 --

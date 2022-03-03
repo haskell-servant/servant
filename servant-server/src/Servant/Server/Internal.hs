@@ -72,7 +72,7 @@ import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
                  CaptureAll, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
-                 Header', If, IsSecure (..), NoContentVerb, QueryFlag,
+                 Header', If, IsSecure (..), NoContentVerbWithStatus, QueryFlag,
                  QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
@@ -315,14 +315,15 @@ instance {-# OVERLAPPING #-}
     where method = reflectMethod (Proxy :: Proxy method)
           status = statusFromNat (Proxy :: Proxy status)
 
-instance (ReflectMethod method) =>
-         HasServer (NoContentVerb method) context where
+instance (KnownNat status, ReflectMethod method) =>
+         HasServer (NoContentVerbWithStatus method status) context where
 
-  type ServerT (NoContentVerb method) m = m NoContent
+  type ServerT (NoContentVerbWithStatus method status) m = m NoContent
   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ = noContentRouter method status204
+  route Proxy _ = noContentRouter method status
     where method = reflectMethod (Proxy :: Proxy method)
+          status = statusFromNat (Proxy :: Proxy status)
 
 instance {-# OVERLAPPABLE #-}
          ( MimeRender ctype chunk, ReflectMethod method, KnownNat status,

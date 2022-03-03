@@ -132,10 +132,10 @@ mkEndpointWithSchemaRef mref path _ = mempty
     responseContentTypes = allContentType (Proxy :: Proxy cs)
     responseHeaders      = toAllResponseHeaders (Proxy :: Proxy hs)
 
-mkEndpointNoContentVerb :: forall proxy method.
-  (SwaggerMethod method)
+mkEndpointNoContentVerb :: forall proxy method status.
+  (SwaggerMethod method, KnownNat status)
   => FilePath                      -- ^ Endpoint path.
-  -> proxy (NoContentVerb method)  -- ^ Method
+  -> proxy (NoContentVerbWithStatus method status)  -- ^ Method
   -> Swagger
 mkEndpointNoContentVerb path _ = mempty
   & paths.at path ?~
@@ -143,7 +143,7 @@ mkEndpointNoContentVerb path _ = mempty
       & at code ?~ Inline mempty))
   where
     method               = swaggerMethod (Proxy :: Proxy method)
-    code                 = 204 -- hardcoded in servant-server
+    code                 = fromIntegral (natVal (Proxy :: Proxy status))
 
 -- | Add parameter to every operation in the spec.
 addParam :: Param -> Swagger -> Swagger
@@ -266,7 +266,7 @@ instance (AllAccept cs, AllToResponseHeader hs, KnownNat status, SwaggerMethod m
   => HasSwagger (Verb method status cs (Headers hs NoContent)) where
   toSwagger = mkEndpointNoContent "/"
 
-instance (SwaggerMethod method) => HasSwagger (NoContentVerb method) where
+instance (KnownNat status, SwaggerMethod method) => HasSwagger (NoContentVerbWithStatus method status) where
   toSwagger =  mkEndpointNoContentVerb "/"
 
 instance (HasSwagger a, HasSwagger b) => HasSwagger (a :<|> b) where
