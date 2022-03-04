@@ -174,7 +174,7 @@ import           Servant.API.NamedRoutes
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam', QueryParams)
 import           Servant.API.Raw
-                 (Raw)
+                 (Raw, RawM)
 import           Servant.API.RemoteHost
                  (RemoteHost)
 import           Servant.API.ReqBody
@@ -578,6 +578,10 @@ instance HasLink (NoContentVerb m) where
 
 instance HasLink Raw where
     type MkLink Raw a = a
+    toLink toA _ = toA
+
+instance HasLink RawM where
+    type MkLink RawM a = a
     toLink toA _ = toA
 
 instance HasLink (Stream m status fr ct a) where

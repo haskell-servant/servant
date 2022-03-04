@@ -15,3 +15,6 @@ import           Data.Typeable
 -- <https://hackage.haskell.org/package/servant-server/docs/Servant-Server-StaticFiles.html Servant.Server.StaticFiles>
 -- to serve static files stored in a particular directory on your filesystem
 data Raw deriving Typeable
+
+-- | Variant of 'Raw' that lets you access the underlying monadic context to process the request.
+data RawM deriving Typeable

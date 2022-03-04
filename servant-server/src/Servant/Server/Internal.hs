@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
@@ -63,7 +64,7 @@ import           Network.HTTP.Types                         hiding
 import           Network.Socket
                  (SockAddr)
 import           Network.Wai
-                 (Application, Request, httpVersion, isSecure, lazyRequestBody,
+                 (Application, Request, Response, ResponseReceived, httpVersion, isSecure, lazyRequestBody,
                  queryString, remoteHost, getRequestBodyChunk, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
@@ -73,7 +74,7 @@ import           Servant.API
                  CaptureAll, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  Header', If, IsSecure (..), NoContentVerb, QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
+                 QueryParam', QueryParams, Raw, RawM, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
                  WithNamedContext, NamedRoutes)
@@ -605,6 +606,35 @@ instance HasServer Raw context where
             Route app   -> untag app request (respond . Route)
             Fail a      -> respond $ Fail a
             FailFatal e -> respond $ FailFatal e
+
+-- | Just pass the request to the underlying application and serve its response.
+--
+-- Example:
+--
+-- > type MyApi = "images" :> Raw
+-- >
+-- > server :: Server MyApi
+-- > server = serveDirectory "/var/www/images"
+instance HasServer RawM context where
+  type ServerT RawM m = Request -> (Response -> IO ResponseReceived) -> m ResponseReceived
+
+  route
+    :: Proxy RawM
+    -> Context context
+    -> Delayed env (Request -> (Response -> IO ResponseReceived) -> Handler ResponseReceived) -> Router env
+  route _ _ handleDelayed = RawRouter $ \env request respond -> runResourceT $ do
+    routeResult <- runDelayed handleDelayed env request
+    let respond' = liftIO . respond
+    liftIO $ case routeResult of
+      Route handler   -> runHandler (handler request (respond . Route)) >>=
+        \case
+           Left e -> respond' $ FailFatal e
+           Right a -> pure a
+      Fail e -> respond' $ Fail e
+      FailFatal e -> respond' $ FailFatal e
+
+  hoistServerWithContext _ _ f srvM = \req respond -> f (srvM req respond)
+
 
 -- | If you use 'ReqBody' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function

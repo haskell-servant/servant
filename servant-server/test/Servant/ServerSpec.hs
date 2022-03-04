@@ -17,8 +17,10 @@ import           Prelude.Compat
 
 import           Control.Monad
                  (forM_, unless, when)
+import           Control.Monad.Reader (runReaderT, ask)
 import           Control.Monad.Error.Class
                  (MonadError (..))
+import           Control.Monad.IO.Class (MonadIO(..))
 import           Data.Aeson
                  (FromJSON, ToJSON, decode', encode)
 import qualified Data.ByteString                   as BS
@@ -52,19 +54,19 @@ import           Servant.API
                  Delete, EmptyAPI, Fragment, Get, HasStatus (StatusOf), Header,
                  Headers, HttpVersion, IsSecure (..), JSON, Lenient,
                  NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
-                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
+                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw, RawM,
                  RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
                  UVerb, Union, Verb, WithStatus (..), addHeader)
 import           Servant.Server
-                 (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
-                 emptyServer, err401, err403, err404, respond, serve,
+                 (Context ((:.), EmptyContext), Handler, Server, ServerT, Tagged (..),
+                 emptyServer, err401, err403, err404, hoistServer, respond, serve,
                  serveWithContext)
 import           Servant.Test.ComprehensiveAPI
 import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
                  (Spec, context, describe, it, shouldBe, shouldContain)
 import           Test.Hspec.Wai
-                 (get, liftIO, matchHeaders, matchStatus, shouldRespondWith,
+                 (get, matchHeaders, matchStatus, shouldRespondWith,
                  with, (<:>))
 import qualified Test.Hspec.Wai                    as THW
 
@@ -97,6 +99,7 @@ spec = do
   reqBodySpec
   headerSpec
   rawSpec
+  rawMSpec
   alternativeSpec
   responseHeadersSpec
   uverbResponseHeadersSpec
@@ -603,6 +606,46 @@ rawSpec = do
         liftIO $ do
           simpleBody response `shouldBe` cs (show ["bar" :: String])
 
+-- }}}
+------------------------------------------------------------------------------
+-- * rawMSpec {{{
+------------------------------------------------------------------------------
+
+type RawMApi = "foo" :> RawM
+
+rawMApi :: Proxy RawMApi
+rawMApi = Proxy
+
+rawMServer :: (Monad m, MonadIO m, Show a) => (Request -> m a) -> ServerT RawMApi m
+rawMServer f req resp = liftIO . resp . responseLBS ok200 [] . cs . show =<< f req
+
+rawMSpec :: Spec
+rawMSpec = do
+  describe "Servant.API.RawM" $ do
+    it "gives access to monadic context" $ do
+      flip runSession (serve rawMApi
+          (hoistServer rawMApi (flip runReaderT (42 :: Integer)) (rawMServer (const ask)))) $ do
+        response <- Network.Wai.Test.request defaultRequest{
+          pathInfo = ["foo"]
+         }
+        liftIO $ do
+          simpleBody response `shouldBe` "42"
+
+    it "lets users throw servant errors" $ do
+      flip runSession (serve rawMApi (rawMServer (const $ throwError err404 >> pure (42 :: Integer)))) $ do
+        response <- Network.Wai.Test.request defaultRequest{
+          pathInfo = ["foo"]
+         }
+        liftIO $ do
+          statusCode (simpleStatus response) `shouldBe` 404
+
+    it "gets the pathInfo modified" $ do
+      flip runSession (serve rawMApi (rawMServer (pure . pathInfo))) $ do
+        response <- Network.Wai.Test.request defaultRequest{
+          pathInfo = ["foo", "bar"]
+         }
+        liftIO $ do
+          simpleBody response `shouldBe` cs (show ["bar" :: String])
 -- }}}
 ------------------------------------------------------------------------------
 -- * alternativeSpec {{{

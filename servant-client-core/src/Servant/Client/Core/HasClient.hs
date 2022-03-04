@@ -76,7 +76,7 @@ import           Servant.API
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent),
-                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
+                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw, RawM,
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
                  Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
@@ -674,6 +674,16 @@ instance RunClient m => HasClient m Raw where
     = H.Method ->  m Response
 
   clientWithRoute :: Proxy m -> Proxy Raw -> Request -> Client m Raw
+  clientWithRoute _pm Proxy req httpMethod = do
+    runRequest req { requestMethod = httpMethod }
+
+  hoistClientMonad _ _ f cl = \meth -> f (cl meth)
+
+instance RunClient m => HasClient m RawM where
+  type Client m RawM
+    = H.Method ->  m Response
+
+  clientWithRoute :: Proxy m -> Proxy RawM -> Request -> Client m RawM
   clientWithRoute _pm Proxy req httpMethod = do
     runRequest req { requestMethod = httpMethod }
 
