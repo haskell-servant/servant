@@ -49,6 +49,7 @@ module Servant.API.ContentTypes
     , PlainText
     , FormUrlEncoded
     , OctetStream
+    , EventStream
 
     -- * Building your own Content-Type
     , Accept(..)
@@ -67,6 +68,7 @@ module Servant.API.ContentTypes
     , AllMimeUnrender(..)
     , eitherDecodeLenient
     , canHandleAcceptH
+    , EventStreamChunk(..)
     ) where
 
 import           Control.Arrow
@@ -110,6 +112,7 @@ data JSON deriving Typeable
 data PlainText deriving Typeable
 data FormUrlEncoded deriving Typeable
 data OctetStream deriving Typeable
+data EventStream deriving Typeable
 
 -- * Accept class
 
@@ -152,6 +155,10 @@ instance Accept PlainText where
 -- | @application/octet-stream@
 instance Accept OctetStream where
     contentType _ = "application" M.// "octet-stream"
+
+-- | @text/event-stream@
+instance Accept EventStream where
+    contentType _ = "text" M.// "event-stream"
 
 newtype AcceptHeader = AcceptHeader BS.ByteString
     deriving (Eq, Show, Read, Typeable, Generic)
@@ -419,6 +426,12 @@ instance MimeUnrender OctetStream ByteString where
 instance MimeUnrender OctetStream BS.ByteString where
     mimeUnrender _ = Right . toStrict
 
+-- | Chunk of an event stream
+newtype EventStreamChunk = EventStreamChunk
+    { unEventStreamChunk :: ByteString }
+
+instance MimeUnrender EventStream EventStreamChunk where
+    mimeUnrender _ = Right . EventStreamChunk
 
 -- $setup
 -- >>> :set -XFlexibleInstances
