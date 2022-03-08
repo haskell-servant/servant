@@ -1,0 +1,81 @@
+synopsis: Display capture hints in router layout
+prs: #1556
+
+description: {
+
+This PR enhances the `Servant.Server.layout` function, which produces a textual description of the routing layout of an API. More precisely, it changes `<capture>` blocks, so that they display the name and type of the variable being captured instead.
+
+Example:
+
+For the following API
+```haskell
+type API =
+       "a" :> "d" :> Get '[JSON] NoContent
+  :<|> "b" :> Capture "x" Int :> Get '[JSON] Bool
+  :<|> "a" :> "e" :> Get '[JSON] Int
+```
+
+we previously got the following output:
+
+```
+/
+├─ a/
+│  ├─ d/
+│  │  └─•
+│  └─ e/
+│     └─•
+└─ b/
+   └─ <capture>/
+      ├─•
+      ┆
+      └─•
+```
+
+now we get:
+
+```
+/
+├─ a/
+│  ├─ d/
+│  │  └─•
+│  └─ e/
+│     └─•
+└─ b/
+   └─ <x::Int>/
+      ├─•
+      ┆
+      └─•
+```
+
+This change is achieved by the introduction of a CaptureHint type, which is passed as an extra argument to the CaptureRouter and CaptureAllRouter constructors for the Router' type.
+CaptureHint values are then used in routerLayout, to display the name and type of captured values, instead of just `<capture>` previously.
+
+N.B.:
+Because the choice smart constructor for routers can aggregate Capture combinators with different capture hints, the Capture*Router constructors actually take a list of CaptureHint, instead of a single one.
+
+This PR also introduces Spec tests for the routerLayout function.
+
+Warning:
+This change is potentially breaking, because it adds the constraint `Typeable a` to all types that are to be captured. Because all types are typeable since GHC 7.10, this is not as bad as it sounds ; it only break expressions where `a` is quantified in an expression with `Capture a`.
+In those cases, the fix is easy: it suffices to add `Typeable a` to the left-hand side of the quantification constraint.
+
+For instance, the following code will no longer compile:
+```haskell
+type MyAPI a = Capture "foo" a :> Get '[JSON] ()
+
+myServer :: forall a. Server (MyAPI a)
+myServer = const $ return ()
+
+myApi :: forall a. Proxy (MyAPI a)
+myApi = Proxy
+
+app :: forall a. (FromHttpApiData a) => Application
+app = serve (myApi @a) (myServer @a)
+```
+
+Indeed, `app` should be replaced with:
+```haskell
+app :: forall a. (FromHttpApiData a, Typeable a) => Application
+app = serve (myApi @a) (myServer @a)
+```
+}
