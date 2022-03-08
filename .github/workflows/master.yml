@@ -47,10 +47,7 @@ jobs:
 
     - name: Configure
       run: |
-        # Using separate store-dir because default one already has 'ghc-paths' package installed
-        # with hardcoded path to ghcup's GHC path (which it was built with). This leads to failure in
-        # doctest, as it tries to invoke that GHC, and it doesn't exist here.
-        cabal --store-dir /tmp/cabal-store install --ignore-project -j2 doctest --constraint='doctest ^>=0.18'
+        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.20'
 
     - name: Build
       run: |
@@ -68,24 +65,17 @@ jobs:
         # Necessary for doctest to be found in $PATH
         export PATH="$HOME/.cabal/bin:$PATH"
 
-        # Filter out base-compat-batteries from .ghc.environment.*, as its modules
-        # conflict with those of base-compat.
-        #
-        # FIXME: This is an ugly hack. Ultimately, we'll want to use cabal-doctest
-        # (or cabal v2-doctest, if it ever lands) to provide a clean GHC environment.
-        # This might allow running doctests in GHCJS build as well.
-        perl -i -e 'while (<ARGV>) { print unless /package-id\s+(base-compat-batteries)-\d+(\.\d+)*/; }' .ghc.environment.*
-
-        (cd servant && doctest src)
-        (cd servant-client && doctest src)
-        (cd servant-client-core && doctest src)
-        (cd servant-http-streams && doctest src)
-        (cd servant-docs && doctest src)
-        (cd servant-foreign && doctest src)
-        (cd servant-server && doctest src)
-        (cd servant-machines && doctest src)
-        (cd servant-conduit && doctest src)
-        (cd servant-pipes && doctest src)
+        DOCTEST="cabal repl --with-ghc=doctest --ghc-options=-w"
+        (cd servant && eval $DOCTEST)
+        (cd servant-client && eval $DOCTEST)
+        (cd servant-client-core && eval $DOCTEST)
+        (cd servant-http-streams && eval $DOCTEST)
+        (cd servant-docs && eval $DOCTEST)
+        (cd servant-foreign && eval $DOCTEST)
+        (cd servant-server && eval $DOCTEST)
+        (cd servant-machines && eval $DOCTEST)
+        (cd servant-conduit && eval $DOCTEST)
+        (cd servant-pipes && eval $DOCTEST)
 
   stack:
     name: stack / ghc ${{ matrix.ghc }}

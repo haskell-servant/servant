@@ -246,7 +246,7 @@ defaultMakeClientRequest burl r = Client.defaultRequest
   where
     -- Content-Type and Accept are specified by requestBody and requestAccept
     headers = filter (\(h, _) -> h /= "Accept" && h /= "Content-Type") $
-        toList $requestHeaders r
+        toList $ requestHeaders r
 
     acceptHdr
         | null hs   = Nothing
