@@ -9,7 +9,9 @@ import           Control.Monad
 import           Data.Proxy
                  (Proxy (..))
 import           Data.Text
-                 (unpack)
+                 (Text, unpack)
+import           Data.Typeable
+                 (typeRep)
 import           Network.HTTP.Types
                  (Status (..))
 import           Network.Wai
@@ -51,13 +53,16 @@ routerSpec = do
         toApp = toApplication . runRouter (const err404)
 
         cap :: Router ()
-        cap = CaptureRouter $
+        cap = CaptureRouter [hint] $
           let delayed = addCapture (emptyDelayed $ Route pure) (const $ delayedFail err400)
           in leafRouter
              $ \env req res ->
                  runAction delayed env req res
                  . const
                  $ Route success
+
+        hint :: CaptureHint
+        hint = CaptureHint "anything" $ typeRep (Proxy :: Proxy ())
 
         router :: Router ()
         router = leafRouter (\_ _ res -> res $ Route success)
@@ -144,12 +149,12 @@ staticRef = Proxy
 -- structure:
 
 type Dynamic =
-       "a" :> Capture "foo" Int  :> "b" :> End
-  :<|> "a" :> Capture "bar" Bool :> "c" :> End
-  :<|> "a" :> Capture "baz" Char :> "d" :> End
+       "a" :> Capture "foo" Int :> "b" :> End
+  :<|> "a" :> Capture "foo" Int :> "c" :> End
+  :<|> "a" :> Capture "foo" Int :> "d" :> End
 
 type DynamicRef =
-  "a" :> Capture "anything" () :>
+  "a" :> Capture "foo" Int :>
     ("b" :> End :<|> "c" :> End :<|> "d" :> End)
 
 dynamic :: Proxy Dynamic

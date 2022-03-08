@@ -9,12 +9,16 @@ import           Prelude.Compat
 
 import           Data.Function
                  (on)
+import           Data.List
+                 (nub)
 import           Data.Map
                  (Map)
 import qualified Data.Map                                   as M
 import           Data.Text
                  (Text)
 import qualified Data.Text                                  as T
+import           Data.Typeable
+                 (TypeRep)
 import           Network.Wai
                  (Response, pathInfo)
 import           Servant.Server.Internal.ErrorFormatter
@@ -23,6 +27,18 @@ import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
 
 type Router env = Router' env RoutingApplication
+
+data CaptureHint = CaptureHint
+  { captureName :: Text
+  , captureType :: TypeRep
+  }
+  deriving (Show, Eq)
+
+toCaptureTag :: CaptureHint -> Text
+toCaptureTag hint = captureName hint <> "::" <> (T.pack . show) (captureType hint)
+
+toCaptureTags :: [CaptureHint] -> Text
+toCaptureTags hints = "<" <> T.intercalate "|" (map toCaptureTag hints) <> ">"
 
 -- | Internal representation of a router.
 --
@@ -36,10 +52,10 @@ data Router' env a =
       -- ^ the map contains routers for subpaths (first path component used
       --   for lookup and removed afterwards), the list contains handlers
       --   for the empty path, to be tried in order
-  | CaptureRouter (Router' (Text, env) a)
+  | CaptureRouter [CaptureHint] (Router' (Text, env) a)
       -- ^ first path component is passed to the child router in its
       --   environment and removed afterwards
-  | CaptureAllRouter (Router' ([Text], env) a)
+  | CaptureAllRouter [CaptureHint] (Router' ([Text], env) a)
       -- ^ all path components are passed to the child router in its
       --   environment and are removed afterwards
   | RawRouter     (env -> a)
@@ -69,8 +85,8 @@ leafRouter l = StaticRouter M.empty [l]
 choice :: Router' env a -> Router' env a -> Router' env a
 choice (StaticRouter table1 ls1) (StaticRouter table2 ls2) =
   StaticRouter (M.unionWith choice table1 table2) (ls1 ++ ls2)
-choice (CaptureRouter router1)   (CaptureRouter router2)   =
-  CaptureRouter (choice router1 router2)
+choice (CaptureRouter hints1 router1)   (CaptureRouter hints2 router2)   =
+  CaptureRouter (nub $ hints1 ++ hints2) (choice router1 router2)
 choice router1 (Choice router2 router3) = Choice (choice router1 router2) router3
 choice router1 router2 = Choice router1 router2
 
@@ -84,7 +100,7 @@ choice router1 router2 = Choice router1 router2
 --
 data RouterStructure =
     StaticRouterStructure  (Map Text RouterStructure) Int
-  | CaptureRouterStructure RouterStructure
+  | CaptureRouterStructure [CaptureHint] RouterStructure
   | RawRouterStructure
   | ChoiceStructure        RouterStructure RouterStructure
   deriving (Eq, Show)
@@ -98,11 +114,11 @@ data RouterStructure =
 routerStructure :: Router' env a -> RouterStructure
 routerStructure (StaticRouter m ls) =
   StaticRouterStructure (fmap routerStructure m) (length ls)
-routerStructure (CaptureRouter router) =
-  CaptureRouterStructure $
+routerStructure (CaptureRouter hints router) =
+  CaptureRouterStructure hints $
     routerStructure router
-routerStructure (CaptureAllRouter router) =
-  CaptureRouterStructure $
+routerStructure (CaptureAllRouter hints router) =
+  CaptureRouterStructure hints $
     routerStructure router
 routerStructure (RawRouter _) =
   RawRouterStructure
@@ -114,8 +130,8 @@ routerStructure (Choice r1 r2) =
 -- | Compare the structure of two routers.
 --
 sameStructure :: Router' env a -> Router' env b -> Bool
-sameStructure r1 r2 =
-  routerStructure r1 == routerStructure r2
+sameStructure router1 router2 =
+    routerStructure router1 == routerStructure router2
 
 -- | Provide a textual representation of the
 -- structure of a router.
@@ -126,7 +142,8 @@ routerLayout router =
   where
     mkRouterLayout :: Bool -> RouterStructure -> [Text]
     mkRouterLayout c (StaticRouterStructure m n) = mkSubTrees c (M.toList m) n
-    mkRouterLayout c (CaptureRouterStructure r)  = mkSubTree c "<capture>" (mkRouterLayout False r)
+    mkRouterLayout c (CaptureRouterStructure hints r) =
+      mkSubTree c (toCaptureTags hints) (mkRouterLayout False r)
     mkRouterLayout c  RawRouterStructure         =
       if c then ["├─ <raw>"] else ["└─ <raw>"]
     mkRouterLayout c (ChoiceStructure r1 r2)     =
@@ -169,7 +186,7 @@ runRouterEnv fmt router env request respond  =
           -> let request' = request { pathInfo = rest }
              in  runRouterEnv fmt router' env request' respond
         _ -> respond $ Fail $ fmt request
-    CaptureRouter router' ->
+    CaptureRouter _ router' ->
       case pathInfo request of
         []   -> respond $ Fail $ fmt request
         -- This case is to handle trailing slashes.
@@ -177,7 +194,7 @@ runRouterEnv fmt router env request respond  =
         first : rest
           -> let request' = request { pathInfo = rest }
              in  runRouterEnv fmt router' (first, env) request' respond
-    CaptureAllRouter router' ->
+    CaptureAllRouter _ router' ->
       let segments = pathInfo request
           request' = request { pathInfo = [] }
       in runRouterEnv fmt router' (segments, env) request' respond
