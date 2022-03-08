@@ -52,9 +52,6 @@ tests: True
 optimization: False
 -- reorder-goals: True
 
--- needed for doctests
-write-ghc-environment-files: always
-
 -- https://github.com/chordify/haskell-servant-pagination/pull/12
 allow-newer: servant-pagination-2.2.2:servant
 allow-newer: servant-pagination-2.2.2:servant-server
