@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -25,6 +26,8 @@ import qualified Data.ByteString                   as BS
 import qualified Data.ByteString.Base64            as Base64
 import           Data.Char
                  (toUpper)
+import           Data.Map
+                 (fromList, notMember)
 import           Data.Maybe
                  (fromMaybe)
 import           Data.Proxy
@@ -49,20 +52,21 @@ import           Network.Wai.Test
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
-                 Delete, EmptyAPI, Fragment, Get, HasStatus (StatusOf), Header,
-                 Headers, HttpVersion, IsSecure (..), JSON, Lenient,
-                 NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
-                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
-                 RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
-                 UVerb, Union, Verb, WithStatus (..), addHeader)
+                 Delete, EmptyAPI, Fragment, Get, GetNoContent,
+                 HasStatus (StatusOf), Header, Headers, HttpVersion,
+                 IsSecure (..), JSON, Lenient, NoContent (..), NoContentVerb,
+                 NoFraming, OctetStream, Patch, PlainText, Post, Put,
+                 QueryFlag, QueryParam, QueryParams, Raw, RemoteHost, ReqBody,
+                 SourceIO, StdMethod (..), Stream, StreamGet, Strict, UVerb,
+                 Union, Verb, WithRoutingHeader, WithStatus (..), addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
-                 emptyServer, err401, err403, err404, respond, serve,
+                 emptyServer, err401, err403, err404, err500, respond, serve,
                  serveWithContext)
 import           Servant.Test.ComprehensiveAPI
 import qualified Servant.Types.SourceT             as S
 import           Test.Hspec
-                 (Spec, context, describe, it, shouldBe, shouldContain)
+                 (Spec, context, describe, it, shouldBe, shouldContain, shouldSatisfy)
 import           Test.Hspec.Wai
                  (get, liftIO, matchHeaders, matchStatus, shouldRespondWith,
                  with, (<:>))
@@ -103,6 +107,7 @@ spec = do
   miscCombinatorSpec
   basicAuthSpec
   genAuthSpec
+  routedPathHeadersSpec
 
 ------------------------------------------------------------------------------
 -- * verbSpec {{{
@@ -841,6 +846,102 @@ genAuthSpec = do
 
         it "plays nice with subsequent Raw endpoints" $ do
           get "/foo" `shouldRespondWith` 418
+
+-- }}}
+------------------------------------------------------------------------------
+-- * Routed path response headers {{{
+------------------------------------------------------------------------------
+
+type RoutedPathApi = WithRoutingHeader :>
+  (    "content"   :> Get '[JSON] Person
+  :<|> "noContent" :> GetNoContent
+  :<|> "header"    :> Get '[JSON] (Headers '[Header "H" Int] Person)
+  :<|> "stream"    :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
+  :<|> "animal"    :> (    Capture "legs" Int :> Get '[JSON] Animal
+                      :<|> CaptureAll "legs" Int :> Get '[JSON] Animal
+                      :<|> Capture "name" String :> Get '[JSON] Animal
+                      )
+  ) :<|> "withoutHeader" :> Get '[JSON] Person
+
+routedPathApi :: Proxy RoutedPathApi
+routedPathApi = Proxy
+
+routedPathServer :: Server RoutedPathApi
+routedPathServer =
+  (    return alice
+  :<|> return NoContent
+  :<|> return (addHeader 5 alice)
+  :<|> return (S.source ["bytestring"])
+  :<|> ((     \case
+                2 -> return tweety
+                4 -> return jerry
+                _ -> throwError err500
+       ):<|>( \ legs -> case sum legs of
+                2 -> return tweety
+                4 -> return jerry
+                _ -> throwError err500
+       ):<|>( \case
+                "tweety" -> return tweety
+                "jerry" -> return jerry
+                "bob" -> return beholder
+                _ -> throwError err404
+       ))
+  ) :<|> return alice
+
+routedPathHeadersSpec :: Spec
+routedPathHeadersSpec = do
+  describe "Server routing header" $ do
+    with (return $ serve routedPathApi routedPathServer) $ do
+      it "returns the routed path on verbs" $ do
+        response <- THW.request methodGet "/content" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Servant-Routed-Path", "/content")]
+
+      it "returns the routed path on noContent verbs" $ do
+        response <- THW.request methodGet "/noContent" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Servant-Routed-Path", "/noContent")]
+
+      it "returns the routed path on streams" $ do
+        response <- THW.request methodGet "/stream" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Servant-Routed-Path", "/stream")]
+
+      it "plays nice with manually added headers" $ do
+        response <- THW.request methodGet "/header" [] ""
+        liftIO $ do
+          simpleHeaders response `shouldContain` [("Servant-Routed-Path", "/header")]
+          simpleHeaders response `shouldContain` [("H", "5")]
+
+      it "abstracts captured values" $ do
+        response <- THW.request methodGet "/animal/4" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Servant-Routed-Path", "/animal/<legs::Int>")]
+
+      it "abstracts captured lists" $ do
+        response <- THW.request methodGet "/animal/1/1/0" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Servant-Routed-Path", "/animal/<legs::[Int]>")]
+
+      it "supports backtracking on routing errors" $ do
+        response <- THW.request methodGet "/animal/jerry" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Servant-Routed-Path", "/animal/<name::[Char]>")]
+
+      it "returns the routed path on a failing route" $ do
+        response <- THW.request methodGet "/animal/0" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Servant-Routed-Path", "/animal/<legs::Int>")]
+
+      it "is missing when no route matches" $ do
+        response <- THW.request methodGet "/wrongPath" [] ""
+        liftIO $ simpleHeaders response `shouldSatisfy`
+          (notMember "Servant-Routed-Path") . fromList
+
+      it "is missing when WithRoutingHeader is missing" $ do
+        response <- THW.request methodGet "/withoutHeader" [] ""
+        liftIO $ simpleHeaders response `shouldSatisfy`
+          (notMember "Servant-Routed-Path") . fromList
 
 -- }}}
 ------------------------------------------------------------------------------
