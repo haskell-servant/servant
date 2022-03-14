@@ -29,6 +29,7 @@ spec :: Spec
 spec = describe "Servant.Server.Internal.Router" $ do
   routerSpec
   distributivitySpec
+  serverLayoutSpec
 
 routerSpec :: Spec
 routerSpec = do
@@ -103,11 +104,29 @@ distributivitySpec =
     it "properly handles mixing static paths at different levels" $ do
       level `shouldHaveSameStructureAs` levelRef
 
+serverLayoutSpec :: Spec
+serverLayoutSpec =
+  describe "serverLayout" $ do
+    it "correctly represents the example API" $ do
+      exampleLayout `shouldHaveLayout` expectedExampleLayout
+    it "aggregates capture hints when different" $ do
+      captureDifferentTypes `shouldHaveLayout` expectedCaptureDifferentTypes
+    it "nubs capture hints when equal" $ do
+      captureSameType `shouldHaveLayout` expectedCaptureSameType
+    it "properly displays CaptureAll hints" $ do
+      captureAllLayout `shouldHaveLayout` expectedCaptureAllLayout
+
 shouldHaveSameStructureAs ::
   (HasServer api1 '[], HasServer api2 '[]) => Proxy api1 -> Proxy api2 -> Expectation
 shouldHaveSameStructureAs p1 p2 =
   unless (sameStructure (makeTrivialRouter p1) (makeTrivialRouter p2)) $
     expectationFailure ("expected:\n" ++ unpack (layout p2) ++ "\nbut got:\n" ++ unpack (layout p1))
+
+shouldHaveLayout ::
+  (HasServer api '[]) => Proxy api -> Text -> Expectation
+shouldHaveLayout p l =
+  unless (routerLayout (makeTrivialRouter p) == l) $
+    expectationFailure ("expected:\n" ++ unpack l ++ "\nbut got:\n" ++ unpack (layout p))
 
 makeTrivialRouter :: (HasServer layout '[]) => Proxy layout -> Router ()
 makeTrivialRouter p =
@@ -344,3 +363,100 @@ level = Proxy
 
 levelRef :: Proxy LevelRef
 levelRef = Proxy
+
+-- The example API for the 'layout' function.
+-- Should get factorized by the 'choice' smart constructor.
+type ExampleLayout =
+       "a" :> "d" :> Get '[JSON] NoContent
+  :<|> "b" :> Capture "x" Int :> Get '[JSON] Bool
+  :<|> "c" :> Put '[JSON] Bool
+  :<|> "a" :> "e" :> Get '[JSON] Int
+  :<|> "b" :> Capture "x" Int :> Put '[JSON] Bool
+  :<|> Raw
+
+exampleLayout :: Proxy ExampleLayout
+exampleLayout = Proxy
+
+-- The expected representation of the example API layout
+--
+expectedExampleLayout :: Text
+expectedExampleLayout =
+  "/\n\
+  \├─ a/\n\
+  \│  ├─ d/\n\
+  \│  │  └─•\n\
+  \│  └─ e/\n\
+  \│     └─•\n\
+  \├─ b/\n\
+  \│  └─ <x::Int>/\n\
+  \│     ├─•\n\
+  \│     ┆\n\
+  \│     └─•\n\
+  \├─ c/\n\
+  \│  └─•\n\
+  \┆\n\
+  \└─ <raw>\n"
+
+-- A capture API with all capture types being the same
+--
+type CaptureSameType =
+       "a" :> Capture "foo" Int :> "b" :> End
+  :<|> "a" :> Capture "foo" Int :> "c" :> End
+  :<|> "a" :> Capture "foo" Int :> "d" :> End
+
+captureSameType :: Proxy CaptureSameType
+captureSameType = Proxy
+
+-- The expected representation of the CaptureSameType API layout.
+--
+expectedCaptureSameType :: Text
+expectedCaptureSameType =
+  "/\n\
+  \└─ a/\n\
+  \   └─ <foo::Int>/\n\
+  \      ├─ b/\n\
+  \      │  └─•\n\
+  \      ├─ c/\n\
+  \      │  └─•\n\
+  \      └─ d/\n\
+  \         └─•\n"
+
+-- A capture API capturing different types
+--
+type CaptureDifferentTypes =
+       "a" :> Capture "foo" Int :> "b" :> End
+  :<|> "a" :> Capture "bar" Bool :> "c" :> End
+  :<|> "a" :> Capture "baz" Char :> "d" :> End
+
+captureDifferentTypes :: Proxy CaptureDifferentTypes
+captureDifferentTypes = Proxy
+
+-- The expected representation of the CaptureDifferentTypes API layout.
+--
+expectedCaptureDifferentTypes :: Text
+expectedCaptureDifferentTypes =
+  "/\n\
+  \└─ a/\n\
+  \   └─ <foo::Int|bar::Bool|baz::Char>/\n\
+  \      ├─ b/\n\
+  \      │  └─•\n\
+  \      ├─ c/\n\
+  \      │  └─•\n\
+  \      └─ d/\n\
+  \         └─•\n"
+
+-- An API with a CaptureAll part
+
+type CaptureAllLayout = "a" :> CaptureAll "foos" Int :> End
+
+captureAllLayout :: Proxy CaptureAllLayout
+captureAllLayout = Proxy
+
+-- The expected representation of the CaptureAllLayout API.
+--
+expectedCaptureAllLayout :: Text
+expectedCaptureAllLayout =
+  "/\n\
+  \└─ a/\n\
+  \   └─ <foos::[Int]>/\n\
+  \      └─•\n"
