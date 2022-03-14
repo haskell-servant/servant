@@ -1,0 +1,33 @@
+synopsis: New combinator to return routed path in response headers
+prs: #1561
+issues: #1553
+
+description: {
+
+This commit introduces a new type-level combinator, `WithRoutingHeader`.
+It modifies the behaviour of the following sub-API, such that all endpoints of said API return an additional routing header in their response.
+
+A routing header is a header that specifies which endpoint the incoming request was routed to.
+Endpoint are designated by their path, in which `Capture'` and `CaptureAll` combinators are replaced by a capture hint.
+
+This header can be used by downstream middlewares to gather information about individual endpoints, since in most cases
+a routing header uniquely identifies a single endpoint.
+
+Example:
+
+```haskell
+type MyApi =
+  WithRoutingHeader :> "by-id" :> Capture "id" Int :> Get '[JSON] Foo
+-- GET /by-id/1234 will return a response with the following header:
+--   ("Servant-Routed-Path", "/by-id/<id::Int>")
+```
+
+To achieve this, two refactorings were necessary:
+
+* Introduce a type `RouterEnv env` to encapsulate the `env` type (as in `Router env a`), which contains a tuple-encoded list of url pieces parsed from the incoming request. This type makes it possible to pass more information throughout the routing process, and the computation of the `Delayed env c` associated with each request.
+* Introduce a new kind of router, which only modifies the `RouterEnv`, and doesn't affect the routing process otherwise: `EnvRouter (RouterEnv env -> RouterEnv env) (Router' env a)`.
+  This new router is used when encountering the `WithRoutingHeader` combinator in an API, to notify the endpoints of the sub-API that they must produce a routing header (this behaviour is disabled by default).
+
+This PR also introduces `Spec` tests for the `WithRoutingHeader` combinator, which showcase some of its possible uses.
+
+}
