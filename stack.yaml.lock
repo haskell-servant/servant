@@ -13,7 +13,7 @@ packages:
     hackage: hspec-wai-0.10.1
 snapshots:
 - completed:
-    size: 585817
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/5.yaml
-    sha256: 22d24d0dacad9c1450b9a174c28d203f9bb482a2a8da9710a2f2a9f4afee2887
-  original: lts-18.5
+    size: 590102
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/27.yaml
+    sha256: 79a786674930a89301b0e908fad2822a48882f3d01486117693c377b8edffdbe
+  original: lts-18.27

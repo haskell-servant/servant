@@ -1,4 +1,4 @@
-resolver: lts-18.5
+resolver: lts-18.27
 packages:
 - servant-client-core/
 - servant-client/
@@ -11,6 +11,12 @@ packages:
 - servant-conduit
 - servant-machines/
 - servant-pipes/
+
+- servant-auth/servant-auth
+- servant-auth/servant-auth-docs
+- servant-auth/servant-auth-client
+- servant-auth/servant-auth-server
+- servant-auth/servant-auth-swagger
 
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/
