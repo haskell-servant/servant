@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 module Servant.Server.Internal.Router where
 
 import           Prelude ()
@@ -17,28 +18,15 @@ import qualified Data.Map                                   as M
 import           Data.Text
                  (Text)
 import qualified Data.Text                                  as T
-import           Data.Typeable
-                 (TypeRep)
 import           Network.Wai
                  (Response, pathInfo)
 import           Servant.Server.Internal.ErrorFormatter
+import           Servant.Server.Internal.RouterEnv
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
 
 type Router env = Router' env RoutingApplication
-
-data CaptureHint = CaptureHint
-  { captureName :: Text
-  , captureType :: TypeRep
-  }
-  deriving (Show, Eq)
-
-toCaptureTag :: CaptureHint -> Text
-toCaptureTag hint = captureName hint <> "::" <> (T.pack . show) (captureType hint)
-
-toCaptureTags :: [CaptureHint] -> Text
-toCaptureTags hints = "<" <> T.intercalate "|" (map toCaptureTag hints) <> ">"
 
 -- | Internal representation of a router.
 --
@@ -48,7 +36,7 @@ toCaptureTags hints = "<" <> T.intercalate "|" (map toCaptureTag hints) <> ">"
 -- components that can be used to process captures.
 --
 data Router' env a =
-    StaticRouter  (Map Text (Router' env a)) [env -> a]
+    StaticRouter  (Map Text (Router' env a)) [RouterEnv env -> a]
       -- ^ the map contains routers for subpaths (first path component used
       --   for lookup and removed afterwards), the list contains handlers
       --   for the empty path, to be tried in order
@@ -58,10 +46,13 @@ data Router' env a =
   | CaptureAllRouter [CaptureHint] (Router' ([Text], env) a)
       -- ^ all path components are passed to the child router in its
       --   environment and are removed afterwards
-  | RawRouter     (env -> a)
+  | RawRouter     (RouterEnv env -> a)
       -- ^ to be used for routes we do not know anything about
   | Choice        (Router' env a) (Router' env a)
       -- ^ left-biased choice between two routers
+  | EnvRouter     (RouterEnv env -> RouterEnv env) (Router' env a)
+      -- ^ modifies the environment, and passes it to the child router
+      -- @since 0.20
   deriving Functor
 
 -- | Smart constructor for a single static path component.
@@ -71,7 +62,7 @@ pathRouter t r = StaticRouter (M.singleton t r) []
 -- | Smart constructor for a leaf, i.e., a router that expects
 -- the empty path.
 --
-leafRouter :: (env -> a) -> Router' env a
+leafRouter :: (RouterEnv env -> a) -> Router' env a
 leafRouter l = StaticRouter M.empty [l]
 
 -- | Smart constructor for the choice between routers.
@@ -126,6 +117,7 @@ routerStructure (Choice r1 r2) =
   ChoiceStructure
     (routerStructure r1)
     (routerStructure r2)
+routerStructure (EnvRouter _ r) = routerStructure r
 
 -- | Compare the structure of two routers.
 --
@@ -172,9 +164,9 @@ tweakResponse f = fmap (\a -> \req cont -> a req (cont . f))
 
 -- | Interpret a router as an application.
 runRouter :: NotFoundErrorFormatter -> Router () -> RoutingApplication
-runRouter fmt r = runRouterEnv fmt r ()
+runRouter fmt r = runRouterEnv fmt r $ emptyEnv ()
 
-runRouterEnv :: NotFoundErrorFormatter -> Router env -> env -> RoutingApplication
+runRouterEnv :: NotFoundErrorFormatter -> Router env -> RouterEnv env -> RoutingApplication
 runRouterEnv fmt router env request respond  =
   case router of
     StaticRouter table ls ->
@@ -184,24 +176,31 @@ runRouterEnv fmt router env request respond  =
         [""] -> runChoice fmt ls env request respond
         first : rest | Just router' <- M.lookup first table
           -> let request' = request { pathInfo = rest }
-             in  runRouterEnv fmt router' env request' respond
+                 newEnv = appendPathPiece (StaticPiece first) env
+             in  runRouterEnv fmt router' newEnv request' respond
         _ -> respond $ Fail $ fmt request
-    CaptureRouter _ router' ->
+    CaptureRouter hints router' ->
       case pathInfo request of
         []   -> respond $ Fail $ fmt request
         -- This case is to handle trailing slashes.
         [""] -> respond $ Fail $ fmt request
         first : rest
           -> let request' = request { pathInfo = rest }
-             in  runRouterEnv fmt router' (first, env) request' respond
-    CaptureAllRouter _ router' ->
+                 newEnv = appendPathPiece (CapturePiece hints) env
+                 newEnv' = ((first,) <$> newEnv)
+             in  runRouterEnv fmt router' newEnv' request' respond
+    CaptureAllRouter hints router' ->
       let segments = pathInfo request
           request' = request { pathInfo = [] }
-      in runRouterEnv fmt router' (segments, env) request' respond
+          newEnv = appendPathPiece (CapturePiece hints) env
+          newEnv' = ((segments,) <$> newEnv)
+      in runRouterEnv fmt router' newEnv' request' respond
     RawRouter app ->
       app env request respond
     Choice r1 r2 ->
       runChoice fmt [runRouterEnv fmt r1, runRouterEnv fmt r2] env request respond
+    EnvRouter f router' ->
+      runRouterEnv fmt router' (f env) request respond
 
 -- | Try a list of routing applications in order.
 -- We stop as soon as one fails fatally or succeeds.

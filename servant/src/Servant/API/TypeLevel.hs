@@ -57,6 +57,8 @@ import           Servant.API.Alternative
                  (type (:<|>))
 import           Servant.API.Capture
                  (Capture, CaptureAll)
+import           Servant.API.Environment
+                 (WithRoutingHeader)
 import           Servant.API.Fragment
 import           Servant.API.Header
                  (Header)
@@ -130,6 +132,7 @@ type family IsElem endpoint api :: Constraint where
   IsElem e (sa :<|> sb)                   = Or (IsElem e sa) (IsElem e sb)
   IsElem (e :> sa) (e :> sb)              = IsElem sa sb
   IsElem sa (Header sym x :> sb)          = IsElem sa sb
+  IsElem sa (WithRoutingHeader :> sb)     = IsElem sa sb
   IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
   IsElem (CaptureAll z y :> sa) (CaptureAll x y :> sb)
                                           = IsElem sa sb
