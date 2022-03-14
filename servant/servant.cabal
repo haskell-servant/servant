@@ -38,6 +38,7 @@ library
     Servant.API.Capture
     Servant.API.ContentTypes
     Servant.API.Description
+    Servant.API.Environment
     Servant.API.Empty
     Servant.API.Experimental.Auth
     Servant.API.Fragment
