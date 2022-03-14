@@ -14,8 +14,6 @@ build-type:          Simple
 tested-with:         GHC==8.6.5, GHC==8.8.3, GHC ==8.10.7
 
 executable cookbook-hoist-server-with-context
-  if impl(ghc >= 9.2)
-    buildable: False
   main-is:             HoistServerWithContext.lhs
   build-depends:       base == 4.*
                      , base-compat

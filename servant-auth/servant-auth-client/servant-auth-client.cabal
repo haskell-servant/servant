@@ -26,15 +26,13 @@ source-repository head
   location: https://github.com/haskell-servant/servant
 
 library
-  if impl(ghc >= 9.2)
-    buildable: False
   hs-source-dirs:
       src
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base                >= 4.10     && < 4.16
-    , bytestring          >= 0.10.6.0 && < 0.11
+      base                >= 4.10     && < 4.17
+    , bytestring          >= 0.10.6.0 && < 0.12
     , containers          >= 0.5.6.2  && < 0.7
     , servant-auth        == 0.4.*
     , servant             >= 0.13     && < 0.20
@@ -46,8 +44,6 @@ library
   default-language: Haskell2010
 
 test-suite spec
-  if impl(ghc >= 9.2)
-    buildable: False
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   hs-source-dirs:
@@ -69,7 +65,7 @@ test-suite spec
       hspec                >= 2.5.5    && < 2.9
     , QuickCheck           >= 2.11.3   && < 2.15
     , aeson                >= 1.3.1.1  && < 3
-    , bytestring           >= 0.10.6.0 && < 0.11
+    , bytestring           >= 0.10.6.0 && < 0.12
     , http-client          >= 0.5.13.1 && < 0.8
     , http-types           >= 0.12.2   && < 0.13
     , servant-auth-server  >= 0.4.2.0  && < 0.5
