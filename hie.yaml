@@ -1,0 +1,41 @@
+cradle:
+  multi:
+    - path: "./.stack-work"
+      config: { cradle: { none } }
+    - path: "./"
+      config:
+        cradle:
+          stack:
+            - path: "./servant-auth/servant-auth/src"
+              component: "servant-auth:lib"
+            - path: "./servant-auth/servant-auth-client/src"
+              component: "servant-auth-client:lib"
+            - path: "./servant-auth/servant-auth-docs/src"
+              component: "servant-auth-docs:lib"
+            - path: "./servant-auth/servant-auth-server/src"
+              component: "servant-auth-server:lib"
+
+            - path: "./servant/src"
+              component: "servant:lib"
+            - path: "./servant-client/src"
+              component: "servant-client:lib"
+            - path: "./servant-client-core/src"
+              component: "servant-client-core:lib"
+            - path: "./servant-client-ghcjs/src"
+              component: "servant-client-ghcjs:lib"
+            - path: "./servant-conduit/src"
+              component: "servant-conduit:lib"
+            - path: "./servant-docs/src"
+              component: "servant-docs:lib"
+            - path: "./servant-foreign/src"
+              component: "servant-foreign:lib"
+            - path: "./servant-http-streams/src"
+              component: "servant-http-streams:lib"
+            - path: "./servant-machines/src"
+              component: "servant-machines:lib"
+            - path: "./servant-pipes/src"
+              component: "servant-pipes:lib"
+            - path: "./servant-server/src"
+              component: "servant-server:lib"
+            - path: "./servant-swagger/src"
+              component: "servant-swagger:lib"
