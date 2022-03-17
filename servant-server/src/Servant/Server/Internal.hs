@@ -42,7 +42,7 @@ import qualified Data.ByteString                            as B
 import qualified Data.ByteString.Builder                    as BB
 import qualified Data.ByteString.Char8                      as BC8
 import qualified Data.ByteString.Lazy                       as BL
-import           Data.Constraint (Constraint, Dict(..))
+import           Data.Constraint (Dict(..))
 import           Data.Either
                  (partitionEithers)
 import           Data.Maybe
@@ -57,7 +57,7 @@ import qualified Data.Text                                  as T
 import           Data.Typeable
 import           GHC.Generics
 import           GHC.TypeLits
-                 (KnownNat, KnownSymbol, TypeError, symbolVal)
+                 (KnownNat, KnownSymbol, symbolVal)
 import qualified Network.HTTP.Media                         as NHM
 import           Network.HTTP.Types                         hiding
                  (Header, ResponseHeaders)
@@ -91,7 +91,6 @@ import           Servant.API.ResponseHeaders
 import           Servant.API.Status
                  (statusFromNat)
 import qualified Servant.Types.SourceT                      as S
-import           Servant.API.TypeErrors
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
                  parseUrlPieces)
@@ -107,8 +106,6 @@ import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
 
-import           GHC.TypeLits
-                 (ErrorMessage (..))
 import           Servant.API.TypeLevel
                  (AtLeastOneFragment, FragmentUnique)
 
@@ -816,67 +813,6 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
       subContext = descendIntoNamedContext (Proxy :: Proxy name) context
 
   hoistServerWithContext _ _ nt s = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
-
--------------------------------------------------------------------------------
--- Custom type errors
--------------------------------------------------------------------------------
-
--- Erroring instance for 'HasServer' when a combinator is not fully applied
-instance TypeError (PartialApplication 
-#if __GLASGOW_HASKELL__ >= 904
-                    @(Type -> [Type] -> Constraint) 
-#endif
-                    HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
-  where
-    type ServerT (arr :> sub) _ = TypeError (PartialApplication (HasServer :: * -> [*] -> Constraint) arr)
-    route = error "unreachable"
-    hoistServerWithContext _ _ _ _ = error "unreachable"
-
--- | This instance prevents from accidentally using '->' instead of ':>'
---
--- >>> serve (Proxy :: Proxy (Capture "foo" Int -> Get '[JSON] Int)) (error "...")
--- ...
--- ...No instance HasServer (a -> b).
--- ...Maybe you have used '->' instead of ':>' between
--- ...Capture' '[] "foo" Int
--- ...and
--- ...Verb 'GET 200 '[JSON] Int
--- ...
---
--- >>> undefined :: Server (Capture "foo" Int -> Get '[JSON] Int)
--- ...
--- ...No instance HasServer (a -> b).
--- ...Maybe you have used '->' instead of ':>' between
--- ...Capture' '[] "foo" Int
--- ...and
--- ...Verb 'GET 200 '[JSON] Int
--- ...
---
-instance TypeError (HasServerArrowTypeError a b) => HasServer (a -> b) context
-  where
-    type ServerT (a -> b) m = TypeError (HasServerArrowTypeError a b)
-    route _ _ _ = error "servant-server panic: impossible happened in HasServer (a -> b)"
-    hoistServerWithContext _ _ _ = id
-
-type HasServerArrowTypeError a b =
-    'Text "No instance HasServer (a -> b)."
-    ':$$: 'Text "Maybe you have used '->' instead of ':>' between "
-    ':$$: 'ShowType a
-    ':$$: 'Text "and"
-    ':$$: 'ShowType b
-
--- Erroring instances for 'HasServer' for unknown API combinators
-
--- XXX: This omits the @context@ parameter, e.g.:
---
--- "There is no instance for HasServer (Bool :> …)". Do we care ?
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub 
-#if __GLASGOW_HASKELL__ >= 904
-                                         @(Type -> [Type] -> Constraint) 
-#endif
-                                         HasServer ty) => HasServer (ty :> sub) context
-
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) => HasServer api context
 
 -- | Ignore @'Fragment'@ in server handlers.
 -- See <https://ietf.org/rfc/rfc2616.html#section-15.1.3> for more details.
