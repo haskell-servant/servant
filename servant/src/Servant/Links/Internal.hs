@@ -100,7 +100,7 @@
 --  `IsElem'` as a last resort.
 --
 --  @since 0.14.1
-module Servant.Links (
+module Servant.Links.Internal (
   module Servant.API.TypeLevel,
 
   -- * Building and using safe links
@@ -141,7 +141,7 @@ import qualified Data.Text.Encoding            as TE
 import           Data.Type.Bool
                  (If)
 import           GHC.TypeLits
-                 (KnownSymbol, TypeError, symbolVal)
+                 (KnownSymbol, symbolVal)
 import           Network.URI
                  (URI (..), escapeURIString, isUnreserved)
 import           Prelude ()
@@ -184,7 +184,6 @@ import           Servant.API.Stream
                  (Stream, StreamBody')
 import           Servant.API.Sub
                  (type (:>))
-import           Servant.API.TypeErrors
 import           Servant.API.TypeLevel
 import           Servant.API.UVerb
 import           Servant.API.Vault
@@ -194,8 +193,6 @@ import           Servant.API.Verbs
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Web.HttpApiData
-import           Data.Kind
-                 (Type)
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
@@ -648,22 +645,3 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 -- $setup
 -- >>> import Servant.API
 -- >>> import Data.Text (Text)
-
--- Erroring instance for 'HasLink' when a combinator is not fully applied
-instance TypeError (PartialApplication 
-#if __GLASGOW_HASKELL__ >= 904
-                    @(Type -> Constraint) 
-#endif
-                    HasLink arr) => HasLink ((arr :: a -> b) :> sub)
-  where
-    type MkLink (arr :> sub) _ = TypeError (PartialApplication (HasLink :: * -> Constraint) arr)
-    toLink = error "unreachable"
-
--- Erroring instances for 'HasLink' for unknown API combinators
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub 
-#if __GLASGOW_HASKELL__ >= 904
-                                         @(Type -> Constraint) 
-#endif
-                                         HasLink ty) => HasLink (ty :> sub)
-
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasLink api)) => HasLink api
