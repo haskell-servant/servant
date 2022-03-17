@@ -21,7 +21,8 @@ import           Network.Wai
 import           Network.Wai.Internal
 import           Prelude ()
 import           Prelude.Compat
-import           Servant
+import           Servant                hiding
+                 (respond)
 import qualified System.Timeout
 import           Test.Hspec
 
