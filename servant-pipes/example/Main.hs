@@ -15,8 +15,6 @@ import           Data.Maybe
                  (fromMaybe)
 import           Network.HTTP.Client
                  (defaultManagerSettings, newManager)
-import           Network.Wai
-                 (Application)
 import           System.Environment
                  (getArgs, lookupEnv)
 import           System.IO

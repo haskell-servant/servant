@@ -95,8 +95,6 @@ import           Servant.API.TypeErrors
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
                  parseUrlPieces)
-import           Data.Kind
-                 (Type)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -110,7 +108,7 @@ import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
 
 import           GHC.TypeLits
-                 (ErrorMessage (..), TypeError)
+                 (ErrorMessage (..))
 import           Servant.API.TypeLevel
                  (AtLeastOneFragment, FragmentUnique)
 

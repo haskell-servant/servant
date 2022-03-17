@@ -55,7 +55,7 @@ import           Data.String.Conversions
 import           Data.Text
                  (Text, unpack)
 import           GHC.Generics
-                 (Generic, Rep, K1(K1), M1(M1), U1(U1), V1,
+                 (K1(K1), M1(M1), U1(U1), V1,
                  (:*:)((:*:)), (:+:)(L1, R1))
 import qualified GHC.Generics               as G
 import           GHC.TypeLits
@@ -964,7 +964,7 @@ instance {-# OVERLAPPABLE #-}
 
 instance (ReflectMethod method) =>
          HasDocs (NoContentVerb method) where
-  docsFor Proxy (endpoint, action) DocOptions{..} =
+  docsFor Proxy (endpoint, action) _ =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ method'
@@ -982,7 +982,7 @@ instance (ReflectMethod method) =>
 instance {-# OVERLAPPABLE #-}
         (Accept ct, KnownNat status, ReflectMethod method)
     => HasDocs (Stream method status framing ct a) where
-  docsFor Proxy (endpoint, action) DocOptions{..} =
+  docsFor Proxy (endpoint, action) _ =
     single endpoint' action'
 
     where endpoint' = endpoint & method .~ method'

@@ -17,8 +17,6 @@ import           Data.Void
                  (Void)
 import           Network.HTTP.Client
                  (defaultManagerSettings, newManager)
-import           Network.Wai
-                 (Application)
 import           System.Environment
                  (getArgs, lookupEnv)
 import           Text.Read

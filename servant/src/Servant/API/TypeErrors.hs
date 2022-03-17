@@ -16,7 +16,6 @@ module Servant.API.TypeErrors (
   NoInstanceForSub,
 ) where
 
-import Data.Kind
 import GHC.TypeLits
 
 -- | No instance exists for @tycls (expr :> ...)@ because 

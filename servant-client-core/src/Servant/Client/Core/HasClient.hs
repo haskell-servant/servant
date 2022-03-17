@@ -32,7 +32,6 @@ import           Control.Arrow
                  (left, (+++))
 import           Control.Monad
                  (unless)
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import           Data.Either
                  (partitionEithers)
@@ -78,7 +77,7 @@ import           Servant.API
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
                  Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
-                 getResponse, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
+                 getResponse, toEncodedUrlPiece, NamedRoutes)
 import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
                  , GenericServant, toServant, fromServant)
