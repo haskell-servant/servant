@@ -4,6 +4,8 @@
 {-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE TypeOperators       #-}
 
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
+
 -- | This module tests whether streaming works from client to server
 -- with a server implemented with servant-server.
 module Servant.Server.StreamingSpec where
