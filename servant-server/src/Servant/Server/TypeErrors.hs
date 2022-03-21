@@ -97,3 +97,10 @@ instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub
                                          HasServer ty) => HasServer (ty :> sub) context
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) => HasServer api context
+
+-- $setup
+-- >>> :set -XDataKinds
+-- >>> :set -XTypeOperators
+-- >>> import Data.Typeable
+-- >>> import Servant.API
+-- >>> import Servant.Server
