@@ -3,10 +3,11 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
-Unreleased
-----------
+0.19.1
+------
 
 - Add `MonadFail` instance for `Handler` wrt [#1545](https://github.com/haskell-servant/servant/issues/1545)
+- Support GHC 9.2 [#1525](https://github.com/haskell-servant/servant/issues/1525)
 
 0.19
 ----
