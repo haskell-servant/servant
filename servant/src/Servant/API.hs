@@ -38,6 +38,7 @@ module Servant.API (
 
   -- * Sub-APIs defined as records of routes
   module Servant.API.NamedRoutes,
+  module Servant.API.Generic,
 
   -- * Streaming endpoints, distinguished by HTTP method
   module Servant.API.Stream,
@@ -102,6 +103,9 @@ import           Servant.API.Fragment
                  (Fragment)
 import           Servant.API.Header
                  (Header, Header')
+import           Servant.API.Generic
+                 (GenericMode ((:-)), AsApi, ToServant, ToServantApi, GServantProduct,
+                 GenericServant, fromServant, toServant, genericApi)
 import           Servant.API.HttpVersion
                  (HttpVersion (..))
 import           Servant.API.IsSecure
