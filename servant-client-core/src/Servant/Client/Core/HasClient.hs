@@ -874,7 +874,7 @@ infixl 2 /:
 --
 -- Example:
 --
--- @@
+-- @
 -- type Api = NamedRoutes RootApi
 --
 -- data RootApi mode = RootApi
@@ -895,7 +895,7 @@ infixl 2 /:
 --
 -- endpointClient :: ClientM Person
 -- endpointClient = client // subApi // endpoint
--- @@
+-- @
 (//) :: a -> (a -> b) -> b
 x // f = f x
 
@@ -906,7 +906,7 @@ x // f = f x
 --
 -- Example:
 --
--- @@
+-- @
 -- type Api = NamedRoutes RootApi
 --
 -- data RootApi mode = RootApi
@@ -931,7 +931,7 @@ x // f = f x
 --
 -- endpointClient :: ClientM Person
 -- endpointClient = client // subApi /: "foobar123" // endpoint
--- @@
+-- @
 (/:) :: (a -> b -> c) -> b -> a -> c
 (/:) = flip
 
