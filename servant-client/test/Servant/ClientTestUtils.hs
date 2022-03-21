@@ -160,6 +160,7 @@ type Api =
                                       WithStatus 301 Text]
   :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
   :<|> NamedRoutes RecordRoutes
+  :<|> "captureVerbatim" :> Capture "someString" Verbatim :> Get '[PlainText] Text
 
 api :: Proxy Api
 api = Proxy
@@ -214,7 +215,8 @@ getRoot
   :<|> EmptyClient
   :<|> uverbGetSuccessOrRedirect
   :<|> uverbGetCreated
-  :<|> recordRoutes = client api
+  :<|> recordRoutes
+  :<|> captureVerbatim = client api
 
 server :: Application
 server = serve api (
@@ -259,6 +261,7 @@ server = serve api (
              { something = pure ["foo", "bar", "pweet"]
              }
          }
+  :<|> pure . decodeUtf8 . unVerbatim
   )
 
 -- * api for testing failures
@@ -370,3 +373,12 @@ instance ToHttpApiData UrlEncodedByteString where
 
 instance FromHttpApiData UrlEncodedByteString where
     parseUrlPiece = pure . UrlEncodedByteString . HTTP.urlDecode True . encodeUtf8
+
+newtype Verbatim = Verbatim { unVerbatim :: ByteString }
+
+instance ToHttpApiData Verbatim where
+    toEncodedUrlPiece = byteString . unVerbatim
+    toUrlPiece = decodeUtf8 . unVerbatim
+
+instance FromHttpApiData Verbatim where
+    parseUrlPiece = pure . Verbatim . encodeUtf8

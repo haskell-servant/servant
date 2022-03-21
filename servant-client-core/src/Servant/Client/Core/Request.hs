@@ -34,6 +34,8 @@ import           Data.Bifunctor
 import           Data.Bitraversable
                  (Bitraversable (..), bifoldMapDefault, bimapDefault)
 import qualified Data.ByteString                      as BS
+import           Data.ByteString.Builder
+                 (Builder)
 import qualified Data.ByteString.Builder              as Builder
 import qualified Data.ByteString.Lazy                 as LBS
 import qualified Data.Sequence                        as Seq
@@ -112,7 +114,7 @@ instance (NFData path, NFData body) => NFData (RequestF body path) where
         rnfB Nothing        = ()
         rnfB (Just (b, mt)) = rnf b `seq` mediaTypeRnf mt
 
-type Request = RequestF RequestBody Builder.Builder
+type Request = RequestF RequestBody Builder
 
 -- | The request body. R replica of the @http-client@ @RequestBody@.
 data RequestBody
@@ -145,9 +147,10 @@ defaultRequest = Request
 
 -- | Append extra path to the request being constructed.
 --
-appendToPath :: Text -> Request -> Request
+-- Warning: This function assumes that the path fragment is already URL-encoded.
+appendToPath :: Builder -> Request -> Request
 appendToPath p req
-  = req { requestPath = requestPath req <> "/" <> toEncodedUrlPiece p }
+  = req { requestPath = requestPath req <> "/" <> p }
 
 -- | Append a query parameter to the request being constructed.
 --
