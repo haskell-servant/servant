@@ -38,6 +38,7 @@ import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
 import Servant.API.ContentTypes (JSON, PlainText, FormUrlEncoded, OctetStream, NoContent, MimeRender(mimeRender), MimeUnrender(mimeUnrender))
 import Servant.API.Status (KnownStatus, statusVal)
+import Servant.API.ResponseHeaders (Headers)
 import Servant.API.UVerb.Union
 
 class KnownStatus (StatusOf a) => HasStatus (a :: *) where
@@ -86,6 +87,8 @@ newtype WithStatus (k :: Nat) a = WithStatus a
 instance KnownStatus n => HasStatus (WithStatus n a) where
   type StatusOf (WithStatus n a) = n
 
+instance HasStatus a => HasStatus (Headers ls a) where
+  type StatusOf (Headers ls a) = StatusOf a
 
 -- | A variant of 'Verb' that can have any of a number of response values and status codes.
 --

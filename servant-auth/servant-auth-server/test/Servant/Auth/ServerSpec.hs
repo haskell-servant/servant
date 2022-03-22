@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TypeApplications #-}
 module Servant.Auth.ServerSpec (spec) where
 
 #if !MIN_VERSION_servant_server(0,16,0)
@@ -25,6 +26,7 @@ import           Data.Aeson                          (FromJSON, ToJSON, Value,
 import           Data.Aeson.Lens                     (_JSON)
 import qualified Data.ByteString                     as BS
 import qualified Data.ByteString.Lazy                as BSL
+import           Data.Text                           (Text)
 import           Data.CaseInsensitive                (mk)
 import           Data.Foldable                       (find)
 import           Data.Monoid
@@ -407,6 +409,7 @@ type API auths
         ( Get '[JSON] Int
        :<|> ReqBody '[JSON] Int :> Post '[JSON] Int
        :<|> NamedRoutes DummyRoutes
+       :<|> UVerb 'GET '[JSON] '[WithStatus 200 Int, WithStatus 500 Text]
        :<|> "header" :> Get '[JSON] (Headers '[Header "Blah" Int] Int)
 #if MIN_VERSION_servant_server(0,15,0)
        :<|> "stream" :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
@@ -483,6 +486,7 @@ server ccfg =
         Authenticated usr -> getInt usr
                         :<|> postInt usr
                         :<|> DummyRoutes { dummyInt = getInt usr }
+                        :<|> respond (WithStatus @200 (42 :: Int))
                         :<|> getHeaderInt
 #if MIN_VERSION_servant_server(0,15,0)
                         :<|> return (S.source ["bytestring"])
