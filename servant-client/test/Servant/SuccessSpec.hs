@@ -36,6 +36,8 @@ import           Data.Maybe
 import           Data.Monoid ()
 import           Data.Text
                  (Text)
+import           Data.Text.Encoding
+                 (encodeUtf8)
 import qualified Network.HTTP.Client                as C
 import qualified Network.HTTP.Types                 as HTTP
 import           Test.Hspec
@@ -196,3 +198,10 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         case eitherResponse of
           Left clientError -> fail $ show clientError
           Right response -> matchUnion response `shouldBe` Just (WithStatus @201 carol)
+
+    it "encodes URL pieces following ToHttpApiData instance" $ \(_, baseUrl) -> do
+      let textOrig = "*"
+      eitherResponse <- runClient (captureVerbatim $ Verbatim $ encodeUtf8 textOrig) baseUrl
+      case eitherResponse of
+        Left clientError -> fail $ show clientError
+        Right textBack -> textBack `shouldBe` textOrig

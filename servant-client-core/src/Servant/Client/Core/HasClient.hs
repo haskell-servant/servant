@@ -208,7 +208,7 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m api)
     clientWithRoute pm (Proxy :: Proxy api)
                     (appendToPath p req)
 
-    where p = (toUrlPiece val)
+    where p = toEncodedUrlPiece val
 
   hoistClientMonad pm _ f cl = \a ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
@@ -243,7 +243,7 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
     clientWithRoute pm (Proxy :: Proxy sublayout)
                     (foldl' (flip appendToPath) req ps)
 
-    where ps = map (toUrlPiece) vals
+    where ps = map toEncodedUrlPiece vals
 
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy sublayout) f (cl as)
@@ -740,7 +740,7 @@ instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where
      clientWithRoute pm (Proxy :: Proxy api)
                      (appendToPath p req)
 
-    where p = pack $ symbolVal (Proxy :: Proxy path)
+    where p = toEncodedUrlPiece $ pack $ symbolVal (Proxy :: Proxy path)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
