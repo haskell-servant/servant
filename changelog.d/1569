@@ -1,0 +1,13 @@
+synopsis: Encode captures using toEncodedUrlPiece
+prs: #1569
+issues: #1511
+
+description: {
+The `servant-client` library now makes direct use of `toEncodedUrlPiece` from `ToHttpApiData`
+to encode captured values when building the request path. It gives user freedom to implement
+URL-encoding however they need.
+
+Previous behavior was to use `toUrlPiece` and URL-encode its output using `toEncodedUrlPiece`
+from the `Text` instance of `ToHttpApiData`. The issue with this approach is that
+`ToHttpApiData Text` is overly zealous and also encodes characters, such as `*`, which are perfectly valid in a URL.
+}
