@@ -183,7 +183,11 @@ instance (AddHeader h v old new) => AddHeader h v (Union '[old]) (Union '[new]) 
     SOP.Z $ SOP.I $ addOptionalHeader hdr $ SOP.unI $ SOP.unZ $ resp
 
 instance
-  (AddHeader h v old new, AddHeader h v (Union oldrest) (Union newrest), oldrest ~ (a ': as), newrest ~ (b ': bs))
+  ( AddHeader h v old new, AddHeader h v (Union oldrest) (Union newrest)
+  -- This ensures that the remainder of the response list is _not_ empty
+  -- It is necessary to prevent the two instances for union types from
+  -- overlapping.
+  , oldrest ~ (a ': as), newrest ~ (b ': bs))
   => AddHeader h v (Union (old ': (a ': as))) (Union (new ': (b ': bs))) where
   addOptionalHeader hdr resp = case resp of
     SOP.Z (SOP.I rHead) -> SOP.Z $ SOP.I $ addOptionalHeader hdr rHead
