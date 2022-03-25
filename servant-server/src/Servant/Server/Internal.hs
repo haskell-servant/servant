@@ -173,7 +173,7 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
 -- > server = getBook
 -- >   where getBook :: Text -> Handler Book
 -- >         getBook isbn = ...
-instance (KnownSymbol capture, FromHttpApiData a
+instance (KnownSymbol capture, FromHttpApiData a, Typeable a
          , HasServer api context, SBoolI (FoldLenient mods)
          , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
          )
@@ -185,7 +185,7 @@ instance (KnownSymbol capture, FromHttpApiData a
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context d =
-    CaptureRouter $
+    CaptureRouter [hint] $
         route (Proxy :: Proxy api)
               context
               (addCapture d $ \ txt -> withRequest $ \ request ->
@@ -197,6 +197,7 @@ instance (KnownSymbol capture, FromHttpApiData a
     where
       rep = typeRep (Proxy :: Proxy Capture')
       formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
+      hint = CaptureHint (T.pack $ symbolVal $ Proxy @capture) (typeRep (Proxy :: Proxy a))
 
 -- | If you use 'CaptureAll' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a
@@ -215,7 +216,7 @@ instance (KnownSymbol capture, FromHttpApiData a
 -- > server = getSourceFile
 -- >   where getSourceFile :: [Text] -> Handler Book
 -- >         getSourceFile pathSegments = ...
-instance (KnownSymbol capture, FromHttpApiData a
+instance (KnownSymbol capture, FromHttpApiData a, Typeable a
          , HasServer api context
          , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
          )
@@ -227,7 +228,7 @@ instance (KnownSymbol capture, FromHttpApiData a
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context d =
-    CaptureAllRouter $
+    CaptureAllRouter [hint] $
         route (Proxy :: Proxy api)
               context
               (addCapture d $ \ txts -> withRequest $ \ request ->
@@ -238,6 +239,7 @@ instance (KnownSymbol capture, FromHttpApiData a
     where
       rep = typeRep (Proxy :: Proxy CaptureAll)
       formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
+      hint = CaptureHint (T.pack $ symbolVal $ Proxy @capture) (typeRep (Proxy :: Proxy [a]))
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
