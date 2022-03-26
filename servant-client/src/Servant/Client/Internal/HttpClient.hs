@@ -24,7 +24,7 @@ import           Control.Monad
 import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Catch
-                 (MonadCatch, MonadThrow)
+                 (MonadCatch, MonadThrow, MonadMask)
 import           Control.Monad.Error.Class
                  (MonadError (..))
 import           Control.Monad.IO.Class
@@ -136,7 +136,7 @@ newtype ClientM a = ClientM
   { unClientM :: ReaderT ClientEnv (ExceptT ClientError IO) a }
   deriving ( Functor, Applicative, Monad, MonadIO, Generic
            , MonadReader ClientEnv, MonadError ClientError, MonadThrow
-           , MonadCatch)
+           , MonadCatch, MonadMask)
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftBase
