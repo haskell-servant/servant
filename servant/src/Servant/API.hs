@@ -100,7 +100,7 @@ import           Servant.API.Description
 import           Servant.API.Empty
                  (EmptyAPI (..))
 import           Servant.API.Environment
-                 (WithRoutingHeader)
+                 (Redirect, WithRoutingHeader)
 import           Servant.API.Experimental.Auth
                  (AuthProtect)
 import           Servant.API.Fragment

@@ -46,6 +46,7 @@ library
     Servant.Server.Internal.DelayedIO
     Servant.Server.Internal.ErrorFormatter
     Servant.Server.Internal.Handler
+    Servant.Server.Internal.Redirect
     Servant.Server.Internal.RouterEnv
     Servant.Server.Internal.RouteResult
     Servant.Server.Internal.Router
