@@ -112,6 +112,10 @@ import           Servant.API.TypeLevel
                  (AtLeastOneFragment, FragmentUnique)
 
 class HasServer api context where
+  -- | The type of a server for this API, given a monad to run effects in.
+  --
+  -- Note that the result kind is @*@, so it is /not/ a monad transformer, unlike
+  -- what the @T@ in the name might suggest.
   type ServerT api (m :: * -> *) :: *
 
   route ::
