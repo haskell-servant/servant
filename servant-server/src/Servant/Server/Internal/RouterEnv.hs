@@ -23,14 +23,20 @@ import           Network.HTTP.Types.Header
                  (HeaderName)
 
 data RouterEnv env = RouterEnv
-  { routedPath :: [PathPiece]
+  { locationHeader :: Maybe String
+  , routedPath :: [PathPiece]
   , shouldReturnRoutedPath :: Bool
   , routerEnv :: env
   }
   deriving Functor
 
 emptyEnv :: a -> RouterEnv a
-emptyEnv v = RouterEnv [] False v
+emptyEnv v = RouterEnv
+  { locationHeader = Nothing
+  , routedPath = []
+  , shouldReturnRoutedPath = False
+  , routerEnv = v
+  }
 
 enableRoutingHeaders :: RouterEnv env -> RouterEnv env
 enableRoutingHeaders env = env { shouldReturnRoutedPath = True }
@@ -61,5 +67,11 @@ toCaptureTag hint = captureName hint <> "::" <> (T.pack . show) (captureType hin
 toCaptureTags :: [CaptureHint] -> Text
 toCaptureTags hints = "<" <> T.intercalate "|" (map toCaptureTag hints) <> ">"
 
+withLocationHeader :: String -> RouterEnv a -> RouterEnv a
+withLocationHeader loc env = env { locationHeader = Just loc}
+
 hRoutedPathHeader :: HeaderName
 hRoutedPathHeader = "Servant-Routed-Path"
+
+hLocationHeader :: HeaderName
+hLocationHeader = "Location"

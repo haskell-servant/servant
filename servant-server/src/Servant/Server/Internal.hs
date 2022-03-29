@@ -74,7 +74,7 @@ import           Servant.API
                  CaptureAll, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  Header', If, IsSecure (..), NoContentVerb, QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
+                 QueryParam', QueryParams, Raw, Redirect, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
                  WithNamedContext, WithRoutingHeader, NamedRoutes)
@@ -89,7 +89,7 @@ import           Servant.API.Modifiers
 import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
 import           Servant.API.Status
-                 (statusFromNat)
+                 (Redirection, statusFromNat)
 import qualified Servant.Types.SourceT                      as S
 import           Servant.API.TypeErrors
 import           Web.HttpApiData
@@ -102,6 +102,7 @@ import           Servant.Server.Internal.Delayed
 import           Servant.Server.Internal.DelayedIO
 import           Servant.Server.Internal.ErrorFormatter
 import           Servant.Server.Internal.Handler
+import           Servant.Server.Internal.Redirect
 import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.RouterEnv
@@ -259,6 +260,23 @@ instance ( HasServer api context
 
   route _ context d =
       EnvRouter enableRoutingHeaders $ route (Proxy :: Proxy api) context d
+
+-- | TODO: Documentation
+instance ( HasServer api context
+         , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+         , KnownSymbol location
+         , AllStatusesInClass Redirection api
+         )
+      => HasServer (Redirect location :> api) context where
+
+  type ServerT (Redirect location :> api) m = ServerT api m
+
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+
+  route _ context d =
+      EnvRouter
+        (withLocationHeader $ symbolVal $ Proxy @location)
+        (route (Proxy :: Proxy api) context d)
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead

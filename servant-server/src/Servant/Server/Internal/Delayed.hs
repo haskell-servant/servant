@@ -22,7 +22,7 @@ import           Network.Wai
 import           Servant.Server.Internal.DelayedIO
 import           Servant.Server.Internal.Handler
 import           Servant.Server.Internal.RouterEnv
-                 (RouterEnv (..), hRoutedPathHeader, routedPathRepr)
+                 (RouterEnv (..), hLocationHeader, hRoutedPathHeader, routedPathRepr)
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.ServerError
 
@@ -266,11 +266,17 @@ runAction action env req respond k = runResourceT $
       e <- runHandler a
       case e of
         Left err -> return . Route . withRoutingHeaders $ responseServerError err
-        Right x  -> return $! withRoutingHeaders <$> k x
+        Right x  -> return $! withHeaders <$> k x
     withRoutingHeaders :: Response -> Response
     withRoutingHeaders = if shouldReturnRoutedPath env
       then mapResponseHeaders ((hRoutedPathHeader, cs $ routedPathRepr env) :)
       else id
+    withLocationHeader :: Response -> Response
+    withLocationHeader = case locationHeader env of
+      Nothing -> id
+      Just location -> mapResponseHeaders ((hLocationHeader, cs location) :)
+    withHeaders :: Response -> Response
+    withHeaders = withLocationHeader . withRoutingHeaders
 
 {- Note [Existential Record Update]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
