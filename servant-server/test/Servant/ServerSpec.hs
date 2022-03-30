@@ -56,7 +56,7 @@ import           Servant.API
                  HasStatus (StatusOf), Header, Headers, HttpVersion,
                  IsSecure (..), JSON, Lenient, NoContent (..), NoContentVerb,
                  NoFraming, OctetStream, Patch, PlainText, Post, Put,
-                 QueryFlag, QueryParam, QueryParams, Raw, RemoteHost, ReqBody,
+                 QueryFlag, QueryParam, QueryParams, Raw, Redirect, RemoteHost, ReqBody,
                  SourceIO, StdMethod (..), Stream, StreamGet, Strict, UVerb,
                  Union, Verb, WithRoutingHeader, WithStatus (..), addHeader)
 import           Servant.Server
@@ -108,6 +108,7 @@ spec = do
   basicAuthSpec
   genAuthSpec
   routedPathHeadersSpec
+  redirectionSpec
 
 ------------------------------------------------------------------------------
 -- * verbSpec {{{
@@ -942,6 +943,54 @@ routedPathHeadersSpec = do
         response <- THW.request methodGet "/withoutHeader" [] ""
         liftIO $ simpleHeaders response `shouldSatisfy`
           (notMember "Servant-Routed-Path") . fromList
+
+-- }}}
+------------------------------------------------------------------------------
+-- * Redirection {{{
+------------------------------------------------------------------------------
+
+type RedirectionApi
+  = "old-api" :> Redirect "/new-api" :>
+    (    Verb 'GET 307 '[JSON] NoContent
+    :<|> Verb 'POST 307 '[JSON] NoContent
+    :<|> "sub-api" :> Redirect "/new-api/sub-api" :> Verb 'GET 301 '[JSON] NoContent
+    )
+  :<|> "new-api" :>
+    (    Get '[JSON] Person
+    :<|> Post '[JSON] Person
+    :<|> "sub-api" :> Get '[JSON] Person
+    )
+
+redirectionApi :: Proxy RedirectionApi
+redirectionApi = Proxy
+
+redirectionServer :: Server RedirectionApi
+redirectionServer =
+  (    return NoContent
+  :<|> return NoContent
+  :<|> return NoContent
+  ) :<|>
+  (    return alice
+  :<|> return alice
+  :<|> return alice
+  )
+
+redirectionSpec :: Spec
+redirectionSpec = do
+  describe "Redirect combinator" $ do
+    with (return $ serve redirectionApi redirectionServer) $ do
+      it "fills the Location header" $ do
+        response <- THW.request methodGet "/old-api" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Location", "/new-api")]
+      it "gets trumped by more specific redirections" $ do
+        response <- THW.request methodGet "/old-api/sub-api" [] ""
+        liftIO $ simpleHeaders response `shouldContain`
+          [("Location", "/new-api/sub-api")]
+      it "only fills Location header in nested apis" $ do
+        response <- THW.request methodGet "/new-api" [] ""
+        liftIO $ simpleHeaders response `shouldSatisfy`
+          (notMember "Location") . fromList
 
 -- }}}
 ------------------------------------------------------------------------------
