@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
 -- | This is a module containing an API with all `Servant.API` combinators. It
@@ -44,11 +45,13 @@ type ComprehensiveAPIWithoutStreaming =
 comprehensiveAPIWithoutStreaming :: Proxy ComprehensiveAPIWithoutStreaming
 comprehensiveAPIWithoutStreaming = Proxy
 
+type CaptureEndpoint = Capture' '[Description "example description"] "bar" Int :> GET
+
 -- | @:: API -> API@, so we have linear structure of the API.
 type ComprehensiveAPIWithoutStreamingOrRaw' endpoint =
     GET
     :<|> "get-int"          :> Get '[JSON] Int
-    :<|> "capture"          :> Capture' '[Description "example description"] "bar" Int :> GET
+    :<|> CaptureEndpoint
     :<|> "capture-lenient"  :> Capture' '[Lenient] "foo" Int :> GET
     :<|> "header"           :> Header "foo" Int :> GET
     :<|> "header-lenient"   :> Header' '[Required, Lenient] "bar" Int :> GET
@@ -78,3 +81,9 @@ type ComprehensiveAPIWithoutStreamingOrRaw = ComprehensiveAPIWithoutStreamingOrR
 
 comprehensiveAPIWithoutStreamingOrRaw :: Proxy ComprehensiveAPIWithoutStreamingOrRaw
 comprehensiveAPIWithoutStreamingOrRaw = Proxy
+
+redirectEndpoints :: [RedirectOf ComprehensiveAPI]
+redirectEndpoints =
+  [ RedirectOf (Proxy @GET) id
+  , RedirectOf (Proxy @CaptureEndpoint) (\mkLink -> mkLink 42)
+  ]

@@ -50,6 +50,7 @@ library
     Servant.API.QueryParam
     Servant.API.Raw
     Servant.API.RemoteHost
+    Servant.API.RedirectOf
     Servant.API.ReqBody
     Servant.API.ResponseHeaders
     Servant.API.Status

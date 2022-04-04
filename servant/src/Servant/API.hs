@@ -57,6 +57,9 @@ module Servant.API (
   -- * Response Headers
   module Servant.API.ResponseHeaders,
 
+  -- * Redirections
+  module Servant.API.RedirectOf,
+
   -- * Untyped endpoints
   module Servant.API.Raw,
   -- | Plugging in a wai 'Network.Wai.Application', serving directories
@@ -118,6 +121,8 @@ import           Servant.API.Raw
                  (Raw)
 import           Servant.API.RemoteHost
                  (RemoteHost)
+import           Servant.API.RedirectOf
+                 (RedirectOf(..))
 import           Servant.API.ReqBody
                  (ReqBody, ReqBody')
 import           Servant.API.ResponseHeaders
