@@ -84,8 +84,9 @@ server = (helloH :<|> postGreetH :<|> deleteGreetH :<|> otherRoutes) :<|> redire
           RedirectOf (Proxy @("hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON] Greet))
           (\buildPath -> buildPath "Nicolas" (Just True))
 
-        -- Fail in any other case
-        redirect _ = throwError err500
+        redirect _ = pure $
+          RedirectOf (Proxy @("bye" :> Capture "name" Text :> Get '[JSON] Text))
+          (\buildPath -> buildPath "Gaël")
 
 -- Turn the server into a WAI app. 'serve' is provided by servant,
 -- more precisely by the Servant.Server module.

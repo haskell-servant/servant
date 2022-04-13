@@ -60,6 +60,8 @@ import           Servant.API.Capture
 import           Servant.API.Fragment
 import           Servant.API.Header
                  (Header)
+import           Servant.API.NamedRoutes (NamedRoutes)
+import           Servant.API.Generic (ToServantApi)
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam, QueryParams)
 import           Servant.API.ReqBody
@@ -127,6 +129,7 @@ type family IsElem' a s :: Constraint
 -- request represented by @a@ matches the endpoints serving @b@ (for the
 -- latter, use 'IsIn').
 type family IsElem endpoint api :: Constraint where
+  IsElem endpoint (NamedRoutes rec)       = IsElem endpoint (ToServantApi rec)
   IsElem e (sa :<|> sb)                   = Or (IsElem e sa) (IsElem e sb)
   IsElem (e :> sa) (e :> sb)              = IsElem sa sb
   IsElem sa (Header sym x :> sb)          = IsElem sa sb
