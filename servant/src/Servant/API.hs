@@ -143,7 +143,7 @@ import           Servant.API.UVerb
 import           Servant.API.Vault
                  (Vault)
 import           Servant.API.NamedRoutes
-                 (NamedRoutes)
+                 (NamedRoutes, namedRoute)
 import           Servant.API.Verbs
                  (Delete, DeleteAccepted, DeleteNoContent,
                  DeleteNonAuthoritative, Get, GetAccepted, GetNoContent,

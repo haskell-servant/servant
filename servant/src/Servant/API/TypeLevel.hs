@@ -75,8 +75,6 @@ import           Servant.API.UVerb
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
 
-
-
 -- * API predicates
 
 -- | Flatten API into a list of endpoints.

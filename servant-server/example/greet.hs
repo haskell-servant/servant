@@ -85,7 +85,7 @@ server = (helloH :<|> postGreetH :<|> deleteGreetH :<|> otherRoutes) :<|> redire
           (\buildPath -> buildPath "Nicolas" (Just True))
 
         redirect _ = pure $
-          RedirectOf (Proxy @("bye" :> Capture "name" Text :> Get '[JSON] Text))
+          RedirectOf (namedRoute @"bye" @OtherRoutes)
           (\buildPath -> buildPath "Gaël")
 
 -- Turn the server into a WAI app. 'serve' is provided by servant,
