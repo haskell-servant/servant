@@ -76,7 +76,7 @@ import           Servant.API
                  QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
-                 WithNamedContext, NamedRoutes)
+                 WithNamedContext, NamedRoutes, RedirectOf(..))
 import           Servant.API.Generic (GenericMode(..), ToServant, ToServantApi, GServantProduct, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
@@ -887,6 +887,11 @@ instance (AtLeastOneFragment api, FragmentUnique (Fragment a1 :> api), HasServer
   route _ = route (Proxy :: Proxy api)
 
   hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
+
+instance HasServer (RedirectOf api) context where
+  type ServerT (RedirectOf api) m = m (RedirectOf api)
+  route _ = undefined
+  hoistServerWithContext _ _ _ = undefined
 
 -- $setup
 -- >>> import Servant

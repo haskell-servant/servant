@@ -1,10 +1,13 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds         #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE PolyKinds          #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeOperators      #-}
 
 import           Prelude ()
 import           Prelude.Compat
@@ -29,7 +32,7 @@ instance FromJSON Greet
 instance ToJSON Greet
 
 -- API specification
-type TestApi =
+type TestApi' =
        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
        "hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON] Greet
 
@@ -41,6 +44,11 @@ type TestApi =
   :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent
 
   :<|> NamedRoutes OtherRoutes
+
+type TestApi =
+       TestApi'
+  :<|> "redirect" :> Capture "redirectValue" Int :> RedirectOf TestApi'
+
 
 data OtherRoutes mode = OtherRoutes
   { version :: mode :- Get '[JSON] Int
@@ -58,7 +66,7 @@ testApi = Proxy
 --
 -- Each handler runs in the 'Handler' monad.
 server :: Server TestApi
-server = helloH :<|> postGreetH :<|> deleteGreetH :<|> otherRoutes
+server = (helloH :<|> postGreetH :<|> deleteGreetH :<|> otherRoutes) :<|> redirect
   where otherRoutes = OtherRoutes {..}
 
         bye name = pure $ "Bye, " <> name <> " !"
@@ -71,6 +79,13 @@ server = helloH :<|> postGreetH :<|> deleteGreetH :<|> otherRoutes
         postGreetH greet = return greet
 
         deleteGreetH _ = return NoContent
+
+        redirect 42 = pure $
+          RedirectOf (Proxy @("hello" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON] Greet))
+          (\buildPath -> buildPath "Nicolas" (Just True))
+
+        -- Fail in any other case
+        redirect _ = throwError err500
 
 -- Turn the server into a WAI app. 'serve' is provided by servant,
 -- more precisely by the Servant.Server module.
