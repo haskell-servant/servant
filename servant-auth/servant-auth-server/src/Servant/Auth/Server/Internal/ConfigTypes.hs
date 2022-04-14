@@ -33,7 +33,7 @@ data JWTSettings = JWTSettings
   -- | Algorithm used to sign JWT.
   , jwtAlg          :: Maybe Jose.Alg
   -- | Keys used to validate JWT.
-  , validationKeys  :: Jose.JWKSet
+  , validationKeys  :: IO Jose.JWKSet
   -- | An @aud@ predicate. The @aud@ is a string or URI that identifies the
   -- intended recipient of the JWT.
   , audienceMatches :: Jose.StringOrURI -> IsMatch
@@ -44,7 +44,7 @@ defaultJWTSettings :: Jose.JWK -> JWTSettings
 defaultJWTSettings k = JWTSettings
    { signingKey = k
    , jwtAlg = Nothing
-   , validationKeys = Jose.JWKSet [k]
+   , validationKeys = pure $ Jose.JWKSet [k]
    , audienceMatches = const Matches }
 
 -- | The policies to use when generating cookies.

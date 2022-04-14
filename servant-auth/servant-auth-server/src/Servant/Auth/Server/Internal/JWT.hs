@@ -58,11 +58,12 @@ makeJWT v cfg expiry = runExceptT $ do
 
 verifyJWT :: FromJWT a => JWTSettings -> BS.ByteString -> IO (Maybe a)
 verifyJWT jwtCfg input = do
-  verifiedJWT <- liftIO $ runExceptT $ do
+  keys <- validationKeys jwtCfg
+  verifiedJWT <- runExceptT $ do
     unverifiedJWT <- Jose.decodeCompact (BSL.fromStrict input)
     Jose.verifyClaims
       (jwtSettingsToJwtValidationSettings jwtCfg)
-      (validationKeys jwtCfg)
+      keys
       unverifiedJWT
   return $ case verifiedJWT of
     Left (_ :: Jose.JWTError) -> Nothing
