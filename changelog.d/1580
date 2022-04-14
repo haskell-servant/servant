@@ -4,7 +4,9 @@ issues: #1579
 
 description: {
 
-Currently validationKeys are a fixed JWKSet. This does not work for setups such
-as AWS Cognito or Okta, where there is a regular key rotation. This change
-alters the type of validationKeys from JWKSet to IO JWKSet.
+Currently validationKeys are a fixed JWKSet. This does not work with OIDC
+providers such as AWS Cognito or Okta, which regularly fetching jwks_uri to
+discover new and expired keys.
+
+This change alters the type of validationKeys from JWKSet to IO JWKSet.
 }
