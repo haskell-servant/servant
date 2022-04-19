@@ -29,10 +29,12 @@ import           Servant.Swagger.Internal.TypeLevel
 -- >>> import Control.Applicative
 -- >>> import GHC.Generics
 -- >>> import Test.QuickCheck
+-- >>> import System.Environment (setEnv)
 -- >>> :set -XDeriveGeneric
 -- >>> :set -XGeneralizedNewtypeDeriving
 -- >>> :set -XDataKinds
 -- >>> :set -XTypeOperators
+-- >>> setEnv "HSPEC_COLOR" "no"
 
 -- | Verify that every type used with @'JSON'@ content type in a servant API
 -- has compatible @'ToJSON'@ and @'ToSchema'@ instances using @'validateToJSON'@.
