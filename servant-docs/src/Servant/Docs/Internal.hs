@@ -62,6 +62,7 @@ import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
 import           Servant.API.TypeLevel
+import           Servant.API.Generic
 
 import qualified Data.Universe.Helpers      as U
 
@@ -1149,6 +1150,9 @@ instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth r
       where
         authProxy = Proxy :: Proxy (BasicAuth realm usr)
         action' = over authInfo (|> toAuthInfo authProxy) action
+
+instance HasDocs (ToServantApi api) => HasDocs (NamedRoutes api) where
+  docsFor Proxy = docsFor (Proxy :: Proxy (ToServantApi api))
 
 -- ToSample instances for simple types
 instance ToSample NoContent
