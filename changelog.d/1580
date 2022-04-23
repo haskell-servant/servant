@@ -1,0 +1,12 @@
+synopsis: Allow IO in validationKeys
+prs: #1580
+issues: #1579
+
+description: {
+
+Currently validationKeys are a fixed JWKSet. This does not work with OIDC
+providers such as AWS Cognito or Okta, which regularly fetching jwks_uri to
+discover new and expired keys.
+
+This change alters the type of validationKeys from JWKSet to IO JWKSet.
+}
