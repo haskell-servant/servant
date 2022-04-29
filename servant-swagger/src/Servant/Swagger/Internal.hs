@@ -32,7 +32,7 @@ import qualified Data.Swagger                           as Swagger
 import           Data.Swagger.Declare
 import           Data.Text                              (Text)
 import qualified Data.Text                              as Text
-import           GHC.Generics                           (Rep, datatypeName, D1, Meta(..))
+import           GHC.Generics                           (D1, Meta(..), Rep)
 import           GHC.TypeLits
 import           Network.HTTP.Media                     (MediaType)
 import           Servant.API
