@@ -35,6 +35,7 @@ import           Network.HTTP.Media                     (MediaType)
 import           Servant.API
 import           Servant.API.Description                (FoldDescription,
                                                          reflectDescription)
+import           Servant.API.Generic                    (ToServantApi)
 import           Servant.API.Modifiers                  (FoldRequired)
 
 import           Servant.Swagger.Internal.TypeLevel.API
@@ -438,6 +439,9 @@ instance (ToSchema a, Accept ct, HasSwagger sub, KnownSymbol (FoldDescription mo
         & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
         & required  ?~ True
         & schema    .~ ParamBody ref
+
+instance HasSwagger (ToServantApi routes) => HasSwagger (NamedRoutes routes) where
+  toSwagger _ = toSwagger (Proxy :: Proxy (ToServantApi routes))
 
 -- =======================================================================
 -- Below are the definitions that should be in Servant.API.ContentTypes
