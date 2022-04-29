@@ -134,6 +134,7 @@ type Api =
   :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
   :<|> "body" :> ReqBody '[FormUrlEncoded,JSON] Person :> Post '[JSON] Person
   :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded,JSON] Person
+  :<|> "param-echo" :> QueryParam "payload" String :> Get '[JSON] (Maybe String)
   -- This endpoint makes use of a 'Raw' server because it is not currently
   -- possible to handle arbitrary binary query param values with
   -- @servant-server@
@@ -175,6 +176,7 @@ getCapture      :: String -> ClientM Person
 getCaptureAll   :: [String] -> ClientM [Person]
 getBody         :: Person -> ClientM Person
 getQueryParam   :: Maybe String -> ClientM Person
+getQueryParamEcho :: Maybe String -> ClientM (Maybe String)
 getQueryParamBinary :: Maybe UrlEncodedByteString -> HTTP.Method -> ClientM Response
 getQueryParams  :: [String] -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
@@ -203,6 +205,7 @@ getRoot
   :<|> getCaptureAll
   :<|> getBody
   :<|> getQueryParam
+  :<|> getQueryParamEcho
   :<|> getQueryParamBinary
   :<|> getQueryParams
   :<|> getQueryFlag
@@ -235,6 +238,7 @@ server = serve api (
                    Just "alice" -> return alice
                    Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
                    Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
+  :<|> return
   :<|> const (Tagged $ \request respond ->
           respond . maybe (Wai.responseLBS HTTP.notFound404 [] "Missing: payload")
                           (Wai.responseLBS HTTP.ok200 [] . LazyByteString.fromStrict)

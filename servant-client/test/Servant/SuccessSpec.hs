@@ -101,6 +101,10 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       Left (FailureResponse _ r) <- runClient (getQueryParam (Just "bob")) baseUrl
       responseStatusCode r `shouldBe` HTTP.Status 400 "bob not found"
 
+    it "Servant.API.QueryParam echo special chars" $ \(_, baseUrl) -> do
+      let payload = Just ":@&=+$,"
+      left show <$> runClient (getQueryParamEcho payload) baseUrl `shouldReturn` Right payload
+
     it "Servant.API.QueryParam binary data" $ \(_, baseUrl) -> do
       let payload = BS.pack [0, 1, 2, 4, 8, 16, 32, 64, 128]
           apiCall = getQueryParamBinary (Just $ UrlEncodedByteString payload) HTTP.methodGet
