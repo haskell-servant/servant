@@ -3,11 +3,13 @@
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedLists      #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE TypeFamilies         #-}
 #if __GLASGOW_HASKELL__ >= 806
 {-# LANGUAGE UndecidableInstances #-}
 #endif
@@ -30,12 +32,13 @@ import qualified Data.Swagger                           as Swagger
 import           Data.Swagger.Declare
 import           Data.Text                              (Text)
 import qualified Data.Text                              as Text
+import           GHC.Generics                           (Rep, datatypeName, D1, Meta(..))
 import           GHC.TypeLits
 import           Network.HTTP.Media                     (MediaType)
 import           Servant.API
 import           Servant.API.Description                (FoldDescription,
                                                          reflectDescription)
-import           Servant.API.Generic                    (ToServantApi)
+import           Servant.API.Generic                    (ToServantApi, AsApi)
 import           Servant.API.Modifiers                  (FoldRequired)
 
 import           Servant.Swagger.Internal.TypeLevel.API
@@ -149,6 +152,10 @@ mkEndpointNoContentVerb path _ = mempty
 -- | Add parameter to every operation in the spec.
 addParam :: Param -> Swagger -> Swagger
 addParam param = allOperations.parameters %~ (Inline param :)
+
+-- | Add a tag to every operation in the spec.
+addTag :: Text -> Swagger -> Swagger
+addTag tag = allOperations.tags %~ ([tag] <>)
 
 -- | Add accepted content types to every operation in the spec.
 addConsumes :: [MediaType] -> Swagger -> Swagger
@@ -440,8 +447,8 @@ instance (ToSchema a, Accept ct, HasSwagger sub, KnownSymbol (FoldDescription mo
         & required  ?~ True
         & schema    .~ ParamBody ref
 
-instance HasSwagger (ToServantApi routes) => HasSwagger (NamedRoutes routes) where
-  toSwagger _ = toSwagger (Proxy :: Proxy (ToServantApi routes))
+instance (HasSwagger (ToServantApi routes), KnownSymbol datatypeName, Rep (routes AsApi) ~ D1 ('MetaData datatypeName moduleName packageName isNewtype) f) => HasSwagger (NamedRoutes routes) where
+  toSwagger _ = addTag (Text.pack $ symbolVal (Proxy :: Proxy datatypeName)) (toSwagger (Proxy :: Proxy (ToServantApi routes)))
 
 -- =======================================================================
 -- Below are the definitions that should be in Servant.API.ContentTypes
