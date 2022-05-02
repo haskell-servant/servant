@@ -83,6 +83,9 @@ spec = describe "Servant.API.ContentTypes" $ do
     describe "The NoContent Content-Type type" $ do
         let p = Proxy :: Proxy '[JSON]
 
+        it "does not render any content" $
+          allMimeRender p NoContent `shouldSatisfy` (all (BSL8.null . snd))
+
         it "evaluates the NoContent value" $
           evaluate (allMimeRender p (undefined :: NoContent)) `shouldThrow` anyErrorCall
 
