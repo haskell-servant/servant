@@ -295,7 +295,7 @@ instance {-# OVERLAPPABLE #-}
 -- then this would be taken care of. However there is no more specific instance
 -- between that and 'MimeRender JSON a', so we do this instead
 instance {-# OVERLAPPING #-} ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
-    allMimeRender _ _ = map (, "") $ NE.toList $ contentTypes pctyp
+    allMimeRender _ NoContent = map (, "") $ NE.toList $ contentTypes pctyp
       where
         pctyp = Proxy :: Proxy ctyp
 

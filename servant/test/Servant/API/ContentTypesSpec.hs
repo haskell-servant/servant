@@ -33,6 +33,8 @@ import           Data.String.Conversions
 import qualified Data.Text                                        as TextS
 import qualified Data.Text.Encoding                               as TextSE
 import qualified Data.Text.Lazy                                   as TextL
+import           Control.Exception
+                 (evaluate)
 import           GHC.Generics
 import           Test.Hspec
 import           Test.QuickCheck
@@ -77,6 +79,15 @@ spec = describe "Servant.API.ContentTypes" $ do
 
         it "has mimeUnrender reverse mimeRender for valid top-level json " $ do
             property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::SomeData)
+
+    describe "The NoContent Content-Type type" $ do
+        let p = Proxy :: Proxy '[JSON]
+
+        it "does not render any content" $
+          allMimeRender p NoContent `shouldSatisfy` (all (BSL8.null . snd))
+
+        it "evaluates the NoContent value" $
+          evaluate (allMimeRender p (undefined :: NoContent)) `shouldThrow` anyErrorCall
 
     describe "The PlainText Content-Type type" $ do
         let p = Proxy :: Proxy PlainText
