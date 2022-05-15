@@ -289,7 +289,8 @@ defaultMakeClientRequest burl r = Client.defaultRequest
         Https -> True
 
     -- Query string builder which does not do any encoding
-    buildQueryString = ("?" <>) . foldl' addQueryParam mempty
+    buildQueryString [] = mempty
+    buildQueryString qps = "?" <> foldl' addQueryParam mempty qps
 
     addQueryParam qs (k, v) =
           qs <> (if BS.null qs then mempty else "&") <> urlEncode True k <> foldMap ("=" <>) v
