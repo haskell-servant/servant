@@ -212,7 +212,7 @@ instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
 -- >>> source "foo" :: SourceT Identity Char
 -- fromStepT (Effect (Identity (Yield 'f' (Yield 'o' (Yield 'o' Stop)))))
 --
-source :: [a] -> SourceT m a
+source :: Foldable f => f a -> SourceT m a
 source = fromStepT . foldr Yield Stop
 
 -- | Get the answers.
