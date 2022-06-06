@@ -269,7 +269,7 @@ mapMaybeStep p = go where
 
 -- | Run action for each value in the 'SourceT'.
 --
--- >>> foreach fail print (source "abc")
+-- >>> foreach fail print $ source ("abc" :: String)
 -- 'a'
 -- 'b'
 -- 'c'
