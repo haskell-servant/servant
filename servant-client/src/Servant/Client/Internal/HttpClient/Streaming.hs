@@ -140,7 +140,7 @@ performRequest :: Maybe [Status] -> Request -> ClientM Response
 performRequest acceptStatus req = do
     -- TODO: should use Client.withResponse here too
   ClientEnv m burl cookieJar' createClientRequest <- ask
-  let clientRequest = createClientRequest burl req
+  clientRequest <- liftIO $ createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest
     Just cj -> liftIO $ do
@@ -177,7 +177,7 @@ performWithStreamingRequest req k = do
   m <- asks manager
   burl <- asks baseUrl
   createClientRequest <- asks makeClientRequest
-  let request = createClientRequest burl req
+  request <- liftIO $ createClientRequest burl req
   ClientM $ lift $ lift $ Codensity $ \k1 ->
       Client.withResponse request m $ \res -> do
           let status = Client.responseStatus res
