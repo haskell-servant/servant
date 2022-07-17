@@ -38,8 +38,6 @@ library
     , servant         >= 0.13    && < 0.20
     , servant-auth    == 0.4.*
     , lens            >= 4.16.1  && < 5.2
-  if impl(ghc >= 9)
-    buildable: False
   exposed-modules:
       Servant.Auth.Swagger
   default-language: Haskell2010
@@ -61,8 +59,6 @@ test-suite spec
     , servant
     , servant-auth
     , lens
-  if impl(ghc >= 9)
-    buildable: False
 
   -- test dependencies
   build-depends:
