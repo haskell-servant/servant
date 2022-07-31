@@ -134,7 +134,7 @@ mainWithJWT = do
      xs <- words <$> getLine
      case xs of
        [name', email'] -> do
-         etoken <- makeJWT (User name' email') jwtCfg Nothing
+         etoken <- makeJWT (User name' email') jwtCfg
          case etoken of
            Left e -> putStrLn $ "Error generating token:t" ++ show e
            Right v -> putStrLn $ "New token:\t" ++ show v
