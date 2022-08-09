@@ -94,6 +94,8 @@ import           Servant.API.TypeErrors
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
                  parseUrlPieces)
+import           Data.Kind
+                 (Type)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -821,7 +823,7 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -------------------------------------------------------------------------------
 
 -- Erroring instance for 'HasServer' when a combinator is not fully applied
-instance TypeError (PartialApplication HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
+instance TypeError (PartialApplication @(Type -> [Type] -> Constraint) HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
   where
     type ServerT (arr :> sub) _ = TypeError (PartialApplication (HasServer :: * -> [*] -> Constraint) arr)
     route = error "unreachable"
@@ -865,7 +867,7 @@ type HasServerArrowTypeError a b =
 -- XXX: This omits the @context@ parameter, e.g.:
 --
 -- "There is no instance for HasServer (Bool :> …)". Do we care ?
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub HasServer ty) => HasServer (ty :> sub) context
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub @(Type -> [Type] -> Constraint) HasServer ty) => HasServer (ty :> sub) context
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) => HasServer api context
 

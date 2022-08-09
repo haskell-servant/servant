@@ -193,6 +193,8 @@ import           Servant.API.Verbs
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Web.HttpApiData
+import           Data.Kind
+                 (Type)
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
@@ -647,12 +649,12 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 -- >>> import Data.Text (Text)
 
 -- Erroring instance for 'HasLink' when a combinator is not fully applied
-instance TypeError (PartialApplication HasLink arr) => HasLink ((arr :: a -> b) :> sub)
+instance TypeError (PartialApplication @(Type -> Constraint) HasLink arr) => HasLink ((arr :: a -> b) :> sub)
   where
     type MkLink (arr :> sub) _ = TypeError (PartialApplication (HasLink :: * -> Constraint) arr)
     toLink = error "unreachable"
 
 -- Erroring instances for 'HasLink' for unknown API combinators
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub HasLink ty) => HasLink (ty :> sub)
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub @(Type -> Constraint) HasLink ty) => HasLink (ty :> sub)
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasLink api)) => HasLink api
