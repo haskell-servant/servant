@@ -31,7 +31,7 @@ library
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base                >= 4.10     && < 4.17
+      base                >= 4.10     && < 4.18
     , bytestring          >= 0.10.6.0 && < 0.12
     , containers          >= 0.5.6.2  && < 0.7
     , servant-auth        == 0.4.*
