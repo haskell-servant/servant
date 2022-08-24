@@ -48,6 +48,7 @@ library
     Servant.API.Modifiers
     Servant.API.NamedRoutes
     Servant.API.QueryParam
+    Servant.API.QueryString
     Servant.API.Raw
     Servant.API.RemoteHost
     Servant.API.ReqBody

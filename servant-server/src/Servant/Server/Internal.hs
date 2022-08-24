@@ -74,7 +74,7 @@ import           Servant.API
                  CaptureAll, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  Header', If, IsSecure (..), NoContentVerb, QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
+                 QueryParam', QueryParams, QueryString, Raw, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
                  WithNamedContext, NamedRoutes)
@@ -584,6 +584,34 @@ instance (KnownSymbol sym, HasServer api context)
     where paramname = cs $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
+
+-- | If you use @'QueryString'@ in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a function
+-- that takes an argument of type @Query@ (@[('ByteString', 'Maybe' 'ByteString')]@).
+--
+-- This lets you extract the whole query string. This is useful when the query string
+-- can contain parameters with dynamic names, that you can't access with @'QueryParam'@.
+--
+-- Example:
+--
+-- > type MyApi = "books" :> QueryString :> Get '[JSON] [Book]
+-- >
+-- > server :: Server MyApi
+-- > server = getBooksBy
+-- >   where getBooksBy :: Query -> Handler [Book]
+-- >         getBooksBy filters = ...filter books based on the dynamic filters provided...
+instance
+  ( HasServer api context
+  )
+  => HasServer (QueryString :> api) context where
+------
+  type ServerT (QueryString :> api) m =
+    Query -> ServerT api m
+
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+
+  route Proxy context subserver =
+    route (Proxy :: Proxy api) context (passToServer subserver queryString)
 
 -- | Just pass the request to the underlying application and serve its response.
 --
