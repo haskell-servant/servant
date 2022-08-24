@@ -110,6 +110,13 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
         left show <$> runClient (getQueryFlag flag) baseUrl `shouldReturn` Right flag
 
+    it "Servant.API.QueryParam.QueryString" $ \(_, baseUrl) -> do
+      let qs = [("name", Just "bob"), ("age", Just "1")]
+      left show <$> runClient (getQueryString qs) baseUrl `shouldReturn` (Right (Person "bob" 1))
+
+    it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) -> do
+       left show <$> runClient (getDeepQuery $ Filter 1 "bob") baseUrl `shouldReturn` (Right (Person "bob" 1))
+
     it "Servant.API.Fragment" $ \(_, baseUrl) -> do
       left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
 
