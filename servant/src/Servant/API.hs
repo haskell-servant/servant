@@ -117,7 +117,7 @@ import           Servant.API.Modifiers
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam, QueryParam', QueryParams)
 import           Servant.API.QueryString
-                 (QueryString)
+                 (QueryString, DeepQuery)
 import           Servant.API.Raw
                  (Raw)
 import           Servant.API.RemoteHost

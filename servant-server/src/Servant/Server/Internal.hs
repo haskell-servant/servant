@@ -38,6 +38,7 @@ import           Control.Monad.Trans
                  (liftIO)
 import           Control.Monad.Trans.Resource
                  (runResourceT)
+import           Data.Bifunctor (first)
 import qualified Data.ByteString                            as B
 import qualified Data.ByteString.Builder                    as BB
 import qualified Data.ByteString.Char8                      as BC8
@@ -45,6 +46,7 @@ import qualified Data.ByteString.Lazy                       as BL
 import           Data.Constraint (Constraint, Dict(..))
 import           Data.Either
                  (partitionEithers)
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  (fromMaybe, isNothing, mapMaybe, maybeToList)
 import           Data.String
@@ -71,7 +73,7 @@ import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
-                 CaptureAll, Description, EmptyAPI, Fragment,
+                 CaptureAll, DeepQuery, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  Header', If, IsSecure (..), NoContentVerb, QueryFlag,
                  QueryParam', QueryParams, QueryString, Raw, ReflectMethod (reflectMethod),
@@ -612,6 +614,93 @@ instance
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (passToServer subserver queryString)
+
+-- | If you use @'DeepQuery' "symbol" a@ in one of the endpoints for your API,
+-- this automatically requires your server-side handler to be a function
+-- that takes an argument of type @a@.
+--
+-- This lets you extract an object from multiple parameters in the query string,
+-- with its fields enclosed in brackets: `/books?filter[author][name]=value`. When
+-- all the fields are known in advance, it can be done with @'QueryParam'@ (it can
+-- still be tedious if you the object has many fields). When some fields are dynamic,
+-- it cannot be done with @'QueryParam'.
+--
+-- The way the object is constructed from the extracted fields can be controlled by
+-- providing an instance on @'FromDeepQuery'@
+-- 
+-- Example:
+--
+-- > type MyApi = "books" :> DeepQuery "filter" BookQuery :> Get '[JSON] [Book]
+-- >
+-- > server :: Server MyApi
+-- > server = getBooksBy
+-- >   where getBooksBy :: BookQuery -> Handler [Book]
+-- >         getBooksBy query = ...filter books based on the dynamic filters provided...
+instance
+  ( KnownSymbol sym, FromDeepQuery a, HasServer api context
+  , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  )
+  => HasServer (DeepQuery sym a :> api) context where
+------
+  type ServerT (DeepQuery sym a :> api) m =
+    a -> ServerT api m
+
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
+
+  route Proxy context subserver = route (Proxy :: Proxy api) context $
+      subserver `addParameterCheck` withRequest paramsCheck
+    where
+      rep = typeRep (Proxy :: Proxy DeepQuery)
+      formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
+
+      paramname = cs $ symbolVal (Proxy :: Proxy sym)
+      paramsCheck req =
+        let relevantParams :: [(T.Text, Maybe T.Text)]
+            relevantParams = mapMaybe isRelevantParam
+                           . queryToQueryText
+                           . queryString
+                           $ req
+            isRelevantParam (name, value) = (, value) <$>
+              case T.stripPrefix paramname name of
+                Just "" -> Just ""
+                Just x | "[" `T.isPrefixOf` x -> Just x
+                _ -> Nothing
+         in case fromDeepQuery =<< traverse parseDeepParam relevantParams of
+              Left e -> delayedFailFatal $ formatError rep req
+                          $ cs $ "Error parsing deep query parameter(s) "
+                                 <> paramname <> T.pack " failed: "
+                                 <> T.pack e
+              Right parsed -> return parsed
+
+parseDeepParam :: (T.Text, Maybe T.Text) -> Either String ([T.Text], Maybe T.Text)
+parseDeepParam (paramname, value) =
+  let parseParam "" = return []
+      parseParam n = reverse <$> go [] n
+      go parsed remaining = case T.take 1 remaining of
+          "[" -> case T.breakOn "]" remaining of
+            (_   , "")  -> Left $ "Error parsing deep param, missing closing ']': " <> T.unpack remaining
+            (name, "]") -> return $ T.drop 1 name : parsed
+            (name, remaining') -> case T.take 2 remaining' of
+              "][" -> go (T.drop 1 name : parsed) (T.drop 1 remaining')
+              _    -> Left $ "Error parsing deep param, incorrect brackets: " <> T.unpack remaining
+          _   -> Left $ "Error parsing deep param, missing opening '[': " <> T.unpack remaining
+   in (, value) <$> parseParam paramname
+
+-- | Extract a deep object from (possibly nested) query parameters.
+-- a param like @filter[a][b][c]=d@ will be represented as
+-- @'(["a", "b", "c"], Just "d")'@. Note that a parameter with no
+-- nested field is possible: @filter=a@ will be represented as
+-- @'([], Just "a")'@
+class FromDeepQuery a where
+  fromDeepQuery :: [([T.Text], Maybe T.Text)] -> Either String a
+
+instance FromHttpApiData a => FromDeepQuery (Map.Map T.Text a) where
+  fromDeepQuery params =
+    let parseParam ([k], Just rawV) = (k,) <$> first T.unpack (parseQueryParam rawV)
+        parseParam (_, Nothing) = Left "Empty map value"
+        parseParam ([], _) = Left "Empty map parameter"
+        parseParam (_ , Just _) = Left "Nested map values"
+     in Map.fromList <$> traverse parseParam params
 
 -- | Just pass the request to the underlying application and serve its response.
 --
