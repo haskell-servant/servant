@@ -1,0 +1,10 @@
+synopsis: Handle Cookies correctly for RunStreamingClient
+prs: #1606
+issues: #1605
+
+description: {
+
+Makes performWithStreamingRequest take into consideration the
+CookieJar, which it previously didn't.
+
+}
