@@ -106,11 +106,11 @@ test-suite spec
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test
   main-is:          Spec.hs
-  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.10
+  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.11
   build-depends:    base
                   , base-compat
                   , aeson >=1.4.2.0 && <3
-                  , hspec >=2.6.0 && <2.10
+                  , hspec >=2.6.0 && <2.11
                   , QuickCheck
                   , lens
                   , lens-aeson >=1.0.2    && <1.3
