@@ -39,7 +39,7 @@ library
     , servant-docs >= 0.11.2  && < 0.13
     , servant      >= 0.13    && < 0.20
     , servant-auth == 0.4.*
-    , lens         >= 4.16.1  && <5.2
+    , lens         >= 4.16.1  && <5.3
   exposed-modules:
       Servant.Auth.Docs
   default-language: Haskell2010
