@@ -1,5 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -823,7 +824,11 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -------------------------------------------------------------------------------
 
 -- Erroring instance for 'HasServer' when a combinator is not fully applied
-instance TypeError (PartialApplication @(Type -> [Type] -> Constraint) HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
+instance TypeError (PartialApplication 
+#if __GLASGOW_HASKELL__ >= 904
+                    @(Type -> [Type] -> Constraint) 
+#endif
+                    HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
   where
     type ServerT (arr :> sub) _ = TypeError (PartialApplication (HasServer :: * -> [*] -> Constraint) arr)
     route = error "unreachable"
@@ -867,7 +872,11 @@ type HasServerArrowTypeError a b =
 -- XXX: This omits the @context@ parameter, e.g.:
 --
 -- "There is no instance for HasServer (Bool :> …)". Do we care ?
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub @(Type -> [Type] -> Constraint) HasServer ty) => HasServer (ty :> sub) context
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub 
+#if __GLASGOW_HASKELL__ >= 904
+                                         @(Type -> [Type] -> Constraint) 
+#endif
+                                         HasServer ty) => HasServer (ty :> sub) context
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) => HasServer api context
 
