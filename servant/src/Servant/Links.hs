@@ -1,5 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -91,7 +92,7 @@
 -- >>> let bad_link = Proxy :: Proxy ("hello" :> Delete '[JSON] NoContent)
 -- >>> safeLink api bad_link
 -- ...
--- ...Could not deduce...
+-- ...Could not ...
 -- ...
 --
 --  This error is essentially saying that the type family couldn't find
@@ -193,6 +194,8 @@ import           Servant.API.Verbs
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Web.HttpApiData
+import           Data.Kind
+                 (Type)
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
@@ -647,12 +650,20 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 -- >>> import Data.Text (Text)
 
 -- Erroring instance for 'HasLink' when a combinator is not fully applied
-instance TypeError (PartialApplication HasLink arr) => HasLink ((arr :: a -> b) :> sub)
+instance TypeError (PartialApplication 
+#if __GLASGOW_HASKELL__ >= 904
+                    @(Type -> Constraint) 
+#endif
+                    HasLink arr) => HasLink ((arr :: a -> b) :> sub)
   where
     type MkLink (arr :> sub) _ = TypeError (PartialApplication (HasLink :: * -> Constraint) arr)
     toLink = error "unreachable"
 
 -- Erroring instances for 'HasLink' for unknown API combinators
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub HasLink ty) => HasLink (ty :> sub)
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub 
+#if __GLASGOW_HASKELL__ >= 904
+                                         @(Type -> Constraint) 
+#endif
+                                         HasLink ty) => HasLink (ty :> sub)
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasLink api)) => HasLink api

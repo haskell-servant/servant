@@ -51,3 +51,8 @@ packages:
 tests: True
 optimization: False
 -- reorder-goals: True
+
+allow-newer:
+-- see https://github.com/haskellari/postgresql-simple/issues/104
+    postgresql-simple:base
+  , postgresql-simple:template-haskell

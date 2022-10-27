@@ -41,14 +41,14 @@ library
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   build-depends:
-      base                  >= 4.9      && < 4.17
+      base                  >= 4.9      && < 4.18
     , bytestring            >= 0.10.8.1 && < 0.12
     , containers            >= 0.5.7.1  && < 0.7
     , deepseq               >= 1.4.2.0  && < 1.5
     , mtl                   >= 2.2.2    && < 2.3
     , stm                   >= 2.4.5.1  && < 2.6
     , text                  >= 1.2.3.0  && < 2.1
-    , time                  >= 1.6.0.1  && < 1.12
+    , time                  >= 1.6.0.1  && < 1.13
     , transformers          >= 0.5.2.0  && < 0.6
 
   if !impl(ghc >= 8.2)
