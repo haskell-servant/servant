@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-server
-version:             0.19.1
+version:             0.19.2
 
 synopsis:            A family of combinators for defining webservices APIs and serving them
 category:            Servant, Web
@@ -60,7 +60,7 @@ library
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   build-depends:
-      base                >= 4.9      && < 4.17
+      base                >= 4.9      && < 4.18
     , bytestring          >= 0.10.8.1 && < 0.12
     , constraints         >= 0.2      && < 0.14
     , containers          >= 0.5.7.1  && < 0.7
