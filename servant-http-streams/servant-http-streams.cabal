@@ -42,10 +42,10 @@ library
     , bytestring            >= 0.10.8.1 && < 0.12
     , containers            >= 0.5.7.1  && < 0.7
     , deepseq               >= 1.4.2.0  && < 1.5
-    , mtl                   >= 2.2.2    && < 2.3
+    , mtl                   ^>= 2.2.2   || ^>= 2.3.1
     , text                  >= 1.2.3.0  && < 2.1
     , time                  >= 1.6.0.1  && < 1.13
-    , transformers          >= 0.5.2.0  && < 0.6
+    , transformers          >= 0.5.2.0  && < 0.7
 
   if !impl(ghc >= 8.2)
     build-depends:

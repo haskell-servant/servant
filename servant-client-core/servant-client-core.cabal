@@ -56,7 +56,7 @@ library
     , containers            >= 0.5.7.1  && < 0.7
     , deepseq               >= 1.4.2.0  && < 1.5
     , text                  >= 1.2.3.0  && < 2.1
-    , transformers          >= 0.5.2.0  && < 0.6
+    , transformers          >= 0.5.2.0  && < 0.7
     , template-haskell      >= 2.11.1.0 && < 2.20
 
   if !impl(ghc >= 8.2)

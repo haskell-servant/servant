@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DeriveFunctor       #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
@@ -154,8 +155,10 @@ instance (Applicative m, Show1 m, Show a) => Show (StepT m a) where
 -- | >>> lift [1,2,3] :: StepT [] Int
 -- Effect [Yield 1 Stop,Yield 2 Stop,Yield 3 Stop]
 --
+#if !MIN_VERSION_transformers(0,6,0)
 instance MonadTrans StepT where
     lift = Effect . fmap (`Yield` Stop)
+#endif
 
 instance MFunctor StepT where
     hoist f = go where
