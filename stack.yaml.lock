@@ -7,13 +7,31 @@ packages:
 - completed:
     hackage: hspec-wai-0.10.1@sha256:56dd9ec1d56f47ef1946f71f7cbf070e4c285f718cac1b158400ae5e7172ef47,2290
     pantry-tree:
-      size: 809
       sha256: 17af1c2e709cd84bfda066b9ebb04cdde7f92660c51a1f7401a1e9f766524e93
+      size: 809
   original:
     hackage: hspec-wai-0.10.1
+- completed:
+    name: http-api-data
+    pantry-tree:
+      sha256: 85b13f87bc1a47a9107dcf9406da94619c13a7040585ffd337a1e89d2aab4e0d
+      size: 1168
+    sha256: 3712b601120361b2977cafb210647c365923c57d9f3fedd4b41874813e36e671
+    size: 24310
+    url: https://github.com/fizruk/http-api-data/archive/5408b078d1ee960309a9fc6141b7e14bc903b3a0.tar.gz
+    version: 0.5.1
+  original:
+    url: https://github.com/fizruk/http-api-data/archive/5408b078d1ee960309a9fc6141b7e14bc903b3a0.tar.gz
+- completed:
+    hackage: attoparsec-iso8601-1.1.0.0@sha256:29d590f21adc4112973ad5e874d095f8b403b886932fe7e15567b239f5483539,1370
+    pantry-tree:
+      sha256: 7eddd7d3bd0f3d51a3b0fe8284ed996bc2bf83effc8cf6afce360e5f0e54fbe5
+      size: 361
+  original:
+    hackage: attoparsec-iso8601-1.1.0.0
 snapshots:
 - completed:
-    size: 585817
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/5.yaml
-    sha256: 22d24d0dacad9c1450b9a174c28d203f9bb482a2a8da9710a2f2a9f4afee2887
-  original: lts-18.5
+    sha256: 9a74d76d250a455d9cd11e74f157e087787fa9aa3c4264e69c94703d1e71aede
+    size: 619200
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/30.yaml
+  original: lts-19.30

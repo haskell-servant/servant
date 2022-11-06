@@ -1,4 +1,4 @@
-resolver: lts-18.5
+resolver: lts-19.30
 packages:
 - servant-client-core/
 - servant-client/
@@ -18,3 +18,6 @@ packages:
 
 extra-deps:
 - hspec-wai-0.10.1
+- github: fizruk/http-api-data
+  commit: 5408b078d1ee960309a9fc6141b7e14bc903b3a0
+- attoparsec-iso8601-1.1.0.0
