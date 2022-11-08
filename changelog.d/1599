@@ -1,0 +1,30 @@
+synopsis: Allow setting a NominalDiffTime for JWT Token expiration on JWTSettings
+prs: #1599
+
+description: {
+
+## Introduction
+
+The ability to set expiration to the `JWT Token` in `servant-auth-server` library, rests on the `CookieSettings`  data type configuration and in particular in the field `cookieExpires`  as we can appreciate it [here](https://github.com/haskell-servant/servant/blob/f0e2316895ee5fda52ba9d5b2b7e10f8a80a9019/servant-auth/servant-auth-server/src/Servant/Auth/Server/Internal/ConfigTypes.hs#L66).
+
+## Discussion
+
+The problems regarding using this field for setting `JWT Token` expiration time are the following:
+1. `CookieSettings` are usually created at application startup time and it keeps with the same values during the whole application life cycle. Since `cookieExpires` is an absolute and deterministic point in time, futures `JWT Tokens` will contain precisely the same expiration time leading to an undesired behavior and expiring the token upon creation.
+2. `CookieSettings` is a particular Data Type for all the cookies and `JWT Token` should not be coupled to the rest of the cookies.
+3. With the current setup and using the automatic authentication schema like the one described [here](https://docs.servant.dev/en/stable/cookbook/jwt-and-basic-auth/JWTAndBasicAuth.html), it is not possible to configure the application to create `JWT Tokens` with specific `DiffTime` expirations, like for example configure the authentication context to create a JWT that expires in 2 hours, even using `CookieSettings.cookieExpires`.
+4. The only possible way to do this is using the `acceptLogin` function and the creation of the `CookieSettings` value every time the entity authenticates successfully, but this authentication setup is manual and cannot be done with `BasicAuthentication` combinator.
+
+## Proposal
+The proposal is implemented in this PR and includes the following changes:
+
+1. Add `expiresIn :: Maybe NominalDiffTime` in `JWTSettings`
+2. Remove `Maybe UTCTime` parameter from `makeJWT` function.
+3. Calculate expiration on `makeJWT` function using `getCurrentTime + expiresIn` if it is present.
+
+## Solution
+
+- The implemented solution will allow to create once `JWTSettings` and `CookieSettings` but allow the user to set an optional  `NominalDiffTime` to calculate the expiration of the `JWT Token` upon token creation if the value is present.
+- This removes the need of calling explicitly `acceptLogin` and allowing `BasicAuthentication` context to handle the creation of the token by itself.
+
+}

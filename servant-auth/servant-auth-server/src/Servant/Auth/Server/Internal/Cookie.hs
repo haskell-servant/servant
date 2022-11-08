@@ -4,8 +4,6 @@ module Servant.Auth.Server.Internal.Cookie where
 import           Blaze.ByteString.Builder (toByteString)
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import qualified Crypto.JOSE              as Jose
-import qualified Crypto.JWT               as Jose
 import           Data.ByteArray           (constEq)
 import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Base64   as BS64
@@ -21,7 +19,7 @@ import           Servant                  (AddHeader, addHeader)
 import           System.Entropy           (getEntropy)
 import           Web.Cookie
 
-import Servant.Auth.JWT                          (FromJWT (decodeJWT), ToJWT)
+import Servant.Auth.JWT                          (FromJWT, ToJWT)
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.JWT          (makeJWT, verifyJWT)
 import Servant.Auth.Server.Internal.Types
@@ -80,7 +78,7 @@ makeCsrfCookie = makeXsrfCookie
 -- | Makes a cookie with session information.
 makeSessionCookie :: ToJWT v => CookieSettings -> JWTSettings -> v -> IO (Maybe SetCookie)
 makeSessionCookie cookieSettings jwtSettings v = do
-  ejwt <- makeJWT v jwtSettings (cookieExpires cookieSettings)
+  ejwt <- makeJWT v jwtSettings
   case ejwt of
     Left _ -> return Nothing
     Right jwt -> return

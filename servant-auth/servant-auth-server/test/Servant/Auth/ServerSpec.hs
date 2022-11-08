@@ -1,3 +1,4 @@
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE CPP #-}
 module Servant.Auth.ServerSpec (spec) where
 
@@ -85,7 +86,7 @@ authSpec
 
   it "succeeds if one authentication suceeds" $ \port -> property $
                                                 \(user :: User) -> do
-    jwt <- makeJWT user jwtCfg Nothing
+    jwt <- makeJWT user jwtCfg
     opts <- addJwtToHeader jwt
     resp <- getWith opts (url port)
     resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
@@ -95,7 +96,7 @@ authSpec
 
   it "doesn't clobber pre-existing response headers" $ \port -> property $
                                                 \(user :: User) -> do
-    jwt <- makeJWT user jwtCfg Nothing
+    jwt <- makeJWT user jwtCfg
     opts <- addJwtToHeader jwt
     resp <- getWith opts (url port ++ "/header")
     resp ^. responseHeader "Blah" `shouldBe` "1797"
@@ -104,14 +105,14 @@ authSpec
   context "Raw" $ do
 
     it "gets the response body" $ \port -> property $ \(user :: User) -> do
-      jwt <- makeJWT user jwtCfg Nothing
+      jwt <- makeJWT user jwtCfg
       opts <- addJwtToHeader jwt
       resp <- getWith opts (url port ++ "/raw")
       resp ^. responseBody `shouldBe` "how are you?"
 
     it "doesn't clobber pre-existing reponse headers" $ \port -> property $
                                                 \(user :: User) -> do
-      jwt <- makeJWT user jwtCfg Nothing
+      jwt <- makeJWT user jwtCfg
       opts <- addJwtToHeader jwt
       resp <- getWith opts (url port ++ "/raw")
       resp ^. responseHeader "hi" `shouldBe` "there"
@@ -146,7 +147,7 @@ authSpec
       let (cookieJar:_) = resp ^.. responseCookieJar
           Just xxsrf = find (\x -> cookie_name x == xsrfField xsrfCookieName cookieCfg)
                      $ destroyCookieJar cookieJar
-      xxsrf ^. cookieExpiryTime `shouldBe` future
+      xxsrf ^. cookieExpiryTime `shouldBe` futureUTC
 
     it "sets the token cookie as HttpOnly" $ \port -> property $ \(user :: User) -> do
       jwt <- createJWT theKey (newJWSHeader ((), HS256))
@@ -318,19 +319,19 @@ jwtAuthSpec
   it "fails if 'nbf' is set to a future date" $ \port -> property $
                                                 \(user :: User) -> do
     jwt <- createJWT theKey (newJWSHeader ((), HS256))
-      (claims (toJSON user) & claimNbf .~ Just (NumericDate future))
+      (claims (toJSON user) & claimNbf .~ Just (NumericDate futureUTC))
     opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
     getWith opts (url port) `shouldHTTPErrorWith` status401
 
   it "fails if 'exp' is set to a past date" $ \port -> property $
                                               \(user :: User) -> do
-    jwt <- makeJWT user jwtCfg (Just past)
+    jwt <- makeJWT user $ jwtCfg {expiresIn = Just past}
     opts <- addJwtToHeader jwt
     getWith opts (url port) `shouldHTTPErrorWith` status401
 
   it "succeeds if 'exp' is set to a future date" $ \port -> property $
                                                    \(user :: User) -> do
-    jwt <- makeJWT user jwtCfg (Just future)
+    jwt <- makeJWT user $ jwtCfg {expiresIn = Just future}
     opts <- addJwtToHeader jwt
     resp <- getWith opts (url port)
     resp ^. responseStatus `shouldBe` status200
@@ -441,7 +442,7 @@ theKey = unsafePerformIO . genJWK $ OctGenParam 256
 
 cookieCfg :: CookieSettings
 cookieCfg = def
-  { cookieExpires = Just future
+  { cookieExpires = Just futureUTC
   , cookieIsSecure = NotSecure
   , sessionCookieName = "RuncibleSpoon"
   , cookieXsrfSetting = pure $ def
@@ -527,11 +528,14 @@ server ccfg =
 ------------------------------------------------------------------------------
 -- * Utils {{{
 
-past :: UTCTime
-past = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "1970-01-01"
+past :: NominalDiffTime
+past = (-1) * future
 
-future :: UTCTime
-future = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "2070-01-01"
+future :: NominalDiffTime
+future = 1_000_000
+
+futureUTC :: UTCTime
+futureUTC = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "2070-01-01"
 
 addJwtToHeader :: Either Error BSL.ByteString -> IO Options
 addJwtToHeader jwt = case jwt of

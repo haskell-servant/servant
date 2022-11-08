@@ -13,7 +13,7 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.HashMap.Strict  as HM
 import           Data.Maybe           (fromMaybe)
 import qualified Data.Text            as T
-import           Data.Time            (UTCTime)
+import           Data.Time            (UTCTime, getCurrentTime, addUTCTime)
 import           Network.Wai          (requestHeaders)
 
 import Servant.Auth.JWT               (FromJWT(..), ToJWT(..))
@@ -38,22 +38,23 @@ jwtAuthCheck jwtSettings = do
     Just v -> return v
 
 -- | Creates a JWT containing the specified data. The data is stored in the
--- @dat@ claim. The 'Maybe UTCTime' argument indicates the time at which the
--- token expires.
+-- @dat@ claim. The expiration time 'Maybe NominalDiffTime' is taken from 'JWTSettings'
+-- and indicates the time at which the token expires.
 makeJWT :: ToJWT a
-  => a -> JWTSettings -> Maybe UTCTime -> IO (Either Jose.Error BSL.ByteString)
-makeJWT v cfg expiry = runExceptT $ do
+  => a -> JWTSettings -> IO (Either Jose.Error BSL.ByteString)
+makeJWT v cfg = runExceptT $ do
+  currentTime <- ExceptT $ pure <$> getCurrentTime
   bestAlg <- Jose.bestJWSAlg $ signingKey cfg
   let alg = fromMaybe bestAlg $ jwtAlg cfg
   ejwt <- Jose.signClaims (signingKey cfg)
                           (Jose.newJWSHeader ((), alg))
-                          (addExp $ encodeJWT v)
+                          (addExp currentTime $ encodeJWT v)
 
   return $ Jose.encodeCompact ejwt
   where
-   addExp claims = case expiry of
+   addExp currTime claims = case expiresIn cfg of
      Nothing -> claims
-     Just e  -> claims & Jose.claimExp ?~ Jose.NumericDate e
+     Just e  -> claims & Jose.claimExp ?~ Jose.NumericDate (addUTCTime e currTime)
 
 
 verifyJWT :: FromJWT a => JWTSettings -> BS.ByteString -> IO (Maybe a)

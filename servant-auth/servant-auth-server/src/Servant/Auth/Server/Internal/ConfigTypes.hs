@@ -37,6 +37,10 @@ data JWTSettings = JWTSettings
   -- | An @aud@ predicate. The @aud@ is a string or URI that identifies the
   -- intended recipient of the JWT.
   , audienceMatches :: Jose.StringOrURI -> IsMatch
+
+  -- | How long from now until the jwt expires. Default: @Nothing@.
+  , expiresIn      :: Maybe NominalDiffTime
+
   } deriving (Generic)
 
 -- | A @JWTSettings@ where the audience always matches.
@@ -45,7 +49,9 @@ defaultJWTSettings k = JWTSettings
    { signingKey = k
    , jwtAlg = Nothing
    , validationKeys = pure $ Jose.JWKSet [k]
-   , audienceMatches = const Matches }
+   , audienceMatches = const Matches
+   , expiresIn = Nothing
+   }
 
 -- | The policies to use when generating cookies.
 --
