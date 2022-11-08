@@ -46,7 +46,7 @@ module Servant.Server
   , descendIntoNamedContext
 
   -- * Basic Authentication
-  , BasicAuthCheck(BasicAuthCheck, unBasicAuthCheck)
+  , BasicAuthCheck(BasicAuthCheck, basicAuthRunCheck, basicAuthPresentChallenge)
   , BasicAuthResult(..)
 
   -- * General Authentication

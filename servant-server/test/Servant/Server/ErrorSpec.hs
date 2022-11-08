@@ -42,7 +42,7 @@ errorOrderAuthCheck =
         if username == "servant" && password == "server"
         then return (Authorized ())
         else return Unauthorized
-  in BasicAuthCheck check
+  in BasicAuthCheck True check
 
 ------------------------------------------------------------------------------
 -- * Error Order {{{
