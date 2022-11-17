@@ -2,6 +2,7 @@
 module Servant.Auth.Server.Internal.Cookie where
 
 import           Blaze.ByteString.Builder (toByteString)
+import           Control.Monad (MonadPlus(..), guard)
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import qualified Crypto.JOSE              as Jose

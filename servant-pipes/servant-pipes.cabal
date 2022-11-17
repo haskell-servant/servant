@@ -32,7 +32,7 @@ library
     , bytestring    >=0.10.8.1 && <0.12
     , pipes         >=4.3.9    && <4.4
     , pipes-safe    >=2.3.1    && <2.4
-    , mtl           >=2.2.2    && <2.3
+    , mtl           ^>=2.2.2   || ^>=2.3.1
     , monad-control >=1.0.2.3  && <1.1
     , servant       >=0.15     && <0.20
   hs-source-dirs:      src

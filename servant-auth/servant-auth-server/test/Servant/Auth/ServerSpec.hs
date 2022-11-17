@@ -6,13 +6,12 @@ module Servant.Auth.ServerSpec (spec) where
 #endif
 
 import           Control.Lens
-import           Control.Monad.Except                (runExceptT)
 import           Control.Monad.IO.Class              (liftIO)
 import           Crypto.JOSE                         (Alg (HS256, None), Error,
                                                       JWK, JWSHeader,
                                                       KeyMaterialGenParam (OctGenParam),
                                                       ToCompact, encodeCompact,
-                                                      genJWK, newJWSHeader)
+                                                      genJWK, newJWSHeader, runJOSE)
 import           Crypto.JWT                          (Audience (..), ClaimsSet,
                                                       NumericDate (NumericDate),
                                                       SignedJWT,
@@ -540,7 +539,7 @@ addJwtToHeader jwt = case jwt of
     $ defaults & header "Authorization" .~ ["Bearer " <> BSL.toStrict v]
 
 createJWT :: JWK -> JWSHeader () -> ClaimsSet -> IO (Either Error Crypto.JWT.SignedJWT)
-createJWT k a b = runExceptT $ signClaims k a b
+createJWT k a b = runJOSE $ signClaims k a b
 
 addJwtToCookie :: ToCompact a => CookieSettings -> Either Error a -> IO Options
 addJwtToCookie ccfg jwt = case jwt >>= (return . encodeCompact) of

@@ -48,7 +48,7 @@ library
     , http-media          >=0.6.2   && <0.9
     , http-types          >=0.12    && <0.13
     , monad-control       >=1.0.0.4 && <1.1
-    , mtl                 >=2.2.2   && <2.3
+    , mtl                 ^>=2.2.2  || ^>=2.3.1
     , semigroupoids       >=5.3     && <5.4
     , string-conversions  >=0.3     && <0.5
     , transformers        >=0.3     && <0.6
