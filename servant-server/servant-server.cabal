@@ -23,7 +23,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 build-type:          Simple
-tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
+tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1 || ==9.4.2
 
 extra-source-files:
   CHANGELOG.md
@@ -159,7 +159,7 @@ test-suite spec
   build-depends:
       aeson                >= 1.4.1.0  && < 3
     , directory            >= 1.3.0.0  && < 1.4
-    , hspec                >= 2.6.0    && < 2.10
+    , hspec                >= 2.6.0    && < 2.11
     , hspec-wai            >= 0.10.1   && < 0.12
     , QuickCheck           >= 2.12.6.1 && < 2.15
     , should-not-typecheck >= 2.1.0    && < 2.2
@@ -167,4 +167,4 @@ test-suite spec
     , wai-extra            >= 3.0.24.3 && < 3.2
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && <2.10
+    hspec-discover:hspec-discover >= 2.6.0 && <2.11

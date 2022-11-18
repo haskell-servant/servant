@@ -28,7 +28,7 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           (c) 2015-2018, Servant contributors
 category:            Web, Servant, Swagger
 build-type:          Custom
-tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2
+tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.4.2
 
 extra-source-files:
     README.md
@@ -92,7 +92,7 @@ test-suite doctests
   build-depends:
     base,
     directory >= 1.0,
-    doctest >= 0.17 && <0.21,
+    doctest >= 0.17 && <0.22,
     servant,
     QuickCheck,
     filepath
