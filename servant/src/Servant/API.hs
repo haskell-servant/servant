@@ -101,17 +101,19 @@ import           Servant.API.Experimental.Auth
                  (AuthProtect)
 import           Servant.API.Fragment
                  (Fragment)
+import           Servant.API.Generic
+                 (AsApi, GServantProduct, GenericMode ((:-)), GenericServant,
+                 ToServant, ToServantApi, fromServant, genericApi, toServant)
 import           Servant.API.Header
                  (Header, Header')
-import           Servant.API.Generic
-                 (GenericMode ((:-)), AsApi, ToServant, ToServantApi, GServantProduct,
-                 GenericServant, fromServant, toServant, genericApi)
 import           Servant.API.HttpVersion
                  (HttpVersion (..))
 import           Servant.API.IsSecure
                  (IsSecure (..))
 import           Servant.API.Modifiers
                  (Lenient, Optional, Required, Strict)
+import           Servant.API.NamedRoutes
+                 (NamedRoutes)
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam, QueryParam', QueryParams)
 import           Servant.API.Raw
@@ -137,8 +139,6 @@ import           Servant.API.UVerb
                  Unique, WithStatus (..), inject, statusOf)
 import           Servant.API.Vault
                  (Vault)
-import           Servant.API.NamedRoutes
-                 (NamedRoutes)
 import           Servant.API.Verbs
                  (Delete, DeleteAccepted, DeleteNoContent,
                  DeleteNonAuthoritative, Get, GetAccepted, GetNoContent,
