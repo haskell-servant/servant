@@ -14,11 +14,15 @@ import           Control.Monad.Reader
                  (ask)
 import           Control.Monad.Trans.Resource
                  (ResourceT, runResourceT)
+import           Data.String.Conversions
+                 (cs)
 import           Network.Wai
-                 (Request, Response)
+                 (Request, Response, mapResponseHeaders)
 
 import           Servant.Server.Internal.DelayedIO
 import           Servant.Server.Internal.Handler
+import           Servant.Server.Internal.RouterEnv
+                 (RouterEnv (..), hLocationHeader, hRoutedPathHeader, routedPathRepr)
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.ServerError
 
@@ -228,12 +232,12 @@ passToServer Delayed{..} x =
 -- This should only be called once per request; otherwise the guarantees about
 -- effect and HTTP error ordering break down.
 runDelayed :: Delayed env a
-           -> env
+           -> RouterEnv env
            -> Request
            -> ResourceT IO (RouteResult a)
 runDelayed Delayed{..} env = runDelayedIO $ do
     r <- ask
-    c <- capturesD env
+    c <- capturesD $ routerEnv env
     methodD
     a <- authD
     acceptD
@@ -248,7 +252,7 @@ runDelayed Delayed{..} env = runDelayedIO $ do
 -- Also takes a continuation for how to turn the
 -- result of the delayed server into a response.
 runAction :: Delayed env (Handler a)
-          -> env
+          -> RouterEnv env
           -> Request
           -> (RouteResult Response -> IO r)
           -> (a -> RouteResult Response)
@@ -261,8 +265,18 @@ runAction action env req respond k = runResourceT $
     go (Route a)     = liftIO $ do
       e <- runHandler a
       case e of
-        Left err -> return . Route $ responseServerError err
-        Right x  -> return $! k x
+        Left err -> return . Route . withRoutingHeaders $ responseServerError err
+        Right x  -> return $! withHeaders <$> k x
+    withRoutingHeaders :: Response -> Response
+    withRoutingHeaders = if shouldReturnRoutedPath env
+      then mapResponseHeaders ((hRoutedPathHeader, cs $ routedPathRepr env) :)
+      else id
+    withLocationHeader :: Response -> Response
+    withLocationHeader = case locationHeader env of
+      Nothing -> id
+      Just location -> mapResponseHeaders ((hLocationHeader, cs location) :)
+    withHeaders :: Response -> Response
+    withHeaders = withLocationHeader . withRoutingHeaders
 
 {- Note [Existential Record Update]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

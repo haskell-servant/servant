@@ -7,6 +7,8 @@ module Servant.API (
   -- | Type-level combinator for alternative endpoints: @':<|>'@
   module Servant.API.Empty,
   -- | Type-level combinator for an empty API: @'EmptyAPI'@
+  module Servant.API.Environment,
+  -- | Type-level combinators to modify the routing environment: @'WithRoutingHeader'@
   module Servant.API.Modifiers,
   -- | Type-level modifiers for 'QueryParam', 'Header' and 'ReqBody'.
 
@@ -97,6 +99,8 @@ import           Servant.API.Description
                  (Description, Summary)
 import           Servant.API.Empty
                  (EmptyAPI (..))
+import           Servant.API.Environment
+                 (Redirect, WithRoutingHeader)
 import           Servant.API.Experimental.Auth
                  (AuthProtect)
 import           Servant.API.Fragment

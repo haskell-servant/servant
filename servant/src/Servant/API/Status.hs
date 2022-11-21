@@ -1,10 +1,19 @@
 {-# LANGUAGE DataKinds #-}
 -- Flexible instances is necessary on GHC 8.4 and earlier
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Servant.API.Status where
 
-import GHC.TypeLits (KnownNat, natVal)
+import Data.Kind
+       (Constraint)
+import GHC.TypeLits
+       (type (+), type (<=?), ErrorMessage(..), KnownNat, Nat, Symbol, TypeError, natVal)
 import Network.HTTP.Types.Status
 
 -- | Retrieve a known or unknown Status from a KnownNat
@@ -158,3 +167,41 @@ instance KnownStatus 505 where
 
 instance KnownStatus 511 where
   statusVal _ = status511
+
+-- | Witness that a type-level natural number corresponds to a class
+-- of HTTP error codes
+class KnownNat c => KnownStatusClass c where
+  type TextualClass c :: Symbol
+
+type Informational = 100
+instance KnownStatusClass Informational where
+  type TextualClass Informational = "Informational"
+
+type Successful = 200
+instance KnownStatusClass Successful where
+  type TextualClass Successful = "Successful"
+
+type Redirection = 300
+instance KnownStatusClass Redirection where
+  type TextualClass Redirection = "Redirection"
+
+type ClientError = 400
+instance KnownStatusClass ClientError where
+  type TextualClass ClientError = "ClientError"
+
+type ServerError = 500
+instance KnownStatusClass ServerError where
+  type TextualClass ServerError = "ServerError"
+
+-- | Witness that a type-level status belongs to its given class.
+-- Raises a custom error when it does not.
+class (KnownStatus s, KnownStatusClass c) => HasStatusClass c s
+
+type ClassCheck :: Bool -> Bool -> Nat -> Nat -> Constraint
+type family ClassCheck a b c s where
+  ClassCheck 'True 'True _ _ = ()
+  ClassCheck _ _ c s = TypeError ('Text "HTTP status code " ':<>: 'ShowType s ':<>: 'Text " does not belong to class " ':<>: 'Text (TextualClass c))
+
+instance ( KnownStatus s, KnownStatusClass c
+         , ClassCheck (c <=? s) (s <=? c + 99) c s
+         ) => HasStatusClass c s
