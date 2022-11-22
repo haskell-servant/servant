@@ -80,7 +80,7 @@ delayed body srv = Delayed
 simpleRun :: Delayed () (Handler ())
           -> IO ()
 simpleRun d = fmap (either ignoreE id) . try $
-  runAction d () defaultRequest (\_ -> return ()) (\_ -> FailFatal err500)
+  runAction d (emptyEnv ()) defaultRequest (\_ -> return ()) (\_ -> FailFatal err500)
 
   where ignoreE :: SomeException -> ()
         ignoreE = const ()

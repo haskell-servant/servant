@@ -46,6 +46,7 @@ library
     Servant.Server.Internal.DelayedIO
     Servant.Server.Internal.ErrorFormatter
     Servant.Server.Internal.Handler
+    Servant.Server.Internal.RouterEnv
     Servant.Server.Internal.RouteResult
     Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
@@ -142,6 +143,7 @@ test-suite spec
     , base-compat
     , base64-bytestring
     , bytestring
+    , containers
     , http-types
     , mtl
     , resourcet
