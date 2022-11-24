@@ -37,3 +37,4 @@ you name it!
   sentry/Sentry.lhs
   testing/Testing.lhs
   open-id-connect/OpenIdConnect.lhs
+  managed-resource/ManagedResource.lhs

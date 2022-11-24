@@ -1144,6 +1144,9 @@ instance HasDocs api => HasDocs (Vault :> api) where
 instance HasDocs api => HasDocs (WithNamedContext name context api) where
   docsFor Proxy = docsFor (Proxy :: Proxy api)
 
+instance HasDocs api => HasDocs (WithResource res :> api) where
+  docsFor Proxy = docsFor (Proxy :: Proxy api)
+
 instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth realm usr :> api) where
   docsFor Proxy (endpoint, action) =
     docsFor (Proxy :: Proxy api) (endpoint, action')

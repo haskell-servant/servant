@@ -62,6 +62,7 @@ library
     Servant.API.Vault
     Servant.API.Verbs
     Servant.API.WithNamedContext
+    Servant.API.WithResource
 
   -- Types
   exposed-modules:

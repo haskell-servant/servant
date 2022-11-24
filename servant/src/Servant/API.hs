@@ -31,6 +31,8 @@ module Servant.API (
   -- | Access the location for arbitrary data to be shared by applications and middleware
   module Servant.API.WithNamedContext,
   -- | Access context entries in combinators in servant-server
+  module Servant.API.WithResource,
+  -- | Access a managed resource scoped to a single request
 
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Verbs,
@@ -150,6 +152,8 @@ import           Servant.API.Verbs
                  ReflectMethod (reflectMethod), StdMethod (..), Verb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
+import           Servant.API.WithResource
+                 (WithResource)
 import           Servant.Links
                  (HasLink (..), IsElem, IsElem', Link, URI (..), safeLink)
 import           Web.HttpApiData
