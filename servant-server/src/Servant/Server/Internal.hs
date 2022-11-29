@@ -70,8 +70,9 @@ import           Network.Socket
 import           Network.Wai
                  (Application, Request, RequestBodyLength (KnownLength),
                  httpVersion, isSecure, lazyRequestBody,
-                 queryString, remoteHost, getRequestBodyChunk, requestHeaders,
-                 requestMethod, responseLBS, responseStream, vault)
+                 queryString, remoteHost, getRequestBodyChunk,
+                 requestBodyLength, requestHeaders, requestMethod, responseLBS,
+                 responseStream, vault)
 import           Prelude ()
 import           Prelude.Compat
 import           Servant.API
