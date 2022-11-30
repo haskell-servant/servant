@@ -23,7 +23,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 build-type:          Simple
-tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
+tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.7 || ==9.0.2 || ==9.2.4 || ==9.4.3
 
 extra-source-files:
   CHANGELOG.md
@@ -88,7 +88,7 @@ library
     , network             >= 2.8      && < 3.2
     , sop-core            >= 0.4.0.0  && < 0.6
     , string-conversions  >= 0.4.0.1  && < 0.5
-    , resourcet           >= 1.2.2    && < 1.3
+    , resourcet           >= 1.2.2    && < 1.4
     , tagged              >= 0.8.6    && < 0.9
     , transformers-base   >= 0.4.5.2  && < 0.5
     , wai                 >= 3.2.1.2  && < 3.3
