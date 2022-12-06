@@ -12,16 +12,19 @@
 
 module Servant.ServerSpec where
 
+import Debug.Trace
+
 import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Monad
-                 (forM_, unless, when)
+                 (forM_, join, unless, when)
 import           Control.Monad.Error.Class
                  (MonadError (..))
 import           Data.Aeson
                  (FromJSON, ToJSON, decode', encode)
 import qualified Data.ByteString                   as BS
+import qualified Data.ByteString.Char8             as C8
 import qualified Data.ByteString.Base64            as Base64
 import           Data.Char
                  (toUpper)
@@ -49,14 +52,15 @@ import           Network.Wai.Test
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
-                 Delete, EmptyAPI, Fragment, Get, HasStatus (StatusOf), Header,
-                 Headers, HttpVersion, IsSecure (..), JSON, Lenient,
-                 NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
-                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
+                 DeepQuery, Delete, EmptyAPI, Fragment, Get,
+                 HasStatus (StatusOf), Header, Headers, HttpVersion,
+                 IsSecure (..), JSON, Lenient, NoContent (..), NoContentVerb,
+                 NoFraming, OctetStream, Patch, PlainText, Post, Put,
+                 QueryFlag, QueryParam, QueryParams, QueryString, Raw,
                  RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
                  UVerb, Union, Verb, WithStatus (..), addHeader)
 import           Servant.Server
-                 (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
+                 (Context ((:.), EmptyContext), FromDeepQuery (..), Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, respond, serve,
                  serveWithContext)
 import           Servant.Test.ComprehensiveAPI
@@ -67,6 +71,7 @@ import           Test.Hspec.Wai
                  (get, liftIO, matchHeaders, matchStatus, shouldRespondWith,
                  with, (<:>))
 import qualified Test.Hspec.Wai                    as THW
+import           Text.Read (readMaybe)
 
 import           Servant.Server.Experimental.Auth
                  (AuthHandler, AuthServerData, mkAuthHandler)
@@ -320,17 +325,33 @@ captureAllSpec = do
 -- * queryParamSpec {{{
 ------------------------------------------------------------------------------
 
+data Filter = Filter
+  { ageFilter :: Integer
+  , nameFilter :: String
+  }
+  deriving Show
+
+instance FromDeepQuery Filter where
+  fromDeepQuery params = traceShowId $ do
+    let maybeToRight l = maybe (Left l) Right
+    age' <- maybeToRight "missing age" $ readMaybe . T.unpack =<< join (lookup ["age"] params)
+    name' <- maybeToRight "missing name" $ join $ lookup ["name"] params
+    return $ Filter age' (T.unpack name')
+
+
 type QueryParamApi = QueryParam "name" String :> Get '[JSON] Person
                 :<|> "a" :> QueryParams "names" String :> Get '[JSON] Person
                 :<|> "b" :> QueryFlag "capitalize" :> Get '[JSON] Person
                 :<|> "param" :> QueryParam "age" Integer :> Get '[JSON] Person
                 :<|> "multiparam" :> QueryParams "ages" Integer :> Get '[JSON] Person
+                :<|> "raw-query-string" :> QueryString :> Get '[JSON] Person
+                :<|> "deep-query" :> DeepQuery "filter" Filter :> Get '[JSON] Person
 
 queryParamApi :: Proxy QueryParamApi
 queryParamApi = Proxy
 
 qpServer :: Server QueryParamApi
-qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges
+qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges :<|> qpRaw :<|> qpDeep
 
   where qpNames (_:name2:_) = return alice { name = name2 }
         qpNames _           = return alice
@@ -342,6 +363,15 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAge
         qpAge (Just age') = return alice{ age = age'}
 
         qpAges ages = return alice{ age = sum ages}
+
+        qpRaw q = return alice { name = maybe mempty C8.unpack $ join (lookup "name" q)
+                               , age = fromMaybe 0 (readMaybe . C8.unpack =<< join (lookup "age" q))
+                               }
+
+        qpDeep filter' =
+          return alice { name = nameFilter filter'
+                       , age = ageFilter filter'
+                       }
 
         queryParamServer (Just name_) = return alice{name = name_}
         queryParamServer Nothing = return alice
@@ -412,6 +442,22 @@ queryParamSpec = do
           response3'' <- mkRequest "?unknown=" ["b"]
           liftIO $ decode' (simpleBody response3'') `shouldBe` Just alice
             { name = "Alice"
+            }
+
+      it "allows retrieving a full query string" $
+        flip runSession (serve queryParamApi qpServer) $ do
+          response <- mkRequest "?age=32&name=john" ["raw-query-string"]
+          liftIO $ decode' (simpleBody response) `shouldBe` Just alice
+            { name = "john"
+            , age = 32
+            }
+
+      it "allows retrieving a query string deep object" $
+        flip runSession (serve queryParamApi qpServer) $ do
+          response <- mkRequest "?filter[age]=32&filter[name]=john" ["deep-query"]
+          liftIO $ decode' (simpleBody response) `shouldBe` Just alice
+            { name = "john"
+            , age = 32
             }
 
       describe "Uses queryString instead of rawQueryString" $ do
