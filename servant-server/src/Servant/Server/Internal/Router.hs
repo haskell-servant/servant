@@ -28,9 +28,12 @@ import           Servant.Server.Internal.ServerError
 
 type Router env = Router' env RoutingApplication
 
+-- | Holds information about pieces of url that are captured as variables.
 data CaptureHint = CaptureHint
   { captureName :: Text
+  -- ^ Holds the name of the captured variable
   , captureType :: TypeRep
+  -- ^ Holds the type of the captured variable
   }
   deriving (Show, Eq)
 
@@ -54,10 +57,21 @@ data Router' env a =
       --   for the empty path, to be tried in order
   | CaptureRouter [CaptureHint] (Router' (Text, env) a)
       -- ^ first path component is passed to the child router in its
-      --   environment and removed afterwards
+      --   environment and removed afterwards.
+      --   The first argument is a list of hints for all variables that can be
+      --   captured by the router. The fact that it is a list is counter-intuitive,
+      --   because the 'Capture' combinator only allows to capture a single varible,
+      --   with a single name and a single type. However, the 'choice' smart
+      --   constructor may merge two 'Capture' combinators with different hints, thus
+      --   forcing the type to be '[CaptureHint]'.
+      --   Because 'CaptureRouter' is built from a 'Capture' combinator, the list of
+      --   hints should always be non-empty.
   | CaptureAllRouter [CaptureHint] (Router' ([Text], env) a)
       -- ^ all path components are passed to the child router in its
       --   environment and are removed afterwards
+      --   The first argument is a hint for the list of variables that can be
+      --   captured by the router. Note that the 'captureType' field of the hint
+      --   should always be '[a]' for some 'a'.
   | RawRouter     (env -> a)
       -- ^ to be used for routes we do not know anything about
   | Choice        (Router' env a) (Router' env a)
@@ -101,6 +115,10 @@ choice router1 router2 = Choice router1 router2
 data RouterStructure =
     StaticRouterStructure  (Map Text RouterStructure) Int
   | CaptureRouterStructure [CaptureHint] RouterStructure
+  -- ^ The first argument holds information about variables
+  -- that are captured by the router. There may be several hints
+  -- if several routers have been aggregated by the 'choice'
+  -- smart constructor.
   | RawRouterStructure
   | ChoiceStructure        RouterStructure RouterStructure
   deriving (Eq, Show)
