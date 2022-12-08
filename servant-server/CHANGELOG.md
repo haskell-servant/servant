@@ -13,6 +13,7 @@ Compatibility with GHC 9.4, see [PR #1592](https://github.com/haskell-servant/se
 
 - Add `MonadFail` instance for `Handler` wrt [#1545](https://github.com/haskell-servant/servant/issues/1545)
 - Support GHC 9.2 [#1525](https://github.com/haskell-servant/servant/issues/1525)
+- Add capture hints in `Router` type for debug and display purposes [PR #1556] (https://github.com/haskell-servant/servant/pull/1556)
 
 0.19
 ----
