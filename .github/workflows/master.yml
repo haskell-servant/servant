@@ -25,6 +25,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Setup
+      run: |
+        sudo apt update -y
+        sudo apt install -y libssl-dev
+        sudo ldconfig
+
     - uses: haskell/actions/setup@v1
       id: setup-haskell-cabal
       name: Setup Haskell
