@@ -48,6 +48,9 @@ packages:
   doc/cookbook/using-free-client
   -- doc/cookbook/open-id-connect
 
+package HsOpenSSL
+  flags: +use-pkg-config
+
 tests: True
 optimization: False
 -- reorder-goals: True
