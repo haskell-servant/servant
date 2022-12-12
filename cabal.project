@@ -48,8 +48,10 @@ packages:
   doc/cookbook/using-free-client
   -- doc/cookbook/open-id-connect
 
-package HsOpenSSL
-  flags: +use-pkg-config
+source-repository-package
+  type: git
+  location: https://github.com/haskell-cryptography/HsOpenSSL.git
+  tag: e18303a
 
 tests: True
 optimization: False
