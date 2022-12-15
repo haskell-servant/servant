@@ -110,6 +110,9 @@ module Servant.Server
 
   , getAcceptHeader
 
+  -- * DeepQuery parsing
+  , FromDeepQuery (..)
+
   -- * Re-exports
   , Application
   , Tagged (..)

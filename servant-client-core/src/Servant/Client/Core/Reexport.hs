@@ -20,6 +20,9 @@ module Servant.Client.Core.Reexport
   , ClientError(..)
   , EmptyClient(..)
 
+  -- * DeepQuery
+  , ToDeepQuery(..)
+
   -- * BaseUrl
   , BaseUrl(..)
   , Scheme(..)
