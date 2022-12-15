@@ -12,8 +12,6 @@
 
 module Servant.ServerSpec where
 
-import Debug.Trace
-
 import           Prelude ()
 import           Prelude.Compat
 
