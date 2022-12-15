@@ -330,7 +330,7 @@ data Filter = Filter
   deriving Show
 
 instance FromDeepQuery Filter where
-  fromDeepQuery params = traceShowId $ do
+  fromDeepQuery params = do
     let maybeToRight l = maybe (Left l) Right
     age' <- maybeToRight "missing age" $ readMaybe . T.unpack =<< join (lookup ["age"] params)
     name' <- maybeToRight "missing name" $ join $ lookup ["name"] params
