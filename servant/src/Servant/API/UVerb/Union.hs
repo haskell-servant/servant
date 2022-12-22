@@ -128,9 +128,9 @@ type DuplicateElementError (rs :: [k]) =
     ':$$: 'Text "    " ':<>: 'ShowType rs
 
 type family Elem (x :: k) (xs :: [k]) :: Bool where
+  Elem x (x ': _) = 'True
+  Elem x (_ ': xs) = Elem x xs
   Elem _ '[] = 'False
-  Elem x (x' ': xs) =
-    If (x == x') 'True (Elem x xs)
 
 type family Unique xs :: Constraint where
   Unique xs = If (Nubbed xs == 'True) (() :: Constraint) (TypeError (DuplicateElementError xs))
