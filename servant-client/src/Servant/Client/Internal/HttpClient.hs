@@ -43,14 +43,12 @@ import qualified Data.ByteString             as BS
 import           Data.ByteString.Builder
                  (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
-import           Data.Either
-                 (either)
 import           Data.Foldable
                  (foldl',toList)
 import           Data.Functor.Alt
                  (Alt (..))
 import           Data.Maybe
-                 (maybe, maybeToList)
+                 (maybeToList)
 import           Data.Proxy
                  (Proxy (..))
 import           Data.Sequence
@@ -63,7 +61,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (hContentType, renderQuery, statusIsSuccessful, urlEncode, Status)
+                 (hContentType, statusIsSuccessful, urlEncode, Status)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client

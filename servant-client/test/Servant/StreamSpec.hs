@@ -21,16 +21,9 @@
 
 module Servant.StreamSpec (spec) where
 
-import           Control.Monad
-                 (when)
-import           Control.Monad.Codensity
-                 (Codensity (..))
-import           Control.Monad.IO.Class
-                 (MonadIO (..))
 import           Control.Monad.Trans.Except
 import qualified Data.ByteString               as BS
 import           Data.Proxy
-import qualified Data.TDigest                  as TD
 import qualified Network.HTTP.Client           as C
 import           Prelude ()
 import           Prelude.Compat
@@ -46,19 +39,9 @@ import           System.Entropy
                  (getEntropy, getHardwareEntropy)
 import           System.IO.Unsafe
                  (unsafePerformIO)
-import           System.Mem
-                 (performGC)
 import           Test.Hspec
 import           Servant.ClientTestUtils (Person(..))
 import qualified Servant.ClientTestUtils as CT
-
-#if MIN_VERSION_base(4,10,0)
-import           GHC.Stats
-                 (gc, gcdetails_live_bytes, getRTSStats)
-#else
-import           GHC.Stats
-                 (currentBytesUsed, getGCStats)
-#endif
 
 -- This declaration simply checks that all instances are in place.
 -- Note: this is streaming client
@@ -78,9 +61,9 @@ api :: Proxy StreamApi
 api = Proxy
 
 getGetNL, getGetNS :: ClientM (SourceIO Person)
-getGetALot :: ClientM (SourceIO BS.ByteString)
+_getGetALot :: ClientM (SourceIO BS.ByteString)
 getStreamBody :: SourceT IO BS.ByteString -> ClientM (SourceIO BS.ByteString)
-getGetNL :<|> getGetNS :<|> getGetALot :<|> getStreamBody = client api
+getGetNL :<|> getGetNS :<|> _getGetALot :<|> getStreamBody = client api
 
 alice :: Person
 alice = Person "Alice" 42
@@ -134,50 +117,3 @@ streamSpec = beforeAll (CT.startWaiApp server) $ afterAll CT.endWaiApp $ do
         where
           input = ["foo", "", "bar"]
           output = ["foo", "bar"]
-
-{-
-    it "streams in constant memory" $ \(_, baseUrl) -> do
-        Right rs <- runClient getGetALot baseUrl
-        performGC
-        -- usage0 <- getUsage
-        -- putStrLn $ "Start:  " ++ show usage0
-        tdigest <- memoryUsage $ joinCodensitySourceT rs
-
-        -- putStrLn $ "Median: " ++ show (TD.median tdigest)
-        -- putStrLn $ "Mean:   " ++ show (TD.mean tdigest)
-        -- putStrLn $ "Stddev: " ++ show (TD.stddev tdigest)
-
-        -- forM_ [0.01, 0.1, 0.2, 0.5, 0.8, 0.9, 0.99] $ \q ->
-        --    putStrLn $ "q" ++ show q ++ ": " ++ show (TD.quantile q tdigest)
-
-        let Just stddev = TD.stddev tdigest
-
-        -- standard deviation of 100k is ok, we generate 256M of data after all.
-        -- On my machine deviation is 40k-50k
-        stddev `shouldSatisfy` (< 100000)
-
-memoryUsage :: SourceT IO BS.ByteString -> IO (TD.TDigest 25)
-memoryUsage src = unSourceT src $ loop mempty (0 :: Int)
-  where
-    loop !acc !_ Stop          = return acc
-    loop !_   !_ (Error err)   = fail err -- !
-    loop !acc !n (Skip s)      = loop acc n s
-    loop !acc !n (Effect ms)   = ms >>= loop acc n
-    loop !acc !n (Yield _bs s) =  do
-        usage  <- liftIO getUsage
-        -- We perform GC in between as we generate garbage.
-        when (n `mod` 1024 == 0) $ liftIO performGC
-        loop (TD.insert usage acc) (n + 1) s
-
-getUsage :: IO Double
-getUsage = fromIntegral .
-#if MIN_VERSION_base(4,10,0)
-    gcdetails_live_bytes . gc <$> getRTSStats
-#else
-    currentBytesUsed <$> getGCStats
-#endif
-       memUsed `shouldSatisfy` (< megabytes 22)
-
-megabytes :: Num a => a -> a
-megabytes n = n * (1000 ^ (2 :: Int))
--}

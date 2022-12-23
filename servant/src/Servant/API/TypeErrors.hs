@@ -4,6 +4,8 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+{-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
+
 -- | This module defines the error messages used in type-level errors.
 -- Type-level errors can signal non-existing instances, for instance when
 -- a combinator is not applied to the correct number of arguments.
@@ -14,7 +16,6 @@ module Servant.API.TypeErrors (
   NoInstanceForSub,
 ) where
 
-import Data.Kind
 import GHC.TypeLits
 
 -- | No instance exists for @tycls (expr :> ...)@ because 

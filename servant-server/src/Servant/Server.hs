@@ -126,6 +126,7 @@ import           Data.Text
 import           Network.Wai
                  (Application)
 import           Servant.Server.Internal
+import           Servant.Server.TypeErrors ()
 import           Servant.Server.UVerb
 
 

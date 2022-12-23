@@ -44,6 +44,8 @@ library
 
   other-modules:
       Servant.Client.Core.Internal
+      Servant.Client.Core.HasClient.Internal
+      Servant.Client.Core.HasClient.TypeErrors
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4

@@ -24,8 +24,6 @@ import           Control.DeepSeq
                  (NFData, force)
 import           Control.Exception
                  (evaluate, throwIO)
-import           Control.Monad
-                 (unless)
 import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Codensity

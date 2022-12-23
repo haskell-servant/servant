@@ -38,7 +38,6 @@ import           Network.HTTP.Media                     (MediaType)
 import           Servant.API
 import           Servant.API.Description                (FoldDescription,
                                                          reflectDescription)
-import           Servant.API.Generic                    (ToServantApi, AsApi)
 import           Servant.API.Modifiers                  (FoldRequired)
 
 import           Servant.Swagger.Internal.TypeLevel.API

@@ -19,7 +19,8 @@ module Servant.Server.UsingContextSpec.TestCombinators where
 
 import           GHC.TypeLits
 
-import           Servant
+import           Servant      hiding
+                 (inject)
 
 data ExtractFromContext
 

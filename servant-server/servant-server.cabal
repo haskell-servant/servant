@@ -53,6 +53,9 @@ library
     Servant.Server.StaticFiles
     Servant.Server.UVerb
 
+  other-modules:
+    Servant.Server.TypeErrors
+
   -- deprecated
   exposed-modules:
     Servant.Utils.StaticFiles
