@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -44,7 +45,7 @@ type family AuthServerData a :: *
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
 newtype AuthHandler r usr = AuthHandler
   { unAuthHandler :: r -> Handler usr }
-  deriving (Generic, Typeable)
+  deriving (Functor, Generic, Typeable)
 
 -- | NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
 mkAuthHandler :: (r -> Handler usr) -> AuthHandler r usr
