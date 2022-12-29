@@ -77,7 +77,7 @@ import           Servant.API
                  NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
-                 Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
+                 Verb, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList,
                  getResponse, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
 import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
@@ -772,6 +772,14 @@ instance HasClient m subapi =>
   HasClient m (WithNamedContext name context subapi) where
 
   type Client m (WithNamedContext name context subapi) = Client m subapi
+  clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl
+
+instance HasClient m subapi =>
+  HasClient m (WithResource res :> subapi) where
+
+  type Client m (WithResource res :> subapi) = Client m subapi
   clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl

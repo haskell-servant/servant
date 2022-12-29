@@ -304,6 +304,10 @@ instance (HasSwagger sub) => HasSwagger (HttpVersion :> sub) where
 instance (HasSwagger sub) => HasSwagger (WithNamedContext x c sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy sub)
 
+-- | @'WithResource'@ combinator does not change our specification at all.
+instance (HasSwagger sub) => HasSwagger (WithResource res :> sub) where
+  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+
 instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (sym :> sub) where
   toSwagger _ = prependPath piece (toSwagger (Proxy :: Proxy sub))
     where

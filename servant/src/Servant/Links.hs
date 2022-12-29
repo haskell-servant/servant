@@ -193,6 +193,8 @@ import           Servant.API.Verbs
                  (Verb, NoContentVerb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
+import           Servant.API.WithResource
+                 (WithResource)
 import           Web.HttpApiData
 import           Data.Kind
                  (Type)
@@ -556,6 +558,10 @@ instance HasLink sub => HasLink (IsSecure :> sub) where
 
 instance HasLink sub => HasLink (WithNamedContext name context sub) where
     type MkLink (WithNamedContext name context sub) a = MkLink sub a
+    toLink toA _ = toLink toA (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (WithResource res :> sub) where
+    type MkLink (WithResource res :> sub) a = MkLink sub a
     toLink toA _ = toLink toA (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (RemoteHost :> sub) where

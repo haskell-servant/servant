@@ -47,6 +47,7 @@ packages:
   doc/cookbook/using-custom-monad
   doc/cookbook/using-free-client
   -- doc/cookbook/open-id-connect
+  doc/cookbook/managed-resource
 
 tests: True
 optimization: False

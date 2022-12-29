@@ -35,9 +35,10 @@ module Servant.Server.Internal
 import           Control.Monad
                  (join, when)
 import           Control.Monad.Trans
-                 (liftIO)
+                 (liftIO, lift)
 import           Control.Monad.Trans.Resource
-                 (runResourceT)
+                 (runResourceT, ReleaseKey)
+import           Data.Acquire
 import qualified Data.ByteString                            as B
 import qualified Data.ByteString.Builder                    as BB
 import qualified Data.ByteString.Char8                      as BC8
@@ -77,7 +78,7 @@ import           Servant.API
                  QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
-                 WithNamedContext, NamedRoutes)
+                 WithNamedContext, WithResource, NamedRoutes)
 import           Servant.API.Generic (GenericMode(..), ToServant, ToServantApi, GServantProduct, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
@@ -243,6 +244,42 @@ instance (KnownSymbol capture, FromHttpApiData a, Typeable a
       rep = typeRep (Proxy :: Proxy CaptureAll)
       formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
       hint = CaptureHint (T.pack $ symbolVal $ Proxy @capture) (typeRep (Proxy :: Proxy [a]))
+
+-- | If you use 'WithResource' in one of the endpoints for your API Servant
+-- will provide the handler for this endpoint an argument of the specified type.
+-- The lifespan of this resource will be automatically managed by Servant. This
+-- resource will be created before the handler starts and it will be destoyed
+-- after it ends. A new resource is created for each request to the endpoint.
+
+-- The creation and destruction are done using a 'Data.Acquire.Acquire'
+-- provided via server 'Context'.
+--
+-- Example
+--
+-- > type MyApi = WithResource Handle :> "writeToFile" :> Post '[JSON] NoContent
+-- >
+-- > server :: Server MyApi
+-- > server = writeToFile
+-- >   where writeToFile :: (ReleaseKey, Handle) -> Handler NoContent
+-- >         writeToFile (_, h) = hPutStrLn h "message"
+--
+-- In addition to the resource, the handler will also receive a 'ReleaseKey'
+-- which can be used to deallocate the resource before the end of the request
+-- if desired.
+
+instance (HasServer api ctx, HasContextEntry ctx (Acquire a))
+      => HasServer (WithResource a :> api) ctx where
+
+  type ServerT (WithResource a :> api) m = (ReleaseKey, a) -> ServerT api m
+
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy @api) pc nt . s
+
+  route Proxy context d = route (Proxy @api) context (d `addParameterCheck` allocateResource)
+    where
+      allocateResource :: DelayedIO (ReleaseKey, a)
+      allocateResource = DelayedIO $ lift $ allocateAcquire (getContextEntry context)
+
+
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead

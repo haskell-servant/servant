@@ -487,6 +487,13 @@ instance HasForeign lang ftype api =>
 
   foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
+instance HasForeign lang ftype api =>
+  HasForeign lang ftype (WithResource res :> api) where
+
+  type Foreign ftype (WithResource res :> api) = Foreign ftype api
+
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
+
 instance HasForeign lang ftype api
   => HasForeign lang ftype (HttpVersion :> api) where
   type Foreign ftype (HttpVersion :> api) = Foreign ftype api
