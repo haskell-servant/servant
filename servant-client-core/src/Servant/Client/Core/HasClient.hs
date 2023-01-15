@@ -902,7 +902,7 @@ infixl 2 /:
 -- rootClient = client api
 --
 -- endpointClient :: ClientM Person
--- endpointClient = client // subApi // endpoint
+-- endpointClient = client \/\/ subApi \/\/ endpoint
 -- @
 (//) :: a -> (a -> b) -> b
 x // f = f x
@@ -935,10 +935,10 @@ x // f = f x
 -- rootClient = client api
 --
 -- hello :: String -> ClientM String
--- hello name = rootClient // hello /: name
+-- hello name = rootClient \/\/ hello \/: name
 --
 -- endpointClient :: ClientM Person
--- endpointClient = client // subApi /: "foobar123" // endpoint
+-- endpointClient = client \/\/ subApi \/: "foobar123" \/\/ endpoint
 -- @
 (/:) :: (a -> b -> c) -> b -> a -> c
 (/:) = flip
