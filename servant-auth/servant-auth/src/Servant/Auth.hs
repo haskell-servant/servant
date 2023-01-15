@@ -27,7 +27,7 @@ instance HasLink sub => HasLink (Auth (tag :: [*]) value :> sub) where
 
 -- ** Combinators
 
--- | A JSON Web Token (JWT) in the the Authorization header:
+-- | A JSON Web Token (JWT) in the Authorization header:
 --
 --    @Authorization: Bearer \<token\>@
 --

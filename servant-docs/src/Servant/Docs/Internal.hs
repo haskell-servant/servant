@@ -447,7 +447,7 @@ docsWith opts intros (ExtraInfo endpoints) p =
       & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
 
 
--- | Generate the docs for a given API that implements 'HasDocs' with with any
+-- | Generate the docs for a given API that implements 'HasDocs' with any
 -- number of introduction(s)
 docsWithIntros :: HasDocs api => [DocIntro] -> Proxy api -> API
 docsWithIntros intros = docsWith defaultDocOptions intros mempty
