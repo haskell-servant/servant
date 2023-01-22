@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE TypeFamilies         #-}
@@ -12,9 +13,11 @@ module Servant.API.TypeErrors (
   PartialApplication,
   NoInstanceFor,
   NoInstanceForSub,
+  ErrorIfNoGeneric,
 ) where
 
 import Data.Kind
+import GHC.Generics (Generic(..))
 import GHC.TypeLits
 
 -- | No instance exists for @tycls (expr :> ...)@ because 
@@ -38,3 +41,19 @@ type Arity (ty :: k) = Arity' k
 type family Arity' (ty :: k) :: Nat where
   Arity' (_ -> ty) = 1 + Arity' ty
   Arity' _ = 0
+
+-- see https://blog.csongor.co.uk/report-stuck-families/
+type ErrorIfNoGeneric routes = Break (NoGeneric routes :: Type) (Rep (routes ()))
+
+data T1 a
+
+type family Break err a :: Constraint where
+  Break _ T1 = ((), ())
+  Break _ a  = ()
+
+type family NoGeneric (routes :: Type -> Type) where
+  NoGeneric routes = TypeError
+    ( 'Text "Named routes require a "
+      ':<>: 'ShowType Generic ':<>: 'Text " instance for "
+      ':<>: 'ShowType routes
+    )

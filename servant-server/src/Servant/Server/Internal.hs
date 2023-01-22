@@ -983,6 +983,7 @@ instance
   ( HasServer (ToServantApi api) context
   , forall m. Generic (api (AsServerT m))
   , forall m. GServer api m
+  , ErrorIfNoGeneric api
   ) => HasServer (NamedRoutes api) context where
 
   type ServerT (NamedRoutes api) m = api (AsServerT m)
