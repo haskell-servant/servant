@@ -1,0 +1,8 @@
+synopsis: Add HasStatus instance for Headers (that defers StatusOf to underlying value)
+prs: #1649
+
+description: {
+
+Adds a new HasStatus (Headers hs a) instance (StatusOf (Headers hs a) = StatusOf a)
+
+}

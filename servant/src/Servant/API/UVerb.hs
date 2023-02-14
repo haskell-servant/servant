@@ -38,6 +38,7 @@ import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
 import Servant.API.ContentTypes (JSON, PlainText, FormUrlEncoded, OctetStream, NoContent, MimeRender(mimeRender), MimeUnrender(mimeUnrender))
 import Servant.API.Status (KnownStatus, statusVal)
+import Servant.API.ResponseHeaders (Headers)
 import Servant.API.UVerb.Union
 
 class KnownStatus (StatusOf a) => HasStatus (a :: *) where
@@ -51,6 +52,9 @@ statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
 -- 'WithStatus' can be used.
 instance HasStatus NoContent where
   type StatusOf NoContent = 204
+
+instance HasStatus a => HasStatus (Headers hs a) where
+  type StatusOf (Headers hs a) = StatusOf a
 
 class HasStatuses (as :: [*]) where
   type Statuses (as :: [*]) :: [Nat]
