@@ -1,0 +1,13 @@
+synopsis: Refactor NoContentVerb into NoContentVerbWithStatus
+prs: #1550
+issues: #1532
+
+description: {
+
+There are several HTTP status codes that correspond to a response body with `NoContent`. This PR introduces `NoContentVerbWithStatus` which generalizes `NoContentVerb` to cases when the return status may be
+different from `204`. The former replaces the latter anywhere possible.
+`NoContentVerb` is kept as a special case of `NoContentVerbWithStatus` for backwards compatibility.
+
+This PR also adds a test case for `NoContentVerbWithStatus` in `ServerSpec.hs`
+
+}

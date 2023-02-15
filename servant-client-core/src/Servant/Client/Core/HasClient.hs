@@ -74,7 +74,7 @@ import           Servant.API
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent),
-                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
+                 NoContentVerbWithStatus, QueryFlag, QueryParam', QueryParams, Raw,
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
                  Verb, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList,
@@ -280,14 +280,16 @@ instance {-# OVERLAPPING #-}
 
   hoistClientMonad _ _ f ma = f ma
 
-instance (RunClient m, ReflectMethod method) =>
-         HasClient m (NoContentVerb method) where
-  type Client m (NoContentVerb method)
+instance
+  ( RunClient m, ReflectMethod method, KnownNat status
+  ) => HasClient m (NoContentVerbWithStatus method status) where
+  type Client m (NoContentVerbWithStatus method status)
     = m NoContent
   clientWithRoute _pm Proxy req = do
-    _response <- runRequest req { requestMethod = method }
+    _response <- runRequestAcceptStatus (Just [status]) req { requestMethod = method }
     return NoContent
       where method = reflectMethod (Proxy :: Proxy method)
+            status = statusFromNat (Proxy :: Proxy status)
 
   hoistClientMonad _ _ f ma = f ma
 

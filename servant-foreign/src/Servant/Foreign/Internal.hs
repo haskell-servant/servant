@@ -337,8 +337,8 @@ instance (Elem JSON list, HasForeignType lang ftype a, ReflectMethod method)
       methodLC = toLower $ decodeUtf8 method
 
 instance (HasForeignType lang ftype NoContent, ReflectMethod method)
-  => HasForeign lang ftype (NoContentVerb method) where
-  type Foreign ftype (NoContentVerb method) = Req ftype
+  => HasForeign lang ftype (NoContentVerbWithStatus method status) where
+  type Foreign ftype (NoContentVerbWithStatus method status) = Req ftype
 
   foreignFor lang Proxy Proxy req =
     req & reqFuncName . _FunctionName %~ (methodLC :)

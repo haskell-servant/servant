@@ -53,10 +53,11 @@ import           Servant.API
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
                  Delete, EmptyAPI, Fragment, Get, HasStatus (StatusOf), Header,
                  Headers, HttpVersion, IsSecure (..), JSON, Lenient,
-                 NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
-                 PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw,
-                 RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
-                 UVerb, Union, Verb, WithStatus (..), addHeader)
+                 NoContent (..), NoContentVerb, NoContentVerbWithStatus,
+                 NoFraming, OctetStream, Patch, PlainText, Post, Put,
+                 QueryFlag, QueryParam, QueryParams, Raw, RemoteHost, ReqBody,
+                 SourceIO, StdMethod (..), Stream, Strict, UVerb, Union, Verb,
+                 WithStatus (..), addHeader)
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, Tagged (..),
                  emptyServer, err401, err403, err404, respond, serve,
@@ -114,19 +115,21 @@ spec = do
 ------------------------------------------------------------------------------
 
 type VerbApi method status
-    =                Verb method status '[JSON] Person
- :<|> "noContent" :> NoContentVerb method
- :<|> "header"    :> Verb method status '[JSON] (Headers '[Header "H" Int] Person)
- :<|> "headerNC"  :> Verb method status '[JSON] (Headers '[Header "H" Int] NoContent)
- :<|> "accept"    :> (    Verb method status '[JSON] Person
-                     :<|> Verb method status '[PlainText] String
-                     )
+    =                            Verb method status '[JSON] Person
+ :<|> "noContent"             :> NoContentVerb method
+ :<|> "permanentRedirection"  :> NoContentVerbWithStatus method 308
+ :<|> "header"                :> Verb method status '[JSON] (Headers '[Header "H" Int] Person)
+ :<|> "headerNC"              :> Verb method status '[JSON] (Headers '[Header "H" Int] NoContent)
+ :<|> "accept"                :> (    Verb method status '[JSON] Person
+                                 :<|> Verb method status '[PlainText] String
+                                 )
  :<|> "stream"    :> Stream method status NoFraming OctetStream (SourceIO BS.ByteString)
 
 verbSpec :: Spec
 verbSpec = describe "Servant.API.Verb" $ do
   let server :: Server (VerbApi method status)
       server = return alice
+          :<|> return NoContent
           :<|> return NoContent
           :<|> return (addHeader 5 alice)
           :<|> return (addHeader 10 NoContent)
@@ -153,6 +156,11 @@ verbSpec = describe "Servant.API.Verb" $ do
           it "returns no content on NoContent" $ do
               response <- THW.request method "/noContent" [] ""
               liftIO $ statusCode (simpleStatus response) `shouldBe` 204
+              liftIO $ simpleBody response `shouldBe` ""
+
+          it "returns no content on Permanent Redirection" $ do
+              response <- THW.request method "/permanentRedirection" [] ""
+              liftIO $ statusCode (simpleStatus response) `shouldBe` 308
               liftIO $ simpleBody response `shouldBe` ""
 
           -- HEAD should not return body
