@@ -1,0 +1,8 @@
+synopsis: Support UVerb in servant-auth-server
+prs: #1571
+issues: #1570
+description: {
+UVerb endpoints are now supported by servant-auth-server and can be used under the
+Auth combinator when writing servers. It is still unsupported by
+servant-auth-client.
+}

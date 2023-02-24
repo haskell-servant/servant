@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TypeApplications #-}
 module Servant.Auth.ServerSpec (spec) where
 
 #if !MIN_VERSION_servant_server(0,16,0)
@@ -24,6 +25,7 @@ import           Data.Aeson                          (FromJSON, ToJSON, Value,
 import           Data.Aeson.Lens                     (_JSON)
 import qualified Data.ByteString                     as BS
 import qualified Data.ByteString.Lazy                as BSL
+import           Data.Text                           (Text, pack)
 import           Data.CaseInsensitive                (mk)
 import           Data.Foldable                       (find)
 import           Data.Monoid
@@ -39,6 +41,7 @@ import           Network.HTTP.Types                  (Status, status200,
 import           Network.Wai                         (responseLBS)
 import           Network.Wai.Handler.Warp            (testWithApplication)
 import           Network.Wreq                        (Options, auth, basicAuth,
+                                                      checkResponse,
                                                       cookieExpiryTime, cookies,
                                                       defaults, get, getWith, postWith,
                                                       header, oauth2Bearer,
@@ -182,8 +185,21 @@ cookieAuthSpec
         it "fails with no XSRF header or cookie" $ \port -> property
                                                          $ \(user :: User) -> do
           jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
-          opts <- addJwtToCookie cookieCfg jwt
-          getWith opts (url port) `shouldHTTPErrorWith` status401
+          opts' <- addJwtToCookie cookieCfg jwt
+          let opts = opts' & checkResponse .~ Just mempty
+          resp <- getWith opts (url port)
+          resp ^. responseStatus `shouldBe` status401
+          (resp ^. responseCookieJar) `shouldNotHaveCookies` ["XSRF-TOKEN"]
+
+          -- Validating that the XSRF cookie isn't added for UVerb routes either.
+          -- These routes can return a 401 response directly without using throwError / throwAll,
+          -- which revealed a bug:
+          --
+          -- https://github.com/haskell-servant/servant/issues/1570#issuecomment-1076374449
+          resp <- getWith opts (url port ++ "/uverb")
+          resp ^. responseStatus `shouldBe` status401
+          (resp ^. responseCookieJar) `shouldNotHaveCookies` ["XSRF-TOKEN"]
+
 
         it "succeeds if XSRF header and cookie match, and JWT is valid" $ \port -> property
                                                                         $ \(user :: User) -> do
@@ -405,13 +421,14 @@ type API auths
     = Auth auths User :>
         ( Get '[JSON] Int
        :<|> ReqBody '[JSON] Int :> Post '[JSON] Int
-       :<|> NamedRoutes DummyRoutes
+       :<|> "named" :> NamedRoutes DummyRoutes
        :<|> "header" :> Get '[JSON] (Headers '[Header "Blah" Int] Int)
 #if MIN_VERSION_servant_server(0,15,0)
        :<|> "stream" :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
 #endif
        :<|> "raw" :> Raw
         )
+      :<|> "uverb" :> Auth auths User :> UVerb 'GET '[JSON] '[WithStatus 200 Int, WithStatus 401 Text, WithStatus 403 Text]
       :<|> "login" :> ReqBody '[JSON] User :> Post '[JSON] (Headers '[ Header "Set-Cookie" SetCookie
                                                                      , Header "Set-Cookie" SetCookie ] NoContent)
       :<|> "logout" :> Get '[JSON] (Headers '[ Header "Set-Cookie" SetCookie
@@ -489,6 +506,11 @@ server ccfg =
                         :<|> raw
         Indefinite -> throwAll err401
         _ -> throwAll err403
+    ) :<|>
+    (\authResult -> case authResult of
+      Authenticated usr -> respond (WithStatus @200 (42 :: Int))
+      Indefinite -> respond (WithStatus @401 $ pack "Authentication required")
+      _ -> respond (WithStatus @403 $ pack "Forbidden")
     )
     :<|> getLogin
     :<|> getLogout
@@ -568,6 +590,12 @@ shouldMatchCookieNames :: HCli.CookieJar -> [BS.ByteString] -> Expectation
 shouldMatchCookieNames cj patterns
     = fmap cookie_name (destroyCookieJar cj)
     `shouldMatchList` patterns
+
+shouldNotHaveCookies :: HCli.CookieJar -> [BS.ByteString] -> Expectation
+shouldNotHaveCookies cj patterns =
+    sequence_ $ (\cookieName -> cookieNames `shouldNotContain` [cookieName]) <$> patterns
+  where cookieNames :: [BS.ByteString]
+        cookieNames = cookie_name <$> destroyCookieJar cj
 
 shouldMatchCookieNameValues :: HCli.CookieJar -> [(BS.ByteString, BS.ByteString)] -> Expectation
 shouldMatchCookieNameValues cj patterns

@@ -8,6 +8,7 @@
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_HADDOCK not-home        #-}
@@ -51,6 +52,9 @@ import           Prelude ()
 import           Prelude.Compat
 import           Servant.API.Header
                  (Header)
+import           Servant.API.UVerb.Union
+import qualified Data.SOP.BasicFunctors as SOP
+import qualified Data.SOP.NS as SOP
 
 -- | Response Header objects. You should never need to construct one directly.
 -- Instead, use 'addOptionalHeader'.
@@ -169,6 +173,25 @@ instance {-# OVERLAPPING #-} ( KnownSymbol h, ToHttpApiData v )
 instance {-# OVERLAPPABLE #-} ( KnownSymbol h, ToHttpApiData v , new ~ Headers '[Header h v] a)
          => AddHeader h v a new where
     addOptionalHeader hdr resp = Headers resp (HCons hdr HNil)
+
+-- Instances to decorate all responses in a 'Union' with headers. The functional
+-- dependencies force us to consider singleton lists as the base case in the
+-- recursion (it is impossible to determine h and v otherwise from old / new
+-- responses if the list is empty).
+instance (AddHeader h v old new) => AddHeader h v (Union '[old]) (Union '[new]) where
+  addOptionalHeader hdr resp =
+    SOP.Z $ SOP.I $ addOptionalHeader hdr $ SOP.unI $ SOP.unZ $ resp
+
+instance
+  ( AddHeader h v old new, AddHeader h v (Union oldrest) (Union newrest)
+  -- This ensures that the remainder of the response list is _not_ empty
+  -- It is necessary to prevent the two instances for union types from
+  -- overlapping.
+  , oldrest ~ (a ': as), newrest ~ (b ': bs))
+  => AddHeader h v (Union (old ': (a ': as))) (Union (new ': (b ': bs))) where
+  addOptionalHeader hdr resp = case resp of
+    SOP.Z (SOP.I rHead) -> SOP.Z $ SOP.I $ addOptionalHeader hdr rHead
+    SOP.S rOthers -> SOP.S $ addOptionalHeader hdr rOthers
 
 -- | @addHeader@ adds a header to a response. Note that it changes the type of
 -- the value in the following ways:

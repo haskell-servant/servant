@@ -129,6 +129,7 @@ test-suite spec
     , lens-aeson  >= 1.0.2     && < 1.3
     , warp        >= 3.2.25    && < 3.4
     , wreq        >= 0.5.2.1   && < 0.6
+    , text        >= 1.2.3.0   && < 2.1
   other-modules:
       Servant.Auth.ServerSpec
   default-language: Haskell2010
