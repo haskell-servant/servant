@@ -90,9 +90,6 @@ newtype WithStatus (k :: Nat) a = WithStatus a
 instance KnownStatus n => HasStatus (WithStatus n a) where
   type StatusOf (WithStatus n a) = n
 
-instance HasStatus a => HasStatus (Headers ls a) where
-  type StatusOf (Headers ls a) = StatusOf a
-
 -- | A variant of 'Verb' that can have any of a number of response values and status codes.
 --
 -- FUTUREWORK: it would be nice to make 'Verb' a special case of 'UVerb', and only write
