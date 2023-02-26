@@ -53,9 +53,6 @@ statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
 instance HasStatus NoContent where
   type StatusOf NoContent = 204
 
-instance HasStatus a => HasStatus (Headers hs a) where
-  type StatusOf (Headers hs a) = StatusOf a
-
 class HasStatuses (as :: [*]) where
   type Statuses (as :: [*]) :: [Nat]
   statuses :: Proxy as -> [Status]

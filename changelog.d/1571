@@ -5,4 +5,6 @@ description: {
 UVerb endpoints are now supported by servant-auth-server and can be used under the
 Auth combinator when writing servers. It is still unsupported by
 servant-auth-client.
+
+This PR also brings Headers support in UVerb responses
 }
