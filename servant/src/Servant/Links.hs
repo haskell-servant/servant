@@ -617,6 +617,7 @@ instance GLinkConstraints routes a => GLink routes a where
 instance
   ( HasLink (ToServantApi routes)
   , forall a. GLink routes a
+  , ErrorIfNoGeneric routes
   ) => HasLink (NamedRoutes routes) where
 
   type MkLink (NamedRoutes routes) a = routes (AsLink a)

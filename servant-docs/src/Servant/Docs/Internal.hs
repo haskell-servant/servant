@@ -61,6 +61,7 @@ import qualified GHC.Generics               as G
 import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
+import           Servant.API.TypeErrors
 import           Servant.API.TypeLevel
 import           Servant.API.Generic
 
@@ -1154,7 +1155,10 @@ instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth r
         authProxy = Proxy :: Proxy (BasicAuth realm usr)
         action' = over authInfo (|> toAuthInfo authProxy) action
 
-instance HasDocs (ToServantApi api) => HasDocs (NamedRoutes api) where
+instance
+  ( HasDocs (ToServantApi api)
+  , ErrorIfNoGeneric api
+  ) => HasDocs (NamedRoutes api) where
   docsFor Proxy = docsFor (Proxy :: Proxy (ToServantApi api))
 
 -- ToSample instances for simple types

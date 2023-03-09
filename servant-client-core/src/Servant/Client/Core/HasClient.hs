@@ -860,6 +860,7 @@ instance
   ( forall n. GClient api n
   , HasClient m (ToServantApi api)
   , RunClient m
+  , ErrorIfNoGeneric api
   )
   => HasClient m (NamedRoutes api) where
   type Client m (NamedRoutes api) = api (AsClientT m)
