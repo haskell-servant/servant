@@ -1,0 +1,15 @@
+synopsis: Make fromSourceIO run in IO
+prs: #1661
+
+description: {
+
+Some streaming abstractions, like io-streams, require stateful
+initialization. Since all actual call sites of `fromSourceIO`
+are in a context where `IO` actions can be executed, these
+streaming sources can be accomodated by having letting
+`fromSourceIO` run in `IO`.
+
+To migrate your existing `FromSourceIO` instance, simply put
+a `pure`/`return` in front of it.
+
+}

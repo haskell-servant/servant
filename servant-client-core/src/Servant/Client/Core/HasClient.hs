@@ -428,7 +428,7 @@ instance {-# OVERLAPPABLE #-}
   clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
       let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-      return $ fromSourceIO $ framingUnrender' $ responseBody gres
+      fromSourceIO $ framingUnrender' $ responseBody gres
     where
       req' = req
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
@@ -448,7 +448,7 @@ instance {-# OVERLAPPING #-}
   clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
       let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-          val = fromSourceIO $ framingUnrender' $ responseBody gres
+      val <- fromSourceIO $ framingUnrender' $ responseBody gres
       return $ Headers
         { getResponse = val
         , getHeadersHList = buildHeadersTo . toList $ responseHeaders gres

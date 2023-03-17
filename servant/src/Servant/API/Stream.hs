@@ -113,10 +113,10 @@ instance ToSourceIO a [a] where
 -- Pipe, etc. By implementing this class, all such streaming abstractions can
 -- be used directly on the client side for talking to streaming endpoints.
 class FromSourceIO chunk a | a -> chunk where
-    fromSourceIO :: SourceIO chunk -> a
+    fromSourceIO :: SourceIO chunk -> IO a
 
 instance MonadIO m => FromSourceIO a (SourceT m a) where
-    fromSourceIO = sourceFromSourceIO
+    fromSourceIO = return . sourceFromSourceIO
 
 sourceFromSourceIO :: forall m a. MonadIO m => SourceT IO a -> SourceT m a
 sourceFromSourceIO src =
