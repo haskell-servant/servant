@@ -103,7 +103,17 @@ applyCookieSettings cookieSettings setCookie = setCookie
   , setCookieSecure = case cookieIsSecure cookieSettings of
       Secure -> True
       NotSecure -> False
+  , setCookieSameSite = case cookieSameSite cookieSettings of
+      AnySite -> anySite
+      SameSiteStrict -> Just sameSiteStrict
+      SameSiteLax -> Just sameSiteLax
   }
+  where
+#if MIN_VERSION_cookie(0,4,5)
+    anySite = Just sameSiteNone
+#else
+    anySite = Nothing
+#endif
 
 applyXsrfCookieSettings :: XsrfCookieSettings -> SetCookie -> SetCookie
 applyXsrfCookieSettings xsrfCookieSettings setCookie = setCookie
@@ -115,18 +125,8 @@ applyXsrfCookieSettings xsrfCookieSettings setCookie = setCookie
 applySessionCookieSettings :: CookieSettings -> SetCookie -> SetCookie
 applySessionCookieSettings cookieSettings setCookie = setCookie
   { setCookieName = sessionCookieName cookieSettings
-  , setCookieSameSite = case cookieSameSite cookieSettings of
-      AnySite -> anySite
-      SameSiteStrict -> Just sameSiteStrict
-      SameSiteLax -> Just sameSiteLax
   , setCookieHttpOnly = True
   }
-  where
-#if MIN_VERSION_cookie(0,4,5)
-    anySite = Just sameSiteNone
-#else
-    anySite = Nothing
-#endif
 
 -- | For a JWT-serializable session, returns a function that decorates a
 -- provided response object with XSRF and session cookies. This should be used
