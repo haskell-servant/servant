@@ -32,6 +32,7 @@ doc/tutorial/static/api.js
 doc/tutorial/static/jq.js
 shell.nix
 .hspec-failures
+cabal.project.local
 
 # nix
 result*
