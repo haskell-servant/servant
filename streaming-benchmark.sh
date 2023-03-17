@@ -28,6 +28,10 @@ cleanup() {
     kill "$PIPES_PID" || true
   fi
 
+  if [ ! -z "$STREAMS_PID" ]; then
+    kill "$STREAMS_PID" || true
+  fi
+
   if [ ! -z "$COOKBOOK_PID" ]; then
     kill "$COOKBOOK_PID" || true
   fi
@@ -107,6 +111,27 @@ curl --silent --show-error "$PROXYURL" --request POST --data-binary @"$TESTFILE"
 kill -INT $COOKBOOK_PID
 unset COOKBOOK_PID
 
+## io-streams
+
+bench "server streams"
+
+$(cabal-plan list-bin servant-io-streams:test:example) server +RTS -sbench-io-streams-server-rts.txt &
+STREAMS_PID=$!
+echo "Starting servant-io-streams server. PID=$STREAMS_PID"
+
+# Time to startup
+sleep 1
+
+# Run slow url to test & warm-up server
+curl "$SLOWURL"
+
+curl --silent --show-error "$FASTURL" --output /dev/null --write-out "$CURLSTATS" > bench-streams-server.txt
+
+curl --silent --show-error "$PROXYURL" --request POST --data-binary @"$TESTFILE" --output "$TMPFILE" --write-out "$CURLSTATS" > bench-streams-server-proxy.txt
+
+kill -INT $STREAMS_PID
+unset STREAMS_PID
+
 ## Conduit
 
 bench "server conduit"
@@ -154,6 +179,17 @@ $(cabal-plan list-bin servant-pipes:test:example) client 10
 # Real run
 /usr/bin/time --verbose --output bench-pipes-client-time.txt \
   "$(cabal-plan list-bin servant-pipes:test:example)" client "$SIZE" +RTS -sbench-pipes-client-rts.txt
+
+## Streams
+
+bench "client streams"
+
+# Test run
+$(cabal-plan list-bin servant-io-streams:test:example) client 10
+
+# Real run
+/usr/bin/time --verbose --output bench-io-streams-client-time.txt \
+  "$(cabal-plan list-bin servant-io-streams:test:example)" client "$SIZE" +RTS -sbench-io-streams-client-rts.txt
 
 ## Conduit
 
@@ -230,6 +266,11 @@ report bench-pipes-server.txt
 report bench-pipes-server-proxy.txt
 report bench-pipes-server-rts.txt
 
+header "###" io-streams
+report bench-streams-server.txt
+report bench-streams-server-proxy.txt
+report bench-streams-server-rts.txt
+
 header "###" conduit
 note "Conduit server is also used for client tests below"
 report bench-conduit-server.txt
@@ -251,6 +292,10 @@ header "###" pipes
 report2 bench-pipes-client-time.txt
 report bench-pipes-client-rts.txt
 
+header "###" io-streams
+report2 bench-streams-client-time.txt
+report bench-streams-client-rts.txt
+
 header "###" conduit
 report2 bench-conduit-client-time.txt
 report bench-conduit-client-rts.txt
@@ -262,6 +307,7 @@ report bench-cookbook-client-rts.txt
 # Cleanup filepaths
 sed -E -i 's/\/[^ ]*machines[^ ]*\/example/...machines:example/' bench.md
 sed -E -i 's/\/[^ ]*conduit[^ ]*\/example/...conduit:example/' bench.md
+sed -E -i 's/\/[^ ]*io-streams[^ ]*\/example/...io-streams:example/' bench.md
 sed -E -i 's/\/[^ ]*pipes[^ ]*\/example/...pipes:example/' bench.md
 sed -E -i 's/\/[^ ]*\/cookbook-basic-streaming/...cookbook-basic-streaming/' bench.md
 

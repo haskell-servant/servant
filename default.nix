@@ -16,6 +16,7 @@ let
     servant-foreign      = self.callCabal2nix "servant-foreign"      ./servant-foreign      {};
     servant-conduit      = self.callCabal2nix "servant-conduit"      ./servant-conduit      {};
     servant-machines     = self.callCabal2nix "servant-machines"     ./servant-machines     {};
+    servant-io-streams   = self.callCabal2nix "servant-io-streams"   ./servant-io-streams   {};
     servant-client-core  = self.callCabal2nix "servant-client-core"  ./servant-client-core  {};
     servant-http-streams = self.callCabal2nix "servant-http-streams" ./servant-http-streams {};
   };
@@ -33,6 +34,7 @@ in
       servant-http-streams
       servant-machines
       servant-pipes
+      servant-io-streams
       servant-server;
   }
 

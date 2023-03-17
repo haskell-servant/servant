@@ -1,0 +1,6 @@
+synopsis: Add servant-io-streams package
+prs: #1660
+
+description: {
+Instances of `ToSourceIO` and `FromSourceIO` for `InputStream` from `io-streams`.
+}

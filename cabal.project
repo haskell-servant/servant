@@ -20,6 +20,7 @@ packages:
   servant-machines/
   servant-conduit/
   servant-pipes/
+  servant-io-streams/
 
 -- servant GHCJS
 -- packages:

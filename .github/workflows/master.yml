@@ -74,6 +74,7 @@ jobs:
         (cd servant-machines && eval $DOCTEST)
         (cd servant-conduit && eval $DOCTEST)
         (cd servant-pipes && eval $DOCTEST)
+        (cd servant-io-streams && eval $DOCTEST)
 
   # stack:
   #   name: stack / ghc ${{ matrix.ghc }}
