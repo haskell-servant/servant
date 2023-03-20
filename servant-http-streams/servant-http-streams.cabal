@@ -118,7 +118,6 @@ test-suite spec
     , QuickCheck        >= 2.12.6.1 && < 2.15
     , servant           == 0.19.*
     , servant-server    == 0.19.*
-    , tdigest           >= 0.2     && < 0.3
 
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.6.0 && < 2.10
