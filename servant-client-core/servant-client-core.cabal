@@ -61,7 +61,7 @@ library
 
   if !impl(ghc >= 8.2)
     build-depends:
-      bifunctors >= 5.5.3 && < 5.6
+      bifunctors >= 5.5.3 && < 5.7
 
   -- Servant dependencies
   build-depends:
