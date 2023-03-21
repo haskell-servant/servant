@@ -49,7 +49,7 @@ library
     , http-types          >=0.12    && <0.13
     , monad-control       >=1.0.0.4 && <1.1
     , mtl                 ^>=2.2.2  || ^>=2.3.1
-    , semigroupoids       >=5.3     && <5.4
+    , semigroupoids       >=5.3     && <6.1
     , string-conversions  >=0.3     && <0.5
     , transformers        >=0.3     && <0.6
     , transformers-base   >=0.4.4   && <0.5
