@@ -107,6 +107,7 @@ carol :: Person
 carol = Person "Carol" 17
 
 type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
+type TestSetCookieHeaders = '[Header "Set-Cookie" String , Header "Set-Cookie" String]
 
 data RecordRoutes mode = RecordRoutes
   { version :: mode :- "version" :> Get '[JSON] Int
@@ -151,6 +152,7 @@ type Api =
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
   :<|> "uverb-headers" :> UVerb 'GET '[JSON] '[ WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String ]
+  :<|> "set-cookie-headers" :> Get '[JSON] (Headers TestSetCookieHeaders Bool)
   :<|> "deleteContentType" :> DeleteNoContent
   :<|> "redirectWithCookie" :> Raw
   :<|> "empty" :> EmptyAPI
@@ -184,6 +186,7 @@ getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
 getUVerbRespHeaders  :: ClientM (Union '[ WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String ])
+getSetCookieHeaders  :: ClientM (Headers TestSetCookieHeaders Bool)
 getDeleteContentType :: ClientM NoContent
 getRedirectWithCookie :: HTTP.Method -> ClientM Response
 uverbGetSuccessOrRedirect :: Bool
@@ -210,6 +213,7 @@ getRoot
   :<|> getMultiple
   :<|> getRespHeaders
   :<|> getUVerbRespHeaders
+  :<|> getSetCookieHeaders
   :<|> getDeleteContentType
   :<|> getRedirectWithCookie
   :<|> EmptyClient
@@ -247,6 +251,7 @@ server = serve api (
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> (pure . Z . I . WithStatus $ addHeader 1729 $ addHeader "eg2" True)
+  :<|> (return $ addHeader "cookie1" $ addHeader "cookie2" True)
   :<|> return NoContent
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
   :<|> emptyServer
