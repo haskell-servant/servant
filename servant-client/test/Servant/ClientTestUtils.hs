@@ -107,7 +107,7 @@ carol :: Person
 carol = Person "Carol" 17
 
 type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
-type TestSetCookieHeaders = '[Header "Set-Cookie" String , Header "Set-Cookie" String]
+type TestSetCookieHeaders = '[Header "Set-Cookie" String, Header "Set-Cookie" String]
 
 data RecordRoutes mode = RecordRoutes
   { version :: mode :- "version" :> Get '[JSON] Int
