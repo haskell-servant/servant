@@ -98,9 +98,6 @@ type family HeaderValMap (f :: * -> *) (xs :: [*]) where
 
 class BuildHeadersTo hs where
     buildHeadersTo :: [HTTP.Header] -> HList hs
-    -- ^ Note: if there are multiple occurrences of a header in the argument,
-    -- the values are interspersed with commas before deserialization (see
-    -- <http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2 RFC2616 Sec 4.2>)
 
 instance {-# OVERLAPPING #-} BuildHeadersTo '[] where
     buildHeadersTo _ = HNil
