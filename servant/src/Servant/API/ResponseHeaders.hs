@@ -102,6 +102,8 @@ class BuildHeadersTo hs where
 instance {-# OVERLAPPING #-} BuildHeadersTo '[] where
     buildHeadersTo _ = HNil
 
+-- The current implementation does not manipulate HTTP header field lines in any way,
+-- like merging field lines with the same field name in a single line.
 instance {-# OVERLAPPABLE #-} ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
          => BuildHeadersTo (Header h v ': xs) where
     buildHeadersTo headers = case L.find wantedHeader headers of
