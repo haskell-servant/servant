@@ -368,8 +368,8 @@ pathGen = fmap NonEmpty path
 newtype UrlEncodedByteString = UrlEncodedByteString { unUrlEncodedByteString :: ByteString }
 
 instance ToHttpApiData UrlEncodedByteString where
-    toEncodedUrlPiece = byteString . HTTP.urlEncode True . unUrlEncodedByteString
-    toUrlPiece = decodeUtf8 . HTTP.urlEncode True . unUrlEncodedByteString
+    toEncodedQueryParam = byteString . HTTP.urlEncode True . unUrlEncodedByteString
+    toQueryParam = decodeUtf8 . HTTP.urlEncode True . unUrlEncodedByteString
 
 instance FromHttpApiData UrlEncodedByteString where
     parseUrlPiece = pure . UrlEncodedByteString . HTTP.urlDecode True . encodeUtf8
