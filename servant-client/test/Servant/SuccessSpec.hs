@@ -150,6 +150,12 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             -> getHeaders val' `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
           Nothing -> assertFailure "unexpected alternative of union"
 
+    it "Returns multiple Set-Cookie headers appropriately" $ \(_, baseUrl) -> do
+      res <- runClient getSetCookieHeaders baseUrl
+      case res of
+        Left e -> assertFailure $ show e
+        Right val -> getHeaders val `shouldBe` [("Set-Cookie", "cookie1"), ("Set-Cookie", "cookie2")]
+
     it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
       mgr <- C.newManager C.defaultManagerSettings
       cj <- atomically . newTVar $ C.createCookieJar []

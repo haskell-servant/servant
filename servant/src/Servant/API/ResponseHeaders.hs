@@ -39,6 +39,7 @@ import           Control.DeepSeq
 import           Data.ByteString.Char8     as BS
                  (ByteString, init, pack, unlines)
 import qualified Data.CaseInsensitive      as CI
+import qualified Data.List                 as L
 import           Data.Proxy
 import           Data.Typeable
                  (Typeable)
@@ -97,24 +98,21 @@ type family HeaderValMap (f :: * -> *) (xs :: [*]) where
 
 class BuildHeadersTo hs where
     buildHeadersTo :: [HTTP.Header] -> HList hs
-    -- ^ Note: if there are multiple occurrences of a header in the argument,
-    -- the values are interspersed with commas before deserialization (see
-    -- <http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2 RFC2616 Sec 4.2>)
 
 instance {-# OVERLAPPING #-} BuildHeadersTo '[] where
     buildHeadersTo _ = HNil
 
+-- The current implementation does not manipulate HTTP header field lines in any way,
+-- like merging field lines with the same field name in a single line.
 instance {-# OVERLAPPABLE #-} ( FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h )
          => BuildHeadersTo (Header h v ': xs) where
-    buildHeadersTo headers =
-      let wantedHeader = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
-          matching = snd <$> filter (\(h, _) -> h == wantedHeader) headers
-      in case matching of
-        [] -> MissingHeader `HCons` buildHeadersTo headers
-        xs -> case parseHeader (BS.init $ BS.unlines xs) of
-          Left _err -> UndecodableHeader (BS.init $ BS.unlines xs)
-             `HCons` buildHeadersTo headers
-          Right h   -> Header h `HCons` buildHeadersTo headers
+    buildHeadersTo headers = case L.find wantedHeader headers of
+      Nothing -> MissingHeader `HCons` buildHeadersTo headers
+      Just header@(_, val) -> case parseHeader val of
+        Left _err -> UndecodableHeader val `HCons` buildHeadersTo (L.delete header headers)
+        Right h   -> Header h `HCons` buildHeadersTo (L.delete header headers)
+      where wantedHeader (h, _) = h == wantedHeaderName
+            wantedHeaderName = CI.mk . pack $ symbolVal (Proxy :: Proxy h)
 
 -- * Getting headers
 

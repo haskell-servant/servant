@@ -1,0 +1,9 @@
+synopsis: Fix the handling of multiple headers with the same name.
+prs: #1666
+
+description: {
+
+servant-client no longer concatenates the values of response headers with the same name.
+This fixes an issue with parsing multiple `Set-Cookie` headers.
+
+}
