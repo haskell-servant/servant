@@ -11,19 +11,20 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        cabal: ["3.6"]
+        cabal: ["3.10"]
         ghc:
           - "8.6.5"
           - "8.8.4"
           - "8.10.7"
           - "9.0.2"
-          - "9.2.7"
-          - "9.4.4"
+          - "9.2.8"
+          - "9.4.5"
+          - "9.6.2"
 
     steps:
     - uses: actions/checkout@v2
 
-    - uses: haskell/actions/setup@v1
+    - uses: haskell/actions/setup@v2
       id: setup-haskell-cabal
       name: Setup Haskell
       with:
@@ -35,7 +36,7 @@ jobs:
         cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
         cabal freeze
 
-    - uses: actions/cache@v2.1.3
+    - uses: actions/cache/restore@v3
       name: Cache ~/.cabal/store and dist-newstyle
       with:
         path: |
@@ -45,9 +46,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ matrix.ghc }}-
 
-    - name: Configure
+    - name: Install doctest
       run: |
-        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.20'
+        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.21'
 
     - name: Build
       run: |
@@ -62,7 +63,7 @@ jobs:
         # Necessary for doctest to be found in $PATH
         export PATH="$HOME/.cabal/bin:$PATH"
 
-        DOCTEST="cabal repl --with-ghc=doctest --ghc-options=-w"
+        DOCTEST="cabal repl --with-ghc=doctest"
         (cd servant && eval $DOCTEST)
         (cd servant-client && eval $DOCTEST)
         (cd servant-client-core && eval $DOCTEST)
@@ -114,7 +115,7 @@ jobs:
     runs-on: "ubuntu-latest"
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: cachix/install-nix-action@v20
       with:
         extra_nix_config: |
@@ -129,7 +130,7 @@ jobs:
         cat cabal.project
         nix-shell ghcjs.nix --run "cabal v2-update && cabal v2-freeze"
 
-    - uses: actions/cache@v2.1.3
+    - uses: actions/cache/save@v3
       name: Cache ~/.cabal/store and dist-newstyle
       with:
         path: |

@@ -196,8 +196,8 @@ instance
 --
 --   1. A simple value is wrapped in "Headers '[hdr]":
 --
--- >>> let example1 = addHeader 5 "hi" :: Headers '[Header "someheader" Int] String;
--- >>> getHeaders example1
+-- >>> let example0 = addHeader 5 "hi" :: Headers '[Header "someheader" Int] String;
+-- >>> getHeaders example0
 -- [("someheader","5")]
 --
 --   2. A value that already has a header has its new header *prepended* to the

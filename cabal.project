@@ -57,3 +57,14 @@ optimization: False
 -- https://github.com/snoyberg/http-client/issues/508
 constraints: crypton < 0, crypton-connection < 0, crypton-x509 < 0, crypton-x509-store < 0, crypton-x509-system < 0, crypton-x509-validation < 0
 constraints: warp < 3.3.26
+
+allow-newer: servant-js:base
+
+-- Print ticks so that doctest type querying is consistent across GHC versions.
+-- This block can be removed when we drop support for GHC 9.4 and below.
+if(impl(ghc >= 9.6.1))
+  package servant
+    ghc-options: -fprint-redundant-promotion-ticks
+
+  package servant-server
+    ghc-options: -fprint-redundant-promotion-ticks
