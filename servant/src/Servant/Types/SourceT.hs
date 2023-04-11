@@ -215,7 +215,7 @@ instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
 -- >>> source "foo" :: SourceT Identity Char
 -- fromStepT (Effect (Identity (Yield 'f' (Yield 'o' (Yield 'o' Stop)))))
 --
-source :: [a] -> SourceT m a
+source :: Foldable f => f a -> SourceT m a
 source = fromStepT . foldr Yield Stop
 
 -- | Get the answers.
@@ -272,7 +272,7 @@ mapMaybeStep p = go where
 
 -- | Run action for each value in the 'SourceT'.
 --
--- >>> foreach fail print (source "abc")
+-- >>> foreach fail print $ source ("abc" :: String)
 -- 'a'
 -- 'b'
 -- 'c'
