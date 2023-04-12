@@ -82,10 +82,11 @@ import           Data.Aeson.Types
                  (parseEither)
 import           Data.Attoparsec.ByteString.Char8
                  (endOfInput, parseOnly, skipSpace, (<?>))
+import           Data.Bifunctor
+                 (bimap)
 import qualified Data.ByteString                  as BS
 import           Data.ByteString.Lazy
                  (ByteString, fromStrict, toStrict)
-import qualified Data.ByteString.Lazy.Char8       as BC
 import qualified Data.List.NonEmpty               as NE
 import           Data.Maybe
                  (isJust)
@@ -350,7 +351,7 @@ instance MimeRender PlainText TextS.Text where
 
 -- | @BC.pack@
 instance MimeRender PlainText String where
-    mimeRender _ = BC.pack
+    mimeRender _ = TextL.encodeUtf8 . TextL.pack
 
 -- | @id@
 instance MimeRender OctetStream ByteString where
@@ -409,7 +410,7 @@ instance MimeUnrender PlainText TextS.Text where
 
 -- | @Right . BC.unpack@
 instance MimeUnrender PlainText String where
-    mimeUnrender _ = Right . BC.unpack
+    mimeUnrender _ = bimap show TextL.unpack . TextL.decodeUtf8'
 
 -- | @Right . id@
 instance MimeUnrender OctetStream ByteString where
