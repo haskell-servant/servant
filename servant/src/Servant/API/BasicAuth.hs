@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE KindSignatures     #-}
 {-# LANGUAGE PolyKinds          #-}
 
 module Servant.API.BasicAuth where
