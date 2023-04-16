@@ -13,6 +13,8 @@ packages:
 - servant-pipes/
 - servant-swagger/
 
+- servant-named/
+
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/
 

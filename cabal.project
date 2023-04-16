@@ -15,6 +15,10 @@ packages:
   servant-swagger/
   doc/tutorial/
 
+  servant-named/servant-named-core
+  servant-named/servant-named-client
+  servant-named/servant-named-server
+
 -- servant streaming
 packages:
   servant-machines/
