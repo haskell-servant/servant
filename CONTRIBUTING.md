@@ -4,21 +4,25 @@ Contributions are very welcome! To hack on the github version, clone the
 repository. You can use `cabal`:
 
 ```shell
-./scripts/start-sandbox.sh # Initialize the sandbox and add-source the packages
-./scripts/test-all.sh      # Run all the tests
+cabal build all  # Install dependencies and build packages
+cabal test all   # Run all the tests
 ```
 
 Or `stack`:
 
 ```shell
-stack setup                    # Downloads and installs a proper GHC version if necessary
-stack build --fast --pedantic  # Install dependencies and build packages
-stack test                     # Run all the tests
+stack setup         # Downloads and installs a proper GHC version if necessary
+stack build --fast  # Install dependencies and build packages
+stack test          # Run all the tests
 ```
 
 Or `nix`:
+
 ```shell
-./scripts/generate-nix-files.sh   # Get up-to-date shell.nix files
+nix-shell nix/shell.nix  # Enter a new development shell with Cabal and Stack
+
+# Alternatively, another version of GHC can be used. See nix/README.md for more info.
+nix-shell nix/shell.nix --argstr compiler ghc901
 ```
 
 To build the docs, see `doc/README.md`.
