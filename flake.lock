@@ -1,0 +1,80 @@
+{
+  "nodes": {
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1681202837,
+        "narHash": "sha256-H+Rh19JDwRtpVPAWp64F+rlEtxUWBAQW28eAi3SRSzg=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "cfacdce06f30d2b68473a46042957675eebb3401",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "cfacdce06f30d2b68473a46042957675eebb3401",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1681184417,
+        "narHash": "sha256-hEYKxuO9gQkeCdyhgvH/Jhs2bkAFyUBALCFiaT5IQE0=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "1fb781f4a148c19e9da1d35a4cbe15d0158afc4e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "1fb781f4a148c19e9da1d35a4cbe15d0158afc4e",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs",
+        "symbols": "symbols"
+      }
+    },
+    "symbols": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1681567615,
+        "narHash": "sha256-DYHTDfjLD3949CJqkugBQ49P0P2cJSHjDjS8FDaLoQQ=",
+        "owner": "deemp",
+        "repo": "symbols",
+        "rev": "1f980d383ba35b410a9d65526a0746a2fc6d5826",
+        "type": "github"
+      },
+      "original": {
+        "owner": "deemp",
+        "ref": "add-fromlist",
+        "repo": "symbols",
+        "type": "github"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
