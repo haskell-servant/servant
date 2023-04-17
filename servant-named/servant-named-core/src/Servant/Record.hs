@@ -10,7 +10,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Servant.Record (RecordParam, UnRecordParam, GHasLink, genericToLink) where
+module Servant.Record (RecordParam, UnRecordParam) where
 
 import Data.Kind (Type)
 import Data.Proxy
@@ -82,9 +82,6 @@ type family UnRecordParam (mkExp :: Symbol -> Exp Symbol) (x :: Type) :: Type wh
 instance (Generic a, GHasLink mkExp (Rep a) sub) => HasLink (RecordParam mkExp a :> sub) where
   type MkLink (RecordParam mkExp a :> sub) b = a -> MkLink sub b
   toLink toA _ l record = gToLink (Proxy :: Proxy mkExp) toA (Proxy :: Proxy sub) l (from record :: Rep a ())
-
-genericToLink :: forall mkExp a sub b. (Generic a, GHasLink mkExp (Rep a) sub) => (Link -> b) -> Proxy (RecordParam mkExp a :> sub) -> Link -> a -> MkLink sub b
-genericToLink toA _ l record = gToLink (Proxy :: Proxy mkExp) toA (Proxy :: Proxy sub) l (from record :: Rep a ())
 
 data GParam (mkExp :: Symbol -> Exp Symbol) a
 

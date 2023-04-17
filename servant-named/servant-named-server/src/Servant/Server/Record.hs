@@ -7,14 +7,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | This module just exports orphan instances to make @servant-named@ work with servers
-module Servant.Server.Record (GHasServer (..), genericRoute, genericHoistServerWithContext) where
+module Servant.Server.Record () where
 
 import Data.Kind (Type)
 import Data.Proxy
@@ -35,7 +34,7 @@ instance (Generic a, GHasServer mkExp (Rep a) context api) => HasServer (RecordP
   hoistServerWithContext _ pc nt s x =
     gHoistServerWithContext (Proxy :: Proxy mkExp) (Proxy :: Proxy api) pc nt (s . to) (from x :: Rep a ())
   {-# INLINE hoistServerWithContext #-}
--- @
+
 class GHasServer (mkExp :: Symbol -> Exp Symbol) (a :: Type -> Type) context api where
   gRoute ::
     Proxy mkExp ->
@@ -50,28 +49,6 @@ class GHasServer (mkExp :: Symbol -> Exp Symbol) (a :: Type -> Type) context api
     (forall x. m x -> n x) ->
     (a () -> ServerT api m) ->
     (a () -> ServerT api n)
-
-genericRoute ::
-  forall (mkExp :: Symbol -> Exp Symbol) a context api env.
-  (Generic a, GHasServer mkExp (Rep a) context api) =>
-  Proxy (RecordParam mkExp a :> api) ->
-  Context context ->
-  Delayed env (a -> ServerT api Handler) ->
-  Router env
-genericRoute _ context env =
-  gRoute (Proxy :: Proxy mkExp) (Proxy :: Proxy api) context $ (\f (x :: Rep a ()) -> f (to @a x)) <$> env
-{-# INLINE genericRoute #-}
-
-genericHoistServerWithContext ::
-  forall (mkExp :: Symbol -> Exp Symbol) a context api m n.
-  (Generic a, GHasServer mkExp (Rep a) context api) =>
-  Proxy (RecordParam mkExp a :> api) ->
-  Proxy context ->
-  (forall x. m x -> n x) ->
-  (a -> ServerT api m) ->
-  (a -> ServerT api n)
-genericHoistServerWithContext _ pc nt s x = gHoistServerWithContext (Proxy :: Proxy mkExp) (Proxy :: Proxy api) pc nt (s . to) (from x :: Rep a ())
-{-# INLINE genericHoistServerWithContext #-}
 
 data GParam (mkExp :: Symbol -> Exp Symbol) a
 
