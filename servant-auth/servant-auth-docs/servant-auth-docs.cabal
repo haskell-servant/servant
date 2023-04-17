@@ -16,7 +16,7 @@ maintainer:     jkarni@gmail.com
 copyright:      (c) Julian K. Arni
 license:        BSD-3-Clause
 license-file:   LICENSE
-tested-with:    GHC ==8.6.5 || ==8.8.4 || ==8.10.4 || ==9.0.1
+tested-with:    GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4
 build-type:     Custom
 extra-source-files:
     CHANGELOG.md

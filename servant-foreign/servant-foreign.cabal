@@ -21,7 +21,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2015-2019 Servant Contributors
 build-type:          Simple
-tested-with:         GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
+tested-with:         GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4
 
 extra-source-files:
   CHANGELOG.md
