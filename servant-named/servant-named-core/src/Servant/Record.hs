@@ -43,7 +43,9 @@ import Servant.Symbols (Exp, Modify)
 --   , filters :: [Filter]
 --   }
 --
--- type API = "users" :> RecordParam UserParams :> Get '[JSON] User
+-- type API = "users" :> RecordParam SomeLabel UserParams :> Get '[JSON] User
+-- 
+-- 'SomeLabel' will be used to evaluate the field modifiers using 'Modify'
 -- @
 data RecordParam (mkExp :: Symbol -> Exp Symbol) (a :: Type)
 
