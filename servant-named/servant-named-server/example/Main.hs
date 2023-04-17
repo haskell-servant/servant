@@ -7,7 +7,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
@@ -18,7 +17,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 import Data.Aeson (ToJSON)
-import Data.ByteString.Lazy.Char8 qualified as BSL8
+import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Data (Proxy (..), Typeable)
 import Data.OpenApi (OpenApi, ToParamSchema, ToSchema)
 import Data.OpenApi.Internal.Utils (encodePretty)
