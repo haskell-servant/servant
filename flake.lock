@@ -38,25 +38,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs",
-        "symbols": "symbols"
-      }
-    },
-    "symbols": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1681567615,
-        "narHash": "sha256-DYHTDfjLD3949CJqkugBQ49P0P2cJSHjDjS8FDaLoQQ=",
-        "owner": "deemp",
-        "repo": "symbols",
-        "rev": "1f980d383ba35b410a9d65526a0746a2fc6d5826",
-        "type": "github"
-      },
-      "original": {
-        "owner": "deemp",
-        "ref": "add-fromlist",
-        "repo": "symbols",
-        "type": "github"
+        "nixpkgs": "nixpkgs"
       }
     },
     "systems": {

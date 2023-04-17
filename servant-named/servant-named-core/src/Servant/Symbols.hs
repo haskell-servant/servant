@@ -27,9 +27,9 @@ module Servant.Symbols (
 ) where
 
 import Data.Kind (Type)
-import Data.Symbol.Ascii (FromList, ToList, ToLower, ToUpper)
+import Data.Symbol.Ascii (ToList, ToLower, ToUpper)
 import GHC.Base (Symbol)
-import GHC.TypeLits (ErrorMessage (..), TypeError)
+import GHC.TypeLits (ErrorMessage (..), TypeError, AppendSymbol)
 
 -- | Kind of type-level expressions indexed by their result type.
 type Exp a = a -> Type
@@ -48,6 +48,16 @@ type Exp a = a -> Type
 -- Modify (ExampleMkExp "_hello_world") :: Symbol
 -- = "world"
 type family Modify (a :: Exp Symbol) :: Symbol
+
+-- | Convert a list of 'Symbol's to a 'Symbol'.
+-- 
+-- Works for ASCII-only 'Symbol's.
+type family FromList (syms :: [Symbol]) :: Symbol where
+  FromList xs = FromList1 (ToList (FromList1 xs))
+
+type family FromList1 (syms :: [Symbol]) :: Symbol where
+  FromList1 '[] = ""
+  FromList1 (x : xs) = AppendSymbol x (FromList1 xs)
 
 -- | Assuming @dropSym@ contains a single character, drop that character from the prefix of @sym@.
 --

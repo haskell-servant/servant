@@ -2,10 +2,10 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils/cfacdce06f30d2b68473a46042957675eebb3401";
     nixpkgs.url = "github:NixOS/nixpkgs/1fb781f4a148c19e9da1d35a4cbe15d0158afc4e";
-    symbols = {
-      url = "github:deemp/symbols/add-fromlist";
-      flake = false;
-    };
+    # symbols = {
+    #   url = "github:deemp/symbols/add-fromlist";
+    #   flake = false;
+    # };
   };
   outputs = inputs: inputs.flake-utils.lib.eachDefaultSystem (system:
     let
@@ -14,7 +14,7 @@
 
       override = {
         overrides = self: super: {
-          symbols = super.callCabal2nix "symbols" inputs.symbols.outPath { };
+          # symbols = super.callCabal2nix "symbols" inputs.symbols.outPath { };
           servant-quickcheck = unmarkBroken super.servant-quickcheck;
           openapi3 = dontCheck (unmarkBroken super.openapi3);
 
