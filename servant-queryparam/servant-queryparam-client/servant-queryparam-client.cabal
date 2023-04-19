@@ -1,7 +1,7 @@
 cabal-version: 1.12
-name: servant-named-client
+name: servant-queryparam-client
 version: 0.4.0
-synopsis: client support for servant-named
+synopsis: Client support for [servant-queryparam-core](https://hackage.haskell.org/package/servant-queryparam-core).
 maintainer: kristof@resonata.be
 copyright: Kristof Bastiaensen 2020
 license: BSD3
@@ -24,5 +24,5 @@ library
         base >= 4.7 && < 5,
         servant >= 0.19,
         servant-client-core >= 0.19,
-        servant-named-core == 0.4.0,
+        servant-queryparam-core == 0.4.0,
         named >= 0.3 && < 0.4

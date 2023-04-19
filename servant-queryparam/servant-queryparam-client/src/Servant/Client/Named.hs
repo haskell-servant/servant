@@ -9,8 +9,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
--- | This module just exports orphan instances to make named-servant
--- work with clients
+-- | This module exports orphan instances to make
+-- [@servant-queryparam-core@](https://hackage.haskell.org/package/servant-queryparam-core) work with clients.
 module Servant.Client.Named () where
 
 import Data.Functor.Identity
@@ -22,9 +22,6 @@ import Servant.API
 import Servant.API.Modifiers
 import Servant.Client.Core.HasClient
 import Servant.Named
-
-unarg :: NamedF f a name -> f a
-unarg (ArgF a) = a
 
 instance
   (KnownSymbol sym, ToHttpApiData a, HasClient m api) =>

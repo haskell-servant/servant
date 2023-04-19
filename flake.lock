@@ -19,6 +19,23 @@
         "type": "github"
       }
     },
+    "lima": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1681742879,
+        "narHash": "sha256-xsIFSKfapx7zCBf/DD6HzkOlY8ImeUPFeGFgDLSwNE0=",
+        "owner": "deemp",
+        "repo": "lima",
+        "rev": "4095dc44cce54543231435648a21625b250587c4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "deemp",
+        "repo": "lima",
+        "rev": "4095dc44cce54543231435648a21625b250587c4",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1681184417,
@@ -38,6 +55,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "lima": "lima",
         "nixpkgs": "nixpkgs"
       }
     },

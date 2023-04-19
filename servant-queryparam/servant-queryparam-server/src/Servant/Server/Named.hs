@@ -9,7 +9,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
--- | This module just exports orphan instances to make @servant-named@ work with servers
+-- | This module exports orphan instances to make
+-- [@servant-queryparam-core@](https://hackage.haskell.org/package/servant-queryparam-core) work with servers.
 module Servant.Server.Named () where
 
 import Data.Proxy

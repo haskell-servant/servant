@@ -2,10 +2,6 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils/cfacdce06f30d2b68473a46042957675eebb3401";
     nixpkgs.url = "github:NixOS/nixpkgs/1fb781f4a148c19e9da1d35a4cbe15d0158afc4e";
-    # symbols = {
-    #   url = "github:deemp/symbols/add-fromlist";
-    #   flake = false;
-    # };
   };
   outputs = inputs: inputs.flake-utils.lib.eachDefaultSystem (system:
     let
@@ -55,9 +51,9 @@
           servant-foreign = super.callCabal2nix "servant-foreign" ./servant-foreign { };
           servant-http-streams = super.callCabal2nix "servant-http-streams" ./servant-http-streams { };
           servant-machines = super.callCabal2nix "servant-machines" ./servant-machines { };
-          servant-named-core = super.callCabal2nix "servant-named-core" ./servant-named/servant-named-core { };
-          servant-named-client = super.callCabal2nix "servant-named-client" ./servant-named/servant-named-client { };
-          servant-named-server = super.callCabal2nix "servant-named-server" ./servant-named/servant-named-server { };
+          servant-queryparam-core = super.callCabal2nix "servant-queryparam-core" ./servant-queryparam/servant-queryparam-core { };
+          servant-queryparam-client = super.callCabal2nix "servant-queryparam-client" ./servant-queryparam/servant-queryparam-client { };
+          servant-queryparam-server = super.callCabal2nix "servant-queryparam-server" ./servant-queryparam/servant-queryparam-server { };
           servant-pipes = super.callCabal2nix "servant-pipes" ./servant-pipes { };
           servant-server = super.callCabal2nix "servant-server" ./servant-server { };
           servant-swagger = super.callCabal2nix "servant-swagger" ./servant-swagger { };

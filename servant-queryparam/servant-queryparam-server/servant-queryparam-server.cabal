@@ -1,9 +1,9 @@
 cabal-version: 1.12
-name: servant-named-server
+name: servant-queryparam-server
 version: 0.4.0
 maintainer: kristof@resonata.be
 copyright: Kristof Bastiaensen 2020
-synopsis: server support for servant-named-core
+synopsis: Server support for [servant-queryparam-core](https://hackage.haskell.org/package/servant-queryparam-core).
 license: BSD3
 -- license-file: LICENSE
 build-type: Simple
@@ -24,7 +24,7 @@ library
         base >= 4.7 && < 5,
         servant >= 0.19,
         servant-server >= 0.19,
-        servant-named-core >= 0.4.0,
+        servant-queryparam-core >= 0.4.0,
         named >= 0.3 && < 0.4,
         text
 
@@ -36,8 +36,8 @@ executable example
         base >= 4.7 && < 5,
         aeson,
         servant,
-        servant-named-core >= 0.4.0,
-        servant-named-server,
+        servant-queryparam-core >= 0.4.0,
+        servant-queryparam-server,
         servant-openapi3,
         servant-server,
         openapi3,

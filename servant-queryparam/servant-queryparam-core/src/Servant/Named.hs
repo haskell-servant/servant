@@ -9,35 +9,38 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- |
--- This module uses the named package to match names with parameters. For example, this api:
--- 
+-- This module uses the [@named@](https://hackage.haskell.org/package/named) package to match names with query parameters.
+-- For example, this API:
+--
 -- @
 -- type API = "users" :> (QueryParam "category" Category :>
 --                        QueryParam' '[Required, Strict] "sort_by" SortBy :>
 --                        QueryFlag "with_schema" :>
 --                        QueryParams "filters" Filter :>
---                        Get '[JSON] User
+--                        Get '[JSON] User)
 -- @
--- 
--- can be written with named:
--- 
+--
+-- can be written as:
+--
 -- @
 -- type API = "users" :> (OptionalQueryParam "category" Category :>
 --                        NamedQueryParam "sort_by" SortBy :>
 --                        NamedQueryFlag "with_schema" :>
 --                        NamedQueryParams "filters" Filter :>
---                        Get '[JSON] User
+--                        Get '[JSON] User)
 -- @
--- 
--- The servant-named-client and servant-named-server will create
--- functions that use the `named` package to match the names with the
--- parameters.
+--
+-- The [@servant-queryparam-client@](https://hackage.haskell.org/package/servant-queryparam-client)
+-- and [@servant-queryparam-server@](https://hackage.haskell.org/package/servant-queryparam-server) provide
+-- functions that match the names with query parameters.
 module Servant.Named (
   NamedQueryParam,
+  UnNameParam,
   OptionalQueryParam,
   NamedQueryParams,
   NamedQueryFlag,
   NamedQueryParam',
+  unarg,
 ) where
 
 import Data.Functor.Identity
@@ -54,13 +57,13 @@ import Servant.API.Modifiers
 -- corresponds to the query parameter string.
 data NamedQueryParam' (mods :: [Type]) (sym :: Symbol) (a :: Type)
 
+-- | Extract a wrapped value from 'NamedF'.
 unarg :: NamedF f a name -> f a
 unarg (ArgF a) = a
 
--- | type family to rewrite a named queryparam to a regular
--- queryparam.  Useful to define instances for classes that extract
--- information from the API type., for example servant-foreign, or
--- servant-swagger.
+-- | Type family for converting a named query parameter to a regular query parameter.
+-- This family is useful for defining instances of classes that extract information from the API type,
+-- such as classes from @servant-swagger@ or @servant-foreign@.
 type family UnNameParam x where
   UnNameParam (NamedQueryParams sym a) = QueryParams sym a
   UnNameParam (NamedQueryParam' mods sym a) = QueryParam' mods sym a
@@ -89,13 +92,13 @@ instance
 type OptionalQueryParam = NamedQueryParam' [Optional, Strict]
 
 -- | Like `QueryParam`, but instead of extracting a type @a@, it
--- extracts a named type @named `:!` a@, where named corresponds to
+-- extracts a named type @named `:!` a@, where @named@ corresponds to
 -- the query parameter string.
 type NamedQueryParam = NamedQueryParam' [Required, Strict]
 
 -- | Like `QueryParams`, but extracts a named type @named `:?` [a]@
--- instead, where named corresponds to the query parameter string.
--- The default value is the empty list `[]`
+-- instead, where @named@ corresponds to the query parameter string.
+-- The default value is the empty list @[]@
 data NamedQueryParams (sym :: Symbol) (a :: Type)
 
 instance
@@ -107,13 +110,15 @@ instance
     toLink toA (Proxy :: Proxy (QueryParams sym v :> sub)) l $
       fromMaybe [] params
 
--- | Like `QueryFlag, but extracts a named type @named `:?` Bool@
--- instead, where named corresponds to the query parameter string.
--- The default value is False.
+-- | Like 'QueryFlag', but extracts a named type @named `:?` Bool@ instead,
+-- where @named@ corresponds to the query parameter string.
+-- The default value is 'False'.
 data NamedQueryFlag (sym :: Symbol)
 
 instance
-  (KnownSymbol sym, HasLink sub) =>
+  ( KnownSymbol sym
+  , HasLink sub
+  ) =>
   HasLink (NamedQueryFlag sym :> sub)
   where
   type

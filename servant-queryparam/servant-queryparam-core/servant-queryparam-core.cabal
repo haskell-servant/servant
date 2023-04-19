@@ -1,5 +1,5 @@
 cabal-version: 1.12
-name: servant-named-core
+name: servant-queryparam-core
 synopsis: support records and named (from the named package) parameters in servant
 version: 0.4.0
 maintainer: kristof@resonata.be
@@ -7,10 +7,10 @@ copyright: Kristof Bastiaensen 2020
 license: BSD3
 -- license-file: LICENSE
 build-type: Simple
-description: | 
-     Having positional parameters in Servant can be error prone, especially if you have lot of them, and they have similar types.  
-     This package solves that problem by either using records or named parameters (from the named package) to specify servant parameters.  
-     To use with servers, use the /servant-named-server/ package, with clients use /servant-named-client/.
+description:
+     Having positional parameters in Servant can be error-prone, especially if there are a lot of them and they have similar types.
+     This package solves that problem by letting to either use records or named parameters (from the @named@ package) to specify @servant@ query parameters.
+     Use @servant-queryparam-server@ for servers and @servant-queryparam-client@ for clients.
 
 source-repository head
     type: git
@@ -29,4 +29,5 @@ library
         base >= 4.7 && < 5,
         servant >= 0.19,
         named >= 0.3 && < 0.4,
-        symbols
+        symbols,
+        first-class-families

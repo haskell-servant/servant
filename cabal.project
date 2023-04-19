@@ -15,9 +15,9 @@ packages:
   servant-swagger/
   doc/tutorial/
 
-  servant-named/servant-named-core
-  servant-named/servant-named-client
-  servant-named/servant-named-server
+  servant-queryparam/servant-queryparam-core
+  servant-queryparam/servant-queryparam-client
+  servant-queryparam/servant-queryparam-server
 
 -- servant streaming
 packages:

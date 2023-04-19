@@ -22,31 +22,29 @@ import Data.Data (Proxy (..), Typeable)
 import Data.OpenApi (OpenApi, ToParamSchema, ToSchema)
 import Data.OpenApi.Internal.Utils (encodePretty)
 import GHC.Generics (Generic)
+import GHC.TypeLits (Symbol)
 import Servant (GenericMode ((:-)), Get, JSON, NamedRoutes, (:>))
 import Servant.Named ()
 import Servant.OpenApi (HasOpenApi (..))
 import Servant.Record (RecordParam, UnRecordParam)
 import Servant.Server.Named ()
 import Servant.Server.Record ()
-import Servant.Symbols (DropWhile, DropWhileNot, Exp, Modify, Symbol)
+import Servant.Symbols (DropPrefix, Eval, Exp)
 
 -- | Instance of 'HasOpenAPI' for any 'RecordParam'
-instance HasOpenApi (UnRecordParam mkExp (RecordParam mkExp a :> api)) => HasOpenApi (RecordParam mkExp a :> api) where
-  toOpenApi :: Proxy (RecordParam mkExp a :> api) -> OpenApi
-  toOpenApi _ = toOpenApi (Proxy :: Proxy (UnRecordParam mkExp (RecordParam mkExp a :> api)))
-
-
--- | A type family that drops the prefix of a symbol
-type family ModDropPrefix (sym :: Symbol) :: Symbol where
-  ModDropPrefix sym = DropWhile "_" (DropWhileNot "_" (DropWhile "_" sym))
+instance HasOpenApi (UnRecordParam mod (RecordParam mod a :> api)) => HasOpenApi (RecordParam mod a :> api) where
+  toOpenApi :: Proxy (RecordParam mod a :> api) -> OpenApi
+  toOpenApi _ = toOpenApi (Proxy :: Proxy (UnRecordParam mod (RecordParam mod a :> api)))
 
 -- | A label for dropping the prefix of a symbol
 data DropPrefixExp :: Symbol -> Exp Symbol
-type instance Modify (DropPrefixExp sym) = ModDropPrefix sym
+
+type instance Eval (DropPrefixExp sym) = DropPrefix sym
 
 -- | A label for keeping the prefix of a symbol
 data KeepPrefixExp :: Symbol -> Exp Symbol
-type instance Modify (KeepPrefixExp sym) = sym
+
+type instance Eval (KeepPrefixExp sym) = sym
 
 -- | Query parameters as a record
 newtype Params = Params {_get_user :: Maybe String} deriving (Show, Generic, Typeable, ToJSON, ToSchema)
