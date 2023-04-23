@@ -1,4 +1,5 @@
-resolver: lts-18.5
+resolver: nightly-2023-04-14
+
 packages:
 - servant-client-core/
 - servant-client/
@@ -17,4 +18,5 @@ packages:
 # - doc/tutorial/
 
 extra-deps:
-- hspec-wai-0.10.1
+- hspec-wai-0.11.1
+- pipes-safe-2.3.4
