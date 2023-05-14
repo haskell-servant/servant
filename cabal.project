@@ -18,6 +18,7 @@ packages:
   servant-queryparam/servant-queryparam-core
   servant-queryparam/servant-queryparam-client
   servant-queryparam/servant-queryparam-server
+  servant-queryparam/servant-queryparam-openapi3
 
 -- servant streaming
 packages:
@@ -34,6 +35,7 @@ packages:
   doc/cookbook/basic-auth
   doc/cookbook/curl-mock
   doc/cookbook/custom-errors
+  doc/cookbook/db-mysql-basics
   doc/cookbook/basic-streaming
   doc/cookbook/db-postgres-pool
   doc/cookbook/db-sqlite-simple

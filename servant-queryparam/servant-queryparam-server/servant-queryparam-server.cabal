@@ -27,18 +27,3 @@ library
         servant-queryparam-core >= 0.4.0,
         named >= 0.3 && < 0.4,
         text
-
-executable example
-   default-language: Haskell2010
-   Ghc-options: -Wall
-   main-is: example/Main.hs
-   build-depends:
-        base >= 4.7 && < 5,
-        aeson,
-        servant,
-        servant-queryparam-core >= 0.4.0,
-        servant-queryparam-server,
-        servant-openapi3,
-        servant-server,
-        openapi3,
-        bytestring
