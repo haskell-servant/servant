@@ -1,0 +1,33 @@
+cabal-version: 1.12
+name: servant-queryparam-openapi3
+version: 0.4.0
+maintainer: kristof@resonata.be
+copyright: Kristof Bastiaensen 2020
+synopsis: Server support for [servant-queryparam-core](https://hackage.haskell.org/package/servant-queryparam-core).
+license: BSD3
+-- license-file: LICENSE
+build-type: Simple
+
+source-repository head
+    type: git
+    location: https://github.com/haskell-servant/servant
+
+library
+   default-language: Haskell2010
+   Ghc-options: -Wall
+   exposed-modules:
+        Servant.OpenApi.Named
+        Servant.OpenApi.Record
+   hs-source-dirs:
+        src
+   build-depends:
+        base >= 4.7 && < 5,
+        servant >= 0.19,
+        servant-server >= 0.19,
+        servant-queryparam-core >= 0.4.0,
+        named >= 0.3 && < 0.4,
+        servant-openapi3,
+        openapi3,
+        text,
+        bytestring,
+        warp
