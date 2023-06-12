@@ -105,6 +105,8 @@ import           Prelude ()
 import           Prelude.Compat
 import           Web.FormUrlEncoded
                  (FromForm, ToForm, urlDecodeAsForm, urlEncodeAsForm)
+import           Network.HTTP.Media
+                 (MediaType)
 
 -- * Provided content types
 data JSON deriving Typeable
@@ -181,18 +183,26 @@ class (AllMime list) => AllCTRender (list :: [*]) a where
     -- If the Accept header can be matched, returns (Just) a tuple of the
     -- Content-Type and response (serialization of @a@ into the appropriate
     -- mimetype).
-    handleAcceptH :: Proxy list -> AcceptHeader -> a -> Maybe (ByteString, ByteString)
+    handleAcceptH :: Proxy list -> AcceptHeader -> Maybe (ByteString, a -> ByteString)
 
 instance {-# OVERLAPPABLE #-}
-         (Accept ct, AllMime cts, AllMimeRender (ct ': cts) a) => AllCTRender (ct ': cts) a where
-    handleAcceptH _ (AcceptHeader accept) val = M.mapAcceptMedia lkup accept
-      where pctyps = Proxy :: Proxy (ct ': cts)
-            amrs = allMimeRender pctyps val
-            lkup = fmap (\(a,b) -> (a, (fromStrict $ M.renderHeader a, b))) amrs
+         ( Accept ct
+         , AllMime cts
+         , AllMimeRender (ct ': cts) a
+         ) => AllCTRender (ct ': cts) a where
+
+    handleAcceptH proxyContentTypes (AcceptHeader accept) =
+      M.mapAcceptMedia allMimeRenderFnsWithMediaType accept
+      where
+        allMimeRenderFnsWithMediaType :: [(MediaType, (ByteString, a -> ByteString))]
+        allMimeRenderFnsWithMediaType = withMediaType <$> allMimeRender proxyContentTypes
+
+        withMediaType :: (MediaType, b) -> (MediaType, (ByteString, b))
+        withMediaType (mediaType, renderFn) = (mediaType, (fromStrict $ M.renderHeader mediaType, renderFn))
 
 instance TL.TypeError ('TL.Text "No instance for (), use NoContent instead.")
   => AllCTRender '[] () where
-  handleAcceptH _ _ _ = error "unreachable"
+  handleAcceptH _ _ = error "unreachable"
 
 --------------------------------------------------------------------------
 -- * Unrender
@@ -270,40 +280,40 @@ canHandleAcceptH p (AcceptHeader h ) = isJust $ M.matchAccept (allMime p) h
 --------------------------------------------------------------------------
 class (AllMime list) => AllMimeRender (list :: [*]) a where
     allMimeRender :: Proxy list
-                  -> a                              -- value to serialize
-                  -> [(M.MediaType, ByteString)]    -- content-types/response pairs
+                  -> [(M.MediaType, a -> ByteString)]    -- content-types/response pairs
 
 instance {-# OVERLAPPABLE #-} ( MimeRender ctyp a ) => AllMimeRender '[ctyp] a where
-    allMimeRender _ a = map (, bs) $ NE.toList $ contentTypes pctyp
+    allMimeRender _ = addMimeRenderConstraint <$> mediaTypes
       where
-        bs    = mimeRender pctyp a
-        pctyp = Proxy :: Proxy ctyp
+        proxyContentTypeHead = Proxy :: Proxy ctyp
+        mediaTypes = NE.toList $ contentTypes proxyContentTypeHead
+        addMimeRenderConstraint mediaType = (mediaType, mimeRender proxyContentTypeHead)
 
 instance {-# OVERLAPPABLE #-}
          ( MimeRender ctyp a
          , AllMimeRender (ctyp' ': ctyps) a
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) a where
-    allMimeRender _ a =
-        map (, bs) (NE.toList $ contentTypes pctyp)
-        ++ allMimeRender pctyps a
+    allMimeRender _ = headMimeRender : restAllMimeRender
       where
-        bs     = mimeRender pctyp a
-        pctyp  = Proxy :: Proxy ctyp
-        pctyps = Proxy :: Proxy (ctyp' ': ctyps)
-
+        proxyContentTypeHead = Proxy :: Proxy ctyp
+        mediaTypesHead = NE.head $ contentTypes proxyContentTypeHead
+        headMimeRender = (mediaTypesHead, mimeRender proxyContentTypeHead)
+        
+        proxyContentTypeRest = Proxy :: Proxy (ctyp' ': ctyps)
+        restAllMimeRender = allMimeRender proxyContentTypeRest
 
 -- Ideally we would like to declare a 'MimeRender a NoContent' instance, and
 -- then this would be taken care of. However there is no more specific instance
 -- between that and 'MimeRender JSON a', so we do this instead
 instance {-# OVERLAPPING #-} ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
-    allMimeRender _ NoContent = map (, "") $ NE.toList $ contentTypes pctyp
+    allMimeRender _ = map (, const "") $ NE.toList $ contentTypes pctyp
       where
         pctyp = Proxy :: Proxy ctyp
 
 instance {-# OVERLAPPING #-}
          ( AllMime (ctyp ': ctyp' ': ctyps)
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) NoContent where
-    allMimeRender p _ = zip (allMime p) (repeat "")
+    allMimeRender p = zip (allMime p) (repeat $ const "")
 
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
