@@ -752,18 +752,17 @@ instance
     route Proxy context subserver = route (Proxy :: Proxy api) context $
         addBodyCheck subserver ctCheck bodyCheck
       where
-        ctCheck :: DelayedIO (SourceIO chunk -> a)
+        ctCheck :: DelayedIO (SourceIO chunk -> IO a)
         -- TODO: do content-type check
         ctCheck = return fromSourceIO
 
-        bodyCheck :: (SourceIO chunk -> a) -> DelayedIO a
+        bodyCheck :: (SourceIO chunk -> IO a) -> DelayedIO a
         bodyCheck fromRS = withRequest $ \req -> do
             let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ctype) :: BL.ByteString -> Either String chunk
             let framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender' :: SourceIO B.ByteString ->  SourceIO chunk
             let body = getRequestBodyChunk req
             let rs = S.fromAction B.null body
-            let rs' = fromRS $ framingUnrender' rs
-            return rs'
+            liftIO $ fromRS $ framingUnrender' rs
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @api@.
