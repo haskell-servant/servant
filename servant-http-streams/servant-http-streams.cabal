@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-http-streams
-version:             0.18.4
+version:             0.20
 
 synopsis:            Automatic derivation of querying functions for servant
 category:            Servant, Web
@@ -54,8 +54,8 @@ library
   -- Servant dependencies.
   -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
-      servant               >= 0.18 && < 0.20
-    , servant-client-core   >= 0.18.3 && <0.20
+      servant               >= 0.20 && < 0.21
+    , servant-client-core   >= 0.20 && <0.21
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
@@ -116,8 +116,8 @@ test-suite spec
     , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 2.8.0.0  && < 3.2
     , QuickCheck        >= 2.12.6.1 && < 2.15
-    , servant           == 0.19.*
-    , servant-server    == 0.19.*
+    , servant-server    >= 0.20 && < 0.21
+    , servant           >= 0.20 && < 0.21
 
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.6.0 && < 2.11
