@@ -2,6 +2,26 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20
+----
+
+- Headers support in UVerb responses [#1570](https://github.com/haskell-servant/servant/issues/1570) [#1571](https://github.com/haskell-servant/servant/pull/1571)
+- Generalize type of `Servant.Types.SourceT.source` to any foldable [#1593](https://github.com/haskell-servant/servant/pull/1593)
+- Make `Mime(Un)Render PlainText String` instances encode/decode UTF-8 [#1645](https://github.com/haskell-servant/servant/issues/1645)
+- Add HasStatus instance for Headers (that defers StatusOf to underlying value) [#1649](https://github.com/haskell-servant/servant/pull/1649)
+- Make fromSourceIO run in IO [#1661](https://github.com/haskell-servant/servant/pull/1661)
+
+  Some streaming abstractions, like io-streams, require stateful
+  initialization. Since all actual call sites of `fromSourceIO`
+  are in a context where `IO` actions can be executed, these
+  streaming sources can be accomodated by having letting
+  `fromSourceIO` run in `IO`.
+
+  To migrate your existing `FromSourceIO` instance, simply put
+  a `pure`/`return` in front of it.
+
+- Fix the handling of multiple headers with the same name. [#1666](https://github.com/haskell-servant/servant/pull/1666)
+
 0.19.1
 ------
 

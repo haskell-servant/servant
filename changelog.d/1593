@@ -1,2 +1,0 @@
-synopsis: Generalize type of Servant.Types.SourceT.source to any foldable.
-prs: 1593

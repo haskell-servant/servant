@@ -1,2 +1,0 @@
-synopsis: change Mime(Un)Render PlainText String instances to encode/decode UTF-8
-issues: #1645
