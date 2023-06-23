@@ -46,9 +46,9 @@ library
     , memory                  >= 0.14.16  && < 0.19
     , monad-time              >= 0.3.1.0  && < 0.4
     , mtl                     ^>= 2.2.2   || ^>= 2.3.1
-    , servant                 >= 0.13     && < 0.20
+    , servant                 >= 0.13     && < 0.21
     , servant-auth            == 0.4.*
-    , servant-server          >= 0.13     && < 0.20
+    , servant-server          >= 0.13     && < 0.21
     , tagged                  >= 0.8.4    && < 0.9
     , text                    >= 1.2.3.0  && < 2.1
     , time                    >= 1.5.0.1  && < 1.13

@@ -15,9 +15,9 @@ executable cookbook-managed-resource
   build-depends:       base == 4.*
                      , text >= 1.2
                      , aeson >= 1.2
-                     , servant
-                     , servant-client
-                     , servant-server
+                     , servant >= 0.20 && <0.21
+                     , servant-client >= 0.20 && <0.21
+                     , servant-server >= 0.20 && <0.21
                      , warp >= 3.2
                      , wai >= 3.2
                      , http-types >= 0.12

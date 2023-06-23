@@ -68,3 +68,7 @@ if(impl(ghc >= 9.6.1))
 
   package servant-server
     ghc-options: -fprint-redundant-promotion-ticks
+
+allow-newer: servant-multipart:servant, servant-multipart:servant-server, servant-multipart-api:servant
+allow-newer: servant-pagination:servant, servant-pagination:servant-server
+allow-newer: servant-js:servant, servant-js:servant-foreign

@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-conduit
-version:             0.15.1
+version:             0.16
 
 synopsis:            Servant Stream support for conduit.
 category:            Servant, Web, Enumerator
@@ -33,7 +33,7 @@ library
     , conduit       >=1.3.1    && <1.4
     , mtl           ^>=2.2.2   || ^>=2.3.1
     , resourcet     >=1.2.2    && <1.4
-    , servant       >=0.15     && <0.20
+    , servant       >=0.20     && <0.21
     , unliftio-core >=0.1.2.0  && <0.3
   hs-source-dirs:      src
   default-language:    Haskell2010
@@ -52,10 +52,10 @@ test-suite example
     , conduit
     , http-media
     , resourcet
-    , servant
+    , servant        >=0.20     && <0.21
     , servant-conduit
-    , servant-server >=0.15     && <0.20
-    , servant-client >=0.15     && <0.20
+    , servant-server >=0.20     && <0.21
+    , servant-client >=0.20     && <0.21
     , wai            >=3.2.1.2  && <3.3
     , warp           >=3.2.25   && <3.4
     , http-client
