@@ -3,6 +3,13 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20
+----
+
+- Add API docs for ServerT [#1573](https://github.com/haskell-servant/servant/pull/1573)
+- Add Functor instance to AuthHandler. [#1638](https://github.com/haskell-servant/servant/pull/1638)
+- Compatibility with GHC 9.6. [#1680](https://github.com/haskell-servant/servant/pull/1680)
+
 0.19.2
 ------
 

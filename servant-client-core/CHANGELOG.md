@@ -3,6 +3,25 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20
+----
+
+- Escape special chars in QueryParams. [#1584](https://github.com/haskell-servant/servant/issues/1584) [#1597](https://github.com/haskell-servant/servant/pull/1597)
+
+  Escape special chars in QueryParam (`:@&=+$`) in servant-client. Note that this
+  mean binary data will not work as is, and so reverts the functionality in
+  [#1432](https://github.com/haskell-servant/servant/pull/1432).
+
+- Handle Cookies correctly for RunStreamingClient [#1605](https://github.com/haskell-servant/servant/issues/1605) [#1606](https://github.com/haskell-servant/servant/pull/1606)
+
+  Makes `performWithStreamingRequest` take into consideration the
+  CookieJar, which it previously didn't.
+
+- Fix the handling of multiple headers with the same name. [#1666](https://github.com/haskell-servant/servant/pull/1666)
+
+  servant-client no longer concatenates the values of response headers with the same name.
+  This fixes an issue with parsing multiple `Set-Cookie` headers.
+
 0.19
 ----
 
