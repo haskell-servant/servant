@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           servant-auth-swagger
-version:        0.2.10.1
+version:        0.2.10.2
 synopsis:       servant-swagger/servant-auth compatibility
 description:    This package provides instances that allow generating swagger2 schemas from
                 <https://hackage.haskell.org/package/servant servant>

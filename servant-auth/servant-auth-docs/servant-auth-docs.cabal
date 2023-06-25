@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           servant-auth-docs
-version:        0.2.10.0
+version:        0.2.10.1
 synopsis:       servant-docs/servant-auth compatibility
 description:    This package provides instances that allow generating docs from
                 <https://hackage.haskell.org/package/servant servant>
@@ -23,7 +23,7 @@ extra-source-files:
 
 custom-setup
   setup-depends:
-    base, Cabal, cabal-doctest >=1.0.6 && <1.1
+    base < 4.19, Cabal < 4, cabal-doctest >=1.0.6 && <1.1
 
 source-repository head
   type: git
