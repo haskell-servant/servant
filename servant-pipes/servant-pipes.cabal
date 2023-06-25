@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-pipes
-version:             0.15.3
+version:             0.16
 
 synopsis:            Servant Stream support for pipes
 category:            Servant, Web, Pipes
