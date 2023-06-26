@@ -44,7 +44,7 @@ library
     , jose                    >= 0.10     && < 0.11
     , lens                    >= 4.16.1   && < 5.3
     , memory                  >= 0.14.16  && < 0.19
-    , monad-time              >= 0.3.1.0  && < 0.4
+    , monad-time              >= 0.3.1.0  && < 0.5
     , mtl                     ^>= 2.2.2   || ^>= 2.3.1
     , servant                 >= 0.13     && < 0.21
     , servant-auth            == 0.4.*
@@ -102,7 +102,7 @@ test-suite spec
       test
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
-  build-tool-depends: hspec-discover:hspec-discover >=2.5.5 && <2.11
+  build-tool-depends: hspec-discover:hspec-discover >=2.5.5 && <2.12
 
   -- dependencies with bounds inherited from the library stanza
   build-depends:
@@ -123,7 +123,7 @@ test-suite spec
   -- test dependencies
   build-depends:
       servant-auth-server
-    , hspec       >= 2.5.5     && < 2.11
+    , hspec       >= 2.5.5     && < 2.12
     , QuickCheck  >= 2.11.3    && < 2.15
     , http-client >= 0.5.13.1  && < 0.8
     , lens-aeson  >= 1.0.2     && < 1.3

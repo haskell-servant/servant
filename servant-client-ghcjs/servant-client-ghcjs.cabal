@@ -51,13 +51,13 @@ library
     , mtl                 ^>=2.2.2  || ^>=2.3.1
     , semigroupoids       >=5.3     && <6.1
     , string-conversions  >=0.3     && <0.5
-    , transformers        >=0.3     && <0.6
+    , transformers        >=0.3     && <0.7
     , transformers-base   >=0.4.4   && <0.5
 
   -- strict, as we re-export stuff
   build-depends:
-      servant              >=0.16 && <0.20
-    , servant-client-core  >=0.16 && <0.20
+      servant              >=0.20 && <0.21
+    , servant-client-core  >=0.20 && <0.21
 
   hs-source-dirs:   src
   default-language: Haskell2010
