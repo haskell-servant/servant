@@ -49,7 +49,7 @@ test-suite spec
       test
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
-  build-tool-depends: hspec-discover:hspec-discover >= 2.5.5 && <2.11
+  build-tool-depends: hspec-discover:hspec-discover >= 2.5.5 && <2.12
   -- dependencies with bounds inherited from the library stanza
   build-depends:
       base
@@ -63,7 +63,7 @@ test-suite spec
   -- test dependencies
   build-depends:
       servant-auth-swagger
-    , hspec      >= 2.5.5  && < 2.11
+    , hspec      >= 2.5.5  && < 2.12
     , QuickCheck >= 2.11.3 && < 2.15
   other-modules:
       Servant.Auth.SwaggerSpec

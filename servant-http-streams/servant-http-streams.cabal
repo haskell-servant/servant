@@ -112,7 +112,7 @@ test-suite spec
   -- Additional dependencies
   build-depends:
       entropy           >= 0.4.1.3  && < 0.5
-    , hspec             >= 2.6.0    && < 2.11
+    , hspec             >= 2.6.0    && < 2.12
     , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 2.8.0.0  && < 3.2
     , QuickCheck        >= 2.12.6.1 && < 2.15
@@ -120,7 +120,7 @@ test-suite spec
     , servant           >= 0.20 && < 0.21
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && < 2.11
+    hspec-discover:hspec-discover >= 2.6.0 && < 2.12
 
 test-suite readme
   type:           exitcode-stdio-1.0
