@@ -80,7 +80,7 @@ spec = do
 authSpec :: Spec
 authSpec
   = describe "The Auth combinator"
-  $ around (testWithApplication . return $ app jwtAndCookieApi) $ do
+  $ aroundAll (testWithApplication . return $ app jwtAndCookieApi) $ do
 
   it "returns a 401 if all authentications are Indefinite" $ \port -> do
     get (url port) `shouldHTTPErrorWith` status401
@@ -172,7 +172,7 @@ cookieAuthSpec :: Spec
 cookieAuthSpec
   = describe "The Auth combinator" $ do
       describe "With XSRF check" $
-       around (testWithApplication . return $ app cookieOnlyApi) $ do
+       aroundAll (testWithApplication . return $ app cookieOnlyApi) $ do
 
         it "fails if XSRF header and cookie don't match" $ \port -> property
                                                          $ \(user :: User) -> do
@@ -243,7 +243,7 @@ cookieAuthSpec
       describe "With no XSRF check for GET requests" $ let
             noXsrfGet xsrfCfg = xsrfCfg { xsrfExcludeGet = True }
             cookieCfgNoXsrfGet = cookieCfg { cookieXsrfSetting = fmap noXsrfGet $ cookieXsrfSetting cookieCfg }
-       in around (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
+       in aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
 
         it "succeeds with no XSRF header or cookie for GET" $ \port -> property
                                                             $ \(user :: User) -> do
@@ -260,7 +260,7 @@ cookieAuthSpec
 
       describe "With no XSRF check at all" $ let
             cookieCfgNoXsrf = cookieCfg { cookieXsrfSetting = Nothing }
-       in around (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
+       in aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
 
         it "succeeds with no XSRF header or cookie for GET" $ \port -> property
                                                             $ \(user :: User) -> do
@@ -313,7 +313,7 @@ cookieAuthSpec
 jwtAuthSpec :: Spec
 jwtAuthSpec
   = describe "The JWT combinator"
-  $ around (testWithApplication . return $ app jwtOnlyApi) $ do
+  $ aroundAll (testWithApplication . return $ app jwtOnlyApi) $ do
 
   it "fails if 'aud' does not match predicate" $ \port -> property $
                                                 \(user :: User) -> do
@@ -378,7 +378,7 @@ jwtAuthSpec
 
 basicAuthSpec :: Spec
 basicAuthSpec = describe "The BasicAuth combinator"
-  $ around (testWithApplication . return $ app basicAuthApi) $ do
+  $ aroundAll (testWithApplication . return $ app basicAuthApi) $ do
 
   it "succeeds with the correct password and username" $ \port -> do
     resp <- getWith (defaults & auth ?~ basicAuth "ali" "Open sesame") (url port)
