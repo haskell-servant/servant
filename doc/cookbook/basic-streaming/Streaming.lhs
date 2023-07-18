@@ -10,8 +10,9 @@ In other words, without streaming libraries.
   We have bindings for them though.
 - Similar example is bundled with each of our streaming library interop packages (see 
 [servant-pipes](https://github.com/haskell-servant/servant/blob/master/servant-pipes/example/Main.hs),
-[servant-conduit](https://github.com/haskell-servant/servant/blob/master/servant-conduit/example/Main.hs) and
-[servant-machines](https://github.com/haskell-servant/servant/blob/master/servant-machines/example/Main.hs))
+[servant-conduit](https://github.com/haskell-servant/servant/blob/master/servant-conduit/example/Main.hs),
+[servant-machines](https://github.com/haskell-servant/servant/blob/master/servant-machines/example/Main.hs) and
+[servant-io-streams](https://github.com/haskell-servant/servant/blob/master/servant-io-streams/example/Main.hs))
 - `SourceT` doesn't have *Prelude* with handy combinators, so we have to write
   things ourselves. (Note to self: `mapM` and `foldM` would be handy to have). 
 
