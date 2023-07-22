@@ -2,11 +2,8 @@
 module Servant.Auth.Server.Internal.Cookie where
 
 import           Blaze.ByteString.Builder (toByteString)
-import           Control.Monad (MonadPlus(..), guard)
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import qualified Crypto.JOSE              as Jose
-import qualified Crypto.JWT               as Jose
 import           Data.ByteArray           (constEq)
 import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Base64   as BS64
@@ -22,7 +19,7 @@ import           Servant                  (AddHeader, addHeader)
 import           System.Entropy           (getEntropy)
 import           Web.Cookie
 
-import Servant.Auth.JWT                          (FromJWT (decodeJWT), ToJWT)
+import Servant.Auth.JWT                          (FromJWT, ToJWT)
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.JWT          (makeJWT, verifyJWT)
 import Servant.Auth.Server.Internal.Types
@@ -132,8 +129,8 @@ applySessionCookieSettings cookieSettings setCookie = setCookie
 -- provided response object with XSRF and session cookies. This should be used
 -- when a user successfully authenticates with credentials.
 acceptLogin :: ( ToJWT session
-               , AddHeader "Set-Cookie" SetCookie response withOneCookie
-               , AddHeader "Set-Cookie" SetCookie withOneCookie withTwoCookies )
+               , AddHeader mods "Set-Cookie" SetCookie response withOneCookie
+               , AddHeader mods "Set-Cookie" SetCookie withOneCookie withTwoCookies )
             => CookieSettings
             -> JWTSettings
             -> session
@@ -152,8 +149,8 @@ expireTime = UTCTime (ModifiedJulianDay 50000) 0
 
 -- | Adds headers to a response that clears all session cookies
 -- | using max-age and expires cookie attributes.
-clearSession :: ( AddHeader "Set-Cookie" SetCookie response withOneCookie
-                , AddHeader "Set-Cookie" SetCookie withOneCookie withTwoCookies )
+clearSession :: ( AddHeader mods "Set-Cookie" SetCookie response withOneCookie
+                , AddHeader mods "Set-Cookie" SetCookie withOneCookie withTwoCookies )
              => CookieSettings
              -> response
              -> withTwoCookies

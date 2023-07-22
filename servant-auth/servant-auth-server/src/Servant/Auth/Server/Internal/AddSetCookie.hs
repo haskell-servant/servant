@@ -7,11 +7,9 @@ module Servant.Auth.Server.Internal.AddSetCookie where
 
 import           Blaze.ByteString.Builder (toByteString)
 import qualified Data.ByteString          as BS
-import           Data.Tagged              (Tagged (..))
 import qualified Network.HTTP.Types       as HTTP
 import           Network.Wai              (mapResponseHeaders)
 import           Servant
-import           Servant.API.UVerb.Union
 import           Servant.API.Generic
 import           Servant.Server.Generic
 import           Web.Cookie
@@ -76,7 +74,7 @@ instance (orig1 ~ orig2) => AddSetCookies 'Z orig1 orig2 where
 instance {-# OVERLAPPABLE #-}
   ( Functor m
   , AddSetCookies n (m old) (m cookied)
-  , AddHeader "Set-Cookie" SetCookie cookied new
+  , AddHeader mods "Set-Cookie" SetCookie cookied new
   ) => AddSetCookies ('S n) (m old) (m new)  where
   addSetCookies (mCookie `SetCookieCons` rest) oldVal =
     case mCookie of
