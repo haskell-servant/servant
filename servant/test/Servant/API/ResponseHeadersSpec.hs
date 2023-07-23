@@ -32,7 +32,7 @@ spec = describe "Servant.API.ResponseHeaders" $ do
       getHeaders val `shouldBe` [("first", "10"), ("second", "b")]
 
     it "adds a header with description to a value" $ do
-      let val = addHeader "hi" 5 :: Headers '[Header' '[Description "desc", Optional, Strict] "test" String] Int
+      let val = addHeader' "hi" 5 :: Headers '[Header' '[Description "desc", Optional, Strict] "test" String] Int
       getHeaders val `shouldBe` [("test", "hi")]
 
   describe "noHeader" $ do
