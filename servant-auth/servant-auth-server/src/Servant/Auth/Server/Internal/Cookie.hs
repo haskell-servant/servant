@@ -15,7 +15,7 @@ import           Data.Time.Clock          (UTCTime(..), secondsToDiffTime)
 import           Network.HTTP.Types       (methodGet)
 import           Network.HTTP.Types.Header(hCookie)
 import           Network.Wai              (Request, requestHeaders, requestMethod)
-import           Servant                  (AddHeader, addHeader)
+import           Servant                  (AddHeader, addHeader')
 import           System.Entropy           (getEntropy)
 import           Web.Cookie
 
@@ -141,7 +141,7 @@ acceptLogin cookieSettings jwtSettings session = do
     Nothing            -> pure Nothing
     Just sessionCookie -> do
       xsrfCookie <- makeXsrfCookie cookieSettings
-      return $ Just $ addHeader sessionCookie . addHeader xsrfCookie
+      return $ Just $ addHeader' sessionCookie . addHeader' xsrfCookie
 
 -- | Arbitrary cookie expiry time set back in history after unix time 0
 expireTime :: UTCTime
@@ -154,7 +154,7 @@ clearSession :: ( AddHeader mods "Set-Cookie" SetCookie response withOneCookie
              => CookieSettings
              -> response
              -> withTwoCookies
-clearSession cookieSettings = addHeader clearedSessionCookie . addHeader clearedXsrfCookie
+clearSession cookieSettings = addHeader' clearedSessionCookie . addHeader' clearedXsrfCookie
   where
     -- According to RFC6265 max-age takes precedence, but IE/Edge ignore it completely so we set both
     cookieSettingsExpires = cookieSettings

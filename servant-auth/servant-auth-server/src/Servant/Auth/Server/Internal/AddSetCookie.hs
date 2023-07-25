@@ -78,8 +78,8 @@ instance {-# OVERLAPPABLE #-}
   ) => AddSetCookies ('S n) (m old) (m new)  where
   addSetCookies (mCookie `SetCookieCons` rest) oldVal =
     case mCookie of
-      Nothing -> noHeader <$> addSetCookies rest oldVal
-      Just cookie -> addHeader cookie <$> addSetCookies rest oldVal
+      Nothing -> noHeader' <$> addSetCookies rest oldVal
+      Just cookie -> addHeader' cookie <$> addSetCookies rest oldVal
 
 instance {-# OVERLAPS #-}
   (AddSetCookies ('S n) a a', AddSetCookies ('S n) b b')
