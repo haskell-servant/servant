@@ -1,0 +1,7 @@
+synopsis: Add NamedRoutes instance to IsElem
+prs: #1699
+issues: #1674
+description: {
+Add missing IsElem instance for NamedRoutes, this allows links to be checked
+with `safeLink`.
+}
