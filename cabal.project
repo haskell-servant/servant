@@ -58,6 +58,10 @@ optimization: False
 constraints: crypton < 0, crypton-connection < 0, crypton-x509 < 0, crypton-x509-store < 0, crypton-x509-system < 0, crypton-x509-validation < 0
 constraints: warp < 3.3.26
 
+-- wreq-0.5.4.1 doesn't seem to work with ghc-8.6.5
+if (impl(ghc < 8.8))
+  constraints: wreq == 0.5.4.0
+
 allow-newer: servant-js:base
 
 -- Print ticks so that doctest type querying is consistent across GHC versions.
