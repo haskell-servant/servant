@@ -127,8 +127,9 @@ import           Servant.API.ReqBody
 import           Servant.API.ResponseHeaders
                  (AddHeader, BuildHeadersTo (buildHeadersTo),
                  GetHeaders (getHeaders), HList (..), HasResponseHeader,
-                 Headers (..), ResponseHeader (..), addHeader, getHeadersHList,
-                 getResponse, lookupResponseHeader, noHeader)
+                 Headers (..), ResponseHeader (..), addHeader, addHeader',
+                 getHeadersHList, getResponse, lookupResponseHeader, noHeader,
+                 noHeader')
 import           Servant.API.Stream
                  (FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  NetstringFraming, NewlineFraming, NoFraming, SourceIO, Stream,

@@ -5,8 +5,6 @@ import           Blaze.ByteString.Builder (toByteString)
 import           Control.Monad (MonadPlus(..), guard)
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import qualified Crypto.JOSE              as Jose
-import qualified Crypto.JWT               as Jose
 import           Data.ByteArray           (constEq)
 import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Base64   as BS64
@@ -18,11 +16,11 @@ import           Data.Time.Clock          (UTCTime(..), secondsToDiffTime)
 import           Network.HTTP.Types       (methodGet)
 import           Network.HTTP.Types.Header(hCookie)
 import           Network.Wai              (Request, requestHeaders, requestMethod)
-import           Servant                  (AddHeader, addHeader)
+import           Servant                  (AddHeader, addHeader')
 import           System.Entropy           (getEntropy)
 import           Web.Cookie
 
-import Servant.Auth.JWT                          (FromJWT (decodeJWT), ToJWT)
+import Servant.Auth.JWT                          (FromJWT, ToJWT)
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.JWT          (makeJWT, verifyJWT)
 import Servant.Auth.Server.Internal.Types
@@ -132,8 +130,8 @@ applySessionCookieSettings cookieSettings setCookie = setCookie
 -- provided response object with XSRF and session cookies. This should be used
 -- when a user successfully authenticates with credentials.
 acceptLogin :: ( ToJWT session
-               , AddHeader "Set-Cookie" SetCookie response withOneCookie
-               , AddHeader "Set-Cookie" SetCookie withOneCookie withTwoCookies )
+               , AddHeader mods "Set-Cookie" SetCookie response withOneCookie
+               , AddHeader mods "Set-Cookie" SetCookie withOneCookie withTwoCookies )
             => CookieSettings
             -> JWTSettings
             -> session
@@ -144,7 +142,7 @@ acceptLogin cookieSettings jwtSettings session = do
     Nothing            -> pure Nothing
     Just sessionCookie -> do
       xsrfCookie <- makeXsrfCookie cookieSettings
-      return $ Just $ addHeader sessionCookie . addHeader xsrfCookie
+      return $ Just $ addHeader' sessionCookie . addHeader' xsrfCookie
 
 -- | Arbitrary cookie expiry time set back in history after unix time 0
 expireTime :: UTCTime
@@ -152,12 +150,12 @@ expireTime = UTCTime (ModifiedJulianDay 50000) 0
 
 -- | Adds headers to a response that clears all session cookies
 -- | using max-age and expires cookie attributes.
-clearSession :: ( AddHeader "Set-Cookie" SetCookie response withOneCookie
-                , AddHeader "Set-Cookie" SetCookie withOneCookie withTwoCookies )
+clearSession :: ( AddHeader mods "Set-Cookie" SetCookie response withOneCookie
+                , AddHeader mods "Set-Cookie" SetCookie withOneCookie withTwoCookies )
              => CookieSettings
              -> response
              -> withTwoCookies
-clearSession cookieSettings = addHeader clearedSessionCookie . addHeader clearedXsrfCookie
+clearSession cookieSettings = addHeader' clearedSessionCookie . addHeader' clearedXsrfCookie
   where
     -- According to RFC6265 max-age takes precedence, but IE/Edge ignore it completely so we set both
     cookieSettingsExpires = cookieSettings

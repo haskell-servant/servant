@@ -7,7 +7,11 @@ import           GHC.TypeLits
 import           Test.Hspec
 
 import           Servant.API.ContentTypes
+import           Servant.API.Description
+                 (Description)
 import           Servant.API.Header
+import           Servant.API.Modifiers
+                 (Optional, Strict)
 import           Servant.API.ResponseHeaders
 import           Servant.API.UVerb
 
@@ -26,6 +30,10 @@ spec = describe "Servant.API.ResponseHeaders" $ do
     it "adds headers to the front of the list" $ do
       let val = addHeader 10 $ addHeader "b" 5 :: Headers '[Header "first" Int, Header "second" String] Int
       getHeaders val `shouldBe` [("first", "10"), ("second", "b")]
+
+    it "adds a header with description to a value" $ do
+      let val = addHeader' "hi" 5 :: Headers '[Header' '[Description "desc", Optional, Strict] "test" String] Int
+      getHeaders val `shouldBe` [("test", "hi")]
 
   describe "noHeader" $ do
 
