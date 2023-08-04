@@ -1,18 +1,25 @@
 resolver: nightly-2023-04-14
 
 packages:
-- servant-client-core/
+- servant/
+- servant-auth/servant-auth
+- servant-auth/servant-auth-client
+- servant-auth/servant-auth-docs
+- servant-auth/servant-auth-server
+- servant-auth/servant-auth-swagger
+
 - servant-client/
+- servant-client-core/
+- servant-http-streams/
 - servant-docs/
 - servant-foreign/
-- servant-http-streams/
 - servant-server/
-- servant/
-
-- servant-conduit
-- servant-machines/
-- servant-pipes/
 - servant-swagger/
+
+# streaming
+- servant-machines/
+- servant-conduit
+- servant-pipes/
 
 # allow-newer: true # ignores all bounds, that's a sledgehammer
 # - doc/tutorial/

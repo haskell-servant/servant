@@ -53,12 +53,12 @@ import           Network.Wai.Test
 import           Servant.API
                  ((:<|>) (..), (:>), AuthProtect, BasicAuth,
                  BasicAuthData (BasicAuthData), Capture, Capture', CaptureAll,
-                 Delete, EmptyAPI, Fragment, Get, HasStatus (StatusOf), Header,
-                 Headers, HttpVersion, IsSecure (..), JSON, Lenient,
-                 NoContent (..), NoContentVerb, NoFraming, OctetStream, Patch,
+                 Delete, Description, EmptyAPI, Fragment, Get, HasStatus (StatusOf),
+                 Header, Header', Headers, HttpVersion, IsSecure (..), JSON, Lenient,
+                 NoContent (..), NoContentVerb, NoFraming, OctetStream, Optional, Patch,
                  PlainText, Post, Put, QueryFlag, QueryParam, QueryParams, Raw, RawM,
                  RemoteHost, ReqBody, SourceIO, StdMethod (..), Stream, Strict,
-                 UVerb, Union, Verb, WithStatus (..), addHeader)
+                 UVerb, Union, Verb, WithStatus (..), addHeader, addHeader')
 import           Servant.Server
                  (Context ((:.), EmptyContext), Handler, Server, ServerT, Tagged (..),
                  emptyServer, err401, err403, err404, hoistServer, respond, serve,
@@ -121,6 +121,7 @@ type VerbApi method status
  :<|> "noContent" :> NoContentVerb method
  :<|> "header"    :> Verb method status '[JSON] (Headers '[Header "H" Int] Person)
  :<|> "headerNC"  :> Verb method status '[JSON] (Headers '[Header "H" Int] NoContent)
+ :<|> "headerD"   :> Verb method status '[JSON] (Headers '[Header' '[Description "desc", Optional, Strict] "H" Int] Person)
  :<|> "accept"    :> (    Verb method status '[JSON] Person
                      :<|> Verb method status '[PlainText] String
                      )
@@ -133,6 +134,7 @@ verbSpec = describe "Servant.API.Verb" $ do
           :<|> return NoContent
           :<|> return (addHeader 5 alice)
           :<|> return (addHeader 10 NoContent)
+          :<|> return (addHeader' 5 alice)
           :<|> (return alice :<|> return "B")
           :<|> return (S.source ["bytestring"])
 
@@ -176,6 +178,10 @@ verbSpec = describe "Servant.API.Verb" $ do
             response2 <- THW.request method "/header" [] ""
             liftIO $ statusCode (simpleStatus response2) `shouldBe` status
             liftIO $ simpleHeaders response2 `shouldContain` [("H", "5")]
+
+            response3 <- THW.request method "/headerD" [] ""
+            liftIO $ statusCode (simpleStatus response3) `shouldBe` status
+            liftIO $ simpleHeaders response3 `shouldContain` [("H", "5")]
 
           it "handles trailing '/' gracefully" $ do
             response <- THW.request method "/headerNC/" [] ""
