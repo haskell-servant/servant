@@ -1,10 +1,13 @@
 {-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 module Servant.LinksSpec where
 
+import           GHC.Generics
+                 (Generic)
 import           Data.Proxy
                  (Proxy (..))
 import           Data.String
@@ -44,16 +47,50 @@ type LinkableApi =
        "all" :> CaptureAll "names" String :> Get '[JSON] NoContent
   :<|> "get" :> Get '[JSON] NoContent
 
-
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
          => Proxy endpoint -> MkLink endpoint Link
 apiLink = safeLink (Proxy :: Proxy TestApi)
+
+
+newtype QuuxRoutes mode = QuuxRoutes
+  { corge :: mode :- "corge" :> Post '[PlainText] NoContent
+  } deriving Generic
+
+newtype WaldoRoutes mode = WaldoRoutes
+  { waldo :: mode :- "waldo" :> Get '[JSON] NoContent
+  } deriving Generic
+
+data FooRoutes mode = FooRoutes
+  { baz :: mode :- "baz" :> Get '[JSON] NoContent
+  , qux :: mode :- "qux" :> NamedRoutes QuuxRoutes
+  , quux :: mode :- "quux" :> QueryParam "grault" String :> Get '[JSON] NoContent
+  , garply :: mode :- "garply" :> Capture "garply" String
+           :> Capture "garplyNum" Int :> NamedRoutes WaldoRoutes
+  } deriving Generic
+
+data BaseRoutes mode = BaseRoutes
+  { foo :: mode :- "foo" :> NamedRoutes FooRoutes
+  , bar :: mode :- "bar" :> Get '[JSON] NoContent
+  } deriving Generic
+
+recordApiLink
+  :: (IsElem endpoint (NamedRoutes BaseRoutes), HasLink endpoint)
+  => Proxy endpoint -> MkLink endpoint Link
+recordApiLink = safeLink (Proxy :: Proxy (NamedRoutes BaseRoutes))
 
 -- | Convert a link to a URI and ensure that this maps to the given string
 -- given string
 shouldBeLink :: Link -> String -> Expectation
 shouldBeLink link expected =
     toUrlPiece link `shouldBe` fromString expected
+
+(//) :: a -> (a -> b) -> b
+x // f = f x
+infixl 1 //
+
+(/:) :: (a -> b -> c) -> b -> a -> c
+(/:) = flip
+infixl 2 /:
 
 spec :: Spec
 spec = describe "Servant.Links" $ do
@@ -105,6 +142,33 @@ spec = describe "Servant.Links" $ do
     it "can generate all links for ComprehensiveAPIWithoutRaw" $ do
         let firstLink :<|> _ = allLinks comprehensiveAPIWithoutRaw
         firstLink `shouldBeLink` ""
+
+    it "Generate links from record fields accessors" $ do
+      fieldLink bar `shouldBeLink` "bar"
+      (fieldLink foo // baz)  `shouldBeLink` "foo/baz"
+      (fieldLink foo // qux // corge) `shouldBeLink` "foo/qux/corge"
+      (fieldLink foo // quux /: Nothing) `shouldBeLink` "foo/quux"
+      (fieldLink foo // quux /: Just "floop") `shouldBeLink` "foo/quux?grault=floop"
+      (fieldLink foo // garply /: "captureme" /: 42 // waldo)
+        `shouldBeLink` "foo/garply/captureme/42/waldo"
+
+    it "Check links from record fields" $ do
+      let sub1 = Proxy :: Proxy ("bar" :> Get '[JSON] NoContent)
+      recordApiLink sub1 `shouldBeLink` "bar"
+
+      let sub2 = Proxy :: Proxy ("foo" :> "baz" :> Get '[JSON] NoContent)
+      recordApiLink sub2 `shouldBeLink` "foo/baz"
+
+      let sub3 = Proxy :: Proxy ("foo" :> "quux" :> QueryParam "grault" String
+                                       :> Get '[JSON] NoContent)
+      recordApiLink sub3 (Just "floop") `shouldBeLink` "foo/quux?grault=floop"
+
+      let sub4 :: Proxy ("foo" :> "garply" :> Capture "garplyText" String
+                       :> Capture "garplyInt" Int :> "waldo"
+                       :> Get '[JSON] NoContent)
+          sub4 = Proxy
+      recordApiLink sub4 "captureme" 42
+        `shouldBeLink` "foo/garply/captureme/42/waldo"
 
 -- The doctests below aren't run on CI, setting that up is tricky.
 -- They are run by makefile rule, however.
