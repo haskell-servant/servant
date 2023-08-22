@@ -86,6 +86,11 @@ instance {-# OVERLAPS #-}
   => AddSetCookies ('S n) (a :<|> b) (a' :<|> b') where
   addSetCookies cookies (a :<|> b) = addSetCookies cookies a :<|> addSetCookies cookies b
 
+instance {-# OVERLAPPING #-}
+  (AddSetCookies ('S n) a a, AddSetCookies ('S n) b b')
+  => AddSetCookies ('S n) (a :<|> b) (a :<|> b') where
+  addSetCookies cookies ( a :<|> b) = addSetCookies cookies a :<|> addSetCookies cookies b
+
 instance {-# OVERLAPS #-}
   ( AddSetCookies ('S n) (ServerT (ToServantApi api) m) cookiedApi
   , Generic (api (AsServerT m))
