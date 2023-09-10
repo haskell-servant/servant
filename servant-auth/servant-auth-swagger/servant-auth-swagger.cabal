@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           servant-auth-swagger
-version:        0.2.10.1
+version:        0.2.10.2
 synopsis:       servant-swagger/servant-auth compatibility
 description:    This package provides instances that allow generating swagger2 schemas from
                 <https://hackage.haskell.org/package/servant servant>
@@ -16,7 +16,7 @@ maintainer:     jkarni@gmail.com
 copyright:      (c) Julian K. Arni
 license:        BSD-3-Clause
 license-file:   LICENSE
-tested-with:    GHC ==8.6.5 || ==8.8.4 || ==8.10.4
+tested-with:    GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4
 build-type:     Simple
 extra-source-files:
     CHANGELOG.md
@@ -31,15 +31,13 @@ library
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base            >= 4.10    && < 4.16
+      base            >= 4.10    && < 4.19
     , text            >= 1.2.3.0 && < 2.1
     , servant-swagger >= 1.1.5   && < 2
     , swagger2        >= 2.2.2   && < 3
-    , servant         >= 0.13    && < 0.20
+    , servant         >= 0.13    && < 0.21
     , servant-auth    == 0.4.*
-    , lens            >= 4.16.1  && < 5.2
-  if impl(ghc >= 9)
-    buildable: False
+    , lens            >= 4.16.1  && < 5.3
   exposed-modules:
       Servant.Auth.Swagger
   default-language: Haskell2010
@@ -51,7 +49,7 @@ test-suite spec
       test
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
-  build-tool-depends: hspec-discover:hspec-discover >= 2.5.5 && <2.10
+  build-tool-depends: hspec-discover:hspec-discover >= 2.5.5 && <2.12
   -- dependencies with bounds inherited from the library stanza
   build-depends:
       base
@@ -61,13 +59,11 @@ test-suite spec
     , servant
     , servant-auth
     , lens
-  if impl(ghc >= 9)
-    buildable: False
 
   -- test dependencies
   build-depends:
       servant-auth-swagger
-    , hspec      >= 2.5.5  && < 2.10
+    , hspec      >= 2.5.5  && < 2.12
     , QuickCheck >= 2.11.3 && < 2.15
   other-modules:
       Servant.Auth.SwaggerSpec

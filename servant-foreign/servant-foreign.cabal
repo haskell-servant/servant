@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-foreign
-version:             0.15.4
+version:             0.16
 
 synopsis:            Helpers for generating clients for servant APIs in any programming language
 category:            Servant, Web
@@ -21,7 +21,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2015-2019 Servant Contributors
 build-type:          Simple
-tested-with:         GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
+tested-with:         GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4
 
 extra-source-files:
   CHANGELOG.md
@@ -41,18 +41,18 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base        >= 4.9     && < 4.17
+      base        >= 4.9     && < 4.19
     , text        >= 1.2.3.0 && < 2.1
 
   -- Servant dependencies
   build-depends:
-      servant            >=0.18 && <0.20
+      servant            >=0.20 && <0.21
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat >= 0.10.5  && < 0.13
-    , lens        >= 4.17    && < 5.2
+      base-compat >= 0.10.5  && < 0.14
+    , lens        >= 4.17    && < 5.3
     , http-types  >= 0.12.2  && < 0.13
 
   hs-source-dirs:      src
@@ -74,7 +74,7 @@ test-suite spec
 
   -- Additional dependencies
   build-depends:
-    hspec >= 2.6.0 && <2.10
+    hspec >= 2.6.0 && <2.12
   build-tool-depends:
-    hspec-discover:hspec-discover >=2.6.0 && <2.10
+    hspec-discover:hspec-discover >=2.6.0 && <2.12
   default-language:  Haskell2010

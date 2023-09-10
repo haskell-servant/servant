@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-swagger
-version:             1.1.11
+version:             1.2
 synopsis:            Generate a Swagger/OpenAPI/OAS 2.0 specification for your servant API.
 description:
   Swagger is a project used to describe and document RESTful APIs. The core of the
@@ -28,7 +28,7 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           (c) 2015-2018, Servant contributors
 category:            Web, Servant, Swagger
 build-type:          Custom
-tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2
+tested-with: GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4
 
 extra-source-files:
     README.md
@@ -50,7 +50,7 @@ source-repository head
 custom-setup
   setup-depends:
     base >=4.9 && <5,
-    Cabal >= 1.24,
+    Cabal >= 1.24 && <4,
     cabal-doctest >=1.0.6 && <1.1
 
 library
@@ -72,12 +72,12 @@ library
   build-depends:       aeson                     >=1.4.2.0 && <3
                      , aeson-pretty              >=0.8.7    && <0.9
                      , base                      >=4.9.1.0  && <5
-                     , base-compat               >=0.10.5   && <0.13
+                     , base-compat               >=0.10.5   && <0.14
                      , bytestring                >=0.10.8.1 && <0.12
                      , http-media                >=0.7.1.3  && <0.9
                      , insert-ordered-containers >=0.2.1.0  && <0.3
                      , lens                      >=4.17     && <6
-                     , servant                   >=0.18.2   && <0.20
+                     , servant                   >=0.20     && <0.21
                      , singleton-bool            >=0.1.4    && <0.2
                      , swagger2                  >=2.3.0.1  && <3
                      , text                      >=1.2.3.0  && <2.1
@@ -92,7 +92,7 @@ test-suite doctests
   build-depends:
     base,
     directory >= 1.0,
-    doctest >= 0.17 && <0.21,
+    doctest >= 0.17 && <0.22,
     servant,
     QuickCheck,
     filepath
@@ -106,11 +106,11 @@ test-suite spec
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test
   main-is:          Spec.hs
-  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.10
+  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.12
   build-depends:    base
                   , base-compat
                   , aeson >=1.4.2.0 && <3
-                  , hspec >=2.6.0 && <2.10
+                  , hspec >=2.6.0 && <2.12
                   , QuickCheck
                   , lens
                   , lens-aeson >=1.0.2    && <1.3

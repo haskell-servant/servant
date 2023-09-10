@@ -119,7 +119,7 @@ Now we can use `servant-client`'s internals to convert servant's `Request`
 to http-client's `Request`, and we can inspect it:
 
 ```haskell
-        let req' = I.defaultMakeClientRequest burl req
+        req' <- I.defaultMakeClientRequest burl req
         putStrLn $ "Making request: " ++ show req'
 ```
 

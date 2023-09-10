@@ -74,10 +74,10 @@ import           Servant.API
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent),
-                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
+                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw, RawM,
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
-                 Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
+                 Verb, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList,
                  getResponse, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
 import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
@@ -428,7 +428,7 @@ instance {-# OVERLAPPABLE #-}
   clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
       let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-      return $ fromSourceIO $ framingUnrender' $ responseBody gres
+      fromSourceIO $ framingUnrender' $ responseBody gres
     where
       req' = req
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
@@ -448,7 +448,7 @@ instance {-# OVERLAPPING #-}
   clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
       let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-          val = fromSourceIO $ framingUnrender' $ responseBody gres
+      val <- fromSourceIO $ framingUnrender' $ responseBody gres
       return $ Headers
         { getResponse = val
         , getHeadersHList = buildHeadersTo . toList $ responseHeaders gres
@@ -674,6 +674,16 @@ instance RunClient m => HasClient m Raw where
 
   hoistClientMonad _ _ f cl = \meth -> f (cl meth)
 
+instance RunClient m => HasClient m RawM where
+  type Client m RawM
+    = H.Method ->  m Response
+
+  clientWithRoute :: Proxy m -> Proxy RawM -> Request -> Client m RawM
+  clientWithRoute _pm Proxy req httpMethod = do
+    runRequest req { requestMethod = httpMethod }
+
+  hoistClientMonad _ _ f cl = \meth -> f (cl meth)
+
 -- | If you use a 'ReqBody' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
 -- an additional argument of the type specified by your 'ReqBody'.
@@ -776,6 +786,14 @@ instance HasClient m subapi =>
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl
 
+instance HasClient m subapi =>
+  HasClient m (WithResource res :> subapi) where
+
+  type Client m (WithResource res :> subapi) = Client m subapi
+  clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl
+
 instance ( HasClient m api
          ) => HasClient m (AuthProtect tag :> api) where
   type Client m (AuthProtect tag :> api)
@@ -842,6 +860,7 @@ instance
   ( forall n. GClient api n
   , HasClient m (ToServantApi api)
   , RunClient m
+  , ErrorIfNoGeneric api
   )
   => HasClient m (NamedRoutes api) where
   type Client m (NamedRoutes api) = api (AsClientT m)
@@ -894,7 +913,7 @@ infixl 2 /:
 -- rootClient = client api
 --
 -- endpointClient :: ClientM Person
--- endpointClient = client // subApi // endpoint
+-- endpointClient = client \/\/ subApi \/\/ endpoint
 -- @
 (//) :: a -> (a -> b) -> b
 x // f = f x
@@ -927,10 +946,10 @@ x // f = f x
 -- rootClient = client api
 --
 -- hello :: String -> ClientM String
--- hello name = rootClient // hello /: name
+-- hello name = rootClient \/\/ hello \/: name
 --
 -- endpointClient :: ClientM Person
--- endpointClient = client // subApi /: "foobar123" // endpoint
+-- endpointClient = client \/\/ subApi \/: "foobar123" \/\/ endpoint
 -- @
 (/:) :: (a -> b -> c) -> b -> a -> c
 (/:) = flip

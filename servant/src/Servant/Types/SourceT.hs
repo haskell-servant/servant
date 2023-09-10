@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DeriveFunctor       #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
@@ -24,7 +25,7 @@ import           System.IO
 import qualified Test.QuickCheck            as QC
 
 -- $setup
--- >>> :set -XOverloadedStrings
+-- >>> import Data.String (fromString)
 -- >>> import Control.Monad.Except (runExcept)
 -- >>> import Data.Foldable (toList)
 -- >>> import qualified Data.Attoparsec.ByteString.Char8 as A8
@@ -66,7 +67,7 @@ fromStepT s = SourceT ($ s)
 instance Functor m => Functor (SourceT m) where
     fmap f = mapStepT (fmap f)
 
--- | >>> toList (source [1..10])
+-- | >>> toList (source [1::Int .. 10])
 -- [1,2,3,4,5,6,7,8,9,10]
 --
 instance Identity ~ m => Foldable (SourceT m) where
@@ -151,11 +152,17 @@ instance (Applicative m, Show1 m) => Show1 (StepT m) where
 instance (Applicative m, Show1 m, Show a) => Show (StepT m a) where
     showsPrec = showsPrec1
 
+#if !MIN_VERSION_transformers(0,6,0)
+-- Since transformers-0.6, MonadTrans only works on Monads.
+-- StepT isn't necesssarily a monad. It doesn't have the Monad instance.
+-- See https://gitlab.haskell.org/ghc/ghc/-/issues/19922
+
 -- | >>> lift [1,2,3] :: StepT [] Int
 -- Effect [Yield 1 Stop,Yield 2 Stop,Yield 3 Stop]
 --
 instance MonadTrans StepT where
     lift = Effect . fmap (`Yield` Stop)
+#endif
 
 instance MFunctor StepT where
     hoist f = go where
@@ -212,7 +219,7 @@ instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
 -- >>> source "foo" :: SourceT Identity Char
 -- fromStepT (Effect (Identity (Yield 'f' (Yield 'o' (Yield 'o' Stop)))))
 --
-source :: [a] -> SourceT m a
+source :: Foldable f => f a -> SourceT m a
 source = fromStepT . foldr Yield Stop
 
 -- | Get the answers.
@@ -269,7 +276,7 @@ mapMaybeStep p = go where
 
 -- | Run action for each value in the 'SourceT'.
 --
--- >>> foreach fail print (source "abc")
+-- >>> foreach fail print $ source ("abc" :: String)
 -- 'a'
 -- 'b'
 -- 'c'
@@ -342,16 +349,16 @@ readFile fp =
 --
 -- >>> let parser = A.skipWhile A8.isSpace_w8 >> A.takeWhile1 A8.isDigit_w8
 --
--- >>> runExcept $ runSourceT $ transformWithAtto parser (source ["1 2 3"])
+-- >>> runExcept $ runSourceT $ transformWithAtto parser (source $ [fromString "1 2 3"])
 -- Right ["1","2","3"]
 --
--- >>> runExcept $ runSourceT $ transformWithAtto parser (source ["1", "2", "3"])
+-- >>> runExcept $ runSourceT $ transformWithAtto parser (source $ map fromString ["1", "2", "3"])
 -- Right ["123"]
 --
--- >>> runExcept $ runSourceT $ transformWithAtto parser (source ["1", "2 3", "4"])
+-- >>> runExcept $ runSourceT $ transformWithAtto parser (source $ map fromString ["1", "2 3", "4"])
 -- Right ["12","34"]
 --
--- >>> runExcept $ runSourceT $ transformWithAtto parser (source ["foobar"])
+-- >>> runExcept $ runSourceT $ transformWithAtto parser (source [fromString "foobar"])
 -- Left "Failed reading: takeWhile1"
 --
 transformWithAtto :: Monad m => A.Parser a -> SourceT m BS.ByteString -> SourceT m a

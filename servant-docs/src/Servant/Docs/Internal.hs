@@ -61,6 +61,7 @@ import qualified GHC.Generics               as G
 import           GHC.TypeLits
 import           Servant.API
 import           Servant.API.ContentTypes
+import           Servant.API.TypeErrors
 import           Servant.API.TypeLevel
 import           Servant.API.Generic
 
@@ -447,7 +448,7 @@ docsWith opts intros (ExtraInfo endpoints) p =
       & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
 
 
--- | Generate the docs for a given API that implements 'HasDocs' with with any
+-- | Generate the docs for a given API that implements 'HasDocs' with any
 -- number of introduction(s)
 docsWithIntros :: HasDocs api => [DocIntro] -> Proxy api -> API
 docsWithIntros intros = docsWith defaultDocOptions intros mempty
@@ -1144,6 +1145,9 @@ instance HasDocs api => HasDocs (Vault :> api) where
 instance HasDocs api => HasDocs (WithNamedContext name context api) where
   docsFor Proxy = docsFor (Proxy :: Proxy api)
 
+instance HasDocs api => HasDocs (WithResource res :> api) where
+  docsFor Proxy = docsFor (Proxy :: Proxy api)
+
 instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth realm usr :> api) where
   docsFor Proxy (endpoint, action) =
     docsFor (Proxy :: Proxy api) (endpoint, action')
@@ -1151,7 +1155,10 @@ instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth r
         authProxy = Proxy :: Proxy (BasicAuth realm usr)
         action' = over authInfo (|> toAuthInfo authProxy) action
 
-instance HasDocs (ToServantApi api) => HasDocs (NamedRoutes api) where
+instance
+  ( HasDocs (ToServantApi api)
+  , ErrorIfNoGeneric api
+  ) => HasDocs (NamedRoutes api) where
   docsFor Proxy = docsFor (Proxy :: Proxy (ToServantApi api))
 
 -- ToSample instances for simple types

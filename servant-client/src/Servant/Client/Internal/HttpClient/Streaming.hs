@@ -24,7 +24,8 @@ import           Control.DeepSeq
                  (NFData, force)
 import           Control.Exception
                  (evaluate, throwIO)
-import           Control.Monad ()
+import           Control.Monad
+                 (unless)
 import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Codensity
@@ -140,7 +141,7 @@ performRequest :: Maybe [Status] -> Request -> ClientM Response
 performRequest acceptStatus req = do
     -- TODO: should use Client.withResponse here too
   ClientEnv m burl cookieJar' createClientRequest <- ask
-  let clientRequest = createClientRequest burl req
+  clientRequest <- liftIO $ createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest
     Just cj -> liftIO $ do
@@ -174,10 +175,21 @@ performRequest acceptStatus req = do
 -- | TODO: support UVerb ('acceptStatus' argument, like in 'performRequest' above).
 performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a
 performWithStreamingRequest req k = do
-  m <- asks manager
-  burl <- asks baseUrl
-  createClientRequest <- asks makeClientRequest
-  let request = createClientRequest burl req
+  ClientEnv m burl cookieJar' createClientRequest <- ask
+  clientRequest <- liftIO $ createClientRequest burl req
+  request <- case cookieJar' of
+    Nothing -> pure clientRequest
+    Just cj -> liftIO $ do
+      now <- getCurrentTime
+      atomically $ do
+        oldCookieJar <- readTVar cj
+        let (newRequest, newCookieJar) =
+              Client.insertCookiesIntoRequest
+                clientRequest
+                oldCookieJar
+                now
+        writeTVar cj newCookieJar
+        pure newRequest
   ClientM $ lift $ lift $ Codensity $ \k1 ->
       Client.withResponse request m $ \res -> do
           let status = Client.responseStatus res

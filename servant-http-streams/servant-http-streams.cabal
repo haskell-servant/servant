@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-http-streams
-version:             0.18.4
+version:             0.20
 
 synopsis:            Automatic derivation of querying functions for servant
 category:            Servant, Web
@@ -20,7 +20,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2019 Servant Contributors
 build-type:          Simple
-tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
+tested-with: GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4
 
 extra-source-files:
   CHANGELOG.md
@@ -38,29 +38,29 @@ library
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   build-depends:
-      base                  >= 4.9      && < 4.17
+      base                  >= 4.9      && < 4.19
     , bytestring            >= 0.10.8.1 && < 0.12
     , containers            >= 0.5.7.1  && < 0.7
     , deepseq               >= 1.4.2.0  && < 1.5
-    , mtl                   >= 2.2.2    && < 2.3
+    , mtl                   ^>= 2.2.2   || ^>= 2.3.1
     , text                  >= 1.2.3.0  && < 2.1
-    , time                  >= 1.6.0.1  && < 1.12
-    , transformers          >= 0.5.2.0  && < 0.6
+    , time                  >= 1.6.0.1  && < 1.13
+    , transformers          >= 0.5.2.0  && < 0.7
 
   if !impl(ghc >= 8.2)
     build-depends:
-      bifunctors >= 5.5.3 && < 5.6
+      bifunctors >= 5.5.3 && < 5.7
 
   -- Servant dependencies.
   -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
-      servant               >= 0.18 && < 0.20
-    , servant-client-core   >= 0.18.3 && <0.20
+      servant               >= 0.20 && < 0.21
+    , servant-client-core   >= 0.20 && <0.21
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat           >= 0.10.5   && < 0.13
+      base-compat           >= 0.10.5   && < 0.14
     , case-insensitive
     , http-streams          >= 0.8.6.1  && < 0.9
     , http-media            >= 0.7.1.3  && < 0.9
@@ -70,7 +70,7 @@ library
     , exceptions            >= 0.10.0   && < 0.11
     , kan-extensions        >= 5.2      && < 5.3
     , monad-control         >= 1.0.2.3  && < 1.1
-    , semigroupoids         >= 5.3.1    && < 5.4
+    , semigroupoids         >= 5.3.1    && < 6.1
     , transformers-base     >= 0.4.5.2  && < 0.5
     , transformers-compat   >= 0.6.2    && < 0.8
 
@@ -112,16 +112,15 @@ test-suite spec
   -- Additional dependencies
   build-depends:
       entropy           >= 0.4.1.3  && < 0.5
-    , hspec             >= 2.6.0    && < 2.10
+    , hspec             >= 2.6.0    && < 2.12
     , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 2.8.0.0  && < 3.2
     , QuickCheck        >= 2.12.6.1 && < 2.15
-    , servant           == 0.19.*
-    , servant-server    == 0.19.*
-    , tdigest           >= 0.2     && < 0.3
+    , servant-server    >= 0.20 && < 0.21
+    , servant           >= 0.20 && < 0.21
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && < 2.10
+    hspec-discover:hspec-discover >= 2.6.0 && < 2.12
 
 test-suite readme
   type:           exitcode-stdio-1.0

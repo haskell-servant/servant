@@ -38,7 +38,6 @@ import           Network.HTTP.Media                     (MediaType)
 import           Servant.API
 import           Servant.API.Description                (FoldDescription,
                                                          reflectDescription)
-import           Servant.API.Generic                    (ToServantApi, AsApi)
 import           Servant.API.Modifiers                  (FoldRequired)
 
 import           Servant.Swagger.Internal.TypeLevel.API
@@ -304,6 +303,10 @@ instance (HasSwagger sub) => HasSwagger (HttpVersion :> sub) where
 instance (HasSwagger sub) => HasSwagger (WithNamedContext x c sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy sub)
 
+-- | @'WithResource'@ combinator does not change our specification at all.
+instance (HasSwagger sub) => HasSwagger (WithResource res :> sub) where
+  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+
 instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (sym :> sub) where
   toSwagger _ = prependPath piece (toSwagger (Proxy :: Proxy sub))
     where
@@ -466,10 +469,15 @@ instance (Accept c, AllAccept cs) => AllAccept (c ': cs) where
 class ToResponseHeader h where
   toResponseHeader :: Proxy h -> (HeaderName, Swagger.Header)
 
-instance (KnownSymbol sym, ToParamSchema a) => ToResponseHeader (Header sym a) where
-  toResponseHeader _ = (hname, Swagger.Header Nothing hschema)
+instance (KnownSymbol sym, ToParamSchema a, KnownSymbol (FoldDescription mods)) => ToResponseHeader (Header' mods sym a) where
+  toResponseHeader _ =
+    ( hname
+    , Swagger.Header (transDesc $ reflectDescription (Proxy :: Proxy mods)) hschema
+    )
     where
       hname = Text.pack (symbolVal (Proxy :: Proxy sym))
+      transDesc ""   = Nothing
+      transDesc desc = Just (Text.pack desc)
       hschema = toParamSchema (Proxy :: Proxy a)
 
 class AllToResponseHeader hs where

@@ -59,11 +59,15 @@ import           Servant.API.Capture
                  (Capture, CaptureAll)
 import           Servant.API.Fragment
 import           Servant.API.Header
-                 (Header)
+                 (Header, Header')
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam, QueryParams)
 import           Servant.API.ReqBody
                  (ReqBody)
+import           Servant.API.NamedRoutes
+                 (NamedRoutes)
+import           Servant.API.Generic
+                 (ToServantApi)
 import           Servant.API.Sub
                  (type (:>))
 import           Servant.API.Verbs
@@ -110,7 +114,7 @@ type family IsElem' a s :: Constraint
 --
 -- >>> ok (Proxy :: Proxy (IsElem ("bye" :> Get '[JSON] Int) SampleAPI))
 -- ...
--- ... Could not deduce...
+-- ... Could not ...
 -- ...
 --
 -- An endpoint is considered within an api even if it is missing combinators
@@ -130,6 +134,7 @@ type family IsElem endpoint api :: Constraint where
   IsElem e (sa :<|> sb)                   = Or (IsElem e sa) (IsElem e sb)
   IsElem (e :> sa) (e :> sb)              = IsElem sa sb
   IsElem sa (Header sym x :> sb)          = IsElem sa sb
+  IsElem sa (Header' mods sym x :> sb)    = IsElem sa sb
   IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
   IsElem (CaptureAll z y :> sa) (CaptureAll x y :> sb)
                                           = IsElem sa sb
@@ -142,6 +147,7 @@ type family IsElem endpoint api :: Constraint where
   IsElem (Verb m s ct typ) (Verb m s ct' typ)
                                           = IsSubList ct ct'
   IsElem e e                              = ()
+  IsElem e (NamedRoutes rs)               = IsElem e (ToServantApi rs)
   IsElem e a                              = IsElem' e a
 
 -- | Check whether @sub@ is a sub-API of @api@.
@@ -151,7 +157,7 @@ type family IsElem endpoint api :: Constraint where
 --
 -- >>> ok (Proxy :: Proxy (IsSubAPI (SampleAPI :<|> Get '[JSON] Int) SampleAPI))
 -- ...
--- ... Could not deduce...
+-- ... Could not ...
 -- ...
 --
 -- This uses @IsElem@ for checking; thus the note there applies here.
@@ -174,7 +180,7 @@ type family AllIsElem xs api :: Constraint where
 --
 -- >>> ok (Proxy :: Proxy (IsIn (Get '[JSON] Int) (Header "h" Bool :> Get '[JSON] Int)))
 -- ...
--- ... Could not deduce...
+-- ... Could not ...
 -- ...
 type family IsIn (endpoint :: *) (api :: *) :: Constraint where
   IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)

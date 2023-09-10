@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TypeApplications #-}
 module Servant.Auth.ServerSpec (spec) where
 
 #if !MIN_VERSION_servant_server(0,16,0)
@@ -6,13 +7,12 @@ module Servant.Auth.ServerSpec (spec) where
 #endif
 
 import           Control.Lens
-import           Control.Monad.Except                (runExceptT)
 import           Control.Monad.IO.Class              (liftIO)
 import           Crypto.JOSE                         (Alg (HS256, None), Error,
                                                       JWK, JWSHeader,
                                                       KeyMaterialGenParam (OctGenParam),
                                                       ToCompact, encodeCompact,
-                                                      genJWK, newJWSHeader)
+                                                      genJWK, newJWSHeader, runJOSE)
 import           Crypto.JWT                          (Audience (..), ClaimsSet,
                                                       NumericDate (NumericDate),
                                                       SignedJWT,
@@ -25,6 +25,7 @@ import           Data.Aeson                          (FromJSON, ToJSON, Value,
 import           Data.Aeson.Lens                     (_JSON)
 import qualified Data.ByteString                     as BS
 import qualified Data.ByteString.Lazy                as BSL
+import           Data.Text                           (Text, pack)
 import           Data.CaseInsensitive                (mk)
 import           Data.Foldable                       (find)
 import           Data.Monoid
@@ -40,6 +41,7 @@ import           Network.HTTP.Types                  (Status, status200,
 import           Network.Wai                         (responseLBS)
 import           Network.Wai.Handler.Warp            (testWithApplication)
 import           Network.Wreq                        (Options, auth, basicAuth,
+                                                      checkResponse,
                                                       cookieExpiryTime, cookies,
                                                       defaults, get, getWith, postWith,
                                                       header, oauth2Bearer,
@@ -78,7 +80,7 @@ spec = do
 authSpec :: Spec
 authSpec
   = describe "The Auth combinator"
-  $ around (testWithApplication . return $ app jwtAndCookieApi) $ do
+  $ aroundAll (testWithApplication . return $ app jwtAndCookieApi) $ do
 
   it "returns a 401 if all authentications are Indefinite" $ \port -> do
     get (url port) `shouldHTTPErrorWith` status401
@@ -170,7 +172,7 @@ cookieAuthSpec :: Spec
 cookieAuthSpec
   = describe "The Auth combinator" $ do
       describe "With XSRF check" $
-       around (testWithApplication . return $ app cookieOnlyApi) $ do
+       aroundAll (testWithApplication . return $ app cookieOnlyApi) $ do
 
         it "fails if XSRF header and cookie don't match" $ \port -> property
                                                          $ \(user :: User) -> do
@@ -183,8 +185,21 @@ cookieAuthSpec
         it "fails with no XSRF header or cookie" $ \port -> property
                                                          $ \(user :: User) -> do
           jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
-          opts <- addJwtToCookie cookieCfg jwt
-          getWith opts (url port) `shouldHTTPErrorWith` status401
+          opts' <- addJwtToCookie cookieCfg jwt
+          let opts = opts' & checkResponse .~ Just mempty
+          resp <- getWith opts (url port)
+          resp ^. responseStatus `shouldBe` status401
+          (resp ^. responseCookieJar) `shouldNotHaveCookies` ["XSRF-TOKEN"]
+
+          -- Validating that the XSRF cookie isn't added for UVerb routes either.
+          -- These routes can return a 401 response directly without using throwError / throwAll,
+          -- which revealed a bug:
+          --
+          -- https://github.com/haskell-servant/servant/issues/1570#issuecomment-1076374449
+          resp <- getWith opts (url port ++ "/uverb")
+          resp ^. responseStatus `shouldBe` status401
+          (resp ^. responseCookieJar) `shouldNotHaveCookies` ["XSRF-TOKEN"]
+
 
         it "succeeds if XSRF header and cookie match, and JWT is valid" $ \port -> property
                                                                         $ \(user :: User) -> do
@@ -228,7 +243,7 @@ cookieAuthSpec
       describe "With no XSRF check for GET requests" $ let
             noXsrfGet xsrfCfg = xsrfCfg { xsrfExcludeGet = True }
             cookieCfgNoXsrfGet = cookieCfg { cookieXsrfSetting = fmap noXsrfGet $ cookieXsrfSetting cookieCfg }
-       in around (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
+       in aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
 
         it "succeeds with no XSRF header or cookie for GET" $ \port -> property
                                                             $ \(user :: User) -> do
@@ -245,7 +260,7 @@ cookieAuthSpec
 
       describe "With no XSRF check at all" $ let
             cookieCfgNoXsrf = cookieCfg { cookieXsrfSetting = Nothing }
-       in around (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
+       in aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
 
         it "succeeds with no XSRF header or cookie for GET" $ \port -> property
                                                             $ \(user :: User) -> do
@@ -298,7 +313,7 @@ cookieAuthSpec
 jwtAuthSpec :: Spec
 jwtAuthSpec
   = describe "The JWT combinator"
-  $ around (testWithApplication . return $ app jwtOnlyApi) $ do
+  $ aroundAll (testWithApplication . return $ app jwtOnlyApi) $ do
 
   it "fails if 'aud' does not match predicate" $ \port -> property $
                                                 \(user :: User) -> do
@@ -363,7 +378,7 @@ jwtAuthSpec
 
 basicAuthSpec :: Spec
 basicAuthSpec = describe "The BasicAuth combinator"
-  $ around (testWithApplication . return $ app basicAuthApi) $ do
+  $ aroundAll (testWithApplication . return $ app basicAuthApi) $ do
 
   it "succeeds with the correct password and username" $ \port -> do
     resp <- getWith (defaults & auth ?~ basicAuth "ali" "Open sesame") (url port)
@@ -406,13 +421,14 @@ type API auths
     = Auth auths User :>
         ( Get '[JSON] Int
        :<|> ReqBody '[JSON] Int :> Post '[JSON] Int
-       :<|> NamedRoutes DummyRoutes
+       :<|> "named" :> NamedRoutes DummyRoutes
        :<|> "header" :> Get '[JSON] (Headers '[Header "Blah" Int] Int)
 #if MIN_VERSION_servant_server(0,15,0)
        :<|> "stream" :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
 #endif
        :<|> "raw" :> Raw
         )
+      :<|> "uverb" :> Auth auths User :> UVerb 'GET '[JSON] '[WithStatus 200 Int, WithStatus 401 Text, WithStatus 403 Text]
       :<|> "login" :> ReqBody '[JSON] User :> Post '[JSON] (Headers '[ Header "Set-Cookie" SetCookie
                                                                      , Header "Set-Cookie" SetCookie ] NoContent)
       :<|> "logout" :> Get '[JSON] (Headers '[ Header "Set-Cookie" SetCookie
@@ -490,6 +506,11 @@ server ccfg =
                         :<|> raw
         Indefinite -> throwAll err401
         _ -> throwAll err403
+    ) :<|>
+    (\authResult -> case authResult of
+      Authenticated usr -> respond (WithStatus @200 (42 :: Int))
+      Indefinite -> respond (WithStatus @401 $ pack "Authentication required")
+      _ -> respond (WithStatus @403 $ pack "Forbidden")
     )
     :<|> getLogin
     :<|> getLogout
@@ -540,7 +561,7 @@ addJwtToHeader jwt = case jwt of
     $ defaults & header "Authorization" .~ ["Bearer " <> BSL.toStrict v]
 
 createJWT :: JWK -> JWSHeader () -> ClaimsSet -> IO (Either Error Crypto.JWT.SignedJWT)
-createJWT k a b = runExceptT $ signClaims k a b
+createJWT k a b = runJOSE $ signClaims k a b
 
 addJwtToCookie :: ToCompact a => CookieSettings -> Either Error a -> IO Options
 addJwtToCookie ccfg jwt = case jwt >>= (return . encodeCompact) of
@@ -569,6 +590,12 @@ shouldMatchCookieNames :: HCli.CookieJar -> [BS.ByteString] -> Expectation
 shouldMatchCookieNames cj patterns
     = fmap cookie_name (destroyCookieJar cj)
     `shouldMatchList` patterns
+
+shouldNotHaveCookies :: HCli.CookieJar -> [BS.ByteString] -> Expectation
+shouldNotHaveCookies cj patterns =
+    sequence_ $ (\cookieName -> cookieNames `shouldNotContain` [cookieName]) <$> patterns
+  where cookieNames :: [BS.ByteString]
+        cookieNames = cookie_name <$> destroyCookieJar cj
 
 shouldMatchCookieNameValues :: HCli.CookieJar -> [(BS.ByteString, BS.ByteString)] -> Expectation
 shouldMatchCookieNameValues cj patterns

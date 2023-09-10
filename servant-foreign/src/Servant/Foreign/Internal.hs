@@ -487,6 +487,13 @@ instance HasForeign lang ftype api =>
 
   foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
+instance HasForeign lang ftype api =>
+  HasForeign lang ftype (WithResource res :> api) where
+
+  type Foreign ftype (WithResource res :> api) = Foreign ftype api
+
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
+
 instance HasForeign lang ftype api
   => HasForeign lang ftype (HttpVersion :> api) where
   type Foreign ftype (HttpVersion :> api) = Foreign ftype api
@@ -507,6 +514,13 @@ instance HasForeign lang ftype api
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) req
+
+instance HasForeign lang ftype (ToServantApi r) => HasForeign lang ftype (NamedRoutes r) where
+  type Foreign ftype (NamedRoutes r) = Foreign ftype (ToServantApi r)
+
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy (ToServantApi r)) req
+
 
 -- | Utility class used by 'listFromAPI' which computes
 --   the data needed to generate a function for each endpoint

@@ -1,10 +1,12 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
@@ -34,9 +36,10 @@ module Servant.Server.Internal
 import           Control.Monad
                  (join, when)
 import           Control.Monad.Trans
-                 (liftIO)
+                 (liftIO, lift)
 import           Control.Monad.Trans.Resource
-                 (runResourceT)
+                 (runResourceT, ReleaseKey)
+import           Data.Acquire
 import qualified Data.ByteString                            as B
 import qualified Data.ByteString.Builder                    as BB
 import qualified Data.ByteString.Char8                      as BC8
@@ -63,7 +66,7 @@ import           Network.HTTP.Types                         hiding
 import           Network.Socket
                  (SockAddr)
 import           Network.Wai
-                 (Application, Request, httpVersion, isSecure, lazyRequestBody,
+                 (Application, Request, Response, ResponseReceived, httpVersion, isSecure, lazyRequestBody,
                  queryString, remoteHost, getRequestBodyChunk, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
 import           Prelude ()
@@ -73,10 +76,10 @@ import           Servant.API
                  CaptureAll, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  Header', If, IsSecure (..), NoContentVerb, QueryFlag,
-                 QueryParam', QueryParams, Raw, ReflectMethod (reflectMethod),
+                 QueryParam', QueryParams, Raw, RawM, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
-                 WithNamedContext, NamedRoutes)
+                 WithNamedContext, WithResource, NamedRoutes)
 import           Servant.API.Generic (GenericMode(..), ToServant, ToServantApi, GServantProduct, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
@@ -94,6 +97,8 @@ import           Servant.API.TypeErrors
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
                  parseUrlPieces)
+import           Data.Kind
+                 (Type)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -112,6 +117,10 @@ import           Servant.API.TypeLevel
                  (AtLeastOneFragment, FragmentUnique)
 
 class HasServer api context where
+  -- | The type of a server for this API, given a monad to run effects in.
+  --
+  -- Note that the result kind is @*@, so it is /not/ a monad transformer, unlike
+  -- what the @T@ in the name might suggest.
   type ServerT api (m :: * -> *) :: *
 
   route ::
@@ -240,6 +249,42 @@ instance (KnownSymbol capture, FromHttpApiData a, Typeable a
       rep = typeRep (Proxy :: Proxy CaptureAll)
       formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
       hint = CaptureHint (T.pack $ symbolVal $ Proxy @capture) (typeRep (Proxy :: Proxy [a]))
+
+-- | If you use 'WithResource' in one of the endpoints for your API Servant
+-- will provide the handler for this endpoint an argument of the specified type.
+-- The lifespan of this resource will be automatically managed by Servant. This
+-- resource will be created before the handler starts and it will be destoyed
+-- after it ends. A new resource is created for each request to the endpoint.
+
+-- The creation and destruction are done using a 'Data.Acquire.Acquire'
+-- provided via server 'Context'.
+--
+-- Example
+--
+-- > type MyApi = WithResource Handle :> "writeToFile" :> Post '[JSON] NoContent
+-- >
+-- > server :: Server MyApi
+-- > server = writeToFile
+-- >   where writeToFile :: (ReleaseKey, Handle) -> Handler NoContent
+-- >         writeToFile (_, h) = hPutStrLn h "message"
+--
+-- In addition to the resource, the handler will also receive a 'ReleaseKey'
+-- which can be used to deallocate the resource before the end of the request
+-- if desired.
+
+instance (HasServer api ctx, HasContextEntry ctx (Acquire a))
+      => HasServer (WithResource a :> api) ctx where
+
+  type ServerT (WithResource a :> api) m = (ReleaseKey, a) -> ServerT api m
+
+  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy @api) pc nt . s
+
+  route Proxy context d = route (Proxy @api) context (d `addParameterCheck` allocateResource)
+    where
+      allocateResource :: DelayedIO (ReleaseKey, a)
+      allocateResource = DelayedIO $ lift $ allocateAcquire (getContextEntry context)
+
+
 
 allowedMethodHead :: Method -> Request -> Bool
 allowedMethodHead method request = method == methodGet && requestMethod request == methodHead
@@ -608,6 +653,35 @@ instance HasServer Raw context where
             Fail a      -> respond $ Fail a
             FailFatal e -> respond $ FailFatal e
 
+-- | Just pass the request to the underlying application and serve its response.
+--
+-- Example:
+--
+-- > type MyApi = "images" :> Raw
+-- >
+-- > server :: Server MyApi
+-- > server = serveDirectory "/var/www/images"
+instance HasServer RawM context where
+  type ServerT RawM m = Request -> (Response -> IO ResponseReceived) -> m ResponseReceived
+
+  route
+    :: Proxy RawM
+    -> Context context
+    -> Delayed env (Request -> (Response -> IO ResponseReceived) -> Handler ResponseReceived) -> Router env
+  route _ _ handleDelayed = RawRouter $ \env request respond -> runResourceT $ do
+    routeResult <- runDelayed handleDelayed env request
+    let respond' = liftIO . respond
+    liftIO $ case routeResult of
+      Route handler   -> runHandler (handler request (respond . Route)) >>=
+        \case
+           Left e -> respond' $ FailFatal e
+           Right a -> pure a
+      Fail e -> respond' $ Fail e
+      FailFatal e -> respond' $ FailFatal e
+
+  hoistServerWithContext _ _ f srvM = \req respond -> f (srvM req respond)
+
+
 -- | If you use 'ReqBody' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
 -- that takes an argument of the type specified by 'ReqBody'.
@@ -678,18 +752,17 @@ instance
     route Proxy context subserver = route (Proxy :: Proxy api) context $
         addBodyCheck subserver ctCheck bodyCheck
       where
-        ctCheck :: DelayedIO (SourceIO chunk -> a)
+        ctCheck :: DelayedIO (SourceIO chunk -> IO a)
         -- TODO: do content-type check
         ctCheck = return fromSourceIO
 
-        bodyCheck :: (SourceIO chunk -> a) -> DelayedIO a
+        bodyCheck :: (SourceIO chunk -> IO a) -> DelayedIO a
         bodyCheck fromRS = withRequest $ \req -> do
             let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ctype) :: BL.ByteString -> Either String chunk
             let framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender' :: SourceIO B.ByteString ->  SourceIO chunk
             let body = getRequestBodyChunk req
             let rs = S.fromAction B.null body
-            let rs' = fromRS $ framingUnrender' rs
-            return rs'
+            liftIO $ fromRS $ framingUnrender' rs
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @api@.
@@ -821,7 +894,11 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -------------------------------------------------------------------------------
 
 -- Erroring instance for 'HasServer' when a combinator is not fully applied
-instance TypeError (PartialApplication HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
+instance TypeError (PartialApplication 
+#if __GLASGOW_HASKELL__ >= 904
+                    @(Type -> [Type] -> Constraint) 
+#endif
+                    HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
   where
     type ServerT (arr :> sub) _ = TypeError (PartialApplication (HasServer :: * -> [*] -> Constraint) arr)
     route = error "unreachable"
@@ -865,7 +942,11 @@ type HasServerArrowTypeError a b =
 -- XXX: This omits the @context@ parameter, e.g.:
 --
 -- "There is no instance for HasServer (Bool :> …)". Do we care ?
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub HasServer ty) => HasServer (ty :> sub) context
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub 
+#if __GLASGOW_HASKELL__ >= 904
+                                         @(Type -> [Type] -> Constraint) 
+#endif
+                                         HasServer ty) => HasServer (ty :> sub) context
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) => HasServer api context
 
@@ -931,6 +1012,7 @@ instance
   ( HasServer (ToServantApi api) context
   , forall m. Generic (api (AsServerT m))
   , forall m. GServer api m
+  , ErrorIfNoGeneric api
   ) => HasServer (NamedRoutes api) context where
 
   type ServerT (NamedRoutes api) m = api (AsServerT m)

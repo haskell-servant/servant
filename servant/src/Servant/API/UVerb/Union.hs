@@ -111,8 +111,8 @@ instance {-# OVERLAPPING #-} UElem x xs => UElem x (x' ': xs) where
   eject (Z _) = Nothing
   eject (S ns) = eject ns
 
--- | Check whether @a@ is in list.  This will throw nice errors if the element is not in the
--- list, or if there is a duplicate in the list.
+-- | Check whether @a@ is in given type-level list.
+-- This will throw a nice error if the element is not in the list.
 type family CheckElemIsMember (a :: k) (as :: [k]) :: Constraint where
     CheckElemIsMember a as =
       If (Elem a as) (() :: Constraint) (TypeError (NoElementError a as))
@@ -128,10 +128,12 @@ type DuplicateElementError (rs :: [k]) =
     ':$$: 'Text "    " ':<>: 'ShowType rs
 
 type family Elem (x :: k) (xs :: [k]) :: Bool where
+  Elem x (x ': _) = 'True
+  Elem x (_ ': xs) = Elem x xs
   Elem _ '[] = 'False
-  Elem x (x' ': xs) =
-    If (x == x') 'True (Elem x xs)
 
+-- | Check whether all values in a type-level list are distinct.
+-- This will throw a nice error if there are any duplicate elements in the list.
 type family Unique xs :: Constraint where
   Unique xs = If (Nubbed xs == 'True) (() :: Constraint) (TypeError (DuplicateElementError xs))
 

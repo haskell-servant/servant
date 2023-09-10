@@ -31,6 +31,8 @@ module Servant.API (
   -- | Access the location for arbitrary data to be shared by applications and middleware
   module Servant.API.WithNamedContext,
   -- | Access context entries in combinators in servant-server
+  module Servant.API.WithResource,
+  -- | Access a managed resource scoped to a single request
 
   -- * Actual endpoints, distinguished by HTTP method
   module Servant.API.Verbs,
@@ -101,21 +103,23 @@ import           Servant.API.Experimental.Auth
                  (AuthProtect)
 import           Servant.API.Fragment
                  (Fragment)
+import           Servant.API.Generic
+                 (AsApi, GServantProduct, GenericMode ((:-)), GenericServant,
+                 ToServant, ToServantApi, fromServant, genericApi, toServant)
 import           Servant.API.Header
                  (Header, Header')
-import           Servant.API.Generic
-                 (GenericMode ((:-)), AsApi, ToServant, ToServantApi, GServantProduct,
-                 GenericServant, fromServant, toServant, genericApi)
 import           Servant.API.HttpVersion
                  (HttpVersion (..))
 import           Servant.API.IsSecure
                  (IsSecure (..))
 import           Servant.API.Modifiers
                  (Lenient, Optional, Required, Strict)
+import           Servant.API.NamedRoutes
+                 (NamedRoutes)
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam, QueryParam', QueryParams)
 import           Servant.API.Raw
-                 (Raw)
+                 (Raw, RawM)
 import           Servant.API.RemoteHost
                  (RemoteHost)
 import           Servant.API.ReqBody
@@ -123,8 +127,9 @@ import           Servant.API.ReqBody
 import           Servant.API.ResponseHeaders
                  (AddHeader, BuildHeadersTo (buildHeadersTo),
                  GetHeaders (getHeaders), HList (..), HasResponseHeader,
-                 Headers (..), ResponseHeader (..), addHeader, getHeadersHList,
-                 getResponse, lookupResponseHeader, noHeader)
+                 Headers (..), ResponseHeader (..), addHeader, addHeader',
+                 getHeadersHList, getResponse, lookupResponseHeader, noHeader,
+                 noHeader')
 import           Servant.API.Stream
                  (FramingRender (..), FramingUnrender (..), FromSourceIO (..),
                  NetstringFraming, NewlineFraming, NoFraming, SourceIO, Stream,
@@ -137,8 +142,6 @@ import           Servant.API.UVerb
                  Unique, WithStatus (..), inject, statusOf)
 import           Servant.API.Vault
                  (Vault)
-import           Servant.API.NamedRoutes
-                 (NamedRoutes)
 import           Servant.API.Verbs
                  (Delete, DeleteAccepted, DeleteNoContent,
                  DeleteNonAuthoritative, Get, GetAccepted, GetNoContent,
@@ -150,6 +153,8 @@ import           Servant.API.Verbs
                  ReflectMethod (reflectMethod), StdMethod (..), Verb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
+import           Servant.API.WithResource
+                 (WithResource)
 import           Servant.Links
                  (HasLink (..), IsElem, IsElem', Link, URI (..), safeLink)
 import           Web.HttpApiData

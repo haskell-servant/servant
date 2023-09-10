@@ -3,11 +3,24 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20
+----
+
+- Add API docs for ServerT [#1573](https://github.com/haskell-servant/servant/pull/1573)
+- Add Functor instance to AuthHandler. [#1638](https://github.com/haskell-servant/servant/pull/1638)
+- Compatibility with GHC 9.6. [#1680](https://github.com/haskell-servant/servant/pull/1680)
+
+0.19.2
+------
+
+Compatibility with GHC 9.4, see [PR #1592](https://github.com/haskell-servant/servant/pull/1592).
+
 0.19.1
 ------
 
 - Add `MonadFail` instance for `Handler` wrt [#1545](https://github.com/haskell-servant/servant/issues/1545)
 - Support GHC 9.2 [#1525](https://github.com/haskell-servant/servant/issues/1525)
+- Add capture hints in `Router` type for debug and display purposes [PR #1556] (https://github.com/haskell-servant/servant/pull/1556)
 
 0.19
 ----

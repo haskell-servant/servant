@@ -53,7 +53,7 @@ spec = describe "The JWT combinator" $ do
 -- * HasClient {{{
 
 hasClientSpec :: Spec
-hasClientSpec = describe "HasClient" $ around (testWithApplication $ return app) $ do
+hasClientSpec = describe "HasClient" $ aroundAll (testWithApplication $ return app) $ do
 
   let mkTok :: User -> Maybe UTCTime -> IO Token
       mkTok user mexp = do

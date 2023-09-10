@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-client-core
-version:             0.19
+version:             0.20
 
 synopsis:            Core functionality and class for client function generation for servant APIs
 category:            Servant, Web
@@ -16,7 +16,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 build-type:          Simple
-tested-with: GHC ==8.6.5 || ==8.8.4 || ==8.10.2 || ==9.0.1
+tested-with: GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4
            , GHCJS ==8.6.0.1
 
 extra-source-files:
@@ -50,31 +50,31 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                  >= 4.9      && < 4.17
+      base                  >= 4.9      && < 4.19
     , bytestring            >= 0.10.8.1 && < 0.12
     , constraints           >= 0.2      && < 0.14
     , containers            >= 0.5.7.1  && < 0.7
     , deepseq               >= 1.4.2.0  && < 1.5
     , text                  >= 1.2.3.0  && < 2.1
-    , transformers          >= 0.5.2.0  && < 0.6
-    , template-haskell      >= 2.11.1.0 && < 2.19
+    , transformers          >= 0.5.2.0  && < 0.7
+    , template-haskell      >= 2.11.1.0 && < 2.21
 
   if !impl(ghc >= 8.2)
     build-depends:
-      bifunctors >= 5.5.3 && < 5.6
+      bifunctors >= 5.5.3 && < 5.7
 
   -- Servant dependencies
   build-depends:
-      servant            >= 0.19
+      servant            >= 0.20
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
       aeson                 >= 1.4.1.0  && < 3
-    , base-compat           >= 0.10.5   && < 0.13
+    , base-compat           >= 0.10.5   && < 0.14
     , base64-bytestring     >= 1.0.0.1  && < 1.3
     , exceptions            >= 0.10.0   && < 0.11
-    , free                  >= 5.1      && < 5.2
+    , free                  >= 5.1      && < 5.3
     , http-media            >= 0.7.1.3  && < 0.9
     , http-types            >= 0.12.2   && < 0.13
     , network-uri           >= 2.6.1.0  && < 2.7
@@ -104,8 +104,8 @@ test-suite spec
   -- Additional dependencies
   build-depends:
       deepseq    >= 1.4.2.0  && < 1.5
-    , hspec      >= 2.6.0    && < 2.10
+    , hspec      >= 2.6.0    && < 2.12
     , QuickCheck >= 2.12.6.1 && < 2.15
 
   build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && <2.10
+    hspec-discover:hspec-discover >= 2.6.0 && <2.12

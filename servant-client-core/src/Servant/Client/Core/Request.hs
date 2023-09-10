@@ -51,9 +51,9 @@ import           Network.HTTP.Media
                  (MediaType)
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
-                 http11, methodGet)
+                 http11, methodGet, urlEncodeBuilder)
 import           Servant.API
-                 (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
+                 (ToHttpApiData, toEncodedUrlPiece, toQueryParam, toHeader, SourceIO)
 
 import Servant.Client.Core.Internal (mediaTypeRnf)
 
@@ -165,7 +165,8 @@ appendToQueryString pname pvalue req
 -- | Encode a query parameter value.
 --
 encodeQueryParamValue :: ToHttpApiData a => a  -> BS.ByteString
-encodeQueryParamValue = LBS.toStrict . Builder.toLazyByteString . toEncodedUrlPiece
+encodeQueryParamValue = LBS.toStrict . Builder.toLazyByteString
+  . urlEncodeBuilder True . encodeUtf8 . toQueryParam
 
 -- | Add header to the request being constructed.
 --

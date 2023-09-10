@@ -1,18 +1,14 @@
 module Servant.Auth.Server.Internal.JWT where
 
 import           Control.Lens
-import           Control.Monad.Except
+import           Control.Monad (MonadPlus(..), guard)
 import           Control.Monad.Reader
 import qualified Crypto.JOSE          as Jose
 import qualified Crypto.JWT           as Jose
-import           Data.Aeson           (FromJSON, Result (..), ToJSON, fromJSON,
-                                       toJSON)
 import           Data.ByteArray       (constEq)
 import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as BSL
-import qualified Data.HashMap.Strict  as HM
 import           Data.Maybe           (fromMaybe)
-import qualified Data.Text            as T
 import           Data.Time            (UTCTime)
 import           Network.Wai          (requestHeaders)
 
@@ -42,7 +38,7 @@ jwtAuthCheck jwtSettings = do
 -- token expires.
 makeJWT :: ToJWT a
   => a -> JWTSettings -> Maybe UTCTime -> IO (Either Jose.Error BSL.ByteString)
-makeJWT v cfg expiry = runExceptT $ do
+makeJWT v cfg expiry = Jose.runJOSE $ do
   bestAlg <- Jose.bestJWSAlg $ signingKey cfg
   let alg = fromMaybe bestAlg $ jwtAlg cfg
   ejwt <- Jose.signClaims (signingKey cfg)
@@ -59,7 +55,7 @@ makeJWT v cfg expiry = runExceptT $ do
 verifyJWT :: FromJWT a => JWTSettings -> BS.ByteString -> IO (Maybe a)
 verifyJWT jwtCfg input = do
   keys <- validationKeys jwtCfg
-  verifiedJWT <- runExceptT $ do
+  verifiedJWT <- Jose.runJOSE $ do
     unverifiedJWT <- Jose.decodeCompact (BSL.fromStrict input)
     Jose.verifyClaims
       (jwtSettingsToJwtValidationSettings jwtCfg)

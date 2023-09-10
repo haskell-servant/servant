@@ -199,7 +199,7 @@ parsers in the hope that the ones that should will always error out so
 you can try until the right one returns a value.)
 
 [servant-exceptions](https://github.com/ch1bo/servant-exceptions) is
-another shot at at the problem.  It is inspired by
+another shot at the problem.  It is inspired by
 servant-checked-exceptions, so it may be worth taking a closer look.
 The README claims that
 [cardano-sl](https://github.com/input-output-hk/cardano-sl) also has

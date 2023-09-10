@@ -2,6 +2,7 @@
 module Servant.Auth.Server.Internal.Types where
 
 import Control.Applicative
+import Control.Monad        (MonadPlus(..), ap)
 import Control.Monad.Reader
 import Control.Monad.Time
 import Data.Monoid          (Monoid (..))

@@ -1,3 +1,10 @@
+1.2
+---
+
+- WithResource combinator for Servant-managed resources [#1630](https://github.com/haskell-servant/servant/pull/1630)
+
+  For servant-swagger, this meant the addition of a `HasSwagger` instance.
+
 1.1.9
 -------
 
