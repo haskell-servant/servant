@@ -84,6 +84,7 @@ module Servant.Server
   , err417
   , err418
   , err422
+  , err429
    -- ** 5XX
   , err500
   , err501
