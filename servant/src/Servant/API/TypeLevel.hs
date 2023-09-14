@@ -185,6 +185,7 @@ type family AllIsElem xs api :: Constraint where
 type family IsIn (endpoint :: *) (api :: *) :: Constraint where
   IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
   IsIn (e :> sa) (e :> sb)           = IsIn sa sb
+  IsIn e (NamedRoutes record)        = IsIn e (ToServantApi record)
   IsIn e e                           = ()
 
 -- | Check whether @sub@ is a sub API of @api@.
