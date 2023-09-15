@@ -43,6 +43,7 @@ type family IsIn sub api :: Constraint where
   IsIn e (a :<|> b) = Or (IsIn e a) (IsIn e b)
   IsIn (e :> a) (e :> b) = IsIn a b
   IsIn e e = ()
+  IsIn e (NamedRoutes record) = IsIn e (ToServantApi record)
 
 -- | Check whether a type is a member of a list of types.
 -- This is a type-level analogue of @'elem'@.
