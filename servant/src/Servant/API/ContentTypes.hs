@@ -65,6 +65,7 @@ module Servant.API.ContentTypes
     , AllMime(..)
     , AllMimeRender(..)
     , AllMimeUnrender(..)
+    , eitherDecodeLenient
     , canHandleAcceptH
     ) where
 
@@ -363,6 +364,12 @@ instance NFData NoContent
 
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances
+
+-- | Deprecated: since aeson version 0.9 `eitherDecode` has lenient behavior.
+--
+eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
+eitherDecodeLenient = eitherDecode
+{-# DEPRECATED eitherDecodeLenient "use eitherDecode instead" #-}
 
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where

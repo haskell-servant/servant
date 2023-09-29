@@ -219,7 +219,7 @@ spec = describe "Servant.API.ContentTypes" $ do
                 handleCTypeH (Proxy :: Proxy '[JSONorText]) "image/jpeg"
                     "foobar" `shouldBe` (Nothing :: Maybe (Either String Int))
 
-    describe "eitherDecodeLenient" $ do
+    describe "eitherDecode is lenient" $ do
 
         -- Since servant-0.20.1 MimeUnrender JSON instance uses eitherDecode,
         -- as aeson >= 0.9 supports decoding top-level strings and numbers.
