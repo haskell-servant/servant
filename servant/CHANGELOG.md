@@ -2,6 +2,11 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20.1
+----
+
+- Support aeson-2.2 [#1695](https://github.com/haskell-servant/servant/pull/1695)
+
 0.20
 ----
 
