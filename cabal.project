@@ -53,10 +53,11 @@ tests: True
 optimization: False
 -- reorder-goals: True
 
--- The switch to crypton breaks the build, so let's avoid it for now
--- https://github.com/snoyberg/http-client/issues/508
-constraints: crypton < 0, crypton-connection < 0, crypton-x509 < 0, crypton-x509-store < 0, crypton-x509-system < 0, crypton-x509-validation < 0
-constraints: warp < 3.3.26
+-- Older warp versions fail to build with https >= 4.2:
+-- Network/Wai/Handler/Warp/HTTP2.hs:48:16: error:
+-- Error:     • Constructor ‘H2.Config’ does not have the required strict field(s): confMySockAddr,
+--                                                                          confPeerSockAddr
+constraints: http2 <4.2
 
 -- wreq-0.5.4.1 doesn't seem to work with ghc-8.6.5
 if (impl(ghc < 8.8))
