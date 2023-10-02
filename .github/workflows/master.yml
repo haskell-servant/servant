@@ -3,6 +3,8 @@ name: CI
 on:
   pull_request:
   push:
+    branches:
+      - master
 
 jobs:
   cabal:
@@ -20,6 +22,7 @@ jobs:
           - "9.2.8"
           - "9.4.5"
           - "9.6.2"
+      fail-fast: false
 
     steps:
     - uses: actions/checkout@v2

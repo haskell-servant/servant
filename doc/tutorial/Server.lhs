@@ -47,7 +47,6 @@ import System.Directory
 import Text.Blaze
 import Text.Blaze.Html.Renderer.Utf8
 import Servant.Types.SourceT (source)
-import qualified Data.Aeson.Parser
 import qualified Text.Blaze.Html
 ```
 
@@ -431,25 +430,11 @@ class Accept ctype => MimeUnrender ctype a where
     mimeUnrender :: Proxy ctype -> ByteString -> Either String a
 ```
 
-We don't have much work to do there either, `Data.Aeson.eitherDecode` is
-precisely what we need. However, it only allows arrays and objects as toplevel
-JSON values and this has proven to get in our way more than help us so we wrote
-our own little function around **aeson** and **attoparsec** that allows any type of
-JSON value at the toplevel of a "JSON document". Here's the definition in case
-you are curious.
-
-``` haskell
-eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
-eitherDecodeLenient input = do
-    v :: Value <- parseOnly (Data.Aeson.Parser.value <* endOfInput) (cs input)
-    parseEither parseJSON v
-```
-
-This function is exactly what we need for our `MimeUnrender` instance.
+As with `MimeRender`, we can use a function already available in `aeson`: `Data.Aeson.eitherDecode`.
 
 ``` haskell ignore
 instance FromJSON a => MimeUnrender JSON a where
-    mimeUnrender _ = eitherDecodeLenient
+    mimeUnrender _ = eitherDecode
 ```
 
 And this is all the code that lets you use `JSON` with `ReqBody`, `Get`,

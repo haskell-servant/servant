@@ -75,13 +75,7 @@ import           Control.Monad.Compat
 import           Control.DeepSeq
                  (NFData)
 import           Data.Aeson
-                 (FromJSON (..), ToJSON (..), encode)
-import           Data.Aeson.Parser
-                 (value)
-import           Data.Aeson.Types
-                 (parseEither)
-import           Data.Attoparsec.ByteString.Char8
-                 (endOfInput, parseOnly, skipSpace, (<?>))
+                 (FromJSON (..), ToJSON (..), encode, eitherDecode)
 import           Data.Bifunctor
                  (bimap)
 import qualified Data.ByteString                  as BS
@@ -371,28 +365,15 @@ instance NFData NoContent
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances
 
--- | Like 'Data.Aeson.eitherDecode' but allows all JSON values instead of just
--- objects and arrays.
+-- | Deprecated: since aeson version 0.9 `eitherDecode` has lenient behavior.
 --
--- Will handle trailing whitespace, but not trailing junk. ie.
---
--- >>> eitherDecodeLenient "1 " :: Either String Int
--- Right 1
---
--- >>> eitherDecodeLenient "1 junk" :: Either String Int
--- Left "trailing junk after valid JSON: endOfInput"
 eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
-eitherDecodeLenient input =
-    parseOnly parser (cs input) >>= parseEither parseJSON
-  where
-    parser = skipSpace
-          *> Data.Aeson.Parser.value
-          <* skipSpace
-          <* (endOfInput <?> "trailing junk after valid JSON")
+eitherDecodeLenient = eitherDecode
+{-# DEPRECATED eitherDecodeLenient "use eitherDecode instead" #-}
 
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where
-    mimeUnrender _ = eitherDecodeLenient
+    mimeUnrender _ = eitherDecode
 
 -- | @urlDecodeAsForm@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
