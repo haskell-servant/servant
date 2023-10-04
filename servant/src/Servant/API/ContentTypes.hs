@@ -81,6 +81,7 @@ import           Data.Bifunctor
 import qualified Data.ByteString                  as BS
 import           Data.ByteString.Lazy
                  (ByteString, fromStrict, toStrict)
+import           Data.Kind
 import qualified Data.List.NonEmpty               as NE
 import           Data.Maybe
                  (isJust)
@@ -171,7 +172,7 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 class Accept ctype => MimeRender ctype a where
     mimeRender  :: Proxy ctype -> a -> ByteString
 
-class (AllMime list) => AllCTRender (list :: [*]) a where
+class (AllMime list) => AllCTRender (list :: [Type]) a where
     -- If the Accept header can be matched, returns (Just) a tuple of the
     -- Content-Type and response (serialization of @a@ into the appropriate
     -- mimetype).
@@ -225,7 +226,7 @@ class Accept ctype => MimeUnrender ctype a where
 
     {-# MINIMAL mimeUnrender | mimeUnrenderWithType #-}
 
-class AllCTUnrender (list :: [*]) a where
+class AllCTUnrender (list :: [Type]) a where
     canHandleCTypeH
         :: Proxy list
         -> ByteString  -- Content-Type header
@@ -244,7 +245,7 @@ instance ( AllMimeUnrender ctyps a ) => AllCTUnrender ctyps a where
 --------------------------------------------------------------------------
 -- * Utils (Internal)
 
-class AllMime (list :: [*]) where
+class AllMime (list :: [Type]) where
     allMime :: Proxy list -> [M.MediaType]
 
 instance AllMime '[] where
@@ -262,7 +263,7 @@ canHandleAcceptH p (AcceptHeader h ) = isJust $ M.matchAccept (allMime p) h
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeRender
 --------------------------------------------------------------------------
-class (AllMime list) => AllMimeRender (list :: [*]) a where
+class (AllMime list) => AllMimeRender (list :: [Type]) a where
     allMimeRender :: Proxy list
                   -> a                              -- value to serialize
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
@@ -302,7 +303,7 @@ instance {-# OVERLAPPING #-}
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
 --------------------------------------------------------------------------
-class (AllMime list) => AllMimeUnrender (list :: [*]) a where
+class (AllMime list) => AllMimeUnrender (list :: [Type]) a where
     allMimeUnrender :: Proxy list
                     -> [(M.MediaType, ByteString -> Either String a)]
 

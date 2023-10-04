@@ -10,6 +10,7 @@
 
 module Servant.Server.Internal.Context where
 
+import           Data.Kind
 import           Data.Proxy
 import           GHC.TypeLits
 
@@ -51,7 +52,7 @@ instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
 -- Hint: import it as
 --
 -- > import Servant.Server (type (.++))
-type family (.++) (l1 :: [*]) (l2 :: [*]) where
+type family (.++) (l1 :: [Type]) (l2 :: [Type]) where
   '[] .++ a = a
   (a ': as) .++ b = a ': (as .++ b)
 
@@ -73,7 +74,7 @@ EmptyContext .++ a = a
 -- ...
 -- ...No instance for ...HasContextEntry '[] [Char]...
 -- ...
-class HasContextEntry (context :: [*]) (val :: *) where
+class HasContextEntry (context :: [Type]) (val :: Type) where
     getContextEntry :: Context context -> val
 
 instance {-# OVERLAPPABLE #-}
@@ -90,7 +91,7 @@ instance {-# OVERLAPPING #-}
 -- to have multiple values of the same type in your 'Context' and need to access
 -- them, we provide 'NamedContext'. You can think of it as sub-namespaces for
 -- 'Context's.
-data NamedContext (name :: Symbol) (subContext :: [*])
+data NamedContext (name :: Symbol) (subContext :: [Type])
   = NamedContext (Context subContext)
 
 -- | 'descendIntoNamedContext' allows you to access `NamedContext's. Usually you

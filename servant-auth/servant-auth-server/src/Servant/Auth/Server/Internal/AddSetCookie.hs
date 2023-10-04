@@ -7,6 +7,7 @@ module Servant.Auth.Server.Internal.AddSetCookie where
 
 import           Blaze.ByteString.Builder (toByteString)
 import qualified Data.ByteString          as BS
+import           Data.Kind
 import qualified Network.HTTP.Types       as HTTP
 import           Network.Wai              (mapResponseHeaders)
 import           Servant
@@ -33,12 +34,12 @@ type family AddSetCookieApiVerb a where
   AddSetCookieApiVerb a = Headers '[Header "Set-Cookie" SetCookie] a
 
 #if MIN_VERSION_servant_server(0,18,1)
-type family MapAddSetCookieApiVerb (as :: [*]) where
+type family MapAddSetCookieApiVerb (as :: [Type]) where
   MapAddSetCookieApiVerb '[] = '[]
   MapAddSetCookieApiVerb (a ': as) = (AddSetCookieApiVerb a ': MapAddSetCookieApiVerb as)
 #endif
 
-type family AddSetCookieApi a :: *
+type family AddSetCookieApi a :: Type
 type instance AddSetCookieApi (a :> b) = a :> AddSetCookieApi b
 type instance AddSetCookieApi (a :<|> b) = AddSetCookieApi a :<|> AddSetCookieApi b
 #if MIN_VERSION_servant_server(0,19,0)
@@ -57,7 +58,7 @@ type instance AddSetCookieApi (Stream method stat framing ctyps a)
 #endif
 type instance AddSetCookieApi (Headers hs a) = AddSetCookieApiVerb (Headers hs a)
 
-data SetCookieList (n :: Nat) :: * where
+data SetCookieList (n :: Nat) :: Type where
   SetCookieNil :: SetCookieList 'Z
   SetCookieCons :: Maybe SetCookie -> SetCookieList n -> SetCookieList ('S n)
 

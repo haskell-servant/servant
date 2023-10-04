@@ -15,6 +15,7 @@ module Servant.Server.Internal.ErrorFormatter
   , mkContextWithErrorFormatter
   ) where
 
+import           Data.Kind
 import           Data.String.Conversions
                  (cs)
 import           Data.Typeable
@@ -67,9 +68,9 @@ type ErrorFormatter = TypeRep -> Request -> String -> ServerError
 -- | This formatter does not get neither 'TypeRep' nor error message.
 type NotFoundErrorFormatter = Request -> ServerError
 
-type MkContextWithErrorFormatter (ctx :: [*]) = ctx .++ DefaultErrorFormatters
+type MkContextWithErrorFormatter (ctx :: [Type]) = ctx .++ DefaultErrorFormatters
 
-mkContextWithErrorFormatter :: forall (ctx :: [*]). Context ctx -> Context (MkContextWithErrorFormatter ctx)
+mkContextWithErrorFormatter :: forall (ctx :: [Type]). Context ctx -> Context (MkContextWithErrorFormatter ctx)
 mkContextWithErrorFormatter ctx = ctx .++ (defaultErrorFormatters :. EmptyContext)
 
 -- Internal

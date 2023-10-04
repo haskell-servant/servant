@@ -16,6 +16,7 @@ module Servant.Server.Generic (
     genericServerT
   ) where
 
+import           Data.Kind
 import           Data.Proxy
                  (Proxy (..))
 
@@ -37,7 +38,7 @@ genericServe = serve (Proxy :: Proxy (ToServantApi routes))  . genericServer
 --   by providing a transformation to bring each handler back in the 'Handler'
 --   monad.
 genericServeT
-  :: forall (routes :: * -> *) (m :: * -> *).
+  :: forall (routes :: Type -> Type) (m :: Type -> Type).
      ( GenericServant routes (AsServerT m)
      , GenericServant routes AsApi
      , HasServer (ToServantApi routes) '[]
@@ -55,7 +56,7 @@ genericServeT f server = serve p $ hoistServer p f (genericServerT server)
 --   used by auth-related combinators in servant, e.g to hold auth checks) and the given
 --   transformation to map all the handlers back to the 'Handler' monad.
 genericServeTWithContext
-  :: forall (routes :: * -> *) (m :: * -> *) (ctx :: [*]).
+  :: forall (routes :: Type -> Type) (m :: Type -> Type) (ctx :: [Type]).
      ( GenericServant routes (AsServerT m)
      , GenericServant routes AsApi
      , HasServer (ToServantApi routes) ctx

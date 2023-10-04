@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeOperators              #-}
 module Servant.Auth where
 
+import           Data.Kind
 import           Data.Proxy          (Proxy(..))
 import           Servant.API         ((:>))
 import           Servant.Links       (HasLink (..))
@@ -13,15 +14,15 @@ import           Servant.Links       (HasLink (..))
 
 -- | @Auth [auth1, auth2] val :> api@ represents an API protected *either* by
 -- @auth1@ or @auth2@
-data Auth (auths :: [*]) val
+data Auth (auths :: [Type]) val
 
 -- | A @HasLink@ instance for @Auth@
-instance HasLink sub => HasLink (Auth (tag :: [*]) value :> sub) where
+instance HasLink sub => HasLink (Auth (tag :: [Type]) value :> sub) where
 #if MIN_VERSION_servant(0,14,0)
-  type MkLink (Auth (tag :: [*]) value :> sub) a = MkLink sub a
+  type MkLink (Auth (tag :: [Type]) value :> sub) a = MkLink sub a
   toLink toA _ = toLink toA (Proxy :: Proxy sub)
 #else
-  type MkLink (Auth (tag :: [*]) value :> sub) = MkLink sub
+  type MkLink (Auth (tag :: [Type]) value :> sub) = MkLink sub
   toLink _ = toLink (Proxy :: Proxy sub)
 #endif
 

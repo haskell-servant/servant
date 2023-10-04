@@ -47,6 +47,7 @@ import qualified Data.ByteString.Lazy                       as BL
 import           Data.Constraint (Constraint, Dict(..))
 import           Data.Either
                  (partitionEithers)
+import           Data.Kind
 import           Data.Maybe
                  (fromMaybe, isNothing, mapMaybe, maybeToList)
 import           Data.String
@@ -121,7 +122,7 @@ class HasServer api context where
   --
   -- Note that the result kind is @*@, so it is /not/ a monad transformer, unlike
   -- what the @T@ in the name might suggest.
-  type ServerT api (m :: * -> *) :: *
+  type ServerT api (m :: Type -> Type) :: Type
 
   route ::
        Proxy api
@@ -900,7 +901,7 @@ instance TypeError (PartialApplication
 #endif
                     HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
   where
-    type ServerT (arr :> sub) _ = TypeError (PartialApplication (HasServer :: * -> [*] -> Constraint) arr)
+    type ServerT (arr :> sub) _ = TypeError (PartialApplication (HasServer :: Type -> [Type] -> Constraint) arr)
     route = error "unreachable"
     hoistServerWithContext _ _ _ _ = error "unreachable"
 
@@ -973,7 +974,7 @@ instance (AtLeastOneFragment api, FragmentUnique (Fragment a1 :> api), HasServer
 -- >>> import Servant
 
 -- | A type that specifies that an API record contains a server implementation.
-data AsServerT (m :: * -> *)
+data AsServerT (m :: Type -> Type)
 instance GenericMode (AsServerT m) where
     type AsServerT m :- api = ServerT api m
 
@@ -999,7 +1000,7 @@ type GServerConstraints api m =
 -- Users shouldn't have to worry about this class, as the only possible instance
 -- is provided in this module for all record APIs.
 
-class GServer (api :: * -> *) (m :: * -> *) where
+class GServer (api :: Type -> Type) (m :: Type -> Type) where
   gServerProof :: Dict (GServerConstraints api m)
 
 instance

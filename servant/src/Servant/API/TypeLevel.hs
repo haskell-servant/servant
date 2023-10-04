@@ -53,6 +53,7 @@ module Servant.API.TypeLevel (
 
 import           GHC.Exts
                  (Constraint)
+import           Data.Kind
 import           Servant.API.Alternative
                  (type (:<|>))
 import           Servant.API.Capture
@@ -182,7 +183,7 @@ type family AllIsElem xs api :: Constraint where
 -- ...
 -- ... Could not ...
 -- ...
-type family IsIn (endpoint :: *) (api :: *) :: Constraint where
+type family IsIn (endpoint :: Type) (api :: Type) :: Constraint where
   IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
   IsIn (e :> sa) (e :> sb)           = IsIn sa sb
   IsIn e e                           = ()

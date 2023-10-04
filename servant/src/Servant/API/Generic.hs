@@ -69,6 +69,7 @@ module Servant.API.Generic (
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
+import           Data.Kind
 import           Data.Proxy
                  (Proxy (..))
 import           GHC.Generics
@@ -83,7 +84,7 @@ type GenericServant routes mode = (GenericMode mode, Generic (routes mode), GSer
 -- parameter.  For example, 'AsApi' will leave @api@ untouched, while
 -- @'AsServerT' m@ will produce @'ServerT' api m@.
 class GenericMode mode where
-    type mode :- api :: *
+    type mode :- api :: Type
 
 infixl 0 :-
 

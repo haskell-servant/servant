@@ -33,6 +33,7 @@ module Servant.API.UVerb
   )
 where
 
+import Data.Kind
 import Data.Proxy (Proxy (Proxy))
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
@@ -41,8 +42,8 @@ import Servant.API.Status (KnownStatus, statusVal)
 import Servant.API.ResponseHeaders (Headers)
 import Servant.API.UVerb.Union
 
-class KnownStatus (StatusOf a) => HasStatus (a :: *) where
-  type StatusOf (a :: *) :: Nat
+class KnownStatus (StatusOf a) => HasStatus (a :: Type) where
+  type StatusOf (a :: Type) :: Nat
 
 statusOf :: forall a proxy. HasStatus a => proxy a -> Status
 statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
@@ -53,8 +54,8 @@ statusOf = const (statusVal (Proxy :: Proxy (StatusOf a)))
 instance HasStatus NoContent where
   type StatusOf NoContent = 204
 
-class HasStatuses (as :: [*]) where
-  type Statuses (as :: [*]) :: [Nat]
+class HasStatuses (as :: [Type]) where
+  type Statuses (as :: [Type]) :: [Nat]
   statuses :: Proxy as -> [Status]
 
 instance HasStatuses '[] where
@@ -100,7 +101,7 @@ instance HasStatus a => HasStatus (Headers ls a) where
 --
 -- Backwards compatibility is tricky, though: this type alias would mean people would have to
 -- use 'respond' instead of 'pure' or 'return', so all old handlers would have to be rewritten.
-data UVerb (method :: StdMethod) (contentTypes :: [*]) (as :: [*])
+data UVerb (method :: StdMethod) (contentTypes :: [Type]) (as :: [Type])
 
 instance {-# OVERLAPPING #-} MimeRender JSON a => MimeRender JSON (WithStatus _status a) where
   mimeRender contentTypeProxy (WithStatus a) = mimeRender contentTypeProxy a

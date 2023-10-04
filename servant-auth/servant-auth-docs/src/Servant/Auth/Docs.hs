@@ -33,6 +33,7 @@ module Servant.Auth.Docs
   ) where
 
 import Control.Lens          ((%~), (&), (|>))
+import Data.Kind
 import Data.List             (intercalate)
 import Data.Monoid
 import Data.Proxy            (Proxy (Proxy))
@@ -63,7 +64,7 @@ pretty rs =
   )
 
 
-class AllDocs (x :: [*]) where
+class AllDocs (x :: [Type]) where
   allDocs :: proxy x
               -- intro, req
           -> [(String, String)]

@@ -18,6 +18,7 @@
 #endif
 module Servant.Swagger.Internal.TypeLevel.Every where
 
+import           Data.Kind
 import           Data.Proxy
 import           GHC.Exts                                (Constraint)
 
@@ -48,7 +49,7 @@ type family EveryTF cs x :: Constraint where
 -- | Apply multiple constraint constructors to a type as a class.
 --
 -- This is different from @'EveryTF'@ in that it allows partial application.
-class EveryTF cs x => Every (cs :: [* -> Constraint]) (x :: *) where
+class EveryTF cs x => Every (cs :: [Type -> Constraint]) (x :: Type) where
 
 instance Every '[] x where
 instance (c x, Every cs x) => Every (c ': cs) x where

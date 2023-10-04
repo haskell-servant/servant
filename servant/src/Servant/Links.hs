@@ -130,6 +130,7 @@ module Servant.Links (
   , linkFragment
 ) where
 
+import           Data.Kind
 import           Data.List
 import           Data.Constraint
 import           Data.Proxy
@@ -358,7 +359,7 @@ safeLink' toA _ endpoint = toLink toA endpoint (Link mempty mempty mempty)
 -- Note: nested APIs don't work well with this approach
 --
 -- >>> :kind! MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link
--- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link :: *
+-- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link :: Type
 -- = Char -> (Int -> Link) :<|> (Double -> Link)
 allLinks
     :: forall api. HasLink api
@@ -417,7 +418,7 @@ fieldLink' toA _ = safeLink' toA (genericApi (Proxy :: Proxy routes)) (Proxy :: 
 -- | A type that specifies that an API record contains a set of links.
 --
 -- @since 0.14.1
-data AsLink (a :: *)
+data AsLink (a :: Type)
 instance GenericMode (AsLink a) where
     type (AsLink a) :- api = MkLink api a
 
@@ -453,7 +454,7 @@ allFieldLinks' toA
 
 -- | Construct a toLink for an endpoint.
 class HasLink endpoint where
-    type MkLink endpoint (a :: *)
+    type MkLink endpoint (a :: Type)
     toLink
         :: (Link -> a)
         -> Proxy endpoint -- ^ The API endpoint you would like to point to
@@ -532,7 +533,7 @@ instance (ToHttpApiData v, HasLink sub)
     toLink toA _ l vs = toLink toA (Proxy :: Proxy sub) $
         foldl' (flip $ addSegment . escaped . Text.unpack . toUrlPiece) l vs
 
-instance HasLink sub => HasLink (Header' mods sym (a :: *) :> sub) where
+instance HasLink sub => HasLink (Header' mods sym (a :: Type) :> sub) where
     type MkLink (Header' mods sym a :> sub) r = MkLink sub r
     toLink = simpleToLink (Proxy :: Proxy sub)
 
@@ -608,7 +609,7 @@ type GLinkConstraints routes a =
   , GenericServant routes (AsLink a)
   )
 
-class GLink (routes :: * -> *) (a :: *) where
+class GLink (routes :: Type -> Type) (a :: Type) where
   gLinkProof :: Dict (GLinkConstraints routes a)
 
 instance GLinkConstraints routes a => GLink routes a where
@@ -667,7 +668,7 @@ instance TypeError (PartialApplication
 #endif
                     HasLink arr) => HasLink ((arr :: a -> b) :> sub)
   where
-    type MkLink (arr :> sub) _ = TypeError (PartialApplication (HasLink :: * -> Constraint) arr)
+    type MkLink (arr :> sub) _ = TypeError (PartialApplication (HasLink :: Type -> Constraint) arr)
     toLink = error "unreachable"
 
 -- Erroring instances for 'HasLink' for unknown API combinators

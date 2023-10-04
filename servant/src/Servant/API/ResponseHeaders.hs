@@ -41,6 +41,7 @@ import           Control.DeepSeq
 import           Data.ByteString.Char8     as BS
                  (ByteString, pack)
 import qualified Data.CaseInsensitive      as CI
+import           Data.Kind
 import qualified Data.List                 as L
 import           Data.Proxy
 import           Data.Typeable
@@ -95,7 +96,7 @@ instance (y ~ Header' mods h x, NFData x, NFDataHList xs) => NFDataHList (y ': x
 instance NFDataHList xs => NFData (HList xs) where
     rnf = rnfHList
 
-type family HeaderValMap (f :: * -> *) (xs :: [*]) where
+type family HeaderValMap (f :: Type -> Type) (xs :: [Type]) where
     HeaderValMap f '[]                = '[]
     HeaderValMap f (Header' mods h x ': xs) = Header' mods h (f x) ': HeaderValMap f xs
 
@@ -162,7 +163,7 @@ instance (KnownSymbol h, GetHeadersFromHList rest, ToHttpApiData v)
 -- * Adding headers
 
 -- We need all these fundeps to save type inference
-class AddHeader (mods :: [*]) h v orig new
+class AddHeader (mods :: [Type]) h v orig new
     | mods h v orig -> new, new -> mods, new -> h, new -> v, new -> orig where
   addOptionalHeader :: ResponseHeader h v -> orig -> new  -- ^ N.B.: The same header can't be added multiple times
 

@@ -4,6 +4,7 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Capture (Capture, Capture', CaptureAll) where
 
+import           Data.Kind
 import           Data.Typeable
                  (Typeable)
 import           GHC.TypeLits
@@ -17,7 +18,7 @@ import           GHC.TypeLits
 type Capture = Capture' '[] -- todo
 
 -- | 'Capture' which can be modified. For example with 'Description'.
-data Capture' (mods :: [*]) (sym :: Symbol) (a :: *)
+data Capture' (mods :: [Type]) (sym :: Symbol) (a :: Type)
     deriving (Typeable)
 
 -- | Capture all remaining values from the request path under a certain type
@@ -27,7 +28,7 @@ data Capture' (mods :: [*]) (sym :: Symbol) (a :: *)
 --
 -- >>>            -- GET /src/*
 -- >>> type MyAPI = "src" :> CaptureAll "segments" Text :> Get '[JSON] SourceFile
-data CaptureAll (sym :: Symbol) (a :: *)
+data CaptureAll (sym :: Symbol) (a :: Type)
     deriving (Typeable)
 
 -- $setup

@@ -8,6 +8,7 @@ module Servant.API.Verbs
   , StdMethod(GET, POST, HEAD, PUT, DELETE, TRACE, CONNECT, OPTIONS, PATCH)
   ) where
 
+import           Data.Kind
 import           Data.Proxy
                  (Proxy)
 import           Data.Typeable
@@ -26,7 +27,7 @@ import           Network.HTTP.Types.Method
 -- provided, but you are free to define your own:
 --
 -- >>> type Post204 contentTypes a = Verb 'POST 204 contentTypes a
-data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [*]) (a :: *)
+data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [Type]) (a :: Type)
   deriving (Typeable, Generic)
 
 -- | @NoContentVerb@ is a specific type to represent 'NoContent' responses.

@@ -17,6 +17,7 @@ module Servant.Auth.Swagger
   ) where
 
 import Control.Lens    ((&), (<>~))
+import Data.Kind
 import Data.Proxy      (Proxy (Proxy))
 import Data.Swagger    (ApiKeyLocation (..), ApiKeyParams (..),
                         SecurityRequirement (..), SecurityScheme (..), 
@@ -66,7 +67,7 @@ instance HasSecurity JWT where
       type_ = SecuritySchemeApiKey (ApiKeyParams "Authorization" ApiKeyHeader)
       desc  = "JSON Web Token-based API key"
 
-class AllHasSecurity (x :: [*]) where
+class AllHasSecurity (x :: [Type]) where
   securities :: Proxy x -> [(T.Text,SecurityScheme)]
 
 instance {-# OVERLAPPABLE #-} (HasSecurity x, AllHasSecurity xs) => AllHasSecurity (x ': xs) where

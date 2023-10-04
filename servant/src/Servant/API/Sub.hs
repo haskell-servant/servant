@@ -4,6 +4,7 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Sub ((:>)) where
 
+import           Data.Kind
 import           Data.Typeable
                  (Typeable)
 
@@ -15,7 +16,7 @@ import           Data.Typeable
 -- >>> -- GET /hello/world
 -- >>> -- returning a JSON encoded World value
 -- >>> type MyApi = "hello" :> "world" :> Get '[JSON] World
-data (path :: k) :> (a :: *)
+data (path :: k) :> (a :: Type)
     deriving (Typeable)
 infixr 4 :>
 

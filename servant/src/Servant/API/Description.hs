@@ -16,6 +16,7 @@ module Servant.API.Description (
     reflectDescription,
     ) where
 
+import           Data.Kind
 import           Data.Proxy
                  (Proxy (..))
 import           Data.Typeable
@@ -59,7 +60,7 @@ data Description (sym :: Symbol)
 type FoldDescription mods = FoldDescription' "" mods
 
 -- | Implementation of 'FoldDescription'.
-type family FoldDescription' (acc :: Symbol) (mods ::  [*]) :: Symbol where
+type family FoldDescription' (acc :: Symbol) (mods ::  [Type]) :: Symbol where
     FoldDescription' acc '[]                        = acc
     FoldDescription' acc (Description desc ': mods) = FoldDescription' desc mods
     FoldDescription' acc (mod     ': mods)          = FoldDescription' acc mods
