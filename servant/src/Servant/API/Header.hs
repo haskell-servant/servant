@@ -7,6 +7,7 @@ module Servant.API.Header (
     ) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           GHC.TypeLits

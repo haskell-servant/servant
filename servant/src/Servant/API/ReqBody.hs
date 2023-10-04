@@ -7,6 +7,7 @@ module Servant.API.ReqBody (
     ) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           Servant.API.Modifiers

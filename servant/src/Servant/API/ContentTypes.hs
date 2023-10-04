@@ -82,6 +82,7 @@ import qualified Data.ByteString                  as BS
 import           Data.ByteString.Lazy
                  (ByteString, fromStrict, toStrict)
 import           Data.Kind
+                 (Type)
 import qualified Data.List.NonEmpty               as NE
 import           Data.Maybe
                  (isJust)

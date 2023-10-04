@@ -17,7 +17,7 @@ module Servant.Auth.Swagger
   ) where
 
 import Control.Lens    ((&), (<>~))
-import Data.Kind
+import Data.Kind       (Type)
 import Data.Proxy      (Proxy (Proxy))
 import Data.Swagger    (ApiKeyLocation (..), ApiKeyParams (..),
                         SecurityRequirement (..), SecurityScheme (..), 

@@ -5,6 +5,7 @@ module Servant.API.WithNamedContext where
 
 import           GHC.TypeLits
 import           Data.Kind
+                 (Type)
 
 -- | 'WithNamedContext' names a specific tagged context to use for the
 -- combinators in the API. (See also in @servant-server@,

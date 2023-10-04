@@ -8,6 +8,7 @@ module Servant.API.BasicAuth where
 import           Data.ByteString
                  (ByteString)
 import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           GHC.TypeLits

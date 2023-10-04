@@ -19,6 +19,7 @@
 module Servant.Swagger.Internal.TypeLevel.Every where
 
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
 import           GHC.Exts                                (Constraint)
 

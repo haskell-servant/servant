@@ -59,7 +59,7 @@ module Servant.API.UVerb.Union
 )
 where
 
-import Data.Kind
+import Data.Kind (Type)
 import Data.Proxy (Proxy)
 import Data.SOP.BasicFunctors (I, unI)
 import Data.SOP.Constraint

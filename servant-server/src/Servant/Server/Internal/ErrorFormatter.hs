@@ -16,6 +16,7 @@ module Servant.Server.Internal.ErrorFormatter
   ) where
 
 import           Data.Kind
+                 (Type)
 import           Data.String.Conversions
                  (cs)
 import           Data.Typeable

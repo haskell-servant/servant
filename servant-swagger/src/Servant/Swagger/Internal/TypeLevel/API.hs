@@ -8,7 +8,7 @@
 module Servant.Swagger.Internal.TypeLevel.API where
 
 import           GHC.Exts       (Constraint)
-import           Data.Kind
+import           Data.Kind      (Type)
 import           Servant.API
 
 -- | Build a list of endpoints from an API.

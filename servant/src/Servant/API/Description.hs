@@ -17,6 +17,7 @@ module Servant.API.Description (
     ) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy (..))
 import           Data.Typeable

@@ -5,6 +5,7 @@
 module Servant.API.Sub ((:>)) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 

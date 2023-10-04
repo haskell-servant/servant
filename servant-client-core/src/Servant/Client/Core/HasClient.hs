@@ -40,6 +40,7 @@ import           Data.Constraint (Dict(..))
 import           Data.Foldable
                  (toList)
 import           Data.Kind
+                 (Type)
 import           Data.List
                  (foldl')
 import           Data.Sequence

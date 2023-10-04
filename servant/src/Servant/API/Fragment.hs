@@ -6,6 +6,7 @@
 module Servant.API.Fragment (Fragment) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 

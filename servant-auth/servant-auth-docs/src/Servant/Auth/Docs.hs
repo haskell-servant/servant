@@ -33,7 +33,7 @@ module Servant.Auth.Docs
   ) where
 
 import Control.Lens          ((%~), (&), (|>))
-import Data.Kind
+import Data.Kind             (Type)
 import Data.List             (intercalate)
 import Data.Monoid
 import Data.Proxy            (Proxy (Proxy))

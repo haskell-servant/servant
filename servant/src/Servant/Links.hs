@@ -131,6 +131,7 @@ module Servant.Links (
 ) where
 
 import           Data.Kind
+                 (Type)
 import           Data.List
 import           Data.Constraint
 import           Data.Proxy
@@ -197,8 +198,6 @@ import           Servant.API.WithNamedContext
 import           Servant.API.WithResource
                  (WithResource)
 import           Web.HttpApiData
-import           Data.Kind
-                 (Type)
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any

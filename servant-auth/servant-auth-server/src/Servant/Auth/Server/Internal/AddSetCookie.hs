@@ -7,7 +7,7 @@ module Servant.Auth.Server.Internal.AddSetCookie where
 
 import           Blaze.ByteString.Builder (toByteString)
 import qualified Data.ByteString          as BS
-import           Data.Kind
+import           Data.Kind                (Type)
 import qualified Network.HTTP.Types       as HTTP
 import           Network.Wai              (mapResponseHeaders)
 import           Servant

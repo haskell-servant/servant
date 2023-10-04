@@ -5,6 +5,7 @@
 module Servant.API.Capture (Capture, Capture', CaptureAll) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           GHC.TypeLits

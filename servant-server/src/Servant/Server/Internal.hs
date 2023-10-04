@@ -48,6 +48,7 @@ import           Data.Constraint (Constraint, Dict(..))
 import           Data.Either
                  (partitionEithers)
 import           Data.Kind
+                 (Type)
 import           Data.Maybe
                  (fromMaybe, isNothing, mapMaybe, maybeToList)
 import           Data.String
@@ -98,8 +99,6 @@ import           Servant.API.TypeErrors
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
                  parseUrlPieces)
-import           Data.Kind
-                 (Type)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context

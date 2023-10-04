@@ -54,6 +54,7 @@ module Servant.API.TypeLevel (
 import           GHC.Exts
                  (Constraint)
 import           Data.Kind
+                 (Type)
 import           Servant.API.Alternative
                  (type (:<|>))
 import           Servant.API.Capture

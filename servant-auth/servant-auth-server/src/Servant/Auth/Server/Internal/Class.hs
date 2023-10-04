@@ -2,7 +2,7 @@
 module Servant.Auth.Server.Internal.Class where
 
 import Servant.Auth
-import Data.Kind
+import Data.Kind      (Type)
 import Data.Monoid
 import Servant hiding (BasicAuth)
 

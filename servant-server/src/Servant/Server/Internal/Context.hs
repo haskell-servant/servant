@@ -11,6 +11,7 @@
 module Servant.Server.Internal.Context where
 
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
 import           GHC.TypeLits
 

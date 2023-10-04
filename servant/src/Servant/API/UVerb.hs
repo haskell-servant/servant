@@ -33,7 +33,7 @@ module Servant.API.UVerb
   )
 where
 
-import Data.Kind
+import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)

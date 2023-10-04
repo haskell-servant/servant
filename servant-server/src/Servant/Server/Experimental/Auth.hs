@@ -16,6 +16,7 @@ module Servant.Server.Experimental.Auth where
 import           Control.Monad.Trans
                  (liftIO)
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy (Proxy))
 import           Data.Typeable

@@ -20,6 +20,7 @@ module Servant.API.Modifiers (
     ) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy (..))
 import           Data.Singletons.Bool

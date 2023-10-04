@@ -9,6 +9,7 @@ module Servant.API.Verbs
   ) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy)
 import           Data.Typeable

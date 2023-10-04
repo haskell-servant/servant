@@ -6,6 +6,7 @@
 module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParam', QueryParams) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           GHC.TypeLits

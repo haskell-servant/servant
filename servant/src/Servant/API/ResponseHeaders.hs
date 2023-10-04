@@ -42,6 +42,7 @@ import           Data.ByteString.Char8     as BS
                  (ByteString, pack)
 import qualified Data.CaseInsensitive      as CI
 import           Data.Kind
+                 (Type)
 import qualified Data.List                 as L
 import           Data.Proxy
 import           Data.Typeable

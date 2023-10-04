@@ -23,6 +23,7 @@ import           Control.Lens
 import           Data.Data
                  (Data)
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
 import           Data.String
 import           Data.Text

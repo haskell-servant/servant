@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeOperators              #-}
 module Servant.Auth where
 
-import           Data.Kind
+import           Data.Kind           (Type)
 import           Data.Proxy          (Proxy(..))
 import           Servant.API         ((:>))
 import           Servant.Links       (HasLink (..))

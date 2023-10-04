@@ -17,6 +17,7 @@ module Servant.Server.Generic (
   ) where
 
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy (..))
 

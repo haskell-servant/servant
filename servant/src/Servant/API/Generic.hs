@@ -70,6 +70,7 @@ module Servant.API.Generic (
 -- SOFTWARE.
 
 import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy (..))
 import           GHC.Generics

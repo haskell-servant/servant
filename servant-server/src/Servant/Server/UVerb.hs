@@ -23,7 +23,7 @@ module Servant.Server.UVerb
 where
 
 import qualified Data.ByteString as B
-import Data.Kind
+import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import Data.SOP (I (I))
 import Data.SOP.Constraint (All, And)
