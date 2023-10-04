@@ -358,7 +358,7 @@ safeLink' toA _ endpoint = toLink toA endpoint (Link mempty mempty mempty)
 -- Note: nested APIs don't work well with this approach
 --
 -- >>> :kind! MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link
--- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link :: Type
+-- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link :: *
 -- = Char -> (Int -> Link) :<|> (Double -> Link)
 allLinks
     :: forall api. HasLink api
