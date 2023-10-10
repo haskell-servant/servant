@@ -5,6 +5,8 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Fragment (Fragment) where
 
+import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 
@@ -14,7 +16,7 @@ import           Data.Typeable
 --
 -- >>> -- /post#TRACKING
 -- >>> type MyApi = "post" :> Fragment Text :> Get '[JSON] Tracking
-data Fragment (a :: *)
+data Fragment (a :: Type)
     deriving Typeable
 
 -- $setup

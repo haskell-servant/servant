@@ -6,5 +6,7 @@ module Servant.API.NamedRoutes (
     NamedRoutes
   ) where
 
+import Data.Kind (Type)
+
 -- | Combinator for embedding a record of named routes into a Servant API type.
-data NamedRoutes (api :: * -> *)
+data NamedRoutes (api :: Type -> Type)

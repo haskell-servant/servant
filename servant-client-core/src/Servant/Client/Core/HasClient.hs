@@ -39,6 +39,8 @@ import           Data.Either
 import           Data.Constraint (Dict(..))
 import           Data.Foldable
                  (toList)
+import           Data.Kind
+                 (Type)
 import           Data.List
                  (foldl')
 import           Data.Sequence
@@ -128,7 +130,7 @@ clientIn p pm = clientWithRoute pm p defaultRequest
 -- combinators that you want to support client-generation, you can ignore this
 -- class.
 class RunClient m => HasClient m api where
-  type Client (m :: * -> *) (api :: *) :: *
+  type Client (m :: Type -> Type) (api :: Type) :: Type
   clientWithRoute :: Proxy m -> Proxy api -> Request -> Client m api
   hoistClientMonad
     :: Proxy m
@@ -333,7 +335,7 @@ instance {-# OVERLAPPING #-}
 data ClientParseError = ClientParseError MediaType String | ClientStatusMismatch | ClientNoMatchingStatus
   deriving (Eq, Show)
 
-class UnrenderResponse (cts :: [*]) (a :: *) where
+class UnrenderResponse (cts :: [Type]) (a :: Type) where
   unrenderResponse :: Seq.Seq H.Header -> BL.ByteString -> Proxy cts
                    -> [Either (MediaType, String) a]
 
@@ -840,7 +842,7 @@ instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
     hoistClientMonad pm (Proxy :: Proxy api) f (cl bauth)
 
 -- | A type that specifies that an API record contains a client implementation.
-data AsClientT (m :: * -> *)
+data AsClientT (m :: Type -> Type)
 instance GenericMode (AsClientT m) where
     type AsClientT m :- api = Client m api
 
@@ -850,7 +852,7 @@ type GClientConstraints api m =
   , Client m (ToServantApi api) ~ ToServant api (AsClientT m)
   )
 
-class GClient (api :: * -> *) m where
+class GClient (api :: Type -> Type) m where
   gClientProof :: Dict (GClientConstraints api m)
 
 instance GClientConstraints api m => GClient api m where

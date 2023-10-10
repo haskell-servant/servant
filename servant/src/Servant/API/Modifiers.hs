@@ -19,6 +19,8 @@ module Servant.API.Modifiers (
     unfoldRequestArgument,
     ) where
 
+import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy (..))
 import           Data.Singletons.Bool
@@ -51,7 +53,7 @@ data Optional
 type FoldRequired mods = FoldRequired' 'False mods
 
 -- | Implementation of 'FoldRequired'.
-type family FoldRequired' (acc :: Bool) (mods :: [*]) :: Bool where
+type family FoldRequired' (acc :: Bool) (mods :: [Type]) :: Bool where
     FoldRequired' acc '[]                = acc
     FoldRequired' acc (Required ': mods) = FoldRequired' 'True mods
     FoldRequired' acc (Optional ': mods) = FoldRequired' 'False mods
@@ -72,7 +74,7 @@ data Strict
 type FoldLenient mods = FoldLenient' 'False mods
 
 -- | Implementation of 'FoldLenient'.
-type family FoldLenient' (acc :: Bool) (mods ::  [*]) :: Bool where
+type family FoldLenient' (acc :: Bool) (mods ::  [Type]) :: Bool where
     FoldLenient' acc '[]               = acc
     FoldLenient' acc (Lenient ': mods) = FoldLenient' 'True mods
     FoldLenient' acc (Strict  ': mods) = FoldLenient' 'False mods

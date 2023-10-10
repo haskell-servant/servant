@@ -2,6 +2,7 @@
 module Servant.Auth.Server.Internal.Class where
 
 import Servant.Auth
+import Data.Kind      (Type)
 import Data.Monoid
 import Servant hiding (BasicAuth)
 
@@ -16,7 +17,7 @@ import Servant.Auth.Server.Internal.JWT (jwtAuthCheck)
 -- elements of @ctx@ to be the in the Context and whose authentication check
 -- returns an @AuthCheck v@.
 class IsAuth a v  where
-  type family AuthArgs a :: [*]
+  type family AuthArgs a :: [Type]
   runAuth :: proxy a -> proxy v -> Unapp (AuthArgs a) (AuthCheck v)
 
 instance FromJWT usr => IsAuth Cookie usr where
@@ -33,7 +34,7 @@ instance FromBasicAuthData usr => IsAuth BasicAuth usr where
 
 -- * Helper
 
-class AreAuths (as :: [*]) (ctxs :: [*]) v where
+class AreAuths (as :: [Type]) (ctxs :: [Type]) v where
   runAuths :: proxy as -> Context ctxs -> AuthCheck v
 
 instance  AreAuths '[] ctxs v where

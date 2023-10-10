@@ -7,6 +7,8 @@ module Servant.API.BasicAuth where
 
 import           Data.ByteString
                  (ByteString)
+import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           GHC.TypeLits
@@ -24,7 +26,7 @@ import           GHC.TypeLits
 -- In Basic Auth, username and password are base64-encoded and transmitted via
 -- the @Authorization@ header. Handshakes are not required, making it
 -- relatively efficient.
-data BasicAuth (realm :: Symbol) (userData :: *)
+data BasicAuth (realm :: Symbol) (userData :: Type)
   deriving (Typeable)
 
 -- | A simple datatype to hold data required to decorate a request

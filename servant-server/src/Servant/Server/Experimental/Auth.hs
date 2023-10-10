@@ -15,6 +15,8 @@ module Servant.Server.Experimental.Auth where
 
 import           Control.Monad.Trans
                  (liftIO)
+import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy (Proxy))
 import           Data.Typeable
@@ -38,7 +40,7 @@ import           Servant.Server.Internal
 -- quite often this is some `User` datatype.
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-type family AuthServerData a :: *
+type family AuthServerData a :: Type
 
 -- | Handlers for AuthProtected resources
 --

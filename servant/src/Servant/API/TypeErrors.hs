@@ -16,7 +16,7 @@ module Servant.API.TypeErrors (
   ErrorIfNoGeneric,
 ) where
 
-import Data.Kind
+import Data.Kind (Type, Constraint)
 import GHC.Generics (Generic(..))
 import GHC.TypeLits
 

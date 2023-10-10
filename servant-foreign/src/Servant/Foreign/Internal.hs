@@ -22,6 +22,8 @@ import           Control.Lens
                  (Getter, makeLenses, makePrisms, (%~), (&), (.~), (<>~))
 import           Data.Data
                  (Data)
+import           Data.Kind
+                 (Type)
 import           Data.Proxy
 import           Data.String
 import           Data.Text
@@ -274,8 +276,8 @@ instance HasForeignType NoTypes NoContent a where
 -- | Implementation of the Servant framework types.
 --
 -- Relevant instances: Everything containing 'HasForeignType'.
-class HasForeign lang ftype (api :: *) where
-  type Foreign ftype api :: *
+class HasForeign lang ftype (api :: Type) where
+  type Foreign ftype api :: Type
   foreignFor :: Proxy lang -> Proxy ftype -> Proxy api -> Req ftype -> Foreign ftype api
 
 instance (HasForeign lang ftype a, HasForeign lang ftype b)
