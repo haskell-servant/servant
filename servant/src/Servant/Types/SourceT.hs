@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections       #-}
 module Servant.Types.SourceT where
 
 import           Control.Monad.Except
@@ -318,6 +319,28 @@ fromActionStep stop action = loop where
         | stop x    = Stop
         | otherwise = Yield x loop
 {-# INLINE fromActionStep #-}
+
+-- | Create a `StepT' from a consumable @c@, that is to say from an input and an action that returns
+-- and is called again on an updated version of that input.
+--
+-- >>> import qualified Streaming.Prelude as S
+-- >>> foreachStep mempty print (unfoldStep S.uncons $ S.each [1..3] :: StepT IO Int)
+-- 1
+-- 2
+-- 3
+-- 
+unfoldStep :: Functor m
+                     => (c -> m (Maybe (a,c)))
+                     -- ^ Action. Return @Nothing@ to stop or @Just (a,c)@ where @a@ is the
+                     -- output element of the action and @c@ the updated input
+                     -> c
+                     -- ^ Input
+                     -> StepT m a
+unfoldStep action = loop where
+  loop c = Effect $ step <$> action c
+  step Nothing = Stop
+  step (Just (x,t)) = Yield x $ loop t
+{-# INLINE unfoldStep #-}
 
 -------------------------------------------------------------------------------
 -- File
