@@ -41,8 +41,8 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base        >= 4.9     && < 4.19
-    , text        >= 1.2.3.0 && < 2.1
+      base        >= 4.9     && < 4.20
+    , text        >= 1.2.3.0 && < 2.2
 
   -- Servant dependencies
   build-depends:
