@@ -53,17 +53,9 @@ tests: True
 optimization: False
 -- reorder-goals: True
 
--- Older warp versions fail to build with https >= 4.2:
--- Network/Wai/Handler/Warp/HTTP2.hs:48:16: error:
--- Error:     • Constructor ‘H2.Config’ does not have the required strict field(s): confMySockAddr,
---                                                                          confPeerSockAddr
-constraints: http2 <4.2
-
 -- wreq-0.5.4.1 doesn't seem to work with ghc-8.6.5
 if (impl(ghc < 8.8))
   constraints: wreq == 0.5.4.0
-
-allow-newer: servant-js:base
 
 -- Print ticks so that doctest type querying is consistent across GHC versions.
 -- This block can be removed when we drop support for GHC 9.4 and below.
@@ -74,6 +66,8 @@ if(impl(ghc >= 9.6.1))
   package servant-server
     ghc-options: -fprint-redundant-promotion-ticks
 
-allow-newer: servant-multipart:servant, servant-multipart:servant-server, servant-multipart-api:servant
-allow-newer: servant-pagination:servant, servant-pagination:servant-server
-allow-newer: servant-js:servant, servant-js:servant-foreign
+allow-newer: servant-multipart:servant,     servant-multipart:bytestring,     servant-multipart:text,    servant-multipart:servant-server
+allow-newer: servant-multipart-api:servant, servant-multipart-api:bytestring, servant-multipart-api:text
+allow-newer: servant-pagination:servant, servant-pagination:servant-server, servant-pagination:text
+allow-newer: servant-js:base, servant-js:servant, servant-js:servant-foreign, servant-js:text
+allow-newer: swagger2:aeson, swagger2:base, swagger2:template-haskell, swagger2:bytestring, swagger2:text
