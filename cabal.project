@@ -53,10 +53,6 @@ tests: True
 optimization: False
 -- reorder-goals: True
 
--- wreq-0.5.4.1 doesn't seem to work with ghc-8.6.5
-if (impl(ghc < 8.8))
-  constraints: wreq == 0.5.4.0
-
 -- Print ticks so that doctest type querying is consistent across GHC versions.
 -- This block can be removed when we drop support for GHC 9.4 and below.
 if(impl(ghc >= 9.6.1))
@@ -66,8 +62,8 @@ if(impl(ghc >= 9.6.1))
   package servant-server
     ghc-options: -fprint-redundant-promotion-ticks
 
-allow-newer: servant-multipart:servant,     servant-multipart:bytestring,     servant-multipart:text,    servant-multipart:servant-server
-allow-newer: servant-multipart-api:servant, servant-multipart-api:bytestring, servant-multipart-api:text
+allow-newer: servant-multipart:bytestring,     servant-multipart:text
+allow-newer: servant-multipart-api:bytestring, servant-multipart-api:text
 allow-newer: servant-pagination:servant, servant-pagination:servant-server, servant-pagination:text
 allow-newer: servant-js:base, servant-js:servant, servant-js:servant-foreign, servant-js:text
 allow-newer: swagger2:aeson, swagger2:base, swagger2:template-haskell, swagger2:bytestring, swagger2:text
