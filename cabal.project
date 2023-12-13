@@ -64,6 +64,4 @@ if(impl(ghc >= 9.6.1))
 
 allow-newer: servant-multipart:bytestring,     servant-multipart:text
 allow-newer: servant-multipart-api:bytestring, servant-multipart-api:text
-allow-newer: servant-pagination:servant, servant-pagination:servant-server, servant-pagination:text
-allow-newer: servant-js:base, servant-js:servant, servant-js:servant-foreign, servant-js:text
 allow-newer: swagger2:aeson, swagger2:base, swagger2:template-haskell, swagger2:bytestring, swagger2:text
