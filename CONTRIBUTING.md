@@ -41,7 +41,7 @@ Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs`
 
 ## Changelog entries
 
-We experiment with using [changelog-d tool](https://github.com/phadej/changelog-d) to assemble changelogs.
+We experiment with using [changelog-d](https://codeberg.org/fgaz/changelog-d) tool to assemble changelogs.
 You are not required to install it.
 
 In each PR please add a file to `changelog.d` directory named after issue you are solving or the pull request itself (in a separate commit after you know the pull request number). For example
