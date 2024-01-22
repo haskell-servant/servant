@@ -8,9 +8,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -32,18 +30,22 @@ import Servant.Client.Internal.HttpClient (ClientMiddleware)
 import Servant.ClientTestUtils
 import Test.Hspec
 import Prelude ()
+import Control.Exception (Exception, throwIO, try)
 
 spec :: Spec
 spec = describe "Servant.MiddlewareSpec" $ do
-  successSpec
+  middlewareSpec
 
 runClientWithMiddleware :: ClientM a -> ClientMiddleware -> BaseUrl -> IO (Either ClientError a)
 runClientWithMiddleware x mid baseUrl' =
   runClientM x ((mkClientEnv manager' baseUrl') {middleware = mid})
 
-successSpec :: Spec
-successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
-  describe "mMiddleware" $ do
+data CustomException = CustomException deriving (Show, Eq)
+instance Exception CustomException
+
+middlewareSpec :: Spec
+middlewareSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+  describe "middleware" $ do
     it "Raw request and response can be accessed in middleware" $ \(_, baseUrl) -> do
       mvarReq <- newEmptyMVar
       mvarResp <- newEmptyMVar
@@ -68,3 +70,16 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       -- Access some raw response data
       resp <- takeMVar mvarResp
       responseBody resp `shouldBe` "{\"_age\":42,\"_name\":\"Alice\"}"
+  describe "error in middleware" $ do
+    it "errors can be thrown in middleware" $ \(_, baseUrl) -> do
+      
+      let mid :: ClientMiddleware
+          mid oldApp req = do
+            -- perform request
+            resp <- oldApp req
+            -- throw error
+            liftIO $ throwIO CustomException
+            pure resp
+
+      -- Same as without middleware
+      try (runClientWithMiddleware getGet mid baseUrl) `shouldReturn` Left CustomException
