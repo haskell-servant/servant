@@ -81,5 +81,4 @@ middlewareSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             liftIO $ throwIO CustomException
             pure resp
 
-      -- Same as without middleware
       try (runClientWithMiddleware getGet mid baseUrl) `shouldReturn` Left CustomException
