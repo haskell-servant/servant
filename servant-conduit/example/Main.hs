@@ -58,7 +58,7 @@ server = fast :<|> slow :<|> readme :<|> proxy
         return $ slowConduit n
 
     readme = liftIO $ do
-        putStrLn "/proxy"
+        putStrLn "/readme"
         return (C.sourceFile "README.md")
 
     proxy c = liftIO $ do
