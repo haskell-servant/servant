@@ -96,7 +96,13 @@ type ClientMiddleware = ClientApplication -> ClientApplication
 
 -- | 'ClientEnv' smart constructor.
 mkClientEnv :: Client.Manager -> BaseUrl -> ClientEnv
-mkClientEnv mgr burl = ClientEnv mgr burl Nothing defaultMakeClientRequest id
+mkClientEnv manager baseUrl = ClientEnv 
+  { manager
+  , baseUrl
+  , cookieJar = Nothing
+  , makeClientRequest = defaultMakeClientRequest
+  , middleware = id
+  }
 
 -- | Generates a set of client functions for an API.
 --
