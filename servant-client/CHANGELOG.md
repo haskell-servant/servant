@@ -3,11 +3,6 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
-0.21
-----
-
-- Clients now support real middleware of type `(Request -> ClientM Response) -> Request -> ClientM Response` which can be configured in `ClientEnv`. This allows access to raw request and response data. It can also be used to control how/when/if actual requests are performed.
-
 0.20
 ----
 
