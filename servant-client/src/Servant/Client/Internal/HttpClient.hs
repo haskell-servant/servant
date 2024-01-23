@@ -9,6 +9,7 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE NamedFieldPuns             #-}
 module Servant.Client.Internal.HttpClient where
 
 import           Prelude ()
@@ -159,9 +160,9 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
   runRequestAcceptStatus statuses req = do
-    ClientEnv _ _ _ _ mid <- ask
+    ClientEnv {middleware} <- ask
     let oldApp = performRequest statuses
-    mid oldApp req
+    middleware oldApp req
   throwClientError = throwError
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ClientError a)
