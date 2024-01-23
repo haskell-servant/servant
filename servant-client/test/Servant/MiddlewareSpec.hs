@@ -33,10 +33,6 @@ import Servant.ClientTestUtils
 import Test.Hspec
 import Prelude ()
 
-spec :: Spec
-spec = describe "Servant.MiddlewareSpec" $ do
-  middlewareSpec
-
 runClientWithMiddleware :: ClientM a -> ClientMiddleware -> BaseUrl -> IO (Either ClientError a)
 runClientWithMiddleware x mid baseUrl' =
   runClientM x ((mkClientEnv manager' baseUrl') {middleware = mid})
@@ -45,8 +41,8 @@ data CustomException = CustomException deriving (Show, Eq)
 
 instance Exception CustomException
 
-middlewareSpec :: Spec
-middlewareSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
+spec :: Spec
+spec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
   it "Raw request and response can be accessed in middleware" $ \(_, baseUrl) -> do
     mvarReq <- newEmptyMVar
     mvarResp <- newEmptyMVar
@@ -78,7 +74,7 @@ middlewareSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
           -- perform request
           resp <- oldApp req
           -- throw error
-          liftIO $ throwIO CustomException
+          _ <- liftIO $ throwIO CustomException
           pure resp
 
     try (runClientWithMiddleware getGet mid baseUrl) `shouldReturn` Left CustomException
