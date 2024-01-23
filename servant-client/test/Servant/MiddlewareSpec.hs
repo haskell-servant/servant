@@ -112,9 +112,13 @@ middlewareSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
       let mid :: ClientMiddleware
           mid = mid1 . mid2 . mid3
+          -- ^ Compisition in "reverse order". 
+          -- It is equivalent to the following, which is more intuitive:
+          -- mid :: ClientMiddleware
+          -- mid oldApp = mid1 (mid2 (mid3 oldApp))
 
       -- Same as without middleware
-      left show <$> runClientWithMiddleware getGet mid baseUrl `shouldReturn` Right alice
+      left show <$> runClientWithMiddleware getGet m baseUrl `shouldReturn` Right alice
 
       ref <- readIORef ref
       ref `shouldBe` ["req1", "req2", "req3", "resp3", "resp2", "resp1"]
