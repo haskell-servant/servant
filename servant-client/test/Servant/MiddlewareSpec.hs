@@ -112,7 +112,7 @@ middlewareSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
       let mid :: ClientMiddleware
           mid = mid1 . mid2 . mid3
-          -- ^ Compisition in "reverse order". 
+          -- ^ Composition in "reverse order". 
           -- It is equivalent to the following, which is more intuitive:
           -- mid :: ClientMiddleware
           -- mid oldApp = mid1 (mid2 (mid3 oldApp))
