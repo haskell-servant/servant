@@ -89,7 +89,9 @@ data ClientEnv
   , middleware :: ClientMiddleware 
   }
 
-type ClientMiddleware = (Request -> ClientM Response) -> Request -> ClientM Response
+type ClientApplication = Request -> ClientM Response
+
+type ClientMiddleware = ClientApplication -> ClientApplication
 
 -- | 'ClientEnv' smart constructor.
 mkClientEnv :: Client.Manager -> BaseUrl -> ClientEnv
