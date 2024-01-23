@@ -105,10 +105,10 @@ spec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     let mid :: ClientMiddleware
         mid = mid1 . mid2 . mid3
-    -- \^ Composition in "reverse order".
-    -- It is equivalent to the following, which is more intuitive:
-    -- mid :: ClientMiddleware
-    -- mid oldApp = mid1 (mid2 (mid3 oldApp))
+        -- \^ Composition in "reverse order".
+        -- It is equivalent to the following, which is more intuitive:
+        -- mid :: ClientMiddleware
+        -- mid oldApp = mid1 (mid2 (mid3 oldApp))
 
     -- Same as without middleware
     left show <$> runClientWithMiddleware getGet mid baseUrl `shouldReturn` Right alice
