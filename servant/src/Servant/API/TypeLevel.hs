@@ -188,6 +188,7 @@ type family IsIn (endpoint :: Type) (api :: Type) :: Constraint where
   IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
   IsIn (e :> sa) (e :> sb)           = IsIn sa sb
   IsIn e e                           = ()
+  IsIn e (NamedRoutes record)        = IsIn e (ToServantApi record)
 
 -- | Check whether @sub@ is a sub API of @api@.
 --
