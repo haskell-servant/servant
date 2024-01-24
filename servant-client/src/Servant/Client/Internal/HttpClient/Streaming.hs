@@ -140,7 +140,7 @@ runClientM cm env = withClientM cm env (evaluate . force)
 performRequest :: Maybe [Status] -> Request -> ClientM Response
 performRequest acceptStatus req = do
     -- TODO: should use Client.withResponse here too
-  ClientEnv m burl cookieJar' createClientRequest <- ask
+  ClientEnv m burl cookieJar' createClientRequest _ <- ask
   clientRequest <- liftIO $ createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest
@@ -175,7 +175,7 @@ performRequest acceptStatus req = do
 -- | TODO: support UVerb ('acceptStatus' argument, like in 'performRequest' above).
 performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a
 performWithStreamingRequest req k = do
-  ClientEnv m burl cookieJar' createClientRequest <- ask
+  ClientEnv m burl cookieJar' createClientRequest _ <- ask
   clientRequest <- liftIO $ createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest

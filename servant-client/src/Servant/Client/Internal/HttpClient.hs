@@ -9,6 +9,7 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE NamedFieldPuns             #-}
 module Servant.Client.Internal.HttpClient where
 
 import           Prelude ()
@@ -86,11 +87,22 @@ data ClientEnv
   --      1. 'makeClientRequest' exists to allow overriding operational semantics e.g. 'responseTimeout' per request,
   --          If you need global modifications, you should use 'managerModifyRequest'
   --      2. the 'cookieJar', if defined, is being applied after 'makeClientRequest' is called.
+  , middleware :: ClientMiddleware 
   }
+
+type ClientApplication = Request -> ClientM Response
+
+type ClientMiddleware = ClientApplication -> ClientApplication
 
 -- | 'ClientEnv' smart constructor.
 mkClientEnv :: Client.Manager -> BaseUrl -> ClientEnv
-mkClientEnv mgr burl = ClientEnv mgr burl Nothing defaultMakeClientRequest
+mkClientEnv manager baseUrl = ClientEnv 
+  { manager
+  , baseUrl
+  , cookieJar = Nothing
+  , makeClientRequest = defaultMakeClientRequest
+  , middleware = id
+  }
 
 -- | Generates a set of client functions for an API.
 --
@@ -153,7 +165,10 @@ instance Alt ClientM where
   a <!> b = a `catchError` \_ -> b
 
 instance RunClient ClientM where
-  runRequestAcceptStatus = performRequest
+  runRequestAcceptStatus statuses req = do
+    ClientEnv {middleware} <- ask
+    let oldApp = performRequest statuses
+    middleware oldApp req
   throwClientError = throwError
 
 runClientM :: ClientM a -> ClientEnv -> IO (Either ClientError a)
@@ -161,7 +176,7 @@ runClientM cm env = runExceptT $ flip runReaderT env $ unClientM cm
 
 performRequest :: Maybe [Status] -> Request -> ClientM Response
 performRequest acceptStatus req = do
-  ClientEnv m burl cookieJar' createClientRequest <- ask
+  ClientEnv m burl cookieJar' createClientRequest _ <- ask
   clientRequest <- liftIO $ createClientRequest burl req
   request <- case cookieJar' of
     Nothing -> pure clientRequest
