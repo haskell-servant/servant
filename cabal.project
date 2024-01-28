@@ -61,5 +61,3 @@ if(impl(ghc >= 9.6.1))
 
   package servant-server
     ghc-options: -fprint-redundant-promotion-ticks
-
-allow-newer: swagger2:aeson, swagger2:base, swagger2:template-haskell, swagger2:bytestring, swagger2:text
