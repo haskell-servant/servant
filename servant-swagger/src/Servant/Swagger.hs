@@ -55,6 +55,7 @@ import           Servant.Swagger.Internal.Orphans ()
 -- >>> import Data.Typeable
 -- >>> import GHC.Generics
 -- >>> import Servant.API
+-- >>> import System.Environment
 -- >>> import Test.Hspec
 -- >>> import Test.QuickCheck
 -- >>> import qualified Data.ByteString.Lazy.Char8 as BSL8
@@ -64,6 +65,7 @@ import           Servant.Swagger.Internal.Orphans ()
 -- >>> :set -XGeneralizedNewtypeDeriving
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XTypeOperators
+-- >>> setEnv "HSPEC_COLOR" "no"
 -- >>> data User = User { name :: String, age :: Int } deriving (Show, Generic, Typeable)
 -- >>> newtype UserId = UserId Integer deriving (Show, Generic, Typeable, ToJSON)
 -- >>> instance ToJSON User
@@ -160,11 +162,11 @@ import           Servant.Swagger.Internal.Orphans ()
 -- >>> instance Arbitrary UserId where arbitrary = UserId <$> arbitrary
 -- >>> hspec $ validateEveryToJSON (Proxy :: Proxy UserAPI)
 -- <BLANKLINE>
--- [User]
+-- [User]...
 -- ...
--- User
+-- User...
 -- ...
--- UserId
+-- UserId...
 -- ...
 -- Finished in ... seconds
 -- 3 examples, 0 failures

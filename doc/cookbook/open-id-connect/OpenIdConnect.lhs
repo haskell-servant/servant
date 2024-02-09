@@ -330,7 +330,7 @@ data Customer = Customer {
 ```
 
 Here is the code that displays the homepage.
-It should contain a link to the the `/login` URL.
+It should contain a link to the `/login` URL.
 When the user clicks on this link it will be redirected to Google login page
 with some generated information.
 

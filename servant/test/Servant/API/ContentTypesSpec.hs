@@ -12,7 +12,7 @@ import           Prelude ()
 import           Prelude.Compat
 
 import           Data.Aeson
-                 (FromJSON, ToJSON (..), Value, decode, encode, object, (.=))
+                 (FromJSON, ToJSON (..), Value, decode, encode, object, (.=), eitherDecode)
 import           Data.ByteString.Char8
                  (ByteString, append, pack)
 import qualified Data.ByteString.Lazy                             as BSL
@@ -33,6 +33,8 @@ import           Data.String.Conversions
 import qualified Data.Text                                        as TextS
 import qualified Data.Text.Encoding                               as TextSE
 import qualified Data.Text.Lazy                                   as TextL
+import           Control.Exception
+                 (evaluate)
 import           GHC.Generics
 import           Test.Hspec
 import           Test.QuickCheck
@@ -77,6 +79,15 @@ spec = describe "Servant.API.ContentTypes" $ do
 
         it "has mimeUnrender reverse mimeRender for valid top-level json " $ do
             property $ \x -> mimeUnrender p (mimeRender p x) == Right (x::SomeData)
+
+    describe "The NoContent Content-Type type" $ do
+        let p = Proxy :: Proxy '[JSON]
+
+        it "does not render any content" $
+          allMimeRender p NoContent `shouldSatisfy` (all (BSL8.null . snd))
+
+        it "evaluates the NoContent value" $
+          evaluate (allMimeRender p (undefined :: NoContent)) `shouldThrow` anyErrorCall
 
     describe "The PlainText Content-Type type" $ do
         let p = Proxy :: Proxy PlainText
@@ -208,15 +219,13 @@ spec = describe "Servant.API.ContentTypes" $ do
                 handleCTypeH (Proxy :: Proxy '[JSONorText]) "image/jpeg"
                     "foobar" `shouldBe` (Nothing :: Maybe (Either String Int))
 
-    -- aeson >= 0.9 decodes top-level strings
-    describe "eitherDecodeLenient" $ do
+    describe "eitherDecode is lenient" $ do
 
+        -- Since servant-0.20.1 MimeUnrender JSON instance uses eitherDecode,
+        -- as aeson >= 0.9 supports decoding top-level strings and numbers.
         it "parses top-level strings" $ do
-            let toMaybe = either (const Nothing) Just
-            -- The Left messages differ, so convert to Maybe
-            property $ \x -> toMaybe (eitherDecodeLenient x)
-                `shouldBe` (decode x :: Maybe String)
-
+            property $ \x -> mimeUnrender (Proxy :: Proxy JSON) x
+                `shouldBe` (eitherDecode x :: Either String String)
 
 data SomeData = SomeData { record1 :: String, record2 :: Int }
     deriving (Generic, Eq, Show)

@@ -3,11 +3,13 @@
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedLists      #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE TypeFamilies         #-}
 #if __GLASGOW_HASKELL__ >= 806
 {-# LANGUAGE UndecidableInstances #-}
 #endif
@@ -30,6 +32,7 @@ import qualified Data.Swagger                           as Swagger
 import           Data.Swagger.Declare
 import           Data.Text                              (Text)
 import qualified Data.Text                              as Text
+import           GHC.Generics                           (D1, Meta(..), Rep)
 import           GHC.TypeLits
 import           Network.HTTP.Media                     (MediaType)
 import           Servant.API
@@ -148,6 +151,10 @@ mkEndpointNoContentVerb path _ = mempty
 -- | Add parameter to every operation in the spec.
 addParam :: Param -> Swagger -> Swagger
 addParam param = allOperations.parameters %~ (Inline param :)
+
+-- | Add a tag to every operation in the spec.
+addTag :: Text -> Swagger -> Swagger
+addTag tag = allOperations.tags %~ ([tag] <>)
 
 -- | Add accepted content types to every operation in the spec.
 addConsumes :: [MediaType] -> Swagger -> Swagger
@@ -296,6 +303,10 @@ instance (HasSwagger sub) => HasSwagger (HttpVersion :> sub) where
 instance (HasSwagger sub) => HasSwagger (WithNamedContext x c sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy sub)
 
+-- | @'WithResource'@ combinator does not change our specification at all.
+instance (HasSwagger sub) => HasSwagger (WithResource res :> sub) where
+  toSwagger _ = toSwagger (Proxy :: Proxy sub)
+
 instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (sym :> sub) where
   toSwagger _ = prependPath piece (toSwagger (Proxy :: Proxy sub))
     where
@@ -439,6 +450,9 @@ instance (ToSchema a, Accept ct, HasSwagger sub, KnownSymbol (FoldDescription mo
         & required  ?~ True
         & schema    .~ ParamBody ref
 
+instance (HasSwagger (ToServantApi routes), KnownSymbol datatypeName, Rep (routes AsApi) ~ D1 ('MetaData datatypeName moduleName packageName isNewtype) f) => HasSwagger (NamedRoutes routes) where
+  toSwagger _ = addTag (Text.pack $ symbolVal (Proxy :: Proxy datatypeName)) (toSwagger (Proxy :: Proxy (ToServantApi routes)))
+
 -- =======================================================================
 -- Below are the definitions that should be in Servant.API.ContentTypes
 -- =======================================================================
@@ -455,10 +469,15 @@ instance (Accept c, AllAccept cs) => AllAccept (c ': cs) where
 class ToResponseHeader h where
   toResponseHeader :: Proxy h -> (HeaderName, Swagger.Header)
 
-instance (KnownSymbol sym, ToParamSchema a) => ToResponseHeader (Header sym a) where
-  toResponseHeader _ = (hname, Swagger.Header Nothing hschema)
+instance (KnownSymbol sym, ToParamSchema a, KnownSymbol (FoldDescription mods)) => ToResponseHeader (Header' mods sym a) where
+  toResponseHeader _ =
+    ( hname
+    , Swagger.Header (transDesc $ reflectDescription (Proxy :: Proxy mods)) hschema
+    )
     where
       hname = Text.pack (symbolVal (Proxy :: Proxy sym))
+      transDesc ""   = Nothing
+      transDesc desc = Just (Text.pack desc)
       hschema = toParamSchema (Proxy :: Proxy a)
 
 class AllToResponseHeader hs where

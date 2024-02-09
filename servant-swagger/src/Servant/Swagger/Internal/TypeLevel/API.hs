@@ -8,6 +8,7 @@
 module Servant.Swagger.Internal.TypeLevel.API where
 
 import           GHC.Exts       (Constraint)
+import           Data.Kind      (Type)
 import           Servant.API
 
 -- | Build a list of endpoints from an API.
@@ -43,6 +44,7 @@ type family IsIn sub api :: Constraint where
   IsIn e (a :<|> b) = Or (IsIn e a) (IsIn e b)
   IsIn (e :> a) (e :> b) = IsIn a b
   IsIn e e = ()
+  IsIn e (NamedRoutes record) = IsIn e (ToServantApi record)
 
 -- | Check whether a type is a member of a list of types.
 -- This is a type-level analogue of @'elem'@.
@@ -75,7 +77,7 @@ type AddBodyType c cs a as = If (Elem c cs) (a ': as) as
 -- @'NoContent'@ is removed from the list and not tested.  (This allows for leaving the body
 -- completely empty on responses to requests that only accept 'application/json', while
 -- setting the content-type in the response accordingly.)
-type family BodyTypes' c api :: [*] where
+type family BodyTypes' c api :: [Type] where
   BodyTypes' c (Verb verb b cs (Headers hdrs a)) = AddBodyType c cs a '[]
   BodyTypes' c (Verb verb b cs NoContent) = '[]
   BodyTypes' c (Verb verb b cs a) = AddBodyType c cs a '[]

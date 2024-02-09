@@ -1,6 +1,24 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-docs/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.13
+----
+
+- WithResource combinator for Servant-managed resources. [#1630](https://github.com/haskell-servant/servant/pull/1630)
+
+  For servant-docs, this meant the addition of `instance HasDocs api => HasDocs (WithResource res :> api)`
+
+- Compatibility with GHC series 9.2, 9.4, 9.6
+
+0.12
+----
+
+### Significant changes
+
+- Generate sample cURL requests
+  ([#1401](https://github.com/haskell-servant/servant/pull/1401/files)).
+  Breaking change: requires sample header values to be supplied with `headers`.
+
 0.11.9
 ------
 

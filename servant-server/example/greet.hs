@@ -18,7 +18,7 @@ import           Network.Wai.Handler.Warp
 
 import           Servant
 import           Servant.Server.Generic ()
-import           Servant.API.Generic
+import           Servant.API.Generic ((:-))
 
 -- * Example
 

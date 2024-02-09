@@ -57,7 +57,7 @@ instance Eq BaseUrl where
         where s ('/':x) = x
               s x       = x
 
--- | >>> traverse_ (LBS8.putStrLn . encode) $ parseBaseUrl "api.example.com"
+-- | >>> traverse_ (LBS8.putStrLn . encode) (parseBaseUrl "api.example.com" :: [BaseUrl])
 -- "http://api.example.com"
 instance ToJSON BaseUrl where
     toJSON     = toJSON . showBaseUrl
@@ -72,8 +72,8 @@ instance FromJSON BaseUrl where
 
 -- | >>> :{
 -- traverse_ (LBS8.putStrLn . encode) $ do
---   u1 <- parseBaseUrl "api.example.com"
---   u2 <- parseBaseUrl "example.com"
+--   u1 <- parseBaseUrl "api.example.com" :: [BaseUrl]
+--   u2 <- parseBaseUrl "example.com" :: [BaseUrl]
 --   return $ Map.fromList [(u1, 'x'), (u2, 'y')]
 -- :}
 -- {"http://api.example.com":"x","http://example.com":"y"}

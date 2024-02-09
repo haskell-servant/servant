@@ -1,5 +1,151 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
+
+0.20.1
+----
+
+- Support aeson-2.2 [#1695](https://github.com/haskell-servant/servant/pull/1695)
+
+0.20
+----
+
+- Headers support in UVerb responses [#1570](https://github.com/haskell-servant/servant/issues/1570) [#1571](https://github.com/haskell-servant/servant/pull/1571)
+- Generalize type of `Servant.Types.SourceT.source` to any foldable [#1593](https://github.com/haskell-servant/servant/pull/1593)
+- Make `Mime(Un)Render PlainText String` instances encode/decode UTF-8 [#1645](https://github.com/haskell-servant/servant/issues/1645)
+- Add HasStatus instance for Headers (that defers StatusOf to underlying value) [#1649](https://github.com/haskell-servant/servant/pull/1649)
+- Make fromSourceIO run in IO [#1661](https://github.com/haskell-servant/servant/pull/1661)
+
+  Some streaming abstractions, like io-streams, require stateful
+  initialization. Since all actual call sites of `fromSourceIO`
+  are in a context where `IO` actions can be executed, these
+  streaming sources can be accomodated by having letting
+  `fromSourceIO` run in `IO`.
+
+  To migrate your existing `FromSourceIO` instance, simply put
+  a `pure`/`return` in front of it.
+
+- Fix the handling of multiple headers with the same name. [#1666](https://github.com/haskell-servant/servant/pull/1666)
+
+0.19.1
+------
+
+Compatibility with GHC 9.4, see [PR #1592](https://github.com/haskell-servant/servant/pull/1592).
+
+0.19
+----
+
+### Significant changes
+
+- Drop support for GHC < 8.6.
+- Support GHC 9.0 (GHC 9.2 should work as well, but isn't fully tested yet).
+- Support Aeson 2 ([#1475](https://github.com/haskell-servant/servant/pull/1475)),
+  which fixes a [DOS vulnerability](https://github.com/haskell/aeson/issues/864)
+  related to hash collisions.
+- Add `NamedRoutes` combinator, making support for records first-class in Servant
+  ([#1388](https://github.com/haskell-servant/servant/pull/1388)).
+ 
+  Users can now directly mark part as an API as defined by a record, instead of
+  using `(:<|>)` to combine routes. Concretely, the anonymous:
+  
+  ```haskell
+  type API = 
+    "version" :> Get '[JSON] String :<|>
+    "products" :> Get '[JSON] [Product]
+  ```
+  
+  can be replaced with the explicitly-named:
+  
+  ```haskell
+  type API = NamedRoutes NamedAPI
+  data NamedAPI mode = NamedAPI
+    { version :: mode :- "version" :> Get '[JSON] String
+    , products :: mode :- "products" :> Get '[JSON] [Product]
+    }
+  ```
+ 
+  `NamedRoutes` builds upon `servant-generic`, but improves usability by freeing
+  users from the need to perform `toServant` / `fromServant` conversions
+  manually. Serving `NamedRoutes NamedAPI` is now done directly by providing a
+  record of handlers, and servant generates clients directly as records as well.
+  In particular, it makes it much more practical to work with nested hierarchies
+  of named routes.
+
+  Two convenience functions, `(//)` and `(/:)`, have been added to make the
+  usage of named route hierarchies more pleasant:
+  
+  ```haskell
+  rootClient :: RootApi (AsClientT ClientM)
+  rootClient = client (Proxy @API)
+
+  helloClient :: String -> ClientM String
+  helloClient name = rootClient // hello /: name
+
+  endpointClient :: ClientM Person
+  endpointClient = rootClient // subApi /: "foobar123" // endpoint
+
+  type Api = NamedRoutes RootApi
+
+  data RootApi mode = RootApi
+    { subApi :: mode :- Capture "token" String :> NamedRoutes SubApi
+    , hello :: mode :- Capture "name" String :> Get '[JSON] String
+    , …
+    } deriving Generic
+
+  data SubApi mode = SubApi
+    { endpoint :: mode :- Get '[JSON] Person
+    , …
+    } deriving Generic
+  ```
+  
+- Add custom type errors for partially applied combinators
+  ([#1289](https://github.com/haskell-servant/servant/pull/1289),
+  [#1486](https://github.com/haskell-servant/servant/pull/1486)).
+ 
+  For example, forgetting to document the expected type for a query parameter,
+  as in:
+ 
+  ``` haskell
+  type API = QueryParam "param" :> Get '[JSON] NoContent
+  ```
+  
+  will raise to the following error when trying to serve the API:
+
+  ```
+    • There is no instance for HasServer (QueryParam'
+                                            '[Optional, Strict] "param" :> ...)
+      QueryParam' '[Optional, Strict] "1" expects 1 more arguments
+  ```
+  
+  As a consequence of this change, unsaturated types are now forbidden before `(:>)`.
+  
+- Add a `HeadNoContent` verb ([#1502](https://github.com/haskell-servant/servant/pull/1502)).
+
+- *servant-client* / *servant-client-core* / *servant-http-streams*:
+  Fix erroneous behavior, where only 2XX status codes would be considered
+  successful, irrelevant of the status parameter specified by the verb
+  combinator. ([#1469](https://github.com/haskell-servant/servant/pull/1469))
+
+- *servant-client* / *servant-client-core*: Fix `Show` instance for
+  `Servant.Client.Core.Request`.
+ 
+ 
+- *servant-client* / *servant-client-core*: Allow passing arbitrary binary data
+  in Query parameters.
+  ([#1432](https://github.com/haskell-servant/servant/pull/1432)).
+
+- *servant-docs*: Generate sample cURL requests
+  ([#1401](https://github.com/haskell-servant/servant/pull/1401/files)).
+
+  Breaking change: requires sample header values to be supplied with `headers`.
+  
+### Other changes
+
+- Various bit rotten cookbooks have been updated and re-introduced on
+  [docs.servant.dev](https://docs.servant.dev).
+
+- Various version bumps.
+
 0.18.3
 ------
 

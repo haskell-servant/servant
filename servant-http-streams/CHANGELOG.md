@@ -1,6 +1,21 @@
   [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-http-streams/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+0.20
+----
+
+- Compatibility with GHC series 9.2, 9.4, 9.6
+
+0.18.4
+------
+
+### Significant changes
+
+- *servant-client* / *servant-client-core* / *servant-http-streams*:
+  Fix erroneous behavior, where only 2XX status codes would be considered
+  successful, irrelevant of the status parameter specified by the verb
+  combinator. ([#1469](https://github.com/haskell-servant/servant/pull/1469))
+
 0.18.3
 ------
 

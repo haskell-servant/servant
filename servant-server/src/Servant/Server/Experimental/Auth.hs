@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -14,6 +15,8 @@ module Servant.Server.Experimental.Auth where
 
 import           Control.Monad.Trans
                  (liftIO)
+import           Data.Kind
+                 (Type)
 import           Data.Proxy
                  (Proxy (Proxy))
 import           Data.Typeable
@@ -37,14 +40,14 @@ import           Servant.Server.Internal
 -- quite often this is some `User` datatype.
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-type family AuthServerData a :: *
+type family AuthServerData a :: Type
 
 -- | Handlers for AuthProtected resources
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
 newtype AuthHandler r usr = AuthHandler
   { unAuthHandler :: r -> Handler usr }
-  deriving (Generic, Typeable)
+  deriving (Functor, Generic, Typeable)
 
 -- | NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
 mkAuthHandler :: (r -> Handler usr) -> AuthHandler r usr

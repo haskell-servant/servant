@@ -17,6 +17,7 @@ module Servant.Client.Core.Request (
     addHeader,
     appendToPath,
     appendToQueryString,
+    encodeQueryParamValue,
     setRequestBody,
     setRequestBodyLBS,
     ) where
@@ -33,6 +34,8 @@ import           Data.Bifunctor
 import           Data.Bitraversable
                  (Bitraversable (..), bifoldMapDefault, bimapDefault)
 import qualified Data.ByteString                      as BS
+import           Data.ByteString.Builder
+                 (Builder)
 import qualified Data.ByteString.Builder              as Builder
 import qualified Data.ByteString.Lazy                 as LBS
 import qualified Data.Sequence                        as Seq
@@ -48,9 +51,9 @@ import           Network.HTTP.Media
                  (MediaType)
 import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, QueryItem,
-                 http11, methodGet)
+                 http11, methodGet, urlEncodeBuilder)
 import           Servant.API
-                 (ToHttpApiData, toEncodedUrlPiece, toHeader, SourceIO)
+                 (ToHttpApiData, toEncodedUrlPiece, toQueryParam, toHeader, SourceIO)
 
 import Servant.Client.Core.Internal (mediaTypeRnf)
 
@@ -111,7 +114,7 @@ instance (NFData path, NFData body) => NFData (RequestF body path) where
         rnfB Nothing        = ()
         rnfB (Just (b, mt)) = rnf b `seq` mediaTypeRnf mt
 
-type Request = RequestF RequestBody Builder.Builder
+type Request = RequestF RequestBody Builder
 
 -- | The request body. R replica of the @http-client@ @RequestBody@.
 data RequestBody
@@ -142,18 +145,31 @@ defaultRequest = Request
   , requestMethod = methodGet
   }
 
-appendToPath :: Text -> Request -> Request
+-- | Append extra path to the request being constructed.
+--
+-- Warning: This function assumes that the path fragment is already URL-encoded.
+appendToPath :: Builder -> Request -> Request
 appendToPath p req
-  = req { requestPath = requestPath req <> "/" <> toEncodedUrlPiece p }
+  = req { requestPath = requestPath req <> "/" <> p }
 
-appendToQueryString :: Text             -- ^ param name
-                    -> Maybe BS.ByteString -- ^ param value
+-- | Append a query parameter to the request being constructed.
+--
+appendToQueryString :: Text                -- ^ query param name
+                    -> Maybe BS.ByteString -- ^ query param value
                     -> Request
                     -> Request
 appendToQueryString pname pvalue req
   = req { requestQueryString = requestQueryString req
                         Seq.|> (encodeUtf8 pname, pvalue)}
 
+-- | Encode a query parameter value.
+--
+encodeQueryParamValue :: ToHttpApiData a => a  -> BS.ByteString
+encodeQueryParamValue = LBS.toStrict . Builder.toLazyByteString
+  . urlEncodeBuilder True . encodeUtf8 . toQueryParam
+
+-- | Add header to the request being constructed.
+--
 addHeader :: ToHttpApiData a => HeaderName -> a -> Request -> Request
 addHeader name val req
   = req { requestHeaders = requestHeaders req Seq.|> (name, toHeader val)}

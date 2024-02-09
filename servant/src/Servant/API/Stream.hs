@@ -45,6 +45,8 @@ import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString                  as BS
 import qualified Data.ByteString.Lazy             as LBS
 import qualified Data.ByteString.Lazy.Char8       as LBS8
+import           Data.Kind
+                 (Type)
 import           Data.List.NonEmpty
                  (NonEmpty (..))
 import           Data.Proxy
@@ -63,7 +65,7 @@ import           Servant.Types.SourceT
 -- given @Content-Type@, delimited by a @framing@ strategy.
 -- Type synonyms are provided for standard methods.
 --
-data Stream (method :: k1) (status :: Nat) (framing :: *) (contentType :: *) (a :: *)
+data Stream (method :: k1) (status :: Nat) (framing :: Type) (contentType :: Type) (a :: Type)
   deriving (Typeable, Generic)
 
 type StreamGet  = Stream 'GET 200
@@ -72,7 +74,7 @@ type StreamPost = Stream 'POST 200
 -- | A stream request body.
 type StreamBody = StreamBody' '[]
 
-data StreamBody' (mods :: [*]) (framing :: *) (contentType :: *) (a :: *)
+data StreamBody' (mods :: [Type]) (framing :: Type) (contentType :: Type) (a :: Type)
   deriving (Typeable, Generic)
 
 -------------------------------------------------------------------------------
@@ -113,10 +115,10 @@ instance ToSourceIO a [a] where
 -- Pipe, etc. By implementing this class, all such streaming abstractions can
 -- be used directly on the client side for talking to streaming endpoints.
 class FromSourceIO chunk a | a -> chunk where
-    fromSourceIO :: SourceIO chunk -> a
+    fromSourceIO :: SourceIO chunk -> IO a
 
 instance MonadIO m => FromSourceIO a (SourceT m a) where
-    fromSourceIO = sourceFromSourceIO
+    fromSourceIO = return . sourceFromSourceIO
 
 sourceFromSourceIO :: forall m a. MonadIO m => SourceT IO a -> SourceT m a
 sourceFromSourceIO src =

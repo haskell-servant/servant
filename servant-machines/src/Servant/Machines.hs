@@ -35,7 +35,7 @@ instance MachineToSourceIO m => ToSourceIO o (MachineT m k o) where
     toSourceIO = machineToSourceIO
 
 instance MonadIO m => FromSourceIO o (MachineT m k o) where
-    fromSourceIO src = MachineT $ liftIO $ S.unSourceT src go
+    fromSourceIO src = return $ MachineT $ liftIO $ S.unSourceT src go
       where
         go :: S.StepT IO o -> IO (Step k o (MachineT m k o))
         go S.Stop        = return Stop
@@ -43,4 +43,4 @@ instance MonadIO m => FromSourceIO o (MachineT m k o) where
         go (S.Skip s)    = go s
         go (S.Effect ms) = ms >>= go
         go (S.Yield x s) = return (Yield x (MachineT (liftIO (go s))))
-    {-# SPECIALIZE INLINE fromSourceIO :: SourceIO o -> MachineT IO k o #-}
+    {-# SPECIALIZE INLINE fromSourceIO :: SourceIO o -> IO (MachineT IO k o) #-}

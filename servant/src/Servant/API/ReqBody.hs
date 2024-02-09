@@ -6,6 +6,8 @@ module Servant.API.ReqBody (
     ReqBody, ReqBody',
     ) where
 
+import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           Servant.API.Modifiers
@@ -21,7 +23,7 @@ type ReqBody = ReqBody' '[Required, Strict]
 -- |
 --
 -- /Note:/ 'ReqBody'' is always 'Required'.
-data ReqBody' (mods :: [*]) (contentTypes :: [*]) (a :: *)
+data ReqBody' (mods :: [Type]) (contentTypes :: [Type]) (a :: Type)
     deriving (Typeable)
 
 -- $setup

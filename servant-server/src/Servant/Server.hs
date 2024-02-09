@@ -84,6 +84,7 @@ module Servant.Server
   , err417
   , err418
   , err422
+  , err429
    -- ** 5XX
   , err500
   , err501
@@ -235,7 +236,7 @@ hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
 -- > │  └─ e/
 -- > │     └─•
 -- > ├─ b/
--- > │  └─ <capture>/
+-- > │  └─ <x::Int>/
 -- > │     ├─•
 -- > │     ┆
 -- > │     └─•
@@ -252,7 +253,8 @@ hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
 --
 -- [@─•@] Leaves reflect endpoints.
 --
--- [@\<capture\>/@] This is a delayed capture of a path component.
+-- [@\<x::Int\>/@] This is a delayed capture of a single
+-- path component named @x@, of expected type @Int@.
 --
 -- [@\<raw\>@] This is a part of the API we do not know anything about.
 --

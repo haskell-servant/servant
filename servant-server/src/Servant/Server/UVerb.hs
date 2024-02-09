@@ -23,6 +23,7 @@ module Servant.Server.UVerb
 where
 
 import qualified Data.ByteString as B
+import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import Data.SOP (I (I))
 import Data.SOP.Constraint (All, And)
@@ -39,13 +40,13 @@ import Servant.Server.Internal (Context, Delayed, Handler, HasServer (..), Route
 -- | 'return' for 'UVerb' handlers.  Takes a value of any of the members of the open union,
 -- and will construct a union value in an 'Applicative' (eg. 'Server').
 respond ::
-  forall (x :: *) (xs :: [*]) (f :: * -> *).
+  forall (x :: Type) (xs :: [Type]) (f :: Type -> Type).
   (Applicative f, HasStatus x, IsMember x xs) =>
   x ->
   f (Union xs)
 respond = pure . inject . I
 
-class IsServerResource (cts :: [*]) a where
+class IsServerResource (cts :: [Type]) a where
   resourceResponse :: Request -> Proxy cts -> a -> Maybe (LBS, LBS)
   resourceHeaders :: Proxy cts -> a -> [(HeaderName, B.ByteString)]
 

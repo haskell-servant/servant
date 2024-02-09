@@ -5,15 +5,22 @@
 
 packages:
 - completed:
-    hackage: hspec-wai-0.10.1@sha256:56dd9ec1d56f47ef1946f71f7cbf070e4c285f718cac1b158400ae5e7172ef47,2290
+    hackage: hspec-wai-0.11.1@sha256:fe359f4af85d7a09ba3d67a11ff3a2e29ec09aa6156ec19cfb163b0672d4432b,2237
     pantry-tree:
+      sha256: cf0ea54386c0c631430391c46f26b55882e7d59d98ff74430951e730f25603cc
       size: 809
-      sha256: 17af1c2e709cd84bfda066b9ebb04cdde7f92660c51a1f7401a1e9f766524e93
   original:
-    hackage: hspec-wai-0.10.1
+    hackage: hspec-wai-0.11.1
+- completed:
+    hackage: pipes-safe-2.3.4@sha256:1e4be771d7998251be7890536a3d3d31e5c93118737bed1d8a19505ec6130256,1890
+    pantry-tree:
+      sha256: a82914f8221ffa6df9b3f56dfe12a702ed06cd317ae04af259ec4842b451ab2e
+      size: 380
+  original:
+    hackage: pipes-safe-2.3.4
 snapshots:
 - completed:
-    size: 585817
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/5.yaml
-    sha256: 22d24d0dacad9c1450b9a174c28d203f9bb482a2a8da9710a2f2a9f4afee2887
-  original: lts-18.5
+    sha256: 8cf0695c568d7135f24b248c328bc80c32601b0c3a469aa5151196580781d84e
+    size: 604751
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2023/4/14.yaml
+  original: nightly-2023-04-14

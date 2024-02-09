@@ -36,6 +36,8 @@ import           Data.Maybe
 import           Data.Monoid ()
 import           Data.Text
                  (Text)
+import           Data.Text.Encoding
+                 (encodeUtf8)
 import qualified Network.HTTP.Client                as C
 import qualified Network.HTTP.Types                 as HTTP
 import           Test.Hspec
@@ -99,11 +101,6 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       Left (FailureResponse _ r) <- runClient (getQueryParam (Just "bob")) baseUrl
       responseStatusCode r `shouldBe` HTTP.Status 400 "bob not found"
 
-    it "Servant.API.QueryParam binary data" $ \(_, baseUrl) -> do
-      let payload = BS.pack [0, 1, 2, 4, 8, 16, 32, 64, 128]
-          apiCall = getQueryParamBinary (Just $ UrlEncodedByteString payload) HTTP.methodGet
-      (show +++ responseBody) <$> runClient apiCall baseUrl `shouldReturn` Right (BL.fromStrict payload)
-
     it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
       left show <$> runClient (getQueryParams []) baseUrl `shouldReturn` Right []
       left show <$> runClient (getQueryParams ["alice", "bob"]) baseUrl
@@ -148,10 +145,16 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
             -> getHeaders val' `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
           Nothing -> assertFailure "unexpected alternative of union"
 
+    it "Returns multiple Set-Cookie headers appropriately" $ \(_, baseUrl) -> do
+      res <- runClient getSetCookieHeaders baseUrl
+      case res of
+        Left e -> assertFailure $ show e
+        Right val -> getHeaders val `shouldBe` [("Set-Cookie", "cookie1"), ("Set-Cookie", "cookie2")]
+
     it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
       mgr <- C.newManager C.defaultManagerSettings
       cj <- atomically . newTVar $ C.createCookieJar []
-      _ <- runClientM (getRedirectWithCookie HTTP.methodGet) (ClientEnv mgr baseUrl (Just cj) defaultMakeClientRequest)
+      _ <- runClientM (getRedirectWithCookie HTTP.methodGet) (ClientEnv mgr baseUrl (Just cj) defaultMakeClientRequest id)
       cookie <- listToMaybe . C.destroyCookieJar <$> atomically (readTVar cj)
       C.cookie_name <$> cookie `shouldBe` Just "testcookie"
       C.cookie_value <$> cookie `shouldBe` Just "test"
@@ -160,7 +163,8 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       mgr <- C.newManager C.defaultManagerSettings
       -- In proper situation, extra headers should probably be visible in API type.
       -- However, testing for response timeout is difficult, so we test with something which is easy to observe
-      let createClientRequest url r = (defaultMakeClientRequest url r) { C.requestHeaders = [("X-Added-Header", "XXX")] }
+      let createClientRequest url r = fmap (\req -> req { C.requestHeaders = [("X-Added-Header", "XXX")] })
+                                           (defaultMakeClientRequest url r)
           clientEnv = (mkClientEnv mgr baseUrl) { makeClientRequest = createClientRequest }
       res <- runClientM (getRawSuccessPassHeaders HTTP.methodGet) clientEnv
       case res of
@@ -196,3 +200,10 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         case eitherResponse of
           Left clientError -> fail $ show clientError
           Right response -> matchUnion response `shouldBe` Just (WithStatus @201 carol)
+
+    it "encodes URL pieces following ToHttpApiData instance" $ \(_, baseUrl) -> do
+      let textOrig = "*"
+      eitherResponse <- runClient (captureVerbatim $ Verbatim $ encodeUtf8 textOrig) baseUrl
+      case eitherResponse of
+        Left clientError -> fail $ show clientError
+        Right textBack -> textBack `shouldBe` textOrig

@@ -22,6 +22,8 @@ import           Control.Lens
                  (Getter, makeLenses, makePrisms, (%~), (&), (.~), (<>~))
 import           Data.Data
                  (Data)
+import           Data.Kind
+                 (Type)
 import           Data.Proxy
 import           Data.String
 import           Data.Text
@@ -274,8 +276,8 @@ instance HasForeignType NoTypes NoContent a where
 -- | Implementation of the Servant framework types.
 --
 -- Relevant instances: Everything containing 'HasForeignType'.
-class HasForeign lang ftype (api :: *) where
-  type Foreign ftype api :: *
+class HasForeign lang ftype (api :: Type) where
+  type Foreign ftype api :: Type
   foreignFor :: Proxy lang -> Proxy ftype -> Proxy api -> Req ftype -> Foreign ftype api
 
 instance (HasForeign lang ftype a, HasForeign lang ftype b)
@@ -487,6 +489,13 @@ instance HasForeign lang ftype api =>
 
   foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
+instance HasForeign lang ftype api =>
+  HasForeign lang ftype (WithResource res :> api) where
+
+  type Foreign ftype (WithResource res :> api) = Foreign ftype api
+
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
+
 instance HasForeign lang ftype api
   => HasForeign lang ftype (HttpVersion :> api) where
   type Foreign ftype (HttpVersion :> api) = Foreign ftype api
@@ -507,6 +516,13 @@ instance HasForeign lang ftype api
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) req
+
+instance HasForeign lang ftype (ToServantApi r) => HasForeign lang ftype (NamedRoutes r) where
+  type Foreign ftype (NamedRoutes r) = Foreign ftype (ToServantApi r)
+
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy (ToServantApi r)) req
+
 
 -- | Utility class used by 'listFromAPI' which computes
 --   the data needed to generate a function for each endpoint

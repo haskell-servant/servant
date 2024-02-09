@@ -1,6 +1,56 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-client-core/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
+
+0.20
+----
+
+- Escape special chars in QueryParams. [#1584](https://github.com/haskell-servant/servant/issues/1584) [#1597](https://github.com/haskell-servant/servant/pull/1597)
+
+  Escape special chars in QueryParam (`:@&=+$`) in servant-client. Note that this
+  mean binary data will not work as is, and so reverts the functionality in
+  [#1432](https://github.com/haskell-servant/servant/pull/1432).
+
+- Handle Cookies correctly for RunStreamingClient [#1605](https://github.com/haskell-servant/servant/issues/1605) [#1606](https://github.com/haskell-servant/servant/pull/1606)
+
+  Makes `performWithStreamingRequest` take into consideration the
+  CookieJar, which it previously didn't.
+
+- Fix the handling of multiple headers with the same name. [#1666](https://github.com/haskell-servant/servant/pull/1666)
+
+  servant-client no longer concatenates the values of response headers with the same name.
+  This fixes an issue with parsing multiple `Set-Cookie` headers.
+
+0.19
+----
+
+### Significant changes
+
+- Drop support for GHC < 8.6.
+- Support GHC 9.0 (GHC 9.2 should work as well, but isn't fully tested yet).
+- Support Aeson 2 ([#1475](https://github.com/haskell-servant/servant/pull/1475)),
+  which fixes a [DOS vulnerability](https://github.com/haskell/aeson/issues/864)
+  related to hash collisions.
+- Add `NamedRoutes` combinator, making support for records first-class in Servant
+  ([#1388](https://github.com/haskell-servant/servant/pull/1388)).
+- Add custom type errors for partially applied combinators
+  ([#1289](https://github.com/haskell-servant/servant/pull/1289),
+  [#1486](https://github.com/haskell-servant/servant/pull/1486)).
+- *servant-client* / *servant-client-core* / *servant-http-streams*: Fix
+  erroneous behavior, where only 2XX status codes would be considered
+  successful, irrelevant of the status parameter specified by the verb
+  combinator. ([#1469](https://github.com/haskell-servant/servant/pull/1469))
+- *servant-client* / *servant-client-core*: Fix `Show` instance for
+  `Servant.Client.Core.Request`.
+- *servant-client* /  *servant-client-core*: Allow passing arbitrary binary data
+  in Query parameters.
+  ([#1432](https://github.com/haskell-servant/servant/pull/1432)).
+
+### Other changes
+
+- Various version bumps.
+
 0.18.3
 ------
 

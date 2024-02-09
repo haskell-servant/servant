@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 -- | This module exports 'ToSourceIO' and 'FromSourceIO' for 'ConduitT' instances.
@@ -57,7 +58,7 @@ instance (ConduitToSourceIO m, r ~ ())
     toSourceIO = conduitToSourceIO
 
 instance (MonadIO m, r ~ ()) => FromSourceIO o (ConduitT i o m r) where
-    fromSourceIO src =
+    fromSourceIO src = return $
         ConduitT $ \con ->
         PipeM $ liftIO $ S.unSourceT src $ \step ->
         loop con step
@@ -69,4 +70,4 @@ instance (MonadIO m, r ~ ()) => FromSourceIO o (ConduitT i o m r) where
         loop  con (S.Effect ms) = ms >>= loop con
         loop  con (S.Yield x s) = return (HaveOutput (PipeM (liftIO $ loop con s)) x)
 
-    {-# SPECIALIZE INLINE fromSourceIO :: SourceIO o -> ConduitT i o IO () #-}
+    {-# SPECIALIZE INLINE fromSourceIO :: SourceIO o -> IO (ConduitT i o IO ()) #-}

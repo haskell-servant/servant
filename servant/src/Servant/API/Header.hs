@@ -6,6 +6,8 @@ module Servant.API.Header (
     Header, Header',
     ) where
 
+import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           GHC.TypeLits
@@ -23,7 +25,7 @@ import           Servant.API.Modifiers
 -- >>> type MyApi = "view-my-referer" :> Header "from" Referer :> Get '[JSON] Referer
 type Header = Header' '[Optional, Strict]
 
-data Header' (mods :: [*]) (sym :: Symbol) (a :: *)
+data Header' (mods :: [Type]) (sym :: Symbol) (a :: Type)
     deriving Typeable
 
 -- $setup

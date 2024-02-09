@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Servant'
-copyright = u'2018, Servant Contributors'
+copyright = u'2022, Servant Contributors'
 author = u'Servant Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -169,4 +169,3 @@ texinfo_documents = [
 source_parsers = {
     '.lhs': CommonMarkParser,
 }
-

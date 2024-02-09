@@ -392,6 +392,20 @@ err422 = ServerError { errHTTPCode = 422
                     , errHeaders = []
                     }
 
+-- | 'err429' Too Many Requests
+--
+-- Example:
+--
+-- > failingHandler :: Handler ()
+-- > failingHandler = throwError $ err429 { errBody = "You have sent too many requests in a short period of time." }
+--
+err429 :: ServerError
+err429 = ServerError { errHTTPCode = 429
+                    , errReasonPhrase = "Too Many Requests"
+                    , errBody = ""
+                    , errHeaders = []
+                    }
+
 -- | 'err500' Internal Server Error
 --
 -- Example:

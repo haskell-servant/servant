@@ -107,6 +107,7 @@ carol :: Person
 carol = Person "Carol" 17
 
 type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
+type TestSetCookieHeaders = '[Header "Set-Cookie" String, Header "Set-Cookie" String]
 
 data RecordRoutes mode = RecordRoutes
   { version :: mode :- "version" :> Get '[JSON] Int
@@ -151,6 +152,7 @@ type Api =
             Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
   :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
   :<|> "uverb-headers" :> UVerb 'GET '[JSON] '[ WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String ]
+  :<|> "set-cookie-headers" :> Get '[JSON] (Headers TestSetCookieHeaders Bool)
   :<|> "deleteContentType" :> DeleteNoContent
   :<|> "redirectWithCookie" :> Raw
   :<|> "empty" :> EmptyAPI
@@ -160,6 +162,7 @@ type Api =
                                       WithStatus 301 Text]
   :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
   :<|> NamedRoutes RecordRoutes
+  :<|> "captureVerbatim" :> Capture "someString" Verbatim :> Get '[PlainText] Text
 
 api :: Proxy Api
 api = Proxy
@@ -183,6 +186,7 @@ getMultiple     :: String -> Maybe Int -> Bool -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders  :: ClientM (Headers TestHeaders Bool)
 getUVerbRespHeaders  :: ClientM (Union '[ WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String ])
+getSetCookieHeaders  :: ClientM (Headers TestSetCookieHeaders Bool)
 getDeleteContentType :: ClientM NoContent
 getRedirectWithCookie :: HTTP.Method -> ClientM Response
 uverbGetSuccessOrRedirect :: Bool
@@ -209,12 +213,14 @@ getRoot
   :<|> getMultiple
   :<|> getRespHeaders
   :<|> getUVerbRespHeaders
+  :<|> getSetCookieHeaders
   :<|> getDeleteContentType
   :<|> getRedirectWithCookie
   :<|> EmptyClient
   :<|> uverbGetSuccessOrRedirect
   :<|> uverbGetCreated
-  :<|> recordRoutes = client api
+  :<|> recordRoutes
+  :<|> captureVerbatim = client api
 
 server :: Application
 server = serve api (
@@ -245,6 +251,7 @@ server = serve api (
   :<|> (\ a b c d -> return (a, b, c, d))
   :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
   :<|> (pure . Z . I . WithStatus $ addHeader 1729 $ addHeader "eg2" True)
+  :<|> (return $ addHeader "cookie1" $ addHeader "cookie2" True)
   :<|> return NoContent
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
   :<|> emptyServer
@@ -259,6 +266,7 @@ server = serve api (
              { something = pure ["foo", "bar", "pweet"]
              }
          }
+  :<|> pure . decodeUtf8 . unVerbatim
   )
 
 -- * api for testing failures
@@ -370,3 +378,12 @@ instance ToHttpApiData UrlEncodedByteString where
 
 instance FromHttpApiData UrlEncodedByteString where
     parseUrlPiece = pure . UrlEncodedByteString . HTTP.urlDecode True . encodeUtf8
+
+newtype Verbatim = Verbatim { unVerbatim :: ByteString }
+
+instance ToHttpApiData Verbatim where
+    toEncodedUrlPiece = byteString . unVerbatim
+    toUrlPiece = decodeUtf8 . unVerbatim
+
+instance FromHttpApiData Verbatim where
+    parseUrlPiece = pure . Verbatim . encodeUtf8

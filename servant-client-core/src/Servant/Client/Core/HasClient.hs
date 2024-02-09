@@ -33,14 +33,14 @@ import           Control.Arrow
 import           Control.Monad
                  (unless)
 import qualified Data.ByteString as BS
-import           Data.ByteString.Builder
-                 (toLazyByteString)
-import qualified Data.ByteString.Lazy                     as BL
+import qualified Data.ByteString.Lazy as BL
 import           Data.Either
                  (partitionEithers)
 import           Data.Constraint (Dict(..))
 import           Data.Foldable
                  (toList)
+import           Data.Kind
+                 (Type)
 import           Data.List
                  (foldl')
 import           Data.Sequence
@@ -76,10 +76,10 @@ import           Servant.API
                  FromSourceIO (..), Header', Headers (..), HttpVersion,
                  IsSecure, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NoContent (NoContent),
-                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw,
+                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw, RawM,
                  ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
                  StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
-                 Verb, WithNamedContext, WithStatus (..), contentType, getHeadersHList,
+                 Verb, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList,
                  getResponse, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
 import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
@@ -130,7 +130,7 @@ clientIn p pm = clientWithRoute pm p defaultRequest
 -- combinators that you want to support client-generation, you can ignore this
 -- class.
 class RunClient m => HasClient m api where
-  type Client (m :: * -> *) (api :: *) :: *
+  type Client (m :: Type -> Type) (api :: Type) :: Type
   clientWithRoute :: Proxy m -> Proxy api -> Request -> Client m api
   hoistClientMonad
     :: Proxy m
@@ -210,7 +210,7 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m api)
     clientWithRoute pm (Proxy :: Proxy api)
                     (appendToPath p req)
 
-    where p = (toUrlPiece val)
+    where p = toEncodedUrlPiece val
 
   hoistClientMonad pm _ f cl = \a ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
@@ -245,7 +245,7 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
     clientWithRoute pm (Proxy :: Proxy sublayout)
                     (foldl' (flip appendToPath) req ps)
 
-    where ps = map (toUrlPiece) vals
+    where ps = map toEncodedUrlPiece vals
 
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy sublayout) f (cl as)
@@ -335,7 +335,7 @@ instance {-# OVERLAPPING #-}
 data ClientParseError = ClientParseError MediaType String | ClientStatusMismatch | ClientNoMatchingStatus
   deriving (Eq, Show)
 
-class UnrenderResponse (cts :: [*]) (a :: *) where
+class UnrenderResponse (cts :: [Type]) (a :: Type) where
   unrenderResponse :: Seq.Seq H.Header -> BL.ByteString -> Proxy cts
                    -> [Either (MediaType, String) a]
 
@@ -430,7 +430,7 @@ instance {-# OVERLAPPABLE #-}
   clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
       let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-      return $ fromSourceIO $ framingUnrender' $ responseBody gres
+      fromSourceIO $ framingUnrender' $ responseBody gres
     where
       req' = req
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
@@ -450,7 +450,7 @@ instance {-# OVERLAPPING #-}
   clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
       let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-          val = fromSourceIO $ framingUnrender' $ responseBody gres
+      val <- fromSourceIO $ framingUnrender' $ responseBody gres
       return $ Headers
         { getResponse = val
         , getHeadersHList = buildHeadersTo . toList $ responseHeaders gres
@@ -571,16 +571,13 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequire
       (Proxy :: Proxy mods) add (maybe req add) mparam
     where
       add :: a -> Request
-      add param = appendToQueryString pname (Just $ encodeQueryParam param) req
+      add param = appendToQueryString pname (Just $ encodeQueryParamValue param) req
 
       pname :: Text
       pname  = pack $ symbolVal (Proxy :: Proxy sym)
 
   hoistClientMonad pm _ f cl = \arg ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
-
-encodeQueryParam :: ToHttpApiData a => a  -> BS.ByteString
-encodeQueryParam = BL.toStrict . toLazyByteString . toEncodedUrlPiece
 
 -- | If you use a 'QueryParams' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -623,7 +620,7 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
                     )
 
     where pname = pack $ symbolVal (Proxy :: Proxy sym)
-          paramlist' = map (Just . encodeQueryParam) paramlist
+          paramlist' = map (Just . encodeQueryParamValue) paramlist
 
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl as)
@@ -674,6 +671,16 @@ instance RunClient m => HasClient m Raw where
     = H.Method ->  m Response
 
   clientWithRoute :: Proxy m -> Proxy Raw -> Request -> Client m Raw
+  clientWithRoute _pm Proxy req httpMethod = do
+    runRequest req { requestMethod = httpMethod }
+
+  hoistClientMonad _ _ f cl = \meth -> f (cl meth)
+
+instance RunClient m => HasClient m RawM where
+  type Client m RawM
+    = H.Method ->  m Response
+
+  clientWithRoute :: Proxy m -> Proxy RawM -> Request -> Client m RawM
   clientWithRoute _pm Proxy req httpMethod = do
     runRequest req { requestMethod = httpMethod }
 
@@ -745,7 +752,7 @@ instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where
      clientWithRoute pm (Proxy :: Proxy api)
                      (appendToPath p req)
 
-    where p = pack $ symbolVal (Proxy :: Proxy path)
+    where p = toEncodedUrlPiece $ pack $ symbolVal (Proxy :: Proxy path)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
@@ -777,6 +784,14 @@ instance HasClient m subapi =>
   HasClient m (WithNamedContext name context subapi) where
 
   type Client m (WithNamedContext name context subapi) = Client m subapi
+  clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
+
+  hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl
+
+instance HasClient m subapi =>
+  HasClient m (WithResource res :> subapi) where
+
+  type Client m (WithResource res :> subapi) = Client m subapi
   clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl
@@ -827,7 +842,7 @@ instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
     hoistClientMonad pm (Proxy :: Proxy api) f (cl bauth)
 
 -- | A type that specifies that an API record contains a client implementation.
-data AsClientT (m :: * -> *)
+data AsClientT (m :: Type -> Type)
 instance GenericMode (AsClientT m) where
     type AsClientT m :- api = Client m api
 
@@ -837,7 +852,7 @@ type GClientConstraints api m =
   , Client m (ToServantApi api) ~ ToServant api (AsClientT m)
   )
 
-class GClient (api :: * -> *) m where
+class GClient (api :: Type -> Type) m where
   gClientProof :: Dict (GClientConstraints api m)
 
 instance GClientConstraints api m => GClient api m where
@@ -847,6 +862,7 @@ instance
   ( forall n. GClient api n
   , HasClient m (ToServantApi api)
   , RunClient m
+  , ErrorIfNoGeneric api
   )
   => HasClient m (NamedRoutes api) where
   type Client m (NamedRoutes api) = api (AsClientT m)
@@ -879,7 +895,7 @@ infixl 2 /:
 --
 -- Example:
 --
--- @@
+-- @
 -- type Api = NamedRoutes RootApi
 --
 -- data RootApi mode = RootApi
@@ -899,8 +915,8 @@ infixl 2 /:
 -- rootClient = client api
 --
 -- endpointClient :: ClientM Person
--- endpointClient = client // subApi // endpoint
--- @@
+-- endpointClient = client \/\/ subApi \/\/ endpoint
+-- @
 (//) :: a -> (a -> b) -> b
 x // f = f x
 
@@ -911,7 +927,7 @@ x // f = f x
 --
 -- Example:
 --
--- @@
+-- @
 -- type Api = NamedRoutes RootApi
 --
 -- data RootApi mode = RootApi
@@ -932,11 +948,11 @@ x // f = f x
 -- rootClient = client api
 --
 -- hello :: String -> ClientM String
--- hello name = rootClient // hello /: name
+-- hello name = rootClient \/\/ hello \/: name
 --
 -- endpointClient :: ClientM Person
--- endpointClient = client // subApi /: "foobar123" // endpoint
--- @@
+-- endpointClient = client \/\/ subApi \/: "foobar123" \/\/ endpoint
+-- @
 (/:) :: (a -> b -> c) -> b -> a -> c
 (/:) = flip
 

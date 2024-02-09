@@ -75,17 +75,14 @@ import           Control.Monad.Compat
 import           Control.DeepSeq
                  (NFData)
 import           Data.Aeson
-                 (FromJSON (..), ToJSON (..), encode)
-import           Data.Aeson.Parser
-                 (value)
-import           Data.Aeson.Types
-                 (parseEither)
-import           Data.Attoparsec.ByteString.Char8
-                 (endOfInput, parseOnly, skipSpace, (<?>))
+                 (FromJSON (..), ToJSON (..), encode, eitherDecode)
+import           Data.Bifunctor
+                 (bimap)
 import qualified Data.ByteString                  as BS
 import           Data.ByteString.Lazy
                  (ByteString, fromStrict, toStrict)
-import qualified Data.ByteString.Lazy.Char8       as BC
+import           Data.Kind
+                 (Type)
 import qualified Data.List.NonEmpty               as NE
 import           Data.Maybe
                  (isJust)
@@ -176,7 +173,7 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 class Accept ctype => MimeRender ctype a where
     mimeRender  :: Proxy ctype -> a -> ByteString
 
-class (AllMime list) => AllCTRender (list :: [*]) a where
+class (AllMime list) => AllCTRender (list :: [Type]) a where
     -- If the Accept header can be matched, returns (Just) a tuple of the
     -- Content-Type and response (serialization of @a@ into the appropriate
     -- mimetype).
@@ -230,7 +227,7 @@ class Accept ctype => MimeUnrender ctype a where
 
     {-# MINIMAL mimeUnrender | mimeUnrenderWithType #-}
 
-class AllCTUnrender (list :: [*]) a where
+class AllCTUnrender (list :: [Type]) a where
     canHandleCTypeH
         :: Proxy list
         -> ByteString  -- Content-Type header
@@ -249,7 +246,7 @@ instance ( AllMimeUnrender ctyps a ) => AllCTUnrender ctyps a where
 --------------------------------------------------------------------------
 -- * Utils (Internal)
 
-class AllMime (list :: [*]) where
+class AllMime (list :: [Type]) where
     allMime :: Proxy list -> [M.MediaType]
 
 instance AllMime '[] where
@@ -267,7 +264,7 @@ canHandleAcceptH p (AcceptHeader h ) = isJust $ M.matchAccept (allMime p) h
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeRender
 --------------------------------------------------------------------------
-class (AllMime list) => AllMimeRender (list :: [*]) a where
+class (AllMime list) => AllMimeRender (list :: [Type]) a where
     allMimeRender :: Proxy list
                   -> a                              -- value to serialize
                   -> [(M.MediaType, ByteString)]    -- content-types/response pairs
@@ -295,7 +292,7 @@ instance {-# OVERLAPPABLE #-}
 -- then this would be taken care of. However there is no more specific instance
 -- between that and 'MimeRender JSON a', so we do this instead
 instance {-# OVERLAPPING #-} ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent where
-    allMimeRender _ _ = map (, "") $ NE.toList $ contentTypes pctyp
+    allMimeRender _ NoContent = map (, "") $ NE.toList $ contentTypes pctyp
       where
         pctyp = Proxy :: Proxy ctyp
 
@@ -307,7 +304,7 @@ instance {-# OVERLAPPING #-}
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender
 --------------------------------------------------------------------------
-class (AllMime list) => AllMimeUnrender (list :: [*]) a where
+class (AllMime list) => AllMimeUnrender (list :: [Type]) a where
     allMimeUnrender :: Proxy list
                     -> [(M.MediaType, ByteString -> Either String a)]
 
@@ -350,7 +347,7 @@ instance MimeRender PlainText TextS.Text where
 
 -- | @BC.pack@
 instance MimeRender PlainText String where
-    mimeRender _ = BC.pack
+    mimeRender _ = TextL.encodeUtf8 . TextL.pack
 
 -- | @id@
 instance MimeRender OctetStream ByteString where
@@ -370,28 +367,15 @@ instance NFData NoContent
 --------------------------------------------------------------------------
 -- * MimeUnrender Instances
 
--- | Like 'Data.Aeson.eitherDecode' but allows all JSON values instead of just
--- objects and arrays.
+-- | Deprecated: since aeson version 0.9 `eitherDecode` has lenient behavior.
 --
--- Will handle trailing whitespace, but not trailing junk. ie.
---
--- >>> eitherDecodeLenient "1 " :: Either String Int
--- Right 1
---
--- >>> eitherDecodeLenient "1 junk" :: Either String Int
--- Left "trailing junk after valid JSON: endOfInput"
 eitherDecodeLenient :: FromJSON a => ByteString -> Either String a
-eitherDecodeLenient input =
-    parseOnly parser (cs input) >>= parseEither parseJSON
-  where
-    parser = skipSpace
-          *> Data.Aeson.Parser.value
-          <* skipSpace
-          <* (endOfInput <?> "trailing junk after valid JSON")
+eitherDecodeLenient = eitherDecode
+{-# DEPRECATED eitherDecodeLenient "use eitherDecode instead" #-}
 
 -- | `eitherDecode`
 instance FromJSON a => MimeUnrender JSON a where
-    mimeUnrender _ = eitherDecodeLenient
+    mimeUnrender _ = eitherDecode
 
 -- | @urlDecodeAsForm@
 -- Note that the @mimeUnrender p (mimeRender p x) == Right x@ law only
@@ -409,7 +393,7 @@ instance MimeUnrender PlainText TextS.Text where
 
 -- | @Right . BC.unpack@
 instance MimeUnrender PlainText String where
-    mimeUnrender _ = Right . BC.unpack
+    mimeUnrender _ = bimap show TextL.unpack . TextL.decodeUtf8'
 
 -- | @Right . id@
 instance MimeUnrender OctetStream ByteString where

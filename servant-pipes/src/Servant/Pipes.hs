@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 -- | This module exports 'ToSourceIO' and 'FromSourceIO' for 'Proxy' and 'SafeT' instances.
@@ -62,14 +63,14 @@ instance PipesToSourceIO m => ToSourceIO a (ListT m a) where
 instance (MonadIO m, a' ~ X, a ~ (), b' ~ (), r ~ ())
     => FromSourceIO b (Proxy a' a b' b m r)
   where
-    fromSourceIO src = M $ liftIO $ S.unSourceT src (return . go) where
+    fromSourceIO src = pure $ M $ liftIO $ S.unSourceT src (return . go) where
         go :: S.StepT IO b -> Proxy X () () b m ()
         go S.Stop        = Pure ()
         go (S.Error err) = M (liftIO (fail err))
         go (S.Skip s)    = go s -- drives
         go (S.Effect ms) = M (liftIO (fmap go ms))
         go (S.Yield x s) = Respond x (const (go s))
-    {-# SPECIALIZE INLINE fromSourceIO :: SourceIO x -> Proxy X () () x IO () #-}
+    {-# SPECIALIZE INLINE fromSourceIO :: SourceIO x -> IO (Proxy X () () x IO ()) #-}
 
 instance MonadIO m => FromSourceIO a (ListT m a) where
-    fromSourceIO = Select . fromSourceIO
+    fromSourceIO src = Select <$> liftIO (fromSourceIO src)

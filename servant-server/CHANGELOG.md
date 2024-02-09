@@ -1,6 +1,43 @@
 [The latest version of this document is on GitHub.](https://github.com/haskell-servant/servant/blob/master/servant-server/CHANGELOG.md)
 [Changelog for `servant` package contains significant entries for all core packages.](https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md)
 
+Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
+
+0.20
+----
+
+- Add API docs for ServerT [#1573](https://github.com/haskell-servant/servant/pull/1573)
+- Add Functor instance to AuthHandler. [#1638](https://github.com/haskell-servant/servant/pull/1638)
+- Compatibility with GHC 9.6. [#1680](https://github.com/haskell-servant/servant/pull/1680)
+
+0.19.2
+------
+
+Compatibility with GHC 9.4, see [PR #1592](https://github.com/haskell-servant/servant/pull/1592).
+
+0.19.1
+------
+
+- Add `MonadFail` instance for `Handler` wrt [#1545](https://github.com/haskell-servant/servant/issues/1545)
+- Support GHC 9.2 [#1525](https://github.com/haskell-servant/servant/issues/1525)
+- Add capture hints in `Router` type for debug and display purposes [PR #1556] (https://github.com/haskell-servant/servant/pull/1556)
+
+0.19
+----
+
+### Significant changes
+
+- Drop support for GHC < 8.6.
+- Support GHC 9.0 (GHC 9.2 should work as well, but isn't fully tested yet).
+- Support Aeson 2 ([#1475](https://github.com/haskell-servant/servant/pull/1475)),
+  which fixes a [DOS vulnerability](https://github.com/haskell/aeson/issues/864)
+  related to hash collisions.
+- Add `NamedRoutes` combinator, making support for records first-class in Servant
+  ([#1388](https://github.com/haskell-servant/servant/pull/1388)).
+- Add custom type errors for partially applied combinators
+  ([#1289](https://github.com/haskell-servant/servant/pull/1289),
+  [#1486](https://github.com/haskell-servant/servant/pull/1486)).
+
 0.18.3
 ------
 

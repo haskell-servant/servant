@@ -5,6 +5,8 @@
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParam', QueryParams) where
 
+import           Data.Kind
+                 (Type)
 import           Data.Typeable
                  (Typeable)
 import           GHC.TypeLits
@@ -21,7 +23,7 @@ import           Servant.API.Modifiers
 type QueryParam = QueryParam' '[Optional, Strict]
 
 -- | 'QueryParam' which can be 'Required', 'Lenient', or modified otherwise.
-data QueryParam' (mods :: [*]) (sym :: Symbol) (a :: *)
+data QueryParam' (mods :: [Type]) (sym :: Symbol) (a :: Type)
     deriving Typeable
 
 -- | Lookup the values associated to the @sym@ query string parameter
@@ -35,7 +37,7 @@ data QueryParam' (mods :: [*]) (sym :: Symbol) (a :: *)
 --
 -- >>> -- /books?authors[]=<author1>&authors[]=<author2>&...
 -- >>> type MyApi = "books" :> QueryParams "authors" Text :> Get '[JSON] [Book]
-data QueryParams (sym :: Symbol) (a :: *)
+data QueryParams (sym :: Symbol) (a :: Type)
     deriving Typeable
 
 -- | Lookup a potentially value-less query string parameter
