@@ -213,7 +213,10 @@ runRouterEnv fmt router env request respond  =
           -> let request' = request { pathInfo = rest }
              in  runRouterEnv fmt router' (first, env) request' respond
     CaptureAllRouter _ router' ->
-      let segments = pathInfo request
+      let segments = case pathInfo request of
+            -- this case is to handle trailing slashes.
+            ("":xs) -> xs
+            xs -> xs
           request' = request { pathInfo = [] }
       in runRouterEnv fmt router' (segments, env) request' respond
     RawRouter app ->
