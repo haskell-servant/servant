@@ -814,7 +814,7 @@ markdownWith RenderingOptions{..} api = unlines $
                 ("text", "html") -> "html"
                 ("application", "xml") -> "xml"
                 ("text", "xml") -> "xml"
-                ("application", "json") -> "javascript"
+                ("application", "json") -> "json"
                 ("application", "javascript") -> "javascript"
                 ("text", "css") -> "css"
                 (_, _) -> ""
