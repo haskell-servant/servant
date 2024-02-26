@@ -67,7 +67,7 @@ library
     , mtl                 ^>= 2.2.2   || ^>= 2.3.1
     , text                >= 1.2.3.0  && < 2.2
     , transformers        >= 0.5.2.0  && < 0.7
-    , filepath            >= 1.4.1.1  && < 1.5
+    , filepath            >= 1.4.1.1  && < 1.6
 
   -- Servant dependencies
   -- strict dependency as we re-export 'servant' things.
