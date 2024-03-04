@@ -47,7 +47,7 @@ jobs:
         path: | 
           ${{ steps.setup-haskell.outputs.cabal-store }}
           dist-newstyle
-        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./.plan.json') }}
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('**/plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
     - name: Install doctest
