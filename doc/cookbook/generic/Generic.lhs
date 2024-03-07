@@ -4,7 +4,7 @@ This cookbook explains how to implement an API with a simple record-based
 structure. We only deal with non-nested APIs in which every endpoint is on the same
 level.
 
-If a you need nesting because you have different branches in your API tree, you
+If you need nesting because you have different branches in your API tree, you
 might want to jump directly to the [Record-based APIs: the nested records
 case](../namedRoutes/NamedRoutes.html) cookbook that broaches the subject.
 
@@ -25,7 +25,7 @@ apiHandler :: ServerT API1 Handler
 apiHandler =   getMovies
                  :<|> getVersion
 ```
-GHC could scold you with a very tedious message such as :
+GHC can and will scold you with a very tedious message such as :
 ```console
     • Couldn't match type 'Handler NoContent'
                      with 'Movie -> Handler NoContent'
@@ -50,6 +50,7 @@ GHC could scold you with a very tedious message such as :
                       getMovieHandler :<|> updateMovieHandler :<|> deleteMovieHandler
     |
 226 | server = versionHandler
+    |
 ```
 On the contrary, with the record-based technique, we refer to the routes by their name:
 ```haskell,ignore
@@ -58,7 +59,7 @@ data API mode = API
     , delete ::  "delete" :> ...
     }
 ```
-and GHC follows the lead :
+and GHC follows the lead:
 ```console
     • Couldn't match type 'NoContent' with 'Movie'
       Expected type: AsServerT Handler :- Delete '[JSON] Movie
@@ -77,6 +78,7 @@ and GHC follows the lead :
                  delete = deleteMovieHandler movieId}
     |
 252 |     , delete = deleteMovieHandler movieId
+    |
 ```
 
 So, records are more readable for a human, and GHC gives you more accurate error messages.
@@ -92,7 +94,6 @@ module Main (main, api, getLink, routesLinks, cliGet) where
 
 import Control.Exception          (throwIO)
 import Control.Monad.Trans.Reader (ReaderT, runReaderT)
-import Data.Proxy                 (Proxy (..))
 import Network.Wai.Handler.Warp   (run)
 import System.Environment         (getArgs)
 

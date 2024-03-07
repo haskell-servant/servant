@@ -1,4 +1,4 @@
-# Record-based APIs: the nested records case
+# Record-based APIs: the nested case
 
 *Available in Servant 0.19 or higher*
 
@@ -7,8 +7,7 @@ Servant offers a very natural way of constructing APIs with nested records, call
 This cookbook explains how to implement such nested-record-based-APIs using
 `NamedRoutes` through the example of a Movie Catalog.
 If you don't need the nested aspect of the record-based API, you might want to look at [Record-based
-APIs: the simple
-case](../generic/Generic.html) cookbook
+APIs: the simple case](../generic/Generic.html) cookbook
 which covers a simpler implementation in which every endpoint is on the same
 level.
 
@@ -17,13 +16,13 @@ After, we show you how to implement the API type with the NamedRoutes records.
 Lastly, we make a Server and a Client out of the API type.
 
 However, it should be understood that this cookbook does _not_ dwell on the
-built-in servant combinators as the [Structuring APIs
-](<../structuring-apis/StructuringApis.html>) cookbook already covers that angle.
+built-in servant combinators as the [Structuring APIs](<../structuring-apis/StructuringApis.html>) 
+cookbook already covers that angle.
 
 
 ## Boilerplate time!
 
-First, let’s get rid of the the extensions and imports boilerplate in order to focus on our new technique:
+First, let’s get rid of the extensions and imports boilerplate in order to focus on our new technique:
 
 
 ```haskell
@@ -51,7 +50,7 @@ import Servant.Client             ( AsClientT, ClientM, client
                                   , (//), (/:) )
 import Servant.Client.Generic     ()
 
-import Servant.Server             ( Application, ServerT )
+import Servant.Server             ( Application )
 import Servant.Server.Generic     ( AsServer )
 
 ```
@@ -62,7 +61,7 @@ Now that we’ve handled the boilerplate, we can dive into our Movie Catalog dom
 
 Consider a `Movie` constructed from a `Title` and a `Year` of publication.
 
-``` haskell
+```haskell
 data Movie = Movie
     { movieId :: MovieId
     , title :: Title
@@ -107,7 +106,7 @@ So, the URLs would look like
 
 Now that we have a very clear idea of the API we want to make, we need to transform it into usable Haskell code:
 
-``` haskell
+```haskell
 
 data API mode = API
     { version :: mode :- "version" :> Get '[JSON] Version
@@ -129,7 +128,7 @@ The `mode` type parameter indicates into which implementation the record’s `Ge
 Let's jump into the "movies" subtree node:
 
 
-``` haskell
+```haskell
 
 data MoviesAPI mode = MoviesAPI
     { list :: mode :- "list" :> QueryParam "SortBy" SortBy :> Get '[JSON] [Movie]
@@ -154,7 +153,7 @@ In this subtree, we illustrated both an endpoint with a **query param** and also
 
 So, let's go deeper into our API tree.
 
-``` haskell
+```haskell
 data MovieAPI mode = MovieAPI
   { get :: mode :- Get '[JSON] (Maybe Movie)
   , update :: mode :- ReqBody '[JSON] Movie :> Put '[JSON] NoContent
@@ -167,7 +166,7 @@ As you can see, we end up implementing the deepest routes of our API.
 Small detail: as our main API tree is also a record, we need the `NamedRoutes` helper.
 To improve readability, we suggest you create a type alias:
 
-``` haskell
+```haskell
 type MovieCatalogAPI = NamedRoutes API
 ```
 
@@ -199,8 +198,8 @@ getMovieHandler :: MovieId -> Handler (Maybe Movie)
 getMovieHandler requestMovieId = go moviesDB
   where
     go [] = pure Nothing
-    go (movie:ms) | movieId movie == requestMovieId = pure $ Just movie
-    go (m:ms) = go ms
+    go (m : _ms) | movieId m == requestMovieId = pure $ Just m
+    go (_m : ms) = go ms
 
 updateMovieHandler :: MovieId -> Movie -> Handler NoContent
 updateMovieHandler requestedMovieId newMovie =
@@ -211,7 +210,6 @@ deleteMovieHandler :: MovieId -> Handler NoContent
 deleteMovieHandler _ =
    -- delete the movie from the database...
    pure NoContent
-
 ```
 
 And assemble them together with the record structure, which is the glue here.
@@ -232,17 +230,17 @@ moviesHandler =
     }
 
 movieHandler :: MovieId -> MovieAPI AsServer
-movieHandler movieId = MovieAPI
-    { get = getMovieHandler movieId
-    , update = updateMovieHandler movieId
-    , delete = deleteMovieHandler movieId
+movieHandler mId = MovieAPI
+    { get = getMovieHandler mId
+    , update = updateMovieHandler mId
+    , delete = deleteMovieHandler mId
     }
 ```
 As you might have noticed, we build our handlers out of the same record types we used to define our API: `MoviesAPI` and `MovieAPI`. What kind of magic is this ?
 
 Finally, we can run the server and connect the API routes to the handlers as usual:
 
-``` haskell
+```haskell
 api :: Proxy MovieCatalogAPI
 api = Proxy
 
@@ -251,7 +249,6 @@ main = run 8081 app
 
 app :: Application
 app = serve api server
-
 ```
 Yay! That’s done and we’ve got our server!
 
@@ -259,7 +256,7 @@ Yay! That’s done and we’ve got our server!
 
 The client, so to speak, is very easy to implement:
 
-``` haskell
+```haskell
 movieCatalogClient :: API (AsClientT ClientM)
 movieCatalogClient = client api -- remember: api :: Proxy MovieCatalogAPI
 ```
@@ -276,21 +273,24 @@ listMovies :: Maybe SortBy -> ClientM [Movie]
 listMovies sortBy = movieCatalogClient // movies // list /: sortBy
 
 getMovie :: MovieId -> ClientM (Maybe Movie)
-getMovie movieId = movieCatalogClient // movies // movie /: movieId // get
+getMovie mId = movieCatalogClient // movies // movie /: mId // get
 
 updateMovie :: MovieId -> Movie -> ClientM NoContent
-updateMovie movieId newMovie = movieCatalogClient // movies // movie /: movieId // update /: newMovie
+updateMovie mId newMovie = movieCatalogClient // movies // movie /: mId // update /: newMovie
 
 deleteMovie :: MovieId -> ClientM NoContent
-deleteMovie movieId = movieCatalogClient // movies // movie /: movieId // delete
+deleteMovie mId = movieCatalogClient // movies // movie /: mId // delete
 ```
 
 Done! We’ve got our client!
 
 ## Conclusion
 
-We hope that you found this cookbook helpful, and that you now feel more confident using the record-based APIs, nested or not.
+We hope that you found this cookbook helpful, and that you now feel more confident 
+using the record-based APIs, nested or not.
 
-If you are interested in further understanding the built-in Servant combinators, see [Structuring APIs](../structuring-apis/StructuringApis.html).
+If you are interested in further understanding the built-in Servant combinators, see
+[Structuring APIs](../structuring-apis/StructuringApis.html).
 
-Since `NamedRoutes` is based on the Generic mechanism, you might want to have a look at [Sandy Maguire’s _Thinking with Types_ book](https://doku.pub/download/sandy-maguire-thinking-with-typesz-liborgpdf-4lo5ne7kdj0x).
+Since `NamedRoutes` is based on the Generic mechanism, you might want to have a look at 
+[Sandy Maguire’s _Thinking with Types_ book](https://thinkingwithtypes.com/).
