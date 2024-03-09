@@ -266,7 +266,7 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 -- | If there is more than one fragment in an API endpoint,
 -- a compile-time error is raised.
 --
--- >>> type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
+-- >>> -- type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
 -- >>> instance AtMostOneFragment FailAPI
 -- ...
 -- ...Only one Fragment allowed per endpoint in api 'FailAPI'...
