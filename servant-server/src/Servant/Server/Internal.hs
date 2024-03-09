@@ -114,7 +114,7 @@ import           Servant.Server.Internal.ServerError
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
 import           Servant.API.TypeLevel
-                 (AtLeastOneFragment, FragmentUnique)
+                 (AtMostOneFragment, FragmentUnique)
 
 class HasServer api context where
   -- | The type of a server for this API, given a monad to run effects in.
@@ -961,7 +961,7 @@ instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) 
 -- > server = getBooks
 -- >   where getBooks :: Handler [Book]
 -- >         getBooks = ...return all books...
-instance (AtLeastOneFragment api, FragmentUnique (Fragment a1 :> api), HasServer api context)
+instance (AtMostOneFragment api, FragmentUnique (Fragment a1 :> api), HasServer api context)
     => HasServer (Fragment a1 :> api) context where
   type ServerT (Fragment a1 :> api) m = ServerT api m
 

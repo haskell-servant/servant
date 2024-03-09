@@ -47,7 +47,7 @@ module Servant.API.TypeLevel (
     And,
     -- ** Fragment
     FragmentUnique,
-    AtLeastOneFragment
+    AtMostOneFragment
     ) where
 
 
@@ -244,14 +244,14 @@ type family ElemGo e es orig :: Constraint where
 
 -- ** Logic
 
--- | If either a or b produce an empty constraint, produce an empty constraint.
+-- | If either 'a' or 'b' produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
     -- This works because of:
     -- https://ghc.haskell.org/trac/ghc/wiki/NewAxioms/CoincidentOverlap
   Or () b       = ()
   Or a ()       = ()
 
--- | If both a or b produce an empty constraint, produce an empty constraint.
+-- | If both 'a' or 'b' produce an empty constraint, produce an empty constraint.
 type family And (a :: Constraint) (b :: Constraint) :: Constraint where
   And () ()     = ()
 
@@ -263,21 +263,22 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 
 -- ** Fragment
 
-class FragmentUnique api => AtLeastOneFragment api
-
--- | If fragment appeared in API endpoint twice, compile-time error would be raised.
+-- | If there is more than one fragment in an API endpoint,
+-- a compile-time error is raised.
 --
--- >>> -- type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
--- >>> instance AtLeastOneFragment FailAPI
+-- >>> type FailAPI = Fragment Bool :> Fragment Int :> Get '[JSON] NoContent
+-- >>> instance AtMostOneFragment FailAPI
 -- ...
--- ...Only one Fragment allowed per endpoint in api...
+-- ...Only one Fragment allowed per endpoint in api 'FailAPI'...
 -- ...
 -- ...In the instance declaration for...
-instance AtLeastOneFragment (Verb m s ct typ)
+class FragmentUnique api => AtMostOneFragment api
 
-instance AtLeastOneFragment (UVerb m cts as)
+instance AtMostOneFragment (Verb m s ct typ)
 
-instance AtLeastOneFragment (Fragment a)
+instance AtMostOneFragment (UVerb m cts as)
+
+instance AtMostOneFragment (Fragment a)
 
 type family FragmentUnique api :: Constraint where
   FragmentUnique (sa :<|> sb)       = And (FragmentUnique sa) (FragmentUnique sb)
