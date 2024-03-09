@@ -1,0 +1,10 @@
+synopsis: Renamed `AtLeastOneFragment` type class to `AtMostOneFragment`
+prs: #1720
+
+description: {
+
+The previously named `AtLeastOneFragment` type class defined in the
+`Servant.API.TypeLevel` module has been renamed to `AtMostOneFragment`,
+since the previous name was misleading.
+
+}
