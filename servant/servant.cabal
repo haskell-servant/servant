@@ -120,8 +120,8 @@ library
                   , ConstraintKinds
                   , DataKinds
                   , DeriveDataTypeable
+                  , DeriveFunctor
                   , DeriveGeneric
-                  , ExplicitNamespaces
                   , FlexibleContexts
                   , FlexibleInstances
                   , FunctionalDependencies
@@ -134,6 +134,7 @@ library
                   , ScopedTypeVariables
                   , TupleSections
                   , TypeFamilies
+                  , TypeFamilyDependencies
                   , TypeOperators
                   , UndecidableInstances
 
