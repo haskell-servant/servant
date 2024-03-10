@@ -115,7 +115,7 @@ executable greet
 
   build-depends:
       aeson               >= 1.4.1.0  && < 3
-    , warp                >= 3.2.25   && < 3.4
+    , warp                >= 3.2.25   && < 3.5
 
 test-suite spec
   type: exitcode-stdio-1.0

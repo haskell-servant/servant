@@ -73,7 +73,7 @@ test-suite spec
     , time                 >= 1.5.0.1  && < 1.13
     , transformers         >= 0.4.2.0  && < 0.7
     , wai                  >= 3.2.1.2  && < 3.3
-    , warp                 >= 3.2.25   && < 3.4
+    , warp                 >= 3.2.25   && < 3.5
     , jose                 >= 0.10     && < 0.12
   other-modules:
       Servant.Auth.ClientSpec
