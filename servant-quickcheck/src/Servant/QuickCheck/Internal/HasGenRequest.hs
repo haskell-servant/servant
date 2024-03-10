@@ -1,21 +1,25 @@
-{-# LANGUAGE CPP       #-}
-{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE CPP        #-}
+{-# LANGUAGE PolyKinds  #-}
+{-# LANGUAGE StarIsType #-}
 module Servant.QuickCheck.Internal.HasGenRequest where
 
-import Data.String              (fromString)
-import Data.String.Conversions  (cs)
-import GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
-import Network.HTTP.Client      (Request, RequestBody (..), host, method, path,
-                                 port, queryString, requestBody, requestHeaders,
-                                 secure, defaultRequest)
-import Network.HTTP.Media       (renderHeader)
-import Prelude.Compat
-import Servant
-import Servant.API.ContentTypes (AllMimeRender (..))
-import Servant.Client           (BaseUrl (..), Scheme (..))
-import Test.QuickCheck          (Arbitrary (..), Gen, elements, frequency)
+import           Data.Kind                (Type)
+import           Data.String              (fromString)
+import           Data.String.Conversions  (cs)
+import           GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
+import           Network.HTTP.Client      (Request, RequestBody (..),
+                                           defaultRequest, host, method, path,
+                                           port, queryString, requestBody,
+                                           requestHeaders, secure)
+import           Network.HTTP.Media       (renderHeader)
+import           Prelude.Compat
+import           Servant
+import           Servant.API.ContentTypes (AllMimeRender (..))
+import           Servant.Client           (BaseUrl (..), Scheme (..))
+import           Test.QuickCheck          (Arbitrary (..), Gen, elements,
+                                           frequency)
 
-import qualified Data.ByteString as BS
+import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Internal as BS (c2w)
 
 
@@ -66,10 +70,9 @@ instance (KnownSymbol path, HasGenRequest b) => HasGenRequest (path :> b) where
 instance HasGenRequest EmptyAPI where
   genRequest _ = (0, error "EmptyAPIs cannot be queried.")
 
-instance HasGenRequest api => HasGenRequest (Summary d :> api) where
-  genRequest _ = genRequest (Proxy :: Proxy api)
-
-instance HasGenRequest api => HasGenRequest (Description d :> api) where
+-- | capture all path pieces that do not have semantics relevant to 'HasGenRequest'; this is to maintain backwards compatibility
+--   without having to introduce CPP for every new URL piece that basically is irrelevant for this class
+instance {-# OVERLAPPABLE #-} HasGenRequest api => HasGenRequest (f d :> api) where
   genRequest _ = genRequest (Proxy :: Proxy api)
 
 instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
@@ -140,7 +143,7 @@ instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
       old' <- old
       return $ \burl -> let r = old' burl in r {
           queryString = queryString r
-                     <> if length new' > 0 then fold (toParam <$> new') else ""})
+                     <> if not (null new') then fold (toParam <$> new') else ""})
       where
         (oldf, old) = genRequest (Proxy :: Proxy b)
         param = cs $ symbolVal (Proxy :: Proxy x)

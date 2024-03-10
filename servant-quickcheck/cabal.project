@@ -1,4 +1,14 @@
-packages: .
+packages:
+  ./.
+
+-- due to a bug in the nixpkgs haskell infrastructure (or cabal, if you will)
+-- it is impossible to provided hspec-discover in a devShell therefore having 
+-- to resort to downloads from hackage
+repository hackage.haskell.org
+  url: http://hackage.haskell.org/
+
 tests: true
 
 allow-newer: servant-blaze:servant
+
+test-show-details: direct
