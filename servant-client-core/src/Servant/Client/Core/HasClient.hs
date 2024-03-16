@@ -88,7 +88,7 @@ import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
 import           Servant.API.Status
                  (statusFromNat)
-import           Servant.API.TypeLevel (FragmentUnique, AtLeastOneFragment)
+import           Servant.API.TypeLevel (FragmentUnique, AtMostOneFragment)
 import           Servant.API.Modifiers
                  (FoldRequired, RequiredArgument, foldRequiredArgument)
 import           Servant.API.TypeErrors
@@ -821,7 +821,7 @@ instance ( HasClient m api
 -- > getBooks = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooks' for all books.
-instance (AtLeastOneFragment api, FragmentUnique (Fragment a :> api), HasClient m api
+instance (AtMostOneFragment api, FragmentUnique (Fragment a :> api), HasClient m api
          ) => HasClient m (Fragment a :> api) where
 
   type Client m (Fragment a :> api) = Client m api
