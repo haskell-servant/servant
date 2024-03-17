@@ -1,4 +1,87 @@
-# Using generics
+# Record-based APIs: the simple case
+
+This cookbook explains how to implement an API with a simple record-based
+structure. We only deal with non-nested APIs in which every endpoint is on the same
+level.
+
+If a you need nesting because you have different branches in your API tree, you
+might want to jump directly to the [Record-based APIs: the nested records
+case](../namedRoutes/NamedRoutes.html) cookbook that broaches the subject.
+
+Shall we begin?
+
+## Why would I want to use `Records` over the alternative `:<|>` operator?
+
+With a record-based API, we don’t need to care about the declaration order of the endpoints.
+For example, with the `:<|>` operator there’s room for error when the order of the API type
+
+```haskell,ignore
+type API1  =   "version" :> Get '[JSON] Version
+                :<|>  "movies" :> Get '[JSON] [Movie]
+```
+does not follow the `Handler` implementation order
+```haskell,ignore
+apiHandler :: ServerT API1 Handler
+apiHandler =   getMovies
+                 :<|> getVersion
+```
+GHC could scold you with a very tedious message such as :
+```console
+    • Couldn't match type 'Handler NoContent'
+                     with 'Movie -> Handler NoContent'
+      Expected type: ServerT MovieCatalogAPI Handler
+        Actual type: Handler Version
+                     :<|> ((Maybe SortBy -> Handler [Movie])
+                           :<|> ((MovieId -> Handler (Maybe Movie))
+                                 :<|> ((MovieId -> Movie -> Handler NoContent)
+                                       :<|> (MovieId -> Handler NoContent))))
+    • In the expression:
+        versionHandler
+          :<|>
+            movieListHandler
+              :<|>
+                getMovieHandler :<|> updateMovieHandler :<|> deleteMovieHandler
+      In an equation for 'server':
+          server
+            = versionHandler
+                :<|>
+                  movieListHandler
+                    :<|>
+                      getMovieHandler :<|> updateMovieHandler :<|> deleteMovieHandler
+    |
+226 | server = versionHandler
+```
+On the contrary, with the record-based technique, we refer to the routes by their name:
+```haskell,ignore
+data API mode = API
+    { list   :: "list" :> ...
+    , delete ::  "delete" :> ...
+    }
+```
+and GHC follows the lead :
+```console
+    • Couldn't match type 'NoContent' with 'Movie'
+      Expected type: AsServerT Handler :- Delete '[JSON] Movie
+        Actual type: Handler NoContent
+    • In the 'delete' field of a record
+      In the expression:
+        MovieAPI
+          {get = getMovieHandler movieId,
+           update = updateMovieHandler movieId,
+           delete = deleteMovieHandler movieId}
+      In an equation for 'movieHandler':
+          movieHandler movieId
+            = MovieAPI
+                {get = getMovieHandler movieId,
+                 update = updateMovieHandler movieId,
+                 delete = deleteMovieHandler movieId}
+    |
+252 |     , delete = deleteMovieHandler movieId
+```
+
+So, records are more readable for a human, and GHC gives you more accurate error messages.
+
+What are we waiting for?
 
 ```haskell
 {-# LANGUAGE DataKinds     #-}
@@ -22,12 +105,12 @@ import Servant.Server.Generic
 ```
 
 The usage is simple, if you only need a collection of routes.
-First you define a record with field types prefixed by a parameter `route`:
+First you define a record with field types prefixed by a parameter `mode`:
 
 ```haskell
-data Routes route = Routes
-    { _get :: route :- Capture "id" Int :> Get '[JSON] String
-    , _put :: route :- ReqBody '[JSON] Int :> Put '[JSON] Bool
+data Routes mode = Routes
+    { _get :: mode :- Capture "id" Int :> Get '[JSON] String
+    , _put :: mode :- ReqBody '[JSON] Int :> Put '[JSON] Bool
     }
   deriving (Generic)
 ```
@@ -110,7 +193,7 @@ main = do
         _ -> putStrLn "To run, pass 'run' argument: cabal new-run cookbook-generic run"
 ```
 
-## Using generics together with a custom monad
+## Using record-based APIs together with a custom monad
 
 If your app uses a custom monad, here's how you can combine it with
 generics.
@@ -120,9 +203,6 @@ data AppCustomState =
   AppCustomState
 
 type AppM = ReaderT AppCustomState Handler
-
-apiMyMonad :: Proxy (ToServantApi Routes)
-apiMyMonad = genericApi (Proxy :: Proxy Routes)
 
 getRouteMyMonad :: Int -> AppM String
 getRouteMyMonad = return . show
@@ -139,3 +219,4 @@ nt s x = runReaderT x s
 
 appMyMonad :: AppCustomState -> Application
 appMyMonad state = genericServeT (nt state) recordMyMonad
+```
