@@ -4,6 +4,7 @@ packages:
   db-mysql-basics/
   db-sqlite-simple/
   db-postgres-pool/
+  expose-prometheus/
   using-custom-monad/
   jwt-and-basic-auth/
   hoist-server-with-context/
