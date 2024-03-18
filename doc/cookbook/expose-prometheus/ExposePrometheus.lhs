@@ -2,11 +2,12 @@
 
 Production services require monitoring to operate reliably and efficiently.  In
 a production setup, you may want to record a variety of things like the number
-of access to a feature when doing some A-B tests, the duration of database queriest to
+of access to a feature when doing some A-B tests, the duration of database queries to
 optimize performance when needed, the number of third-party API calls to avoid
-hitting rate-limits, the count the number of failed logins to report suspicious
+hitting rate-limits, the number of failed logins to report suspicious
 activity etc.  Observability is the umbrella term for techniques and
-technologies to expose such _metrics_ and _traces_ about internals of services.
+technologies concerned with exposing such _metrics_ and _traces_ about
+internals of services.
 A prevalent tool and format to expose metrics is
 [Prometheus](https://prometheus.io/).
 
@@ -55,7 +56,7 @@ count accesses to this API route.  For the purpose of this cookbook the
 "hello-world" API route will count how many times whom got a hello. For
 instance "Hello, Bob" and "Hello, Alice" means we got "1 for Bob" and "1 for
 Alice", in short, we record a counter _breakdown_.  Another counter will report
-values counted in background-thread, here, a counter in a sleep-loop.  Such
+values counted in a background-thread, here, a counter in a sleep-loop.  Such
 counters can serve as watchdog for other applications: if the counter stops
 increasing, then something is aloof.
 
@@ -157,7 +158,9 @@ type ServePrometheusAPI =
 With this API type, we now need to fill-in the blanks.  We define a `Metrics`
 object that serializes as the Prometheus text format.  We want to keep it
 simple and use `Prometheus.exportMetricsAsText` to collect the metrics as a
-text-formatted payload. Thus, our `Metrics` object contains the raw payload.
+text-formatted payload. This function is an IO object returning the whole text
+payload, thus, our `Metrics` object contains the raw payload in a
+"pre-rendered" format for the MimeRender instance.
 
 ``` haskell
 newtype Metrics = Metrics {toLBS :: ByteString}
