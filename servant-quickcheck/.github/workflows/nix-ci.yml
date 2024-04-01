@@ -1,0 +1,17 @@
+name: nix ci
+on: 
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix -L flake check
+      - run: nix -L build .#servant-quickcheck
+      - run: nix -L bulid .#ghc96-servant-quickcheck

@@ -26,20 +26,25 @@
             stylish-haskell.enable = true;
 
             alejandra.enable = true;
-            statix.enable = true;
             deadnix.enable = true;
           };
+        };
+        haskellProjects.ghc94 = {
+          packages = {};
+          settings = {};
+          devShell.mkShellArgs.shellHook = config.pre-commit.installationScript;
+          basePackages = pkgs.haskell.packages.ghc94;
         };
         haskellProjects.default = {
           packages = {};
           settings = {};
           devShell.mkShellArgs.shellHook = config.pre-commit.installationScript;
         };
-        haskellProjects.ghc96 = {
+        haskellProjects.ghc98 = {
+          devShell.enable = false;
           packages = {};
           settings = {};
-          devShell.mkShellArgs.shellHook = config.pre-commit.installationScript;
-          basePackages = pkgs.haskell.packages.ghc96;
+          basePackages = pkgs.haskell.packages.ghc98;
         };
       };
     };
