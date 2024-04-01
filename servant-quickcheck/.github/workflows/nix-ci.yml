@@ -16,4 +16,4 @@ jobs:
       - run: nix -L flake check
       - run: nix -L build .#servant-quickcheck
       - run: nix -L build .#ghc94-servant-quickcheck
-      - run: nix -L bulid .#ghc98-servant-quickcheck
+      - run: nix -L build .#ghc98-servant-quickcheck
