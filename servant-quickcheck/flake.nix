@@ -23,7 +23,7 @@
           check.enable = true;
           settings.hooks = {
             cabal-fmt.enable = true;
-            stylish-haskell.enable = true;
+            stylish-haskell.enable = false;
 
             alejandra.enable = true;
             deadnix.enable = true;
