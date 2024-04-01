@@ -13,7 +13,7 @@ category:           Web
 build-type:         Simple
 cabal-version:      >=1.10
 extra-source-files: CHANGELOG.yaml
-tested-with:        GHC ==9.4.8 || ==9.6.4
+tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.1
 
 source-repository head
   type:     git
@@ -58,9 +58,6 @@ library
     , text                   >=1      && <2.1
     , time                   >=1.5    && <1.13
     , warp                   >=3.2.4  && <3.4
-
-  if !impl(ghc >=8.0)
-    build-depends: semigroups >=0.18.3 && <0.20
 
   hs-source-dirs:     src
   default-extensions:
