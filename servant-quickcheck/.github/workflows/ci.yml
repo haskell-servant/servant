@@ -31,4 +31,10 @@ jobs:
         id: setup-haskell
         with:
           ghc-version: ${{ matrix.ghc }}
+      - name: Cache
+        uses: actions/cache@v4.0.1
+        with:
+          path: ${{ steps.setup-haskell.outputs.cabal-store }}
+          key: ${{ matrix.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('**/plan.json') }}
+          restore-keys: ${{ matrix.os }}-ghc-${{ matrix.ghc }}-
       - run: cabal test all
