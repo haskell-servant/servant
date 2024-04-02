@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP #-}
 module Servant.QuickCheck.Internal.QuickCheck where
 
@@ -21,7 +20,6 @@ import           Test.QuickCheck          (Args (..),  Result (..), quickCheckWi
 import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, monitor,
                                            run)
 import           Test.QuickCheck.Property (counterexample)
-
 import Servant.QuickCheck.Internal.Equality
 import Servant.QuickCheck.Internal.ErrorTypes
 import Servant.QuickCheck.Internal.HasGenRequest
@@ -47,7 +45,7 @@ withServantServerAndContext :: HasServer a ctx
 #endif
   => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
 withServantServerAndContext api ctx server t
-  = withApplication (return . serveWithContext api ctx =<< server) $ \port ->
+  = withApplication (serveWithContext api ctx <$> server) $ \port ->
       t (BaseUrl Http "localhost" port "")
 
 -- | Check that the two servers running under the provided @BaseUrl@s behave
@@ -90,7 +88,7 @@ serversEqual api burl1 burl2 args req = do
       assert False
   case r of
     Success {} -> return ()
-    Failure{..} -> do
+    Failure {} -> do
       mx <- tryReadMVar deetsMVar
       case mx of
         Just x ->
@@ -146,7 +144,7 @@ serverSatisfiesMgr api manager burl args preds = do
       _ -> return ()
   case r of
     Success {} -> return ()
-    Failure {..} -> do
+    Failure {} -> do
       mx <- tryReadMVar deetsMVar
       case mx of
         Just x ->
@@ -154,7 +152,7 @@ serverSatisfiesMgr api manager burl args preds = do
         Nothing ->
           expectationFailure $ "We failed to record a reason for failure: " <> show r
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
-    NoExpectedFailure {} -> expectationFailure $ "No expected failure"
+    NoExpectedFailure {} -> expectationFailure "No expected failure"
 #if MIN_VERSION_QuickCheck(2,12,0)
 #else
     InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
@@ -175,7 +173,7 @@ serverDoesntSatisfyMgr api manager burl args preds = do
     Success {} -> return ()
     GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     Failure { output = m } -> expectationFailure $ "Failed:\n" ++ show m
-    NoExpectedFailure {} -> expectationFailure $ "No expected failure"
+    NoExpectedFailure {} -> expectationFailure "No expected failure"
 #if MIN_VERSION_QuickCheck(2,12,0)
 #else
     InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
