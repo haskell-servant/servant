@@ -163,7 +163,7 @@ instance (KnownSymbol x, HasGenRequest b)
         param = cs $ symbolVal (Proxy :: Proxy x)
 
 instance (ReflectMethod method)
-    => HasGenRequest (Verb (method :: k) (status :: Nat) (cts :: [*]) a) where
+    => HasGenRequest (Verb (method :: k) (status :: Nat) (cts :: [Type]) a) where
     genRequest _ = (1, return $ \burl -> defaultRequest
        { host = cs $ baseUrlHost burl
        , port = baseUrlPort burl
