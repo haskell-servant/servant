@@ -1,4 +1,9 @@
 releases:
+  - version: "0.1.0.0"
+    changes:
+      - description: "Support servant{-server,-client} up to 0.20, support base up to 4.19, drop support for some older servant and base versions, drop support for stack, drop testing for some older ghc versions"
+        authors: mangoiv
+        date: 2024-04-02
   - version: "0.0.9.0"
     changes:
       - description: "Support servant-0.15 (#65)"
