@@ -4,9 +4,7 @@ import           Data.Aeson           (Value, decode, decodeStrict)
 import           Data.ByteString      (ByteString)
 import qualified Data.ByteString.Lazy as LB
 import           Data.Function        (on)
-import           Data.Semigroup       (Semigroup (..))
-import           Network.HTTP.Client  (Response (..), equivCookieJar,
-                                       responseBody, responseClose)
+import           Network.HTTP.Client  (Response (..), equivCookieJar, responseBody)
 import           Prelude.Compat
 
 newtype ResponseEquality b = ResponseEquality {getResponseEquality :: Response b -> Response b -> Bool}
