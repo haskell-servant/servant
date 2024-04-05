@@ -124,7 +124,7 @@ handleHello counters Nothing = do
   liftIO $ Prometheus.withLabel (countHellos counters) breakdown Prometheus.incCounter
   pure "hello, world"
 handleHello counters (Just who) = do
-  let breakdown = helloWhomToCounterBreakdown who
+  let breakdown = helloWhoToCounterBreakdown who
   liftIO $ Prometheus.withLabel (countHellos counters) breakdown Prometheus.incCounter
   pure $ "hello, " <> getWhom who
 ```
