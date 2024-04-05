@@ -28,7 +28,7 @@ protect the endpoint so that only trusted clients can read the metrics. Here we
 propose to augment the endpoint with a
 [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing) header so
 that a browser clients (such as
-[mine](https://dicioccio.fr/prometheus-monitor.html)) can query the Prometheus
+[prometheus-monitor](https://dicioccio.fr/prometheus-monitor.html)) can query the Prometheus
 metrics endpoint.
 
 First, the imports.
