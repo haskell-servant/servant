@@ -126,7 +126,7 @@ handleHello counters Nothing = do
 handleHello counters (Just who) = do
   let breakdown = helloWhoToCounterBreakdown who
   liftIO $ Prometheus.withLabel (countHellos counters) breakdown Prometheus.incCounter
-  pure $ "hello, " <> getWhom who
+  pure $ "hello, " <> getWho who
 ```
 
 The second metrics we use to instrument our program is a background thread
