@@ -118,7 +118,7 @@ type HelloAPI =
 helloWhoToCounterBreakdown :: HelloWho -> Text
 helloWhoToCounterBreakdown (HelloWho txt) = txt
 
-handleHello :: Counters -> Maybe HelloWhom -> Handler Greeting
+handleHello :: Counters -> Maybe HelloWho -> Handler Greeting
 handleHello counters Nothing = do
   let breakdown = "n/a"
   liftIO $ Prometheus.withLabel (countHellos counters) breakdown Prometheus.incCounter
