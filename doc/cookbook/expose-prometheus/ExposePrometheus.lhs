@@ -109,7 +109,7 @@ type HelloAPI =
   Summary "a dummy hello-world route"
     :> "api"
     :> "hello"
-    :> QueryParam "who" HelloWhom
+    :> QueryParam "who" HelloWho
     :> Get '[JSON] Greeting
 
 -- | A function to turn an input object into a key that we use as breakdown for
