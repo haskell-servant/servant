@@ -68,7 +68,7 @@ purpose of this cookbook, we assume the risk is mitigated.
 
 The Prometheus library we use requires us to register the counters ahead of
 time. Let's define a datatype to refer to all the counters needed
-in this cookbook. A `initCounters` function performs all the needed
+in this cookbook. An `initCounters` function performs all the needed
 registration.
 
 ``` haskell
