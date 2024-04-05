@@ -115,8 +115,8 @@ type HelloAPI =
 -- | A function to turn an input object into a key that we use as breakdown for
 -- the `countHellos` counter. In a real-world setting you want to ponder
 -- security and privacy risks of recording user-controlled values as breakdown values.
-helloWhomToCounterBreakdown :: HelloWhom -> Text
-helloWhomToCounterBreakdown (HelloWhom txt) = txt
+helloWhoToCounterBreakdown :: HelloWho -> Text
+helloWhoToCounterBreakdown (HelloWho txt) = txt
 
 handleHello :: Counters -> Maybe HelloWhom -> Handler Greeting
 handleHello counters Nothing = do
