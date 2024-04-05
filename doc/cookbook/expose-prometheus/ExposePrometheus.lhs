@@ -5,7 +5,7 @@ a production setup, you may want to record a variety of things like the number
 of access to a feature when doing some A-B tests, the duration of database queries to
 optimize performance when needed, the number of third-party API calls to avoid
 hitting rate-limits, the number of failed logins to report suspicious
-activity etc.  Observability is the umbrella term for techniques and
+activity, etc.  Observability is the umbrella term for techniques and
 technologies concerned with exposing such _metrics_ and _traces_ about
 internals of services.
 A prevalent tool and format to expose metrics is
