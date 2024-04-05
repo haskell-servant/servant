@@ -18,7 +18,7 @@ this route for one or many services.
 
 This cookbook shows how to expose Prometheus counters using Servant so that a
 Prometheus collector can then collect metrics about your application. We
-leverage the `prometheus-client` package to provide most of the instrumentation
+leverage the [`prometheus-client`](https://hackage.haskell.org/package/prometheus-client) package to provide most of the instrumentation
 primitives.  While packages exist to direcly expose Prometheus counters, this
 cookbook guides you to write your own exposition handler. Writing your own
 handler allows you to tailor the metrics endpoint to your needs. Indeed, you
