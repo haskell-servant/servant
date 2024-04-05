@@ -233,4 +233,4 @@ Now you can navigate to various pages:
 - http://localhost:8080/metrics
 
 You can also see counter increases live by installing a Prometheus collector.
-For development and troubleshooting purpose, I only use my [own monitor tool](https://dicioccio.fr/prometheus-monitor.html) also available as [Firefox extension](https://addons.mozilla.org/en-GB/firefox/addon/prometheus-monitor/).
+For development and troubleshooting purpose, you can use [prometheus-monitor](https://dicioccio.fr/prometheus-monitor.html) also available as [Firefox extension](https://addons.mozilla.org/en-GB/firefox/addon/prometheus-monitor/).
