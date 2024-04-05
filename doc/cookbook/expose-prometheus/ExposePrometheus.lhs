@@ -102,7 +102,7 @@ The handler will defaults to `n/a` as a magic value to represent the absence of
 ``` haskell
 type Greeting = Text
 
-newtype HelloWhom = HelloWhom { getWhom :: Text }
+newtype HelloWho = HelloWho { getWho :: Text }
   deriving FromHttpApiData
 
 type HelloAPI =
