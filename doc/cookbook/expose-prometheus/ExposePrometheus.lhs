@@ -67,7 +67,7 @@ memory-requirements as counter breakdowns persist in memory). However, for the
 purpose of this cookbook, we assume the risk is mitigated.
 
 The Prometheus library we use requires us to register the counters ahead of
-time. I recommend that we define a datatype to refer to all the counters needed
+time. Let's define a datatype to refer to all the counters needed
 in this cookbook. A `initCounters` function performs all the needed
 registration.
 
