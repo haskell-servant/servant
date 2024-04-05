@@ -148,7 +148,7 @@ Let's define an API route: it's a simple `HTTP GET` returning some _Metrics_.
 In this example we also add the CORS header we discussed in intro.
 
 ``` haskell
-type ServePrometheusAPI =
+type PrometheusAPI =
   Summary "Prometheus metrics"
     :> "metrics"
     :> Get '[PlainText]
