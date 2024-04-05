@@ -58,7 +58,7 @@ instance "Hello, Bob" and "Hello, Alice" means we got "1 for Bob" and "1 for
 Alice", in short, we record a counter _breakdown_.  Another counter will report
 values counted in a background-thread, here, a counter in a sleep-loop.  Such
 counters can serve as watchdog for other applications: if the counter stops
-increasing, then something is aloof.
+increasing, then something is amiss.
 
 In a real-application you may want to avoid
 exposing counters broken-down by a value chosen by an untrusted-user (i.e., if
