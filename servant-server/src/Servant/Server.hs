@@ -5,6 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE PatternSynonyms     #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
@@ -25,6 +26,7 @@ module Servant.Server
   , emptyServer
   , Handler (..)
   , runHandler
+  , pattern MkHandler
 
     -- * Debugging the server layout
   , layout
