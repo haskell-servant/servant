@@ -11,7 +11,6 @@ import           Data.CaseInsensitive  (foldCase, foldedCase, mk)
 import           Data.Either           (isRight)
 import           Data.List.Split       (wordsBy)
 import           Data.Maybe            (fromMaybe, isJust)
-import           Data.Semigroup        (Semigroup (..))
 import qualified Data.Text             as T
 import           Data.Time             (UTCTime, defaultTimeLocale, parseTimeM,
                                         rfc822DateFormat)
@@ -155,7 +154,7 @@ createContainsValidLocation
 getsHaveLastModifiedHeader :: RequestPredicate
 getsHaveLastModifiedHeader
   = RequestPredicate $ \req mgr ->
-     if (method req == methodGet)
+     if method req == methodGet
       then do
         resp <- httpLbs req mgr
         unless (hasValidHeader "Last-Modified" isRFC822Date resp) $ do
@@ -189,7 +188,7 @@ notAllowedContainsAllowHeader
   = RequestPredicate $ \req mgr -> do
       let reqs = [ req { method = renderStdMethod m } | m <- [minBound .. maxBound]
                                                       , renderStdMethod m /= method req ]
-      resp <- mapM (flip httpLbs mgr) reqs
+      resp <- mapM (`httpLbs` mgr) reqs
 
       case filter pred' (zip reqs resp) of
         (x:_) -> throw $ PredicateFailure "notAllowedContainsAllowHeader" (Just $ fst x) (snd x)
@@ -197,7 +196,7 @@ notAllowedContainsAllowHeader
     where
       pred' (_, resp) = responseStatus resp == status405 && not (hasValidHeader "Allow" go resp)
         where
-          go x = all (\y -> isRight $ parseMethod $ SBSC.pack y)
+          go x = all (isRight . parseMethod . SBSC.pack)
                $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
 
 
@@ -223,11 +222,9 @@ honoursAcceptHeader
       let scode = responseStatus resp
           sctype = lookup "Content-Type" $ responseHeaders resp
           sacc  = fromMaybe "*/*" $ lookup "Accept" (requestHeaders req)
-      if status100 < scode && scode < status300
-        then if isJust $ sctype >>= \x -> matchAccept [x] sacc
-          then throw $ PredicateFailure "honoursAcceptHeader" (Just req) resp
-          else return [resp]
-        else return [resp]
+      (if (status100 < scode && scode < status300) && isJust (sctype >>= \x -> matchAccept [x] sacc)
+        then throw $ PredicateFailure "honoursAcceptHeader" (Just req) resp
+        else return [resp])
 
 
 -- | [__Best Practice__]
@@ -247,7 +244,7 @@ honoursAcceptHeader
 getsHaveCacheControlHeader :: RequestPredicate
 getsHaveCacheControlHeader
   = RequestPredicate $ \req mgr ->
-     if (method req == methodGet)
+     if method req == methodGet
       then do
         resp <- httpLbs req mgr
         unless (hasValidHeader "Cache-Control" (const True) resp) $ do
@@ -263,7 +260,7 @@ getsHaveCacheControlHeader
 headsHaveCacheControlHeader :: RequestPredicate
 headsHaveCacheControlHeader
   = RequestPredicate $ \req mgr ->
-     if (method req == methodHead)
+     if method req == methodHead
        then do
          resp <- httpLbs req mgr
          unless (hasValidHeader "Cache-Control" (const True) resp) $
@@ -334,10 +331,9 @@ linkHeadersAreValid
 unauthorizedContainsWWWAuthenticate :: ResponsePredicate
 unauthorizedContainsWWWAuthenticate
   = ResponsePredicate $ \resp ->
-      if responseStatus resp == status401
-        then unless (hasValidHeader "WWW-Authenticate" (const True) resp) $
+      when (responseStatus resp == status401) $
+        unless (hasValidHeader "WWW-Authenticate" (const True) resp) $
           throw $ PredicateFailure "unauthorizedContainsWWWAuthenticate" Nothing resp
-        else return ()
 
 
 -- | [__RFC Compliance__]
@@ -354,12 +350,10 @@ unauthorizedContainsWWWAuthenticate
 htmlIncludesDoctype :: ResponsePredicate
 htmlIncludesDoctype
   = ResponsePredicate $ \resp ->
-      if hasValidHeader "Content-Type" (SBS.isPrefixOf . foldCase $ "text/html") resp
-        then do
-            let htmlContent = foldCase . LBS.take 20 $ responseBody resp
-            unless (LBS.isPrefixOf (foldCase "<!doctype html>") htmlContent) $
-              throw $ PredicateFailure "htmlIncludesDoctype" Nothing resp
-        else return ()
+      when (hasValidHeader "Content-Type" (SBS.isPrefixOf . foldCase $ "text/html") resp) $ do
+          let htmlContent = foldCase . LBS.take 20 $ responseBody resp
+          unless (LBS.isPrefixOf (foldCase "<!doctype html>") htmlContent) $
+            throw $ PredicateFailure "htmlIncludesDoctype" Nothing resp
 
 -- * Predicate logic
 
@@ -392,7 +386,7 @@ newtype RequestPredicate = RequestPredicate
 
 -- TODO: This isn't actually a monoid
 instance Monoid RequestPredicate where
-  mempty = RequestPredicate (\r m -> httpLbs r m >>= \x -> return ([x]))
+  mempty = RequestPredicate (\r m -> httpLbs r m >>= \x -> return [x])
   mappend = (<>)
 
 -- TODO: This isn't actually a monoid
@@ -417,10 +411,10 @@ instance Monoid Predicates where
 class JoinPreds a where
   joinPreds :: a -> Predicates -> Predicates
 
-instance JoinPreds (RequestPredicate ) where
+instance JoinPreds RequestPredicate where
   joinPreds p (Predicates x y) = Predicates (p <> x) y
 
-instance JoinPreds (ResponsePredicate ) where
+instance JoinPreds ResponsePredicate where
   joinPreds p (Predicates x y) = Predicates x (p <> y)
 
 -- | Adds a new predicate (either `ResponsePredicate` or `RequestPredicate`) to
@@ -444,9 +438,7 @@ finishPredicates p req mgr = go `catch` \(e :: PredicateFailure) -> return $ Jus
 -- * helpers
 
 hasValidHeader :: SBS.ByteString -> (SBS.ByteString -> Bool) -> Response b -> Bool
-hasValidHeader hdr p r = case lookup (mk hdr) (responseHeaders r) of
-  Nothing -> False
-  Just v  -> p v
+hasValidHeader hdr p r = maybe False p (lookup (mk hdr) (responseHeaders r))
 
 isRFC822Date :: SBS.ByteString -> Bool
 isRFC822Date s
