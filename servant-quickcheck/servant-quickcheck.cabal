@@ -2,8 +2,7 @@ name:               servant-quickcheck
 version:            0.1.0.0
 synopsis:           QuickCheck entire APIs
 description:
-  This packages provides QuickCheck properties that are tested across an entire
-  API.
+  This packages provides QuickCheck properties that are tested across an entire API.
 
 license:            BSD3
 license-file:       LICENSE
@@ -17,7 +16,8 @@ tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.1
 
 source-repository head
   type:     git
-  location: https://github.com/haskell-servant/servant-quickcheck
+  location: https://github.com/haskell-servant/servant.git
+  subdir:   servant-quickcheck
 
 flag long-tests
   description: Run more QuickCheck tests
