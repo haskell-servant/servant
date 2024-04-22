@@ -15,11 +15,12 @@ jobs:
     steps:
       - name: Extract the tested GHC versions
         id: set-matrix
-        uses: kleidukos/get-tested@v0.1.6.0
+        uses: kleidukos/get-tested@v0.1.7.0
         with:
           cabal-file: servant/servant.cabal
-          ubuntu: true
-          version: 0.1.6.0
+          ubuntu-version: "latest"
+          macos-version: "latest"
+          version: 0.1.7.0
   tests:
     name: ${{ matrix.ghc }} on ${{ matrix.os }}
     needs: generate-matrix
@@ -78,6 +79,7 @@ jobs:
         (cd servant-machines && eval $DOCTEST)
         (cd servant-conduit && eval $DOCTEST)
         (cd servant-pipes && eval $DOCTEST)
+        (cd servant-quickcheck && eval $DOCTEST)
 
     - name: Save cache
       uses: actions/cache/save@v3
