@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 module Servant.QuickCheck.Internal.Equality where
 
 import           Data.Aeson           (Value, decode, decodeStrict)
