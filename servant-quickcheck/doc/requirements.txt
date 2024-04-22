@@ -3,7 +3,7 @@ argh==0.26.1
 Babel==2.2.0
 backports-abc==0.4
 backports.ssl-match-hostname==3.5.0.1
-certifi==2015.11.20.1
+certifi==2022.12.7
 CommonMark==0.5.4
 docutils==0.12
 Jinja2==2.8
