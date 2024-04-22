@@ -1,0 +1,40 @@
+name: haskell ci
+on: 
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  generate-matrix:
+    name: "Generate matrix from cabal"
+    outputs: 
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract the tested GHC versions
+        id: set-matrix
+        uses: kleidukos/get-tested@v0.1.7.0
+        with:
+          cabal-file: servant-quickcheck.cabal
+          ubuntu-version: latest
+          macos-version: latest
+          windows-version: latest
+          version: 0.1.7.0
+  tests:
+    name: ${{ matrix.ghc }} on ${{ matrix.os }}
+    needs: generate-matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
+    steps: 
+      - uses: actions/checkout@v4
+      - uses: haskell-actions/setup@v2
+        id: setup-haskell
+        with:
+          ghc-version: ${{ matrix.ghc }}
+      - name: Cache
+        uses: actions/cache@v4.0.1
+        with:
+          path: ${{ steps.setup-haskell.outputs.cabal-store }}
+          key: ${{ matrix.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('**/plan.json') }}
+          restore-keys: ${{ matrix.os }}-ghc-${{ matrix.ghc }}-
+      - run: cabal test all

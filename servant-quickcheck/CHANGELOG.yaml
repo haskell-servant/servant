@@ -1,0 +1,219 @@
+releases:
+  - version: "0.1.0.0"
+    changes:
+      - description: "Support servant{-server,-client} up to 0.20, support base up to 4.19, drop support for some older servant and base versions, drop support for stack, drop testing for some older ghc versions"
+        authors: mangoiv
+        date: 2024-04-02
+  - version: "0.0.9.0"
+    changes:
+      - description: "Support servant-0.15 (#65)"
+        authors: fizruk
+        date: 2020-06-25
+
+      - description: "Relax constraints for GHC 8.10 (#70)"
+        authors: felixmulder
+        date: 2020-06-20
+
+  - version: "0.0.8.0"
+    changes:
+      - description: Support for servant-0.17
+        authors: phadej
+        date: 2019-01-23
+
+  - version: "0.0.7.3"
+    changes:
+      - description: Support for servant-0.14
+        issue: 53
+        authors: phadej
+        date: 2018-06-12
+
+      - description: Fix a failure from OnlyJsonObjects when there is no content-type.
+        issue: 55
+        authors: Phenitei
+        date: 2018-08-27
+
+      - description: A bug fix where notAllowedContainsAllowHeader would print the initial request alongside the failure instead of the request causing the failure when it failed.
+        issue: 57
+        authors: Phenitei
+        date: 2018-08-29
+
+      - description: QuickCheck 2.12 compatibility
+        issue: 58
+        authors: parsonsmatt
+        date: 2018-10-12
+
+      - description: GHC 8.6 compatibility
+        issue: 59
+        authors: phadej
+        date: 2018-10-15
+
+  - version: "0.0.7.2"
+    changes:
+
+      - description: Allow client to pass an HTTP Manager in to functions
+        issue: 47
+        authors: parsonsmatt
+        date: 2018-05-10
+
+      - description: Fix "should not happen" error when exceptions are thrown
+        issue: 48
+        authors: parsonsmatt
+        date: 2018-05-10
+
+  - version: "0.0.7.0"
+    changes:
+
+      - description: Support for base-compat-0.10
+        issue: none
+        authors: phadej
+        date: 2018-04-12
+
+  - version: "0.0.7.0"
+    changes:
+
+      - description: Support for GHC-8.4.1
+        issue: none
+        authors: phadej
+        date: 2018-03-23
+
+      - description: Requires hspec-2.5
+        issue: none
+        authors: phadej
+        date: 2018-03-23
+
+  - version: "0.0.6.0"
+    changes:
+
+      - description: Support for servant-0.12
+        issue: none
+        authors: phadej
+        date: 2018-02-09
+
+  - version: "0.0.5.0"
+    changes:
+
+      - description: Export forgotten predicates
+        issue: none
+        pr: 40
+        authors: Phenitei
+        date: 2017-12-14
+
+  - version: "0.0.4"
+    changes:
+
+      - description: Support for Servant 0.12
+        issue: none
+        authors: phadej
+        date: 2017-11-07
+
+      - description: Support for Servant 0.11
+        issue: none
+        pr: 32
+        authors: adinapoli-iohk
+        date: 2017-10-18
+        notes: Includes 0-weighted instance for EmptyAPI
+
+  - version: "0.0.3.0"
+    changes:
+
+      - description: Add jsonEquality
+        issue: 2
+        pr: 30
+        authors: erewok
+        date: 2017-10-15
+
+      - description: Support hspec >= 2.4
+        issue: 27
+        pr: 29
+        authors: erewok, jkarni
+        date: 2017-10-15
+
+  - version: "0.0.2.4"
+    changes:
+
+      - description: Don't append slashes to paths
+        issue: 22
+        authors: declension
+        date: 2017-03-11
+
+  - version: "0.0.2.3"
+    changes:
+
+      - description: Fix QueryParam and QueryFlag requests
+        issue: 23
+        authors: declension
+        date: 2017-03-10
+
+  - version: "0.0.2.2"
+    changes:
+
+      - description: Make onlyJsonObjects succeed in non-JSON endpoints
+        issue: 20
+        authors: jkarni
+        date: 2016-10-18
+
+
+  - version: "0.0.2.1"
+    changes:
+
+      - description: Add notLongerThan predicate
+        pr: 17
+        authors: jkarni
+        date: 2016-10-05
+
+      - description: Add getsHaveLastModifiedHeader predicate
+        pr: none
+        authors: jkarni
+        date: 2016-10-03
+
+      - description: Raise upper bounds
+        notes: >
+            For Quickcheck, aeson, http-client, servant, servant-client and
+            servant-server.
+        pr: none
+        authors: jkarni
+        date: 2016-10-03
+
+
+  - version: "0.0.2.0"
+    changes:
+
+      - description: Update CHANGELOG to YAML syntax.
+        pr: 16
+        authors: jkarni
+        date: 2016-09-14
+
+      - description: Support new CaptureAll combinator
+        pr: 16
+        authors: jkarni
+        date: 2016-09-14
+
+      - description: Support GHC 8
+        pr: 16
+        authors: jkarni
+        date: 2016-09-14
+
+  - version: "0.0.1.1"
+    changes:
+
+      - description: Exclude GHC 7.8 (by bumping base lower bound to 4.8)
+        pr: none
+        authors: jkarni
+
+      - description: More generous bounds for other packages.
+        pr: none
+        authors: jkarni
+
+  - version: "0.0.1.0"
+    changes:
+
+      - description: Better error messages.
+        notes: >
+          Error messages now contain failing predicate, failing response and
+          (except for response predicates), failing requests.
+        pr: none
+        authors: jkarni
+
+      - description: Signicant changes to RequestPredicate and ResponsePredicate types.
+        pr: none
+        authors: jkarni

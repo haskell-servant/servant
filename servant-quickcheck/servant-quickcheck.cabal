@@ -1,0 +1,136 @@
+name:               servant-quickcheck
+version:            0.1.0.0
+synopsis:           QuickCheck entire APIs
+description:
+  This packages provides QuickCheck properties that are tested across an entire
+  API.
+
+license:            BSD3
+license-file:       LICENSE
+author:             Julian K. Arni
+maintainer:         haskell-servant-maintainers@googlegroups.com
+category:           Web
+build-type:         Simple
+cabal-version:      >=1.10
+extra-source-files: CHANGELOG.yaml
+tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.1
+
+source-repository head
+  type:     git
+  location: https://github.com/haskell-servant/servant-quickcheck
+
+flag long-tests
+  description: Run more QuickCheck tests
+  default:     False
+
+library
+  exposed-modules:
+    Servant.QuickCheck
+    Servant.QuickCheck.Internal
+    Servant.QuickCheck.Internal.Equality
+    Servant.QuickCheck.Internal.ErrorTypes
+    Servant.QuickCheck.Internal.HasGenRequest
+    Servant.QuickCheck.Internal.Predicates
+    Servant.QuickCheck.Internal.QuickCheck
+
+  ghc-options:        -Wall -Wcompat
+  build-depends:
+      aeson                  >=0.8    && <2.3
+    , base                   >=4.9    && <4.20
+    , base-compat-batteries  >=0.10.1 && <0.14
+    , bytestring             >=0.10   && <0.13
+    , case-insensitive       >=1.2    && <1.3
+    , clock                  >=0.7    && <0.9
+    , data-default-class     >=0.0    && <0.2
+    , hspec                  >=2.5.6  && <2.12
+    , http-client            >=0.7.0  && <0.8
+    , http-media             >=0.6    && <0.9
+    , http-types             >=0.8    && <0.13
+    , mtl                    >=2.1    && <2.4
+    , pretty                 >=1.1    && <1.2
+    , process                >=1.2    && <1.7
+    , QuickCheck             >=2.7    && <2.15
+    , servant                >=0.18.2 && <0.21
+    , servant-client         >=0.17   && <0.21
+    , servant-server         >=0.17   && <0.21
+    , split                  >=0.2    && <0.3
+    , string-conversions     >=0.3    && <0.5
+    , temporary              >=1.2    && <1.4
+    , text                   >=1      && <2.2
+    , time                   >=1.5    && <1.13
+    , warp                   >=3.2.4  && <3.4
+
+  hs-source-dirs:     src
+  default-extensions:
+    ConstraintKinds
+    DataKinds
+    DeriveDataTypeable
+    DeriveFunctor
+    DeriveGeneric
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    KindSignatures
+    MultiParamTypeClasses
+    NoImplicitPrelude
+    OverloadedStrings
+    RankNTypes
+    ScopedTypeVariables
+    TypeOperators
+
+  default-language:   Haskell2010
+
+test-suite spec
+  type:               exitcode-stdio-1.0
+  ghc-options:        -Wall -Wcompat -threaded
+  default-language:   Haskell2010
+  hs-source-dirs:     test
+  main-is:            Spec.hs
+  other-modules:      Servant.QuickCheck.InternalSpec
+  build-tool-depends: hspec-discover:hspec-discover
+  build-depends:
+      aeson
+    , base
+    , base-compat-batteries
+    , blaze-html
+    , bytestring
+    , hspec
+    , hspec-core             >=2.5.5 && <2.12
+    , http-client
+    , QuickCheck
+    , quickcheck-io
+    , servant
+    , servant-blaze
+    , servant-client
+    , servant-quickcheck
+    , servant-server
+    , transformers
+    , warp
+
+  default-extensions:
+    DataKinds
+    FlexibleContexts
+    FlexibleInstances
+    GADTs
+    NoImplicitPrelude
+    OverloadedStrings
+    ScopedTypeVariables
+    TypeOperators
+
+  if flag(long-tests)
+    cpp-options: -DLONG_TESTS
+
+test-suite example
+  type:             exitcode-stdio-1.0
+  main-is:          Main.hs
+  hs-source-dirs:   example
+  ghc-options:      -Wall -Wcompat
+  build-depends:
+      base
+    , hspec
+    , servant-quickcheck
+    , servant-server
+    , text
+
+  default-language: Haskell2010
