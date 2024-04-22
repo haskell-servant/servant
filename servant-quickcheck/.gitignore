@@ -1,0 +1,10 @@
+doc/_build/
+scripts/
+samples/
+test-servers/
+/doc/
+.stack-work/
+.pre-commit-config.yaml
+.direnv
+dist*
+result*
