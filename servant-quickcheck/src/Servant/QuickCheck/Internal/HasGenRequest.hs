@@ -199,7 +199,5 @@ instance (HasGenRequest a) => HasGenRequest (WithNamedContext x y a) where
 instance (HasGenRequest a) => HasGenRequest (BasicAuth x y :> a) where
     genRequest _ = genRequest (Proxy :: Proxy a)
 
-#if MIN_VERSION_servant(0,18,2)
 instance (HasGenRequest a) => HasGenRequest (Fragment v :> a) where
     genRequest _ = genRequest (Proxy :: Proxy a)
-#endif
