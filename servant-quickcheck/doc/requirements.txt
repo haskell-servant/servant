@@ -10,7 +10,7 @@ Jinja2==3.1.3
 livereload==2.4.1
 MarkupSafe==0.23
 pathtools==0.1.2
-Pygments==2.7.4
+Pygments==2.15.0
 pytz==2015.7
 PyYAML==3.11
 recommonmark==0.4.0
