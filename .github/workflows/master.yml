@@ -41,7 +41,7 @@ jobs:
         cabal freeze
 
     - name: Cache
-      uses: actions/cache@v4.0.0
+      uses: actions/cache@v4
       with:
         path: |
           ${{ steps.setup-haskell.outputs.cabal-store }}
@@ -83,7 +83,7 @@ jobs:
         (cd servant-quickcheck && eval $DOCTEST)
 
     - name: Save cache
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       if: always()
       with:
         path: |
@@ -111,7 +111,7 @@ jobs:
         cat cabal.project
         nix-shell ghcjs.nix --run "cabal v2-update && cabal v2-freeze"
     - name: Cache
-      uses: actions/cache@v4.0.0
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cabal/store
@@ -128,7 +128,7 @@ jobs:
         nix-shell ghcjs.nix --run ".github/run-ghcjs-tests.sh"
 
     - name: Save cache
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       if: always()
       with:
         path: |
