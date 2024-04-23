@@ -19,7 +19,6 @@ jobs:
         with:
           cabal-file: servant/servant.cabal
           ubuntu-version: "latest"
-          macos-version: "latest"
           version: 0.1.7.0
   tests:
     name: ${{ matrix.ghc }} on ${{ matrix.os }}
@@ -29,8 +28,7 @@ jobs:
       matrix: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
     steps:
     - uses: actions/checkout@v2
-
-    - uses: haskell/actions/setup@v2
+    - uses: haskell-actions/setup@v2
       id: setup-haskell-cabal
       name: Setup Haskell
       with:
@@ -51,6 +49,9 @@ jobs:
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('**/plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
+    - name: Install system dependencies
+      run: |
+          ./.github/workflows/install-system-dependencies.sh
     - name: Install doctest
       run: |
         cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.22'

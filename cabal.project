@@ -6,13 +6,15 @@ packages:
   servant-auth/servant-auth-server
   servant-auth/servant-auth-swagger
 
-  servant-client/
   servant-client-core/
-  servant-http-streams/
+  servant-client/
   servant-docs/
   servant-foreign/
+  servant-http-streams/
+  servant-quickcheck/
   servant-server/
   servant-swagger/
+
   doc/tutorial/
 
 -- servant streaming
