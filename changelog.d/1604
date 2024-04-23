@@ -1,0 +1,10 @@
+synopsis: Full query string helpers
+prs: #1604
+
+description: {
+  This PR introduces `DeepQuery`, a route combinator that implements a pattern commonly known as deep objects.
+  It builds upon the convention of using `[]` for a list of parameters: 
+  `books?filter[search]=value&filter[author][name]=value`.
+  The corresponding type would be `DeepQuery "filter" BookQuery :> Get '[JSON] [Book]`.
+
+}
