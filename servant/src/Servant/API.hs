@@ -19,6 +19,8 @@ module Servant.API (
   -- | Retrieving the HTTP version of the request
   module Servant.API.QueryParam,
   -- | Retrieving parameters from the query string of the 'URI': @'QueryParam'@
+  module Servant.API.QueryString,
+  -- | Retrieving the complete query string of the 'URI': @'QueryString'@
   module Servant.API.Fragment,
   -- | Documenting the fragment of the 'URI': @'Fragment'@
   module Servant.API.ReqBody,
@@ -118,6 +120,8 @@ import           Servant.API.NamedRoutes
                  (NamedRoutes)
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam, QueryParam', QueryParams)
+import           Servant.API.QueryString
+                 (QueryString, DeepQuery)
 import           Servant.API.Raw
                  (Raw, RawM)
 import           Servant.API.RemoteHost

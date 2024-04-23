@@ -18,6 +18,7 @@ module Servant.Client.Core.Request (
     appendToPath,
     appendToQueryString,
     encodeQueryParamValue,
+    setQueryString,
     setRequestBody,
     setRequestBodyLBS,
     ) where
@@ -50,7 +51,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (MediaType)
 import           Network.HTTP.Types
-                 (Header, HeaderName, HttpVersion (..), Method, QueryItem,
+                 (Header, HeaderName, HttpVersion (..), Method, Query, QueryItem,
                  http11, methodGet, urlEncodeBuilder)
 import           Servant.API
                  (ToHttpApiData, toEncodedUrlPiece, toQueryParam, toHeader, SourceIO)
@@ -161,6 +162,12 @@ appendToQueryString :: Text                -- ^ query param name
 appendToQueryString pname pvalue req
   = req { requestQueryString = requestQueryString req
                         Seq.|> (encodeUtf8 pname, pvalue)}
+
+setQueryString :: Query
+               -> Request
+               -> Request
+setQueryString query req
+  = req { requestQueryString = Seq.fromList query }
 
 -- | Encode a query parameter value.
 --

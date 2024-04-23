@@ -22,7 +22,7 @@ module Servant.Client.Core.HasClient (
     (//),
     (/:),
     foldMapUnion,
-    matchUnion,
+    matchUnion
     ) where
 
 import           Prelude ()
@@ -46,6 +46,7 @@ import           Data.List
 import           Data.Sequence
                  (fromList)
 import qualified Data.Text                       as T
+import           Data.Text.Encoding (encodeUtf8)
 import           Network.HTTP.Media
                  (MediaType, matches, parseAccept)
 import qualified Network.HTTP.Media as Media
@@ -70,22 +71,23 @@ import           Network.HTTP.Types
                  (Status)
 import qualified Network.HTTP.Types                       as H
 import           Servant.API
-                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth, BasicAuthData,
-                 BuildHeadersTo (..), Capture', CaptureAll, Description,
-                 EmptyAPI, Fragment, FramingRender (..), FramingUnrender (..),
-                 FromSourceIO (..), Header', Headers (..), HttpVersion,
-                 IsSecure, MimeRender (mimeRender),
-                 MimeUnrender (mimeUnrender), NoContent (NoContent),
-                 NoContentVerb, QueryFlag, QueryParam', QueryParams, Raw, RawM,
-                 ReflectMethod (..), RemoteHost, ReqBody', SBoolI, Stream,
-                 StreamBody', Summary, ToHttpApiData, ToSourceIO (..), Vault,
-                 Verb, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList,
-                 getResponse, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
+                 ((:<|>) ((:<|>)), (:>),
+                 BuildHeadersTo (..),
+                 EmptyAPI,
+                 FromSourceIO (..),
+                 IsSecure,
+                 MimeUnrender (mimeUnrender),
+                 NoContentVerb,
+                 ReflectMethod (..),
+                 StreamBody',
+                 Verb,
+                 getResponse, AuthProtect, BasicAuth, BasicAuthData, Capture', CaptureAll, DeepQuery, Description, Fragment, FramingRender (..), FramingUnrender (..), Header', Headers (..), HttpVersion, MimeRender (mimeRender), NoContent (NoContent), QueryFlag, QueryParam', QueryParams, QueryString, Raw, RawM, RemoteHost, ReqBody', SBoolI, Stream, Summary, ToHttpApiData, ToSourceIO (..), Vault, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
 import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
                  , GenericServant, toServant, fromServant)
 import           Servant.API.ContentTypes
                  (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
+import           Servant.API.QueryString (ToDeepQuery(..), generateDeepParam)
 import           Servant.API.Status
                  (statusFromNat)
 import           Servant.API.TypeLevel (FragmentUnique, AtMostOneFragment)
@@ -660,6 +662,36 @@ instance (KnownSymbol sym, HasClient m api)
                     )
 
     where paramname = pack $ symbolVal (Proxy :: Proxy sym)
+
+  hoistClientMonad pm _ f cl = \b ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl b)
+
+instance (HasClient m api)
+      => HasClient m (QueryString :> api) where
+  type Client m (QueryString :> api) =
+    H.Query -> Client m api
+
+  clientWithRoute pm Proxy req query =
+    clientWithRoute pm (Proxy :: Proxy api)
+                    (setQueryString query req)
+
+  hoistClientMonad pm _ f cl = \b ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl b)
+
+instance (KnownSymbol sym, ToDeepQuery a, HasClient m api)
+      => HasClient m (DeepQuery sym a :> api) where
+  type Client m (DeepQuery sym a :> api) =
+    a -> Client m api
+
+  clientWithRoute pm Proxy req deepObject =
+    let params = toDeepQuery deepObject
+        withParams = foldl' addDeepParam req params
+        addDeepParam r' kv =
+          let (k, textV) = generateDeepParam paramname kv
+           in appendToQueryString k (encodeUtf8 <$> textV) r'
+        paramname = pack $ symbolVal (Proxy :: Proxy sym)
+     in clientWithRoute pm (Proxy :: Proxy api)
+                        withParams
 
   hoistClientMonad pm _ f cl = \b ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl b)

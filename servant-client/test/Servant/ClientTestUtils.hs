@@ -31,11 +31,13 @@ import           Control.Monad.Error.Class
 import           Data.Aeson
 import           Data.ByteString
                  (ByteString)
+import qualified Data.ByteString.Char8            as C8
 import           Data.ByteString.Builder
                  (byteString)
 import qualified Data.ByteString.Lazy             as LazyByteString
 import           Data.Char
                  (chr, isPrint)
+import           Data.Maybe (fromMaybe)
 import           Data.Monoid ()
 import           Data.Proxy
 import           Data.SOP
@@ -54,18 +56,20 @@ import           Network.Wai.Handler.Warp
 import           System.IO.Unsafe
                  (unsafePerformIO)
 import           Test.QuickCheck
+import           Text.Read (readMaybe)
 import           Web.FormUrlEncoded
                  (FromForm, ToForm)
 
 import           Servant.API
                  ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
-                 BasicAuthData (..), Capture, CaptureAll, DeleteNoContent,
+                 BasicAuthData (..), Capture, CaptureAll, DeepQuery, DeleteNoContent,
                  EmptyAPI, FormUrlEncoded, Fragment, FromHttpApiData (..), Get, Header, Headers,
                  JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
-                 QueryParams, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..), UVerb, Union,
-                 Verb, WithStatus (WithStatus), NamedRoutes, addHeader)
+                 QueryParams, QueryString, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..),
+                 UVerb, Union, Verb, WithStatus (WithStatus), NamedRoutes, addHeader)
 import           Servant.API.Generic ((:-))
+import           Servant.API.QueryString (FromDeepQuery(..), ToDeepQuery(..))
 import           Servant.Client
 import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
@@ -122,6 +126,25 @@ data OtherRoutes mode = OtherRoutes
 -- Get for HTTP 307 Temporary Redirect
 type Get307 = Verb 'GET 307
 
+data Filter = Filter
+  { ageFilter :: Integer
+  , nameFilter :: String
+  }
+  deriving Show
+
+instance FromDeepQuery Filter where
+  fromDeepQuery params = do
+    let maybeToRight l = maybe (Left l) Right
+    age' <- maybeToRight "missing age" $ readMaybe . Text.unpack =<< join (lookup ["age"] params)
+    name' <- maybeToRight "missing name" $ join $ lookup ["name"] params
+    return $ Filter age' (Text.unpack name')
+
+instance ToDeepQuery Filter where
+  toDeepQuery (Filter age' name') =
+    [ (["age"], Just (Text.pack $ show age'))
+    , (["name"], Just (Text.pack name'))
+    ]
+
 type Api =
   Get '[JSON] Person
   :<|> "get" :> Get '[JSON] Person
@@ -140,6 +163,8 @@ type Api =
   :<|> "param-binary" :> QueryParam "payload" UrlEncodedByteString :> Raw
   :<|> "params" :> QueryParams "names" String :> Get '[JSON] [Person]
   :<|> "flag" :> QueryFlag "flag" :> Get '[JSON] Bool
+  :<|> "query-string" :> QueryString :> Get '[JSON] Person
+  :<|> "deep-query" :> DeepQuery "filter" Filter :> Get '[JSON] Person
   :<|> "fragment" :> Fragment String :> Get '[JSON] Person
   :<|> "rawSuccess" :> Raw
   :<|> "rawSuccessPassHeaders" :> Raw
@@ -178,6 +203,8 @@ getQueryParam   :: Maybe String -> ClientM Person
 getQueryParamBinary :: Maybe UrlEncodedByteString -> HTTP.Method -> ClientM Response
 getQueryParams  :: [String] -> ClientM [Person]
 getQueryFlag    :: Bool -> ClientM Bool
+getQueryString  :: [(ByteString, Maybe ByteString)] -> ClientM Person
+getDeepQuery    :: Filter -> ClientM Person
 getFragment     :: ClientM Person
 getRawSuccess   :: HTTP.Method -> ClientM Response
 getRawSuccessPassHeaders :: HTTP.Method -> ClientM Response
@@ -206,6 +233,8 @@ getRoot
   :<|> getQueryParamBinary
   :<|> getQueryParams
   :<|> getQueryFlag
+  :<|> getQueryString
+  :<|> getDeepQuery
   :<|> getFragment
   :<|> getRawSuccess
   :<|> getRawSuccessPassHeaders
@@ -244,6 +273,14 @@ server = serve api (
        )
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
+  :<|> (\ q -> return alice { _name = maybe mempty C8.unpack $ join (lookup "name" q)
+                            , _age = fromMaybe 0 (readMaybe . C8.unpack =<< join (lookup "age" q))
+                            }
+       )
+  :<|> (\ filter'  -> return alice { _name = nameFilter filter'
+                                   , _age = ageFilter filter'
+                                   }
+       )
   :<|> return alice
   :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
   :<|> (Tagged $ \ request respond -> (respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders $ request) "rawSuccess"))
