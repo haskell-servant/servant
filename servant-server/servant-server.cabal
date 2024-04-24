@@ -85,7 +85,7 @@ library
     , http-types          >= 0.12.2   && < 0.13
     , network-uri         >= 2.6.1.0  && < 2.8
     , monad-control       >= 1.0.2.3  && < 1.1
-    , network             >= 2.8      && < 3.2
+    , network             >= 2.8      && < 3.3
     , sop-core            >= 0.4.0.0  && < 0.6
     , string-conversions  >= 0.4.0.1  && < 0.5
     , resourcet           >= 1.2.2    && < 1.4

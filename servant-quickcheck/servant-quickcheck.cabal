@@ -58,7 +58,7 @@ library
     , temporary              >=1.2    && <1.4
     , text                   >=1      && <2.2
     , time                   >=1.5    && <1.13
-    , warp                   >=3.2.4  && <3.4
+    , warp                   >=3.2.4  && <3.5
 
   hs-source-dirs:     src
   default-extensions:

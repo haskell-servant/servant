@@ -18,13 +18,13 @@ cabal-version: >=1.10
 executable posts
   main-is:          Main.hs
   build-depends:
-      aeson              >=0.9 && <0.12
-    , base               >=4.8 && <4.9
+      aeson
+    , base
     , postgresql-simple
-    , servant-server     >=0.5 && <0.8
-    , text               >=1   && <2
-    , transformers       >=0.4 && <0.5
-    , warp               >=3.0 && <3.3
+    , servant-server
+    , text
+    , transformers
+    , warp
 
   hs-source-dirs:   src
   ghc-options:      -Wall -O2 -threaded
@@ -41,14 +41,14 @@ test-suite spec
   --  see http://haskell.org/cabal/users-guide/
 
   build-depends:
-      aeson                 >=0.9 && <0.12
-    , base                  >=4   && <5
-    , hspec                 >=2   && <3
+      aeson
+    , base
+    , hspec
     , postgresql-simple
     , QuickCheck
     , quickcheck-instances
     , servant-quickcheck
-    , servant-server        >=0.5 && <0.8
-    , text                  >=1   && <2
-    , transformers          >=0.4 && <0.5
-    , warp                  >=3.0 && <3.3
+    , servant-server
+    , text
+    , transformers
+    , warp
