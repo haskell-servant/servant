@@ -10,8 +10,8 @@ cabal-version: >=1.10
 -- library
 --   exposed-modules:     ServersEqual
 --   other-extensions:    DataKinds, TypeOperators
---   build-depends:       base >=4.8 && <4.9
---                      , servant-server == 0.7.*
+--   build-depends:       base
+--                      , servant-server
 --                      , servant-quickcheck
 --                      , servant-client
 --                      , QuickCheck
@@ -25,8 +25,8 @@ cabal-version: >=1.10
 --
 -- executable doc
 --   main-is:             Main.hs
---   build-depends:       base >=4.8 && <4.9
---                      , servant-server == 0.7.*
+--   build-depends:       base
+--                      , servant-server
 --                      , servant-quickcheck
 --                      , servant-client
 --                      , QuickCheck
@@ -42,14 +42,14 @@ executable announcement
   main-is:          Announcement.lhs
   build-depends:
       aeson
-    , base                >=4.8 && <4.9
+    , base
     , containers
     , hspec
     , postgresql-simple
     , QuickCheck
     , servant-client
     , servant-quickcheck
-    , servant-server      >=0.7 && <0.8
+    , servant-server
     , stm
     , text
     , transformers
