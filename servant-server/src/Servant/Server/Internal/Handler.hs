@@ -3,6 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE PatternSynonyms            #-}
 module Servant.Server.Internal.Handler where
 
 import           Prelude ()
@@ -19,7 +20,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Control
                  (MonadBaseControl (..))
 import           Control.Monad.Trans.Except
-                 (ExceptT, runExceptT)
+                 (ExceptT(ExceptT), runExceptT)
 import           Data.String
                  (fromString)
 import           GHC.Generics
@@ -51,3 +52,10 @@ instance MonadBaseControl IO Handler where
 
 runHandler :: Handler a -> IO (Either ServerError a)
 runHandler = runExceptT . runHandler'
+
+-- | Pattern synonym that matches directly on the inner 'IO' action.
+--
+-- To lift 'IO' actions that don't carry a 'ServerError', use 'Control.Monad.IO.Class.liftIO' instead.
+pattern MkHandler :: IO (Either ServerError a) -> Handler a
+pattern MkHandler ioe = Handler (ExceptT ioe)
+{-# COMPLETE MkHandler #-}

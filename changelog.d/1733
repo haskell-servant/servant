@@ -1,0 +1,7 @@
+synopsis: Add `MkHandler` pattern synonym
+prs: #1733
+issues: #1732
+description: {
+Add a bidirectional pattern synonym to construct `Handler a` values from `IO
+(Either ServerError a)` ones, and match in the other direction.
+}
