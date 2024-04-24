@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE PolyKinds          #-}
-{-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParam', QueryParams) where
 
