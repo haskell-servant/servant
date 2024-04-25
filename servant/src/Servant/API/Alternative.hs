@@ -15,8 +15,6 @@ import           Data.Bitraversable
                  (Bitraversable (..))
 import           Data.Typeable
                  (Typeable)
-import           Prelude ()
-import           Prelude.Compat
 
 -- | Union of two APIs, first takes precedence in case of overlap.
 --

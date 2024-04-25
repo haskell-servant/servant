@@ -3,11 +3,10 @@
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -53,8 +52,6 @@ import qualified Network.HTTP.Types.Header as HTTP
 import           Web.HttpApiData
                  (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
 
-import           Prelude ()
-import           Prelude.Compat
 import           Servant.API.Header
                  (Header')
 import           Servant.API.Modifiers

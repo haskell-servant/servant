@@ -18,9 +18,7 @@ import           Data.Functor.Classes
                  (Show1 (..), showsBinaryWith, showsPrec1, showsUnaryWith)
 import           Data.Functor.Identity
                  (Identity (..))
-import           Prelude ()
-import           Prelude.Compat             hiding
-                 (readFile)
+import           Prelude hiding (readFile)
 import           System.IO
                  (Handle, IOMode (..), withFile)
 import qualified Test.QuickCheck            as QC
