@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -11,9 +10,7 @@
 module Servant.API.QueryString (QueryString, DeepQuery, FromDeepQuery (..), ToDeepQuery (..), generateDeepParam) where
 
 import Data.Bifunctor (Bifunctor (first))
-#if MIN_VERSION_base(4,9,0)
 import Data.Kind (Type)
-#endif
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)

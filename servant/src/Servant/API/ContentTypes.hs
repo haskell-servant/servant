@@ -397,7 +397,7 @@ instance MimeUnrender PlainText String where
 
 -- | @Right . id@
 instance MimeUnrender OctetStream ByteString where
-    mimeUnrender _ = Right . id
+    mimeUnrender _ = Right
 
 -- | @Right . toStrict@
 instance MimeUnrender OctetStream BS.ByteString where

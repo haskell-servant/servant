@@ -89,7 +89,7 @@ instance (Applicative m, Show1 m, Show a) => Show (SourceT m a) where
 -- fromStepT (Effect (Just (Yield 1 (Yield 2 (Yield 3 Stop)))))
 instance MFunctor SourceT where
     hoist f (SourceT m) = SourceT $ \k -> k $
-        Effect $ f $ fmap (hoist f) $ m return
+        Effect $ f $ fmap (hoist f) $ m pure
 
 -- | >>> source "xy" <> source "z" :: SourceT Identity Char
 -- fromStepT (Effect (Identity (Yield 'x' (Yield 'y' (Yield 'z' Stop)))))
@@ -197,7 +197,7 @@ instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
               | otherwise = QC.frequency
                   [ (1, pure Stop)
                   , (1, Skip <$> arb')
-                  , (1, Effect . return <$> arb')
+                  , (1, Effect . pure <$> arb')
                   , (8, Yield <$> QC.arbitrary <*> arb')
                   ]
           where
@@ -235,7 +235,7 @@ runSourceT :: Monad m => SourceT m a -> ExceptT String m [a]
 runSourceT (SourceT m) = ExceptT (m (runExceptT . runStepT))
 
 runStepT :: Monad m => StepT m a -> ExceptT String m [a]
-runStepT Stop        = return []
+runStepT Stop        = pure []
 runStepT (Error err) = throwError err
 runStepT (Skip s)    = runStepT s
 runStepT (Yield x s) = fmap (x :) (runStepT s)
@@ -246,9 +246,9 @@ runStepT (Effect ms) = lift ms >>= runStepT
 -- Identity (Just ('f',Yield 'o' (Yield 'o' Stop)))
 --
 uncons :: Monad m => StepT m a -> m (Maybe (a, StepT m a))
-uncons Stop        = return Nothing
+uncons Stop        = pure Nothing
 uncons (Skip s)    = uncons s
-uncons (Yield x s) = return (Just (x, s))
+uncons (Yield x s) = pure (Just (x, s))
 uncons (Effect ms) = ms >>= uncons
 uncons (Error _) =
 -}
@@ -298,7 +298,7 @@ foreachStep
     -> StepT m a
     -> m ()
 foreachStep f g = go where
-    go Stop        = return ()
+    go Stop        = pure ()
     go (Skip s)    = go s
     go (Yield x s) = g x >> go s
     go (Error err) = f err
