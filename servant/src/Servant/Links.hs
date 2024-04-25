@@ -661,9 +661,9 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 
 -- Erroring instance for 'HasLink' when a combinator is not fully applied
 instance TypeError (PartialApplication
-
+#if __GLASGOW_HASKELL__ >= 904
                     @(Type -> Constraint)
-
+#endif
                     HasLink arr) => HasLink ((arr :: a -> b) :> sub)
   where
     type MkLink (arr :> sub) _ = TypeError (PartialApplication (HasLink :: Type -> Constraint) arr)
@@ -671,9 +671,9 @@ instance TypeError (PartialApplication
 
 -- Erroring instances for 'HasLink' for unknown API combinators
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub
-
+#if __GLASGOW_HASKELL__ >= 904
                                          @(Type -> Constraint)
-
+#endif
                                          HasLink ty) => HasLink (ty :> sub)
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasLink api)) => HasLink api
