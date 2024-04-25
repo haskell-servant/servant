@@ -26,7 +26,7 @@ Generated Swagger specification then can be used for many things such as
 
 Please refer to [haddock documentation](http://hackage.haskell.org/package/servant-swagger).
 
-Some examples can be found in [`example/` directory](/example).
+Some examples can be found in [`example/` directory](/servant-swagger/example).
 
 ### Try it out
 
