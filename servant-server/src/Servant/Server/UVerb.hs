@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -23,11 +22,11 @@ module Servant.Server.UVerb
 where
 
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BSL
 import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import Data.SOP (I (I))
 import Data.SOP.Constraint (All, And)
-import Data.String.Conversions (LBS, cs)
 import Network.HTTP.Types (Status, HeaderName, hContentType)
 import Network.Wai (responseLBS, Request)
 import Servant.API (ReflectMethod, reflectMethod)
@@ -47,7 +46,7 @@ respond ::
 respond = pure . inject . I
 
 class IsServerResource (cts :: [Type]) a where
-  resourceResponse :: Request -> Proxy cts -> a -> Maybe (LBS, LBS)
+  resourceResponse :: Request -> Proxy cts -> a -> Maybe (BSL.ByteString, BSL.ByteString)
   resourceHeaders :: Proxy cts -> a -> [(HeaderName, B.ByteString)]
 
 instance {-# OVERLAPPABLE #-} AllCTRender cts a
@@ -67,7 +66,7 @@ instance {-# OVERLAPPING #-} IsServerResource cts a
 
 encodeResource :: forall a cts . (IsServerResource cts a, HasStatus a)
                => Request -> Proxy cts -> a
-               -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
+               -> (Status, Maybe (BSL.ByteString, BSL.ByteString), [(HeaderName, B.ByteString)])
 encodeResource request cts res = (statusOf (Proxy @a),
                                   resourceResponse request cts res,
                                   resourceHeaders cts res)
@@ -108,10 +107,10 @@ instance
 
         runAction action' env request cont $ \(output :: Union as) -> do
           let cts = Proxy @contentTypes
-              pickResource :: Union as -> (Status, Maybe (LBS, LBS), [(HeaderName, B.ByteString)])
+              pickResource :: Union as -> (Status, Maybe (BSL.ByteString, BSL.ByteString), [(HeaderName, B.ByteString)])
               pickResource = foldMapUnion (Proxy @(IsServerResourceWithStatus contentTypes)) (encodeResource request cts)
           case pickResource output of
             (_, Nothing, _) -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
             (status, Just (contentT, body), headers) ->
               let bdy = if allowedMethodHead method request then "" else body
-               in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
+               in Route $ responseLBS status ((hContentType, BSL.toStrict contentT) : headers) bdy

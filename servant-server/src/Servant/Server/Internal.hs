@@ -40,30 +40,25 @@ import           Control.Monad.Trans
 import           Control.Monad.Trans.Resource
                  (runResourceT, ReleaseKey)
 import           Data.Acquire
-import           Data.Bifunctor (first)
 import qualified Data.ByteString                            as B
 import qualified Data.ByteString.Builder                    as BB
 import qualified Data.ByteString.Char8                      as BC8
-import qualified Data.ByteString.Lazy                       as BL
+import qualified Data.ByteString.Lazy                       as BSL
 import           Data.Constraint (Constraint, Dict(..))
 import           Data.Either
                  (partitionEithers)
 import           Data.Kind
                  (Type)
-import qualified Data.Map.Strict as Map
 import           Data.Maybe
                  (fromMaybe, isNothing, mapMaybe, maybeToList)
 import           Data.String
                  (IsString (..))
-import           Data.String.Conversions
-                 (cs)
 import           Data.Tagged
                  (Tagged (..), retag, untag)
 import qualified Data.Text                                  as T
 import           Data.Typeable
 import           GHC.Generics
-import           GHC.TypeLits
-                 (KnownNat, KnownSymbol, TypeError, symbolVal)
+import           GHC.TypeLits (KnownNat, KnownSymbol, TypeError, ErrorMessage (..),  symbolVal)
 import qualified Network.HTTP.Media                         as NHM
 import           Network.HTTP.Types                         hiding
                  (Header, ResponseHeaders)
@@ -73,8 +68,6 @@ import           Network.Wai
                  (Application, Request, Response, ResponseReceived, httpVersion, isSecure, lazyRequestBody,
                  queryString, remoteHost, getRequestBodyChunk, requestHeaders,
                  requestMethod, responseLBS, responseStream, vault)
-import           Prelude ()
-import           Prelude.Compat
 import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
                  CaptureAll, DeepQuery, Description, EmptyAPI, Fragment,
@@ -114,10 +107,7 @@ import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
 
-import           GHC.TypeLits
-                 (ErrorMessage (..), TypeError)
-import           Servant.API.TypeLevel
-                 (AtMostOneFragment, FragmentUnique)
+import           Servant.API.TypeLevel (AtMostOneFragment, FragmentUnique)
 
 class HasServer api context where
   -- | The type of a server for this API, given a monad to run effects in.
@@ -203,9 +193,9 @@ instance (KnownSymbol capture, FromHttpApiData a, Typeable a
               (addCapture d $ \ txt -> withRequest $ \ request ->
                 case ( sbool :: SBool (FoldLenient mods)
                      , parseUrlPiece txt :: Either T.Text a) of
-                  (SFalse, Left e) -> delayedFail $ formatError rep request $ cs e
+                  (SFalse, Left e) -> delayedFail $ formatError rep request $ T.unpack e
                   (SFalse, Right v) -> return v
-                  (STrue, piece) -> return $ (either (Left . cs) Right) piece)
+                  (STrue, piece) -> return $ either (Left . T.unpack) Right piece)
     where
       rep = typeRep (Proxy :: Proxy Capture')
       formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
@@ -245,7 +235,7 @@ instance (KnownSymbol capture, FromHttpApiData a, Typeable a
               context
               (addCapture d $ \ txts -> withRequest $ \ request ->
                 case parseUrlPieces txts of
-                   Left e  -> delayedFail $ formatError rep request $ cs e
+                   Left e  -> delayedFail $ formatError rep request $ T.unpack e
                    Right v -> return v
               )
     where
@@ -329,7 +319,7 @@ methodRouter splitHeaders method proxy status action = leafRouter route'
                  Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
                  Just (contentT, body) ->
                       let bdy = if allowedMethodHead method request then "" else body
-                      in Route $ responseLBS status ((hContentType, cs contentT) : headers) bdy
+                      in Route $ responseLBS status ((hContentType, BSL.toStrict contentT) : headers) bdy
 
 noContentRouter :: Method
              -> Status
@@ -419,7 +409,7 @@ streamRouter splitHeaders method status framingproxy ctypeproxy action = leafRou
                        ) env request respond $ \ output ->
                 let (headers, fa) = splitHeaders output
                     sourceT = toSourceIO fa
-                    S.SourceT kStepLBS = framingRender framingproxy (mimeRender ctypeproxy :: chunk -> BL.ByteString) sourceT
+                    S.SourceT kStepLBS = framingRender framingproxy (mimeRender ctypeproxy :: chunk -> BSL.ByteString) sourceT
                 in Route $ responseStream status (contentHeader : headers) $ \write flush -> do
                     let loop S.Stop          = flush
                         loop (S.Error err)   = fail err -- TODO: throw better error
@@ -484,7 +474,7 @@ instance
             $ "Header " <> headerName <> " is required"
 
           errSt e = delayedFailFatal $ formatError rep req
-            $ cs $ "Error parsing header "
+            $ T.unpack $ "Error parsing header "
                     <> headerName
                     <> " failed: " <> e
 
@@ -523,7 +513,7 @@ instance
 
   route Proxy context subserver =
     let querytext = queryToQueryText . queryString
-        paramname = cs $ symbolVal (Proxy :: Proxy sym)
+        paramname = T.pack $ symbolVal (Proxy :: Proxy sym)
 
         rep = typeRep (Proxy :: Proxy QueryParam')
         formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
@@ -536,10 +526,10 @@ instance
             mev = fmap parseQueryParam $ join $ lookup paramname $ querytext req
 
             errReq = delayedFailFatal $ formatError rep req
-              $ cs $ "Query parameter " <> paramname <> " is required"
+              $ T.unpack $ "Query parameter " <> paramname <> " is required"
 
             errSt e = delayedFailFatal $ formatError rep req
-              $ cs $ "Error parsing query parameter "
+              $ T.unpack $ "Error parsing query parameter "
                       <> paramname <> " failed: " <> e
 
         delayed = addParameterCheck subserver . withRequest $ \req ->
@@ -581,12 +571,12 @@ instance (KnownSymbol sym, FromHttpApiData a, HasServer api context
       rep = typeRep (Proxy :: Proxy QueryParams)
       formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
 
-      paramname = cs $ symbolVal (Proxy :: Proxy sym)
+      paramname = T.pack $ symbolVal (Proxy :: Proxy sym)
       paramsCheck req =
           case partitionEithers $ fmap parseQueryParam params of
               ([], parsed) -> return parsed
               (errs, _)    -> delayedFailFatal $ formatError rep req
-                  $ cs $ "Error parsing query parameter(s) "
+                  $ T.unpack $ "Error parsing query parameter(s) "
                          <> paramname <> " failed: "
                          <> T.intercalate ", " errs
         where
@@ -626,7 +616,7 @@ instance (KnownSymbol sym, HasServer api context)
           Just (Just v) -> examine v -- param with a value
           Nothing       -> False -- param not in the query string
     in  route (Proxy :: Proxy api) context (passToServer subserver param)
-    where paramname = cs $ symbolVal (Proxy :: Proxy sym)
+    where paramname = T.pack $ symbolVal (Proxy :: Proxy sym)
           examine v | v == "true" || v == "1" || v == "" = True
                     | otherwise = False
 
@@ -696,7 +686,7 @@ instance
       rep = typeRep (Proxy :: Proxy DeepQuery)
       formatError = urlParseErrorFormatter $ getContextEntry (mkContextWithErrorFormatter context)
 
-      paramname = cs $ symbolVal (Proxy :: Proxy sym)
+      paramname = T.pack $ symbolVal (Proxy :: Proxy sym)
       paramsCheck req =
         let relevantParams :: [(T.Text, Maybe T.Text)]
             relevantParams = mapMaybe isRelevantParam
@@ -710,7 +700,7 @@ instance
                 _ -> Nothing
          in case fromDeepQuery =<< traverse parseDeepParam relevantParams of
               Left e -> delayedFailFatal $ formatError rep req
-                          $ cs $ "Error parsing deep query parameter(s) "
+                          $ T.unpack $ "Error parsing deep query parameter(s) "
                                  <> paramname <> T.pack " failed: "
                                  <> T.pack e
               Right parsed -> return parsed
@@ -829,7 +819,7 @@ instance ( AllCTUnrender list a, HasServer api context, SBoolI (FoldLenient mods
         -- http://www.w3.org/2001/tag/2002/0129-mime
         let contentTypeH = fromMaybe "application/octet-stream"
                          $ lookup hContentType $ requestHeaders request
-        case canHandleCTypeH (Proxy :: Proxy list) (cs contentTypeH) :: Maybe (BL.ByteString -> Either String a) of
+        case canHandleCTypeH (Proxy :: Proxy list) (BSL.fromStrict contentTypeH) :: Maybe (BSL.ByteString -> Either String a) of
           Nothing -> delayedFail err415
           Just f  -> return f
 
@@ -860,7 +850,7 @@ instance
 
         bodyCheck :: (SourceIO chunk -> IO a) -> DelayedIO a
         bodyCheck fromRS = withRequest $ \req -> do
-            let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ctype) :: BL.ByteString -> Either String chunk
+            let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ctype) :: BSL.ByteString -> Either String chunk
             let framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender' :: SourceIO B.ByteString ->  SourceIO chunk
             let body = getRequestBodyChunk req
             let rs = S.fromAction B.null body
@@ -874,7 +864,7 @@ instance (KnownSymbol path, HasServer api context) => HasServer (path :> api) co
 
   route Proxy context subserver =
     pathRouter
-      (cs (symbolVal proxyPath))
+      (T.pack (symbolVal proxyPath))
       (route (Proxy :: Proxy api) context subserver)
     where proxyPath = Proxy :: Proxy path
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
@@ -996,10 +986,10 @@ instance (HasContextEntry context (NamedContext name subContext), HasServer subA
 -------------------------------------------------------------------------------
 
 -- Erroring instance for 'HasServer' when a combinator is not fully applied
-instance TypeError (PartialApplication 
-#if __GLASGOW_HASKELL__ >= 904
-                    @(Type -> [Type] -> Constraint) 
-#endif
+instance TypeError (PartialApplication
+
+                    @(Type -> [Type] -> Constraint)
+
                     HasServer arr) => HasServer ((arr :: a -> b) :> sub) context
   where
     type ServerT (arr :> sub) _ = TypeError (PartialApplication (HasServer :: Type -> [Type] -> Constraint) arr)
@@ -1044,10 +1034,10 @@ type HasServerArrowTypeError a b =
 -- XXX: This omits the @context@ parameter, e.g.:
 --
 -- "There is no instance for HasServer (Bool :> …)". Do we care ?
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub 
-#if __GLASGOW_HASKELL__ >= 904
-                                         @(Type -> [Type] -> Constraint) 
-#endif
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub
+
+                                         @(Type -> [Type] -> Constraint)
+
                                          HasServer ty) => HasServer (ty :> sub) context
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasServer api context)) => HasServer api context
