@@ -54,7 +54,6 @@ library
     , servant-client         >=0.17   && <0.21
     , servant-server         >=0.17   && <0.21
     , split                  >=0.2    && <0.3
-    , string-conversions     >=0.3    && <0.5
     , temporary              >=1.2    && <1.4
     , text                   >=1      && <2.2
     , time                   >=1.5    && <1.13
