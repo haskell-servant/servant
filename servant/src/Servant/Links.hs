@@ -1,10 +1,9 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE CPP    #-}
 {-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE InstanceSigs           #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE QuantifiedConstraints    #-}
@@ -13,8 +12,8 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-
 {-# OPTIONS_HADDOCK not-home        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- | Type safe generation of internal links.
 --

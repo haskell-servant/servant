@@ -1,7 +1,4 @@
-{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveFoldable     #-}
-{-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DeriveTraversable  #-}
 {-# LANGUAGE TypeOperators      #-}
 {-# OPTIONS_HADDOCK not-home    #-}

@@ -7,7 +7,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeFamilies           #-}
+
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -184,7 +184,7 @@ instance {-# OVERLAPPABLE #-} ( KnownSymbol h, ToHttpApiData v , new ~ Headers '
 -- responses if the list is empty).
 instance (AddHeader mods h v old new) => AddHeader mods h v (Union '[old]) (Union '[new]) where
   addOptionalHeader hdr resp =
-    SOP.Z $ SOP.I $ addOptionalHeader hdr $ SOP.unI $ SOP.unZ $ resp
+    SOP.Z $ SOP.I $ addOptionalHeader hdr $ SOP.unI $ SOP.unZ resp
 
 instance
   ( AddHeader mods h v old new, AddHeader mods h v (Union oldrest) (Union newrest)
