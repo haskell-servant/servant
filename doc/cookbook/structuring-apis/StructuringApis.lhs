@@ -218,4 +218,4 @@ A simple case is approached in the [Record-based APIs: the simple
 case](../generic/Generic.html)
 cookbook, which deals with flat APIs where every endpoint is on the same level.
 Also, a more complex example with nested record is discussed in [Record-based APIs: the nested
-records case](../namedRoutes/NamedRoutes.html) in which we implement an API tree with many branches.
+records case](../named-routes/NamedRoutes.html) in which we implement an API tree with many branches.
