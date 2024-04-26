@@ -6,7 +6,7 @@ level.
 
 If you need nesting because you have different branches in your API tree, you
 might want to jump directly to the [Record-based APIs: the nested records
-case](../namedRoutes/NamedRoutes.html) cookbook that broaches the subject.
+case](../named-routes/NamedRoutes.html) cookbook that broaches the subject.
 
 Shall we begin?
 
