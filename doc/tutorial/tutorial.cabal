@@ -62,7 +62,7 @@ library
   build-depends:
       blaze-html   >= 0.9.0.1 && < 0.10
     , blaze-markup >= 0.8.0.0 && < 0.9
-    , cookie       >= 0.4.3   && < 0.5
+    , cookie       >= 0.4.3   && < 0.6
     , js-jquery    >= 3.3.1   && < 3.4
     , lucid        >= 2.9.11  && < 2.12
     , random       >= 1.1     && < 1.3
