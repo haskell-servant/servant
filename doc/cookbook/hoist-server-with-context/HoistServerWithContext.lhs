@@ -334,6 +334,8 @@ main = do
   Warp.runSettings settings $ warpLogger $ mkApp cfg cookieCfg jwtCfg ctx
 ```
 
+**Note for browser clients**: default cookie settings (`defaultCookieSettings`) may not be suitable for
+browser clients due to [XSRF protection](https://github.com/haskell-servant/servant/tree/master/servant-auth#xsrf-and-the-frontend).
 
 ## Usage
 
