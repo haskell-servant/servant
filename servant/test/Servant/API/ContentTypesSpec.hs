@@ -78,7 +78,7 @@ spec = describe "Servant.API.ContentTypes" $ do
         let p = Proxy :: Proxy '[JSON]
 
         it "does not render any content" $
-          allMimeRender p NoContent `shouldSatisfy` (all (BSL8.null . snd))
+          allMimeRender p NoContent `shouldSatisfy` all (BSL8.null . snd)
 
         it "evaluates the NoContent value" $
           evaluate (allMimeRender p (undefined :: NoContent)) `shouldThrow` anyErrorCall
@@ -155,8 +155,7 @@ spec = describe "Servant.API.ContentTypes" $ do
 #endif
             let acceptH a b c = addToAccept (Proxy :: Proxy OctetStream) a $
                                 addToAccept (Proxy :: Proxy JSON)        b $
-                                addToAccept (Proxy :: Proxy PlainText )  c $
-                                ""
+                                addToAccept (Proxy :: Proxy PlainText )  c ""
             let val a b c i = handleAcceptH (Proxy :: Proxy '[OctetStream, JSON, PlainText])
                                             (acceptH a b c) (i :: Int)
             property $ \a b c i ->

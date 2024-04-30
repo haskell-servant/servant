@@ -5,7 +5,8 @@ module Servant.QuickCheck.Internal.HasGenRequest where
 
 import           Data.Kind                (Type)
 import           Data.String              (fromString)
-import           Data.String.Conversions  (cs)
+import qualified Data.Text.Encoding as Text
+import qualified Data.ByteString.Char8 as BS8
 import           GHC.TypeLits             (KnownSymbol, Nat, symbolVal)
 import           Network.HTTP.Client      (Request, RequestBody (..),
                                            defaultRequest, host, method, path,
@@ -65,7 +66,7 @@ instance (KnownSymbol path, HasGenRequest b) => HasGenRequest (path :> b) where
                             in r { path = "/" <> BS.intercalate "/" paths })
       where
         (oldf, old) = genRequest (Proxy :: Proxy b)
-        new = cs $ symbolVal (Proxy :: Proxy path)
+        new = BS8.pack $ symbolVal (Proxy :: Proxy path)
 
 instance HasGenRequest EmptyAPI where
   genRequest _ = (0, error "EmptyAPIs cannot be queried.")
@@ -80,7 +81,7 @@ instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
     genRequest _ = (oldf, do
       old' <- old
       new' <- toUrlPiece <$> new
-      return $ \burl -> let r = old' burl in r { path = cs new' <> path r })
+      return $ \burl -> let r = old' burl in r { path = Text.encodeUtf8 new' <> path r })
       where
         (oldf, old) = genRequest (Proxy :: Proxy b)
         new = arbitrary :: Gen c
@@ -89,7 +90,7 @@ instance (Arbitrary c, HasGenRequest b, ToHttpApiData c )
     => HasGenRequest (CaptureAll x c :> b) where
     genRequest _ = (oldf, do
       old' <- old
-      new' <- fmap (cs . toUrlPiece) <$> new
+      new' <- fmap (Text.encodeUtf8 . toUrlPiece) <$> new
       let new'' = BS.intercalate "/" new'
       return $ \burl -> let r = old' burl in r { path = new'' <> path r })
       where
@@ -102,7 +103,7 @@ instance (Arbitrary c, KnownSymbol h, HasGenRequest b, ToHttpApiData c)
       old' <- old
       new' <- toUrlPiece <$> new  -- TODO: generate lenient or/and optional
       return $ \burl -> let r = old' burl in r {
-          requestHeaders = (hdr, cs new') : requestHeaders r })
+          requestHeaders = (hdr, Text.encodeUtf8 new') : requestHeaders r })
       where
         (oldf, old) = genRequest (Proxy :: Proxy b)
         hdr = fromString $ symbolVal (Proxy :: Proxy h)
@@ -128,12 +129,12 @@ instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
       new' <- new  -- TODO: generate lenient or/and optional
       old' <- old
       return $ \burl -> let r = old' burl
-                            newExpr = param <> "=" <> cs (toQueryParam new')
+                            newExpr = param <> "=" <> Text.encodeUtf8 (toQueryParam new')
                             qs = queryString r in r {
           queryString = if BS.null qs then newExpr else newExpr <> "&" <> qs })
       where
         (oldf, old) = genRequest (Proxy :: Proxy b)
-        param = cs $ symbolVal (Proxy :: Proxy x)
+        param = BS8.pack $ symbolVal (Proxy :: Proxy x)
         new = arbitrary :: Gen c
 
 instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
@@ -146,9 +147,9 @@ instance (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
                      <> if not (null new') then fold (toParam <$> new') else ""})
       where
         (oldf, old) = genRequest (Proxy :: Proxy b)
-        param = cs $ symbolVal (Proxy :: Proxy x)
+        param = BS8.pack $ symbolVal (Proxy :: Proxy x)
         new = arbitrary :: Gen [c]
-        toParam c = param <> "[]=" <> cs (toQueryParam c)
+        toParam c = param <> "[]=" <> Text.encodeUtf8 (toQueryParam c)
         fold = foldr1 (\a b -> a <> "&" <> b)
 
 instance (KnownSymbol x, HasGenRequest b)
@@ -160,12 +161,12 @@ instance (KnownSymbol x, HasGenRequest b)
           queryString = if BS.null qs then param else param <> "&" <> qs })
       where
         (oldf, old) = genRequest (Proxy :: Proxy b)
-        param = cs $ symbolVal (Proxy :: Proxy x)
+        param = BS8.pack $ symbolVal (Proxy :: Proxy x)
 
 instance (ReflectMethod method)
     => HasGenRequest (Verb (method :: k) (status :: Nat) (cts :: [Type]) a) where
     genRequest _ = (1, return $ \burl -> defaultRequest
-       { host = cs $ baseUrlHost burl
+       { host = BS8.pack $ baseUrlHost burl
        , port = baseUrlPort burl
        , secure = baseUrlScheme burl == Https
        , method = reflectMethod (Proxy :: Proxy method)
@@ -174,7 +175,7 @@ instance (ReflectMethod method)
 instance (ReflectMethod method)
     => HasGenRequest (NoContentVerb (method :: k)) where
     genRequest _ = (1, return $ \burl -> defaultRequest
-       { host = cs $ baseUrlHost burl
+       { host = BS8.pack $ baseUrlHost burl
        , port = baseUrlPort burl
        , secure = baseUrlScheme burl == Https
        , method = reflectMethod (Proxy :: Proxy method)
