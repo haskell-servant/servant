@@ -544,7 +544,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -607,3 +607,4 @@
 ```json
 
 ```
+
