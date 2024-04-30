@@ -71,7 +71,6 @@ module Servant.API.ContentTypes
 
 import           Control.Arrow
                  (left)
-import           Control.Monad.Compat
 import           Control.DeepSeq
                  (NFData)
 import           Data.Aeson
@@ -97,8 +96,6 @@ import           GHC.Generics
                  (Generic)
 import qualified GHC.TypeLits                     as TL
 import qualified Network.HTTP.Media               as M
-import           Prelude ()
-import           Prelude.Compat
 import           Web.FormUrlEncoded
                  (FromForm, ToForm, urlDecodeAsForm, urlEncodeAsForm)
 
@@ -299,7 +296,7 @@ instance {-# OVERLAPPING #-} ( Accept ctyp ) => AllMimeRender '[ctyp] NoContent 
 instance {-# OVERLAPPING #-}
          ( AllMime (ctyp ': ctyp' ': ctyps)
          ) => AllMimeRender (ctyp ': ctyp' ': ctyps) NoContent where
-    allMimeRender p _ = zip (allMime p) (repeat "")
+    allMimeRender p _ = map (, "") (allMime p)
 
 --------------------------------------------------------------------------
 -- Check that all elements of list are instances of MimeUnrender

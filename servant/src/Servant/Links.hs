@@ -1,19 +1,21 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
-{-# LANGUAGE CPP    #-}
-{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE InstanceSigs           #-}
 {-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE QuantifiedConstraints    #-}
+{-# LANGUAGE QuantifiedConstraints  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
+
 {-# OPTIONS_HADDOCK not-home        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wno-missing-methods #-}
 
 -- | Type safe generation of internal links.
 --
@@ -145,8 +147,6 @@ import           GHC.TypeLits
                  (KnownSymbol, TypeError, symbolVal)
 import           Network.URI
                  (URI (..), escapeURIString, isUnreserved)
-import           Prelude ()
-import           Prelude.Compat
 
 import           Servant.API.Alternative
                  ((:<|>) ((:<|>)))
@@ -660,9 +660,9 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 -- >>> import Data.Text (Text)
 
 -- Erroring instance for 'HasLink' when a combinator is not fully applied
-instance TypeError (PartialApplication 
+instance TypeError (PartialApplication
 #if __GLASGOW_HASKELL__ >= 904
-                    @(Type -> Constraint) 
+                    @(Type -> Constraint)
 #endif
                     HasLink arr) => HasLink ((arr :: a -> b) :> sub)
   where
@@ -670,9 +670,9 @@ instance TypeError (PartialApplication
     toLink = error "unreachable"
 
 -- Erroring instances for 'HasLink' for unknown API combinators
-instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub 
+instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub
 #if __GLASGOW_HASKELL__ >= 904
-                                         @(Type -> Constraint) 
+                                         @(Type -> Constraint)
 #endif
                                          HasLink ty) => HasLink (ty :> sub)
 
