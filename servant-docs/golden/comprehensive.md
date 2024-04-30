@@ -12,7 +12,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -30,7 +30,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -48,7 +48,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -70,7 +70,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -92,7 +92,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -114,7 +114,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -135,7 +135,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -160,7 +160,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -178,7 +178,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -200,7 +200,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -218,7 +218,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 17
 ```
 
@@ -240,7 +240,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -262,7 +262,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -280,7 +280,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -298,7 +298,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -316,7 +316,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -341,7 +341,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -366,7 +366,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -392,7 +392,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -410,7 +410,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 17
 ```
 
@@ -446,7 +446,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -461,7 +461,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 17
 ```
 
@@ -477,7 +477,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -492,7 +492,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 17
 ```
 
@@ -508,7 +508,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -526,7 +526,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -586,7 +586,7 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -604,7 +604,6 @@
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
-

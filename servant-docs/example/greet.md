@@ -19,13 +19,13 @@ You'll also note that multiple intros are possible.
 
 - If you use ?capital=true (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 "HELLO, HASKELLER"
 ```
 
 - If you use ?capital=false (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 "Hello, haskeller"
 ```
 
@@ -41,13 +41,13 @@ You'll also note that multiple intros are possible.
 
 - If you use ?capital=true (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 "HELLO, HASKELLER"
 ```
 
 - If you use ?capital=false (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 "Hello, haskeller"
 ```
 
@@ -90,7 +90,7 @@ And some more
 
 - Example (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 
 ```
 
@@ -132,13 +132,13 @@ curl -XDELETE \
 
 - If you use ?capital=true (`application/json;charset=utf-8`, `application/json`, `text/plain;charset=utf-8`):
 
-```javascript
+```json
 "HELLO, HASKELLER"
 ```
 
 - If you use ?capital=false (`application/json;charset=utf-8`, `application/json`):
 
-```javascript
+```json
 "Hello, haskeller"
 ```
 
