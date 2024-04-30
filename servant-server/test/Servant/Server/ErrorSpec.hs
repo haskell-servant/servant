@@ -11,10 +11,8 @@ import           Control.Monad
 import           Data.Aeson
                  (encode)
 import qualified Data.ByteString.Char8      as BC
-import qualified Data.ByteString.Lazy.Char8 as BCL
+import qualified Data.ByteString.Lazy.Char8 as BSL8
 import           Data.Proxy
-import           Data.String.Conversions
-                 (cs)
 import           Network.HTTP.Types
                  (hAccept, hAuthorization, hContentType, methodGet, methodPost,
                  methodPut)
@@ -299,7 +297,7 @@ errorChoiceSpec = describe "Multiple handlers return errors"
 -- * Custom errors {{{
 
 customFormatter :: ErrorFormatter
-customFormatter _ _ err = err400 { errBody = "CUSTOM! " <> cs err }
+customFormatter _ _ err = err400 { errBody = "CUSTOM! " <> BSL8.pack err }
 
 customFormatters :: ErrorFormatters
 customFormatters = defaultErrorFormatters
@@ -328,7 +326,7 @@ customFormattersSpec = describe "Custom errors from combinators"
   let startsWithCustom = ResponseMatcher
         { matchStatus = 400
         , matchHeaders = []
-        , matchBody = MatchBody $ \_ body -> if "CUSTOM!" `BCL.isPrefixOf` body
+        , matchBody = MatchBody $ \_ body -> if "CUSTOM!" `BSL8.isPrefixOf` body
             then Nothing
             else Just $ show body <> " does not start with \"CUSTOM!\""
         }
@@ -354,8 +352,8 @@ customFormattersSpec = describe "Custom errors from combinators"
 -- * Instances {{{
 
 instance MimeUnrender PlainText Int where
-    mimeUnrender _ x = maybe (Left "no parse") Right (readMay $ BCL.unpack x)
+    mimeUnrender _ x = maybe (Left "no parse") Right (readMay $ BSL8.unpack x)
 
 instance MimeRender PlainText Int where
-    mimeRender _ = BCL.pack . show
+    mimeRender _ = BSL8.pack . show
 -- }}}

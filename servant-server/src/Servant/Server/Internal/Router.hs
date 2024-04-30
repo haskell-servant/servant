@@ -4,9 +4,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Servant.Server.Internal.Router where
 
-import           Prelude ()
-import           Prelude.Compat
-
 import           Data.Function
                  (on)
 import           Data.List

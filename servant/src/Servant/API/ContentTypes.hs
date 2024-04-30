@@ -85,8 +85,6 @@ import           Data.Kind
 import qualified Data.List.NonEmpty               as NE
 import           Data.Maybe
                  (isJust)
-import           Data.String.Conversions
-                 (cs)
 import qualified Data.Text                        as TextS
 import qualified Data.Text.Encoding               as TextS
 import qualified Data.Text.Lazy                   as TextL
@@ -238,7 +236,7 @@ class AllCTUnrender (list :: [Type]) a where
 
 instance ( AllMimeUnrender ctyps a ) => AllCTUnrender ctyps a where
     canHandleCTypeH p ctypeH =
-        M.mapContentMedia (allMimeUnrender p) (cs ctypeH)
+        M.mapContentMedia (allMimeUnrender p) (toStrict ctypeH)
 
 --------------------------------------------------------------------------
 -- * Utils (Internal)

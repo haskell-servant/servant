@@ -2,8 +2,6 @@ module Servant.Server.Internal.RoutingApplication where
 
 import           Network.Wai
                  (Application, Request, Response, ResponseReceived)
-import           Prelude ()
-import           Prelude.Compat
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.ServerError
 

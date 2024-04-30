@@ -3,7 +3,7 @@ module Servant.QuickCheck.Internal.ErrorTypes where
 
 import           Control.Exception       (Exception (..))
 import qualified Data.ByteString.Lazy    as LBS
-import           Data.String.Conversions (cs)
+import qualified Data.ByteString.Char8   as BS8
 import qualified Data.Text               as T
 import           Data.Typeable           (Typeable)
 import           GHC.Generics            (Generic)
@@ -12,6 +12,7 @@ import           Network.HTTP.Types      (Header, statusCode)
 import           Text.PrettyPrint
 
 import           Prelude.Compat hiding ((<>))
+import qualified Data.ByteString.Lazy.Char8 as BSL8
 
 data PredicateFailure
   = PredicateFailure T.Text (Maybe C.Request) (C.Response LBS.ByteString)
@@ -42,37 +43,34 @@ prettyHeaders hdrs = vcat $ prettyHdr <$> hdrs
 
 prettyReq :: C.Request -> Doc
 prettyReq r =
-  text "Request:" $$ (nest 5 $
-     text "Method:"   <+> (nest 5 $ text . show $ C.method r)
-  $$ text "Path:"     <+> (nest 5 $ text . cs $ C.path r)
-  $$ text "Headers:"  <+> (nest 5 $ prettyHeaders $ C.requestHeaders r)
-  $$ text "Body:"     <+> (nest 5 $ text . getReqBody $ C.requestBody r))
+  text "Request:" $$ nest 5 (text "Method:"   <+> nest 5 (text . show $ C.method r)
+  $$ text "Path:"     <+> nest 5 (text . BS8.unpack $ C.path r)
+  $$ text "Headers:"  <+> nest 5 (prettyHeaders $ C.requestHeaders r)
+  $$ text "Body:"     <+> nest 5 (text . getReqBody $ C.requestBody r))
   where
-    getReqBody (C.RequestBodyLBS lbs ) = cs lbs
-    getReqBody (C.RequestBodyBS bs ) = cs bs
+    getReqBody :: C.RequestBody -> String
+    getReqBody (C.RequestBodyLBS lbs ) = BSL8.unpack lbs
+    getReqBody (C.RequestBodyBS bs ) = BS8.unpack bs
     getReqBody _ = error "expected bytestring body"
 
 prettyResp :: C.Response LBS.ByteString -> Doc
 prettyResp r =
-  text "Response:" $$ (nest 5 $
-     text "Status code:" <+> (nest 5 $ text . show . statusCode $ C.responseStatus r)
-  $$ text "Headers:"  $$ (nest 10 $ prettyHeaders $ C.responseHeaders r)
-  $$ text "Body:"     <+> (nest 5 $ text . cs $ C.responseBody r))
+  text "Response:" $$ nest 5 (text "Status code:" <+> nest 5 (text . show . statusCode $ C.responseStatus r)
+  $$ text "Headers:"  $$ nest 10 (prettyHeaders $ C.responseHeaders r)
+  $$ text "Body:"     <+> nest 5 (text . BSL8.unpack $ C.responseBody r))
 
 
 
 prettyServerEqualityFailure :: ServerEqualityFailure -> Doc
 prettyServerEqualityFailure (ServerEqualityFailure req resp1 resp2) =
-  text "Server equality failed" $$ (nest 5 $
-     prettyReq req
+  text "Server equality failed" $$ nest 5 (prettyReq req
   $$ prettyResp resp1
   $$ prettyResp resp2)
 
 
 prettyPredicateFailure :: PredicateFailure -> Doc
 prettyPredicateFailure (PredicateFailure predicate req resp) =
-  text "Predicate failed" $$ (nest 5 $
-     text "Predicate:" <+> (text $ T.unpack predicate)
+  text "Predicate failed" $$ nest 5 (text "Predicate:" <+> text (T.unpack predicate)
   $$ r
   $$ prettyResp resp)
   where

@@ -6,9 +6,6 @@
 {-# LANGUAGE PatternSynonyms            #-}
 module Servant.Server.Internal.Handler where
 
-import           Prelude ()
-import           Prelude.Compat
-
 import           Control.Monad.Base
                  (MonadBase (..))
 import           Control.Monad.Catch

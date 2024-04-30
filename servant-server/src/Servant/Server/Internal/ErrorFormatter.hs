@@ -15,13 +15,10 @@ module Servant.Server.Internal.ErrorFormatter
   , mkContextWithErrorFormatter
   ) where
 
-import           Data.Kind
-                 (Type)
-import           Data.String.Conversions
-                 (cs)
+import           Data.Kind (Type)
 import           Data.Typeable
-import           Network.Wai.Internal
-                 (Request)
+import           Network.Wai.Internal (Request)
+import qualified Data.ByteString.Lazy.Char8 as BSL8
 
 import           Servant.API
                  (Capture, ReqBody)
@@ -77,7 +74,7 @@ mkContextWithErrorFormatter ctx = ctx .++ (defaultErrorFormatters :. EmptyContex
 -- Internal
 
 err400Formatter :: ErrorFormatter
-err400Formatter _ _ e = err400 { errBody = cs e }
+err400Formatter _ _ e = err400 { errBody = BSL8.pack e }
 
 -- These definitions suppress "unused import" warning.
 -- The imorts are needed for Haddock to correctly link to them.

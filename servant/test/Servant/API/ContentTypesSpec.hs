@@ -8,13 +8,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Servant.API.ContentTypesSpec where
 
-import           Prelude ()
-import           Prelude.Compat
-
-import           Data.Aeson
-                 (FromJSON, ToJSON (..), Value, decode, encode, object, (.=), eitherDecode)
-import           Data.ByteString.Char8
-                 (ByteString, append, pack)
+import           Data.Aeson (FromJSON, ToJSON (..), Value, decode, encode, object, (.=), eitherDecode)
+import           Data.ByteString.Char8 (ByteString)
+import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy                             as BSL
 import qualified Data.ByteString.Lazy.Char8                       as BSL8
 import           Data.Either
@@ -28,8 +24,6 @@ import           Data.Maybe
 import           Data.Proxy
 import           Data.String
                  (IsString (..))
-import           Data.String.Conversions
-                 (cs)
 import qualified Data.Text                                        as TextS
 import qualified Data.Text.Encoding                               as TextSE
 import qualified Data.Text.Lazy                                   as TextL
@@ -84,7 +78,7 @@ spec = describe "Servant.API.ContentTypes" $ do
         let p = Proxy :: Proxy '[JSON]
 
         it "does not render any content" $
-          allMimeRender p NoContent `shouldSatisfy` (all (BSL8.null . snd))
+          allMimeRender p NoContent `shouldSatisfy` all (BSL8.null . snd)
 
         it "evaluates the NoContent value" $
           evaluate (allMimeRender p (undefined :: NoContent)) `shouldThrow` anyErrorCall
@@ -161,8 +155,7 @@ spec = describe "Servant.API.ContentTypes" $ do
 #endif
             let acceptH a b c = addToAccept (Proxy :: Proxy OctetStream) a $
                                 addToAccept (Proxy :: Proxy JSON)        b $
-                                addToAccept (Proxy :: Proxy PlainText )  c $
-                                ""
+                                addToAccept (Proxy :: Proxy PlainText )  c ""
             let val a b c i = handleAcceptH (Proxy :: Proxy '[OctetStream, JSON, PlainText])
                                             (acceptH a b c) (i :: Int)
             property $ \a b c i ->
@@ -244,13 +237,13 @@ instance Arbitrary ZeroToOne where
     arbitrary = ZeroToOne <$> elements [ x / 10 | x <- [1..10]]
 
 instance MimeRender OctetStream Int where
-    mimeRender _ = cs . show
+    mimeRender _ = BSL8.pack . show
 
 instance MimeRender PlainText Int where
-    mimeRender _ = cs . show
+    mimeRender _ = BSL8.pack . show
 
 instance MimeRender PlainText ByteString where
-    mimeRender _ = cs
+    mimeRender _ = BSL.fromStrict
 
 instance ToJSON ByteString where
     toJSON x = object [ "val" .= x ]
@@ -265,7 +258,7 @@ instance Accept JSONorText where
     contentTypes _ = "text/plain" NE.:| [ "application/json" ]
 
 instance MimeRender JSONorText Int  where
-    mimeRender _ = cs . show
+    mimeRender _ = BSL8.pack . show
 
 instance MimeUnrender JSONorText Int where
     mimeUnrender _ = maybe (Left "") Right . readMaybe . BSL8.unpack
@@ -277,6 +270,6 @@ instance MimeUnrender JSONorText TextS.Text where
 
 addToAccept :: Accept a => Proxy a -> ZeroToOne -> AcceptHeader -> AcceptHeader
 addToAccept p (ZeroToOne f) (AcceptHeader h) = AcceptHeader (cont h)
-    where new = cs (show $ contentType p) `append` "; q=" `append` pack (show f)
+    where new = BS8.pack (show $ contentType p) <> "; q=" <> BS8.pack (show f)
           cont "" = new
-          cont old = old `append` ", " `append` new
+          cont old = old <> ", " <> new

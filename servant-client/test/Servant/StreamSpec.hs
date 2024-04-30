@@ -1,17 +1,13 @@
 {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE StandaloneDeriving     #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -21,12 +17,6 @@
 
 module Servant.StreamSpec (spec) where
 
-import           Control.Monad
-                 (when)
-import           Control.Monad.Codensity
-                 (Codensity (..))
-import           Control.Monad.IO.Class
-                 (MonadIO (..))
 import           Control.Monad.Trans.Except
 import qualified Data.ByteString               as BS
 import           Data.Proxy
@@ -45,19 +35,9 @@ import           System.Entropy
                  (getEntropy, getHardwareEntropy)
 import           System.IO.Unsafe
                  (unsafePerformIO)
-import           System.Mem
-                 (performGC)
 import           Test.Hspec
 import           Servant.ClientTestUtils (Person(..))
 import qualified Servant.ClientTestUtils as CT
-
-#if MIN_VERSION_base(4,10,0)
-import           GHC.Stats
-                 (gc, gcdetails_live_bytes, getRTSStats)
-#else
-import           GHC.Stats
-                 (currentBytesUsed, getGCStats)
-#endif
 
 -- This declaration simply checks that all instances are in place.
 -- Note: this is streaming client
