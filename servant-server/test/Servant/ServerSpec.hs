@@ -26,7 +26,8 @@ import           Data.Aeson
 import           Data.Acquire
                  (Acquire, mkAcquire)
 import qualified Data.ByteString                   as BS
-import qualified Data.ByteString.Char8             as C8
+import qualified Data.ByteString.Char8             as BS8
+import qualified Data.ByteString.Lazy.Char8        as BSL8
 import qualified Data.ByteString.Base64            as Base64
 import           Data.Char
                  (toUpper)
@@ -36,8 +37,6 @@ import           Data.Proxy
                  (Proxy (Proxy))
 import           Data.String
                  (fromString)
-import           Data.String.Conversions
-                 (cs)
 import qualified Data.Text                         as T
 import           GHC.Generics
                  (Generic)
@@ -174,9 +173,8 @@ verbSpec = describe "Servant.API.Verb" $ do
               response <- THW.request method "/" [] ""
               liftIO $ simpleBody response `shouldBe` ""
 
-          it "throws 405 on wrong method " $ do
-            THW.request (wrongMethod method) "/" [] ""
-              `shouldRespondWith` 405
+          it "throws 405 on wrong method " $ THW.request (wrongMethod method) "/" [] ""
+            `shouldRespondWith` 405
 
           it "returns headers" $ do
             response1 <- THW.request method "/header" [] ""
@@ -195,9 +193,8 @@ verbSpec = describe "Servant.API.Verb" $ do
             response <- THW.request method "/headerNC/" [] ""
             liftIO $ statusCode (simpleStatus response) `shouldBe` status
 
-          it "returns 406 if the Accept header is not supported" $ do
-            THW.request method "" [(hAccept, "crazy/mime")] ""
-              `shouldRespondWith` 406
+          it "returns 406 if the Accept header is not supported" $ THW.request method "" [(hAccept, "crazy/mime")] ""
+            `shouldRespondWith` 406
 
           it "responds if the Accept header is supported" $ do
             response <- THW.request method ""
@@ -256,34 +253,30 @@ captureServer = getLegs :<|> getEars :<|> getEyes
         getEyes _ = throwError err404
 
 captureSpec :: Spec
-captureSpec = do
-  describe "Servant.API.Capture" $ do
-    with (return (serve captureApi captureServer)) $ do
+captureSpec = describe "Servant.API.Capture" $ do
+  with (return (serve captureApi captureServer)) $ do
 
-      it "can capture parts of the 'pathInfo'" $ do
-        response <- get "/2"
-        liftIO $ decode' (simpleBody response) `shouldBe` Just tweety
+    it "can capture parts of the 'pathInfo'" $ do
+      response <- get "/2"
+      liftIO $ decode' (simpleBody response) `shouldBe` Just tweety
 
-      it "returns 400 if the decoding fails" $ do
-        get "/notAnInt" `shouldRespondWith` 400
+    it "returns 400 if the decoding fails" $ get "/notAnInt" `shouldRespondWith` 400
 
-      it "returns an animal if eyes or ears are 2" $ do
-        get "/ears/2" `shouldRespondWith` 200
-        get "/eyes/2" `shouldRespondWith` 200
+    it "returns an animal if eyes or ears are 2" $ do
+      get "/ears/2" `shouldRespondWith` 200
+      get "/eyes/2" `shouldRespondWith` 200
 
-      it "returns a weird animal on Lenient Capture" $ do
-        response <- get "/ears/bla"
-        liftIO $ decode' (simpleBody response) `shouldBe` Just chimera
+    it "returns a weird animal on Lenient Capture" $ do
+      response <- get "/ears/bla"
+      liftIO $ decode' (simpleBody response) `shouldBe` Just chimera
 
-      it "returns 400 if parsing integer fails on Strict Capture" $ do
-        get "/eyes/bla" `shouldRespondWith` 400
+    it "returns 400 if parsing integer fails on Strict Capture" $ get "/eyes/bla" `shouldRespondWith` 400
 
-    with (return (serve
-        (Proxy :: Proxy (Capture "captured" String :> Raw))
-        (\ "captured" -> Tagged $ \request_ sendResponse ->
-            sendResponse $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
-      it "strips the captured path snippet from pathInfo" $ do
-        get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
+  with (return (serve
+      (Proxy :: Proxy (Capture "captured" String :> Raw))
+      (\ "captured" -> Tagged $ \request_ sendResponse ->
+          sendResponse $ responseLBS ok200 [] (BSL8.pack $ show $ pathInfo request_))))
+            $ it "strips the captured path snippet from pathInfo" $ get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -328,14 +321,11 @@ captureAllSpec = do
         response <- get "/legs/"
         liftIO $ decode' (simpleBody response) `shouldBe` Just beholder
 
-      it "returns 400 if the decoding fails" $ do
-        get "/legs/notAnInt" `shouldRespondWith` 400
+      it "returns 400 if the decoding fails" $ get "/legs/notAnInt" `shouldRespondWith` 400
 
-      it "returns 400 if the decoding fails, regardless of which element" $ do
-        get "/legs/1/0/0/notAnInt/3/" `shouldRespondWith` 400
+      it "returns 400 if the decoding fails, regardless of which element" $ get "/legs/1/0/0/notAnInt/3/" `shouldRespondWith` 400
 
-      it "returns 400 if the decoding fails, even when it's multiple elements" $ do
-        get "/legs/1/0/0/notAnInt/3/orange/" `shouldRespondWith` 400
+      it "returns 400 if the decoding fails, even when it's multiple elements" $ get "/legs/1/0/0/notAnInt/3/orange/" `shouldRespondWith` 400
 
       it "can capture single String" $ do
         response <- get "/arms/jerry"
@@ -361,9 +351,9 @@ captureAllSpec = do
     with (return (serve
         (Proxy :: Proxy (CaptureAll "segments" String :> Raw))
         (\ _captured -> Tagged $ \request_ sendResponse ->
-            sendResponse $ responseLBS ok200 [] (cs $ show $ pathInfo request_)))) $ do
-      it "consumes everything from pathInfo" $ do
-        get "/captured/foo/bar/baz" `shouldRespondWith` (fromString (show ([] :: [Int])))
+            sendResponse $ responseLBS ok200 [] (BSL8.pack $ show $ pathInfo request_))))
+              $ it "consumes everything from pathInfo"
+                $ get "/captured/foo/bar/baz" `shouldRespondWith` fromString (show ([] :: [Int]))
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -409,8 +399,8 @@ qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAge
 
         qpAges ages = return alice{ age = sum ages}
 
-        qpRaw q = return alice { name = maybe mempty C8.unpack $ join (lookup "name" q)
-                               , age = fromMaybe 0 (readMaybe . C8.unpack =<< join (lookup "age" q))
+        qpRaw q = return alice { name = maybe mempty BS8.unpack $ join (lookup "name" q)
+                               , age = fromMaybe 0 (readMaybe . BS8.unpack =<< join (lookup "age" q))
                                }
 
         qpDeep filter' =
@@ -509,7 +499,7 @@ queryParamSpec = do
         -- test query parameters rewriter
         let queryRewriter :: Middleware
             queryRewriter app req = app req
-                { queryString = fmap rewrite $ queryString req
+                { queryString = rewrite <$> queryString req
                 }
               where
                 rewrite :: QueryItem -> QueryItem
@@ -580,11 +570,9 @@ fragmentSpec = do
         , pathInfo       = pinfo
         }
 
-  describe "Servant.API.Fragment" $ do
-    it "ignores fragment even if it is present in query" $ do
-      flip runSession (serve fragmentApi fragServer) $ do
-        response1 <- mkRequest "#Alice" ["name"]
-        liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
+  describe "Servant.API.Fragment" $ it "ignores fragment even if it is present in query" $ flip runSession (serve fragmentApi fragServer) $ do
+    response1 <- mkRequest "#Alice" ["name"]
+    liftIO $ decode' (simpleBody response1) `shouldBe` Just alice
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -610,12 +598,10 @@ reqBodySpec = describe "Servant.API.ReqBody" $ do
       response <- mkReq methodPost "" (encode alice)
       liftIO $ decode' (simpleBody response) `shouldBe` Just alice
 
-    it "rejects invalid request bodies with status 400" $ do
-      mkReq methodPut "/blah" "some invalid body" `shouldRespondWith` 400
+    it "rejects invalid request bodies with status 400" $ mkReq methodPut "/blah" "some invalid body" `shouldRespondWith` 400
 
-    it "responds with 415 if the request body media type is unsupported" $ do
-      THW.request methodPost "/"
-        [(hContentType, "application/nonsense")] "" `shouldRespondWith` 415
+    it "responds with 415 if the request body media type is unsupported" $ THW.request methodPost "/"
+      [(hContentType, "application/nonsense")] "" `shouldRespondWith` 415
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -673,26 +659,21 @@ rawApi = Proxy
 rawApplication :: Show a => (Request -> a) -> Tagged m Application
 rawApplication f = Tagged $ \request_ sendResponse ->
     sendResponse $ responseLBS ok200 []
-        (cs $ show $ f request_)
+        (BSL8.pack $ show $ f request_)
 
 rawSpec :: Spec
-rawSpec = do
-  describe "Servant.API.Raw" $ do
-    it "runs applications" $ do
-      flip runSession (serve rawApi (rawApplication (const (42 :: Integer)))) $ do
-        response <- Network.Wai.Test.request defaultRequest{
-          pathInfo = ["foo"]
-         }
-        liftIO $ do
-          simpleBody response `shouldBe` "42"
+rawSpec = describe "Servant.API.Raw" $ do
+  it "runs applications" $ flip runSession (serve rawApi (rawApplication (const (42 :: Integer)))) $ do
+    response <- Network.Wai.Test.request defaultRequest{
+      pathInfo = ["foo"]
+     }
+    liftIO $ simpleBody response `shouldBe` "42"
 
-    it "gets the pathInfo modified" $ do
-      flip runSession (serve rawApi (rawApplication pathInfo)) $ do
-        response <- Network.Wai.Test.request defaultRequest{
-          pathInfo = ["foo", "bar"]
-         }
-        liftIO $ do
-          simpleBody response `shouldBe` cs (show ["bar" :: String])
+  it "gets the pathInfo modified" $ flip runSession (serve rawApi (rawApplication pathInfo)) $ do
+    response <- Network.Wai.Test.request defaultRequest{
+      pathInfo = ["foo", "bar"]
+     }
+    liftIO $ simpleBody response `shouldBe` BSL8.pack (show ["bar" :: String])
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -705,35 +686,28 @@ rawMApi :: Proxy RawMApi
 rawMApi = Proxy
 
 rawMServer :: (Monad m, MonadIO m, Show a) => (Request -> m a) -> ServerT RawMApi m
-rawMServer f req resp = liftIO . resp . responseLBS ok200 [] . cs . show =<< f req
+rawMServer f req resp = liftIO . resp . responseLBS ok200 [] . BSL8.pack . show =<< f req
 
 rawMSpec :: Spec
-rawMSpec = do
-  describe "Servant.API.RawM" $ do
-    it "gives access to monadic context" $ do
-      flip runSession (serve rawMApi
-          (hoistServer rawMApi (flip runReaderT (42 :: Integer)) (rawMServer (const ask)))) $ do
-        response <- Network.Wai.Test.request defaultRequest{
-          pathInfo = ["foo"]
-         }
-        liftIO $ do
-          simpleBody response `shouldBe` "42"
+rawMSpec = describe "Servant.API.RawM" $ do
+  it "gives access to monadic context" $ flip runSession (serve rawMApi
+      (hoistServer rawMApi (`runReaderT` (42 :: Integer)) (rawMServer (const ask)))) $ do
+    response <- Network.Wai.Test.request defaultRequest{
+      pathInfo = ["foo"]
+     }
+    liftIO $ simpleBody response `shouldBe` "42"
 
-    it "lets users throw servant errors" $ do
-      flip runSession (serve rawMApi (rawMServer (const $ throwError err404 >> pure (42 :: Integer)))) $ do
-        response <- Network.Wai.Test.request defaultRequest{
-          pathInfo = ["foo"]
-         }
-        liftIO $ do
-          statusCode (simpleStatus response) `shouldBe` 404
+  it "lets users throw servant errors" $ flip runSession (serve rawMApi (rawMServer (const $ throwError err404 >> pure (42 :: Integer)))) $ do
+    response <- Network.Wai.Test.request defaultRequest{
+      pathInfo = ["foo"]
+     }
+    liftIO $ statusCode (simpleStatus response) `shouldBe` 404
 
-    it "gets the pathInfo modified" $ do
-      flip runSession (serve rawMApi (rawMServer (pure . pathInfo))) $ do
-        response <- Network.Wai.Test.request defaultRequest{
-          pathInfo = ["foo", "bar"]
-         }
-        liftIO $ do
-          simpleBody response `shouldBe` cs (show ["bar" :: String])
+  it "gets the pathInfo modified" $ flip runSession (serve rawMApi (rawMServer (pure . pathInfo))) $ do
+    response <- Network.Wai.Test.request defaultRequest{
+      pathInfo = ["foo", "bar"]
+     }
+    liftIO $ simpleBody response `shouldBe` BSL8.pack (show ["bar" :: String])
 -- }}}
 ------------------------------------------------------------------------------
 -- * alternativeSpec {{{
@@ -759,25 +733,19 @@ alternativeServer =
   :<|> return NoContent
 
 alternativeSpec :: Spec
-alternativeSpec = do
-  describe "Servant.API.Alternative" $ do
-    with (return $ serve alternativeApi alternativeServer) $ do
+alternativeSpec = describe "Servant.API.Alternative" $ with (return $ serve alternativeApi alternativeServer) $ do
 
-      it "unions endpoints" $ do
-        response <- get "/foo"
-        liftIO $ do
-          decode' (simpleBody response) `shouldBe`
-            Just alice
-        response_ <- get "/bar"
-        liftIO $ do
-          decode' (simpleBody response_) `shouldBe`
-            Just jerry
+  it "unions endpoints" $ do
+    response <- get "/foo"
+    liftIO $ decode' (simpleBody response) `shouldBe`
+      Just alice
+    response_ <- get "/bar"
+    liftIO $ decode' (simpleBody response_) `shouldBe`
+      Just jerry
 
-      it "checks all endpoints before returning 415" $ do
-        get "/foo" `shouldRespondWith` 200
+  it "checks all endpoints before returning 415" $ get "/foo" `shouldRespondWith` 200
 
-      it "returns 404 if the path does not exist" $ do
-        get "/nonexistent" `shouldRespondWith` 404
+  it "returns 404 if the path does not exist" $ get "/nonexistent" `shouldRespondWith` 404
 -- }}}
 ------------------------------------------------------------------------------
 -- * responseHeaderSpec {{{
@@ -795,27 +763,26 @@ responseHeadersServer = let h = return $ addHeader 5 $ addHeader "kilroy" "hi"
 
 
 responseHeadersSpec :: Spec
-responseHeadersSpec = describe "ResponseHeaders" $ do
-  with (return $ serve (Proxy :: Proxy ResponseHeadersApi) responseHeadersServer) $ do
+responseHeadersSpec = describe "ResponseHeaders" $ with (return $ serve (Proxy :: Proxy ResponseHeadersApi) responseHeadersServer) $ do
 
-    let methods = [methodGet, methodPost, methodPut, methodPatch]
+  let methods = [methodGet, methodPost, methodPut, methodPatch]
 
-    it "includes the headers in the response" $
-      forM_ methods $ \method ->
-        THW.request method "/" [] ""
-          `shouldRespondWith` "\"hi\""{ matchHeaders = ["H1" <:> "5", "H2" <:> "kilroy"]
-                                      , matchStatus  = 200
-                                      }
+  it "includes the headers in the response" $
+    forM_ methods $ \method ->
+      THW.request method "/" [] ""
+        `shouldRespondWith` "\"hi\""{ matchHeaders = ["H1" <:> "5", "H2" <:> "kilroy"]
+                                    , matchStatus  = 200
+                                    }
 
-    it "responds with not found for non-existent endpoints" $
-      forM_ methods $ \method ->
-        THW.request method "blahblah" [] ""
-          `shouldRespondWith` 404
+  it "responds with not found for non-existent endpoints" $
+    forM_ methods $ \method ->
+      THW.request method "blahblah" [] ""
+        `shouldRespondWith` 404
 
-    it "returns 406 if the Accept header is not supported" $
-      forM_ methods $ \method ->
-        THW.request method "" [(hAccept, "crazy/mime")] ""
-          `shouldRespondWith` 406
+  it "returns 406 if the Accept header is not supported" $
+    forM_ methods $ \method ->
+      THW.request method "" [(hAccept, "crazy/mime")] ""
+        `shouldRespondWith` 406
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -833,14 +800,11 @@ uverbResponseHeadersServer True = respond . WithStatus @200 . addHeader @"H1" (5
 uverbResponseHeadersServer False = respond .  WithStatus @404 $ ("bar" :: String)
 
 uverbResponseHeadersSpec :: Spec
-uverbResponseHeadersSpec = describe "UVerbResponseHeaders" $ do
-  with (return $ serve (Proxy :: Proxy UVerbResponseHeadersApi) uverbResponseHeadersServer) $ do
-
-    it "includes the headers in the response" $
-        THW.request methodGet "/true" [] ""
-          `shouldRespondWith` "\"foo\"" { matchHeaders = ["H1" <:> "5"]
-                                        , matchStatus  = 200
-                                        }
+uverbResponseHeadersSpec = describe "UVerbResponseHeaders" $ with (return $ serve (Proxy :: Proxy UVerbResponseHeadersApi) uverbResponseHeadersServer) $ it "includes the headers in the response" $
+    THW.request methodGet "/true" [] ""
+      `shouldRespondWith` "\"foo\"" { matchHeaders = ["H1" <:> "5"]
+                                    , matchStatus  = 200
+                                    }
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -898,7 +862,7 @@ basicAuthApi = Proxy
 basicAuthServer :: Server BasicAuthAPI
 basicAuthServer =
   const (return jerry) :<|>
-  (Tagged $ \ _ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
+  Tagged (\ _ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
 
 basicAuthContext :: Context '[ BasicAuthCheck () ]
 basicAuthContext =
@@ -909,26 +873,22 @@ basicAuthContext =
   in basicHandler :. EmptyContext
 
 basicAuthSpec :: Spec
-basicAuthSpec = do
-  describe "Servant.API.BasicAuth" $ do
-    with (return (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ do
+basicAuthSpec = describe "Servant.API.BasicAuth" $ with (return (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ context "Basic Authentication" $ do
+  let basicAuthHeaders user password =
+        [("Authorization", "Basic " <> Base64.encode (user <> ":" <> password))]
+  it "returns 401 when no credentials given" $ do
+    get "/basic" `shouldRespondWith` 401
 
-      context "Basic Authentication" $ do
-        let basicAuthHeaders user password =
-              [("Authorization", "Basic " <> Base64.encode (user <> ":" <> password))]
-        it "returns 401 when no credentials given" $ do
-          get "/basic" `shouldRespondWith` 401
+  it "returns 403 when invalid credentials given" $ do
+    THW.request methodGet "/basic" (basicAuthHeaders "servant" "wrong") ""
+      `shouldRespondWith` 403
 
-        it "returns 403 when invalid credentials given" $ do
-          THW.request methodGet "/basic" (basicAuthHeaders "servant" "wrong") ""
-            `shouldRespondWith` 403
+  it "returns 200 with the right password" $ do
+    THW.request methodGet "/basic" (basicAuthHeaders "servant" "server") ""
+      `shouldRespondWith` 200
 
-        it "returns 200 with the right password" $ do
-          THW.request methodGet "/basic" (basicAuthHeaders "servant" "server") ""
-            `shouldRespondWith` 200
-
-        it "plays nice with subsequent Raw endpoints" $ do
-          get "/foo" `shouldRespondWith` 418
+  it "plays nice with subsequent Raw endpoints" $ do
+    get "/foo" `shouldRespondWith` 418
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -943,7 +903,7 @@ genAuthApi = Proxy
 
 genAuthServer :: Server GenAuthAPI
 genAuthServer = const (return tweety)
-           :<|> (Tagged $ \ _ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
+           :<|> Tagged (\ _ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
 
 type instance AuthServerData (AuthProtect "auth") = ()
 
@@ -956,22 +916,18 @@ genAuthContext =
   in mkAuthHandler authHandler :. EmptyContext
 
 genAuthSpec :: Spec
-genAuthSpec = do
-  describe "Servant.API.Auth" $ do
-    with (return (serveWithContext genAuthApi genAuthContext genAuthServer)) $ do
+genAuthSpec = describe "Servant.API.Auth" $ with (return (serveWithContext genAuthApi genAuthContext genAuthServer)) $ context "Custom Auth Protection" $ do
+  it "returns 401 when missing headers" $ do
+    get "/auth" `shouldRespondWith` 401
 
-      context "Custom Auth Protection" $ do
-        it "returns 401 when missing headers" $ do
-          get "/auth" `shouldRespondWith` 401
+  it "returns 403 on wrong passwords" $ do
+    THW.request methodGet "/auth" [("Auth","wrong")] "" `shouldRespondWith` 403
 
-        it "returns 403 on wrong passwords" $ do
-          THW.request methodGet "/auth" [("Auth","wrong")] "" `shouldRespondWith` 403
+  it "returns 200 with the right header" $ do
+    THW.request methodGet "/auth" [("Auth","secret")] "" `shouldRespondWith` 200
 
-        it "returns 200 with the right header" $ do
-          THW.request methodGet "/auth" [("Auth","secret")] "" `shouldRespondWith` 200
-
-        it "plays nice with subsequent Raw endpoints" $ do
-          get "/foo" `shouldRespondWith` 418
+  it "plays nice with subsequent Raw endpoints" $ do
+    get "/foo" `shouldRespondWith` 418
 
 -- }}}
 ------------------------------------------------------------------------------

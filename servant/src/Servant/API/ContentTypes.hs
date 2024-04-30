@@ -236,7 +236,7 @@ class AllCTUnrender (list :: [Type]) a where
 
 instance ( AllMimeUnrender ctyps a ) => AllCTUnrender ctyps a where
     canHandleCTypeH p ctypeH =
-        M.mapContentMedia (allMimeUnrender p) (BS.toStrict ctypeH)
+        M.mapContentMedia (allMimeUnrender p) (toStrict ctypeH)
 
 --------------------------------------------------------------------------
 -- * Utils (Internal)

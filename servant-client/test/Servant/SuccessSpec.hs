@@ -10,7 +10,6 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -22,13 +21,11 @@ import           Prelude ()
 import           Prelude.Compat
 
 import           Control.Arrow
-                 ((+++), left)
+                 (left)
 import           Control.Concurrent.STM
                  (atomically)
 import           Control.Concurrent.STM.TVar
                  (newTVar, readTVar)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
 import           Data.Foldable
                  (forM_, toList)
 import           Data.Maybe
@@ -56,30 +53,23 @@ import           Servant.Test.ComprehensiveAPI
 _ = client comprehensiveAPIWithoutStreaming
 
 spec :: Spec
-spec = describe "Servant.SuccessSpec" $ do
-    successSpec
+spec = describe "Servant.SuccessSpec" $ successSpec
 
 successSpec :: Spec
 successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     describe "Servant.API.Get" $ do
-      it "get root endpoint" $ \(_, baseUrl) -> do
-        left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
+      it "get root endpoint" $ \(_, baseUrl) -> left show <$> runClient getRoot baseUrl  `shouldReturn` Right carol
 
-      it "get simple endpoint" $ \(_, baseUrl) -> do
-        left show <$> runClient getGet baseUrl  `shouldReturn` Right alice
+      it "get simple endpoint" $ \(_, baseUrl) -> left show <$> runClient getGet baseUrl  `shouldReturn` Right alice
 
-      it "get redirection endpoint" $ \(_, baseUrl) -> do
-        left show <$> runClient getGet307 baseUrl `shouldReturn` Right "redirecting"
+      it "get redirection endpoint" $ \(_, baseUrl) -> left show <$> runClient getGet307 baseUrl `shouldReturn` Right "redirecting"
 
     describe "Servant.API.Delete" $ do
-      it "allows empty content type" $ \(_, baseUrl) -> do
-        left show <$> runClient getDeleteEmpty baseUrl `shouldReturn` Right NoContent
+      it "allows empty content type" $ \(_, baseUrl) -> left show <$> runClient getDeleteEmpty baseUrl `shouldReturn` Right NoContent
 
-      it "allows content type" $ \(_, baseUrl) -> do
-        left show <$> runClient getDeleteContentType baseUrl `shouldReturn` Right NoContent
+      it "allows content type" $ \(_, baseUrl) -> left show <$> runClient getDeleteContentType baseUrl `shouldReturn` Right NoContent
 
-    it "Servant.API.Capture" $ \(_, baseUrl) -> do
-      left show <$> runClient (getCapture "Paula") baseUrl `shouldReturn` Right (Person "Paula" 0)
+    it "Servant.API.Capture" $ \(_, baseUrl) -> left show <$> runClient (getCapture "Paula") baseUrl `shouldReturn` Right (Person "Paula" 0)
 
     it "Servant.API.CaptureAll" $ \(_, baseUrl) -> do
       let expected = [Person "Paula" 0, Person "Peta" 1]
@@ -107,18 +97,15 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
 
     context "Servant.API.QueryParam.QueryFlag" $
-      forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> do
-        left show <$> runClient (getQueryFlag flag) baseUrl `shouldReturn` Right flag
+      forM_ [False, True] $ \ flag -> it (show flag) $ \(_, baseUrl) -> left show <$> runClient (getQueryFlag flag) baseUrl `shouldReturn` Right flag
 
     it "Servant.API.QueryParam.QueryString" $ \(_, baseUrl) -> do
       let qs = [("name", Just "bob"), ("age", Just "1")]
-      left show <$> runClient (getQueryString qs) baseUrl `shouldReturn` (Right (Person "bob" 1))
+      left show <$> runClient (getQueryString qs) baseUrl `shouldReturn` Right (Person "bob" 1)
 
-    it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) -> do
-       left show <$> runClient (getDeepQuery $ Filter 1 "bob") baseUrl `shouldReturn` (Right (Person "bob" 1))
+    it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) -> left show <$> runClient (getDeepQuery $ Filter 1 "bob") baseUrl `shouldReturn` (Right (Person "bob" 1))
 
-    it "Servant.API.Fragment" $ \(_, baseUrl) -> do
-      left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
+    it "Servant.API.Fragment" $ \(_, baseUrl) -> left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
 
     it "Servant.API.Raw on success" $ \(_, baseUrl) -> do
       res <- runClient (getRawSuccess HTTP.methodGet) baseUrl
@@ -180,13 +167,12 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
         Right r ->
           ("X-Added-Header", "XXX") `elem` toList (responseHeaders r) `shouldBe` True
 
-    modifyMaxSuccess (const 20) $ do
-      it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
-        property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
-          ioProperty $ do
-            result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
-            return $
-              result === Right (cap, num, flag, body)
+    modifyMaxSuccess (const 20) $ it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
+      property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
+        ioProperty $ do
+          result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
+          return $
+            result === Right (cap, num, flag, body)
 
     context "With a route that can either return success or redirect" $ do
       it "Redirects when appropriate" $ \(_, baseUrl) -> do
@@ -203,7 +189,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     context "with a route that uses uverb but only has a single response" $
       it "returns the expected response" $ \(_, baseUrl) -> do
-        eitherResponse <- runClient (uverbGetCreated) baseUrl
+        eitherResponse <- runClient uverbGetCreated baseUrl
         case eitherResponse of
           Left clientError -> fail $ show clientError
           Right response -> matchUnion response `shouldBe` Just (WithStatus @201 carol)
