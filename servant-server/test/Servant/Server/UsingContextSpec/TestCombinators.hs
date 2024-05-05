@@ -20,6 +20,7 @@ module Servant.Server.UsingContextSpec.TestCombinators where
 import           GHC.TypeLits
 
 import           Servant
+import Data.Kind (Type)
 
 data ExtractFromContext
 
@@ -32,12 +33,12 @@ instance (HasContextEntry context String, HasServer subApi context) =>
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy subApi) pc nt . s
 
   route Proxy context delayed =
-    route subProxy context (fmap inject delayed)
+    route subProxy context (fmap injectContext delayed)
     where
       subProxy :: Proxy subApi
       subProxy = Proxy
 
-      inject f = f (getContextEntry context)
+      injectContext f = f (getContextEntry context)
 
 data InjectIntoContext
 
@@ -58,7 +59,7 @@ instance (HasServer subApi (String ': context)) =>
 
       newContext = ("injected" :: String) :. context
 
-data NamedContextWithBirdface (name :: Symbol) (subContext :: [*])
+data NamedContextWithBirdface (name :: Symbol) (subContext :: [Type])
 
 instance (HasContextEntry context (NamedContext name subContext), HasServer subApi subContext) =>
   HasServer (NamedContextWithBirdface name subContext :> subApi) context where

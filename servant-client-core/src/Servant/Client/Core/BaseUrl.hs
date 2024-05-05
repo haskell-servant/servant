@@ -1,7 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DeriveLift         #-}
-{-# LANGUAGE ViewPatterns       #-}
 module Servant.Client.Core.BaseUrl (
     BaseUrl (..),
     Scheme (..),
@@ -21,7 +18,7 @@ import           Data.Aeson.Types
                  withText)
 import           Data.Data
                  (Data)
-import           Data.List
+import qualified Data.List as List
 import qualified Data.Text                  as T
 import           GHC.Generics
 import           Language.Haskell.TH.Syntax
@@ -91,7 +88,7 @@ showBaseUrl :: BaseUrl -> String
 showBaseUrl (BaseUrl urlscheme host port path) =
   schemeString ++ "//" ++ host ++ (portString </> path)
     where
-      a </> b = if "/" `isPrefixOf` b || null b then a ++ b else a ++ '/':b
+      a </> b = if "/" `List.isPrefixOf` b || null b then a ++ b else a ++ '/':b
       schemeString = case urlscheme of
         Http  -> "http:"
         Https -> "https:"
@@ -128,7 +125,7 @@ parseBaseUrl s = case parseURI (removeTrailingSlash s) of
     return (BaseUrl Https host port path)
   Just (URI "https:" (Just (URIAuth "" host "")) path "" "") ->
     return (BaseUrl Https host 443 path)
-  _ -> if "://" `isInfixOf` s
+  _ -> if "://" `List.isInfixOf` s
     then throwM (InvalidBaseUrlException $ "Invalid base URL: " ++ s)
     else parseBaseUrl ("http://" ++ s)
  where

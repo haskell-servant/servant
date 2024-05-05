@@ -1,19 +1,4 @@
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
-
+{-# OPTIONS_GHC -Wno-missing-methods #-}
 module Servant.Client.Core.HasClient (
     clientIn,
     HasClient (..),
@@ -32,7 +17,6 @@ import           Control.Arrow
                  (left, (+++))
 import           Control.Monad
                  (unless)
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import           Data.Either
                  (partitionEithers)
@@ -81,7 +65,7 @@ import           Servant.API
                  ReflectMethod (..),
                  StreamBody',
                  Verb,
-                 getResponse, AuthProtect, BasicAuth, BasicAuthData, Capture', CaptureAll, DeepQuery, Description, Fragment, FramingRender (..), FramingUnrender (..), Header', Headers (..), HttpVersion, MimeRender (mimeRender), NoContent (NoContent), QueryFlag, QueryParam', QueryParams, QueryString, Raw, RawM, RemoteHost, ReqBody', SBoolI, Stream, Summary, ToHttpApiData, ToSourceIO (..), Vault, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList, toEncodedUrlPiece, toUrlPiece, NamedRoutes)
+                 getResponse, AuthProtect, BasicAuth, BasicAuthData, Capture', CaptureAll, DeepQuery, Description, Fragment, FramingRender (..), FramingUnrender (..), Header', Headers (..), HttpVersion, MimeRender (mimeRender), NoContent (NoContent), QueryFlag, QueryParam', QueryParams, QueryString, Raw, RawM, RemoteHost, ReqBody', SBoolI, Stream, Summary, ToHttpApiData, ToSourceIO (..), Vault, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList, toEncodedUrlPiece, NamedRoutes)
 import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
                  , GenericServant, toServant, fromServant)
@@ -202,7 +186,7 @@ instance RunClient m => HasClient m EmptyAPI where
 -- > getBook :: Text -> ClientM Book
 -- > getBook = client myApi
 -- > -- then you can just use "getBook" to query that endpoint
-instance (KnownSymbol capture, ToHttpApiData a, HasClient m api)
+instance (ToHttpApiData a, HasClient m api)
       => HasClient m (Capture' mods capture a :> api) where
 
   type Client m (Capture' mods capture a :> api) =
@@ -237,7 +221,7 @@ instance (KnownSymbol capture, ToHttpApiData a, HasClient m api)
 -- > getSourceFile :: [Text] -> ClientM SourceFile
 -- > getSourceFile = client myApi
 -- > -- then you can use "getSourceFile" to query that endpoint
-instance (KnownSymbol capture, ToHttpApiData a, HasClient m sublayout)
+instance (ToHttpApiData a, HasClient m sublayout)
       => HasClient m (CaptureAll capture a :> sublayout) where
 
   type Client m (CaptureAll capture a :> sublayout) =

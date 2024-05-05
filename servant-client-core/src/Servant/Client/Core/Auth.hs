@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
@@ -10,6 +9,8 @@ module Servant.Client.Core.Auth (
     mkAuthenticatedRequest,
     ) where
 
+import Data.Kind (Type)
+
 import           Servant.Client.Core.Request
                  (Request)
 
@@ -18,7 +19,7 @@ import           Servant.Client.Core.Request
 -- to a request
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
-type family AuthClientData a :: *
+type family AuthClientData a :: Type
 
 -- | For better type inference and to avoid usage of a data family, we newtype
 -- wrap the combination of some 'AuthClientData' and a function to add authentication

@@ -28,7 +28,7 @@ import           Servant.Server.Internal.ServerError
 -- (with the possibility to recover), or fail fatally.
 --
 newtype DelayedIO a = DelayedIO { runDelayedIO' :: ReaderT Request (ResourceT (RouteResultT IO)) a }
-  deriving
+  deriving newtype
     ( Functor, Applicative, Monad
     , MonadIO, MonadReader Request
     , MonadThrow

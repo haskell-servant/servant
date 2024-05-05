@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -26,8 +25,9 @@ import           Servant.Server.Internal.ServerError
                  (ServerError, errBody, err500)
 
 newtype Handler a = Handler { runHandler' :: ExceptT ServerError IO a }
-  deriving
-    ( Functor, Applicative, Monad, MonadIO, Generic
+  deriving stock (Generic)
+  deriving newtype
+    ( Functor, Applicative, Monad, MonadIO
     , MonadError ServerError
     , MonadThrow, MonadCatch, MonadMask
     )

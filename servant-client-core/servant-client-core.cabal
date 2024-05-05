@@ -1,109 +1,154 @@
-cabal-version:       2.2
-name:                servant-client-core
-version:             0.20
+cabal-version:      3.0
+name:               servant-client-core
+version:            0.20
+synopsis:
+  Core functionality and class for client function generation for servant APIs
 
-synopsis:            Core functionality and class for client function generation for servant APIs
-category:            Servant, Web
+category:           Servant, Web
 description:
   This library provides backend-agnostic generation of client functions. For
   more information, see the README.
 
-homepage:            http://docs.servant.dev/
-bug-reports:         http://github.com/haskell-servant/servant/issues
-license:             BSD-3-Clause
-license-file:        LICENSE
-author:              Servant Contributors
-maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
-build-type:          Simple
-tested-with: GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.8, GHC ==9.4.8, GHC ==9.6.4, GHC ==9.8.2
+homepage:           http://docs.servant.dev/
+bug-reports:        http://github.com/haskell-servant/servant/issues
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Servant Contributors
+maintainer:         haskell-servant-maintainers@googlegroups.com
+copyright:
+  2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
+
+build-type:         Simple
+tested-with:
+  GHC ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.2
 
 extra-source-files:
   CHANGELOG.md
   README.md
 
 source-repository head
-  type:              git
-  location:          http://github.com/haskell-servant/servant.git
+  type:     git
+  location: http://github.com/haskell-servant/servant.git
+
+common extensions
+  default-extensions:
+    AllowAmbiguousTypes
+    ConstraintKinds
+    DataKinds
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFunctor
+    DeriveGeneric
+    DerivingStrategies
+    DerivingVia
+    DuplicateRecordFields
+    ExplicitNamespaces
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    NoStarIsType
+    OverloadedLabels
+    OverloadedStrings
+    PackageImports
+    PolyKinds
+    RankNTypes
+    RecordWildCards
+    QuantifiedConstraints
+    ScopedTypeVariables
+    StrictData
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    UndecidableInstances
+    ViewPatterns
+
+  default-language:   Haskell2010
+
+common ghc-options
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+    -fhide-source-paths -Wno-unused-do-bind -fdicts-strict
+    -Wno-unticked-promoted-constructors -Werror=unused-imports
+    -Wunused-packages
 
 library
+  import:          extensions
+  import:          ghc-options
   exposed-modules:
-      Servant.Client.Core
-      Servant.Client.Free
-      Servant.Client.Generic
-      Servant.Client.Core.Reexport
-      Servant.Client.Core.Auth
-      Servant.Client.Core.BaseUrl
-      Servant.Client.Core.BasicAuth
-      Servant.Client.Core.ClientError
-      Servant.Client.Core.HasClient
-      Servant.Client.Core.Request
-      Servant.Client.Core.Response
-      Servant.Client.Core.RunClient
+    Servant.Client.Core
+    Servant.Client.Core.Auth
+    Servant.Client.Core.BaseUrl
+    Servant.Client.Core.BasicAuth
+    Servant.Client.Core.ClientError
+    Servant.Client.Core.HasClient
+    Servant.Client.Core.Reexport
+    Servant.Client.Core.Request
+    Servant.Client.Core.Response
+    Servant.Client.Core.RunClient
+    Servant.Client.Free
+    Servant.Client.Generic
 
-  other-modules:
-      Servant.Client.Core.Internal
+  other-modules:   Servant.Client.Core.Internal
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                  >= 4.9      && < 4.20
-    , bytestring            >= 0.10.8.1 && < 0.13
-    , constraints           >= 0.2      && < 0.15
-    , containers            >= 0.5.7.1  && < 0.7
-    , deepseq               >= 1.4.2.0  && < 1.6
-    , text                  >= 1.2.3.0  && < 2.2
-    , template-haskell      >= 2.11.1.0 && < 2.22
-
-  if !impl(ghc >= 8.2)
-    build-depends:
-      bifunctors >= 5.5.3 && < 5.7
+    , base              >=4.9      && <4.20
+    , bytestring        >=0.10.8.1 && <0.13
+    , constraints       >=0.2      && <0.15
+    , containers        >=0.5.7.1  && <0.7
+    , deepseq           >=1.4.2.0  && <1.6
+    , template-haskell  >=2.11.1.0 && <2.22
+    , text              >=1.2.3.0  && <2.2
 
   -- Servant dependencies
-  build-depends:
-      servant            >= 0.20
+  build-depends:   servant >=0.20
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson                 >= 1.4.1.0  && < 3
-    , base-compat           >= 0.10.5   && < 0.14
-    , base64-bytestring     >= 1.0.0.1  && < 1.3
-    , exceptions            >= 0.10.0   && < 0.11
-    , free                  >= 5.1      && < 5.3
-    , http-media            >= 0.7.1.3  && < 0.9
-    , http-types            >= 0.12.2   && < 0.13
-    , network-uri           >= 2.6.1.0  && < 2.7
-    , safe                  >= 0.3.17   && < 0.4
-    , sop-core              >= 0.4.0.0  && < 0.6
+    , aeson              >=1.4.1.0 && <3
+    , base-compat        >=0.10.5  && <0.14
+    , base64-bytestring  >=1.0.0.1 && <1.3
+    , exceptions         >=0.10.0  && <0.11
+    , free               >=5.1     && <5.3
+    , http-media         >=0.7.1.3 && <0.9
+    , http-types         >=0.12.2  && <0.13
+    , network-uri        >=2.6.1.0 && <2.7
+    , safe               >=0.3.17  && <0.4
+    , sop-core           >=0.4.0.0 && <0.6
 
-  hs-source-dirs:      src
-  default-language:    Haskell2010
-  ghc-options:         -Wall
+  hs-source-dirs:  src
 
 test-suite spec
-  type:                exitcode-stdio-1.0
-  ghc-options:         -Wall
-  default-language:    Haskell2010
-  hs-source-dirs:      test
-  main-is:             Spec.hs
+  import:             extensions
+  import:             ghc-options
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     test
+  main-is:            Spec.hs
   other-modules:
-      Servant.Client.Core.Internal.BaseUrlSpec
-      Servant.Client.Core.RequestSpec
+    Servant.Client.Core.Internal.BaseUrlSpec
+    Servant.Client.Core.RequestSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
-      base
+    , base
     , base-compat
     , servant-client-core
 
   -- Additional dependencies
   build-depends:
-      deepseq    >= 1.4.2.0  && < 1.6
-    , hspec      >= 2.6.0    && < 2.12
-    , QuickCheck >= 2.12.6.1 && < 2.15
+    , deepseq     >=1.4.2.0  && <1.6
+    , hspec       >=2.6.0    && <2.12
+    , QuickCheck  >=2.12.6.1 && <2.15
 
-  build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && <2.12
+  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.12

@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 module Servant.API.Modifiers (
     -- * Required / optional argument
     Required, Optional,

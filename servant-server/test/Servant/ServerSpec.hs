@@ -685,7 +685,7 @@ type RawMApi = "foo" :> RawM
 rawMApi :: Proxy RawMApi
 rawMApi = Proxy
 
-rawMServer :: (Monad m, MonadIO m, Show a) => (Request -> m a) -> ServerT RawMApi m
+rawMServer :: (MonadIO m, Show a) => (Request -> m a) -> ServerT RawMApi m
 rawMServer f req resp = liftIO . resp . responseLBS ok200 [] . BSL8.pack . show =<< f req
 
 rawMSpec :: Spec

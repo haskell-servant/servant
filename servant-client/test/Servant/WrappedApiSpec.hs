@@ -20,6 +20,7 @@ module Servant.WrappedApiSpec (spec) where
 import           Prelude ()
 import           Prelude.Compat
 
+import           Data.Kind (Type)
 import           Control.Exception
                  (bracket)
 import           Control.Monad.Error.Class
@@ -40,7 +41,7 @@ spec = describe "Servant.WrappedApiSpec" $ do
     wrappedApiSpec
 
 data WrappedApi where
-  WrappedApi :: (HasServer (api :: *) '[], Server api ~ Handler a,
+  WrappedApi :: (HasServer (api :: Type) '[], Server api ~ Handler a,
                  HasClient ClientM api, Client ClientM api ~ ClientM ()) =>
     Proxy api -> WrappedApi
 

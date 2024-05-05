@@ -54,7 +54,7 @@ import           Network.HTTP.Types
                  (Header, HeaderName, HttpVersion (..), Method, Query, QueryItem,
                  http11, methodGet, urlEncodeBuilder)
 import           Servant.API
-                 (ToHttpApiData, toEncodedUrlPiece, toQueryParam, toHeader, SourceIO)
+                 (ToHttpApiData, toQueryParam, toHeader, SourceIO)
 
 import Servant.Client.Core.Internal (mediaTypeRnf)
 

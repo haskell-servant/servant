@@ -28,11 +28,11 @@ data RouteResult a =
   deriving (Eq, Show, Read, Functor)
 
 instance Applicative RouteResult where
-    pure = return
+    pure = Route
     (<*>) = ap
 
 instance Monad RouteResult where
-    return = Route
+    return = pure
     Route a     >>= f = f a
     Fail e      >>= _ = Fail e
     FailFatal e >>= _ = FailFatal e
@@ -41,14 +41,14 @@ newtype RouteResultT m a = RouteResultT { runRouteResultT :: m (RouteResult a) }
   deriving (Functor)
 
 instance MonadTrans RouteResultT where
-    lift = RouteResultT . liftM Route
+    lift = RouteResultT . fmap Route
 
 instance (Functor m, Monad m) => Applicative (RouteResultT m) where
-    pure  = return
+    pure = RouteResultT . return . Route
     (<*>) = ap
 
 instance Monad m => Monad (RouteResultT m) where
-    return = RouteResultT . return . Route
+    return = pure
     m >>= k = RouteResultT $ do
         a <- runRouteResultT m
         case a of

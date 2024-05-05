@@ -1,9 +1,8 @@
-cabal-version:       2.2
-name:                servant
-version:             0.20.1
-
-synopsis:            A family of combinators for defining webservices APIs
-category:            Servant, Web
+cabal-version:      3.0
+name:               servant
+version:            0.20.1
+synopsis:           A family of combinators for defining webservices APIs
+category:           Servant, Web
 description:
   A family of combinators for defining webservices APIs and serving them
   .
@@ -11,24 +10,75 @@ description:
   .
   <https://github.com/haskell-servant/servant/blob/master/servant/CHANGELOG.md CHANGELOG>
 
-homepage:            http://docs.servant.dev/
-bug-reports:         http://github.com/haskell-servant/servant/issues
-license:             BSD-3-Clause
-license-file:        LICENSE
-author:              Servant Contributors
-maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
-build-type:          Simple
-tested-with: GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.8, GHC ==9.4.8, GHC ==9.6.4, GHC ==9.8.2
+homepage:           http://docs.servant.dev/
+bug-reports:        http://github.com/haskell-servant/servant/issues
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Servant Contributors
+maintainer:         haskell-servant-maintainers@googlegroups.com
+copyright:
+  2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 
-extra-source-files:
-  CHANGELOG.md
+build-type:         Simple
+tested-with:
+  GHC ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.2
+
+extra-source-files: CHANGELOG.md
 
 source-repository head
-  type: git
+  type:     git
   location: http://github.com/haskell-servant/servant.git
 
+common extensions
+  default-extensions:
+    AllowAmbiguousTypes
+    ConstraintKinds
+    DataKinds
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFunctor
+    DeriveGeneric
+    DerivingStrategies
+    DerivingVia
+    DuplicateRecordFields
+    ExplicitNamespaces
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    NoStarIsType
+    OverloadedLabels
+    OverloadedStrings
+    PackageImports
+    PolyKinds
+    RankNTypes
+    RecordWildCards
+    ScopedTypeVariables
+    StrictData
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    UndecidableInstances
+    ViewPatterns
+
+  default-language:   Haskell2010
+
+common ghc-options
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+    -fhide-source-paths -Wno-unused-do-bind -fdicts-strict
+    -Wno-unticked-promoted-constructors -Werror=unused-imports
+    -Wunused-packages
+
 library
+  import:          extensions
+  import:          ghc-options
   exposed-modules:
     Servant.API
     Servant.API.Alternative
@@ -64,96 +114,67 @@ library
     Servant.API.WithResource
 
   -- Types
-  exposed-modules:
-    Servant.Types.SourceT
+  exposed-modules: Servant.Types.SourceT
 
   -- Test stuff
-  exposed-modules:
-    Servant.Test.ComprehensiveAPI
+  exposed-modules: Servant.Test.ComprehensiveAPI
 
   -- Safe links
-  exposed-modules:
-    Servant.Links
+  exposed-modules: Servant.Links
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base                   >= 4.9      && < 4.20
-    , bytestring             >= 0.10.8.1 && < 0.13
-    , constraints            >= 0.2
-    , containers             >= 0.6      && < 0.7
-    , mtl                    ^>= 2.2.2   || ^>= 2.3.1
-    , sop-core               >= 0.4.0.0  && < 0.6
-    , transformers           >= 0.5.2.0  && < 0.7
-    , text                   >= 1.2.3.0  && < 2.2
-
+    , base          >=4.9      && <4.20
+    , bytestring    >=0.10.8.1 && <0.13
+    , constraints   >=0.2
+    , containers    >=0.6      && <0.7
+    , mtl           ^>=2.2.2   || ^>=2.3.1
+    , sop-core      >=0.4.0.0  && <0.6
+    , text          >=1.2.3.0  && <2.2
+    , transformers  >=0.5.2.0  && <0.7
 
   -- We depend (heavily) on the API of these packages:
   -- i.e. re-export, or allow using without direct dependency
   build-depends:
-      http-api-data          >= 0.4.1    && < 0.7
-    , singleton-bool         >= 0.1.4    && < 0.2
+    , http-api-data   >=0.4.1 && <0.7
+    , singleton-bool  >=0.1.4 && <0.2
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      aeson                  >= 1.4.1.0  && < 2.3
-    , attoparsec             >= 0.13.2.2 && < 0.15
-    , bifunctors             >= 5.5.3    && < 5.7
-    , case-insensitive       >= 1.2.0.11 && < 1.3
-    , deepseq                >= 1.4.2.0  && < 1.6
-    , http-media             >= 0.7.1.3  && < 0.9
-    , http-types             >= 0.12.2   && < 0.13
-    , mmorph                 >= 1.1.2    && < 1.3
-    , network-uri            >= 2.6.1.0  && < 2.7
-    , QuickCheck             >= 2.12.6.1 && < 2.15
-    , vault                  >= 0.3.1.2  && < 0.4
+    , aeson             >=1.4.1.0  && <2.3
+    , attoparsec        >=0.13.2.2 && <0.15
+    , bifunctors        >=5.5.3    && <5.7
+    , case-insensitive  >=1.2.0.11 && <1.3
+    , deepseq           >=1.4.2.0  && <1.6
+    , http-media        >=0.7.1.3  && <0.9
+    , http-types        >=0.12.2   && <0.13
+    , mmorph            >=1.1.2    && <1.3
+    , network-uri       >=2.6.1.0  && <2.7
+    , QuickCheck        >=2.12.6.1 && <2.15
+    , vault             >=0.3.1.2  && <0.4
 
-  hs-source-dirs: src
-  default-language: Haskell2010
-  other-extensions: AllowAmbiguousTypes
-                  , CPP
-                  , ConstraintKinds
-                  , DataKinds
-                  , DeriveDataTypeable
-                  , DeriveGeneric
-                  , ExplicitNamespaces
-                  , FlexibleContexts
-                  , FlexibleInstances
-                  , FunctionalDependencies
-                  , GADTs
-                  , KindSignatures
-                  , MultiParamTypeClasses
-                  , OverloadedStrings
-                  , PolyKinds
-                  , RankNTypes
-                  , ScopedTypeVariables
-                  , TupleSections
-                  , TypeFamilies
-                  , TypeOperators
-                  , UndecidableInstances
-
-  ghc-options: -Wall -Wno-redundant-constraints
+  hs-source-dirs:  src
 
 test-suite spec
-  type: exitcode-stdio-1.0
-  ghc-options: -Wall
-  default-language: Haskell2010
-  hs-source-dirs: test
-  main-is: Spec.hs
+  import:             extensions
+  import:             ghc-options
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     test
+  main-is:            Spec.hs
   other-modules:
-      Servant.API.ContentTypesSpec
-      Servant.API.ResponseHeadersSpec
-      Servant.API.StreamSpec
-      Servant.LinksSpec
+    Servant.API.ContentTypesSpec
+    Servant.API.ResponseHeadersSpec
+    Servant.API.StreamSpec
+    Servant.LinksSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
-      base
-    , base-compat
     , aeson
+    , base
     , bytestring
     , http-media
     , mtl
@@ -162,9 +183,8 @@ test-suite spec
 
   -- Additional dependencies
   build-depends:
-      hspec                >= 2.6.0    && < 2.12
-    , QuickCheck           >= 2.12.6.1 && < 2.15
-    , quickcheck-instances >= 0.3.19   && < 0.4
+    , hspec                 >=2.6.0    && <2.12
+    , QuickCheck            >=2.12.6.1 && <2.15
+    , quickcheck-instances  >=0.3.19   && <0.4
 
-  build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && < 2.12
+  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.12

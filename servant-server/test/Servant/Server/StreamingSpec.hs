@@ -81,10 +81,10 @@ spec = do
 executeRequest :: Application -> Request -> IO Response
 executeRequest app request = do
   responseMVar <- newEmptyMVar
-  let respond response = do
+  let respondToRequest response = do
         putMVar responseMVar response
         return ResponseReceived
-  ResponseReceived <- app request respond
+  ResponseReceived <- app request respondToRequest
   takeMVar responseMVar
 
 timeout :: IO a -> IO a
