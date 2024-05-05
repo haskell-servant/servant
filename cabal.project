@@ -54,6 +54,11 @@ packages:
 
 tests: True
 optimization: False
+
+-- Development flags
+package *
+  ghc-options: -fshow-hole-constraints -fhide-source-paths
+
 -- reorder-goals: True
 
 -- Print ticks so that doctest type querying is consistent across GHC versions.

@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -32,7 +31,8 @@ import           Control.Monad.Codensity
                  (Codensity (..))
 import           Control.Monad.Error.Class
                  (MonadError (..))
-import           Control.Monad.Reader
+import           Control.Monad.IO.Class (MonadIO(..))
+import           Control.Monad.Reader (MonadReader(..), ReaderT(..))
 import           Control.Monad.STM
                  (atomically)
 import           Control.Monad.Trans.Except
@@ -58,6 +58,7 @@ import           Servant.Client.Internal.HttpClient
                  clientResponseToResponse, mkClientEnv, mkFailureResponse,
                  defaultMakeClientRequest)
 import qualified Servant.Types.SourceT              as S
+import Control.Monad.Trans.Class (MonadTrans(..))
 
 
 -- | Generates a set of client functions for an API.
@@ -102,7 +103,7 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
   { unClientM :: ReaderT ClientEnv (ExceptT ClientError (Codensity IO)) a }
-  deriving ( Functor, Applicative, Monad, MonadIO, Generic
+  deriving newtype ( Functor, Applicative, Monad, MonadIO, Generic
            , MonadReader ClientEnv, MonadError ClientError)
 
 instance MonadBase IO ClientM where

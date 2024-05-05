@@ -1,16 +1,5 @@
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveDataTypeable     #-}
-{-# LANGUAGE DeriveFunctor          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeFamilyDependencies #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_HADDOCK not-home        #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 -- | This module provides facilities for adding headers to a response.
 --

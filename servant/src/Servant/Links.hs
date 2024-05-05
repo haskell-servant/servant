@@ -1,27 +1,13 @@
-{-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE InstanceSigs           #-}
-{-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE QuantifiedConstraints  #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
-
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# OPTIONS_HADDOCK not-home        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# OPTIONS_GHC -Wno-missing-methods #-}
+{-# OPTIONS_GHC -Wno-missing-methods -Wno-redundant-constraints #-}
 
 -- | Type safe generation of internal links.
 --
 -- Given an API with a few endpoints:
 --
--- >>> :set -XDataKinds -XTypeFamilies -XTypeOperators
+-- >>> :set -XDataKinds -XTypeFamilies -XTypeOperators -XPolyKinds
 -- >>> import Servant.API
 -- >>> import Servant.Links
 -- >>> import Web.HttpApiData (toUrlPiece)
@@ -133,7 +119,7 @@ module Servant.Links (
 
 import           Data.Kind
                  (Type)
-import           Data.List
+import qualified Data.List as List
 import           Data.Constraint
 import           Data.Proxy
                  (Proxy (..))
@@ -297,14 +283,14 @@ linkURI' :: LinkArrayElementStyle -> Link -> URI
 linkURI' addBrackets (Link segments q_params mfragment) =
     URI mempty  -- No scheme (relative)
         Nothing -- Or authority (relative)
-        (intercalate "/" $ map getEscaped segments)
+        (List.intercalate "/" $ map getEscaped segments)
         (makeQueries q_params)
         (makeFragment mfragment)
   where
     makeQueries :: [Param] -> String
     makeQueries [] = ""
     makeQueries xs =
-        "?" <> intercalate "&" (fmap makeQuery xs)
+        "?" <> List.intercalate "&" (fmap makeQuery xs)
 
     makeQuery :: Param -> String
     makeQuery (ArrayElemParam k v) = escape k <> style <> escape (Text.unpack v)
@@ -357,7 +343,7 @@ safeLink' toA _ endpoint = toLink toA endpoint (Link mempty mempty mempty)
 -- Note: nested APIs don't work well with this approach
 --
 -- >>> :kind! MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link
--- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link :: *
+-- MkLink (Capture "nest" Char :> (Capture "x" Int :> Get '[JSON] Int :<|> Capture "y" Double :> Get '[JSON] Double)) Link :: Type
 -- = Char -> (Int -> Link) :<|> (Double -> Link)
 allLinks
     :: forall api. HasLink api
@@ -393,10 +379,11 @@ allLinks' toA api = toLink toA api (Link mempty mempty mempty)
 --
 -- @since 0.14.1
 fieldLink
-    :: ( IsElem endpoint (ToServantApi routes), HasLink endpoint
+    :: ( IsElem endpoint (ToServantApi routes)
+       , HasLink endpoint
        , GenericServant routes AsApi
        )
-    => (routes AsApi -> endpoint)
+    =>(routes AsApi -> endpoint)
     -> MkLink endpoint Link
 fieldLink = fieldLink' id
 
@@ -405,10 +392,11 @@ fieldLink = fieldLink' id
 -- @since 0.14.1
 fieldLink'
     :: forall routes endpoint a.
-       ( IsElem endpoint (ToServantApi routes), HasLink endpoint
+       ( IsElem endpoint (ToServantApi routes)
+       , HasLink endpoint
        , GenericServant routes AsApi
        )
-    => (Link -> a)
+    =>(Link -> a)
     -> (routes AsApi -> endpoint)
     -> MkLink endpoint a
 fieldLink' toA _ = safeLink' toA (genericApi (Proxy :: Proxy routes)) (Proxy :: Proxy endpoint)
@@ -487,7 +475,7 @@ instance (KnownSymbol sym, ToHttpApiData v, HasLink sub)
     type MkLink (QueryParams sym v :> sub) a = [v] -> MkLink sub a
     toLink toA _ l =
         toLink toA (Proxy :: Proxy sub) .
-            foldl' (\l' v -> addQueryParam (ArrayElemParam k (toQueryParam v)) l') l
+            List.foldl' (\l' v -> addQueryParam (ArrayElemParam k (toQueryParam v)) l') l
       where
         k = symbolVal (Proxy :: Proxy sym)
 
@@ -529,7 +517,7 @@ instance (ToHttpApiData v, HasLink sub)
   where
     type MkLink (CaptureAll sym v :> sub) a = [v] -> MkLink sub a
     toLink toA _ l vs = toLink toA (Proxy :: Proxy sub) $
-        foldl' (flip $ addSegment . escaped . Text.unpack . toUrlPiece) l vs
+        List.foldl' (flip $ addSegment . escaped . Text.unpack . toUrlPiece) l vs
 
 instance HasLink sub => HasLink (Header' mods sym (a :: Type) :> sub) where
     type MkLink (Header' mods sym a :> sub) r = MkLink sub r

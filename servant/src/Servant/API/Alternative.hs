@@ -1,10 +1,12 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveTraversable  #-}
-{-# LANGUAGE TypeOperators      #-}
+{-# LANGUAGE CPP      #-}
 {-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Alternative ((:<|>)(..)) where
 
-import           Control.Applicative (liftA2)
+#if !MIN_VERSION_base(4,18,0)
+import Control.Applicative (liftA2)
+#endif
 import           Data.Biapplicative
                  (Biapplicative (..))
 import           Data.Bifoldable

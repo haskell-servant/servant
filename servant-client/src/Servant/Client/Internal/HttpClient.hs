@@ -1,15 +1,4 @@
 {-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE NamedFieldPuns             #-}
 module Servant.Client.Internal.HttpClient where
 
 import           Prelude ()
@@ -44,14 +33,12 @@ import qualified Data.ByteString             as BS
 import           Data.ByteString.Builder
                  (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
-import           Data.Either
-                 (either)
 import           Data.Foldable
                  (foldl',toList)
 import           Data.Functor.Alt
                  (Alt (..))
 import           Data.Maybe
-                 (maybe, maybeToList)
+                 (maybeToList)
 import           Data.Proxy
                  (Proxy (..))
 import           Data.Sequence
@@ -64,7 +51,7 @@ import           GHC.Generics
 import           Network.HTTP.Media
                  (renderHeader)
 import           Network.HTTP.Types
-                 (hContentType, renderQuery, statusIsSuccessful, urlEncode, Status)
+                 (hContentType, statusIsSuccessful, urlEncode, Status)
 import           Servant.Client.Core
 
 import qualified Network.HTTP.Client         as Client
@@ -146,7 +133,7 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
   { unClientM :: ReaderT ClientEnv (ExceptT ClientError IO) a }
-  deriving ( Functor, Applicative, Monad, MonadIO, Generic
+  deriving newtype ( Functor, Applicative, Monad, MonadIO, Generic
            , MonadReader ClientEnv, MonadError ClientError, MonadThrow
            , MonadCatch, MonadMask)
 

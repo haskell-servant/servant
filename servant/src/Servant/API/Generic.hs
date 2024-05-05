@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 {-# LANGUAGE TypeOperators    #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 -- | Define servant servers from record types. Generics for the win.
 --
 -- The usage is simple, if you only need a collection of routes.  First you

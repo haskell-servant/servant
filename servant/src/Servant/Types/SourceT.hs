@@ -1,9 +1,4 @@
 {-# LANGUAGE CPP                 #-}
-{-# LANGUAGE DeriveFunctor       #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
 module Servant.Types.SourceT where
 
 import           Control.Monad.Except
@@ -24,6 +19,7 @@ import           System.IO
 import qualified Test.QuickCheck            as QC
 
 -- $setup
+-- >>> :set -XNoOverloadedStrings
 -- >>> import Data.String (fromString)
 -- >>> import Control.Monad.Except (runExcept)
 -- >>> import Data.Foldable (toList)
@@ -325,8 +321,8 @@ fromActionStep stop action = loop where
 -- | Read file.
 --
 -- >>> foreach fail BS.putStr (readFile "servant.cabal")
--- cabal-version:       2.2
--- name:                servant
+-- cabal-version:      3.0
+-- name:               servant
 -- ...
 --
 readFile :: FilePath -> SourceT IO BS.ByteString

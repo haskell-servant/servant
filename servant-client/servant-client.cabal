@@ -1,9 +1,8 @@
-cabal-version:       2.2
-name:                servant-client
-version:             0.20
-
-synopsis:            Automatic derivation of querying functions for servant
-category:            Servant, Web
+cabal-version:      3.0
+name:               servant-client
+version:            0.20
+synopsis:           Automatic derivation of querying functions for servant
+category:           Servant, Web
 description:
   This library lets you derive automatically Haskell functions that
   let you query each endpoint of a <http://hackage.haskell.org/package/servant servant> webservice.
@@ -12,133 +11,190 @@ description:
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md CHANGELOG>
 
-homepage:            http://docs.servant.dev/
-bug-reports:         http://github.com/haskell-servant/servant/issues
-license:             BSD-3-Clause
-license-file:        LICENSE
-author:              Servant Contributors
-maintainer:          haskell-servant-maintainers@googlegroups.com
-copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
-build-type:          Simple
-tested-with: GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.8, GHC ==9.4.8, GHC ==9.6.4, GHC ==9.8.2
+homepage:           http://docs.servant.dev/
+bug-reports:        http://github.com/haskell-servant/servant/issues
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Servant Contributors
+maintainer:         haskell-servant-maintainers@googlegroups.com
+copyright:
+  2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
+
+build-type:         Simple
+tested-with:
+  GHC ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.2
 
 extra-source-files:
   CHANGELOG.md
   README.md
 
 source-repository head
-  type: git
+  type:     git
   location: http://github.com/haskell-servant/servant.git
 
+common extensions
+  default-extensions:
+    AllowAmbiguousTypes
+    ConstraintKinds
+    DataKinds
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFunctor
+    DeriveGeneric
+    DerivingStrategies
+    DerivingVia
+    DuplicateRecordFields
+    ExplicitNamespaces
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    GeneralizedNewtypeDeriving
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    NamedFieldPuns
+    NoStarIsType
+    OverloadedLabels
+    OverloadedStrings
+    PackageImports
+    PolyKinds
+    QuantifiedConstraints
+    RankNTypes
+    RecordWildCards
+    ScopedTypeVariables
+    StrictData
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    UndecidableInstances
+    ViewPatterns
+
+  default-language:   Haskell2010
+
+common ghc-options
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+    -fhide-source-paths -Wno-unused-do-bind -fdicts-strict
+    -Wno-unticked-promoted-constructors -Werror=unused-imports
+    -Wunused-packages
+
 library
+  import:          extensions
+  import:          ghc-options
   exposed-modules:
     Servant.Client
-    Servant.Client.Streaming
     Servant.Client.Internal.HttpClient
     Servant.Client.Internal.HttpClient.Streaming
+    Servant.Client.Streaming
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   build-depends:
-      base                  >= 4.9      && < 4.20
-    , bytestring            >= 0.10.8.1 && < 0.13
-    , containers            >= 0.5.7.1  && < 0.7
-    , deepseq               >= 1.4.2.0  && < 1.6
-    , mtl                   ^>= 2.2.2   || ^>= 2.3.1
-    , stm                   >= 2.4.5.1  && < 2.6
-    , text                  >= 1.2.3.0  && < 2.2
-    , time                  >= 1.6.0.1  && < 1.13
-    , transformers          >= 0.5.2.0  && < 0.7
-
-  if !impl(ghc >= 8.2)
-    build-depends:
-      bifunctors >= 5.5.3 && < 5.7
+    , base          >=4.9      && <4.20
+    , bytestring    >=0.10.8.1 && <0.13
+    , containers    >=0.5.7.1  && <0.7
+    , deepseq       >=1.4.2.0  && <1.6
+    , mtl           ^>=2.2.2   || ^>=2.3.1
+    , stm           >=2.4.5.1  && <2.6
+    , time          >=1.6.0.1  && <1.13
+    , transformers  >=0.5.2.0  && <0.7
 
   -- Servant dependencies.
   -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
-      servant               >= 0.20 && < 0.21
-    , servant-client-core   >= 0.20 && < 0.21
+    , servant              >=0.20 && <0.21
+    , servant-client-core  >=0.20 && <0.21
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat           >= 0.10.5   && < 0.14
-    , http-client           >= 0.5.13.1 && < 0.8
-    , http-media            >= 0.7.1.3  && < 0.9
-    , http-types            >= 0.12.2   && < 0.13
-    , exceptions            >= 0.10.0   && < 0.11
-    , kan-extensions        >= 5.2      && < 5.3
-    , monad-control         >= 1.0.2.3  && < 1.1
-    , semigroupoids         >= 5.3.1    && < 6.1
-    , transformers-base     >= 0.4.5.2  && < 0.5
-    , transformers-compat   >= 0.6.2    && < 0.8
+    , base-compat          >=0.10.5   && <0.14
+    , exceptions           >=0.10.0   && <0.11
+    , http-client          >=0.5.13.1 && <0.8
+    , http-media           >=0.7.1.3  && <0.9
+    , http-types           >=0.12.2   && <0.13
+    , kan-extensions       >=5.2      && <5.3
+    , monad-control        >=1.0.2.3  && <1.1
+    , semigroupoids        >=5.3.1    && <6.1
+    , transformers-base    >=0.4.5.2  && <0.5
 
-  hs-source-dirs: src
-  default-language: Haskell2010
-  ghc-options: -Wall -Wno-redundant-constraints
+  hs-source-dirs:  src
 
 test-suite spec
-  type: exitcode-stdio-1.0
-  ghc-options: -Wall -rtsopts -threaded "-with-rtsopts=-T -N2"
-  default-language: Haskell2010
+  import:             extensions
+  import:             ghc-options
+  type:               exitcode-stdio-1.0
+  ghc-options:        -Wall -rtsopts -threaded "-with-rtsopts=-T -N2"
+
   if impl(ghcjs)
-     buildable: False
-  hs-source-dirs: test
-  main-is: Spec.hs
+    buildable: False
+
+  hs-source-dirs:     test
+  main-is:            Spec.hs
   other-modules:
-      Servant.BasicAuthSpec
-      Servant.BrokenSpec
-      Servant.ClientTestUtils
-      Servant.ConnectionErrorSpec
-      Servant.FailSpec
-      Servant.GenAuthSpec
-      Servant.GenericSpec
-      Servant.HoistClientSpec
-      Servant.StreamSpec
-      Servant.SuccessSpec
-      Servant.WrappedApiSpec
+    Servant.BasicAuthSpec
+    Servant.BrokenSpec
+    Servant.ClientTestUtils
+    Servant.ConnectionErrorSpec
+    Servant.FailSpec
+    Servant.GenAuthSpec
+    Servant.GenericSpec
+    Servant.HoistClientSpec
+    Servant.MiddlewareSpec
+    Servant.StreamSpec
+    Servant.SuccessSpec
+    Servant.WrappedApiSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
-      base
     , aeson
+    , base
     , base-compat
     , bytestring
     , http-api-data
     , http-client
     , http-types
     , mtl
-    , kan-extensions
     , servant-client
     , servant-client-core
     , sop-core
     , stm
     , text
     , transformers
-    , transformers-compat
     , wai
     , warp
 
   -- Additional dependencies
   build-depends:
-      entropy           >= 0.4.1.3  && < 0.5
-    , hspec             >= 2.6.0    && < 2.12
-    , HUnit             >= 1.6.0.0  && < 1.7
-    , network           >= 2.8.0.0  && < 3.3
-    , QuickCheck        >= 2.12.6.1 && < 2.15
-    , servant           >= 0.20     && < 0.21
-    , servant-server    >= 0.20     && < 0.21
+    , entropy         >=0.4.1.3  && <0.5
+    , hspec           >=2.6.0    && <2.12
+    , HUnit           >=1.6.0.0  && <1.7
+    , network         >=2.8.0.0  && <3.3
+    , QuickCheck      >=2.12.6.1 && <2.15
+    , servant         >=0.20     && <0.21
+    , servant-server  >=0.20     && <0.21
 
-  build-tool-depends:
-    hspec-discover:hspec-discover >= 2.6.0 && < 2.12
+  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.12
 
 test-suite readme
-  type:           exitcode-stdio-1.0
-  main-is:        README.lhs
-  build-depends:  base, servant, http-client, text, servant-client, markdown-unlit
+  import:             extensions
+  import:             ghc-options
+  type:               exitcode-stdio-1.0
+  main-is:            README.lhs
+  build-depends:
+    , base
+    , http-client
+    , markdown-unlit
+    , servant
+    , servant-client
+    , text
+
   build-tool-depends: markdown-unlit:markdown-unlit
-  ghc-options:    -pgmL markdown-unlit
-  default-language: Haskell2010
+  ghc-options:        -pgmL markdown-unlit
+
   if impl(ghcjs)
-     buildable: False
+    buildable: False

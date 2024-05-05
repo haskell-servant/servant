@@ -31,6 +31,7 @@ import           Control.Exception
                  (evaluate)
 import           GHC.Generics
 import           Test.Hspec
+import           Network.HTTP.Media () -- for CPP
 import           Test.QuickCheck
 import           "quickcheck-instances" Test.QuickCheck.Instances ()
 import           Text.Read
