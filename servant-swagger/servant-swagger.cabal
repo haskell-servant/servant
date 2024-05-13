@@ -28,7 +28,7 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           (c) 2015-2018, Servant contributors
 category:            Web, Servant, Swagger
 build-type:          Custom
-tested-with: GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.8, GHC ==9.4.8, GHC ==9.6.4, GHC ==9.8.2
+tested-with: GHC ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.5 || ==9.8.2 || ==9.10.1
 
 extra-source-files:
     README.md

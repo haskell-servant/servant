@@ -19,7 +19,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 build-type:          Simple
-tested-with: GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.8, GHC ==9.4.8, GHC ==9.6.4, GHC ==9.8.2
+tested-with: GHC ==8.10.7 || ==9.0.2 || ==9.2.8 || ==9.4.8 || ==9.6.5 || ==9.8.2 || ==9.10.1
 
 extra-source-files:
   CHANGELOG.md
