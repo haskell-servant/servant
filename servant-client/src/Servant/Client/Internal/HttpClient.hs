@@ -33,8 +33,10 @@ import qualified Data.ByteString             as BS
 import           Data.ByteString.Builder
                  (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
-import           Data.Foldable
-                 (foldl',toList)
+#if !MIN_VERSION_base_compat(0,14,0)
+import           Data.Foldable (foldl')
+#endif
+import           Data.Foldable (toList)
 import           Data.Functor.Alt
                  (Alt (..))
 import           Data.Maybe
