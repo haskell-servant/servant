@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
 module Servant.Client.Core.HasClient (
     clientIn,
@@ -25,8 +26,10 @@ import           Data.Foldable
                  (toList)
 import           Data.Kind
                  (Type)
+#if !MIN_VERSION_base_compat(0,14,0)
 import           Data.List
                  (foldl')
+#endif
 import           Data.Sequence
                  (fromList)
 import qualified Data.Text                       as T
