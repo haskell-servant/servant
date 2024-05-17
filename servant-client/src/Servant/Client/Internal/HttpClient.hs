@@ -33,10 +33,9 @@ import qualified Data.ByteString             as BS
 import           Data.ByteString.Builder
                  (toLazyByteString)
 import qualified Data.ByteString.Lazy        as BSL
-#if !MIN_VERSION_base_compat(0,14,0)
-import           Data.Foldable (foldl')
-#endif
-import           Data.Foldable (toList)
+import qualified Data.List as List
+import           Data.Foldable
+                 (toList)
 import           Data.Functor.Alt
                  (Alt (..))
 import           Data.Maybe
@@ -294,7 +293,7 @@ defaultMakeClientRequest burl r = return Client.defaultRequest
 
     -- Query string builder which does not do any encoding
     buildQueryString [] = mempty
-    buildQueryString qps = "?" <> foldl' addQueryParam mempty qps
+    buildQueryString qps = "?" <> List.foldl' addQueryParam mempty qps
 
     addQueryParam qs (k, v) =
           qs <> (if BS.null qs then mempty else "&") <> urlEncode True k <> foldMap ("=" <>) v

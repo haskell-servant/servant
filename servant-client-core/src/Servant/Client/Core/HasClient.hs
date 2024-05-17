@@ -26,10 +26,7 @@ import           Data.Foldable
                  (toList)
 import           Data.Kind
                  (Type)
-#if !MIN_VERSION_base_compat(0,14,0)
-import           Data.List
-                 (foldl')
-#endif
+import qualified Data.List as List
 import           Data.Sequence
                  (fromList)
 import qualified Data.Text                       as T
@@ -232,7 +229,7 @@ instance (ToHttpApiData a, HasClient m sublayout)
 
   clientWithRoute pm Proxy req vals =
     clientWithRoute pm (Proxy :: Proxy sublayout)
-                    (foldl' (flip appendToPath) req ps)
+                    (List.foldl' (flip appendToPath) req ps)
 
     where ps = map toEncodedUrlPiece vals
 
@@ -603,7 +600,7 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
 
   clientWithRoute pm Proxy req paramlist =
     clientWithRoute pm (Proxy :: Proxy api)
-                    (foldl' (\ req' -> maybe req' (flip (appendToQueryString pname) req' . Just))
+                    (List.foldl' (\ req' -> maybe req' (flip (appendToQueryString pname) req' . Just))
                             req
                             paramlist'
                     )
@@ -672,7 +669,7 @@ instance (KnownSymbol sym, ToDeepQuery a, HasClient m api)
 
   clientWithRoute pm Proxy req deepObject =
     let params = toDeepQuery deepObject
-        withParams = foldl' addDeepParam req params
+        withParams = List.foldl' addDeepParam req params
         addDeepParam r' kv =
           let (k, textV) = generateDeepParam paramname kv
            in appendToQueryString k (encodeUtf8 <$> textV) r'
