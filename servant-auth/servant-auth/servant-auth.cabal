@@ -37,7 +37,7 @@ library
     , containers              >= 0.6      && < 0.7
     , aeson                   >= 2.0      && < 3
     , jose                    >= 0.10     && < 0.12
-    , lens                    >= 4.16.1   && < 5.3
+    , lens                    >= 4.16.1   && < 5.4
     , servant                 >= 0.15     && < 0.21
     , text                    >= 1.2.3.0  && < 2.2
     , unordered-containers    >= 0.2.9.0  && < 0.3

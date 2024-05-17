@@ -37,7 +37,7 @@ library
     , swagger2        >= 2.2.2   && < 3
     , servant         >= 0.13    && < 0.21
     , servant-auth    == 0.4.*
-    , lens            >= 4.16.1  && < 5.3
+    , lens            >= 4.16.1  && < 5.4
   exposed-modules:
       Servant.Auth.Swagger
   default-language: Haskell2010
