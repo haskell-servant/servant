@@ -115,7 +115,7 @@ test-suite spec
     , hspec             >= 2.6.0    && < 2.12
     , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 2.8.0.0  && < 3.3
-    , QuickCheck        >= 2.12.6.1 && < 2.15
+    , QuickCheck        >= 2.12.6.1 && < 2.16
     , servant-server    >= 0.20 && < 0.21
     , servant           >= 0.20 && < 0.21
 
