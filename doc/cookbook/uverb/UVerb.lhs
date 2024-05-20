@@ -73,7 +73,7 @@ instance ToJSON FisxUser
 instance FromJSON FisxUser
 instance ToSchema FisxUser
 
--- | 'HasStatus' allows us to can get around 'WithStatus' if we want
+-- | 'HasStatus' allows us to get around 'WithStatus' if we want
 -- to, and associate the status code with our resource types directly.
 --
 -- (To avoid orphan instances and make it more explicit what's in the
