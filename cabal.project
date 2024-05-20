@@ -36,7 +36,6 @@ packages:
   doc/cookbook/db-postgres-pool
   doc/cookbook/db-sqlite-simple
   doc/cookbook/file-upload
-  doc/cookbook/generic
   doc/cookbook/named-routes
   doc/cookbook/hoist-server-with-context
   doc/cookbook/https

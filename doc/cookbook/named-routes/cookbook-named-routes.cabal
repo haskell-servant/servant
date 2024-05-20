@@ -20,7 +20,8 @@ executable cookbook-named-routes
     , servant
     , servant-client
     , servant-client-core
-    , servant-server
+    , servant-server 
+    , transformers
     , text
     , wai                  >=3.2
     , warp                 >=3.2

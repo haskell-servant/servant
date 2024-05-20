@@ -1,15 +1,10 @@
-# Record-based APIs: the nested case
+# Record-based APIs
 
 *Available in Servant 0.19 or higher*
 
-Servant offers a very natural way of constructing APIs with nested records, called `NamedRoutes`.
+Servant offers a very natural way of constructing APIs with records and nested records.
 
-This cookbook explains how to implement such nested-record-based-APIs using
-`NamedRoutes` through the example of a Movie Catalog.
-If you don't need the nested aspect of the record-based API, you might want to look at [Record-based
-APIs: the simple case](../generic/Generic.html) cookbook
-which covers a simpler implementation in which every endpoint is on the same
-level.
+This cookbook explains how to implement APIs using records.  
 
 First, we start by constructing the domain types of our Movie Catalog.
 After, we show you how to implement the API type with the NamedRoutes records.
@@ -19,45 +14,113 @@ However, it should be understood that this cookbook does _not_ dwell on the
 built-in servant combinators as the [Structuring APIs](<../structuring-apis/StructuringApis.html>) 
 cookbook already covers that angle.
 
+## Motivation: Why would I want to use records over the `:<|>` operator?
 
-## Boilerplate time!
+With a record-based API, we don’t need to care about the declaration order of the endpoints.
+For example, with the `:<|>` operator there’s room for error when the order of the API type
 
-First, let’s get rid of the extensions and imports boilerplate in order to focus on our new technique:
-
-
-```haskell
-{-# LANGUAGE DataKinds          #-}
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE TypeOperators      #-}
-
-import GHC.Generics               ( Generic )
-import Data.Aeson                 ( FromJSON, ToJSON )
-import Data.Proxy                 ( Proxy(..) )
-import Network.Wai.Handler.Warp   ( run )
-
-import Servant                    ( NamedRoutes
-                                  , Handler, serve )
-import Servant.API                (Capture, Delete, Get, Put, QueryParam, ReqBody
-                                  , JSON, NoContent (..)
-                                  , FromHttpApiData (..),ToHttpApiData(..)
-                                  , (:>) )
-import Servant.API.Generic        ( (:-) )
-
-import Servant.Client             ( AsClientT, ClientM, client
-                                  , (//), (/:) )
-import Servant.Client.Generic     ()
-
-import Servant.Server             ( Application )
-import Servant.Server.Generic     ( AsServer )
-
+```haskell,ignore
+type API1  =   "version" :> Get '[JSON] Version
+                :<|>  "movies" :> Get '[JSON] [Movie]
+```
+does not follow the `Handler` implementation order
+```haskell,ignore
+apiHandler :: ServerT API1 Handler
+apiHandler =   getMovies
+                 :<|> getVersion
+```
+GHC can and will scold you with a very tedious message such as :
+```console
+    • Couldn't match type 'Handler NoContent'
+                     with 'Movie -> Handler NoContent'
+      Expected type: ServerT MovieCatalogAPI Handler
+        Actual type: Handler Version
+                     :<|> ((Maybe SortBy -> Handler [Movie])
+                           :<|> ((MovieId -> Handler (Maybe Movie))
+                                 :<|> ((MovieId -> Movie -> Handler NoContent)
+                                       :<|> (MovieId -> Handler NoContent))))
+    • In the expression:
+        versionHandler
+          :<|>
+            movieListHandler
+              :<|>
+                getMovieHandler :<|> updateMovieHandler :<|> deleteMovieHandler
+      In an equation for 'server':
+          server
+            = versionHandler
+                :<|>
+                  movieListHandler
+                    :<|>
+                      getMovieHandler :<|> updateMovieHandler :<|> deleteMovieHandler
+    |
+226 | server = versionHandler
+    |
+```
+On the contrary, with the record-based technique, we refer to the routes by their name:
+```haskell,ignore
+data API mode = API
+    { list   :: "list" :> ...
+    , delete ::  "delete" :> ...
+    }
+```
+and GHC follows the lead:
+```console
+    • Couldn't match type 'NoContent' with 'Movie'
+      Expected type: AsServerT Handler :- Delete '[JSON] Movie
+        Actual type: Handler NoContent
+    • In the 'delete' field of a record
+      In the expression:
+        MovieAPI
+          {get = getMovieHandler movieId,
+           update = updateMovieHandler movieId,
+           delete = deleteMovieHandler movieId}
+      In an equation for 'movieHandler':
+          movieHandler movieId
+            = MovieAPI
+                {get = getMovieHandler movieId,
+                 update = updateMovieHandler movieId,
+                 delete = deleteMovieHandler movieId}
+    |
+252 |     , delete = deleteMovieHandler movieId
+    |
 ```
 
-## Domain context
+So, records are more readable for a human, and GHC gives you more accurate error messages, so 
+why ever look back? Let's get started! 
 
-Now that we’ve handled the boilerplate, we can dive into our Movie Catalog domain.
+
+<details> 
+  <summary>The boilerplate required for both the nested and flat case</summary>
+
+```haskell
+{-# LANGUAGE GHC2021             #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DerivingVia         #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+
+import Control.Exception          (throwIO)
+import Control.Monad.Trans.Reader (ReaderT, runReaderT)
+import Network.Wai.Handler.Warp   (run)
+import System.Environment         (getArgs)
+import Data.Aeson                 (FromJSON (..), ToJSON (..))
+import GHC.Generics               (Generic, Generically (..))
+import Data.List                  (sortOn)
+import Data.Text                  (Text)
+import Data.Foldable              (find)
+
+import Servant 
+import Servant.Client 
+import Servant.Client.Generic 
+import Servant.Server
+import Servant.Server.Generic
+```
+
+</details>
+
+## Domain context
 
 Consider a `Movie` constructed from a `Title` and a `Year` of publication.
 
@@ -68,58 +131,60 @@ data Movie = Movie
     , year :: Year
     }
     deriving stock Generic
-    deriving anyclass (FromJSON, ToJSON)
+    deriving (FromJSON, ToJSON) via Generically Movie
 
-type MovieId = String
-type Title = String
+type MovieId = Text
+type Title = Text
 type Year = Int
-
 ```
 
-
-Let’s forget about the deriving stuff for now and think about the API that we want to make.
+To proceed, let us think about the API we want to build: 
 
 ```
-  "version" -> Get Version
-  /
-api          "list" -> Get [Movie] ?sortBy= Title | Year       (sort by the Title or the Year)
-  \        /
-  "movies"                Get Movie
-           \                /
-            Capture MovieId - Put Movie
-                            \
-                              Delete MovieId
+"version" ───► Get Version                                         
+                                                                  
+"movies" ──┬─► "list" ────────────► Get [Movie] ?sortBy=(Title|Year)
+           │                                                      
+           └─► Capture MovieId ─┬─► Get Movie                       
+                                │                                  
+                                ├─► Put Movie                       
+                                │                                  
+                                └─► Delete Movie
 ```
 
 In this example, we create a very simple endpoint for the Version,
 and several complex endpoints that use nested records for the CRUD part of the movie.
 
-So, the URLs would look like
+So, flattening this out, the URLs a client may call are: 
 
-- GET …/version
-- GET …/movies/list?sortby=Title
-- GET …/movies/<MovieId>/
-- PUT …/movies/<MovieId>/
-- DELETE …/movies/<MovieId>
+- `GET /version`
+- `GET /movies/list?sortby=<title>`
+- `GET /movies/:MovieId`
+- `PUT /movies/:MovieId`
+- `DELETE /movies/:MovieId`
 
 ### API Type
 
-Now that we have a very clear idea of the API we want to make, we need to transform it into usable Haskell code:
+Now that we have a clear idea of the API we want to make, we need to transform it into usable Haskell code, for that, let us first 
+create a `Generic` record type that will hold our Api:
 
 ```haskell
-
 data API mode = API
     { version :: mode :- "version" :> Get '[JSON] Version
     , movies :: mode :- "movies" :> NamedRoutes MoviesAPI
     } deriving stock Generic
 
-type Version = String -- This will do for the sake of example.
-
+type Version = Text -- this will do for the sake of example.
 ```
+
 Here, we see the first node of our tree. It contains the two branches “version” and “movies” respectively:
 
-The “version” branch is very simple and self-explanatory.
-The “movies” branch will contain another node, represented by another record (see above). That is why we need the `NameRoutes` helper.
+The “version” branch reads as follows: "instantiated ad a `mode`, the record field with the name `version` holds a route that needs
+to match the prefix `"version"` and returns a `Version`, serialized as a `JSON` upon issing a `Get` request.
+
+The “movies” branch will contain another node, represented by another record (see above). That is why we need the `NameRoutes` helper, 
+`:>` would normally expect another "standard" `API` tree (the ones with the `:<|>` operator) and `NamedRoutes` gets us one of these 
+when passing a record.
 
 Note:
 
@@ -129,14 +194,15 @@ Let's jump into the "movies" subtree node:
 
 
 ```haskell
-
 data MoviesAPI mode = MoviesAPI
     { list :: mode :- "list" :> QueryParam "SortBy" SortBy :> Get '[JSON] [Movie]
     , movie :: mode :- Capture "movieId" MovieId :> NamedRoutes MovieAPI
     } deriving stock Generic
 
 data SortBy = Year | Title
+  deriving stock (Eq, Ord, Show)
 
+-- ... and the boilerplate to allow for usage as a query param: 
 instance ToHttpApiData SortBy where
   toQueryParam Year = "year"
   toQueryParam Title = "title"
@@ -144,14 +210,14 @@ instance ToHttpApiData SortBy where
 instance FromHttpApiData SortBy where
   parseQueryParam "year" = Right Year
   parseQueryParam "title" = Right Title
-  parseQueryParam param = Left $ param <> " is not a valid value"
-
+  parseQueryParam param = Left $ param <> " is not a valid SortBy"
 ```
+
 So, remember, this type represents the `MoviesAPI` node that we’ve connected earlier to the main `API` tree.
 
 In this subtree, we illustrated both an endpoint with a **query param** and also, a **capture** with a subtree underneath it.
 
-So, let's go deeper into our API tree.
+The first branch is done, now, let's also implement the second one as follows: 
 
 ```haskell
 data MovieAPI mode = MovieAPI
@@ -161,9 +227,7 @@ data MovieAPI mode = MovieAPI
   } deriving stock Generic
 ```
 
-As you can see, we end up implementing the deepest routes of our API.
-
-Small detail: as our main API tree is also a record, we need the `NamedRoutes` helper.
+Small detail: as our main API tree is also a record, we need the `NamedRoutes` helper (to obtain the API proper)
 To improve readability, we suggest you create a type alias:
 
 ```haskell
@@ -178,14 +242,18 @@ Let's make a server and a client out of it!
 
 As you know, we can’t talk about a server, without addressing the handlers.
 
-First, we take our handlers…
+First, we build our handlers (mind that we're cheating a bit, obviously, the `moviesDB` in reality 
+would have to be part of some state, such that we can modify it, additionally, making it a list is not 
+very wise in terms of performance)
 
 ```haskell
 versionHandler :: Handler Version
 versionHandler = pure "0.0.1"
 
 movieListHandler :: Maybe SortBy -> Handler [Movie]
-movieListHandler _ = pure moviesDB
+movieListHandler _ = 
+  -- depending on sortBy, do a different sorting
+  pure moviesDB
 
 moviesDB :: [Movie]
 moviesDB =
@@ -195,11 +263,7 @@ moviesDB =
   ]
 
 getMovieHandler :: MovieId -> Handler (Maybe Movie)
-getMovieHandler requestMovieId = go moviesDB
-  where
-    go [] = pure Nothing
-    go (m : _ms) | movieId m == requestMovieId = pure $ Just m
-    go (_m : ms) = go ms
+getMovieHandler requestMovieId = find (\movie -> movie.movieId == requestMovieId) moviesDB
 
 updateMovieHandler :: MovieId -> Movie -> Handler NoContent
 updateMovieHandler requestedMovieId newMovie =
@@ -236,29 +300,28 @@ movieHandler mId = MovieAPI
     , delete = deleteMovieHandler mId
     }
 ```
-As you might have noticed, we build our handlers out of the same record types we used to define our API: `MoviesAPI` and `MovieAPI`. What kind of magic is this ?
 
-Finally, we can run the server and connect the API routes to the handlers as usual:
+Finally, we can run the server and connect the API routes to the handlers, using the convenient `genericServe` function
 
 ```haskell
-api :: Proxy MovieCatalogAPI
-api = Proxy
-
 main :: IO ()
 main = run 8081 app
 
 app :: Application
-app = serve api server
+app = genericServe server
 ```
+
 Yay! That’s done and we’ve got our server!
 
-## The Client
+## Clients and Links
 
-The client, so to speak, is very easy to implement:
+The clear advantage of record-based generics approach, is that
+we can get safe links and clients very conveniently. We don't need to define endpoint types,
+as field accessors work as proxies - let's demonstrate that with a client: 
 
 ```haskell
 movieCatalogClient :: API (AsClientT ClientM)
-movieCatalogClient = client api -- remember: api :: Proxy MovieCatalogAPI
+movieCatalogClient = genericClient -- this also works with other Monads than ClientM by using `genericClientHoist`
 ```
 
 We’ve also introduced some operators that help navigate through the nested records.
@@ -282,7 +345,41 @@ deleteMovie :: MovieId -> ClientM NoContent
 deleteMovie mId = movieCatalogClient // movies // movie /: mId // delete
 ```
 
-Done! We’ve got our client!
+Done! We’ve got our client, now let's turn to the links: 
+
+```haskell
+-- a single link: 
+versionLink :: Link 
+versionLink = fieldLink version
+
+-- links for the entire route: 
+routesLinks :: API (AsLink Link)
+routesLinks = allFieldLinks
+```
+
+## Using record-based APIs together with a custom monad
+
+If your app uses a custom monad, here's how you can combine it with
+generics.
+
+```haskell
+-- for some custom Environment
+data HandlerEnv = MkHandlerEnv
+
+type AppM = ReaderT HandlerEnv Handler
+
+-- we need to provide a natural transformation
+appToHandler :: HandlerEnv -> (forall a. AppM a -> Handler a)
+appToHandler env act = runReaderT act env
+
+-- which we can then use in `genericServeT`
+appMyMonad :: HandlerEnv -> Application
+appMyMonad env = genericServeT (appToHandler env) appMapi
+  where 
+    appMapi = undefined
+```
+
+There is also a combinator for serving with a `Context`, `genericServeWithContextT`.
 
 ## Conclusion
 
