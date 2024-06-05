@@ -16,14 +16,14 @@ maintainer:     jkarni@gmail.com
 copyright:      (c) Julian K. Arni
 license:        BSD-3-Clause
 license-file:   LICENSE
-tested-with:    GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4
+tested-with:    GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4, GHC ==9.10.1
 build-type:     Custom
 extra-source-files:
     CHANGELOG.md
 
 custom-setup
   setup-depends:
-    base < 4.20, Cabal < 4, cabal-doctest >=1.0.6 && <1.1
+    base < 4.21, Cabal < 4, cabal-doctest >=1.0.6 && <1.1
 
 source-repository head
   type: git
@@ -35,7 +35,7 @@ library
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base         >= 4.10    && < 4.20
+      base         >= 4.10    && < 4.21
     , servant-docs >= 0.13    && < 0.14
     , servant      >= 0.13    && < 0.21
     , servant-auth == 0.4.*

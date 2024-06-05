@@ -12,7 +12,7 @@ maintainer:         haskell-servant-maintainers@googlegroups.com
 category:           Web
 build-type:         Simple
 extra-source-files: CHANGELOG.yaml
-tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.1
+tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.1 || ==9.10.1
 
 source-repository head
   type:     git
@@ -36,7 +36,7 @@ library
   ghc-options:        -Wall -Wcompat
   build-depends:
       aeson                  >=0.8    && <2.3
-    , base                   >=4.9    && <4.20
+    , base                   >=4.9    && <4.21
     , base-compat-batteries  >=0.10.1 && <0.15
     , bytestring             >=0.10   && <0.13
     , case-insensitive       >=1.2    && <1.3
