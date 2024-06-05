@@ -71,6 +71,9 @@ if(impl(ghc >= 9.6.1))
     ghc-options: -fprint-redundant-promotion-ticks
 
 allow-newer: postgresql-simple:base
+allow-newer: postgresql-simple:template-haskell
+allow-newer: postgresql-simple:containers
+allow-newer: postgresql-libpq:base
 allow-newer: servant-swagger-ui:base
 allow-newer: servant-swagger-ui-core:base
 allow-newer: file-embed-lzma:base
