@@ -69,3 +69,29 @@ if(impl(ghc >= 9.6.1))
 
   package servant-server
     ghc-options: -fprint-redundant-promotion-ticks
+
+allow-newer: postgresql-simple:base
+allow-newer: postgresql-simple:template-haskell
+allow-newer: postgresql-simple:containers
+allow-newer: postgresql-libpq:base
+allow-newer: servant-swagger-ui:base
+allow-newer: servant-swagger-ui-core:base
+allow-newer: file-embed-lzma:base
+allow-newer: file-embed-lzma:template-haskell
+allow-newer: file-embed-lzma:filepath
+allow-newer: lzma:base
+allow-newer: servant-openapi3:base
+allow-newer: insert-ordered-containers:base
+allow-newer: insert-ordered-containers:lens
+allow-newer: openapi3:base
+allow-newer: openapi3:template-haskell
+allow-newer: swagger2:base
+allow-newer: swagger2:template-haskell
+allow-newer: swagger2:lens
+allow-newer: swagger2:containers
+allow-newer: pipes-safe:base
+allow-newer: servant-js:base
+allow-newer: servant-js:lens
+allow-newer: lucid:base
+allow-newer: stringsearch:containers
+allow-newer: Cabal
