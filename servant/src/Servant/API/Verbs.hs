@@ -22,14 +22,16 @@ import           Network.HTTP.Types.Method
                  (Method, StdMethod (..), methodConnect, methodDelete,
                  methodGet, methodHead, methodOptions, methodPatch, methodPost,
                  methodPut, methodTrace)
+import Servant.API.MultiVerb (MultiVerb1, Respond)
 
 -- | @Verb@ is a general type for representing HTTP verbs (a.k.a. methods). For
 -- convenience, type synonyms for each verb with a 200 response code are
 -- provided, but you are free to define your own:
 --
 -- >>> type Post204 contentTypes a = Verb 'POST 204 contentTypes a
-data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [Type]) (a :: Type)
-  deriving (Typeable, Generic)
+-- data Verb (method :: k1) (statusCode :: Nat) (contentTypes :: [Type]) (a :: Type)
+type Verb (method :: StdMethod) (statusCode :: Nat) (contentTypes :: [Type]) (returnType :: Type)
+    = MultiVerb1 method contentTypes (Respond statusCode "" returnType) 
 
 -- | @NoContentVerb@ is a specific type to represent 'NoContent' responses.
 -- It does not require either a list of content types (because there's
@@ -47,15 +49,15 @@ data NoContentVerb  (method :: k1)
 -- the relevant information is summarily presented here.
 
 -- | 'GET' with 200 status code.
-type Get    = Verb 'GET    200
+type Get contentTypes returnType   = Verb 'GET    200 contentTypes returnType
 -- | 'POST' with 200 status code.
-type Post   = Verb 'POST   200
+type Post   contentTypes returnType = Verb 'POST   200 contentTypes returnType 
 -- | 'PUT' with 200 status code.
-type Put    = Verb 'PUT    200
+type Put    contentTypes returnType = Verb 'PUT    200 contentTypes returnType
 -- | 'DELETE' with 200 status code.
-type Delete = Verb 'DELETE 200
+type Delete contentTypes returnType = Verb 'DELETE 200 contentTypes returnType
 -- | 'PATCH' with 200 status code.
-type Patch  = Verb 'PATCH  200
+type Patch  contentTypes returnType = Verb 'PATCH  200 contentTypes returnType 
 
 -- * Other responses
 
@@ -72,9 +74,9 @@ type Patch  = Verb 'PATCH  200
 -- field.
 
 -- | 'POST' with 201 status code.
-type PostCreated = Verb 'POST 201
+type PostCreated contentTypes returnType = Verb 'POST 201 contentTypes returnType
 -- | 'PUT' with 201 status code.
-type PutCreated = Verb 'PUT 201
+type PutCreated contentTypes returnType = Verb 'PUT 201 contentTypes returnType
 
 
 -- ** 202 Accepted
@@ -85,15 +87,15 @@ type PutCreated = Verb 'PUT 201
 -- estimate of when the processing will be finished.
 
 -- | 'GET' with 202 status code.
-type GetAccepted    = Verb 'GET 202
+type GetAccepted    contentTypes returnType = Verb 'GET 202 contentTypes returnType
 -- | 'POST' with 202 status code.
-type PostAccepted   = Verb 'POST 202
+type PostAccepted   contentTypes returnType = Verb 'POST 202 contentTypes returnType
 -- | 'DELETE' with 202 status code.
-type DeleteAccepted = Verb 'DELETE 202
+type DeleteAccepted contentTypes returnType = Verb 'DELETE 202 contentTypes returnType
 -- | 'PATCH' with 202 status code.
-type PatchAccepted  = Verb 'PATCH 202
+type PatchAccepted  contentTypes returnType = Verb 'PATCH 202 contentTypes returnType
 -- | 'PUT' with 202 status code.
-type PutAccepted    = Verb 'PUT 202
+type PutAccepted    contentTypes returnType = Verb 'PUT 202 contentTypes returnType
 
 
 -- ** 203 Non-Authoritative Information
@@ -102,15 +104,15 @@ type PutAccepted    = Verb 'PUT 202
 -- information may come from a third-party.
 
 -- | 'GET' with 203 status code.
-type GetNonAuthoritative    = Verb 'GET 203
+type GetNonAuthoritative    contentTypes returnType = Verb 'GET 203 contentTypes returnType
 -- | 'POST' with 203 status code.
-type PostNonAuthoritative   = Verb 'POST 203
+type PostNonAuthoritative   contentTypes returnType = Verb 'POST 203 contentTypes returnType
 -- | 'DELETE' with 203 status code.
-type DeleteNonAuthoritative = Verb 'DELETE 203
+type DeleteNonAuthoritative contentTypes returnType = Verb 'DELETE 203 contentTypes returnType
 -- | 'PATCH' with 203 status code.
-type PatchNonAuthoritative  = Verb 'PATCH 203
+type PatchNonAuthoritative  contentTypes returnType = Verb 'PATCH 203 contentTypes returnType
 -- | 'PUT' with 203 status code.
-type PutNonAuthoritative    = Verb 'PUT 203
+type PutNonAuthoritative    contentTypes returnType = Verb 'PUT 203 contentTypes returnType
 
 
 -- ** 204 No Content
@@ -141,15 +143,15 @@ type HeadNoContent   = NoContentVerb 'HEAD
 -- If the document view should not be reset, use @204 No Content@.
 
 -- | 'GET' with 205 status code.
-type GetResetContent    = Verb 'GET 205
+type GetResetContent    contentTypes returnType = Verb 'GET 205 contentTypes returnType
 -- | 'POST' with 205 status code.
-type PostResetContent   = Verb 'POST 205
+type PostResetContent   contentTypes returnType = Verb 'POST 205 contentTypes returnType
 -- | 'DELETE' with 205 status code.
-type DeleteResetContent = Verb 'DELETE 205
+type DeleteResetContent contentTypes returnType = Verb 'DELETE 205 contentTypes returnType
 -- | 'PATCH' with 205 status code.
-type PatchResetContent  = Verb 'PATCH 205
+type PatchResetContent  contentTypes returnType = Verb 'PATCH 205 contentTypes returnType
 -- | 'PUT' with 205 status code.
-type PutResetContent    = Verb 'PUT 205
+type PutResetContent    contentTypes returnType = Verb 'PUT 205 contentTypes returnType
 
 
 -- ** 206 Partial Content
@@ -161,7 +163,7 @@ type PutResetContent    = Verb 'PUT 205
 -- RFC7233 Section 4.1>
 
 -- | 'GET' with 206 status code.
-type GetPartialContent = Verb 'GET 206
+type GetPartialContent contentTypes returnType = Verb 'GET 206 contentTypes returnType
 
 
 class ReflectMethod a where
