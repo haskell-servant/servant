@@ -101,8 +101,9 @@ library
     Servant.Server.Internal.DelayedIO
     Servant.Server.Internal.ErrorFormatter
     Servant.Server.Internal.Handler
-    Servant.Server.Internal.Router
+    Servant.Server.Internal.ResponseRender
     Servant.Server.Internal.RouteResult
+    Servant.Server.Internal.Router
     Servant.Server.Internal.RoutingApplication
     Servant.Server.Internal.ServerError
     Servant.Server.StaticFiles

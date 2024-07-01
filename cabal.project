@@ -87,3 +87,7 @@ allow-newer: openapi3:hashable
 -- http2-5.3.3 is blacklisted, force http2-5.3.2 or http2-5.3.4
 constraints:
   http2 ==5.3.2 || ==5.3.4
+
+package HsOpenSSL
+  -- Fix compilation with GCC >= 14
+  ghc-options: -optc-Wno-incompatible-pointer-types

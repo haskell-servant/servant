@@ -16,9 +16,7 @@
 
 module Servant.MiddlewareSpec (spec) where
 
-import Control.Arrow
-  ( left,
-  )
+import Control.Arrow (left)
 import Control.Concurrent (newEmptyMVar, putMVar, takeMVar)
 import Control.Exception (Exception, throwIO, try)
 import Control.Monad.IO.Class

@@ -107,7 +107,7 @@ main = do
         ("run-custom-monad":_) -> do
             putStrLn "Starting cookbook-generic with a custom monad at http://localhost:8000"
             run 8000 (appMyMonad AppCustomState)
-        _ -> putStrLn "To run, pass 'run' argument: cabal new-run cookbook-generic run"
+        _ -> putStrLn "To run, pass 'run' argument: cabal run cookbook-generic run"
 ```
 
 ## Using generics together with a custom monad
