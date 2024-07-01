@@ -91,6 +91,7 @@ library
     Servant.Client.Core.Reexport
     Servant.Client.Core.Request
     Servant.Client.Core.Response
+    Servant.Client.Core.MultiVerb.ResponseUnrender
     Servant.Client.Core.RunClient
     Servant.Client.Free
     Servant.Client.Generic

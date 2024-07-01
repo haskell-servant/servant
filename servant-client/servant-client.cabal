@@ -161,6 +161,7 @@ test-suite spec
     , servant-client
     , servant-client-core
     , sop-core
+    , generics-sop
     , stm
     , text
     , transformers

@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ApplicativeDo #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
 module Servant.Client.Core.HasClient (
     clientIn,
@@ -8,7 +9,8 @@ module Servant.Client.Core.HasClient (
     (//),
     (/:),
     foldMapUnion,
-    matchUnion
+    matchUnion,
+    fromSomeClientResponse
     ) where
 
 import           Prelude ()
@@ -16,9 +18,10 @@ import           Prelude.Compat
 
 import           Control.Arrow
                  (left, (+++))
+import qualified Data.Text as Text
 import           Control.Monad
                  (unless)
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy as BSL
 import           Data.Either
                  (partitionEithers)
 import           Data.Constraint (Dict(..))
@@ -42,13 +45,11 @@ import           Data.SOP.Constraint
 import           Data.SOP.NP
                  (NP (..), cpure_NP)
 import           Data.SOP.NS
-                 (NS (S))
+                 (NS (..))
 import           Data.String
                  (fromString)
 import           Data.Text
                  (Text, pack)
-import           Data.Proxy
-                 (Proxy (Proxy))
 import           GHC.TypeLits
                  (KnownNat, KnownSymbol, TypeError, symbolVal)
 import           Network.HTTP.Types
@@ -86,7 +87,12 @@ import           Servant.Client.Core.BasicAuth
 import           Servant.Client.Core.ClientError
 import           Servant.Client.Core.Request
 import           Servant.Client.Core.Response
+import           Servant.Client.Core.MultiVerb.ResponseUnrender
+import qualified Servant.Client.Core.Response as Response
 import           Servant.Client.Core.RunClient
+import           Servant.API.MultiVerb
+import qualified Network.HTTP.Media as M
+import           Data.Typeable
 
 -- * Accessing APIs as a Client
 
@@ -108,7 +114,6 @@ import           Servant.Client.Core.RunClient
 clientIn :: HasClient m api => Proxy api -> Proxy m -> Client m api
 clientIn p pm = clientWithRoute pm p defaultRequest
 
-
 -- | This class lets us define how each API combinator influences the creation
 -- of an HTTP request.
 --
@@ -124,7 +129,6 @@ class RunClient m => HasClient m api where
     -> (forall x. mon x -> mon' x)
     -> Client mon api
     -> Client mon' api
-
 
 -- | A client querying function for @a ':<|>' b@ will actually hand you
 --   one function for querying @a@ and another one for querying @b@,
@@ -322,7 +326,7 @@ data ClientParseError = ClientParseError MediaType String | ClientStatusMismatch
   deriving (Eq, Show)
 
 class UnrenderResponse (cts :: [Type]) (a :: Type) where
-  unrenderResponse :: Seq.Seq H.Header -> BL.ByteString -> Proxy cts
+  unrenderResponse :: Seq.Seq H.Header -> BSL.ByteString -> Proxy cts
                    -> [Either (MediaType, String) a]
 
 instance {-# OVERLAPPABLE #-} AllMimeUnrender cts a => UnrenderResponse cts a where
@@ -364,15 +368,13 @@ instance {-# OVERLAPPING #-}
 
         method = reflectMethod $ Proxy @method
         acceptStatus = statuses (Proxy @as)
-    response <- runRequestAcceptStatus (Just acceptStatus) request {requestMethod = method, requestAccept = accept}
+    response@Response{responseBody=body, responseStatusCode=status, responseHeaders=headers}
+      <- runRequestAcceptStatus (Just acceptStatus) (request {requestMethod = method, requestAccept = accept})
     responseContentType <- checkContentTypeHeader response
     unless (any (matches responseContentType) accept) $ do
       throwClientError $ UnsupportedContentType responseContentType response
 
-    let status = responseStatusCode response
-        body = responseBody response
-        headers = responseHeaders response
-        res = tryParsers status $ mimeUnrenders (Proxy @contentTypes) headers body
+    let res = tryParsers status $ mimeUnrenders (Proxy @contentTypes) headers body
     case res of
       Left errors -> throwClientError $ DecodeFailure (T.pack (show errors)) response
       Right x -> return x
@@ -396,7 +398,7 @@ instance {-# OVERLAPPING #-}
         All (UnrenderResponse cts) xs =>
         Proxy cts ->
         Seq.Seq H.Header ->
-        BL.ByteString ->
+        BSL.ByteString ->
         NP ([] :.: Either (MediaType, String)) xs
       mimeUnrenders ctp headers body = cpure_NP
         (Proxy @(UnrenderResponse cts))
@@ -413,10 +415,10 @@ instance {-# OVERLAPPABLE #-}
 
   hoistClientMonad _ _ f ma = f ma
 
-  clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
-      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
+  clientWithRoute _pm Proxy req = withStreamingRequest req' $ \Response{responseBody=body} -> do
+      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BSL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-      fromSourceIO $ framingUnrender' $ responseBody gres
+      fromSourceIO $ framingUnrender' body
     where
       req' = req
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
@@ -433,13 +435,14 @@ instance {-# OVERLAPPING #-}
 
   hoistClientMonad _ _ f ma = f ma
 
-  clientWithRoute _pm Proxy req = withStreamingRequest req' $ \gres -> do
-      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BL.ByteString -> Either String chunk
+  clientWithRoute _pm Proxy req = withStreamingRequest req' $ 
+    \Response{responseBody=body, responseHeaders=headers} -> do
+      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BSL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-      val <- fromSourceIO $ framingUnrender' $ responseBody gres
+      val <- fromSourceIO $ framingUnrender' body
       return $ Headers
         { getResponse = val
-        , getHeadersHList = buildHeadersTo . toList $ responseHeaders gres
+        , getHeadersHList = buildHeadersTo $ toList headers
         }
 
     where
@@ -757,7 +760,7 @@ instance
 
         sourceIO = framingRender
             framingP
-            (mimeRender ctypeP :: chunk -> BL.ByteString)
+            (mimeRender ctypeP :: chunk -> BSL.ByteString)
             (toSourceIO body)
 
 -- | Make the querying function append @path@ to the request path.
@@ -861,7 +864,6 @@ instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
 data AsClientT (m :: Type -> Type)
 instance GenericMode (AsClientT m) where
     type AsClientT m :- api = Client m api
-
 
 type GClientConstraints api m =
   ( GenericServant api (AsClientT m)
@@ -972,6 +974,52 @@ x // f = f x
 (/:) :: (a -> b -> c) -> b -> a -> c
 (/:) = flip
 
+instance
+  ( ResponseListUnrender cs as,
+    AllMime cs,
+    ReflectMethod method,
+    AsUnion as r,
+    RunClient m
+  ) =>
+  HasClient m (MultiVerb method cs as r)
+  where
+  type Client m (MultiVerb method cs as r) = m r
+
+  clientWithRoute _ _ req = do
+    response@Response{responseBody=body} <-
+      runRequestAcceptStatus
+        (Just (responseListStatuses @cs @as))
+        req
+          { requestMethod = method,
+            requestAccept = Seq.fromList accept
+          }
+
+    c <- getResponseContentType response
+    unless (any (M.matches c) accept) $ do
+      throwClientError $ UnsupportedContentType c response
+
+    -- NOTE: support streaming in the future
+    let sresp =
+          if BSL.null body
+            then SomeClientResponse $ response {Response.responseBody = ()}
+            else SomeClientResponse response
+    case responseListUnrender @cs @as c sresp of
+      StatusMismatch -> throwClientError (DecodeFailure "Status mismatch" response)
+      UnrenderError e -> throwClientError (DecodeFailure (Text.pack e) response)
+      UnrenderSuccess x -> pure (fromUnion @as x)
+    where
+      accept = allMime (Proxy @cs)
+      method = reflectMethod (Proxy @method)
+
+  hoistClientMonad _ _ f = f
+
+getResponseContentType :: (RunClient m) => Response -> m M.MediaType
+getResponseContentType response =
+  case lookup "Content-Type" (toList (responseHeaders response)) of
+    Nothing -> pure $ "application" M.// "octet-stream"
+    Just t -> case M.parseAccept t of
+      Nothing -> throwClientError $ InvalidContentTypeHeader response
+      Just t' -> pure t'
 
 {- Note [Non-Empty Content Types]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1003,11 +1051,11 @@ checkContentTypeHeader response =
 
 decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
   => Response -> Proxy ct -> m a
-decodedAs response ct = do
+decodedAs response@Response{responseBody=body} ct = do
   responseContentType <- checkContentTypeHeader response
   unless (any (matches responseContentType) accept) $
     throwClientError $ UnsupportedContentType responseContentType response
-  case mimeUnrender ct $ responseBody response of
+  case mimeUnrender ct body of
     Left err -> throwClientError $ DecodeFailure (T.pack err) response
     Right val -> return val
   where

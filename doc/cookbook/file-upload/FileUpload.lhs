@@ -113,7 +113,7 @@ main = withSocketsDo . bracket (forkIO startServer) killThread $ \_threadid -> d
 If you run this, you should get:
 
 ``` bash
-$ cabal new-build cookbook-file-upload
+$ cabal build cookbook-file-upload
 [...]
 $ dist-newstyle/build/x86_64-linux/ghc-8.2.1/cookbook-file-upload-0.1/x/cookbook-file-upload/build/cookbook-file-upload/cookbook-file-upload
 Inputs:

@@ -66,8 +66,8 @@ main = do
             test
         _ -> do
             putStrLn "Try:"
-            putStrLn "cabal new-run cookbook-using-free-client server"
-            putStrLn "cabal new-run cookbook-using-free-client client"
+            putStrLn "cabal run cookbook-using-free-client server"
+            putStrLn "cabal run cookbook-using-free-client client"
 ```
 
 ## Test

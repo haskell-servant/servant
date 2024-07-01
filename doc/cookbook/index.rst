@@ -28,6 +28,7 @@ you name it!
   using-free-client/UsingFreeClient.lhs
   custom-errors/CustomErrors.lhs
   uverb/UVerb.lhs
+  multiverb/MultiVerb.lhs
   basic-auth/BasicAuth.lhs
   basic-streaming/Streaming.lhs
   jwt-and-basic-auth/JWTAndBasicAuth.lhs
