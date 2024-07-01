@@ -47,7 +47,7 @@ module Servant.API.TypeLevel (
     And,
     -- ** Fragment
     FragmentUnique,
-    AtMostOneFragment
+    AtMostOneFragment,
     ) where
 
 
@@ -72,12 +72,11 @@ import           Servant.API.Generic
                  (ToServantApi)
 import           Servant.API.Sub
                  (type (:>))
-import           Servant.API.Verbs
-                 (Verb)
 import           Servant.API.UVerb
                  (UVerb)
 import           GHC.TypeLits
                  (ErrorMessage (..), TypeError)
+import Servant.API.MultiVerb
 
 
 
@@ -146,7 +145,7 @@ type family IsElem endpoint api :: Constraint where
   IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
   IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
   IsElem sa (Fragment x :> sb)            = IsElem sa sb
-  IsElem (Verb m s ct typ) (Verb m s ct' typ)
+  IsElem (MultiVerb m s ct typ) (MultiVerb m s ct' typ)
                                           = IsSubList ct ct'
   IsElem e e                              = ()
   IsElem e (NamedRoutes rs)               = IsElem e (ToServantApi rs)
@@ -273,7 +272,7 @@ families are not evaluated (see https://ghc.haskell.org/trac/ghc/ticket/12048).
 -- ...
 class FragmentUnique api => AtMostOneFragment api
 
-instance AtMostOneFragment (Verb m s ct typ)
+instance AtMostOneFragment (MultiVerb m s ct typ)
 
 instance AtMostOneFragment (UVerb m cts as)
 
