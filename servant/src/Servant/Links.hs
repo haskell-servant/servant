@@ -177,12 +177,13 @@ import           Servant.API.UVerb
 import           Servant.API.Vault
                  (Vault)
 import           Servant.API.Verbs
-                 (Verb, NoContentVerb)
+                 (NoContentVerb)
 import           Servant.API.WithNamedContext
                  (WithNamedContext)
 import           Servant.API.WithResource
                  (WithResource)
 import           Web.HttpApiData
+import Servant.API.MultiVerb (MultiVerb)
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
@@ -564,8 +565,8 @@ instance HasLink EmptyAPI where
     toLink _ _ _ = EmptyAPI
 
 -- Verb (terminal) instances
-instance HasLink (Verb m s ct a) where
-    type MkLink (Verb m s ct a) r = r
+instance HasLink (MultiVerb m s ct a) where
+    type MkLink (MultiVerb m s ct a) r = r
     toLink toA _ = toA
 
 instance HasLink (NoContentVerb m) where
@@ -646,7 +647,6 @@ simpleToLink _ toA _ = toLink toA (Proxy :: Proxy sub)
 -- $setup
 -- >>> import Servant.API
 -- >>> import Data.Text (Text)
-
 -- Erroring instance for 'HasLink' when a combinator is not fully applied
 instance TypeError (PartialApplication
 #if __GLASGOW_HASKELL__ >= 904

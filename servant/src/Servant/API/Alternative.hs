@@ -35,7 +35,6 @@ instance (Semigroup a, Semigroup b) => Semigroup (a :<|> b) where
 
 instance (Monoid a, Monoid b) => Monoid (a :<|> b) where
     mempty = mempty :<|> mempty
-    (a :<|> b) `mappend` (a' :<|> b') = (a `mappend` a') :<|> (b `mappend` b')
 
 instance Bifoldable (:<|>) where
     bifoldMap f g ~(a :<|> b) = f a `mappend` g b

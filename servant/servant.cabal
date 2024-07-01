@@ -106,10 +106,12 @@ library
     Servant.API.Sub
     Servant.API.TypeErrors
     Servant.API.TypeLevel
+    Servant.API.TypeLevel.List
     Servant.API.UVerb
     Servant.API.UVerb.Union
     Servant.API.Vault
     Servant.API.Verbs
+    Servant.API.MultiVerb
     Servant.API.WithNamedContext
     Servant.API.WithResource
 
@@ -133,6 +135,7 @@ library
     , containers    >=0.6      && <0.8
     , mtl           ^>=2.2.2   || ^>=2.3.1
     , sop-core      >=0.4.0.0  && <0.6
+    , generics-sop  ^>=0.5.1
     , text          >=1.2.3.0  && <2.2
     , transformers  >=0.5.2.0  && <0.7
 
