@@ -1,21 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE EmptyCase #-}
 
--- Copyright (C) 2022 Wire Swiss GmbH <opensource@wire.com>
---
--- This program is free software: you can redistribute it and/or modify it under
--- the terms of the GNU Affero General Public License as published by the Free
--- Software Foundation, either version 3 of the License, or (at your option) any
--- later version.
---
--- This program is distributed in the hope that it will be useful, but WITHOUT
--- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
--- FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
--- details.
---
--- You should have received a copy of the GNU Affero General Public License along
--- with this program. If not, see <https://www.gnu.org/licenses/>.
-
 module Servant.API.MultiVerb
   ( -- * MultiVerb types
     MultiVerb,
@@ -38,27 +23,29 @@ module Servant.API.MultiVerb
     GenericAsUnion (..),
     ResponseType,
     ResponseTypes,
+    UnrenderResult(..)
   )
 where
 
+
 import Control.Applicative (Alternative(..), empty)
-import qualified Data.CaseInsensitive as CI
+import Control.Monad (ap, MonadPlus(..))
+import Data.ByteString (ByteString)
 import Data.Kind
 import Data.Proxy
 import Data.SOP
 import Data.Sequence (Seq(..))
+import GHC.TypeLits
+import Generics.SOP as GSOP
+import Network.HTTP.Types as HTTP
+import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
+import qualified Data.CaseInsensitive as CI
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
-import Generics.SOP as GSOP
-import GHC.TypeLits
-import Network.HTTP.Types as HTTP
-import Data.ByteString (ByteString)
-import Control.Monad (ap, MonadPlus(..))
 
 import Servant.API.TypeLevel.List
 import Servant.API.Stream (SourceIO)
-import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
 import Servant.API.UVerb.Union (Union)
 import Servant.API.Header (Header')
 
@@ -125,9 +112,11 @@ type family ResponseType a :: Type
 
 type instance ResponseType (Respond s desc a) = a
 
+
 type instance ResponseType (RespondAs ct s desc a) = a
 
 type instance ResponseType (RespondStreaming s desc framing ct) = SourceIO ByteString
+
 
 -- | This type adds response headers to a 'MultiVerb' response.
 --
@@ -216,9 +205,11 @@ instance (ServantHeader h name x) => ServantHeader (OptHeader h) name (Maybe x) 
 
 type instance ResponseType (WithHeaders hs a r) = a
 
+
 type family ResponseTypes (as :: [Type]) where
   ResponseTypes '[] = '[]
   ResponseTypes (a ': as) = ResponseType a ': ResponseTypes as
+
 
 -- | This type can be used in Servant to produce an endpoint which can return
 -- multiple values with various content types and status codes. It is similar to
@@ -236,7 +227,6 @@ data MultiVerb (method :: StdMethod) cs (as :: [Type]) (r :: Type)
 
 -- | A 'MultiVerb' endpoint with a single response.
 type MultiVerb1 m cs a = MultiVerb m cs '[a] (ResponseType a)
-
 
 -- | This class is used to convert a handler return type to a union type
 -- including all possible responses of a 'MultiVerb' endpoint.
@@ -316,9 +306,13 @@ maybeFromUnion ::
   (EitherFromUnion as '[()]) =>
   (Union as -> a) ->
   (Union (as .++ '[()]) -> Maybe a)
-maybeFromUnion f = leftToMaybe . eitherFromUnion @as @'[()] f (const (Z (I ())))
-  where
-    leftToMaybe = either Just (const Nothing)
+maybeFromUnion f =
+    leftToMaybe . eitherFromUnion @as @'[()] f (const (Z (I ())))
+    where
+        leftToMaybe = either Just (const Nothing)
+
+
+
 
 -- | This class can be instantiated to get automatic derivation of 'AsUnion'
 -- instances via 'GenericAsUnion'. The idea is that one has to make sure that for
@@ -420,6 +414,7 @@ instance
 -- "failure" case, normally represented by 'Nothing', corresponds to the /first/
 -- response.
 instance
+  {-# OVERLAPPABLE #-}
   (ResponseType r1 ~ (), ResponseType r2 ~ a) =>
   AsUnion '[r1, r2] (Maybe a)
   where

@@ -108,10 +108,10 @@ library
     Servant.API.TypeLevel
     Servant.API.TypeLevel.List
     Servant.API.UVerb
+    Servant.API.MultiVerb
     Servant.API.UVerb.Union
     Servant.API.Vault
     Servant.API.Verbs
-    Servant.API.MultiVerb
     Servant.API.WithNamedContext
     Servant.API.WithResource
 

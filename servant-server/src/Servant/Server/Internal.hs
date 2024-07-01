@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP                   #-}
+{-# LANGUAGE DeriveTraversable #-}
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
@@ -39,10 +40,10 @@ import           Data.Tagged
 import qualified Data.Text                                  as T
 import           Data.Typeable
 import           GHC.Generics
-import           GHC.TypeLits (KnownNat, KnownSymbol, TypeError, ErrorMessage (..),  symbolVal)
+import           GHC.TypeLits (KnownNat, KnownSymbol, TypeError, ErrorMessage (..),  symbolVal, Nat)
 import qualified Network.HTTP.Media                         as NHM
 import           Network.HTTP.Types                         hiding
-                 (Header, ResponseHeaders)
+                 (statusCode, Header, ResponseHeaders)
 import           Network.Socket
                  (SockAddr)
 import           Network.Wai
@@ -62,7 +63,7 @@ import           Servant.API.Generic (GenericMode(..), ToServant, ToServantApi, 
 import           Servant.API.ContentTypes
                  (AcceptHeader (..), AllCTRender (..), AllCTUnrender (..),
                  AllMime, MimeRender (..), MimeUnrender (..), NoContent,
-                 canHandleAcceptH)
+                 canHandleAcceptH, AllMimeRender, AllMimeUnrender)
 import           Servant.API.Modifiers
                  (FoldLenient, FoldRequired, RequestArgument,
                  unfoldRequestArgument)
@@ -70,12 +71,18 @@ import           Servant.API.QueryString (FromDeepQuery(..))
 import           Servant.API.ResponseHeaders
                  (GetHeaders, Headers, getHeaders, getResponse)
 import           Servant.API.Status
-                 (statusFromNat)
+                 (statusFromNat, KnownStatus)
 import qualified Servant.Types.SourceT                      as S
 import           Servant.API.TypeErrors
 import           Web.HttpApiData
                  (FromHttpApiData, parseHeader, parseQueryParam, parseUrlPiece,
                  parseUrlPieces)
+import           Network.HTTP.Types (Header)
+import           Data.Sequence (Seq)
+import           qualified Network.Wai as Wai
+import           Data.ByteString (ByteString)
+import           qualified Network.HTTP.Media as M
+import           Control.Applicative (Alternative)
 
 import           Servant.Server.Internal.BasicAuth
 import           Servant.Server.Internal.Context
@@ -87,8 +94,9 @@ import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
-
+import           Servant.API.MultiVerb
 import           Servant.API.TypeLevel (AtMostOneFragment, FragmentUnique)
+import Data.SOP
 
 class HasServer api context where
   -- | The type of a server for this API, given a monad to run effects in.
@@ -1114,3 +1122,236 @@ instance
             toServant server
           servantSrvN :: ServerT (ToServantApi api) n =
             hoistServerWithContext (Proxy @(ToServantApi api)) pctx nat servantSrvM
+
+data InternalResponse a = InternalResponse
+  { statusCode :: Status
+  , headers :: Seq Header
+  , responseBody :: a
+  } deriving stock (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
+
+class (Typeable a) => IsWaiBody a where
+  responseToWai :: InternalResponse a -> Wai.Response
+
+instance IsWaiBody BSL.ByteString where
+  responseToWai r =
+    Wai.responseLBS
+      (statusCode r)
+      (toList (headers r))
+      (responseBody r)
+
+instance IsWaiBody () where
+  responseToWai r =
+    Wai.responseLBS
+      (statusCode r)
+      (toList (headers r))
+      mempty
+
+instance IsWaiBody (SourceIO ByteString) where
+  responseToWai r =
+    Wai.responseStream
+      (statusCode r)
+      (toList (headers r))
+      $ \output flush -> do
+        foreach
+          (const (pure ()))
+          (\chunk -> output (byteString chunk) *> flush)
+          (responseBody r)
+
+
+class (IsWaiBody (ResponseBody a)) => IsResponse cs a where
+  type ResponseStatus a :: Nat
+  type ResponseBody a :: Type
+
+  responseRender :: AcceptHeader -> ResponseType a -> Maybe (InternalResponse (ResponseBody a))
+  responseUnrender :: M.MediaType -> InternalResponse (ResponseBody a) -> UnrenderResult (ResponseType a)
+
+data SomeResponse = forall a. (IsWaiBody a) => SomeResponse (InternalResponse a)
+
+addContentType :: forall ct a. (Accept ct) => InternalResponse a -> InternalResponse a
+addContentType = addContentType' (contentType (Proxy @ct))
+
+addContentType' :: M.MediaType -> InternalResponse a -> InternalResponse a
+addContentType' c r = r {headers = (hContentType, M.renderHeader c) <| headers r}
+
+setEmptyBody :: SomeResponse -> SomeResponse
+setEmptyBody (SomeResponse r) = SomeResponse (go r)
+  where
+    go :: InternalResponse a -> InternalResponse BSL.ByteString
+    go InternalResponse {..} = InternalResponse {responseBody = mempty, ..}
+
+someResponseToWai :: SomeResponse -> Wai.Response
+someResponseToWai (SomeResponse r) = responseToWai r
+
+fromSomeResponse :: (Alternative m, Typeable a) => SomeResponse -> m (InternalResponse a)
+fromSomeResponse (SomeResponse InternalResponse {..}) = do
+  body <- maybe empty pure $ cast responseBody
+  pure $
+    InternalResponse
+      { responseBody = body,
+        ..
+      }
+
+instance
+  ( KnownStatus s,
+    MimeRender ct a,
+    MimeUnrender ct a
+  ) =>
+  IsResponse cs (RespondAs (ct :: Type) s desc a)
+  where
+  type ResponseStatus (RespondAs ct s desc a) = s
+  type ResponseBody (RespondAs ct s desc a) = BSL.ByteString
+
+  responseRender _ x =
+    pure . addContentType @ct $
+      InternalResponse
+        { statusCode = statusVal (Proxy @s),
+          responseBody = mimeRender (Proxy @ct) x,
+          headers = mempty
+        }
+
+  responseUnrender _ output = do
+    guard (statusCode output == statusVal (Proxy @s))
+    either UnrenderError UnrenderSuccess $
+      mimeUnrender (Proxy @ct) (responseBody output)
+
+instance (KnownStatus s) => IsResponse cs (RespondAs '() s desc ()) where
+  type ResponseStatus (RespondAs '() s desc ()) = s
+  type ResponseBody (RespondAs '() s desc ()) = ()
+
+  responseRender _ _ =
+    pure $
+      InternalResponse
+        { statusCode = statusVal (Proxy @s),
+          responseBody = (),
+          headers = mempty
+        }
+
+  responseUnrender _ output =
+    guard (statusCode output == statusVal (Proxy @s))
+
+instance
+  (Accept ct, KnownStatus s) =>
+  IsResponse cs (RespondStreaming s desc framing ct)
+  where
+  type ResponseStatus (RespondStreaming s desc framing ct) = s
+  type ResponseBody (RespondStreaming s desc framing ct) = SourceIO ByteString
+  responseRender _ x =
+    pure . addContentType @ct $
+      InternalResponse
+        { statusCode = statusVal (Proxy @s),
+          responseBody = x
+        }
+
+  responseUnrender _ resp = do
+    guard (statusCode resp == statusVal (Proxy @s))
+    pure $ responseBody resp
+
+instance (AllMimeRender cs a, AllMimeUnrender cs a, KnownStatus s) => IsResponse cs (Respond s desc a) where
+  type ResponseStatus (Respond s desc a) = s
+  type ResponseBody (Respond s desc a) = BSL.ByteString
+
+  -- Note: here it seems like we are rendering for all possible content types,
+  -- only to choose the correct one afterwards. However, render results besides the
+  -- one picked by 'M.mapAcceptMedia' are not evaluated, and therefore nor are the
+  -- corresponding rendering functions.
+  responseRender (AcceptHeader acc) x =
+    M.mapAcceptMedia (map (uncurry mkRenderOutput) (allMimeRender (Proxy @cs) x)) acc
+    where
+      mkRenderOutput :: M.MediaType -> BSL.ByteString -> (M.MediaType, Response)
+      mkRenderOutput c body =
+        (c,) . addContentType' c $
+          InternalResponse
+            { statusCode = statusVal (Proxy @s),
+              responseBody = body,
+              headers = mempty
+            }
+
+  responseUnrender c output = do
+    guard (statusCode output == statusVal (Proxy @s))
+    let results = allMimeUnrender (Proxy @cs)
+    case lookup c results of
+      Nothing -> empty
+      Just f -> either UnrenderError UnrenderSuccess (f (responseBody output))
+
+instance
+  ( HasAcceptCheck cs,
+    IsResponseList cs as,
+    AsUnion as r,
+    ReflectMethod method
+  ) =>
+  HasServer (MultiVerb method cs as r) ctx
+  where
+  type ServerT (MultiVerb method cs as r) m = m r
+
+  hoistServerWithContext _ _ f = f
+
+  route ::
+    forall env.
+    Proxy (MultiVerb method cs as r) ->
+    Context ctx ->
+    Delayed env (Handler r) ->
+    Router env
+  route _ _ action = leafRouter $ \env req k -> do
+    let acc = getAcceptHeader req
+        action' =
+          action
+            `addMethodCheck` methodCheck method req
+            `addAcceptCheck` acceptCheck' (Proxy @cs) acc
+    runAction action' env req k $ \output -> do
+      let mresp = responseListRender @cs @as acc (toUnion @as output)
+      someResponseToWai <$> case mresp of
+        Nothing -> FailFatal err406
+        Just resp
+          | allowedMethodHead method req -> pure (setEmptyBody resp)
+          | otherwise -> pure resp
+    where
+      method = reflectMethod (Proxy @method)
+
+instance
+  ( AsHeaders xs (ResponseType r) a,
+    ServantHeaders hs xs,
+    IsResponse cs r
+  ) =>
+  IsResponse cs (WithHeaders hs a r)
+  where
+  type ResponseStatus (WithHeaders hs a r) = ResponseStatus r
+  type ResponseBody (WithHeaders hs a r) = ResponseBody r
+
+  responseRender acc x = addHeaders <$> responseRender @cs @r acc y
+    where
+      (hs, y) = toHeaders @xs x
+      addHeaders r =
+        r
+          { headers = headers r <> Seq.fromList (constructHeaders @hs hs)
+          }
+
+  responseUnrender c output = do
+    x <- responseUnrender @cs @r c output
+    case extractHeaders @hs (headers output) of
+      Nothing -> UnrenderError "Failed to parse headers"
+      Just hs -> pure $ fromHeaders @xs (hs, x)
+
+instance
+  ( IsResponse cs a,
+    KnownStatus (ResponseStatus a)
+  ) =>
+  IsResponseList cs (a ': as)
+  where
+  responseListRender acc (Z (I x)) = fmap SomeResponse (responseRender @cs @a acc x)
+  responseListRender acc (S x) = responseListRender @cs @as acc x
+
+  responseListUnrender c output =
+    Z . I <$> (responseUnrender @cs @a c =<< fromSomeResponse output)
+      <|> S <$> responseListUnrender @cs @as c output
+
+  responseListStatuses = statusVal (Proxy @(ResponseStatus a)) : responseListStatuses @cs @as
+
+class HasAcceptCheck cs where
+  acceptCheck' :: Proxy cs -> AcceptHeader -> DelayedIO ()
+
+instance (AllMime cs) => HasAcceptCheck cs where
+  acceptCheck' = acceptCheck
+
+instance HasAcceptCheck '() where
+  acceptCheck' _ _ = pure ()
+

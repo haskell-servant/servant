@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
+{-# LANGUAGE EmptyCase #-}
 module Servant.Client.Core.HasClient (
     clientIn,
     HasClient (..),
@@ -70,7 +71,7 @@ import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
                  , GenericServant, toServant, fromServant)
 import           Servant.API.ContentTypes
-                 (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender))
+                 (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender), AcceptHeader)
 import           Servant.API.QueryString (ToDeepQuery(..), generateDeepParam)
 import           Servant.API.Status
                  (statusFromNat)
@@ -87,6 +88,8 @@ import           Servant.Client.Core.ClientError
 import           Servant.Client.Core.Request
 import           Servant.Client.Core.Response
 import           Servant.Client.Core.RunClient
+import Servant.API.MultiVerb
+import qualified Network.HTTP.Media as M
 
 -- * Accessing APIs as a Client
 
@@ -971,6 +974,64 @@ x // f = f x
 -- @
 (/:) :: (a -> b -> c) -> b -> a -> c
 (/:) = flip
+
+class IsResponseList cs as where
+  responseListRender :: AcceptHeader -> Union (ResponseTypes as) -> Maybe InternalResponse
+  responseListUnrender :: M.MediaType -> InternalResponse -> UnrenderResult (Union (ResponseTypes as))
+
+  responseListStatuses :: [Status]
+
+instance IsResponseList cs '[] where
+  responseListRender _ x = case x of {}
+  responseListUnrender _ _ = empty
+  responseListStatuses = []
+
+instance
+  ( IsResponseList cs as,
+    AllMime cs,
+    ReflectMethod method,
+    AsUnion as r,
+    RunClient m
+  ) =>
+  HasClient m (MultiVerb method cs as r)
+  where
+  type Client m (MultiVerb method cs as r) = m r
+
+  clientWithRoute _ _ req = do
+    response <-
+      runRequestAcceptStatus
+        (Just (responseListStatuses @cs @as))
+        req
+          { requestMethod = method,
+            requestAccept = Seq.fromList accept
+          }
+
+    c <- getResponseContentType response
+    unless (any (M.matches c) accept) $ do
+      throwClientError $ UnsupportedContentType c response
+
+    -- FUTUREWORK: support streaming
+    let sresp =
+          if LBS.null (responseBody response)
+            then SomeResponse response {responseBody = ()}
+            else SomeResponse response
+    case responseListUnrender @cs @as c sresp of
+      StatusMismatch -> throwClientError (DecodeFailure "Status mismatch" response)
+      UnrenderError e -> throwClientError (DecodeFailure (Text.pack e) response)
+      UnrenderSuccess x -> pure (fromUnion @as x)
+    where
+      accept = allMime (Proxy @cs)
+      method = reflectMethod (Proxy @method)
+
+  hoistClientMonad _ _ f = f
+
+getResponseContentType :: (RunClient m) => Response -> m M.MediaType
+getResponseContentType response =
+  case lookup "Content-Type" (toList (responseHeaders response)) of
+    Nothing -> pure $ "application" M.// "octet-stream"
+    Just t -> case M.parseAccept t of
+      Nothing -> throwClientError $ InvalidContentTypeHeader response
+      Just t' -> pure t'
 
 
 {- Note [Non-Empty Content Types]
