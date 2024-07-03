@@ -79,10 +79,7 @@ allow-newer: servant-swagger-ui-core:base
 allow-newer: file-embed-lzma:base
 allow-newer: file-embed-lzma:template-haskell
 allow-newer: file-embed-lzma:filepath
-allow-newer: lzma:base
 allow-newer: servant-openapi3:base
-allow-newer: insert-ordered-containers:base
-allow-newer: insert-ordered-containers:lens
 allow-newer: openapi3:base
 allow-newer: openapi3:template-haskell
 allow-newer: swagger2:base
@@ -93,5 +90,4 @@ allow-newer: pipes-safe:base
 allow-newer: servant-js:base
 allow-newer: servant-js:lens
 allow-newer: lucid:base
-allow-newer: stringsearch:containers
 allow-newer: Cabal
