@@ -105,3 +105,5 @@ allow-newer: openapi3:hashable
 allow-newer: http-api-data:hashable
 allow-newer: swagger2:hashable
 allow-newer: quickcheck-instances:hashable
+allow-newer: postgresql-libpq:hashable
+allow-newer: postgresql-simple:hashable
