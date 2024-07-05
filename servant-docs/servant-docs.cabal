@@ -56,7 +56,7 @@ library
     , aeson-pretty         >= 0.8.5    && < 0.9
     , base-compat          >= 0.10.5   && < 0.15
     , case-insensitive     >= 1.2.0.11 && < 1.3
-    , hashable             >= 1.2.7.0  && < 1.5
+    , hashable             >= 1.2.7.0  && < 1.6
     , http-media           >= 0.7.1.3  && < 0.9
     , http-types           >= 0.12.2   && < 0.13
     , lens                 >= 4.17     && < 5.4
@@ -102,7 +102,7 @@ test-suite spec
 
   -- Additional dependencies
   build-depends:
-      tasty         >= 1.1.0.4  && < 1.5,
+      tasty         >= 1.1.0.4  && < 1.6,
       tasty-golden  >= 2.3.2    && < 2.4,
       tasty-hunit   >= 0.10.0.1 && < 0.11,
       transformers  >= 0.5.2.0  && < 0.7
