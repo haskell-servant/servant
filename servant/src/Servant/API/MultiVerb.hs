@@ -23,7 +23,8 @@ module Servant.API.MultiVerb
     GenericAsUnion (..),
     ResponseType,
     ResponseTypes,
-    UnrenderResult(..)
+    UnrenderResult(..),
+    ServantHeaders(..)
   )
 where
 
