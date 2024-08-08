@@ -71,39 +71,17 @@ if(impl(ghc >= 9.6.1))
     ghc-options: -fprint-redundant-promotion-ticks
 
 -- This block is for GHC 9.10.1.
-allow-newer: postgresql-simple:base
-allow-newer: postgresql-simple:template-haskell
-allow-newer: postgresql-simple:containers
-allow-newer: postgresql-libpq:base
 allow-newer: servant-openapi3:base
 allow-newer: openapi3:base
 allow-newer: openapi3:template-haskell
-allow-newer: swagger2:base
-allow-newer: swagger2:template-haskell
-allow-newer: swagger2:lens
-allow-newer: swagger2:containers
 allow-newer: pipes-safe:base
 allow-newer: servant-js:base
 allow-newer: servant-js:lens
 allow-newer: lucid:base
-allow-newer: Cabal
 
 -- This block is for hashable-1.5
 allow-newer: vault:hashable
-allow-newer: unordered-containers:hashable
 allow-newer: async:hashable
 allow-newer: psqueues:hashable
-allow-newer: aeson:hashable
-allow-newer: witherable:hashable
-allow-newer: these:hashable
-allow-newer: strict:hashable
-allow-newer: semialign:hashable
-allow-newer: lens:hashable
 allow-newer: insert-ordered-containers:hashable
-allow-newer: optics-extra:hashable
 allow-newer: openapi3:hashable
-allow-newer: http-api-data:hashable
-allow-newer: swagger2:hashable
-allow-newer: quickcheck-instances:hashable
-allow-newer: postgresql-libpq:hashable
-allow-newer: postgresql-simple:hashable
