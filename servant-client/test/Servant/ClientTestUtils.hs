@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
@@ -75,6 +74,7 @@ import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
+import Servant.API.MultiVerb
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -144,6 +144,23 @@ instance ToDeepQuery Filter where
     [ (["age"], Just (Text.pack $ show age'))
     , (["name"], Just (Text.pack name'))
     ]
+
+-- MultiVerb test endpoint
+
+data ErrorResponse a
+
+data UserNotFound
+
+type instance ResponseType (ErrorResponse a ) = a
+
+type GetUserVerb =
+  MultiVerb
+    'GET
+    '[JSON]
+    '[ ErrorResponse UserNotFound,
+       Respond 200 "User found" Person
+     ]
+    (Maybe Person)
 
 type Api =
   Get '[JSON] Person
@@ -221,6 +238,7 @@ uverbGetSuccessOrRedirect :: Bool
                                               WithStatus 301 Text])
 uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
 recordRoutes :: RecordRoutes (AsClientT ClientM)
+captureVerbatim :: Verbatim -> ClientM Text
 
 getRoot
   :<|> getGet
@@ -282,15 +300,15 @@ server = serve api (
                                    }
        )
   :<|> return alice
-  :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
-  :<|> (Tagged $ \ request respond -> (respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders $ request) "rawSuccess"))
-  :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
+  :<|> Tagged (\ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
+  :<|> Tagged (\ request respond -> respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders request) "rawSuccess")
+  :<|> Tagged (\ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
-  :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
+  :<|> return (addHeader 1729 $ addHeader "eg2" True)
   :<|> (pure . Z . I . WithStatus $ addHeader 1729 $ addHeader "eg2" True)
-  :<|> (return $ addHeader "cookie1" $ addHeader "cookie2" True)
+  :<|> return (addHeader "cookie1" $ addHeader "cookie2" True)
   :<|> return NoContent
-  :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
+  :<|> Tagged (\ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
   :<|> emptyServer
   :<|> (\shouldRedirect -> if shouldRedirect
                               then respond (WithStatus @301 ("redirecting" :: Text))
@@ -318,10 +336,10 @@ failApi = Proxy
 
 failServer :: Application
 failServer = serve failApi (
-       (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
+       Tagged (\ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
   :<|> (\ _capture -> Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/json")] "")
-  :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
-  :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/x-www-form-urlencoded"), ("X-Example1", "1"), ("X-Example2", "foo")] "")
+  :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
+  :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/x-www-form-urlencoded"), ("X-Example1", "1"), ("X-Example2", "foo")] "")
   )
 
 -- * basic auth stuff
