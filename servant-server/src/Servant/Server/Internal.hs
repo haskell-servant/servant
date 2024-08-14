@@ -641,7 +641,7 @@ instance
 --
 -- The way the object is constructed from the extracted fields can be controlled by
 -- providing an instance on @'FromDeepQuery'@
--- 
+--
 -- Example:
 --
 -- > type MyApi = "books" :> DeepQuery "filter" BookQuery :> Get '[JSON] [Book]
@@ -913,6 +913,13 @@ instance HasServer EmptyAPI context where
   route Proxy _ _ = StaticRouter mempty mempty
 
   hoistServerWithContext _ _ _ = retag
+
+-- | Ignore @'EmptyAPI'@ as part of route in server handlers.
+instance HasServer api context => HasServer (EmptyAPI :> api) context where
+  type ServerT (EmptyAPI :> api) m = ServerT api m
+
+  route _ = route (Proxy :: Proxy api)
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 -- | Basic Authentication
 instance ( KnownSymbol realm
