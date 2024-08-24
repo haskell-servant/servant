@@ -74,14 +74,12 @@ if(impl(ghc >= 9.6.1))
 allow-newer: servant-openapi3:base
 allow-newer: openapi3:base
 allow-newer: openapi3:template-haskell
-allow-newer: pipes-safe:base
 allow-newer: servant-js:base
 allow-newer: servant-js:lens
 allow-newer: lucid:base
 
 -- This block is for hashable-1.5
 allow-newer: vault:hashable
-allow-newer: async:hashable
 allow-newer: psqueues:hashable
 allow-newer: insert-ordered-containers:hashable
 allow-newer: openapi3:hashable
