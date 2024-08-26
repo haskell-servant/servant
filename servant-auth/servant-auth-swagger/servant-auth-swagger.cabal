@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           servant-auth-swagger
-version:        0.2.10.2
+version:        0.2.11.0
 synopsis:       servant-swagger/servant-auth compatibility
 description:    This package provides instances that allow generating swagger2 schemas from
                 <https://hackage.haskell.org/package/servant servant>
@@ -31,12 +31,12 @@ library
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base            >= 4.10    && < 4.21
+      base            >= 4.14    && < 4.21
     , text            >= 1.2.3.0 && < 2.2
-    , servant-swagger >= 1.1.5   && < 2
+    , servant-swagger >= 1.2.1   && < 2
     , swagger2        >= 2.2.2   && < 3
-    , servant         >= 0.13    && < 0.21
-    , servant-auth    == 0.4.*
+    , servant         >= 0.20.2  && < 0.21
+    , servant-auth    >= 0.4.2.0 && < 0.5
     , lens            >= 4.16.1  && < 5.4
   exposed-modules:
       Servant.Auth.Swagger

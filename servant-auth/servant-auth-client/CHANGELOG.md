@@ -7,6 +7,11 @@ and this project adheres to [PVP Versioning](https://pvp.haskell.org/).
 
 ## [Unreleased]
 
+## [0.4.2.0] - 2024-08-28
+
+- Allow newer versions of dependencies (QuickCheck, jose, warp, bytestring, etc.) and compiler.
+- Use `aroundAll` instead of `around`. [#1694](https://github.com/haskell-servant/servant/pull/1694)
+
 ## [0.4.1.0] - 2020-10-06
 
 - Support generic Bearer token auth 

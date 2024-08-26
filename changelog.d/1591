@@ -1,2 +1,0 @@
-synopsis: Fix build of examples/greet.hs. Add "429 Too Many Requests" error.
-prs: #1591

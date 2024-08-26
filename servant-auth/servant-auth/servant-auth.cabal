@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           servant-auth
-version:        0.4.1.0
+version:        0.4.2.0
 synopsis:       Authentication combinators for servant
 description:    This package provides an @Auth@ combinator for 'servant'. This combinator
                 allows using different authentication schemes in a straightforward way,
@@ -33,12 +33,12 @@ library
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base                    >= 4.10     && < 4.21
+      base                    >= 4.14     && < 4.21
     , containers              >= 0.6      && < 0.8
     , aeson                   >= 2.0      && < 3
     , jose                    >= 0.10     && < 0.12
     , lens                    >= 4.16.1   && < 5.4
-    , servant                 >= 0.15     && < 0.21
+    , servant                 >= 0.20.2   && < 0.21
     , text                    >= 1.2.3.0  && < 2.2
     , unordered-containers    >= 0.2.9.0  && < 0.3
   exposed-modules:

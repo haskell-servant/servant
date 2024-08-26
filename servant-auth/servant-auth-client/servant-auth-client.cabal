@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           servant-auth-client
-version:        0.4.1.1
+version:        0.4.2.0
 synopsis:       servant-client/servant-auth compatibility
 description:    This package provides instances that allow generating clients from
                 <https://hackage.haskell.org/package/servant servant>
@@ -31,12 +31,12 @@ library
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base                >= 4.10     && < 4.21
+      base                >= 4.14     && < 4.21
     , bytestring          >= 0.10.6.0 && < 0.13
     , containers          >= 0.5.6.2  && < 0.8
-    , servant-auth        == 0.4.*
-    , servant             >= 0.13     && < 0.21
-    , servant-client-core >= 0.13     && < 0.21
+    , servant-auth        >= 0.4.2.0  && < 0.5
+    , servant             >= 0.20.2   && < 0.21
+    , servant-client-core >= 0.20.2   && < 0.21
 
   exposed-modules:
       Servant.Auth.Client
@@ -69,7 +69,7 @@ test-suite spec
     , http-client          >= 0.5.13.1 && < 0.8
     , http-types           >= 0.12.2   && < 0.13
     , servant-auth-server  >= 0.4.2.0  && < 0.5
-    , servant-server       >= 0.13     && < 0.21
+    , servant-server       >= 0.20.2   && < 0.21
     , time                 >= 1.5.0.1  && < 1.13
     , transformers         >= 0.4.2.0  && < 0.7
     , wai                  >= 3.2.1.2  && < 3.3

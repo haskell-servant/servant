@@ -1,3 +1,0 @@
-synopsis: Add AddSetCookies instance for when the left tree is the same before and after the transformation.
-prs: #1702
-issues: #1601

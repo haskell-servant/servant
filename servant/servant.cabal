@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               servant
-version:            0.20.1
+version:            0.20.2
 synopsis:           A family of combinators for defining webservices APIs
 category:           Servant, Web
 description:
@@ -127,7 +127,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-    , base          >=4.9      && <4.21
+    , base          >=4.14     && <4.21
     , bytestring    >=0.10.8.1 && <0.13
     , constraints   >=0.2
     , containers    >=0.6      && <0.8

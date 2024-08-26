@@ -2,6 +2,40 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20.2
+----
+- Full query string helpers [#1604](https://github.com/haskell-servant/servant/pull/1604)
+
+  This PR introduces `DeepQuery`, a route combinator that implements a pattern commonly known as deep objects.
+  It builds upon the convention of using `[]` for a list of parameters: 
+  `books?filter[search]=value&filter[author][name]=value`.
+  The corresponding type would be `DeepQuery "filter" BookQuery :> Get '[JSON] [Book]`.
+- Add IsIn instance for NamedRoutes [#1707](https://github.com/haskell-servant/servant/pull/1707)
+- Renamed `AtLeastOneFragment` type class to `AtMostOneFragment` [#1727](https://github.com/haskell-servant/servant/pull/1727)
+
+  The previously named `AtLeastOneFragment` type class defined in the
+  `Servant.API.TypeLevel` module has been renamed to `AtMostOneFragment`,
+  since the previous name was misleading.
+- Use `Header'` in response headers. [#1697](https://github.com/haskell-servant/servant/pull/1697)
+
+  Use `Header'` instead of `Header` in response, so it's possible to provide
+  `Description`, for example:
+
+  ```
+  type PaginationTotalCountHeader =
+    Header'
+      '[ Description "Indicates to the client total count of items in collection"
+       , Optional
+       , Strict
+       ]
+      "Total-Count"
+      Int
+  ```
+
+  Note: if you want to add header with description you should use `addHeader'`
+  or `noHeader'` which accepts `Header'` with all modifiers.
+
+
 0.20.1
 ----
 

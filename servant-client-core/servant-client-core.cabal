@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               servant-client-core
-version:            0.20
+version:            0.20.2
 synopsis:
   Core functionality and class for client function generation for servant APIs
 
@@ -102,7 +102,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-    , base              >=4.9      && <4.21
+    , base              >=4.14     && <4.21
     , bytestring        >=0.10.8.1 && <0.13
     , constraints       >=0.2      && <0.15
     , containers        >=0.5.7.1  && <0.8
@@ -111,7 +111,7 @@ library
     , text              >=1.2.3.0  && <2.2
 
   -- Servant dependencies
-  build-depends:   servant >=0.20
+  build-depends:   servant >=0.20.2
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
