@@ -1,18 +1,18 @@
 packages:
   servant/
+  servant-client-core/
+  servant-client/
+  servant-server/
+
   servant-auth/servant-auth
   servant-auth/servant-auth-client
   servant-auth/servant-auth-docs
   servant-auth/servant-auth-server
   servant-auth/servant-auth-swagger
-
-  servant-client-core/
-  servant-client/
   servant-docs/
   servant-foreign/
   servant-http-streams/
   servant-quickcheck/
-  servant-server/
   servant-swagger/
 
   doc/tutorial/
@@ -83,3 +83,7 @@ allow-newer: vault:hashable
 allow-newer: psqueues:hashable
 allow-newer: insert-ordered-containers:hashable
 allow-newer: openapi3:hashable
+
+-- http2-5.3.3 is blacklisted, force http2-5.3.2 or http2-5.3.4
+constraints:
+  http2 ==5.3.2 || ==5.3.4

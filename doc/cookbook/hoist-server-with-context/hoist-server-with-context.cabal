@@ -11,7 +11,6 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 category:            Servant
 build-type:          Simple
-tested-with:         GHC==8.6.5, GHC==8.8.3, GHC ==8.10.7
 
 executable cookbook-hoist-server-with-context
   main-is:             HoistServerWithContext.lhs

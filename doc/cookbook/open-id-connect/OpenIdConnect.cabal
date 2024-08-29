@@ -8,7 +8,6 @@ license-file:   ../../../servant/LICENSE
 author:         Servant Contributors
 maintainer:     haskell-servant-maintainers@googlegroups.com
 build-type:     Simple
-tested-with:    GHC==8.6.5
 
 executable cookbook-openidconnect
   main-is: OpenIdConnect.lhs

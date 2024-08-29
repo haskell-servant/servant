@@ -18,7 +18,7 @@ maintainer:     jkarni@gmail.com
 copyright:      (c) Julian K. Arni
 license:        BSD-3-Clause
 license-file:   LICENSE
-tested-with:    GHC==8.6.5, GHC==8.8.4, GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.7, GHC ==9.4.4, GHC ==9.10.1
+tested-with:    GHC ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.2 || ==9.10.1
 build-type:     Simple
 extra-source-files:
     CHANGELOG.md
@@ -33,7 +33,7 @@ library
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base                    >= 4.14     && < 4.21
+      base                    >= 4.16.4.0 && < 4.21
     , containers              >= 0.6      && < 0.8
     , aeson                   >= 2.0      && < 3
     , jose                    >= 0.10     && < 0.12
