@@ -90,7 +90,7 @@ library
 test-suite doctests
   ghc-options:      -Wall
   build-depends:
-    base,
+    base < 5,
     directory >= 1.0,
     doctest >= 0.17 && <0.23,
     servant,
@@ -107,7 +107,7 @@ test-suite spec
   hs-source-dirs:   test
   main-is:          Spec.hs
   build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.12
-  build-depends:    base
+  build-depends:    base < 5
                   , base-compat
                   , aeson >=1.4.2.0 && <3
                   , hspec >=2.6.0 && <2.12
