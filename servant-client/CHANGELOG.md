@@ -3,6 +3,15 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20.2
+------
+
+- Client Middleware [#1720](https://github.com/haskell-servant/servant/pull/1720)
+
+  Clients now support real middleware of type `(Request -> ClientM Response) -> Request -> ClientM Response` which can be configured in `ClientEnv`.
+  This allows access to raw request and response data. It can also be used to control how/when/if actual requests are performed.
+  Middleware can be chained with function composition `mid1 . mid2 . mid3`.
+
 0.20
 ----
 

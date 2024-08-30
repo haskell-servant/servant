@@ -1,2 +1,0 @@
-synopsis: Add instance `HasServer (EmptyAPI :> api) context`
-prs: #1775

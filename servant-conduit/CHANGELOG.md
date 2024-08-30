@@ -1,3 +1,8 @@
+0.16.1
+------
+
+- Compatibility with newer dependencies.
+
 0.16
 ----
 

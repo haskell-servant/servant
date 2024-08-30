@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-http-streams
-version:             0.20
+version:             0.20.2
 
 synopsis:            Automatic derivation of querying functions for servant
 category:            Servant, Web
@@ -38,7 +38,7 @@ library
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4
   build-depends:
-      base                  >= 4.9      && < 4.21
+      base                  >= 4.14     && < 4.21
     , bytestring            >= 0.10.8.1 && < 0.13
     , containers            >= 0.5.7.1  && < 0.8
     , deepseq               >= 1.4.2.0  && < 1.6
@@ -54,8 +54,8 @@ library
   -- Servant dependencies.
   -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
-      servant               >= 0.20 && < 0.21
-    , servant-client-core   >= 0.20 && <0.21
+      servant               >= 0.20.2 && < 0.21
+    , servant-client-core   >= 0.20.2 && <0.21
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
@@ -116,8 +116,8 @@ test-suite spec
     , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 2.8.0.0  && < 3.3
     , QuickCheck        >= 2.12.6.1 && < 2.16
-    , servant-server    >= 0.20 && < 0.21
-    , servant           >= 0.20 && < 0.21
+    , servant-server    >= 0.20.2 && < 0.21
+    , servant           >= 0.20.2 && < 0.21
 
   build-tool-depends:
     hspec-discover:hspec-discover >= 2.6.0 && < 2.12

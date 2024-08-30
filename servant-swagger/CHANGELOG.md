@@ -1,3 +1,8 @@
+1.2.1
+-----
+
+- Add IsIn instance for NamedRoutes [#1707](https://github.com/haskell-servant/servant/pull/1707)
+
 1.2
 ---
 

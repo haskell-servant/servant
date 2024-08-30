@@ -1,4 +1,9 @@
 releases:
+  - version: "0.1.1.0"
+    changes:
+      - description: "Add missing LICENSE file to servant-quickcheck"
+        authors: tchoutri
+        date: 2024-05-16
   - version: "0.1.0.0"
     changes:
       - description: "Support servant{-server,-client} up to 0.20, support base up to 4.19, drop support for some older servant and base versions, drop support for stack, drop testing for some older ghc versions"

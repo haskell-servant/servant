@@ -7,6 +7,15 @@ and this project adheres to [PVP Versioning](https://pvp.haskell.org/).
 
 ## [Unreleased]
 
+## [0.4.9.0] - 2024-08-28
+- Allow newer versions dependencies, and newer versions of GHC. [#1747](https://github.com/haskell-servant/servant/pull/1747) among others.
+- Use `Type` instead of `*`. [#1710](https://github.com/haskell-servant/servant/pull/1710)
+- Add AddSetCookies instance for when the left tree is the same before and after the transformation. [#1601](https://github.com/haskell-servant/servant/issues/1601) [#1702](https://github.com/haskell-servant/servant/pull/1702)
+
+## [0.4.8.0] - 2023-06-25
+
+- No changelog available.
+
 ## [0.4.6.0] - 2020-10-06
 
 ## Changed

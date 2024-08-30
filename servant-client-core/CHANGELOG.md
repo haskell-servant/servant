@@ -3,6 +3,12 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20.2
+----
+
+- Full query string helpers [#1604](https://github.com/haskell-servant/servant/pull/1604)
+  This involves exporting `setQueryString` from Servant.Client.Core.Request.
+
 0.20
 ----
 

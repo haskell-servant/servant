@@ -3,6 +3,26 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20.2
+----
+
+- Fix build of examples/greet.hs. Add "429 Too Many Requests" error. [#1591](https://github.com/haskell-servant/servant/pull/1591)
+- Full query string helpers [#1604](https://github.com/haskell-servant/servant/pull/1604)
+  This involves a new instance `HasServer (QueryString :> api) context`.
+- Add `MkHandler` pattern synonym [#1732](https://github.com/haskell-servant/servant/issues/1732) [#1733](https://github.com/haskell-servant/servant/pull/1733)
+
+  Add a bidirectional pattern synonym to construct `Handler a` values from `IO
+  (Either ServerError a)` ones, and match in the other direction.
+- Add instance `HasServer (EmptyAPI :> api) context` [#1775](https://github.com/haskell-servant/servant/pull/1775)
+- Bugfix - CaptureAll produces [""] for empty paths due to trailing slash. [#1243](https://github.com/haskell-servant/servant/issues/1243) [#1516](https://github.com/haskell-servant/servant/pull/1516)
+
+  CaptureAll resulted in `[""]` for empty paths due to trailing slash.  Similar
+  oddities occurred around these edge cases like `"/"` resulted in `[]` correctly,
+  but `"//"` resulted in `["", ""]`.  This patch simply eliminates the first `""`
+  in the pathinfo list as taken from the wai response.  This might break user
+  code that relies on personal shims to solve the problem, however simply removing their
+  workarounds should fix their code as the behavior is now sane.
+
 0.20
 ----
 

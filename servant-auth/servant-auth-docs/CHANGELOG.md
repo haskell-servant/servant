@@ -7,6 +7,11 @@ and this project adheres to [PVP Versioning](https://pvp.haskell.org/).
 
 ## [Unreleased]
 
+## [0.2.11.0] - 2024-08-28
+
+- Compatibility with newer dependencies, newer GHCs.
+- Use `Type` instead of `*`. (#1710)
+
 ## [0.2.10.0] - 2018-06-18
 
 ### Added

@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-swagger
-version:             1.2
+version:             1.2.1
 synopsis:            Generate a Swagger/OpenAPI/OAS 2.0 specification for your servant API.
 description:
   Swagger is a project used to describe and document RESTful APIs. The core of the
@@ -49,7 +49,7 @@ source-repository head
 
 custom-setup
   setup-depends:
-    base >=4.9 && <5,
+    base >=4.14 && <5,
     Cabal >= 1.24 && <4,
     cabal-doctest >=1.0.6 && <1.1
 
@@ -71,13 +71,13 @@ library
   hs-source-dirs:      src
   build-depends:       aeson                     >=1.4.2.0 && <3
                      , aeson-pretty              >=0.8.7    && <0.9
-                     , base                      >=4.9.1.0  && <5
+                     , base                      >=4.14     && <5
                      , base-compat               >=0.10.5   && <0.15
                      , bytestring                >=0.10.8.1 && <0.13
                      , http-media                >=0.7.1.3  && <0.9
                      , insert-ordered-containers >=0.2.1.0  && <0.3
                      , lens                      >=4.17     && <6
-                     , servant                   >=0.20     && <0.21
+                     , servant                   >=0.20.2   && <0.21
                      , singleton-bool            >=0.1.4    && <0.2
                      , swagger2                  >=2.3.0.1  && <3
                      , text                      >=1.2.3.0  && <2.2
@@ -90,7 +90,7 @@ library
 test-suite doctests
   ghc-options:      -Wall
   build-depends:
-    base,
+    base < 5,
     directory >= 1.0,
     doctest >= 0.17 && <0.23,
     servant,
@@ -107,7 +107,7 @@ test-suite spec
   hs-source-dirs:   test
   main-is:          Spec.hs
   build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.12
-  build-depends:    base
+  build-depends:    base < 5
                   , base-compat
                   , aeson >=1.4.2.0 && <3
                   , hspec >=2.6.0 && <2.12

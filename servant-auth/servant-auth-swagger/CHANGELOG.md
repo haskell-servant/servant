@@ -7,6 +7,10 @@ and this project adheres to [PVP Versioning](https://pvp.haskell.org/).
 
 ## [Unreleased]
 
+## [0.2.11.0] - 2024-08-28
+
+- Compatibility with newer dependencies and GHCs.
+
 ## [0.2.10.1] - 2020-10-06
 
 ### Changed
