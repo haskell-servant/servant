@@ -58,7 +58,6 @@ common extensions
     RankNTypes
     RecordWildCards
     ScopedTypeVariables
-    StrictData
     TupleSections
     TypeApplications
     TypeFamilies

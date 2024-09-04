@@ -1,0 +1,11 @@
+-- Possible fields for changelog entry
+-- synopsis: Brief description of the change. Often just the PR title.
+-- description:	Longer description, with a list of sub-changes. Not needed for small/atomic changes.
+-- packages: Packages affected by the change. Omit if it's an overarching or non-package change.
+-- prs: Space-separated hash-prefixed pull request numbers containing the change (usually just one).
+-- issues: Space-separated hash-prefixed issue numbers that the change fixes/closes/affects.
+-- significance: Set to significant if the change is significant, that is if it warrants being put near the top of the changelog.
+organization: haskell-servant
+repository: servant
+required-fields: synopsis description prs
+packages: servant servant-server servant-client-core servant-client servant-quickcheck servant
