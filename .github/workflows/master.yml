@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Extract the tested GHC versions
         id: set-matrix
-        uses: kleidukos/get-tested@0.1.7.1
+        uses: kleidukos/get-tested@v0.1.8.0
         with:
           cabal-file: servant/servant.cabal
           ubuntu-version: "latest"
