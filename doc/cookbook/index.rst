@@ -20,6 +20,7 @@ you name it!
   structuring-apis/StructuringApis.lhs
   generic/Generic.lhs
   openapi3/OpenAPI.lhs
+  named-routes/NamedRoutes.lhs
   https/Https.lhs
   db-mysql-basics/MysqlBasics.lhs
   db-sqlite-simple/DBConnection.lhs
