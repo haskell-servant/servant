@@ -34,7 +34,7 @@ library
   ghc-options: -Wall
   build-depends:
       base                    >= 4.16.4.0 && < 4.21
-    , containers              >= 0.6      && < 0.8
+    , containers              >=0.6.5.1   && < 0.8
     , aeson                   >= 2.0      && < 3
     , jose                    >= 0.10     && < 0.12
     , lens                    >= 4.16.1   && < 5.4

@@ -128,7 +128,7 @@ library
     , base          >= 4.16.4.0 && < 4.21
     , bytestring    >=0.11 && <0.13
     , constraints   >=0.2
-    , containers    >=0.6      && <0.8
+    , containers    >=0.6.5.1  && <0.8
     , mtl           ^>=2.2.2   || ^>=2.3.1
     , sop-core      >=0.4.0.0  && <0.6
     , text          >=1.2.3.0  && <2.2

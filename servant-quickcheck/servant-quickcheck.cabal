@@ -38,7 +38,7 @@ library
       aeson                  >=0.8    && <2.3
     , base                   >= 4.16.4.0 && < 4.21
     , base-compat-batteries  >=0.10.1 && <0.15
-    , bytestring             >=0.10   && <0.13
+    , bytestring             >=0.11   && <0.13
     , case-insensitive       >=1.2    && <1.3
     , clock                  >=0.7    && <0.9
     , data-default-class     >=0.0    && <0.2
