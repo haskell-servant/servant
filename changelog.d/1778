@@ -1,0 +1,8 @@
+synopsis: Remove GHC <= 8.10.7 from the support window
+prs: #1778
+
+description {
+  GHC <= 8.10.7 is removed from the support window. The lowest version supported in CI becomes GHC 9.2.1, released on the 26/05/2023
+
+  This grants us the ability to use -XGHC2021 as default language, as well as -XOverloadedRecordDot.
+}

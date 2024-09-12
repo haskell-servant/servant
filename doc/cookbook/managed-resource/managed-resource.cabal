@@ -8,7 +8,6 @@ license-file:        ../../../servant/LICENSE
 author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 build-type:          Simple
-tested-with:         GHC==9.4.2
 
 executable cookbook-managed-resource
   main-is:             ManagedResource.lhs
