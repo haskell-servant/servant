@@ -92,7 +92,8 @@ authCheck connPool (BasicAuthData login password) = pure $
 ```
 
 **Warning**: make sure to use a proper password hashing function in
-functions like this: see [bcrypt](https://en.wikipedia.org/wiki/Bcrypt),
+functions like this: see [Argon2](https://en.wikipedia.org/wiki/Argon2),
+[bcrypt](https://en.wikipedia.org/wiki/Bcrypt),
 [scrypt](https://en.wikipedia.org/wiki/Scrypt),
 [pgcrypto](https://www.postgresql.org/docs/current/static/pgcrypto.html).
 
