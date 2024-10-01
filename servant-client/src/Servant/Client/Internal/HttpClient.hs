@@ -232,8 +232,15 @@ clientResponseToResponse f r = Response
 -- | Create a @http-client@ 'Client.Request' from a @servant@ 'Request'
 --    The 'Client.host', 'Client.path' and 'Client.port' fields are extracted from the 'BaseUrl'
 --    otherwise the body, headers and query string are derived from the @servant@ 'Request'
-defaultMakeClientRequest :: BaseUrl -> Request -> IO Client.Request
-defaultMakeClientRequest burl r = return Client.defaultRequest
+--
+-- Note that @Applicative@ dependency is not really needed for this function
+-- implementation. But in the past the return type was wrapped into @IO@
+-- without a necessity breaking the API backward-compatibility. In order to not
+-- break the API again it was changed to @Applicative@ so that you can just use
+-- something like @Data.Functor.Identity@ without a need to involve @IO@ but
+-- still keeping it compatible with the code written when it was typed as @IO@.
+defaultMakeClientRequest :: Applicative f => BaseUrl -> Request -> f Client.Request
+defaultMakeClientRequest burl r = pure Client.defaultRequest
     { Client.method = requestMethod r
     , Client.host = fromString $ baseUrlHost burl
     , Client.port = baseUrlPort burl
