@@ -183,6 +183,7 @@ import           Servant.API.WithNamedContext
 import           Servant.API.WithResource
                  (WithResource)
 import           Web.HttpApiData
+import           Servant.API.MultiVerb
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
@@ -665,3 +666,7 @@ instance {-# OVERLAPPABLE #-} TypeError (NoInstanceForSub
                                          HasLink ty) => HasLink (ty :> sub)
 
 instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasLink api)) => HasLink api
+
+instance HasLink (MultiVerb method cs as r) where
+  type MkLink (MultiVerb method cs as r) a = a
+  toLink toA _ = toA
