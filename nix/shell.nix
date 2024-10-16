@@ -1,8 +1,8 @@
-{ compiler ? "ghc8104"
+{ compiler ? "ghc92"
 , tutorial ? false
 , pkgs ? import ./nixpkgs.nix
 }:
-  
+
   with pkgs;
 
   let
