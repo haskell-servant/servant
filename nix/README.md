@@ -30,6 +30,14 @@ To check which which ghc compiler options are available:
 $ nix-env -f nix/nixpkgs.nix -qaP -A haskell.compiler
 ```
 
+If you prefer to use flakes, the `flake.nix` file provides an
+equivalent default devShell to `shell.nix`. In addition, the
+tutorial is provided as a separate flake output:
+
+```sh
+$ nix develop .#tutorial
+```
+
 ### Cabal users
 
 GHC version can be chosen via the nix-shell parameter
