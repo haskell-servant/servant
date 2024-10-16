@@ -70,6 +70,9 @@ if(impl(ghc >= 9.6.1))
   package servant-server
     ghc-options: -fprint-redundant-promotion-ticks
 
+  package lzma
+    flags: -pkgconfig
+
 -- This block is for GHC 9.10.1.
 allow-newer: servant-openapi3:base
 allow-newer: openapi3:base
