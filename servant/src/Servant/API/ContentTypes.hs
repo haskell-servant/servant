@@ -24,7 +24,7 @@
 -- >>> type MyEndpoint = ReqBody '[JSON, PlainText] Book :> Put '[JSON, PlainText] Book
 --
 -- Meaning the endpoint accepts requests of Content-Type @application/json@
--- or @text/plain;charset-utf8@, and returns data in either one of those
+-- or @text/plain;charset=utf8@, and returns data in either one of those
 -- formats (depending on the @Accept@ header).
 --
 -- If you would like to support Content-Types beyond those provided here,
