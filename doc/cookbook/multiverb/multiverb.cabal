@@ -1,0 +1,34 @@
+cabal-version:       3.0
+name:                cookbook-multiverb
+version:             0.0.1
+synopsis:            MultiVerb cookbook
+homepage:            http://docs.servant.dev/
+license:             BSD-3-Clause
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+category:            Servant
+build-type:          Simple
+
+executable cookbook-multiverb
+  main-is:             MultiVerb.lhs
+  build-depends:       base <  5 
+                     , aeson >= 2.2
+                     , aeson-pretty >= 0.8.8
+                     , async
+                     , http-client
+                     , mtl
+                     , servant
+                     , servant-client
+                     , generics-sop
+                     , sop-core
+                     , servant-server
+                     , servant-swagger
+                     , string-conversions
+                     , swagger2
+                     , wai
+                     , warp
+  default-language: Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit
+  build-tool-depends:  markdown-unlit:markdown-unlit
+

@@ -2,18 +2,22 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
-module Servant.Server.Internal.Context where
+module Servant.Server.Internal.Context
+  ( module Servant.Server.Internal.Context
+  , module Servant.API.TypeLevel.List
+  ) where
 
-import           Data.Kind
+import           Data.Kind 
                  (Type)
 import           Data.Proxy
 import           GHC.TypeLits
+import           Servant.API.TypeLevel.List
+                 (type (.++))
 
 -- | 'Context's are used to pass values to combinators. (They are __not__ meant
 -- to be used to pass parameters to your handlers, i.e. they should not replace
@@ -47,15 +51,6 @@ instance Eq (Context '[]) where
     _ == _ = True
 instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
     x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
-
--- | Append two type-level lists.
---
--- Hint: import it as
---
--- > import Servant.Server (type (.++))
-type family (.++) (l1 :: [Type]) (l2 :: [Type]) where
-  '[] .++ a = a
-  (a ': as) .++ b = a ': (as .++ b)
 
 -- | Append two contexts.
 (.++) :: Context l1 -> Context l2 -> Context (l1 .++ l2)
@@ -92,7 +87,7 @@ instance {-# OVERLAPPING #-}
 -- to have multiple values of the same type in your 'Context' and need to access
 -- them, we provide 'NamedContext'. You can think of it as sub-namespaces for
 -- 'Context's.
-data NamedContext (name :: Symbol) (subContext :: [Type])
+newtype NamedContext (name :: Symbol) (subContext :: [Type])
   = NamedContext (Context subContext)
 
 -- | 'descendIntoNamedContext' allows you to access `NamedContext's. Usually you

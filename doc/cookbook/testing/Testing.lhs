@@ -175,7 +175,7 @@ businessLogicSpec =
 Let's run our tests and see what happens:
 
 ```
-$ cabal new-test all
+$ cabal test all
 POST /user
   should create a user with a high enough ID
   should fail with a too-small ID FAILED [1]
@@ -364,7 +364,7 @@ Out of the box, `hspec-wai` provides a lot of useful tools for us to run tests
 against our application. What happens when we run these tests?
 
 ```
-$ cabal new-test all
+$ cabal test all
 ...
 
 GET /docs
