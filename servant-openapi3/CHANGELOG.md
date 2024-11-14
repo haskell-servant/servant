@@ -1,3 +1,9 @@
+Unreleased
+----------
+
+* Do not count `NoContent` as a body type if it appears in `Headers
+  hdrs NoContent`.
+
 2.1.0.0
 -------
 
