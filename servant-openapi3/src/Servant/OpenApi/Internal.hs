@@ -224,12 +224,7 @@ instance HasOpenApi (UVerb method cs '[]) where
 -- | @since <2.0.1.0>
 instance
   {-# OVERLAPPABLE #-}
-  ( AllAccept cs
-  , HasOpenApi (UVerb method cs as)
-  , HasStatus a
-  , OpenApiMethod method
-  , ToSchema a
-  )
+  (HasOpenApi (UVerb method cs as), HasOpenApi (Verb method (StatusOf a) cs a))
   => HasOpenApi (UVerb method cs (a ': as))
   where
   toOpenApi _ =

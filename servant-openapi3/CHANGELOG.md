@@ -1,6 +1,8 @@
 Unreleased
 ----------
 
+* The `HasOpenApi` instance that recurses through `UVerb` responses no
+  longer demands `ToSchema NoContent`.
 * Do not count `NoContent` as a body type if it appears in `Headers
   hdrs NoContent`.
 
