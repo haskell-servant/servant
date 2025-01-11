@@ -476,8 +476,10 @@ instance
         hostCheck :: DelayedIO ()
         hostCheck = withRequest $ \req ->
           case requestHeaderHost req of
-            Just host -> unless (BC8.unpack host == targetHost) $
-              delayedFail $ formatError rep req $ "Expected host: " ++ targetHost
+            Just hostBytes ->
+              let host = BC8.unpack hostBytes
+              in  unless (host == targetHost) $
+                    delayedFail $ formatError rep req $ "Invalid host: " ++ host
             _ -> delayedFail $ formatError rep req "Host header missing"
     in  Delayed { headersD = headersD <* hostCheck, .. }
 
