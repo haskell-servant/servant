@@ -478,9 +478,7 @@ instance
             Just host -> unless (BC8.unpack host == targetHost) $
               delayedFail $ formatError rep req $ "Expected host: " ++ targetHost
             _ -> delayedFail $ formatError rep req "Host header missing"
-    in  Delayed { headersD = hostCheck >> headersD
-                , ..
-                  }
+    in  Delayed { headersD = hostCheck >> headersD, .. }
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
