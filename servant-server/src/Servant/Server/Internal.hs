@@ -15,8 +15,9 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServerError
   ) where
 
+import           Control.Applicative (liftA2)
 import           Control.Monad
-                 (join, when)
+                 (join, when, unless)
 import           Control.Monad.Trans
                  (liftIO, lift)
 import           Control.Monad.Trans.Resource
@@ -54,7 +55,7 @@ import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
                  CaptureAll, DeepQuery, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
-                 Header', If, IsSecure (..), NoContentVerb, QueryFlag,
+                 Host, Header', If, IsSecure (..), NoContentVerb, QueryFlag,
                  QueryParam', QueryParams, QueryString, Raw, RawM, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
@@ -460,6 +461,27 @@ instance
             $ T.unpack $ "Error parsing header "
                     <> headerName
                     <> " failed: " <> e
+
+instance
+  ( KnownSymbol sym
+  , HasServer api context
+  , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+    ) => HasServer (Host sym :> api) context where
+  type ServerT (Host sym :> api) m = ServerT api m
+
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
+
+  route Proxy context (Delayed {..}) = route (Proxy :: Proxy api) context $
+    let formatError =
+          headerParseErrorFormatter $ getContextEntry $ mkContextWithErrorFormatter context
+        rep = typeRep (Proxy :: Proxy Host)
+        targetHost = symbolVal (Proxy :: Proxy sym)
+        hostCheck = withRequest $ \req ->
+          case lookup "Host" $ requestHeaders req of
+            Just host -> unless (BC8.unpack host == targetHost) $
+              delayedFail $ formatError rep req $ "Expected host: " ++ targetHost
+            _ -> delayedFail $ formatError rep req "Host header missing"
+    in  Delayed { headersD = liftA2 (,) headersD hostCheck }
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
