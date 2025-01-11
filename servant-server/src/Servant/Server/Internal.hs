@@ -15,7 +15,9 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServerError
   ) where
 
+#if !MIN_VERSION_base(4,18,0)
 import           Control.Applicative (liftA2)
+#endif
 import           Control.Monad
                  (join, when, unless)
 import           Control.Monad.Trans
