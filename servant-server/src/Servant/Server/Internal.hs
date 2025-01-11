@@ -15,9 +15,6 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.ServerError
   ) where
 
-#if !MIN_VERSION_base(4,18,0)
-import           Control.Applicative (liftA2)
-#endif
 import           Control.Monad
                  (join, when, unless)
 import           Control.Monad.Trans
@@ -483,8 +480,7 @@ instance
             Just host -> unless (BC8.unpack host == targetHost) $
               delayedFail $ formatError rep req $ "Expected host: " ++ targetHost
             _ -> delayedFail $ formatError rep req "Host header missing"
-    in  Delayed { headersD = liftA2 (,) headersD hostCheck
-                , serverD = \c p (h, _) a b req -> serverD c p h a b req
+    in  Delayed { headersD = hostCheck >> headersD
                 , ..
                   }
 
