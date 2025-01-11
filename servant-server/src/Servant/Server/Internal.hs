@@ -47,7 +47,7 @@ import           Network.Socket
                  (SockAddr)
 import           Network.Wai
                  (Application, Request, Response, ResponseReceived, httpVersion, isSecure, lazyRequestBody,
-                 queryString, remoteHost, getRequestBodyChunk, requestHeaders,
+                 queryString, remoteHost, getRequestBodyChunk, requestHeaders, requestHeaderHost,
                  requestMethod, responseLBS, responseStream, vault)
 import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
@@ -475,7 +475,7 @@ instance
         targetHost = symbolVal (Proxy :: Proxy sym)
         hostCheck :: DelayedIO ()
         hostCheck = withRequest $ \req ->
-          case lookup "Host" $ requestHeaders req of
+          case requestHeaderHost req of
             Just host -> unless (BC8.unpack host == targetHost) $
               delayedFail $ formatError rep req $ "Expected host: " ++ targetHost
             _ -> delayedFail $ formatError rep req "Host header missing"
