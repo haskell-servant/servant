@@ -468,7 +468,7 @@ instance
 
   hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
-  route Proxy context (Delayed {..}) = route (Proxy :: Proxy api) context $
+  route _ context (Delayed {..}) = route (Proxy :: Proxy api) context $
     let formatError =
           headerParseErrorFormatter $ getContextEntry $ mkContextWithErrorFormatter context
         rep = typeRep (Proxy :: Proxy Host)
