@@ -35,6 +35,10 @@ jobs:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: 'latest'
 
+    - name: Install system dependencies
+      run: |
+          ./.github/workflows/install-system-dependencies.sh
+
     - name: Freeze
       run: |
         cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
@@ -49,9 +53,6 @@ jobs:
         key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('**/plan.json') }}
         restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
-    - name: Install system dependencies
-      run: |
-          ./.github/workflows/install-system-dependencies.sh
     - name: Install doctest
       run: |
         cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.22'

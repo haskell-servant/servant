@@ -34,10 +34,9 @@ This recipe uses the following ingredients:
 import Prelude ()
 import Prelude.Compat
 
-import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader
 import Data.Aeson
-import Data.Default
+import Data.Default (def)
 import Data.Proxy
 import Data.Text
 import Data.Time.Clock ( UTCTime, getCurrentTime )
@@ -48,7 +47,7 @@ import Network.Wai.Middleware.RequestLogger
 import Network.Wai.Middleware.RequestLogger.JSON
 import Servant as S
 import Servant.Auth as SA
-import Servant.Auth.Server as SAS
+import Servant.Auth.Server as SAS hiding (def)
 import System.Log.FastLogger                      ( ToLogStr(..)
                                                   , LoggerSet
                                                   , defaultBufSize
