@@ -16,7 +16,7 @@ module Servant.Server.Internal
   ) where
 
 import           Control.Monad
-                 (join, when)
+                 (join, when, unless)
 import           Control.Monad.Trans
                  (liftIO, lift)
 import           Control.Monad.Trans.Resource
@@ -48,13 +48,13 @@ import           Network.Socket
                  (SockAddr)
 import           Network.Wai
                  (Application, Request, Response, ResponseReceived, httpVersion, isSecure, lazyRequestBody,
-                 queryString, remoteHost, getRequestBodyChunk, requestHeaders,
+                 queryString, remoteHost, getRequestBodyChunk, requestHeaders, requestHeaderHost,
                  requestMethod, responseLBS, responseStream, vault)
 import           Servant.API
                  ((:<|>) (..), (:>), Accept (..), BasicAuth, Capture',
                  CaptureAll, DeepQuery, Description, EmptyAPI, Fragment,
                  FramingRender (..), FramingUnrender (..), FromSourceIO (..),
-                 Header', If, IsSecure (..), NoContentVerb, QueryFlag,
+                 Host, Header', If, IsSecure (..), NoContentVerb, QueryFlag,
                  QueryParam', QueryParams, QueryString, Raw, RawM, ReflectMethod (reflectMethod),
                  RemoteHost, ReqBody', SBool (..), SBoolI (..), SourceIO,
                  Stream, StreamBody', Summary, ToSourceIO (..), Vault, Verb,
@@ -460,6 +460,30 @@ instance
             $ T.unpack $ "Error parsing header "
                     <> headerName
                     <> " failed: " <> e
+
+instance
+  ( KnownSymbol sym
+  , HasServer api context
+  , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+    ) => HasServer (Host sym :> api) context where
+  type ServerT (Host sym :> api) m = ServerT api m
+
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
+
+  route _ context (Delayed {..}) = route (Proxy :: Proxy api) context $
+    let formatError =
+          headerParseErrorFormatter $ getContextEntry $ mkContextWithErrorFormatter context
+        rep = typeRep (Proxy :: Proxy Host)
+        targetHost = symbolVal (Proxy :: Proxy sym)
+        hostCheck :: DelayedIO ()
+        hostCheck = withRequest $ \req ->
+          case requestHeaderHost req of
+            Just hostBytes ->
+              let host = BC8.unpack hostBytes
+              in  unless (host == targetHost) $
+                    delayedFail $ formatError rep req $ "Invalid host: " ++ host
+            _ -> delayedFail $ formatError rep req "Host header missing"
+    in  Delayed { headersD = headersD <* hostCheck, .. }
 
 -- | If you use @'QueryParam' "author" Text@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function

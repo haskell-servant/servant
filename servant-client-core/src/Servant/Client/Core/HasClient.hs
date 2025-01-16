@@ -66,7 +66,7 @@ import           Servant.API
                  ReflectMethod (..),
                  StreamBody',
                  Verb,
-                 getResponse, AuthProtect, BasicAuth, BasicAuthData, Capture', CaptureAll, DeepQuery, Description, Fragment, FramingRender (..), FramingUnrender (..), Header', Headers (..), HttpVersion, MimeRender (mimeRender), NoContent (NoContent), QueryFlag, QueryParam', QueryParams, QueryString, Raw, RawM, RemoteHost, ReqBody', SBoolI, Stream, Summary, ToHttpApiData, ToSourceIO (..), Vault, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList, toEncodedUrlPiece, NamedRoutes)
+                 getResponse, AuthProtect, BasicAuth, BasicAuthData, Capture', CaptureAll, DeepQuery, Description, Fragment, FramingRender (..), FramingUnrender (..), Header', Headers (..), HttpVersion, MimeRender (mimeRender), NoContent (NoContent), QueryFlag, QueryParam', QueryParams, QueryString, Raw, RawM, RemoteHost, ReqBody', SBoolI, Stream, Summary, ToHttpApiData, ToSourceIO (..), Vault, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList, toEncodedUrlPiece, NamedRoutes, Host)
 import           Servant.API.Generic
                  (GenericMode(..), ToServant, ToServantApi
                  , GenericServant, toServant, fromServant)
@@ -493,6 +493,15 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequire
 
   hoistClientMonad pm _ f cl = \arg ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
+
+instance (KnownSymbol sym, HasClient m api) => HasClient m (Host sym :> api) where
+  type Client m (Host sym :> api) = Client m api
+
+  clientWithRoute pm Proxy req =
+    clientWithRoute pm (Proxy :: Proxy api) $
+      addHeader "Host" (symbolVal (Proxy :: Proxy sym)) req
+
+  hoistClientMonad pm _ = hoistClientMonad pm (Proxy :: Proxy api)
 
 -- | Using a 'HttpVersion' combinator in your API doesn't affect the client
 -- functions.
