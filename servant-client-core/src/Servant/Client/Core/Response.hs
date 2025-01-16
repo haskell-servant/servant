@@ -31,7 +31,7 @@ import           Network.HTTP.Types
 
 import           Servant.API.Stream
                  (SourceIO)
-import           Servant.Types.Internal.ResponseList
+import           Servant.Types.Internal.Response
 
 data ResponseF a = Response
   { responseStatusCode  :: Status

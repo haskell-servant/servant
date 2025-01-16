@@ -19,7 +19,7 @@ import Servant.API.MultiVerb
 import Servant.API.Status
 import Servant.API.Stream (SourceIO)
 import Servant.API.UVerb.Union
-import Servant.Types.Internal.ResponseList
+import Servant.Types.Internal.Response
 import qualified Network.HTTP.Media as M
 import Data.Foldable (toList)
 import Data.Sequence ((<|))
