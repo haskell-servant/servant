@@ -141,7 +141,7 @@ module Servant.Auth.Server
 
 import Prelude hiding                           (readFile, writeFile)
 import Data.ByteString                          (ByteString, writeFile, readFile)
-import Data.Default.Class                       (Default (def))
+import Data.Default                             (Default (def))
 import Servant.Auth
 import Servant.Auth.JWT
 import Servant.Auth.Server.Internal             ()
