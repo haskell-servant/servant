@@ -123,7 +123,7 @@ main = do
                     go !acc (S.Yield _ s) = go (acc + 1) s
         _ -> do
             putStrLn "Try:"
-            putStrLn "cabal new-run cookbook-basic-streaming server"
-            putStrLn "cabal new-run cookbook-basic-streaming client 10"
+            putStrLn "cabal run cookbook-basic-streaming server"
+            putStrLn "cabal run cookbook-basic-streaming client 10"
             putStrLn "time curl -H 'Accept: application/json' localhost:8000/slow/5"
 ```

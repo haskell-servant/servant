@@ -1,4 +1,5 @@
-{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE EmptyCase #-}
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
@@ -42,7 +43,7 @@ import           GHC.Generics
 import           GHC.TypeLits (KnownNat, KnownSymbol, TypeError, ErrorMessage (..),  symbolVal)
 import qualified Network.HTTP.Media                         as NHM
 import           Network.HTTP.Types                         hiding
-                 (Header, ResponseHeaders)
+                 (statusCode, Header, ResponseHeaders)
 import           Network.Socket
                  (SockAddr)
 import           Network.Wai
@@ -87,7 +88,8 @@ import           Servant.Server.Internal.Router
 import           Servant.Server.Internal.RouteResult
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Server.Internal.ServerError
-
+import           Servant.Server.Internal.ResponseRender
+import           Servant.API.MultiVerb
 import           Servant.API.TypeLevel (AtMostOneFragment, FragmentUnique)
 
 class HasServer api context where
@@ -1145,3 +1147,47 @@ instance
             toServant server
           servantSrvN :: ServerT (ToServantApi api) n =
             hoistServerWithContext (Proxy @(ToServantApi api)) pctx nat servantSrvM
+
+
+instance
+  ( HasAcceptCheck cs,
+    ResponseListRender cs as,
+    AsUnion as r,
+    ReflectMethod method
+  ) =>
+  HasServer (MultiVerb method cs as r) ctx
+  where
+  type ServerT (MultiVerb method cs as r) m = m r
+
+  hoistServerWithContext _ _ f = f
+
+  route ::
+    forall env.
+    Proxy (MultiVerb method cs as r) ->
+    Context ctx ->
+    Delayed env (Handler r) ->
+    Router env
+  route _ _ action = leafRouter $ \env req k -> do
+    let acc = getAcceptHeader req
+        action' =
+          action
+            `addMethodCheck` methodCheck method req
+            `addAcceptCheck` acceptCheck' (Proxy @cs) acc
+    runAction action' env req k $ \output -> do
+      let mresp = responseListRender @cs @as acc (toUnion @as output)
+      someResponseToWai <$> case mresp of
+        Nothing -> FailFatal err406
+        Just resp
+          | allowedMethodHead method req -> pure (setEmptyBody resp)
+          | otherwise -> pure resp
+    where
+      method = reflectMethod (Proxy @method)
+
+class HasAcceptCheck cs where
+  acceptCheck' :: Proxy cs -> AcceptHeader -> DelayedIO ()
+
+instance (AllMime cs) => HasAcceptCheck cs where
+  acceptCheck' = acceptCheck
+
+instance HasAcceptCheck '() where
+  acceptCheck' _ _ = pure ()

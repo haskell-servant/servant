@@ -1,17 +1,17 @@
 {-# LANGUAGE DeriveDataTypeable    #-}
-{-# LANGUAGE DeriveFoldable        #-}
-{-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DeriveTraversable     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Servant.Client.Core.Response (
     Response,
     StreamingResponse,
     ResponseF (..),
+    responseToInternalResponse,
     ) where
 
 import           Prelude ()
@@ -31,6 +31,7 @@ import           Network.HTTP.Types
 
 import           Servant.API.Stream
                  (SourceIO)
+import           Servant.Types.Internal.Response
 
 data ResponseF a = Response
   { responseStatusCode  :: Status
@@ -51,3 +52,7 @@ instance NFData a => NFData (ResponseF a) where
 
 type Response = ResponseF LBS.ByteString
 type StreamingResponse = ResponseF (SourceIO BS.ByteString)
+
+responseToInternalResponse :: ResponseF a -> InternalResponse a
+responseToInternalResponse Response{responseStatusCode, responseHeaders,responseBody} =
+    InternalResponse responseStatusCode responseHeaders responseBody

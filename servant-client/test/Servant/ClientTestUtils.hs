@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
@@ -16,6 +15,7 @@
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# LANGUAGE EmptyCase #-}
 
 module Servant.ClientTestUtils where
 
@@ -48,6 +48,7 @@ import           Data.Text.Encoding
                  (decodeUtf8, encodeUtf8)
 import           GHC.Generics
                  (Generic)
+import qualified Generics.SOP as GSOP
 import qualified Network.HTTP.Client              as C
 import qualified Network.HTTP.Types               as HTTP
 import           Network.Socket
@@ -75,6 +76,7 @@ import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
+import           Servant.API.MultiVerb
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -119,7 +121,7 @@ data RecordRoutes mode = RecordRoutes
   , otherRoutes :: mode :- "other" :> Capture "someParam" Int :> NamedRoutes OtherRoutes
   } deriving Generic
 
-data OtherRoutes mode = OtherRoutes
+newtype OtherRoutes mode = OtherRoutes
   { something :: mode :- "something" :> Get '[JSON] [String]
   } deriving Generic
 
@@ -144,6 +146,36 @@ instance ToDeepQuery Filter where
     [ (["age"], Just (Text.pack $ show age'))
     , (["name"], Just (Text.pack name'))
     ]
+
+-----------------------------
+-- MultiVerb test endpoint --
+-----------------------------
+
+-- This is the list of all possible responses
+type MultipleChoicesIntResponses = 
+  '[ RespondEmpty 400 "Negative"
+   , Respond 200 "Even number" Bool
+   , Respond 200 "Odd number" Int
+   ]
+
+data MultipleChoicesIntResult
+  = NegativeNumber
+  | Even Bool
+  | Odd Int
+  deriving stock (Generic)
+  deriving (AsUnion MultipleChoicesIntResponses)
+    via GenericAsUnion MultipleChoicesIntResponses MultipleChoicesIntResult
+
+instance GSOP.Generic MultipleChoicesIntResult
+
+-- This is our endpoint description
+type MultipleChoicesInt =
+  Capture "int" Int
+  :> MultiVerb
+    'GET
+    '[JSON]
+    MultipleChoicesIntResponses
+    MultipleChoicesIntResult
 
 type Api =
   Get '[JSON] Person
@@ -187,6 +219,7 @@ type Api =
                                       WithStatus 301 Text]
   :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
   :<|> NamedRoutes RecordRoutes
+  :<|> "multiple-choices-int" :> MultipleChoicesInt
   :<|> "captureVerbatim" :> Capture "someString" Verbatim :> Get '[PlainText] Text
 
 api :: Proxy Api
@@ -221,6 +254,8 @@ uverbGetSuccessOrRedirect :: Bool
                                               WithStatus 301 Text])
 uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
 recordRoutes :: RecordRoutes (AsClientT ClientM)
+multiChoicesInt :: Int -> ClientM MultipleChoicesIntResult
+captureVerbatim :: Verbatim -> ClientM Text
 
 getRoot
   :<|> getGet
@@ -249,6 +284,7 @@ getRoot
   :<|> uverbGetSuccessOrRedirect
   :<|> uverbGetCreated
   :<|> recordRoutes
+  :<|> multiChoicesInt
   :<|> captureVerbatim = client api
 
 server :: Application
@@ -282,15 +318,15 @@ server = serve api (
                                    }
        )
   :<|> return alice
-  :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
-  :<|> (Tagged $ \ request respond -> (respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders $ request) "rawSuccess"))
-  :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
+  :<|> Tagged (\ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
+  :<|> Tagged (\ request respond -> respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders request) "rawSuccess")
+  :<|> Tagged (\ _request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
   :<|> (\ a b c d -> return (a, b, c, d))
-  :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
+  :<|> return (addHeader 1729 $ addHeader "eg2" True)
   :<|> (pure . Z . I . WithStatus $ addHeader 1729 $ addHeader "eg2" True)
-  :<|> (return $ addHeader "cookie1" $ addHeader "cookie2" True)
+  :<|> return (addHeader "cookie1" $ addHeader "cookie2" True)
   :<|> return NoContent
-  :<|> (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
+  :<|> Tagged (\ _request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
   :<|> emptyServer
   :<|> (\shouldRedirect -> if shouldRedirect
                               then respond (WithStatus @301 ("redirecting" :: Text))
@@ -303,6 +339,15 @@ server = serve api (
              { something = pure ["foo", "bar", "pweet"]
              }
          }
+  :<|> (\param -> 
+          if param < 0 
+          then pure NegativeNumber
+          else
+            if even param 
+            then pure $ Odd 3
+            else pure $ Even True
+            )
+    
   :<|> pure . decodeUtf8 . unVerbatim
   )
 
@@ -318,10 +363,10 @@ failApi = Proxy
 
 failServer :: Application
 failServer = serve failApi (
-       (Tagged $ \ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
+       Tagged (\ _request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
   :<|> (\ _capture -> Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/json")] "")
-  :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
-  :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/x-www-form-urlencoded"), ("X-Example1", "1"), ("X-Example2", "foo")] "")
+  :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
+  :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/x-www-form-urlencoded"), ("X-Example1", "1"), ("X-Example2", "foo")] "")
   )
 
 -- * basic auth stuff
