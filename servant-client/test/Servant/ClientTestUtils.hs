@@ -68,7 +68,7 @@ import           Servant.API
                  JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
                  QueryParams, QueryString, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..),
-                 UVerb, Union, Verb, WithStatus (WithStatus), NamedRoutes, addHeader)
+                 UVerb, Union, Verb, WithStatus (WithStatus), NamedRoutes, addHeader, Host)
 import           Servant.API.Generic ((:-))
 import           Servant.API.QueryString (FromDeepQuery(..), ToDeepQuery(..))
 import           Servant.Client
@@ -221,6 +221,7 @@ type Api =
   :<|> NamedRoutes RecordRoutes
   :<|> "multiple-choices-int" :> MultipleChoicesInt
   :<|> "captureVerbatim" :> Capture "someString" Verbatim :> Get '[PlainText] Text
+  :<|> "host-test" :> Host "servant.example" :> Get '[JSON] Bool
 
 api :: Proxy Api
 api = Proxy
@@ -256,6 +257,7 @@ uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
 recordRoutes :: RecordRoutes (AsClientT ClientM)
 multiChoicesInt :: Int -> ClientM MultipleChoicesIntResult
 captureVerbatim :: Verbatim -> ClientM Text
+getHost :: ClientM Bool
 
 getRoot
   :<|> getGet
@@ -285,7 +287,8 @@ getRoot
   :<|> uverbGetCreated
   :<|> recordRoutes
   :<|> multiChoicesInt
-  :<|> captureVerbatim = client api
+  :<|> captureVerbatim
+  :<|> getHost = client api
 
 server :: Application
 server = serve api (
@@ -349,6 +352,7 @@ server = serve api (
             )
     
   :<|> pure . decodeUtf8 . unVerbatim
+  :<|> pure True
   )
 
 -- * api for testing failures
