@@ -263,7 +263,7 @@ moviesDB =
   ]
 
 getMovieHandler :: MovieId -> Handler (Maybe Movie)
-getMovieHandler requestMovieId = find (\movie -> movie.movieId == requestMovieId) moviesDB
+getMovieHandler requestMovieId = pure $ find (\movie -> movie.movieId == requestMovieId) moviesDB
 
 updateMovieHandler :: MovieId -> Movie -> Handler NoContent
 updateMovieHandler requestedMovieId newMovie =
@@ -376,6 +376,7 @@ appToHandler env act = runReaderT act env
 appMyMonad :: HandlerEnv -> Application
 appMyMonad env = genericServeT (appToHandler env) appMapi
   where 
+    appMapi :: ServerT (NamedRoutes API) m
     appMapi = undefined
 ```
 
