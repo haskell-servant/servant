@@ -93,28 +93,24 @@ why ever look back? Let's get started!
   <summary>The boilerplate required for both the nested and flat case</summary>
 
 ```haskell
-{-# LANGUAGE GHC2021             #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveAnyClass      #-}
-{-# LANGUAGE DerivingVia         #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE GHC2021                  #-}
+{-# LANGUAGE DataKinds                #-}
+{-# LANGUAGE DeriveAnyClass           #-}
+{-# LANGUAGE DerivingStrategies       #-}
+{-# LANGUAGE DeriveGeneric            #-}
+{-# LANGUAGE OverloadedStrings        #-}
+{-# LANGUAGE OverloadedRecordDot      #-}
 
-import Control.Exception          (throwIO)
 import Control.Monad.Trans.Reader (ReaderT, runReaderT)
 import Network.Wai.Handler.Warp   (run)
-import System.Environment         (getArgs)
 import Data.Aeson                 (FromJSON (..), ToJSON (..))
-import GHC.Generics               (Generic, Generically (..))
-import Data.List                  (sortOn)
+import GHC.Generics               (Generic)
 import Data.Text                  (Text)
 import Data.Foldable              (find)
 
 import Servant 
 import Servant.Client 
 import Servant.Client.Generic 
-import Servant.Server
 import Servant.Server.Generic
 ```
 
@@ -131,7 +127,7 @@ data Movie = Movie
     , year :: Year
     }
     deriving stock Generic
-    deriving (FromJSON, ToJSON) via Generically Movie
+    deriving anyclass (FromJSON, ToJSON)
 
 type MovieId = Text
 type Title = Text
