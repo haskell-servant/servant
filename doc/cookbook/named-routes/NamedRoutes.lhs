@@ -307,7 +307,7 @@ app :: Application
 app = genericServe server
 ```
 
-Yay! That’s done and we’ve got our server!
+Yay! That's done and we've got our server!
 
 ## Clients and Links
 
@@ -387,4 +387,4 @@ If you are interested in further understanding the built-in Servant combinators,
 [Structuring APIs](../structuring-apis/StructuringApis.html).
 
 Since `NamedRoutes` is based on the Generic mechanism, you might want to have a look at 
-[Sandy Maguire’s _Thinking with Types_ book](https://thinkingwithtypes.com/).
+[Sandy Maguire's _Thinking with Types_ book](https://thinkingwithtypes.com/).
