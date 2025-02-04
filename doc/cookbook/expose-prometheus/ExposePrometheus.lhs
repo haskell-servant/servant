@@ -163,10 +163,10 @@ payload, thus, our `Metrics` object contains the raw payload in a
 "pre-rendered" format for the MimeRender instance.
 
 ``` haskell
-newtype Metrics = Metrics {toLBS :: ByteString}
+newtype Metrics = Metrics {getMetrics :: ByteString}
 
 instance MimeRender PlainText Metrics where
-  mimeRender _ = toLBS
+  mimeRender _ = getMetrics
 ```
 
 We define the CORS header helper.
