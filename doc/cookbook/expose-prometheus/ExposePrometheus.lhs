@@ -129,8 +129,9 @@ handleHello counters (Just who) = do
   pure $ "hello, " <> getWho who
 ```
 
-The second metrics we use to instrument our program is a background thread
-incrementing a counter every second.
+We further instrument our program with a second metrics. This second metrics
+consist of a simple counter. A background thread will increment the counter
+every second.
 
 ``` haskell
 startBackgroundThread :: Counters -> IO ThreadId
