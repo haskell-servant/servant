@@ -420,6 +420,10 @@ instance AsConstructor '[] (RespondEmpty code description) where
   toConstructor _ = Nil
   fromConstructor _ = ()
 
+instance AsConstructor '[a] (WithHeaders headers a response) where
+  toConstructor a = I a :* Nil
+  fromConstructor (I a :* Nil) = a
+
 newtype GenericAsConstructor r = GenericAsConstructor r
 
 type instance ResponseType (GenericAsConstructor r) = ResponseType r
