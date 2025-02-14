@@ -81,6 +81,7 @@ library
     Servant.API
     Servant.API.Alternative
     Servant.API.BasicAuth
+    Servant.API.BoundedNat
     Servant.API.Capture
     Servant.API.ContentTypes
     Servant.API.Description
