@@ -60,11 +60,11 @@ import           Servant.API
                  QueryParams, QueryString, Raw, ReqBody, StdMethod (GET),
                  ToHttpApiData (..), UVerb, Union, Verb,
                  WithStatus (WithStatus), addHeader, (:<|>) ((:<|>)), (:>))
-import           Servant.API.BoundedNat
 import           Servant.API.Generic              ((:-))
 import           Servant.API.MultiVerb
 import           Servant.API.QueryString
                  (FromDeepQuery (..), ToDeepQuery (..))
+import           Servant.API.Range
 import           Servant.Client
 import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
@@ -463,18 +463,13 @@ instance ToHttpApiData Verbatim where
 instance FromHttpApiData Verbatim where
     parseUrlPiece = pure . Verbatim . encodeUtf8
 
--- * bounded nat example
+-- * range type example
 
 type PaginatedAPI =
-  "users" :> QueryParam "page" (BoundedNat 1 100) :> Get '[JSON] [Person]
+  "users" :> QueryParam "page" (Range 1 100) :> Get '[JSON] [Person]
 
--- Handler example (assuming ClientM context)
-getUsers :: Maybe (BoundedNat 1 100) -> ClientM [Person]
-getUsers = client (Proxy :: Proxy PaginatedAPI)
-
--- Server-side implementation example
-usersServer :: Maybe (BoundedNat 1 100) -> Handler [Person]
+usersServer :: Maybe (Range 1 100) -> Handler [Person]
 usersServer mpage = do
-  let pageNum = maybe 1 toBoundedNatInt mpage
+  let pageNum = maybe 1 unRange mpage
   -- pageNum is guaranteed to be between 1 and 100
-  return [Person "Example" pageNum]
+  return [Person "Example" $ fromIntegral pageNum]

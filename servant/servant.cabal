@@ -81,7 +81,6 @@ library
     Servant.API
     Servant.API.Alternative
     Servant.API.BasicAuth
-    Servant.API.BoundedNat
     Servant.API.Capture
     Servant.API.ContentTypes
     Servant.API.Description
@@ -96,6 +95,7 @@ library
     Servant.API.NamedRoutes
     Servant.API.QueryParam
     Servant.API.QueryString
+    Servant.API.Range
     Servant.API.Raw
     Servant.API.RemoteHost
     Servant.API.ReqBody
