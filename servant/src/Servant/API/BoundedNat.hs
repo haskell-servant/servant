@@ -2,19 +2,33 @@
 
 module Servant.API.BoundedNat (BoundedNat (unBoundedNat), unsafeBoundedNat) where
 
+import           Control.Monad    (unless)
 import           Data.Aeson
 import           Data.Aeson.Types (modifyFailure)
 import           Data.Bifunctor   (bimap)
 import           Data.Ix
-
--- import Data.OpenApi
-
-import           Control.Monad    (unless)
 import           Data.Proxy       (Proxy (Proxy))
 import qualified Data.Text        as T
 import           GHC.Generics     (Generic)
 import           GHC.TypeLits
 import           Servant.API
+
+-- | A newtype wrapper around 'Word' that ensures the value is within a given range.
+--
+-- Example:
+--
+-- >>> :set -XDataKinds
+-- >>> import Data.Proxy
+-- >>> let val = unsafeBoundedNat 5 :: BoundedNat 1 10
+-- >>> unBoundedNat val
+-- 5
+-- >>> let invalidVal = unsafeBoundedNat 15 :: BoundedNat 1 10
+-- >>> unBoundedNat invalidVal
+-- 15
+-- >>> checkBoundedRange (const $ fail "Out of range") val
+-- MkBoundedNat {unBoundedNat = 5}
+-- >>> checkBoundedRange (const $ fail "Out of range") invalidVal
+-- *** Exception: user error (Out of range)
 
 newtype BoundedNat (min :: Nat) (max :: Nat) = MkBoundedNat {unBoundedNat :: Word}
     deriving stock (Eq, Ord, Show, Generic)
@@ -53,14 +67,3 @@ instance (KnownNat min, KnownNat max) => FromHttpApiData (BoundedNat min max) wh
     parseQueryParam v = do
         val <- bimap (const . T.pack $ parseErrorMsg @min @max Proxy) MkBoundedNat $ parseQueryParam v
         checkBoundedRange (Left . T.pack) val
-
--- instance (KnownNat min, KnownNat max) => ToSchema (BoundedNat min max) where
---     declareNamedSchema _ =
---         pure . NamedSchema Nothing $
---             mempty
---                 & #type ?~ OpenApiInteger
---                 & #minimum ?~ fromIntegral (minBound @(BoundedNat min max)) . unBoundedNat
---                 & #maximum ?~ fromIntegral (maxBound @(BoundedNat min max)) . unBoundedNat
-
--- instance (KnownNat min, KnownNat max) => ToParamSchema (BoundedNat min max) where
---     toParamSchema = toSchema
