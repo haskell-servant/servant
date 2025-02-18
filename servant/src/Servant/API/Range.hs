@@ -1,11 +1,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Servant.API.Range (Range (unRange), unsafeRange) where
+module Servant.API.Range (Range (unRange), unsafeRange, mkRange) where
 
-import           Control.Monad    (unless)
 import           Data.Aeson
 import           Data.Aeson.Types (modifyFailure)
-import           Data.Bifunctor   (bimap)
+import           Data.Bifunctor   (first)
 import           Data.Ix
 import           Data.Proxy       (Proxy (Proxy))
 import qualified Data.Text        as T
@@ -17,19 +16,27 @@ import           Servant.API
 --
 -- Example:
 --
--- >>> :set -XDataKinds
--- >>> import Data.Proxy
--- >>> let val = unsafeRange 5 :: Range 1 10
--- >>> unRange val
--- 5
--- >>> let invalidVal = unsafeRange 15 :: Range 1 10
--- >>> unRange invalidVal
--- 15
--- >>> checkInRange (const $ fail "Out of range") val
--- MkRange {unRange = 5}
--- >>> checkInRange (const $ fail "Out of range") invalidVal
--- *** Exception: user error (Out of range)
-
+-- >>> :{
+--   let validRange = mkRange 5 :: Maybe (Range 1 10)
+--   in case validRange of
+--        Just r  -> "Valid range: " ++ show (unRange r)
+--        Nothing -> "Invalid range"
+-- :}
+-- "Valid range: 5"
+--
+-- >>> :{
+--   let invalidRange = mkRange 15 :: Maybe (Range 1 10)
+--   in case invalidRange of
+--        Just r  -> "Valid range: " ++ show (unRange r)
+--        Nothing -> "Invalid range"
+-- :}
+-- "Invalid range"
+--
+-- >>> decode "5" :: Maybe (Range 1 10)
+-- Just (MkRange {unRange = 5})
+--
+-- >>> decode "15" :: Maybe (Range 1 10)
+-- Nothing
 newtype Range (min :: Nat) (max :: Nat) = MkRange {unRange :: Natural}
     deriving stock (Eq, Ord, Show, Generic)
     deriving newtype (Ix, ToJSON)
@@ -45,25 +52,20 @@ parseErrorMsg :: forall min max. (KnownNat min, KnownNat max) => Proxy (Range mi
 parseErrorMsg _ =
     "Expecting an integer between " <> show (natVal (Proxy @min)) <> " and " <> show (natVal (Proxy @max)) <> "."
 
-checkInRange ::
-    forall min max m.
-    (KnownNat min, KnownNat max, Monad m) =>
-    (String -> m ()) ->
-    Range min max ->
-    m (Range min max)
-checkInRange f val = do
-    unless (inRange (minBound, maxBound) val) . f $ parseErrorMsg @min @max Proxy
-    pure val
+mkRange :: forall min max. (KnownNat min, KnownNat max) => Natural -> Maybe (Range min max)
+mkRange n
+    | inRange (minBound :: Range min max, maxBound :: Range min max) (MkRange n) = Just (MkRange n)
+    | otherwise = Nothing
 
 instance (KnownNat min, KnownNat max) => FromJSON (Range min max) where
     parseJSON v = do
-        val <- fmap MkRange . modifyFailure (const $ parseErrorMsg @min @max Proxy) $ parseJSON v
-        checkInRange fail val
+        n <- modifyFailure (const $ parseErrorMsg @min @max Proxy) $ parseJSON v
+        maybe (fail $ parseErrorMsg @min @max Proxy) pure $ mkRange n
 
 instance (KnownNat min, KnownNat max) => ToHttpApiData (Range min max) where
     toQueryParam = T.pack . show . unRange
 
 instance (KnownNat min, KnownNat max) => FromHttpApiData (Range min max) where
     parseQueryParam v = do
-        val <- bimap (const . T.pack $ parseErrorMsg @min @max Proxy) MkRange $ parseQueryParam v
-        checkInRange (Left . T.pack) val
+        n <- first (const . T.pack $ parseErrorMsg @min @max Proxy) $ parseQueryParam v
+        maybe (Left . T.pack $ parseErrorMsg @min @max Proxy) Right $ mkRange n
