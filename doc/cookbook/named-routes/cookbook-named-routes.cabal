@@ -1,0 +1,31 @@
+name:          cookbook-named-routes
+version:       0.1
+synopsis:
+  NamedRoutes - Generic servant API implementation cookbook example
+
+homepage:      http://docs.servant.dev/
+license:       BSD3
+license-file:  ../../../servant/LICENSE
+author:        Servant Contributors
+maintainer:    haskell-servant-maintainers@googlegroups.com
+build-type:    Simple
+cabal-version: >=1.10
+tested-with:   GHC ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.2 || ==9.10.1
+
+executable cookbook-named-routes
+  main-is:            NamedRoutes.lhs
+  build-depends:
+      aeson                >=1.2
+    , base                 >=4   && <5
+    , servant
+    , servant-client
+    , servant-client-core
+    , servant-server 
+    , transformers
+    , text
+    , wai                  >=3.2
+    , warp                 >=3.2
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit
