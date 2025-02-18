@@ -50,7 +50,7 @@ instance (KnownNat min, KnownNat max) => Bounded (Range min max) where
 
 parseErrorMsg :: forall min max. (KnownNat min, KnownNat max) => Proxy (Range min max) -> String
 parseErrorMsg _ =
-    "Expecting an integer between " <> show (natVal (Proxy @min)) <> " and " <> show (natVal (Proxy @max)) <> "."
+    "Expecting a natural number between " <> show (natVal (Proxy @min)) <> " and " <> show (natVal (Proxy @max)) <> "."
 
 mkRange :: forall min max. (KnownNat min, KnownNat max) => Natural -> Maybe (Range min max)
 mkRange n
