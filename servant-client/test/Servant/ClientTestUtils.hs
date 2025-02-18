@@ -473,3 +473,9 @@ usersServer mpage = do
   let pageNum = maybe 1 unRange mpage
   -- pageNum is guaranteed to be between 1 and 100
   return [Person "Example" $ fromIntegral pageNum]
+
+paginatedAPI :: Proxy PaginatedAPI
+paginatedAPI = Proxy
+
+paginatedServer :: Application
+paginatedServer = serve paginatedAPI usersServer
