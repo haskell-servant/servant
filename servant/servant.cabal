@@ -89,6 +89,7 @@ library
     Servant.API.Fragment
     Servant.API.Generic
     Servant.API.Header
+    Servant.API.Host
     Servant.API.HttpVersion
     Servant.API.IsSecure
     Servant.API.Modifiers
