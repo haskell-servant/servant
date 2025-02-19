@@ -214,6 +214,7 @@ type Api =
   :<|> NamedRoutes RecordRoutes
   :<|> "multiple-choices-int" :> MultipleChoicesInt
   :<|> "captureVerbatim" :> Capture "someString" Verbatim :> Get '[PlainText] Text
+  :<|> PaginatedAPI
 
 api :: Proxy Api
 api = Proxy
@@ -249,6 +250,7 @@ uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
 recordRoutes :: RecordRoutes (AsClientT ClientM)
 multiChoicesInt :: Int -> ClientM MultipleChoicesIntResult
 captureVerbatim :: Verbatim -> ClientM Text
+getPaginatedPerson :: Maybe (Range 1 100) -> ClientM [Person]
 
 getRoot
   :<|> getGet
@@ -278,7 +280,8 @@ getRoot
   :<|> uverbGetCreated
   :<|> recordRoutes
   :<|> multiChoicesInt
-  :<|> captureVerbatim = client api
+  :<|> captureVerbatim
+  :<|> getPaginatedPerson = client api
 
 server :: Application
 server = serve api (
@@ -342,6 +345,7 @@ server = serve api (
             )
 
   :<|> pure . decodeUtf8 . unVerbatim
+  :<|> usersServer
   )
 
 -- * api for testing failures
@@ -473,9 +477,3 @@ usersServer mpage = do
   let pageNum = maybe 1 unRange mpage
   -- pageNum is guaranteed to be between 1 and 100
   return [Person "Example" $ fromIntegral pageNum]
-
-paginatedAPI :: Proxy PaginatedAPI
-paginatedAPI = Proxy
-
-paginatedServer :: Application
-paginatedServer = serve paginatedAPI usersServer
