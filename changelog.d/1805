@@ -1,0 +1,6 @@
+synopsis: Add Servant.API.Range type
+prs: #1805
+
+description {
+  Adds a new type `Range` which is a newtype wrapper around `Natural` that ensures the value is within a given range.
+}

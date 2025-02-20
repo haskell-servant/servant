@@ -96,6 +96,7 @@ library
     Servant.API.NamedRoutes
     Servant.API.QueryParam
     Servant.API.QueryString
+    Servant.API.Range
     Servant.API.Raw
     Servant.API.RemoteHost
     Servant.API.ReqBody

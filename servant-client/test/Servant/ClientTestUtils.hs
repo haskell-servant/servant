@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
@@ -15,68 +16,60 @@
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
-{-# LANGUAGE EmptyCase #-}
 
 module Servant.ClientTestUtils where
 
 import           Prelude ()
 import           Prelude.Compat
 
-import           Control.Concurrent
-                 (ThreadId, forkIO, killThread)
-import           Control.Monad
-                 (join)
-import           Control.Monad.Error.Class
-                 (throwError)
+import           Control.Concurrent               (ThreadId, forkIO, killThread)
+import           Control.Monad                    (join)
+import           Control.Monad.Error.Class        (throwError)
 import           Data.Aeson
-import           Data.ByteString
-                 (ByteString)
+import           Data.ByteString                  (ByteString)
+import           Data.ByteString.Builder          (byteString)
 import qualified Data.ByteString.Char8            as C8
-import           Data.ByteString.Builder
-                 (byteString)
 import qualified Data.ByteString.Lazy             as LazyByteString
-import           Data.Char
-                 (chr, isPrint)
-import           Data.Maybe (fromMaybe)
+import           Data.Char                        (chr, isPrint)
+import           Data.Maybe                       (fromMaybe)
 import           Data.Monoid ()
 import           Data.Proxy
 import           Data.SOP
-import           Data.Text
-                 (Text)
+import           Data.Text                        (Text)
 import qualified Data.Text                        as Text
-import           Data.Text.Encoding
-                 (decodeUtf8, encodeUtf8)
-import           GHC.Generics
-                 (Generic)
-import qualified Generics.SOP as GSOP
+import           Data.Text.Encoding               (decodeUtf8, encodeUtf8)
+import qualified Generics.SOP                     as GSOP
+import           GHC.Generics                     (Generic)
 import qualified Network.HTTP.Client              as C
 import qualified Network.HTTP.Types               as HTTP
 import           Network.Socket
 import qualified Network.Wai                      as Wai
 import           Network.Wai.Handler.Warp
-import           System.IO.Unsafe
-                 (unsafePerformIO)
+import           System.IO.Unsafe                 (unsafePerformIO)
 import           Test.QuickCheck
-import           Text.Read (readMaybe)
-import           Web.FormUrlEncoded
-                 (FromForm, ToForm)
+import           Text.Read                        (readMaybe)
+import           Web.FormUrlEncoded               (FromForm, ToForm)
 
 import           Servant.API
-                 ((:<|>) ((:<|>)), (:>), AuthProtect, BasicAuth,
-                 BasicAuthData (..), Capture, CaptureAll, DeepQuery, DeleteNoContent,
-                 EmptyAPI, FormUrlEncoded, Fragment, FromHttpApiData (..), Get, Header, Headers,
-                 JSON, MimeRender (mimeRender), MimeUnrender (mimeUnrender),
+                 (AuthProtect, BasicAuth, BasicAuthData (..), Capture,
+                 CaptureAll, DeepQuery, DeleteNoContent, EmptyAPI,
+                 FormUrlEncoded, Fragment, FromHttpApiData (..), Get, Header,
+                 Headers, Host, JSON, MimeRender (mimeRender),
+                 MimeUnrender (mimeUnrender), NamedRoutes,
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
-                 QueryParams, QueryString, Raw, ReqBody, StdMethod (GET), ToHttpApiData (..),
-                 UVerb, Union, Verb, WithStatus (WithStatus), NamedRoutes, addHeader, Host)
-import           Servant.API.Generic ((:-))
-import           Servant.API.QueryString (FromDeepQuery(..), ToDeepQuery(..))
+                 QueryParams, QueryString, Raw, ReqBody, StdMethod (GET),
+                 ToHttpApiData (..), UVerb, Union, Verb,
+                 WithStatus (WithStatus), addHeader, (:<|>) ((:<|>)), (:>))
+import           Servant.API.Generic              ((:-))
+import           Servant.API.MultiVerb
+import           Servant.API.QueryString
+                 (FromDeepQuery (..), ToDeepQuery (..))
+import           Servant.API.Range
 import           Servant.Client
 import qualified Servant.Client.Core.Auth         as Auth
 import           Servant.Server
 import           Servant.Server.Experimental.Auth
 import           Servant.Test.ComprehensiveAPI
-import           Servant.API.MultiVerb
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -152,7 +145,7 @@ instance ToDeepQuery Filter where
 -----------------------------
 
 -- This is the list of all possible responses
-type MultipleChoicesIntResponses = 
+type MultipleChoicesIntResponses =
   '[ RespondEmpty 400 "Negative"
    , Respond 200 "Even number" Bool
    , Respond 200 "Odd number" Int
@@ -222,6 +215,7 @@ type Api =
   :<|> "multiple-choices-int" :> MultipleChoicesInt
   :<|> "captureVerbatim" :> Capture "someString" Verbatim :> Get '[PlainText] Text
   :<|> "host-test" :> Host "servant.example" :> Get '[JSON] Bool
+  :<|> PaginatedAPI
 
 api :: Proxy Api
 api = Proxy
@@ -258,6 +252,7 @@ recordRoutes :: RecordRoutes (AsClientT ClientM)
 multiChoicesInt :: Int -> ClientM MultipleChoicesIntResult
 captureVerbatim :: Verbatim -> ClientM Text
 getHost :: ClientM Bool
+getPaginatedPerson :: Maybe (Range 1 100) -> ClientM [Person]
 
 getRoot
   :<|> getGet
@@ -288,7 +283,8 @@ getRoot
   :<|> recordRoutes
   :<|> multiChoicesInt
   :<|> captureVerbatim
-  :<|> getHost = client api
+  :<|> getHost
+  :<|> getPaginatedPerson = client api
 
 server :: Application
 server = serve api (
@@ -299,10 +295,10 @@ server = serve api (
   :<|> (\ name -> return $ Person name 0)
   :<|> (\ names -> return (zipWith Person names [0..]))
   :<|> return
-  :<|> (\ name -> case name of
-                   Just "alice" -> return alice
-                   Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
-                   Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
+  :<|> (\case
+          Just "alice" -> return alice
+          Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
+          Nothing -> throwError $ ServerError 400 "missing parameter" "" [])
   :<|> const (Tagged $ \request respond ->
           respond . maybe (Wai.responseLBS HTTP.notFound404 [] "Missing: payload")
                           (Wai.responseLBS HTTP.ok200 [] . LazyByteString.fromStrict)
@@ -338,21 +334,22 @@ server = serve api (
   :<|> RecordRoutes
          { version = pure 42
          , echo = pure
-         , otherRoutes = \_ -> OtherRoutes
+         , otherRoutes = const OtherRoutes
              { something = pure ["foo", "bar", "pweet"]
              }
          }
-  :<|> (\param -> 
-          if param < 0 
+  :<|> (\param ->
+          if param < 0
           then pure NegativeNumber
           else
-            if even param 
+            if even param
             then pure $ Odd 3
             else pure $ Even True
             )
-    
+
   :<|> pure . decodeUtf8 . unVerbatim
   :<|> pure True
+  :<|> usersServer
   )
 
 -- * api for testing failures
@@ -473,3 +470,14 @@ instance ToHttpApiData Verbatim where
 
 instance FromHttpApiData Verbatim where
     parseUrlPiece = pure . Verbatim . encodeUtf8
+
+-- * range type example
+
+type PaginatedAPI =
+  "users" :> QueryParam "page" (Range 1 100) :> Get '[JSON] [Person]
+
+usersServer :: Maybe (Range 1 100) -> Handler [Person]
+usersServer mpage = do
+  let pageNum = maybe 1 unRange mpage
+  -- pageNum is guaranteed to be between 1 and 100
+  return [Person "Example" $ fromIntegral pageNum]
