@@ -54,7 +54,7 @@ import           Servant.API
                  (AuthProtect, BasicAuth, BasicAuthData (..), Capture,
                  CaptureAll, DeepQuery, DeleteNoContent, EmptyAPI,
                  FormUrlEncoded, Fragment, FromHttpApiData (..), Get, Header,
-                 Headers, JSON, MimeRender (mimeRender),
+                 Headers, Host, JSON, MimeRender (mimeRender),
                  MimeUnrender (mimeUnrender), NamedRoutes,
                  NoContent (NoContent), PlainText, Post, QueryFlag, QueryParam,
                  QueryParams, QueryString, Raw, ReqBody, StdMethod (GET),
@@ -214,6 +214,7 @@ type Api =
   :<|> NamedRoutes RecordRoutes
   :<|> "multiple-choices-int" :> MultipleChoicesInt
   :<|> "captureVerbatim" :> Capture "someString" Verbatim :> Get '[PlainText] Text
+  :<|> "host-test" :> Host "servant.example" :> Get '[JSON] Bool
   :<|> PaginatedAPI
 
 api :: Proxy Api
@@ -250,6 +251,7 @@ uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
 recordRoutes :: RecordRoutes (AsClientT ClientM)
 multiChoicesInt :: Int -> ClientM MultipleChoicesIntResult
 captureVerbatim :: Verbatim -> ClientM Text
+getHost :: ClientM Bool
 getPaginatedPerson :: Maybe (Range 1 100) -> ClientM [Person]
 
 getRoot
@@ -281,6 +283,7 @@ getRoot
   :<|> recordRoutes
   :<|> multiChoicesInt
   :<|> captureVerbatim
+  :<|> getHost
   :<|> getPaginatedPerson = client api
 
 server :: Application
@@ -345,6 +348,7 @@ server = serve api (
             )
 
   :<|> pure . decodeUtf8 . unVerbatim
+  :<|> pure True
   :<|> usersServer
   )
 

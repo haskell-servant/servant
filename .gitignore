@@ -36,6 +36,8 @@ shell.nix
 
 # nix
 result*
+.direnv
+.pre-commit-config.yaml
 
 # local versions of things
 servant-multipart

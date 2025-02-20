@@ -132,9 +132,12 @@ data WithHeaders (headers :: [Type]) (returnType :: Type) (response :: Type)
 
 -- | This is used to convert a response containing headers to a custom type
 -- including the information in the headers.
-class AsHeaders xs a b where
-  fromHeaders :: (NP I xs, a) -> b
-  toHeaders :: b -> (NP I xs, a)
+--
+-- If you need to send a combination of headers and response that is not provided by Servant,
+-- you can cwrite your own instance. Take example on the ones provided.
+class AsHeaders headers response returnType where
+  fromHeaders :: (NP I headers, response) -> returnType
+  toHeaders :: returnType -> (NP I headers, response)
 
 -- | Single-header empty response
 instance AsHeaders '[a] () a where
@@ -145,6 +148,11 @@ instance AsHeaders '[a] () a where
 instance AsHeaders '[h] a (a, h) where
   toHeaders (t, cc) = (I cc :* Nil, t)
   fromHeaders (I cc :* Nil, t) = (t, cc)
+
+-- | Two headers and an empty response, return value is a tuple of the response and the header
+instance AsHeaders '[a, b] () (a, b) where
+  toHeaders (h1, h2) = (I h1 :* I h2 :* Nil, ())
+  fromHeaders (I h1 :* I h2 :* Nil, ()) = (h1, h2)
 
 data DescHeader (name :: Symbol) (description :: Symbol) (a :: Type)
 
@@ -419,6 +427,10 @@ instance AsConstructor '[a] (RespondAs (responseContentTypes :: Type) code descr
 instance AsConstructor '[] (RespondEmpty code description) where
   toConstructor _ = Nil
   fromConstructor _ = ()
+
+instance AsConstructor '[a] (WithHeaders headers a response) where
+  toConstructor a = I a :* Nil
+  fromConstructor (I a :* Nil) = a
 
 newtype GenericAsConstructor r = GenericAsConstructor r
 

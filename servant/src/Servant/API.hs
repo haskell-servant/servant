@@ -14,6 +14,8 @@ module Servant.API (
   module Servant.API.Capture,
   -- | Capturing parts of the url path as parsed values: @'Capture'@ and @'CaptureAll'@
   module Servant.API.Header,
+  -- | Matching the @Host@ header.
+  module Servant.API.Host,
   -- | Retrieving specific headers from the request
   module Servant.API.HttpVersion,
   -- | Retrieving the HTTP version of the request
@@ -110,6 +112,7 @@ import           Servant.API.Generic
                  ToServant, ToServantApi, fromServant, genericApi, toServant)
 import           Servant.API.Header
                  (Header, Header')
+import           Servant.API.Host (Host)
 import           Servant.API.HttpVersion
                  (HttpVersion (..))
 import           Servant.API.IsSecure
