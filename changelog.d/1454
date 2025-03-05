@@ -1,0 +1,7 @@
+synopsis: Integrate MultiVerb
+packages: servant servant-client-core servant-client servant-server
+prs: #1766 #1804
+description: {
+  Expose MultiVerb, a more ergonomic way of defining endpoints that return
+  many kinds of responses. Read the cookbook https://docs.servant.dev/en/master/cookbook/multiverb/MultiVerb.html
+}
