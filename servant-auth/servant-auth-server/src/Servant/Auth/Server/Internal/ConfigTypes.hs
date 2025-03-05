@@ -6,7 +6,7 @@ module Servant.Auth.Server.Internal.ConfigTypes
 import           Crypto.JOSE        as Jose
 import           Crypto.JWT         as Jose
 import qualified Data.ByteString    as BS
-import           Data.Default.Class
+import           Data.Default
 import           Data.Time
 import           GHC.Generics       (Generic)
 import           Servant.API        (IsSecure(..))
