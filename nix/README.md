@@ -22,11 +22,21 @@ a particular ghc version, e.g:
 $ nix-shell nix/shell.nix --argstr compiler ghcHEAD
 ```
 
-**Possible GHC versions**
--   `ghc865Binary`
--   `ghc884`
--   `ghc8104` - default
--   `ghc901`
+The default is `ghc92`.
+
+To check which which ghc compiler options are available:
+
+```sh
+$ nix-env -f nix/nixpkgs.nix -qaP -A haskell.compiler
+```
+
+If you prefer to use flakes, the `flake.nix` file provides an
+equivalent default devShell to `shell.nix`. In addition, the
+tutorial is provided as a separate flake output:
+
+```sh
+$ nix develop .#tutorial
+```
 
 ### Cabal users
 

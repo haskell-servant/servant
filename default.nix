@@ -4,7 +4,7 @@ with (builtins.fromJSON (builtins.readFile ./nix/nixpkgs.json));
     url = "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz";
     inherit sha256;
   }) {}
-, compiler ? "ghc883"
+, compiler ? "ghc92"
 }:
 let
   overrides = self: super: {
