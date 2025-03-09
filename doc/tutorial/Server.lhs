@@ -1182,4 +1182,4 @@ already been written back.
 
 You're now equipped to write webservices/web-applications using
 **servant**. The rest of this document focuses on **servant-client**,
-**servant-js** and **servant-docs**.
+**servant-js**, **servant-docs** and **servant-auth**.
