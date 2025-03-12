@@ -11,7 +11,7 @@ This library lets you automatically derive Haskell functions that let you query 
 {-# LANGUAGE TypeOperators #-}
 
 import Data.Proxy
-import Data.Text
+import Data.Text (Text)
 import Servant.API
 import Servant.HttpStreams
 
