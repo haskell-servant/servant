@@ -23,7 +23,7 @@ extra-source-files:
 
 custom-setup
   setup-depends:
-    base >= 4.16.4.0 && < 4.21,
+    base >= 4.16.4.0 && < 4.22,
     Cabal < 4, cabal-doctest >=1.0.6 && <1.1
 
 source-repository head
@@ -36,7 +36,7 @@ library
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
   ghc-options: -Wall
   build-depends:
-      base         >= 4.16.4.0 && < 4.21
+      base         >= 4.16.4.0 && < 4.22
     , servant-docs >= 0.13.1  && < 0.14
     , servant      >= 0.20.2  && < 0.21
     , servant-auth >= 0.4.2.0 && < 0.5
@@ -51,7 +51,7 @@ test-suite doctests
   build-depends:
     base,
     servant-auth-docs,
-    doctest             >= 0.16   && < 0.23,
+    doctest             >= 0.16   && < 0.25,
     QuickCheck          >= 2.11.3 && < 2.16,
     template-haskell
   ghc-options:         -Wall -threaded

@@ -131,10 +131,10 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-    , base          >= 4.16.4.0 && < 4.21
+    , base          >= 4.16.4.0 && <4.22
     , bytestring    >=0.11 && <0.13
     , constraints   >=0.2
-    , containers    >=0.6.5.1  && <0.8
+    , containers    >=0.6.5.1  && <0.9
     , mtl           ^>=2.2.2   || ^>=2.3.1
     , sop-core      >=0.4.0.0  && <0.6
     , generics-sop  ^>=0.5.1

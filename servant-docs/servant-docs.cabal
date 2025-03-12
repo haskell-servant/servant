@@ -41,7 +41,7 @@ library
   --
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
-      base       >= 4.16.4.0 && < 4.21
+      base       >= 4.16.4.0 && < 4.22
     , bytestring >= 0.11 && < 0.13
     , text       >= 1.2.3.0  && < 2.2
 

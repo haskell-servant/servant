@@ -28,7 +28,7 @@ source-repository head
 library
   exposed-modules:     Servant.Pipes
   build-depends:
-      base          >= 4.16.4.0 && < 4.21
+      base          >= 4.16.4.0 && < 4.22
     , bytestring    >=0.11 && <0.13
     , pipes         >=4.3.9    && <4.4
     , pipes-safe    >=2.3.1    && <2.4

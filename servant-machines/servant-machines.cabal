@@ -28,7 +28,7 @@ source-repository head
 library
   exposed-modules:     Servant.Machines
   build-depends:
-      base          >= 4.16.4.0 && < 4.21
+      base          >= 4.16.4.0 && < 4.22
     , bytestring    >=0.11 && <0.13
     , machines      >=0.6.4    && <0.8
     , mtl           ^>=2.2.2   || ^>=2.3.1
