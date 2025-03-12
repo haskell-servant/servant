@@ -26,7 +26,7 @@ copyright:
   2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 
 build-type:         Simple
-tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.4 || ==9.8.2 || ==9.10.1
+tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.1
 
 extra-source-files:
   CHANGELOG.md
