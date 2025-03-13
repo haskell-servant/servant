@@ -55,7 +55,7 @@ jobs:
 
     - name: Install doctest
       run: |
-        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.22'
+        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.24'
 
     - name: Build
       run: |

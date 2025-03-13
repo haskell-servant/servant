@@ -61,6 +61,11 @@ package *
 
 -- reorder-goals: True
 
+-- Required as a workaround for:
+-- https://github.com/haskell-cryptography/HsOpenSSL/issues/95
+package HsOpenSSL
+  ghc-options: -optc=-Wno-discarded-qualifiers -optc=-Wno-deprecated-declarations -optc=-Wno-incompatible-pointer-types
+
 -- Print ticks so that doctest type querying is consistent across GHC versions.
 -- This block can be removed when we drop support for GHC 9.4 and below.
 if(impl(ghc >= 9.6.1))
@@ -73,24 +78,25 @@ if(impl(ghc >= 9.6.1))
   package lzma
     flags: -pkgconfig
 
--- This block is for GHC 9.10.1.
-allow-newer: servant-openapi3:base
-allow-newer: openapi3:base
-allow-newer: openapi3:template-haskell
-allow-newer: servant-js:base
-allow-newer: servant-js:lens
-allow-newer: lucid:base
+if impl (ghc >= 9.10)
+  allow-newer: servant-openapi3:base
+  allow-newer: openapi3:base
+  allow-newer: openapi3:template-haskell
+  allow-newer: servant-js:base
+  allow-newer: servant-js:lens
 
--- This block is for hashable-1.5
-allow-newer: vault:hashable
-allow-newer: psqueues:hashable
-allow-newer: insert-ordered-containers:hashable
-allow-newer: openapi3:hashable
-
--- http2-5.3.3 is blacklisted, force http2-5.3.2 or http2-5.3.4
-constraints:
-  http2 ==5.3.2 || ==5.3.4
-
-package HsOpenSSL
-  -- Fix compilation with GCC >= 14
-  ghc-options: -optc-Wno-incompatible-pointer-types
+if impl (ghc >= 9.12)
+  allow-newer: servant-swagger-ui:base
+  allow-newer: servant-swagger-ui-core:base
+  allow-newer: insert-ordered-containers:base
+  allow-newer: optics-th:template-haskell
+  allow-newer: http-api-data:base
+  allow-newer: openapi3:time
+  allow-newer: swagger2:time
+  allow-newer: postgresql-simple:base
+  allow-newer: postgresql-simple:template-haskell
+  allow-newer: insert-ordered-containers:hashable
+  allow-newer: openapi3:hashable
+  allow-newer: swagger2:base
+  allow-newer: swagger2:template-haskell
+  allow-newer: pipes-safe:base

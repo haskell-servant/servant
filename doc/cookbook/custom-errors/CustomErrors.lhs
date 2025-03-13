@@ -19,7 +19,8 @@ Extensions and imports:
 
 import           Data.Aeson
 import           Data.Proxy
-import           Data.Text
+import           Data.Text (Text)
+import qualified Data.Text as Text
 import           GHC.Generics
 import           Network.Wai
 import           Network.Wai.Handler.Warp
@@ -67,7 +68,7 @@ server = helloH :<|> postGreetH :<|> deleteGreetH
 
   where helloH name Nothing = helloH name (Just False)
         helloH name (Just False) = return . Greet $ "Hello, " <> name
-        helloH name (Just True) = return . Greet . toUpper $ "Hello, " <> name
+        helloH name (Just True) = return . Greet . Text.toUpper $ "Hello, " <> name
 
         postGreetH greet = return greet
 
