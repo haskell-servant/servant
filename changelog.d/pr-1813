@@ -1,0 +1,6 @@
+synopsis: Use newtype deriving for ToHttpApiData in the type Range
+packages: servant
+prs: #1813
+description: {
+  Use newtype deriving for ToHttpApiData in the type Range
+}
