@@ -39,7 +39,7 @@ import           Servant.API
 -- Nothing
 newtype Range (min :: Nat) (max :: Nat) = MkRange {unRange :: Natural}
     deriving stock (Eq, Ord, Show, Generic)
-    deriving newtype (Ix, ToJSON)
+    deriving newtype (Ix, ToJSON, ToHttpApiData)
 
 unsafeRange :: Natural -> Range min max
 unsafeRange = MkRange
@@ -61,9 +61,6 @@ instance (KnownNat min, KnownNat max) => FromJSON (Range min max) where
     parseJSON v = do
         n <- modifyFailure (const $ parseErrorMsg @min @max Proxy) $ parseJSON v
         maybe (fail $ parseErrorMsg @min @max Proxy) pure $ mkRange n
-
-instance (KnownNat min, KnownNat max) => ToHttpApiData (Range min max) where
-    toQueryParam = T.pack . show . unRange
 
 instance (KnownNat min, KnownNat max) => FromHttpApiData (Range min max) where
     parseQueryParam v = do
