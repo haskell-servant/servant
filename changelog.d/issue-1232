@@ -2,8 +2,7 @@ synopsis: Exported addQueryParam
 packages: servant
 prs: #1785
 issues: #1232
-significance: minor
 description: {
   `addQueryParams` is required to define custom `HasLink` instances which actually manipulate the
-  generated query params. This function was not exported earlier and now it is.
+  generated query params. This function was not exported earlier and now it is. 
 }

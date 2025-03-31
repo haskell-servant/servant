@@ -116,9 +116,6 @@ module Servant.Links (
   , linkQueryParams
   , linkFragment
   , addQueryParam
-  , addSegment
-  , Escaped
-  , escaped
 ) where
 
 import           Data.Kind
