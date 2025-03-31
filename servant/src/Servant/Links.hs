@@ -115,6 +115,7 @@ module Servant.Links (
   , linkSegments
   , linkQueryParams
   , linkFragment
+  , addQueryParam
 ) where
 
 import           Data.Kind
@@ -188,6 +189,10 @@ import           Servant.API.MultiVerb
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
 -- 'Link' is guaranteed to be part of the mentioned API.
+--
+-- NOTE: If you are writing a custom 'HasLink' instance, and need to manipulate
+-- the 'Link' (adding query params or fragments, perhaps), please use the the
+-- 'addQueryParam' and 'addSegment' functions.
 data Link = Link
   { _segments    :: [Escaped]
   , _queryParams :: [Param]
@@ -233,10 +238,18 @@ data Param
 addSegment :: Escaped -> Link -> Link
 addSegment seg l = l { _segments = _segments l <> [seg] }
 
+-- | Add a 'Param' (query param) to a 'Link'
+--
+-- Please use this judiciously from within your custom 'HasLink' instances
+-- to ensure that you don't end-up breaking the safe provided by "safe links"
 addQueryParam :: Param -> Link -> Link
 addQueryParam qp l =
     l { _queryParams = _queryParams l <> [qp] }
 
+-- | Add a 'Fragment' (query param) to a 'Link'
+--
+-- Please use this judiciously from within your custom 'HasLink' instances
+-- to ensure that you don't end-up breaking the safe provided by "safe links"
 addFragment :: Fragment' -> Link -> Link
 addFragment fr l = l { _fragment = fr }
 
