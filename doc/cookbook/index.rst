@@ -25,6 +25,7 @@ you name it!
   db-mysql-basics/MysqlBasics.lhs
   db-sqlite-simple/DBConnection.lhs
   db-postgres-pool/PostgresPool.lhs
+  expose-prometheus/ExposePrometheus.lhs
   using-custom-monad/UsingCustomMonad.lhs
   using-free-client/UsingFreeClient.lhs
   custom-errors/CustomErrors.lhs
