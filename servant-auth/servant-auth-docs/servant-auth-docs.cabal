@@ -50,6 +50,7 @@ test-suite doctests
   main-is:             doctests.hs
   build-depends:
     base,
+    servant,
     servant-auth-docs,
     doctest             >= 0.16   && < 0.25,
     QuickCheck          >= 2.11.3 && < 2.16,
