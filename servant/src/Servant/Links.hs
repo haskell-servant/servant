@@ -122,8 +122,6 @@ import           Data.Kind
                  (Type)
 import qualified Data.List as List
 import           Data.Constraint
-import           Data.Foldable
-                 (foldl')
 import           Data.Maybe
                  (fromMaybe)
 import           Data.Proxy
@@ -712,5 +710,4 @@ instance (KnownSymbol sym, ToDeepQuery record, HasLink sub) => HasLink (DeepQuer
 
       addParams :: Link -> Link
       addParams link =
-        foldl' (flip (addQueryParam . mkSingleParam)) link $
-        toDeepQuery record
+        List.foldl' (flip (addQueryParam . mkSingleParam)) link $ toDeepQuery record
