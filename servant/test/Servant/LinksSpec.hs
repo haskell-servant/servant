@@ -173,7 +173,7 @@ spec = describe "Servant.Links" $ do
     it "generated correct links for DeepQuery" $ do
       let bFilter = Proxy :: Proxy ("books" :> DeepQuery "filter" BookQuery :> Get '[JSON] [Book])
       let exampleQuery = BookQuery { author = "Herbert", year = 1965 }
-      apiLink bFilter exampleQuery `shouldBeLink` "books?filter[author]=Herbert&filter[year]=1965"
+      apiLink bFilter exampleQuery `shouldBeLink` "books?filter%5Bauthor%5D=Herbert&filter%5Byear%5D=1965"
 
     it "Check links from record fields" $ do
       let sub1 = Proxy :: Proxy ("bar" :> Get '[JSON] NoContent)
