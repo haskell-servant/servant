@@ -13,6 +13,8 @@ import           Data.Proxy
 import           Data.String
                  (fromString)
 import qualified Data.Text as T
+import           Network.URI
+                 (escapeURIString)
 import           Test.Hspec
                  (Expectation, Spec, describe, it, shouldBe)
 
@@ -102,6 +104,9 @@ shouldBeLink :: Link -> String -> Expectation
 shouldBeLink link expected =
     toUrlPiece link `shouldBe` fromString expected
 
+isNotBracket :: Char -> Bool
+isNotBracket c = c /= '[' && c /= ']'
+
 (//) :: a -> (a -> b) -> b
 x // f = f x
 infixl 1 //
@@ -173,7 +178,8 @@ spec = describe "Servant.Links" $ do
     it "generated correct links for DeepQuery" $ do
       let bFilter = Proxy :: Proxy ("books" :> DeepQuery "filter" BookQuery :> Get '[JSON] [Book])
       let exampleQuery = BookQuery { author = "Herbert", year = 1965 }
-      apiLink bFilter exampleQuery `shouldBeLink` "books?filter%5Bauthor%5D=Herbert&filter%5Byear%5D=1965"
+      let expected = escapeURIString isNotBracket "books?filter[author]=Herbert&filter[year]=1965"
+      apiLink bFilter exampleQuery `shouldBeLink` expected
 
     it "Check links from record fields" $ do
       let sub1 = Proxy :: Proxy ("bar" :> Get '[JSON] NoContent)

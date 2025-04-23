@@ -184,6 +184,7 @@ test-suite spec
     , bytestring
     , http-media
     , mtl
+    , network-uri
     , servant
     , text
 

@@ -206,7 +206,7 @@ newtype Escaped = Escaped String
 type Fragment' = Maybe String
 
 escaped :: String -> Escaped
-escaped = Escaped . escapeURIString isUnreserved
+escaped = Escaped . escape
 
 getEscaped :: Escaped -> String
 getEscaped (Escaped s) = s
@@ -704,7 +704,7 @@ instance (KnownSymbol sym, ToDeepQuery record, HasLink sub) => HasLink (DeepQuer
       mkSingleParam :: ([Text.Text], Maybe Text.Text) -> Param
       mkSingleParam x =
         let (a, b) = generateDeepParam k x
-        in SingleParam (Text.unpack a) (Text.pack $ escapeURIString isUnreserved $ maybe "" Text.unpack b)
+        in SingleParam (Text.unpack a) (Text.pack $ escape $ maybe "" Text.unpack b)
 
       addParams :: Link -> Link
       addParams link =
