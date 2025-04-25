@@ -162,6 +162,8 @@ import           Servant.API.NamedRoutes
                  (NamedRoutes)
 import           Servant.API.QueryParam
                  (QueryFlag, QueryParam', QueryParams)
+import           Servant.API.QueryString
+                 (ToDeepQuery, DeepQuery, generateDeepParam, toDeepQuery)
 import           Servant.API.Raw
                  (Raw, RawM)
 import           Servant.API.RemoteHost
@@ -204,7 +206,7 @@ newtype Escaped = Escaped String
 type Fragment' = Maybe String
 
 escaped :: String -> Escaped
-escaped = Escaped . escapeURIString isUnreserved
+escaped = Escaped . escape
 
 getEscaped :: Escaped -> String
 getEscaped (Escaped s) = s
@@ -683,3 +685,27 @@ instance {-# OVERLAPPABLE #-} TypeError (NoInstanceFor (HasLink api)) => HasLink
 instance HasLink (MultiVerb method cs as r) where
   type MkLink (MultiVerb method cs as r) a = a
   toLink toA _ = toA
+
+instance (KnownSymbol sym, ToDeepQuery record, HasLink sub) => HasLink (DeepQuery sym record :> sub) where
+  type MkLink (DeepQuery sym record :> sub) a =
+    record -> MkLink sub a
+
+  toLink :: (KnownSymbol sym, ToDeepQuery record, HasLink sub) =>
+    (Link -> a)
+    -> Proxy (DeepQuery sym record :> sub)
+    -> Link
+    -> MkLink (DeepQuery sym record :> sub) a
+  toLink toA _ lnk record =
+    toLink toA (Proxy @sub) $ addParams lnk
+    where
+      k :: Text.Text
+      k = Text.pack $ symbolVal (Proxy @sym)
+
+      mkSingleParam :: ([Text.Text], Maybe Text.Text) -> Param
+      mkSingleParam x =
+        let (a, b) = generateDeepParam k x
+        in SingleParam (Text.unpack a) (Text.pack $ escape $ maybe "" Text.unpack b)
+
+      addParams :: Link -> Link
+      addParams link =
+        List.foldl' (flip (addQueryParam . mkSingleParam)) link $ toDeepQuery record

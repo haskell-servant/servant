@@ -12,10 +12,15 @@ import           Data.Proxy
                  (Proxy (..))
 import           Data.String
                  (fromString)
+import qualified Data.Text as T
+import           Network.URI
+                 (unEscapeString)
 import           Test.Hspec
                  (Expectation, Spec, describe, it, shouldBe)
 
 import           Servant.API
+import           Servant.API.QueryString 
+                 (ToDeepQuery (toDeepQuery))
 import           Servant.Links
 import           Servant.Test.ComprehensiveAPI
                  (comprehensiveAPIWithoutRaw)
@@ -35,6 +40,9 @@ type TestApi =
   -- UVerb
   :<|> "uverb-example" :> UVerb 'GET '[JSON] '[WithStatus 200 NoContent]
 
+  -- DeepQuery
+  :<|> "books" :> DeepQuery "filter" BookQuery :> Get '[JSON] [Book]
+
   -- All of the verbs
   :<|> "get" :> Get '[JSON] NoContent
   :<|> "put" :> Put '[JSON] NoContent
@@ -50,6 +58,18 @@ type LinkableApi =
 apiLink :: (IsElem endpoint TestApi, HasLink endpoint)
          => Proxy endpoint -> MkLink endpoint Link
 apiLink = safeLink (Proxy :: Proxy TestApi)
+
+data Book
+data BookQuery = BookQuery 
+  { author :: String
+  , year   :: Int
+  } deriving (Generic, Show, Eq)
+
+instance ToDeepQuery BookQuery where
+  toDeepQuery (BookQuery author year) =
+    [ ([T.pack "author"], Just $ toQueryParam author)
+    , ([T.pack "year"], Just $ toQueryParam year)
+    ]
 
 
 newtype QuuxRoutes mode = QuuxRoutes
@@ -83,6 +103,10 @@ recordApiLink = safeLink (Proxy :: Proxy (NamedRoutes BaseRoutes))
 shouldBeLink :: Link -> String -> Expectation
 shouldBeLink link expected =
     toUrlPiece link `shouldBe` fromString expected
+
+shouldBeLinkUnescaped :: Link -> String -> Expectation
+shouldBeLinkUnescaped link expected =
+    unEscapeString (T.unpack $ toUrlPiece link) `shouldBe` fromString expected
 
 (//) :: a -> (a -> b) -> b
 x // f = f x
@@ -151,6 +175,11 @@ spec = describe "Servant.Links" $ do
       (fieldLink foo // quux /: Just "floop") `shouldBeLink` "foo/quux?grault=floop"
       (fieldLink foo // garply /: "captureme" /: 42 // waldo)
         `shouldBeLink` "foo/garply/captureme/42/waldo"
+
+    it "generated correct links for DeepQuery" $ do
+      let bFilter = Proxy :: Proxy ("books" :> DeepQuery "filter" BookQuery :> Get '[JSON] [Book])
+      let exampleQuery = BookQuery { author = "Herbert", year = 1965 }
+      apiLink bFilter exampleQuery `shouldBeLinkUnescaped` "books?filter[author]=Herbert&filter[year]=1965"
 
     it "Check links from record fields" $ do
       let sub1 = Proxy :: Proxy ("bar" :> Get '[JSON] NoContent)
