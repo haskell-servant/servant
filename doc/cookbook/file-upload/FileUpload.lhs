@@ -43,7 +43,7 @@ Because of some technicalities, multipart form data is not
 represented as a good old content type like `JSON` in servant,
 that one could use with `ReqBody`, but instead is its own
 dedicated `ReqBody`-like combinator named
-[`MultiPartForm`](https://hackage.haskell.org/package/servant-multipart-0.11/docs/Servant-Multipart.html#t:MultipartForm).
+[`MultiPartForm`](https://hackage.haskell.org/package/servant-multipart/docs/Servant-Multipart.html#t:MultipartForm).
 
 This combinator takes two parameters. The first one is the
 "backend" to use. Currently, you only have the choice between
@@ -58,7 +58,7 @@ allows you to specify how to decode multipart form data from
 trivial "decoding" to `MultipartData` itself, and simply
 will get our hands on the raw input. If you want to use
 a type of yours, see the documentation for
-[`FromMultipart`](https://hackage.haskell.org/package/servant-multipart-0.11/docs/Servant-Multipart.html#t:FromMultipart).
+[`FromMultipart`](https://hackage.haskell.org/package/servant-multipart/docs/Servant-Multipart.html#t:FromMultipart).
 
 Our only request handler has type `MultipartData Mem -> Handler Integer`.
 All it does is list the textual and file inputs that

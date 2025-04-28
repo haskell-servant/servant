@@ -383,7 +383,7 @@ decomposed into two steps.
 
 The first step is to provide a proper
 `MediaType` (from
-[**http-media**](https://hackage.haskell.org/package/http-media-0.6.2/docs/Network-HTTP-Media.html))
+[**http-media**](https://hackage.haskell.org/package/http-media/docs/Network-HTTP-Media.html))
 representation for `JSON`, or for your own content-types. If you look at the
 haddocks from this link, you can see that we just have to specify
 `application/json` using the appropriate functions. In our case, we can just
