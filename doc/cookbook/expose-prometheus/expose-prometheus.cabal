@@ -1,0 +1,30 @@
+cabal-version:       2.2
+name:                expose-prometheus
+version:             0.1
+synopsis:            Expose Prometheus cookbook example
+homepage:            http://docs.servant.dev/
+license:             BSD-3-Clause
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+build-type:          Simple
+tested-with:         GHC==9.4.2
+
+executable cookbook-expose-prometheus
+  main-is:             ExposePrometheus.lhs
+  build-depends:       base == 4.*
+                     , text >= 1.2
+                     , bytestring >= 0.11
+                     , containers >= 0.5
+                     , servant
+                     , servant-server
+                     , prometheus-client
+                     , prometheus-metrics-ghc
+                     , warp >= 3.2
+                     , wai >= 3.2
+                     , http-types >= 0.12
+                     , markdown-unlit >= 0.4
+                     , http-client >= 0.5
+  default-language:    Haskell2010
+  ghc-options:         -rtsopts -Wall -pgmL markdown-unlit
+  build-tool-depends: markdown-unlit:markdown-unlit
