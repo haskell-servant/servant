@@ -315,26 +315,42 @@ noContentRouter method status action = leafRouter route'
                     env request respond $ \ _output ->
                       Route $ responseLBS status [] ""
 
-instance {-# OVERLAPPABLE #-}
-         ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
+newtype Naked a = Naked a
+
+type family Wrap a where
+  Wrap (Headers x a) = Headers x a
+  Wrap a = Naked a
+
+class ExtractHeadersResponse orig wrapped where
+  type HandlerResponse orig wrapped :: *
+  type ExtractedValue orig wrapped :: *
+
+  extractHeadersResponse :: HandlerResponse orig wrapped -> (([(HeaderName, B.ByteString)]), ExtractedValue orig wrapped)
+
+instance ExtractHeadersResponse a (Naked a) where
+  type HandlerResponse a (Naked a) = a
+  type ExtractedValue a (Naked a) = a
+
+  extractHeadersResponse :: a -> (([(HeaderName, B.ByteString)]), a)
+  extractHeadersResponse x = ([], x)
+
+instance GetHeaders (Headers x a) => ExtractHeadersResponse (Headers x a) (Headers x a) where
+  type HandlerResponse (Headers x a) (Headers x a) = Headers x a
+  type ExtractedValue (Headers x a) (Headers x a) = a
+
+  extractHeadersResponse :: Headers x a -> ([(HeaderName, B.ByteString)], a)
+  extractHeadersResponse x = (getHeaders x, getResponse x)
+
+instance ( AllCTRender ctypes (ExtractedValue a (Wrap a))
+         , ReflectMethod method, KnownNat status
+         , ExtractHeadersResponse a (Wrap a)
+         , a ~ HandlerResponse a (Wrap a)
          ) => HasServer (Verb method status ctypes a) context where
 
   type ServerT (Verb method status ctypes a) m = m a
   hoistServerWithContext _ _ nt s = nt s
 
-  route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
-    where method = reflectMethod (Proxy :: Proxy method)
-          status = statusFromNat (Proxy :: Proxy status)
-
-instance {-# OVERLAPPING #-}
-         ( AllCTRender ctypes a, ReflectMethod method, KnownNat status
-         , GetHeaders (Headers h a)
-         ) => HasServer (Verb method status ctypes (Headers h a)) context where
-
-  type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
-  hoistServerWithContext _ _ nt s = nt s
-
-  route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
+  route Proxy _ = methodRouter (extractHeadersResponse @a @(Wrap a)) method (Proxy :: Proxy ctypes) status
     where method = reflectMethod (Proxy :: Proxy method)
           status = statusFromNat (Proxy :: Proxy status)
 
