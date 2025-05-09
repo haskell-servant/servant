@@ -1,0 +1,7 @@
+synopsis: Use newtype deriving for ToHttpApiData in the type Range
+packages: servant
+prs: #1816
+issues: #1346
+description: {
+  Make Optional ReqBody wrap its type into Maybe
+}
