@@ -80,14 +80,8 @@ if(impl(ghc >= 9.6.1))
 
 if impl (ghc >= 9.10)
   allow-newer: servant-openapi3:base
-  allow-newer: openapi3:base
-  allow-newer: openapi3:template-haskell
-  allow-newer: servant-js:base
-  allow-newer: servant-js:lens
 
 if impl (ghc >= 9.12)
-  allow-newer: openapi3:time
   allow-newer: postgresql-simple:base
   allow-newer: postgresql-simple:template-haskell
-  allow-newer: openapi3:hashable
   allow-newer: pipes-safe:base
