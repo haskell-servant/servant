@@ -86,17 +86,8 @@ if impl (ghc >= 9.10)
   allow-newer: servant-js:lens
 
 if impl (ghc >= 9.12)
-  allow-newer: servant-swagger-ui:base
-  allow-newer: servant-swagger-ui-core:base
-  allow-newer: insert-ordered-containers:base
-  allow-newer: optics-th:template-haskell
-  allow-newer: http-api-data:base
   allow-newer: openapi3:time
-  allow-newer: swagger2:time
   allow-newer: postgresql-simple:base
   allow-newer: postgresql-simple:template-haskell
-  allow-newer: insert-ordered-containers:hashable
   allow-newer: openapi3:hashable
-  allow-newer: swagger2:base
-  allow-newer: swagger2:template-haskell
   allow-newer: pipes-safe:base
