@@ -38,8 +38,6 @@ Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/
 
 - Use newtype deriving for ToHttpApiData in the type Range [#1813](https://github.com/haskell-servant/servant/pull/1813)
 
-  Use newtype deriving for ToHttpApiData in the type Range
-
 - Add public re-export of renderCurlBasePath lens [#1706](https://github.com/haskell-servant/servant/pull/1706)
 - Remove GHC <= 8.10.7 from the support window [#1778](https://github.com/haskell-servant/servant/pull/1778)
 - Add Servant.API.Range type [#1805](https://github.com/haskell-servant/servant/pull/1805)
