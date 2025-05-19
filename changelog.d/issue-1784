@@ -1,6 +1,0 @@
-synopsis: Add missing HasLink instance for DeepQuery
-issues: #1784
-
-description {
-  Adds missing `HasLink` instance for the `DeepQuery` type.
-}

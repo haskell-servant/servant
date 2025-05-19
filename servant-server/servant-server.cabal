@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               servant-server
-version:            0.20.2
+version:            0.20.3.0
 synopsis:
   A family of combinators for defining webservices APIs and serving them
 

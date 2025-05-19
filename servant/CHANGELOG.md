@@ -2,6 +2,49 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20.3.0
+----
+
+### Significant changes
+
+- Remove -XStrictData from servant{,-server}'s cabal files [#1780](https://github.com/haskell-servant/servant/issues/1780) [#1781](https://github.com/haskell-servant/servant/pull/1781)
+
+  The addition of -XStrictData to servant.cabal and servant-server.cabal reduced the laziness
+  of routing, which would trigger unimplemented endpoints using `error` or `undefined`,
+  despite the fact that these endpoints themselves were not queried.
+
+### Other changes
+
+- Server-sent events (SSE) for client-side [#1317](https://github.com/haskell-servant/servant/issues/1317) [#1317](https://github.com/haskell-servant/servant/pull/1317)
+
+  Implement Server-sent events (SSE) for the Servant client using a new
+  combinator "ServerSentEvents". The raw event messages, accumulated events and
+  JSON-processed events can be exposed.
+
+- Integrate MultiVerb [#1766](https://github.com/haskell-servant/servant/pull/1766) [#1804](https://github.com/haskell-servant/servant/pull/1804)
+
+  Expose MultiVerb, a more ergonomic way of defining endpoints that return
+  many kinds of responses. Read the cookbook https://docs.servant.dev/en/master/cookbook/multiverb/MultiVerb.html
+
+- Exported addQueryParam [#1232](https://github.com/haskell-servant/servant/issues/1232) [#1785](https://github.com/haskell-servant/servant/pull/1785)
+
+  `addQueryParams` is required to define custom `HasLink` instances which actually manipulate the
+  generated query params. This function was not exported earlier and now it is.
+
+- Add Host API combinator [#1800](https://github.com/haskell-servant/servant/pull/1800)
+
+  Adding a Host combinator allows servant users to select APIs according
+  to the Host header provided by clients.
+
+- Use newtype deriving for ToHttpApiData in the type Range [#1813](https://github.com/haskell-servant/servant/pull/1813)
+
+  Use newtype deriving for ToHttpApiData in the type Range
+
+- Add public re-export of renderCurlBasePath lens [#1706](https://github.com/haskell-servant/servant/pull/1706)
+- Remove GHC <= 8.10.7 from the support window [#1778](https://github.com/haskell-servant/servant/pull/1778)
+- Add Servant.API.Range type [#1805](https://github.com/haskell-servant/servant/pull/1805)
+- Add missing HasLink instance for DeepQuery [#1784](https://github.com/haskell-servant/servant/issues/1784) [#1814](https://github.com/haskell-servant/servant/pull/1814)
+
 0.20.2
 ----
 - Full query string helpers [#1604](https://github.com/haskell-servant/servant/pull/1604)
