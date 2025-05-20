@@ -7,5 +7,5 @@
 -- significance: Set to significant if the change is significant, that is if it warrants being put near the top of the changelog.
 organization: haskell-servant
 repository: servant
-required-fields: synopsis description prs
+required-fields: synopsis prs
 packages: servant servant-server servant-client-core servant-client servant-quickcheck servant

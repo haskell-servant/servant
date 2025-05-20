@@ -3,6 +3,29 @@
 
 Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/): in A.B.C, bumps to either A or B represent major versions.
 
+0.20.3.0
+--------
+
+- Server-sent events (SSE) for client-side [#1811](https://github.com/haskell-servant/servant/issues/1811)
+
+  Implement Server-sent events (SSE) for the Servant client using a new
+  combinator "ServerSentEvents". The raw event messages, accumulated events and
+  JSON-processed events can be exposed.
+
+- Integrate MultiVerb [#1766](https://github.com/haskell-servant/servant/pull/1766) [#1804](https://github.com/haskell-servant/servant/pull/1804)
+
+  Expose MultiVerb, a more ergonomic way of defining endpoints that return
+  many kinds of responses. Read the cookbook https://docs.servant.dev/en/master/cookbook/multiverb/MultiVerb.html
+
+- Add public re-export of renderCurlBasePath lens [#1706](https://github.com/haskell-servant/servant/pull/1706)
+- Remove GHC <= 8.10.7 from the support window [#1778](https://github.com/haskell-servant/servant/pull/1778)
+- Add Servant.API.Range type [#1805](https://github.com/haskell-servant/servant/pull/1805)
+- Add missing HasLink instance for DeepQuery [#1784](https://github.com/haskell-servant/servant/issues/1784)
+- Add Host API combinator [#1800](https://github.com/haskell-servant/servant/pull/1800)
+
+  Adding a Host combinator allows servant users to select APIs according
+  to the Host header provided by clients.
+
 0.20.2
 ----
 

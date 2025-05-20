@@ -1,7 +1,0 @@
-synopsis: Add Host API combinator
-packages: servant servant-client-core servant-client servant-server
-prs: #1800
-description: {
-  Adding a Host combinator allows servant users to select APIs according
-  to the Host header provided by clients.
-}

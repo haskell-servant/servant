@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               servant-client
-version:            0.20.2
+version:            0.20.3.0
 synopsis:           Automatic derivation of querying functions for servant
 category:           Servant, Web
 description:
