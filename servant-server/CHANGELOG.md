@@ -16,7 +16,7 @@ Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/
 
 ### Other changes
 
-- Server-sent events (SSE) for client-side [#1317](https://github.com/haskell-servant/servant/issues/1317) [#1317](https://github.com/haskell-servant/servant/pull/1317)
+- Server-sent events (SSE) for client-side [#1811](https://github.com/haskell-servant/servant/issues/1811)
 
   Implement Server-sent events (SSE) for the Servant client using a new
   combinator "ServerSentEvents". The raw event messages, accumulated events and
