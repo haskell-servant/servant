@@ -35,7 +35,7 @@ Package versions follow the [Package Versioning Policy](https://pvp.haskell.org/
 - Add public re-export of renderCurlBasePath lens [#1706](https://github.com/haskell-servant/servant/pull/1706)
 - Remove GHC <= 8.10.7 from the support window [#1778](https://github.com/haskell-servant/servant/pull/1778)
 - Add Servant.API.Range type [#1805](https://github.com/haskell-servant/servant/pull/1805)
-- Add missing HasLink instance for DeepQuery [#1784](https://github.com/haskell-servant/servant/issues/1784) [#1814](https://github.com/haskell-servant/servant/pull/1814)
+- Add missing HasLink instance for DeepQuery [#1784](https://github.com/haskell-servant/servant/issues/1784)
 
 0.20.2
 ----
