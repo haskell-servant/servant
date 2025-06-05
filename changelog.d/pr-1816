@@ -1,0 +1,7 @@
+synopsis: Make Optional ReqBody wrap its type into Maybe
+packages: servant
+prs: #1816
+issues: #1346
+description: {
+  Make Optional ReqBody wrap its type into Maybe
+}
