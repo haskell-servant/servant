@@ -600,11 +600,10 @@ instance HasLink (Stream m status fr ct a) where
     type MkLink (Stream m status fr ct a) r = r
     toLink toA _ = toA
 
--- UVerb instances
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 instance HasLink (UVerb m ct a) where
     type MkLink (UVerb m ct a) r = r
     toLink toA _ = toA
--- Instance for NamedRoutes combinator
 
 type GLinkConstraints routes a =
   ( MkLink (ToServant routes AsApi) a ~ ToServant routes (AsLink a)

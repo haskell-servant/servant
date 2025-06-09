@@ -349,6 +349,7 @@ instance {-# OVERLAPPING #-} UnrenderResponse cts a
   => UnrenderResponse cts (WithStatus n a) where
   unrenderResponse hs body = (map . fmap) WithStatus . unrenderResponse hs body
 
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 instance {-# OVERLAPPING #-}
   ( RunClient m,
     contentTypes ~ (contentType ': otherContentTypes),

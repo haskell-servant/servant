@@ -1,3 +1,8 @@
+
+
+# WARNING: UVerb is deprecated.  Please use MultiVerb instead!
+
+
 # Listing alternative responses and exceptions in your API types
 
 Servant allows you to talk about the exceptions you throw in your API

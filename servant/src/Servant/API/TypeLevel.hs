@@ -275,6 +275,7 @@ class FragmentUnique api => AtMostOneFragment api
 
 instance AtMostOneFragment (Verb m s ct typ)
 
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 instance AtMostOneFragment (UVerb m cts as)
 
 instance AtMostOneFragment (Fragment a)

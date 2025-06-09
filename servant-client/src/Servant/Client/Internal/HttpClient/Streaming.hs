@@ -173,7 +173,6 @@ performRequest acceptStatus req = do
         throwError $ mkFailureResponse burl req ourResponse
       return ourResponse
 
--- | TODO: support UVerb ('acceptStatus' argument, like in 'performRequest' above).
 performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a
 performWithStreamingRequest req k = do
   ClientEnv m burl cookieJar' createClientRequest _ <- ask

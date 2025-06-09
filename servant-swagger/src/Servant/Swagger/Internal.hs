@@ -184,10 +184,11 @@ instance SwaggerMethod 'OPTIONS where swaggerMethod _ = options
 instance SwaggerMethod 'HEAD    where swaggerMethod _ = head_
 instance SwaggerMethod 'PATCH   where swaggerMethod _ = patch
 
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 instance HasSwagger (UVerb method cs '[]) where
   toSwagger _ = mempty
 
--- | @since <TODO>
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 instance
   {-# OVERLAPPABLE #-}
   ( ToSchema a,
@@ -202,6 +203,8 @@ instance
     toSwagger (Proxy :: Proxy (Verb method (StatusOf a) cs a))
       `combineSwagger` toSwagger (Proxy :: Proxy (UVerb method cs as))
 
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
+--
 -- ATTENTION: do not remove this instance!
 -- A similar instance above will always use the more general
 -- polymorphic -- HasSwagger instance and will result in a type error
