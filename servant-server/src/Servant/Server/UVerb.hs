@@ -15,6 +15,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 module Servant.Server.UVerb
   ( respond,
     IsServerResource,
@@ -73,6 +74,7 @@ encodeResource request cts res = (statusOf (Proxy @a),
 
 type IsServerResourceWithStatus cts = IsServerResource cts `And` HasStatus
 
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 instance
   ( ReflectMethod method,
     AllMime contentTypes,

@@ -223,7 +223,7 @@ type family ResponseTypes (as :: [Type]) where
 
 
 -- | 'MultiVerb' produces an endpoint which can return
--- multiple values with various content types and status codes. It is similar to
+-- multiple values with various content types and status codes. It is similar to the deprecated
 -- 'Servant.API.UVerb.UVerb' and behaves similarly, but it has some important differences:
 --
 --  * Descriptions and statuses can be attached to individual responses without

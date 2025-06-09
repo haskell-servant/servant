@@ -12,7 +12,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 
--- | An alternative to 'Verb' for end-points that respond with a resource value of any of an
+-- | **WARNING: UVerb is deprecated.  Please use MultiVerb instead!**
+--
+-- An alternative to 'Verb' for end-points that respond with a resource value of any of an
 -- open union of types, and specific status codes for each type in this union.  (`UVerb` is
 -- short for `UnionVerb`)
 --
@@ -91,16 +93,9 @@ instance KnownStatus n => HasStatus (WithStatus n a) where
 instance HasStatus a => HasStatus (Headers ls a) where
   type StatusOf (Headers ls a) = StatusOf a
 
--- | A variant of 'Verb' that can have any of a number of response values and status codes.
+-- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 --
--- FUTUREWORK: it would be nice to make 'Verb' a special case of 'UVerb', and only write
--- instances for 'HasServer' etc. for the latter, getting them for the former for free.
--- Something like:
---
--- @type Verb method statusCode contentTypes a = UVerb method contentTypes [WithStatus statusCode a]@
---
--- Backwards compatibility is tricky, though: this type alias would mean people would have to
--- use 'respond' instead of 'pure' or 'return', so all old handlers would have to be rewritten.
+-- A variant of 'Verb' that can have any of a number of response values and status codes.
 data UVerb (method :: StdMethod) (contentTypes :: [Type]) (as :: [Type])
 
 instance {-# OVERLAPPING #-} MimeRender JSON a => MimeRender JSON (WithStatus _status a) where
