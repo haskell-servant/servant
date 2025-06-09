@@ -96,6 +96,7 @@ instance HasStatus a => HasStatus (Headers ls a) where
 -- | WARNING: UVerb is deprecated.  Please use MultiVerb instead!
 --
 -- A variant of 'Verb' that can have any of a number of response values and status codes.
+{-# DEPRECATED UVerb "Use MultiVerb instead; if you find that `MultiVerb` doesn't allow you to do the things you're doing with `UVerb`, please [open an issue](https://github.com/haskell-servant/servant/issues)" #-}
 data UVerb (method :: StdMethod) (contentTypes :: [Type]) (as :: [Type])
 
 instance {-# OVERLAPPING #-} MimeRender JSON a => MimeRender JSON (WithStatus _status a) where
