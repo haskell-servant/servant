@@ -36,8 +36,9 @@ import Prelude.Compat
 import Servant.API
 import Servant.API.Description (FoldDescription, reflectDescription)
 import Servant.API.Modifiers (FoldRequired)
-import Servant.Swagger.Internal.TypeLevel.API
 import Prelude ()
+
+import Servant.Swagger.Internal.TypeLevel.API
 
 -- | Generate a Swagger specification for a servant API.
 --
@@ -84,7 +85,7 @@ instance HasSwagger EmptyAPI where
 -- This is similar to @'operationsOf'@ but ensures that operations
 -- indeed belong to the API at compile time.
 subOperations
-  :: (IsSubAPI sub api, HasSwagger sub)
+  :: (HasSwagger sub, IsSubAPI sub api)
   => Proxy sub
   -- ^ Part of a servant API.
   -> Proxy api
@@ -96,7 +97,7 @@ subOperations sub _ = operationsOf (toSwagger sub)
 -- For endpoints with no content see 'mkEndpointNoContent'.
 mkEndpoint
   :: forall a cs hs proxy method status
-   . (ToSchema a, AllAccept cs, AllToResponseHeader hs, SwaggerMethod method, KnownNat status)
+   . (AllAccept cs, AllToResponseHeader hs, KnownNat status, SwaggerMethod method, ToSchema a)
   => FilePath
   -- ^ Endpoint path.
   -> proxy (Verb method status cs (Headers hs a))
@@ -111,7 +112,7 @@ mkEndpoint path proxy =
 -- | Make a singletone 'Swagger' spec (with only one endpoint) and with no content schema.
 mkEndpointNoContent
   :: forall nocontent cs hs proxy method status
-   . (AllAccept cs, AllToResponseHeader hs, SwaggerMethod method, KnownNat status)
+   . (AllAccept cs, AllToResponseHeader hs, KnownNat status, SwaggerMethod method)
   => FilePath
   -- ^ Endpoint path.
   -> proxy (Verb method status cs (Headers hs nocontent))
@@ -124,7 +125,7 @@ mkEndpointNoContent path proxy =
 -- Unlike @'mkEndpoint'@ this function does not update @'definitions'@.
 mkEndpointWithSchemaRef
   :: forall cs hs proxy method status a
-   . (AllAccept cs, AllToResponseHeader hs, SwaggerMethod method, KnownNat status)
+   . (AllAccept cs, AllToResponseHeader hs, KnownNat status, SwaggerMethod method)
   => Maybe (Referenced Schema)
   -> FilePath
   -> proxy (Verb method status cs (Headers hs a))
@@ -133,16 +134,16 @@ mkEndpointWithSchemaRef mref path _ =
   mempty
     & paths . at path
       ?~ ( mempty
-            & method
-              ?~ ( mempty
-                    & produces ?~ MimeList responseContentTypes
-                    & at code
-                      ?~ Inline
-                        ( mempty
-                            & schema .~ mref
-                            & headers .~ responseHeaders
-                        )
-                 )
+             & method
+               ?~ ( mempty
+                      & produces ?~ MimeList responseContentTypes
+                      & at code
+                        ?~ Inline
+                          ( mempty
+                              & schema .~ mref
+                              & headers .~ responseHeaders
+                          )
+                  )
          )
   where
     method = swaggerMethod (Proxy :: Proxy method)
@@ -162,10 +163,10 @@ mkEndpointNoContentVerb path _ =
   mempty
     & paths . at path
       ?~ ( mempty
-            & method
-              ?~ ( mempty
-                    & at code ?~ Inline mempty
-                 )
+             & method
+               ?~ ( mempty
+                      & at code ?~ Inline mempty
+                  )
          )
   where
     method = swaggerMethod (Proxy :: Proxy method)
@@ -219,11 +220,11 @@ instance HasSwagger (UVerb method cs '[]) where
 -- | @since <TODO>
 instance
   {-# OVERLAPPABLE #-}
-  ( ToSchema a
+  ( AllAccept cs
   , HasStatus a
-  , AllAccept cs
-  , SwaggerMethod method
   , HasSwagger (UVerb method cs as)
+  , SwaggerMethod method
+  , ToSchema a
   )
   => HasSwagger (UVerb method cs (a ': as))
   where
@@ -236,10 +237,10 @@ instance
 -- polymorphic -- HasSwagger instance and will result in a type error
 -- since 'NoContent' does not have a 'ToSchema' instance.
 instance
-  ( KnownNat status
-  , AllAccept cs
-  , SwaggerMethod method
+  ( AllAccept cs
   , HasSwagger (UVerb method cs as)
+  , KnownNat status
+  , SwaggerMethod method
   )
   => HasSwagger (UVerb method cs (WithStatus status NoContent ': as))
   where
@@ -281,16 +282,16 @@ combineSwagger s t =
     , _swaggerExternalDocs = _swaggerExternalDocs s <|> _swaggerExternalDocs t
     }
 
-instance {-# OVERLAPPABLE #-} (ToSchema a, AllAccept cs, KnownNat status, SwaggerMethod method) => HasSwagger (Verb method status cs a) where
+instance {-# OVERLAPPABLE #-} (AllAccept cs, KnownNat status, SwaggerMethod method, ToSchema a) => HasSwagger (Verb method status cs a) where
   toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
 
 -- | @since 1.1.7
-instance (ToSchema a, Accept ct, KnownNat status, SwaggerMethod method) => HasSwagger (Stream method status fr ct a) where
+instance (Accept ct, KnownNat status, SwaggerMethod method, ToSchema a) => HasSwagger (Stream method status fr ct a) where
   toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status '[ct] (Headers '[] a)))
 
 instance
   {-# OVERLAPPABLE #-}
-  (ToSchema a, AllAccept cs, AllToResponseHeader hs, KnownNat status, SwaggerMethod method)
+  (AllAccept cs, AllToResponseHeader hs, KnownNat status, SwaggerMethod method, ToSchema a)
   => HasSwagger (Verb method status cs (Headers hs a))
   where
   toSwagger = mkEndpoint "/"
@@ -342,12 +343,12 @@ instance HasSwagger sub => HasSwagger (WithNamedContext x c sub) where
 instance HasSwagger sub => HasSwagger (WithResource res :> sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy sub)
 
-instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (sym :> sub) where
+instance (HasSwagger sub, KnownSymbol sym) => HasSwagger (sym :> sub) where
   toSwagger _ = prependPath piece (toSwagger (Proxy :: Proxy sub))
     where
       piece = symbolVal (Proxy :: Proxy sym)
 
-instance (KnownSymbol sym, Typeable a, ToParamSchema a, HasSwagger sub, KnownSymbol (FoldDescription mods)) => HasSwagger (Capture' mods sym a :> sub) where
+instance (HasSwagger sub, KnownSymbol (FoldDescription mods), KnownSymbol sym, ToParamSchema a, Typeable a) => HasSwagger (Capture' mods sym a :> sub) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy sub)
       & addParam param
@@ -376,20 +377,20 @@ instance (KnownSymbol sym, Typeable a, ToParamSchema a, HasSwagger sub, KnownSym
               )
 
 -- | Swagger Spec doesn't have a notion of CaptureAll, this instance is the best effort.
-instance (KnownSymbol sym, Typeable a, ToParamSchema a, HasSwagger sub) => HasSwagger (CaptureAll sym a :> sub) where
+instance (HasSwagger sub, KnownSymbol sym, ToParamSchema a, Typeable a) => HasSwagger (CaptureAll sym a :> sub) where
   toSwagger _ = toSwagger (Proxy :: Proxy (Capture sym a :> sub))
 
-instance (KnownSymbol desc, HasSwagger api) => HasSwagger (Description desc :> api) where
+instance (HasSwagger api, KnownSymbol desc) => HasSwagger (Description desc :> api) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy api)
       & allOperations . description %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
-instance (KnownSymbol desc, HasSwagger api) => HasSwagger (Summary desc :> api) where
+instance (HasSwagger api, KnownSymbol desc) => HasSwagger (Summary desc :> api) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy api)
       & allOperations . summary %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
-instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired mods), KnownSymbol (FoldDescription mods)) => HasSwagger (QueryParam' mods sym a :> sub) where
+instance (HasSwagger sub, KnownSymbol (FoldDescription mods), KnownSymbol sym, SBoolI (FoldRequired mods), ToParamSchema a) => HasSwagger (QueryParam' mods sym a :> sub) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy sub)
       & addParam param
@@ -409,7 +410,7 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired
           & in_ .~ ParamQuery
           & paramSchema .~ toParamSchema (Proxy :: Proxy a)
 
-instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub) => HasSwagger (QueryParams sym a :> sub) where
+instance (HasSwagger sub, KnownSymbol sym, ToParamSchema a) => HasSwagger (QueryParams sym a :> sub) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy sub)
       & addParam param
@@ -432,7 +433,7 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub) => HasSwagger (Query
       pschema = mempty & type_ .~ SwaggerArray & items ?~ pschemaItems
 #endif
 
-instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (QueryFlag sym :> sub) where
+instance (HasSwagger sub, KnownSymbol sym) => HasSwagger (QueryFlag sym :> sub) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy sub)
       & addParam param
@@ -449,11 +450,11 @@ instance (KnownSymbol sym, HasSwagger sub) => HasSwagger (QueryFlag sym :> sub) 
                   & allowEmptyValue ?~ True
                   & paramSchema
                     .~ ( toParamSchema (Proxy :: Proxy Bool)
-                          & default_ ?~ toJSON False
+                           & default_ ?~ toJSON False
                        )
               )
 
-instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired mods), KnownSymbol (FoldDescription mods)) => HasSwagger (Header' mods sym a :> sub) where
+instance (HasSwagger sub, KnownSymbol (FoldDescription mods), KnownSymbol sym, SBoolI (FoldRequired mods), ToParamSchema a) => HasSwagger (Header' mods sym a :> sub) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy sub)
       & addParam param
@@ -474,7 +475,7 @@ instance (KnownSymbol sym, ToParamSchema a, HasSwagger sub, SBoolI (FoldRequired
                   & paramSchema .~ toParamSchema (Proxy :: Proxy a)
               )
 
-instance (ToSchema a, AllAccept cs, HasSwagger sub, KnownSymbol (FoldDescription mods)) => HasSwagger (ReqBody' mods cs a :> sub) where
+instance (AllAccept cs, HasSwagger sub, KnownSymbol (FoldDescription mods), ToSchema a) => HasSwagger (ReqBody' mods cs a :> sub) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy sub)
       & addParam param
@@ -496,7 +497,7 @@ instance (ToSchema a, AllAccept cs, HasSwagger sub, KnownSymbol (FoldDescription
 -- | This instance is an approximation.
 --
 -- @since 1.1.7
-instance (ToSchema a, Accept ct, HasSwagger sub, KnownSymbol (FoldDescription mods)) => HasSwagger (StreamBody' mods fr ct a :> sub) where
+instance (Accept ct, HasSwagger sub, KnownSymbol (FoldDescription mods), ToSchema a) => HasSwagger (StreamBody' mods fr ct a :> sub) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy sub)
       & addParam param
@@ -534,7 +535,7 @@ instance (Accept c, AllAccept cs) => AllAccept (c ': cs) where
 class ToResponseHeader h where
   toResponseHeader :: Proxy h -> (HeaderName, Swagger.Header)
 
-instance (KnownSymbol sym, ToParamSchema a, KnownSymbol (FoldDescription mods)) => ToResponseHeader (Header' mods sym a) where
+instance (KnownSymbol (FoldDescription mods), KnownSymbol sym, ToParamSchema a) => ToResponseHeader (Header' mods sym a) where
   toResponseHeader _ =
     ( hname
     , Swagger.Header (transDesc $ reflectDescription (Proxy :: Proxy mods)) hschema
@@ -551,7 +552,7 @@ class AllToResponseHeader hs where
 instance AllToResponseHeader '[] where
   toAllResponseHeaders _ = mempty
 
-instance (ToResponseHeader h, AllToResponseHeader hs) => AllToResponseHeader (h ': hs) where
+instance (AllToResponseHeader hs, ToResponseHeader h) => AllToResponseHeader (h ': hs) where
   toAllResponseHeaders _ = InsOrdHashMap.insert headerName headerBS hdrs
     where
       (headerName, headerBS) = toResponseHeader (Proxy :: Proxy h)

@@ -42,9 +42,10 @@ import Control.Monad.Trans.Except (runExceptT)
 #define ClientError ServantError
 #endif
 
-import Servant.Auth.Client
 import Servant.Auth.Server
 import Servant.Auth.Server.SetCookieOrphan ()
+
+import Servant.Auth.Client
 
 spec :: Spec
 spec = describe "The JWT combinator" $ do
@@ -152,7 +153,7 @@ data User = User
   { name :: String
   , _id :: String
   }
-  deriving (Eq, Show, Read, Generic)
+  deriving (Eq, Generic, Read, Show)
 
 instance FromJWT User
 

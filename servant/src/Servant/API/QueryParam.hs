@@ -8,6 +8,7 @@ module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParam', QueryParams) 
 import Data.Kind (Type)
 import Data.Typeable (Typeable)
 import GHC.TypeLits (Symbol)
+
 import Servant.API.Modifiers
 
 -- | Lookup the value associated to the @sym@ query string parameter

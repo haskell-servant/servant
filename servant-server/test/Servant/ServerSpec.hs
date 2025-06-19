@@ -115,6 +115,21 @@ import Servant.API
   , (:>)
   )
 import Servant.API.QueryString (FromDeepQuery (..))
+import Servant.Test.ComprehensiveAPI
+import qualified Servant.Types.SourceT as S
+import Test.Hspec (Spec, context, describe, it, shouldBe, shouldContain)
+import Test.Hspec.Wai
+  ( get
+  , matchHeaders
+  , matchStatus
+  , shouldRespondWith
+  , with
+  , (<:>)
+  )
+import qualified Test.Hspec.Wai as THW
+import Text.Read (readMaybe)
+import Prelude ()
+
 import Servant.Server
   ( Context (EmptyContext, (:.))
   , Handler
@@ -140,20 +155,6 @@ import Servant.Server.Internal.BasicAuth
   , BasicAuthResult (Authorized, Unauthorized)
   )
 import Servant.Server.Internal.Context (NamedContext (..))
-import Servant.Test.ComprehensiveAPI
-import qualified Servant.Types.SourceT as S
-import Test.Hspec (Spec, context, describe, it, shouldBe, shouldContain)
-import Test.Hspec.Wai
-  ( get
-  , matchHeaders
-  , matchStatus
-  , shouldRespondWith
-  , with
-  , (<:>)
-  )
-import qualified Test.Hspec.Wai as THW
-import Text.Read (readMaybe)
-import Prelude ()
 
 -- * comprehensive api test
 
@@ -201,7 +202,7 @@ type VerbApi method status =
     :<|> "headerD" :> Verb method status '[JSON] (Headers '[Header' '[Description "desc", Optional, Strict] "H" Int] Person)
     :<|> "accept"
       :> ( Verb method status '[JSON] Person
-            :<|> Verb method status '[PlainText] String
+             :<|> Verb method status '[PlainText] String
          )
     :<|> "stream" :> Stream method status NoFraming OctetStream (SourceIO BS.ByteString)
 
@@ -1217,11 +1218,11 @@ uverbSpec = describe "Servant.API.UVerb " $ do
     personHandler
       :: Bool
       -> Handler
-          ( Union
-              '[ PersonResponse
-               , RedirectResponse
-               ]
-          )
+           ( Union
+               '[ PersonResponse
+                , RedirectResponse
+                ]
+           )
     personHandler True = respond $ RedirectResponse "over there!"
     personHandler False = respond $ PersonResponse joe
 
@@ -1262,7 +1263,7 @@ data Person = Person
   { name :: String
   , age :: Integer
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToJSON Person
 
@@ -1275,7 +1276,7 @@ data Animal = Animal
   { species :: String
   , numberOfLegs :: Integer
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToJSON Animal
 

@@ -17,7 +17,7 @@ data ServerError = ServerError
   , errBody :: LBS.ByteString
   , errHeaders :: [HTTP.Header]
   }
-  deriving (Show, Eq, Read, Typeable)
+  deriving (Eq, Read, Show, Typeable)
 
 instance Exception ServerError
 

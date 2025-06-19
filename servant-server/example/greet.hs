@@ -13,9 +13,10 @@ import GHC.Generics
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Prelude.Compat
+import Prelude ()
+
 import Servant
 import Servant.Server.Generic ()
-import Prelude ()
 
 -- * Example
 

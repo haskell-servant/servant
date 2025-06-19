@@ -21,10 +21,11 @@ import Data.Monoid ()
 import qualified Network.HTTP.Types as HTTP
 import Prelude.Compat
 import Servant.API ((:<|>) ((:<|>)))
-import Servant.Client
-import Servant.ClientTestUtils
 import Test.Hspec
 import Prelude ()
+
+import Servant.Client
+import Servant.ClientTestUtils
 
 spec :: Spec
 spec = describe "Servant.FailSpec" $ do

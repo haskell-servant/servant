@@ -82,15 +82,15 @@ client api = api `clientIn` (Proxy :: Proxy ClientM)
 newtype ClientM a = ClientM
   {runClientM' :: ReaderT ClientEnv (ExceptT ClientError IO) a}
   deriving
-    ( Functor
-    , Applicative
-    , Monad
-    , MonadIO
+    ( Applicative
+    , Functor
     , Generic
-    , MonadReader ClientEnv
-    , MonadError ClientError
-    , MonadThrow
+    , Monad
     , MonadCatch
+    , MonadError ClientError
+    , MonadIO
+    , MonadReader ClientEnv
+    , MonadThrow
     )
 
 instance MonadBase IO ClientM where
@@ -108,7 +108,7 @@ instance Alt ClientM where
   a <!> b = a `catchError` const b
 
 data StreamingNotSupportedException = StreamingNotSupportedException
-  deriving (Typeable, Show)
+  deriving (Show, Typeable)
 
 instance Exception StreamingNotSupportedException where
   displayException _ = "streamingRequest: streaming is not supported!"

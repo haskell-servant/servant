@@ -16,10 +16,11 @@ import qualified Network.Wai.Handler.Warp as Warp
 import Prelude.Compat
 import Servant
 import Servant.Client.Streaming
-import Servant.Machines ()
 import System.Environment (getArgs, lookupEnv)
 import Text.Read (readMaybe)
 import Prelude ()
+
+import Servant.Machines ()
 
 type FastAPI = "get" :> Capture "num" Int :> StreamGet NewlineFraming JSON (MachineT IO (Is Void) Int)
 

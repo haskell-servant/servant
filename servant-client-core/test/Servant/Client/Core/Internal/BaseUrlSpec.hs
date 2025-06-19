@@ -4,10 +4,11 @@ module Servant.Client.Core.Internal.BaseUrlSpec (spec) where
 
 import Control.DeepSeq
 import Prelude.Compat
-import Servant.Client.Core.BaseUrl
 import Test.Hspec
 import Test.QuickCheck
 import Prelude ()
+
+import Servant.Client.Core.BaseUrl
 
 spec :: Spec
 spec = do

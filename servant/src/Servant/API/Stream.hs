@@ -54,13 +54,14 @@ import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types.Method (StdMethod (..))
+
 import Servant.Types.SourceT
 
 -- | A Stream endpoint for a given method emits a stream of encoded values at a
 -- given @Content-Type@, delimited by a @framing@ strategy.
 -- Type synonyms are provided for standard methods.
 data Stream (method :: k1) (status :: Nat) (framing :: Type) (contentType :: Type) (a :: Type)
-  deriving (Typeable, Generic)
+  deriving (Generic, Typeable)
 
 type StreamGet = Stream 'GET 200
 
@@ -70,7 +71,7 @@ type StreamPost = Stream 'POST 200
 type StreamBody = StreamBody' '[]
 
 data StreamBody' (mods :: [Type]) (framing :: Type) (contentType :: Type) (a :: Type)
-  deriving (Typeable, Generic)
+  deriving (Generic, Typeable)
 
 -------------------------------------------------------------------------------
 -- Sources

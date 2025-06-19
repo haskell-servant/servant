@@ -11,11 +11,12 @@ import Data.Proxy
 import qualified Network.HTTP.Types as HTTP
 import Prelude.Compat
 import Servant.API (Get, JSON, StdMethod (GET), Verb, (:<|>) ((:<|>)), (:>))
-import Servant.Client
-import Servant.ClientTestUtils
 import Servant.Server
 import Test.Hspec
 import Prelude ()
+
+import Servant.Client
+import Servant.ClientTestUtils
 
 -- * api for testing inconsistencies between client and server
 

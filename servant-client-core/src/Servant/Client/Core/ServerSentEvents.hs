@@ -31,7 +31,6 @@ import Data.Char (chr)
 import Data.Coerce (coerce)
 import Data.Foldable (traverse_)
 import Data.Functor (void)
-
 -- For compatibility with GHC <= 8.2
 import Data.Semigroup (Semigroup (..))
 import qualified Data.Text as Text
@@ -123,14 +122,14 @@ data EventMessage
     EventRetry Natural
   | -- | Ignored
     EventIgnore EventIgnoreReason
-  deriving (Show, Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 -- | Reason why a event line can be ignored
 data EventIgnoreReason
   = EventFieldNameUnknown ByteString.ByteString
   | EventRetryNonNumeric ByteString.ByteString
   | EventComment ByteString.ByteString
-  deriving (Show, Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 -- | Parse the event stream lines into more structured messages.
 eventMessagesFromLines
@@ -191,7 +190,7 @@ data Event a = Event
   { eventName :: Maybe ByteString.ByteString
   , eventData :: a
   }
-  deriving (Show, Eq, Ord, Functor, Generic)
+  deriving (Eq, Functor, Generic, Ord, Show)
 
 -- | Accumulate event messages to build individual 'Event's.
 eventsFromMessages
@@ -244,7 +243,7 @@ eventsFromMessages =
 newtype EventMessageStreamT m = EventMessageStreamT
   {unEventMessageStreamT :: SourceT m EventMessage}
   deriving stock (Show)
-  deriving newtype (Semigroup, Monoid)
+  deriving newtype (Monoid, Semigroup)
 
 -- | Server-sent event messages
 --
@@ -262,7 +261,7 @@ instance MonadIO m => FromSourceIO EventStreamChunk (EventMessageStreamT m) wher
 newtype EventStreamT m = EventStreamT
   {unEventStreamT :: SourceT m (Event ByteString.ByteString)}
   deriving stock (Show)
-  deriving newtype (Semigroup, Monoid)
+  deriving newtype (Monoid, Semigroup)
 
 -- | Server-sent events
 instance MonadIO m => FromSourceIO EventStreamChunk (EventStreamT m) where
@@ -274,7 +273,7 @@ instance MonadIO m => FromSourceIO EventStreamChunk (EventStreamT m) where
 
 -- | Try to parse event data to JSON.
 jsonEventsFromEvents
-  :: (Functor m, Aeson.FromJSON a)
+  :: (Aeson.FromJSON a, Functor m)
   => StepT m (Event ByteString.ByteString)
   -> StepT m (Event a)
 jsonEventsFromEvents =
@@ -287,11 +286,11 @@ jsonEventsFromEvents =
 -- | Server-sent event stream (SSE) for JSON values
 newtype JsonEventStreamT m a = JsonEventStreamT
   {unJsonEventStreamT :: SourceT m (Event a)}
-  deriving stock (Show, Functor)
-  deriving newtype (Semigroup, Monoid)
+  deriving stock (Functor, Show)
+  deriving newtype (Monoid, Semigroup)
 
 -- | Server-sent JSON event stream
-instance (MonadIO m, Aeson.FromJSON a) => FromSourceIO EventStreamChunk (JsonEventStreamT m a) where
+instance (Aeson.FromJSON a, MonadIO m) => FromSourceIO EventStreamChunk (JsonEventStreamT m a) where
   fromSourceIO input = do
     src :: EventStreamT m <- fromSourceIO input
     pure $

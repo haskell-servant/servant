@@ -2,6 +2,7 @@ module Main where
 
 import Network.Wai.Handler.Warp
 import Servant
+
 import Todo
 
 main :: IO ()

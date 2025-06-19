@@ -1,6 +1,7 @@
 module Servant.Server.Internal.RoutingApplication where
 
 import Network.Wai (Application, Request, Response, ResponseReceived)
+
 import Servant.Server.Internal.RouteResult
 import Servant.Server.Internal.ServerError
 

@@ -12,11 +12,12 @@ import Data.String (fromString)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Network.URI (unEscapeString)
+import Test.Hspec (Expectation, Spec, describe, it, shouldBe)
+
 import Servant.API
 import Servant.API.QueryString (ToDeepQuery (toDeepQuery))
 import Servant.Links
 import Servant.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
-import Test.Hspec (Expectation, Spec, describe, it, shouldBe)
 
 type TestApi =
   -- Capture and query params
@@ -44,7 +45,7 @@ type LinkableApi =
     :<|> "get" :> Get '[JSON] NoContent
 
 apiLink
-  :: (IsElem endpoint TestApi, HasLink endpoint)
+  :: (HasLink endpoint, IsElem endpoint TestApi)
   => Proxy endpoint
   -> MkLink endpoint Link
 apiLink = safeLink (Proxy :: Proxy TestApi)
@@ -55,7 +56,7 @@ data BookQuery = BookQuery
   { author :: String
   , year :: Int
   }
-  deriving (Generic, Show, Eq)
+  deriving (Eq, Generic, Show)
 
 instance ToDeepQuery BookQuery where
   toDeepQuery (BookQuery author year) =
@@ -93,7 +94,7 @@ data BaseRoutes mode = BaseRoutes
   deriving (Generic)
 
 recordApiLink
-  :: (IsElem endpoint (NamedRoutes BaseRoutes), HasLink endpoint)
+  :: (HasLink endpoint, IsElem endpoint (NamedRoutes BaseRoutes))
   => Proxy endpoint
   -> MkLink endpoint Link
 recordApiLink = safeLink (Proxy :: Proxy (NamedRoutes BaseRoutes))
@@ -127,21 +128,21 @@ spec = describe "Servant.Links" $ do
     let l2 =
           Proxy
             :: Proxy
-                ( "hello"
-                    :> Capture "name" String
-                    :> QueryParam "capital" Bool
-                    :> Delete '[JSON] NoContent
-                )
+                 ( "hello"
+                     :> Capture "name" String
+                     :> QueryParam "capital" Bool
+                     :> Delete '[JSON] NoContent
+                 )
     apiLink l2 "bye" (Just True) `shouldBeLink` "hello/bye?capital=true"
 
     let l4 =
           Proxy
             :: Proxy
-                ( "hi"
-                    :> Capture "name" String
-                    :> QueryParam' '[Required] "capital" Bool
-                    :> Delete '[JSON] NoContent
-                )
+                 ( "hi"
+                     :> Capture "name" String
+                     :> QueryParam' '[Required] "capital" Bool
+                     :> Delete '[JSON] NoContent
+                 )
     apiLink l4 "privet" False `shouldBeLink` "hi/privet?capital=false"
 
   it "generates correct links for CaptureAll" $ do
@@ -158,11 +159,11 @@ spec = describe "Servant.Links" $ do
     let l1 =
           Proxy
             :: Proxy
-                ( "balls"
-                    :> QueryFlag "bouncy"
-                    :> QueryFlag "fast"
-                    :> Delete '[JSON] NoContent
-                )
+                 ( "balls"
+                     :> QueryFlag "bouncy"
+                     :> QueryFlag "fast"
+                     :> Delete '[JSON] NoContent
+                 )
     apiLink l1 True True `shouldBeLink` "balls?bouncy&fast"
     apiLink l1 False True `shouldBeLink` "balls?fast"
 
@@ -210,22 +211,22 @@ spec = describe "Servant.Links" $ do
     let sub3 =
           Proxy
             :: Proxy
-                ( "foo"
-                    :> "quux"
-                    :> QueryParam "grault" String
-                    :> Get '[JSON] NoContent
-                )
+                 ( "foo"
+                     :> "quux"
+                     :> QueryParam "grault" String
+                     :> Get '[JSON] NoContent
+                 )
     recordApiLink sub3 (Just "floop") `shouldBeLink` "foo/quux?grault=floop"
 
     let sub4
           :: Proxy
-              ( "foo"
-                  :> "garply"
-                  :> Capture "garplyText" String
-                  :> Capture "garplyInt" Int
-                  :> "waldo"
-                  :> Get '[JSON] NoContent
-              )
+               ( "foo"
+                   :> "garply"
+                   :> Capture "garplyText" String
+                   :> Capture "garplyInt" Int
+                   :> "waldo"
+                   :> Get '[JSON] NoContent
+               )
         sub4 = Proxy
     recordApiLink sub4 "captureme" 42
       `shouldBeLink` "foo/garply/captureme/42/waldo"

@@ -9,11 +9,12 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Functor.Identity (Identity (..))
 import Data.Proxy (Proxy (..))
 import Data.String (fromString)
-import Servant.API.Stream
-import Servant.Types.SourceT
 import Test.Hspec
 import Test.QuickCheck (Property, property, (===))
 import Test.QuickCheck.Instances ()
+
+import Servant.API.Stream
+import Servant.Types.SourceT
 
 spec :: Spec
 spec = describe "Servant.API.Stream" $ do

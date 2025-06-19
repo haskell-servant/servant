@@ -17,6 +17,7 @@ import Control.Monad.Trans.Control
   , defaultLiftBaseWith
   , defaultRestoreM
   )
+
 import Servant.Server.Internal.ServerError
 
 -- | The result of matching against a path in the route tree.
@@ -27,7 +28,7 @@ data RouteResult a
   | -- | Don't try other paths.
     FailFatal !ServerError
   | Route !a
-  deriving (Eq, Show, Read, Functor)
+  deriving (Eq, Functor, Read, Show)
 
 instance Applicative RouteResult where
   pure = Route

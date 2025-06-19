@@ -20,11 +20,13 @@ data Auth (auths :: [Type]) val
 -- | A @HasLink@ instance for @Auth@
 instance HasLink sub => HasLink (Auth (tag :: [Type]) value :> sub)
 #if MIN_VERSION_servant(0,14,0)
-  type MkLink (Auth (tag :: [Type]) value :> sub) a = MkLink sub a
-  toLink toA _ = toLink toA (Proxy :: Proxy sub)
+  where
+    type MkLink (Auth (tag :: [Type]) value :> sub) a = MkLink sub a
+    toLink toA _ = toLink toA (Proxy :: Proxy sub)
 #else
-  type MkLink (Auth (tag :: [Type]) value :> sub) = MkLink sub
-  toLink _ = toLink (Proxy :: Proxy sub)
+  where
+    type MkLink (Auth (tag :: [Type]) value :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
 #endif
 
 -- ** Combinators

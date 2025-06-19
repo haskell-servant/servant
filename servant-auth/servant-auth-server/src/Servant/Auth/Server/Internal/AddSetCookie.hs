@@ -80,9 +80,9 @@ instance orig1 ~ orig2 => AddSetCookies 'Z orig1 orig2 where
 
 instance
   {-# OVERLAPPABLE #-}
-  ( Functor m
+  ( AddHeader mods "Set-Cookie" SetCookie cookied new
   , AddSetCookies n (m old) (m cookied)
-  , AddHeader mods "Set-Cookie" SetCookie cookied new
+  , Functor m
   )
   => AddSetCookies ('S n) (m old) (m new)
   where
@@ -108,8 +108,8 @@ instance
 instance
   {-# OVERLAPS #-}
   ( AddSetCookies ('S n) (ServerT (ToServantApi api) m) cookiedApi
-  , Generic (api (AsServerT m))
   , GServantProduct (Rep (api (AsServerT m)))
+  , Generic (api (AsServerT m))
   , ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
   )
   => AddSetCookies ('S n) (api (AsServerT m)) cookiedApi

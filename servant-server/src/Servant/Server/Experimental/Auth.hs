@@ -19,8 +19,9 @@ import Data.Proxy (Proxy (Proxy))
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import Network.Wai (Request)
-import Servant ((:>))
 import Servant.API.Experimental.Auth
+
+import Servant ((:>))
 import Servant.Server.Internal
   ( DelayedIO
   , Handler
@@ -54,8 +55,8 @@ mkAuthHandler = AuthHandler
 
 -- | Known orphan instance.
 instance
-  ( HasServer api context
-  , HasContextEntry context (AuthHandler Request (AuthServerData (AuthProtect tag)))
+  ( HasContextEntry context (AuthHandler Request (AuthServerData (AuthProtect tag)))
+  , HasServer api context
   )
   => HasServer (AuthProtect tag :> api) context
   where

@@ -76,7 +76,7 @@ instance HasSecurity JWT where
 class AllHasSecurity (x :: [Type]) where
   securities :: Proxy x -> [(T.Text, SecurityScheme)]
 
-instance {-# OVERLAPPABLE #-} (HasSecurity x, AllHasSecurity xs) => AllHasSecurity (x ': xs) where
+instance {-# OVERLAPPABLE #-} (AllHasSecurity xs, HasSecurity x) => AllHasSecurity (x ': xs) where
   securities _ = (securityName px, securityScheme px) : securities pxs
     where
       px :: Proxy x

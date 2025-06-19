@@ -8,9 +8,10 @@ import Control.Monad.Reader
 import Data.Functor.Identity
 import Data.Proxy
 import Servant.API
-import Servant.Server
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Wai (get, matchStatus, post, shouldRespondWith, with)
+
+import Servant.Server
 
 spec :: Spec
 spec = describe "Arbitrary monad server" $ do

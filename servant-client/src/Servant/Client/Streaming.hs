@@ -17,4 +17,5 @@ module Servant.Client.Streaming
 where
 
 import Servant.Client.Core.Reexport
+
 import Servant.Client.Internal.HttpClient.Streaming

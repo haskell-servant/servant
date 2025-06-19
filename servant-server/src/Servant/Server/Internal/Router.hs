@@ -13,6 +13,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Typeable (TypeRep)
 import Network.Wai (Response, pathInfo)
+
 import Servant.Server.Internal.ErrorFormatter
 import Servant.Server.Internal.RouteResult
 import Servant.Server.Internal.RoutingApplication
@@ -27,7 +28,7 @@ data CaptureHint = CaptureHint
   , captureType :: TypeRep
   -- ^ Holds the type of the captured variable
   }
-  deriving (Show, Eq)
+  deriving (Eq, Show)
 
 toCaptureTag :: CaptureHint -> Text
 toCaptureTag hint = captureName hint <> "::" <> (T.pack . show) (captureType hint)

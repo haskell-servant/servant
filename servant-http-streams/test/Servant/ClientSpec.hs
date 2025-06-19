@@ -68,7 +68,6 @@ import Servant.API
   )
 import qualified Servant.Client.Core.Auth as Auth
 import qualified Servant.Client.Core.Request as Req
-import Servant.HttpStreams
 import Servant.Server
 import Servant.Server.Experimental.Auth
 import Servant.Test.ComprehensiveAPI
@@ -78,6 +77,8 @@ import Test.Hspec.QuickCheck
 import Test.QuickCheck
 import Web.FormUrlEncoded (FromForm, ToForm)
 import Prelude ()
+
+import Servant.HttpStreams
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -98,7 +99,7 @@ data Person = Person
   { _name :: String
   , _age :: Integer
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance NFData Person where
   rnf (Person n a) = rnf n `seq` rnf a
@@ -196,9 +197,9 @@ server =
         :<|> (\names -> return (zipWith Person names [0 ..]))
         :<|> return
         :<|> ( \name -> case name of
-                Just "alice" -> return alice
-                Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
-                Nothing -> throwError $ ServerError 400 "missing parameter" "" []
+                 Just "alice" -> return alice
+                 Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
+                 Nothing -> throwError $ ServerError 400 "missing parameter" "" []
              )
         :<|> (\names -> return (zipWith Person names [0 ..]))
         :<|> return
@@ -420,10 +421,10 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
 
 data WrappedApi where
   WrappedApi
-    :: ( HasServer (api :: *) '[]
-       , Server api ~ Handler a
+    :: ( Client ClientM api ~ ClientM ()
        , HasClient ClientM api
-       , Client ClientM api ~ ClientM ()
+       , HasServer (api :: *) '[]
+       , Server api ~ Handler a
        )
     => Proxy api
     -> WrappedApi

@@ -17,6 +17,14 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
+        format-tools = [
+          # We use fourmolu compiled with GHC 9.12
+          # as getting it to compile with lower GHC versions
+          # is complicated and this works out of the box.
+          pkgs.haskell.packages.ghc912.fourmolu_0_18_0_0
+          pkgs.nixfmt-rfc-style
+        ];
+
         mkDevShell =
           {
             compiler ? "ghc92",
@@ -44,10 +52,9 @@
                 postgresql
                 openssl
                 stack
-                fourmolu
-                nixfmt-rfc-style
                 haskellPackages.hspec-discover
               ]
+              ++ format-tools
               ++ (
                 if tutorial then
                   [
@@ -68,6 +75,9 @@
         devShells = {
           default = mkDevShell { };
           tutorial = mkDevShell { tutorial = true; };
+          formatters = pkgs.mkShell {
+            buildInputs = format-tools;
+          };
         };
       }
     );

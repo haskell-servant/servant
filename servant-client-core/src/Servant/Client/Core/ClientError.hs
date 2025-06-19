@@ -24,11 +24,12 @@ import GHC.Generics (Generic)
 import Network.HTTP.Media (MediaType)
 import Network.HTTP.Types ()
 import Prelude.Compat
+import Prelude ()
+
 import Servant.Client.Core.BaseUrl
 import Servant.Client.Core.Internal (mediaTypeRnf)
 import Servant.Client.Core.Request
 import Servant.Client.Core.Response
-import Prelude ()
 
 -- | A type representing possible errors in a request
 --
@@ -46,7 +47,7 @@ data ClientError
     InvalidContentTypeHeader Response
   | -- | There was a connection error, and no response was received
     ConnectionError SomeException
-  deriving (Show, Generic, Typeable)
+  deriving (Generic, Show, Typeable)
 
 instance Eq ClientError where
   FailureResponse req res == FailureResponse req' res' = req == req' && res == res'

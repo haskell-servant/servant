@@ -15,4 +15,4 @@ data InternalResponse a = InternalResponse
   , headers :: Seq Header
   , responseBody :: a
   }
-  deriving stock (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
+  deriving stock (Eq, Foldable, Functor, Generic, Show, Traversable, Typeable)

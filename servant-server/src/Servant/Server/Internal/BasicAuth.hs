@@ -15,6 +15,7 @@ import GHC.Generics
 import Network.HTTP.Types (Header)
 import Network.Wai (Request, requestHeaders)
 import Servant.API.BasicAuth (BasicAuthData (BasicAuthData))
+
 import Servant.Server.Internal.DelayedIO
 import Servant.Server.Internal.ServerError
 
@@ -30,7 +31,7 @@ data BasicAuthResult usr
   | BadPassword
   | NoSuchUser
   | Authorized usr
-  deriving (Eq, Show, Read, Generic, Typeable, Functor)
+  deriving (Eq, Functor, Generic, Read, Show, Typeable)
 
 -- | Datatype wrapping a function used to check authentication.
 newtype BasicAuthCheck usr = BasicAuthCheck
@@ -38,7 +39,7 @@ newtype BasicAuthCheck usr = BasicAuthCheck
       :: BasicAuthData
       -> IO (BasicAuthResult usr)
   }
-  deriving (Generic, Typeable, Functor)
+  deriving (Functor, Generic, Typeable)
 
 -- | Internal method to make a basic-auth challenge
 mkBAChallengerHdr :: BS.ByteString -> Header

@@ -24,7 +24,6 @@ import Data.String.Conversions (cs)
 import GHC.Generics
 import Prelude.Compat
 import Servant.API
-import Servant.Docs.Internal
 import Servant.Test.ComprehensiveAPI
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.Golden (goldenVsString)
@@ -36,6 +35,8 @@ import Test.Tasty.HUnit
   , (@?=)
   )
 import Prelude ()
+
+import Servant.Docs.Internal
 
 -- * comprehensive api
 
@@ -150,7 +151,7 @@ data Datatype1 = Datatype1
   { dt1field1 :: String
   , dt1field2 :: Int
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToJSON Datatype1
 
@@ -176,9 +177,9 @@ type TestApi2 =
   "duplicate-endpoint" :> Get '[JSON] Datatype1
     :<|> "duplicate-endpoint" :> Get '[PlainText] Int
 
-data TT = TT1 | TT2 deriving (Show, Eq)
+data TT = TT1 | TT2 deriving (Eq, Show)
 
-data UT = UT1 | UT2 deriving (Show, Eq)
+data UT = UT1 | UT2 deriving (Eq, Show)
 
 instance ToSample TT where
   toSamples _ = [("eins", TT1), ("zwei", TT2)]
@@ -191,7 +192,7 @@ instance ToSample UT where
 -------------------------------------------------------------------------------
 
 newtype TestTreeM a = TestTreeM (Writer [TestTree] a)
-  deriving (Functor, Applicative, Monad)
+  deriving (Applicative, Functor, Monad)
 
 runTestTreeM :: TestTreeM () -> [TestTree]
 runTestTreeM (TestTreeM m) = snd (runWriter m)
@@ -208,16 +209,16 @@ instance Describe TestTree where
 it :: TestName -> Assertion -> TestTreeM ()
 it n assertion = TestTreeM $ tell [testCase n assertion]
 
-shouldBe :: (Eq a, Show a, HasCallStack) => a -> a -> Assertion
+shouldBe :: (Eq a, HasCallStack, Show a) => a -> a -> Assertion
 shouldBe = (@?=)
 
-shouldContain :: (Eq a, Show a, HasCallStack) => [a] -> [a] -> Assertion
+shouldContain :: (Eq a, HasCallStack, Show a) => [a] -> [a] -> Assertion
 shouldContain = compareWith (flip isInfixOf) "does not contain"
 
-shouldNotContain :: (Eq a, Show a, HasCallStack) => [a] -> [a] -> Assertion
+shouldNotContain :: (Eq a, HasCallStack, Show a) => [a] -> [a] -> Assertion
 shouldNotContain = compareWith (\x y -> not (isInfixOf y x)) "contains"
 
-compareWith :: (Show a, Show b, HasCallStack) => (a -> b -> Bool) -> String -> a -> b -> Assertion
+compareWith :: (HasCallStack, Show a, Show b) => (a -> b -> Bool) -> String -> a -> b -> Assertion
 compareWith f msg x y =
   unless (f x y) $
     assertFailure $

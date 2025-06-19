@@ -18,10 +18,10 @@ import Servant
 type API =
   "species"
     :> ( Capture "species-name" Text
-          :> ( Get '[JSON] Species
-                :<|> Delete '[JSON] ()
-             )
-          :<|> ReqBody '[JSON] Species :> Post '[JSON] ()
+           :> ( Get '[JSON] Species
+                  :<|> Delete '[JSON] ()
+              )
+           :<|> ReqBody '[JSON] Species :> Post '[JSON] ()
        )
     -- The plural of 'species' is unfortunately also 'species'
     :<|> "speciess" :> Get '[JSON] [Species]
@@ -33,13 +33,13 @@ data Species = Species
   { speciesName :: Text
   , speciesGenus :: Text
   }
-  deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
+  deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)
 
 data Genus = Genus
   { genusName :: Text
   , genusFamily :: Text
   }
-  deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
+  deriving (Eq, FromJSON, Generic, Read, Show, ToJSON)
 
 instance FromRow Genus
 

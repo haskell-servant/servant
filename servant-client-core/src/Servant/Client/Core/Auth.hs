@@ -10,6 +10,7 @@ module Servant.Client.Core.Auth
 where
 
 import Data.Kind (Type)
+
 import Servant.Client.Core.Request (Request)
 
 -- | For a resource protected by authentication (e.g. AuthProtect), we need

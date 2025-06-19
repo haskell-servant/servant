@@ -34,15 +34,16 @@ import Servant.API
   , WithStatus (WithStatus)
   , getHeaders
   )
-import Servant.Client
 import qualified Servant.Client.Core.Request as Req
-import Servant.ClientTestUtils
 import Servant.Test.ComprehensiveAPI
 import Test.HUnit
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
 import Prelude ()
+
+import Servant.Client
+import Servant.ClientTestUtils
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming

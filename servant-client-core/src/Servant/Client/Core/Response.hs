@@ -33,7 +33,7 @@ data ResponseF a = Response
   , responseHttpVersion :: HttpVersion
   , responseBody :: a
   }
-  deriving (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
+  deriving (Eq, Foldable, Functor, Generic, Show, Traversable, Typeable)
 
 instance NFData a => NFData (ResponseF a) where
   rnf (Response sc hs hv body) =

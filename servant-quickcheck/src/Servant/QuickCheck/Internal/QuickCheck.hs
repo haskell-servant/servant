@@ -15,15 +15,16 @@ import Servant
     (DefaultErrorFormatters, ErrorFormatters, HasContextEntry, type (.++))
 #endif
 import Servant.Client (BaseUrl (..), Scheme (..))
-import Servant.QuickCheck.Internal.Equality
-import Servant.QuickCheck.Internal.ErrorTypes
-import Servant.QuickCheck.Internal.HasGenRequest
-import Servant.QuickCheck.Internal.Predicates
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Expectation, expectationFailure)
 import Test.QuickCheck (Args (..), Result (..), quickCheckWithResult)
 import Test.QuickCheck.Monadic (assert, forAllM, monadicIO, monitor, run)
 import Test.QuickCheck.Property (counterexample)
+
+import Servant.QuickCheck.Internal.Equality
+import Servant.QuickCheck.Internal.ErrorTypes
+import Servant.QuickCheck.Internal.HasGenRequest
+import Servant.QuickCheck.Internal.Predicates
 
 -- | Start a servant application on an open port, run the provided function,
 -- then stop the application.

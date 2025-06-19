@@ -81,9 +81,9 @@ class IsWaiBody (ResponseBody a) => ResponseRender cs a where
     -> Maybe (InternalResponse (ResponseBody a))
 
 instance
-  ( ResponseRender cs a
+  ( KnownStatus (ResponseStatus a)
   , ResponseListRender cs as
-  , KnownStatus (ResponseStatus a)
+  , ResponseRender cs a
   )
   => ResponseListRender cs (a ': as)
   where
@@ -94,8 +94,8 @@ instance
 
 instance
   ( AsHeaders xs (ResponseType r) a
-  , ServantHeaders hs xs
   , ResponseRender cs r
+  , ServantHeaders hs xs
   )
   => ResponseRender cs (WithHeaders hs a r)
   where

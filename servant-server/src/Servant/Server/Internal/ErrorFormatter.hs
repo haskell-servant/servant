@@ -19,6 +19,7 @@ import Data.Kind (Type)
 import Data.Typeable
 import Network.Wai.Internal (Request)
 import Servant.API (Capture, ReqBody)
+
 import Servant.Server.Internal.Context
 import Servant.Server.Internal.ServerError
 

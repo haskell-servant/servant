@@ -32,7 +32,7 @@ data Scheme
     Http
   | -- | https://
     Https
-  deriving (Show, Eq, Ord, Generic, Lift, Data)
+  deriving (Data, Eq, Generic, Lift, Ord, Show)
 
 -- | Simple data type to represent the target of HTTP requests
 --   for servant's automatically-generated clients.
@@ -46,7 +46,7 @@ data BaseUrl = BaseUrl
   , baseUrlPath :: String
   -- ^ path (eg "/a/b/c")
   }
-  deriving (Show, Ord, Generic, Lift, Data)
+  deriving (Data, Generic, Lift, Ord, Show)
 
 -- TODO: Ord is more precise than Eq
 -- TODO: Add Hashable instance?

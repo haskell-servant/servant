@@ -90,6 +90,8 @@ where
 
 import Data.Singletons.Bool (SBool (..), SBoolI (..))
 import Data.Type.Bool (If)
+import Web.HttpApiData (FromHttpApiData (..), ToHttpApiData (..))
+
 import Servant.API.Alternative ((:<|>) (..))
 import Servant.API.BasicAuth (BasicAuth, BasicAuthData (..))
 import Servant.API.Capture (Capture, Capture', CaptureAll)
@@ -213,4 +215,3 @@ import Servant.API.Verbs
 import Servant.API.WithNamedContext (WithNamedContext)
 import Servant.API.WithResource (WithResource)
 import Servant.Links (HasLink (..), IsElem, IsElem', Link, URI (..), safeLink)
-import Web.HttpApiData (FromHttpApiData (..), ToHttpApiData (..))

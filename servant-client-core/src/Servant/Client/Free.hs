@@ -11,6 +11,7 @@ where
 
 import Control.Monad.Free
 import Data.Proxy (Proxy (..))
+
 import Servant.Client.Core
 import Servant.Client.Core.Reexport
 import Servant.Client.Core.RunClient

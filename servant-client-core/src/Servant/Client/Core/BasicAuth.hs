@@ -11,6 +11,7 @@ where
 import Data.ByteString.Base64 (encode)
 import Data.Text.Encoding (decodeUtf8)
 import Servant.API.BasicAuth (BasicAuthData (BasicAuthData))
+
 import Servant.Client.Core.Request (Request, addHeader)
 
 -- | Authenticate a request using Basic Authentication

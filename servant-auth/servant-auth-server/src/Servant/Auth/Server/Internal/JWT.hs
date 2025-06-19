@@ -12,6 +12,7 @@ import Data.Maybe (fromMaybe)
 import Data.Time (UTCTime)
 import Network.Wai (requestHeaders)
 import Servant.Auth.JWT (FromJWT (..), ToJWT (..))
+
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.Types
 

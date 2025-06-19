@@ -11,6 +11,7 @@ where
 
 import Data.Kind (Type)
 import Data.Typeable (Typeable)
+
 import Servant.API.Modifiers
 
 -- | Extract the request body as a value of type @a@.

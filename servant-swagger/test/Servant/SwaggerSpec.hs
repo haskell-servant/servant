@@ -22,9 +22,10 @@ import Data.Text (Text)
 import Data.Time
 import GHC.Generics
 import Servant.API
-import Servant.Swagger
 import Servant.Test.ComprehensiveAPI (comprehensiveAPI)
 import Test.Hspec hiding (example)
+
+import Servant.Swagger
 
 #if !MIN_VERSION_swagger2(2,4,0)
 import Data.Aeson.Lens (_Array, key)
@@ -153,7 +154,7 @@ data UserSummary = UserSummary
   { summaryUsername :: Username
   , summaryUserid :: Int64 -- Word64 would make sense too
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 lowerCutPrefix :: String -> String -> String
 lowerCutPrefix s = map toLower . drop (length s)
@@ -178,12 +179,12 @@ data UserDetailed = UserDetailed
   , userid :: Int64
   , groups :: [Group]
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToSchema UserDetailed
 
 newtype Package = Package {packageName :: Text}
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToSchema Package
 
@@ -430,7 +431,7 @@ getPostAPI =
 -- =======================================================================
 
 data Lunch = Lunch {name :: String}
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToSchema Lunch
 
@@ -438,7 +439,7 @@ instance HasStatus Lunch where
   type StatusOf Lunch = 200
 
 data NoLunch = NoLunch
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToSchema NoLunch
 

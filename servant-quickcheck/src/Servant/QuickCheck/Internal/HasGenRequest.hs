@@ -60,7 +60,7 @@ instance (HasGenRequest a, HasGenRequest b) => HasGenRequest (a :<|> b) where
       l@(lf, _) = genRequest (Proxy :: Proxy a)
       r@(rf, _) = genRequest (Proxy :: Proxy b)
 
-instance (KnownSymbol path, HasGenRequest b) => HasGenRequest (path :> b) where
+instance (HasGenRequest b, KnownSymbol path) => HasGenRequest (path :> b) where
   genRequest _ =
     ( oldf
     , do
@@ -116,7 +116,7 @@ instance
       new = arbitrary :: Gen [c]
 
 instance
-  (Arbitrary c, KnownSymbol h, HasGenRequest b, ToHttpApiData c)
+  (Arbitrary c, HasGenRequest b, KnownSymbol h, ToHttpApiData c)
   => HasGenRequest (Header' mods h c :> b)
   where
   genRequest _ =
@@ -157,7 +157,7 @@ instance
       new = arbitrary :: Gen c
 
 instance
-  (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
+  (Arbitrary c, HasGenRequest b, KnownSymbol x, ToHttpApiData c)
   => HasGenRequest (QueryParam' mods x c :> b)
   where
   genRequest _ =
@@ -179,7 +179,7 @@ instance
       new = arbitrary :: Gen c
 
 instance
-  (KnownSymbol x, Arbitrary c, ToHttpApiData c, HasGenRequest b)
+  (Arbitrary c, HasGenRequest b, KnownSymbol x, ToHttpApiData c)
   => HasGenRequest (QueryParams x c :> b)
   where
   genRequest _ =
@@ -203,7 +203,7 @@ instance
       fold = foldr1 (\a b -> a <> "&" <> b)
 
 instance
-  (KnownSymbol x, HasGenRequest b)
+  (HasGenRequest b, KnownSymbol x)
   => HasGenRequest (QueryFlag x :> b)
   where
   genRequest _ =

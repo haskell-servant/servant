@@ -21,9 +21,10 @@ import Network.HTTP.Types
   , methodPut
   )
 import Safe (readMay)
-import Servant
 import Test.Hspec
 import Test.Hspec.Wai
+
+import Servant
 
 spec :: Spec
 spec = describe "HTTP Errors" $ do
@@ -276,11 +277,11 @@ type ErrorChoiceApi =
     :<|> "path3" :> ReqBody '[JSON] Int :> Post '[PlainText] Int -- 3
     :<|> "path4"
       :> ( ReqBody '[PlainText] Int :> Post '[PlainText] Int -- 4
-            :<|> ReqBody '[PlainText] Int :> Post '[JSON] Int -- 5
+             :<|> ReqBody '[PlainText] Int :> Post '[JSON] Int -- 5
          )
     :<|> "path5"
       :> ( ReqBody '[JSON] Int :> Post '[PlainText] Int -- 6
-            :<|> ReqBody '[PlainText] Int :> Post '[PlainText] Int -- 7
+             :<|> ReqBody '[PlainText] Int :> Post '[PlainText] Int -- 7
          )
 
 errorChoiceApi :: Proxy ErrorChoiceApi

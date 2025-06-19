@@ -127,6 +127,7 @@ import Data.Proxy (Proxy (..))
 import Data.Tagged (Tagged (..))
 import Data.Text (Text)
 import Network.Wai (Application)
+
 import Servant.Server.Internal
 import Servant.Server.UVerb
 
@@ -138,8 +139,7 @@ import Servant.Server.UVerb
 -- need to worry about these constraints, but if you write a helper function that wraps
 -- 'serveWithContext', you might need to include this constraint.
 type ServerContext context =
-  ( HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters
-  )
+  (HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters)
 
 -- | 'serve' allows you to implement an API and produce a wai 'Application'.
 --

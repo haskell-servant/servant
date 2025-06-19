@@ -133,6 +133,8 @@ import Servant.API.UVerb
   , matchUnion
   , statusOf
   )
+import Prelude ()
+
 import Servant.Client.Core.Auth
 import Servant.Client.Core.BasicAuth
 import Servant.Client.Core.ClientError
@@ -142,7 +144,6 @@ import Servant.Client.Core.Response
 import qualified Servant.Client.Core.Response as Response
 import Servant.Client.Core.RunClient
 import Servant.Client.Core.ServerSentEvents
-import Prelude ()
 
 -- * Accessing APIs as a Client
 
@@ -204,7 +205,7 @@ instance (HasClient m a, HasClient m b) => HasClient m (a :<|> b) where
       :<|> hoistClientMonad pm (Proxy :: Proxy b) f cb
 
 -- | Singleton type representing a client for an empty API.
-data EmptyClient = EmptyClient deriving (Eq, Show, Bounded, Enum)
+data EmptyClient = EmptyClient deriving (Bounded, Enum, Eq, Show)
 
 -- | The client for 'EmptyAPI' is simply 'EmptyClient'.
 --
@@ -241,7 +242,7 @@ instance RunClient m => HasClient m EmptyAPI where
 -- > getBook = client myApi
 -- > -- then you can just use "getBook" to query that endpoint
 instance
-  (ToHttpApiData a, HasClient m api)
+  (HasClient m api, ToHttpApiData a)
   => HasClient m (Capture' mods capture a :> api)
   where
   type
@@ -280,7 +281,7 @@ instance
 -- > getSourceFile = client myApi
 -- > -- then you can use "getSourceFile" to query that endpoint
 instance
-  (ToHttpApiData a, HasClient m sublayout)
+  (HasClient m sublayout, ToHttpApiData a)
   => HasClient m (CaptureAll capture a :> sublayout)
   where
   type
@@ -298,14 +299,15 @@ instance
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy sublayout) f (cl as)
 
-instance-- Note [Non-Empty Content Types]
+instance
+-- Note [Non-Empty Content Types]
 
   {-# OVERLAPPABLE #-}
-  ( RunClient m
+  ( KnownNat status
   , MimeUnrender ct a
   , ReflectMethod method
+  , RunClient m
   , cts' ~ (ct ': cts)
-  , KnownNat status
   )
   => HasClient m (Verb method status cts' a)
   where
@@ -328,9 +330,9 @@ instance-- Note [Non-Empty Content Types]
 
 instance
   {-# OVERLAPPING #-}
-  ( RunClient m
+  ( KnownNat status
   , ReflectMethod method
-  , KnownNat status
+  , RunClient m
   )
   => HasClient m (Verb method status cts NoContent)
   where
@@ -347,7 +349,7 @@ instance
   hoistClientMonad _ _ f ma = f ma
 
 instance
-  (RunClient m, ReflectMethod method)
+  (ReflectMethod method, RunClient m)
   => HasClient m (NoContentVerb method)
   where
   type
@@ -361,14 +363,15 @@ instance
 
   hoistClientMonad _ _ f ma = f ma
 
-instance-- Note [Non-Empty Content Types]
+instance
+-- Note [Non-Empty Content Types]
 
   {-# OVERLAPPING #-}
-  ( RunClient m
-  , MimeUnrender ct a
-  , BuildHeadersTo ls
+  ( BuildHeadersTo ls
   , KnownNat status
+  , MimeUnrender ct a
   , ReflectMethod method
+  , RunClient m
   , cts' ~ (ct ': cts)
   )
   => HasClient m (Verb method status cts' (Headers ls a))
@@ -399,10 +402,10 @@ instance-- Note [Non-Empty Content Types]
 
 instance
   {-# OVERLAPPING #-}
-  ( RunClient m
-  , BuildHeadersTo ls
-  , ReflectMethod method
+  ( BuildHeadersTo ls
   , KnownNat status
+  , ReflectMethod method
+  , RunClient m
   )
   => HasClient m (Verb method status cts (Headers ls NoContent))
   where
@@ -440,7 +443,7 @@ instance {-# OVERLAPPABLE #-} AllMimeUnrender cts a => UnrenderResponse cts a wh
 instance
   {-# OVERLAPPING #-}
   forall cts a h
-   . (UnrenderResponse cts a, BuildHeadersTo h)
+   . (BuildHeadersTo h, UnrenderResponse cts a)
   => UnrenderResponse cts (Headers h a)
   where
   unrenderResponse hs body = (map . fmap) setHeaders . unrenderResponse hs body
@@ -457,17 +460,18 @@ instance
 
 instance
   {-# OVERLAPPING #-}
-  ( RunClient m
-  , contentTypes ~ (contentType ': otherContentTypes)
-  , -- ('otherContentTypes' should be '_', but even -XPartialTypeSignatures does not seem
+  ( -- ('otherContentTypes' should be '_', but even -XPartialTypeSignatures does not seem
     -- allow this in instance types as of 8.8.3.)
-    as ~ (a ': as')
-  , AllMime contentTypes
-  , ReflectMethod method
-  , All (UnrenderResponse contentTypes) as
+
+    All (UnrenderResponse contentTypes) as
   , All HasStatus as
+  , AllMime contentTypes
   , HasStatuses as'
+  , ReflectMethod method
+  , RunClient m
   , Unique (Statuses as)
+  , as ~ (a ': as')
+  , contentTypes ~ (contentType ': otherContentTypes)
   )
   => HasClient m (UVerb method contentTypes as)
   where
@@ -523,11 +527,11 @@ instance
 
 instance
   {-# OVERLAPPABLE #-}
-  ( RunStreamingClient m
+  ( FramingUnrender framing
+  , FromSourceIO chunk a
   , MimeUnrender ct chunk
   , ReflectMethod method
-  , FramingUnrender framing
-  , FromSourceIO chunk a
+  , RunStreamingClient m
   )
   => HasClient m (Stream method status framing ct a)
   where
@@ -548,12 +552,12 @@ instance
 
 instance
   {-# OVERLAPPING #-}
-  ( RunStreamingClient m
-  , MimeUnrender ct chunk
-  , ReflectMethod method
+  ( BuildHeadersTo hs
   , FramingUnrender framing
   , FromSourceIO chunk a
-  , BuildHeadersTo hs
+  , MimeUnrender ct chunk
+  , ReflectMethod method
+  , RunStreamingClient m
   )
   => HasClient m (Stream method status framing ct (Headers hs a))
   where
@@ -582,8 +586,8 @@ type SseClientDelegate method status =
   Stream method status NoFraming EventStream
 
 instance
-  ( RunClient m
-  , HasClient m (SseClientDelegate method status (EventMessageStreamT IO))
+  ( HasClient m (SseClientDelegate method status (EventMessageStreamT IO))
+  , RunClient m
   )
   => HasClient m (ServerSentEvents' method status 'RawEvent EventMessage)
   where
@@ -602,8 +606,8 @@ instance
       (Proxy :: Proxy (SseClientDelegate method status (EventMessageStreamT IO)))
 
 instance
-  ( RunClient m
-  , HasClient m (SseClientDelegate method status (EventStreamT IO))
+  ( HasClient m (SseClientDelegate method status (EventStreamT IO))
+  , RunClient m
   )
   => HasClient m (ServerSentEvents' method status 'RawEvent (Event a))
   where
@@ -622,8 +626,8 @@ instance
       (Proxy :: Proxy (SseClientDelegate method status (EventStreamT IO)))
 
 instance
-  ( RunClient m
-  , HasClient m (SseClientDelegate method status (JsonEventStreamT IO a))
+  ( HasClient m (SseClientDelegate method status (JsonEventStreamT IO a))
+  , RunClient m
   )
   => HasClient m (ServerSentEvents' method status 'JsonEvent a)
   where
@@ -667,7 +671,7 @@ instance
 -- > -- then you can just use "viewRefer" to query that endpoint
 -- > -- specifying Nothing or e.g Just "http://haskell.org/" as arguments
 instance
-  (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequired mods))
+  (HasClient m api, KnownSymbol sym, SBoolI (FoldRequired mods), ToHttpApiData a)
   => HasClient m (Header' mods sym a :> api)
   where
   type
@@ -690,7 +694,7 @@ instance
   hoistClientMonad pm _ f cl = \arg ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
 
-instance (KnownSymbol sym, HasClient m api) => HasClient m (Host sym :> api) where
+instance (HasClient m api, KnownSymbol sym) => HasClient m (Host sym :> api) where
   type Client m (Host sym :> api) = Client m api
 
   clientWithRoute pm Proxy req =
@@ -756,7 +760,7 @@ instance HasClient m api => HasClient m (Description desc :> api) where
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
 instance
-  (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequired mods))
+  (HasClient m api, KnownSymbol sym, SBoolI (FoldRequired mods), ToHttpApiData a)
   => HasClient m (QueryParam' mods sym a :> api)
   where
   type
@@ -809,7 +813,7 @@ instance
 -- > -- 'getBooksBy ["Isaac Asimov", "Robert A. Heinlein"]'
 -- > --   to get all books by Asimov and Heinlein
 instance
-  (KnownSymbol sym, ToHttpApiData a, HasClient m api)
+  (HasClient m api, KnownSymbol sym, ToHttpApiData a)
   => HasClient m (QueryParams sym a :> api)
   where
   type
@@ -854,7 +858,7 @@ instance
 -- > -- 'getBooksBy False' for all books
 -- > -- 'getBooksBy True' to only get _already published_ books
 instance
-  (KnownSymbol sym, HasClient m api)
+  (HasClient m api, KnownSymbol sym)
   => HasClient m (QueryFlag sym :> api)
   where
   type
@@ -893,7 +897,7 @@ instance
     hoistClientMonad pm (Proxy :: Proxy api) f (cl b)
 
 instance
-  (KnownSymbol sym, ToDeepQuery a, HasClient m api)
+  (HasClient m api, KnownSymbol sym, ToDeepQuery a)
   => HasClient m (DeepQuery sym a :> api)
   where
   type
@@ -958,7 +962,7 @@ instance RunClient m => HasClient m RawM where
 -- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
 instance
-  (MimeRender ct a, HasClient m api)
+  (HasClient m api, MimeRender ct a)
   => HasClient m (ReqBody' mods (ct ': cts) a :> api)
   where
   type
@@ -981,9 +985,9 @@ instance
     hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
 
 instance
-  ( HasClient m api
+  ( FramingRender framing
+  , HasClient m api
   , MimeRender ctype chunk
-  , FramingRender framing
   , ToSourceIO chunk a
   )
   => HasClient m (StreamBody' mods framing ctype a :> api)
@@ -1007,7 +1011,7 @@ instance
           (toSourceIO body)
 
 -- | Make the querying function append @path@ to the request path.
-instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where
+instance (HasClient m api, KnownSymbol path) => HasClient m (path :> api) where
   type Client m (path :> api) = Client m api
 
   clientWithRoute pm Proxy req =
@@ -1132,10 +1136,10 @@ instance GClientConstraints api m => GClient api m where
   gClientProof = Dict
 
 instance
-  ( forall n. GClient api n
+  ( ErrorIfNoGeneric api
   , HasClient m (ToServantApi api)
   , RunClient m
-  , ErrorIfNoGeneric api
+  , forall n. GClient api n
   )
   => HasClient m (NamedRoutes api)
   where
@@ -1232,10 +1236,10 @@ x // f = f x
 (/:) = flip
 
 instance
-  ( ResponseListUnrender cs as
-  , AllMime cs
-  , ReflectMethod method
+  ( AllMime cs
   , AsUnion as r
+  , ReflectMethod method
+  , ResponseListUnrender cs as
   , RunClient m
   )
   => HasClient m (MultiVerb method cs as r)

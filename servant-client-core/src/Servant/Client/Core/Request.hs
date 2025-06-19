@@ -53,8 +53,9 @@ import Network.HTTP.Types
   )
 import Prelude.Compat
 import Servant.API (SourceIO, ToHttpApiData, toHeader, toQueryParam)
-import Servant.Client.Core.Internal (mediaTypeRnf)
 import Prelude ()
+
+import Servant.Client.Core.Internal (mediaTypeRnf)
 
 data RequestF body path = Request
   { requestPath :: path
@@ -65,7 +66,7 @@ data RequestF body path = Request
   , requestHttpVersion :: HttpVersion
   , requestMethod :: Method
   }
-  deriving (Generic, Typeable, Eq, Functor, Foldable, Traversable)
+  deriving (Eq, Foldable, Functor, Generic, Traversable, Typeable)
 
 instance
   (Show a, Show b)
@@ -107,7 +108,7 @@ instance Bitraversable RequestF where
     where
       mk b p = r{requestBody = b, requestPath = p}
 
-instance (NFData path, NFData body) => NFData (RequestF body path) where
+instance (NFData body, NFData path) => NFData (RequestF body path) where
   rnf r =
     rnf (requestPath r) `seq`
       rnf (requestQueryString r) `seq`

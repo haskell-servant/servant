@@ -18,5 +18,6 @@ import Control.Monad.Error.Class (throwError)
 import Data.Proxy
 import Servant.API
 import Servant.Links
+
 import Servant.Server
 import Servant.Server.StaticFiles

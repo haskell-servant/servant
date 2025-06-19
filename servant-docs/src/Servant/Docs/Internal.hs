@@ -104,7 +104,7 @@ data Endpoint = Endpoint
   { _path :: [String] -- type collected
   , _method :: HTTP.Method -- type collected
   }
-  deriving (Eq, Ord, Generic)
+  deriving (Eq, Generic, Ord)
 
 instance Show Endpoint where
   show (Endpoint p m) =
@@ -384,7 +384,7 @@ data ShowContentTypes
     AllContentTypes
   | -- | For each example, show only one content type.
     FirstContentType
-  deriving (Eq, Ord, Show, Read, Bounded, Enum)
+  deriving (Bounded, Enum, Eq, Ord, Read, Show)
 
 -- | Customise how an 'API' is converted into documentation.
 --
@@ -455,7 +455,7 @@ docsWithOptions p = docsFor p (defEndpoint, defAction)
 -- >                                      , DocNote "Second section" ["And some more"]
 -- >                                      ]
 extraInfo
-  :: (IsIn endpoint api, HasLink endpoint, HasDocs endpoint)
+  :: (HasDocs endpoint, HasLink endpoint, IsIn endpoint api)
   => Proxy endpoint
   -> Action
   -> ExtraInfo api
@@ -525,7 +525,7 @@ class HasDocs api where
 -- get the corresponding response.
 class ToSample a where
   toSamples :: Proxy a -> [(Text, a)]
-  default toSamples :: (Generic a, GToSample (Rep a)) => Proxy a -> [(Text, a)]
+  default toSamples :: (GToSample (Rep a), Generic a) => Proxy a -> [(Text, a)]
   toSamples = defaultSamples
 
 -- | Sample input or output (if there is at least one).
@@ -545,7 +545,7 @@ samples :: [a] -> [(Text, a)]
 samples = map ("",)
 
 -- | Default sample Generic-based inputs/outputs.
-defaultSamples :: forall a. (Generic a, GToSample (Rep a)) => Proxy a -> [(Text, a)]
+defaultSamples :: forall a. (GToSample (Rep a), Generic a) => Proxy a -> [(Text, a)]
 defaultSamples _ = second G.to <$> gtoSamples (Proxy :: Proxy (Rep a))
 
 -- | @'ToSample'@ for Generics.
@@ -588,7 +588,7 @@ instance AllHeaderSamples '[] where
   allHeaderToSample _ = []
 
 instance
-  (ToHttpApiData l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
+  (AllHeaderSamples ls, KnownSymbol h, ToHttpApiData l, ToSample l)
   => AllHeaderSamples (Header h l ': ls)
   where
   allHeaderToSample _ =
@@ -602,7 +602,7 @@ instance
 -- | Synthesise a sample value of a type, encoded in the specified media types.
 sampleByteString
   :: forall ct cts a
-   . (ToSample a, AllMimeRender (ct ': cts) a)
+   . (AllMimeRender (ct ': cts) a, ToSample a)
   => Proxy (ct ': cts)
   -> Proxy a
   -> [(M.MediaType, ByteString)]
@@ -613,7 +613,7 @@ sampleByteString ctypes@Proxy Proxy =
 -- specified media types.
 sampleByteStrings
   :: forall ct cts a
-   . (ToSample a, AllMimeRender (ct ': cts) a)
+   . (AllMimeRender (ct ': cts) a, ToSample a)
   => Proxy (ct ': cts)
   -> Proxy a
   -> [(Text, M.MediaType, ByteString)]
@@ -813,8 +813,8 @@ markdownWith RenderingOptions{..} api =
                 else []
             )
           ++ ( if (param ^. paramKind == Flag)
-                then ["     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."]
-                else []
+                 then ["     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."]
+                 else []
              )
           ++ []
       where
@@ -959,7 +959,7 @@ instance HasDocs EmptyAPI where
 -- | @"books" :> 'Capture' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
 instance
-  (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)
+  (HasDocs api, KnownSymbol sym, ToCapture (Capture sym a))
   => HasDocs (Capture' '[] sym a :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -973,7 +973,7 @@ instance
       symP = Proxy :: Proxy sym
 
 instance
-  (KnownSymbol descr, KnownSymbol sym, HasDocs api)
+  (HasDocs api, KnownSymbol descr, KnownSymbol sym)
   => HasDocs (Capture' (Description descr ': mods) sym a :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -1000,7 +1000,7 @@ instance
 -- | @"books" :> 'CaptureAll' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
 instance
-  (KnownSymbol sym, ToCapture (CaptureAll sym a), HasDocs sublayout)
+  (HasDocs sublayout, KnownSymbol sym, ToCapture (CaptureAll sym a))
   => HasDocs (CaptureAll sym a :> sublayout)
   where
   docsFor Proxy (endpoint, action) =
@@ -1015,10 +1015,10 @@ instance
 
 instance
   {-# OVERLAPPABLE #-}
-  ( ToSample a
-  , AllMimeRender (ct ': cts) a
+  ( AllMimeRender (ct ': cts) a
   , KnownNat status
   , ReflectMethod method
+  , ToSample a
   )
   => HasDocs (Verb method status (ct ': cts) a)
   where
@@ -1076,12 +1076,12 @@ instance
 
 instance
   {-# OVERLAPPING #-}
-  ( ToSample a
+  ( AllHeaderSamples ls
   , AllMimeRender (ct ': cts) a
+  , GetHeaders (HList ls)
   , KnownNat status
   , ReflectMethod method
-  , AllHeaderSamples ls
-  , GetHeaders (HList ls)
+  , ToSample a
   )
   => HasDocs (Verb method status (ct ': cts) (Headers ls a))
   where
@@ -1102,7 +1102,7 @@ instance
       p = Proxy :: Proxy a
 
 instance
-  (ToHttpApiData a, ToSample a, KnownSymbol sym, HasDocs api)
+  (HasDocs api, KnownSymbol sym, ToHttpApiData a, ToSample a)
   => HasDocs (Header' mods sym a :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -1116,7 +1116,7 @@ instance
         Nothing -> "<no header sample provided>"
 
 instance
-  (KnownSymbol sym, ToParam (QueryParam' mods sym a), HasDocs api)
+  (HasDocs api, KnownSymbol sym, ToParam (QueryParam' mods sym a))
   => HasDocs (QueryParam' mods sym a :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -1127,7 +1127,7 @@ instance
       action' = over params (|> toParam paramP) action
 
 instance
-  (KnownSymbol sym, ToParam (QueryParams sym a), HasDocs api)
+  (HasDocs api, KnownSymbol sym, ToParam (QueryParams sym a))
   => HasDocs (QueryParams sym a :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -1138,7 +1138,7 @@ instance
       action' = over params (|> toParam paramP) action
 
 instance
-  (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs api)
+  (HasDocs api, KnownSymbol sym, ToParam (QueryFlag sym))
   => HasDocs (QueryFlag sym :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -1149,7 +1149,7 @@ instance
       action' = over params (|> toParam paramP) action
 
 instance
-  (ToFragment (Fragment a), HasDocs api)
+  (HasDocs api, ToFragment (Fragment a))
   => HasDocs (Fragment a :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -1164,7 +1164,7 @@ instance HasDocs Raw where
     single endpoint action
 
 instance
-  (KnownSymbol desc, HasDocs api)
+  (HasDocs api, KnownSymbol desc)
   => HasDocs (Description desc :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -1175,7 +1175,7 @@ instance
       note = DocNote (symbolVal (Proxy :: Proxy desc)) []
 
 instance
-  (KnownSymbol desc, HasDocs api)
+  (HasDocs api, KnownSymbol desc)
   => HasDocs (Summary desc :> api)
   where
   docsFor Proxy (endpoint, action) =
@@ -1190,7 +1190,7 @@ instance
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
 -- both are even defined) for any particular type.
 instance
-  (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
+  (AllMimeRender (ct ': cts) a, HasDocs api, ToSample a)
   => HasDocs (ReqBody' mods (ct ': cts) a :> api)
   where
   docsFor Proxy (endpoint, action) opts@DocOptions{..} =
@@ -1206,7 +1206,7 @@ instance
       p = Proxy :: Proxy a
 
 -- | TODO: this instance is incomplete.
-instance (HasDocs api, Accept ctype) => HasDocs (StreamBody' mods framing ctype a :> api) where
+instance (Accept ctype, HasDocs api) => HasDocs (StreamBody' mods framing ctype a :> api) where
   docsFor Proxy (endpoint, action) opts =
     docsFor subApiP (endpoint, action') opts
     where
@@ -1217,7 +1217,7 @@ instance (HasDocs api, Accept ctype) => HasDocs (StreamBody' mods framing ctype 
 
       t = Proxy :: Proxy ctype
 
-instance (KnownSymbol path, HasDocs api) => HasDocs (path :> api) where
+instance (HasDocs api, KnownSymbol path) => HasDocs (path :> api) where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint', action)
     where
@@ -1247,7 +1247,7 @@ instance HasDocs api => HasDocs (WithNamedContext name context api) where
 instance HasDocs api => HasDocs (WithResource res :> api) where
   docsFor Proxy = docsFor (Proxy :: Proxy api)
 
-instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth realm usr :> api) where
+instance (HasDocs api, ToAuthInfo (BasicAuth realm usr)) => HasDocs (BasicAuth realm usr :> api) where
   docsFor Proxy (endpoint, action) =
     docsFor (Proxy :: Proxy api) (endpoint, action')
     where
@@ -1255,8 +1255,8 @@ instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth r
       action' = over authInfo (|> toAuthInfo authProxy) action
 
 instance
-  ( HasDocs (ToServantApi api)
-  , ErrorIfNoGeneric api
+  ( ErrorIfNoGeneric api
+  , HasDocs (ToServantApi api)
   )
   => HasDocs (NamedRoutes api)
   where

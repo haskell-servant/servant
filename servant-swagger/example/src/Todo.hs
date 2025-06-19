@@ -43,11 +43,11 @@ data Todo = Todo
   , summary :: Text
   -- ^ Task summary.
   }
-  deriving (Show, Generic, Typeable)
+  deriving (Generic, Show, Typeable)
 
 -- | A unique Todo entry ID.
 newtype TodoId = TodoId Int
-  deriving (Show, Generic, Typeable, ToJSON, FromHttpApiData)
+  deriving (FromHttpApiData, Generic, Show, ToJSON, Typeable)
 
 instance ToJSON Todo
 

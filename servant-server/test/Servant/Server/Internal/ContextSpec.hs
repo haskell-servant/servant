@@ -5,9 +5,10 @@ module Servant.Server.Internal.ContextSpec (spec) where
 
 import Data.Proxy (Proxy (..))
 import Servant.API
-import Servant.Server.Internal.Context
 import Test.Hspec (Spec, context, describe, it, shouldBe)
 import Test.ShouldNotTypecheck (shouldNotTypecheck)
+
+import Servant.Server.Internal.Context
 
 spec :: Spec
 spec = do

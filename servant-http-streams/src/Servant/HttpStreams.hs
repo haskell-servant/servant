@@ -15,4 +15,5 @@ module Servant.HttpStreams
 where
 
 import Servant.Client.Core.Reexport
+
 import Servant.HttpStreams.Internal

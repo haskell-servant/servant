@@ -30,6 +30,6 @@ data EventKind
 --
 -- See <https://www.w3.org/TR/2009/WD-eventsource-20090421/>.
 data ServerSentEvents' (method :: k) (status :: Nat) (kind :: EventKind) (a :: Type)
-  deriving (Typeable, Generic)
+  deriving (Generic, Typeable)
 
 type ServerSentEvents = ServerSentEvents' 'GET 200

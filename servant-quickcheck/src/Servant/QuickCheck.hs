@@ -84,8 +84,9 @@ where
 
 import Data.Proxy (Proxy (..))
 import Servant.Client (BaseUrl (..), Scheme (..))
-import Servant.QuickCheck.Internal
 import Test.QuickCheck (Args (..), stdArgs)
+
+import Servant.QuickCheck.Internal
 
 -- | QuickCheck @Args@ with 1000 rather than 100 test cases.
 --

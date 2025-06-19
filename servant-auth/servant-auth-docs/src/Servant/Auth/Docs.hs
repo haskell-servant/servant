@@ -69,7 +69,7 @@ class AllDocs (x :: [Type]) where
     -- intro, req
     -> [(String, String)]
 
-instance (OneDoc a, AllDocs as) => AllDocs (a ': as) where
+instance (AllDocs as, OneDoc a) => AllDocs (a ': as) where
   allDocs _ = oneDoc (Proxy :: Proxy a) : allDocs (Proxy :: Proxy as)
 
 instance AllDocs '[] where

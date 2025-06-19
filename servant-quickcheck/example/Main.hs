@@ -5,9 +5,10 @@ module Main (main) where
 
 import Data.Text (Text)
 import Servant
-import Servant.QuickCheck
 import System.Environment (getArgs)
 import Test.Hspec
+
+import Servant.QuickCheck
 
 main :: IO ()
 main = do

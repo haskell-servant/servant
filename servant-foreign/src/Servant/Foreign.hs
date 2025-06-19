@@ -61,5 +61,6 @@ module Servant.Foreign
 where
 
 import Servant.API
+
 import Servant.Foreign.Inflections
 import Servant.Foreign.Internal

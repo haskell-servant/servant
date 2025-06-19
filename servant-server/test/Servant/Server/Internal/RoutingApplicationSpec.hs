@@ -18,12 +18,13 @@ import qualified Data.Text as T
 import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
 import Network.Wai (defaultRequest)
 import Prelude.Compat
-import Servant
-import Servant.Server.Internal
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
 import Test.Hspec.Wai (request, shouldRespondWith, with)
 import Prelude ()
+
+import Servant
+import Servant.Server.Internal
 
 data TestResource x
   = TestResourceNone
@@ -87,7 +88,7 @@ simpleRun d =
 -- | This data types writes 'sym' to 'delayedTestRef'.
 data Res (sym :: Symbol)
 
-instance (KnownSymbol sym, HasServer api ctx) => HasServer (Res sym :> api) ctx where
+instance (HasServer api ctx, KnownSymbol sym) => HasServer (Res sym :> api) ctx where
   type ServerT (Res sym :> api) m = IORef (TestResource String) -> ServerT api m
 
   hoistServerWithContext _ nc nt s = hoistServerWithContext (Proxy :: Proxy api) nc nt . s

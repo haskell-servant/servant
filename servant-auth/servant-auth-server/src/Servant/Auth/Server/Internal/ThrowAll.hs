@@ -30,7 +30,7 @@ instance (ThrowAll a, ThrowAll b) => ThrowAll (a :<|> b) where
   throwAll e = throwAll e :<|> throwAll e
 
 instance
-  (ThrowAll (ToServant api (AsServerT m)), GenericServant api (AsServerT m))
+  (GenericServant api (AsServerT m), ThrowAll (ToServant api (AsServerT m)))
   => ThrowAll (api (AsServerT m))
   where
   throwAll = fromServant . throwAll

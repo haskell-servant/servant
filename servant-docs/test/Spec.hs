@@ -1,7 +1,8 @@
 module Main (main) where
 
-import qualified Servant.DocsSpec
 import Test.Tasty (defaultMain)
+
+import qualified Servant.DocsSpec
 
 main :: IO ()
 main = defaultMain Servant.DocsSpec.spec

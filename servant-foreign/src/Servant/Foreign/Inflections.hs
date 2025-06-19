@@ -14,8 +14,9 @@ where
 import Control.Lens hiding (cons)
 import qualified Data.Char as C
 import Data.Text hiding (map)
-import Servant.Foreign.Internal
 import Prelude hiding (head, tail)
+
+import Servant.Foreign.Internal
 
 -- | Simply concat each part of the FunctionName together.
 --

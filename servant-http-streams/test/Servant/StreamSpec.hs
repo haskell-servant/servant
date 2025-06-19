@@ -37,14 +37,15 @@ import Servant.API
   , (:<|>) ((:<|>))
   , (:>)
   )
-import Servant.ClientSpec (Person (..))
-import qualified Servant.ClientSpec as CS
-import Servant.HttpStreams
 import Servant.Server
 import Servant.Types.SourceT
 import System.Entropy (getEntropy, getHardwareEntropy)
 import Test.Hspec
 import Prelude ()
+
+import Servant.ClientSpec (Person (..))
+import qualified Servant.ClientSpec as CS
+import Servant.HttpStreams
 
 spec :: Spec
 spec = describe "Servant.HttpStreams streaming" $ do

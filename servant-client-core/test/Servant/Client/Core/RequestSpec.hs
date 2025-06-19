@@ -6,9 +6,10 @@ module Servant.Client.Core.RequestSpec (spec) where
 import Control.Monad
 import Data.List (isInfixOf)
 import Prelude.Compat
-import Servant.Client.Core.Request
 import Test.Hspec
 import Prelude ()
+
+import Servant.Client.Core.Request
 
 newtype DataWithRequest = DataWithRequest (RequestF RequestBody ())
   deriving (Show)

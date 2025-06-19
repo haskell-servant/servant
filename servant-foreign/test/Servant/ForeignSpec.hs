@@ -12,10 +12,11 @@
 module Servant.ForeignSpec where
 
 import Data.Proxy
-import Servant.Foreign
 import Servant.Test.ComprehensiveAPI
 import Servant.Types.SourceT (SourceT)
 import Test.Hspec
+
+import Servant.Foreign
 
 spec :: Spec
 spec = describe "Servant.Foreign" $ do

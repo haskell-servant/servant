@@ -11,4 +11,5 @@ module Servant.Client.Ghcjs
 where
 
 import Servant.Client.Core.Reexport
+
 import Servant.Client.Internal.XhrClient

@@ -26,7 +26,7 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Either
 import Data.Function (on)
-import Data.List (maximumBy, sortBy)
+import Data.List (maximumBy)
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Proxy
@@ -36,14 +36,14 @@ import qualified Data.Text.Encoding as TextSE
 import qualified Data.Text.Lazy as TextL
 import GHC.Generics
 import Network.HTTP.Media ()
-
 -- for CPP
 
-import Servant.API.ContentTypes
 import Test.Hspec
 import Test.QuickCheck
 import Text.Read (readMaybe)
 import "quickcheck-instances" Test.QuickCheck.Instances ()
+
+import Servant.API.ContentTypes
 
 spec :: Spec
 spec = describe "Servant.API.ContentTypes" $ do
@@ -256,7 +256,7 @@ spec = describe "Servant.API.ContentTypes" $ do
           `shouldBe` (eitherDecode x :: Either String String)
 
 -- when qualities are same, http-media-0.8 picks first; 0.7 last.
-selectMedia :: [(AcceptHeader, ZeroToOne)] -> (AcceptHeader, ZeroToOne)
+selectMedia :: [(BSL8.ByteString, ZeroToOne)] -> (BSL8.ByteString, ZeroToOne)
 #if MIN_VERSION_http_media(0,8,0)
 selectMedia = maximumBy (compare `on` snd) . reverse
 #else
@@ -264,10 +264,10 @@ selectMedia = maximumBy (compare `on` snd)
 #endif
 
 data SomeData = SomeData {record1 :: String, record2 :: Int}
-  deriving (Generic, Eq, Show)
+  deriving (Eq, Generic, Show)
 
 newtype ZeroToOne = ZeroToOne Float
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Ord, Show)
 
 instance FromJSON SomeData
 

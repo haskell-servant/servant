@@ -43,7 +43,7 @@ infixr 5 :.
 instance Show (Context '[]) where
   show EmptyContext = "EmptyContext"
 
-instance (Show a, Show (Context as)) => Show (Context (a ': as)) where
+instance (Show (Context as), Show a) => Show (Context (a ': as)) where
   showsPrec outerPrecedence (a :. as) =
     showParen (outerPrecedence > 5) $
       shows a . showString " :. " . shows as
@@ -51,7 +51,7 @@ instance (Show a, Show (Context as)) => Show (Context (a ': as)) where
 instance Eq (Context '[]) where
   _ == _ = True
 
-instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
+instance (Eq (Context as), Eq a) => Eq (Context (a ': as)) where
   x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
 
 -- | Append two contexts.

@@ -20,7 +20,7 @@ import Servant.Client.Core
 
 -- | A simple bearer token.
 newtype Token = Token {getToken :: BS.ByteString}
-  deriving (Eq, Show, Read, Generic, IsString)
+  deriving (Eq, Generic, IsString, Read, Show)
 
 type family HasBearer xs :: Constraint where
   HasBearer (Bearer ': xs) = ()

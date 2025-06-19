@@ -56,6 +56,7 @@ where
 import Data.Kind (Type)
 import GHC.Exts (Constraint)
 import GHC.TypeLits (ErrorMessage (..), TypeError)
+
 import Servant.API.Alternative (type (:<|>))
 import Servant.API.Capture (Capture, CaptureAll)
 import Servant.API.Fragment

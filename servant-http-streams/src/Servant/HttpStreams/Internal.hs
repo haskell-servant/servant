@@ -119,13 +119,13 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 newtype ClientM a = ClientM
   {unClientM :: ReaderT ClientEnv (ExceptT ClientError (Codensity IO)) a}
   deriving
-    ( Functor
-    , Applicative
-    , Monad
-    , MonadIO
+    ( Applicative
+    , Functor
     , Generic
-    , MonadReader ClientEnv
+    , Monad
     , MonadError ClientError
+    , MonadIO
+    , MonadReader ClientEnv
     )
 
 instance MonadBase IO ClientM where

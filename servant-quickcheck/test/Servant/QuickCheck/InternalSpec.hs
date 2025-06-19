@@ -13,12 +13,6 @@ import Network.HTTP.Client (path, queryString)
 import Prelude.Compat
 import Servant
 import Servant.HTML.Blaze (HTML)
-import Servant.QuickCheck
-import Servant.QuickCheck.Internal
-  ( genRequest
-  , runGenRequest
-  , serverDoesntSatisfy
-  )
 import Servant.Test.ComprehensiveAPI (comprehensiveAPIWithoutStreamingOrRaw)
 import Test.Hspec (Spec, context, describe, it, shouldBe, shouldContain)
 import Test.Hspec.Core.Spec
@@ -33,6 +27,13 @@ import Test.QuickCheck.Gen (generate, unGen)
 import Test.QuickCheck.Random (mkQCGen)
 import qualified Text.Blaze.Html as Blaze
 import qualified Text.Blaze.Html5 as Blaze5
+
+import Servant.QuickCheck
+import Servant.QuickCheck.Internal
+  ( genRequest
+  , runGenRequest
+  , serverDoesntSatisfy
+  )
 
 spec :: Spec
 spec = do
@@ -353,7 +354,7 @@ ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
 ------------------------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------------------------
-evalExample :: (Example e, Arg e ~ ()) => e -> IO EvalResult
+evalExample :: (Arg e ~ (), Example e) => e -> IO EvalResult
 evalExample e = do
   r <- safeEvaluateExample e defaultParams ($ ()) progCallback
   case resultStatus r of

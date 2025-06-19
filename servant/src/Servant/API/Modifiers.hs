@@ -107,7 +107,7 @@ foldRequiredArgument _ f g mx =
 -- | Unfold a value into a 'RequiredArgument'.
 unfoldRequiredArgument
   :: forall mods m a
-   . (Monad m, SBoolI (FoldRequired mods), SBoolI (FoldLenient mods))
+   . (Monad m, SBoolI (FoldLenient mods), SBoolI (FoldRequired mods))
   => Proxy mods
   -> m (RequiredArgument mods a)
   -- ^ error when argument is required
@@ -143,7 +143,7 @@ type RequestArgument mods a =
 -- | Unfold a value into a 'RequestArgument'.
 unfoldRequestArgument
   :: forall mods m a
-   . (Monad m, SBoolI (FoldRequired mods), SBoolI (FoldLenient mods))
+   . (Monad m, SBoolI (FoldLenient mods), SBoolI (FoldRequired mods))
   => Proxy mods
   -> m (RequestArgument mods a)
   -- ^ error when argument is required

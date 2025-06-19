@@ -26,7 +26,7 @@ data IsSecure
   | -- | the connection to the server
     --   is not secure (HTTP)
     NotSecure
-  deriving (Eq, Show, Read, Generic, Ord, Typeable)
+  deriving (Eq, Generic, Ord, Read, Show, Typeable)
 
 -- $issecure
 --

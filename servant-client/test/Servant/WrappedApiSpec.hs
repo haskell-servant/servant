@@ -25,11 +25,12 @@ import Data.Proxy
 import qualified Network.HTTP.Types as HTTP
 import Prelude.Compat
 import Servant.API (Delete, Get, JSON, Post, Put)
-import Servant.Client
-import Servant.ClientTestUtils
 import Servant.Server
 import Test.Hspec
 import Prelude ()
+
+import Servant.Client
+import Servant.ClientTestUtils
 
 spec :: Spec
 spec = describe "Servant.WrappedApiSpec" $ do
@@ -37,10 +38,10 @@ spec = describe "Servant.WrappedApiSpec" $ do
 
 data WrappedApi where
   WrappedApi
-    :: ( HasServer (api :: Type) '[]
-       , Server api ~ Handler a
+    :: ( Client ClientM api ~ ClientM ()
        , HasClient ClientM api
-       , Client ClientM api ~ ClientM ()
+       , HasServer (api :: Type) '[]
+       , Server api ~ Handler a
        )
     => Proxy api
     -> WrappedApi

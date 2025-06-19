@@ -13,10 +13,11 @@ import Network.HTTP.Types (Status (..))
 import Network.Wai (responseBuilder)
 import Network.Wai.Internal (Response (ResponseBuilder))
 import Servant.API
-import Servant.Server
-import Servant.Server.Internal
 import Test.Hspec
 import Test.Hspec.Wai (get, shouldRespondWith, with)
+
+import Servant.Server
+import Servant.Server.Internal
 
 spec :: Spec
 spec = describe "Servant.Server.Internal.Router" $ do
@@ -196,15 +197,15 @@ type Permute =
 type PermuteRef =
   "a"
     :> ( "b" :> "c" :> End
-          :<|> "c" :> "b" :> End
+           :<|> "c" :> "b" :> End
        )
     :<|> "b"
       :> ( "a" :> "c" :> End
-            :<|> "c" :> "a" :> End
+             :<|> "c" :> "a" :> End
          )
     :<|> "c"
       :> ( "a" :> "b" :> End
-            :<|> "b" :> "a" :> End
+             :<|> "b" :> "a" :> End
          )
 
 permute :: Proxy Permute
@@ -279,14 +280,14 @@ type PermuteRawMiddle =
 type PermuteRawMiddleRef =
   "a"
     :> ( "b" :> "c" :> End
-          :<|> "c" :> "b" :> End
+           :<|> "c" :> "b" :> End
        )
     :<|> "b" :> "a" :> "c" :> End
     :<|> Raw
     :<|> "b" :> "c" :> "a" :> End
     :<|> "c"
       :> ( "a" :> "b" :> End
-            :<|> "b" :> "a" :> End
+             :<|> "b" :> "a" :> End
          )
 
 permuteRawMiddle :: Proxy PermuteRawMiddle

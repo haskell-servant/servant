@@ -24,7 +24,7 @@ data AuthResult val
     -- @Indefinite@ is returned. This indicates that other authentication
     -- methods should be tried.
     Indefinite
-  deriving (Eq, Show, Read, Generic, Ord, Functor, Traversable, Foldable)
+  deriving (Eq, Foldable, Functor, Generic, Ord, Read, Show, Traversable)
 
 instance Semigroup (AuthResult val) where
   Indefinite <> y = y
@@ -59,7 +59,7 @@ instance MonadPlus AuthResult where
 -- non-'Indefinite' result from left to right is used and the rest are ignored.
 newtype AuthCheck val = AuthCheck
   {runAuthCheck :: Request -> IO (AuthResult val)}
-  deriving (Generic, Functor)
+  deriving (Functor, Generic)
 
 instance Semigroup (AuthCheck val) where
   AuthCheck f <> AuthCheck g = AuthCheck $ \x -> do

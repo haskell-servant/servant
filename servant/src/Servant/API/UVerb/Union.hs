@@ -142,8 +142,8 @@ type family Nubbed xs :: Bool where
 
 _testNubbed
   :: ( ( Nubbed '[Bool, Int, Int] ~ 'False
-       , Nubbed '[Int, Int, Bool] ~ 'False
        , Nubbed '[Int, Bool] ~ 'True
+       , Nubbed '[Int, Int, Bool] ~ 'False
        )
        => a
      )

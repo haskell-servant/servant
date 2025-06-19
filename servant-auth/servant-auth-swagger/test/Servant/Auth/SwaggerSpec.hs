@@ -7,16 +7,18 @@ import Data.Proxy
 import Data.Swagger
 import Servant.API
 import Servant.Auth
-import Servant.Auth.Swagger
 import Servant.Swagger
 import Test.Hspec
+
+import Servant.Auth.Swagger ()
 
 spec :: Spec
 spec = describe "HasSwagger instance" $ do
   let swag = toSwagger (Proxy :: Proxy API)
+      secDefs = unSecDefs $ swag ^. securityDefinitions
 
   it "adds security definitions at the top level" $ do
-    length (secDefs swag) `shouldSatisfy` (> 0)
+    length secDefs `shouldSatisfy` (> 0)
 
   it "adds security at sub-apis" $ do
     swag ^. security `shouldBe` []
@@ -24,11 +26,9 @@ spec = describe "HasSwagger instance" $ do
     show (swag ^. paths . at "/insecure") `shouldNotContain` "JwtSecurity"
   where
 #if MIN_VERSION_swagger2(2,6,0)
-    secDefs =
-      let (SecurityDefinitions secDefs) = swag ^. securityDefinitions
-      in secDefs
+    unSecDefs (SecurityDefinitions defs) = defs
 #else
-    secDefs = swag ^. securityDefinitions
+    unSecDefs = id
 #endif
 
 -- * API

@@ -21,12 +21,13 @@ import Control.Arrow (left)
 import Data.Monoid ()
 import qualified Network.HTTP.Types as HTTP
 import Prelude.Compat
-import Servant.Client
 import qualified Servant.Client.Core.Auth as Auth
 import qualified Servant.Client.Core.Request as Req
-import Servant.ClientTestUtils
 import Test.Hspec
 import Prelude ()
+
+import Servant.Client
+import Servant.ClientTestUtils
 
 spec :: Spec
 spec = describe "Servant.GenAuthSpec" $ do

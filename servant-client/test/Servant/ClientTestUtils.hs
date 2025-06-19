@@ -86,7 +86,6 @@ import Servant.API.Generic ((:-))
 import Servant.API.MultiVerb
 import Servant.API.QueryString (FromDeepQuery (..), ToDeepQuery (..))
 import Servant.API.Range
-import Servant.Client
 import qualified Servant.Client.Core.Auth as Auth
 import Servant.Server
 import Servant.Server.Experimental.Auth
@@ -97,6 +96,8 @@ import Text.Read (readMaybe)
 import Web.FormUrlEncoded (FromForm, ToForm)
 import Prelude ()
 
+import Servant.Client
+
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
 
@@ -106,7 +107,7 @@ data Person = Person
   { _name :: String
   , _age :: Integer
   }
-  deriving (Eq, Show, Read, Generic)
+  deriving (Eq, Generic, Read, Show)
 
 instance ToJSON Person
 
@@ -197,10 +198,10 @@ instance GSOP.Generic MultipleChoicesIntResult
 type MultipleChoicesInt =
   Capture "int" Int
     :> MultiVerb
-        'GET
-        '[JSON]
-        MultipleChoicesIntResponses
-        MultipleChoicesIntResult
+         'GET
+         '[JSON]
+         MultipleChoicesIntResponses
+         MultipleChoicesIntResult
 
 type Api =
   Get '[JSON] Person
@@ -241,11 +242,11 @@ type Api =
     :<|> "uverb-success-or-redirect"
       :> Capture "bool" Bool
       :> UVerb
-          'GET
-          '[PlainText]
-          '[ WithStatus 200 Person
-           , WithStatus 301 Text
-           ]
+           'GET
+           '[PlainText]
+           '[ WithStatus 200 Person
+            , WithStatus 301 Text
+            ]
     :<|> "uverb-get-created" :> UVerb 'GET '[PlainText] '[WithStatus 201 Person]
     :<|> NamedRoutes RecordRoutes
     :<|> "multiple-choices-int" :> MultipleChoicesInt
@@ -287,11 +288,11 @@ getRedirectWithCookie :: HTTP.Method -> ClientM Response
 uverbGetSuccessOrRedirect
   :: Bool
   -> ClientM
-      ( Union
-          '[ WithStatus 200 Person
-           , WithStatus 301 Text
-           ]
-      )
+       ( Union
+           '[ WithStatus 200 Person
+            , WithStatus 301 Text
+            ]
+       )
 uverbGetCreated :: ClientM (Union '[WithStatus 201 Person])
 recordRoutes :: RecordRoutes (AsClientT ClientM)
 multiChoicesInt :: Int -> ClientM MultipleChoicesIntResult
@@ -342,9 +343,9 @@ server =
         :<|> (\names -> return (zipWith Person names [0 ..]))
         :<|> return
         :<|> ( \case
-                Just "alice" -> return alice
-                Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
-                Nothing -> throwError $ ServerError 400 "missing parameter" "" []
+                 Just "alice" -> return alice
+                 Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
+                 Nothing -> throwError $ ServerError 400 "missing parameter" "" []
              )
         :<|> const
           ( Tagged $ \request respond ->
@@ -359,18 +360,18 @@ server =
         :<|> (\names -> return (zipWith Person names [0 ..]))
         :<|> return
         :<|> ( \q ->
-                return
-                  alice
-                    { _name = maybe mempty C8.unpack $ join (lookup "name" q)
-                    , _age = fromMaybe 0 (readMaybe . C8.unpack =<< join (lookup "age" q))
-                    }
+                 return
+                   alice
+                     { _name = maybe mempty C8.unpack $ join (lookup "name" q)
+                     , _age = fromMaybe 0 (readMaybe . C8.unpack =<< join (lookup "age" q))
+                     }
              )
         :<|> ( \filter' ->
-                return
-                  alice
-                    { _name = nameFilter filter'
-                    , _age = ageFilter filter'
-                    }
+                 return
+                   alice
+                     { _name = nameFilter filter'
+                     , _age = ageFilter filter'
+                     }
              )
         :<|> return alice
         :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
@@ -384,9 +385,9 @@ server =
         :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
         :<|> emptyServer
         :<|> ( \shouldRedirect ->
-                if shouldRedirect
-                  then respond (WithStatus @301 ("redirecting" :: Text))
-                  else respond (WithStatus @200 alice)
+                 if shouldRedirect
+                   then respond (WithStatus @301 ("redirecting" :: Text))
+                   else respond (WithStatus @200 alice)
              )
         :<|> respond (WithStatus @201 carol)
         :<|> RecordRoutes
@@ -399,12 +400,12 @@ server =
                   }
           }
         :<|> ( \param ->
-                if param < 0
-                  then pure NegativeNumber
-                  else
-                    if even param
-                      then pure $ Odd 3
-                      else pure $ Even True
+                 if param < 0
+                   then pure NegativeNumber
+                   else
+                     if even param
+                       then pure $ Odd 3
+                       else pure $ Even True
              )
         :<|> pure . decodeUtf8 . unVerbatim
         :<|> pure True

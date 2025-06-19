@@ -19,11 +19,12 @@ import Network.HTTP.Types.Header (hCookie)
 import Network.Wai (Request, requestHeaders, requestMethod)
 import Servant (AddHeader, addHeader')
 import Servant.Auth.JWT (FromJWT, ToJWT)
+import System.Entropy (getEntropy)
+import Web.Cookie
+
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.JWT (makeJWT, verifyJWT)
 import Servant.Auth.Server.Internal.Types
-import System.Entropy (getEntropy)
-import Web.Cookie
 
 cookieAuthCheck :: FromJWT usr => CookieSettings -> JWTSettings -> AuthCheck usr
 cookieAuthCheck ccfg jwtSettings = do
@@ -131,9 +132,9 @@ applySessionCookieSettings cookieSettings setCookie =
 -- provided response object with XSRF and session cookies. This should be used
 -- when a user successfully authenticates with credentials.
 acceptLogin
-  :: ( ToJWT session
-     , AddHeader mods "Set-Cookie" SetCookie response withOneCookie
+  :: ( AddHeader mods "Set-Cookie" SetCookie response withOneCookie
      , AddHeader mods "Set-Cookie" SetCookie withOneCookie withTwoCookies
+     , ToJWT session
      )
   => CookieSettings
   -> JWTSettings

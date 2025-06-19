@@ -151,6 +151,9 @@ import Data.Default (Default (def))
 import Servant (BasicAuthData (..))
 import Servant.Auth
 import Servant.Auth.JWT
+import Web.Cookie (SetCookie)
+import Prelude hiding (readFile, writeFile)
+
 import Servant.Auth.Server.Internal ()
 import Servant.Auth.Server.Internal.BasicAuth
 import Servant.Auth.Server.Internal.Class
@@ -159,8 +162,6 @@ import Servant.Auth.Server.Internal.Cookie
 import Servant.Auth.Server.Internal.JWT
 import Servant.Auth.Server.Internal.ThrowAll
 import Servant.Auth.Server.Internal.Types
-import Web.Cookie (SetCookie)
-import Prelude hiding (readFile, writeFile)
 
 -- | Generate a key suitable for use with 'defaultConfig'.
 generateKey :: IO Jose.JWK

@@ -14,19 +14,20 @@ import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT)
 import Data.String (fromString)
 import GHC.Generics (Generic)
+
 import Servant.Server.Internal.ServerError (ServerError, err500, errBody)
 
 newtype Handler a = Handler {runHandler' :: ExceptT ServerError IO a}
   deriving stock (Generic)
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
-    , MonadIO
-    , MonadError ServerError
-    , MonadThrow
     , MonadCatch
+    , MonadError ServerError
+    , MonadIO
     , MonadMask
+    , MonadThrow
     )
 
 instance MonadFail Handler where

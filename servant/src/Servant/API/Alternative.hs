@@ -23,7 +23,7 @@ import Data.Typeable (Typeable)
 --        :<|> "books" :> ReqBody '[JSON] Book :> Post '[JSON] () -- POST /books
 -- :}
 data a :<|> b = a :<|> b
-  deriving stock (Typeable, Eq, Show, Functor, Traversable, Foldable, Bounded)
+  deriving stock (Bounded, Eq, Foldable, Functor, Show, Traversable, Typeable)
 
 infixr 3 :<|>
 

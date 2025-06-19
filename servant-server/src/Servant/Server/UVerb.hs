@@ -43,6 +43,7 @@ import Servant.API.UVerb
   , inject
   , statusOf
   )
+
 import Servant.Server.Internal
   ( Context
   , Delayed
@@ -86,7 +87,7 @@ instance
 
 instance
   {-# OVERLAPPING #-}
-  (IsServerResource cts a, GetHeaders (Headers h a))
+  (GetHeaders (Headers h a), IsServerResource cts a)
   => IsServerResource cts (Headers h a)
   where
   resourceResponse request p res = resourceResponse request p (getResponse res)
@@ -102,7 +103,7 @@ instance
 
 encodeResource
   :: forall a cts
-   . (IsServerResource cts a, HasStatus a)
+   . (HasStatus a, IsServerResource cts a)
   => Request
   -> Proxy cts
   -> a
@@ -116,9 +117,9 @@ encodeResource request cts res =
 type IsServerResourceWithStatus cts = IsServerResource cts `And` HasStatus
 
 instance
-  ( ReflectMethod method
+  ( All (IsServerResourceWithStatus contentTypes) as
   , AllMime contentTypes
-  , All (IsServerResourceWithStatus contentTypes) as
+  , ReflectMethod method
   , Unique (Statuses as) -- for consistency with servant-swagger (server would work fine
   -- without; client is a bit of a corner case, because it dispatches
   -- the parser based on the status code.  with this uniqueness

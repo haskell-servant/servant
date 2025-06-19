@@ -35,6 +35,7 @@ import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
+
 import Servant.API.ContentTypes
   ( FormUrlEncoded
   , JSON

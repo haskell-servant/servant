@@ -36,10 +36,11 @@ import qualified Data.SOP.NS as SOP
 import Data.Typeable (Typeable)
 import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
 import qualified Network.HTTP.Types.Header as HTTP
+import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
+
 import Servant.API.Header (Header')
 import Servant.API.Modifiers (Optional, Strict)
 import Servant.API.UVerb.Union
-import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
 
 -- | Response Header objects. You should never need to construct one directly.
 -- Instead, use 'addOptionalHeader'.
@@ -51,14 +52,14 @@ data Headers ls a = Headers
   }
   deriving (Functor)
 
-instance (NFDataHList ls, NFData a) => NFData (Headers ls a) where
+instance (NFData a, NFDataHList ls) => NFData (Headers ls a) where
   rnf (Headers x hdrs) = rnf x `seq` rnf hdrs
 
 data ResponseHeader (sym :: Symbol) a
   = Header a
   | MissingHeader
   | UndecodableHeader ByteString
-  deriving (Typeable, Eq, Show, Functor)
+  deriving (Eq, Functor, Show, Typeable)
 
 instance NFData a => NFData (ResponseHeader sym a) where
   rnf MissingHeader = ()
@@ -73,7 +74,7 @@ class NFDataHList xs where rnfHList :: HList xs -> ()
 
 instance NFDataHList '[] where rnfHList HNil = ()
 
-instance (y ~ Header' mods h x, NFData x, NFDataHList xs) => NFDataHList (y ': xs) where
+instance (NFData x, NFDataHList xs, y ~ Header' mods h x) => NFDataHList (y ': xs) where
   rnfHList (HCons h xs) = rnf h `seq` rnfHList xs
 
 instance NFDataHList xs => NFData (HList xs) where
@@ -93,7 +94,7 @@ instance {-# OVERLAPPING #-} BuildHeadersTo '[] where
 -- like merging field lines with the same field name in a single line.
 instance
   {-# OVERLAPPABLE #-}
-  (FromHttpApiData v, BuildHeadersTo xs, KnownSymbol h)
+  (BuildHeadersTo xs, FromHttpApiData v, KnownSymbol h)
   => BuildHeadersTo (Header' mods h v ': xs)
   where
   buildHeadersTo headers = case L.find wantedHeader headers of
@@ -121,7 +122,7 @@ instance GetHeadersFromHList '[] where
   getHeadersFromHList _ = []
 
 instance
-  (KnownSymbol h, ToHttpApiData x, GetHeadersFromHList xs)
+  (GetHeadersFromHList xs, KnownSymbol h, ToHttpApiData x)
   => GetHeadersFromHList (Header' mods h x ': xs)
   where
   getHeadersFromHList hdrs = case hdrs of
@@ -143,7 +144,7 @@ instance GetHeaders' '[] where
   getHeaders' _ = []
 
 instance
-  (KnownSymbol h, GetHeadersFromHList rest, ToHttpApiData v)
+  (GetHeadersFromHList rest, KnownSymbol h, ToHttpApiData v)
   => GetHeaders' (Header' mods h v ': rest)
   where
   getHeaders' hs = getHeadersFromHList $ getHeadersHList hs
@@ -190,13 +191,14 @@ instance AddHeader mods h v old new => AddHeader mods h v (Union '[old]) (Union 
     SOP.Z $ SOP.I $ addOptionalHeader hdr $ SOP.unI $ SOP.unZ resp
 
 instance
-  ( AddHeader mods h v old new
-  , AddHeader mods h v (Union oldrest) (Union newrest)
+  ( AddHeader mods h v (Union oldrest) (Union newrest)
+  , AddHeader mods h v old new
   , -- This ensures that the remainder of the response list is _not_ empty
     -- It is necessary to prevent the two instances for union types from
     -- overlapping.
-    oldrest ~ (a ': as)
-  , newrest ~ (b ': bs)
+
+    newrest ~ (b ': bs)
+  , oldrest ~ (a ': as)
   )
   => AddHeader mods h v (Union (old ': (a ': as))) (Union (new ': (b ': bs)))
   where

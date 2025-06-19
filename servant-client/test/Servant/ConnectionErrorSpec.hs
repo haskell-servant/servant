@@ -25,10 +25,11 @@ import Data.Proxy
 import qualified Network.HTTP.Client as C
 import Prelude.Compat
 import Servant.API (Get, JSON)
-import Servant.Client
-import Servant.ClientTestUtils
 import Test.Hspec
 import Prelude ()
+
+import Servant.Client
+import Servant.ClientTestUtils
 
 spec :: Spec
 spec = describe "Servant.ConnectionErrorSpec" $ do

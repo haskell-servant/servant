@@ -41,8 +41,9 @@ import Network.HTTP.Types
   , status500
   )
 import Prelude.Compat
-import Servant.QuickCheck.Internal.ErrorTypes
 import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
+
+import Servant.QuickCheck.Internal.ErrorTypes
 
 -- | [__Best Practice__]
 --

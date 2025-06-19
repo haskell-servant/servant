@@ -78,6 +78,7 @@ where
 import Data.Kind (Type)
 import Data.Proxy (Proxy (..))
 import GHC.Generics (Generic (..), K1 (..), M1 (..), (:*:) (..))
+
 import Servant.API.Alternative
 
 -- | A constraint alias, for work with 'mode' and 'routes'.

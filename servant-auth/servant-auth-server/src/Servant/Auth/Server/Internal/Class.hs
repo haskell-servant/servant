@@ -7,6 +7,7 @@ import Data.Monoid
 import Servant hiding (BasicAuth)
 import Servant.Auth
 import Servant.Auth.JWT
+
 import Servant.Auth.Server.Internal.BasicAuth
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.Cookie
@@ -41,10 +42,10 @@ instance AreAuths '[] ctxs v where
   runAuths _ _ = mempty
 
 instance
-  ( AuthCheck v ~ App (AuthArgs a) (Unapp (AuthArgs a) (AuthCheck v))
-  , IsAuth a v
+  ( AppCtx ctxs (AuthArgs a) (Unapp (AuthArgs a) (AuthCheck v))
   , AreAuths as ctxs v
-  , AppCtx ctxs (AuthArgs a) (Unapp (AuthArgs a) (AuthCheck v))
+  , AuthCheck v ~ App (AuthArgs a) (Unapp (AuthArgs a) (AuthCheck v))
+  , IsAuth a v
   )
   => AreAuths (a ': as) ctxs v
   where
@@ -70,8 +71,8 @@ class AppCtx ctx ls res where
   appCtx :: proxy ls -> Context ctx -> res -> App ls res
 
 instance
-  ( HasContextEntry ctxs ctx
-  , AppCtx ctxs rest res
+  ( AppCtx ctxs rest res
+  , HasContextEntry ctxs ctx
   )
   => AppCtx ctxs (ctx ': rest) (ctx -> res)
   where

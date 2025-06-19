@@ -19,11 +19,12 @@ import qualified Pipes.Safe.Prelude as P
 import Prelude.Compat
 import Servant
 import Servant.Client.Streaming
-import Servant.Pipes ()
 import System.Environment (getArgs, lookupEnv)
 import System.IO (IOMode (..))
 import Text.Read (readMaybe)
 import Prelude ()
+
+import Servant.Pipes ()
 
 type FastAPI = "get" :> Capture "num" Int :> StreamGet NewlineFraming JSON (P.Producer Int IO ())
 

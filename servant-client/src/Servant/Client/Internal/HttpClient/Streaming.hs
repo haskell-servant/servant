@@ -40,6 +40,9 @@ import qualified Network.HTTP.Client as Client
 import Network.HTTP.Types (Status, statusIsSuccessful)
 import Prelude.Compat
 import Servant.Client.Core
+import qualified Servant.Types.SourceT as S
+import Prelude ()
+
 import Servant.Client.Internal.HttpClient
   ( ClientEnv (..)
   , catchConnectionError
@@ -48,8 +51,6 @@ import Servant.Client.Internal.HttpClient
   , mkClientEnv
   , mkFailureResponse
   )
-import qualified Servant.Types.SourceT as S
-import Prelude ()
 
 -- | Generates a set of client functions for an API.
 --
@@ -94,13 +95,13 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 newtype ClientM a = ClientM
   {unClientM :: ReaderT ClientEnv (ExceptT ClientError (Codensity IO)) a}
   deriving newtype
-    ( Functor
-    , Applicative
-    , Monad
-    , MonadIO
+    ( Applicative
+    , Functor
     , Generic
-    , MonadReader ClientEnv
+    , Monad
     , MonadError ClientError
+    , MonadIO
+    , MonadReader ClientEnv
     )
 
 instance MonadBase IO ClientM where

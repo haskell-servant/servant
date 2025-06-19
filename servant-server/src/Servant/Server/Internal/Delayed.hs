@@ -13,6 +13,7 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Reader (ask)
 import Control.Monad.Trans.Resource (ResourceT, runResourceT)
 import Network.Wai (Request, Response)
+
 import Servant.Server.Internal.DelayedIO
 import Servant.Server.Internal.Handler
 import Servant.Server.Internal.RouteResult
@@ -95,13 +96,13 @@ data Delayed env c where
        , headersD :: DelayedIO headers
        , bodyD :: contentType -> DelayedIO body
        , serverD
-          :: captures
-          -> params
-          -> headers
-          -> auth
-          -> body
-          -> Request
-          -> RouteResult c
+           :: captures
+           -> params
+           -> headers
+           -> auth
+           -> body
+           -> Request
+           -> RouteResult c
        }
     -> Delayed env c
 

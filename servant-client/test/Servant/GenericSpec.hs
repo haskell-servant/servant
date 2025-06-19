@@ -17,9 +17,10 @@
 
 module Servant.GenericSpec (spec) where
 
+import Test.Hspec
+
 import Servant.Client ((//), (/:))
 import Servant.ClientTestUtils
-import Test.Hspec
 
 spec :: Spec
 spec = describe "Servant.GenericSpec" $ do

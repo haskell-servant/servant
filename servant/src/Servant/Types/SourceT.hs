@@ -76,7 +76,7 @@ instance (Applicative m, Show1 m) => Show1 (SourceT m) where
       pure' (Effect s) = s
       pure' s = pure s
 
-instance (Applicative m, Show1 m, Show a) => Show (SourceT m a) where
+instance (Applicative m, Show a, Show1 m) => Show (SourceT m a) where
   showsPrec = showsPrec1
 
 -- | >>> hoist (Just . runIdentity) (source [1..3]) :: SourceT Maybe Int
@@ -104,7 +104,7 @@ instance Functor m => Monoid (SourceT m a) where
   mappend = (<>)
 
 -- | Doesn't generate 'Error' constructors. 'SourceT' doesn't shrink.
-instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (SourceT m a) where
+instance (Monad m, QC.Arbitrary a) => QC.Arbitrary (SourceT m a) where
   arbitrary = fromStepT <$> QC.arbitrary
 
 -- An example of above instance. Not doctested because it's volatile.
@@ -163,7 +163,7 @@ instance (Applicative m, Show1 m) => Show1 (StepT m) where
 
       goList = liftShowList sp sl
 
-instance (Applicative m, Show1 m, Show a) => Show (StepT m a) where
+instance (Applicative m, Show a, Show1 m) => Show (StepT m a) where
   showsPrec = showsPrec1
 
 #if !MIN_VERSION_transformers(0,6,0)
@@ -204,7 +204,7 @@ instance Functor m => Monoid (StepT m a) where
   mappend = (<>)
 
 -- | Doesn't generate 'Error' constructors.
-instance (QC.Arbitrary a, Monad m) => QC.Arbitrary (StepT m a) where
+instance (Monad m, QC.Arbitrary a) => QC.Arbitrary (StepT m a) where
   arbitrary = QC.sized arb
     where
       arb n

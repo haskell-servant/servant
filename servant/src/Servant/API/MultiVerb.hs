@@ -53,11 +53,12 @@ import qualified Data.Text.Encoding as Text
 import GHC.TypeLits
 import Generics.SOP as GSOP
 import Network.HTTP.Types as HTTP
+import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
+
 import Servant.API.Header (Header')
 import Servant.API.Stream (SourceIO)
 import Servant.API.TypeLevel.List
 import Servant.API.UVerb.Union (Union)
-import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
 
 -- | A type to describe a 'MultiVerb' response.
 --
@@ -97,7 +98,7 @@ data RespondStreaming (s :: Nat) (description :: Symbol) (framing :: Type) (ct :
 -- The 'UnrenderResult' type constructor has monad and alternative instances
 -- corresponding to those of 'Either (Maybe (Last String)) a'.
 data UnrenderResult a = StatusMismatch | UnrenderError String | UnrenderSuccess a
-  deriving (Eq, Show, Functor)
+  deriving (Eq, Functor, Show)
 
 instance Applicative UnrenderResult where
   pure = UnrenderSuccess
@@ -176,9 +177,9 @@ headerName =
     $ symbolVal (Proxy @name)
 
 instance
-  ( KnownSymbol name
+  ( FromHttpApiData x
+  , KnownSymbol name
   , ServantHeader h name x
-  , FromHttpApiData x
   , ServantHeaders headers xs
   )
   => ServantHeaders (h ': headers) (x ': xs)
@@ -459,7 +460,7 @@ instance
 newtype GenericAsUnion rs a = GenericAsUnion a
 
 instance
-  (GSOP.Code a ~ xss, GSOP.Generic a, AsConstructors xss rs)
+  (AsConstructors xss rs, GSOP.Code a ~ xss, GSOP.Generic a)
   => AsUnion rs (GenericAsUnion rs a)
   where
   toUnion (GenericAsUnion x) = fromSOP @xss @rs (GSOP.from x)

@@ -13,10 +13,10 @@ import GHC.Generics (Generic)
 import Servant.API (IsSecure (..))
 
 data IsMatch = Matches | DoesNotMatch
-  deriving (Eq, Show, Read, Generic, Ord)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 data IsPasswordCorrect = PasswordCorrect | PasswordIncorrect
-  deriving (Eq, Show, Read, Generic, Ord)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 -- The @SameSite@ attribute of cookies determines whether cookies will be sent
 -- on cross-origin requests.
@@ -24,7 +24,7 @@ data IsPasswordCorrect = PasswordCorrect | PasswordIncorrect
 -- See <https://tools.ietf.org/html/draft-west-first-party-cookies-07 this document>
 -- for more information.
 data SameSite = AnySite | SameSiteStrict | SameSiteLax
-  deriving (Eq, Show, Read, Generic, Ord)
+  deriving (Eq, Generic, Ord, Read, Show)
 
 -- | @JWTSettings@ are used to generate cookies, and to verify JWTs.
 data JWTSettings = JWTSettings
@@ -77,7 +77,7 @@ data CookieSettings = CookieSettings
   , cookieXsrfSetting :: !(Maybe XsrfCookieSettings)
   -- ^ The optional settings to use for XSRF protection. Default: @Just def@.
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance Default CookieSettings where
   def = defaultCookieSettings
@@ -106,7 +106,7 @@ data XsrfCookieSettings = XsrfCookieSettings
   , xsrfExcludeGet :: !Bool
   -- ^ Exclude GET request method from XSRF protection.
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance Default XsrfCookieSettings where
   def = defaultXsrfCookieSettings

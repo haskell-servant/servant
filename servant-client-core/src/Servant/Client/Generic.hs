@@ -15,15 +15,16 @@ where
 
 import Data.Proxy (Proxy (..))
 import Servant.API.Generic
+
 import Servant.Client.Core
 import Servant.Client.Core.HasClient (AsClientT)
 
 -- | Generate a record of client functions.
 genericClient
   :: forall routes m
-   . ( HasClient m (ToServantApi routes)
+   . ( Client m (ToServantApi routes) ~ ToServant routes (AsClientT m)
      , GenericServant routes (AsClientT m)
-     , Client m (ToServantApi routes) ~ ToServant routes (AsClientT m)
+     , HasClient m (ToServantApi routes)
      )
   => routes (AsClientT m)
 genericClient =
@@ -33,9 +34,9 @@ genericClient =
 -- | 'genericClient' but with 'hoistClientMonad' in between.
 genericClientHoist
   :: forall routes m n
-   . ( HasClient m (ToServantApi routes)
+   . ( Client n (ToServantApi routes) ~ ToServant routes (AsClientT n)
      , GenericServant routes (AsClientT n)
-     , Client n (ToServantApi routes) ~ ToServant routes (AsClientT n)
+     , HasClient m (ToServantApi routes)
      )
   => (forall x. m x -> n x)
   -- ^ natural transformation

@@ -7,6 +7,7 @@
 module Servant.Test.ComprehensiveAPI where
 
 import Data.Proxy (Proxy (..))
+
 import Servant.API
 import Servant.Types.SourceT (SourceT)
 

@@ -52,7 +52,7 @@ instance m ~ IO => PipesToSourceIO (SafeT m) where
       go runSafe (Respond b n) = S.Yield b (go runSafe (n ()))
 
 instance
-  (PipesToSourceIO m, a' ~ X, a ~ (), b' ~ (), r ~ ())
+  (PipesToSourceIO m, a ~ (), a' ~ X, b' ~ (), r ~ ())
   => ToSourceIO b (Proxy a' a b' b m r)
   where
   toSourceIO = pipesToSourceIO
@@ -61,7 +61,7 @@ instance PipesToSourceIO m => ToSourceIO a (ListT m a) where
   toSourceIO = pipesToSourceIO . enumerate
 
 instance
-  (MonadIO m, a' ~ X, a ~ (), b' ~ (), r ~ ())
+  (MonadIO m, a ~ (), a' ~ X, b' ~ (), r ~ ())
   => FromSourceIO b (Proxy a' a b' b m r)
   where
   fromSourceIO src = pure $ M $ liftIO $ S.unSourceT src (return . go)

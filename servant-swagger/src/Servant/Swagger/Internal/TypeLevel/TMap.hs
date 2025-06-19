@@ -33,5 +33,5 @@ class TMap (q :: k -> Constraint) (xs :: [k]) where
 instance TMap q '[] where
   tmap _ _ _ = []
 
-instance (q x, TMap q xs) => TMap q (x ': xs) where
+instance (TMap q xs, q x) => TMap q (x ': xs) where
   tmap q f _ = f (Proxy :: Proxy x) : tmap q f (Proxy :: Proxy xs)

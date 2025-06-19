@@ -134,6 +134,8 @@ import qualified Data.Text.Encoding as TE
 import Data.Type.Bool (If)
 import GHC.TypeLits (KnownSymbol, TypeError, symbolVal)
 import Network.URI (URI (..), escapeURIString, isUnreserved)
+import Web.HttpApiData
+
 import Servant.API.Alternative ((:<|>) ((:<|>)))
 import Servant.API.BasicAuth (BasicAuth)
 import Servant.API.Capture (Capture', CaptureAll)
@@ -167,7 +169,6 @@ import Servant.API.Vault (Vault)
 import Servant.API.Verbs (NoContentVerb, Verb)
 import Servant.API.WithNamedContext (WithNamedContext)
 import Servant.API.WithResource (WithResource)
-import Web.HttpApiData
 
 -- | A safe link datatype.
 -- The only way of constructing a 'Link' is using 'safeLink', which means any
@@ -267,7 +268,7 @@ data LinkArrayElementStyle
     LinkArrayElementBracket
   | -- | @foo=1&foo=2@
     LinkArrayElementPlain
-  deriving (Eq, Ord, Show, Enum, Bounded)
+  deriving (Bounded, Enum, Eq, Ord, Show)
 
 -- | Configurable 'linkURI'.
 --
@@ -312,7 +313,7 @@ escape = escapeURIString isUnreserved
 -- This function will only typecheck if `endpoint` is part of the API `api`
 safeLink
   :: forall endpoint api
-   . (IsElem endpoint api, HasLink endpoint)
+   . (HasLink endpoint, IsElem endpoint api)
   => Proxy api
   -- ^ The whole API that this endpoint is a part of
   -> Proxy endpoint
@@ -323,7 +324,7 @@ safeLink = safeLink' id
 -- | More general 'safeLink'.
 safeLink'
   :: forall endpoint api a
-   . (IsElem endpoint api, HasLink endpoint)
+   . (HasLink endpoint, IsElem endpoint api)
   => (Link -> a)
   -> Proxy api
   -- ^ The whole API that this endpoint is a part of
@@ -385,9 +386,9 @@ allLinks' toA api = toLink toA api (Link mempty mempty mempty)
 --
 -- @since 0.14.1
 fieldLink
-  :: ( IsElem endpoint (ToServantApi routes)
+  :: ( GenericServant routes AsApi
      , HasLink endpoint
-     , GenericServant routes AsApi
+     , IsElem endpoint (ToServantApi routes)
      )
   => (routes AsApi -> endpoint)
   -> MkLink endpoint Link
@@ -398,9 +399,9 @@ fieldLink = fieldLink' id
 -- @since 0.14.1
 fieldLink'
   :: forall routes endpoint a
-   . ( IsElem endpoint (ToServantApi routes)
+   . ( GenericServant routes AsApi
      , HasLink endpoint
-     , GenericServant routes AsApi
+     , IsElem endpoint (ToServantApi routes)
      )
   => (Link -> a)
   -> (routes AsApi -> endpoint)
@@ -419,8 +420,8 @@ instance GenericMode (AsLink a) where
 --
 -- @since 0.14.1
 allFieldLinks
-  :: ( HasLink (ToServantApi routes)
-     , GenericServant routes (AsLink Link)
+  :: ( GenericServant routes (AsLink Link)
+     , HasLink (ToServantApi routes)
      , ToServant routes (AsLink Link) ~ MkLink (ToServantApi routes) Link
      )
   => routes (AsLink Link)
@@ -431,8 +432,8 @@ allFieldLinks = allFieldLinks' id
 -- @since 0.14.1
 allFieldLinks'
   :: forall routes a
-   . ( HasLink (ToServantApi routes)
-     , GenericServant routes (AsLink a)
+   . ( GenericServant routes (AsLink a)
+     , HasLink (ToServantApi routes)
      , ToServant routes (AsLink a) ~ MkLink (ToServantApi routes) a
      )
   => (Link -> a)
@@ -456,7 +457,7 @@ class HasLink endpoint where
     -> MkLink endpoint a
 
 -- Naked symbol instance
-instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
+instance (HasLink sub, KnownSymbol sym) => HasLink (sym :> sub) where
   type MkLink (sym :> sub) a = MkLink sub a
   toLink toA _ =
     toLink toA (Proxy :: Proxy sub) . addSegment (escaped seg)
@@ -465,7 +466,7 @@ instance (KnownSymbol sym, HasLink sub) => HasLink (sym :> sub) where
 
 -- QueryParam instances
 instance
-  (KnownSymbol sym, ToHttpApiData v, HasLink sub, SBoolI (FoldRequired mods))
+  (HasLink sub, KnownSymbol sym, SBoolI (FoldRequired mods), ToHttpApiData v)
   => HasLink (QueryParam' mods sym v :> sub)
   where
   type MkLink (QueryParam' mods sym v :> sub) a = If (FoldRequired mods) v (Maybe v) -> MkLink sub a
@@ -479,7 +480,7 @@ instance
       k = symbolVal (Proxy :: Proxy sym)
 
 instance
-  (KnownSymbol sym, ToHttpApiData v, HasLink sub)
+  (HasLink sub, KnownSymbol sym, ToHttpApiData v)
   => HasLink (QueryParams sym v :> sub)
   where
   type MkLink (QueryParams sym v :> sub) a = [v] -> MkLink sub a
@@ -490,7 +491,7 @@ instance
       k = symbolVal (Proxy :: Proxy sym)
 
 instance
-  (KnownSymbol sym, HasLink sub)
+  (HasLink sub, KnownSymbol sym)
   => HasLink (QueryFlag sym :> sub)
   where
   type MkLink (QueryFlag sym :> sub) a = Bool -> MkLink sub a
@@ -516,7 +517,7 @@ instance HasLink sub => HasLink (StreamBody' mods framing ct a :> sub) where
   toLink toA _ = toLink toA (Proxy :: Proxy sub)
 
 instance
-  (ToHttpApiData v, HasLink sub)
+  (HasLink sub, ToHttpApiData v)
   => HasLink (Capture' mods sym v :> sub)
   where
   type MkLink (Capture' mods sym v :> sub) a = v -> MkLink sub a
@@ -525,7 +526,7 @@ instance
       addSegment (escaped . Text.unpack $ toUrlPiece v) l
 
 instance
-  (ToHttpApiData v, HasLink sub)
+  (HasLink sub, ToHttpApiData v)
   => HasLink (CaptureAll sym v :> sub)
   where
   type MkLink (CaptureAll sym v :> sub) a = [v] -> MkLink sub a
@@ -617,9 +618,9 @@ instance GLinkConstraints routes a => GLink routes a where
   gLinkProof = Dict
 
 instance
-  ( HasLink (ToServantApi routes)
+  ( ErrorIfNoGeneric routes
+  , HasLink (ToServantApi routes)
   , forall a. GLink routes a
-  , ErrorIfNoGeneric routes
   )
   => HasLink (NamedRoutes routes)
   where
@@ -691,13 +692,13 @@ instance HasLink (MultiVerb method cs as r) where
   type MkLink (MultiVerb method cs as r) a = a
   toLink toA _ = toA
 
-instance (KnownSymbol sym, ToDeepQuery record, HasLink sub) => HasLink (DeepQuery sym record :> sub) where
+instance (HasLink sub, KnownSymbol sym, ToDeepQuery record) => HasLink (DeepQuery sym record :> sub) where
   type
     MkLink (DeepQuery sym record :> sub) a =
       record -> MkLink sub a
 
   toLink
-    :: (KnownSymbol sym, ToDeepQuery record, HasLink sub)
+    :: (HasLink sub, KnownSymbol sym, ToDeepQuery record)
     => (Link -> a)
     -> Proxy (DeepQuery sym record :> sub)
     -> Link

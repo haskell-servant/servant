@@ -17,6 +17,7 @@ import Servant.API.MultiVerb
 import Servant.API.Status
 import Servant.API.Stream (SourceIO)
 import Servant.API.UVerb.Union (Union)
+
 import Servant.Client.Core.Response (ResponseF (..))
 import qualified Servant.Client.Core.Response as Response
 
@@ -56,11 +57,11 @@ instance ResponseListUnrender cs '[] where
   responseListStatuses = []
 
 instance
-  ( Typeable a
-  , Typeable (ResponseBody a)
-  , ResponseUnrender cs a
+  ( KnownStatus (ResponseStatus a)
   , ResponseListUnrender cs as
-  , KnownStatus (ResponseStatus a)
+  , ResponseUnrender cs a
+  , Typeable (ResponseBody a)
+  , Typeable a
   )
   => ResponseListUnrender cs (a ': as)
   where
@@ -118,8 +119,8 @@ instance
 
 instance
   ( AsHeaders xs (ResponseType r) a
-  , ServantHeaders hs xs
   , ResponseUnrender cs r
+  , ServantHeaders hs xs
   )
   => ResponseUnrender cs (WithHeaders hs a r)
   where

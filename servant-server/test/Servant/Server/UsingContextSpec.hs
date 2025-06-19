@@ -6,10 +6,11 @@
 module Servant.Server.UsingContextSpec where
 
 import Network.Wai
-import Servant
-import Servant.Server.UsingContextSpec.TestCombinators
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Wai
+
+import Servant
+import Servant.Server.UsingContextSpec.TestCombinators
 
 spec :: Spec
 spec = do
@@ -118,8 +119,7 @@ type NamedContextAPI =
   WithNamedContext
     "sub"
     '[String]
-    ( ExtractFromContext :> Get '[JSON] String
-    )
+    (ExtractFromContext :> Get '[JSON] String)
 
 namedContextApp :: Application
 namedContextApp = serveWithContext (Proxy :: Proxy NamedContextAPI) context return

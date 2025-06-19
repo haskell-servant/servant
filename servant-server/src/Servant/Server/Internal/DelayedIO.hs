@@ -17,6 +17,7 @@ import Control.Monad.Trans.Resource
   , withInternalState
   )
 import Network.Wai (Request)
+
 import Servant.Server.Internal.RouteResult
 import Servant.Server.Internal.ServerError
 
@@ -26,13 +27,13 @@ import Servant.Server.Internal.ServerError
 -- (with the possibility to recover), or fail fatally.
 newtype DelayedIO a = DelayedIO {runDelayedIO' :: ReaderT Request (ResourceT (RouteResultT IO)) a}
   deriving newtype
-    ( Functor
-    , Applicative
+    ( Applicative
+    , Functor
     , Monad
     , MonadIO
     , MonadReader Request
-    , MonadThrow
     , MonadResource
+    , MonadThrow
     )
 
 instance MonadBase IO DelayedIO where

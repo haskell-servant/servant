@@ -8,6 +8,9 @@ import Data.Foldable (for_)
 import Data.Int (Int64)
 import Servant.API.ContentTypes (EventStreamChunk (..))
 import Servant.API.Stream (FromSourceIO (fromSourceIO))
+import Servant.Types.SourceT (runSourceT, source)
+import Test.Hspec (Spec, describe, it, shouldBe)
+
 import Servant.Client.Core.ServerSentEvents
   ( Event (..)
   , EventIgnoreReason (EventComment)
@@ -15,8 +18,6 @@ import Servant.Client.Core.ServerSentEvents
   , unEventMessageStreamT
   , unEventStreamT
   )
-import Servant.Types.SourceT (runSourceT, source)
-import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
 spec = describe "Servant.Client.Core.ServerSentEvent" $ do

@@ -20,14 +20,15 @@ where
 import Data.Kind (Type)
 import Data.Proxy (Proxy (..))
 import Servant.API.Generic
+
 import Servant.Server
 import Servant.Server.Internal
 
 -- | Transform a record of routes into a WAI 'Application'.
 genericServe
   :: forall routes
-   . ( HasServer (ToServantApi routes) '[]
-     , GenericServant routes AsServer
+   . ( GenericServant routes AsServer
+     , HasServer (ToServantApi routes) '[]
      , Server (ToServantApi routes) ~ ToServant routes AsServer
      )
   => routes AsServer
@@ -61,8 +62,8 @@ genericServeTWithContext
   :: forall (routes :: Type -> Type) (m :: Type -> Type) (ctx :: [Type])
    . ( GenericServant routes (AsServerT m)
      , GenericServant routes AsApi
-     , HasServer (ToServantApi routes) ctx
      , HasContextEntry (ctx .++ DefaultErrorFormatters) ErrorFormatters
+     , HasServer (ToServantApi routes) ctx
      , ServerT (ToServantApi routes) m ~ ToServant routes (AsServerT m)
      )
   => (forall a. m a -> Handler a)

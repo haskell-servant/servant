@@ -74,6 +74,7 @@ import Network.Wreq
 import Network.Wreq.Types (Postable (..))
 import Servant hiding (BasicAuth, IsSecure (..), header)
 import Servant.API.Generic ((:-))
+
 import Servant.Auth.Server
 import Servant.Auth.Server.Internal.Cookie (expireTime)
 import Servant.Auth.Server.SetCookieOrphan ()
@@ -711,7 +712,7 @@ data User = User
   { name :: String
   , _id :: String
   }
-  deriving (Eq, Show, Read, Generic)
+  deriving (Eq, Generic, Read, Show)
 
 instance FromJWT User
 

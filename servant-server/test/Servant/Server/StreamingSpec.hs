@@ -17,10 +17,11 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.Internal
 import Prelude.Compat
-import Servant
 import qualified System.Timeout
 import Test.Hspec
 import Prelude ()
+
+import Servant
 
 type TestAPI =
   ReqBody '[OctetStream] Lazy.ByteString :> Get '[JSON] NoContent

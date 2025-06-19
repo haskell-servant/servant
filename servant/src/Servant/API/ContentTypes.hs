@@ -148,7 +148,7 @@ instance Accept EventStream where
   contentType _ = "text" M.// "event-stream"
 
 newtype AcceptHeader = AcceptHeader BS.ByteString
-  deriving (Eq, Show, Read, Typeable, Generic)
+  deriving (Eq, Generic, Read, Show, Typeable)
 
 -- * Render (serializing)
 
@@ -278,8 +278,8 @@ instance {-# OVERLAPPABLE #-} MimeRender ctyp a => AllMimeRender '[ctyp] a where
 
 instance
   {-# OVERLAPPABLE #-}
-  ( MimeRender ctyp a
-  , AllMimeRender (ctyp' ': ctyps) a
+  ( AllMimeRender (ctyp' ': ctyps) a
+  , MimeRender ctyp a
   )
   => AllMimeRender (ctyp ': ctyp' ': ctyps) a
   where
@@ -318,8 +318,8 @@ instance AllMimeUnrender '[] a where
   allMimeUnrender _ = []
 
 instance
-  ( MimeUnrender ctyp a
-  , AllMimeUnrender ctyps a
+  ( AllMimeUnrender ctyps a
+  , MimeUnrender ctyp a
   )
   => AllMimeUnrender (ctyp ': ctyps) a
   where
@@ -367,7 +367,7 @@ instance MimeRender OctetStream BS.ByteString where
 
 -- | A type for responses without content-body.
 data NoContent = NoContent
-  deriving (Show, Eq, Read, Generic)
+  deriving (Eq, Generic, Read, Show)
 
 instance NFData NoContent
 

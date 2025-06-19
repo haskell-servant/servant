@@ -141,6 +141,15 @@ import Servant.API.ResponseHeaders
 import Servant.API.Status (statusFromNat)
 import Servant.API.TypeErrors
 import Servant.API.TypeLevel (AtMostOneFragment, FragmentUnique)
+import qualified Servant.Types.SourceT as S
+import Web.HttpApiData
+  ( FromHttpApiData
+  , parseHeader
+  , parseQueryParam
+  , parseUrlPiece
+  , parseUrlPieces
+  )
+
 import Servant.Server.Internal.BasicAuth
 import Servant.Server.Internal.Context
 import Servant.Server.Internal.Delayed
@@ -152,14 +161,6 @@ import Servant.Server.Internal.RouteResult
 import Servant.Server.Internal.Router
 import Servant.Server.Internal.RoutingApplication
 import Servant.Server.Internal.ServerError
-import qualified Servant.Types.SourceT as S
-import Web.HttpApiData
-  ( FromHttpApiData
-  , parseHeader
-  , parseQueryParam
-  , parseUrlPiece
-  , parseUrlPieces
-  )
 
 class HasServer api context where
   -- | The type of a server for this API, given a monad to run effects in.
@@ -230,12 +231,12 @@ instance (HasServer a context, HasServer b context) => HasServer (a :<|> b) cont
 -- >   where getBook :: Text -> Handler Book
 -- >         getBook isbn = ...
 instance
-  ( KnownSymbol capture
-  , FromHttpApiData a
-  , Typeable a
-  , HasServer api context
-  , SBoolI (FoldLenient mods)
+  ( FromHttpApiData a
   , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  , HasServer api context
+  , KnownSymbol capture
+  , SBoolI (FoldLenient mods)
+  , Typeable a
   )
   => HasServer (Capture' mods capture a :> api) context
   where
@@ -281,11 +282,11 @@ instance
 -- >   where getSourceFile :: [Text] -> Handler Book
 -- >         getSourceFile pathSegments = ...
 instance
-  ( KnownSymbol capture
-  , FromHttpApiData a
-  , Typeable a
-  , HasServer api context
+  ( FromHttpApiData a
   , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  , HasServer api context
+  , KnownSymbol capture
+  , Typeable a
   )
   => HasServer (CaptureAll capture a :> api) context
   where
@@ -333,7 +334,7 @@ instance
 -- if desired.
 
 instance
-  (HasServer api ctx, HasContextEntry ctx (Acquire a))
+  (HasContextEntry ctx (Acquire a), HasServer api ctx)
   => HasServer (WithResource a :> api) ctx
   where
   type ServerT (WithResource a :> api) m = (ReleaseKey, a) -> ServerT api m
@@ -415,8 +416,8 @@ noContentRouter method status action = leafRouter route'
 instance
   {-# OVERLAPPABLE #-}
   ( AllCTRender ctypes a
-  , ReflectMethod method
   , KnownNat status
+  , ReflectMethod method
   )
   => HasServer (Verb method status ctypes a) context
   where
@@ -431,9 +432,9 @@ instance
 instance
   {-# OVERLAPPING #-}
   ( AllCTRender ctypes a
-  , ReflectMethod method
-  , KnownNat status
   , GetHeaders (Headers h a)
+  , KnownNat status
+  , ReflectMethod method
   )
   => HasServer (Verb method status ctypes (Headers h a)) context
   where
@@ -458,10 +459,10 @@ instance
 
 instance
   {-# OVERLAPPABLE #-}
-  ( MimeRender ctype chunk
-  , ReflectMethod method
+  ( FramingRender framing
   , KnownNat status
-  , FramingRender framing
+  , MimeRender ctype chunk
+  , ReflectMethod method
   , ToSourceIO chunk a
   )
   => HasServer (Stream method status framing ctype a) context
@@ -476,12 +477,12 @@ instance
 
 instance
   {-# OVERLAPPING #-}
-  ( MimeRender ctype chunk
-  , ReflectMethod method
-  , KnownNat status
-  , FramingRender framing
-  , ToSourceIO chunk a
+  ( FramingRender framing
   , GetHeaders (Headers h a)
+  , KnownNat status
+  , MimeRender ctype chunk
+  , ReflectMethod method
+  , ToSourceIO chunk a
   )
   => HasServer (Stream method status framing ctype (Headers h a)) context
   where
@@ -495,7 +496,7 @@ instance
 
 streamRouter
   :: forall ctype a c chunk env framing
-   . (MimeRender ctype chunk, FramingRender framing, ToSourceIO chunk a)
+   . (FramingRender framing, MimeRender ctype chunk, ToSourceIO chunk a)
   => (c -> ([(HeaderName, B.ByteString)], a))
   -> Method
   -> Status
@@ -553,12 +554,12 @@ streamRouter splitHeaders method status framingproxy ctypeproxy action = leafRou
 -- >   where viewReferer :: Referer -> Handler referer
 -- >         viewReferer referer = return referer
 instance
-  ( KnownSymbol sym
-  , FromHttpApiData a
-  , HasServer api context
-  , SBoolI (FoldRequired mods)
-  , SBoolI (FoldLenient mods)
+  ( FromHttpApiData a
   , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  , HasServer api context
+  , KnownSymbol sym
+  , SBoolI (FoldLenient mods)
+  , SBoolI (FoldRequired mods)
   )
   => HasServer (Header' mods sym a :> api) context
   where
@@ -601,9 +602,9 @@ instance
                     <> e
 
 instance
-  ( KnownSymbol sym
+  ( HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
   , HasServer api context
-  , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  , KnownSymbol sym
   )
   => HasServer (Host sym :> api) context
   where
@@ -651,12 +652,12 @@ instance
 -- >         getBooksBy Nothing       = ...return all books...
 -- >         getBooksBy (Just author) = ...return books by the given author...
 instance
-  ( KnownSymbol sym
-  , FromHttpApiData a
-  , HasServer api context
-  , SBoolI (FoldRequired mods)
-  , SBoolI (FoldLenient mods)
+  ( FromHttpApiData a
   , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  , HasServer api context
+  , KnownSymbol sym
+  , SBoolI (FoldLenient mods)
+  , SBoolI (FoldRequired mods)
   )
   => HasServer (QueryParam' mods sym a :> api) context
   where
@@ -720,10 +721,10 @@ instance
 -- >   where getBooksBy :: [Text] -> Handler [Book]
 -- >         getBooksBy authors = ...return all books by these authors...
 instance
-  ( KnownSymbol sym
-  , FromHttpApiData a
-  , HasServer api context
+  ( FromHttpApiData a
   , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  , HasServer api context
+  , KnownSymbol sym
   )
   => HasServer (QueryParams sym a :> api) context
   where
@@ -776,7 +777,7 @@ instance
 -- >   where getBooks :: Bool -> Handler [Book]
 -- >         getBooks onlyPublished = ...return all books, or only the ones that are already published, depending on the argument...
 instance
-  (KnownSymbol sym, HasServer api context)
+  (HasServer api context, KnownSymbol sym)
   => HasServer (QueryFlag sym :> api) context
   where
   type
@@ -849,10 +850,10 @@ instance
 -- >   where getBooksBy :: BookQuery -> Handler [Book]
 -- >         getBooksBy query = ...filter books based on the dynamic filters provided...
 instance
-  ( KnownSymbol sym
-  , FromDeepQuery a
-  , HasServer api context
+  ( FromDeepQuery a
   , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  , HasServer api context
+  , KnownSymbol sym
   )
   => HasServer (DeepQuery sym a :> api) context
   where
@@ -987,10 +988,10 @@ instance HasServer RawM context where
 -- >         postBook book = ...insert into your db...
 instance
   ( AllCTUnrender list a
-  , HasServer api context
-  , SBoolI (FoldRequired mods)
-  , SBoolI (FoldLenient mods)
   , HasContextEntry (MkContextWithErrorFormatter context) ErrorFormatters
+  , HasServer api context
+  , SBoolI (FoldLenient mods)
+  , SBoolI (FoldRequired mods)
   )
   => HasServer (ReqBody' mods list a :> api) context
   where
@@ -1049,8 +1050,8 @@ instance
 instance
   ( FramingUnrender framing
   , FromSourceIO chunk a
-  , MimeUnrender ctype chunk
   , HasServer api context
+  , MimeUnrender ctype chunk
   )
   => HasServer (StreamBody' mods framing ctype a :> api) context
   where
@@ -1076,7 +1077,7 @@ instance
 
 -- | Make sure the incoming request starts with @"/path"@, strip it and
 -- pass the rest of the request path to @api@.
-instance (KnownSymbol path, HasServer api context) => HasServer (path :> api) context where
+instance (HasServer api context, KnownSymbol path) => HasServer (path :> api) context where
   type ServerT (path :> api) m = ServerT api m
 
   route Proxy context subserver =
@@ -1133,7 +1134,7 @@ instance HasServer api ctx => HasServer (Description desc :> api) ctx where
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
 
 -- | Singleton type representing a server that serves an empty API.
-data EmptyServer = EmptyServer deriving (Typeable, Eq, Show, Bounded, Enum)
+data EmptyServer = EmptyServer deriving (Bounded, Enum, Eq, Show, Typeable)
 
 -- | Server for `EmptyAPI`
 emptyServer :: ServerT EmptyAPI m
@@ -1161,9 +1162,9 @@ instance HasServer api context => HasServer (EmptyAPI :> api) context where
 
 -- | Basic Authentication
 instance
-  ( KnownSymbol realm
+  ( HasContextEntry context (BasicAuthCheck usr)
   , HasServer api context
-  , HasContextEntry context (BasicAuthCheck usr)
+  , KnownSymbol realm
   )
   => HasServer (BasicAuth realm usr :> api) context
   where
@@ -1329,18 +1330,18 @@ class GServer (api :: Type -> Type) (m :: Type -> Type) where
   gServerProof :: Dict (GServerConstraints api m)
 
 instance
-  ( ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
-  , GServantProduct (Rep (api (AsServerT m)))
+  ( GServantProduct (Rep (api (AsServerT m)))
+  , ToServant api (AsServerT m) ~ ServerT (ToServantApi api) m
   )
   => GServer api m
   where
   gServerProof = Dict
 
 instance
-  ( HasServer (ToServantApi api) context
-  , forall m. Generic (api (AsServerT m))
+  ( ErrorIfNoGeneric api
+  , HasServer (ToServantApi api) context
   , forall m. GServer api m
-  , ErrorIfNoGeneric api
+  , forall m. Generic (api (AsServerT m))
   )
   => HasServer (NamedRoutes api) context
   where
@@ -1373,10 +1374,10 @@ instance
             hoistServerWithContext (Proxy @(ToServantApi api)) pctx nat servantSrvM
 
 instance
-  ( HasAcceptCheck cs
-  , ResponseListRender cs as
-  , AsUnion as r
+  ( AsUnion as r
+  , HasAcceptCheck cs
   , ReflectMethod method
+  , ResponseListRender cs as
   )
   => HasServer (MultiVerb method cs as r) ctx
   where

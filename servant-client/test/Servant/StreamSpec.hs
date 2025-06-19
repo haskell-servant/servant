@@ -34,9 +34,6 @@ import Servant.API
   , (:<|>) ((:<|>))
   , (:>)
   )
-import Servant.Client.Streaming
-import Servant.ClientTestUtils (Person (..))
-import qualified Servant.ClientTestUtils as CT
 import Servant.Server
 import Servant.Test.ComprehensiveAPI
 import Servant.Types.SourceT
@@ -44,6 +41,10 @@ import System.Entropy (getEntropy, getHardwareEntropy)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
 import Prelude ()
+
+import Servant.Client.Streaming
+import Servant.ClientTestUtils (Person (..))
+import qualified Servant.ClientTestUtils as CT
 
 -- This declaration simply checks that all instances are in place.
 -- Note: this is streaming client

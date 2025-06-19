@@ -17,10 +17,11 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
 import Data.Typeable
 import Servant.API
-import Servant.Swagger.Internal.TypeLevel
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck (Arbitrary, Property, counterexample, property)
+
+import Servant.Swagger.Internal.TypeLevel
 
 -- $setup
 -- >>> import Control.Applicative
@@ -81,8 +82,8 @@ import Test.QuickCheck (Arbitrary, Property, counterexample, property)
 validateEveryToJSON
   :: forall proxy api
    . TMap
-      (Every [Typeable, Show, Arbitrary, ToJSON, ToSchema])
-      (BodyTypes JSON api)
+       (Every [Typeable, Show, Arbitrary, ToJSON, ToSchema])
+       (BodyTypes JSON api)
   => proxy api
   -- ^ Servant API.
   -> Spec
@@ -148,7 +149,7 @@ props _ f px = sequence_ specs
     specs :: [Spec]
     specs = tmapEvery (Proxy :: Proxy (Typeable ': Show ': Arbitrary ': cs)) aprop px
 
-    aprop :: forall p' a. (EveryTF cs a, Typeable a, Show a, Arbitrary a) => p' a -> Spec
+    aprop :: forall p' a. (Arbitrary a, EveryTF cs a, Show a, Typeable a) => p' a -> Spec
     aprop _ = prop (show (typeOf (undefined :: a))) (f :: a -> Property)
 
 -- | Pretty print validation errors

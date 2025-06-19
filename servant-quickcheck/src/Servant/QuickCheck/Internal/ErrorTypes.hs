@@ -16,7 +16,7 @@ import Text.PrettyPrint
 
 data PredicateFailure
   = PredicateFailure T.Text (Maybe C.Request) (C.Response LBS.ByteString)
-  deriving (Typeable, Generic)
+  deriving (Generic, Typeable)
 
 instance Exception ServerEqualityFailure
 
@@ -25,7 +25,7 @@ instance Show PredicateFailure where
 
 data ServerEqualityFailure
   = ServerEqualityFailure C.Request (C.Response LBS.ByteString) (C.Response LBS.ByteString)
-  deriving (Typeable, Generic)
+  deriving (Generic, Typeable)
 
 instance Show ServerEqualityFailure where
   show = render . prettyServerEqualityFailure
