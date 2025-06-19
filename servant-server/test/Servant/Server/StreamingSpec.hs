@@ -55,7 +55,7 @@ spec = do
           replicate 1000 (return "foo")
             ++ (waitFor serverReceivedFirstChunk >> return "foo")
             : replicate 1000 (return "foo")
-      return $ modifyMVar mvar $ \actions -> case actions of
+      return $ modifyMVar mvar $ \case
         (a : r) -> (r,) <$> a
         [] -> return ([], "")
 

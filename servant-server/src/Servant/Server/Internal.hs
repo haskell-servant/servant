@@ -1186,11 +1186,8 @@ instance
 
 -- * helpers
 
-ct_wildcard :: B.ByteString
-ct_wildcard = "*" <> "/" <> "*"
-
 getAcceptHeader :: Request -> AcceptHeader
-getAcceptHeader = AcceptHeader . fromMaybe ct_wildcard . lookup hAccept . requestHeaders
+getAcceptHeader = AcceptHeader . fromMaybe "*/*" . lookup hAccept . requestHeaders
 
 -- * General Authentication
 
@@ -1204,8 +1201,7 @@ instance
     ServerT (WithNamedContext name subContext subApi) m =
       ServerT subApi m
 
-  route Proxy context delayed =
-    route subProxy subContext delayed
+  route Proxy context = route subProxy subContext
     where
       subProxy :: Proxy subApi
       subProxy = Proxy

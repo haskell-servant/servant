@@ -41,6 +41,7 @@ import qualified Data.ByteString.Char8 as BSC
 import Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive as CI
 import Data.Foldable (fold, toList)
+import Data.Functor
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HM
 import Data.Hashable (Hashable)
@@ -686,7 +687,8 @@ markdown = markdownWith defRenderingOptions
 --
 --   @since 0.11.1
 
-{- HLINT ignore "Use list comprehension" -}
+{- HLINT ignore markdownWith "Use list comprehension" -}
+{- HLINT ignore markdownWith "Use list literal" -}
 markdownWith :: RenderingOptions -> API -> String
 markdownWith RenderingOptions{..} api =
   unlines $
@@ -763,7 +765,7 @@ markdownWith RenderingOptions{..} api =
       "### Captures:"
         : ""
         : map captureStr l
-        : [""]
+        ++ [""]
 
     captureStr cap =
       "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
@@ -807,10 +809,10 @@ markdownWith RenderingOptions{..} api =
                   ]
                 else []
             )
-          ++ [ if param ^. paramKind == Flag
+          ++ ( if param ^. paramKind == Flag
                  then ["     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."]
                  else []
-             ]
+             )
       where
         values = param ^. paramValues
 

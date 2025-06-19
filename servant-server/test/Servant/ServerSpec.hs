@@ -1154,7 +1154,7 @@ type instance AuthServerData (AuthProtect "auth") = ()
 
 genAuthContext :: Context '[AuthHandler Request ()]
 genAuthContext =
-  let authHandler = \req -> case lookup "Auth" (requestHeaders req) of
+  let authHandler req = case lookup "Auth" (requestHeaders req) of
         Just "secret" -> return ()
         Just _ -> throwError err403
         Nothing -> throwError err401

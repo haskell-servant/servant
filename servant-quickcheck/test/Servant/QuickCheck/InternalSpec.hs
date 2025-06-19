@@ -8,6 +8,7 @@ import Control.Monad (replicateM)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
+import Data.Functor
 import Data.Maybe (fromJust)
 import Network.HTTP.Client (path, queryString)
 import Prelude.Compat

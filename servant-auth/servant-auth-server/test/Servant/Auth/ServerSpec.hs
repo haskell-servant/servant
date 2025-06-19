@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Servant.Auth.ServerSpec (spec) where
@@ -39,11 +40,8 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Data.CaseInsensitive (mk)
 import Data.Foldable (find)
-import Data.Functor ((<&>))
-import Data.Monoid
 import Data.Text (Text, pack)
 import Data.Time
-import Data.Time.Clock (getCurrentTime)
 import GHC.Generics (Generic)
 import Network.HTTP.Client
   ( cookie_expiry_time
@@ -628,11 +626,13 @@ server ccfg =
 
     raw :: Server Raw
     raw = tagged $ \_req respond ->
-        respond $ responseLBS status200 [("hi", "there")] "how are you?"
+            respond $ responseLBS status200 [("hi", "there")] "how are you?"
 
 #if MIN_VERSION_servant_server(0,11,0)
+    tagged :: Application -> Tagged Handler Application
     tagged = Tagged
 #else
+    tagged :: Application -> Application
     tagged = id
 #endif
 {- FOURMOLU_ENABLE -}

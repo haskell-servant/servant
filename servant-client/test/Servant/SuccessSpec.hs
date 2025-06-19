@@ -169,7 +169,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       Left e ->
         assertFailure $ show e
       Right r ->
-        ("X-Added-Header", "XXX") `elem` toList (responseHeaders r) `shouldBe` True
+        (("X-Added-Header", "XXX") `elem` responseHeaders r) `shouldBe` True
 
   modifyMaxSuccess (const 20) $ it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
     property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->

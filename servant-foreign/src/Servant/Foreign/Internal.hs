@@ -15,7 +15,16 @@
 
 module Servant.Foreign.Internal where
 
-import Control.Lens (Getter, makeLenses, makePrisms, (%~), (&), (.~), (<>~))
+import Control.Lens
+  ( Getter
+  , makeLenses
+  , makePrisms
+  , (%~)
+  , (&)
+  , (.~)
+  , (<>~)
+  , (?~)
+  )
 import Data.Data (Data)
 import Data.Kind (Type)
 import Data.Proxy

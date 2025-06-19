@@ -53,8 +53,7 @@ instance
 
   hoistServerWithContext _ _ = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy (String ': context))
 
-  route Proxy context delayed =
-    route subProxy newContext delayed
+  route Proxy context = route subProxy newContext
     where
       subProxy :: Proxy subApi
       subProxy = Proxy
@@ -73,8 +72,7 @@ instance
 
   hoistServerWithContext _ _ = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext)
 
-  route Proxy context delayed =
-    route subProxy subContext delayed
+  route Proxy context = route subProxy subContext
     where
       subProxy :: Proxy subApi
       subProxy = Proxy

@@ -22,8 +22,7 @@
           # as getting it to compile with lower GHC versions
           # is complicated and this works out of the box.
           pkgs.haskell.packages.ghc912.fourmolu_0_18_0_0
-          pkgs.haskell.packages.ghc912.hlint_3_10
-          pkgs.haskell.packages.ghc912.apply-refact_0_15_0_0
+          pkgs.hlint
           pkgs.nixfmt-rfc-style
         ];
 
@@ -33,7 +32,12 @@
             tutorial ? false,
           }:
           let
-            ghc = pkgs.haskell.packages.${compiler}.ghcWithPackages (_: [ ]);
+            ghc = pkgs.haskell.packages.${compiler}.ghcWithPackages (ghcPkg: [
+              # Some dependencies don't like being built with
+              # as part of a project, so we pull them from nix.
+              ghcPkg.zlib
+              ghcPkg.lzma
+            ]);
             docstuffs = pkgs.python3.withPackages (
               ps: with ps; [
                 recommonmark
@@ -47,7 +51,6 @@
               with pkgs;
               [
                 ghc
-                zlib
                 python3
                 wget
                 cabal-install
@@ -66,11 +69,6 @@
                 else
                   [ ]
               );
-
-            shellHook = ''
-              eval $(grep export ${ghc}/bin/ghc)
-              export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"${pkgs.zlib}/lib";
-            '';
           };
       in
       {

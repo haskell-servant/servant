@@ -6,7 +6,7 @@
 
 module Servant.Server.Internal.RouteResult where
 
-import Control.Monad (ap, liftM)
+import Control.Monad (ap)
 import Control.Monad.Base (MonadBase (..))
 import Control.Monad.Catch (MonadThrow (..))
 import Control.Monad.Trans (MonadIO (..), MonadTrans (..))
@@ -72,7 +72,7 @@ instance MonadBaseControl b m => MonadBaseControl b (RouteResultT m) where
 
 instance MonadTransControl RouteResultT where
   type StT RouteResultT a = RouteResult a
-  liftWith f = RouteResultT $ fmap return $ f runRouteResultT
+  liftWith f = RouteResultT (return <$> f runRouteResultT)
   restoreT = RouteResultT
 
 instance MonadThrow m => MonadThrow (RouteResultT m) where

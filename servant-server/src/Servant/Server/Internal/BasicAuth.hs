@@ -63,7 +63,7 @@ runBasicAuth req realm (BasicAuthCheck ba) =
   case decodeBAHdr req of
     Nothing -> plzAuthenticate
     Just e ->
-      liftIO (ba e) >>= \res -> case res of
+      liftIO (ba e) >>= \case
         BadPassword -> plzAuthenticate
         NoSuchUser -> plzAuthenticate
         Unauthorized -> delayedFailFatal err403

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Main (main) where
@@ -77,7 +78,7 @@ main = do
       n <- maybe (fail $ "not a number: " ++ ns) pure $ readMaybe ns
       mgr <- newManager defaultManagerSettings
       burl <- parseBaseUrl "http://localhost:8000/"
-      withClientM (cli n) (mkClientEnv mgr burl) $ \me -> case me of
+      withClientM (cli n) (mkClientEnv mgr burl) $ \case
         Left err -> print err
         Right m -> do
           x <- runT $ fold (\p _ -> p + 1) (0 :: Int) <~ m

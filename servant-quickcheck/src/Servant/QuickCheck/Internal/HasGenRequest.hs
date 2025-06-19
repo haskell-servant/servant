@@ -192,7 +192,7 @@ instance
            in r
                 { queryString =
                     queryString r
-                      <> if not (null new') then foldMap toParam new' else ""
+                      <> if not (null new') then joinAmp (toParam <$> new') else ""
                 }
     )
     where
@@ -200,7 +200,7 @@ instance
       param = BS8.pack $ symbolVal (Proxy :: Proxy x)
       new = arbitrary :: Gen [c]
       toParam c = param <> "[]=" <> Text.encodeUtf8 (toQueryParam c)
-      fold = foldr1 (\a b -> a <> "&" <> b)
+      joinAmp = foldr1 (\a b -> a <> "&" <> b)
 
 instance
   (HasGenRequest b, KnownSymbol x)

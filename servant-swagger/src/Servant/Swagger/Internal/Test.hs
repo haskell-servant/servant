@@ -150,7 +150,7 @@ props _ f px = sequence_ specs
     specs = tmapEvery (Proxy :: Proxy (Typeable ': Show ': Arbitrary ': cs)) aprop px
 
     aprop :: forall p' a. (Arbitrary a, EveryTF cs a, Show a, Typeable a) => p' a -> Spec
-    aprop _ = prop (show (typeRef (Proxy @a))) (f :: a -> Property)
+    aprop _ = prop (show (typeRep (Proxy :: Proxy a))) (f :: a -> Property)
 
 -- | Pretty print validation errors
 -- together with actual JSON and Swagger Schema

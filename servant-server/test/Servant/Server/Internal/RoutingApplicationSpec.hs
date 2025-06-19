@@ -45,12 +45,12 @@ initTestResource :: IO ()
 initTestResource = writeIORef delayedTestRef TestResourceNone
 
 writeTestResource :: String -> IO ()
-writeTestResource x = modifyIORef delayedTestRef $ \r -> case r of
+writeTestResource x = modifyIORef delayedTestRef $ \case
   TestResourceNone -> TestResource x
   _ -> TestResourceError
 
 freeTestResource :: IO ()
-freeTestResource = modifyIORef delayedTestRef $ \r -> case r of
+freeTestResource = modifyIORef delayedTestRef $ \case
   TestResource _ -> TestResourceFreed
   _ -> TestResourceError
 
