@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Servant.Client.Core.Internal.BaseUrlSpec (spec) where
 
+import Control.DeepSeq
+import Prelude.Compat
+import Test.Hspec
+import Test.QuickCheck
+import Prelude ()
 
-import           Control.DeepSeq
-import           Prelude ()
-import           Prelude.Compat
-import           Test.Hspec
-import           Test.QuickCheck
-
-import           Servant.Client.Core.BaseUrl
+import Servant.Client.Core.BaseUrl
 
 spec :: Spec
 spec = do
@@ -31,12 +31,13 @@ spec = do
 
   describe "parseBaseUrl" $ do
     it "is total" $ do
-      property $ \ string ->
-        deepseq (fmap show (parse string )) True
+      property $ \string ->
+        deepseq (fmap show (parse string)) True
 
     it "is the inverse of showBaseUrl" $ do
-      property $ \ baseUrl -> counterexample (showBaseUrl baseUrl) $
-        parse (showBaseUrl baseUrl) === Just baseUrl
+      property $ \baseUrl ->
+        counterexample (showBaseUrl baseUrl) $
+          parse (showBaseUrl baseUrl) === Just baseUrl
 
     context "trailing slashes" $ do
       it "allows trailing slashes" $ do
@@ -59,23 +60,25 @@ spec = do
       parse "ftp://foo.com" `shouldBe` Nothing
 
 instance Arbitrary BaseUrl where
-  arbitrary = BaseUrl <$>
-    elements [Http, Https] <*>
-    hostNameGen <*>
-    portGen <*>
-    pathGen
-   where
-    letters = ['a' .. 'z'] ++ ['A' .. 'Z']
-    -- this does not perfectly mirror the url standard, but I hope it's good
-    -- enough.
-    hostNameGen = do
-      first <- elements letters
-      middle <- listOf1 $ elements (letters ++ ['0' .. '9'] ++ ['.', '-'])
-      last' <- elements letters
-      return (first : middle ++ [last'])
-    portGen = frequency $
-      (1, return 80) :
-      (1, return 443) :
-      (1, choose (1, 20000)) :
-      []
-    pathGen = listOf1 . elements $ letters
+  arbitrary =
+    BaseUrl
+      <$> elements [Http, Https]
+      <*> hostNameGen
+      <*> portGen
+      <*> pathGen
+    where
+      letters = ['a' .. 'z'] ++ ['A' .. 'Z']
+      -- this does not perfectly mirror the url standard, but I hope it's good
+      -- enough.
+      hostNameGen = do
+        first <- elements letters
+        middle <- listOf1 $ elements (letters ++ ['0' .. '9'] ++ ['.', '-'])
+        last' <- elements letters
+        return (first : middle ++ [last'])
+      portGen =
+        frequency $
+          (1, return 80)
+            : (1, return 443)
+            : (1, choose (1, 20000))
+            : []
+      pathGen = listOf1 . elements $ letters

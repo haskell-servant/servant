@@ -1,27 +1,28 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections       #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeOperators #-}
 
 -- | This module tests whether streaming works from client to server
 -- with a server implemented with servant-server.
 module Servant.Server.StreamingSpec where
 
-import           Control.Concurrent
-import           Control.Exception      hiding
-                 (Handler)
-import           Control.Monad.IO.Class
-import qualified Data.ByteString        as Strict
-import qualified Data.ByteString.Lazy   as Lazy
-import           Network.HTTP.Types
-import           Network.Wai
-import           Network.Wai.Internal
-import           Prelude ()
-import           Prelude.Compat
-import           Servant
+import Control.Concurrent
+import Control.Exception hiding
+  ( Handler
+  )
+import Control.Monad.IO.Class
+import qualified Data.ByteString as Strict
+import qualified Data.ByteString.Lazy as Lazy
+import Network.HTTP.Types
+import Network.Wai
+import Network.Wai.Internal
+import Prelude.Compat
+import Servant
 import qualified System.Timeout
-import           Test.Hspec
+import Test.Hspec
+import Prelude ()
 
 type TestAPI =
   ReqBody '[OctetStream] Lazy.ByteString :> Get '[JSON] NoContent
@@ -50,18 +51,20 @@ spec = do
     -- - waits for serverReceivedFirstChunk
     -- - streams some more test data
     streamTestData <- do
-      mvar :: MVar [IO Strict.ByteString] <- newMVar $
-        map return (replicate 1000 "foo") ++
-        (waitFor serverReceivedFirstChunk >> return "foo") :
-        map return (replicate 1000 "foo")
-      return $ modifyMVar mvar $ \ actions -> case actions of
-        (a : r) -> (r, ) <$> a
+      mvar :: MVar [IO Strict.ByteString] <-
+        newMVar $
+          map return (replicate 1000 "foo")
+            ++ (waitFor serverReceivedFirstChunk >> return "foo")
+            : map return (replicate 1000 "foo")
+      return $ modifyMVar mvar $ \actions -> case actions of
+        (a : r) -> (r,) <$> a
         [] -> return ([], "")
 
-    let request = defaultRequest {
-          requestBody = streamTestData,
-          requestBodyLength = ChunkedBody
-        }
+    let request =
+          defaultRequest
+            { requestBody = streamTestData
+            , requestBodyLength = ChunkedBody
+            }
 
     -- - receives the first chunk
     -- - notifies serverReceivedFirstChunk
@@ -95,15 +98,16 @@ timeout action = do
 -- * waiter
 
 data Waiter a
-  = Waiter {
-    notify :: a -> IO (),
-    waitFor :: IO a
+  = Waiter
+  { notify :: a -> IO ()
+  , waitFor :: IO a
   }
 
 newWaiter :: IO (Waiter a)
 newWaiter = do
   mvar <- newEmptyMVar
-  return $ Waiter {
-    notify = putMVar mvar,
-    waitFor = readMVar mvar
-  }
+  return $
+    Waiter
+      { notify = putMVar mvar
+      , waitFor = readMVar mvar
+      }

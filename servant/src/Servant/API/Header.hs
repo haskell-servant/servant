@@ -1,18 +1,23 @@
-{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds          #-}
-{-# OPTIONS_HADDOCK not-home    #-}
-module Servant.API.Header (
-    Header, Header',
-    ) where
+{-# LANGUAGE PolyKinds #-}
+{-# OPTIONS_HADDOCK not-home #-}
 
-import           Data.Kind
-                 (Type)
-import           Data.Typeable
-                 (Typeable)
-import           GHC.TypeLits
-                 (Symbol)
-import           Servant.API.Modifiers
+module Servant.API.Header
+  ( Header
+  , Header'
+  ) where
+
+import Data.Kind
+  ( Type
+  )
+import Data.Typeable
+  ( Typeable
+  )
+import GHC.TypeLits
+  ( Symbol
+  )
+import Servant.API.Modifiers
 
 -- | Extract the given header's value as a value of type @a@.
 -- I.e. header sent by client, parsed by server.
@@ -26,7 +31,7 @@ import           Servant.API.Modifiers
 type Header = Header' '[Optional, Strict]
 
 data Header' (mods :: [Type]) (sym :: Symbol) (a :: Type)
-    deriving Typeable
+  deriving (Typeable)
 
 -- $setup
 -- >>> import Servant.API

@@ -3,29 +3,30 @@
 --
 -- See documentation of 'HasForeignType' for a simple example. 'listFromAPI' returns a list of all your endpoints and their foreign types, given a mapping from Haskell types to foreign types (conventionally called `ftypes` below).
 module Servant.Foreign
-  (
-  -- * Main API
+  ( -- * Main API
     listFromAPI
-  , Req(..)
+  , Req (..)
   , defReq
-  , HasForeignType(..)
-  , GenerateList(..)
-  , HasForeign(..)
+  , HasForeignType (..)
+  , GenerateList (..)
+  , HasForeign (..)
   , NoTypes
-  -- * Subtypes of 'Req'
-  , Url(..)
+
+    -- * Subtypes of 'Req'
+  , Url (..)
   , Path
-  , Segment(..)
-  , SegmentType(..)
+  , Segment (..)
+  , SegmentType (..)
   , isCapture
   , captureArg
-  , QueryArg(..)
-  , ArgType(..)
-  , HeaderArg(..)
-  , Arg(..)
-  , FunctionName(..)
-  , ReqBodyContentType(..)
-  , PathSegment(..)
+  , QueryArg (..)
+  , ArgType (..)
+  , HeaderArg (..)
+  , Arg (..)
+  , FunctionName (..)
+  , ReqBodyContentType (..)
+  , PathSegment (..)
+
     -- * Lenses
   , argName
   , argType
@@ -42,6 +43,7 @@ module Servant.Foreign
   , queryArgName
   , queryArgType
   , headerArg
+
     -- * Prisms
   , _PathSegment
   , _HeaderArg
@@ -51,11 +53,12 @@ module Servant.Foreign
   , _Normal
   , _Flag
   , _List
+
     -- * Re-exports
   , module Servant.API
   , module Servant.Foreign.Inflections
   ) where
 
-import           Servant.API
-import           Servant.Foreign.Inflections
-import           Servant.Foreign.Internal
+import Servant.API
+import Servant.Foreign.Inflections
+import Servant.Foreign.Internal

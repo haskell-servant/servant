@@ -1,9 +1,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
@@ -49,14 +47,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -- | Type-level code for implementing and using 'UVerb'.  Heavily inspired by
 -- [world-peace](https://github.com/cdepillabout/world-peace).
 module Servant.API.UVerb.Union
-( IsMember
-, Unique
-, Union
-, inject
-, eject
-, foldMapUnion
-, matchUnion
-)
+  ( IsMember
+  , Unique
+  , Union
+  , inject
+  , eject
+  , foldMapUnion
+  , matchUnion
+  )
 where
 
 import Data.Kind (Type)
@@ -75,13 +73,13 @@ type Union = NS I
 -- applied unconditionally.
 --
 -- See also: 'matchUnion'.
-foldMapUnion ::
-  forall (c :: Type -> Constraint) (a :: Type) (as :: [Type]).
-  All c as =>
-  Proxy c ->
-  (forall x. c x => x -> a) ->
-  Union as ->
-  a
+foldMapUnion
+  :: forall (c :: Type -> Constraint) (a :: Type) (as :: [Type])
+   . All c as
+  => Proxy c
+  -> (forall x. c x => x -> a)
+  -> Union as
+  -> a
 foldMapUnion proxy go = cfoldMap_NS proxy (go . unI)
 
 -- | Convenience function to extract a union element using 'cast', ie. return the value if the
@@ -89,7 +87,7 @@ foldMapUnion proxy go = cfoldMap_NS proxy (go . unI)
 -- otherwise.
 --
 -- See also: 'foldMapUnion'.
-matchUnion :: forall (a :: Type) (as :: [Type]). (IsMember a as) => Union as -> Maybe a
+matchUnion :: forall (a :: Type) (as :: [Type]). IsMember a as => Union as -> Maybe a
 matchUnion = fmap unI . eject
 
 -- * Stuff stolen from 'Data.WorldPeace" but for generics-sop
@@ -115,17 +113,17 @@ instance {-# OVERLAPPING #-} UElem x xs => UElem x (x' ': xs) where
 -- | Check whether @a@ is in given type-level list.
 -- This will throw a nice error if the element is not in the list.
 type family CheckElemIsMember (a :: k) (as :: [k]) :: Constraint where
-    CheckElemIsMember a as =
-      If (Elem a as) (() :: Constraint) (TypeError (NoElementError a as))
+  CheckElemIsMember a as =
+    If (Elem a as) (() :: Constraint) (TypeError (NoElementError a as))
 
 type NoElementError (r :: k) (rs :: [k]) =
-          'Text "Expected one of:"
+  'Text "Expected one of:"
     ':$$: 'Text "    " ':<>: 'ShowType rs
     ':$$: 'Text "But got:"
     ':$$: 'Text "    " ':<>: 'ShowType r
 
 type DuplicateElementError (rs :: [k]) =
-          'Text "Duplicate element in list:"
+  'Text "Duplicate element in list:"
     ':$$: 'Text "    " ':<>: 'ShowType rs
 
 type family Elem (x :: k) (xs :: [k]) :: Bool where
@@ -142,9 +140,12 @@ type family Nubbed xs :: Bool where
   Nubbed '[] = 'True
   Nubbed (x ': xs) = If (Elem x xs) 'False (Nubbed xs)
 
-_testNubbed :: ( ( Nubbed '[Bool, Int, Int] ~ 'False
-                 , Nubbed '[Int, Int, Bool] ~ 'False
-                 , Nubbed '[Int, Bool] ~ 'True
-                 )
-               => a) -> a
+_testNubbed
+  :: ( ( Nubbed '[Bool, Int, Int] ~ 'False
+       , Nubbed '[Int, Int, Bool] ~ 'False
+       , Nubbed '[Int, Bool] ~ 'True
+       )
+       => a
+     )
+  -> a
 _testNubbed a = a

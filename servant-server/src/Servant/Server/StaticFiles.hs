@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+
 -- | This module defines server-side handlers that lets you serve static files.
 --
 -- The most common needs for a web application are covered by
@@ -11,21 +12,28 @@ module Servant.Server.StaticFiles
   , serveDirectoryFileServer
   , serveDirectoryEmbedded
   , serveDirectoryWith
-  , -- * Deprecated
-    serveDirectory
+
+    -- * Deprecated
+  , serveDirectory
   ) where
 
-import           Data.ByteString
-                 (ByteString)
-import           Network.Wai.Application.Static
-import           Servant.API.Raw
-                 (Raw)
-import           Servant.Server
-                 (ServerT, Tagged (..))
-import           System.FilePath
-                 (addTrailingPathSeparator)
-import           WaiAppStatic.Storage.Filesystem
-                 (ETagLookup)
+import Data.ByteString
+  ( ByteString
+  )
+import Network.Wai.Application.Static
+import Servant.API.Raw
+  ( Raw
+  )
+import Servant.Server
+  ( ServerT
+  , Tagged (..)
+  )
+import System.FilePath
+  ( addTrailingPathSeparator
+  )
+import WaiAppStatic.Storage.Filesystem
+  ( ETagLookup
+  )
 
 -- | Serve anything under the specified directory as a 'Raw' endpoint.
 --

@@ -1,13 +1,13 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | These are custom combinators for Servant.Server.UsingContextSpec.
 --
@@ -17,18 +17,20 @@
 -- work out this way.)
 module Servant.Server.UsingContextSpec.TestCombinators where
 
-import           GHC.TypeLits
+import GHC.TypeLits
 
-import           Servant
 import Data.Kind (Type)
+import Servant
 
 data ExtractFromContext
 
-instance (HasContextEntry context String, HasServer subApi context) =>
-  HasServer (ExtractFromContext :> subApi) context where
-
-  type ServerT (ExtractFromContext :> subApi) m =
-    String -> ServerT subApi m
+instance
+  (HasContextEntry context String, HasServer subApi context)
+  => HasServer (ExtractFromContext :> subApi) context
+  where
+  type
+    ServerT (ExtractFromContext :> subApi) m =
+      String -> ServerT subApi m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy subApi) pc nt . s
 
@@ -42,11 +44,13 @@ instance (HasContextEntry context String, HasServer subApi context) =>
 
 data InjectIntoContext
 
-instance (HasServer subApi (String ': context)) =>
-  HasServer (InjectIntoContext :> subApi) context where
-
-  type ServerT (InjectIntoContext :> subApi) m =
-    ServerT subApi m
+instance
+  HasServer subApi (String ': context)
+  => HasServer (InjectIntoContext :> subApi) context
+  where
+  type
+    ServerT (InjectIntoContext :> subApi) m =
+      ServerT subApi m
 
   hoistServerWithContext _ _ nt s =
     hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy (String ': context)) nt s
@@ -61,11 +65,13 @@ instance (HasServer subApi (String ': context)) =>
 
 data NamedContextWithBirdface (name :: Symbol) (subContext :: [Type])
 
-instance (HasContextEntry context (NamedContext name subContext), HasServer subApi subContext) =>
-  HasServer (NamedContextWithBirdface name subContext :> subApi) context where
-
-  type ServerT (NamedContextWithBirdface name subContext :> subApi) m =
-    ServerT subApi m
+instance
+  (HasContextEntry context (NamedContext name subContext), HasServer subApi subContext)
+  => HasServer (NamedContextWithBirdface name subContext :> subApi) context
+  where
+  type
+    ServerT (NamedContextWithBirdface name subContext :> subApi) m =
+      ServerT subApi m
 
   hoistServerWithContext _ _ nt s =
     hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s

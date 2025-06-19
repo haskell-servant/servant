@@ -1,29 +1,41 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Servant.Server.RouterSpec (spec) where
 
-import           Control.Monad
-                 (unless)
-import           Data.Proxy
-                 (Proxy (..))
-import           Data.Text
-                 (Text, unpack)
-import           Data.Typeable
-                 (typeRep)
-import           Network.HTTP.Types
-                 (Status (..))
-import           Network.Wai
-                 (responseBuilder)
-import           Network.Wai.Internal
-                 (Response (ResponseBuilder))
-import           Servant.API
-import           Servant.Server
-import           Servant.Server.Internal
-import           Test.Hspec
-import           Test.Hspec.Wai
-                 (get, shouldRespondWith, with)
+import Control.Monad
+  ( unless
+  )
+import Data.Proxy
+  ( Proxy (..)
+  )
+import Data.Text
+  ( Text
+  , unpack
+  )
+import Data.Typeable
+  ( typeRep
+  )
+import Network.HTTP.Types
+  ( Status (..)
+  )
+import Network.Wai
+  ( responseBuilder
+  )
+import Network.Wai.Internal
+  ( Response (ResponseBuilder)
+  )
+import Servant.API
+import Servant.Server
+import Servant.Server.Internal
+import Test.Hspec
+import Test.Hspec.Wai
+  ( get
+  , shouldRespondWith
+  , with
+  )
 
 spec :: Spec
 spec = describe "Servant.Server.Internal.Router" $ do
@@ -54,20 +66,22 @@ routerSpec = do
         toApp = toApplication . runRouter (const err404)
 
         cap :: Router ()
-        cap = CaptureRouter [hint] $
-          let delayed = addCapture (emptyDelayed $ Route pure) (const $ delayedFail err400)
-          in leafRouter
-             $ \env req res ->
-                 runAction delayed env req res
-                 . const
-                 $ Route success
+        cap =
+          CaptureRouter [hint] $
+            let delayed = addCapture (emptyDelayed $ Route pure) (const $ delayedFail err400)
+             in leafRouter $
+                  \env req res ->
+                    runAction delayed env req res
+                      . const
+                      $ Route success
 
         hint :: CaptureHint
         hint = CaptureHint "anything" $ typeRep (Proxy :: Proxy ())
 
         router :: Router ()
-        router = leafRouter (\_ _ res -> res $ Route success)
-          `Choice` cap
+        router =
+          leafRouter (\_ _ res -> res $ Route success)
+            `Choice` cap
 
         success :: Response
         success = responseBuilder (Status 200 "") [] ""
@@ -116,19 +130,19 @@ serverLayoutSpec =
     it "properly displays CaptureAll hints" $ do
       captureAllLayout `shouldHaveLayout` expectedCaptureAllLayout
 
-shouldHaveSameStructureAs ::
-  (HasServer api1 '[], HasServer api2 '[]) => Proxy api1 -> Proxy api2 -> Expectation
+shouldHaveSameStructureAs
+  :: (HasServer api1 '[], HasServer api2 '[]) => Proxy api1 -> Proxy api2 -> Expectation
 shouldHaveSameStructureAs p1 p2 =
   unless (sameStructure (makeTrivialRouter p1) (makeTrivialRouter p2)) $
     expectationFailure ("expected:\n" ++ unpack (layout p2) ++ "\nbut got:\n" ++ unpack (layout p1))
 
-shouldHaveLayout ::
-  (HasServer api '[]) => Proxy api -> Text -> Expectation
+shouldHaveLayout
+  :: HasServer api '[] => Proxy api -> Text -> Expectation
 shouldHaveLayout p l =
   unless (routerLayout (makeTrivialRouter p) == l) $
     expectationFailure ("expected:\n" ++ unpack l ++ "\nbut got:\n" ++ unpack (layout p))
 
-makeTrivialRouter :: (HasServer layout '[]) => Proxy layout -> Router ()
+makeTrivialRouter :: HasServer layout '[] => Proxy layout -> Router ()
 makeTrivialRouter p =
   route p EmptyContext (emptyDelayed (FailFatal err501))
 
@@ -138,7 +152,7 @@ type End = Get '[JSON] NoContent
 -- but the former should be compiled to the
 -- same layout:
 
-type Endpoint    = "a" :> End :<|> "a" :> End
+type Endpoint = "a" :> End :<|> "a" :> End
 type EndpointRef = "a" :> (End :<|> End)
 
 endpoint :: Proxy Endpoint
@@ -151,7 +165,7 @@ endpointRef = Proxy
 -- but the former should be compiled to the same
 -- layout:
 
-type Static    = "a" :> "b" :> End :<|> "a" :> "c" :> End
+type Static = "a" :> "b" :> End :<|> "a" :> "c" :> End
 type StaticRef = "a" :> ("b" :> End :<|> "c" :> End)
 
 static :: Proxy Static
@@ -168,13 +182,14 @@ staticRef = Proxy
 -- structure:
 
 type Dynamic =
-       "a" :> Capture "foo" Int :> "b" :> End
-  :<|> "a" :> Capture "foo" Int :> "c" :> End
-  :<|> "a" :> Capture "foo" Int :> "d" :> End
+  "a" :> Capture "foo" Int :> "b" :> End
+    :<|> "a" :> Capture "foo" Int :> "c" :> End
+    :<|> "a" :> Capture "foo" Int :> "d" :> End
 
 type DynamicRef =
-  "a" :> Capture "foo" Int :>
-    ("b" :> End :<|> "c" :> End :<|> "d" :> End)
+  "a"
+    :> Capture "foo" Int
+    :> ("b" :> End :<|> "c" :> End :<|> "d" :> End)
 
 dynamic :: Proxy Dynamic
 dynamic = Proxy
@@ -188,23 +203,26 @@ dynamicRef = Proxy
 -- the same layout:
 
 type Permute =
-       "a" :> "b" :> "c" :> End
-  :<|> "b" :> "a" :> "c" :> End
-  :<|> "a" :> "c" :> "b" :> End
-  :<|> "c" :> "a" :> "b" :> End
-  :<|> "b" :> "c" :> "a" :> End
-  :<|> "c" :> "b" :> "a" :> End
+  "a" :> "b" :> "c" :> End
+    :<|> "b" :> "a" :> "c" :> End
+    :<|> "a" :> "c" :> "b" :> End
+    :<|> "c" :> "a" :> "b" :> End
+    :<|> "b" :> "c" :> "a" :> End
+    :<|> "c" :> "b" :> "a" :> End
 
 type PermuteRef =
-       "a" :> (    "b" :> "c" :> End
-              :<|> "c" :> "b" :> End
-              )
-  :<|> "b" :> (    "a" :> "c" :> End
-              :<|> "c" :> "a" :> End
-              )
-  :<|> "c" :> (    "a" :> "b" :> End
-              :<|> "b" :> "a" :> End
-              )
+  "a"
+    :> ( "b" :> "c" :> End
+          :<|> "c" :> "b" :> End
+       )
+    :<|> "b"
+      :> ( "a" :> "c" :> End
+            :<|> "c" :> "a" :> End
+         )
+    :<|> "c"
+      :> ( "a" :> "b" :> End
+            :<|> "b" :> "a" :> End
+         )
 
 permute :: Proxy Permute
 permute = Proxy
@@ -215,12 +233,12 @@ permuteRef = Proxy
 -- Adding a "QueryParam" should not affect structure
 
 type PermuteQuery =
-       QueryParam "1" Int :> "a" :> "b" :> "c" :> End
-  :<|> QueryParam "2" Int :> "b" :> "a" :> "c" :> End
-  :<|> QueryParam "3" Int :> "a" :> "c" :> "b" :> End
-  :<|> QueryParam "4" Int :> "c" :> "a" :> "b" :> End
-  :<|> QueryParam "5" Int :> "b" :> "c" :> "a" :> End
-  :<|> QueryParam "6" Int :> "c" :> "b" :> "a" :> End
+  QueryParam "1" Int :> "a" :> "b" :> "c" :> End
+    :<|> QueryParam "2" Int :> "b" :> "a" :> "c" :> End
+    :<|> QueryParam "3" Int :> "a" :> "c" :> "b" :> End
+    :<|> QueryParam "4" Int :> "c" :> "a" :> "b" :> End
+    :<|> QueryParam "5" Int :> "b" :> "c" :> "a" :> End
+    :<|> QueryParam "6" Int :> "c" :> "b" :> "a" :> End
 
 permuteQuery :: Proxy PermuteQuery
 permuteQuery = Proxy
@@ -229,24 +247,24 @@ permuteQuery = Proxy
 -- effect on the grouping.
 
 type PermuteRawEnd =
-       "a" :> "b" :> "c" :> End
-  :<|> "b" :> "a" :> "c" :> End
-  :<|> "a" :> "c" :> "b" :> End
-  :<|> "c" :> "a" :> "b" :> End
-  :<|> "b" :> "c" :> "a" :> End
-  :<|> "c" :> "b" :> "a" :> End
-  :<|> Raw
+  "a" :> "b" :> "c" :> End
+    :<|> "b" :> "a" :> "c" :> End
+    :<|> "a" :> "c" :> "b" :> End
+    :<|> "c" :> "a" :> "b" :> End
+    :<|> "b" :> "c" :> "a" :> End
+    :<|> "c" :> "b" :> "a" :> End
+    :<|> Raw
 
 type PermuteRawEndRef = PermuteRef :<|> Raw
 
 type PermuteRawBegin =
-       Raw
-  :<|> "a" :> "b" :> "c" :> End
-  :<|> "b" :> "a" :> "c" :> End
-  :<|> "a" :> "c" :> "b" :> End
-  :<|> "c" :> "a" :> "b" :> End
-  :<|> "b" :> "c" :> "a" :> End
-  :<|> "c" :> "b" :> "a" :> End
+  Raw
+    :<|> "a" :> "b" :> "c" :> End
+    :<|> "b" :> "a" :> "c" :> End
+    :<|> "a" :> "c" :> "b" :> End
+    :<|> "c" :> "a" :> "b" :> End
+    :<|> "b" :> "c" :> "a" :> End
+    :<|> "c" :> "b" :> "a" :> End
 
 type PermuteRawBeginRef = Raw :<|> PermuteRef
 
@@ -267,24 +285,26 @@ permuteRawEndRef = Proxy
 -- halves should still be grouped.
 
 type PermuteRawMiddle =
-       "a" :> "b" :> "c" :> End
-  :<|> "b" :> "a" :> "c" :> End
-  :<|> "a" :> "c" :> "b" :> End
-  :<|> Raw
-  :<|> "c" :> "a" :> "b" :> End
-  :<|> "b" :> "c" :> "a" :> End
-  :<|> "c" :> "b" :> "a" :> End
+  "a" :> "b" :> "c" :> End
+    :<|> "b" :> "a" :> "c" :> End
+    :<|> "a" :> "c" :> "b" :> End
+    :<|> Raw
+    :<|> "c" :> "a" :> "b" :> End
+    :<|> "b" :> "c" :> "a" :> End
+    :<|> "c" :> "b" :> "a" :> End
 
 type PermuteRawMiddleRef =
-       "a" :> (    "b" :> "c" :> End
-              :<|> "c" :> "b" :> End
-              )
-  :<|> "b" :> "a" :> "c" :> End
-  :<|> Raw
-  :<|> "b" :> "c" :> "a" :> End
-  :<|> "c" :> (    "a" :> "b" :> End
-              :<|> "b" :> "a" :> End
-              )
+  "a"
+    :> ( "b" :> "c" :> End
+          :<|> "c" :> "b" :> End
+       )
+    :<|> "b" :> "a" :> "c" :> End
+    :<|> Raw
+    :<|> "b" :> "c" :> "a" :> End
+    :<|> "c"
+      :> ( "a" :> "b" :> End
+            :<|> "b" :> "a" :> End
+         )
 
 permuteRawMiddle :: Proxy PermuteRawMiddle
 permuteRawMiddle = Proxy
@@ -298,31 +318,31 @@ permuteRawMiddleRef = Proxy
 -- the middle.
 
 type PermuteEndEnd =
-       "a" :> "b" :> "c" :> End
-  :<|> "b" :> "a" :> "c" :> End
-  :<|> "a" :> "c" :> "b" :> End
-  :<|> "c" :> "a" :> "b" :> End
-  :<|> "b" :> "c" :> "a" :> End
-  :<|> "c" :> "b" :> "a" :> End
-  :<|> End
+  "a" :> "b" :> "c" :> End
+    :<|> "b" :> "a" :> "c" :> End
+    :<|> "a" :> "c" :> "b" :> End
+    :<|> "c" :> "a" :> "b" :> End
+    :<|> "b" :> "c" :> "a" :> End
+    :<|> "c" :> "b" :> "a" :> End
+    :<|> End
 
 type PermuteEndBegin =
-       End
-  :<|> "a" :> "b" :> "c" :> End
-  :<|> "b" :> "a" :> "c" :> End
-  :<|> "a" :> "c" :> "b" :> End
-  :<|> "c" :> "a" :> "b" :> End
-  :<|> "b" :> "c" :> "a" :> End
-  :<|> "c" :> "b" :> "a" :> End
+  End
+    :<|> "a" :> "b" :> "c" :> End
+    :<|> "b" :> "a" :> "c" :> End
+    :<|> "a" :> "c" :> "b" :> End
+    :<|> "c" :> "a" :> "b" :> End
+    :<|> "b" :> "c" :> "a" :> End
+    :<|> "c" :> "b" :> "a" :> End
 
 type PermuteEndMiddle =
-       "a" :> "b" :> "c" :> End
-  :<|> "b" :> "a" :> "c" :> End
-  :<|> "a" :> "c" :> "b" :> End
-  :<|> End
-  :<|> "c" :> "a" :> "b" :> End
-  :<|> "b" :> "c" :> "a" :> End
-  :<|> "c" :> "b" :> "a" :> End
+  "a" :> "b" :> "c" :> End
+    :<|> "b" :> "a" :> "c" :> End
+    :<|> "a" :> "c" :> "b" :> End
+    :<|> End
+    :<|> "c" :> "a" :> "b" :> End
+    :<|> "b" :> "c" :> "a" :> End
+    :<|> "c" :> "b" :> "a" :> End
 
 type PermuteEndRef = PermuteRef :<|> End
 
@@ -343,20 +363,20 @@ permuteEndRef = Proxy
 -- be reordered correctly.
 
 type LevelFragment1 =
-       "a" :> "b" :> End
-  :<|> "a" :> End
+  "a" :> "b" :> End
+    :<|> "a" :> End
 
 type LevelFragment2 =
-       "b" :> End
-  :<|> "a" :> "c" :> End
-  :<|> End
+  "b" :> End
+    :<|> "a" :> "c" :> End
+    :<|> End
 
 type Level = LevelFragment1 :<|> LevelFragment2
 
 type LevelRef =
-       "a" :> ("b" :> End :<|> "c" :> End :<|> End)
-  :<|> "b" :> End
-  :<|> End
+  "a" :> ("b" :> End :<|> "c" :> End :<|> End)
+    :<|> "b" :> End
+    :<|> End
 
 level :: Proxy Level
 level = Proxy
@@ -367,12 +387,12 @@ levelRef = Proxy
 -- The example API for the 'layout' function.
 -- Should get factorized by the 'choice' smart constructor.
 type ExampleLayout =
-       "a" :> "d" :> Get '[JSON] NoContent
-  :<|> "b" :> Capture "x" Int :> Get '[JSON] Bool
-  :<|> "c" :> Put '[JSON] Bool
-  :<|> "a" :> "e" :> Get '[JSON] Int
-  :<|> "b" :> Capture "x" Int :> Put '[JSON] Bool
-  :<|> Raw
+  "a" :> "d" :> Get '[JSON] NoContent
+    :<|> "b" :> Capture "x" Int :> Get '[JSON] Bool
+    :<|> "c" :> Put '[JSON] Bool
+    :<|> "a" :> "e" :> Get '[JSON] Int
+    :<|> "b" :> Capture "x" Int :> Put '[JSON] Bool
+    :<|> Raw
 
 exampleLayout :: Proxy ExampleLayout
 exampleLayout = Proxy
@@ -400,9 +420,9 @@ expectedExampleLayout =
 -- A capture API with all capture types being the same
 --
 type CaptureSameType =
-       "a" :> Capture "foo" Int :> "b" :> End
-  :<|> "a" :> Capture "foo" Int :> "c" :> End
-  :<|> "a" :> Capture "foo" Int :> "d" :> End
+  "a" :> Capture "foo" Int :> "b" :> End
+    :<|> "a" :> Capture "foo" Int :> "c" :> End
+    :<|> "a" :> Capture "foo" Int :> "d" :> End
 
 captureSameType :: Proxy CaptureSameType
 captureSameType = Proxy
@@ -424,9 +444,9 @@ expectedCaptureSameType =
 -- A capture API capturing different types
 --
 type CaptureDifferentTypes =
-       "a" :> Capture "foo" Int :> "b" :> End
-  :<|> "a" :> Capture "bar" Bool :> "c" :> End
-  :<|> "a" :> Capture "baz" Char :> "d" :> End
+  "a" :> Capture "foo" Int :> "b" :> End
+    :<|> "a" :> Capture "bar" Bool :> "c" :> End
+    :<|> "a" :> Capture "baz" Char :> "d" :> End
 
 captureDifferentTypes :: Proxy CaptureDifferentTypes
 captureDifferentTypes = Proxy

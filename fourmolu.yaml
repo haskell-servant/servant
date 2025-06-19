@@ -1,0 +1,15 @@
+indentation: 2
+comma-style: leading
+import-export-style: leading
+record-brace-space: false
+indent-wheres: true
+respectful: true # don't be too opinionated about newlines etc.
+haddock-style: single-line
+newlines-between-decls: 1
+fixities: []
+function-arrows: leading
+single-constraint-parens: never
+import-grouping: by-scope
+sort-constraints: true
+sort-derived-classes: true
+sort-deriving-clauses: true

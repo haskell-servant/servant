@@ -5,9 +5,9 @@
 -- Stability:   experimental
 --
 -- Automatic tests for servant API against Swagger spec.
-module Servant.Swagger.Test (
-  validateEveryToJSON,
-  validateEveryToJSONWithPatternChecker,
-) where
+module Servant.Swagger.Test
+  ( validateEveryToJSON
+  , validateEveryToJSONWithPatternChecker
+  ) where
 
-import           Servant.Swagger.Internal.Test
+import Servant.Swagger.Internal.Test

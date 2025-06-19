@@ -1,6 +1,6 @@
-module Servant.API.TypeLevel.List 
-    (type (.++)
-    ) where
+module Servant.API.TypeLevel.List
+  ( type (.++)
+  ) where
 
 import Data.Kind
 

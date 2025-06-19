@@ -1,11 +1,11 @@
 module Servant.QuickCheck.Internal.Equality where
 
-import           Data.Aeson           (Value, decode, decodeStrict)
-import           Data.ByteString      (ByteString)
+import Data.Aeson (Value, decode, decodeStrict)
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LB
-import           Data.Function        (on)
-import           Network.HTTP.Client  (Response (..), equivCookieJar, responseBody)
-import           Prelude.Compat
+import Data.Function (on)
+import Network.HTTP.Client (Response (..), equivCookieJar, responseBody)
+import Prelude.Compat
 
 newtype ResponseEquality b = ResponseEquality {getResponseEquality :: Response b -> Response b -> Bool}
 
@@ -17,11 +17,10 @@ instance Monoid (ResponseEquality b) where
   mempty = ResponseEquality $ \_ _ -> True
   mappend = (<>)
 
-{- | Use `Eq` instance for `Response`
-
-/Since 0.0.0.0/
--}
-allEquality :: (Eq b) => ResponseEquality b
+-- | Use `Eq` instance for `Response`
+--
+-- /Since 0.0.0.0/
+allEquality :: Eq b => ResponseEquality b
 allEquality = ResponseEquality $ \respa respb ->
   and
     [ responseStatus respa == responseStatus respb
@@ -31,19 +30,17 @@ allEquality = ResponseEquality $ \respa respb ->
     , responseCookieJar respa `equivCookieJar` responseCookieJar respb
     ]
 
-{- | ByteString `Eq` instance over the response body.
-
-/Since 0.0.0.0/
--}
-bodyEquality :: (Eq b) => ResponseEquality b
+-- | ByteString `Eq` instance over the response body.
+--
+-- /Since 0.0.0.0/
+bodyEquality :: Eq b => ResponseEquality b
 bodyEquality = ResponseEquality ((==) `on` responseBody)
 
-{- | Equality as 'Value'. This means that if two bodies are equal as JSON
-(e.g., insignificant whitespace difference) they are considered equal.
-
-/Since 0.0.3.0/
--}
-jsonEquality :: (JsonEq b) => ResponseEquality b
+-- | Equality as 'Value'. This means that if two bodies are equal as JSON
+-- (e.g., insignificant whitespace difference) they are considered equal.
+--
+-- /Since 0.0.3.0/
+jsonEquality :: JsonEq b => ResponseEquality b
 jsonEquality = ResponseEquality (jsonEq `on` responseBody)
 
 class JsonEq a where
@@ -62,5 +59,5 @@ compareDecodedResponses resp1 resp2 =
   case resp1 of
     Nothing -> False -- if decoding fails we assume failure
     (Just r1) -> case resp2 of
-      Nothing   -> False -- another decode failure
+      Nothing -> False -- another decode failure
       (Just r2) -> r1 == r2

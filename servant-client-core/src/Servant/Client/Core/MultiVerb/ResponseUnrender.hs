@@ -1,37 +1,39 @@
 {-# LANGUAGE ApplicativeDo #-}
+
 module Servant.Client.Core.MultiVerb.ResponseUnrender where
 
 import Control.Applicative
 import Control.Monad
+import qualified Data.ByteString.Lazy as BSL
 import Data.Kind (Type)
 import Data.SOP
 import Data.Typeable
 import GHC.TypeLits
-import Network.HTTP.Types.Status (Status)
-import qualified Data.ByteString.Lazy as BSL
 import qualified Network.HTTP.Media as M
+import Network.HTTP.Types.Status (Status)
 
+import Data.ByteString (ByteString)
 import Servant.API.ContentTypes
 import Servant.API.MultiVerb
 import Servant.API.Status
-import Servant.API.UVerb.Union (Union)
-import Servant.Client.Core.Response (ResponseF(..))
-import qualified Servant.Client.Core.Response as Response
 import Servant.API.Stream (SourceIO)
-import Data.ByteString (ByteString)
+import Servant.API.UVerb.Union (Union)
+import Servant.Client.Core.Response (ResponseF (..))
+import qualified Servant.Client.Core.Response as Response
 
 data SomeClientResponse = forall a. Typeable a => SomeClientResponse (ResponseF a)
 
-fromSomeClientResponse 
-  :: forall a m. (Alternative m, Typeable a)
+fromSomeClientResponse
+  :: forall a m
+   . (Alternative m, Typeable a)
   => SomeClientResponse
   -> m (ResponseF a)
-fromSomeClientResponse (SomeClientResponse Response {..}) = do
+fromSomeClientResponse (SomeClientResponse Response{..}) = do
   body <- maybe empty pure $ cast @_ @a responseBody
   pure $
     Response
-      { responseBody = body,
-        ..
+      { responseBody = body
+      , ..
       }
 
 class ResponseUnrender cs a where
@@ -42,7 +44,7 @@ class ResponseUnrender cs a where
     -> ResponseF (ResponseBody a)
     -> UnrenderResult (ResponseType a)
 
-class (Typeable as) => ResponseListUnrender cs as where
+class Typeable as => ResponseListUnrender cs as where
   responseListUnrender
     :: M.MediaType
     -> SomeClientResponse
@@ -55,13 +57,13 @@ instance ResponseListUnrender cs '[] where
   responseListStatuses = []
 
 instance
-  ( Typeable a,
-    Typeable (ResponseBody a),
-    ResponseUnrender cs a,
-    ResponseListUnrender cs as,
-    KnownStatus (ResponseStatus a)
-  ) =>
-  ResponseListUnrender cs (a ': as)
+  ( Typeable a
+  , Typeable (ResponseBody a)
+  , ResponseUnrender cs a
+  , ResponseListUnrender cs as
+  , KnownStatus (ResponseStatus a)
+  )
+  => ResponseListUnrender cs (a ': as)
   where
   responseListUnrender c output =
     Z . I <$> (responseUnrender @cs @a c =<< fromSomeClientResponse output)
@@ -70,10 +72,10 @@ instance
   responseListStatuses = statusVal (Proxy @(ResponseStatus a)) : responseListStatuses @cs @as
 
 instance
-  ( KnownStatus s,
-    MimeUnrender ct a
-  ) =>
-  ResponseUnrender cs (RespondAs (ct :: Type) s desc a)
+  ( KnownStatus s
+  , MimeUnrender ct a
+  )
+  => ResponseUnrender cs (RespondAs (ct :: Type) s desc a)
   where
   type ResponseStatus (RespondAs ct s desc a) = s
   type ResponseBody (RespondAs ct s desc a) = BSL.ByteString
@@ -83,7 +85,7 @@ instance
     either UnrenderError UnrenderSuccess $
       mimeUnrender (Proxy @ct) (Response.responseBody output)
 
-instance (KnownStatus s) => ResponseUnrender cs (RespondAs '() s desc ()) where
+instance KnownStatus s => ResponseUnrender cs (RespondAs '() s desc ()) where
   type ResponseStatus (RespondAs '() s desc ()) = s
   type ResponseBody (RespondAs '() s desc ()) = ()
 
@@ -91,7 +93,7 @@ instance (KnownStatus s) => ResponseUnrender cs (RespondAs '() s desc ()) where
     guard (responseStatusCode output == statusVal (Proxy @s))
 
 instance
-  (KnownStatus s) 
+  KnownStatus s
   => ResponseUnrender cs (RespondStreaming s desc framing ct)
   where
   type ResponseStatus (RespondStreaming s desc framing ct) = s
@@ -103,7 +105,8 @@ instance
 
 instance
   (AllMimeUnrender cs a, KnownStatus s)
-  => ResponseUnrender cs (Respond s desc a) where
+  => ResponseUnrender cs (Respond s desc a)
+  where
   type ResponseStatus (Respond s desc a) = s
   type ResponseBody (Respond s desc a) = BSL.ByteString
 
@@ -115,11 +118,11 @@ instance
       Just f -> either UnrenderError UnrenderSuccess (f (responseBody output))
 
 instance
-  ( AsHeaders xs (ResponseType r) a,
-    ServantHeaders hs xs,
-    ResponseUnrender cs r
-  ) =>
-  ResponseUnrender cs (WithHeaders hs a r)
+  ( AsHeaders xs (ResponseType r) a
+  , ServantHeaders hs xs
+  , ResponseUnrender cs r
+  )
+  => ResponseUnrender cs (WithHeaders hs a r)
   where
   type ResponseStatus (WithHeaders hs a r) = ResponseStatus r
   type ResponseBody (WithHeaders hs a r) = ResponseBody r

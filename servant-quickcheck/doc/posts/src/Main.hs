@@ -1,50 +1,58 @@
-#line 296 "Announcement.anansi"
-
-#line 86 "Announcement.anansi"
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Main where
 
-import Servant
+import Control.Monad.IO.Class (liftIO)
 import Data.Aeson
+import Data.Text (Text)
 import Database.PostgreSQL.Simple
 import GHC.Generics (Generic)
-import Data.Text (Text)
 import Network.Wai.Handler.Warp
-import Control.Monad.IO.Class (liftIO)
+import Servant
 
-type API
-  = "species" :> (Capture "species-name" Text :> ( Get '[JSON] Species
-                                              :<|> Delete '[JSON] ())
-             :<|> ReqBody '[JSON] Species :> Post '[JSON] ())
-  -- The plural of 'species' is unfortunately also 'species'
- :<|> "speciess" :> Get '[JSON] [Species]
+type API =
+  "species"
+    :> ( Capture "species-name" Text
+          :> ( Get '[JSON] Species
+                :<|> Delete '[JSON] ()
+             )
+          :<|> ReqBody '[JSON] Species :> Post '[JSON] ()
+       )
+    -- The plural of 'species' is unfortunately also 'species'
+    :<|> "speciess" :> Get '[JSON] [Species]
 
 api :: Proxy API
 api = Proxy
 
 data Species = Species
-  { speciesName  :: Text
+  { speciesName :: Text
   , speciesGenus :: Text
-  } deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
+  }
+  deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
 
 data Genus = Genus
-  { genusName   :: Text
+  { genusName :: Text
   , genusFamily :: Text
-  } deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
+  }
+  deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
 
 instance FromRow Genus
 instance FromRow Species
 
 server :: Connection -> Server API
-server conn = ((\sname -> liftIO (lookupSpecies conn sname)
-                     :<|> liftIO (deleteSpecies conn sname))
-         :<|> (\species -> liftIO $ insertSpecies conn species))
-         :<|> (liftIO $ allSpecies conn)
+server conn =
+  ( ( \sname ->
+        liftIO (lookupSpecies conn sname)
+          :<|> liftIO (deleteSpecies conn sname)
+    )
+      :<|> (\species -> liftIO $ insertSpecies conn species)
+  )
+    :<|> (liftIO $ allSpecies conn)
 
 lookupSpecies :: Connection -> Text -> IO Species
 lookupSpecies conn name = do

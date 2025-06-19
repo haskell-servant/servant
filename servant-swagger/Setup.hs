@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wall #-}
+
 module Main (main) where
 
 #ifndef MIN_VERSION_cabal_doctest

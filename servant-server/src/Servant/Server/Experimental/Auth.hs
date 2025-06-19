@@ -1,38 +1,52 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Servant.Server.Experimental.Auth where
 
-import           Control.Monad.Trans
-                 (liftIO)
-import           Data.Kind
-                 (Type)
-import           Data.Proxy
-                 (Proxy (Proxy))
-import           Data.Typeable
-                 (Typeable)
-import           GHC.Generics
-                 (Generic)
-import           Network.Wai
-                 (Request)
+import Control.Monad.Trans
+  ( liftIO
+  )
+import Data.Kind
+  ( Type
+  )
+import Data.Proxy
+  ( Proxy (Proxy)
+  )
+import Data.Typeable
+  ( Typeable
+  )
+import GHC.Generics
+  ( Generic
+  )
+import Network.Wai
+  ( Request
+  )
 
-import           Servant
-                 ((:>))
-import           Servant.API.Experimental.Auth
-import           Servant.Server.Internal
-                 (DelayedIO, Handler, HasContextEntry, HasServer (..),
-                 addAuthCheck, delayedFailFatal, getContextEntry, runHandler,
-                 withRequest)
+import Servant
+  ( (:>)
+  )
+import Servant.API.Experimental.Auth
+import Servant.Server.Internal
+  ( DelayedIO
+  , Handler
+  , HasContextEntry
+  , HasServer (..)
+  , addAuthCheck
+  , delayedFailFatal
+  , getContextEntry
+  , runHandler
+  , withRequest
+  )
 
 -- * General Auth
 
@@ -46,7 +60,7 @@ type family AuthServerData a :: Type
 --
 -- NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
 newtype AuthHandler r usr = AuthHandler
-  { unAuthHandler :: r -> Handler usr }
+  {unAuthHandler :: r -> Handler usr}
   deriving (Functor, Generic, Typeable)
 
 -- | NOTE: THIS API IS EXPERIMENTAL AND SUBJECT TO CHANGE
@@ -54,20 +68,22 @@ mkAuthHandler :: (r -> Handler usr) -> AuthHandler r usr
 mkAuthHandler = AuthHandler
 
 -- | Known orphan instance.
-instance ( HasServer api context
-         , HasContextEntry context (AuthHandler Request (AuthServerData (AuthProtect tag)))
-         )
-  => HasServer (AuthProtect tag :> api) context where
-
-  type ServerT (AuthProtect tag :> api) m =
-    AuthServerData (AuthProtect tag) -> ServerT api m
+instance
+  ( HasServer api context
+  , HasContextEntry context (AuthHandler Request (AuthServerData (AuthProtect tag)))
+  )
+  => HasServer (AuthProtect tag :> api) context
+  where
+  type
+    ServerT (AuthProtect tag :> api) m =
+      AuthServerData (AuthProtect tag) -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
   route Proxy context subserver =
     route (Proxy :: Proxy api) context (subserver `addAuthCheck` withRequest authCheck)
-      where
-        authHandler :: Request -> Handler (AuthServerData (AuthProtect tag))
-        authHandler = unAuthHandler (getContextEntry context)
-        authCheck :: Request -> DelayedIO (AuthServerData (AuthProtect tag))
-        authCheck = (>>= either delayedFailFatal return) . liftIO . runHandler . authHandler
+    where
+      authHandler :: Request -> Handler (AuthServerData (AuthProtect tag))
+      authHandler = unAuthHandler (getContextEntry context)
+      authCheck :: Request -> DelayedIO (AuthServerData (AuthProtect tag))
+      authCheck = (>>= either delayedFailFatal return) . liftIO . runHandler . authHandler

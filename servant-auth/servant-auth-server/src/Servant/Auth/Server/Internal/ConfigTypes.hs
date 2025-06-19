@@ -1,15 +1,15 @@
 module Servant.Auth.Server.Internal.ConfigTypes
   ( module Servant.Auth.Server.Internal.ConfigTypes
-  , Servant.API.IsSecure(..)
+  , Servant.API.IsSecure (..)
   ) where
 
-import           Crypto.JOSE        as Jose
-import           Crypto.JWT         as Jose
-import qualified Data.ByteString    as BS
-import           Data.Default
-import           Data.Time
-import           GHC.Generics       (Generic)
-import           Servant.API        (IsSecure(..))
+import Crypto.JOSE as Jose
+import Crypto.JWT as Jose
+import qualified Data.ByteString as BS
+import Data.Default
+import Data.Time
+import GHC.Generics (Generic)
+import Servant.API (IsSecure (..))
 
 data IsMatch = Matches | DoesNotMatch
   deriving (Eq, Show, Read, Generic, Ord)
@@ -27,25 +27,27 @@ data SameSite = AnySite | SameSiteStrict | SameSiteLax
 
 -- | @JWTSettings@ are used to generate cookies, and to verify JWTs.
 data JWTSettings = JWTSettings
-  {
-  -- | Key used to sign JWT.
-    signingKey      :: Jose.JWK
-  -- | Algorithm used to sign JWT.
-  , jwtAlg          :: Maybe Jose.Alg
-  -- | Keys used to validate JWT.
-  , validationKeys  :: IO Jose.JWKSet
-  -- | An @aud@ predicate. The @aud@ is a string or URI that identifies the
-  -- intended recipient of the JWT.
+  { signingKey :: Jose.JWK
+  -- ^ Key used to sign JWT.
+  , jwtAlg :: Maybe Jose.Alg
+  -- ^ Algorithm used to sign JWT.
+  , validationKeys :: IO Jose.JWKSet
+  -- ^ Keys used to validate JWT.
   , audienceMatches :: Jose.StringOrURI -> IsMatch
-  } deriving (Generic)
+  -- ^ An @aud@ predicate. The @aud@ is a string or URI that identifies the
+  -- intended recipient of the JWT.
+  }
+  deriving (Generic)
 
 -- | A @JWTSettings@ where the audience always matches.
 defaultJWTSettings :: Jose.JWK -> JWTSettings
-defaultJWTSettings k = JWTSettings
-   { signingKey = k
-   , jwtAlg = Nothing
-   , validationKeys = pure $ Jose.JWKSet [k]
-   , audienceMatches = const Matches }
+defaultJWTSettings k =
+  JWTSettings
+    { signingKey = k
+    , jwtAlg = Nothing
+    , validationKeys = pure $ Jose.JWKSet [k]
+    , audienceMatches = const Matches
+    }
 
 -- | The policies to use when generating cookies.
 --
@@ -56,72 +58,75 @@ defaultJWTSettings k = JWTSettings
 -- Note that having the setting @Secure@ may cause testing failures if you are
 -- not testing over HTTPS.
 data CookieSettings = CookieSettings
-  {
-  -- | 'Secure' means browsers will only send cookies over HTTPS. Default:
+  { cookieIsSecure :: !IsSecure
+  -- ^ 'Secure' means browsers will only send cookies over HTTPS. Default:
   -- @Secure@.
-    cookieIsSecure    :: !IsSecure
-  -- | How long from now until the cookie expires. Default: @Nothing@.
-  , cookieMaxAge      :: !(Maybe DiffTime)
-  -- | At what time the cookie expires. Default: @Nothing@.
-  , cookieExpires     :: !(Maybe UTCTime)
-  -- | The URL path and sub-paths for which this cookie is used. Default: @Just "/"@.
-  , cookiePath        :: !(Maybe BS.ByteString)
-  -- | Domain name, if set cookie also allows subdomains. Default: @Nothing@.
-  , cookieDomain      :: !(Maybe BS.ByteString)
-  -- | 'SameSite' settings. Default: @SameSiteLax@.
-  , cookieSameSite    :: !SameSite
-  -- | What name to use for the cookie used for the session.
+  , cookieMaxAge :: !(Maybe DiffTime)
+  -- ^ How long from now until the cookie expires. Default: @Nothing@.
+  , cookieExpires :: !(Maybe UTCTime)
+  -- ^ At what time the cookie expires. Default: @Nothing@.
+  , cookiePath :: !(Maybe BS.ByteString)
+  -- ^ The URL path and sub-paths for which this cookie is used. Default: @Just "/"@.
+  , cookieDomain :: !(Maybe BS.ByteString)
+  -- ^ Domain name, if set cookie also allows subdomains. Default: @Nothing@.
+  , cookieSameSite :: !SameSite
+  -- ^ 'SameSite' settings. Default: @SameSiteLax@.
   , sessionCookieName :: !BS.ByteString
-  -- | The optional settings to use for XSRF protection. Default: @Just def@.
+  -- ^ What name to use for the cookie used for the session.
   , cookieXsrfSetting :: !(Maybe XsrfCookieSettings)
-  } deriving (Eq, Show, Generic)
+  -- ^ The optional settings to use for XSRF protection. Default: @Just def@.
+  }
+  deriving (Eq, Show, Generic)
 
 instance Default CookieSettings where
   def = defaultCookieSettings
 
 defaultCookieSettings :: CookieSettings
-defaultCookieSettings = CookieSettings
-    { cookieIsSecure    = Secure
-    , cookieMaxAge      = Nothing
-    , cookieExpires     = Nothing
-    , cookiePath        = Just "/"
-    , cookieDomain      = Nothing
-    , cookieSameSite    = SameSiteLax
+defaultCookieSettings =
+  CookieSettings
+    { cookieIsSecure = Secure
+    , cookieMaxAge = Nothing
+    , cookieExpires = Nothing
+    , cookiePath = Just "/"
+    , cookieDomain = Nothing
+    , cookieSameSite = SameSiteLax
     , sessionCookieName = "JWT-Cookie"
     , cookieXsrfSetting = Just def
     }
 
 -- | The policies to use when generating and verifying XSRF cookies
 data XsrfCookieSettings = XsrfCookieSettings
-  {
-  -- | What name to use for the cookie used for XSRF protection.
-    xsrfCookieName :: !BS.ByteString
-  -- | What path to use for the cookie used for XSRF protection. Default @Just "/"@.
+  { xsrfCookieName :: !BS.ByteString
+  -- ^ What name to use for the cookie used for XSRF protection.
   , xsrfCookiePath :: !(Maybe BS.ByteString)
-  -- | What name to use for the header used for XSRF protection.
+  -- ^ What path to use for the cookie used for XSRF protection. Default @Just "/"@.
   , xsrfHeaderName :: !BS.ByteString
-  -- | Exclude GET request method from XSRF protection.
+  -- ^ What name to use for the header used for XSRF protection.
   , xsrfExcludeGet :: !Bool
-  } deriving (Eq, Show, Generic)
+  -- ^ Exclude GET request method from XSRF protection.
+  }
+  deriving (Eq, Show, Generic)
 
 instance Default XsrfCookieSettings where
   def = defaultXsrfCookieSettings
 
 defaultXsrfCookieSettings :: XsrfCookieSettings
-defaultXsrfCookieSettings = XsrfCookieSettings
-  { xsrfCookieName = "XSRF-TOKEN"
-  , xsrfCookiePath = Just "/"
-  , xsrfHeaderName = "X-XSRF-TOKEN"
-  , xsrfExcludeGet = False
-  }
+defaultXsrfCookieSettings =
+  XsrfCookieSettings
+    { xsrfCookieName = "XSRF-TOKEN"
+    , xsrfCookiePath = Just "/"
+    , xsrfHeaderName = "X-XSRF-TOKEN"
+    , xsrfExcludeGet = False
+    }
 
 ------------------------------------------------------------------------------
 -- Internal {{{
 
 jwtSettingsToJwtValidationSettings :: JWTSettings -> Jose.JWTValidationSettings
-jwtSettingsToJwtValidationSettings s
-  = defaultJWTValidationSettings (toBool <$> audienceMatches s)
+jwtSettingsToJwtValidationSettings s =
+  defaultJWTValidationSettings (toBool <$> audienceMatches s)
   where
-    toBool Matches      = True
+    toBool Matches = True
     toBool DoesNotMatch = False
+
 -- }}}

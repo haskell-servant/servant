@@ -23,9 +23,8 @@
           check.enable = true;
           settings.hooks = {
             cabal-fmt.enable = true;
-            stylish-haskell.enable = false;
-
-            alejandra.enable = true;
+            fourmolu.enable = true;
+            nixfmt-rfc-style.enable = true;
             deadnix.enable = true;
           };
         };

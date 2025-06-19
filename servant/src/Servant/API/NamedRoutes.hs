@@ -1,8 +1,8 @@
 {-# LANGUAGE KindSignatures #-}
-{-# OPTIONS_HADDOCK not-home    #-}
+{-# OPTIONS_HADDOCK not-home #-}
 
-module Servant.API.NamedRoutes (
-    -- * NamedRoutes combinator
+module Servant.API.NamedRoutes
+  ( -- * NamedRoutes combinator
     NamedRoutes
   ) where
 

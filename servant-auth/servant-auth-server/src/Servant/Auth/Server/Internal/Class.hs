@@ -1,23 +1,24 @@
 {-# LANGUAGE UndecidableInstances #-}
+
 module Servant.Auth.Server.Internal.Class where
 
-import Servant.Auth
-import Data.Kind      (Type)
+import Data.Kind (Type)
 import Data.Monoid
 import Servant hiding (BasicAuth)
+import Servant.Auth
 
 import Servant.Auth.JWT
-import Servant.Auth.Server.Internal.Types
-import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.BasicAuth
+import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.Cookie
 import Servant.Auth.Server.Internal.JWT (jwtAuthCheck)
+import Servant.Auth.Server.Internal.Types
 
 -- | @IsAuth a ctx v@ indicates that @a@ is an auth type that expects all
 -- elements of @ctx@ to be the in the Context and whose authentication check
 -- returns an @AuthCheck v@.
-class IsAuth a v  where
-  type family AuthArgs a :: [Type]
+class IsAuth a v where
+  type AuthArgs a :: [Type]
   runAuth :: proxy a -> proxy v -> Unapp (AuthArgs a) (AuthCheck v)
 
 instance FromJWT usr => IsAuth Cookie usr where
@@ -37,19 +38,24 @@ instance FromBasicAuthData usr => IsAuth BasicAuth usr where
 class AreAuths (as :: [Type]) (ctxs :: [Type]) v where
   runAuths :: proxy as -> Context ctxs -> AuthCheck v
 
-instance  AreAuths '[] ctxs v where
+instance AreAuths '[] ctxs v where
   runAuths _ _ = mempty
 
-instance ( AuthCheck v ~ App (AuthArgs a) (Unapp (AuthArgs a) (AuthCheck v))
-         , IsAuth a v
-         , AreAuths as ctxs v
-         , AppCtx ctxs (AuthArgs a) (Unapp (AuthArgs a) (AuthCheck v))
-         ) => AreAuths (a ': as) ctxs v where
+instance
+  ( AuthCheck v ~ App (AuthArgs a) (Unapp (AuthArgs a) (AuthCheck v))
+  , IsAuth a v
+  , AreAuths as ctxs v
+  , AppCtx ctxs (AuthArgs a) (Unapp (AuthArgs a) (AuthCheck v))
+  )
+  => AreAuths (a ': as) ctxs v
+  where
   runAuths _ ctxs = go <> runAuths (Proxy :: Proxy as) ctxs
     where
-      go = appCtx (Proxy :: Proxy (AuthArgs a))
-                  ctxs
-                  (runAuth (Proxy :: Proxy a) (Proxy :: Proxy v))
+      go =
+        appCtx
+          (Proxy :: Proxy (AuthArgs a))
+          ctxs
+          (runAuth (Proxy :: Proxy a) (Proxy :: Proxy v))
 
 type family Unapp ls res where
   Unapp '[] res = res
@@ -64,9 +70,12 @@ type family App ls res where
 class AppCtx ctx ls res where
   appCtx :: proxy ls -> Context ctx -> res -> App ls res
 
-instance ( HasContextEntry ctxs ctx
-         , AppCtx ctxs rest res
-         ) => AppCtx ctxs (ctx ': rest) (ctx -> res) where
+instance
+  ( HasContextEntry ctxs ctx
+  , AppCtx ctxs rest res
+  )
+  => AppCtx ctxs (ctx ': rest) (ctx -> res)
+  where
   appCtx _ ctx fn = appCtx (Proxy :: Proxy rest) ctx $ fn $ getContextEntry ctx
 
 instance AppCtx ctx '[] res where

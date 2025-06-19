@@ -1,13 +1,16 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds          #-}
-{-# LANGUAGE TypeOperators      #-}
-{-# OPTIONS_HADDOCK not-home    #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_HADDOCK not-home #-}
+
 module Servant.API.Sub ((:>)) where
 
-import           Data.Kind
-                 (Type)
-import           Data.Typeable
-                 (Typeable)
+import Data.Kind
+  ( Type
+  )
+import Data.Typeable
+  ( Typeable
+  )
 
 -- | The contained API (second argument) can be found under @("/" ++ path)@
 -- (path being the first argument).
@@ -18,7 +21,8 @@ import           Data.Typeable
 -- >>> -- returning a JSON encoded World value
 -- >>> type MyApi = "hello" :> "world" :> Get '[JSON] World
 data (path :: k) :> (a :: Type)
-    deriving (Typeable)
+  deriving (Typeable)
+
 infixr 4 :>
 
 -- $setup

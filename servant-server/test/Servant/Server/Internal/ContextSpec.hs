@@ -1,16 +1,24 @@
 {-# LANGUAGE DataKinds #-}
 {-# OPTIONS_GHC -fdefer-type-errors -Wwarn -Wno-deferred-type-errors #-}
+
 module Servant.Server.Internal.ContextSpec (spec) where
 
-import           Data.Proxy
-                 (Proxy (..))
-import           Test.Hspec
-                 (Spec, context, describe, it, shouldBe)
-import           Test.ShouldNotTypecheck
-                 (shouldNotTypecheck)
+import Data.Proxy
+  ( Proxy (..)
+  )
+import Test.Hspec
+  ( Spec
+  , context
+  , describe
+  , it
+  , shouldBe
+  )
+import Test.ShouldNotTypecheck
+  ( shouldNotTypecheck
+  )
 
-import           Servant.API
-import           Servant.Server.Internal.Context
+import Servant.API
+import Servant.Server.Internal.Context
 
 spec :: Spec
 spec = do
@@ -45,9 +53,9 @@ spec = do
   describe "descendIntoNamedContext" $ do
     let cxt :: Context [Char, NamedContext "sub" '[Char]]
         cxt =
-          'a' :.
-          (NamedContext subContext :: NamedContext "sub" '[Char])
-          :. EmptyContext
+          'a'
+            :. (NamedContext subContext :: NamedContext "sub" '[Char])
+            :. EmptyContext
         subContext = 'b' :. EmptyContext
     it "allows extracting subcontexts" $ do
       descendIntoNamedContext (Proxy :: Proxy "sub") cxt `shouldBe` subContext

@@ -1,33 +1,47 @@
 {-# LANGUAGE CPP #-}
+
 module Servant.QuickCheck.InternalSpec (spec) where
 
-
-import           Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
-import           Control.Exception       (SomeException)
-import           Control.Monad           (replicateM)
-import           Control.Monad.IO.Class  (liftIO)
-import qualified Data.ByteString         as BS
-import qualified Data.ByteString.Char8   as C
-import           Data.Maybe              (fromJust)
-import           Network.HTTP.Client     (path, queryString)
-import           Prelude.Compat
-import           Servant
-import           Servant.HTML.Blaze      (HTML)
-import qualified Text.Blaze.Html         as Blaze
-import qualified Text.Blaze.Html5        as Blaze5
-import           Test.Hspec              (Spec, context, describe, it, shouldBe,
-                                          shouldContain)
-import           Test.Hspec.Core.Spec    (Arg, Example, Result (..), ResultStatus (..),
-                                          defaultParams, safeEvaluateExample)
-import           Test.QuickCheck.Gen     (generate, unGen)
-import           Test.QuickCheck.Random  (mkQCGen)
-
+import Control.Concurrent.MVar (newMVar, readMVar, swapMVar)
+import Control.Exception (SomeException)
+import Control.Monad (replicateM)
+import Control.Monad.IO.Class (liftIO)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as C
+import Data.Maybe (fromJust)
+import Network.HTTP.Client (path, queryString)
+import Prelude.Compat
+import Servant
+import Servant.HTML.Blaze (HTML)
+import Test.Hspec
+  ( Spec
+  , context
+  , describe
+  , it
+  , shouldBe
+  , shouldContain
+  )
+import Test.Hspec.Core.Spec
+  ( Arg
+  , Example
+  , Result (..)
+  , ResultStatus (..)
+  , defaultParams
+  , safeEvaluateExample
+  )
+import Test.QuickCheck.Gen (generate, unGen)
+import Test.QuickCheck.Random (mkQCGen)
+import qualified Text.Blaze.Html as Blaze
+import qualified Text.Blaze.Html5 as Blaze5
 
 import Servant.Test.ComprehensiveAPI (comprehensiveAPIWithoutStreamingOrRaw)
 
 import Servant.QuickCheck
-import Servant.QuickCheck.Internal (genRequest, runGenRequest,
-                                    serverDoesntSatisfy)
+import Servant.QuickCheck.Internal
+  ( genRequest
+  , runGenRequest
+  , serverDoesntSatisfy
+  )
 
 spec :: Spec
 spec = do
@@ -44,7 +58,6 @@ spec = do
 
 serversEqualSpec :: Spec
 serversEqualSpec = describe "serversEqual" $ do
-
   it "considers equal servers equal" $ do
     withServantServerAndContext api ctx server $ \burl1 ->
       withServantServerAndContext api ctx server $ \burl2 -> do
@@ -61,7 +74,6 @@ serversEqualSpec = describe "serversEqual" $ do
       show err `shouldContain` "Path: /failplz"
 
   context "when JSON is equal but looks a bit different as a ByteString" $ do
-
     it "sanity check: different whitespace same JSON objects bodyEquality fails" $ do
       FailedWith err <- withServantServer jsonApi jsonServer1 $ \burl1 ->
         withServantServer jsonApi jsonServer2 $ \burl2 -> do
@@ -87,26 +99,33 @@ serversEqualSpec = describe "serversEqual" $ do
       show err `shouldContain` "Server equality failed"
       show err `shouldContain` "Path: /jsonComparison"
 
-
 serverSatisfiesSpec :: Spec
 serverSatisfiesSpec = describe "serverSatisfies" $ do
-
   it "succeeds for true predicates" $ do
     withServantServerAndContext api ctx server $ \burl ->
-      serverSatisfies api burl args (unauthorizedContainsWWWAuthenticate
-                                 <%> not500
-                                 <%> mempty)
+      serverSatisfies
+        api
+        burl
+        args
+        ( unauthorizedContainsWWWAuthenticate
+            <%> not500
+            <%> mempty
+        )
 
   it "fails for false predicates" $ do
     withServantServerAndContext api ctx server $ \burl -> do
-      serverDoesntSatisfy api burl args (onlyJsonObjects
-                                     <%> getsHaveCacheControlHeader
-                                     <%> headsHaveCacheControlHeader
-                                     <%> notAllowedContainsAllowHeader
-                                     <%> mempty)
+      serverDoesntSatisfy
+        api
+        burl
+        args
+        ( onlyJsonObjects
+            <%> getsHaveCacheControlHeader
+            <%> headsHaveCacheControlHeader
+            <%> notAllowedContainsAllowHeader
+            <%> mempty
+        )
 
   context "when predicates are false" $ do
-
     it "fails with informative error messages" $ do
       FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
         evalExample $ serverSatisfies api burl args (notAllowedContainsAllowHeader <%> mempty)
@@ -114,14 +133,16 @@ serverSatisfiesSpec = describe "serverSatisfies" $ do
       show err `shouldContain` "Headers"
       show err `shouldContain` "Body"
 
-
 onlyJsonObjectSpec :: Spec
 onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
-
   it "fails correctly" $ do
     FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
-      evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
-        (onlyJsonObjects <%> mempty)
+      evalExample
+        $ serverSatisfies
+          (Proxy :: Proxy (Get '[JSON] Int))
+          burl
+          args
+          (onlyJsonObjects <%> mempty)
     show err `shouldContain` "onlyJsonObjects"
 
   it "accepts non-JSON endpoints" $ do
@@ -130,15 +151,18 @@ onlyJsonObjectSpec = describe "onlyJsonObjects" $ do
 
   it "does not fail when there is no content-type" $ do
     withServantServerAndContext api2 ctx serverFailing $ \burl ->
-        serverSatisfies api2 burl args (onlyJsonObjects <%> mempty)
+      serverSatisfies api2 burl args (onlyJsonObjects <%> mempty)
 
 notLongerThanSpec :: Spec
 notLongerThanSpec = describe "notLongerThan" $ do
-
   it "fails correctly" $ do
     FailedWith err <- withServantServerAndContext api ctx server $ \burl -> do
-      evalExample $ serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
-        (notLongerThan 1 <%> mempty)
+      evalExample
+        $ serverSatisfies
+          (Proxy :: Proxy (Get '[JSON] Int))
+          burl
+          args
+          (notLongerThan 1 <%> mempty)
     show err `shouldContain` "notLongerThan"
 
   it "succeeds correctly" $ do
@@ -147,14 +171,12 @@ notLongerThanSpec = describe "notLongerThan" $ do
 
 isComprehensiveSpec :: Spec
 isComprehensiveSpec = describe "HasGenRequest" $ do
-
   it "has instances for all 'servant' combinators" $ do
     let _g = genRequest comprehensiveAPIWithoutStreamingOrRaw
     True `shouldBe` True -- This is a type-level check
 
 deepPathSpec :: Spec
 deepPathSpec = describe "Path components" $ do
-
   it "are separated by slashes, without a trailing slash" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
@@ -162,10 +184,8 @@ deepPathSpec = describe "Path components" $ do
         req = (unGen gen rng 0) burl
     path req `shouldBe` ("/one/two/three")
 
-
 queryParamsSpec :: Spec
 queryParamsSpec = describe "QueryParams" $ do
-
   it "reduce to an HTTP query string correctly" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
@@ -176,7 +196,6 @@ queryParamsSpec = describe "QueryParams" $ do
 
 queryFlagsSpec :: Spec
 queryFlagsSpec = describe "QueryFlags" $ do
-
   it "reduce to an HTTP query string correctly" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
@@ -187,33 +206,37 @@ queryFlagsSpec = describe "QueryFlags" $ do
 
 htmlDocTypesSpec :: Spec
 htmlDocTypesSpec = describe "HtmlDocTypes" $ do
-
-    it "fails HTML without doctype correctly" $ do
-      err <- withServantServerAndContext docTypeApi ctx noDocTypeServer $ \burl -> do
-        evalExample $ serverSatisfies docTypeApi burl args
+  it "fails HTML without doctype correctly" $ do
+    err <- withServantServerAndContext docTypeApi ctx noDocTypeServer $ \burl -> do
+      evalExample
+        $ serverSatisfies
+          docTypeApi
+          burl
+          args
           (htmlIncludesDoctype <%> mempty)
-      show err `shouldContain` "htmlIncludesDoctype"
+    show err `shouldContain` "htmlIncludesDoctype"
 
-    it "passes HTML with a doctype at start" $ do
-      withServantServerAndContext docTypeApi ctx docTypeServer $ \burl ->
-        serverSatisfies docTypeApi burl args (htmlIncludesDoctype <%> mempty)
+  it "passes HTML with a doctype at start" $ do
+    withServantServerAndContext docTypeApi ctx docTypeServer $ \burl ->
+      serverSatisfies docTypeApi burl args (htmlIncludesDoctype <%> mempty)
 
-    it "accepts json endpoints and passes over them in silence" $ do
-      withServantServerAndContext api ctx server $ \burl -> do
-        serverSatisfies (Proxy :: Proxy (Get '[JSON] Int)) burl args
-          (htmlIncludesDoctype <%> mempty)
-
+  it "accepts json endpoints and passes over them in silence" $ do
+    withServantServerAndContext api ctx server $ \burl -> do
+      serverSatisfies
+        (Proxy :: Proxy (Get '[JSON] Int))
+        burl
+        args
+        (htmlIncludesDoctype <%> mempty)
 
 makeRandomRequest :: Proxy LargeAPI -> BaseUrl -> IO Integer
 makeRandomRequest large burl = do
   req <- generate $ runGenRequest large
   pure $ fst . fromJust . C.readInteger . C.drop 1 . path $ req burl
 
-
 unbiasedGenerationSpec :: Spec
-unbiasedGenerationSpec = describe "Unbiased Generation of requests" $
-
-  it "frequency paired with generated endpoint should be more randomly distributed" $ do
+unbiasedGenerationSpec = describe "Unbiased Generation of requests"
+  $ it "frequency paired with generated endpoint should be more randomly distributed"
+  $ do
     let burl = BaseUrl Http "localhost" 80 ""
     let runs = 10000 :: Double
     someRequests <- replicateM 10000 (makeRandomRequest largeApi burl)
@@ -230,9 +253,10 @@ unbiasedGenerationSpec = describe "Unbiased Generation of requests" $
 -- APIs
 ------------------------------------------------------------------------------
 
-type API = ReqBody '[JSON] String :> Post '[JSON] String
-      :<|> Get '[JSON] Int
-      :<|> BasicAuth "some-realm" () :> Get '[JSON] ()
+type API =
+  ReqBody '[JSON] String :> Post '[JSON] String
+    :<|> Get '[JSON] Int
+    :<|> BasicAuth "some-realm" () :> Get '[JSON] ()
 
 api :: Proxy API
 api = Proxy
@@ -247,25 +271,22 @@ type FlagsAPI = QueryFlag "one" :> QueryFlag "two" :> Get '[JSON] ()
 flagsAPI :: Proxy FlagsAPI
 flagsAPI = Proxy
 
-
 server :: IO (Server API)
 server = do
-    mvar <- newMVar ""
-    return $ (\x -> liftIO $ swapMVar mvar x)
-        :<|> (liftIO $ readMVar mvar >>= return . length)
-        :<|> (const $ return ())
-
+  mvar <- newMVar ""
+  return $ (\x -> liftIO $ swapMVar mvar x)
+    :<|> (liftIO $ readMVar mvar >>= return . length)
+    :<|> (const $ return ())
 
 type API2 = "failplz" :> Get '[JSON] Int
 
 api2 :: Proxy API2
 api2 = Proxy
 
-type DeepAPI = "one" :> "two" :> "three":> Get '[JSON] ()
+type DeepAPI = "one" :> "two" :> "three" :> Get '[JSON] ()
 
 deepAPI :: Proxy DeepAPI
 deepAPI = Proxy
-
 
 server2 :: IO (Server API2)
 server2 = return $ return 1
@@ -288,29 +309,27 @@ docTypeServer = pure $ pure $ Blaze5.docTypeHtml $ Blaze5.span "Hello Test!"
 noDocTypeServer :: IO (Server HtmlDoctype)
 noDocTypeServer = pure $ pure $ Blaze.text "Hello Test!"
 
-
 -- Api for unbiased generation of requests tests
 largeApi :: Proxy LargeAPI
 largeApi = Proxy
 
-type LargeAPI
-  =    "1" :> Get '[JSON] Int
-  :<|> "2" :> Get '[JSON] Int
-  :<|> "3" :> Get '[JSON] Int
-  :<|> "4" :> Get '[JSON] Int
-  :<|> "5" :> Get '[JSON] Int
-  :<|> "6" :> Get '[JSON] Int
-  :<|> "7" :> Get '[JSON] Int
-  :<|> "8" :> Get '[JSON] Int
-  :<|> "9" :> Get '[JSON] Int
-  :<|> "10" :> Get '[JSON] Int
-  :<|> "11" :> Get '[JSON] Int
-  :<|> "12" :> Get '[JSON] Int
-  :<|> "13" :> Get '[JSON] Int
-  :<|> "14" :> Get '[JSON] Int
-  :<|> "15" :> Get '[JSON] Int
-  :<|> "16" :> Get '[JSON] Int
-
+type LargeAPI =
+  "1" :> Get '[JSON] Int
+    :<|> "2" :> Get '[JSON] Int
+    :<|> "3" :> Get '[JSON] Int
+    :<|> "4" :> Get '[JSON] Int
+    :<|> "5" :> Get '[JSON] Int
+    :<|> "6" :> Get '[JSON] Int
+    :<|> "7" :> Get '[JSON] Int
+    :<|> "8" :> Get '[JSON] Int
+    :<|> "9" :> Get '[JSON] Int
+    :<|> "10" :> Get '[JSON] Int
+    :<|> "11" :> Get '[JSON] Int
+    :<|> "12" :> Get '[JSON] Int
+    :<|> "13" :> Get '[JSON] Int
+    :<|> "14" :> Get '[JSON] Int
+    :<|> "15" :> Get '[JSON] Int
+    :<|> "16" :> Get '[JSON] Int
 
 type OctetAPI = Get '[OctetStream] BS.ByteString
 
@@ -326,7 +345,7 @@ jsonApi :: Proxy JsonApi
 jsonApi = Proxy
 
 jsonServer1 :: IO (Server JsonApi)
-jsonServer1 = return $ return "{ \"b\": [\"b\"], \"a\": 1 }"  -- whitespace, ordering different
+jsonServer1 = return $ return "{ \"b\": [\"b\"], \"a\": 1 }" -- whitespace, ordering different
 
 jsonServer2 :: IO (Server JsonApi)
 jsonServer2 = return $ return "{\"a\": 1,\"b\":[\"b\"]}"
@@ -337,9 +356,9 @@ jsonServer3 = return $ return "{\"a\": 2, \"b\": [\"b\"]}"
 jsonServer4 :: IO (Server JsonApi)
 jsonServer4 = return $ return "{\"c\": 1, \"d\": [\"b\"]}"
 
-
 ctx :: Context '[BasicAuthCheck ()]
 ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
+
 ------------------------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------------------------
@@ -347,9 +366,9 @@ evalExample :: (Example e, Arg e ~ ()) => e -> IO EvalResult
 evalExample e = do
   r <- safeEvaluateExample e defaultParams ($ ()) progCallback
   case resultStatus r of
-    Success          -> return $ AllGood
+    Success -> return $ AllGood
     Failure _ reason -> return $ FailedWith $ show reason
-    Pending {}       -> error "should not happen"
+    Pending{} -> error "should not happen"
   where
     progCallback _ = return ()
 
@@ -359,9 +378,8 @@ data EvalResult
   | FailedWith String
   deriving (Show)
 
-
 args :: Args
-args = defaultArgs { maxSuccess = noOfTestCases }
+args = defaultArgs{maxSuccess = noOfTestCases}
 
 noOfTestCases :: Int
 #if LONG_TESTS

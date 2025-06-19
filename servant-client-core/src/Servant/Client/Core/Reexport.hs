@@ -2,9 +2,8 @@
 -- contains all the functionality from @servant-client-core@ that should be
 -- re-exported.
 module Servant.Client.Core.Reexport
-  (
-    -- * HasClient
-    HasClient(..)
+  ( -- * HasClient
+    HasClient (..)
   , foldMapUnion
   , matchUnion
   , AsClientT
@@ -14,23 +13,21 @@ module Servant.Client.Core.Reexport
     -- * Response (for @Raw@)
   , Response
   , StreamingResponse
-  , ResponseF(..)
+  , ResponseF (..)
 
-  -- * Data types
-  , ClientError(..)
-  , EmptyClient(..)
+    -- * Data types
+  , ClientError (..)
+  , EmptyClient (..)
 
-  -- * BaseUrl
-  , BaseUrl(..)
-  , Scheme(..)
+    -- * BaseUrl
+  , BaseUrl (..)
+  , Scheme (..)
   , showBaseUrl
   , parseBaseUrl
   , InvalidBaseUrlException
-
   ) where
 
-
-import           Servant.Client.Core.BaseUrl
-import           Servant.Client.Core.HasClient
-import           Servant.Client.Core.Response
-import           Servant.Client.Core.ClientError
+import Servant.Client.Core.BaseUrl
+import Servant.Client.Core.ClientError
+import Servant.Client.Core.HasClient
+import Servant.Client.Core.Response

@@ -1,29 +1,40 @@
-{-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Servant.Swagger.Internal.Test where
 
-import           Data.Aeson                         (ToJSON (..))
-import           Data.Aeson.Encode.Pretty           (encodePretty', defConfig,
-                                                     confCompare)
-import           Data.Swagger                       (Pattern, ToSchema,
-                                                     toSchema)
-import           Data.Swagger.Schema.Validation
-import           Data.Text                          (Text)
-import qualified Data.Text.Lazy                     as TL
-import qualified Data.Text.Lazy.Encoding            as TL
-import           Data.Typeable
-import           Test.Hspec
-import           Test.Hspec.QuickCheck
-import           Test.QuickCheck                    (Arbitrary, Property,
-                                                     counterexample, property)
+import Data.Aeson (ToJSON (..))
+import Data.Aeson.Encode.Pretty
+  ( confCompare
+  , defConfig
+  , encodePretty'
+  )
+import Data.Swagger
+  ( Pattern
+  , ToSchema
+  , toSchema
+  )
+import Data.Swagger.Schema.Validation
+import Data.Text (Text)
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as TL
+import Data.Typeable
+import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
+  ( Arbitrary
+  , Property
+  , counterexample
+  , property
+  )
 
-import           Servant.API
-import           Servant.Swagger.Internal.TypeLevel
+import Servant.API
+import Servant.Swagger.Internal.TypeLevel
 
 -- $setup
 -- >>> import Control.Applicative
@@ -82,28 +93,36 @@ import           Servant.Swagger.Internal.TypeLevel
 -- ...  arising from a use of ‘validateEveryToJSON’
 -- ...
 validateEveryToJSON
-  :: forall proxy api .
-     TMap (Every [Typeable, Show, Arbitrary, ToJSON, ToSchema])
-          (BodyTypes JSON api)
-  => proxy api   -- ^ Servant API.
+  :: forall proxy api
+   . TMap
+      (Every [Typeable, Show, Arbitrary, ToJSON, ToSchema])
+      (BodyTypes JSON api)
+  => proxy api
+  -- ^ Servant API.
   -> Spec
-validateEveryToJSON _ = props
-  (Proxy :: Proxy [ToJSON, ToSchema])
-  (maybeCounterExample . prettyValidateWith validateToJSON)
-  (Proxy :: Proxy (BodyTypes JSON api))
+validateEveryToJSON _ =
+  props
+    (Proxy :: Proxy [ToJSON, ToSchema])
+    (maybeCounterExample . prettyValidateWith validateToJSON)
+    (Proxy :: Proxy (BodyTypes JSON api))
 
 -- | Verify that every type used with @'JSON'@ content type in a servant API
 -- has compatible @'ToJSON'@ and @'ToSchema'@ instances using @'validateToJSONWithPatternChecker'@.
 --
 -- For validation without patterns see @'validateEveryToJSON'@.
-validateEveryToJSONWithPatternChecker :: forall proxy api. TMap (Every [Typeable, Show, Arbitrary, ToJSON, ToSchema]) (BodyTypes JSON api) =>
-  (Pattern -> Text -> Bool)   -- ^ @'Pattern'@ checker.
-  -> proxy api                -- ^ Servant API.
+validateEveryToJSONWithPatternChecker
+  :: forall proxy api
+   . TMap (Every [Typeable, Show, Arbitrary, ToJSON, ToSchema]) (BodyTypes JSON api)
+  => (Pattern -> Text -> Bool)
+  -- ^ @'Pattern'@ checker.
+  -> proxy api
+  -- ^ Servant API.
   -> Spec
-validateEveryToJSONWithPatternChecker checker _ = props
-  (Proxy :: Proxy [ToJSON, ToSchema])
-  (maybeCounterExample . prettyValidateWith (validateToJSONWithPatternChecker checker))
-  (Proxy :: Proxy (BodyTypes JSON api))
+validateEveryToJSONWithPatternChecker checker _ =
+  props
+    (Proxy :: Proxy [ToJSON, ToSchema])
+    (maybeCounterExample . prettyValidateWith (validateToJSONWithPatternChecker checker))
+    (Proxy :: Proxy (BodyTypes JSON api))
 
 -- * QuickCheck-related stuff
 
@@ -128,10 +147,15 @@ validateEveryToJSONWithPatternChecker checker _ = props
 -- ...
 -- Finished in ... seconds
 -- 3 examples, 0 failures
-props :: forall p p'' cs xs. TMap (Every (Typeable ': Show ': Arbitrary ': cs)) xs =>
-  p cs                                          -- ^ A list of constraints.
-  -> (forall x. EveryTF cs x => x -> Property)  -- ^ Property predicate.
-  -> p'' xs                                     -- ^ A list of types.
+props
+  :: forall p p'' cs xs
+   . TMap (Every (Typeable ': Show ': Arbitrary ': cs)) xs
+  => p cs
+  -- ^ A list of constraints.
+  -> (forall x. EveryTF cs x => x -> Property)
+  -- ^ Property predicate.
+  -> p'' xs
+  -- ^ A list of types.
   -> Spec
 props _ f px = sequence_ specs
   where
@@ -180,28 +204,33 @@ props _ f px = sequence_ specs
 --
 -- FIXME: this belongs in "Data.Swagger.Schema.Validation" (in @swagger2@).
 prettyValidateWith
-  :: forall a. (ToJSON a, ToSchema a)
-  => (a -> [ValidationError]) -> a -> Maybe String
+  :: forall a
+   . (ToJSON a, ToSchema a)
+  => (a -> [ValidationError])
+  -> a
+  -> Maybe String
 prettyValidateWith f x =
   case f x of
-    []      -> Nothing
-    errors  -> Just $ unlines
-      [ "Validation against the schema fails:"
-      , unlines (map ("  * " ++) errors)
-      , "JSON value:"
-      , ppJSONString json
-      , ""
-      , "Swagger Schema:"
-      , ppJSONString (toJSON schema)
-      ]
+    [] -> Nothing
+    errors ->
+      Just $
+        unlines
+          [ "Validation against the schema fails:"
+          , unlines (map ("  * " ++) errors)
+          , "JSON value:"
+          , ppJSONString json
+          , ""
+          , "Swagger Schema:"
+          , ppJSONString (toJSON schema)
+          ]
   where
     ppJSONString = TL.unpack . TL.decodeUtf8 . encodePretty' ppCfg
-    ppCfg = defConfig { confCompare = compare }
+    ppCfg = defConfig{confCompare = compare}
 
-    json   = toJSON x
+    json = toJSON x
     schema = toSchema (Proxy :: Proxy a)
 
 -- | Provide a counterexample if there is any.
 maybeCounterExample :: Maybe String -> Property
-maybeCounterExample Nothing  = property True
+maybeCounterExample Nothing = property True
 maybeCounterExample (Just s) = counterexample s (property False)

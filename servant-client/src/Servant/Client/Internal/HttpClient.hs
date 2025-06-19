@@ -1,62 +1,98 @@
-{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE CPP #-}
+
 module Servant.Client.Internal.HttpClient where
 
-import           Prelude ()
-import           Prelude.Compat
+import Prelude.Compat
+import Prelude ()
 
-import           Control.Concurrent.MVar
-                 (modifyMVar, newMVar)
-import           Control.Concurrent.STM.TVar
-import           Control.Exception
-                 (SomeException (..), catch)
-import           Control.Monad
-                 (unless)
-import           Control.Monad.Base
-                 (MonadBase (..))
-import           Control.Monad.Catch
-                 (MonadCatch, MonadThrow, MonadMask)
-import           Control.Monad.Error.Class
-                 (MonadError (..))
-import           Control.Monad.IO.Class
-                 (MonadIO (..))
-import           Control.Monad.Reader
-                 (MonadReader, ReaderT, ask, runReaderT)
-import           Control.Monad.STM
-                 (STM, atomically)
-import           Control.Monad.Trans.Control
-                 (MonadBaseControl (..))
-import           Control.Monad.Trans.Except
-                 (ExceptT, runExceptT)
-import           Data.Bifunctor
-                 (bimap)
-import qualified Data.ByteString             as BS
-import           Data.ByteString.Builder
-                 (toLazyByteString)
-import qualified Data.ByteString.Lazy        as BSL
+import Control.Concurrent.MVar
+  ( modifyMVar
+  , newMVar
+  )
+import Control.Concurrent.STM.TVar
+import Control.Exception
+  ( SomeException (..)
+  , catch
+  )
+import Control.Monad
+  ( unless
+  )
+import Control.Monad.Base
+  ( MonadBase (..)
+  )
+import Control.Monad.Catch
+  ( MonadCatch
+  , MonadMask
+  , MonadThrow
+  )
+import Control.Monad.Error.Class
+  ( MonadError (..)
+  )
+import Control.Monad.IO.Class
+  ( MonadIO (..)
+  )
+import Control.Monad.Reader
+  ( MonadReader
+  , ReaderT
+  , ask
+  , runReaderT
+  )
+import Control.Monad.STM
+  ( STM
+  , atomically
+  )
+import Control.Monad.Trans.Control
+  ( MonadBaseControl (..)
+  )
+import Control.Monad.Trans.Except
+  ( ExceptT
+  , runExceptT
+  )
+import Data.Bifunctor
+  ( bimap
+  )
+import qualified Data.ByteString as BS
+import Data.ByteString.Builder
+  ( toLazyByteString
+  )
+import qualified Data.ByteString.Lazy as BSL
+import Data.Foldable
+  ( toList
+  )
+import Data.Functor.Alt
+  ( Alt (..)
+  )
 import qualified Data.List as List
-import           Data.Foldable
-                 (toList)
-import           Data.Functor.Alt
-                 (Alt (..))
-import           Data.Maybe
-                 (maybeToList)
-import           Data.Proxy
-                 (Proxy (..))
-import           Data.Sequence
-                 (fromList)
-import           Data.String
-                 (fromString)
-import           Data.Time.Clock
-                 (UTCTime, getCurrentTime)
-import           GHC.Generics
-import           Network.HTTP.Media
-                 (renderHeader)
-import           Network.HTTP.Types
-                 (hContentType, statusIsSuccessful, urlEncode, Status)
-import           Servant.Client.Core
+import Data.Maybe
+  ( maybeToList
+  )
+import Data.Proxy
+  ( Proxy (..)
+  )
+import Data.Sequence
+  ( fromList
+  )
+import Data.String
+  ( fromString
+  )
+import Data.Time.Clock
+  ( UTCTime
+  , getCurrentTime
+  )
+import GHC.Generics
+import Network.HTTP.Media
+  ( renderHeader
+  )
+import Network.HTTP.Types
+  ( Status
+  , hContentType
+  , statusIsSuccessful
+  , urlEncode
+  )
+import Servant.Client.Core
 
-import qualified Network.HTTP.Client         as Client
-import qualified Servant.Types.SourceT       as S
+import qualified Network.HTTP.Client as Client
+import qualified Servant.Types.SourceT as S
 
 -- | The environment in which a request is run.
 --   The 'baseUrl' and 'makeClientRequest' function are used to create a @http-client@ request.
@@ -75,7 +111,7 @@ data ClientEnv
   --      1. 'makeClientRequest' exists to allow overriding operational semantics e.g. 'responseTimeout' per request,
   --          If you need global modifications, you should use 'managerModifyRequest'
   --      2. the 'cookieJar', if defined, is being applied after 'makeClientRequest' is called.
-  , middleware :: ClientMiddleware 
+  , middleware :: ClientMiddleware
   }
 
 type ClientApplication = Request -> ClientM Response
@@ -84,13 +120,14 @@ type ClientMiddleware = ClientApplication -> ClientApplication
 
 -- | 'ClientEnv' smart constructor.
 mkClientEnv :: Client.Manager -> BaseUrl -> ClientEnv
-mkClientEnv manager baseUrl = ClientEnv 
-  { manager
-  , baseUrl
-  , cookieJar = Nothing
-  , makeClientRequest = defaultMakeClientRequest
-  , middleware = id
-  }
+mkClientEnv manager baseUrl =
+  ClientEnv
+    { manager
+    , baseUrl
+    , cookieJar = Nothing
+    , makeClientRequest = defaultMakeClientRequest
+    , middleware = id
+    }
 
 -- | Generates a set of client functions for an API.
 --
@@ -133,10 +170,19 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
-  { unClientM :: ReaderT ClientEnv (ExceptT ClientError IO) a }
-  deriving newtype ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ClientError, MonadThrow
-           , MonadCatch, MonadMask)
+  {unClientM :: ReaderT ClientEnv (ExceptT ClientError IO) a}
+  deriving newtype
+    ( Functor
+    , Applicative
+    , Monad
+    , MonadIO
+    , Generic
+    , MonadReader ClientEnv
+    , MonadError ClientError
+    , MonadThrow
+    , MonadCatch
+    , MonadMask
+    )
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftBase
@@ -154,7 +200,7 @@ instance Alt ClientM where
 
 instance RunClient ClientM where
   runRequestAcceptStatus statuses req = do
-    ClientEnv {middleware} <- ask
+    ClientEnv{middleware} <- ask
     let oldApp = performRequest statuses
     middleware oldApp req
   throwClientError = throwError
@@ -192,40 +238,41 @@ performRequest acceptStatus req = do
   where
     requestWithoutCookieJar :: Client.Manager -> Client.Request -> ClientM (Client.Response BSL.ByteString)
     requestWithoutCookieJar m' request' = do
-        eResponse <- liftIO . catchConnectionError $ Client.httpLbs request' m'
-        either throwError return eResponse
+      eResponse <- liftIO . catchConnectionError $ Client.httpLbs request' m'
+      either throwError return eResponse
 
     requestWithCookieJar :: Client.Manager -> Client.Request -> TVar Client.CookieJar -> ClientM (Client.Response BSL.ByteString)
     requestWithCookieJar m' request' cj = do
-        eResponse <- liftIO . catchConnectionError . Client.withResponseHistory request' m' $ updateWithResponseCookies cj
-        either throwError return eResponse
+      eResponse <- liftIO . catchConnectionError . Client.withResponseHistory request' m' $ updateWithResponseCookies cj
+      either throwError return eResponse
 
     updateWithResponseCookies :: TVar Client.CookieJar -> Client.HistoriedResponse Client.BodyReader -> IO (Client.Response BSL.ByteString)
     updateWithResponseCookies cj responses = do
-        now <- getCurrentTime
-        bss <- Client.brConsume $ Client.responseBody fRes
-        let fRes'        = fRes { Client.responseBody = BSL.fromChunks bss }
-            allResponses = Client.hrRedirects responses <> [(fReq, fRes')]
-        atomically $ mapM_ (updateCookieJar now) allResponses
-        return fRes'
+      now <- getCurrentTime
+      bss <- Client.brConsume $ Client.responseBody fRes
+      let fRes' = fRes{Client.responseBody = BSL.fromChunks bss}
+          allResponses = Client.hrRedirects responses <> [(fReq, fRes')]
+      atomically $ mapM_ (updateCookieJar now) allResponses
+      return fRes'
       where
-          updateCookieJar :: UTCTime -> (Client.Request, Client.Response BSL.ByteString) -> STM ()
-          updateCookieJar now' (req', res') = modifyTVar' cj (fst . Client.updateCookieJar res' req' now')
+        updateCookieJar :: UTCTime -> (Client.Request, Client.Response BSL.ByteString) -> STM ()
+        updateCookieJar now' (req', res') = modifyTVar' cj (fst . Client.updateCookieJar res' req' now')
 
-          fReq = Client.hrFinalRequest responses
-          fRes = Client.hrFinalResponse responses
+        fReq = Client.hrFinalRequest responses
+        fRes = Client.hrFinalResponse responses
 
 mkFailureResponse :: BaseUrl -> Request -> ResponseF BSL.ByteString -> ClientError
 mkFailureResponse burl request =
-    FailureResponse (bimap (const ()) f request)
+  FailureResponse (bimap (const ()) f request)
   where
     f b = (burl, BSL.toStrict $ toLazyByteString b)
 
 clientResponseToResponse :: (a -> b) -> Client.Response a -> ResponseF b
-clientResponseToResponse f r = Response
-    { responseStatusCode  = Client.responseStatus r
-    , responseBody        = f (Client.responseBody r)
-    , responseHeaders     = fromList $ Client.responseHeaders r
+clientResponseToResponse f r =
+  Response
+    { responseStatusCode = Client.responseStatus r
+    , responseBody = f (Client.responseBody r)
+    , responseHeaders = fromList $ Client.responseHeaders r
     , responseHttpVersion = Client.responseVersion r
     }
 
@@ -240,71 +287,76 @@ clientResponseToResponse f r = Response
 -- something like @Data.Functor.Identity@ without a need to involve @IO@ but
 -- still keeping it compatible with the code written when it was typed as @IO@.
 defaultMakeClientRequest :: Applicative f => BaseUrl -> Request -> f Client.Request
-defaultMakeClientRequest burl r = pure Client.defaultRequest
-    { Client.method = requestMethod r
-    , Client.host = fromString $ baseUrlHost burl
-    , Client.port = baseUrlPort burl
-    , Client.path = BSL.toStrict
-                  $ fromString (baseUrlPath burl)
-                 <> toLazyByteString (requestPath r)
-    , Client.queryString = buildQueryString . toList $ requestQueryString r
-    , Client.requestHeaders =
-      maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
-    , Client.requestBody = body
-    , Client.secure = isSecure
-    }
+defaultMakeClientRequest burl r =
+  pure
+    Client.defaultRequest
+      { Client.method = requestMethod r
+      , Client.host = fromString $ baseUrlHost burl
+      , Client.port = baseUrlPort burl
+      , Client.path =
+          BSL.toStrict $
+            fromString (baseUrlPath burl)
+              <> toLazyByteString (requestPath r)
+      , Client.queryString = buildQueryString . toList $ requestQueryString r
+      , Client.requestHeaders =
+          maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
+      , Client.requestBody = body
+      , Client.secure = isSecure
+      }
   where
     -- Content-Type and Accept are specified by requestBody and requestAccept
-    headers = filter (\(h, _) -> h /= "Accept" && h /= "Content-Type") $
-        toList $ requestHeaders r
+    headers =
+      filter (\(h, _) -> h /= "Accept" && h /= "Content-Type") $
+        toList $
+          requestHeaders r
 
     acceptHdr
-        | null hs   = Nothing
-        | otherwise = Just ("Accept", renderHeader hs)
+      | null hs = Nothing
+      | otherwise = Just ("Accept", renderHeader hs)
       where
         hs = toList $ requestAccept r
 
     convertBody bd = case bd of
-        RequestBodyLBS body'       -> Client.RequestBodyLBS body'
-        RequestBodyBS body'        -> Client.RequestBodyBS body'
-        RequestBodySource sourceIO -> Client.RequestBodyStreamChunked givesPopper
-          where
-            givesPopper :: (IO BS.ByteString -> IO ()) -> IO ()
-            givesPopper needsPopper = S.unSourceT sourceIO $ \step0 -> do
-                ref <- newMVar step0
+      RequestBodyLBS body' -> Client.RequestBodyLBS body'
+      RequestBodyBS body' -> Client.RequestBodyBS body'
+      RequestBodySource sourceIO -> Client.RequestBodyStreamChunked givesPopper
+        where
+          givesPopper :: (IO BS.ByteString -> IO ()) -> IO ()
+          givesPopper needsPopper = S.unSourceT sourceIO $ \step0 -> do
+            ref <- newMVar step0
 
-                -- Note sure we need locking, but it's feels safer.
-                let popper :: IO BS.ByteString
-                    popper = modifyMVar ref nextBs
+            -- Note sure we need locking, but it's feels safer.
+            let popper :: IO BS.ByteString
+                popper = modifyMVar ref nextBs
 
-                needsPopper popper
+            needsPopper popper
 
-            nextBs S.Stop          = return (S.Stop, BS.empty)
-            nextBs (S.Error err)   = fail err
-            nextBs (S.Skip s)      = nextBs s
-            nextBs (S.Effect ms)   = ms >>= nextBs
-            nextBs (S.Yield lbs s) = case BSL.toChunks lbs of
-                []     -> nextBs s
-                (x:xs) | BS.null x -> nextBs step'
-                       | otherwise -> return (step', x)
-                    where
-                      step' = S.Yield (BSL.fromChunks xs) s
+          nextBs S.Stop = return (S.Stop, BS.empty)
+          nextBs (S.Error err) = fail err
+          nextBs (S.Skip s) = nextBs s
+          nextBs (S.Effect ms) = ms >>= nextBs
+          nextBs (S.Yield lbs s) = case BSL.toChunks lbs of
+            [] -> nextBs s
+            (x : xs)
+              | BS.null x -> nextBs step'
+              | otherwise -> return (step', x)
+              where
+                step' = S.Yield (BSL.fromChunks xs) s
 
     (body, contentTypeHdr) = case requestBody r of
-        Nothing           -> (Client.RequestBodyBS "", Nothing)
-        Just (body', typ) -> (convertBody body', Just (hContentType, renderHeader typ))
+      Nothing -> (Client.RequestBodyBS "", Nothing)
+      Just (body', typ) -> (convertBody body', Just (hContentType, renderHeader typ))
 
     isSecure = case baseUrlScheme burl of
-        Http -> False
-        Https -> True
+      Http -> False
+      Https -> True
 
     -- Query string builder which does not do any encoding
     buildQueryString [] = mempty
     buildQueryString qps = "?" <> List.foldl' addQueryParam mempty qps
 
     addQueryParam qs (k, v) =
-          qs <> (if BS.null qs then mempty else "&") <> urlEncode True k <> foldMap ("=" <>) v
-
+      qs <> (if BS.null qs then mempty else "&") <> urlEncode True k <> foldMap ("=" <>) v
 
 catchConnectionError :: IO a -> IO (Either ClientError a)
 catchConnectionError action =

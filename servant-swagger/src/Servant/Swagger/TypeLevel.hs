@@ -5,11 +5,10 @@
 -- Stability:   experimental
 --
 -- Useful type families for servant APIs.
-module Servant.Swagger.TypeLevel (
-  IsSubAPI,
-  EndpointsList,
-  BodyTypes,
-) where
+module Servant.Swagger.TypeLevel
+  ( IsSubAPI
+  , EndpointsList
+  , BodyTypes
+  ) where
 
-import           Servant.Swagger.Internal.TypeLevel
-
+import Servant.Swagger.Internal.TypeLevel

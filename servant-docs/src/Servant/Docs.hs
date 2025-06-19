@@ -1,4 +1,5 @@
 -------------------------------------------------------------------------------
+
 -- | This module lets you get API docs for free. It lets you generate
 -- an 'API' from the type that represents your API using 'docs':
 --
@@ -23,39 +24,86 @@
 -- See example/greet.hs for an example.
 module Servant.Docs
   ( -- * 'HasDocs' class and key functions
-    HasDocs(..), docs, pretty, markdown
-    -- ** Customising generated documentation
-  , markdownWith, RenderingOptions(..), defRenderingOptions
-  , requestExamples, responseExamples, ShowContentTypes(..)
-  , notesHeading, renderCurlBasePath
-    -- * Generating docs with extra information
-  , docsWith, docsWithIntros, docsWithOptions
-  , ExtraInfo(..), extraInfo
-  , DocOptions(..) , defaultDocOptions, maxSamples
+    HasDocs (..)
+  , docs
+  , pretty
+  , markdown
 
-  , -- * Classes you need to implement for your types
-    ToSample(..)
+    -- ** Customising generated documentation
+  , markdownWith
+  , RenderingOptions (..)
+  , defRenderingOptions
+  , requestExamples
+  , responseExamples
+  , ShowContentTypes (..)
+  , notesHeading
+  , renderCurlBasePath
+
+    -- * Generating docs with extra information
+  , docsWith
+  , docsWithIntros
+  , docsWithOptions
+  , ExtraInfo (..)
+  , extraInfo
+  , DocOptions (..)
+  , defaultDocOptions
+  , maxSamples
+
+    -- * Classes you need to implement for your types
+  , ToSample (..)
   , toSample
   , noSamples
   , singleSample
   , samples
   , sampleByteString
   , sampleByteStrings
-  , ToParam(..)
-  , ToCapture(..)
+  , ToParam (..)
+  , ToCapture (..)
 
-  , -- * ADTs to represent an 'API'
-    Endpoint, path, method, defEndpoint
-  , API, apiIntros, apiEndpoints, emptyAPI
-  , DocAuthentication(..), authIntro, authDataRequired
-  , DocCapture(..), capSymbol, capDesc
-  , DocQueryParam(..), ParamKind(..), paramName, paramValues, paramDesc, paramKind
-  , DocNote(..), noteTitle, noteBody
-  , DocIntro(..), introTitle, introBody
-  , Response(..), respStatus, respTypes, respBody, defResponse
-  , Action, authInfo, captures, headers, notes, params, rqtypes, rqbody, response, defAction
+    -- * ADTs to represent an 'API'
+  , Endpoint
+  , path
+  , method
+  , defEndpoint
+  , API
+  , apiIntros
+  , apiEndpoints
+  , emptyAPI
+  , DocAuthentication (..)
+  , authIntro
+  , authDataRequired
+  , DocCapture (..)
+  , capSymbol
+  , capDesc
+  , DocQueryParam (..)
+  , ParamKind (..)
+  , paramName
+  , paramValues
+  , paramDesc
+  , paramKind
+  , DocNote (..)
+  , noteTitle
+  , noteBody
+  , DocIntro (..)
+  , introTitle
+  , introBody
+  , Response (..)
+  , respStatus
+  , respTypes
+  , respBody
+  , defResponse
+  , Action
+  , authInfo
+  , captures
+  , headers
+  , notes
+  , params
+  , rqtypes
+  , rqbody
+  , response
+  , defAction
   , single
   ) where
 
-import           Servant.Docs.Internal
-import           Servant.Docs.Internal.Pretty
+import Servant.Docs.Internal
+import Servant.Docs.Internal.Pretty

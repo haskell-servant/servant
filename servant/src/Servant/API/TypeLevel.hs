@@ -1,85 +1,102 @@
-{-# LANGUAGE CPP                      #-}
-{-# LANGUAGE ConstraintKinds          #-}
-{-# LANGUAGE DataKinds                #-}
-{-# LANGUAGE FlexibleInstances        #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 
-{-# LANGUAGE MultiParamTypeClasses    #-}
-{-# LANGUAGE PolyKinds                #-}
-{-# LANGUAGE ScopedTypeVariables      #-}
-{-# LANGUAGE TypeFamilies             #-}
-{-# LANGUAGE TypeOperators            #-}
-{-# LANGUAGE RankNTypes               #-}
-{-# LANGUAGE UndecidableInstances     #-}
-{-# LANGUAGE UndecidableSuperClasses  #-}
+-- |
+-- This module collects utilities for manipulating @servant@ API types. The
+-- functionality in this module is for advanced usage.
+--
+-- The code samples in this module use the following type synonym:
+--
+-- > type SampleAPI = "hello" :> Get '[JSON] Int
+-- >             :<|> "bye" :> Capture "name" String :> Post '[JSON, PlainText] Bool
+module Servant.API.TypeLevel
+  ( -- $setup
+    Endpoints
 
-{-|
-This module collects utilities for manipulating @servant@ API types. The
-functionality in this module is for advanced usage.
-
-The code samples in this module use the following type synonym:
-
-> type SampleAPI = "hello" :> Get '[JSON] Int
->             :<|> "bye" :> Capture "name" String :> Post '[JSON, PlainText] Bool
-
--}
-module Servant.API.TypeLevel (
-    -- $setup
-    -- * API predicates
-    Endpoints,
     -- ** Lax inclusion
-    IsElem',
-    IsElem,
-    IsSubAPI,
-    AllIsElem,
+  , IsElem'
+  , IsElem
+  , IsSubAPI
+  , AllIsElem
+
     -- ** Strict inclusion
-    IsIn,
-    IsStrictSubAPI,
-    AllIsIn,
+  , IsIn
+  , IsStrictSubAPI
+  , AllIsIn
+
     -- * Helpers
+
     -- ** Lists
-    MapSub,
-    AppendList,
-    IsSubList,
-    Elem,
-    ElemGo,
+  , MapSub
+  , AppendList
+  , IsSubList
+  , Elem
+  , ElemGo
+
     -- ** Logic
-    Or,
-    And,
+  , Or
+  , And
+
     -- ** Fragment
-    FragmentUnique,
-    AtMostOneFragment
-    ) where
+  , FragmentUnique
+  , AtMostOneFragment
+  ) where
 
-
-import           GHC.Exts
-                 (Constraint)
-import           Data.Kind
-                 (Type)
-import           Servant.API.Alternative
-                 (type (:<|>))
-import           Servant.API.Capture
-                 (Capture, CaptureAll)
-import           Servant.API.Fragment
-import           Servant.API.Header
-                 (Header, Header')
-import           Servant.API.QueryParam
-                 (QueryFlag, QueryParam, QueryParams)
-import           Servant.API.ReqBody
-                 (ReqBody)
-import           Servant.API.NamedRoutes
-                 (NamedRoutes)
-import           Servant.API.Generic
-                 (ToServantApi)
-import           Servant.API.Sub
-                 (type (:>))
-import           Servant.API.Verbs
-                 (Verb)
-import           Servant.API.UVerb
-                 (UVerb)
-import           GHC.TypeLits
-                 (ErrorMessage (..), TypeError)
-
-
+import Data.Kind
+  ( Type
+  )
+import GHC.Exts
+  ( Constraint
+  )
+import GHC.TypeLits
+  ( ErrorMessage (..)
+  , TypeError
+  )
+import Servant.API.Alternative
+  ( type (:<|>)
+  )
+import Servant.API.Capture
+  ( Capture
+  , CaptureAll
+  )
+import Servant.API.Fragment
+import Servant.API.Generic
+  ( ToServantApi
+  )
+import Servant.API.Header
+  ( Header
+  , Header'
+  )
+import Servant.API.NamedRoutes
+  ( NamedRoutes
+  )
+import Servant.API.QueryParam
+  ( QueryFlag
+  , QueryParam
+  , QueryParams
+  )
+import Servant.API.ReqBody
+  ( ReqBody
+  )
+import Servant.API.Sub
+  ( type (:>)
+  )
+import Servant.API.UVerb
+  ( UVerb
+  )
+import Servant.API.Verbs
+  ( Verb
+  )
 
 -- * API predicates
 
@@ -89,7 +106,7 @@ import           GHC.TypeLits
 -- Refl
 type family Endpoints api where
   Endpoints (a :<|> b) = AppendList (Endpoints a) (Endpoints b)
-  Endpoints (e :> a)   = MapSub e (Endpoints a)
+  Endpoints (e :> a) = MapSub e (Endpoints a)
   Endpoints a = '[a]
 
 -- ** Lax inclusion
@@ -133,24 +150,24 @@ type family IsElem' a s :: Constraint
 -- request represented by @a@ matches the endpoints serving @b@ (for the
 -- latter, use 'IsIn').
 type family IsElem endpoint api :: Constraint where
-  IsElem e (sa :<|> sb)                   = Or (IsElem e sa) (IsElem e sb)
-  IsElem (e :> sa) (e :> sb)              = IsElem sa sb
-  IsElem sa (Header sym x :> sb)          = IsElem sa sb
-  IsElem sa (Header' mods sym x :> sb)    = IsElem sa sb
-  IsElem sa (ReqBody y x :> sb)           = IsElem sa sb
-  IsElem (CaptureAll z y :> sa) (CaptureAll x y :> sb)
-                                          = IsElem sa sb
-  IsElem (Capture z y :> sa) (Capture x y :> sb)
-                                          = IsElem sa sb
-  IsElem sa (QueryParam x y :> sb)        = IsElem sa sb
-  IsElem sa (QueryParams x y :> sb)       = IsElem sa sb
-  IsElem sa (QueryFlag x :> sb)           = IsElem sa sb
-  IsElem sa (Fragment x :> sb)            = IsElem sa sb
-  IsElem (Verb m s ct typ) (Verb m s ct' typ)
-                                          = IsSubList ct ct'
-  IsElem e e                              = ()
-  IsElem e (NamedRoutes rs)               = IsElem e (ToServantApi rs)
-  IsElem e a                              = IsElem' e a
+  IsElem e (sa :<|> sb) = Or (IsElem e sa) (IsElem e sb)
+  IsElem (e :> sa) (e :> sb) = IsElem sa sb
+  IsElem sa (Header sym x :> sb) = IsElem sa sb
+  IsElem sa (Header' mods sym x :> sb) = IsElem sa sb
+  IsElem sa (ReqBody y x :> sb) = IsElem sa sb
+  IsElem (CaptureAll z y :> sa) (CaptureAll x y :> sb) =
+    IsElem sa sb
+  IsElem (Capture z y :> sa) (Capture x y :> sb) =
+    IsElem sa sb
+  IsElem sa (QueryParam x y :> sb) = IsElem sa sb
+  IsElem sa (QueryParams x y :> sb) = IsElem sa sb
+  IsElem sa (QueryFlag x :> sb) = IsElem sa sb
+  IsElem sa (Fragment x :> sb) = IsElem sa sb
+  IsElem (Verb m s ct typ) (Verb m s ct' typ) =
+    IsSubList ct ct'
+  IsElem e e = ()
+  IsElem e (NamedRoutes rs) = IsElem e (ToServantApi rs)
+  IsElem e a = IsElem' e a
 
 -- | Check whether @sub@ is a sub-API of @api@.
 --
@@ -185,10 +202,10 @@ type family AllIsElem xs api :: Constraint where
 -- ... Could not ...
 -- ...
 type family IsIn (endpoint :: Type) (api :: Type) :: Constraint where
-  IsIn e (sa :<|> sb)                = Or (IsIn e sa) (IsIn e sb)
-  IsIn (e :> sa) (e :> sb)           = IsIn sa sb
-  IsIn e e                           = ()
-  IsIn e (NamedRoutes record)        = IsIn e (ToServantApi record)
+  IsIn e (sa :<|> sb) = Or (IsIn e sa) (IsIn e sb)
+  IsIn (e :> sa) (e :> sb) = IsIn sa sb
+  IsIn e e = ()
+  IsIn e (NamedRoutes record) = IsIn e (ToServantApi record)
 
 -- | Check whether @sub@ is a sub API of @api@.
 --
@@ -215,12 +232,12 @@ type family MapSub e xs where
 
 -- | Append two type-level lists.
 type family AppendList xs ys where
-  AppendList '[]       ys = ys
+  AppendList '[] ys = ys
   AppendList (x ': xs) ys = x ': AppendList xs ys
 
 type family IsSubList a b :: Constraint where
-  IsSubList '[] b          = ()
-  IsSubList (x ': xs) y    = Elem x y `And` IsSubList xs y
+  IsSubList '[] b = ()
+  IsSubList (x ': xs) y = Elem x y `And` IsSubList xs y
 
 -- | Check that a value is an element of a list:
 --
@@ -238,22 +255,25 @@ type family ElemGo e es orig :: Constraint where
   ElemGo x (x ': xs) orig = ()
   ElemGo y (x ': xs) orig = ElemGo y xs orig
   -- Note [Custom Errors]
-  ElemGo x '[] orig       = TypeError ('ShowType x
-                                 ':<>: 'Text " expected in list "
-                                 ':<>: 'ShowType orig)
+  ElemGo x '[] orig =
+    TypeError
+      ( 'ShowType x
+          ':<>: 'Text " expected in list "
+          ':<>: 'ShowType orig
+      )
 
 -- ** Logic
 
 -- | If either 'a' or 'b' produce an empty constraint, produce an empty constraint.
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
-    -- This works because of:
-    -- https://ghc.haskell.org/trac/ghc/wiki/NewAxioms/CoincidentOverlap
-  Or () b       = ()
-  Or a ()       = ()
+  -- This works because of:
+  -- https://ghc.haskell.org/trac/ghc/wiki/NewAxioms/CoincidentOverlap
+  Or () b = ()
+  Or a () = ()
 
 -- | If both 'a' or 'b' produce an empty constraint, produce an empty constraint.
 type family And (a :: Constraint) (b :: Constraint) :: Constraint where
-  And () ()     = ()
+  And () () = ()
 
 {- Note [Custom Errors]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -280,22 +300,22 @@ instance AtMostOneFragment (UVerb m cts as)
 instance AtMostOneFragment (Fragment a)
 
 type family FragmentUnique api :: Constraint where
-  FragmentUnique (sa :<|> sb)       = And (FragmentUnique sa) (FragmentUnique sb)
+  FragmentUnique (sa :<|> sb) = And (FragmentUnique sa) (FragmentUnique sb)
   FragmentUnique (Fragment a :> sa) = FragmentNotIn sa (Fragment a :> sa)
-  FragmentUnique (x :> sa)          = FragmentUnique sa
-  FragmentUnique (Fragment a)       = ()
-  FragmentUnique x                  = ()
+  FragmentUnique (x :> sa) = FragmentUnique sa
+  FragmentUnique (Fragment a) = ()
+  FragmentUnique x = ()
 
 type family FragmentNotIn api orig :: Constraint where
-  FragmentNotIn (sa :<|> sb)       orig =
+  FragmentNotIn (sa :<|> sb) orig =
     And (FragmentNotIn sa orig) (FragmentNotIn sb orig)
   FragmentNotIn (Fragment c :> sa) orig = TypeError (NotUniqueFragmentInApi orig)
-  FragmentNotIn (x :> sa)          orig = FragmentNotIn sa orig
-  FragmentNotIn (Fragment c)       orig = TypeError (NotUniqueFragmentInApi orig)
-  FragmentNotIn x                  orig = ()
+  FragmentNotIn (x :> sa) orig = FragmentNotIn sa orig
+  FragmentNotIn (Fragment c) orig = TypeError (NotUniqueFragmentInApi orig)
+  FragmentNotIn x orig = ()
 
 type NotUniqueFragmentInApi api =
-    'Text "Only one Fragment allowed per endpoint in api ‘"
+  'Text "Only one Fragment allowed per endpoint in api ‘"
     ':<>: 'ShowType api
     ':<>: 'Text "’."
 

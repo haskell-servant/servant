@@ -1,23 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Servant.Foreign.Inflections
   ( concatCase
   , snakeCase
   , camelCase
-    -- lenses
+  -- lenses
   , concatCaseL
   , snakeCaseL
   , camelCaseL
   ) where
 
-
-import           Control.Lens             hiding
-                 (cons)
-import qualified Data.Char                as C
-import           Data.Text                hiding
-                 (map)
-import           Prelude                  hiding
-                 (head, tail)
-import           Servant.Foreign.Internal
+import Control.Lens hiding
+  ( cons
+  )
+import qualified Data.Char as C
+import Data.Text hiding
+  ( map
+  )
+import Servant.Foreign.Internal
+import Prelude hiding
+  ( head
+  , tail
+  )
 
 -- | Simply concat each part of the FunctionName together.
 --
@@ -48,7 +52,7 @@ camelCase = view camelCaseL
 camelCaseL :: Getter FunctionName Text
 camelCaseL = _FunctionName . to convert
   where
-    convert []     = ""
-    convert (p:ps) = mconcat $ p : map capitalize ps
-    capitalize ""   = ""
+    convert [] = ""
+    convert (p : ps) = mconcat $ p : map capitalize ps
+    capitalize "" = ""
     capitalize name = C.toUpper (head name) `cons` tail name
