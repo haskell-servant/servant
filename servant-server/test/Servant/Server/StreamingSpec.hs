@@ -52,9 +52,9 @@ spec = do
     streamTestData <- do
       mvar :: MVar [IO Strict.ByteString] <-
         newMVar $
-          map return (replicate 1000 "foo")
+          replicate 1000 (return "foo")
             ++ (waitFor serverReceivedFirstChunk >> return "foo")
-            : map return (replicate 1000 "foo")
+            : replicate 1000 (return "foo")
       return $ modifyMVar mvar $ \actions -> case actions of
         (a : r) -> (r,) <$> a
         [] -> return ([], "")

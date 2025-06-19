@@ -4,14 +4,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -196,19 +193,19 @@ server =
         :<|> (\name -> return $ Person name 0)
         :<|> (\names -> return (zipWith Person names [0 ..]))
         :<|> return
-        :<|> ( \name -> case name of
+        :<|> ( \case
                  Just "alice" -> return alice
                  Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
                  Nothing -> throwError $ ServerError 400 "missing parameter" "" []
              )
         :<|> (\names -> return (zipWith Person names [0 ..]))
         :<|> return
-        :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
-        :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
+        :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
+        :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
         :<|> (\a b c d -> return (a, b, c, d))
-        :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
+        :<|> return (addHeader 1729 $ addHeader "eg2" True)
         :<|> return NoContent
-        :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
+        :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
         :<|> emptyServer
     )
 
@@ -224,9 +221,9 @@ failServer :: Application
 failServer =
   serve
     failApi
-    ( (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
+    ( Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
         :<|> (\_capture -> Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/json")] "")
-        :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
+        :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
     )
 
 -- * basic auth stuff
@@ -303,7 +300,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     left show <$> runClient (getCapture "Paula") baseUrl `shouldReturn` Right (Person "Paula" 0)
 
   it "Servant.API.CaptureAll" $ \(_, baseUrl) -> do
-    let expected = [(Person "Paula" 0), (Person "Peta" 1)]
+    let expected = [Person "Paula" 0, Person "Peta" 1]
     left show <$> runClient (getCaptureAll ["Paula", "Peta"]) baseUrl `shouldReturn` Right expected
 
   it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
@@ -372,13 +369,14 @@ wrappedApiSpec = describe "error status codes" $ do
             let getResponse :: ClientM ()
                 getResponse = client api
             Left (FailureResponse _ r) <- runClient getResponse baseUrl
-            responseStatusCode r `shouldBe` (HTTP.Status 500 "error message")
-     in mapM_ test $
-          (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete")
-            : (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get")
-            : (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post")
-            : (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put")
-            : []
+            responseStatusCode r `shouldBe` HTTP.Status 500 "error message"
+     in mapM_
+          test
+          [ (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete")
+          , (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get")
+          , (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post")
+          , (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put")
+          ]
 
 failSpec :: Spec
 failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
@@ -409,7 +407,7 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
       let (_ :<|> getGet :<|> _) = client api
       Left res <- runClient getGet baseUrl
       case res of
-        UnsupportedContentType ("application/octet-stream") _ -> return ()
+        UnsupportedContentType "application/octet-stream" _ -> return ()
         _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
     it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
@@ -457,7 +455,7 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
       let getProtected = client genAuthAPI
       let authRequest = Auth.mkAuthenticatedRequest () (\_ req -> Req.addHeader "Wrong" ("header" :: String) req)
       Left (FailureResponse _ r) <- runClient (getProtected authRequest) baseUrl
-      responseStatusCode r `shouldBe` (HTTP.Status 401 "Unauthorized")
+      responseStatusCode r `shouldBe` HTTP.Status 401 "Unauthorized"
 
 -- * hoistClient
 
@@ -467,7 +465,7 @@ hoistClientAPI :: Proxy HoistClientAPI
 hoistClientAPI = Proxy
 
 hoistClientServer :: Application -- implements HoistClientAPI
-hoistClientServer = serve hoistClientAPI $ return 5 :<|> (\n -> return n)
+hoistClientServer = serve hoistClientAPI $ pure 5 :<|> pure
 
 hoistClientSpec :: Spec
 hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp $ do
@@ -503,7 +501,7 @@ connectionErrorSpec = describe "Servant.Client.ClientError" $
 startWaiApp :: Application -> IO (ThreadId, BaseUrl)
 startWaiApp app = do
   (port, socket) <- openTestSocket
-  let settings = setPort port $ defaultSettings
+  let settings = setPort port defaultSettings
   thread <- forkIO $ runSettingsSocket settings socket app
   return (thread, BaseUrl Http "127.0.0.1" port "")
 

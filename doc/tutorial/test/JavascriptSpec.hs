@@ -27,7 +27,7 @@ spec = do
   describe "app" $ with (return app) $ do
     context "/api.js" $ do
       it "delivers apiJS" $ do
-        get "/api.js" `shouldRespondWith` (fromString (cs apiJS1))
+        get "/api.js" `shouldRespondWith` fromString (cs apiJS1)
 
     context "/" $ do
       it "delivers something" $ do

@@ -57,9 +57,10 @@ wrappedApiSpec = describe "error status codes" $ do
                 getResponse = client api
             Left (FailureResponse _ r) <- runClient getResponse baseUrl
             responseStatusCode r `shouldBe` HTTP.Status 500 "error message"
-     in mapM_ test $
-          (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete")
-            : (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get")
-            : (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post")
-            : (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put")
-            : []
+     in mapM_
+          test
+          [ (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete")
+          , (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get")
+          , (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post")
+          , (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put")
+          ]

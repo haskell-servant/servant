@@ -76,9 +76,9 @@ instance Arbitrary BaseUrl where
         last' <- elements letters
         return (first : middle ++ [last'])
       portGen =
-        frequency $
-          (1, return 80)
-            : (1, return 443)
-            : (1, choose (1, 20000))
-            : []
+        frequency
+          [ (1, return 80)
+          , (1, return 443)
+          , (1, choose (1, 20000))
+          ]
       pathGen = listOf1 . elements $ letters

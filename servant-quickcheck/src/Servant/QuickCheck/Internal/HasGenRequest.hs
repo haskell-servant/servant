@@ -192,7 +192,7 @@ instance
            in r
                 { queryString =
                     queryString r
-                      <> if not (null new') then fold (toParam <$> new') else ""
+                      <> if not (null new') then foldMap toParam new' else ""
                 }
     )
     where

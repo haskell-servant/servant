@@ -8,7 +8,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -freduction-depth=100 #-}
 
@@ -96,15 +95,15 @@ spec = describe "Servant.Docs" $ do
 
   describe "tuple samples" $ do
     it "looks like expected" $ do
-      (toSample (Proxy :: Proxy (TT, UT))) `shouldBe` Just (TT1, UT1)
-      (toSample (Proxy :: Proxy (TT, UT, UT))) `shouldBe` Just (TT1, UT1, UT1)
-      (toSamples (Proxy :: Proxy (TT, UT)))
+      toSample (Proxy :: Proxy (TT, UT)) `shouldBe` Just (TT1, UT1)
+      toSample (Proxy :: Proxy (TT, UT, UT)) `shouldBe` Just (TT1, UT1, UT1)
+      toSamples (Proxy :: Proxy (TT, UT))
         `shouldBe` [ ("eins, yks", (TT1, UT1))
                    , ("eins, kaks", (TT1, UT2))
                    , ("zwei, yks", (TT2, UT1))
                    , ("zwei, kaks", (TT2, UT2))
                    ]
-      (toSamples (Proxy :: Proxy (TT, UT, UT)))
+      toSamples (Proxy :: Proxy (TT, UT, UT))
         `shouldBe` [ ("eins, yks, yks", (TT1, UT1, UT1))
                    , ("eins, yks, kaks", (TT1, UT1, UT2))
                    , ("zwei, yks, yks", (TT2, UT1, UT1))
@@ -216,7 +215,7 @@ shouldContain :: (Eq a, HasCallStack, Show a) => [a] -> [a] -> Assertion
 shouldContain = compareWith (flip isInfixOf) "does not contain"
 
 shouldNotContain :: (Eq a, HasCallStack, Show a) => [a] -> [a] -> Assertion
-shouldNotContain = compareWith (\x y -> not (isInfixOf y x)) "contains"
+shouldNotContain = compareWith (\x y -> not (y `isInfixOf` x)) "contains"
 
 compareWith :: (HasCallStack, Show a, Show b) => (a -> b -> Bool) -> String -> a -> b -> Assertion
 compareWith f msg x y =

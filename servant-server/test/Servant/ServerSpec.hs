@@ -364,7 +364,7 @@ captureSpec = describe "Servant.API.Capture" $ do
         )
     )
     $ it "strips the captured path snippet from pathInfo"
-    $ get "/captured/foo" `shouldRespondWith` (fromString (show ["foo" :: String]))
+    $ get "/captured/foo" `shouldRespondWith` fromString (show ["foo" :: String])
 
 -- }}}
 ------------------------------------------------------------------------------

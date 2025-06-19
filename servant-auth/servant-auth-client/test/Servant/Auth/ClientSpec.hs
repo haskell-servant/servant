@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Servant.Auth.ClientSpec (spec) where
 

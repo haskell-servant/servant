@@ -72,7 +72,7 @@ instance MonadBaseControl b m => MonadBaseControl b (RouteResultT m) where
 
 instance MonadTransControl RouteResultT where
   type StT RouteResultT a = RouteResult a
-  liftWith f = RouteResultT $ liftM return $ f runRouteResultT
+  liftWith f = RouteResultT $ fmap return $ f runRouteResultT
   restoreT = RouteResultT
 
 instance MonadThrow m => MonadThrow (RouteResultT m) where

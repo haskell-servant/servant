@@ -109,7 +109,7 @@ instance MonadBase IO ClientM where
 
 -- | Try clients in order, last error is preserved.
 instance Alt ClientM where
-  a <!> b = a `catchError` \_ -> b
+  a <!> b = a `catchError` const b
 
 instance RunClient ClientM where
   runRequestAcceptStatus = performRequest

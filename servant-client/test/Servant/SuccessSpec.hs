@@ -49,7 +49,7 @@ import Servant.ClientTestUtils
 _ = client comprehensiveAPIWithoutStreaming
 
 spec :: Spec
-spec = describe "Servant.SuccessSpec" $ successSpec
+spec = describe "Servant.SuccessSpec" successSpec
 
 successSpec :: Spec
 successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
@@ -100,7 +100,12 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     let qs = [("name", Just "bob"), ("age", Just "1")]
     left show <$> runClient (getQueryString qs) baseUrl `shouldReturn` Right (Person "bob" 1)
 
-  it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) -> left show <$> runClient (getDeepQuery $ Filter 1 "bob") baseUrl `shouldReturn` (Right (Person "bob" 1))
+  it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) ->
+    left show
+      <$> runClient
+        (getDeepQuery $ Filter 1 "bob")
+        baseUrl
+      `shouldReturn` Right (Person "bob" 1)
 
   it "Servant.API.Fragment" $ \(_, baseUrl) -> left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
 

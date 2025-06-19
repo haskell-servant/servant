@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -287,7 +288,7 @@ toBody request = case requestBody request of
       RequestBodyLBS x -> return $ mBody $ BL.toStrict x
       RequestBodyBS x -> return $ mBody x
       RequestBodySource xs ->
-        runExceptT (S.runSourceT xs) >>= \e -> case e of
+        runExceptT (S.runSourceT xs) >>= \case
           Left err -> fail err
           Right bss -> return $ mBody $ BL.toStrict $ mconcat bss
 
@@ -348,7 +349,7 @@ foreign import javascript unsafe "$1.response"
 
 parseHeaders :: String -> ResponseHeaders
 parseHeaders s =
-  first mk . first strip . second strip . parseHeader
+  first mk . bimap strip . parseHeader
     <$> splitOn "\r\n" (cs s)
   where
     parseHeader :: BS.ByteString -> (BS.ByteString, BS.ByteString)

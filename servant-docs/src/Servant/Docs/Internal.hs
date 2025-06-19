@@ -5,7 +5,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -240,7 +239,7 @@ instance Monoid (ExtraInfo a) where
     ExtraInfo $ HM.unionWith combineAction a b
 
 -- | Documentation options.
-data DocOptions = DocOptions
+newtype DocOptions = DocOptions
   { _maxSamples :: Int
   -- ^ Maximum samples allowed.
   }
@@ -686,6 +685,8 @@ markdown = markdownWith defRenderingOptions
 --   @
 --
 --   @since 0.11.1
+
+{- HLINT ignore "Use list comprehension" -}
 markdownWith :: RenderingOptions -> API -> String
 markdownWith RenderingOptions{..} api =
   unlines $
@@ -705,7 +706,6 @@ markdownWith RenderingOptions{..} api =
         ++ rqbodyStr (action ^. rqtypes) (action ^. rqbody)
         ++ responseStr (action ^. response)
         ++ maybe [] (curlStr endpoint (action ^. headers) (action ^. rqbody)) _renderCurlBasePath
-        ++ []
       where
         str =
           "## "
@@ -723,8 +723,7 @@ markdownWith RenderingOptions{..} api =
       ("## " ++ i ^. introTitle)
         : ""
         : intersperse "" (i ^. introBody)
-        ++ ""
-        : []
+        ++ [""]
 
     notesStr :: [DocNote] -> [String]
     notesStr =
@@ -738,8 +737,7 @@ markdownWith RenderingOptions{..} api =
       (hdr ++ nt ^. noteTitle)
         : ""
         : intersperse "" (nt ^. noteBody)
-        ++ ""
-        : []
+        ++ [""]
       where
         hdr
           | isJust _notesHeading = "#### "
@@ -748,16 +746,16 @@ markdownWith RenderingOptions{..} api =
     authStr :: [DocAuthentication] -> [String]
     authStr [] = []
     authStr auths =
-      let authIntros = mapped %~ view authIntro $ auths
-          clientInfos = mapped %~ view authDataRequired $ auths
-       in "### Authentication"
-            : ""
-            : unlines authIntros
-            : ""
-            : "Clients must supply the following data"
-            : unlines clientInfos
-            : ""
-            : []
+      let authIntros = auths <&> view authIntro
+          clientInfos = auths <&> view authDataRequired
+       in [ "### Authentication"
+          , ""
+          , unlines authIntros
+          , ""
+          , "Clients must supply the following data"
+          , unlines clientInfos
+          , ""
+          ]
 
     capturesStr :: [DocCapture] -> [String]
     capturesStr [] = []
@@ -765,8 +763,7 @@ markdownWith RenderingOptions{..} api =
       "### Captures:"
         : ""
         : map captureStr l
-        ++ ""
-        : []
+        : [""]
 
     captureStr cap =
       "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
@@ -777,8 +774,7 @@ markdownWith RenderingOptions{..} api =
       "### Headers:"
         : ""
         : map headerStr l
-        ++ ""
-        : []
+        ++ [""]
       where
         headerStr hname =
           "- This endpoint is sensitive to the value of the **"
@@ -791,18 +787,17 @@ markdownWith RenderingOptions{..} api =
       ("### " ++ cs m ++ " Parameters:")
         : ""
         : map (paramStr m) l
-        ++ ""
-        : []
+        ++ [""]
 
     paramStr m param =
       unlines $
         ("- " ++ param ^. paramName)
-          : ( if (not (null values) || param ^. paramKind /= Flag)
+          : ( if not (null values) || (param ^. paramKind /= Flag)
                 then ["     - **Values**: *" ++ intercalate ", " values ++ "*"]
                 else []
             )
           ++ ("     - **Description**: " ++ param ^. paramDesc)
-          : ( if (param ^. paramKind == List)
+          : ( if param ^. paramKind == List
                 then
                   [ "     - This parameter is a **list**. All "
                       ++ cs m
@@ -812,11 +807,10 @@ markdownWith RenderingOptions{..} api =
                   ]
                 else []
             )
-          ++ ( if (param ^. paramKind == Flag)
+          ++ [ if param ^. paramKind == Flag
                  then ["     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."]
                  else []
-             )
-          ++ []
+             ]
       where
         values = param ^. paramValues
 
@@ -879,12 +873,12 @@ markdownWith RenderingOptions{..} api =
         (_, _) -> ""
 
     contentStr mime_type body =
-      ""
-        : "```" <> markdownForType mime_type
-        : cs body
-        : "```"
-        : ""
-        : []
+      [ ""
+      , "```" <> markdownForType mime_type
+      , cs body
+      , "```"
+      , ""
+      ]
 
     responseStr :: Response -> [String]
     responseStr resp =
@@ -992,7 +986,7 @@ instance
   HasDocs (Capture' mods sym a :> api)
   => HasDocs (Capture' (mod ': mods) sym a :> api)
   where
-  docsFor Proxy =
+  docsFor _ =
     docsFor apiP
     where
       apiP = Proxy :: Proxy (Capture' mods sym a :> api)
@@ -1207,8 +1201,7 @@ instance
 
 -- | TODO: this instance is incomplete.
 instance (Accept ctype, HasDocs api) => HasDocs (StreamBody' mods framing ctype a :> api) where
-  docsFor Proxy (endpoint, action) opts =
-    docsFor subApiP (endpoint, action') opts
+  docsFor Proxy (endpoint, action) = docsFor subApiP (endpoint, action')
     where
       subApiP = Proxy :: Proxy api
 
@@ -1226,20 +1219,16 @@ instance (HasDocs api, KnownSymbol path) => HasDocs (path :> api) where
       pa = Proxy :: Proxy path
 
 instance HasDocs api => HasDocs (RemoteHost :> api) where
-  docsFor Proxy ep =
-    docsFor (Proxy :: Proxy api) ep
+  docsFor Proxy = docsFor (Proxy :: Proxy api)
 
 instance HasDocs api => HasDocs (IsSecure :> api) where
-  docsFor Proxy ep =
-    docsFor (Proxy :: Proxy api) ep
+  docsFor Proxy = docsFor (Proxy :: Proxy api)
 
 instance HasDocs api => HasDocs (HttpVersion :> api) where
-  docsFor Proxy ep =
-    docsFor (Proxy :: Proxy api) ep
+  docsFor Proxy = docsFor (Proxy :: Proxy api)
 
 instance HasDocs api => HasDocs (Vault :> api) where
-  docsFor Proxy ep =
-    docsFor (Proxy :: Proxy api) ep
+  docsFor Proxy = docsFor (Proxy :: Proxy api)
 
 instance HasDocs api => HasDocs (WithNamedContext name context api) where
   docsFor Proxy = docsFor (Proxy :: Proxy api)

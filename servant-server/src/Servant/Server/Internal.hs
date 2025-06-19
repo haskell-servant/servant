@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE EmptyCase #-}
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
@@ -422,7 +421,7 @@ instance
   => HasServer (Verb method status ctypes a) context
   where
   type ServerT (Verb method status ctypes a) m = m a
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
     where
@@ -439,7 +438,7 @@ instance
   => HasServer (Verb method status ctypes (Headers h a)) context
   where
   type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
     where
@@ -451,7 +450,7 @@ instance
   => HasServer (NoContentVerb method) context
   where
   type ServerT (NoContentVerb method) m = m NoContent
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = noContentRouter method status204
     where
@@ -468,7 +467,7 @@ instance
   => HasServer (Stream method status framing ctype a) context
   where
   type ServerT (Stream method status framing ctype a) m = m a
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = streamRouter ([],) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
     where
@@ -487,7 +486,7 @@ instance
   => HasServer (Stream method status framing ctype (Headers h a)) context
   where
   type ServerT (Stream method status framing ctype (Headers h a)) m = m (Headers h a)
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
     where
@@ -585,7 +584,7 @@ instance
         unfoldRequestArgument (Proxy :: Proxy mods) errReq errSt mev
         where
           mev :: Maybe (Either T.Text a)
-          mev = fmap parseHeader $ lookup headerName (requestHeaders req)
+          mev = parseHeader <$> lookup headerName (requestHeaders req)
 
           errReq =
             delayedFailFatal $
@@ -963,7 +962,7 @@ instance HasServer RawM context where
       Fail e -> respond' $ Fail e
       FailFatal e -> respond' $ FailFatal e
 
-  hoistServerWithContext _ _ f srvM = \req respond -> f (srvM req respond)
+  hoistServerWithContext _ _ f srvM req respond = f (srvM req respond)
 
 -- | If you use 'ReqBody' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -1037,15 +1036,21 @@ instance
 
           serverErr :: String -> ServerError
           serverErr = formatError rep request
+
+          required = sbool :: SBool (FoldRequired mods)
+          lenient = sbool :: SBool (FoldLenient mods)
          in
-          fmap f (liftIO $ lazyRequestBody request)
-            >>= case (sbool :: SBool (FoldRequired mods), sbool :: SBool (FoldLenient mods), hasReqBody) of
-              (STrue, STrue, _) -> return . first T.pack
-              (STrue, SFalse, _) -> either (delayedFailFatal . serverErr) return
-              (SFalse, STrue, False) -> return . either (const Nothing) (Just . Right)
-              (SFalse, SFalse, False) -> return . either (const Nothing) Just
-              (SFalse, STrue, True) -> return . Just . first T.pack
-              (SFalse, SFalse, True) -> either (delayedFailFatal . serverErr) (return . Just)
+          ( liftIO (lazyRequestBody request)
+              >>= ( case (required, lenient, hasReqBody) of
+                      (STrue, STrue, _) -> return . first T.pack
+                      (STrue, SFalse, _) -> either (delayedFailFatal . serverErr) return
+                      (SFalse, STrue, False) -> return . either (const Nothing) (Just . Right)
+                      (SFalse, SFalse, False) -> return . either (const Nothing) Just
+                      (SFalse, STrue, True) -> return . Just . first T.pack
+                      (SFalse, SFalse, True) -> either (delayedFailFatal . serverErr) (return . Just)
+                  )
+                . f
+          )
 
 instance
   ( FramingUnrender framing
@@ -1086,7 +1091,7 @@ instance (HasServer api context, KnownSymbol path) => HasServer (path :> api) co
       (route (Proxy :: Proxy api) context subserver)
     where
       proxyPath = Proxy :: Proxy path
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 instance HasServer api context => HasServer (RemoteHost :> api) context where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
@@ -1124,14 +1129,14 @@ instance HasServer api ctx => HasServer (Summary desc :> api) ctx where
   type ServerT (Summary desc :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 -- | Ignore @'Description'@ in server handlers.
 instance HasServer api ctx => HasServer (Description desc :> api) ctx where
   type ServerT (Description desc :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 -- | Singleton type representing a server that serves an empty API.
 data EmptyServer = EmptyServer deriving (Bounded, Enum, Eq, Show, Typeable)
@@ -1208,7 +1213,7 @@ instance
       subContext :: Context subContext
       subContext = descendIntoNamedContext (Proxy :: Proxy name) context
 
-  hoistServerWithContext _ _ nt s = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
+  hoistServerWithContext _ _ = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext)
 
 -------------------------------------------------------------------------------
 -- Custom type errors

@@ -22,6 +22,8 @@
           # as getting it to compile with lower GHC versions
           # is complicated and this works out of the box.
           pkgs.haskell.packages.ghc912.fourmolu_0_18_0_0
+          pkgs.haskell.packages.ghc912.hlint_3_10
+          pkgs.haskell.packages.ghc912.apply-refact_0_15_0_0
           pkgs.nixfmt-rfc-style
         ];
 

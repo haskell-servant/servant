@@ -173,8 +173,8 @@ deepPathSpec = describe "Path components" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
         gen = runGenRequest deepAPI
-        req = (unGen gen rng 0) burl
-    path req `shouldBe` ("/one/two/three")
+        req = unGen gen rng 0 burl
+    path req `shouldBe` "/one/two/three"
 
 queryParamsSpec :: Spec
 queryParamsSpec = describe "QueryParams" $ do
@@ -182,7 +182,7 @@ queryParamsSpec = describe "QueryParams" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
         gen = runGenRequest paramsAPI
-        req = (unGen gen rng 0) burl
+        req = unGen gen rng 0 burl
         qs = C.unpack $ queryString req
     qs `shouldBe` "one=_&two=_"
 
@@ -192,7 +192,7 @@ queryFlagsSpec = describe "QueryFlags" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
         gen = runGenRequest flagsAPI
-        req = (unGen gen rng 0) burl
+        req = unGen gen rng 0 burl
         qs = C.unpack $ queryString req
     qs `shouldBe` "one&two"
 
@@ -232,9 +232,9 @@ unbiasedGenerationSpec = describe "Unbiased Generation of requests"
     let burl = BaseUrl Http "localhost" 80 ""
     let runs = 10000 :: Double
     someRequests <- replicateM 10000 (makeRandomRequest largeApi burl)
-    let mean = (sum $ map fromIntegral someRequests) / runs
+    let mean = sum (map fromIntegral someRequests) / runs
     let variancer x = let ix = fromIntegral x in (ix - mean) * (ix - mean)
-    let variance = (sum $ map variancer someRequests) / runs - 1
+    let variance = sum (map variancer someRequests) / runs - 1
     -- mean should be around 8.5. If this fails, we likely need more runs (or there's a bug!)
     mean > 8 `shouldBe` True
     mean < 9 `shouldBe` True
@@ -266,9 +266,9 @@ flagsAPI = Proxy
 server :: IO (Server API)
 server = do
   mvar <- newMVar ""
-  return $ (\x -> liftIO $ swapMVar mvar x)
-    :<|> (liftIO $ readMVar mvar >>= return . length)
-    :<|> (const $ return ())
+  return $ (liftIO . swapMVar mvar)
+    :<|> liftIO (readMVar mvar <&> length)
+    :<|> const (return ())
 
 type API2 = "failplz" :> Get '[JSON] Int
 
@@ -358,7 +358,7 @@ evalExample :: (Arg e ~ (), Example e) => e -> IO EvalResult
 evalExample e = do
   r <- safeEvaluateExample e defaultParams ($ ()) progCallback
   case resultStatus r of
-    Success -> return $ AllGood
+    Success -> return AllGood
     Failure _ reason -> return $ FailedWith $ show reason
     Pending{} -> error "should not happen"
   where

@@ -72,4 +72,4 @@ instance
       authHandler :: Request -> Handler (AuthServerData (AuthProtect tag))
       authHandler = unAuthHandler (getContextEntry context)
       authCheck :: Request -> DelayedIO (AuthServerData (AuthProtect tag))
-      authCheck = (>>= either delayedFailFatal return) . liftIO . runHandler . authHandler
+      authCheck = either delayedFailFatal return Control.Monad.<=< (liftIO . runHandler . authHandler)

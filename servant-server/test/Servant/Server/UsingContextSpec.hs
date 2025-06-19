@@ -25,7 +25,7 @@ type OneEntryAPI =
   ExtractFromContext :> Get '[JSON] String
 
 testServer :: String -> Handler String
-testServer s = return s
+testServer = return
 
 oneEntryApp :: Application
 oneEntryApp =
@@ -74,7 +74,7 @@ type InjectAPI =
 injectApp :: Application
 injectApp =
   serveWithContext (Proxy :: Proxy InjectAPI) context $
-    (\s -> return s)
+    return
       :<|> (\s -> return ("tagged: " ++ s))
   where
     context = EmptyContext
@@ -102,10 +102,10 @@ withBirdfaceApp =
     testServer
       :<|> testServer
   where
-    context :: Context '[String, (NamedContext "sub" '[String])]
+    context :: Context '[String, NamedContext "sub" '[String]]
     context =
       "firstEntry"
-        :. (NamedContext ("secondEntry" :. EmptyContext))
+        :. NamedContext ("secondEntry" :. EmptyContext)
         :. EmptyContext
 
 spec3 :: Spec

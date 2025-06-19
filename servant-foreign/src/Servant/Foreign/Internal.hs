@@ -339,7 +339,7 @@ instance
     req
       & reqFuncName . _FunctionName %~ (methodLC :)
       & reqMethod .~ method
-      & reqReturnType .~ Just retType
+      & reqReturnType ?~ retType
     where
       retType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a)
       method = reflectMethod (Proxy :: Proxy method)
@@ -355,7 +355,7 @@ instance
     req
       & reqFuncName . _FunctionName %~ (methodLC :)
       & reqMethod .~ method
-      & reqReturnType .~ Just retType
+      & reqReturnType ?~ retType
     where
       retType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy NoContent)
       method = reflectMethod (Proxy :: Proxy method)
@@ -372,7 +372,7 @@ instance
     req
       & reqFuncName . _FunctionName %~ (methodLC :)
       & reqMethod .~ method
-      & reqReturnType .~ Just retType
+      & reqReturnType ?~ retType
     where
       retType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy a)
       method = reflectMethod (Proxy :: Proxy method)
@@ -452,7 +452,7 @@ instance
   type Foreign ftype (Fragment a :> api) = Foreign ftype api
   foreignFor lang Proxy Proxy req =
     foreignFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy api) $
-      req & reqUrl . frag .~ Just argT
+      req & reqUrl . frag ?~ argT
     where
       argT = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy (Maybe a))
 
@@ -472,7 +472,7 @@ instance
 
   foreignFor lang ftype Proxy req =
     foreignFor lang ftype (Proxy :: Proxy api) $
-      req & reqBody .~ (Just $ typeFor lang ftype (Proxy :: Proxy a))
+      req & reqBody ?~ typeFor lang ftype (Proxy :: Proxy a)
 
 instance
   HasForeign lang ftype api
@@ -502,8 +502,7 @@ instance
   where
   type Foreign ftype (RemoteHost :> api) = Foreign ftype api
 
-  foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy api) req
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
 instance
   HasForeign lang ftype api
@@ -511,14 +510,12 @@ instance
   where
   type Foreign ftype (IsSecure :> api) = Foreign ftype api
 
-  foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy api) req
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
 instance HasForeign lang ftype api => HasForeign lang ftype (Vault :> api) where
   type Foreign ftype (Vault :> api) = Foreign ftype api
 
-  foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy api) req
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
 instance
   HasForeign lang ftype api
@@ -542,8 +539,7 @@ instance
   where
   type Foreign ftype (HttpVersion :> api) = Foreign ftype api
 
-  foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy api) req
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
 instance
   HasForeign lang ftype api
@@ -551,8 +547,7 @@ instance
   where
   type Foreign ftype (Summary desc :> api) = Foreign ftype api
 
-  foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy api) req
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
 instance
   HasForeign lang ftype api
@@ -560,14 +555,12 @@ instance
   where
   type Foreign ftype (Description desc :> api) = Foreign ftype api
 
-  foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy api) req
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
 instance HasForeign lang ftype (ToServantApi r) => HasForeign lang ftype (NamedRoutes r) where
   type Foreign ftype (NamedRoutes r) = Foreign ftype (ToServantApi r)
 
-  foreignFor lang ftype Proxy req =
-    foreignFor lang ftype (Proxy :: Proxy (ToServantApi r)) req
+  foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy (ToServantApi r))
 
 -- | Utility class used by 'listFromAPI' which computes
 --   the data needed to generate a function for each endpoint
@@ -585,7 +578,7 @@ instance
   (GenerateList ftype rest, GenerateList ftype start)
   => GenerateList ftype (start :<|> rest)
   where
-  generateList (start :<|> rest) = (generateList start) ++ (generateList rest)
+  generateList (start :<|> rest) = generateList start ++ generateList rest
 
 -- | Generate the necessary data for codegen as a list, each 'Req'
 --   describing one endpoint from your API type.

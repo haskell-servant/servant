@@ -8,6 +8,7 @@ module Servant.Auth.ServerSpec (spec) where
 #endif
 
 import Control.Lens
+import Control.Monad (forM_)
 import Control.Monad.IO.Class (liftIO)
 import Crypto.JOSE
   ( Alg (HS256, None)
@@ -38,6 +39,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Data.CaseInsensitive (mk)
 import Data.Foldable (find)
+import Data.Functor ((<&>))
 import Data.Monoid
 import Data.Text (Text, pack)
 import Data.Time
@@ -158,7 +160,7 @@ authSpec =
                   destroyCookieJar cookieJar
               opts2 =
                 defaults
-                  & cookies .~ Just cookieJar
+                  & cookies ?~ cookieJar
                   & header (mk (xsrfField xsrfHeaderName cookieCfg)) .~ [cookie_value xxsrf]
           resp2 <- getWith opts2 (url port)
           resp2 ^? responseBody . _JSON `shouldBe` Just (length $ name user)
@@ -223,7 +225,7 @@ cookieAuthSpec =
           \(user :: User) -> do
             jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
             opts' <- addJwtToCookie cookieCfg jwt
-            let opts = opts' & checkResponse .~ Just mempty
+            let opts = opts' & checkResponse ?~ mempty
             resp <- getWith opts (url port)
             resp ^. responseStatus `shouldBe` status401
             (resp ^. responseCookieJar) `shouldNotHaveCookies` ["XSRF-TOKEN"]
@@ -254,7 +256,7 @@ cookieAuthSpec =
                   let jar = resp ^. responseCookieJar
                       Just xsrfCookieValue = cookie_value <$> find (\c -> cookie_name c == xsrfField xsrfCookieName cookieCfg) (destroyCookieJar jar)
                    in defaults
-                        & cookies .~ Just jar -- real cookie jars aren't updated by being replaced
+                        & cookies ?~ jar -- real cookie jars aren't updated by being replaced
                         & header (mk (xsrfField xsrfHeaderName cookieCfg)) .~ [xsrfCookieValue]
 
             resp <- postWith defaults (url port ++ "/login") user
@@ -281,7 +283,7 @@ cookieAuthSpec =
     describe "With no XSRF check for GET requests" $
       let
         noXsrfGet xsrfCfg = xsrfCfg{xsrfExcludeGet = True}
-        cookieCfgNoXsrfGet = cookieCfg{cookieXsrfSetting = fmap noXsrfGet $ cookieXsrfSetting cookieCfg}
+        cookieCfgNoXsrfGet = cookieCfg{cookieXsrfSetting = noXsrfGet <$> cookieXsrfSetting cookieCfg}
        in
         aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
           it "succeeds with no XSRF header or cookie for GET" $ \port -> property $
@@ -320,7 +322,7 @@ cookieAuthSpec =
             \(user :: User) -> do
               let optsFromResp resp =
                     defaults
-                      & cookies .~ Just (resp ^. responseCookieJar) -- real cookie jars aren't updated by being replaced
+                      & cookies ?~ (resp ^. responseCookieJar) -- real cookie jars aren't updated by being replaced
               resp <- postWith defaults (url port ++ "/login") user
               (resp ^. responseCookieJar)
                 `shouldMatchCookieNames` [ sessionCookieName cookieCfg
@@ -328,7 +330,7 @@ cookieAuthSpec =
                                          ]
               let loggedInOpts = optsFromResp resp
 
-              resp <- getWith (loggedInOpts) (url port)
+              resp <- getWith loggedInOpts (url port)
               resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
 
               resp <- getWith loggedInOpts (url port ++ "/logout")
@@ -361,8 +363,8 @@ jwtAuthSpec =
             createJWT
               theKey
               (newJWSHeader ((), HS256))
-              (claims (toJSON user) & claimAud .~ Just (Audience ["boo"]))
-          opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+              (claims (toJSON user) & claimAud ?~ Audience ["boo"])
+          opts <- addJwtToHeader (jwt <&> encodeCompact)
           getWith opts (url port) `shouldHTTPErrorWith` status401
 
       it "succeeds if 'aud' does match predicate" $ \port -> property $
@@ -371,8 +373,8 @@ jwtAuthSpec =
             createJWT
               theKey
               (newJWSHeader ((), HS256))
-              (claims (toJSON user) & claimAud .~ Just (Audience ["anythingElse"]))
-          opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+              (claims (toJSON user) & claimAud ?~ Audience ["anythingElse"])
+          opts <- addJwtToHeader (jwt <&> encodeCompact)
           resp <- getWith opts (url port)
           resp ^. responseStatus `shouldBe` status200
 
@@ -382,8 +384,8 @@ jwtAuthSpec =
             createJWT
               theKey
               (newJWSHeader ((), HS256))
-              (claims (toJSON user) & claimNbf .~ Just (NumericDate future))
-          opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+              (claims (toJSON user) & claimNbf ?~ NumericDate future)
+          opts <- addJwtToHeader (jwt <&> encodeCompact)
           getWith opts (url port) `shouldHTTPErrorWith` status401
 
       it "fails if 'exp' is set to a past date" $ \port -> property $
@@ -405,7 +407,7 @@ jwtAuthSpec =
             theKey
             (newJWSHeader ((), None))
             (claims $ toJSON user)
-        opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+        opts <- addJwtToHeader (jwt <&> encodeCompact)
         getWith opts (url port) `shouldHTTPErrorWith` status401
 
       it "fails if JWT does not use expected algorithm" $
@@ -414,7 +416,7 @@ jwtAuthSpec =
 
       it "fails if data is not valid JSON" $ \port -> do
         jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims "{{")
-        opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+        opts <- addJwtToHeader (jwt <&> encodeCompact)
         getWith opts (url port) `shouldHTTPErrorWith` status401
 
       it "suceeds as wreq's oauth2Bearer" $ \port -> property $ \(user :: User) -> do
@@ -423,7 +425,7 @@ jwtAuthSpec =
             theKey
             (newJWSHeader ((), HS256))
             (claims $ toJSON user)
-        resp <- case jwt >>= (return . encodeCompact) of
+        resp <- case jwt <&> encodeCompact of
           Left (e :: Error) -> fail $ show e
           Right v -> getWith (defaults & auth ?~ oauth2Bearer (BSL.toStrict v)) (url port)
         resp ^. responseStatus `shouldBe` status200
@@ -493,7 +495,7 @@ type API auths
                                              , Header "Set-Cookie" SetCookie ] NoContent)
 {- FOURMOLU_ENABLE -}
 
-data DummyRoutes mode = DummyRoutes
+newtype DummyRoutes mode = DummyRoutes
   { dummyInt :: mode :- "dummy" :> Get '[JSON] Int
   }
   deriving (Generic)
@@ -566,9 +568,10 @@ app
 app api = appWithCookie api cookieCfg
 
 {- FOURMOLU_DISABLE -}
+
 server :: CookieSettings -> Server (API auths)
 server ccfg =
-  ( \authResult -> case authResult of
+  ( \case
       Authenticated usr ->
         getInt usr
           :<|> postInt usr
@@ -581,7 +584,7 @@ server ccfg =
       Indefinite -> throwAll err401
       _ -> throwAll err403
   )
-    :<|> ( \authResult -> case authResult of
+    :<|> ( \case
             Authenticated usr -> respond (WithStatus @200 (42 :: Int))
             Indefinite        -> respond (WithStatus @401 $ pack "Authentication required")
             _                 -> respond (WithStatus @403 $ pack "Forbidden")
@@ -624,12 +627,14 @@ server ccfg =
     getLogout = return $ clearSession ccfg NoContent
 
     raw :: Server Raw
-    raw =
-#if MIN_VERSION_servant_server(0,11,0)
-      Tagged $
-#endif
-      \_req respond ->
+    raw = tagged $ \_req respond ->
         respond $ responseLBS status200 [("hi", "there")] "how are you?"
+
+#if MIN_VERSION_servant_server(0,11,0)
+    tagged = Tagged
+#else
+    tagged = id
+#endif
 {- FOURMOLU_ENABLE -}
 
 -- }}}
@@ -644,7 +649,7 @@ future :: UTCTime
 future = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "2070-01-01"
 
 addJwtToHeader :: Either Error BSL.ByteString -> IO Options
-addJwtToHeader jwt = case jwt of
+addJwtToHeader = \case
   Left e -> fail $ show e
   Right v ->
     return $
@@ -654,7 +659,7 @@ createJWT :: JWK -> JWSHeader () -> ClaimsSet -> IO (Either Error Crypto.JWT.Sig
 createJWT k a b = runJOSE $ signClaims k a b
 
 addJwtToCookie :: ToCompact a => CookieSettings -> Either Error a -> IO Options
-addJwtToCookie ccfg jwt = case jwt >>= (return . encodeCompact) of
+addJwtToCookie ccfg jwt = case jwt <&> encodeCompact of
   Left e -> fail $ show e
   Right v ->
     return $
@@ -663,14 +668,14 @@ addJwtToCookie ccfg jwt = case jwt >>= (return . encodeCompact) of
 addCookie :: Options -> BS.ByteString -> Options
 addCookie opts cookie' =
   opts
-    & header "Cookie" %~ \c -> case c of
+    & header "Cookie" %~ \case
       [h] -> [cookie' <> "; " <> h]
       [] -> [cookie']
       _ -> error "expecting single cookie header"
 
 {- FOURMOLU_DISABLE -}
 shouldHTTPErrorWith :: IO a -> Status -> Expectation
-shouldHTTPErrorWith act stat = act `shouldThrow` \e -> case e of
+shouldHTTPErrorWith act stat = act `shouldThrow` \case
 #if MIN_VERSION_http_client(0,5,0)
   HCli.HttpExceptionRequest _ (HCli.StatusCodeException resp _)
     -> HCli.responseStatus resp == stat
@@ -687,7 +692,7 @@ shouldMatchCookieNames cj patterns =
 
 shouldNotHaveCookies :: HCli.CookieJar -> [BS.ByteString] -> Expectation
 shouldNotHaveCookies cj patterns =
-  sequence_ $ (\cookieName -> cookieNames `shouldNotContain` [cookieName]) <$> patterns
+  forM_ patterns (\cookieName -> cookieNames `shouldNotContain` [cookieName])
   where
     cookieNames :: [BS.ByteString]
     cookieNames = cookie_name <$> destroyCookieJar cj
@@ -701,7 +706,7 @@ url :: Int -> String
 url port = "http://localhost:" <> show port
 
 claims :: Value -> ClaimsSet
-claims val = emptyClaimsSet & unregisteredClaims . at "dat" .~ Just val
+claims val = emptyClaimsSet & unregisteredClaims . at "dat" ?~ val
 
 -- }}}
 ------------------------------------------------------------------------------
