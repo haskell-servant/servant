@@ -14,7 +14,8 @@ module Servant.Auth.Swagger
 
     -- * Needed to define instances of @HasSwagger@
   , HasSecurity (..)
-  ) where
+  )
+where
 
 import Control.Lens ((&), (<>~))
 import Data.Kind (Type)
@@ -30,15 +31,14 @@ import Data.Swagger
   , securityDefinitions
   )
 #if MIN_VERSION_swagger2(2,6,0)
-import Data.Swagger (SecurityDefinitions(..))
+import Data.Swagger (SecurityDefinitions (..))
 #endif
 
+import qualified Data.Text as T
 import GHC.Exts (fromList)
 import Servant.API hiding (BasicAuth)
 import Servant.Auth
 import Servant.Swagger
-
-import qualified Data.Text as T
 
 instance (AllHasSecurity xs, HasSwagger api) => HasSwagger (Auth xs r :> api) where
   toSwagger _ =

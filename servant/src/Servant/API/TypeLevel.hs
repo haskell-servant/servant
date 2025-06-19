@@ -50,53 +50,23 @@ module Servant.API.TypeLevel
     -- ** Fragment
   , FragmentUnique
   , AtMostOneFragment
-  ) where
+  )
+where
 
-import Data.Kind
-  ( Type
-  )
-import GHC.Exts
-  ( Constraint
-  )
-import GHC.TypeLits
-  ( ErrorMessage (..)
-  , TypeError
-  )
-import Servant.API.Alternative
-  ( type (:<|>)
-  )
-import Servant.API.Capture
-  ( Capture
-  , CaptureAll
-  )
+import Data.Kind (Type)
+import GHC.Exts (Constraint)
+import GHC.TypeLits (ErrorMessage (..), TypeError)
+import Servant.API.Alternative (type (:<|>))
+import Servant.API.Capture (Capture, CaptureAll)
 import Servant.API.Fragment
-import Servant.API.Generic
-  ( ToServantApi
-  )
-import Servant.API.Header
-  ( Header
-  , Header'
-  )
-import Servant.API.NamedRoutes
-  ( NamedRoutes
-  )
-import Servant.API.QueryParam
-  ( QueryFlag
-  , QueryParam
-  , QueryParams
-  )
-import Servant.API.ReqBody
-  ( ReqBody
-  )
-import Servant.API.Sub
-  ( type (:>)
-  )
-import Servant.API.UVerb
-  ( UVerb
-  )
-import Servant.API.Verbs
-  ( Verb
-  )
+import Servant.API.Generic (ToServantApi)
+import Servant.API.Header (Header, Header')
+import Servant.API.NamedRoutes (NamedRoutes)
+import Servant.API.QueryParam (QueryFlag, QueryParam, QueryParams)
+import Servant.API.ReqBody (ReqBody)
+import Servant.API.Sub (type (:>))
+import Servant.API.UVerb (UVerb)
+import Servant.API.Verbs (Verb)
 
 -- * API predicates
 

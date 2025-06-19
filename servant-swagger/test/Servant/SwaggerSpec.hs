@@ -27,7 +27,7 @@ import Servant.Test.ComprehensiveAPI (comprehensiveAPI)
 import Test.Hspec hiding (example)
 
 #if !MIN_VERSION_swagger2(2,4,0)
-import           Data.Aeson.Lens   (key, _Array)
+import Data.Aeson.Lens (_Array, key)
 import qualified Data.Vector as V
 #endif
 
@@ -62,9 +62,11 @@ data Todo = Todo
   deriving (Generic)
 
 instance ToJSON Todo
+
 instance ToSchema Todo
 
 newtype TodoId = TodoId String deriving (Generic)
+
 instance ToParamSchema TodoId
 
 type TodoAPI = "todo" :> Capture "id" TodoId :> Get '[JSON] Todo
@@ -177,10 +179,12 @@ data UserDetailed = UserDetailed
   , groups :: [Group]
   }
   deriving (Eq, Show, Generic)
+
 instance ToSchema UserDetailed
 
 newtype Package = Package {packageName :: Text}
   deriving (Eq, Show, Generic)
+
 instance ToSchema Package
 
 hackageSwaggerWithTags :: Swagger

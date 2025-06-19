@@ -5,27 +5,14 @@
 
 module Servant.Server.Internal.Router where
 
-import Data.Function
-  ( on
-  )
-import Data.List
-  ( nub
-  )
-import Data.Map
-  ( Map
-  )
+import Data.Function (on)
+import Data.List (nub)
+import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Text
-  ( Text
-  )
+import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Typeable
-  ( TypeRep
-  )
-import Network.Wai
-  ( Response
-  , pathInfo
-  )
+import Data.Typeable (TypeRep)
+import Network.Wai (Response, pathInfo)
 import Servant.Server.Internal.ErrorFormatter
 import Servant.Server.Internal.RouteResult
 import Servant.Server.Internal.RoutingApplication

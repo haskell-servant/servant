@@ -6,18 +6,16 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
-import Prelude.Compat
-import Prelude ()
-
 import Data.Aeson
 import Data.Proxy
 import Data.Text
 import GHC.Generics
 import Network.Wai
 import Network.Wai.Handler.Warp
-
+import Prelude.Compat
 import Servant
 import Servant.Server.Generic ()
+import Prelude ()
 
 -- * Example
 
@@ -26,6 +24,7 @@ newtype Greet = Greet {_msg :: Text}
   deriving (Generic, Show)
 
 instance FromJSON Greet
+
 instance ToJSON Greet
 
 -- API specification

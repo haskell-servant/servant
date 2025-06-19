@@ -14,15 +14,11 @@ module Servant.Server.Generic
   , genericServeTWithContext
   , genericServer
   , genericServerT
-  ) where
-
-import Data.Kind
-  ( Type
   )
-import Data.Proxy
-  ( Proxy (..)
-  )
+where
 
+import Data.Kind (Type)
+import Data.Proxy (Proxy (..))
 import Servant.API.Generic
 import Servant.Server
 import Servant.Server.Internal

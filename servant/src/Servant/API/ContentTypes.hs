@@ -68,58 +68,38 @@ module Servant.API.ContentTypes
   , eitherDecodeLenient
   , canHandleAcceptH
   , EventStreamChunk (..)
-  ) where
+  )
+where
 
-import Control.Arrow
-  ( left
-  )
-import Control.DeepSeq
-  ( NFData
-  )
-import Data.Aeson
-  ( FromJSON (..)
-  , ToJSON (..)
-  , eitherDecode
-  , encode
-  )
-import Data.Bifunctor
-  ( bimap
-  )
+import Control.Arrow (left)
+import Control.DeepSeq (NFData)
+import Data.Aeson (FromJSON (..), ToJSON (..), eitherDecode, encode)
+import Data.Bifunctor (bimap)
 import qualified Data.ByteString as BS
-import Data.ByteString.Lazy
-  ( ByteString
-  , fromStrict
-  , toStrict
-  )
-import Data.Kind
-  ( Type
-  )
+import Data.ByteString.Lazy (ByteString, fromStrict, toStrict)
+import Data.Kind (Type)
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe
-  ( isJust
-  )
+import Data.Maybe (isJust)
 import qualified Data.Text as TextS
 import qualified Data.Text.Encoding as TextS
 import qualified Data.Text.Lazy as TextL
 import qualified Data.Text.Lazy.Encoding as TextL
 import Data.Typeable
-import GHC.Generics
-  ( Generic
-  )
+import GHC.Generics (Generic)
 import qualified GHC.TypeLits as TL
 import qualified Network.HTTP.Media as M
-import Web.FormUrlEncoded
-  ( FromForm
-  , ToForm
-  , urlDecodeAsForm
-  , urlEncodeAsForm
-  )
+import Web.FormUrlEncoded (FromForm, ToForm, urlDecodeAsForm, urlEncodeAsForm)
 
 -- * Provided content types
+
 data JSON deriving (Typeable)
+
 data PlainText deriving (Typeable)
+
 data FormUrlEncoded deriving (Typeable)
+
 data OctetStream deriving (Typeable)
+
 data EventStream deriving (Typeable)
 
 -- * Accept class

@@ -11,11 +11,10 @@ module Servant
     -- | Useful re-exports
   , Proxy (..)
   , throwError
-  ) where
-
-import Control.Monad.Error.Class
-  ( throwError
   )
+where
+
+import Control.Monad.Error.Class (throwError)
 import Data.Proxy
 import Servant.API
 import Servant.Links

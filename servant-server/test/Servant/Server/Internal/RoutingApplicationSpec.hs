@@ -9,40 +9,21 @@
 
 module Servant.Server.Internal.RoutingApplicationSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Exception hiding
-  ( Handler
-  )
+import Control.Exception hiding (Handler)
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Resource
-  ( register
-  )
+import Control.Monad.Trans.Resource (register)
 import Data.IORef
 import Data.Proxy
-import GHC.TypeLits
-  ( KnownSymbol
-  , Symbol
-  , symbolVal
-  )
-import Network.Wai
-  ( defaultRequest
-  )
+import qualified Data.Text as T
+import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
+import Network.Wai (defaultRequest)
+import Prelude.Compat
 import Servant
 import Servant.Server.Internal
+import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
-import Test.Hspec.Wai
-  ( request
-  , shouldRespondWith
-  , with
-  )
-
-import qualified Data.Text as T
-
-import System.IO.Unsafe
-  ( unsafePerformIO
-  )
+import Test.Hspec.Wai (request, shouldRespondWith, with)
+import Prelude ()
 
 data TestResource x
   = TestResourceNone

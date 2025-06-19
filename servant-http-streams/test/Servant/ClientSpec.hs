@@ -22,58 +22,23 @@
 
 module Servant.ClientSpec (spec, Person (..), startWaiApp, endWaiApp) where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Arrow
-  ( left
-  )
-import Control.Concurrent
-  ( ThreadId
-  , forkIO
-  , killThread
-  )
-import Control.DeepSeq
-  ( NFData (..)
-  )
-import Control.Exception
-  ( IOException
-  , bracket
-  , fromException
-  )
-import Control.Monad.Error.Class
-  ( throwError
-  )
+import Control.Arrow (left)
+import Control.Concurrent (ThreadId, forkIO, killThread)
+import Control.DeepSeq (NFData (..))
+import Control.Exception (IOException, bracket, fromException)
+import Control.Monad.Error.Class (throwError)
 import Data.Aeson
-import Data.Char
-  ( chr
-  , isPrint
-  )
-import Data.Foldable
-  ( forM_
-  , toList
-  )
-import Data.Maybe
-  ( isJust
-  )
+import Data.Char (chr, isPrint)
+import Data.Foldable (forM_, toList)
+import Data.Maybe (isJust)
 import Data.Monoid ()
 import Data.Proxy
-import GHC.Generics
-  ( Generic
-  )
+import GHC.Generics (Generic)
 import qualified Network.HTTP.Types as HTTP
 import Network.Socket
 import qualified Network.Wai as Wai
 import Network.Wai.Handler.Warp
-import Test.HUnit
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Test.QuickCheck
-import Web.FormUrlEncoded
-  ( FromForm
-  , ToForm
-  )
-
+import Prelude.Compat
 import Servant.API
   ( AuthProtect
   , BasicAuth
@@ -107,6 +72,12 @@ import Servant.HttpStreams
 import Servant.Server
 import Servant.Server.Experimental.Auth
 import Servant.Test.ComprehensiveAPI
+import Test.HUnit
+import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
+import Web.FormUrlEncoded (FromForm, ToForm)
+import Prelude ()
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -133,9 +104,11 @@ instance NFData Person where
   rnf (Person n a) = rnf n `seq` rnf a
 
 instance ToJSON Person
+
 instance FromJSON Person
 
 instance ToForm Person
+
 instance FromForm Person
 
 instance Arbitrary Person where
@@ -242,6 +215,7 @@ type FailApi =
   "get" :> Raw
     :<|> "capture" :> Capture "name" String :> Raw
     :<|> "body" :> Raw
+
 failApi :: Proxy FailApi
 failApi = Proxy
 
@@ -285,6 +259,7 @@ genAuthAPI :: Proxy GenAuthAPI
 genAuthAPI = Proxy
 
 type instance AuthServerData (AuthProtect "auth-tag") = ()
+
 type instance Auth.AuthClientData (AuthProtect "auth-tag") = ()
 
 genAuthHandler :: AuthHandler Wai.Request ()
@@ -507,6 +482,7 @@ hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp
       postInt 5 `shouldReturn` 5
 
 -- * ConnectionError
+
 type ConnectionErrorAPI = Get '[JSON] Int
 
 connectionErrorAPI :: Proxy ConnectionErrorAPI

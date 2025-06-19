@@ -16,58 +16,33 @@ import Control.Arrow
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
-import Control.Monad.Base
-  ( MonadBase (..)
-  )
-import Control.Monad.Catch
-  ( MonadCatch
-  , MonadThrow
-  )
-import Control.Monad.Error.Class
-  ( MonadError (..)
-  )
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Catch (MonadCatch, MonadThrow)
+import Control.Monad.Error.Class (MonadError (..))
 import Control.Monad.Reader
-import Control.Monad.Trans.Control
-  ( MonadBaseControl (..)
-  )
+import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Control.Monad.Trans.Except
-import Data.Bifunctor
-  ( bimap
-  )
-import Data.ByteString.Builder
-  ( toLazyByteString
-  )
+import Data.Bifunctor (bimap)
+import Data.ByteString.Builder (toLazyByteString)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.CaseInsensitive
 import Data.Char
-import Data.Foldable
-  ( toList
-  )
-import Data.Functor.Alt
-  ( Alt (..)
-  )
-import Data.Proxy
-  ( Proxy (..)
-  )
+import Data.Foldable (toList)
+import Data.Functor.Alt (Alt (..))
+import Data.Proxy (Proxy (..))
 import qualified Data.Sequence as Seq
 import Data.String.Conversions
-import Data.Typeable
-  ( Typeable
-  )
+import Data.Typeable (Typeable)
 import Foreign.StablePtr
 import GHC.Generics
 import qualified GHCJS.Buffer as Buffer
 import GHCJS.Foreign.Callback
 import GHCJS.Prim
 import GHCJS.Types
-import JavaScript.TypedArray.ArrayBuffer
-  ( ArrayBuffer
-  )
+import JavaScript.TypedArray.ArrayBuffer (ArrayBuffer)
 import JavaScript.Web.Location
-import Network.HTTP.Media
-  ( renderHeader
-  )
+import Network.HTTP.Media (renderHeader)
 import Network.HTTP.Types
 import Servant.Client.Core
 import qualified Servant.Types.SourceT as S
@@ -244,6 +219,7 @@ onReadyStateChange xhr action = do
   callback <- asyncCallback action
   js_onReadyStateChange xhr callback
   return callback
+
 foreign import javascript safe "$1.onreadystatechange = $2;"
   js_onReadyStateChange :: JSXMLHttpRequest -> Callback (IO ()) -> IO ()
 
@@ -253,6 +229,7 @@ foreign import javascript unsafe "$1.readyState"
 openXhr :: JSXMLHttpRequest -> String -> String -> Bool -> IO ()
 openXhr xhr method url =
   js_openXhr xhr (toJSString method) (toJSString url)
+
 foreign import javascript unsafe "$1.open($2, $3, $4)"
   js_openXhr :: JSXMLHttpRequest -> JSVal -> JSVal -> Bool -> IO ()
 
@@ -348,12 +325,14 @@ foreign import javascript unsafe "$1.status"
 
 getStatusText :: JSXMLHttpRequest -> IO String
 getStatusText = fmap fromJSString . js_statusText
+
 foreign import javascript unsafe "$1.statusText"
   js_statusText :: JSXMLHttpRequest -> IO JSVal
 
 getAllResponseHeaders :: JSXMLHttpRequest -> IO String
 getAllResponseHeaders xhr =
   fromJSString <$> js_getAllResponseHeaders xhr
+
 foreign import javascript unsafe "$1.getAllResponseHeaders()"
   js_getAllResponseHeaders :: JSXMLHttpRequest -> IO JSVal
 

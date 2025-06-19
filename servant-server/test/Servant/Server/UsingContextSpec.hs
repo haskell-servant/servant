@@ -6,15 +6,10 @@
 module Servant.Server.UsingContextSpec where
 
 import Network.Wai
-import Test.Hspec
-  ( Spec
-  , describe
-  , it
-  )
-import Test.Hspec.Wai
-
 import Servant
 import Servant.Server.UsingContextSpec.TestCombinators
+import Test.Hspec (Spec, describe, it)
+import Test.Hspec.Wai
 
 spec :: Spec
 spec = do

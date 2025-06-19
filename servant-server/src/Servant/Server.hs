@@ -120,20 +120,13 @@ module Servant.Server
   , Application
   , Tagged (..)
   , module Servant.Server.UVerb
-  ) where
+  )
+where
 
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.Tagged
-  ( Tagged (..)
-  )
-import Data.Text
-  ( Text
-  )
-import Network.Wai
-  ( Application
-  )
+import Data.Proxy (Proxy (..))
+import Data.Tagged (Tagged (..))
+import Data.Text (Text)
+import Network.Wai (Application)
 import Servant.Server.Internal
 import Servant.Server.UVerb
 

@@ -11,22 +11,13 @@
 -- | This module exports 'ToSourceIO' and 'FromSourceIO' for 'ConduitT' instances.
 module Servant.Conduit
   ( ConduitToSourceIO (..)
-  ) where
+  )
+where
 
-import Control.Monad.IO.Class
-  ( MonadIO (..)
-  )
-import Control.Monad.IO.Unlift
-  ( MonadUnliftIO (..)
-  )
-import Control.Monad.Trans.Resource
-  ( ResourceT
-  , runResourceT
-  )
-import Data.Conduit.Internal
-  ( ConduitT (..)
-  , Pipe (..)
-  )
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.IO.Unlift (MonadUnliftIO (..))
+import Control.Monad.Trans.Resource (ResourceT, runResourceT)
+import Data.Conduit.Internal (ConduitT (..), Pipe (..))
 import Servant.API.Stream
 import qualified Servant.Types.SourceT as S
 

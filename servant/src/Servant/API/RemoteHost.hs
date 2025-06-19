@@ -3,11 +3,10 @@
 module Servant.API.RemoteHost
   ( -- $remotehost
     RemoteHost
-  ) where
-
-import Data.Typeable
-  ( Typeable
   )
+where
+
+import Data.Typeable (Typeable)
 
 -- | Provides access to the host or IP address
 --   from which the HTTP request was sent.

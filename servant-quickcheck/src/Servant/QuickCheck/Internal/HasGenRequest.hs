@@ -4,7 +4,9 @@
 
 module Servant.QuickCheck.Internal.HasGenRequest where
 
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
+import qualified Data.ByteString.Internal as BS (c2w)
 import Data.Kind (Type)
 import Data.String (fromString)
 import qualified Data.Text.Encoding as Text
@@ -27,15 +29,7 @@ import Prelude.Compat
 import Servant
 import Servant.API.ContentTypes (AllMimeRender (..))
 import Servant.Client (BaseUrl (..), Scheme (..))
-import Test.QuickCheck
-  ( Arbitrary (..)
-  , Gen
-  , elements
-  , frequency
-  )
-
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Internal as BS (c2w)
+import Test.QuickCheck (Arbitrary (..), Gen, elements, frequency)
 
 -- -----------------------------------------------------------------------------
 -- runGenRequest

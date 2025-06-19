@@ -17,20 +17,16 @@
 
 module Servant.GenAuthSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Arrow
-  ( left
-  )
+import Control.Arrow (left)
 import Data.Monoid ()
 import qualified Network.HTTP.Types as HTTP
-import Test.Hspec
-
+import Prelude.Compat
 import Servant.Client
 import qualified Servant.Client.Core.Auth as Auth
 import qualified Servant.Client.Core.Request as Req
 import Servant.ClientTestUtils
+import Test.Hspec
+import Prelude ()
 
 spec :: Spec
 spec = describe "Servant.GenAuthSpec" $ do

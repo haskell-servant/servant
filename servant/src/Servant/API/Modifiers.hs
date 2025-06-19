@@ -24,24 +24,14 @@ module Servant.API.Modifiers
   , unfoldRequiredArgument
   , RequestArgument
   , unfoldRequestArgument
-  ) where
+  )
+where
 
-import Data.Kind
-  ( Type
-  )
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.Singletons.Bool
-  ( SBool (..)
-  , SBoolI (..)
-  )
-import Data.Text
-  ( Text
-  )
-import Data.Type.Bool
-  ( If
-  )
+import Data.Kind (Type)
+import Data.Proxy (Proxy (..))
+import Data.Singletons.Bool (SBool (..), SBoolI (..))
+import Data.Text (Text)
+import Data.Type.Bool (If)
 
 -- | Required argument. Not wrapped.
 data Required

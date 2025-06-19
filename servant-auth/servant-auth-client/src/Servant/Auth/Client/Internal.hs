@@ -10,13 +10,12 @@ module Servant.Auth.Client.Internal where
 import qualified Data.ByteString as BS
 import Data.Monoid
 import Data.Proxy (Proxy (..))
+import Data.Sequence ((<|))
 import Data.String (IsString)
 import GHC.Exts (Constraint)
 import GHC.Generics (Generic)
 import Servant.API ((:>))
 import Servant.Auth
-
-import Data.Sequence ((<|))
 import Servant.Client.Core
 
 -- | A simple bearer token.

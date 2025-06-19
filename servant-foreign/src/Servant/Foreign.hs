@@ -57,7 +57,8 @@ module Servant.Foreign
     -- * Re-exports
   , module Servant.API
   , module Servant.Foreign.Inflections
-  ) where
+  )
+where
 
 import Servant.API
 import Servant.Foreign.Inflections

@@ -42,6 +42,7 @@ data Genus = Genus
   deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
 
 instance FromRow Genus
+
 instance FromRow Species
 
 server :: Connection -> Server API

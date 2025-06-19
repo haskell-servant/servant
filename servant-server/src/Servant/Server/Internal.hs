@@ -13,63 +13,38 @@ module Servant.Server.Internal
   , module Servant.Server.Internal.RouteResult
   , module Servant.Server.Internal.RoutingApplication
   , module Servant.Server.Internal.ServerError
-  ) where
+  )
+where
 
 import Control.Applicative ((<|>))
-import Control.Monad
-  ( join
-  , unless
-  , when
-  )
-import Control.Monad.Trans
-  ( lift
-  , liftIO
-  )
-import Control.Monad.Trans.Resource
-  ( ReleaseKey
-  , runResourceT
-  )
+import Control.Monad (join, unless, when)
+import Control.Monad.Trans (lift, liftIO)
+import Control.Monad.Trans.Resource (ReleaseKey, runResourceT)
 import Data.Acquire
-
 import Data.Bifunctor (first)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Char8 as BC8
 import qualified Data.ByteString.Lazy as BSL
 import Data.Constraint (Constraint, Dict (..))
-import Data.Either
-  ( partitionEithers
-  )
-import Data.Kind
-  ( Type
-  )
-import Data.Maybe
-  ( fromMaybe
-  , isNothing
-  , mapMaybe
-  , maybeToList
-  )
-import Data.String
-  ( IsString (..)
-  )
-import Data.Tagged
-  ( Tagged (..)
-  , retag
-  , untag
-  )
+import Data.Either (partitionEithers)
+import Data.Kind (Type)
+import Data.Maybe (fromMaybe, isNothing, mapMaybe, maybeToList)
+import Data.String (IsString (..))
+import Data.Tagged (Tagged (..), retag, untag)
 import qualified Data.Text as T
 import Data.Typeable
 import GHC.Generics
-import GHC.TypeLits (ErrorMessage (..), KnownNat, KnownSymbol, TypeError, symbolVal)
+import GHC.TypeLits
+  ( ErrorMessage (..)
+  , KnownNat
+  , KnownSymbol
+  , TypeError
+  , symbolVal
+  )
 import qualified Network.HTTP.Media as NHM
-import Network.HTTP.Types hiding
-  ( Header
-  , ResponseHeaders
-  , statusCode
-  )
-import Network.Socket
-  ( SockAddr
-  )
+import Network.HTTP.Types hiding (Header, ResponseHeaders, statusCode)
+import Network.Socket (SockAddr)
 import Network.Wai
   ( Application
   , Request
@@ -141,13 +116,21 @@ import Servant.API.ContentTypes
   , NoContent
   , canHandleAcceptH
   )
-import Servant.API.Generic (GServantProduct, GenericMode (..), ToServant, ToServantApi, fromServant, toServant)
+import Servant.API.Generic
+  ( GServantProduct
+  , GenericMode (..)
+  , ToServant
+  , ToServantApi
+  , fromServant
+  , toServant
+  )
 import Servant.API.Modifiers
   ( FoldLenient
   , FoldRequired
   , RequestArgument
   , unfoldRequestArgument
   )
+import Servant.API.MultiVerb
 import Servant.API.QueryString (FromDeepQuery (..))
 import Servant.API.ResponseHeaders
   ( GetHeaders
@@ -155,20 +138,8 @@ import Servant.API.ResponseHeaders
   , getHeaders
   , getResponse
   )
-import Servant.API.Status
-  ( statusFromNat
-  )
+import Servant.API.Status (statusFromNat)
 import Servant.API.TypeErrors
-import qualified Servant.Types.SourceT as S
-import Web.HttpApiData
-  ( FromHttpApiData
-  , parseHeader
-  , parseQueryParam
-  , parseUrlPiece
-  , parseUrlPieces
-  )
-
-import Servant.API.MultiVerb
 import Servant.API.TypeLevel (AtMostOneFragment, FragmentUnique)
 import Servant.Server.Internal.BasicAuth
 import Servant.Server.Internal.Context
@@ -181,6 +152,14 @@ import Servant.Server.Internal.RouteResult
 import Servant.Server.Internal.Router
 import Servant.Server.Internal.RoutingApplication
 import Servant.Server.Internal.ServerError
+import qualified Servant.Types.SourceT as S
+import Web.HttpApiData
+  ( FromHttpApiData
+  , parseHeader
+  , parseQueryParam
+  , parseUrlPiece
+  , parseUrlPieces
+  )
 
 class HasServer api context where
   -- | The type of a server for this API, given a monad to run effects in.

@@ -13,7 +13,8 @@ module Servant.API.TypeErrors
   , NoInstanceFor
   , NoInstanceForSub
   , ErrorIfNoGeneric
-  ) where
+  )
+where
 
 import Data.Kind (Constraint, Type)
 import GHC.Generics (Generic (..))

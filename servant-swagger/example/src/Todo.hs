@@ -50,6 +50,7 @@ newtype TodoId = TodoId Int
   deriving (Show, Generic, Typeable, ToJSON, FromHttpApiData)
 
 instance ToJSON Todo
+
 instance FromJSON Todo
 
 instance ToSchema Todo where
@@ -59,6 +60,7 @@ instance ToSchema Todo where
       & mapped . schema . example ?~ toJSON (Todo (UTCTime (fromGregorian 2015 12 31) 0) "get milk")
 
 instance ToParamSchema TodoId
+
 instance ToSchema TodoId
 
 -- | Swagger spec for Todo API.

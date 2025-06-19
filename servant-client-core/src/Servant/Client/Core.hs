@@ -61,7 +61,8 @@ module Servant.Client.Core
   , setRequestBodyLBS
   , setRequestBody
   , encodeQueryParamValue
-  ) where
+  )
+where
 
 import Servant.Client.Core.Auth
 import Servant.Client.Core.BaseUrl

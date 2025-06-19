@@ -40,7 +40,8 @@ module Servant.Swagger
     -- * Testing
   , validateEveryToJSON
   , validateEveryToJSONWithPatternChecker
-  ) where
+  )
+where
 
 import Servant.Swagger.Internal
 import Servant.Swagger.Internal.Orphans ()

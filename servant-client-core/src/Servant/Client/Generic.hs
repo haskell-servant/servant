@@ -10,12 +10,10 @@ module Servant.Client.Generic
   ( AsClientT
   , genericClient
   , genericClientHoist
-  ) where
-
-import Data.Proxy
-  ( Proxy (..)
   )
+where
 
+import Data.Proxy (Proxy (..))
 import Servant.API.Generic
 import Servant.Client.Core
 import Servant.Client.Core.HasClient (AsClientT)

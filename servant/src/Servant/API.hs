@@ -85,27 +85,14 @@ module Servant.API
   , If
   , SBool (..)
   , SBoolI (..)
-  ) where
+  )
+where
 
-import Data.Singletons.Bool
-  ( SBool (..)
-  , SBoolI (..)
-  )
-import Data.Type.Bool
-  ( If
-  )
-import Servant.API.Alternative
-  ( (:<|>) (..)
-  )
-import Servant.API.BasicAuth
-  ( BasicAuth
-  , BasicAuthData (..)
-  )
-import Servant.API.Capture
-  ( Capture
-  , Capture'
-  , CaptureAll
-  )
+import Data.Singletons.Bool (SBool (..), SBoolI (..))
+import Data.Type.Bool (If)
+import Servant.API.Alternative ((:<|>) (..))
+import Servant.API.BasicAuth (BasicAuth, BasicAuthData (..))
+import Servant.API.Capture (Capture, Capture', CaptureAll)
 import Servant.API.ContentTypes
   ( Accept (..)
   , FormUrlEncoded
@@ -116,19 +103,10 @@ import Servant.API.ContentTypes
   , OctetStream
   , PlainText
   )
-import Servant.API.Description
-  ( Description
-  , Summary
-  )
-import Servant.API.Empty
-  ( EmptyAPI (..)
-  )
-import Servant.API.Experimental.Auth
-  ( AuthProtect
-  )
-import Servant.API.Fragment
-  ( Fragment
-  )
+import Servant.API.Description (Description, Summary)
+import Servant.API.Empty (EmptyAPI (..))
+import Servant.API.Experimental.Auth (AuthProtect)
+import Servant.API.Fragment (Fragment)
 import Servant.API.Generic
   ( AsApi
   , GServantProduct
@@ -140,47 +118,17 @@ import Servant.API.Generic
   , genericApi
   , toServant
   )
-import Servant.API.Header
-  ( Header
-  , Header'
-  )
+import Servant.API.Header (Header, Header')
 import Servant.API.Host (Host)
-import Servant.API.HttpVersion
-  ( HttpVersion (..)
-  )
-import Servant.API.IsSecure
-  ( IsSecure (..)
-  )
-import Servant.API.Modifiers
-  ( Lenient
-  , Optional
-  , Required
-  , Strict
-  )
-import Servant.API.NamedRoutes
-  ( NamedRoutes
-  )
-import Servant.API.QueryParam
-  ( QueryFlag
-  , QueryParam
-  , QueryParam'
-  , QueryParams
-  )
-import Servant.API.QueryString
-  ( DeepQuery
-  , QueryString
-  )
-import Servant.API.Raw
-  ( Raw
-  , RawM
-  )
-import Servant.API.RemoteHost
-  ( RemoteHost
-  )
-import Servant.API.ReqBody
-  ( ReqBody
-  , ReqBody'
-  )
+import Servant.API.HttpVersion (HttpVersion (..))
+import Servant.API.IsSecure (IsSecure (..))
+import Servant.API.Modifiers (Lenient, Optional, Required, Strict)
+import Servant.API.NamedRoutes (NamedRoutes)
+import Servant.API.QueryParam (QueryFlag, QueryParam, QueryParam', QueryParams)
+import Servant.API.QueryString (DeepQuery, QueryString)
+import Servant.API.Raw (Raw, RawM)
+import Servant.API.RemoteHost (RemoteHost)
+import Servant.API.ReqBody (ReqBody, ReqBody')
 import Servant.API.ResponseHeaders
   ( AddHeader
   , BuildHeadersTo (buildHeadersTo)
@@ -217,9 +165,7 @@ import Servant.API.Stream
   , StreamPost
   , ToSourceIO (..)
   )
-import Servant.API.Sub
-  ( (:>)
-  )
+import Servant.API.Sub ((:>))
 import Servant.API.UVerb
   ( HasStatus
   , IsMember
@@ -232,9 +178,7 @@ import Servant.API.UVerb
   , inject
   , statusOf
   )
-import Servant.API.Vault
-  ( Vault
-  )
+import Servant.API.Vault (Vault)
 import Servant.API.Verbs
   ( Delete
   , DeleteAccepted
@@ -266,21 +210,7 @@ import Servant.API.Verbs
   , StdMethod (..)
   , Verb
   )
-import Servant.API.WithNamedContext
-  ( WithNamedContext
-  )
-import Servant.API.WithResource
-  ( WithResource
-  )
-import Servant.Links
-  ( HasLink (..)
-  , IsElem
-  , IsElem'
-  , Link
-  , URI (..)
-  , safeLink
-  )
-import Web.HttpApiData
-  ( FromHttpApiData (..)
-  , ToHttpApiData (..)
-  )
+import Servant.API.WithNamedContext (WithNamedContext)
+import Servant.API.WithResource (WithResource)
+import Servant.Links (HasLink (..), IsElem, IsElem', Link, URI (..), safeLink)
+import Web.HttpApiData (FromHttpApiData (..), ToHttpApiData (..))

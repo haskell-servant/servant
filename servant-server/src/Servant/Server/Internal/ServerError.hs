@@ -4,19 +4,12 @@
 
 module Servant.Server.Internal.ServerError where
 
-import Control.Exception
-  ( Exception
-  )
+import Control.Exception (Exception)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as LBS
-import Data.Typeable
-  ( Typeable
-  )
+import Data.Typeable (Typeable)
 import qualified Network.HTTP.Types as HTTP
-import Network.Wai
-  ( Response
-  , responseLBS
-  )
+import Network.Wai (Response, responseLBS)
 
 data ServerError = ServerError
   { errHTTPCode :: Int

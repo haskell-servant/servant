@@ -8,20 +8,14 @@ module Servant.Foreign.Inflections
   , concatCaseL
   , snakeCaseL
   , camelCaseL
-  ) where
+  )
+where
 
-import Control.Lens hiding
-  ( cons
-  )
+import Control.Lens hiding (cons)
 import qualified Data.Char as C
-import Data.Text hiding
-  ( map
-  )
+import Data.Text hiding (map)
 import Servant.Foreign.Internal
-import Prelude hiding
-  ( head
-  , tail
-  )
+import Prelude hiding (head, tail)
 
 -- | Simply concat each part of the FunctionName together.
 --

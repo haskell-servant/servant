@@ -37,40 +37,23 @@ module Servant.API.Stream
   , NoFraming
   , NewlineFraming
   , NetstringFraming
-  ) where
+  )
+where
 
-import Control.Applicative
-  ( (<|>)
-  )
-import Control.Monad.IO.Class
-  ( MonadIO (..)
-  )
+import Control.Applicative ((<|>))
+import Control.Monad.IO.Class (MonadIO (..))
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as LBS8
-import Data.Kind
-  ( Type
-  )
-import Data.List.NonEmpty
-  ( NonEmpty (..)
-  )
-import Data.Proxy
-  ( Proxy
-  )
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.Generics
-  ( Generic
-  )
-import GHC.TypeLits
-  ( Nat
-  )
-import Network.HTTP.Types.Method
-  ( StdMethod (..)
-  )
+import Data.Kind (Type)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Proxy (Proxy)
+import Data.Typeable (Typeable)
+import GHC.Generics (Generic)
+import GHC.TypeLits (Nat)
+import Network.HTTP.Types.Method (StdMethod (..))
 import Servant.Types.SourceT
 
 -- | A Stream endpoint for a given method emits a stream of encoded values at a
@@ -80,6 +63,7 @@ data Stream (method :: k1) (status :: Nat) (framing :: Type) (contentType :: Typ
   deriving (Typeable, Generic)
 
 type StreamGet = Stream 'GET 200
+
 type StreamPost = Stream 'POST 200
 
 -- | A stream request body.
@@ -145,6 +129,7 @@ sourceFromSourceIO src =
 -- This fires e.g. in Client.lhs
 -- {-# OPTIONS_GHC -ddump-simpl -ddump-rule-firings -ddump-to-file #-}
 {-# NOINLINE [2] sourceFromSourceIO #-}
+
 {-# RULES "sourceFromSourceIO @IO" sourceFromSourceIO = id :: SourceT IO a -> SourceT IO a #-}
 
 -------------------------------------------------------------------------------

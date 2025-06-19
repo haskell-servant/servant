@@ -10,7 +10,8 @@ module Servant.Client
   , defaultMakeClientRequest
   , hoistClient
   , module Servant.Client.Core.Reexport
-  ) where
+  )
+where
 
 import Servant.Client.Core.Reexport
 import Servant.Client.Internal.HttpClient

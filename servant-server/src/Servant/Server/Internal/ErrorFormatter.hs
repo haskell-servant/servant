@@ -11,17 +11,14 @@ module Servant.Server.Internal.ErrorFormatter
   , defaultErrorFormatters
   , MkContextWithErrorFormatter
   , mkContextWithErrorFormatter
-  ) where
+  )
+where
 
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Kind (Type)
 import Data.Typeable
 import Network.Wai.Internal (Request)
-
-import Servant.API
-  ( Capture
-  , ReqBody
-  )
+import Servant.API (Capture, ReqBody)
 import Servant.Server.Internal.Context
 import Servant.Server.Internal.ServerError
 
@@ -81,7 +78,9 @@ err400Formatter _ _ e = err400{errBody = BSL8.pack e}
 -- The imorts are needed for Haddock to correctly link to them.
 _RB :: Proxy ReqBody
 _RB = Proxy
+
 _C :: Proxy Capture
 _C = Proxy
+
 _CT :: Proxy Context
 _CT = Proxy

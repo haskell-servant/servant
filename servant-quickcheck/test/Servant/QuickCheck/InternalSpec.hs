@@ -13,14 +13,14 @@ import Network.HTTP.Client (path, queryString)
 import Prelude.Compat
 import Servant
 import Servant.HTML.Blaze (HTML)
-import Test.Hspec
-  ( Spec
-  , context
-  , describe
-  , it
-  , shouldBe
-  , shouldContain
+import Servant.QuickCheck
+import Servant.QuickCheck.Internal
+  ( genRequest
+  , runGenRequest
+  , serverDoesntSatisfy
   )
+import Servant.Test.ComprehensiveAPI (comprehensiveAPIWithoutStreamingOrRaw)
+import Test.Hspec (Spec, context, describe, it, shouldBe, shouldContain)
 import Test.Hspec.Core.Spec
   ( Arg
   , Example
@@ -33,15 +33,6 @@ import Test.QuickCheck.Gen (generate, unGen)
 import Test.QuickCheck.Random (mkQCGen)
 import qualified Text.Blaze.Html as Blaze
 import qualified Text.Blaze.Html5 as Blaze5
-
-import Servant.Test.ComprehensiveAPI (comprehensiveAPIWithoutStreamingOrRaw)
-
-import Servant.QuickCheck
-import Servant.QuickCheck.Internal
-  ( genRequest
-  , runGenRequest
-  , serverDoesntSatisfy
-  )
 
 spec :: Spec
 spec = do

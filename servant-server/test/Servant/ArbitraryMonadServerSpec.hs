@@ -9,19 +9,8 @@ import Data.Functor.Identity
 import Data.Proxy
 import Servant.API
 import Servant.Server
-
-import Test.Hspec
-  ( Spec
-  , describe
-  , it
-  )
-import Test.Hspec.Wai
-  ( get
-  , matchStatus
-  , post
-  , shouldRespondWith
-  , with
-  )
+import Test.Hspec (Spec, describe, it)
+import Test.Hspec.Wai (get, matchStatus, post, shouldRespondWith, with)
 
 spec :: Spec
 spec = describe "Arbitrary monad server" $ do

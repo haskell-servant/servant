@@ -31,8 +31,37 @@ import Network.Wai (Request, responseLBS)
 import Servant.API (ReflectMethod, reflectMethod)
 import Servant.API.ContentTypes (AllCTRender (handleAcceptH), AllMime)
 import Servant.API.ResponseHeaders (GetHeaders (..), Headers (..))
-import Servant.API.UVerb (HasStatus, IsMember, Statuses, UVerb, Union, Unique, WithStatus (..), foldMapUnion, inject, statusOf)
-import Servant.Server.Internal (Context, Delayed, Handler, HasServer (..), RouteResult (FailFatal, Route), Router, Server, ServerT, acceptCheck, addAcceptCheck, addMethodCheck, allowedMethodHead, err406, getAcceptHeader, leafRouter, methodCheck, runAction)
+import Servant.API.UVerb
+  ( HasStatus
+  , IsMember
+  , Statuses
+  , UVerb
+  , Union
+  , Unique
+  , WithStatus (..)
+  , foldMapUnion
+  , inject
+  , statusOf
+  )
+import Servant.Server.Internal
+  ( Context
+  , Delayed
+  , Handler
+  , HasServer (..)
+  , RouteResult (FailFatal, Route)
+  , Router
+  , Server
+  , ServerT
+  , acceptCheck
+  , addAcceptCheck
+  , addMethodCheck
+  , allowedMethodHead
+  , err406
+  , getAcceptHeader
+  , leafRouter
+  , methodCheck
+  , runAction
+  )
 
 -- | 'return' for 'UVerb' handlers.  Takes a value of any of the members of the open union,
 -- and will construct a union value in an 'Applicative' (eg. 'Server').

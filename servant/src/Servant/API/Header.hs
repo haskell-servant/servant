@@ -6,17 +6,12 @@
 module Servant.API.Header
   ( Header
   , Header'
-  ) where
+  )
+where
 
-import Data.Kind
-  ( Type
-  )
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.TypeLits
-  ( Symbol
-  )
+import Data.Kind (Type)
+import Data.Typeable (Typeable)
+import GHC.TypeLits (Symbol)
 import Servant.API.Modifiers
 
 -- | Extract the given header's value as a value of type @a@.

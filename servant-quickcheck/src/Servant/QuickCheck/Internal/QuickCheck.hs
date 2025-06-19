@@ -9,14 +9,10 @@ import Data.Proxy (Proxy)
 import qualified Network.HTTP.Client as C
 import Network.Wai.Handler.Warp (withApplication)
 import Prelude.Compat
-import Servant
-  ( Context (EmptyContext)
-  , HasServer
-  , Server
-  , serveWithContext
-  )
+import Servant (Context (EmptyContext), HasServer, Server, serveWithContext)
 #if MIN_VERSION_servant_server(0,18,0)
-import           Servant                  (DefaultErrorFormatters, ErrorFormatters, HasContextEntry, type (.++))
+import Servant
+    (DefaultErrorFormatters, ErrorFormatters, HasContextEntry, type (.++))
 #endif
 import Servant.Client (BaseUrl (..), Scheme (..))
 import Servant.QuickCheck.Internal.Equality
@@ -26,13 +22,7 @@ import Servant.QuickCheck.Internal.Predicates
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec (Expectation, expectationFailure)
 import Test.QuickCheck (Args (..), Result (..), quickCheckWithResult)
-import Test.QuickCheck.Monadic
-  ( assert
-  , forAllM
-  , monadicIO
-  , monitor
-  , run
-  )
+import Test.QuickCheck.Monadic (assert, forAllM, monadicIO, monitor, run)
 import Test.QuickCheck.Property (counterexample)
 
 -- | Start a servant application on an open port, run the provided function,

@@ -14,36 +14,20 @@
 
 module Servant.DocsSpec where
 
-import Control.Lens
-  ( (&)
-  , (<>~)
-  )
-import Control.Monad
-  ( unless
-  )
-import Control.Monad.Trans.Writer
-  ( Writer
-  , runWriter
-  , tell
-  )
+import Control.Lens ((&), (<>~))
+import Control.Monad (unless)
+import Control.Monad.Trans.Writer (Writer, runWriter, tell)
 import Data.Aeson
-import Data.List
-  ( isInfixOf
-  )
+import Data.List (isInfixOf)
 import Data.Proxy
-import Data.String.Conversions
-  ( cs
-  )
+import Data.String.Conversions (cs)
 import GHC.Generics
 import Prelude.Compat
-import Test.Tasty
-  ( TestName
-  , TestTree
-  , testGroup
-  )
-import Test.Tasty.Golden
-  ( goldenVsString
-  )
+import Servant.API
+import Servant.Docs.Internal
+import Servant.Test.ComprehensiveAPI
+import Test.Tasty (TestName, TestTree, testGroup)
+import Test.Tasty.Golden (goldenVsString)
 import Test.Tasty.HUnit
   ( Assertion
   , HasCallStack
@@ -53,10 +37,6 @@ import Test.Tasty.HUnit
   )
 import Prelude ()
 
-import Servant.API
-import Servant.Docs.Internal
-import Servant.Test.ComprehensiveAPI
-
 -- * comprehensive api
 
 -- This declaration simply checks that all instances are in place.
@@ -65,16 +45,22 @@ comprehensiveDocs = docs comprehensiveAPI
 
 instance ToParam (QueryParam' mods "foo" Int) where
   toParam _ = DocQueryParam "foo" ["1", "2", "3"] "QueryParams Int" Normal
+
 instance ToParam (QueryParam' mods "bar" Int) where
   toParam _ = DocQueryParam "bar" ["1", "2", "3"] "QueryParams Int" Normal
+
 instance ToParam (QueryParams "foo" Int) where
   toParam _ = DocQueryParam "foo" ["1", "2", "3"] "QueryParams Int" List
+
 instance ToParam (QueryFlag "foo") where
   toParam _ = DocQueryParam "foo" [] "QueryFlag" Flag
+
 instance ToCapture (Capture "foo" Int) where
   toCapture _ = DocCapture "foo" "Capture foo Int"
+
 instance ToCapture (CaptureAll "foo" Int) where
   toCapture _ = DocCapture "foo" "Capture all foo Int"
+
 instance ToFragment (Fragment Int) where
   toFragment _ = DocFragment "foo" "Fragment Int"
 
@@ -191,6 +177,7 @@ type TestApi2 =
     :<|> "duplicate-endpoint" :> Get '[PlainText] Int
 
 data TT = TT1 | TT2 deriving (Show, Eq)
+
 data UT = UT1 | UT2 deriving (Show, Eq)
 
 instance ToSample TT where

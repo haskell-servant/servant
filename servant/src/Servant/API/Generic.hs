@@ -50,7 +50,8 @@ module Servant.API.Generic
 
     -- * re-exports
   , Generic (Rep)
-  ) where
+  )
+where
 
 -- Based on servant-generic licensed under MIT License
 --
@@ -74,19 +75,9 @@ module Servant.API.Generic
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-import Data.Kind
-  ( Type
-  )
-import Data.Proxy
-  ( Proxy (..)
-  )
-import GHC.Generics
-  ( Generic (..)
-  , K1 (..)
-  , M1 (..)
-  , (:*:) (..)
-  )
-
+import Data.Kind (Type)
+import Data.Proxy (Proxy (..))
+import GHC.Generics (Generic (..), K1 (..), M1 (..), (:*:) (..))
 import Servant.API.Alternative
 
 -- | A constraint alias, for work with 'mode' and 'routes'.

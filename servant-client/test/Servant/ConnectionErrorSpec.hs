@@ -18,26 +18,17 @@
 
 module Servant.ConnectionErrorSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Exception
-  ( fromException
-  )
-import Data.Maybe
-  ( isJust
-  )
+import Control.Exception (fromException)
+import Data.Maybe (isJust)
 import Data.Monoid ()
 import Data.Proxy
 import qualified Network.HTTP.Client as C
-import Test.Hspec
-
-import Servant.API
-  ( Get
-  , JSON
-  )
+import Prelude.Compat
+import Servant.API (Get, JSON)
 import Servant.Client
 import Servant.ClientTestUtils
+import Test.Hspec
+import Prelude ()
 
 spec :: Spec
 spec = describe "Servant.ConnectionErrorSpec" $ do

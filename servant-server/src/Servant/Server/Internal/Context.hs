@@ -10,16 +10,13 @@
 module Servant.Server.Internal.Context
   ( module Servant.Server.Internal.Context
   , module Servant.API.TypeLevel.List
-  ) where
-
-import Data.Kind
-  ( Type
   )
+where
+
+import Data.Kind (Type)
 import Data.Proxy
 import GHC.TypeLits
-import Servant.API.TypeLevel.List
-  ( type (.++)
-  )
+import Servant.API.TypeLevel.List (type (.++))
 
 -- | 'Context's are used to pass values to combinators. (They are __not__ meant
 -- to be used to pass parameters to your handlers, i.e. they should not replace
@@ -45,6 +42,7 @@ infixr 5 :.
 
 instance Show (Context '[]) where
   show EmptyContext = "EmptyContext"
+
 instance (Show a, Show (Context as)) => Show (Context (a ': as)) where
   showsPrec outerPrecedence (a :. as) =
     showParen (outerPrecedence > 5) $
@@ -52,6 +50,7 @@ instance (Show a, Show (Context as)) => Show (Context (a ': as)) where
 
 instance Eq (Context '[]) where
   _ == _ = True
+
 instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
   x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
 

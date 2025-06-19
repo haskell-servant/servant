@@ -5,37 +5,18 @@
 
 module Servant.Server.RouterSpec (spec) where
 
-import Control.Monad
-  ( unless
-  )
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.Text
-  ( Text
-  , unpack
-  )
-import Data.Typeable
-  ( typeRep
-  )
-import Network.HTTP.Types
-  ( Status (..)
-  )
-import Network.Wai
-  ( responseBuilder
-  )
-import Network.Wai.Internal
-  ( Response (ResponseBuilder)
-  )
+import Control.Monad (unless)
+import Data.Proxy (Proxy (..))
+import Data.Text (Text, unpack)
+import Data.Typeable (typeRep)
+import Network.HTTP.Types (Status (..))
+import Network.Wai (responseBuilder)
+import Network.Wai.Internal (Response (ResponseBuilder))
 import Servant.API
 import Servant.Server
 import Servant.Server.Internal
 import Test.Hspec
-import Test.Hspec.Wai
-  ( get
-  , shouldRespondWith
-  , with
-  )
+import Test.Hspec.Wai (get, shouldRespondWith, with)
 
 spec :: Spec
 spec = describe "Servant.Server.Internal.Router" $ do
@@ -153,6 +134,7 @@ type End = Get '[JSON] NoContent
 -- same layout:
 
 type Endpoint = "a" :> End :<|> "a" :> End
+
 type EndpointRef = "a" :> (End :<|> End)
 
 endpoint :: Proxy Endpoint
@@ -166,6 +148,7 @@ endpointRef = Proxy
 -- layout:
 
 type Static = "a" :> "b" :> End :<|> "a" :> "c" :> End
+
 type StaticRef = "a" :> ("b" :> End :<|> "c" :> End)
 
 static :: Proxy Static

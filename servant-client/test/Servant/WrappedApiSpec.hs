@@ -17,31 +17,19 @@
 
 module Servant.WrappedApiSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Exception
-  ( bracket
-  )
-import Control.Monad.Error.Class
-  ( throwError
-  )
+import Control.Exception (bracket)
+import Control.Monad.Error.Class (throwError)
 import Data.Kind (Type)
 import Data.Monoid ()
 import Data.Proxy
 import qualified Network.HTTP.Types as HTTP
-import Test.Hspec
-
-import Servant.API
-  ( Delete
-  , Get
-  , JSON
-  , Post
-  , Put
-  )
+import Prelude.Compat
+import Servant.API (Delete, Get, JSON, Post, Put)
 import Servant.Client
 import Servant.ClientTestUtils
 import Servant.Server
+import Test.Hspec
+import Prelude ()
 
 spec :: Spec
 spec = describe "Servant.WrappedApiSpec" $ do

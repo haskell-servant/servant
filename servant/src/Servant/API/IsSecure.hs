@@ -4,14 +4,11 @@
 module Servant.API.IsSecure
   ( -- $issecure
     IsSecure (..)
-  ) where
+  )
+where
 
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.Generics
-  ( Generic
-  )
+import Data.Typeable (Typeable)
+import GHC.Generics (Generic)
 
 -- | Was this request made over an SSL connection?
 --

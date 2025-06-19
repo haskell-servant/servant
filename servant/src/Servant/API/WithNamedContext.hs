@@ -3,9 +3,7 @@
 
 module Servant.API.WithNamedContext where
 
-import Data.Kind
-  ( Type
-  )
+import Data.Kind (Type)
 import GHC.TypeLits
 
 -- | 'WithNamedContext' names a specific tagged context to use for the

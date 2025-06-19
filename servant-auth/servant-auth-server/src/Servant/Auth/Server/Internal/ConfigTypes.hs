@@ -1,7 +1,8 @@
 module Servant.Auth.Server.Internal.ConfigTypes
   ( module Servant.Auth.Server.Internal.ConfigTypes
   , Servant.API.IsSecure (..)
-  ) where
+  )
+where
 
 import Crypto.JOSE as Jose
 import Crypto.JWT as Jose

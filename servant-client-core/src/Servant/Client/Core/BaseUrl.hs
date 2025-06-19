@@ -6,39 +6,23 @@ module Servant.Client.Core.BaseUrl
   , showBaseUrl
   , parseBaseUrl
   , InvalidBaseUrlException (..)
-  ) where
+  )
+where
 
-import Control.DeepSeq
-  ( NFData (..)
-  )
-import Control.Monad.Catch
-  ( Exception
-  , MonadThrow
-  , throwM
-  )
-import Data.Aeson
-  ( FromJSON (..)
-  , FromJSONKey (..)
-  , ToJSON (..)
-  , ToJSONKey (..)
-  )
+import Control.DeepSeq (NFData (..))
+import Control.Monad.Catch (Exception, MonadThrow, throwM)
+import Data.Aeson (FromJSON (..), FromJSONKey (..), ToJSON (..), ToJSONKey (..))
 import Data.Aeson.Types
   ( FromJSONKeyFunction (..)
   , contramapToJSONKeyFunction
   , withText
   )
-import Data.Data
-  ( Data
-  )
+import Data.Data (Data)
 import qualified Data.List as List
 import qualified Data.Text as T
 import GHC.Generics
-import Language.Haskell.TH.Syntax
-  ( Lift
-  )
-import Network.URI hiding
-  ( path
-  )
+import Language.Haskell.TH.Syntax (Lift)
+import Network.URI hiding (path)
 import Safe
 import Text.Read
 
@@ -121,6 +105,7 @@ showBaseUrl (BaseUrl urlscheme host port path) =
       _ -> ":" ++ show port
 
 newtype InvalidBaseUrlException = InvalidBaseUrlException String deriving (Show)
+
 instance Exception InvalidBaseUrlException
 
 -- |

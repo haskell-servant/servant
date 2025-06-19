@@ -6,39 +6,15 @@
 
 module Servant.Server.Internal.Handler where
 
-import Control.Monad.Base
-  ( MonadBase (..)
-  )
-import Control.Monad.Catch
-  ( MonadCatch
-  , MonadMask
-  , MonadThrow
-  )
-import Control.Monad.Error.Class
-  ( MonadError
-  , throwError
-  )
-import Control.Monad.IO.Class
-  ( MonadIO
-  )
-import Control.Monad.Trans.Control
-  ( MonadBaseControl (..)
-  )
-import Control.Monad.Trans.Except
-  ( ExceptT (ExceptT)
-  , runExceptT
-  )
-import Data.String
-  ( fromString
-  )
-import GHC.Generics
-  ( Generic
-  )
-import Servant.Server.Internal.ServerError
-  ( ServerError
-  , err500
-  , errBody
-  )
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
+import Control.Monad.Error.Class (MonadError, throwError)
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Trans.Control (MonadBaseControl (..))
+import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT)
+import Data.String (fromString)
+import GHC.Generics (Generic)
+import Servant.Server.Internal.ServerError (ServerError, err500, errBody)
 
 newtype Handler a = Handler {runHandler' :: ExceptT ServerError IO a}
   deriving stock (Generic)

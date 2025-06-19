@@ -17,7 +17,8 @@ module Servant.Client.Core.ServerSentEvents
   , EventStreamT (..)
   , JsonEventStreamT (..)
   , EventMessageStreamT (..)
-  ) where
+  )
+where
 
 import Control.Applicative (Alternative ((<|>)))
 import Control.Monad.IO.Class (MonadIO)
@@ -30,6 +31,9 @@ import Data.Char (chr)
 import Data.Coerce (coerce)
 import Data.Foldable (traverse_)
 import Data.Functor (void)
+
+-- For compatibility with GHC <= 8.2
+import Data.Semigroup (Semigroup (..))
 import qualified Data.Text as Text
 import Data.Text.Encoding (encodeUtf8)
 import GHC.Generics (Generic)
@@ -43,9 +47,6 @@ import Servant.Types.SourceT
   , mapStepT
   , transformStepWithAtto
   )
-
--- For compatibility with GHC <= 8.2
-import Data.Semigroup (Semigroup (..))
 
 -- | Line (or frame) of an event stream
 newtype EventStreamLine = EventStreamLine

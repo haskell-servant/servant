@@ -4,6 +4,7 @@ module Servant.Client.Core.MultiVerb.ResponseUnrender where
 
 import Control.Applicative
 import Control.Monad
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Kind (Type)
 import Data.SOP
@@ -11,8 +12,6 @@ import Data.Typeable
 import GHC.TypeLits
 import qualified Network.HTTP.Media as M
 import Network.HTTP.Types.Status (Status)
-
-import Data.ByteString (ByteString)
 import Servant.API.ContentTypes
 import Servant.API.MultiVerb
 import Servant.API.Status

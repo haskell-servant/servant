@@ -8,6 +8,7 @@ module Servant.Auth.Server.Internal.ThrowAll where
 #endif
 
 import Control.Monad.Error.Class
+import qualified Data.ByteString.Char8 as BS
 import Data.Tagged (Tagged (..))
 import Network.HTTP.Types
 import Network.Wai
@@ -15,8 +16,6 @@ import Servant (NamedRoutes (..), ServerError (..), (:<|>) (..))
 import Servant.API.Generic
 import Servant.Server
 import Servant.Server.Generic
-
-import qualified Data.ByteString.Char8 as BS
 
 class ThrowAll a where
   -- | 'throwAll' is a convenience function to throw errors across an entire

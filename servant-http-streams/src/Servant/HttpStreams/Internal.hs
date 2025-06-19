@@ -12,13 +12,7 @@
 
 module Servant.HttpStreams.Internal where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.DeepSeq
-  ( NFData
-  , force
-  )
+import Control.DeepSeq (NFData, force)
 import Control.Exception
   ( IOException
   , SomeException (..)
@@ -26,67 +20,27 @@ import Control.Exception
   , evaluate
   , throwIO
   )
-import Control.Monad
-  ( unless
-  )
-import Control.Monad.Base
-  ( MonadBase (..)
-  )
-import Control.Monad.Codensity
-  ( Codensity (..)
-  )
-import Control.Monad.Error.Class
-  ( MonadError (..)
-  )
-import Control.Monad.IO.Class
-  ( MonadIO (..)
-  )
-import Control.Monad.Reader
-  ( MonadReader
-  , ReaderT
-  , ask
-  , runReaderT
-  )
-import Control.Monad.Trans.Class
-  ( lift
-  )
-import Control.Monad.Trans.Except
-  ( ExceptT
-  , runExceptT
-  )
-import Data.Bifunctor
-  ( bimap
-  , first
-  )
-import Data.ByteString.Builder
-  ( toLazyByteString
-  )
+import Control.Monad (unless)
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Codensity (Codensity (..))
+import Control.Monad.Error.Class (MonadError (..))
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.Reader (MonadReader, ReaderT, ask, runReaderT)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import Data.Bifunctor (bimap, first)
+import Data.ByteString.Builder (toLazyByteString)
 import qualified Data.ByteString.Builder as B
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.CaseInsensitive as CI
-import Data.Foldable
-  ( for_
-  , toList
-  )
-import Data.Functor.Alt
-  ( Alt (..)
-  )
-import Data.Maybe
-  ( maybeToList
-  )
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.Sequence
-  ( fromList
-  )
-import Data.String
-  ( fromString
-  )
+import Data.Foldable (for_, toList)
+import Data.Functor.Alt (Alt (..))
+import Data.Maybe (maybeToList)
+import Data.Proxy (Proxy (..))
+import Data.Sequence (fromList)
+import Data.String (fromString)
 import GHC.Generics
-import Network.HTTP.Media
-  ( renderHeader
-  )
+import Network.HTTP.Media (renderHeader)
 import Network.HTTP.Types
   ( Status (..)
   , hContentType
@@ -94,12 +48,13 @@ import Network.HTTP.Types
   , renderQuery
   , statusIsSuccessful
   )
-import Servant.Client.Core
-
 import qualified Network.Http.Client as Client
 import qualified Network.Http.Types as Client
+import Prelude.Compat
+import Servant.Client.Core
 import qualified Servant.Types.SourceT as S
 import qualified System.IO.Streams as Streams
+import Prelude ()
 
 -- | The environment in which a request is run.
 --

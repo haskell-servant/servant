@@ -15,40 +15,21 @@
 
 module Servant.Foreign.Internal where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Lens
-  ( Getter
-  , makeLenses
-  , makePrisms
-  , (%~)
-  , (&)
-  , (.~)
-  , (<>~)
-  )
-import Data.Data
-  ( Data
-  )
-import Data.Kind
-  ( Type
-  )
+import Control.Lens (Getter, makeLenses, makePrisms, (%~), (&), (.~), (<>~))
+import Data.Data (Data)
+import Data.Kind (Type)
 import Data.Proxy
 import Data.String
 import Data.Text
-import Data.Text.Encoding
-  ( decodeUtf8
-  )
-import Data.Typeable
-  ( Typeable
-  )
+import Data.Text.Encoding (decodeUtf8)
+import Data.Typeable (Typeable)
 import GHC.TypeLits
 import qualified Network.HTTP.Types as HTTP
+import Prelude.Compat
 import Servant.API
-import Servant.API.Modifiers
-  ( RequiredArgument
-  )
+import Servant.API.Modifiers (RequiredArgument)
 import Servant.API.TypeLevel
+import Prelude ()
 
 -- | Canonical name of the endpoint, can be used to generate a function name.
 --

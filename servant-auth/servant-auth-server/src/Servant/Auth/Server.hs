@@ -142,10 +142,13 @@ module Servant.Auth.Server
     -- ** Re-exports
   , Default (def)
   , SetCookie
-  ) where
+  )
+where
 
+import Crypto.JOSE as Jose
 import Data.ByteString (ByteString, readFile, writeFile)
 import Data.Default (Default (def))
+import Servant (BasicAuthData (..))
 import Servant.Auth
 import Servant.Auth.JWT
 import Servant.Auth.Server.Internal ()
@@ -156,11 +159,8 @@ import Servant.Auth.Server.Internal.Cookie
 import Servant.Auth.Server.Internal.JWT
 import Servant.Auth.Server.Internal.ThrowAll
 import Servant.Auth.Server.Internal.Types
-import Prelude hiding (readFile, writeFile)
-
-import Crypto.JOSE as Jose
-import Servant (BasicAuthData (..))
 import Web.Cookie (SetCookie)
+import Prelude hiding (readFile, writeFile)
 
 -- | Generate a key suitable for use with 'defaultConfig'.
 generateKey :: IO Jose.JWK

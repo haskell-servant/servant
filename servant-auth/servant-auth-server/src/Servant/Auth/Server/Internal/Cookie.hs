@@ -18,13 +18,12 @@ import Network.HTTP.Types (methodGet)
 import Network.HTTP.Types.Header (hCookie)
 import Network.Wai (Request, requestHeaders, requestMethod)
 import Servant (AddHeader, addHeader')
-import System.Entropy (getEntropy)
-import Web.Cookie
-
 import Servant.Auth.JWT (FromJWT, ToJWT)
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.JWT (makeJWT, verifyJWT)
 import Servant.Auth.Server.Internal.Types
+import System.Entropy (getEntropy)
+import Web.Cookie
 
 cookieAuthCheck :: FromJWT usr => CookieSettings -> JWTSettings -> AuthCheck usr
 cookieAuthCheck ccfg jwtSettings = do

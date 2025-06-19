@@ -6,7 +6,6 @@ import Data.Kind (Type)
 import Data.Monoid
 import Servant hiding (BasicAuth)
 import Servant.Auth
-
 import Servant.Auth.JWT
 import Servant.Auth.Server.Internal.BasicAuth
 import Servant.Auth.Server.Internal.ConfigTypes

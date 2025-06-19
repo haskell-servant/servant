@@ -7,9 +7,7 @@ import qualified Data.ByteString.Lazy as ByteString
 import Data.Foldable (for_)
 import Data.Int (Int64)
 import Servant.API.ContentTypes (EventStreamChunk (..))
-import Servant.API.Stream
-  ( FromSourceIO (fromSourceIO)
-  )
+import Servant.API.Stream (FromSourceIO (fromSourceIO))
 import Servant.Client.Core.ServerSentEvents
   ( Event (..)
   , EventIgnoreReason (EventComment)
@@ -18,12 +16,7 @@ import Servant.Client.Core.ServerSentEvents
   , unEventStreamT
   )
 import Servant.Types.SourceT (runSourceT, source)
-import Test.Hspec
-  ( Spec
-  , describe
-  , it
-  , shouldBe
-  )
+import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
 spec = describe "Servant.Client.Core.ServerSentEvent" $ do

@@ -15,9 +15,6 @@
 #endif
 module Servant.Swagger.Internal where
 
-import Prelude.Compat
-import Prelude ()
-
 import Control.Applicative ((<|>))
 import Control.Lens
 import Data.Aeson
@@ -35,14 +32,12 @@ import Data.Typeable
 import GHC.Generics (D1, Meta (..), Rep)
 import GHC.TypeLits
 import Network.HTTP.Media (MediaType)
+import Prelude.Compat
 import Servant.API
-import Servant.API.Description
-  ( FoldDescription
-  , reflectDescription
-  )
+import Servant.API.Description (FoldDescription, reflectDescription)
 import Servant.API.Modifiers (FoldRequired)
-
 import Servant.Swagger.Internal.TypeLevel.API
+import Prelude ()
 
 -- | Generate a Swagger specification for a servant API.
 --
@@ -205,11 +200,17 @@ class SwaggerMethod method where
   swaggerMethod :: proxy method -> Lens' PathItem (Maybe Operation)
 
 instance SwaggerMethod 'GET where swaggerMethod _ = get
+
 instance SwaggerMethod 'PUT where swaggerMethod _ = put
+
 instance SwaggerMethod 'POST where swaggerMethod _ = post
+
 instance SwaggerMethod 'DELETE where swaggerMethod _ = delete
+
 instance SwaggerMethod 'OPTIONS where swaggerMethod _ = options
+
 instance SwaggerMethod 'HEAD where swaggerMethod _ = head_
+
 instance SwaggerMethod 'PATCH where swaggerMethod _ = patch
 
 instance HasSwagger (UVerb method cs '[]) where

@@ -12,22 +12,16 @@ module Servant.Client.Core.RunClient
   , runRequest
   , RunStreamingClient (..)
   , ClientF (..)
-  ) where
+  )
+where
 
+import Control.Monad.Free (Free (..), liftF)
+import Network.HTTP.Types.Status (Status)
 import Prelude.Compat
-import Prelude ()
-
-import Control.Monad.Free
-  ( Free (..)
-  , liftF
-  )
-import Network.HTTP.Types.Status
-  ( Status
-  )
-
 import Servant.Client.Core.ClientError
 import Servant.Client.Core.Request
 import Servant.Client.Core.Response
+import Prelude ()
 
 class Monad m => RunClient m where
   -- | How to make a request, with an optional list of status codes to not throw exceptions

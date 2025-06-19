@@ -11,26 +11,14 @@
 -- | This module exports 'ToSourceIO' and 'FromSourceIO' for 'Proxy' and 'SafeT' instances.
 module Servant.Pipes
   ( PipesToSourceIO (..)
-  ) where
+  )
+where
 
-import Control.Monad.IO.Class
-  ( MonadIO (..)
-  )
-import Control.Monad.Trans.Control
-  ( liftBaseWith
-  )
-import Pipes
-  ( ListT (..)
-  )
-import Pipes.Internal
-  ( Proxy (..)
-  , X
-  , closed
-  )
-import Pipes.Safe
-  ( SafeT
-  , runSafeT
-  )
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.Trans.Control (liftBaseWith)
+import Pipes (ListT (..))
+import Pipes.Internal (Proxy (..), X, closed)
+import Pipes.Safe (SafeT, runSafeT)
 import Servant.API.Stream
 import qualified Servant.Types.SourceT as S
 

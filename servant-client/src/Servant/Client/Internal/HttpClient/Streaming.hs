@@ -14,61 +14,31 @@ module Servant.Client.Internal.HttpClient.Streaming
   , clientResponseToResponse
   , defaultMakeClientRequest
   , catchConnectionError
-  ) where
-
-import Prelude.Compat
-import Prelude ()
+  )
+where
 
 import Control.Concurrent.STM.TVar
-import Control.DeepSeq
-  ( NFData
-  , force
-  )
-import Control.Exception
-  ( evaluate
-  , throwIO
-  )
-import Control.Monad
-  ( unless
-  )
-import Control.Monad.Base
-  ( MonadBase (..)
-  )
-import Control.Monad.Codensity
-  ( Codensity (..)
-  )
-import Control.Monad.Error.Class
-  ( MonadError (..)
-  )
+import Control.DeepSeq (NFData, force)
+import Control.Exception (evaluate, throwIO)
+import Control.Monad (unless)
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Codensity (Codensity (..))
+import Control.Monad.Error.Class (MonadError (..))
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Reader (MonadReader (..), ReaderT (..))
-import Control.Monad.STM
-  ( atomically
-  )
+import Control.Monad.STM (atomically)
+import Control.Monad.Trans.Class (MonadTrans (..))
 import Control.Monad.Trans.Except
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-import Data.Foldable
-  ( for_
-  )
-import Data.Functor.Alt
-  ( Alt (..)
-  )
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.Time.Clock
-  ( getCurrentTime
-  )
+import Data.Foldable (for_)
+import Data.Functor.Alt (Alt (..))
+import Data.Proxy (Proxy (..))
+import Data.Time.Clock (getCurrentTime)
 import GHC.Generics
-import Network.HTTP.Types
-  ( Status
-  , statusIsSuccessful
-  )
-
 import qualified Network.HTTP.Client as Client
-
-import Control.Monad.Trans.Class (MonadTrans (..))
+import Network.HTTP.Types (Status, statusIsSuccessful)
+import Prelude.Compat
 import Servant.Client.Core
 import Servant.Client.Internal.HttpClient
   ( ClientEnv (..)
@@ -79,6 +49,7 @@ import Servant.Client.Internal.HttpClient
   , mkFailureResponse
   )
 import qualified Servant.Types.SourceT as S
+import Prelude ()
 
 -- | Generates a set of client functions for an API.
 --

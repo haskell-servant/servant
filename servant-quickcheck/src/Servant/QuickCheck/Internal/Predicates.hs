@@ -12,12 +12,7 @@ import Data.Either (isRight)
 import Data.List.Split (wordsBy)
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Text as T
-import Data.Time
-  ( UTCTime
-  , defaultTimeLocale
-  , parseTimeM
-  , rfc822DateFormat
-  )
+import Data.Time (UTCTime, defaultTimeLocale, parseTimeM, rfc822DateFormat)
 import GHC.Generics (Generic)
 import Network.HTTP.Client
   ( Manager
@@ -46,14 +41,8 @@ import Network.HTTP.Types
   , status500
   )
 import Prelude.Compat
-import System.Clock
-  ( Clock (Monotonic)
-  , diffTimeSpec
-  , getTime
-  , toNanoSecs
-  )
-
 import Servant.QuickCheck.Internal.ErrorTypes
+import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
 -- | [__Best Practice__]
 --

@@ -3,9 +3,7 @@
 
 module Servant.API.Raw where
 
-import Data.Typeable
-  ( Typeable
-  )
+import Data.Typeable (Typeable)
 
 -- | Endpoint for plugging in your own Wai 'Application's.
 --

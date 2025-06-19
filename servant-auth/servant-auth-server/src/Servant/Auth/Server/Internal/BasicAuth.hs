@@ -7,17 +7,9 @@ module Servant.Auth.Server.Internal.BasicAuth where
 #endif
 
 import qualified Data.ByteString as BS
-import Servant
-  ( BasicAuthData (..)
-  , ServerError (..)
-  , err401
-  )
-import Servant.Server.Internal.BasicAuth
-  ( decodeBAHdr
-  , mkBAChallengerHdr
-  )
-
+import Servant (BasicAuthData (..), ServerError (..), err401)
 import Servant.Auth.Server.Internal.Types
+import Servant.Server.Internal.BasicAuth (decodeBAHdr, mkBAChallengerHdr)
 
 -- | A 'ServerError' that asks the client to authenticate via Basic
 -- Authentication, should be invoked by an application whenever

@@ -40,13 +40,8 @@ import qualified Servant.ClientTestUtils as CT
 import Servant.Server
 import Servant.Test.ComprehensiveAPI
 import Servant.Types.SourceT
-import System.Entropy
-  ( getEntropy
-  , getHardwareEntropy
-  )
-import System.IO.Unsafe
-  ( unsafePerformIO
-  )
+import System.Entropy (getEntropy, getHardwareEntropy)
+import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
 import Prelude ()
 

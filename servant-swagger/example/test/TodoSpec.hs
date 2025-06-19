@@ -2,17 +2,16 @@
 
 module TodoSpec where
 
-import Prelude.Compat
-import Prelude ()
-
 import Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import Paths_example
+import Prelude.Compat
 import Servant.Swagger.Test
 import Test.Hspec
 import Test.QuickCheck
 import Test.QuickCheck.Instances ()
 import Todo
+import Prelude ()
 
 spec :: Spec
 spec = describe "Swagger" $ do

@@ -9,18 +9,10 @@
 
 module Servant.Docs.Internal.Pretty where
 
-import Data.Aeson
-  ( ToJSON (..)
-  )
-import Data.Aeson.Encode.Pretty
-  ( encodePretty
-  )
-import Data.Proxy
-  ( Proxy (Proxy)
-  )
-import Network.HTTP.Media
-  ( (//)
-  )
+import Data.Aeson (ToJSON (..))
+import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Proxy (Proxy (Proxy))
+import Network.HTTP.Media ((//))
 import Servant.API
 import Servant.API.Verbs
 

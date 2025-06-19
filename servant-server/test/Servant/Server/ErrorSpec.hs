@@ -7,12 +7,8 @@
 
 module Servant.Server.ErrorSpec (spec) where
 
-import Control.Monad
-  ( when
-  )
-import Data.Aeson
-  ( encode
-  )
+import Control.Monad (when)
+import Data.Aeson (encode)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Proxy
@@ -24,13 +20,10 @@ import Network.HTTP.Types
   , methodPost
   , methodPut
   )
-import Safe
-  ( readMay
-  )
+import Safe (readMay)
+import Servant
 import Test.Hspec
 import Test.Hspec.Wai
-
-import Servant
 
 spec :: Spec
 spec = describe "HTTP Errors" $ do

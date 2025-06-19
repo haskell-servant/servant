@@ -6,53 +6,21 @@
 
 module Servant.Server.StaticFilesSpec where
 
-import Control.Exception
-  ( bracket
-  )
-import Data.Proxy
-  ( Proxy (Proxy)
-  )
-import Network.Wai
-  ( Application
-  )
+import Control.Exception (bracket)
+import Data.Proxy (Proxy (Proxy))
+import Network.Wai (Application)
+import Servant.API (Capture, Get, JSON, Raw, (:<|>) ((:<|>)), (:>))
+import Servant.Server (Server, serve)
+import Servant.Server.StaticFiles (serveDirectoryFileServer)
+import Servant.ServerSpec (Person (Person))
 import System.Directory
   ( createDirectory
   , getCurrentDirectory
   , setCurrentDirectory
   )
-import System.IO.Temp
-  ( withSystemTempDirectory
-  )
-import Test.Hspec
-  ( Spec
-  , around_
-  , describe
-  , it
-  )
-import Test.Hspec.Wai
-  ( get
-  , shouldRespondWith
-  , with
-  )
-
-import Servant.API
-  ( Capture
-  , Get
-  , JSON
-  , Raw
-  , (:<|>) ((:<|>))
-  , (:>)
-  )
-import Servant.Server
-  ( Server
-  , serve
-  )
-import Servant.Server.StaticFiles
-  ( serveDirectoryFileServer
-  )
-import Servant.ServerSpec
-  ( Person (Person)
-  )
+import System.IO.Temp (withSystemTempDirectory)
+import Test.Hspec (Spec, around_, describe, it)
+import Test.Hspec.Wai (get, shouldRespondWith, with)
 
 type Api =
   "dummy_api" :> Capture "person_name" String :> Get '[JSON] Person

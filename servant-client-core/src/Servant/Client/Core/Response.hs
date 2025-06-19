@@ -12,33 +12,20 @@ module Servant.Client.Core.Response
   , StreamingResponse
   , ResponseF (..)
   , responseToInternalResponse
-  ) where
-
-import Prelude.Compat
-import Prelude ()
-
-import Control.DeepSeq
-  ( NFData (..)
   )
+where
+
+import Control.DeepSeq (NFData (..))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Sequence as Seq
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.Generics
-  ( Generic
-  )
-import Network.HTTP.Types
-  ( Header
-  , HttpVersion (..)
-  , Status (..)
-  )
-
-import Servant.API.Stream
-  ( SourceIO
-  )
+import Data.Typeable (Typeable)
+import GHC.Generics (Generic)
+import Network.HTTP.Types (Header, HttpVersion (..), Status (..))
+import Prelude.Compat
+import Servant.API.Stream (SourceIO)
 import Servant.Types.Internal.Response
+import Prelude ()
 
 data ResponseF a = Response
   { responseStatusCode :: Status
@@ -59,6 +46,7 @@ instance NFData a => NFData (ResponseF a) where
       rnfHttpVersion (HttpVersion _ _) = () -- HttpVersion fields are strict
 
 type Response = ResponseF LBS.ByteString
+
 type StreamingResponse = ResponseF (SourceIO BS.ByteString)
 
 responseToInternalResponse :: ResponseF a -> InternalResponse a

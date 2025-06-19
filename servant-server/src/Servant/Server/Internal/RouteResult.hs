@@ -6,20 +6,10 @@
 
 module Servant.Server.Internal.RouteResult where
 
-import Control.Monad
-  ( ap
-  , liftM
-  )
-import Control.Monad.Base
-  ( MonadBase (..)
-  )
-import Control.Monad.Catch
-  ( MonadThrow (..)
-  )
-import Control.Monad.Trans
-  ( MonadIO (..)
-  , MonadTrans (..)
-  )
+import Control.Monad (ap, liftM)
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Catch (MonadThrow (..))
+import Control.Monad.Trans (MonadIO (..), MonadTrans (..))
 import Control.Monad.Trans.Control
   ( ComposeSt
   , MonadBaseControl (..)
@@ -27,7 +17,6 @@ import Control.Monad.Trans.Control
   , defaultLiftBaseWith
   , defaultRestoreM
   )
-
 import Servant.Server.Internal.ServerError
 
 -- | The result of matching against a path in the route tree.

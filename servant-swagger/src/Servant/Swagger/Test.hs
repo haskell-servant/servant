@@ -8,6 +8,7 @@
 module Servant.Swagger.Test
   ( validateEveryToJSON
   , validateEveryToJSONWithPatternChecker
-  ) where
+  )
+where
 
 import Servant.Swagger.Internal.Test

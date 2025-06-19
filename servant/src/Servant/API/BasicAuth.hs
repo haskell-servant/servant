@@ -4,18 +4,10 @@
 
 module Servant.API.BasicAuth where
 
-import Data.ByteString
-  ( ByteString
-  )
-import Data.Kind
-  ( Type
-  )
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.TypeLits
-  ( Symbol
-  )
+import Data.ByteString (ByteString)
+import Data.Kind (Type)
+import Data.Typeable (Typeable)
+import GHC.TypeLits (Symbol)
 
 -- | Combinator for <https://tools.ietf.org/html/rfc2617#section-2 Basic Access Authentication>.
 --

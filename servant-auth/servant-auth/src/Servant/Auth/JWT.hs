@@ -4,17 +4,11 @@ module Servant.Auth.JWT where
 
 import Control.Lens ((^.))
 import qualified Crypto.JWT as Jose
-import Data.Aeson
-  ( FromJSON
-  , Result (..)
-  , ToJSON
-  , fromJSON
-  , toJSON
-  )
-#if MIN_VERSION_aeson(2,0,0)                                                                                    
-import qualified Data.Map as KM                                                                        
-#else                                                                                                           
-import qualified Data.HashMap.Strict as KM                                                                      
+import Data.Aeson (FromJSON, Result (..), ToJSON, fromJSON, toJSON)
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Map as KM
+#else
+import qualified Data.HashMap.Strict as KM
 #endif
 
 import qualified Data.Text as T

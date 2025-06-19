@@ -18,12 +18,9 @@
 #endif
 module Servant.Swagger.Internal.TypeLevel.Every where
 
-import Data.Kind
-  ( Type
-  )
+import Data.Kind (Type)
 import Data.Proxy
 import GHC.Exts (Constraint)
-
 import Servant.Swagger.Internal.TypeLevel.TMap
 
 -- $setup
@@ -54,6 +51,7 @@ type family EveryTF cs x :: Constraint where
 class EveryTF cs x => Every (cs :: [Type -> Constraint]) (x :: Type)
 
 instance Every '[] x
+
 instance (c x, Every cs x) => Every (c ': cs) x
 
 -- | Like @'tmap'@, but uses @'Every'@ for multiple constraints.

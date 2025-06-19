@@ -16,22 +16,13 @@ module Servant.API.Description
   , FoldDescription
   , FoldDescription'
   , reflectDescription
-  ) where
+  )
+where
 
-import Data.Kind
-  ( Type
-  )
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.TypeLits
-  ( KnownSymbol
-  , Symbol
-  , symbolVal
-  )
+import Data.Kind (Type)
+import Data.Proxy (Proxy (..))
+import Data.Typeable (Typeable)
+import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
 
 -- | Add a short summary for (part of) API.
 --

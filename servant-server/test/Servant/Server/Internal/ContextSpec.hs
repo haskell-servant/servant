@@ -3,22 +3,11 @@
 
 module Servant.Server.Internal.ContextSpec (spec) where
 
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Test.Hspec
-  ( Spec
-  , context
-  , describe
-  , it
-  , shouldBe
-  )
-import Test.ShouldNotTypecheck
-  ( shouldNotTypecheck
-  )
-
+import Data.Proxy (Proxy (..))
 import Servant.API
 import Servant.Server.Internal.Context
+import Test.Hspec (Spec, context, describe, it, shouldBe)
+import Test.ShouldNotTypecheck (shouldNotTypecheck)
 
 spec :: Spec
 spec = do

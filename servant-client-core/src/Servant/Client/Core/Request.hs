@@ -23,47 +23,23 @@ module Servant.Client.Core.Request
   , setQueryString
   , setRequestBody
   , setRequestBodyLBS
-  ) where
+  )
+where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.DeepSeq
-  ( NFData (..)
-  )
-import Data.Bifoldable
-  ( Bifoldable (..)
-  )
-import Data.Bifunctor
-  ( Bifunctor (..)
-  )
-import Data.Bitraversable
-  ( Bitraversable (..)
-  , bifoldMapDefault
-  , bimapDefault
-  )
+import Control.DeepSeq (NFData (..))
+import Data.Bifoldable (Bifoldable (..))
+import Data.Bifunctor (Bifunctor (..))
+import Data.Bitraversable (Bitraversable (..), bifoldMapDefault, bimapDefault)
 import qualified Data.ByteString as BS
-import Data.ByteString.Builder
-  ( Builder
-  )
+import Data.ByteString.Builder (Builder)
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Sequence as Seq
-import Data.Text
-  ( Text
-  )
-import Data.Text.Encoding
-  ( encodeUtf8
-  )
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.Generics
-  ( Generic
-  )
-import Network.HTTP.Media
-  ( MediaType
-  )
+import Data.Text (Text)
+import Data.Text.Encoding (encodeUtf8)
+import Data.Typeable (Typeable)
+import GHC.Generics (Generic)
+import Network.HTTP.Media (MediaType)
 import Network.HTTP.Types
   ( Header
   , HeaderName
@@ -75,14 +51,10 @@ import Network.HTTP.Types
   , methodGet
   , urlEncodeBuilder
   )
-import Servant.API
-  ( SourceIO
-  , ToHttpApiData
-  , toHeader
-  , toQueryParam
-  )
-
+import Prelude.Compat
+import Servant.API (SourceIO, ToHttpApiData, toHeader, toQueryParam)
 import Servant.Client.Core.Internal (mediaTypeRnf)
+import Prelude ()
 
 data RequestF body path = Request
   { requestPath :: path
@@ -122,8 +94,11 @@ instance
       redactSensitiveHeader :: Header -> Header
       redactSensitiveHeader ("Authorization", _) = ("Authorization", "<REDACTED>")
       redactSensitiveHeader h = h
+
 instance Bifunctor RequestF where bimap = bimapDefault
+
 instance Bifoldable RequestF where bifoldMap = bifoldMapDefault
+
 instance Bitraversable RequestF where
   bitraverse f g r =
     mk

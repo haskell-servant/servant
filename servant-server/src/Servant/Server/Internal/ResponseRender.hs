@@ -5,24 +5,31 @@ module Servant.Server.Internal.ResponseRender where
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as BSL
+import Data.Foldable (toList)
 import Data.Kind (Type)
 import Data.SOP
+import Data.Sequence ((<|))
 import qualified Data.Sequence as Seq
 import Data.Typeable
 import GHC.TypeLits
+import qualified Network.HTTP.Media as M
 import Network.HTTP.Types (Status, hContentType)
 import qualified Network.Wai as Wai
-import qualified Servant.Types.SourceT as S
-
-import Data.Foldable (toList)
-import Data.Sequence ((<|))
-import qualified Network.HTTP.Media as M
-import Servant.API.ContentTypes (Accept, AcceptHeader (..), AllMimeRender, MimeRender, allMimeRender, contentType, mimeRender)
+import Servant.API.ContentTypes
+  ( Accept
+  , AcceptHeader (..)
+  , AllMimeRender
+  , MimeRender
+  , allMimeRender
+  , contentType
+  , mimeRender
+  )
 import Servant.API.MultiVerb
 import Servant.API.Status
 import Servant.API.Stream (SourceIO)
 import Servant.API.UVerb.Union
 import Servant.Types.Internal.Response
+import qualified Servant.Types.SourceT as S
 
 class Typeable a => IsWaiBody a where
   responseToWai :: InternalResponse a -> Wai.Response

@@ -121,120 +121,52 @@ module Servant.Links
   , linkQueryParams
   , linkFragment
   , addQueryParam
-  ) where
+  )
+where
 
 import Data.Constraint
-import Data.Kind
-  ( Type
-  )
+import Data.Kind (Type)
 import qualified Data.List as List
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.Singletons.Bool
-  ( SBool (..)
-  , SBoolI (..)
-  )
+import Data.Proxy (Proxy (..))
+import Data.Singletons.Bool (SBool (..), SBoolI (..))
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as TE
-import Data.Type.Bool
-  ( If
-  )
-import GHC.TypeLits
-  ( KnownSymbol
-  , TypeError
-  , symbolVal
-  )
-import Network.URI
-  ( URI (..)
-  , escapeURIString
-  , isUnreserved
-  )
-
-import Servant.API.Alternative
-  ( (:<|>) ((:<|>))
-  )
-import Servant.API.BasicAuth
-  ( BasicAuth
-  )
-import Servant.API.Capture
-  ( Capture'
-  , CaptureAll
-  )
-import Servant.API.Description
-  ( Description
-  , Summary
-  )
-import Servant.API.Empty
-  ( EmptyAPI (..)
-  )
-import Servant.API.Experimental.Auth
-  ( AuthProtect
-  )
-import Servant.API.Fragment
-  ( Fragment
-  )
+import Data.Type.Bool (If)
+import GHC.TypeLits (KnownSymbol, TypeError, symbolVal)
+import Network.URI (URI (..), escapeURIString, isUnreserved)
+import Servant.API.Alternative ((:<|>) ((:<|>)))
+import Servant.API.BasicAuth (BasicAuth)
+import Servant.API.Capture (Capture', CaptureAll)
+import Servant.API.Description (Description, Summary)
+import Servant.API.Empty (EmptyAPI (..))
+import Servant.API.Experimental.Auth (AuthProtect)
+import Servant.API.Fragment (Fragment)
 import Servant.API.Generic
-import Servant.API.Header
-  ( Header'
-  )
-import Servant.API.HttpVersion
-  ( HttpVersion
-  )
-import Servant.API.IsSecure
-  ( IsSecure
-  )
-import Servant.API.Modifiers
-  ( FoldRequired
-  )
+import Servant.API.Header (Header')
+import Servant.API.HttpVersion (HttpVersion)
+import Servant.API.IsSecure (IsSecure)
+import Servant.API.Modifiers (FoldRequired)
 import Servant.API.MultiVerb
-import Servant.API.NamedRoutes
-  ( NamedRoutes
-  )
-import Servant.API.QueryParam
-  ( QueryFlag
-  , QueryParam'
-  , QueryParams
-  )
+import Servant.API.NamedRoutes (NamedRoutes)
+import Servant.API.QueryParam (QueryFlag, QueryParam', QueryParams)
 import Servant.API.QueryString
   ( DeepQuery
   , ToDeepQuery
   , generateDeepParam
   , toDeepQuery
   )
-import Servant.API.Raw
-  ( Raw
-  , RawM
-  )
-import Servant.API.RemoteHost
-  ( RemoteHost
-  )
-import Servant.API.ReqBody
-  ( ReqBody'
-  )
-import Servant.API.Stream
-  ( Stream
-  , StreamBody'
-  )
-import Servant.API.Sub
-  ( type (:>)
-  )
+import Servant.API.Raw (Raw, RawM)
+import Servant.API.RemoteHost (RemoteHost)
+import Servant.API.ReqBody (ReqBody')
+import Servant.API.Stream (Stream, StreamBody')
+import Servant.API.Sub (type (:>))
 import Servant.API.TypeErrors
 import Servant.API.TypeLevel
 import Servant.API.UVerb
-import Servant.API.Vault
-  ( Vault
-  )
-import Servant.API.Verbs
-  ( NoContentVerb
-  , Verb
-  )
-import Servant.API.WithNamedContext
-  ( WithNamedContext
-  )
-import Servant.API.WithResource
-  ( WithResource
-  )
+import Servant.API.Vault (Vault)
+import Servant.API.Verbs (NoContentVerb, Verb)
+import Servant.API.WithNamedContext (WithNamedContext)
+import Servant.API.WithResource (WithResource)
 import Web.HttpApiData
 
 -- | A safe link datatype.

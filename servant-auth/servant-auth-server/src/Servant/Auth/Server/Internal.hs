@@ -14,14 +14,12 @@ import Servant
   )
 import Servant.Auth
 import Servant.Auth.JWT (ToJWT)
-
 import Servant.Auth.Server.Internal.AddSetCookie
 import Servant.Auth.Server.Internal.Class
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.Cookie
 import Servant.Auth.Server.Internal.JWT
 import Servant.Auth.Server.Internal.Types
-
 import Servant.Server.Internal (DelayedIO, addAuthCheck, withRequest)
 
 instance

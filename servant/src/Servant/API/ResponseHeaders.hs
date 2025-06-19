@@ -22,47 +22,24 @@ module Servant.API.ResponseHeaders
   , GetHeaders'
   , HeaderValMap
   , HList (..)
-  ) where
+  )
+where
 
-import Control.DeepSeq
-  ( NFData (..)
-  )
-import Data.ByteString.Char8 as BS
-  ( ByteString
-  , pack
-  )
+import Control.DeepSeq (NFData (..))
+import Data.ByteString.Char8 as BS (ByteString, pack)
 import qualified Data.CaseInsensitive as CI
-import Data.Kind
-  ( Type
-  )
+import Data.Kind (Type)
 import qualified Data.List as L
 import Data.Proxy
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.TypeLits
-  ( KnownSymbol
-  , Symbol
-  , symbolVal
-  )
-import qualified Network.HTTP.Types.Header as HTTP
-import Web.HttpApiData
-  ( FromHttpApiData
-  , ToHttpApiData
-  , parseHeader
-  , toHeader
-  )
-
 import qualified Data.SOP.BasicFunctors as SOP
 import qualified Data.SOP.NS as SOP
-import Servant.API.Header
-  ( Header'
-  )
-import Servant.API.Modifiers
-  ( Optional
-  , Strict
-  )
+import Data.Typeable (Typeable)
+import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
+import qualified Network.HTTP.Types.Header as HTTP
+import Servant.API.Header (Header')
+import Servant.API.Modifiers (Optional, Strict)
 import Servant.API.UVerb.Union
+import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
 
 -- | Response Header objects. You should never need to construct one directly.
 -- Instead, use 'addOptionalHeader'.
@@ -93,7 +70,9 @@ data HList a where
   HCons :: ResponseHeader h x -> HList xs -> HList (Header' mods h x ': xs)
 
 class NFDataHList xs where rnfHList :: HList xs -> ()
+
 instance NFDataHList '[] where rnfHList HNil = ()
+
 instance (y ~ Header' mods h x, NFData x, NFDataHList xs) => NFDataHList (y ': xs) where
   rnfHList (HCons h xs) = rnf h `seq` rnfHList xs
 

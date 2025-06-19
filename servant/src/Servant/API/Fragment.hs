@@ -5,12 +5,8 @@
 
 module Servant.API.Fragment (Fragment) where
 
-import Data.Kind
-  ( Type
-  )
-import Data.Typeable
-  ( Typeable
-  )
+import Data.Kind (Type)
+import Data.Typeable (Typeable)
 
 -- | Document the URI fragment in API. Useful in combination with 'Link'.
 --

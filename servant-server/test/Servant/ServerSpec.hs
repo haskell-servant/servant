@@ -12,50 +12,22 @@
 
 module Servant.ServerSpec where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Monad
-  ( forM_
-  , join
-  , unless
-  , when
-  )
-import Control.Monad.Error.Class
-  ( MonadError (..)
-  )
+import Control.Monad (forM_, join, unless, when)
+import Control.Monad.Error.Class (MonadError (..))
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Reader (ask, runReaderT)
-import Data.Acquire
-  ( Acquire
-  , mkAcquire
-  )
-import Data.Aeson
-  ( FromJSON
-  , ToJSON
-  , decode'
-  , encode
-  )
+import Data.Acquire (Acquire, mkAcquire)
+import Data.Aeson (FromJSON, ToJSON, decode', encode)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64 as Base64
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy.Char8 as BSL8
-import Data.Char
-  ( toUpper
-  )
-import Data.Maybe
-  ( fromMaybe
-  )
-import Data.Proxy
-  ( Proxy (Proxy)
-  )
-import Data.String
-  ( fromString
-  )
+import Data.Char (toUpper)
+import Data.Maybe (fromMaybe)
+import Data.Proxy (Proxy (Proxy))
+import Data.String (fromString)
 import qualified Data.Text as T
-import GHC.Generics
-  ( Generic
-  )
+import GHC.Generics (Generic)
 import Network.HTTP.Types
   ( QueryItem
   , Status (..)
@@ -89,6 +61,7 @@ import Network.Wai.Test
   , simpleHeaders
   , simpleStatus
   )
+import Prelude.Compat
 import Servant.API
   ( AuthProtect
   , BasicAuth
@@ -157,16 +130,19 @@ import Servant.Server
   , serve
   , serveWithContext
   )
+import Servant.Server.Experimental.Auth
+  ( AuthHandler
+  , AuthServerData
+  , mkAuthHandler
+  )
+import Servant.Server.Internal.BasicAuth
+  ( BasicAuthCheck (BasicAuthCheck)
+  , BasicAuthResult (Authorized, Unauthorized)
+  )
+import Servant.Server.Internal.Context (NamedContext (..))
 import Servant.Test.ComprehensiveAPI
 import qualified Servant.Types.SourceT as S
-import Test.Hspec
-  ( Spec
-  , context
-  , describe
-  , it
-  , shouldBe
-  , shouldContain
-  )
+import Test.Hspec (Spec, context, describe, it, shouldBe, shouldContain)
 import Test.Hspec.Wai
   ( get
   , matchHeaders
@@ -177,19 +153,7 @@ import Test.Hspec.Wai
   )
 import qualified Test.Hspec.Wai as THW
 import Text.Read (readMaybe)
-
-import Servant.Server.Experimental.Auth
-  ( AuthHandler
-  , AuthServerData
-  , mkAuthHandler
-  )
-import Servant.Server.Internal.BasicAuth
-  ( BasicAuthCheck (BasicAuthCheck)
-  , BasicAuthResult (Authorized, Unauthorized)
-  )
-import Servant.Server.Internal.Context
-  ( NamedContext (..)
-  )
+import Prelude ()
 
 -- * comprehensive api test
 
@@ -348,6 +312,7 @@ type CaptureApi =
   Capture "legs" Integer :> Get '[JSON] Animal
     :<|> "ears" :> Capture' '[Lenient] "ears" Integer :> Get '[JSON] Animal
     :<|> "eyes" :> Capture' '[Strict] "eyes" Integer :> Get '[JSON] Animal
+
 captureApi :: Proxy CaptureApi
 captureApi = Proxy
 
@@ -410,8 +375,10 @@ captureSpec = describe "Servant.API.Capture" $ do
 type CaptureAllApi =
   "legs" :> CaptureAll "legs" Integer :> Get '[JSON] Animal
     :<|> "arms" :> CaptureAll "arms" String :> Get '[JSON] [String]
+
 captureAllApi :: Proxy CaptureAllApi
 captureAllApi = Proxy
+
 captureAllServer :: Server CaptureAllApi
 captureAllServer = handleLegs :<|> return
   where
@@ -842,6 +809,7 @@ reqBodySpec = describe "Servant.API.ReqBody" $ do
 ------------------------------------------------------------------------------
 
 type HeaderApi a = Header "MyHeader" a :> Delete '[JSON] NoContent
+
 headerApi :: Proxy a -> Proxy (HeaderApi a)
 headerApi _ = Proxy
 
@@ -1214,19 +1182,25 @@ genAuthSpec = describe "Servant.API.Auth" $ with (return (serveWithContext genAu
 
 newtype PersonResponse = PersonResponse Person
   deriving (Generic)
+
 instance ToJSON PersonResponse
+
 instance HasStatus PersonResponse where
   type StatusOf PersonResponse = 200
 
 newtype RedirectResponse = RedirectResponse String
   deriving (Generic)
+
 instance ToJSON RedirectResponse
+
 instance HasStatus RedirectResponse where
   type StatusOf RedirectResponse = 301
 
 newtype AnimalResponse = AnimalResponse Animal
   deriving (Generic)
+
 instance ToJSON AnimalResponse
+
 instance HasStatus AnimalResponse where
   type StatusOf AnimalResponse = 203
 
@@ -1291,6 +1265,7 @@ data Person = Person
   deriving (Eq, Show, Generic)
 
 instance ToJSON Person
+
 instance FromJSON Person
 
 alice :: Person
@@ -1303,6 +1278,7 @@ data Animal = Animal
   deriving (Eq, Show, Generic)
 
 instance ToJSON Animal
+
 instance FromJSON Animal
 
 jerry :: Animal

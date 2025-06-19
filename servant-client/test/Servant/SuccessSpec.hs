@@ -17,40 +17,17 @@
 
 module Servant.SuccessSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Arrow
-  ( left
-  )
-import Control.Concurrent.STM
-  ( atomically
-  )
-import Control.Concurrent.STM.TVar
-  ( newTVar
-  , readTVar
-  )
-import Data.Foldable
-  ( forM_
-  , toList
-  )
-import Data.Maybe
-  ( listToMaybe
-  )
+import Control.Arrow (left)
+import Control.Concurrent.STM (atomically)
+import Control.Concurrent.STM.TVar (newTVar, readTVar)
+import Data.Foldable (forM_, toList)
+import Data.Maybe (listToMaybe)
 import Data.Monoid ()
-import Data.Text
-  ( Text
-  )
-import Data.Text.Encoding
-  ( encodeUtf8
-  )
+import Data.Text (Text)
+import Data.Text.Encoding (encodeUtf8)
 import qualified Network.HTTP.Client as C
 import qualified Network.HTTP.Types as HTTP
-import Test.HUnit
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Test.QuickCheck
-
+import Prelude.Compat
 import Servant.API
   ( Headers (..)
   , NoContent (NoContent)
@@ -61,6 +38,11 @@ import Servant.Client
 import qualified Servant.Client.Core.Request as Req
 import Servant.ClientTestUtils
 import Servant.Test.ComprehensiveAPI
+import Test.HUnit
+import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
+import Prelude ()
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming

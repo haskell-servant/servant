@@ -25,7 +25,8 @@ module Servant.Client.Core.Reexport
   , showBaseUrl
   , parseBaseUrl
   , InvalidBaseUrlException
-  ) where
+  )
+where
 
 import Servant.Client.Core.BaseUrl
 import Servant.Client.Core.ClientError

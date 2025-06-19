@@ -79,7 +79,8 @@ module Servant.QuickCheck
   , Scheme (..)
   , Args (..)
   , Proxy (..)
-  ) where
+  )
+where
 
 import Data.Proxy (Proxy (..))
 import Servant.Client (BaseUrl (..), Scheme (..))

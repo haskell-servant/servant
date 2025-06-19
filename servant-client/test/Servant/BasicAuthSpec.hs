@@ -17,21 +17,15 @@
 
 module Servant.BasicAuthSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Arrow
-  ( left
-  )
+import Control.Arrow (left)
 import Data.Monoid ()
 import qualified Network.HTTP.Types as HTTP
-import Test.Hspec
-
-import Servant.API
-  ( BasicAuthData (..)
-  )
+import Prelude.Compat
+import Servant.API (BasicAuthData (..))
 import Servant.Client
 import Servant.ClientTestUtils
+import Test.Hspec
+import Prelude ()
 
 spec :: Spec
 spec = describe "Servant.BasicAuthSpec" $ do

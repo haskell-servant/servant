@@ -5,15 +5,9 @@
 
 module Servant.API.Capture (Capture, Capture', CaptureAll) where
 
-import Data.Kind
-  ( Type
-  )
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.TypeLits
-  ( Symbol
-  )
+import Data.Kind (Type)
+import Data.Typeable (Typeable)
+import GHC.TypeLits (Symbol)
 
 -- | Capture a value from the request path under a certain type @a@.
 --

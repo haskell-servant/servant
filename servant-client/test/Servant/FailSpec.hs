@@ -17,18 +17,14 @@
 
 module Servant.FailSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
 import Data.Monoid ()
 import qualified Network.HTTP.Types as HTTP
-import Test.Hspec
-
-import Servant.API
-  ( (:<|>) ((:<|>))
-  )
+import Prelude.Compat
+import Servant.API ((:<|>) ((:<|>)))
 import Servant.Client
 import Servant.ClientTestUtils
+import Test.Hspec
+import Prelude ()
 
 spec :: Spec
 spec = describe "Servant.FailSpec" $ do

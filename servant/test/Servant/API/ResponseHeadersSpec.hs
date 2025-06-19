@@ -5,19 +5,13 @@ module Servant.API.ResponseHeadersSpec where
 
 import Data.Proxy
 import GHC.TypeLits
-import Test.Hspec
-
 import Servant.API.ContentTypes
-import Servant.API.Description
-  ( Description
-  )
+import Servant.API.Description (Description)
 import Servant.API.Header
-import Servant.API.Modifiers
-  ( Optional
-  , Strict
-  )
+import Servant.API.Modifiers (Optional, Strict)
 import Servant.API.ResponseHeaders
 import Servant.API.UVerb
+import Test.Hspec
 
 spec :: Spec
 spec = describe "Servant.API.ResponseHeaders" $ do

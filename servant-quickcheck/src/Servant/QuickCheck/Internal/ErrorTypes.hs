@@ -5,15 +5,14 @@ module Servant.QuickCheck.Internal.ErrorTypes where
 import Control.Exception (Exception (..))
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as BSL8
 import qualified Data.Text as T
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import qualified Network.HTTP.Client as C
 import Network.HTTP.Types (Header, statusCode)
-import Text.PrettyPrint
-
-import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Prelude.Compat hiding ((<>))
+import Text.PrettyPrint
 
 data PredicateFailure
   = PredicateFailure T.Text (Maybe C.Request) (C.Response LBS.ByteString)

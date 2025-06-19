@@ -5,21 +5,13 @@
 -- | Basic Authentication for clients
 module Servant.Client.Core.BasicAuth
   ( basicAuthReq
-  ) where
+  )
+where
 
-import Data.ByteString.Base64
-  ( encode
-  )
-import Data.Text.Encoding
-  ( decodeUtf8
-  )
-import Servant.API.BasicAuth
-  ( BasicAuthData (BasicAuthData)
-  )
-import Servant.Client.Core.Request
-  ( Request
-  , addHeader
-  )
+import Data.ByteString.Base64 (encode)
+import Data.Text.Encoding (decodeUtf8)
+import Servant.API.BasicAuth (BasicAuthData (BasicAuthData))
+import Servant.Client.Core.Request (Request, addHeader)
 
 -- | Authenticate a request using Basic Authentication
 basicAuthReq :: BasicAuthData -> Request -> Request

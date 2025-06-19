@@ -32,13 +32,7 @@ import Crypto.JWT
   , signClaims
   , unregisteredClaims
   )
-import Data.Aeson
-  ( FromJSON
-  , ToJSON
-  , Value
-  , encode
-  , toJSON
-  )
+import Data.Aeson (FromJSON, ToJSON, Value, encode, toJSON)
 import Data.Aeson.Lens (_JSON)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
@@ -56,11 +50,7 @@ import Network.HTTP.Client
   , cookie_value
   , destroyCookieJar
   )
-import Network.HTTP.Types
-  ( Status
-  , status200
-  , status401
-  )
+import Network.HTTP.Types (Status, status200, status401)
 import Network.Wai (responseLBS)
 import Network.Wai.Handler.Warp (testWithApplication)
 import Network.Wreq
@@ -82,17 +72,13 @@ import Network.Wreq
   , responseStatus
   )
 import Network.Wreq.Types (Postable (..))
-import Servant hiding
-  ( BasicAuth
-  , IsSecure (..)
-  , header
-  )
+import Servant hiding (BasicAuth, IsSecure (..), header)
 import Servant.API.Generic ((:-))
 import Servant.Auth.Server
 import Servant.Auth.Server.Internal.Cookie (expireTime)
 import Servant.Auth.Server.SetCookieOrphan ()
 #if MIN_VERSION_servant_server(0,15,0)
-import qualified Servant.Types.SourceT             as S
+import qualified Servant.Types.SourceT as S
 #endif
 import qualified Network.HTTP.Client as HCli
 import System.IO.Unsafe (unsafePerformIO)
@@ -540,6 +526,7 @@ cookieCfg =
             , xsrfHeaderName = "AndSlicesOfQuince"
             }
     }
+
 xsrfField :: (XsrfCookieSettings -> a) -> CookieSettings -> a
 xsrfField f = maybe (error "expected XsrfCookieSettings for test") f . cookieXsrfSetting
 
@@ -595,8 +582,8 @@ server ccfg =
   )
     :<|> ( \authResult -> case authResult of
             Authenticated usr -> respond (WithStatus @200 (42 :: Int))
-            Indefinite -> respond (WithStatus @401 $ pack "Authentication required")
-            _ -> respond (WithStatus @403 $ pack "Forbidden")
+            Indefinite        -> respond (WithStatus @401 $ pack "Authentication required")
+            _                 -> respond (WithStatus @403 $ pack "Forbidden")
          )
     :<|> getLogin
     :<|> getLogout
@@ -623,7 +610,7 @@ server ccfg =
       maybeApplyCookies <- liftIO $ acceptLogin ccfg jwtCfg user
       case maybeApplyCookies of
         Just applyCookies -> return $ applyCookies NoContent
-        Nothing -> error "cookies failed to apply"
+        Nothing           -> error "cookies failed to apply"
 
     getLogout
       :: Handler
@@ -727,8 +714,11 @@ data User = User
   deriving (Eq, Show, Read, Generic)
 
 instance FromJWT User
+
 instance ToJWT User
+
 instance FromJSON User
+
 instance ToJSON User
 
 instance Arbitrary User where

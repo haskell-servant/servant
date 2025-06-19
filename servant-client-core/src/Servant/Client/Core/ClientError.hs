@@ -11,42 +11,24 @@
 
 module Servant.Client.Core.ClientError
   ( ClientError (..)
-  ) where
+  )
+where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.DeepSeq
-  ( NFData (..)
-  )
-import Control.Exception
-  ( SomeException (..)
-  )
-import Control.Monad.Catch
-  ( Exception
-  )
+import Control.DeepSeq (NFData (..))
+import Control.Exception (SomeException (..))
+import Control.Monad.Catch (Exception)
 import qualified Data.ByteString as BS
-import Data.Text
-  ( Text
-  )
-import Data.Typeable
-  ( Typeable
-  , typeOf
-  )
-import GHC.Generics
-  ( Generic
-  )
-import Network.HTTP.Media
-  ( MediaType
-  )
+import Data.Text (Text)
+import Data.Typeable (Typeable, typeOf)
+import GHC.Generics (Generic)
+import Network.HTTP.Media (MediaType)
 import Network.HTTP.Types ()
-
+import Prelude.Compat
 import Servant.Client.Core.BaseUrl
-import Servant.Client.Core.Internal
-  ( mediaTypeRnf
-  )
+import Servant.Client.Core.Internal (mediaTypeRnf)
 import Servant.Client.Core.Request
 import Servant.Client.Core.Response
+import Prelude ()
 
 -- | A type representing possible errors in a request
 --

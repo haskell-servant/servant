@@ -30,7 +30,8 @@ module Servant.Auth.Docs
   , BasicAuth
   , Cookie
   , Auth
-  ) where
+  )
+where
 
 import Control.Lens ((%~), (&), (|>))
 import Data.Kind (Type)

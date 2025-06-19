@@ -9,9 +9,7 @@
 module Servant.Server.StreamingSpec where
 
 import Control.Concurrent
-import Control.Exception hiding
-  ( Handler
-  )
+import Control.Exception hiding (Handler)
 import Control.Monad.IO.Class
 import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Lazy as Lazy

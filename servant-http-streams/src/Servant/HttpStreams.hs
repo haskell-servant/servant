@@ -11,7 +11,8 @@ module Servant.HttpStreams
   , withClientEnvIO
   , hoistClient
   , module Servant.Client.Core.Reexport
-  ) where
+  )
+where
 
 import Servant.Client.Core.Reexport
 import Servant.HttpStreams.Internal

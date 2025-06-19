@@ -7,35 +7,16 @@
 
 module Servant.LinksSpec where
 
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.String
-  ( fromString
-  )
+import Data.Proxy (Proxy (..))
+import Data.String (fromString)
 import qualified Data.Text as T
-import GHC.Generics
-  ( Generic
-  )
-import Network.URI
-  ( unEscapeString
-  )
-import Test.Hspec
-  ( Expectation
-  , Spec
-  , describe
-  , it
-  , shouldBe
-  )
-
+import GHC.Generics (Generic)
+import Network.URI (unEscapeString)
 import Servant.API
-import Servant.API.QueryString
-  ( ToDeepQuery (toDeepQuery)
-  )
+import Servant.API.QueryString (ToDeepQuery (toDeepQuery))
 import Servant.Links
-import Servant.Test.ComprehensiveAPI
-  ( comprehensiveAPIWithoutRaw
-  )
+import Servant.Test.ComprehensiveAPI (comprehensiveAPIWithoutRaw)
+import Test.Hspec (Expectation, Spec, describe, it, shouldBe)
 
 type TestApi =
   -- Capture and query params
@@ -69,6 +50,7 @@ apiLink
 apiLink = safeLink (Proxy :: Proxy TestApi)
 
 data Book
+
 data BookQuery = BookQuery
   { author :: String
   , year :: Int
@@ -128,10 +110,12 @@ shouldBeLinkUnescaped link expected =
 
 (//) :: a -> (a -> b) -> b
 x // f = f x
+
 infixl 1 //
 
 (/:) :: (a -> b -> c) -> b -> a -> c
 (/:) = flip
+
 infixl 2 /:
 
 spec :: Spec
@@ -291,8 +275,13 @@ spec = describe "Servant.Links" $ do
 type WrongPath = "getTypo" :> Get '[JSON] NoContent
 
 type WrongReturnType = "get" :> Get '[JSON] Bool
+
 type WrongContentType = "get" :> Get '[OctetStream] NoContent
+
 type WrongMethod = "get" :> Post '[JSON] NoContent
+
 type NotALink = "hello" :> ReqBody '[JSON] Bool :> Get '[JSON] Bool
+
 type AllGood = "get" :> Get '[JSON] NoContent
+
 type NoEndpoint = "empty" :> EmptyAPI

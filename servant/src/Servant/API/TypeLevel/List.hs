@@ -1,6 +1,7 @@
 module Servant.API.TypeLevel.List
   ( type (.++)
-  ) where
+  )
+where
 
 import Data.Kind
 

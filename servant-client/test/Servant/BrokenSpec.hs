@@ -6,29 +6,21 @@
 
 module Servant.BrokenSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
 import Data.Monoid ()
 import Data.Proxy
 import qualified Network.HTTP.Types as HTTP
-import Test.Hspec
-
-import Servant.API
-  ( Get
-  , JSON
-  , StdMethod (GET)
-  , Verb
-  , (:<|>) ((:<|>))
-  , (:>)
-  )
+import Prelude.Compat
+import Servant.API (Get, JSON, StdMethod (GET), Verb, (:<|>) ((:<|>)), (:>))
 import Servant.Client
 import Servant.ClientTestUtils
 import Servant.Server
+import Test.Hspec
+import Prelude ()
 
 -- * api for testing inconsistencies between client and server
 
 type Get201 = Verb 'GET 201
+
 type Get301 = Verb 'GET 301
 
 type BrokenAPI =

@@ -36,7 +36,8 @@ module Servant.API.MultiVerb
   , ResponseType
   , ResponseTypes
   , UnrenderResult (..)
-  ) where
+  )
+where
 
 import Control.Applicative (Alternative (..), empty)
 import Control.Monad (MonadPlus (..), ap)
@@ -52,12 +53,11 @@ import qualified Data.Text.Encoding as Text
 import GHC.TypeLits
 import Generics.SOP as GSOP
 import Network.HTTP.Types as HTTP
-import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
-
 import Servant.API.Header (Header')
 import Servant.API.Stream (SourceIO)
 import Servant.API.TypeLevel.List
 import Servant.API.UVerb.Union (Union)
+import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
 
 -- | A type to describe a 'MultiVerb' response.
 --

@@ -4,6 +4,7 @@ module Servant.Auth.Server.Internal.Types where
 
 import Control.Applicative
 import Control.Monad (MonadPlus (..), ap)
+import qualified Control.Monad.Fail as Fail
 import Control.Monad.Reader
 import Control.Monad.Time
 import Data.Monoid (Monoid (..))
@@ -11,8 +12,6 @@ import Data.Semigroup (Semigroup (..))
 import Data.Time (getCurrentTime)
 import GHC.Generics (Generic)
 import Network.Wai (Request)
-
-import qualified Control.Monad.Fail as Fail
 
 -- | The result of an authentication attempt.
 data AuthResult val

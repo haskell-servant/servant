@@ -9,6 +9,7 @@ module Servant.Swagger.TypeLevel
   ( IsSubAPI
   , EndpointsList
   , BodyTypes
-  ) where
+  )
+where
 
 import Servant.Swagger.Internal.TypeLevel

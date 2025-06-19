@@ -5,36 +5,16 @@
 
 module Servant.Server.Internal.BasicAuth where
 
-import Control.Monad
-  ( guard
-  )
-import Control.Monad.Trans
-  ( liftIO
-  )
+import Control.Monad (guard)
+import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString as BS
-import Data.ByteString.Base64
-  ( decodeLenient
-  )
-import Data.Typeable
-  ( Typeable
-  )
-import Data.Word8
-  ( isSpace
-  , toLower
-  , _colon
-  )
+import Data.ByteString.Base64 (decodeLenient)
+import Data.Typeable (Typeable)
+import Data.Word8 (isSpace, toLower, _colon)
 import GHC.Generics
-import Network.HTTP.Types
-  ( Header
-  )
-import Network.Wai
-  ( Request
-  , requestHeaders
-  )
-
-import Servant.API.BasicAuth
-  ( BasicAuthData (BasicAuthData)
-  )
+import Network.HTTP.Types (Header)
+import Network.Wai (Request, requestHeaders)
+import Servant.API.BasicAuth (BasicAuthData (BasicAuthData))
 import Servant.Server.Internal.DelayedIO
 import Servant.Server.Internal.ServerError
 

@@ -4,49 +4,26 @@
 
 module Main (main) where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Concurrent
-  ( threadDelay
-  )
-import Control.Monad.IO.Class
-  ( MonadIO (..)
-  )
+import Control.Concurrent (threadDelay)
+import Control.Monad.IO.Class (MonadIO (..))
 import qualified Data.ByteString as BS
-import Data.Maybe
-  ( fromMaybe
-  )
-import Network.HTTP.Client
-  ( defaultManagerSettings
-  , newManager
-  )
-import Network.Wai
-  ( Application
-  )
-import System.Environment
-  ( getArgs
-  , lookupEnv
-  )
-import System.IO
-  ( IOMode (..)
-  )
-import Text.Read
-  ( readMaybe
-  )
-
+import Data.Maybe (fromMaybe)
+import Network.HTTP.Client (defaultManagerSettings, newManager)
+import Network.Wai (Application)
+import qualified Network.Wai.Handler.Warp as Warp
 import qualified Pipes as P
 import Pipes.ByteString as PBS
 import qualified Pipes.Prelude as P
-import Pipes.Safe
-  ( SafeT
-  )
+import Pipes.Safe (SafeT)
 import qualified Pipes.Safe.Prelude as P
+import Prelude.Compat
 import Servant
 import Servant.Client.Streaming
 import Servant.Pipes ()
-
-import qualified Network.Wai.Handler.Warp as Warp
+import System.Environment (getArgs, lookupEnv)
+import System.IO (IOMode (..))
+import Text.Read (readMaybe)
+import Prelude ()
 
 type FastAPI = "get" :> Capture "num" Int :> StreamGet NewlineFraming JSON (P.Producer Int IO ())
 

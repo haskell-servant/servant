@@ -18,24 +18,15 @@
 
 module Servant.HoistClientSpec (spec) where
 
-import Prelude.Compat
-import Prelude ()
-
 import Data.Monoid ()
 import Data.Proxy
-import Test.Hspec
-
-import Servant.API
-  ( Capture
-  , Get
-  , JSON
-  , Post
-  , (:<|>) ((:<|>))
-  , (:>)
-  )
+import Prelude.Compat
+import Servant.API (Capture, Get, JSON, Post, (:<|>) ((:<|>)), (:>))
 import Servant.Client
 import Servant.ClientTestUtils
 import Servant.Server
+import Test.Hspec
+import Prelude ()
 
 spec :: Spec
 spec = describe "Servant.HoistClientSpec" $ do

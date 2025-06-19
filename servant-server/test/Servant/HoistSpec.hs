@@ -3,11 +3,8 @@
 
 module Servant.HoistSpec where
 
-import Test.Hspec
-  ( Spec
-  )
-
 import Servant
+import Test.Hspec (Spec)
 
 -------------------------------------------------------------------------------
 -- https://github.com/haskell-servant/servant/issues/734

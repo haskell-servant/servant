@@ -40,7 +40,9 @@ type family MapAddSetCookieApiVerb (as :: [Type]) where
 #endif
 
 type family AddSetCookieApi a :: Type
+
 type instance AddSetCookieApi (a :> b) = a :> AddSetCookieApi b
+
 type instance AddSetCookieApi (a :<|> b) = AddSetCookieApi a :<|> AddSetCookieApi b
 #if MIN_VERSION_servant_server(0,19,0)
 type instance AddSetCookieApi (NamedRoutes api) = AddSetCookieApi (ToServantApi api)

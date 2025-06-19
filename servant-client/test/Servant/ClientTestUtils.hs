@@ -19,9 +19,6 @@
 
 module Servant.ClientTestUtils where
 
-import Prelude.Compat
-import Prelude ()
-
 import Control.Concurrent (ThreadId, forkIO, killThread)
 import Control.Monad (join)
 import Control.Monad.Error.Class (throwError)
@@ -45,11 +42,7 @@ import qualified Network.HTTP.Types as HTTP
 import Network.Socket
 import qualified Network.Wai as Wai
 import Network.Wai.Handler.Warp
-import System.IO.Unsafe (unsafePerformIO)
-import Test.QuickCheck
-import Text.Read (readMaybe)
-import Web.FormUrlEncoded (FromForm, ToForm)
-
+import Prelude.Compat
 import Servant.API
   ( AuthProtect
   , BasicAuth
@@ -91,16 +84,18 @@ import Servant.API
   )
 import Servant.API.Generic ((:-))
 import Servant.API.MultiVerb
-import Servant.API.QueryString
-  ( FromDeepQuery (..)
-  , ToDeepQuery (..)
-  )
+import Servant.API.QueryString (FromDeepQuery (..), ToDeepQuery (..))
 import Servant.API.Range
 import Servant.Client
 import qualified Servant.Client.Core.Auth as Auth
 import Servant.Server
 import Servant.Server.Experimental.Auth
 import Servant.Test.ComprehensiveAPI
+import System.IO.Unsafe (unsafePerformIO)
+import Test.QuickCheck
+import Text.Read (readMaybe)
+import Web.FormUrlEncoded (FromForm, ToForm)
+import Prelude ()
 
 -- This declaration simply checks that all instances are in place.
 _ = client comprehensiveAPIWithoutStreaming
@@ -114,9 +109,11 @@ data Person = Person
   deriving (Eq, Show, Read, Generic)
 
 instance ToJSON Person
+
 instance FromJSON Person
 
 instance ToForm Person
+
 instance FromForm Person
 
 instance Arbitrary Person where
@@ -137,6 +134,7 @@ carol :: Person
 carol = Person "Carol" 17
 
 type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
+
 type TestSetCookieHeaders = '[Header "Set-Cookie" String, Header "Set-Cookie" String]
 
 data RecordRoutes mode = RecordRoutes
@@ -420,6 +418,7 @@ type FailApi =
     :<|> "capture" :> Capture "name" String :> Raw
     :<|> "body" :> Raw
     :<|> "headers" :> Raw
+
 failApi :: Proxy FailApi
 failApi = Proxy
 
@@ -464,6 +463,7 @@ genAuthAPI :: Proxy GenAuthAPI
 genAuthAPI = Proxy
 
 type instance AuthServerData (AuthProtect "auth-tag") = ()
+
 type instance Auth.AuthClientData (AuthProtect "auth-tag") = ()
 
 genAuthHandler :: AuthHandler Wai.Request ()

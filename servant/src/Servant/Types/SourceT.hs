@@ -2,17 +2,9 @@
 
 module Servant.Types.SourceT where
 
-import Control.Monad.Except
-  ( ExceptT (..)
-  , runExceptT
-  , throwError
-  )
-import Control.Monad.Morph
-  ( MFunctor (..)
-  )
-import Control.Monad.Trans.Class
-  ( MonadTrans (..)
-  )
+import Control.Monad.Except (ExceptT (..), runExceptT, throwError)
+import Control.Monad.Morph (MFunctor (..))
+import Control.Monad.Trans.Class (MonadTrans (..))
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.ByteString as BS
 import Data.Functor.Classes
@@ -21,14 +13,8 @@ import Data.Functor.Classes
   , showsPrec1
   , showsUnaryWith
   )
-import Data.Functor.Identity
-  ( Identity (..)
-  )
-import System.IO
-  ( Handle
-  , IOMode (..)
-  , withFile
-  )
+import Data.Functor.Identity (Identity (..))
+import System.IO (Handle, IOMode (..), withFile)
 import qualified Test.QuickCheck as QC
 import Prelude hiding (readFile)
 

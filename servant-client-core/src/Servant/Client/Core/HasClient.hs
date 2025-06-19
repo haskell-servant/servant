@@ -12,74 +12,36 @@ module Servant.Client.Core.HasClient
   , foldMapUnion
   , matchUnion
   , fromSomeClientResponse
-  ) where
-
-import Prelude.Compat
-import Prelude ()
-
-import Control.Arrow
-  ( left
-  , (+++)
   )
-import Control.Monad
-  ( unless
-  )
+where
+
+import Control.Arrow (left, (+++))
+import Control.Monad (unless)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Constraint (Dict (..))
-import Data.Either
-  ( partitionEithers
-  )
-import Data.Foldable
-  ( toList
-  )
-import Data.Kind
-  ( Type
-  )
+import Data.Either (partitionEithers)
+import Data.Foldable (toList)
+import Data.Kind (Type)
 import qualified Data.List as List
-import Data.SOP.BasicFunctors
-  ( I (I)
-  , (:.:) (Comp)
-  )
-import Data.SOP.Constraint
-  ( All
-  )
-import Data.SOP.NP
-  ( NP (..)
-  , cpure_NP
-  )
-import Data.SOP.NS
-  ( NS (..)
-  )
-import Data.Sequence
-  ( fromList
-  )
+import Data.SOP.BasicFunctors (I (I), (:.:) (Comp))
+import Data.SOP.Constraint (All)
+import Data.SOP.NP (NP (..), cpure_NP)
+import Data.SOP.NS (NS (..))
+import Data.Sequence (fromList)
 import qualified Data.Sequence as Seq
-import Data.String
-  ( fromString
-  )
-import Data.Text
-  ( Text
-  , pack
-  )
+import Data.String (fromString)
+import Data.Text (Text, pack)
 import qualified Data.Text as T
 import qualified Data.Text as Text
 import Data.Text.Encoding (encodeUtf8)
-import GHC.TypeLits
-  ( KnownNat
-  , KnownSymbol
-  , TypeError
-  , symbolVal
-  )
-import Network.HTTP.Media
-  ( MediaType
-  , matches
-  , parseAccept
-  )
+import Data.Typeable
+import GHC.TypeLits (KnownNat, KnownSymbol, TypeError, symbolVal)
+import Network.HTTP.Media (MediaType, matches, parseAccept)
+import qualified Network.HTTP.Media as M
 import qualified Network.HTTP.Media as Media
-import Network.HTTP.Types
-  ( Status
-  )
+import Network.HTTP.Types (Status)
 import qualified Network.HTTP.Types as H
+import Prelude.Compat
 import Servant.API
   ( AuthProtect
   , BasicAuth
@@ -150,17 +112,14 @@ import Servant.API.Modifiers
   , RequiredArgument
   , foldRequiredArgument
   )
+import Servant.API.MultiVerb
 import Servant.API.QueryString (ToDeepQuery (..), generateDeepParam)
 import Servant.API.ServerSentEvents
   ( EventKind (JsonEvent, RawEvent)
   , ServerSentEvents'
   )
-import Servant.API.Status
-  ( statusFromNat
-  )
-import Servant.API.Stream
-  ( NoFraming
-  )
+import Servant.API.Status (statusFromNat)
+import Servant.API.Stream (NoFraming)
 import Servant.API.TypeErrors
 import Servant.API.TypeLevel (AtMostOneFragment, FragmentUnique)
 import Servant.API.UVerb
@@ -174,10 +133,6 @@ import Servant.API.UVerb
   , matchUnion
   , statusOf
   )
-
-import Data.Typeable
-import qualified Network.HTTP.Media as M
-import Servant.API.MultiVerb
 import Servant.Client.Core.Auth
 import Servant.Client.Core.BasicAuth
 import Servant.Client.Core.ClientError
@@ -187,6 +142,7 @@ import Servant.Client.Core.Response
 import qualified Servant.Client.Core.Response as Response
 import Servant.Client.Core.RunClient
 import Servant.Client.Core.ServerSentEvents
+import Prelude ()
 
 -- * Accessing APIs as a Client
 
@@ -1205,6 +1161,7 @@ instance
             toServant @api @(AsClientT ma) clientA
 
 infixl 1 //
+
 infixl 2 /:
 
 -- | Helper to make code using records of clients more readable.

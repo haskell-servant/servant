@@ -2,97 +2,38 @@
 
 module Servant.Client.Internal.HttpClient where
 
-import Prelude.Compat
-import Prelude ()
-
-import Control.Concurrent.MVar
-  ( modifyMVar
-  , newMVar
-  )
+import Control.Concurrent.MVar (modifyMVar, newMVar)
 import Control.Concurrent.STM.TVar
-import Control.Exception
-  ( SomeException (..)
-  , catch
-  )
-import Control.Monad
-  ( unless
-  )
-import Control.Monad.Base
-  ( MonadBase (..)
-  )
-import Control.Monad.Catch
-  ( MonadCatch
-  , MonadMask
-  , MonadThrow
-  )
-import Control.Monad.Error.Class
-  ( MonadError (..)
-  )
-import Control.Monad.IO.Class
-  ( MonadIO (..)
-  )
-import Control.Monad.Reader
-  ( MonadReader
-  , ReaderT
-  , ask
-  , runReaderT
-  )
-import Control.Monad.STM
-  ( STM
-  , atomically
-  )
-import Control.Monad.Trans.Control
-  ( MonadBaseControl (..)
-  )
-import Control.Monad.Trans.Except
-  ( ExceptT
-  , runExceptT
-  )
-import Data.Bifunctor
-  ( bimap
-  )
+import Control.Exception (SomeException (..), catch)
+import Control.Monad (unless)
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
+import Control.Monad.Error.Class (MonadError (..))
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.Reader (MonadReader, ReaderT, ask, runReaderT)
+import Control.Monad.STM (STM, atomically)
+import Control.Monad.Trans.Control (MonadBaseControl (..))
+import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import Data.Bifunctor (bimap)
 import qualified Data.ByteString as BS
-import Data.ByteString.Builder
-  ( toLazyByteString
-  )
+import Data.ByteString.Builder (toLazyByteString)
 import qualified Data.ByteString.Lazy as BSL
-import Data.Foldable
-  ( toList
-  )
-import Data.Functor.Alt
-  ( Alt (..)
-  )
+import Data.Foldable (toList)
+import Data.Functor.Alt (Alt (..))
 import qualified Data.List as List
-import Data.Maybe
-  ( maybeToList
-  )
-import Data.Proxy
-  ( Proxy (..)
-  )
-import Data.Sequence
-  ( fromList
-  )
-import Data.String
-  ( fromString
-  )
-import Data.Time.Clock
-  ( UTCTime
-  , getCurrentTime
-  )
+import Data.Maybe (maybeToList)
+import Data.Proxy (Proxy (..))
+import Data.Sequence (fromList)
+import Data.String (fromString)
+import Data.Time.Clock (UTCTime, getCurrentTime)
 import GHC.Generics
-import Network.HTTP.Media
-  ( renderHeader
-  )
-import Network.HTTP.Types
-  ( Status
-  , hContentType
-  , statusIsSuccessful
-  , urlEncode
-  )
-import Servant.Client.Core
-
 import qualified Network.HTTP.Client as Client
+import Network.HTTP.Media (renderHeader)
+import Network.HTTP.Types (Status, hContentType, statusIsSuccessful, urlEncode)
+import Prelude.Compat
+import Servant.Client.Core
 import qualified Servant.Types.SourceT as S
+import Prelude ()
 
 -- | The environment in which a request is run.
 --   The 'baseUrl' and 'makeClientRequest' function are used to create a @http-client@ request.

@@ -8,21 +8,11 @@ module Servant.API.Alternative ((:<|>) (..)) where
 #if !MIN_VERSION_base(4,18,0)
 import Control.Applicative (liftA2)
 #endif
-import Data.Biapplicative
-  ( Biapplicative (..)
-  )
-import Data.Bifoldable
-  ( Bifoldable (..)
-  )
-import Data.Bifunctor
-  ( Bifunctor (..)
-  )
-import Data.Bitraversable
-  ( Bitraversable (..)
-  )
-import Data.Typeable
-  ( Typeable
-  )
+import Data.Biapplicative (Biapplicative (..))
+import Data.Bifoldable (Bifoldable (..))
+import Data.Bifunctor (Bifunctor (..))
+import Data.Bitraversable (Bitraversable (..))
+import Data.Typeable (Typeable)
 
 -- | Union of two APIs, first takes precedence in case of overlap.
 --

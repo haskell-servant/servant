@@ -17,9 +17,8 @@
 -- work out this way.)
 module Servant.Server.UsingContextSpec.TestCombinators where
 
-import GHC.TypeLits
-
 import Data.Kind (Type)
+import GHC.TypeLits
 import Servant
 
 data ExtractFromContext

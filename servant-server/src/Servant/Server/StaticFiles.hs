@@ -15,25 +15,15 @@ module Servant.Server.StaticFiles
 
     -- * Deprecated
   , serveDirectory
-  ) where
+  )
+where
 
-import Data.ByteString
-  ( ByteString
-  )
+import Data.ByteString (ByteString)
 import Network.Wai.Application.Static
-import Servant.API.Raw
-  ( Raw
-  )
-import Servant.Server
-  ( ServerT
-  , Tagged (..)
-  )
-import System.FilePath
-  ( addTrailingPathSeparator
-  )
-import WaiAppStatic.Storage.Filesystem
-  ( ETagLookup
-  )
+import Servant.API.Raw (Raw)
+import Servant.Server (ServerT, Tagged (..))
+import System.FilePath (addTrailingPathSeparator)
+import WaiAppStatic.Storage.Filesystem (ETagLookup)
 
 -- | Serve anything under the specified directory as a 'Raw' endpoint.
 --

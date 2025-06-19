@@ -6,23 +6,14 @@
 module Servant.API.Verbs
   ( module Servant.API.Verbs
   , StdMethod (GET, POST, HEAD, PUT, DELETE, TRACE, CONNECT, OPTIONS, PATCH)
-  ) where
+  )
+where
 
-import Data.Kind
-  ( Type
-  )
-import Data.Proxy
-  ( Proxy
-  )
-import Data.Typeable
-  ( Typeable
-  )
-import GHC.Generics
-  ( Generic
-  )
-import GHC.TypeLits
-  ( Nat
-  )
+import Data.Kind (Type)
+import Data.Proxy (Proxy)
+import Data.Typeable (Typeable)
+import GHC.Generics (Generic)
+import GHC.TypeLits (Nat)
 import Network.HTTP.Types.Method
   ( Method
   , StdMethod (..)

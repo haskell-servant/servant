@@ -4,24 +4,11 @@
 
 module Servant.Server.Internal.DelayedIO where
 
-import Control.Monad.Base
-  ( MonadBase (..)
-  )
-import Control.Monad.Catch
-  ( MonadThrow (..)
-  )
-import Control.Monad.Reader
-  ( MonadReader (..)
-  , ReaderT (..)
-  , runReaderT
-  )
-import Control.Monad.Trans
-  ( MonadIO (..)
-  , MonadTrans (..)
-  )
-import Control.Monad.Trans.Control
-  ( MonadBaseControl (..)
-  )
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Catch (MonadThrow (..))
+import Control.Monad.Reader (MonadReader (..), ReaderT (..), runReaderT)
+import Control.Monad.Trans (MonadIO (..), MonadTrans (..))
+import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Control.Monad.Trans.Resource
   ( MonadResource (..)
   , ResourceT
@@ -29,10 +16,7 @@ import Control.Monad.Trans.Resource
   , transResourceT
   , withInternalState
   )
-import Network.Wai
-  ( Request
-  )
-
+import Network.Wai (Request)
 import Servant.Server.Internal.RouteResult
 import Servant.Server.Internal.ServerError
 

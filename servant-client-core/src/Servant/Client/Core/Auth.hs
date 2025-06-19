@@ -6,13 +6,11 @@ module Servant.Client.Core.Auth
   ( AuthClientData
   , AuthenticatedRequest (..)
   , mkAuthenticatedRequest
-  ) where
+  )
+where
 
 import Data.Kind (Type)
-
-import Servant.Client.Core.Request
-  ( Request
-  )
+import Servant.Client.Core.Request (Request)
 
 -- | For a resource protected by authentication (e.g. AuthProtect), we need
 -- to provide the client with some data used to add authentication data

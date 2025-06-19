@@ -4,7 +4,8 @@
 module Servant.API.NamedRoutes
   ( -- * NamedRoutes combinator
     NamedRoutes
-  ) where
+  )
+where
 
 import Data.Kind (Type)
 

@@ -103,7 +103,8 @@ module Servant.Docs
   , response
   , defAction
   , single
-  ) where
+  )
+where
 
 import Servant.Docs.Internal
 import Servant.Docs.Internal.Pretty

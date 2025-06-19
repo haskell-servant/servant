@@ -3,28 +3,15 @@
 
 module Servant.Auth.ClientSpec (spec) where
 
-import Crypto.JOSE
-  ( JWK
-  , KeyMaterialGenParam (OctGenParam)
-  , genJWK
-  )
+import Crypto.JOSE (JWK, KeyMaterialGenParam (OctGenParam), genJWK)
 import Data.Aeson (FromJSON (..), ToJSON (..))
 import qualified Data.ByteString.Lazy as BSL
-import Data.Time
-  ( UTCTime
-  , defaultTimeLocale
-  , parseTimeOrError
-  )
+import Data.Time (UTCTime, defaultTimeLocale, parseTimeOrError)
 import GHC.Generics (Generic)
-import Network.HTTP.Client
-  ( Manager
-  , defaultManagerSettings
-  , newManager
-  )
+import Network.HTTP.Client (Manager, defaultManagerSettings, newManager)
 import Network.HTTP.Types (status401)
 import Network.Wai.Handler.Warp (testWithApplication)
 import Servant
-
 import Servant.Client
   ( BaseUrl (..)
   , ClientError (FailureResponse)
@@ -32,11 +19,11 @@ import Servant.Client
   , client
   )
 #if MIN_VERSION_servant_client(0,16,0)
-import Servant.Client (ResponseF(..))
+import Servant.Client (ResponseF (..))
 #elif MIN_VERSION_servant_client(0,13,0)
-import Servant.Client (GenResponse(..))
+import Servant.Client (GenResponse (..))
 #elif MIN_VERSION_servant_client(0,12,0)
-import Servant.Client (Response(..))
+import Servant.Client (Response (..))
 #endif
 
 import System.IO.Unsafe (unsafePerformIO)
@@ -168,8 +155,11 @@ data User = User
   deriving (Eq, Show, Read, Generic)
 
 instance FromJWT User
+
 instance ToJWT User
+
 instance FromJSON User
+
 instance ToJSON User
 
 instance Arbitrary User where

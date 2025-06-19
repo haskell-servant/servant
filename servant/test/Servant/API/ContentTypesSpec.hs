@@ -9,46 +9,41 @@
 
 module Servant.API.ContentTypesSpec where
 
-import Control.Exception
-  ( evaluate
+import Control.Exception (evaluate)
+import Data.Aeson
+  ( FromJSON
+  , ToJSON (..)
+  , Value
+  , decode
+  , eitherDecode
+  , encode
+  , object
+  , (.=)
   )
-import Data.Aeson (FromJSON, ToJSON (..), Value, decode, eitherDecode, encode, object, (.=))
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.Either
-import Data.Function
-  ( on
-  )
-import Data.List
-  ( sortBy
-  )
+import Data.Function (on)
+import Data.List (maximumBy, sortBy)
 import qualified Data.List.NonEmpty as NE
-import Data.Maybe
-  ( fromJust
-  , isJust
-  , isNothing
-  )
+import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Proxy
-import Data.String
-  ( IsString (..)
-  )
+import Data.String (IsString (..))
 import qualified Data.Text as TextS
 import qualified Data.Text.Encoding as TextSE
 import qualified Data.Text.Lazy as TextL
 import GHC.Generics
 import Network.HTTP.Media ()
-import Test.Hspec
 
 -- for CPP
-import Test.QuickCheck
-import Text.Read
-  ( readMaybe
-  )
-import "quickcheck-instances" Test.QuickCheck.Instances ()
 
 import Servant.API.ContentTypes
+import Test.Hspec
+import Test.QuickCheck
+import Text.Read (readMaybe)
+import "quickcheck-instances" Test.QuickCheck.Instances ()
 
 spec :: Spec
 spec = describe "Servant.API.ContentTypes" $ do

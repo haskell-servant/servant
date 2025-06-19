@@ -18,13 +18,8 @@
 
 module Servant.Docs.Internal where
 
-import Prelude.Compat
-import Prelude ()
-
 import Control.Applicative
-import Control.Arrow
-  ( second
-  )
+import Control.Arrow (second)
 import Control.Lens
   ( each
   , makeLenses
@@ -44,29 +39,14 @@ import Control.Lens
   , (|>)
   )
 import qualified Data.ByteString.Char8 as BSC
-import Data.ByteString.Lazy.Char8
-  ( ByteString
-  )
+import Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.CaseInsensitive as CI
-import Data.Foldable
-  ( fold
-  , toList
-  )
-import Data.HashMap.Strict
-  ( HashMap
-  )
-import Data.Hashable
-  ( Hashable
-  )
-import Data.List.Compat
-  ( intercalate
-  , intersperse
-  , sort
-  )
-import Data.List.NonEmpty
-  ( NonEmpty ((:|))
-  , groupWith
-  )
+import Data.Foldable (fold, toList)
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HM
+import Data.Hashable (Hashable)
+import Data.List.Compat (intercalate, intersperse, sort)
+import Data.List.NonEmpty (NonEmpty ((:|)), groupWith)
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Monoid
@@ -78,19 +58,12 @@ import Data.Monoid
   , Product (..)
   , Sum (..)
   )
-import Data.Ord
-  ( comparing
-  )
-import Data.Proxy
-  ( Proxy (Proxy)
-  )
-import Data.String.Conversions
-  ( cs
-  )
-import Data.Text
-  ( Text
-  , unpack
-  )
+import Data.Ord (comparing)
+import Data.Proxy (Proxy (Proxy))
+import Data.String.Conversions (cs)
+import Data.Text (Text, unpack)
+import qualified Data.Text as T
+import qualified Data.Universe.Helpers as U
 import GHC.Generics
   ( Generic
   , K1 (K1)
@@ -103,18 +76,15 @@ import GHC.Generics
   )
 import qualified GHC.Generics as G
 import GHC.TypeLits
+import qualified Network.HTTP.Media as M
+import qualified Network.HTTP.Types as HTTP
+import Prelude.Compat
 import Servant.API
 import Servant.API.ContentTypes
 import Servant.API.Generic
 import Servant.API.TypeErrors
 import Servant.API.TypeLevel
-
-import qualified Data.Universe.Helpers as U
-
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Text as T
-import qualified Network.HTTP.Media as M
-import qualified Network.HTTP.Types as HTTP
+import Prelude ()
 
 -- | An 'Endpoint' type that holds the 'path' and the 'method'.
 --
@@ -263,6 +233,7 @@ newtype ExtraInfo api = ExtraInfo (HashMap Endpoint Action)
 
 instance Semigroup (ExtraInfo a) where
   (<>) = mappend
+
 instance Monoid (ExtraInfo a) where
   mempty = ExtraInfo mempty
   ExtraInfo a `mappend` ExtraInfo b =
@@ -1293,33 +1264,50 @@ instance
 
 -- ToSample instances for simple types
 instance ToSample NoContent
+
 instance ToSample Bool
+
 instance ToSample Ordering
 
 -- polymorphic ToSample instances
 instance (ToSample a, ToSample b) => ToSample (a, b)
+
 instance (ToSample a, ToSample b, ToSample c) => ToSample (a, b, c)
+
 instance (ToSample a, ToSample b, ToSample c, ToSample d) => ToSample (a, b, c, d)
+
 instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e) => ToSample (a, b, c, d, e)
+
 instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e, ToSample f) => ToSample (a, b, c, d, e, f)
+
 instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e, ToSample f, ToSample g) => ToSample (a, b, c, d, e, f, g)
 
 instance ToSample a => ToSample (Maybe a)
+
 instance (ToSample a, ToSample b) => ToSample (Either a b)
+
 instance ToSample a => ToSample [a]
+
 instance ToSample a => ToSample (NonEmpty a)
 
 -- ToSample instances for Control.Applicative types
 instance ToSample a => ToSample (Const a b)
+
 instance ToSample a => ToSample (ZipList a)
 
 -- ToSample instances for Data.Monoid newtypes
 instance ToSample All
+
 instance ToSample Any
+
 instance ToSample a => ToSample (Sum a)
+
 instance ToSample a => ToSample (Product a)
+
 instance ToSample a => ToSample (First a)
+
 instance ToSample a => ToSample (Last a)
+
 instance ToSample a => ToSample (Dual a)
 
 -- $setup

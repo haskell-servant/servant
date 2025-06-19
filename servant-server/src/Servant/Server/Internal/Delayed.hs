@@ -9,21 +9,10 @@
 
 module Servant.Server.Internal.Delayed where
 
-import Control.Monad.IO.Class
-  ( MonadIO (..)
-  )
-import Control.Monad.Reader
-  ( ask
-  )
-import Control.Monad.Trans.Resource
-  ( ResourceT
-  , runResourceT
-  )
-import Network.Wai
-  ( Request
-  , Response
-  )
-
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.Reader (ask)
+import Control.Monad.Trans.Resource (ResourceT, runResourceT)
+import Network.Wai (Request, Response)
 import Servant.Server.Internal.DelayedIO
 import Servant.Server.Internal.Handler
 import Servant.Server.Internal.RouteResult

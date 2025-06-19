@@ -6,13 +6,9 @@
 -- the core servant classes for each combinator).
 module Servant.Test.ComprehensiveAPI where
 
-import Data.Proxy
-  ( Proxy (..)
-  )
+import Data.Proxy (Proxy (..))
 import Servant.API
-import Servant.Types.SourceT
-  ( SourceT
-  )
+import Servant.Types.SourceT (SourceT)
 
 type GET = Get '[JSON] NoContent
 

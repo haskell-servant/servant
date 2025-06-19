@@ -9,15 +9,11 @@
 -- | This module exports 'ToSourceIO' and 'FromSourceIO' for 'MachineT' instances.
 module Servant.Machines
   ( MachineToSourceIO (..)
-  ) where
+  )
+where
 
-import Control.Monad.IO.Class
-  ( MonadIO (..)
-  )
-import Data.Machine
-  ( MachineT (..)
-  , Step (..)
-  )
+import Control.Monad.IO.Class (MonadIO (..))
+import Data.Machine (MachineT (..), Step (..))
 import Servant.API.Stream
 import qualified Servant.Types.SourceT as S
 
