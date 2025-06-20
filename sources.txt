@@ -1,6 +1,0 @@
-servant
-servant-server
-servant-client
-servant-client-core
-servant-docs
-servant-foreign

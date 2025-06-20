@@ -9,7 +9,7 @@ This guide assumes knowledge of servant. Reading its [documentation](http://docs
 ## Using servant-client-ghcjs
 `servant-client-ghcjs` should feel familiar if you've worked with `servant-client`.
 
-Take the following API (taken from the [Querying an API](http://docs.servant.dev/en/stable/tutorial/Client.html) section in the servant documentation)
+Take the following API (taken from the [Querying an API](http://docs.servant.dev/en/latest/tutorial/Client.html) section in the servant documentation)
 
 ```haskell
 {-# LANGUAGE DataKinds      #-}

@@ -17,13 +17,13 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
-        format-tools = [
-          # We use fourmolu compiled with GHC 9.12
-          # as getting it to compile with lower GHC versions
-          # is complicated and this works out of the box.
-          pkgs.haskell.packages.ghc912.fourmolu_0_18_0_0
-          pkgs.nixfmt-rfc-style
-        ];
+        # We use fourmolu compiled with GHC 9.12
+        # as getting it to compile with lower GHC versions
+        # is complicated and this works out of the box.
+        haskellFormatter = pkgs.haskell.packages.ghc912.fourmolu_0_18_0_0;
+        haskellLinter = pkgs.hlint;
+
+        nixFormatter = pkgs.nixfmt-rfc-style;
 
         mkDevShell =
           {
@@ -31,7 +31,12 @@
             tutorial ? false,
           }:
           let
-            ghc = pkgs.haskell.packages.${compiler}.ghcWithPackages (_: [ ]);
+            ghc = pkgs.haskell.packages.${compiler}.ghcWithPackages (ghcPkg: [
+              # Some dependencies don't like being built with
+              # as part of a project, so we pull them from nix.
+              ghcPkg.zlib
+              ghcPkg.lzma
+            ]);
             docstuffs = pkgs.python3.withPackages (
               ps: with ps; [
                 recommonmark
@@ -45,7 +50,6 @@
               with pkgs;
               [
                 ghc
-                zlib
                 python3
                 wget
                 cabal-install
@@ -53,8 +57,10 @@
                 openssl
                 stack
                 haskellPackages.hspec-discover
+                haskellFormatter
+                haskellLinter
+                nixFormatter
               ]
-              ++ format-tools
               ++ (
                 if tutorial then
                   [
@@ -64,20 +70,26 @@
                 else
                   [ ]
               );
-
-            shellHook = ''
-              eval $(grep export ${ghc}/bin/ghc)
-              export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"${pkgs.zlib}/lib";
-            '';
           };
+
+        mkCiShell = tools: pkgs.mkShell { buildInputs = tools; };
       in
       {
         devShells = {
           default = mkDevShell { };
           tutorial = mkDevShell { tutorial = true; };
-          formatters = pkgs.mkShell {
-            buildInputs = format-tools;
-          };
+
+          # Development shells for different GHC versions.
+          ghc92 = mkDevShell { compiler = "ghc92"; };
+          ghc94 = mkDevShell { compiler = "ghc94"; };
+          ghc96 = mkDevShell { compiler = "ghc96"; };
+          ghc98 = mkDevShell { compiler = "ghc98"; };
+          ghc910 = mkDevShell { compiler = "ghc910"; };
+          ghc912 = mkDevShell { compiler = "ghc912"; };
+
+          # Single-tool shells for CI checks.
+          haskellFormatter = mkCiShell [ haskellFormatter ];
+          haskellLinter = mkCiShell [ haskellLinter ];
         };
       }
     );
