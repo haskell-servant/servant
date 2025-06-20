@@ -8,7 +8,7 @@ category:           Servant, Web
 description:
   A family of combinators for defining webservices APIs and serving them
   .
-  You can learn about the basics in the <http://docs.servant.dev/en/stable/tutorial/index.html tutorial>.
+  You can learn about the basics in the <http://docs.servant.dev/en/latest/tutorial/index.html tutorial>.
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-server/example/greet.hs Here>
   is a runnable example, with comments, that defines a dummy API and implements

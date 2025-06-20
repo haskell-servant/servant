@@ -190,7 +190,7 @@ data ReqBodyContentType = ReqBodyJSON | ReqBodyMultipart
 --
 -- Every field containing @ftype@ will use the foreign type mapping specified via 'HasForeignType' (see its docstring on how to set that up).
 --
--- See https://docs.servant.dev/en/stable/tutorial/ApiType.html for accessible documentation of the possible content of an endpoint.
+-- See https://docs.servant.dev/en/latest/tutorial/ApiType.html for accessible documentation of the possible content of an endpoint.
 data Req ftype = Req
   { _reqUrl             :: Url ftype
   -- ^ Full list of URL segments, including captures
