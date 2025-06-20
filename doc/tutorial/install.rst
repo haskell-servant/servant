@@ -38,7 +38,7 @@ nix
 --------
 
 `Nix <https://nixos.org/nix/>`_ users should feel free to take a look at
-the `nix/shell.nix` file in the repository and use it to provision a suitable
+the `flake.nix` file in the repository and use it to provision a suitable
 environment to build and run the examples.
 
 Note for Ubuntu users

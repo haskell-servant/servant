@@ -18,10 +18,11 @@ stack test          # Run all the tests
 Or `nix`:
 
 ```shell
-nix-shell nix/shell.nix  # Enter a new development shell with Cabal and Stack
+nix develop  # Enter a new development shell with Cabal and Stack
 
-# Alternatively, another version of GHC can be used. See nix/README.md for more info.
-nix-shell nix/shell.nix --argstr compiler ghc901
+# Alternatively, another version of GHC can be used.
+# See `flake.nix` for all available shells.
+nix develop '#ghc96'
 ```
 
 To build the docs, see `doc/README.md`.

@@ -66,6 +66,22 @@ You can see the visualised results at https://www.techempower.com/benchmarks/#se
 
 ## Nix
 
-A developer shell.nix file is provided in the `nix` directory
+A developer `flake.nix` file is provided in the root directory.
 
-See  [nix/README.md](nix/README.md)
+Default shell will provide you with tools and dependencies needed to build servant packages.
+
+```sh
+$ nix develop
+```
+
+For the tutorial and the cookbook you can use `tutorial` shell.
+
+```sh
+$ nix develop '#tutorial'
+```
+
+You can also choose a different GHC version.
+
+```sh
+$ nix develop '#ghc96'
+```
