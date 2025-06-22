@@ -183,7 +183,7 @@ ensures that we collect all registered metrics in a process-global variable.
 The implementation uses a where-clause to recall the Handler data-type so that everything is front of our eyes.
 
 ``` haskell
-handlePrometheus :: CORSAllowOrigin -> Server ServePrometheusAPI
+handlePrometheus :: CORSAllowOrigin -> Server PrometheusAPI
 handlePrometheus corsAllow = handleMetrics
   where
     handleMetrics :: Handler (Headers '[Header "Access-Control-Allow-Origin" CORSAllowOrigin] Metrics)
@@ -203,7 +203,7 @@ binary is compiled with `rtsopts` and run your progam with `+RTS -T` (cf. the [G
 ``` haskell
 type API
   = HelloAPI
-  :<|> ServePrometheusAPI
+  :<|> PrometheusAPI
 
 api :: Proxy API
 api = Proxy
