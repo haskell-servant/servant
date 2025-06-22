@@ -4,16 +4,18 @@
 --
 -- This client supports streaming operations.
 module Servant.Client.Streaming
-    ( client
-    , ClientM
-    , withClientM
-    , runClientM
-    , ClientEnv(..)
-    , mkClientEnv
-    , defaultMakeClientRequest
-    , hoistClient
-    , module Servant.Client.Core.Reexport
-    ) where
+  ( client
+  , ClientM
+  , withClientM
+  , runClientM
+  , ClientEnv (..)
+  , mkClientEnv
+  , defaultMakeClientRequest
+  , hoistClient
+  , module Servant.Client.Core.Reexport
+  )
+where
 
-import           Servant.Client.Core.Reexport
-import           Servant.Client.Internal.HttpClient.Streaming
+import Servant.Client.Core.Reexport
+
+import Servant.Client.Internal.HttpClient.Streaming

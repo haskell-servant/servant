@@ -1,19 +1,13 @@
-{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-
-{-# LANGUAGE PolyKinds          #-}
+{-# LANGUAGE PolyKinds #-}
 
 module Servant.API.BasicAuth where
 
-import           Data.ByteString
-                 (ByteString)
-import           Data.Kind
-                 (Type)
-import           Data.Typeable
-                 (Typeable)
-import           GHC.TypeLits
-                 (Symbol)
-
+import Data.ByteString (ByteString)
+import Data.Kind (Type)
+import Data.Typeable (Typeable)
+import GHC.TypeLits (Symbol)
 
 -- | Combinator for <https://tools.ietf.org/html/rfc2617#section-2 Basic Access Authentication>.
 --
@@ -30,6 +24,7 @@ data BasicAuth (realm :: Symbol) (userData :: Type)
   deriving (Typeable)
 
 -- | A simple datatype to hold data required to decorate a request
-data BasicAuthData = BasicAuthData { basicAuthUsername :: !ByteString
-                                   , basicAuthPassword :: !ByteString
-                                   }
+data BasicAuthData = BasicAuthData
+  { basicAuthUsername :: !ByteString
+  , basicAuthPassword :: !ByteString
+  }

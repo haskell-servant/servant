@@ -1,17 +1,15 @@
-{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds          #-}
+{-# LANGUAGE PolyKinds #-}
+{-# OPTIONS_HADDOCK not-home #-}
 
-{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.QueryParam (QueryFlag, QueryParam, QueryParam', QueryParams) where
 
-import           Data.Kind
-                 (Type)
-import           Data.Typeable
-                 (Typeable)
-import           GHC.TypeLits
-                 (Symbol)
-import           Servant.API.Modifiers
+import Data.Kind (Type)
+import Data.Typeable (Typeable)
+import GHC.TypeLits (Symbol)
+
+import Servant.API.Modifiers
 
 -- | Lookup the value associated to the @sym@ query string parameter
 -- and try to extract it as a value of type @a@.
@@ -24,7 +22,7 @@ type QueryParam = QueryParam' '[Optional, Strict]
 
 -- | 'QueryParam' which can be 'Required', 'Lenient', or modified otherwise.
 data QueryParam' (mods :: [Type]) (sym :: Symbol) (a :: Type)
-    deriving Typeable
+  deriving (Typeable)
 
 -- | Lookup the values associated to the @sym@ query string parameter
 -- and try to extract it as a value of type @[a]@. This is typically
@@ -38,7 +36,7 @@ data QueryParam' (mods :: [Type]) (sym :: Symbol) (a :: Type)
 -- >>> -- /books?authors[]=<author1>&authors[]=<author2>&...
 -- >>> type MyApi = "books" :> QueryParams "authors" Text :> Get '[JSON] [Book]
 data QueryParams (sym :: Symbol) (a :: Type)
-    deriving Typeable
+  deriving (Typeable)
 
 -- | Lookup a potentially value-less query string parameter
 -- with boolean semantics. If the param @sym@ is there without any value,

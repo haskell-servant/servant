@@ -1,17 +1,18 @@
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Servant.Swagger.Internal.TypeLevel.TMap where
 
-import           Data.Proxy
-import           GHC.Exts   (Constraint)
+import Data.Proxy
+import GHC.Exts (Constraint)
 
 -- $setup
 -- >>> :set -XDataKinds
@@ -32,6 +33,5 @@ class TMap (q :: k -> Constraint) (xs :: [k]) where
 instance TMap q '[] where
   tmap _ _ _ = []
 
-instance (q x, TMap q xs) => TMap q (x ': xs) where
+instance (TMap q xs, q x) => TMap q (x ': xs) where
   tmap q f _ = f (Proxy :: Proxy x) : tmap q f (Proxy :: Proxy xs)
-

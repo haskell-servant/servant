@@ -1,64 +1,50 @@
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE ViewPatterns               #-}
-
-
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 module Servant.Client.Internal.XhrClient where
 
-import           Control.Arrow
-import           Control.Concurrent
-import           Control.Exception
-import           Control.Monad
-import           Control.Monad.Base
-                 (MonadBase (..))
-import           Control.Monad.Catch
-                 (MonadCatch, MonadThrow)
-import           Control.Monad.Error.Class
-                 (MonadError (..))
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Control
-                 (MonadBaseControl (..))
-import           Control.Monad.Trans.Except
-import           Data.Bifunctor
-                 (bimap)
-import           Data.ByteString.Builder
-                 (toLazyByteString)
-import qualified Data.ByteString.Char8             as BS
-import qualified Data.ByteString.Lazy              as BL
-import           Data.CaseInsensitive
-import           Data.Char
-import           Data.Foldable
-                 (toList)
-import           Data.Functor.Alt
-                 (Alt (..))
-import           Data.Proxy
-                 (Proxy (..))
-import qualified Data.Sequence                     as Seq
-import           Data.String.Conversions
-import           Data.Typeable
-                 (Typeable)
-import           Foreign.StablePtr
-import           GHC.Generics
-import qualified GHCJS.Buffer                      as Buffer
-import           GHCJS.Foreign.Callback
-import           GHCJS.Prim
-import           GHCJS.Types
-import           JavaScript.TypedArray.ArrayBuffer
-                 (ArrayBuffer)
-import           JavaScript.Web.Location
-import           Network.HTTP.Media
-                 (renderHeader)
-import           Network.HTTP.Types
-import           Servant.Client.Core
+import Control.Arrow
+import Control.Concurrent
+import Control.Exception
+import Control.Monad
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Catch (MonadCatch, MonadThrow)
+import Control.Monad.Error.Class (MonadError (..))
+import Control.Monad.Reader
+import Control.Monad.Trans.Control (MonadBaseControl (..))
+import Control.Monad.Trans.Except
+import Data.Bifunctor (bimap)
+import Data.ByteString.Builder (toLazyByteString)
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy as BL
+import Data.CaseInsensitive
+import Data.Char
+import Data.Foldable (toList)
+import Data.Functor.Alt (Alt (..))
+import Data.Proxy (Proxy (..))
+import qualified Data.Sequence as Seq
+import Data.String.Conversions
+import Data.Typeable (Typeable)
+import Foreign.StablePtr
+import GHC.Generics
+import qualified GHCJS.Buffer as Buffer
+import GHCJS.Foreign.Callback
+import GHCJS.Prim
+import GHCJS.Types
+import JavaScript.TypedArray.ArrayBuffer (ArrayBuffer)
+import JavaScript.Web.Location
+import Network.HTTP.Media (renderHeader)
+import Network.HTTP.Types
+import Servant.Client.Core
 import qualified Servant.Types.SourceT as S
 
 newtype JSXMLHttpRequest = JSXMLHttpRequest JSVal
@@ -67,9 +53,9 @@ newtype JSXMLHttpRequestClass = JSXMLHttpRequestClass JSVal
 
 -- | The environment in which a request is run.
 newtype ClientEnv
-   = ClientEnv
-   { baseUrl :: BaseUrl }
-   deriving (Eq, Show)
+  = ClientEnv
+  {baseUrl :: BaseUrl}
+  deriving (Eq, Show)
 
 -- | Generates a set of client functions for an API.
 --
@@ -94,10 +80,18 @@ client api = api `clientIn` (Proxy :: Proxy ClientM)
 --
 -- NOTE: Does not support constant space streaming of the request body!
 newtype ClientM a = ClientM
-  { runClientM' :: ReaderT ClientEnv (ExceptT ClientError IO) a }
-  deriving ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ClientError, MonadThrow
-           , MonadCatch)
+  {runClientM' :: ReaderT ClientEnv (ExceptT ClientError IO) a}
+  deriving
+    ( Applicative
+    , Functor
+    , Generic
+    , Monad
+    , MonadCatch
+    , MonadError ClientError
+    , MonadIO
+    , MonadReader ClientEnv
+    , MonadThrow
+    )
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftBase
@@ -114,7 +108,7 @@ instance Alt ClientM where
   a <!> b = a `catchError` const b
 
 data StreamingNotSupportedException = StreamingNotSupportedException
-  deriving ( Typeable, Show )
+  deriving (Show, Typeable)
 
 instance Exception StreamingNotSupportedException where
   displayException _ = "streamingRequest: streaming is not supported!"
@@ -128,29 +122,30 @@ runClientMOrigin cm env = runExceptT $ flip runReaderT env $ runClientM' cm
 
 runClientM :: ClientM a -> IO (Either ClientError a)
 runClientM m = do
-    curLoc <- getWindowLocation
+  curLoc <- getWindowLocation
 
-    jsStr_protocol <- getProtocol curLoc
-    jsStr_port     <- getPort     curLoc
-    jsStr_hostname <- getHostname curLoc
+  jsStr_protocol <- getProtocol curLoc
+  jsStr_port <- getPort curLoc
+  jsStr_hostname <- getHostname curLoc
 
-    let protocol
-          | jsStr_protocol == "https:" = Https
-          | otherwise                  = Http
+  let protocol
+        | jsStr_protocol == "https:" = Https
+        | otherwise = Http
 
-        portStr :: String
-        portStr = fromJSString $ jsval jsStr_port
+      portStr :: String
+      portStr = fromJSString $ jsval jsStr_port
 
-        port :: Int
-        port | null portStr = case protocol of
-                 Http  ->  80
-                 Https -> 443
-             | otherwise = read portStr
+      port :: Int
+      port
+        | null portStr = case protocol of
+            Http -> 80
+            Https -> 443
+        | otherwise = read portStr
 
-        hostname :: String
-        hostname = fromJSString $ jsval jsStr_hostname
+      hostname :: String
+      hostname = fromJSString $ jsval jsStr_hostname
 
-    runClientMOrigin m (ClientEnv (BaseUrl protocol hostname port ""))
+  runClientMOrigin m (ClientEnv (BaseUrl protocol hostname port ""))
 
 performRequest :: Maybe [Status] -> Request -> ClientM Response
 performRequest acceptStatus req = do
@@ -176,33 +171,37 @@ initXhr = do
   lib <- requireXMLHttpRequestClass
   newXMLHttpRequest lib
 
+{- FOURMOLU_DISABLE -}
 foreign import javascript unsafe
   -- branching between node (for testing) and browsers
   "(function () {if (typeof require !== 'undefined') { return require('xhr2'); } else { return XMLHttpRequest; };})()"
   requireXMLHttpRequestClass :: IO JSXMLHttpRequestClass
+{- FOURMOLU_ENABLE -}
 
+{- FOURMOLU_DISABLE -}
 foreign import javascript unsafe "new $1()"
   newXMLHttpRequest :: JSXMLHttpRequestClass -> IO JSXMLHttpRequest
+{- FOURMOLU_ENABLE -}
 
 -- * performing requests
+
 -- Performs the xhr and blocks until the response was received
 performXhr :: JSXMLHttpRequest -> BaseUrl -> Request -> IO ()
 performXhr xhr burl request = do
+  waiter <- newEmptyMVar
 
-    waiter <- newEmptyMVar
+  bracket (acquire waiter) releaseCallback $ \_callback -> do
+    t <- myThreadId
+    s <- newStablePtr t
 
-    bracket (acquire waiter) releaseCallback $ \_callback -> do
-        t <- myThreadId
-        s <- newStablePtr t
+    openXhr xhr (cs $ requestMethod request) (toUrl burl request) True
+    setHeaders xhr request
+    js_setResponseType xhr "arraybuffer"
+    body <- toBody request
+    sendXhr xhr body
+    takeMVar waiter
 
-        openXhr xhr (cs $ requestMethod request) (toUrl burl request) True
-        setHeaders xhr request
-        js_setResponseType xhr "arraybuffer"
-        body <- toBody request
-        sendXhr xhr body
-        takeMVar waiter
-
-        freeStablePtr s
+    freeStablePtr s
   where
     acquire waiter = onReadyStateChange xhr $ do
       state <- readyState xhr
@@ -220,6 +219,7 @@ onReadyStateChange xhr action = do
   callback <- asyncCallback action
   js_onReadyStateChange xhr callback
   return callback
+
 foreign import javascript safe "$1.onreadystatechange = $2;"
   js_onReadyStateChange :: JSXMLHttpRequest -> Callback (IO ()) -> IO ()
 
@@ -229,6 +229,7 @@ foreign import javascript unsafe "$1.readyState"
 openXhr :: JSXMLHttpRequest -> String -> String -> Bool -> IO ()
 openXhr xhr method url =
   js_openXhr xhr (toJSString method) (toJSString url)
+
 foreign import javascript unsafe "$1.open($2, $3, $4)"
   js_openXhr :: JSXMLHttpRequest -> JSVal -> JSVal -> Bool -> IO ()
 
@@ -239,11 +240,11 @@ toUrl :: BaseUrl -> Request -> String
 toUrl burl request =
   let pathS = cs $ toLazyByteString $ requestPath request
       queryS =
-          cs $
+        cs $
           renderQuery True $
-          toList $
-          requestQueryString request
-  in showBaseUrl burl ++ pathS ++ queryS
+            toList $
+              requestQueryString request
+   in showBaseUrl burl ++ pathS ++ queryS
 
 setHeaders :: JSXMLHttpRequest -> Request -> IO ()
 setHeaders xhr request = do
@@ -280,15 +281,15 @@ toBody :: Request -> IO (Maybe ArrayBuffer)
 toBody request = case requestBody request of
   Nothing -> return Nothing
   Just (a, _) -> Just <$> go a
-
   where
     go :: RequestBody -> IO ArrayBuffer
     go x = case x of
-      RequestBodyLBS x     -> return $ mBody $ BL.toStrict x
-      RequestBodyBS x      -> return $ mBody x
-      RequestBodySource xs -> runExceptT (S.runSourceT xs) >>= \e -> case e of
-        Left err  -> fail err
-        Right bss -> return $ mBody $ BL.toStrict $ mconcat bss
+      RequestBodyLBS x -> return $ mBody $ BL.toStrict x
+      RequestBodyBS x -> return $ mBody x
+      RequestBodySource xs ->
+        runExceptT (S.runSourceT xs) >>= \e -> case e of
+          Left err -> fail err
+          Right bss -> return $ mBody $ BL.toStrict $ mconcat bss
 
     mBody :: BS.ByteString -> ArrayBuffer
     mBody bs = js_bufferSlice offset len $ Buffer.getArrayBuffer buffer
@@ -311,41 +312,44 @@ toResponse xhr = do
       statusText <- cs <$> getStatusText xhr
       headers <- parseHeaders <$> getAllResponseHeaders xhr
       response <- getResponse xhr
-      pure Response
-        { responseStatusCode = mkStatus status statusText
-        , responseBody = response
-        , responseHeaders = Seq.fromList headers
-        , responseHttpVersion = http11 -- this is made up
-        }
+      pure
+        Response
+          { responseStatusCode = mkStatus status statusText
+          , responseBody = response
+          , responseHeaders = Seq.fromList headers
+          , responseHttpVersion = http11 -- this is made up
+          }
 
 foreign import javascript unsafe "$1.status"
   getStatus :: JSXMLHttpRequest -> IO Int
 
 getStatusText :: JSXMLHttpRequest -> IO String
 getStatusText = fmap fromJSString . js_statusText
+
 foreign import javascript unsafe "$1.statusText"
   js_statusText :: JSXMLHttpRequest -> IO JSVal
 
 getAllResponseHeaders :: JSXMLHttpRequest -> IO String
 getAllResponseHeaders xhr =
   fromJSString <$> js_getAllResponseHeaders xhr
+
 foreign import javascript unsafe "$1.getAllResponseHeaders()"
   js_getAllResponseHeaders :: JSXMLHttpRequest -> IO JSVal
 
 getResponse :: JSXMLHttpRequest -> IO BL.ByteString
 getResponse xhr =
-    BL.fromStrict
-  . Buffer.toByteString 0 Nothing
-  . Buffer.createFromArrayBuffer
-  <$> js_response xhr
+  BL.fromStrict
+    . Buffer.toByteString 0 Nothing
+    . Buffer.createFromArrayBuffer
+    <$> js_response xhr
 
 foreign import javascript unsafe "$1.response"
   js_response :: JSXMLHttpRequest -> IO ArrayBuffer
 
 parseHeaders :: String -> ResponseHeaders
 parseHeaders s =
-  first mk . first strip . second strip . parseHeader <$>
-  splitOn "\r\n" (cs s)
+  first mk . first strip . second strip . parseHeader
+    <$> splitOn "\r\n" (cs s)
   where
     parseHeader :: BS.ByteString -> (BS.ByteString, BS.ByteString)
     parseHeader h = case BS.breakSubstring ":" (cs h) of

@@ -1,20 +1,21 @@
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE KindSignatures       #-}
-{-# LANGUAGE PolyKinds            #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 module Servant.Swagger.Internal.TypeLevel.API where
 
-import           GHC.Exts       (Constraint)
-import           Data.Kind      (Type)
-import           Servant.API
+import Data.Kind (Type)
+import GHC.Exts (Constraint)
+import Servant.API
 
 -- | Build a list of endpoints from an API.
 type family EndpointsList api where
   EndpointsList (a :<|> b) = AppendList (EndpointsList a) (EndpointsList b)
-  EndpointsList (e :> a)   = MapSub e (EndpointsList a)
+  EndpointsList (e :> a) = MapSub e (EndpointsList a)
   EndpointsList a = '[a]
 
 -- | Check whether @sub@ is a sub API of @api@.
@@ -33,7 +34,7 @@ type family MapSub e xs where
 
 -- | Append two type-level lists.
 type family AppendList xs ys where
-  AppendList '[]       ys = ys
+  AppendList '[] ys = ys
   AppendList (x ': xs) ys = x ': AppendList xs ys
 
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
@@ -60,8 +61,8 @@ type family Nub xs where
 
 -- | Remove element from a type-level list.
 type family Remove x xs where
-  Remove x '[]       = '[]
-  Remove x (x ': ys) =      Remove x ys
+  Remove x '[] = '[]
+  Remove x (x ': ys) = Remove x ys
   Remove x (y ': ys) = y ': Remove x ys
 
 -- | Extract a list of unique "body" types for a specific content-type from a servant API.
@@ -85,4 +86,3 @@ type family BodyTypes' c api :: [Type] where
   BodyTypes' c (e :> api) = BodyTypes' c api
   BodyTypes' c (a :<|> b) = AppendList (BodyTypes' c a) (BodyTypes' c b)
   BodyTypes' c api = '[]
-

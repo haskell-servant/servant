@@ -15,36 +15,37 @@
 -- Additional utilities can also take advantage of the resulting files, such as testing tools.
 --
 -- For more information see <http://swagger.io/ Swagger documentation>.
-module Servant.Swagger (
-  -- * How to use this library
-  -- $howto
+module Servant.Swagger
+  ( -- * How to use this library
+    -- $howto
 
-  -- ** Generate @'Swagger'@
-  -- $generate
+    -- ** Generate @'Swagger'@
+    -- $generate
 
-  -- ** Annotate
-  -- $annotate
+    -- ** Annotate
+    -- $annotate
 
-  -- ** Test
-  -- $test
+    -- ** Test
+    -- $test
 
-  -- ** Serve
-  -- $serve
+    -- ** Serve
+    -- $serve
 
-  -- * @'HasSwagger'@ class
-  HasSwagger(..),
+    -- * @'HasSwagger'@ class
+    HasSwagger (..)
 
-  -- * Manipulation
-  subOperations,
+    -- * Manipulation
+  , subOperations
 
-  -- * Testing
-  validateEveryToJSON,
-  validateEveryToJSONWithPatternChecker,
-) where
+    -- * Testing
+  , validateEveryToJSON
+  , validateEveryToJSONWithPatternChecker
+  )
+where
 
-import           Servant.Swagger.Internal
-import           Servant.Swagger.Test
-import           Servant.Swagger.Internal.Orphans ()
+import Servant.Swagger.Internal
+import Servant.Swagger.Internal.Orphans ()
+import Servant.Swagger.Test
 
 -- $setup
 -- >>> import Control.Applicative

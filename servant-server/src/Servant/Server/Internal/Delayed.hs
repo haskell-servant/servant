@@ -1,26 +1,23 @@
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RecordWildCards       #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Servant.Server.Internal.Delayed where
 
-import           Control.Monad.IO.Class
-                 (MonadIO (..))
-import           Control.Monad.Reader
-                 (ask)
-import           Control.Monad.Trans.Resource
-                 (ResourceT, runResourceT)
-import           Network.Wai
-                 (Request, Response)
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.Reader (ask)
+import Control.Monad.Trans.Resource (ResourceT, runResourceT)
+import Network.Wai (Request, Response)
 
-import           Servant.Server.Internal.DelayedIO
-import           Servant.Server.Internal.Handler
-import           Servant.Server.Internal.RouteResult
-import           Servant.Server.Internal.ServerError
+import Servant.Server.Internal.DelayedIO
+import Servant.Server.Internal.Handler
+import Servant.Server.Internal.RouteResult
+import Servant.Server.Internal.ServerError
 
 -- | A 'Delayed' is a representation of a handler with scheduled
 -- delayed checks that can trigger errors.
@@ -88,55 +85,63 @@ import           Servant.Server.Internal.ServerError
 -- 6. Header Checks. They also require parsing and can cause 400 if parsing fails.
 --
 -- 7. Body check. The request body check can cause 400.
---
 data Delayed env c where
-  Delayed :: { capturesD :: env -> DelayedIO captures
-             , methodD   :: DelayedIO ()
-             , authD     :: DelayedIO auth
-             , acceptD   :: DelayedIO ()
-             , contentD  :: DelayedIO contentType
-             , paramsD   :: DelayedIO params
-             , headersD  :: DelayedIO headers
-             , bodyD     :: contentType -> DelayedIO body
-             , serverD   :: captures
-                         -> params
-                         -> headers
-                         -> auth
-                         -> body
-                         -> Request
-                         -> RouteResult c
-             } -> Delayed env c
+  Delayed
+    :: { capturesD :: env -> DelayedIO captures
+       , methodD :: DelayedIO ()
+       , authD :: DelayedIO auth
+       , acceptD :: DelayedIO ()
+       , contentD :: DelayedIO contentType
+       , paramsD :: DelayedIO params
+       , headersD :: DelayedIO headers
+       , bodyD :: contentType -> DelayedIO body
+       , serverD
+           :: captures
+           -> params
+           -> headers
+           -> auth
+           -> body
+           -> Request
+           -> RouteResult c
+       }
+    -> Delayed env c
 
 instance Functor (Delayed env) where
   fmap f Delayed{..} =
     Delayed
-      { serverD = \ c p h a b req -> f <$> serverD c p h a b req
+      { serverD = \c p h a b req -> f <$> serverD c p h a b req
       , ..
-      } -- Note [Existential Record Update]
+      }
+
+-- Note [Existential Record Update]
 
 -- | A 'Delayed' without any stored checks.
 emptyDelayed :: RouteResult a -> Delayed env a
 emptyDelayed result =
-  Delayed (const r) r r r r r r (const r) (\ _ _ _ _ _ _ -> result)
+  Delayed (const r) r r r r r r (const r) (\_ _ _ _ _ _ -> result)
   where
     r = return ()
 
 -- | Add a capture to the end of the capture block.
-addCapture :: Delayed env (a -> b)
-           -> (captured -> DelayedIO a)
-           -> Delayed (captured, env) b
+addCapture
+  :: Delayed env (a -> b)
+  -> (captured -> DelayedIO a)
+  -> Delayed (captured, env) b
 addCapture Delayed{..} new =
   Delayed
-    { capturesD = \ (txt, env) -> (,) <$> capturesD env <*> new txt
-    , serverD   = \ (x, v) p h a b req -> ($ v) <$> serverD x p h a b req
+    { capturesD = \(txt, env) -> (,) <$> capturesD env <*> new txt
+    , serverD = \(x, v) p h a b req -> ($ v) <$> serverD x p h a b req
     , ..
-    } -- Note [Existential Record Update]
+    }
+
+-- Note [Existential Record Update]
 
 -- | Add a parameter check to the end of the params block
-addParameterCheck :: Delayed env (a -> b)
-                  -> DelayedIO a
-                  -> Delayed env b
-addParameterCheck Delayed {..} new =
+addParameterCheck
+  :: Delayed env (a -> b)
+  -> DelayedIO a
+  -> Delayed env b
+addParameterCheck Delayed{..} new =
   Delayed
     { paramsD = (,) <$> paramsD <*> new
     , serverD = \c (p, pNew) h a b req -> ($ pNew) <$> serverD c p h a b req
@@ -144,10 +149,11 @@ addParameterCheck Delayed {..} new =
     }
 
 -- | Add a parameter check to the end of the params block
-addHeaderCheck :: Delayed env (a -> b)
-               -> DelayedIO a
-               -> Delayed env b
-addHeaderCheck Delayed {..} new =
+addHeaderCheck
+  :: Delayed env (a -> b)
+  -> DelayedIO a
+  -> Delayed env b
+addHeaderCheck Delayed{..} new =
   Delayed
     { headersD = (,) <$> headersD <*> new
     , serverD = \c p (h, hNew) a b req -> ($ hNew) <$> serverD c p h a b req
@@ -155,42 +161,52 @@ addHeaderCheck Delayed {..} new =
     }
 
 -- | Add a method check to the end of the method block.
-addMethodCheck :: Delayed env a
-               -> DelayedIO ()
-               -> Delayed env a
+addMethodCheck
+  :: Delayed env a
+  -> DelayedIO ()
+  -> Delayed env a
 addMethodCheck Delayed{..} new =
   Delayed
     { methodD = methodD <* new
     , ..
-    } -- Note [Existential Record Update]
+    }
+
+-- Note [Existential Record Update]
 
 -- | Add an auth check to the end of the auth block.
-addAuthCheck :: Delayed env (a -> b)
-             -> DelayedIO a
-             -> Delayed env b
+addAuthCheck
+  :: Delayed env (a -> b)
+  -> DelayedIO a
+  -> Delayed env b
 addAuthCheck Delayed{..} new =
   Delayed
-    { authD   = (,) <$> authD <*> new
-    , serverD = \ c p h (y, v) b req -> ($ v) <$> serverD c p h y b req
+    { authD = (,) <$> authD <*> new
+    , serverD = \c p h (y, v) b req -> ($ v) <$> serverD c p h y b req
     , ..
-    } -- Note [Existential Record Update]
+    }
+
+-- Note [Existential Record Update]
 
 -- | Add a content type and body checks around parameter checks.
 --
 -- We'll report failed content type check (415), before trying to parse
 -- query parameters (400). Which, in turn, happens before request body parsing.
-addBodyCheck :: Delayed env (a -> b)
-             -> DelayedIO c         -- ^ content type check
-             -> (c -> DelayedIO a)  -- ^ body check
-             -> Delayed env b
+addBodyCheck
+  :: Delayed env (a -> b)
+  -> DelayedIO c
+  -- ^ content type check
+  -> (c -> DelayedIO a)
+  -- ^ body check
+  -> Delayed env b
 addBodyCheck Delayed{..} newContentD newBodyD =
   Delayed
     { contentD = (,) <$> contentD <*> newContentD
-    , bodyD    = \(content, c) -> (,) <$> bodyD content <*> newBodyD c
-    , serverD  = \ c p h a (z, v) req -> ($ v) <$> serverD c p h a z req
+    , bodyD = \(content, c) -> (,) <$> bodyD content <*> newBodyD c
+    , serverD = \c p h a (z, v) req -> ($ v) <$> serverD c p h a z req
     , ..
-    } -- Note [Existential Record Update]
+    }
 
+-- Note [Existential Record Update]
 
 -- | Add an accept header check before handling parameters.
 -- In principle, we'd like
@@ -202,14 +218,17 @@ addBodyCheck Delayed{..} newContentD newBodyD =
 -- this, but they'd be more complicated (such as delaying the
 -- body check further so that it can still be run in a situation
 -- where we'd otherwise report 406).
-addAcceptCheck :: Delayed env a
-               -> DelayedIO ()
-               -> Delayed env a
+addAcceptCheck
+  :: Delayed env a
+  -> DelayedIO ()
+  -> Delayed env a
 addAcceptCheck Delayed{..} new =
   Delayed
     { acceptD = acceptD *> new
     , ..
-    } -- Note [Existential Record Update]
+    }
+
+-- Note [Existential Record Update]
 
 -- | Many combinators extract information that is passed to
 -- the handler without the possibility of failure. In such a
@@ -217,9 +236,11 @@ addAcceptCheck Delayed{..} new =
 passToServer :: Delayed env (a -> b) -> (Request -> a) -> Delayed env b
 passToServer Delayed{..} x =
   Delayed
-    { serverD = \ c p h a b req -> ($ x req) <$> serverD c p h a b req
+    { serverD = \c p h a b req -> ($ x req) <$> serverD c p h a b req
     , ..
-    } -- Note [Existential Record Update]
+    }
+
+-- Note [Existential Record Update]
 
 -- | Run a delayed server. Performs all scheduled operations
 -- in order, and passes the results from the capture and body
@@ -227,42 +248,45 @@ passToServer Delayed{..} x =
 --
 -- This should only be called once per request; otherwise the guarantees about
 -- effect and HTTP error ordering break down.
-runDelayed :: Delayed env a
-           -> env
-           -> Request
-           -> ResourceT IO (RouteResult a)
+runDelayed
+  :: Delayed env a
+  -> env
+  -> Request
+  -> ResourceT IO (RouteResult a)
 runDelayed Delayed{..} env = runDelayedIO $ do
-    r <- ask
-    c <- capturesD env
-    methodD
-    a <- authD
-    acceptD
-    content <- contentD
-    p <- paramsD       -- Has to be before body parsing, but after content-type checks
-    h <- headersD
-    b <- bodyD content
-    liftRouteResult (serverD c p h a b r)
+  r <- ask
+  c <- capturesD env
+  methodD
+  a <- authD
+  acceptD
+  content <- contentD
+  p <- paramsD -- Has to be before body parsing, but after content-type checks
+  h <- headersD
+  b <- bodyD content
+  liftRouteResult (serverD c p h a b r)
 
 -- | Runs a delayed server and the resulting action.
 -- Takes a continuation that lets us send a response.
 -- Also takes a continuation for how to turn the
 -- result of the delayed server into a response.
-runAction :: Delayed env (Handler a)
-          -> env
-          -> Request
-          -> (RouteResult Response -> IO r)
-          -> (a -> RouteResult Response)
-          -> IO r
-runAction action env req respond k = runResourceT $
+runAction
+  :: Delayed env (Handler a)
+  -> env
+  -> Request
+  -> (RouteResult Response -> IO r)
+  -> (a -> RouteResult Response)
+  -> IO r
+runAction action env req respond k =
+  runResourceT $
     runDelayed action env req >>= go >>= liftIO . respond
   where
-    go (Fail e)      = return $ Fail e
+    go (Fail e) = return $ Fail e
     go (FailFatal e) = return $ FailFatal e
-    go (Route a)     = liftIO $ do
+    go (Route a) = liftIO $ do
       e <- runHandler a
       case e of
         Left err -> return . Route $ responseServerError err
-        Right x  -> return $! k x
+        Right x -> return $! k x
 
 {- Note [Existential Record Update]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

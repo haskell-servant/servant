@@ -1,11 +1,10 @@
-{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE PolyKinds #-}
 
-{-# LANGUAGE PolyKinds          #-}
 module Servant.API.Experimental.Auth where
 
-import           Data.Typeable
-                 (Typeable)
+import Data.Typeable (Typeable)
 
 -- | A generalized Authentication combinator. Use this if you have a
 -- non-standard authentication technique.

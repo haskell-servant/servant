@@ -5,13 +5,14 @@
 -- It is purely an internal API and SHOULD NOT be used by end-users of Servant.
 module Servant.Types.Internal.Response where
 
-import Network.HTTP.Types (Status, Header)
+import Data.Data (Typeable)
 import Data.Sequence (Seq)
 import GHC.Generics (Generic)
-import Data.Data (Typeable)
+import Network.HTTP.Types (Header, Status)
 
 data InternalResponse a = InternalResponse
   { statusCode :: Status
   , headers :: Seq Header
   , responseBody :: a
-  } deriving stock (Eq, Show, Generic, Typeable, Functor, Foldable, Traversable)
+  }
+  deriving stock (Eq, Foldable, Functor, Generic, Show, Traversable, Typeable)

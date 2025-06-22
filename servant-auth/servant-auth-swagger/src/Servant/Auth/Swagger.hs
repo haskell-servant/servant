@@ -1,53 +1,59 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE CPP #-}
-module Servant.Auth.Swagger
-  (
-  -- | The purpose of this package is provide the instance for 'servant-auth'
-  -- combinators needed for 'servant-swagger' documentation generation.
-  --
-  -- Currently only JWT and BasicAuth are supported.
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-  -- * Re-export
+module Servant.Auth.Swagger
+  ( -- | The purpose of this package is provide the instance for 'servant-auth'
+    -- combinators needed for 'servant-swagger' documentation generation.
+    --
+    -- Currently only JWT and BasicAuth are supported.
+
+    -- * Re-export
     JWT
   , BasicAuth
   , Auth
 
-  -- * Needed to define instances of @HasSwagger@
+    -- * Needed to define instances of @HasSwagger@
   , HasSecurity (..)
-  ) where
+  )
+where
 
-import Control.Lens    ((&), (<>~))
-import Data.Kind       (Type)
-import Data.Proxy      (Proxy (Proxy))
-import Data.Swagger    (ApiKeyLocation (..), ApiKeyParams (..),
-                        SecurityRequirement (..), SecurityScheme (..), 
+import Control.Lens ((&), (<>~))
+import Data.Kind (Type)
+import Data.Proxy (Proxy (Proxy))
+import Data.Swagger
+  ( ApiKeyLocation (..)
+  , ApiKeyParams (..)
+  , SecurityRequirement (..)
+  , SecurityScheme (..)
+  , SecuritySchemeType (..)
+  , allOperations
+  , security
+  , securityDefinitions
+  )
 #if MIN_VERSION_swagger2(2,6,0)
-                        SecurityDefinitions(..),
+import Data.Swagger (SecurityDefinitions (..))
 #endif
-                        SecuritySchemeType (..), allOperations, security,
-                        securityDefinitions)
-import GHC.Exts        (fromList)
-import Servant.API     hiding (BasicAuth)
+
+import qualified Data.Text as T
+import GHC.Exts (fromList)
+import Servant.API hiding (BasicAuth)
 import Servant.Auth
 import Servant.Swagger
 
-import qualified Data.Text as T
-
 instance (AllHasSecurity xs, HasSwagger api) => HasSwagger (Auth xs r :> api) where
-  toSwagger _
-    = toSwagger (Proxy :: Proxy api)
-        & securityDefinitions <>~ mkSec (fromList secs)
-        & allOperations.security <>~ secReqs
+  toSwagger _ =
+    toSwagger (Proxy :: Proxy api)
+      & securityDefinitions <>~ mkSec (fromList secs)
+      & allOperations . security <>~ secReqs
     where
       secs = securities (Proxy :: Proxy xs)
-      secReqs = [ SecurityRequirement (fromList [(s,[])]) | (s,_) <- secs]
-      mkSec =
-#if MIN_VERSION_swagger2(2,6,0)
-        SecurityDefinitions
-#else
-        id
-#endif
+      secReqs = [SecurityRequirement (fromList [(s, [])]) | (s, _) <- secs]
 
+#if MIN_VERSION_swagger2(2,6,0)
+      mkSec = SecurityDefinitions
+#else
+      mkSec = id
+#endif
 
 class HasSecurity x where
   securityName :: Proxy x -> T.Text
@@ -58,19 +64,19 @@ instance HasSecurity BasicAuth where
   securityScheme _ = SecurityScheme type_ (Just desc)
     where
       type_ = SecuritySchemeBasic
-      desc  = "Basic access authentication"
+      desc = "Basic access authentication"
 
 instance HasSecurity JWT where
   securityName _ = "JwtSecurity"
   securityScheme _ = SecurityScheme type_ (Just desc)
     where
       type_ = SecuritySchemeApiKey (ApiKeyParams "Authorization" ApiKeyHeader)
-      desc  = "JSON Web Token-based API key"
+      desc = "JSON Web Token-based API key"
 
 class AllHasSecurity (x :: [Type]) where
-  securities :: Proxy x -> [(T.Text,SecurityScheme)]
+  securities :: Proxy x -> [(T.Text, SecurityScheme)]
 
-instance {-# OVERLAPPABLE #-} (HasSecurity x, AllHasSecurity xs) => AllHasSecurity (x ': xs) where
+instance {-# OVERLAPPABLE #-} (AllHasSecurity xs, HasSecurity x) => AllHasSecurity (x ': xs) where
   securities _ = (securityName px, securityScheme px) : securities pxs
     where
       px :: Proxy x

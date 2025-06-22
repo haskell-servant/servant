@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 module Servant.Auth.Server.Internal.ThrowAll where
 
 #if !MIN_VERSION_servant_server(0,16,0)
@@ -7,15 +8,14 @@ module Servant.Auth.Server.Internal.ThrowAll where
 #endif
 
 import Control.Monad.Error.Class
-import Data.Tagged               (Tagged (..))
-import Servant                   ((:<|>) (..), ServerError(..), NamedRoutes(..))
-import Servant.API.Generic
-import Servant.Server.Generic
-import Servant.Server
+import qualified Data.ByteString.Char8 as BS
+import Data.Tagged (Tagged (..))
 import Network.HTTP.Types
 import Network.Wai
-
-import qualified Data.ByteString.Char8 as BS
+import Servant (NamedRoutes (..), ServerError (..), (:<|>) (..))
+import Servant.API.Generic
+import Servant.Server
+import Servant.Server.Generic
 
 class ThrowAll a where
   -- | 'throwAll' is a convenience function to throw errors across an entire
@@ -30,9 +30,9 @@ instance (ThrowAll a, ThrowAll b) => ThrowAll (a :<|> b) where
   throwAll e = throwAll e :<|> throwAll e
 
 instance
-  ( ThrowAll (ToServant api (AsServerT m)) , GenericServant api (AsServerT m)) =>
-  ThrowAll (api (AsServerT m)) where
-
+  (GenericServant api (AsServerT m), ThrowAll (ToServant api (AsServerT m)))
+  => ThrowAll (api (AsServerT m))
+  where
   throwAll = fromServant . throwAll
 
 -- Really this shouldn't be necessary - ((->) a) should be an instance of
@@ -40,19 +40,23 @@ instance
 instance {-# OVERLAPPING #-} ThrowAll b => ThrowAll (a -> b) where
   throwAll e = const $ throwAll e
 
-instance {-# OVERLAPPABLE #-} (MonadError ServerError m) => ThrowAll (m a) where
+instance {-# OVERLAPPABLE #-} MonadError ServerError m => ThrowAll (m a) where
   throwAll = throwError
 
 -- | for @servant <0.11@
 instance {-# OVERLAPPING #-} ThrowAll Application where
-  throwAll e _req respond
-      = respond $ responseLBS (mkStatus (errHTTPCode e) (BS.pack $ errReasonPhrase e))
-                              (errHeaders e)
-                              (errBody e)
+  throwAll e _req respond =
+    respond $
+      responseLBS
+        (mkStatus (errHTTPCode e) (BS.pack $ errReasonPhrase e))
+        (errHeaders e)
+        (errBody e)
 
 -- | for @servant >=0.11@
 instance {-# OVERLAPPING #-} MonadError ServerError m => ThrowAll (Tagged m Application) where
   throwAll e = Tagged $ \_req respond ->
-      respond $ responseLBS (mkStatus (errHTTPCode e) (BS.pack $ errReasonPhrase e))
-                              (errHeaders e)
-                              (errBody e)
+    respond $
+      responseLBS
+        (mkStatus (errHTTPCode e) (BS.pack $ errReasonPhrase e))
+        (errHeaders e)
+        (errBody e)

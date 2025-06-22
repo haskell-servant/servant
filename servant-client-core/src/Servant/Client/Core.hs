@@ -14,60 +14,67 @@
 -- This library is primarily of interest to backend-writers and
 -- combinator-writers. For more information, see the README.md
 module Servant.Client.Core
-  (
-  -- * Client generation
+  ( -- * Client generation
     clientIn
-  , HasClient(..)
+  , HasClient (..)
   , foldMapUnion
   , matchUnion
 
-  -- * Request
+    -- * Request
   , Request
-  , RequestF(..)
+  , RequestF (..)
   , defaultRequest
-  , RequestBody(..)
+  , RequestBody (..)
 
-  -- * Authentication
+    -- * Authentication
   , mkAuthenticatedRequest
   , basicAuthReq
-  , AuthenticatedRequest(..)
+  , AuthenticatedRequest (..)
   , AuthClientData
 
-  -- * Generic Client
-  , ClientError(..)
-  , EmptyClient(..)
+    -- * Generic Client
+  , ClientError (..)
+  , EmptyClient (..)
 
-  -- * Response
+    -- * Response
   , Response
   , ResponseF (..)
-  , RunClient(..)
-  -- * BaseUrl
+  , RunClient (..)
+
+    -- * BaseUrl
   , BaseUrl (..)
   , Scheme (..)
   , showBaseUrl
   , parseBaseUrl
   , InvalidBaseUrlException (..)
 
-  -- ** Streaming
-  , RunStreamingClient(..)
+    -- ** Streaming
+  , RunStreamingClient (..)
   , StreamingResponse
 
-  -- * Writing HasClient instances
-  -- | These functions need not be re-exported by backend libraries.
+    -- * Writing HasClient instances
+
+    -- | These functions need not be re-exported by backend libraries.
   , addHeader
   , appendToQueryString
   , appendToPath
   , setRequestBodyLBS
   , setRequestBody
   , encodeQueryParamValue
-  ) where
-import           Servant.Client.Core.Auth
-import           Servant.Client.Core.BaseUrl
-                 (BaseUrl (..), InvalidBaseUrlException (..), Scheme (..),
-                 parseBaseUrl, showBaseUrl)
-import           Servant.Client.Core.BasicAuth
-import           Servant.Client.Core.ClientError
-import           Servant.Client.Core.HasClient
-import           Servant.Client.Core.Request
-import           Servant.Client.Core.Response
-import           Servant.Client.Core.RunClient
+  )
+where
+
+import Servant.Client.Core.Auth
+import Servant.Client.Core.BaseUrl
+  ( BaseUrl (..)
+  , InvalidBaseUrlException (..)
+  , Scheme (..)
+  , parseBaseUrl
+  , showBaseUrl
+  )
+import Servant.Client.Core.BasicAuth
+import Servant.Client.Core.ClientError
+import Servant.Client.Core.HasClient
+import Servant.Client.Core.Request
+import Servant.Client.Core.Response
+import Servant.Client.Core.RunClient

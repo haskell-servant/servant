@@ -1,10 +1,10 @@
 module Servant.API.Vault
   ( -- $vault
     Vault
-  ) where
+  )
+where
 
-import           Data.Vault.Lazy
-                 (Vault)
+import Data.Vault.Lazy (Vault)
 
 -- $vault
 --

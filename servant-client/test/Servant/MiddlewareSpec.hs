@@ -24,18 +24,19 @@ import Data.ByteString.Builder (toLazyByteString)
 import Data.IORef (modifyIORef, newIORef, readIORef)
 import Data.Monoid ()
 import Prelude.Compat
-import Servant.Client
 import Servant.Client.Core (RequestF (..))
-import Servant.Client.Internal.HttpClient (ClientMiddleware)
-import Servant.ClientTestUtils
 import Test.Hspec
 import Prelude ()
 
+import Servant.Client
+import Servant.Client.Internal.HttpClient (ClientMiddleware)
+import Servant.ClientTestUtils
+
 runClientWithMiddleware :: ClientM a -> ClientMiddleware -> BaseUrl -> IO (Either ClientError a)
 runClientWithMiddleware x mid baseUrl' =
-  runClientM x ((mkClientEnv manager' baseUrl') {middleware = mid})
+  runClientM x ((mkClientEnv manager' baseUrl'){middleware = mid})
 
-data CustomException = CustomException deriving (Show, Eq)
+data CustomException = CustomException deriving (Eq, Show)
 
 instance Exception CustomException
 
@@ -103,10 +104,10 @@ spec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
     let mid :: ClientMiddleware
         mid = mid1 . mid2 . mid3
-        -- \^ Composition in "reverse order".
-        -- It is equivalent to the following, which is more intuitive:
-        -- mid :: ClientMiddleware
-        -- mid oldApp = mid1 (mid2 (mid3 oldApp))
+    -- \^ Composition in "reverse order".
+    -- It is equivalent to the following, which is more intuitive:
+    -- mid :: ClientMiddleware
+    -- mid oldApp = mid1 (mid2 (mid3 oldApp))
 
     -- Same as without middleware
     left show <$> runClientWithMiddleware getGet mid baseUrl `shouldReturn` Right alice

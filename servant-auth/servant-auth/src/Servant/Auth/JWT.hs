@@ -2,21 +2,20 @@
 
 module Servant.Auth.JWT where
 
-import           Control.Lens         ((^.))
-import qualified Crypto.JWT           as Jose
-import           Data.Aeson           (FromJSON, Result (..), ToJSON, fromJSON,
-                                       toJSON)
-#if MIN_VERSION_aeson(2,0,0)                                                                                    
-import qualified Data.Map as KM                                                                        
-#else                                                                                                           
-import qualified Data.HashMap.Strict as KM                                                                      
+import Control.Lens ((^.))
+import qualified Crypto.JWT as Jose
+import Data.Aeson (FromJSON, Result (..), ToJSON, fromJSON, toJSON)
+#if MIN_VERSION_aeson(2,0,0)
+import qualified Data.Map as KM
+#else
+import qualified Data.HashMap.Strict as KM
 #endif
 
-import qualified Data.Text            as T
-
+import qualified Data.Text as T
 
 -- This should probably also be from ClaimSet
 --
+
 -- | How to decode data from a JWT.
 --
 -- The default implementation assumes the data is stored in the unregistered
@@ -26,7 +25,7 @@ class FromJWT a where
   default decodeJWT :: FromJSON a => Jose.ClaimsSet -> Either T.Text a
   decodeJWT m = case KM.lookup "dat" (m ^. Jose.unregisteredClaims) of
     Nothing -> Left "Missing 'dat' claim"
-    Just v  -> case fromJSON v of
+    Just v -> case fromJSON v of
       Error e -> Left $ T.pack e
       Success a -> Right a
 

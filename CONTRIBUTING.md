@@ -36,7 +36,9 @@ Some things we like:
 - Few dependencies
 - -Werror-compatible (7.8, 7.10 and 8.0)
 
-Though we aren't sticklers for style, the `.stylish-haskell.yaml` and `HLint.hs` files in the repository provide a good baseline for consistency.
+Haskell code should be formatted with `fourmolu` (`>= 0.18.0.0`).
+Please try to avoid introducing new `hlint` warnings.
+For Nix files, `nixfmt-rfc-style` is preferred.
 
 **Important**: please do not modify the versions of the servant packages you are sending patches for.
 

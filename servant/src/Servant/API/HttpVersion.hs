@@ -1,10 +1,10 @@
 module Servant.API.HttpVersion
   ( -- $httpversion
-    HttpVersion(..)
-  ) where
+    HttpVersion (..)
+  )
+where
 
-import           Network.HTTP.Types
-                 (HttpVersion (..))
+import Network.HTTP.Types (HttpVersion (..))
 
 -- $httpversion
 --

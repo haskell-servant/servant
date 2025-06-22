@@ -1,33 +1,34 @@
-{-# LANGUAGE CPP            #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveAnyClass #-}
+
 module Servant.Auth.ClientSpec (spec) where
 
-import           Crypto.JOSE              (JWK,
-                                           KeyMaterialGenParam (OctGenParam),
-                                           genJWK)
-import           Data.Aeson               (FromJSON (..), ToJSON (..))
-import qualified Data.ByteString.Lazy     as BSL
-import           Data.Time                (UTCTime, defaultTimeLocale,
-                                           parseTimeOrError)
-import           GHC.Generics             (Generic)
-import           Network.HTTP.Client      (Manager, defaultManagerSettings,
-                                           newManager)
-import           Network.HTTP.Types       (status401)
-import           Network.Wai.Handler.Warp (testWithApplication)
-import           Servant
-import           Servant.Client           (BaseUrl (..), Scheme (Http),
-                                           ClientError (FailureResponse),
+import Crypto.JOSE (JWK, KeyMaterialGenParam (OctGenParam), genJWK)
+import Data.Aeson (FromJSON (..), ToJSON (..))
+import qualified Data.ByteString.Lazy as BSL
+import Data.Time (UTCTime, defaultTimeLocale, parseTimeOrError)
+import GHC.Generics (Generic)
+import Network.HTTP.Client (Manager, defaultManagerSettings, newManager)
+import Network.HTTP.Types (status401)
+import Network.Wai.Handler.Warp (testWithApplication)
+import Servant
+import Servant.Client
+  ( BaseUrl (..)
+  , ClientError (FailureResponse)
+  , Scheme (Http)
+  , client
+  )
 #if MIN_VERSION_servant_client(0,16,0)
-                                           ResponseF(..),
+import Servant.Client (ResponseF (..))
 #elif MIN_VERSION_servant_client(0,13,0)
-                                           GenResponse(..),
+import Servant.Client (GenResponse (..))
 #elif MIN_VERSION_servant_client(0,12,0)
-                                           Response(..),
+import Servant.Client (Response (..))
 #endif
-                                           client)
-import           System.IO.Unsafe         (unsafePerformIO)
-import           Test.Hspec
-import           Test.QuickCheck
+
+import System.IO.Unsafe (unsafePerformIO)
+import Test.Hspec
+import Test.QuickCheck
 
 #if MIN_VERSION_servant_client(0,13,0)
 import Servant.Client (mkClientEnv, runClientM)
@@ -36,25 +37,26 @@ import Servant.Client (ClientEnv (..), runClientM)
 #else
 import Control.Monad.Trans.Except (runExceptT)
 #endif
+
 #if !MIN_VERSION_servant_server(0,16,0)
 #define ClientError ServantError
 #endif
 
-import Servant.Auth.Client
 import Servant.Auth.Server
 import Servant.Auth.Server.SetCookieOrphan ()
+
+import Servant.Auth.Client
 
 spec :: Spec
 spec = describe "The JWT combinator" $ do
   hasClientSpec
 
-
 ------------------------------------------------------------------------------
+
 -- * HasClient {{{
 
 hasClientSpec :: Spec
 hasClientSpec = describe "HasClient" $ aroundAll (testWithApplication $ return app) $ do
-
   let mkTok :: User -> Maybe UTCTime -> IO Token
       mkTok user mexp = do
         Right tok <- makeJWT user jwtCfg mexp
@@ -70,6 +72,7 @@ hasClientSpec = describe "HasClient" $ aroundAll (testWithApplication $ return a
     v <- getIntClient tok mgr (BaseUrl Http "localhost" port "")
     v `shouldBe` Right (length $ name user)
 
+{- FOURMOLU_DISABLE -}
   it "fails when token is expired" $ \port -> property $ \user -> do
     tok <- mkTok user (Just past)
 #if MIN_VERSION_servant_client(0,16,0)
@@ -83,7 +86,7 @@ hasClientSpec = describe "HasClient" $ aroundAll (testWithApplication $ return a
 #endif
       <- getIntClient tok mgr (BaseUrl Http "localhost" port "")
     stat `shouldBe` status401
-
+{- FOURMOLU_ENABLE -}
 
 getIntClient :: Token -> Manager -> BaseUrl -> IO (Either ClientError Int)
 #if MIN_VERSION_servant(0,13,0)
@@ -93,8 +96,10 @@ getIntClient tok m burl = runClientM (client api tok) (ClientEnv m burl)
 #else
 getIntClient tok m burl = runExceptT $ client api tok m burl
 #endif
+
 -- }}}
 ------------------------------------------------------------------------------
+
 -- * API and Server {{{
 
 type API = Auth '[JWT] User :> Get '[JSON] Int
@@ -121,17 +126,16 @@ jwtCfg = defaultJWTSettings theKey
 cookieCfg :: CookieSettings
 cookieCfg = defaultCookieSettings
 
-
 server :: Server API
 server = getInt
   where
     getInt :: AuthResult User -> Handler Int
-    getInt (Authenticated u) = return . length $ name  u
+    getInt (Authenticated u) = return . length $ name u
     getInt _ = throwAll err401
-
 
 -- }}}
 ------------------------------------------------------------------------------
+
 -- * Utils {{{
 
 past :: UTCTime
@@ -140,19 +144,23 @@ past = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "1970-01-01"
 future :: UTCTime
 future = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "2070-01-01"
 
-
 -- }}}
 ------------------------------------------------------------------------------
+
 -- * Types {{{
 
 data User = User
   { name :: String
-  , _id  :: String
-  } deriving (Eq, Show, Read, Generic)
+  , _id :: String
+  }
+  deriving (Eq, Generic, Read, Show)
 
 instance FromJWT User
+
 instance ToJWT User
+
 instance FromJSON User
+
 instance ToJSON User
 
 instance Arbitrary User where

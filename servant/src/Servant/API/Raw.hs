@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# OPTIONS_HADDOCK not-home    #-}
+{-# OPTIONS_HADDOCK not-home #-}
+
 module Servant.API.Raw where
 
-import           Data.Typeable
-                 (Typeable)
+import Data.Typeable (Typeable)
 
 -- | Endpoint for plugging in your own Wai 'Application's.
 --
@@ -14,7 +14,7 @@ import           Data.Typeable
 -- this can also be used with functions from
 -- <https://hackage.haskell.org/package/servant-server/docs/Servant-Server-StaticFiles.html Servant.Server.StaticFiles>
 -- to serve static files stored in a particular directory on your filesystem
-data Raw deriving Typeable
+data Raw deriving (Typeable)
 
 -- | Variant of 'Raw' that lets you access the underlying monadic context to process the request.
-data RawM deriving Typeable
+data RawM deriving (Typeable)

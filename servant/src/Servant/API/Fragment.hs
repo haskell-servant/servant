@@ -1,14 +1,12 @@
-{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds          #-}
+{-# LANGUAGE PolyKinds #-}
+{-# OPTIONS_HADDOCK not-home #-}
 
-{-# OPTIONS_HADDOCK not-home    #-}
 module Servant.API.Fragment (Fragment) where
 
-import           Data.Kind
-                 (Type)
-import           Data.Typeable
-                 (Typeable)
+import Data.Kind (Type)
+import Data.Typeable (Typeable)
 
 -- | Document the URI fragment in API. Useful in combination with 'Link'.
 --
@@ -17,7 +15,7 @@ import           Data.Typeable
 -- >>> -- /post#TRACKING
 -- >>> type MyApi = "post" :> Fragment Text :> Get '[JSON] Tracking
 data Fragment (a :: Type)
-    deriving Typeable
+  deriving (Typeable)
 
 -- $setup
 -- >>> import Servant.API

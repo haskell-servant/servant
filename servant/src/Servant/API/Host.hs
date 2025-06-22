@@ -9,5 +9,4 @@ import GHC.TypeLits (Symbol)
 --
 -- > type API = Host "api1.example" :> API1
 -- >       :<|> Host "api2.example" :> API2
---
-data Host (sym :: Symbol) deriving Typeable
+data Host (sym :: Symbol) deriving (Typeable)

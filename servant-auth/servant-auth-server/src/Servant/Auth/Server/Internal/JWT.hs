@@ -1,21 +1,20 @@
 module Servant.Auth.Server.Internal.JWT where
 
-import           Control.Lens
-import           Control.Monad (MonadPlus(..), guard)
-import           Control.Monad.Reader
-import qualified Crypto.JOSE          as Jose
-import qualified Crypto.JWT           as Jose
-import           Data.ByteArray       (constEq)
-import qualified Data.ByteString      as BS
+import Control.Lens
+import Control.Monad (MonadPlus (..), guard)
+import Control.Monad.Reader
+import qualified Crypto.JOSE as Jose
+import qualified Crypto.JWT as Jose
+import Data.ByteArray (constEq)
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-import           Data.Maybe           (fromMaybe)
-import           Data.Time            (UTCTime)
-import           Network.Wai          (requestHeaders)
+import Data.Maybe (fromMaybe)
+import Data.Time (UTCTime)
+import Network.Wai (requestHeaders)
+import Servant.Auth.JWT (FromJWT (..), ToJWT (..))
 
-import Servant.Auth.JWT               (FromJWT(..), ToJWT(..))
 import Servant.Auth.Server.Internal.ConfigTypes
 import Servant.Auth.Server.Internal.Types
-
 
 -- | A JWT @AuthCheck@. You likely won't need to use this directly unless you
 -- are protecting a @Raw@ endpoint.
@@ -36,21 +35,26 @@ jwtAuthCheck jwtSettings = do
 -- | Creates a JWT containing the specified data. The data is stored in the
 -- @dat@ claim. The 'Maybe UTCTime' argument indicates the time at which the
 -- token expires.
-makeJWT :: ToJWT a
-  => a -> JWTSettings -> Maybe UTCTime -> IO (Either Jose.Error BSL.ByteString)
+makeJWT
+  :: ToJWT a
+  => a
+  -> JWTSettings
+  -> Maybe UTCTime
+  -> IO (Either Jose.Error BSL.ByteString)
 makeJWT v cfg expiry = Jose.runJOSE $ do
   bestAlg <- Jose.bestJWSAlg $ signingKey cfg
   let alg = fromMaybe bestAlg $ jwtAlg cfg
-  ejwt <- Jose.signClaims (signingKey cfg)
-                          (Jose.newJWSHeader ((), alg))
-                          (addExp $ encodeJWT v)
+  ejwt <-
+    Jose.signClaims
+      (signingKey cfg)
+      (Jose.newJWSHeader ((), alg))
+      (addExp $ encodeJWT v)
 
   return $ Jose.encodeCompact ejwt
   where
-   addExp claims = case expiry of
-     Nothing -> claims
-     Just e  -> claims & Jose.claimExp ?~ Jose.NumericDate e
-
+    addExp claims = case expiry of
+      Nothing -> claims
+      Just e -> claims & Jose.claimExp ?~ Jose.NumericDate e
 
 verifyJWT :: FromJWT a => JWTSettings -> BS.ByteString -> IO (Maybe a)
 verifyJWT jwtCfg input = do

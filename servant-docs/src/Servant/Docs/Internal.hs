@@ -1,76 +1,90 @@
-{-# LANGUAGE ConstraintKinds        #-}
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DefaultSignatures      #-}
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE RecordWildCards        #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TemplateHaskell        #-}
-{-# LANGUAGE TupleSections          #-}
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeOperators          #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Servant.Docs.Internal where
 
-import           Prelude ()
-import           Prelude.Compat
-
-import           Control.Applicative
-import           Control.Arrow
-                 (second)
-import           Control.Lens
-                 (makeLenses, mapped, each, over, set, to, toListOf, traversed, view,
-                 _1, (%~), (&), (.~), (<>~), (^.), (|>))
-import qualified Data.ByteString.Char8      as BSC
-import           Data.ByteString.Lazy.Char8
-                 (ByteString)
-import qualified Data.CaseInsensitive       as CI
-import           Data.Foldable
-                 (fold, toList)
-import           Data.Hashable
-                 (Hashable)
-import           Data.HashMap.Strict
-                 (HashMap)
-import           Data.List.Compat
-                 (intercalate, intersperse, sort)
-import           Data.List.NonEmpty
-                 (NonEmpty ((:|)), groupWith)
-import qualified Data.List.NonEmpty         as NE
-import           Data.Maybe
-import           Data.Monoid
-                 (All (..), Any (..), Dual (..), First (..), Last (..),
-                 Product (..), Sum (..))
-import           Data.Ord
-                 (comparing)
-import           Data.Proxy
-                 (Proxy (Proxy))
-import           Data.String.Conversions
-                 (cs)
-import           Data.Text
-                 (Text, unpack)
-import           GHC.Generics
-                 (Generic, Rep, K1(K1), M1(M1), U1(U1), V1,
-                 (:*:)((:*:)), (:+:)(L1, R1))
-import qualified GHC.Generics               as G
-import           GHC.TypeLits
-import           Servant.API
-import           Servant.API.ContentTypes
-import           Servant.API.TypeErrors
-import           Servant.API.TypeLevel
-import           Servant.API.Generic
-
-import qualified Data.Universe.Helpers      as U
-
-import qualified Data.HashMap.Strict        as HM
-import qualified Data.Text                  as T
-import qualified Network.HTTP.Media         as M
-import qualified Network.HTTP.Types         as HTTP
+import Control.Applicative
+import Control.Arrow (second)
+import Control.Lens
+  ( each
+  , makeLenses
+  , mapped
+  , over
+  , set
+  , to
+  , toListOf
+  , traversed
+  , view
+  , (%~)
+  , (&)
+  , (.~)
+  , (<>~)
+  , (^.)
+  , _1
+  , (|>)
+  )
+import qualified Data.ByteString.Char8 as BSC
+import Data.ByteString.Lazy.Char8 (ByteString)
+import qualified Data.CaseInsensitive as CI
+import Data.Foldable (fold, toList)
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HM
+import Data.Hashable (Hashable)
+import Data.List.Compat (intercalate, intersperse, sort)
+import Data.List.NonEmpty (NonEmpty ((:|)), groupWith)
+import qualified Data.List.NonEmpty as NE
+import Data.Maybe
+import Data.Monoid
+  ( All (..)
+  , Any (..)
+  , Dual (..)
+  , First (..)
+  , Last (..)
+  , Product (..)
+  , Sum (..)
+  )
+import Data.Ord (comparing)
+import Data.Proxy (Proxy (Proxy))
+import Data.String.Conversions (cs)
+import Data.Text (Text, unpack)
+import qualified Data.Text as T
+import qualified Data.Universe.Helpers as U
+import GHC.Generics
+  ( Generic
+  , K1 (K1)
+  , M1 (M1)
+  , Rep
+  , U1 (U1)
+  , V1
+  , (:*:) ((:*:))
+  , (:+:) (L1, R1)
+  )
+import qualified GHC.Generics as G
+import GHC.TypeLits
+import qualified Network.HTTP.Media as M
+import qualified Network.HTTP.Types as HTTP
+import Prelude.Compat
+import Servant.API
+import Servant.API.ContentTypes
+import Servant.API.Generic
+import Servant.API.TypeErrors
+import Servant.API.TypeLevel
+import Prelude ()
 
 -- | An 'Endpoint' type that holds the 'path' and the 'method'.
 --
@@ -86,11 +100,11 @@ import qualified Network.HTTP.Types         as HTTP
 --
 -- >>> defEndpoint & path <>~ ["foo"] & method .~ HTTP.methodPost
 -- "POST" /foo
---
 data Endpoint = Endpoint
-  { _path   :: [String]      -- type collected
-  , _method :: HTTP.Method   -- type collected
-  } deriving (Eq, Ord, Generic)
+  { _path :: [String] -- type collected
+  , _method :: HTTP.Method -- type collected
+  }
+  deriving (Eq, Generic, Ord)
 
 instance Show Endpoint where
   show (Endpoint p m) =
@@ -98,7 +112,6 @@ instance Show Endpoint where
 
 -- |
 -- Render a path as a '/'-delimited string
---
 showPath :: [String] -> String
 showPath [] = "/"
 showPath ps = concatMap ('/' :) ps
@@ -115,7 +128,6 @@ showPath ps = concatMap ('/' :) ps
 --
 -- >>> defEndpoint & path <>~ ["foo"] & method .~ HTTP.methodPost
 -- "POST" /foo
---
 defEndpoint :: Endpoint
 defEndpoint = Endpoint [] HTTP.methodGet
 
@@ -124,17 +136,20 @@ instance Hashable Endpoint
 -- | Our API documentation type, a product of top-level information and a good
 -- old hashmap from 'Endpoint' to 'Action'
 data API = API
-  { _apiIntros    :: [DocIntro]
+  { _apiIntros :: [DocIntro]
   , _apiEndpoints :: HashMap Endpoint Action
-  } deriving (Eq, Show)
+  }
+  deriving (Eq, Show)
 
 instance Semigroup API where
-    (<>) = mappend
+  (<>) = mappend
 
 instance Monoid API where
-    API a1 b1 `mappend` API a2 b2 = API (a1 `mappend` a2)
-                                        (HM.unionWith combineAction b1 b2)
-    mempty = API mempty mempty
+  API a1 b1 `mappend` API a2 b2 =
+    API
+      (a1 `mappend` a2)
+      (HM.unionWith combineAction b1 b2)
+  mempty = API mempty mempty
 
 -- | An empty 'API'
 emptyAPI :: API
@@ -146,8 +161,9 @@ emptyAPI = mempty
 -- Write a 'ToCapture' instance for your captured types.
 data DocCapture = DocCapture
   { _capSymbol :: String -- type supplied
-  , _capDesc   :: String -- user supplied
-  } deriving (Eq, Ord, Show)
+  , _capDesc :: String -- user supplied
+  }
+  deriving (Eq, Ord, Show)
 
 -- | A type to represent a /GET/ (or other possible 'HTTP.Method')
 --   parameter from the Query String. Holds its name, the possible
@@ -156,19 +172,21 @@ data DocCapture = DocCapture
 --
 -- Write a 'ToParam' instance for your GET parameter types
 data DocQueryParam = DocQueryParam
-  { _paramName   :: String   -- type supplied
+  { _paramName :: String -- type supplied
   , _paramValues :: [String] -- user supplied
-  , _paramDesc   :: String   -- user supplied
-  , _paramKind   :: ParamKind
-  } deriving (Eq, Ord, Show)
+  , _paramDesc :: String -- user supplied
+  , _paramKind :: ParamKind
+  }
+  deriving (Eq, Ord, Show)
 
 -- | A type to represent fragment. Holds the name of the fragment and its description.
 --
 -- Write a 'ToFragment' instance for your fragment types.
 data DocFragment = DocFragment
   { _fragSymbol :: String -- type supplied
-  , _fragDesc   :: String -- user supplied
-  } deriving (Eq, Ord, Show)
+  , _fragDesc :: String -- user supplied
+  }
+  deriving (Eq, Ord, Show)
 
 -- | There should be at most one 'Fragment' per API endpoint.
 -- So here we are keeping the first occurrence.
@@ -179,18 +197,22 @@ Just docFragment `combineFragment` _ = Just docFragment
 -- | An introductory paragraph for your documentation. You can pass these to
 -- 'docsWithIntros'.
 data DocIntro = DocIntro
-  { _introTitle :: String   -- ^ Appears above the intro blob
-  , _introBody  :: [String] -- ^ Each String is a paragraph.
-  } deriving (Eq, Show)
+  { _introTitle :: String
+  -- ^ Appears above the intro blob
+  , _introBody :: [String]
+  -- ^ Each String is a paragraph.
+  }
+  deriving (Eq, Show)
 
 -- | A type to represent Authentication information about an endpoint.
 data DocAuthentication = DocAuthentication
-  { _authIntro        :: String
+  { _authIntro :: String
   , _authDataRequired :: String
-  } deriving (Eq, Ord, Show)
+  }
+  deriving (Eq, Ord, Show)
 
 instance Ord DocIntro where
-    compare = comparing _introTitle
+  compare = comparing _introTitle
 
 -- | A type to represent extra notes that may be attached to an 'Action'.
 --
@@ -198,8 +220,9 @@ instance Ord DocIntro where
 -- add extra sections to your endpoint's documentation.
 data DocNote = DocNote
   { _noteTitle :: String
-  , _noteBody  :: [String]
-  } deriving (Eq, Ord, Show)
+  , _noteBody :: [String]
+  }
+  deriving (Eq, Ord, Show)
 
 -- | Type of extra information that a user may wish to "union" with their
 -- documentation.
@@ -207,22 +230,28 @@ data DocNote = DocNote
 -- These are intended to be built using extraInfo.
 -- Multiple ExtraInfo may be combined with the monoid instance.
 newtype ExtraInfo api = ExtraInfo (HashMap Endpoint Action)
+
 instance Semigroup (ExtraInfo a) where
-    (<>) = mappend
+  (<>) = mappend
+
 instance Monoid (ExtraInfo a) where
-    mempty = ExtraInfo mempty
-    ExtraInfo a `mappend` ExtraInfo b =
-        ExtraInfo $ HM.unionWith combineAction a b
+  mempty = ExtraInfo mempty
+  ExtraInfo a `mappend` ExtraInfo b =
+    ExtraInfo $ HM.unionWith combineAction a b
 
 -- | Documentation options.
 data DocOptions = DocOptions
-  { _maxSamples :: Int    -- ^ Maximum samples allowed.
-  } deriving (Show)
+  { _maxSamples :: Int
+  -- ^ Maximum samples allowed.
+  }
+  deriving (Show)
 
 -- | Default documentation options.
 defaultDocOptions :: DocOptions
-defaultDocOptions = DocOptions
-  { _maxSamples = 5 }
+defaultDocOptions =
+  DocOptions
+    { _maxSamples = 5
+    }
 
 -- | Type of GET (or other 'HTTP.Method') parameter:
 --
@@ -248,13 +277,13 @@ data ParamKind = Normal | List | Flag
 --
 -- >>> defResponse & respStatus .~ 204 & respBody .~ [("If everything goes well", "application/json", "{ \"status\": \"ok\" }")]
 -- Response {_respStatus = 204, _respTypes = [], _respBody = [("If everything goes well",application/json,"{ \"status\": \"ok\" }")], _respHeaders = []}
---
 data Response = Response
-  { _respStatus  :: Int
-  , _respTypes   :: [M.MediaType]
-  , _respBody    :: [(Text, M.MediaType, ByteString)]
+  { _respStatus :: Int
+  , _respTypes :: [M.MediaType]
+  , _respBody :: [(Text, M.MediaType, ByteString)]
   , _respHeaders :: [HTTP.Header]
-  } deriving (Eq, Ord, Show)
+  }
+  deriving (Eq, Ord, Show)
 
 -- | Combine two Responses, we can't make a monoid because merging Status breaks
 -- the laws.
@@ -262,8 +291,8 @@ data Response = Response
 -- As such, we invent a non-commutative, left associative operation
 -- 'combineResponse' to mush two together taking the status from the very left.
 combineResponse :: Response -> Response -> Response
-Response s ts bs hs `combineResponse` Response _ ts' bs' hs'
-  = Response s (ts <> ts') (bs <> bs') (hs <> hs')
+Response s ts bs hs `combineResponse` Response _ ts' bs' hs' =
+  Response s (ts <> ts') (bs <> bs') (hs <> hs')
 
 -- | Default response: status code 200, no response body.
 --
@@ -274,14 +303,14 @@ Response s ts bs hs `combineResponse` Response _ ts' bs' hs'
 --
 -- >>> defResponse & respStatus .~ 204
 -- Response {_respStatus = 204, _respTypes = [], _respBody = [], _respHeaders = []}
---
 defResponse :: Response
-defResponse = Response
-  { _respStatus  = 200
-  , _respTypes   = []
-  , _respBody    = []
-  , _respHeaders = []
-  }
+defResponse =
+  Response
+    { _respStatus = 200
+    , _respTypes = []
+    , _respBody = []
+    , _respHeaders = []
+    }
 
 -- | A datatype that represents everything that can happen
 -- at an endpoint, with its lenses:
@@ -294,17 +323,18 @@ defResponse = Response
 -- You can tweak an 'Action' (like the default 'defAction') with these lenses
 -- to transform an action and add some information to it.
 data Action = Action
-  { _authInfo :: [DocAuthentication]         -- user supplied info
-  , _captures :: [DocCapture]                -- type collected + user supplied info
-  , _headers  :: [HTTP.Header]               -- type collected
-  , _params   :: [DocQueryParam]             -- type collected + user supplied info
-  , _fragment :: Maybe DocFragment           -- type collected + user supplied info
-  , _notes    :: [DocNote]                   -- user supplied
+  { _authInfo :: [DocAuthentication] -- user supplied info
+  , _captures :: [DocCapture] -- type collected + user supplied info
+  , _headers :: [HTTP.Header] -- type collected
+  , _params :: [DocQueryParam] -- type collected + user supplied info
+  , _fragment :: Maybe DocFragment -- type collected + user supplied info
+  , _notes :: [DocNote] -- user supplied
   , _mxParams :: [(String, [DocQueryParam])] -- type collected + user supplied info
-  , _rqtypes  :: [M.MediaType]               -- type collected
-  , _rqbody   :: [(Text, M.MediaType, ByteString)] -- user supplied
-  , _response :: Response                    -- user supplied
-  } deriving (Eq, Ord, Show)
+  , _rqtypes :: [M.MediaType] -- type collected
+  , _rqbody :: [(Text, M.MediaType, ByteString)] -- user supplied
+  , _response :: Response -- user supplied
+  }
+  deriving (Eq, Ord, Show)
 
 -- | Combine two Actions, we can't make a monoid as merging Response breaks the
 -- laws.
@@ -314,7 +344,7 @@ data Action = Action
 combineAction :: Action -> Action -> Action
 Action a c h p f n m ts body resp
   `combineAction` Action a' c' h' p' f' n' m' ts' body' resp' =
-        Action (a <> a') (c <> c') (h <> h') (p <> p') (f `combineFragment` f') (n <> n') (m <> m') (ts <> ts') (body <> body') (resp `combineResponse` resp')
+    Action (a <> a') (c <> c') (h <> h') (p <> p') (f `combineFragment` f') (n <> n') (m <> m') (ts <> ts') (body <> body') (resp `combineResponse` resp')
 
 -- | Default 'Action'. Has no 'captures', no query 'params', expects
 -- no request body ('rqbody') and the typical response is 'defResponse'.
@@ -326,19 +356,19 @@ Action a c h p f n m ts body resp
 --
 -- >>> defAction & response.respStatus .~ 201
 -- Action {_authInfo = [], _captures = [], _headers = [], _params = [], _fragment = Nothing, _notes = [], _mxParams = [], _rqtypes = [], _rqbody = [], _response = Response {_respStatus = 201, _respTypes = [], _respBody = [], _respHeaders = []}}
---
 defAction :: Action
 defAction =
-  Action []
-         []
-         []
-         []
-         Nothing
-         []
-         []
-         []
-         []
-         defResponse
+  Action
+    []
+    []
+    []
+    []
+    Nothing
+    []
+    []
+    []
+    []
+    defResponse
 
 -- | Create an API that's comprised of a single endpoint.
 --   'API' is a 'Monoid', so combine multiple endpoints with
@@ -349,23 +379,27 @@ single e a = API mempty (HM.singleton e a)
 -- | How many content-types for each example should be shown?
 --
 --   @since 0.11.1
-data ShowContentTypes = AllContentTypes  -- ^ For each example, show each content type.
-                      | FirstContentType -- ^ For each example, show only one content type.
-  deriving (Eq, Ord, Show, Read, Bounded, Enum)
+data ShowContentTypes
+  = -- | For each example, show each content type.
+    AllContentTypes
+  | -- | For each example, show only one content type.
+    FirstContentType
+  deriving (Bounded, Enum, Eq, Ord, Read, Show)
 
 -- | Customise how an 'API' is converted into documentation.
 --
 --   @since 0.11.1
 data RenderingOptions = RenderingOptions
-  { _requestExamples    :: !ShowContentTypes
-    -- ^ How many content types to display for request body examples?
-  , _responseExamples   :: !ShowContentTypes
-    -- ^ How many content types to display for response body examples?
-  , _notesHeading       :: !(Maybe String)
-    -- ^ Optionally group all 'notes' together under a common heading.
+  { _requestExamples :: !ShowContentTypes
+  -- ^ How many content types to display for request body examples?
+  , _responseExamples :: !ShowContentTypes
+  -- ^ How many content types to display for response body examples?
+  , _notesHeading :: !(Maybe String)
+  -- ^ Optionally group all 'notes' together under a common heading.
   , _renderCurlBasePath :: !(Maybe String)
-    -- ^ Optionally render example curl requests under a common base path (e.g. `http://localhost:80`).
-  } deriving (Show)
+  -- ^ Optionally render example curl requests under a common base path (e.g. `http://localhost:80`).
+  }
+  deriving (Show)
 
 -- | Default API generation options.
 --
@@ -375,12 +409,13 @@ data RenderingOptions = RenderingOptions
 --
 --   @since 0.11.1
 defRenderingOptions :: RenderingOptions
-defRenderingOptions = RenderingOptions
-  { _requestExamples    = AllContentTypes
-  , _responseExamples   = AllContentTypes
-  , _notesHeading       = Nothing
-  , _renderCurlBasePath = Nothing
-  }
+defRenderingOptions =
+  RenderingOptions
+    { _requestExamples = AllContentTypes
+    , _responseExamples = AllContentTypes
+    , _notesHeading = Nothing
+    , _renderCurlBasePath = Nothing
+    }
 
 -- gimme some lenses
 makeLenses ''DocAuthentication
@@ -400,7 +435,6 @@ makeLenses ''RenderingOptions
 -- default way to create documentation.
 --
 -- > docs == docsWithOptions defaultDocOptions
---
 docs :: HasDocs api => Proxy api -> API
 docs p = docsWithOptions p defaultDocOptions
 
@@ -420,14 +454,16 @@ docsWithOptions p = docsFor p (defEndpoint, defAction)
 -- >                        & notes   <>~ [ DocNote "Title" ["This is some text"]
 -- >                                      , DocNote "Second section" ["And some more"]
 -- >                                      ]
-
-extraInfo :: (IsIn endpoint api, HasLink endpoint, HasDocs endpoint)
-          => Proxy endpoint -> Action -> ExtraInfo api
+extraInfo
+  :: (HasDocs endpoint, HasLink endpoint, IsIn endpoint api)
+  => Proxy endpoint
+  -> Action
+  -> ExtraInfo api
 extraInfo p action =
-    let api = docsFor p (defEndpoint, defAction) defaultDocOptions
-    -- Assume one endpoint, HasLink constraint means that we should only ever
-    -- point at one endpoint.
-    in ExtraInfo $ api ^. apiEndpoints & traversed .~ action
+  let api = docsFor p (defEndpoint, defAction) defaultDocOptions
+   in -- Assume one endpoint, HasLink constraint means that we should only ever
+      -- point at one endpoint.
+      ExtraInfo $ api ^. apiEndpoints & traversed .~ action
 
 -- | Generate documentation given some extra introductions (in the form of
 -- 'DocInfo') and some extra endpoint documentation (in the form of
@@ -443,10 +479,9 @@ extraInfo p action =
 -- If you only want to add an introduction, use 'docsWithIntros'.
 docsWith :: HasDocs api => DocOptions -> [DocIntro] -> ExtraInfo api -> Proxy api -> API
 docsWith opts intros (ExtraInfo endpoints) p =
-    docsWithOptions p opts
-      & apiIntros <>~ intros
-      & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
-
+  docsWithOptions p opts
+    & apiIntros <>~ intros
+    & apiEndpoints %~ HM.unionWith (flip combineAction) endpoints
 
 -- | Generate the docs for a given API that implements 'HasDocs' with any
 -- number of introduction(s)
@@ -490,7 +525,7 @@ class HasDocs api where
 -- get the corresponding response.
 class ToSample a where
   toSamples :: Proxy a -> [(Text, a)]
-  default toSamples :: (Generic a, GToSample (Rep a)) => Proxy a -> [(Text, a)]
+  default toSamples :: (GToSample (Rep a), Generic a) => Proxy a -> [(Text, a)]
   toSamples = defaultSamples
 
 -- | Sample input or output (if there is at least one).
@@ -510,7 +545,7 @@ samples :: [a] -> [(Text, a)]
 samples = map ("",)
 
 -- | Default sample Generic-based inputs/outputs.
-defaultSamples :: forall a. (Generic a, GToSample (Rep a)) => Proxy a -> [(Text, a)]
+defaultSamples :: forall a. (GToSample (Rep a), Generic a) => Proxy a -> [(Text, a)]
 defaultSamples _ = second G.to <$> gtoSamples (Proxy :: Proxy (Rep a))
 
 -- | @'ToSample'@ for Generics.
@@ -532,55 +567,60 @@ instance (GToSample p, GToSample q) => GToSample (p :*: q) where
       qs = gtoSamples (Proxy :: Proxy q)
       render (ta, a) (tb, b)
         | T.null ta || T.null tb = (ta <> tb, a :*: b)
-        | otherwise              = (ta <> ", " <> tb, a :*: b)
+        | otherwise = (ta <> ", " <> tb, a :*: b)
 
 instance (GToSample p, GToSample q) => GToSample (p :+: q) where
   gtoSamples _ = lefts U.+++ rights
     where
-      lefts  = second L1 <$> gtoSamples (Proxy :: Proxy p)
+      lefts = second L1 <$> gtoSamples (Proxy :: Proxy p)
       rights = second R1 <$> gtoSamples (Proxy :: Proxy q)
 
 instance ToSample a => GToSample (K1 i a) where
   gtoSamples _ = second K1 <$> toSamples (Proxy :: Proxy a)
 
-instance (GToSample f) => GToSample (M1 i a f) where
+instance GToSample f => GToSample (M1 i a f) where
   gtoSamples _ = second M1 <$> gtoSamples (Proxy :: Proxy f)
 
-
 class AllHeaderSamples ls where
-    allHeaderToSample :: Proxy ls -> [HTTP.Header]
+  allHeaderToSample :: Proxy ls -> [HTTP.Header]
 
 instance AllHeaderSamples '[] where
-    allHeaderToSample _  = []
+  allHeaderToSample _ = []
 
-instance (ToHttpApiData l, AllHeaderSamples ls, ToSample l, KnownSymbol h)
-    => AllHeaderSamples (Header h l ': ls) where
-    allHeaderToSample _ = mkHeader (toSample (Proxy :: Proxy l)) :
-                          allHeaderToSample (Proxy :: Proxy ls)
-      where headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy h)
-            mkHeader (Just x) = (headerName, cs $ toHeader x)
-            mkHeader Nothing  = (headerName, "<no header sample provided>")
+instance
+  (AllHeaderSamples ls, KnownSymbol h, ToHttpApiData l, ToSample l)
+  => AllHeaderSamples (Header h l ': ls)
+  where
+  allHeaderToSample _ =
+    mkHeader (toSample (Proxy :: Proxy l))
+      : allHeaderToSample (Proxy :: Proxy ls)
+    where
+      headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy h)
+      mkHeader (Just x) = (headerName, cs $ toHeader x)
+      mkHeader Nothing = (headerName, "<no header sample provided>")
 
 -- | Synthesise a sample value of a type, encoded in the specified media types.
 sampleByteString
-    :: forall ct cts a. (ToSample a, AllMimeRender (ct ': cts) a)
-    => Proxy (ct ': cts)
-    -> Proxy a
-    -> [(M.MediaType, ByteString)]
+  :: forall ct cts a
+   . (AllMimeRender (ct ': cts) a, ToSample a)
+  => Proxy (ct ': cts)
+  -> Proxy a
+  -> [(M.MediaType, ByteString)]
 sampleByteString ctypes@Proxy Proxy =
-    maybe [] (allMimeRender ctypes) $ toSample (Proxy :: Proxy a)
+  maybe [] (allMimeRender ctypes) $ toSample (Proxy :: Proxy a)
 
 -- | Synthesise a list of sample values of a particular type, encoded in the
 -- specified media types.
 sampleByteStrings
-    :: forall ct cts a. (ToSample a, AllMimeRender (ct ': cts) a)
-    => Proxy (ct ': cts)
-    -> Proxy a
-    -> [(Text, M.MediaType, ByteString)]
+  :: forall ct cts a
+   . (AllMimeRender (ct ': cts) a, ToSample a)
+  => Proxy (ct ': cts)
+  -> Proxy a
+  -> [(Text, M.MediaType, ByteString)]
 sampleByteStrings ctypes@Proxy Proxy =
-    let samples' = toSamples (Proxy :: Proxy a)
-        enc (t, s) = uncurry (t,,) <$> allMimeRender ctypes s
-    in concatMap enc samples'
+  let samples' = toSamples (Proxy :: Proxy a)
+      enc (t, s) = uncurry (t,,) <$> allMimeRender ctypes s
+   in concatMap enc samples'
 
 -- | The class that helps us automatically get documentation for GET
 --   (or other 'HTTP.Method') parameters.
@@ -607,7 +647,7 @@ class ToCapture c where
 
 -- | The class that helps us get documentation for authenticated endpoints
 class ToAuthInfo a where
-      toAuthInfo :: Proxy a -> DocAuthentication
+  toAuthInfo :: Proxy a -> DocAuthentication
 
 -- | The class that helps us get documentation for URL fragments.
 --
@@ -647,247 +687,270 @@ markdown = markdownWith defRenderingOptions
 --
 --   @since 0.11.1
 markdownWith :: RenderingOptions -> API -> String
-markdownWith RenderingOptions{..} api = unlines $
-       introsStr (api ^. apiIntros)
-    ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
+markdownWith RenderingOptions{..} api =
+  unlines $
+    introsStr (api ^. apiIntros)
+      ++ (concatMap (uncurry printEndpoint) . sort . HM.toList $ api ^. apiEndpoints)
+  where
+    printEndpoint :: Endpoint -> Action -> [String]
+    printEndpoint endpoint action =
+      str
+        : ""
+        : notesStr (action ^. notes)
+        ++ authStr (action ^. authInfo)
+        ++ capturesStr (action ^. captures)
+        ++ headersStr (toListOf (headers . each . _1 . to (T.pack . BSC.unpack . CI.original)) action)
+        ++ paramsStr meth (action ^. params)
+        ++ fragmentStr (action ^. fragment)
+        ++ rqbodyStr (action ^. rqtypes) (action ^. rqbody)
+        ++ responseStr (action ^. response)
+        ++ maybe [] (curlStr endpoint (action ^. headers) (action ^. rqbody)) _renderCurlBasePath
+        ++ []
+      where
+        str =
+          "## "
+            ++ BSC.unpack meth
+            ++ " "
+            ++ showPath (endpoint ^. path)
 
-  where printEndpoint :: Endpoint -> Action -> [String]
-        printEndpoint endpoint action =
-          str :
-          "" :
-          notesStr (action ^. notes) ++
-          authStr (action ^. authInfo) ++
-          capturesStr (action ^. captures) ++
-          headersStr (toListOf (headers . each . _1 . to (T.pack . BSC.unpack . CI.original)) action) ++
-          paramsStr meth (action ^. params) ++
-          fragmentStr (action ^. fragment) ++
-          rqbodyStr (action ^. rqtypes) (action ^. rqbody) ++
-          responseStr (action ^. response) ++
-          maybe [] (curlStr endpoint (action ^. headers) (action ^. rqbody)) _renderCurlBasePath ++
-          []
+        meth = endpoint ^. method
 
-          where str = "## " ++ BSC.unpack meth
-                    ++ " " ++ showPath (endpoint^.path)
+    introsStr :: [DocIntro] -> [String]
+    introsStr = concatMap introStr
 
-                meth = endpoint ^. method
+    introStr :: DocIntro -> [String]
+    introStr i =
+      ("## " ++ i ^. introTitle)
+        : ""
+        : intersperse "" (i ^. introBody)
+        ++ ""
+        : []
 
-        introsStr :: [DocIntro] -> [String]
-        introsStr = concatMap introStr
+    notesStr :: [DocNote] -> [String]
+    notesStr =
+      addHeading
+        . concatMap noteStr
+      where
+        addHeading nts = maybe nts (\hd -> ("### " ++ hd) : "" : nts) _notesHeading
 
-        introStr :: DocIntro -> [String]
-        introStr i =
-            ("## " ++ i ^. introTitle) :
-            "" :
-            intersperse "" (i ^. introBody) ++
-            "" :
-            []
+    noteStr :: DocNote -> [String]
+    noteStr nt =
+      (hdr ++ nt ^. noteTitle)
+        : ""
+        : intersperse "" (nt ^. noteBody)
+        ++ ""
+        : []
+      where
+        hdr
+          | isJust _notesHeading = "#### "
+          | otherwise = "### "
 
-        notesStr :: [DocNote] -> [String]
-        notesStr = addHeading
-                   . concatMap noteStr
-          where
-            addHeading nts = maybe nts (\hd -> ("### " ++ hd) : "" : nts) _notesHeading
+    authStr :: [DocAuthentication] -> [String]
+    authStr [] = []
+    authStr auths =
+      let authIntros = mapped %~ view authIntro $ auths
+          clientInfos = mapped %~ view authDataRequired $ auths
+       in "### Authentication"
+            : ""
+            : unlines authIntros
+            : ""
+            : "Clients must supply the following data"
+            : unlines clientInfos
+            : ""
+            : []
 
-        noteStr :: DocNote -> [String]
-        noteStr nt =
-            (hdr ++ nt ^. noteTitle) :
-            "" :
-            intersperse "" (nt ^. noteBody) ++
-            "" :
-            []
-          where
-            hdr | isJust _notesHeading = "#### "
-                | otherwise            = "### "
+    capturesStr :: [DocCapture] -> [String]
+    capturesStr [] = []
+    capturesStr l =
+      "### Captures:"
+        : ""
+        : map captureStr l
+        ++ ""
+        : []
 
-        authStr :: [DocAuthentication] -> [String]
-        authStr [] = []
-        authStr auths =
-          let authIntros = mapped %~ view authIntro $ auths
-              clientInfos = mapped %~ view authDataRequired $ auths
-          in "### Authentication":
-              "":
-              unlines authIntros :
-              "":
-              "Clients must supply the following data" :
-              unlines clientInfos :
-              "" :
-              []
+    captureStr cap =
+      "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
 
-        capturesStr :: [DocCapture] -> [String]
-        capturesStr [] = []
-        capturesStr l =
-          "### Captures:" :
-          "" :
-          map captureStr l ++
-          "" :
-          []
+    headersStr :: [Text] -> [String]
+    headersStr [] = []
+    headersStr l =
+      "### Headers:"
+        : ""
+        : map headerStr l
+        ++ ""
+        : []
+      where
+        headerStr hname =
+          "- This endpoint is sensitive to the value of the **"
+            ++ unpack hname
+            ++ "** HTTP header."
 
-        captureStr cap =
-          "- *" ++ (cap ^. capSymbol) ++ "*: " ++ (cap ^. capDesc)
+    paramsStr :: HTTP.Method -> [DocQueryParam] -> [String]
+    paramsStr _ [] = []
+    paramsStr m l =
+      ("### " ++ cs m ++ " Parameters:")
+        : ""
+        : map (paramStr m) l
+        ++ ""
+        : []
 
-        headersStr :: [Text] -> [String]
-        headersStr [] = []
-        headersStr l =
-          "### Headers:" :
-          "" :
-          map headerStr l ++
-          "" :
-          []
+    paramStr m param =
+      unlines $
+        ("- " ++ param ^. paramName)
+          : ( if (not (null values) || param ^. paramKind /= Flag)
+                then ["     - **Values**: *" ++ intercalate ", " values ++ "*"]
+                else []
+            )
+          ++ ("     - **Description**: " ++ param ^. paramDesc)
+          : ( if (param ^. paramKind == List)
+                then
+                  [ "     - This parameter is a **list**. All "
+                      ++ cs m
+                      ++ " parameters with the name "
+                      ++ param ^. paramName
+                      ++ "[] will forward their values in a list to the handler."
+                  ]
+                else []
+            )
+          ++ ( if (param ^. paramKind == Flag)
+                 then ["     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."]
+                 else []
+             )
+          ++ []
+      where
+        values = param ^. paramValues
 
-          where headerStr hname = "- This endpoint is sensitive to the value of the **"
-                               ++ unpack hname ++ "** HTTP header."
+    fragmentStr :: Maybe DocFragment -> [String]
+    fragmentStr Nothing = []
+    fragmentStr (Just frag) =
+      [ "### Fragment:"
+      , ""
+      , "- *" ++ (frag ^. fragSymbol) ++ "*: " ++ (frag ^. fragDesc)
+      , ""
+      ]
 
-        paramsStr :: HTTP.Method -> [DocQueryParam] -> [String]
-        paramsStr _ [] = []
-        paramsStr m l =
-          ("### " ++ cs m ++ " Parameters:") :
-          "" :
-          map (paramStr m) l ++
-          "" :
-          []
+    rqbodyStr :: [M.MediaType] -> [(Text, M.MediaType, ByteString)] -> [String]
+    rqbodyStr [] [] = []
+    rqbodyStr types s =
+      ["### Request:", ""]
+        <> formatTypes types
+        <> formatBodies _requestExamples s
 
-        paramStr m param = unlines $
-          ("- " ++ param ^. paramName) :
-          (if (not (null values) || param ^. paramKind /= Flag)
-            then ["     - **Values**: *" ++ intercalate ", " values ++ "*"]
-            else []) ++
-          ("     - **Description**: " ++ param ^. paramDesc) :
-          (if (param ^. paramKind == List)
-            then ["     - This parameter is a **list**. All " ++ cs m ++ " parameters with the name "
-                  ++ param ^. paramName ++ "[] will forward their values in a list to the handler."]
-            else []) ++
-          (if (param ^. paramKind == Flag)
-            then ["     - This parameter is a **flag**. This means no value is expected to be associated to this parameter."]
-            else []) ++
-          []
+    formatTypes [] = []
+    formatTypes ts =
+      ["- Supported content types are:", ""]
+        <> map (\t -> "    - `" <> show t <> "`") ts
+        <> [""]
 
-          where values = param ^. paramValues
+    -- This assumes that when the bodies are created, identical
+    -- labels and representations are located next to each other.
+    formatBodies :: ShowContentTypes -> [(Text, M.MediaType, ByteString)] -> [String]
+    formatBodies ex bds = concatMap formatBody (select bodyGroups)
+      where
+        bodyGroups :: [(Text, NonEmpty M.MediaType, ByteString)]
+        bodyGroups =
+          map (\grps -> let (t, _, b) = NE.head grps in (t, fmap (\(_, m, _) -> m) grps, b))
+            . groupWith (\(t, _, b) -> (t, b))
+            $ bds
 
-        fragmentStr :: Maybe DocFragment -> [String]
-        fragmentStr Nothing = []
-        fragmentStr (Just frag) =
-          [ "### Fragment:", ""
-          , "- *" ++ (frag ^. fragSymbol) ++ "*: " ++ (frag ^. fragDesc)
-          , ""
-          ]
+        select = case ex of
+          AllContentTypes -> id
+          FirstContentType -> map (\(t, ms, b) -> (t, NE.head ms :| [], b))
 
-        rqbodyStr :: [M.MediaType] -> [(Text, M.MediaType, ByteString)]-> [String]
-        rqbodyStr [] [] = []
-        rqbodyStr types s =
-            ["### Request:", ""]
-            <> formatTypes types
-            <> formatBodies _requestExamples s
+    formatBody :: (Text, NonEmpty M.MediaType, ByteString) -> [String]
+    formatBody (t, ms, b) =
+      "- " <> title <> " (" <> mediaList ms <> "):"
+        : contentStr (NE.head ms) b
+      where
+        mediaList = fold . NE.intersperse ", " . fmap (\m -> "`" ++ show m ++ "`")
 
-        formatTypes [] = []
-        formatTypes ts = ["- Supported content types are:", ""]
-            <> map (\t -> "    - `" <> show t <> "`") ts
-            <> [""]
+        title
+          | T.null t = "Example"
+          | otherwise = cs t
 
-        -- This assumes that when the bodies are created, identical
-        -- labels and representations are located next to each other.
-        formatBodies :: ShowContentTypes -> [(Text, M.MediaType, ByteString)] -> [String]
-        formatBodies ex bds = concatMap formatBody (select bodyGroups)
-          where
-            bodyGroups :: [(Text, NonEmpty M.MediaType, ByteString)]
-            bodyGroups =
-              map (\grps -> let (t,_,b) = NE.head grps in (t, fmap (\(_,m,_) -> m) grps, b))
-              . groupWith (\(t,_,b) -> (t,b))
-              $ bds
+    markdownForType mime_type =
+      case (M.mainType mime_type, M.subType mime_type) of
+        ("text", "html") -> "html"
+        ("application", "xml") -> "xml"
+        ("text", "xml") -> "xml"
+        ("application", "json") -> "json"
+        ("application", "javascript") -> "javascript"
+        ("text", "css") -> "css"
+        (_, _) -> ""
 
-            select = case ex of
-                       AllContentTypes  -> id
-                       FirstContentType -> map (\(t,ms,b) -> (t, NE.head ms :| [], b))
+    contentStr mime_type body =
+      ""
+        : "```" <> markdownForType mime_type
+        : cs body
+        : "```"
+        : ""
+        : []
 
-        formatBody :: (Text, NonEmpty M.MediaType, ByteString) -> [String]
-        formatBody (t, ms, b) =
-          "- " <> title <> " (" <> mediaList ms <> "):" :
-          contentStr (NE.head ms) b
-          where
-            mediaList = fold . NE.intersperse ", " . fmap (\m -> "`" ++ show m ++ "`")
+    responseStr :: Response -> [String]
+    responseStr resp =
+      "### Response:"
+        : ""
+        : ("- Status code " ++ show (resp ^. respStatus))
+        : ("- Headers: " ++ show (resp ^. respHeaders))
+        : ""
+        : formatTypes (resp ^. respTypes)
+        ++ bodies
+      where
+        bodies = case resp ^. respBody of
+          [] -> ["- No response body\n"]
+          [("", t, r)] -> "- Response body as below." : contentStr t r
+          xs ->
+            formatBodies _responseExamples xs
 
-            title
-              | T.null t  = "Example"
-              | otherwise = cs t
-
-        markdownForType mime_type =
-            case (M.mainType mime_type, M.subType mime_type) of
-                ("text", "html") -> "html"
-                ("application", "xml") -> "xml"
-                ("text", "xml") -> "xml"
-                ("application", "json") -> "json"
-                ("application", "javascript") -> "javascript"
-                ("text", "css") -> "css"
-                (_, _) -> ""
-
-        contentStr mime_type body =
-          "" :
-          "```" <> markdownForType mime_type :
-          cs body :
-          "```" :
-          "" :
-          []
-
-        responseStr :: Response -> [String]
-        responseStr resp =
-          "### Response:" :
-          "" :
-          ("- Status code " ++ show (resp ^. respStatus)) :
-          ("- Headers: " ++ show (resp ^. respHeaders)) :
-          "" :
-          formatTypes (resp ^. respTypes) ++
-          bodies
-
-          where bodies = case resp ^. respBody of
-                  []        -> ["- No response body\n"]
-                  [("", t, r)] -> "- Response body as below." : contentStr t r
-                  xs        ->
-                    formatBodies _responseExamples xs
-
-        curlStr :: Endpoint -> [HTTP.Header] -> [(Text, M.MediaType, ByteString)] -> String -> [String]
-        curlStr endpoint hdrs reqBodies basePath =
-          [  "### Sample Request:"
-          , ""
-          , "```bash"
-          , "curl -X" ++ BSC.unpack (endpoint ^. method) ++ " \\"
-          ] <>
-          maybe [] pure mbMediaTypeStr <>
-          headersStrs <>
-          maybe [] pure mbReqBodyStr <>
-          [  "  " ++ basePath ++ showPath (endpoint ^. path)
-          , "```"
-          , ""
-          ]
-
-          where escapeQuotes :: String -> String
-                escapeQuotes = concatMap $ \c -> case c of
-                  '\"' -> "\\\""
-                  _ -> [c]
-                mbReqBody = listToMaybe reqBodies
-                mbMediaTypeStr = mkMediaTypeStr <$> mbReqBody
-                headersStrs = mkHeaderStr <$> hdrs
-                mbReqBodyStr = mkReqBodyStr <$> mbReqBody
-                mkMediaTypeStr (_, media_type, _) =
-                  "  -H \"Content-Type: " ++ show media_type ++ "\" \\"
-                mkHeaderStr (hdrName, hdrVal) =
-                  "  -H \"" ++ escapeQuotes (cs (CI.original hdrName)) ++ ": " ++
-                  escapeQuotes (cs hdrVal) ++ "\" \\"
-                mkReqBodyStr (_, _, body) = "  -d \"" ++ escapeQuotes (cs body) ++ "\" \\"
+    curlStr :: Endpoint -> [HTTP.Header] -> [(Text, M.MediaType, ByteString)] -> String -> [String]
+    curlStr endpoint hdrs reqBodies basePath =
+      [ "### Sample Request:"
+      , ""
+      , "```bash"
+      , "curl -X" ++ BSC.unpack (endpoint ^. method) ++ " \\"
+      ]
+        <> maybe [] pure mbMediaTypeStr
+        <> headersStrs
+        <> maybe [] pure mbReqBodyStr
+        <> [ "  " ++ basePath ++ showPath (endpoint ^. path)
+           , "```"
+           , ""
+           ]
+      where
+        escapeQuotes :: String -> String
+        escapeQuotes = concatMap $ \c -> case c of
+          '\"' -> "\\\""
+          _ -> [c]
+        mbReqBody = listToMaybe reqBodies
+        mbMediaTypeStr = mkMediaTypeStr <$> mbReqBody
+        headersStrs = mkHeaderStr <$> hdrs
+        mbReqBodyStr = mkReqBodyStr <$> mbReqBody
+        mkMediaTypeStr (_, media_type, _) =
+          "  -H \"Content-Type: " ++ show media_type ++ "\" \\"
+        mkHeaderStr (hdrName, hdrVal) =
+          "  -H \""
+            ++ escapeQuotes (cs (CI.original hdrName))
+            ++ ": "
+            ++ escapeQuotes (cs hdrVal)
+            ++ "\" \\"
+        mkReqBodyStr (_, _, body) = "  -d \"" ++ escapeQuotes (cs body) ++ "\" \\"
 
 -- * Instances
 
 -- | The generated docs for @a ':<|>' b@ just appends the docs
 --   for @a@ with the docs for @b@.
-instance {-# OVERLAPPABLE #-}
-         (HasDocs a, HasDocs b)
-      => HasDocs (a :<|> b) where
-
+instance
+  {-# OVERLAPPABLE #-}
+  (HasDocs a, HasDocs b)
+  => HasDocs (a :<|> b)
+  where
   docsFor Proxy (ep, action) = docsFor p1 (ep, action) <> docsFor p2 (ep, action)
+    where
+      p1 :: Proxy a
+      p1 = Proxy
 
-    where p1 :: Proxy a
-          p1 = Proxy
-
-          p2 :: Proxy b
-          p2 = Proxy
+      p2 :: Proxy b
+      p2 = Proxy
 
 -- | The generated docs for @'EmptyAPI'@ are empty.
 instance HasDocs EmptyAPI where
@@ -895,236 +958,272 @@ instance HasDocs EmptyAPI where
 
 -- | @"books" :> 'Capture' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
-instance (KnownSymbol sym, ToCapture (Capture sym a), HasDocs api)
-      => HasDocs (Capture' '[] sym a :> api) where
-
+instance
+  (HasDocs api, KnownSymbol sym, ToCapture (Capture sym a))
+  => HasDocs (Capture' '[] sym a :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint', action')
+    where
+      subApiP = Proxy :: Proxy api
+      captureP = Proxy :: Proxy (Capture sym a)
 
-    where subApiP = Proxy :: Proxy api
-          captureP = Proxy :: Proxy (Capture sym a)
+      action' = over captures (|> toCapture captureP) action
+      endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
+      symP = Proxy :: Proxy sym
 
-          action' = over captures (|> toCapture captureP) action
-          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
-          symP = Proxy :: Proxy sym
-
-instance (KnownSymbol descr, KnownSymbol sym, HasDocs api)
-      => HasDocs (Capture' (Description descr ': mods) sym a :> api) where
-
+instance
+  (HasDocs api, KnownSymbol descr, KnownSymbol sym)
+  => HasDocs (Capture' (Description descr ': mods) sym a :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint', action')
+    where
+      subApiP = Proxy :: Proxy api
 
-    where subApiP = Proxy :: Proxy api
+      docCapture = DocCapture (symbolVal symP) (symbolVal descrP)
+      action' = over captures (|> docCapture) action
+      endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
+      descrP = Proxy :: Proxy descr
+      symP = Proxy :: Proxy sym
 
-          docCapture = DocCapture (symbolVal symP) (symbolVal descrP)
-          action' = over captures (|> docCapture) action
-          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
-          descrP = Proxy :: Proxy descr
-          symP = Proxy :: Proxy sym
-
-instance {-# OVERLAPPABLE #-} HasDocs (Capture' mods sym a :> api)
-      => HasDocs (Capture' (mod ': mods) sym a :> api) where
-
+instance
+  {-# OVERLAPPABLE #-}
+  HasDocs (Capture' mods sym a :> api)
+  => HasDocs (Capture' (mod ': mods) sym a :> api)
+  where
   docsFor Proxy =
     docsFor apiP
-
-    where apiP = Proxy :: Proxy (Capture' mods sym a :> api)
-
+    where
+      apiP = Proxy :: Proxy (Capture' mods sym a :> api)
 
 -- | @"books" :> 'CaptureAll' "isbn" Text@ will appear as
 -- @/books/:isbn@ in the docs.
-instance (KnownSymbol sym, ToCapture (CaptureAll sym a), HasDocs sublayout)
-      => HasDocs (CaptureAll sym a :> sublayout) where
-
+instance
+  (HasDocs sublayout, KnownSymbol sym, ToCapture (CaptureAll sym a))
+  => HasDocs (CaptureAll sym a :> sublayout)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor sublayoutP (endpoint', action')
+    where
+      sublayoutP = Proxy :: Proxy sublayout
+      captureP = Proxy :: Proxy (CaptureAll sym a)
 
-    where sublayoutP = Proxy :: Proxy sublayout
-          captureP = Proxy :: Proxy (CaptureAll sym a)
+      action' = over captures (|> toCapture captureP) action
+      endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
+      symP = Proxy :: Proxy sym
 
-          action' = over captures (|> toCapture captureP) action
-          endpoint' = over path (\p -> p ++ [":" ++ symbolVal symP]) endpoint
-          symP = Proxy :: Proxy sym
-
-
-instance {-# OVERLAPPABLE #-}
-        (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
-        , ReflectMethod method)
-    => HasDocs (Verb method status (ct ': cts) a) where
+instance
+  {-# OVERLAPPABLE #-}
+  ( AllMimeRender (ct ': cts) a
+  , KnownNat status
+  , ReflectMethod method
+  , ToSample a
+  )
+  => HasDocs (Verb method status (ct ': cts) a)
+  where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
+    where
+      endpoint' = endpoint & method .~ method'
+      action' =
+        action
+          & response . respBody .~ take _maxSamples (sampleByteStrings t p)
+          & response . respTypes .~ allMime t
+          & response . respStatus .~ status
+      t = Proxy :: Proxy (ct ': cts)
+      method' = reflectMethod (Proxy :: Proxy method)
+      status = fromInteger $ natVal (Proxy :: Proxy status)
+      p = Proxy :: Proxy a
 
-    where endpoint' = endpoint & method .~ method'
-          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
-                           & response.respTypes .~ allMime t
-                           & response.respStatus .~ status
-          t = Proxy :: Proxy (ct ': cts)
-          method' = reflectMethod (Proxy :: Proxy method)
-          status = fromInteger $ natVal (Proxy :: Proxy status)
-          p = Proxy :: Proxy a
-
-instance (ReflectMethod method) =>
-         HasDocs (NoContentVerb method) where
+instance
+  ReflectMethod method
+  => HasDocs (NoContentVerb method)
+  where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
-
-    where endpoint' = endpoint & method .~ method'
-          action' = action & response.respStatus .~ 204
-                           & response.respTypes .~ []
-                           & response.respBody .~ []
-                           & response.respHeaders .~ []
-          method' = reflectMethod (Proxy :: Proxy method)
+    where
+      endpoint' = endpoint & method .~ method'
+      action' =
+        action
+          & response . respStatus .~ 204
+          & response . respTypes .~ []
+          & response . respBody .~ []
+          & response . respHeaders .~ []
+      method' = reflectMethod (Proxy :: Proxy method)
 
 -- | TODO: mention the endpoint is streaming, its framing strategy
 --
 -- Also there are no samples.
 --
 -- TODO: AcceptFraming for content-type
-instance {-# OVERLAPPABLE #-}
-        (Accept ct, KnownNat status, ReflectMethod method)
-    => HasDocs (Stream method status framing ct a) where
+instance
+  {-# OVERLAPPABLE #-}
+  (Accept ct, KnownNat status, ReflectMethod method)
+  => HasDocs (Stream method status framing ct a)
+  where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
+    where
+      endpoint' = endpoint & method .~ method'
+      action' =
+        action
+          & response . respTypes .~ allMime t
+          & response . respStatus .~ status
+      t = Proxy :: Proxy '[ct]
+      method' = reflectMethod (Proxy :: Proxy method)
+      status = fromInteger $ natVal (Proxy :: Proxy status)
 
-    where endpoint' = endpoint & method .~ method'
-          action' = action & response.respTypes .~ allMime t
-                           & response.respStatus .~ status
-          t = Proxy :: Proxy '[ct]
-          method' = reflectMethod (Proxy :: Proxy method)
-          status = fromInteger $ natVal (Proxy :: Proxy status)
-
-instance {-# OVERLAPPING #-}
-        (ToSample a, AllMimeRender (ct ': cts) a, KnownNat status
-        , ReflectMethod method, AllHeaderSamples ls, GetHeaders (HList ls))
-    => HasDocs (Verb method status (ct ': cts) (Headers ls a)) where
+instance
+  {-# OVERLAPPING #-}
+  ( AllHeaderSamples ls
+  , AllMimeRender (ct ': cts) a
+  , GetHeaders (HList ls)
+  , KnownNat status
+  , ReflectMethod method
+  , ToSample a
+  )
+  => HasDocs (Verb method status (ct ': cts) (Headers ls a))
+  where
   docsFor Proxy (endpoint, action) DocOptions{..} =
     single endpoint' action'
+    where
+      endpoint' = endpoint & method .~ method'
+      action' =
+        action
+          & response . respBody .~ take _maxSamples (sampleByteStrings t p)
+          & response . respTypes .~ allMime t
+          & response . respStatus .~ status
+          & response . respHeaders .~ hdrs
+      t = Proxy :: Proxy (ct ': cts)
+      hdrs = allHeaderToSample (Proxy :: Proxy ls)
+      method' = reflectMethod (Proxy :: Proxy method)
+      status = fromInteger $ natVal (Proxy :: Proxy status)
+      p = Proxy :: Proxy a
 
-    where endpoint' = endpoint & method .~ method'
-          action' = action & response.respBody .~ take _maxSamples (sampleByteStrings t p)
-                           & response.respTypes .~ allMime t
-                           & response.respStatus .~ status
-                           & response.respHeaders .~ hdrs
-          t = Proxy :: Proxy (ct ': cts)
-          hdrs = allHeaderToSample (Proxy :: Proxy ls)
-          method' = reflectMethod (Proxy :: Proxy method)
-          status = fromInteger $ natVal (Proxy :: Proxy status)
-          p = Proxy :: Proxy a
-
-instance (ToHttpApiData a, ToSample a, KnownSymbol sym, HasDocs api)
-      => HasDocs (Header' mods sym a :> api) where
+instance
+  (HasDocs api, KnownSymbol sym, ToHttpApiData a, ToSample a)
+  => HasDocs (Header' mods sym a :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
+    where
+      subApiP = Proxy :: Proxy api
+      action' = over headers (|> (headerName, headerVal)) action
+      headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy sym)
+      headerVal = case toSample (Proxy :: Proxy a) of
+        Just x -> cs $ toHeader x
+        Nothing -> "<no header sample provided>"
 
-    where subApiP = Proxy :: Proxy api
-          action' = over headers (|> (headerName, headerVal)) action
-          headerName = CI.mk . cs $ symbolVal (Proxy :: Proxy sym)
-          headerVal = case toSample (Proxy :: Proxy a) of
-            Just x -> cs $ toHeader x
-            Nothing -> "<no header sample provided>"
-
-instance (KnownSymbol sym, ToParam (QueryParam' mods sym a), HasDocs api)
-      => HasDocs (QueryParam' mods sym a :> api) where
-
+instance
+  (HasDocs api, KnownSymbol sym, ToParam (QueryParam' mods sym a))
+  => HasDocs (QueryParam' mods sym a :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
+    where
+      subApiP = Proxy :: Proxy api
+      paramP = Proxy :: Proxy (QueryParam' mods sym a)
+      action' = over params (|> toParam paramP) action
 
-    where subApiP = Proxy :: Proxy api
-          paramP = Proxy :: Proxy (QueryParam' mods sym a)
-          action' = over params (|> toParam paramP) action
-
-instance (KnownSymbol sym, ToParam (QueryParams sym a), HasDocs api)
-      => HasDocs (QueryParams sym a :> api) where
-
+instance
+  (HasDocs api, KnownSymbol sym, ToParam (QueryParams sym a))
+  => HasDocs (QueryParams sym a :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
+    where
+      subApiP = Proxy :: Proxy api
+      paramP = Proxy :: Proxy (QueryParams sym a)
+      action' = over params (|> toParam paramP) action
 
-    where subApiP = Proxy :: Proxy api
-          paramP = Proxy :: Proxy (QueryParams sym a)
-          action' = over params (|> toParam paramP) action
-
-
-instance (KnownSymbol sym, ToParam (QueryFlag sym), HasDocs api)
-      => HasDocs (QueryFlag sym :> api) where
-
+instance
+  (HasDocs api, KnownSymbol sym, ToParam (QueryFlag sym))
+  => HasDocs (QueryFlag sym :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
+    where
+      subApiP = Proxy :: Proxy api
+      paramP = Proxy :: Proxy (QueryFlag sym)
+      action' = over params (|> toParam paramP) action
 
-    where subApiP = Proxy :: Proxy api
-          paramP = Proxy :: Proxy (QueryFlag sym)
-          action' = over params (|> toParam paramP) action
-
-instance (ToFragment (Fragment a), HasDocs api)
-      => HasDocs (Fragment a :> api) where
-
+instance
+  (HasDocs api, ToFragment (Fragment a))
+  => HasDocs (Fragment a :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
-
-    where subApiP = Proxy :: Proxy api
-          fragmentP = Proxy :: Proxy (Fragment a)
-          action' = set fragment (Just (toFragment fragmentP)) action
+    where
+      subApiP = Proxy :: Proxy api
+      fragmentP = Proxy :: Proxy (Fragment a)
+      action' = set fragment (Just (toFragment fragmentP)) action
 
 instance HasDocs Raw where
   docsFor _proxy (endpoint, action) _ =
     single endpoint action
 
-
-instance (KnownSymbol desc, HasDocs api)
-  => HasDocs (Description desc :> api) where
-
+instance
+  (HasDocs api, KnownSymbol desc)
+  => HasDocs (Description desc :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
+    where
+      subApiP = Proxy :: Proxy api
+      action' = over notes (|> note) action
+      note = DocNote (symbolVal (Proxy :: Proxy desc)) []
 
-    where subApiP = Proxy :: Proxy api
-          action' = over notes (|> note) action
-          note = DocNote (symbolVal (Proxy :: Proxy desc)) []
-
-instance (KnownSymbol desc, HasDocs api)
-  => HasDocs (Summary desc :> api) where
-
+instance
+  (HasDocs api, KnownSymbol desc)
+  => HasDocs (Summary desc :> api)
+  where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint, action')
-
-    where subApiP = Proxy :: Proxy api
-          action' = over notes (|> note) action
-          note = DocNote (symbolVal (Proxy :: Proxy desc)) []
+    where
+      subApiP = Proxy :: Proxy api
+      action' = over notes (|> note) action
+      note = DocNote (symbolVal (Proxy :: Proxy desc)) []
 
 -- TODO: We use 'AllMimeRender' here because we need to be able to show the
 -- example data. However, there's no reason to believe that the instances of
 -- 'AllMimeUnrender' and 'AllMimeRender' actually agree (or to suppose that
 -- both are even defined) for any particular type.
-instance (ToSample a, AllMimeRender (ct ': cts) a, HasDocs api)
-      => HasDocs (ReqBody' mods (ct ': cts) a :> api) where
+instance
+  (AllMimeRender (ct ': cts) a, HasDocs api, ToSample a)
+  => HasDocs (ReqBody' mods (ct ': cts) a :> api)
+  where
   docsFor Proxy (endpoint, action) opts@DocOptions{..} =
     docsFor subApiP (endpoint, action') opts
-
-    where subApiP = Proxy :: Proxy api
-          action' :: Action
-          action' = action & rqbody .~ take _maxSamples (sampleByteStrings t p)
-                           & rqtypes .~ allMime t
-          t = Proxy :: Proxy (ct ': cts)
-          p = Proxy :: Proxy a
+    where
+      subApiP = Proxy :: Proxy api
+      action' :: Action
+      action' =
+        action
+          & rqbody .~ take _maxSamples (sampleByteStrings t p)
+          & rqtypes .~ allMime t
+      t = Proxy :: Proxy (ct ': cts)
+      p = Proxy :: Proxy a
 
 -- | TODO: this instance is incomplete.
-instance (HasDocs api, Accept ctype) => HasDocs (StreamBody' mods framing ctype a :> api) where
-    docsFor Proxy (endpoint, action) opts =
-        docsFor subApiP (endpoint, action') opts
-      where
-        subApiP = Proxy :: Proxy api
+instance (Accept ctype, HasDocs api) => HasDocs (StreamBody' mods framing ctype a :> api) where
+  docsFor Proxy (endpoint, action) opts =
+    docsFor subApiP (endpoint, action') opts
+    where
+      subApiP = Proxy :: Proxy api
 
-        action' :: Action
-        action' = action & rqtypes .~ toList (contentTypes t)
+      action' :: Action
+      action' = action & rqtypes .~ toList (contentTypes t)
 
-        t = Proxy :: Proxy ctype
+      t = Proxy :: Proxy ctype
 
-instance (KnownSymbol path, HasDocs api) => HasDocs (path :> api) where
-
+instance (HasDocs api, KnownSymbol path) => HasDocs (path :> api) where
   docsFor Proxy (endpoint, action) =
     docsFor subApiP (endpoint', action)
-
-    where subApiP = Proxy :: Proxy api
-          endpoint' = endpoint & path <>~ [symbolVal pa]
-          pa = Proxy :: Proxy path
+    where
+      subApiP = Proxy :: Proxy api
+      endpoint' = endpoint & path <>~ [symbolVal pa]
+      pa = Proxy :: Proxy path
 
 instance HasDocs api => HasDocs (RemoteHost :> api) where
   docsFor Proxy ep =
@@ -1148,48 +1247,67 @@ instance HasDocs api => HasDocs (WithNamedContext name context api) where
 instance HasDocs api => HasDocs (WithResource res :> api) where
   docsFor Proxy = docsFor (Proxy :: Proxy api)
 
-instance (ToAuthInfo (BasicAuth realm usr), HasDocs api) => HasDocs (BasicAuth realm usr :> api) where
+instance (HasDocs api, ToAuthInfo (BasicAuth realm usr)) => HasDocs (BasicAuth realm usr :> api) where
   docsFor Proxy (endpoint, action) =
     docsFor (Proxy :: Proxy api) (endpoint, action')
-      where
-        authProxy = Proxy :: Proxy (BasicAuth realm usr)
-        action' = over authInfo (|> toAuthInfo authProxy) action
+    where
+      authProxy = Proxy :: Proxy (BasicAuth realm usr)
+      action' = over authInfo (|> toAuthInfo authProxy) action
 
 instance
-  ( HasDocs (ToServantApi api)
-  , ErrorIfNoGeneric api
-  ) => HasDocs (NamedRoutes api) where
+  ( ErrorIfNoGeneric api
+  , HasDocs (ToServantApi api)
+  )
+  => HasDocs (NamedRoutes api)
+  where
   docsFor Proxy = docsFor (Proxy :: Proxy (ToServantApi api))
 
 -- ToSample instances for simple types
 instance ToSample NoContent
+
 instance ToSample Bool
+
 instance ToSample Ordering
 
 -- polymorphic ToSample instances
 instance (ToSample a, ToSample b) => ToSample (a, b)
+
 instance (ToSample a, ToSample b, ToSample c) => ToSample (a, b, c)
+
 instance (ToSample a, ToSample b, ToSample c, ToSample d) => ToSample (a, b, c, d)
+
 instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e) => ToSample (a, b, c, d, e)
+
 instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e, ToSample f) => ToSample (a, b, c, d, e, f)
+
 instance (ToSample a, ToSample b, ToSample c, ToSample d, ToSample e, ToSample f, ToSample g) => ToSample (a, b, c, d, e, f, g)
 
 instance ToSample a => ToSample (Maybe a)
+
 instance (ToSample a, ToSample b) => ToSample (Either a b)
+
 instance ToSample a => ToSample [a]
+
 instance ToSample a => ToSample (NonEmpty a)
 
 -- ToSample instances for Control.Applicative types
 instance ToSample a => ToSample (Const a b)
+
 instance ToSample a => ToSample (ZipList a)
 
 -- ToSample instances for Data.Monoid newtypes
 instance ToSample All
+
 instance ToSample Any
+
 instance ToSample a => ToSample (Sum a)
+
 instance ToSample a => ToSample (Product a)
+
 instance ToSample a => ToSample (First a)
+
 instance ToSample a => ToSample (Last a)
+
 instance ToSample a => ToSample (Dual a)
 
 -- $setup

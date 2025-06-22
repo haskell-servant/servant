@@ -1,15 +1,16 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+
 module Servant.API.RemoteHost
   ( -- $remotehost
     RemoteHost
-  ) where
+  )
+where
 
-import           Data.Typeable
-                 (Typeable)
+import Data.Typeable (Typeable)
 
 -- | Provides access to the host or IP address
 --   from which the HTTP request was sent.
-data RemoteHost deriving Typeable
+data RemoteHost deriving (Typeable)
 
 -- $remotehost
 --

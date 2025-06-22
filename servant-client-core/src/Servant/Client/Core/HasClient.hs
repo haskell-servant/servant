@@ -1,103 +1,149 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
-module Servant.Client.Core.HasClient (
-    clientIn,
-    HasClient (..),
-    EmptyClient (..),
-    AsClientT,
-    (//),
-    (/:),
-    foldMapUnion,
-    matchUnion,
-    fromSomeClientResponse
-    ) where
 
-import           Prelude ()
-import           Prelude.Compat
+module Servant.Client.Core.HasClient
+  ( clientIn
+  , HasClient (..)
+  , EmptyClient (..)
+  , AsClientT
+  , (//)
+  , (/:)
+  , foldMapUnion
+  , matchUnion
+  , fromSomeClientResponse
+  )
+where
 
-import           Control.Arrow
-                 (left, (+++))
-import qualified Data.Text as Text
-import           Control.Monad
-                 (unless)
+import Control.Arrow (left, (+++))
+import Control.Monad (unless)
 import qualified Data.ByteString.Lazy as BSL
-import           Data.Either
-                 (partitionEithers)
-import           Data.Constraint (Dict(..))
-import           Data.Foldable
-                 (toList)
-import           Data.Kind
-                 (Type)
+import Data.Constraint (Dict (..))
+import Data.Either (partitionEithers)
+import Data.Foldable (toList)
+import Data.Kind (Type)
 import qualified Data.List as List
-import           Data.Sequence
-                 (fromList)
-import qualified Data.Text                       as T
-import           Data.Text.Encoding (encodeUtf8)
-import           Network.HTTP.Media
-                 (MediaType, matches, parseAccept)
-import qualified Network.HTTP.Media as Media
+import Data.SOP.BasicFunctors (I (I), (:.:) (Comp))
+import Data.SOP.Constraint (All)
+import Data.SOP.NP (NP (..), cpure_NP)
+import Data.SOP.NS (NS (..))
+import Data.Sequence (fromList)
 import qualified Data.Sequence as Seq
-import           Data.SOP.BasicFunctors
-                 (I (I), (:.:) (Comp))
-import           Data.SOP.Constraint
-                 (All)
-import           Data.SOP.NP
-                 (NP (..), cpure_NP)
-import           Data.SOP.NS
-                 (NS (..))
-import           Data.String
-                 (fromString)
-import           Data.Text
-                 (Text, pack)
-import           GHC.TypeLits
-                 (KnownNat, KnownSymbol, TypeError, symbolVal)
-import           Network.HTTP.Types
-                 (Status)
-import qualified Network.HTTP.Types                       as H
-import           Servant.API
-                 ((:<|>) ((:<|>)), (:>),
-                 BuildHeadersTo (..),
-                 EmptyAPI,
-                 FromSourceIO (..),
-                 IsSecure,
-                 MimeUnrender (mimeUnrender),
-                 NoContentVerb,
-                 ReflectMethod (..),
-                 StreamBody',
-                 Verb,
-                 getResponse, AuthProtect, BasicAuth, BasicAuthData, Capture', CaptureAll, DeepQuery, Description, Fragment, FramingRender (..), FramingUnrender (..), Header', Headers (..), HttpVersion, MimeRender (mimeRender), NoContent (NoContent), QueryFlag, QueryParam', QueryParams, QueryString, Raw, RawM, RemoteHost, ReqBody', SBoolI, Stream, Summary, ToHttpApiData, ToSourceIO (..), Vault, WithNamedContext, WithResource, WithStatus (..), contentType, getHeadersHList, toEncodedUrlPiece, NamedRoutes, Host)
-import           Servant.API.Generic
-                 (GenericMode(..), ToServant, ToServantApi
-                 , GenericServant, toServant, fromServant)
-import           Servant.API.ContentTypes
-                 (contentTypes, AllMime (allMime), AllMimeUnrender (allMimeUnrender), EventStream)
-import           Servant.API.QueryString (ToDeepQuery(..), generateDeepParam)
-import           Servant.API.Status
-                 (statusFromNat)
-import           Servant.API.TypeLevel (FragmentUnique, AtMostOneFragment)
-import           Servant.API.Modifiers
-                 (FoldRequired, RequiredArgument, foldRequiredArgument)
-import           Servant.API.TypeErrors
-import           Servant.API.UVerb
-                 (HasStatus, HasStatuses (Statuses, statuses), UVerb, Union, Unique, inject, statusOf, foldMapUnion, matchUnion)
-import           Servant.API.ServerSentEvents
-                 (EventKind (JsonEvent, RawEvent), ServerSentEvents')
-import           Servant.API.Stream
-                 (NoFraming)
-
-import           Servant.Client.Core.Auth
-import           Servant.Client.Core.BasicAuth
-import           Servant.Client.Core.ClientError
-import           Servant.Client.Core.Request
-import           Servant.Client.Core.Response
-import           Servant.Client.Core.MultiVerb.ResponseUnrender
-import qualified Servant.Client.Core.Response as Response
-import           Servant.Client.Core.RunClient
-import           Servant.Client.Core.ServerSentEvents
-import           Servant.API.MultiVerb
+import Data.String (fromString)
+import Data.Text (Text, pack)
+import qualified Data.Text as T
+import qualified Data.Text as Text
+import Data.Text.Encoding (encodeUtf8)
+import Data.Typeable
+import GHC.TypeLits (KnownNat, KnownSymbol, TypeError, symbolVal)
+import Network.HTTP.Media (MediaType, matches, parseAccept)
 import qualified Network.HTTP.Media as M
-import           Data.Typeable
+import qualified Network.HTTP.Media as Media
+import Network.HTTP.Types (Status)
+import qualified Network.HTTP.Types as H
+import Prelude.Compat
+import Servant.API
+  ( AuthProtect
+  , BasicAuth
+  , BasicAuthData
+  , BuildHeadersTo (..)
+  , Capture'
+  , CaptureAll
+  , DeepQuery
+  , Description
+  , EmptyAPI
+  , Fragment
+  , FramingRender (..)
+  , FramingUnrender (..)
+  , FromSourceIO (..)
+  , Header'
+  , Headers (..)
+  , Host
+  , HttpVersion
+  , IsSecure
+  , MimeRender (mimeRender)
+  , MimeUnrender (mimeUnrender)
+  , NamedRoutes
+  , NoContent (NoContent)
+  , NoContentVerb
+  , QueryFlag
+  , QueryParam'
+  , QueryParams
+  , QueryString
+  , Raw
+  , RawM
+  , ReflectMethod (..)
+  , RemoteHost
+  , ReqBody'
+  , SBoolI
+  , Stream
+  , StreamBody'
+  , Summary
+  , ToHttpApiData
+  , ToSourceIO (..)
+  , Vault
+  , Verb
+  , WithNamedContext
+  , WithResource
+  , WithStatus (..)
+  , contentType
+  , getHeadersHList
+  , getResponse
+  , toEncodedUrlPiece
+  , (:<|>) ((:<|>))
+  , (:>)
+  )
+import Servant.API.ContentTypes
+  ( AllMime (allMime)
+  , AllMimeUnrender (allMimeUnrender)
+  , EventStream
+  , contentTypes
+  )
+import Servant.API.Generic
+  ( GenericMode (..)
+  , GenericServant
+  , ToServant
+  , ToServantApi
+  , fromServant
+  , toServant
+  )
+import Servant.API.Modifiers
+  ( FoldRequired
+  , RequiredArgument
+  , foldRequiredArgument
+  )
+import Servant.API.MultiVerb
+import Servant.API.QueryString (ToDeepQuery (..), generateDeepParam)
+import Servant.API.ServerSentEvents
+  ( EventKind (JsonEvent, RawEvent)
+  , ServerSentEvents'
+  )
+import Servant.API.Status (statusFromNat)
+import Servant.API.Stream (NoFraming)
+import Servant.API.TypeErrors
+import Servant.API.TypeLevel (AtMostOneFragment, FragmentUnique)
+import Servant.API.UVerb
+  ( HasStatus
+  , HasStatuses (Statuses, statuses)
+  , UVerb
+  , Union
+  , Unique
+  , foldMapUnion
+  , inject
+  , matchUnion
+  , statusOf
+  )
+import Prelude ()
+
+import Servant.Client.Core.Auth
+import Servant.Client.Core.BasicAuth
+import Servant.Client.Core.ClientError
+import Servant.Client.Core.MultiVerb.ResponseUnrender
+import Servant.Client.Core.Request
+import Servant.Client.Core.Response
+import qualified Servant.Client.Core.Response as Response
+import Servant.Client.Core.RunClient
+import Servant.Client.Core.ServerSentEvents
 
 -- * Accessing APIs as a Client
 
@@ -151,15 +197,15 @@ class RunClient m => HasClient m api where
 instance (HasClient m a, HasClient m b) => HasClient m (a :<|> b) where
   type Client m (a :<|> b) = Client m a :<|> Client m b
   clientWithRoute pm Proxy req =
-    clientWithRoute pm (Proxy :: Proxy a) req :<|>
-    clientWithRoute pm (Proxy :: Proxy b) req
+    clientWithRoute pm (Proxy :: Proxy a) req
+      :<|> clientWithRoute pm (Proxy :: Proxy b) req
 
   hoistClientMonad pm _ f (ca :<|> cb) =
-    hoistClientMonad pm (Proxy :: Proxy a) f ca :<|>
-    hoistClientMonad pm (Proxy :: Proxy b) f cb
+    hoistClientMonad pm (Proxy :: Proxy a) f ca
+      :<|> hoistClientMonad pm (Proxy :: Proxy b) f cb
 
 -- | Singleton type representing a client for an empty API.
-data EmptyClient = EmptyClient deriving (Eq, Show, Bounded, Enum)
+data EmptyClient = EmptyClient deriving (Bounded, Enum, Eq, Show)
 
 -- | The client for 'EmptyAPI' is simply 'EmptyClient'.
 --
@@ -195,17 +241,21 @@ instance RunClient m => HasClient m EmptyAPI where
 -- > getBook :: Text -> ClientM Book
 -- > getBook = client myApi
 -- > -- then you can just use "getBook" to query that endpoint
-instance (ToHttpApiData a, HasClient m api)
-      => HasClient m (Capture' mods capture a :> api) where
-
-  type Client m (Capture' mods capture a :> api) =
-    a -> Client m api
+instance
+  (HasClient m api, ToHttpApiData a)
+  => HasClient m (Capture' mods capture a :> api)
+  where
+  type
+    Client m (Capture' mods capture a :> api) =
+      a -> Client m api
 
   clientWithRoute pm Proxy req val =
-    clientWithRoute pm (Proxy :: Proxy api)
-                    (appendToPath p req)
-
-    where p = toEncodedUrlPiece val
+    clientWithRoute
+      pm
+      (Proxy :: Proxy api)
+      (appendToPath p req)
+    where
+      p = toEncodedUrlPiece val
 
   hoistClientMonad pm _ f cl = \a ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
@@ -230,32 +280,46 @@ instance (ToHttpApiData a, HasClient m api)
 -- > getSourceFile :: [Text] -> ClientM SourceFile
 -- > getSourceFile = client myApi
 -- > -- then you can use "getSourceFile" to query that endpoint
-instance (ToHttpApiData a, HasClient m sublayout)
-      => HasClient m (CaptureAll capture a :> sublayout) where
-
-  type Client m (CaptureAll capture a :> sublayout) =
-    [a] -> Client m sublayout
+instance
+  (HasClient m sublayout, ToHttpApiData a)
+  => HasClient m (CaptureAll capture a :> sublayout)
+  where
+  type
+    Client m (CaptureAll capture a :> sublayout) =
+      [a] -> Client m sublayout
 
   clientWithRoute pm Proxy req vals =
-    clientWithRoute pm (Proxy :: Proxy sublayout)
-                    (List.foldl' (flip appendToPath) req ps)
-
-    where ps = map toEncodedUrlPiece vals
+    clientWithRoute
+      pm
+      (Proxy :: Proxy sublayout)
+      (List.foldl' (flip appendToPath) req ps)
+    where
+      ps = map toEncodedUrlPiece vals
 
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy sublayout) f (cl as)
 
-instance {-# OVERLAPPABLE #-}
-  -- Note [Non-Empty Content Types]
-  ( RunClient m, MimeUnrender ct a, ReflectMethod method, cts' ~ (ct ': cts)
-  , KnownNat status
-  ) => HasClient m (Verb method status cts' a) where
+instance
+-- Note [Non-Empty Content Types]
+
+  {-# OVERLAPPABLE #-}
+  ( KnownNat status
+  , MimeUnrender ct a
+  , ReflectMethod method
+  , RunClient m
+  , cts' ~ (ct ': cts)
+  )
+  => HasClient m (Verb method status cts' a)
+  where
   type Client m (Verb method status cts' a) = m a
   clientWithRoute _pm Proxy req = do
-    response <- runRequestAcceptStatus (Just [status]) req
-      { requestAccept = fromList $ toList accept
-      , requestMethod = method
-      }
+    response <-
+      runRequestAcceptStatus
+        (Just [status])
+        req
+          { requestAccept = fromList $ toList accept
+          , requestMethod = method
+          }
     response `decodedAs` (Proxy :: Proxy ct)
     where
       accept = contentTypes (Proxy :: Proxy ct)
@@ -264,46 +328,71 @@ instance {-# OVERLAPPABLE #-}
 
   hoistClientMonad _ _ f ma = f ma
 
-instance {-# OVERLAPPING #-}
-  ( RunClient m, ReflectMethod method, KnownNat status
-  ) => HasClient m (Verb method status cts NoContent) where
-  type Client m (Verb method status cts NoContent)
-    = m NoContent
+instance
+  {-# OVERLAPPING #-}
+  ( KnownNat status
+  , ReflectMethod method
+  , RunClient m
+  )
+  => HasClient m (Verb method status cts NoContent)
+  where
+  type
+    Client m (Verb method status cts NoContent) =
+      m NoContent
   clientWithRoute _pm Proxy req = do
-    _response <- runRequestAcceptStatus (Just [status]) req { requestMethod = method }
+    _response <- runRequestAcceptStatus (Just [status]) req{requestMethod = method}
     return NoContent
-      where method = reflectMethod (Proxy :: Proxy method)
-            status = statusFromNat (Proxy :: Proxy status)
+    where
+      method = reflectMethod (Proxy :: Proxy method)
+      status = statusFromNat (Proxy :: Proxy status)
 
   hoistClientMonad _ _ f ma = f ma
 
-instance (RunClient m, ReflectMethod method) =>
-         HasClient m (NoContentVerb method) where
-  type Client m (NoContentVerb method)
-    = m NoContent
+instance
+  (ReflectMethod method, RunClient m)
+  => HasClient m (NoContentVerb method)
+  where
+  type
+    Client m (NoContentVerb method) =
+      m NoContent
   clientWithRoute _pm Proxy req = do
-    _response <- runRequest req { requestMethod = method }
+    _response <- runRequest req{requestMethod = method}
     return NoContent
-      where method = reflectMethod (Proxy :: Proxy method)
+    where
+      method = reflectMethod (Proxy :: Proxy method)
 
   hoistClientMonad _ _ f ma = f ma
 
-instance {-# OVERLAPPING #-}
-  -- Note [Non-Empty Content Types]
-  ( RunClient m, MimeUnrender ct a, BuildHeadersTo ls, KnownNat status
-  , ReflectMethod method, cts' ~ (ct ': cts)
-  ) => HasClient m (Verb method status cts' (Headers ls a)) where
-  type Client m (Verb method status cts' (Headers ls a))
-    = m (Headers ls a)
+instance
+-- Note [Non-Empty Content Types]
+
+  {-# OVERLAPPING #-}
+  ( BuildHeadersTo ls
+  , KnownNat status
+  , MimeUnrender ct a
+  , ReflectMethod method
+  , RunClient m
+  , cts' ~ (ct ': cts)
+  )
+  => HasClient m (Verb method status cts' (Headers ls a))
+  where
+  type
+    Client m (Verb method status cts' (Headers ls a)) =
+      m (Headers ls a)
   clientWithRoute _pm Proxy req = do
-    response <- runRequestAcceptStatus (Just [status]) req
-       { requestMethod = method
-       , requestAccept = fromList $ toList accept
-       }
+    response <-
+      runRequestAcceptStatus
+        (Just [status])
+        req
+          { requestMethod = method
+          , requestAccept = fromList $ toList accept
+          }
     val <- response `decodedAs` (Proxy :: Proxy ct)
-    return $ Headers { getResponse = val
-                     , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
-                     }
+    return $
+      Headers
+        { getResponse = val
+        , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
+        }
     where
       method = reflectMethod (Proxy :: Proxy method)
       accept = contentTypes (Proxy :: Proxy ct)
@@ -311,16 +400,25 @@ instance {-# OVERLAPPING #-}
 
   hoistClientMonad _ _ f ma = f ma
 
-instance {-# OVERLAPPING #-}
-  ( RunClient m, BuildHeadersTo ls, ReflectMethod method, KnownNat status
-  ) => HasClient m (Verb method status cts (Headers ls NoContent)) where
-  type Client m (Verb method status cts (Headers ls NoContent))
-    = m (Headers ls NoContent)
+instance
+  {-# OVERLAPPING #-}
+  ( BuildHeadersTo ls
+  , KnownNat status
+  , ReflectMethod method
+  , RunClient m
+  )
+  => HasClient m (Verb method status cts (Headers ls NoContent))
+  where
+  type
+    Client m (Verb method status cts (Headers ls NoContent)) =
+      m (Headers ls NoContent)
   clientWithRoute _pm Proxy req = do
-    response <- runRequestAcceptStatus (Just [status]) req { requestMethod = method }
-    return $ Headers { getResponse = NoContent
-                     , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
-                     }
+    response <- runRequestAcceptStatus (Just [status]) req{requestMethod = method}
+    return $
+      Headers
+        { getResponse = NoContent
+        , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
+        }
     where
       method = reflectMethod (Proxy :: Proxy method)
       status = statusFromNat (Proxy :: Proxy status)
@@ -331,37 +429,51 @@ data ClientParseError = ClientParseError MediaType String | ClientStatusMismatch
   deriving (Eq, Show)
 
 class UnrenderResponse (cts :: [Type]) (a :: Type) where
-  unrenderResponse :: Seq.Seq H.Header -> BSL.ByteString -> Proxy cts
-                   -> [Either (MediaType, String) a]
+  unrenderResponse
+    :: Seq.Seq H.Header
+    -> BSL.ByteString
+    -> Proxy cts
+    -> [Either (MediaType, String) a]
 
 instance {-# OVERLAPPABLE #-} AllMimeUnrender cts a => UnrenderResponse cts a where
   unrenderResponse _ body = map parse . allMimeUnrender
-    where parse (mediaType, parser) = left ((,) mediaType) (parser body)
+    where
+      parse (mediaType, parser) = left ((,) mediaType) (parser body)
 
-instance {-# OVERLAPPING #-} forall cts a h . (UnrenderResponse cts a, BuildHeadersTo h)
-  => UnrenderResponse cts (Headers h a) where
+instance
+  {-# OVERLAPPING #-}
+  forall cts a h
+   . (BuildHeadersTo h, UnrenderResponse cts a)
+  => UnrenderResponse cts (Headers h a)
+  where
   unrenderResponse hs body = (map . fmap) setHeaders . unrenderResponse hs body
     where
       setHeaders :: a -> Headers h a
       setHeaders x = Headers x (buildHeadersTo (toList hs))
 
-instance {-# OVERLAPPING #-} UnrenderResponse cts a
-  => UnrenderResponse cts (WithStatus n a) where
+instance
+  {-# OVERLAPPING #-}
+  UnrenderResponse cts a
+  => UnrenderResponse cts (WithStatus n a)
+  where
   unrenderResponse hs body = (map . fmap) WithStatus . unrenderResponse hs body
 
-instance {-# OVERLAPPING #-}
-  ( RunClient m,
-    contentTypes ~ (contentType ': otherContentTypes),
-    -- ('otherContentTypes' should be '_', but even -XPartialTypeSignatures does not seem
+instance
+  {-# OVERLAPPING #-}
+  ( -- ('otherContentTypes' should be '_', but even -XPartialTypeSignatures does not seem
     -- allow this in instance types as of 8.8.3.)
-    as ~ (a ': as'),
-    AllMime contentTypes,
-    ReflectMethod method,
-    All (UnrenderResponse contentTypes) as,
-    All HasStatus as, HasStatuses as',
-    Unique (Statuses as)
-  ) =>
-  HasClient m (UVerb method contentTypes as)
+
+    All (UnrenderResponse contentTypes) as
+  , All HasStatus as
+  , AllMime contentTypes
+  , HasStatuses as'
+  , ReflectMethod method
+  , RunClient m
+  , Unique (Statuses as)
+  , as ~ (a ': as')
+  , contentTypes ~ (contentType ': otherContentTypes)
+  )
+  => HasClient m (UVerb method contentTypes as)
   where
   type Client m (UVerb method contentTypes as) = m (Union as)
 
@@ -373,8 +485,8 @@ instance {-# OVERLAPPING #-}
 
         method = reflectMethod $ Proxy @method
         acceptStatus = statuses (Proxy @as)
-    response@Response{responseBody=body, responseStatusCode=status, responseHeaders=headers}
-      <- runRequestAcceptStatus (Just acceptStatus) (request {requestMethod = method, requestAccept = accept})
+    response@Response{responseBody = body, responseStatusCode = status, responseHeaders = headers} <-
+      runRequestAcceptStatus (Just acceptStatus) (request{requestMethod = method, requestAccept = accept})
     responseContentType <- checkContentTypeHeader response
     unless (any (matches responseContentType) accept) $ do
       throwClientError $ UnsupportedContentType responseContentType response
@@ -384,74 +496,88 @@ instance {-# OVERLAPPING #-}
       Left errors -> throwClientError $ DecodeFailure (T.pack (show errors)) response
       Right x -> return x
     where
-      -- | Given a list of parsers of 'mkres', returns the first one that succeeds and all the
+      -- \| Given a list of parsers of 'mkres', returns the first one that succeeds and all the
       -- failures it encountered along the way
       -- TODO; better name, rewrite haddocs.
       tryParsers :: forall xs. All HasStatus xs => Status -> NP ([] :.: Either (MediaType, String)) xs -> Either [ClientParseError] (Union xs)
       tryParsers _ Nil = Left [ClientNoMatchingStatus]
       tryParsers status (Comp x :* xs)
         | status == statusOf (Comp x) =
-          case partitionEithers x of
-            (err', []) -> (map (uncurry ClientParseError) err' ++) +++ S $ tryParsers status xs
-            (_, (res : _)) -> Right . inject . I $ res
-        | otherwise = -- no reason to parse in the first place. This ain't the one we're looking for
-          (ClientStatusMismatch :) +++ S $ tryParsers status xs
+            case partitionEithers x of
+              (err', []) -> (map (uncurry ClientParseError) err' ++) +++ S $ tryParsers status xs
+              (_, (res : _)) -> Right . inject . I $ res
+        | otherwise -- no reason to parse in the first place. This ain't the one we're looking for
+          =
+            (ClientStatusMismatch :) +++ S $ tryParsers status xs
 
-      -- | Given a list of types, parses the given response body as each type
-      mimeUnrenders ::
-        forall cts xs.
-        All (UnrenderResponse cts) xs =>
-        Proxy cts ->
-        Seq.Seq H.Header ->
-        BSL.ByteString ->
-        NP ([] :.: Either (MediaType, String)) xs
-      mimeUnrenders ctp headers body = cpure_NP
-        (Proxy @(UnrenderResponse cts))
-        (Comp . unrenderResponse headers body $ ctp)
+      -- \| Given a list of types, parses the given response body as each type
+      mimeUnrenders
+        :: forall cts xs
+         . All (UnrenderResponse cts) xs
+        => Proxy cts
+        -> Seq.Seq H.Header
+        -> BSL.ByteString
+        -> NP ([] :.: Either (MediaType, String)) xs
+      mimeUnrenders ctp headers body =
+        cpure_NP
+          (Proxy @(UnrenderResponse cts))
+          (Comp . unrenderResponse headers body $ ctp)
 
   hoistClientMonad _ _ nt s = nt s
 
-instance {-# OVERLAPPABLE #-}
-  ( RunStreamingClient m, MimeUnrender ct chunk, ReflectMethod method,
-    FramingUnrender framing, FromSourceIO chunk a
-  ) => HasClient m (Stream method status framing ct a) where
-
+instance
+  {-# OVERLAPPABLE #-}
+  ( FramingUnrender framing
+  , FromSourceIO chunk a
+  , MimeUnrender ct chunk
+  , ReflectMethod method
+  , RunStreamingClient m
+  )
+  => HasClient m (Stream method status framing ct a)
+  where
   type Client m (Stream method status framing ct a) = m a
 
   hoistClientMonad _ _ f ma = f ma
 
-  clientWithRoute _pm Proxy req = withStreamingRequest req' $ \Response{responseBody=body} -> do
-      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BSL.ByteString -> Either String chunk
-          framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
-      fromSourceIO $ framingUnrender' body
+  clientWithRoute _pm Proxy req = withStreamingRequest req' $ \Response{responseBody = body} -> do
+    let mimeUnrender' = mimeUnrender (Proxy :: Proxy ct) :: BSL.ByteString -> Either String chunk
+        framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
+    fromSourceIO $ framingUnrender' body
     where
-      req' = req
+      req' =
+        req
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
           , requestMethod = reflectMethod (Proxy :: Proxy method)
           }
 
-instance {-# OVERLAPPING #-}
-  ( RunStreamingClient m, MimeUnrender ct chunk, ReflectMethod method,
-    FramingUnrender framing, FromSourceIO chunk a,
-    BuildHeadersTo hs
-  ) => HasClient m (Stream method status framing ct (Headers hs a)) where
-
+instance
+  {-# OVERLAPPING #-}
+  ( BuildHeadersTo hs
+  , FramingUnrender framing
+  , FromSourceIO chunk a
+  , MimeUnrender ct chunk
+  , ReflectMethod method
+  , RunStreamingClient m
+  )
+  => HasClient m (Stream method status framing ct (Headers hs a))
+  where
   type Client m (Stream method status framing ct (Headers hs a)) = m (Headers hs a)
 
   hoistClientMonad _ _ f ma = f ma
 
-  clientWithRoute _pm Proxy req = withStreamingRequest req' $ 
-    \Response{responseBody=body, responseHeaders=headers} -> do
-      let mimeUnrender'    = mimeUnrender (Proxy :: Proxy ct) :: BSL.ByteString -> Either String chunk
+  clientWithRoute _pm Proxy req = withStreamingRequest req' $
+    \Response{responseBody = body, responseHeaders = headers} -> do
+      let mimeUnrender' = mimeUnrender (Proxy :: Proxy ct) :: BSL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
       val <- fromSourceIO $ framingUnrender' body
-      return $ Headers
-        { getResponse = val
-        , getHeadersHList = buildHeadersTo $ toList headers
-        }
-
+      return $
+        Headers
+          { getResponse = val
+          , getHeadersHList = buildHeadersTo $ toList headers
+          }
     where
-      req' = req
+      req' =
+        req
           { requestAccept = fromList [contentType (Proxy :: Proxy ct)]
           , requestMethod = reflectMethod (Proxy :: Proxy method)
           }
@@ -460,58 +586,64 @@ type SseClientDelegate method status =
   Stream method status NoFraming EventStream
 
 instance
-  ( RunClient m
-  , HasClient m (SseClientDelegate method status (EventMessageStreamT IO))
+  ( HasClient m (SseClientDelegate method status (EventMessageStreamT IO))
+  , RunClient m
   )
-  => HasClient m (ServerSentEvents' method status 'RawEvent EventMessage) where
-    type Client m (ServerSentEvents' method status 'RawEvent EventMessage) =
+  => HasClient m (ServerSentEvents' method status 'RawEvent EventMessage)
+  where
+  type
+    Client m (ServerSentEvents' method status 'RawEvent EventMessage) =
       Client m (SseClientDelegate method status (EventMessageStreamT IO))
 
-    hoistClientMonad p _ =
-      hoistClientMonad
-        p
-        (Proxy :: Proxy (SseClientDelegate method status (EventMessageStreamT IO)))
+  hoistClientMonad p _ =
+    hoistClientMonad
+      p
+      (Proxy :: Proxy (SseClientDelegate method status (EventMessageStreamT IO)))
 
-    clientWithRoute p _ =
-      clientWithRoute
-        p
-        (Proxy :: Proxy (SseClientDelegate method status (EventMessageStreamT IO)))
+  clientWithRoute p _ =
+    clientWithRoute
+      p
+      (Proxy :: Proxy (SseClientDelegate method status (EventMessageStreamT IO)))
 
 instance
-  ( RunClient m
-  , HasClient m (SseClientDelegate method status (EventStreamT IO))
+  ( HasClient m (SseClientDelegate method status (EventStreamT IO))
+  , RunClient m
   )
-  => HasClient m (ServerSentEvents' method status 'RawEvent (Event a)) where
-    type Client m (ServerSentEvents' method status 'RawEvent (Event a)) =
+  => HasClient m (ServerSentEvents' method status 'RawEvent (Event a))
+  where
+  type
+    Client m (ServerSentEvents' method status 'RawEvent (Event a)) =
       Client m (SseClientDelegate method status (EventStreamT IO))
 
-    hoistClientMonad p _ =
-      hoistClientMonad
-        p
-        (Proxy :: Proxy (SseClientDelegate method status (EventStreamT IO)))
+  hoistClientMonad p _ =
+    hoistClientMonad
+      p
+      (Proxy :: Proxy (SseClientDelegate method status (EventStreamT IO)))
 
-    clientWithRoute p _ =
-      clientWithRoute
-        p
-        (Proxy :: Proxy (SseClientDelegate method status (EventStreamT IO)))
+  clientWithRoute p _ =
+    clientWithRoute
+      p
+      (Proxy :: Proxy (SseClientDelegate method status (EventStreamT IO)))
 
 instance
-  ( RunClient m
-  , HasClient m (SseClientDelegate method status (JsonEventStreamT IO a))
+  ( HasClient m (SseClientDelegate method status (JsonEventStreamT IO a))
+  , RunClient m
   )
-  => HasClient m (ServerSentEvents' method status 'JsonEvent a) where
-    type Client m (ServerSentEvents' method status 'JsonEvent a) =
+  => HasClient m (ServerSentEvents' method status 'JsonEvent a)
+  where
+  type
+    Client m (ServerSentEvents' method status 'JsonEvent a) =
       Client m (SseClientDelegate method status (JsonEventStreamT IO a))
 
-    hoistClientMonad p _ =
-      hoistClientMonad
-        p
-        (Proxy :: Proxy (SseClientDelegate method status (JsonEventStreamT IO a)))
+  hoistClientMonad p _ =
+    hoistClientMonad
+      p
+      (Proxy :: Proxy (SseClientDelegate method status (JsonEventStreamT IO a)))
 
-    clientWithRoute p _ =
-      clientWithRoute
-        p
-        (Proxy :: Proxy (SseClientDelegate method status (JsonEventStreamT IO a)))
+  clientWithRoute p _ =
+    clientWithRoute
+      p
+      (Proxy :: Proxy (SseClientDelegate method status (JsonEventStreamT IO a)))
 
 -- | If you use a 'Header' in one of your endpoints in your API,
 -- the corresponding querying function will automatically take
@@ -538,15 +670,21 @@ instance
 -- > viewReferer = client myApi
 -- > -- then you can just use "viewRefer" to query that endpoint
 -- > -- specifying Nothing or e.g Just "http://haskell.org/" as arguments
-instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequired mods))
-      => HasClient m (Header' mods sym a :> api) where
-
-  type Client m (Header' mods sym a :> api) =
-    RequiredArgument mods a -> Client m api
+instance
+  (HasClient m api, KnownSymbol sym, SBoolI (FoldRequired mods), ToHttpApiData a)
+  => HasClient m (Header' mods sym a :> api)
+  where
+  type
+    Client m (Header' mods sym a :> api) =
+      RequiredArgument mods a -> Client m api
 
   clientWithRoute pm Proxy req mval =
-    clientWithRoute pm (Proxy :: Proxy api) $ foldRequiredArgument
-      (Proxy :: Proxy mods) add (maybe req add) mval
+    clientWithRoute pm (Proxy :: Proxy api) $
+      foldRequiredArgument
+        (Proxy :: Proxy mods)
+        add
+        (maybe req add)
+        mval
     where
       hname = fromString $ symbolVal (Proxy :: Proxy sym)
 
@@ -556,7 +694,7 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequire
   hoistClientMonad pm _ f cl = \arg ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
 
-instance (KnownSymbol sym, HasClient m api) => HasClient m (Host sym :> api) where
+instance (HasClient m api, KnownSymbol sym) => HasClient m (Host sym :> api) where
   type Client m (Host sym :> api) = Client m api
 
   clientWithRoute pm Proxy req =
@@ -567,11 +705,13 @@ instance (KnownSymbol sym, HasClient m api) => HasClient m (Host sym :> api) whe
 
 -- | Using a 'HttpVersion' combinator in your API doesn't affect the client
 -- functions.
-instance HasClient m api
-  => HasClient m (HttpVersion :> api) where
-
-  type Client m (HttpVersion :> api) =
-    Client m api
+instance
+  HasClient m api
+  => HasClient m (HttpVersion :> api)
+  where
+  type
+    Client m (HttpVersion :> api) =
+      Client m api
 
   clientWithRoute pm Proxy =
     clientWithRoute pm (Proxy :: Proxy api)
@@ -619,22 +759,28 @@ instance HasClient m api => HasClient m (Description desc :> api) where
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooksBy Nothing' for all books
 -- > -- 'getBooksBy (Just "Isaac Asimov")' to get all books by Isaac Asimov
-instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequired mods))
-      => HasClient m (QueryParam' mods sym a :> api) where
-
-  type Client m (QueryParam' mods sym a :> api) =
-    RequiredArgument mods a -> Client m api
+instance
+  (HasClient m api, KnownSymbol sym, SBoolI (FoldRequired mods), ToHttpApiData a)
+  => HasClient m (QueryParam' mods sym a :> api)
+  where
+  type
+    Client m (QueryParam' mods sym a :> api) =
+      RequiredArgument mods a -> Client m api
 
   -- if mparam = Nothing, we don't add it to the query string
   clientWithRoute pm Proxy req mparam =
-    clientWithRoute pm (Proxy :: Proxy api) $ foldRequiredArgument
-      (Proxy :: Proxy mods) add (maybe req add) mparam
+    clientWithRoute pm (Proxy :: Proxy api) $
+      foldRequiredArgument
+        (Proxy :: Proxy mods)
+        add
+        (maybe req add)
+        mparam
     where
       add :: a -> Request
       add param = appendToQueryString pname (Just $ encodeQueryParamValue param) req
 
       pname :: Text
-      pname  = pack $ symbolVal (Proxy :: Proxy sym)
+      pname = pack $ symbolVal (Proxy :: Proxy sym)
 
   hoistClientMonad pm _ f cl = \arg ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl arg)
@@ -666,21 +812,26 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api, SBoolI (FoldRequire
 -- > -- 'getBooksBy []' for all books
 -- > -- 'getBooksBy ["Isaac Asimov", "Robert A. Heinlein"]'
 -- > --   to get all books by Asimov and Heinlein
-instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
-      => HasClient m (QueryParams sym a :> api) where
-
-  type Client m (QueryParams sym a :> api) =
-    [a] -> Client m api
+instance
+  (HasClient m api, KnownSymbol sym, ToHttpApiData a)
+  => HasClient m (QueryParams sym a :> api)
+  where
+  type
+    Client m (QueryParams sym a :> api) =
+      [a] -> Client m api
 
   clientWithRoute pm Proxy req paramlist =
-    clientWithRoute pm (Proxy :: Proxy api)
-                    (List.foldl' (\ req' -> maybe req' (flip (appendToQueryString pname) req' . Just))
-                            req
-                            paramlist'
-                    )
-
-    where pname = pack $ symbolVal (Proxy :: Proxy sym)
-          paramlist' = map (Just . encodeQueryParamValue) paramlist
+    clientWithRoute
+      pm
+      (Proxy :: Proxy api)
+      ( List.foldl'
+          (\req' -> maybe req' (flip (appendToQueryString pname) req' . Just))
+          req
+          paramlist'
+      )
+    where
+      pname = pack $ symbolVal (Proxy :: Proxy sym)
+      paramlist' = map (Just . encodeQueryParamValue) paramlist
 
   hoistClientMonad pm _ f cl = \as ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl as)
@@ -706,40 +857,52 @@ instance (KnownSymbol sym, ToHttpApiData a, HasClient m api)
 -- > -- then you can just use "getBooks" to query that endpoint.
 -- > -- 'getBooksBy False' for all books
 -- > -- 'getBooksBy True' to only get _already published_ books
-instance (KnownSymbol sym, HasClient m api)
-      => HasClient m (QueryFlag sym :> api) where
-
-  type Client m (QueryFlag sym :> api) =
-    Bool -> Client m api
+instance
+  (HasClient m api, KnownSymbol sym)
+  => HasClient m (QueryFlag sym :> api)
+  where
+  type
+    Client m (QueryFlag sym :> api) =
+      Bool -> Client m api
 
   clientWithRoute pm Proxy req flag =
-    clientWithRoute pm (Proxy :: Proxy api)
-                    (if flag
-                       then appendToQueryString paramname Nothing req
-                       else req
-                    )
-
-    where paramname = pack $ symbolVal (Proxy :: Proxy sym)
+    clientWithRoute
+      pm
+      (Proxy :: Proxy api)
+      ( if flag
+          then appendToQueryString paramname Nothing req
+          else req
+      )
+    where
+      paramname = pack $ symbolVal (Proxy :: Proxy sym)
 
   hoistClientMonad pm _ f cl = \b ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl b)
 
-instance (HasClient m api)
-      => HasClient m (QueryString :> api) where
-  type Client m (QueryString :> api) =
-    H.Query -> Client m api
+instance
+  HasClient m api
+  => HasClient m (QueryString :> api)
+  where
+  type
+    Client m (QueryString :> api) =
+      H.Query -> Client m api
 
   clientWithRoute pm Proxy req query =
-    clientWithRoute pm (Proxy :: Proxy api)
-                    (setQueryString query req)
+    clientWithRoute
+      pm
+      (Proxy :: Proxy api)
+      (setQueryString query req)
 
   hoistClientMonad pm _ f cl = \b ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl b)
 
-instance (KnownSymbol sym, ToDeepQuery a, HasClient m api)
-      => HasClient m (DeepQuery sym a :> api) where
-  type Client m (DeepQuery sym a :> api) =
-    a -> Client m api
+instance
+  (HasClient m api, KnownSymbol sym, ToDeepQuery a)
+  => HasClient m (DeepQuery sym a :> api)
+  where
+  type
+    Client m (DeepQuery sym a :> api) =
+      a -> Client m api
 
   clientWithRoute pm Proxy req deepObject =
     let params = toDeepQuery deepObject
@@ -748,8 +911,10 @@ instance (KnownSymbol sym, ToDeepQuery a, HasClient m api)
           let (k, textV) = generateDeepParam paramname kv
            in appendToQueryString k (encodeUtf8 <$> textV) r'
         paramname = pack $ symbolVal (Proxy :: Proxy sym)
-     in clientWithRoute pm (Proxy :: Proxy api)
-                        withParams
+     in clientWithRoute
+          pm
+          (Proxy :: Proxy api)
+          withParams
 
   hoistClientMonad pm _ f cl = \b ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl b)
@@ -757,22 +922,24 @@ instance (KnownSymbol sym, ToDeepQuery a, HasClient m api)
 -- | Pick a 'Method' and specify where the server you want to query is. You get
 -- back the full `Response`.
 instance RunClient m => HasClient m Raw where
-  type Client m Raw
-    = H.Method ->  m Response
+  type
+    Client m Raw =
+      H.Method -> m Response
 
   clientWithRoute :: Proxy m -> Proxy Raw -> Request -> Client m Raw
   clientWithRoute _pm Proxy req httpMethod = do
-    runRequest req { requestMethod = httpMethod }
+    runRequest req{requestMethod = httpMethod}
 
   hoistClientMonad _ _ f cl = \meth -> f (cl meth)
 
 instance RunClient m => HasClient m RawM where
-  type Client m RawM
-    = H.Method ->  m Response
+  type
+    Client m RawM =
+      H.Method -> m Response
 
   clientWithRoute :: Proxy m -> Proxy RawM -> Request -> Client m RawM
   clientWithRoute _pm Proxy req httpMethod = do
-    runRequest req { requestMethod = httpMethod }
+    runRequest req{requestMethod = httpMethod}
 
   hoistClientMonad _ _ f cl = \meth -> f (cl meth)
 
@@ -794,55 +961,66 @@ instance RunClient m => HasClient m RawM where
 -- > addBook :: Book -> ClientM Book
 -- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
-instance (MimeRender ct a, HasClient m api)
-      => HasClient m (ReqBody' mods (ct ': cts) a :> api) where
-
-  type Client m (ReqBody' mods (ct ': cts) a :> api) =
-    a -> Client m api
+instance
+  (HasClient m api, MimeRender ct a)
+  => HasClient m (ReqBody' mods (ct ': cts) a :> api)
+  where
+  type
+    Client m (ReqBody' mods (ct ': cts) a :> api) =
+      a -> Client m api
 
   clientWithRoute pm Proxy req body =
-    clientWithRoute pm (Proxy :: Proxy api)
-                    (let ctProxy = Proxy :: Proxy ct
-                     in setRequestBodyLBS (mimeRender ctProxy body)
-                                          -- We use first contentType from the Accept list
-                                          (contentType ctProxy)
-                                          req
-                    )
+    clientWithRoute
+      pm
+      (Proxy :: Proxy api)
+      ( let ctProxy = Proxy :: Proxy ct
+         in setRequestBodyLBS
+              (mimeRender ctProxy body)
+              -- We use first contentType from the Accept list
+              (contentType ctProxy)
+              req
+      )
 
   hoistClientMonad pm _ f cl = \a ->
     hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
 
 instance
-    ( HasClient m api, MimeRender ctype chunk, FramingRender framing, ToSourceIO chunk a
-    ) => HasClient m (StreamBody' mods framing ctype a :> api)
+  ( FramingRender framing
+  , HasClient m api
+  , MimeRender ctype chunk
+  , ToSourceIO chunk a
+  )
+  => HasClient m (StreamBody' mods framing ctype a :> api)
   where
+  type Client m (StreamBody' mods framing ctype a :> api) = a -> Client m api
 
-    type Client m (StreamBody' mods framing ctype a :> api) = a -> Client m api
+  hoistClientMonad pm _ f cl = \a ->
+    hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
 
-    hoistClientMonad pm _ f cl = \a ->
-      hoistClientMonad pm (Proxy :: Proxy api) f (cl a)
+  clientWithRoute pm Proxy req body =
+    clientWithRoute pm (Proxy :: Proxy api) $
+      setRequestBody (RequestBodySource sourceIO) (contentType ctypeP) req
+    where
+      ctypeP = Proxy :: Proxy ctype
+      framingP = Proxy :: Proxy framing
 
-    clientWithRoute pm Proxy req body
-        = clientWithRoute pm (Proxy :: Proxy api)
-        $ setRequestBody (RequestBodySource sourceIO) (contentType ctypeP) req
-      where
-        ctypeP   = Proxy :: Proxy ctype
-        framingP = Proxy :: Proxy framing
-
-        sourceIO = framingRender
-            framingP
-            (mimeRender ctypeP :: chunk -> BSL.ByteString)
-            (toSourceIO body)
+      sourceIO =
+        framingRender
+          framingP
+          (mimeRender ctypeP :: chunk -> BSL.ByteString)
+          (toSourceIO body)
 
 -- | Make the querying function append @path@ to the request path.
-instance (KnownSymbol path, HasClient m api) => HasClient m (path :> api) where
+instance (HasClient m api, KnownSymbol path) => HasClient m (path :> api) where
   type Client m (path :> api) = Client m api
 
   clientWithRoute pm Proxy req =
-     clientWithRoute pm (Proxy :: Proxy api)
-                     (appendToPath p req)
-
-    where p = toEncodedUrlPiece $ pack $ symbolVal (Proxy :: Proxy path)
+    clientWithRoute
+      pm
+      (Proxy :: Proxy api)
+      (appendToPath p req)
+    where
+      p = toEncodedUrlPiece $ pack $ symbolVal (Proxy :: Proxy path)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
@@ -870,28 +1048,33 @@ instance HasClient m api => HasClient m (IsSecure :> api) where
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f cl
 
-instance HasClient m subapi =>
-  HasClient m (WithNamedContext name context subapi) where
-
+instance
+  HasClient m subapi
+  => HasClient m (WithNamedContext name context subapi)
+  where
   type Client m (WithNamedContext name context subapi) = Client m subapi
   clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl
 
-instance HasClient m subapi =>
-  HasClient m (WithResource res :> subapi) where
-
+instance
+  HasClient m subapi
+  => HasClient m (WithResource res :> subapi)
+  where
   type Client m (WithResource res :> subapi) = Client m subapi
   clientWithRoute pm Proxy = clientWithRoute pm (Proxy :: Proxy subapi)
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy subapi) f cl
 
-instance ( HasClient m api
-         ) => HasClient m (AuthProtect tag :> api) where
-  type Client m (AuthProtect tag :> api)
-    = AuthenticatedRequest (AuthProtect tag) -> Client m api
+instance
+  HasClient m api
+  => HasClient m (AuthProtect tag :> api)
+  where
+  type
+    Client m (AuthProtect tag :> api) =
+      AuthenticatedRequest (AuthProtect tag) -> Client m api
 
-  clientWithRoute pm Proxy req (AuthenticatedRequest (val,func)) =
+  clientWithRoute pm Proxy req (AuthenticatedRequest (val, func)) =
     clientWithRoute pm (Proxy :: Proxy api) (func val req)
 
   hoistClientMonad pm _ f cl = \authreq ->
@@ -911,9 +1094,13 @@ instance ( HasClient m api
 -- > getBooks = client myApi
 -- > -- then you can just use "getBooksBy" to query that endpoint.
 -- > -- 'getBooks' for all books.
-instance (AtMostOneFragment api, FragmentUnique (Fragment a :> api), HasClient m api
-         ) => HasClient m (Fragment a :> api) where
-
+instance
+  ( AtMostOneFragment api
+  , FragmentUnique (Fragment a :> api)
+  , HasClient m api
+  )
+  => HasClient m (Fragment a :> api)
+  where
   type Client m (Fragment a :> api) = Client m api
 
   clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
@@ -933,8 +1120,9 @@ instance HasClient m api => HasClient m (BasicAuth realm usr :> api) where
 
 -- | A type that specifies that an API record contains a client implementation.
 data AsClientT (m :: Type -> Type)
+
 instance GenericMode (AsClientT m) where
-    type AsClientT m :- api = Client m api
+  type AsClientT m :- api = Client m api
 
 type GClientConstraints api m =
   ( GenericServant api (AsClientT m)
@@ -948,22 +1136,23 @@ instance GClientConstraints api m => GClient api m where
   gClientProof = Dict
 
 instance
-  ( forall n. GClient api n
+  ( ErrorIfNoGeneric api
   , HasClient m (ToServantApi api)
   , RunClient m
-  , ErrorIfNoGeneric api
+  , forall n. GClient api n
   )
-  => HasClient m (NamedRoutes api) where
+  => HasClient m (NamedRoutes api)
+  where
   type Client m (NamedRoutes api) = api (AsClientT m)
 
   clientWithRoute :: Proxy m -> Proxy (NamedRoutes api) -> Request -> Client m (NamedRoutes api)
   clientWithRoute pm _ request =
     case gClientProof @api @m of
-      Dict -> fromServant $ clientWithRoute  pm (Proxy @(ToServantApi api)) request
+      Dict -> fromServant $ clientWithRoute pm (Proxy @(ToServantApi api)) request
 
   hoistClientMonad
-    :: forall ma mb.
-       Proxy m
+    :: forall ma mb
+     . Proxy m
     -> Proxy (NamedRoutes api)
     -> (forall x. ma x -> mb x)
     -> Client ma (NamedRoutes api)
@@ -972,10 +1161,11 @@ instance
     case (gClientProof @api @ma, gClientProof @api @mb) of
       (Dict, Dict) ->
         fromServant @api @(AsClientT mb) $
-        hoistClientMonad @m @(ToServantApi api) @ma @mb Proxy Proxy nat $
-        toServant @api @(AsClientT ma) clientA
+          hoistClientMonad @m @(ToServantApi api) @ma @mb Proxy Proxy nat $
+            toServant @api @(AsClientT ma) clientA
 
 infixl 1 //
+
 infixl 2 /:
 
 -- | Helper to make code using records of clients more readable.
@@ -1046,23 +1236,23 @@ x // f = f x
 (/:) = flip
 
 instance
-  ( ResponseListUnrender cs as,
-    AllMime cs,
-    ReflectMethod method,
-    AsUnion as r,
-    RunClient m
-  ) =>
-  HasClient m (MultiVerb method cs as r)
+  ( AllMime cs
+  , AsUnion as r
+  , ReflectMethod method
+  , ResponseListUnrender cs as
+  , RunClient m
+  )
+  => HasClient m (MultiVerb method cs as r)
   where
   type Client m (MultiVerb method cs as r) = m r
 
   clientWithRoute _ _ req = do
-    response@Response{responseBody=body} <-
+    response@Response{responseBody = body} <-
       runRequestAcceptStatus
         (Just (responseListStatuses @cs @as))
         req
-          { requestMethod = method,
-            requestAccept = Seq.fromList accept
+          { requestMethod = method
+          , requestAccept = Seq.fromList accept
           }
 
     c <- getResponseContentType response
@@ -1072,7 +1262,7 @@ instance
     -- NOTE: support streaming in the future
     let sresp =
           if BSL.null body
-            then SomeClientResponse $ response {Response.responseBody = ()}
+            then SomeClientResponse $ response{Response.responseBody = ()}
             else SomeClientResponse response
     case responseListUnrender @cs @as c sresp of
       StatusMismatch -> throwClientError (DecodeFailure "Status mismatch" response)
@@ -1084,7 +1274,7 @@ instance
 
   hoistClientMonad _ _ f = f
 
-getResponseContentType :: (RunClient m) => Response -> m M.MediaType
+getResponseContentType :: RunClient m => Response -> m M.MediaType
 getResponseContentType response =
   case lookup "Content-Type" (toList (responseHeaders response)) of
     Nothing -> pure $ "application" M.// "octet-stream"
@@ -1120,12 +1310,17 @@ checkContentTypeHeader response =
       Nothing -> throwClientError $ InvalidContentTypeHeader response
       Just t' -> return t'
 
-decodedAs :: forall ct a m. (MimeUnrender ct a, RunClient m)
-  => Response -> Proxy ct -> m a
-decodedAs response@Response{responseBody=body} ct = do
+decodedAs
+  :: forall ct a m
+   . (MimeUnrender ct a, RunClient m)
+  => Response
+  -> Proxy ct
+  -> m a
+decodedAs response@Response{responseBody = body} ct = do
   responseContentType <- checkContentTypeHeader response
   unless (any (matches responseContentType) accept) $
-    throwClientError $ UnsupportedContentType responseContentType response
+    throwClientError $
+      UnsupportedContentType responseContentType response
   case mimeUnrender ct body of
     Left err -> throwClientError $ DecodeFailure (T.pack err) response
     Right val -> return val
@@ -1137,11 +1332,10 @@ decodedAs response@Response{responseBody=body} ct = do
 -------------------------------------------------------------------------------
 
 -- Erroring instance for HasClient' when a combinator is not fully applied
-instance (RunClient m, TypeError (PartialApplication HasClient arr)) => HasClient m ((arr :: a -> b) :> sub)
-  where
-    type Client m (arr :> sub) = TypeError (PartialApplication HasClient arr)
-    clientWithRoute _ _ _ = error "unreachable"
-    hoistClientMonad _ _ _ _ = error "unreachable"
+instance (RunClient m, TypeError (PartialApplication HasClient arr)) => HasClient m ((arr :: a -> b) :> sub) where
+  type Client m (arr :> sub) = TypeError (PartialApplication HasClient arr)
+  clientWithRoute _ _ _ = error "unreachable"
+  hoistClientMonad _ _ _ _ = error "unreachable"
 
 -- Erroring instances for 'HasClient' for unknown API combinators
 instance {-# OVERLAPPABLE #-} (RunClient m, TypeError (NoInstanceForSub (HasClient m) ty)) => HasClient m (ty :> sub)

@@ -2,13 +2,13 @@
 
 module JavascriptSpec where
 
-import           Data.List
-import           Data.String
-import           Data.String.Conversions
-import           Test.Hspec
-import           Test.Hspec.Wai
+import Data.List
+import Data.String
+import Data.String.Conversions
+import Test.Hspec
+import Test.Hspec.Wai
 
-import           Javascript
+import Javascript
 
 spec :: Spec
 spec = do

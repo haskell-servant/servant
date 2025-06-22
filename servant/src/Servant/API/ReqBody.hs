@@ -1,16 +1,18 @@
-{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds          #-}
-{-# OPTIONS_HADDOCK not-home    #-}
-module Servant.API.ReqBody (
-    ReqBody, ReqBody',
-    ) where
+{-# LANGUAGE PolyKinds #-}
+{-# OPTIONS_HADDOCK not-home #-}
 
-import           Data.Kind
-                 (Type)
-import           Data.Typeable
-                 (Typeable)
-import           Servant.API.Modifiers
+module Servant.API.ReqBody
+  ( ReqBody
+  , ReqBody'
+  )
+where
+
+import Data.Kind (Type)
+import Data.Typeable (Typeable)
+
+import Servant.API.Modifiers
 
 -- | Extract the request body as a value of type @a@.
 --
@@ -24,7 +26,7 @@ type ReqBody = ReqBody' '[Required, Strict]
 --
 -- /Note:/ 'ReqBody'' is always 'Required'.
 data ReqBody' (mods :: [Type]) (contentTypes :: [Type]) (a :: Type)
-    deriving (Typeable)
+  deriving (Typeable)
 
 -- $setup
 -- >>> import Servant.API

@@ -1,14 +1,14 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DeriveGeneric #-}
+
 module Servant.API.IsSecure
   ( -- $issecure
-    IsSecure(..)
-  ) where
+    IsSecure (..)
+  )
+where
 
-import           Data.Typeable
-                 (Typeable)
-import           GHC.Generics
-                 (Generic)
+import Data.Typeable (Typeable)
+import GHC.Generics (Generic)
 
 -- | Was this request made over an SSL connection?
 --
@@ -19,11 +19,14 @@ import           GHC.Generics
 -- but connect to the WAI handler without SSL. In such a case,
 -- the handlers would get 'NotSecure', but from a user perspective,
 -- there is a secure connection.
-data IsSecure = Secure    -- ^ the connection to the server
-                          --   is secure (HTTPS)
-              | NotSecure -- ^ the connection to the server
-                          --   is not secure (HTTP)
-  deriving (Eq, Show, Read, Generic, Ord, Typeable)
+data IsSecure
+  = -- | the connection to the server
+    --   is secure (HTTPS)
+    Secure
+  | -- | the connection to the server
+    --   is not secure (HTTP)
+    NotSecure
+  deriving (Eq, Generic, Ord, Read, Show, Typeable)
 
 -- $issecure
 --

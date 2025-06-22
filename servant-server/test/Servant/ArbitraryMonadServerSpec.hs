@@ -1,25 +1,25 @@
-{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Servant.ArbitraryMonadServerSpec where
 
-import           Control.Monad.Reader
-import           Data.Functor.Identity
-import           Data.Proxy
-import           Servant.API
-import           Servant.Server
+import Control.Monad.Reader
+import Data.Functor.Identity
+import Data.Proxy
+import Servant.API
+import Test.Hspec (Spec, describe, it)
+import Test.Hspec.Wai (get, matchStatus, post, shouldRespondWith, with)
 
-import           Test.Hspec
-                 (Spec, describe, it)
-import           Test.Hspec.Wai
-                 (get, matchStatus, post, shouldRespondWith, with)
+import Servant.Server
 
 spec :: Spec
 spec = describe "Arbitrary monad server" $ do
-    enterSpec
+  enterSpec
 
-type ReaderAPI = "int" :> Get '[JSON] Int
-            :<|> "string" :> Post '[JSON] String
+type ReaderAPI =
+  "int" :> Get '[JSON] Int
+    :<|> "string" :> Post '[JSON] String
 
 type IdentityAPI = "bool" :> Get '[JSON] Bool
 
@@ -52,10 +52,9 @@ combinedReaderServer = hoistServer combinedAPI fReader combinedReaderServer'
 enterSpec :: Spec
 enterSpec = describe "Enter" $ do
   with (return (serve readerAPI readerServer)) $ do
-
     it "allows running arbitrary monads" $ do
       get "int" `shouldRespondWith` "1797"
-      post "string" "3" `shouldRespondWith` "\"hi\""{ matchStatus = 200 }
+      post "string" "3" `shouldRespondWith` "\"hi\""{matchStatus = 200}
 
   with (return (serve combinedAPI combinedReaderServer)) $ do
     it "allows combnation of enters" $ do

@@ -1,23 +1,22 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Servant.Server.Internal.Context
   ( module Servant.Server.Internal.Context
   , module Servant.API.TypeLevel.List
-  ) where
+  )
+where
 
-import           Data.Kind 
-                 (Type)
-import           Data.Proxy
-import           GHC.TypeLits
-import           Servant.API.TypeLevel.List
-                 (type (.++))
+import Data.Kind (Type)
+import Data.Proxy
+import GHC.TypeLits
+import Servant.API.TypeLevel.List (type (.++))
 
 -- | 'Context's are used to pass values to combinators. (They are __not__ meant
 -- to be used to pass parameters to your handlers, i.e. they should not replace
@@ -36,21 +35,24 @@ import           Servant.API.TypeLevel.List
 -- >>> :type True :. () :. EmptyContext
 -- True :. () :. EmptyContext :: Context '[Bool, ()]
 data Context contextTypes where
-    EmptyContext :: Context '[]
-    (:.) :: x -> Context xs -> Context (x ': xs)
+  EmptyContext :: Context '[]
+  (:.) :: x -> Context xs -> Context (x ': xs)
+
 infixr 5 :.
 
 instance Show (Context '[]) where
   show EmptyContext = "EmptyContext"
-instance (Show a, Show (Context as)) => Show (Context (a ': as)) where
+
+instance (Show (Context as), Show a) => Show (Context (a ': as)) where
   showsPrec outerPrecedence (a :. as) =
     showParen (outerPrecedence > 5) $
       shows a . showString " :. " . shows as
 
 instance Eq (Context '[]) where
-    _ == _ = True
-instance (Eq a, Eq (Context as)) => Eq (Context (a ': as)) where
-    x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
+  _ == _ = True
+
+instance (Eq (Context as), Eq a) => Eq (Context (a ': as)) where
+  x1 :. y1 == x2 :. y2 = x1 == x2 && y1 == y2
 
 -- | Append two contexts.
 (.++) :: Context l1 -> Context l2 -> Context (l1 .++ l2)
@@ -71,15 +73,13 @@ EmptyContext .++ a = a
 -- ...No instance for ...HasContextEntry '[] [Char]...
 -- ...
 class HasContextEntry (context :: [Type]) (val :: Type) where
-    getContextEntry :: Context context -> val
+  getContextEntry :: Context context -> val
 
-instance {-# OVERLAPPABLE #-}
-         HasContextEntry xs val => HasContextEntry (notIt ': xs) val where
-    getContextEntry (_ :. xs) = getContextEntry xs
+instance {-# OVERLAPPABLE #-} HasContextEntry xs val => HasContextEntry (notIt ': xs) val where
+  getContextEntry (_ :. xs) = getContextEntry xs
 
-instance {-# OVERLAPPING #-}
-         HasContextEntry (val ': xs) val where
-    getContextEntry (x :. _) = x
+instance {-# OVERLAPPING #-} HasContextEntry (val ': xs) val where
+  getContextEntry (x :. _) = x
 
 -- * support for named subcontexts
 
@@ -105,9 +105,12 @@ newtype NamedContext (name :: Symbol) (subContext :: [Type])
 -- parentContext :: Context '[Bool, NamedContext "subContext" '[Bool]]
 -- >>> descendIntoNamedContext (Proxy :: Proxy "subContext") parentContext :: Context '[Bool]
 -- True :. EmptyContext
-descendIntoNamedContext :: forall context name subContext .
-  HasContextEntry context (NamedContext name subContext) =>
-  Proxy (name :: Symbol) -> Context context -> Context subContext
+descendIntoNamedContext
+  :: forall context name subContext
+   . HasContextEntry context (NamedContext name subContext)
+  => Proxy (name :: Symbol)
+  -> Context context
+  -> Context subContext
 descendIntoNamedContext Proxy context =
   let NamedContext subContext = getContextEntry context :: NamedContext name subContext
-  in subContext
+   in subContext

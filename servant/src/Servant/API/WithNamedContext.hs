@@ -1,11 +1,10 @@
-{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 
 module Servant.API.WithNamedContext where
 
-import           GHC.TypeLits
-import           Data.Kind
-                 (Type)
+import Data.Kind (Type)
+import GHC.TypeLits
 
 -- | 'WithNamedContext' names a specific tagged context to use for the
 -- combinators in the API. (See also in @servant-server@,

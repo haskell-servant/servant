@@ -1,11 +1,11 @@
-{-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
-{-# LANGUAGE PatternSynonyms     #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
@@ -16,11 +16,11 @@ module Servant.Server
   , serveWithContextT
   , ServerContext
 
-  , -- * Construct a wai Application from an API
-    toApplication
+    -- * Construct a wai Application from an API
+  , toApplication
 
-  , -- * Handlers for all standard combinators
-    HasServer(..)
+    -- * Handlers for all standard combinators
+  , HasServer (..)
   , Server
   , EmptyServer
   , emptyServer
@@ -35,29 +35,32 @@ module Servant.Server
     -- * Enter / hoisting server
   , hoistServer
 
-  -- ** Functions based on <https://hackage.haskell.org/package/mmorph mmorph>
+    -- ** Functions based on <https://hackage.haskell.org/package/mmorph mmorph>
   , tweakResponse
 
-  -- * Context
-  , Context(..)
-  , HasContextEntry(getContextEntry)
+    -- * Context
+  , Context (..)
+  , HasContextEntry (getContextEntry)
   , type (.++)
   , (.++)
-  -- ** NamedContext
-  , NamedContext(..)
+
+    -- ** NamedContext
+  , NamedContext (..)
   , descendIntoNamedContext
 
-  -- * Basic Authentication
-  , BasicAuthCheck(BasicAuthCheck, unBasicAuthCheck)
-  , BasicAuthResult(..)
+    -- * Basic Authentication
+  , BasicAuthCheck (BasicAuthCheck, unBasicAuthCheck)
+  , BasicAuthResult (..)
 
-  -- * General Authentication
+    -- * General Authentication
+
   -- , AuthHandler(unAuthHandler)
   -- , AuthServerData
   -- , mkAuthHandler
 
     -- * Default error type
-  , ServerError(..)
+  , ServerError (..)
+
     -- ** 3XX
   , err300
   , err301
@@ -66,6 +69,7 @@ module Servant.Server
   , err304
   , err305
   , err307
+
     -- ** 4XX
   , err400
   , err401
@@ -87,7 +91,8 @@ module Servant.Server
   , err418
   , err422
   , err429
-   -- ** 5XX
+
+    -- ** 5XX
   , err500
   , err501
   , err502
@@ -95,42 +100,36 @@ module Servant.Server
   , err504
   , err505
 
-  -- * Formatting of errors from combinators
-  --
-  -- | You can configure how Servant will render errors that occur while parsing the request.
+    -- * Formatting of errors from combinators
 
+  --
+
+    -- | You can configure how Servant will render errors that occur while parsing the request.
   , ErrorFormatter
   , NotFoundErrorFormatter
   , ErrorFormatters
-
   , bodyParserErrorFormatter
   , urlParseErrorFormatter
   , headerParseErrorFormatter
   , notFoundErrorFormatter
-
   , DefaultErrorFormatters
   , defaultErrorFormatters
-
   , getAcceptHeader
 
-  -- * Re-exports
+    -- * Re-exports
   , Application
   , Tagged (..)
   , module Servant.Server.UVerb
+  )
+where
 
-  ) where
+import Data.Proxy (Proxy (..))
+import Data.Tagged (Tagged (..))
+import Data.Text (Text)
+import Network.Wai (Application)
 
-import           Data.Proxy
-                 (Proxy (..))
-import           Data.Tagged
-                 (Tagged (..))
-import           Data.Text
-                 (Text)
-import           Network.Wai
-                 (Application)
-import           Servant.Server.Internal
-import           Servant.Server.UVerb
-
+import Servant.Server.Internal
+import Servant.Server.UVerb
 
 -- * Implementing Servers
 
@@ -140,8 +139,7 @@ import           Servant.Server.UVerb
 -- need to worry about these constraints, but if you write a helper function that wraps
 -- 'serveWithContext', you might need to include this constraint.
 type ServerContext context =
-  ( HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters
-  )
+  (HasContextEntry (context .++ DefaultErrorFormatters) ErrorFormatters)
 
 -- | 'serve' allows you to implement an API and produce a wai 'Application'.
 --
@@ -163,26 +161,33 @@ type ServerContext context =
 -- >
 -- > main :: IO ()
 -- > main = Network.Wai.Handler.Warp.run 8080 app
---
-serve :: (HasServer api '[]) => Proxy api -> Server api -> Application
+serve :: HasServer api '[] => Proxy api -> Server api -> Application
 serve p = serveWithContext p EmptyContext
 
 -- | Like 'serve', but allows you to pass custom context.
 --
 -- 'defaultErrorFormatters' will always be appended to the end of the passed context,
 -- but if you pass your own formatter, it will override the default one.
-serveWithContext :: ( HasServer api context
-                    , ServerContext context
-                    )
-    => Proxy api -> Context context -> Server api -> Application
+serveWithContext
+  :: ( HasServer api context
+     , ServerContext context
+     )
+  => Proxy api
+  -> Context context
+  -> Server api
+  -> Application
 serveWithContext p context = serveWithContextT p context id
 
 -- | A general 'serve' function that allows you to pass a custom context and hoisting function to
 -- apply on all routes.
-serveWithContextT ::
-  forall api context m.
-  (HasServer api context, ServerContext context) =>
-  Proxy api -> Context context -> (forall x. m x -> Handler x) -> ServerT api m -> Application
+serveWithContextT
+  :: forall api context m
+   . (HasServer api context, ServerContext context)
+  => Proxy api
+  -> Context context
+  -> (forall x. m x -> Handler x)
+  -> ServerT api m
+  -> Application
 serveWithContextT p context toHandler server =
   toApplication (runRouter format404 (route p context (emptyDelayed router)))
   where
@@ -208,9 +213,12 @@ serveWithContextT p context toHandler server =
 -- >>> let readerServer = return 1797 :<|> ask :<|> Tagged (error "raw server") :<|> emptyServer :: ServerT ReaderAPI (Reader String)
 -- >>> let nt x = return (runReader x "hi")
 -- >>> let mainServer = hoistServer readerApi nt readerServer :: Server ReaderAPI
---
-hoistServer :: (HasServer api '[]) => Proxy api
-            -> (forall x. m x -> n x) -> ServerT api m -> ServerT api n
+hoistServer
+  :: HasServer api '[]
+  => Proxy api
+  -> (forall x. m x -> n x)
+  -> ServerT api m
+  -> ServerT api n
 hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
 
 -- | The function 'layout' produces a textual description of the internal
@@ -264,13 +272,15 @@ hoistServer p = hoistServerWithContext p (Proxy :: Proxy '[])
 -- and below. If there is a success for fatal failure in the first part,
 -- that one takes precedence. If both parts fail, the \"better\" error
 -- code will be returned.
---
-layout :: (HasServer api '[]) => Proxy api -> Text
+layout :: HasServer api '[] => Proxy api -> Text
 layout p = layoutWithContext p EmptyContext
 
 -- | Variant of 'layout' that takes an additional 'Context'.
-layoutWithContext :: (HasServer api context)
-    => Proxy api -> Context context -> Text
+layoutWithContext
+  :: HasServer api context
+  => Proxy api
+  -> Context context
+  -> Text
 layoutWithContext p context =
   routerLayout (route p context (emptyDelayed (FailFatal err501)))
 

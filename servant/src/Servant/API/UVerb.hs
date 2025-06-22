@@ -1,7 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -10,7 +9,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-
 
 -- | An alternative to 'Verb' for end-points that respond with a resource value of any of an
 -- open union of types, and specific status codes for each type in this union.  (`UVerb` is
@@ -24,12 +22,12 @@
 --
 -- See <https://docs.servant.dev/en/latest/cookbook/uverb/UVerb.html> for a working example.
 module Servant.API.UVerb
-  ( UVerb,
-    HasStatus (StatusOf),
-    statusOf,
-    HasStatuses (Statuses, statuses),
-    WithStatus (..),
-    module Servant.API.UVerb.Union,
+  ( UVerb
+  , HasStatus (StatusOf)
+  , statusOf
+  , HasStatuses (Statuses, statuses)
+  , WithStatus (..)
+  , module Servant.API.UVerb.Union
   )
 where
 
@@ -37,9 +35,18 @@ import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import GHC.TypeLits (Nat)
 import Network.HTTP.Types (Status, StdMethod)
-import Servant.API.ContentTypes (JSON, PlainText, FormUrlEncoded, OctetStream, NoContent, MimeRender(mimeRender), MimeUnrender(mimeUnrender))
-import Servant.API.Status (KnownStatus, statusVal)
+
+import Servant.API.ContentTypes
+  ( FormUrlEncoded
+  , JSON
+  , MimeRender (mimeRender)
+  , MimeUnrender (mimeUnrender)
+  , NoContent
+  , OctetStream
+  , PlainText
+  )
 import Servant.API.ResponseHeaders (Headers)
+import Servant.API.Status (KnownStatus, statusVal)
 import Servant.API.UVerb.Union
 
 class KnownStatus (StatusOf a) => HasStatus (a :: Type) where

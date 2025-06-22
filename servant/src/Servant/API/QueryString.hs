@@ -15,12 +15,8 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Typeable
-  ( Typeable,
-  )
-import GHC.TypeLits
-  ( Symbol,
-  )
+import Data.Typeable (Typeable)
+import GHC.TypeLits (Symbol)
 import Web.HttpApiData (FromHttpApiData)
 import Web.Internal.HttpApiData (FromHttpApiData (..))
 
@@ -61,7 +57,7 @@ data DeepQuery (sym :: Symbol) (a :: Type)
 class FromDeepQuery a where
   fromDeepQuery :: [([Text], Maybe Text)] -> Either String a
 
-instance (FromHttpApiData a) => FromDeepQuery (Map Text a) where
+instance FromHttpApiData a => FromDeepQuery (Map Text a) where
   fromDeepQuery params =
     let parseParam ([k], Just rawV) = (k,) <$> first T.unpack (parseQueryParam rawV)
         parseParam (_, Nothing) = Left "Empty map value"

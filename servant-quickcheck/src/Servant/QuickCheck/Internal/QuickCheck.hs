@@ -1,37 +1,41 @@
 {-# LANGUAGE CPP #-}
+
 module Servant.QuickCheck.Internal.QuickCheck where
 
-import           Control.Concurrent       (tryReadMVar, newEmptyMVar, tryPutMVar)
-import           Control.Monad            (unless)
-import qualified Data.ByteString.Lazy     as LBS
-import           Data.Proxy               (Proxy)
-import qualified Network.HTTP.Client      as C
-import           Network.Wai.Handler.Warp (withApplication)
-import           Prelude.Compat
-import           Servant                  (Context (EmptyContext), HasServer,
-                                           Server, serveWithContext)
+import Control.Concurrent (newEmptyMVar, tryPutMVar, tryReadMVar)
+import Control.Monad (unless)
+import qualified Data.ByteString.Lazy as LBS
+import Data.Proxy (Proxy)
+import qualified Network.HTTP.Client as C
+import Network.Wai.Handler.Warp (withApplication)
+import Prelude.Compat
+import Servant (Context (EmptyContext), HasServer, Server, serveWithContext)
 #if MIN_VERSION_servant_server(0,18,0)
-import           Servant                  (DefaultErrorFormatters, ErrorFormatters, HasContextEntry, type (.++))
+import Servant
+    (DefaultErrorFormatters, ErrorFormatters, HasContextEntry, type (.++))
 #endif
-import           Servant.Client           (BaseUrl (..), Scheme (..))
-import           System.IO.Unsafe         (unsafePerformIO)
-import           Test.Hspec               (Expectation, expectationFailure)
-import           Test.QuickCheck          (Args (..),  Result (..), quickCheckWithResult)
-import           Test.QuickCheck.Monadic  (assert, forAllM, monadicIO, monitor,
-                                           run)
-import           Test.QuickCheck.Property (counterexample)
+import Servant.Client (BaseUrl (..), Scheme (..))
+import System.IO.Unsafe (unsafePerformIO)
+import Test.Hspec (Expectation, expectationFailure)
+import Test.QuickCheck (Args (..), Result (..), quickCheckWithResult)
+import Test.QuickCheck.Monadic (assert, forAllM, monadicIO, monitor, run)
+import Test.QuickCheck.Property (counterexample)
+
 import Servant.QuickCheck.Internal.Equality
 import Servant.QuickCheck.Internal.ErrorTypes
 import Servant.QuickCheck.Internal.HasGenRequest
 import Servant.QuickCheck.Internal.Predicates
 
-
 -- | Start a servant application on an open port, run the provided function,
 -- then stop the application.
 --
 -- /Since 0.0.0.0/
-withServantServer :: HasServer a '[] => Proxy a -> IO (Server a)
-  -> (BaseUrl -> IO r) -> IO r
+withServantServer
+  :: HasServer a '[]
+  => Proxy a
+  -> IO (Server a)
+  -> (BaseUrl -> IO r)
+  -> IO r
 withServantServer api = withServantServerAndContext api EmptyContext
 
 -- | Like 'withServantServer', but allows passing in a 'Context' to the
@@ -40,13 +44,14 @@ withServantServer api = withServantServerAndContext api EmptyContext
 -- /Since 0.0.0.0/
 #if MIN_VERSION_servant_server(0,18,0)
 withServantServerAndContext :: (HasServer a ctx, HasContextEntry (ctx .++ DefaultErrorFormatters) ErrorFormatters)
+  => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
 #else
 withServantServerAndContext :: HasServer a ctx
-#endif
   => Proxy a -> Context ctx -> IO (Server a) -> (BaseUrl -> IO r) -> IO r
-withServantServerAndContext api ctx server t
-  = withApplication (serveWithContext api ctx <$> server) $ \port ->
-      t (BaseUrl Http "localhost" port "")
+#endif
+withServantServerAndContext api ctx server t =
+  withApplication (serveWithContext api ctx <$> server) $ \port ->
+    t (BaseUrl Http "localhost" port "")
 
 -- | Check that the two servers running under the provided @BaseUrl@s behave
 -- identically by randomly generating arguments (captures, query params, request bodies,
@@ -72,31 +77,37 @@ withServantServerAndContext api ctx server t
 -- not listed in the API type are tested.
 --
 -- /Since 0.0.0.0/
-serversEqual :: HasGenRequest a =>
-  Proxy a -> BaseUrl -> BaseUrl -> Args -> ResponseEquality LBS.ByteString -> Expectation
+serversEqual
+  :: HasGenRequest a
+  => Proxy a
+  -> BaseUrl
+  -> BaseUrl
+  -> Args
+  -> ResponseEquality LBS.ByteString
+  -> Expectation
 serversEqual api burl1 burl2 args req = do
   let reqs = (\f -> (f burl1, f burl2)) <$> runGenRequest api
   -- This MVar stuff is clunky! But there doesn't seem to be an easy way to
   -- return results when a test fails, since an exception is throw.
   deetsMVar <- newEmptyMVar
-  r <- quickCheckWithResult args { chatty = False } $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
+  r <- quickCheckWithResult args{chatty = False} $ monadicIO $ forAllM reqs $ \(req1, req2) -> do
     resp1 <- run $ C.httpLbs (noCheckStatus req1) defManager
     resp2 <- run $ C.httpLbs (noCheckStatus req2) defManager
     unless (getResponseEquality req resp1 resp2) $ do
-      monitor (counterexample "hi" )
+      monitor (counterexample "hi")
       _ <- run $ tryPutMVar deetsMVar $ ServerEqualityFailure req1 resp1 resp2
       assert False
   case r of
-    Success {} -> return ()
-    Failure {} -> do
+    Success{} -> return ()
+    Failure{} -> do
       mx <- tryReadMVar deetsMVar
       case mx of
         Just x ->
           expectationFailure $ "Failed:\n" ++ show x
         Nothing ->
           expectationFailure $ "We failed to record a reason for failure: " <> show r
-    GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
-    NoExpectedFailure {} -> expectationFailure "No expected failure"
+    GaveUp{numTests = n} -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
+    NoExpectedFailure{} -> expectationFailure "No expected failure"
 #if MIN_VERSION_QuickCheck(2,12,0)
 #else
     InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
@@ -121,9 +132,14 @@ serversEqual api burl1 burl2 args req = do
 -- >                                     <%> mempty)
 --
 -- /Since 0.0.0.0/
-serverSatisfies :: (HasGenRequest a) =>
-  Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
-serverSatisfies api =  serverSatisfiesMgr api defManager
+serverSatisfies
+  :: HasGenRequest a
+  => Proxy a
+  -> BaseUrl
+  -> Args
+  -> Predicates
+  -> Expectation
+serverSatisfies api = serverSatisfiesMgr api defManager
 
 -- | Check that a server satisfies the set of properties specified, and
 -- accept a 'Manager' for running the HTTP requests through.
@@ -131,49 +147,66 @@ serverSatisfies api =  serverSatisfiesMgr api defManager
 -- See 'serverSatisfies' for more details.
 --
 -- @since 0.0.7.2
-serverSatisfiesMgr :: (HasGenRequest a) =>
-  Proxy a -> C.Manager -> BaseUrl -> Args -> Predicates -> Expectation
+serverSatisfiesMgr
+  :: HasGenRequest a
+  => Proxy a
+  -> C.Manager
+  -> BaseUrl
+  -> Args
+  -> Predicates
+  -> Expectation
 serverSatisfiesMgr api manager burl args preds = do
   let reqs = ($ burl) <$> runGenRequest api
   deetsMVar <- newEmptyMVar
-  r <- quickCheckWithResult args { chatty = False } $ monadicIO $ forAllM reqs $ \req -> do
+  r <- quickCheckWithResult args{chatty = False} $ monadicIO $ forAllM reqs $ \req -> do
     v <- run $ finishPredicates preds (noCheckStatus req) manager
     _ <- run $ tryPutMVar deetsMVar v
     case v of
       Just _ -> assert False
       _ -> return ()
   case r of
-    Success {} -> return ()
-    Failure {} -> do
+    Success{} -> return ()
+    Failure{} -> do
       mx <- tryReadMVar deetsMVar
       case mx of
         Just x ->
           expectationFailure $ "Failed:\n" ++ show x
         Nothing ->
           expectationFailure $ "We failed to record a reason for failure: " <> show r
-    GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
-    NoExpectedFailure {} -> expectationFailure "No expected failure"
+    GaveUp{numTests = n} -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
+    NoExpectedFailure{} -> expectationFailure "No expected failure"
 #if MIN_VERSION_QuickCheck(2,12,0)
 #else
     InsufficientCoverage {} -> expectationFailure "Insufficient coverage"
 #endif
 
-serverDoesntSatisfy :: (HasGenRequest a) =>
-  Proxy a -> BaseUrl -> Args -> Predicates -> Expectation
+serverDoesntSatisfy
+  :: HasGenRequest a
+  => Proxy a
+  -> BaseUrl
+  -> Args
+  -> Predicates
+  -> Expectation
 serverDoesntSatisfy api = serverDoesntSatisfyMgr api defManager
 
-serverDoesntSatisfyMgr :: (HasGenRequest a) =>
-  Proxy a -> C.Manager -> BaseUrl -> Args -> Predicates -> Expectation
+serverDoesntSatisfyMgr
+  :: HasGenRequest a
+  => Proxy a
+  -> C.Manager
+  -> BaseUrl
+  -> Args
+  -> Predicates
+  -> Expectation
 serverDoesntSatisfyMgr api manager burl args preds = do
   let reqs = ($ burl) <$> runGenRequest api
   r <- quickCheckWithResult args $ monadicIO $ forAllM reqs $ \req -> do
-     v <- run $ finishPredicates preds (noCheckStatus req) manager
-     assert $ not $ null v
+    v <- run $ finishPredicates preds (noCheckStatus req) manager
+    assert $ not $ null v
   case r of
-    Success {} -> return ()
-    GaveUp { numTests = n } -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
-    Failure { output = m } -> expectationFailure $ "Failed:\n" ++ show m
-    NoExpectedFailure {} -> expectationFailure "No expected failure"
+    Success{} -> return ()
+    GaveUp{numTests = n} -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
+    Failure{output = m} -> expectationFailure $ "Failed:\n" ++ show m
+    NoExpectedFailure{} -> expectationFailure "No expected failure"
 #if MIN_VERSION_QuickCheck(2,12,0)
 #else
     InsufficientCoverage {} -> expectationFailure "Insufficient coverage"

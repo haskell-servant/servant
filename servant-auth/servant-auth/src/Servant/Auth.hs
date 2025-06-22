@@ -1,14 +1,15 @@
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Servant.Auth where
 
-import           Data.Kind           (Type)
-import           Data.Proxy          (Proxy(..))
-import           Servant.API         ((:>))
-import           Servant.Links       (HasLink (..))
+import Data.Kind (Type)
+import Data.Proxy (Proxy (..))
+import Servant.API ((:>))
+import Servant.Links (HasLink (..))
 
 -- * Authentication
 
@@ -17,13 +18,15 @@ import           Servant.Links       (HasLink (..))
 data Auth (auths :: [Type]) val
 
 -- | A @HasLink@ instance for @Auth@
-instance HasLink sub => HasLink (Auth (tag :: [Type]) value :> sub) where
+instance HasLink sub => HasLink (Auth (tag :: [Type]) value :> sub)
 #if MIN_VERSION_servant(0,14,0)
-  type MkLink (Auth (tag :: [Type]) value :> sub) a = MkLink sub a
-  toLink toA _ = toLink toA (Proxy :: Proxy sub)
+  where
+    type MkLink (Auth (tag :: [Type]) value :> sub) a = MkLink sub a
+    toLink toA _ = toLink toA (Proxy :: Proxy sub)
 #else
-  type MkLink (Auth (tag :: [Type]) value :> sub) = MkLink sub
-  toLink _ = toLink (Proxy :: Proxy sub)
+  where
+    type MkLink (Auth (tag :: [Type]) value :> sub) = MkLink sub
+    toLink _ = toLink (Proxy :: Proxy sub)
 #endif
 
 -- ** Combinators
@@ -43,11 +46,11 @@ data JWT
 -- header, for XSRF protection.
 data Cookie
 
-
 -- We could use 'servant''s BasicAuth, but then we don't get control over the
 -- documentation, and we'd have to polykind everything. (Also, we don't
 -- currently depend on servant!)
 --
+
 -- | Basic Auth.
 data BasicAuth
 

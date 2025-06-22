@@ -1,39 +1,37 @@
-{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE PatternSynonyms            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TypeFamilies #-}
+
 module Servant.Server.Internal.Handler where
 
-import           Control.Monad.Base
-                 (MonadBase (..))
-import           Control.Monad.Catch
-                 (MonadCatch, MonadMask, MonadThrow)
-import           Control.Monad.Error.Class
-                 (MonadError, throwError)
-import           Control.Monad.IO.Class
-                 (MonadIO)
-import           Control.Monad.Trans.Control
-                 (MonadBaseControl (..))
-import           Control.Monad.Trans.Except
-                 (ExceptT(ExceptT), runExceptT)
-import           Data.String
-                 (fromString)
-import           GHC.Generics
-                 (Generic)
-import           Servant.Server.Internal.ServerError
-                 (ServerError, errBody, err500)
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
+import Control.Monad.Error.Class (MonadError, throwError)
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Trans.Control (MonadBaseControl (..))
+import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT)
+import Data.String (fromString)
+import GHC.Generics (Generic)
 
-newtype Handler a = Handler { runHandler' :: ExceptT ServerError IO a }
+import Servant.Server.Internal.ServerError (ServerError, err500, errBody)
+
+newtype Handler a = Handler {runHandler' :: ExceptT ServerError IO a}
   deriving stock (Generic)
   deriving newtype
-    ( Functor, Applicative, Monad, MonadIO
+    ( Applicative
+    , Functor
+    , Monad
+    , MonadCatch
     , MonadError ServerError
-    , MonadThrow, MonadCatch, MonadMask
+    , MonadIO
+    , MonadMask
+    , MonadThrow
     )
 
 instance MonadFail Handler where
-  fail str = throwError err500 { errBody = fromString str }
+  fail str = throwError err500{errBody = fromString str}
 
 instance MonadBase IO Handler where
   liftBase = Handler . liftBase
@@ -55,4 +53,5 @@ runHandler = runExceptT . runHandler'
 -- To lift 'IO' actions that don't carry a 'ServerError', use 'Control.Monad.IO.Class.liftIO' instead.
 pattern MkHandler :: IO (Either ServerError a) -> Handler a
 pattern MkHandler ioe = Handler (ExceptT ioe)
+
 {-# COMPLETE MkHandler #-}

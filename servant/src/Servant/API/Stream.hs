@@ -1,81 +1,77 @@
-{-# LANGUAGE DataKinds              #-}
-{-# LANGUAGE DeriveDataTypeable     #-}
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
-
-
-{-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE PolyKinds              #-}
-{-# LANGUAGE RankNTypes             #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
-module Servant.API.Stream (
-    Stream,
-    StreamGet,
-    StreamPost,
-    StreamBody,
-    StreamBody',
+module Servant.API.Stream
+  ( Stream
+  , StreamGet
+  , StreamPost
+  , StreamBody
+  , StreamBody'
+
     -- * Source
-    --
+
+  --
+
     -- | 'SourceIO' are equivalent to some *source* in streaming libraries.
-    SourceIO,
-    ToSourceIO (..),
-    FromSourceIO (..),
+  , SourceIO
+  , ToSourceIO (..)
+  , FromSourceIO (..)
+
     -- ** Auxiliary classes
-    SourceToSourceIO (..),
+  , SourceToSourceIO (..)
+
     -- * Framing
-    FramingRender (..),
-    FramingUnrender (..),
+  , FramingRender (..)
+  , FramingUnrender (..)
+
     -- ** Strategies
-    NoFraming,
-    NewlineFraming,
-    NetstringFraming,
-    ) where
+  , NoFraming
+  , NewlineFraming
+  , NetstringFraming
+  )
+where
 
-
-import           Control.Applicative
-                 ((<|>))
-import           Control.Monad.IO.Class
-                 (MonadIO (..))
-import qualified Data.Attoparsec.ByteString       as A
+import Control.Applicative ((<|>))
+import Control.Monad.IO.Class (MonadIO (..))
+import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.ByteString.Char8 as A8
-import qualified Data.ByteString                  as BS
-import qualified Data.ByteString.Lazy             as LBS
-import qualified Data.ByteString.Lazy.Char8       as LBS8
-import           Data.Kind
-                 (Type)
-import           Data.List.NonEmpty
-                 (NonEmpty (..))
-import           Data.Proxy
-                 (Proxy)
-import           Data.Typeable
-                 (Typeable)
-import           GHC.Generics
-                 (Generic)
-import           GHC.TypeLits
-                 (Nat)
-import           Network.HTTP.Types.Method
-                 (StdMethod (..))
-import           Servant.Types.SourceT
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as LBS8
+import Data.Kind (Type)
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Proxy (Proxy)
+import Data.Typeable (Typeable)
+import GHC.Generics (Generic)
+import GHC.TypeLits (Nat)
+import Network.HTTP.Types.Method (StdMethod (..))
+
+import Servant.Types.SourceT
 
 -- | A Stream endpoint for a given method emits a stream of encoded values at a
 -- given @Content-Type@, delimited by a @framing@ strategy.
 -- Type synonyms are provided for standard methods.
---
 data Stream (method :: k1) (status :: Nat) (framing :: Type) (contentType :: Type) (a :: Type)
-  deriving (Typeable, Generic)
+  deriving (Generic, Typeable)
 
-type StreamGet  = Stream 'GET 200
+type StreamGet = Stream 'GET 200
+
 type StreamPost = Stream 'POST 200
 
 -- | A stream request body.
 type StreamBody = StreamBody' '[]
 
 data StreamBody' (mods :: [Type]) (framing :: Type) (contentType :: Type) (a :: Type)
-  deriving (Typeable, Generic)
+  deriving (Generic, Typeable)
 
 -------------------------------------------------------------------------------
 -- Sources
@@ -85,56 +81,56 @@ data StreamBody' (mods :: [Type]) (framing :: Type) (contentType :: Type) (a :: 
 --
 -- Clients reading from streaming endpoints can be implemented as consuming a
 -- @'SourceIO' chunk@.
---
 type SourceIO = SourceT IO
 
 -- | 'ToSourceIO' is intended to be implemented for types such as Conduit, Pipe,
 -- etc. By implementing this class, all such streaming abstractions can be used
 -- directly as endpoints.
 class ToSourceIO chunk a | a -> chunk where
-    toSourceIO :: a -> SourceIO chunk
+  toSourceIO :: a -> SourceIO chunk
 
 -- | Auxiliary class for @'ToSourceIO' x ('SourceT' m x)@ instance.
 class SourceToSourceIO m where
-    sourceToSourceIO :: SourceT m a -> SourceT IO a
+  sourceToSourceIO :: SourceT m a -> SourceT IO a
 
 instance SourceToSourceIO IO where
-    sourceToSourceIO = id
+  sourceToSourceIO = id
 
 -- | Relax to use auxiliary class, have m
 instance SourceToSourceIO m => ToSourceIO chunk (SourceT m chunk) where
-    toSourceIO = sourceToSourceIO
+  toSourceIO = sourceToSourceIO
 
 instance ToSourceIO a (NonEmpty a) where
-    toSourceIO (x :| xs) = fromStepT (Yield x (foldr Yield Stop xs))
+  toSourceIO (x :| xs) = fromStepT (Yield x (foldr Yield Stop xs))
 
 instance ToSourceIO a [a] where
-    toSourceIO = source
+  toSourceIO = source
 
 -- | 'FromSourceIO' is intended to be implemented for types such as Conduit,
 -- Pipe, etc. By implementing this class, all such streaming abstractions can
 -- be used directly on the client side for talking to streaming endpoints.
 class FromSourceIO chunk a | a -> chunk where
-    fromSourceIO :: SourceIO chunk -> IO a
+  fromSourceIO :: SourceIO chunk -> IO a
 
 instance MonadIO m => FromSourceIO a (SourceT m a) where
-    fromSourceIO = return . sourceFromSourceIO
+  fromSourceIO = return . sourceFromSourceIO
 
 sourceFromSourceIO :: forall m a. MonadIO m => SourceT IO a -> SourceT m a
 sourceFromSourceIO src =
-    SourceT $ \k ->
+  SourceT $ \k ->
     k $ Effect $ liftIO $ unSourceT src (return . go)
   where
     go :: StepT IO a -> StepT m a
-    go Stop        = Stop
+    go Stop = Stop
     go (Error err) = Error err
-    go (Skip s)    = Skip (go s)
+    go (Skip s) = Skip (go s)
     go (Effect ms) = Effect (liftIO (fmap go ms))
     go (Yield x s) = Yield x (go s)
 
 -- This fires e.g. in Client.lhs
 -- {-# OPTIONS_GHC -ddump-simpl -ddump-rule-firings -ddump-to-file #-}
 {-# NOINLINE [2] sourceFromSourceIO #-}
+
 {-# RULES "sourceFromSourceIO @IO" sourceFromSourceIO = id :: SourceT IO a -> SourceT IO a #-}
 
 -------------------------------------------------------------------------------
@@ -147,14 +143,13 @@ sourceFromSourceIO src =
 -- around chunks.
 --
 -- /Note:/ as the @'Monad' m@ is generic, this is pure transformation.
---
 class FramingRender strategy where
-    framingRender :: Monad m => Proxy strategy -> (a -> LBS.ByteString) -> SourceT m a -> SourceT m LBS.ByteString
+  framingRender :: Monad m => Proxy strategy -> (a -> LBS.ByteString) -> SourceT m a -> SourceT m LBS.ByteString
 
 -- | The 'FramingUnrender' class provides the logic for parsing a framing
 -- strategy.
 class FramingUnrender strategy where
-    framingUnrender :: Monad m => Proxy strategy -> (LBS.ByteString -> Either String a) -> SourceT m BS.ByteString -> SourceT m a
+  framingUnrender :: Monad m => Proxy strategy -> (LBS.ByteString -> Either String a) -> SourceT m BS.ByteString -> SourceT m a
 
 -------------------------------------------------------------------------------
 -- NoFraming
@@ -166,22 +161,22 @@ class FramingUnrender strategy where
 data NoFraming
 
 instance FramingRender NoFraming where
-    framingRender _ = fmap
+  framingRender _ = fmap
 
 -- | As 'NoFraming' doesn't have frame separators, we take the chunks
 -- as given and try to convert them one by one.
 --
 -- That works well when @a@ is a 'ByteString'.
 instance FramingUnrender NoFraming where
-    framingUnrender _ f = mapStepT go
-      where
-        go Stop        = Stop
-        go (Error err) = Error err
-        go (Skip s)    = Skip (go s)
-        go (Effect ms) = Effect (fmap go ms)
-        go (Yield x s) = case f (LBS.fromStrict x) of
-            Right y  -> Yield y (go s)
-            Left err -> Error err
+  framingUnrender _ f = mapStepT go
+    where
+      go Stop = Stop
+      go (Error err) = Error err
+      go (Skip s) = Skip (go s)
+      go (Effect ms) = Effect (fmap go ms)
+      go (Yield x s) = case f (LBS.fromStrict x) of
+        Right y -> Yield y (go s)
+        Left err -> Error err
 
 -------------------------------------------------------------------------------
 -- NewlineFraming
@@ -193,13 +188,13 @@ instance FramingUnrender NoFraming where
 data NewlineFraming
 
 instance FramingRender NewlineFraming where
-    framingRender _ f = fmap (\x -> f x <> "\n")
+  framingRender _ f = fmap (\x -> f x <> "\n")
 
 instance FramingUnrender NewlineFraming where
-    framingUnrender _ f = transformWithAtto $ do
-        bs <- A.takeWhile (/= 10)
-        () <$ A.word8 10 <|> A.endOfInput
-        either fail pure (f (LBS.fromStrict bs))
+  framingUnrender _ f = transformWithAtto $ do
+    bs <- A.takeWhile (/= 10)
+    () <$ A.word8 10 <|> A.endOfInput
+    either fail pure (f (LBS.fromStrict bs))
 
 -------------------------------------------------------------------------------
 -- NetstringFraming
@@ -219,18 +214,17 @@ instance FramingUnrender NewlineFraming where
 -- @<31 32 3a 68 65 6c 6c 6f 20 77 6f 72 6c 64 21 2c>@,
 -- i.e., @"12:hello world!,"@.
 -- The empty string is encoded as @"0:,"@.
---
 data NetstringFraming
 
 instance FramingRender NetstringFraming where
-    framingRender _ f = fmap $ \x ->
-        let bs = f x
-        in LBS8.pack (show (LBS8.length bs)) <> ":" <> bs <> ","
+  framingRender _ f = fmap $ \x ->
+    let bs = f x
+     in LBS8.pack (show (LBS8.length bs)) <> ":" <> bs <> ","
 
 instance FramingUnrender NetstringFraming where
-    framingUnrender _ f = transformWithAtto $ do
-        len <- A8.decimal
-        _ <- A8.char ':'
-        bs <- A.take len
-        _ <- A8.char ','
-        either fail pure (f (LBS.fromStrict bs))
+  framingUnrender _ f = transformWithAtto $ do
+    len <- A8.decimal
+    _ <- A8.char ':'
+    bs <- A.take len
+    _ <- A8.char ','
+    either fail pure (f (LBS.fromStrict bs))

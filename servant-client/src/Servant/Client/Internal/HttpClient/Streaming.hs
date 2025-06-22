@@ -1,65 +1,56 @@
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeFamilies               #-}
-module Servant.Client.Internal.HttpClient.Streaming (
-    module Servant.Client.Internal.HttpClient.Streaming,
-    ClientEnv (..),
-    mkClientEnv,
-    clientResponseToResponse,
-    defaultMakeClientRequest,
-    catchConnectionError,
-    ) where
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
-import           Prelude ()
-import           Prelude.Compat
+module Servant.Client.Internal.HttpClient.Streaming
+  ( module Servant.Client.Internal.HttpClient.Streaming
+  , ClientEnv (..)
+  , mkClientEnv
+  , clientResponseToResponse
+  , defaultMakeClientRequest
+  , catchConnectionError
+  )
+where
 
-import           Control.Concurrent.STM.TVar
-import           Control.DeepSeq
-                 (NFData, force)
-import           Control.Exception
-                 (evaluate, throwIO)
-import           Control.Monad
-                 (unless)
-import           Control.Monad.Base
-                 (MonadBase (..))
-import           Control.Monad.Codensity
-                 (Codensity (..))
-import           Control.Monad.Error.Class
-                 (MonadError (..))
-import           Control.Monad.IO.Class (MonadIO(..))
-import           Control.Monad.Reader (MonadReader(..), ReaderT(..))
-import           Control.Monad.STM
-                 (atomically)
-import           Control.Monad.Trans.Except
-import qualified Data.ByteString                    as BS
-import qualified Data.ByteString.Lazy               as BSL
-import           Data.Foldable
-                 (for_)
-import           Data.Functor.Alt
-                 (Alt (..))
-import           Data.Proxy
-                 (Proxy (..))
-import           Data.Time.Clock
-                 (getCurrentTime)
-import           GHC.Generics
-import           Network.HTTP.Types
-                 (Status, statusIsSuccessful)
+import Control.Concurrent.STM.TVar
+import Control.DeepSeq (NFData, force)
+import Control.Exception (evaluate, throwIO)
+import Control.Monad (unless)
+import Control.Monad.Base (MonadBase (..))
+import Control.Monad.Codensity (Codensity (..))
+import Control.Monad.Error.Class (MonadError (..))
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.Reader (MonadReader (..), ReaderT (..))
+import Control.Monad.STM (atomically)
+import Control.Monad.Trans.Class (MonadTrans (..))
+import Control.Monad.Trans.Except
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
+import Data.Foldable (for_)
+import Data.Functor.Alt (Alt (..))
+import Data.Proxy (Proxy (..))
+import Data.Time.Clock (getCurrentTime)
+import GHC.Generics
+import qualified Network.HTTP.Client as Client
+import Network.HTTP.Types (Status, statusIsSuccessful)
+import Prelude.Compat
+import Servant.Client.Core
+import qualified Servant.Types.SourceT as S
+import Prelude ()
 
-import qualified Network.HTTP.Client                as Client
-
-import           Servant.Client.Core
-import           Servant.Client.Internal.HttpClient
-                 (ClientEnv (..), catchConnectionError,
-                 clientResponseToResponse, mkClientEnv, mkFailureResponse,
-                 defaultMakeClientRequest)
-import qualified Servant.Types.SourceT              as S
-import Control.Monad.Trans.Class (MonadTrans(..))
-
+import Servant.Client.Internal.HttpClient
+  ( ClientEnv (..)
+  , catchConnectionError
+  , clientResponseToResponse
+  , defaultMakeClientRequest
+  , mkClientEnv
+  , mkFailureResponse
+  )
 
 -- | Generates a set of client functions for an API.
 --
@@ -102,9 +93,16 @@ hoistClient = hoistClientMonad (Proxy :: Proxy ClientM)
 -- | @ClientM@ is the monad in which client functions run. Contains the
 -- 'Client.Manager' and 'BaseUrl' used for requests in the reader environment.
 newtype ClientM a = ClientM
-  { unClientM :: ReaderT ClientEnv (ExceptT ClientError (Codensity IO)) a }
-  deriving newtype ( Functor, Applicative, Monad, MonadIO, Generic
-           , MonadReader ClientEnv, MonadError ClientError)
+  {unClientM :: ReaderT ClientEnv (ExceptT ClientError (Codensity IO)) a}
+  deriving newtype
+    ( Applicative
+    , Functor
+    , Generic
+    , Monad
+    , MonadError ClientError
+    , MonadIO
+    , MonadReader ClientEnv
+    )
 
 instance MonadBase IO ClientM where
   liftBase = ClientM . liftIO
@@ -122,8 +120,8 @@ instance RunStreamingClient ClientM where
 
 withClientM :: ClientM a -> ClientEnv -> (Either ClientError a -> IO b) -> IO b
 withClientM cm env k =
-    let Codensity f = runExceptT $ flip runReaderT env $ unClientM cm
-    in f k
+  let Codensity f = runExceptT $ flip runReaderT env $ unClientM cm
+   in f k
 
 -- | A 'runClientM' variant for streaming client.
 --
@@ -134,13 +132,12 @@ withClientM cm env k =
 --
 -- /Note:/ we 'force' the result, so the likelihood of accidentally leaking a
 -- connection is smaller. Use with care.
---
 runClientM :: NFData a => ClientM a -> ClientEnv -> IO (Either ClientError a)
 runClientM cm env = withClientM cm env (evaluate . force)
 
 performRequest :: Maybe [Status] -> Request -> ClientM Response
 performRequest acceptStatus req = do
-    -- TODO: should use Client.withResponse here too
+  -- TODO: should use Client.withResponse here too
   ClientEnv m burl cookieJar' createClientRequest _ <- ask
   clientRequest <- liftIO $ createClientRequest burl req
   request <- case cookieJar' of
@@ -192,13 +189,13 @@ performWithStreamingRequest req k = do
         writeTVar cj newCookieJar
         pure newRequest
   ClientM $ lift $ lift $ Codensity $ \k1 ->
-      Client.withResponse request m $ \res -> do
-          let status = Client.responseStatus res
+    Client.withResponse request m $ \res -> do
+      let status = Client.responseStatus res
 
-          -- we throw FailureResponse in IO :(
-          unless (statusIsSuccessful status) $ do
-              b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody res)
-              throwIO $ mkFailureResponse burl req (clientResponseToResponse (const b) res)
+      -- we throw FailureResponse in IO :(
+      unless (statusIsSuccessful status) $ do
+        b <- BSL.fromChunks <$> Client.brConsume (Client.responseBody res)
+        throwIO $ mkFailureResponse burl req (clientResponseToResponse (const b) res)
 
-          x <- k (clientResponseToResponse (S.fromAction BS.null) res)
-          k1 x
+      x <- k (clientResponseToResponse (S.fromAction BS.null) res)
+      k1 x

@@ -3,59 +3,62 @@
 
 -- | MultiVerb is a part of the type-level eDSL that allows you to express complex routes
 -- while retaining a high level of precision with good ergonomics.
-
 module Servant.API.MultiVerb
   ( -- ** MultiVerb types
-    MultiVerb,
-    MultiVerb1,
+    MultiVerb
+  , MultiVerb1
+
     -- ** Response types
-    Respond,
-    RespondAs,
-    RespondEmpty,
-    RespondStreaming,
+  , Respond
+  , RespondAs
+  , RespondEmpty
+  , RespondStreaming
+
     -- ** Headers
-    WithHeaders,
-    DescHeader,
-    OptHeader,
-    AsHeaders (..),
-    ServantHeaders(..),
-    ServantHeader(..),
+  , WithHeaders
+  , DescHeader
+  , OptHeader
+  , AsHeaders (..)
+  , ServantHeaders (..)
+  , ServantHeader (..)
+
     -- ** Unions of responses
-    AsUnion (..),
-    eitherToUnion,
-    eitherFromUnion,
-    maybeToUnion,
-    maybeFromUnion,
+  , AsUnion (..)
+  , eitherToUnion
+  , eitherFromUnion
+  , maybeToUnion
+  , maybeFromUnion
+
     -- ** Internal machinery
-    AsConstructor (..),
-    GenericAsConstructor (..),
-    GenericAsUnion (..),
-    ResponseType,
-    ResponseTypes,
-    UnrenderResult(..),
-  ) where
+  , AsConstructor (..)
+  , GenericAsConstructor (..)
+  , GenericAsUnion (..)
+  , ResponseType
+  , ResponseTypes
+  , UnrenderResult (..)
+  )
+where
 
-
-import Control.Applicative (Alternative(..), empty)
-import Control.Monad (ap, MonadPlus(..))
+import Control.Applicative (Alternative (..), empty)
+import Control.Monad (MonadPlus (..), ap)
 import Data.ByteString (ByteString)
+import qualified Data.CaseInsensitive as CI
 import Data.Kind
 import Data.Proxy
 import Data.SOP
-import Data.Sequence (Seq(..))
+import Data.Sequence (Seq (..))
+import qualified Data.Sequence as Seq
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
 import GHC.TypeLits
 import Generics.SOP as GSOP
 import Network.HTTP.Types as HTTP
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
-import qualified Data.CaseInsensitive as CI
-import qualified Data.Sequence as Seq
-import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
 
-import Servant.API.TypeLevel.List
-import Servant.API.Stream (SourceIO)
-import Servant.API.UVerb.Union (Union)
 import Servant.API.Header (Header')
+import Servant.API.Stream (SourceIO)
+import Servant.API.TypeLevel.List
+import Servant.API.UVerb.Union (Union)
 
 -- | A type to describe a 'MultiVerb' response.
 --
@@ -95,7 +98,7 @@ data RespondStreaming (s :: Nat) (description :: Symbol) (framing :: Type) (ct :
 -- The 'UnrenderResult' type constructor has monad and alternative instances
 -- corresponding to those of 'Either (Maybe (Last String)) a'.
 data UnrenderResult a = StatusMismatch | UnrenderError String | UnrenderSuccess a
-  deriving (Eq, Show, Functor)
+  deriving (Eq, Functor, Show)
 
 instance Applicative UnrenderResult where
   pure = UnrenderSuccess
@@ -125,7 +128,6 @@ type instance ResponseType (Respond s description a) = a
 type instance ResponseType (RespondAs responseContentType s description a) = a
 
 type instance ResponseType (RespondStreaming s description framing ct) = SourceIO ByteString
-
 
 -- | This type adds response headers to a 'MultiVerb' response.
 data WithHeaders (headers :: [Type]) (returnType :: Type) (response :: Type)
@@ -167,7 +169,7 @@ instance ServantHeaders '[] '[] where
   constructHeaders Nil = []
   extractHeaders _ = Just Nil
 
-headerName :: forall name. (KnownSymbol name) => HTTP.HeaderName
+headerName :: forall name. KnownSymbol name => HTTP.HeaderName
 headerName =
   CI.mk
     . Text.encodeUtf8
@@ -175,12 +177,12 @@ headerName =
     $ symbolVal (Proxy @name)
 
 instance
-  ( KnownSymbol name,
-    ServantHeader h name x,
-    FromHttpApiData x,
-    ServantHeaders headers xs
-  ) =>
-  ServantHeaders (h ': headers) (x ': xs)
+  ( FromHttpApiData x
+  , KnownSymbol name
+  , ServantHeader h name x
+  , ServantHeaders headers xs
+  )
+  => ServantHeaders (h ': headers) (x ': xs)
   where
   constructHeaders (I x :* xs) =
     constructHeader @h x
@@ -200,27 +202,25 @@ class ServantHeader h (name :: Symbol) x | h -> name x where
   constructHeader :: x -> [HTTP.Header]
 
 instance
-  (KnownSymbol name, ToHttpApiData x) =>
-  ServantHeader (Header' mods name x) name x
+  (KnownSymbol name, ToHttpApiData x)
+  => ServantHeader (Header' mods name x) name x
   where
   constructHeader x = [(headerName @name, toHeader x)]
 
 instance
-  (KnownSymbol name, ToHttpApiData x) =>
-  ServantHeader (DescHeader name description x) name x
+  (KnownSymbol name, ToHttpApiData x)
+  => ServantHeader (DescHeader name description x) name x
   where
   constructHeader x = [(headerName @name, toHeader x)]
 
-instance (ServantHeader h name x) => ServantHeader (OptHeader h) name (Maybe x) where
+instance ServantHeader h name x => ServantHeader (OptHeader h) name (Maybe x) where
   constructHeader = foldMap (constructHeader @h)
 
 type instance ResponseType (WithHeaders headers returnType response) = returnType
 
-
 type family ResponseTypes (as :: [Type]) where
   ResponseTypes '[] = '[]
   ResponseTypes (a ': as) = ResponseType a ': ResponseTypes as
-
 
 -- | 'MultiVerb' produces an endpoint which can return
 -- multiple values with various content types and status codes. It is similar to
@@ -293,15 +293,15 @@ type MultiVerb1 method requestMimeTypes a = MultiVerb method requestMimeTypes '[
 -- packaged into an 'AsUnion' instance.
 --
 -- ==== __Example__
--- Let us take the example endpoint from the 'MultiVerb' documentation. 
--- There, we derived the 'AsUnion' instance with the help of Generics. 
+-- Let us take the example endpoint from the 'MultiVerb' documentation.
+-- There, we derived the 'AsUnion' instance with the help of Generics.
 -- The manual way of implementing the instance is:
 --
 -- > instance AsUnion Responses Result where
 -- >   toUnion NegativeNumber = Z (I ())
 -- >   toUnion (Even b) = S (Z (I b))
 -- >   toUnion (Odd i) = S (S (Z (I i)))
--- > 
+-- >
 -- >   fromUnion       (Z (I ())) = NegativeNumber
 -- >   fromUnion    (S (Z (I b))) = Even b
 -- >   fromUnion (S (S (Z (I i)))) = Odd i
@@ -313,12 +313,12 @@ class AsUnion (as :: [Type]) (r :: Type) where
 
 -- | Unions can be used directly as handler return types using this trivial
 -- instance.
-instance (rs ~ ResponseTypes as) => AsUnion as (Union rs) where
+instance rs ~ ResponseTypes as => AsUnion as (Union rs) where
   toUnion = id
   fromUnion = id
 
 -- | A handler with a single response.
-instance (ResponseType r ~ a) => AsUnion '[r] a where
+instance ResponseType r ~ a => AsUnion '[r] a where
   toUnion = Z . I
   fromUnion = unI . unZ
 
@@ -331,7 +331,7 @@ class InjectAfter as bs where
 instance InjectAfter '[] bs where
   injectAfter = id
 
-instance (InjectAfter as bs) => InjectAfter (a ': as) bs where
+instance InjectAfter as bs => InjectAfter (a ': as) bs where
   injectAfter = S . injectAfter @as @bs
 
 class InjectBefore as bs where
@@ -340,49 +340,49 @@ class InjectBefore as bs where
 instance InjectBefore '[] bs where
   injectBefore x = case x of {}
 
-instance (InjectBefore as bs) => InjectBefore (a ': as) bs where
+instance InjectBefore as bs => InjectBefore (a ': as) bs where
   injectBefore (Z x) = Z x
   injectBefore (S x) = S (injectBefore @as @bs x)
 
-eitherToUnion ::
-  forall as bs a b.
-  (InjectAfter as bs, InjectBefore as bs) =>
-  (a -> Union as) ->
-  (b -> Union bs) ->
-  (Either a b -> Union (as .++ bs))
+eitherToUnion
+  :: forall as bs a b
+   . (InjectAfter as bs, InjectBefore as bs)
+  => (a -> Union as)
+  -> (b -> Union bs)
+  -> (Either a b -> Union (as .++ bs))
 eitherToUnion f _ (Left a) = injectBefore @as @bs (f a)
 eitherToUnion _ g (Right b) = injectAfter @as @bs (g b)
 
 class EitherFromUnion as bs where
-  eitherFromUnion ::
-    (Union as -> a) ->
-    (Union bs -> b) ->
-    (Union (as .++ bs) -> Either a b)
+  eitherFromUnion
+    :: (Union as -> a)
+    -> (Union bs -> b)
+    -> (Union (as .++ bs) -> Either a b)
 
 instance EitherFromUnion '[] bs where
   eitherFromUnion _ g = Right . g
 
-instance (EitherFromUnion as bs) => EitherFromUnion (a ': as) bs where
+instance EitherFromUnion as bs => EitherFromUnion (a ': as) bs where
   eitherFromUnion f _ (Z x) = Left (f (Z x))
   eitherFromUnion f g (S x) = eitherFromUnion @as @bs (f . S) g x
 
-maybeToUnion ::
-  forall as a.
-  (InjectAfter as '[()], InjectBefore as '[()]) =>
-  (a -> Union as) ->
-  (Maybe a -> Union (as .++ '[()]))
+maybeToUnion
+  :: forall as a
+   . (InjectAfter as '[()], InjectBefore as '[()])
+  => (a -> Union as)
+  -> (Maybe a -> Union (as .++ '[()]))
 maybeToUnion f (Just a) = injectBefore @as @'[()] (f a)
 maybeToUnion _ Nothing = injectAfter @as @'[()] (Z (I ()))
 
-maybeFromUnion ::
-  forall as a.
-  (EitherFromUnion as '[()]) =>
-  (Union as -> a) ->
-  (Union (as .++ '[()]) -> Maybe a)
+maybeFromUnion
+  :: forall as a
+   . EitherFromUnion as '[()]
+  => (Union as -> a)
+  -> (Union (as .++ '[()]) -> Maybe a)
 maybeFromUnion f =
-    leftToMaybe . eitherFromUnion @as @'[()] f (const (Z (I ())))
-    where
-        leftToMaybe = either Just (const Nothing)
+  leftToMaybe . eitherFromUnion @as @'[()] f (const (Z (I ())))
+  where
+    leftToMaybe = either Just (const Nothing)
 
 -- | This class can be instantiated to get automatic derivation of 'AsUnion'
 -- instances via 'GenericAsUnion'. The idea is that one has to make sure that for
@@ -437,15 +437,15 @@ newtype GenericAsConstructor r = GenericAsConstructor r
 type instance ResponseType (GenericAsConstructor r) = ResponseType r
 
 instance
-  (GSOP.Code (ResponseType r) ~ '[xs], GSOP.Generic (ResponseType r)) =>
-  AsConstructor xs (GenericAsConstructor r)
+  (GSOP.Code (ResponseType r) ~ '[xs], GSOP.Generic (ResponseType r))
+  => AsConstructor xs (GenericAsConstructor r)
   where
   toConstructor = unZ . unSOP . GSOP.from
   fromConstructor = GSOP.to . SOP . Z
 
 instance
-  (AsConstructor xs r, AsConstructors xss rs) =>
-  AsConstructors (xs ': xss) (r ': rs)
+  (AsConstructor xs r, AsConstructors xss rs)
+  => AsConstructors (xs ': xss) (r ': rs)
   where
   toSOP (Z (I x)) = SOP . Z $ toConstructor @xs @r x
   toSOP (S x) = SOP . S . unSOP $ toSOP @xss @rs x
@@ -454,14 +454,14 @@ instance
   fromSOP (SOP (S x)) = S (fromSOP @xss @rs (SOP x))
 
 -- | This type is meant to be used with @deriving via@ in order to automatically
--- generate an 'AsUnion' instance using 'Generics.SOP'. 
+-- generate an 'AsUnion' instance using 'Generics.SOP'.
 --
 -- See 'AsConstructor' for more information and examples.
 newtype GenericAsUnion rs a = GenericAsUnion a
 
 instance
-  (GSOP.Code a ~ xss, GSOP.Generic a, AsConstructors xss rs) =>
-  AsUnion rs (GenericAsUnion rs a)
+  (AsConstructors xss rs, GSOP.Code a ~ xss, GSOP.Generic a)
+  => AsUnion rs (GenericAsUnion rs a)
   where
   toUnion (GenericAsUnion x) = fromSOP @xss @rs (GSOP.from x)
   fromUnion = GenericAsUnion . GSOP.to . toSOP @xss @rs
@@ -471,8 +471,8 @@ instance
 -- represented by 'False', corresponds to the /first/ response.
 instance
   AsUnion
-    '[ RespondEmpty s1 desc1,
-       RespondEmpty s2 desc2
+    '[ RespondEmpty s1 desc1
+     , RespondEmpty s2 desc2
      ]
     Bool
   where
@@ -489,8 +489,8 @@ instance
 -- response.
 instance
   {-# OVERLAPPABLE #-}
-  (ResponseType r1 ~ (), ResponseType r2 ~ a) =>
-  AsUnion '[r1, r2] (Maybe a)
+  (ResponseType r1 ~ (), ResponseType r2 ~ a)
+  => AsUnion '[r1, r2] (Maybe a)
   where
   toUnion Nothing = Z (I ())
   toUnion (Just x) = S (Z (I x))

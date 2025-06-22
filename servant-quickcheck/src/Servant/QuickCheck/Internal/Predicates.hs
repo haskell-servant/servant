@@ -1,35 +1,49 @@
 module Servant.QuickCheck.Internal.Predicates where
 
-import           Control.Exception     (catch, throw)
-import           Control.Monad         (liftM2, unless, when)
-import           Data.Aeson            (Object, decode)
-import           Data.Bifunctor        (first)
-import qualified Data.ByteString       as SBS
+import Control.Exception (catch, throw)
+import Control.Monad (liftM2, unless, when)
+import Data.Aeson (Object, decode)
+import Data.Bifunctor (first)
+import qualified Data.ByteString as SBS
 import qualified Data.ByteString.Char8 as SBSC
-import qualified Data.ByteString.Lazy  as LBS
-import           Data.CaseInsensitive  (foldCase, foldedCase, mk)
-import           Data.Either           (isRight)
-import           Data.List.Split       (wordsBy)
-import           Data.Maybe            (fromMaybe, isJust)
-import qualified Data.Text             as T
-import           Data.Time             (UTCTime, defaultTimeLocale, parseTimeM,
-                                        rfc822DateFormat)
-import           GHC.Generics          (Generic)
-import           Network.HTTP.Client   (Manager, Request, Response, httpLbs,
-                                        method, parseRequest, requestHeaders,
-                                        responseBody, responseHeaders,
-                                        responseStatus)
-import           Network.HTTP.Media    (matchAccept)
-import           Network.HTTP.Types    (methodGet, methodHead, parseMethod,
-                                        renderStdMethod, status100, status200,
-                                        status201, status300, status401,
-                                        status405, status500)
-import           Prelude.Compat
-import           System.Clock          (Clock (Monotonic), diffTimeSpec,
-                                        getTime, toNanoSecs)
+import qualified Data.ByteString.Lazy as LBS
+import Data.CaseInsensitive (foldCase, foldedCase, mk)
+import Data.Either (isRight)
+import Data.List.Split (wordsBy)
+import Data.Maybe (fromMaybe, isJust)
+import qualified Data.Text as T
+import Data.Time (UTCTime, defaultTimeLocale, parseTimeM, rfc822DateFormat)
+import GHC.Generics (Generic)
+import Network.HTTP.Client
+  ( Manager
+  , Request
+  , Response
+  , httpLbs
+  , method
+  , parseRequest
+  , requestHeaders
+  , responseBody
+  , responseHeaders
+  , responseStatus
+  )
+import Network.HTTP.Media (matchAccept)
+import Network.HTTP.Types
+  ( methodGet
+  , methodHead
+  , parseMethod
+  , renderStdMethod
+  , status100
+  , status200
+  , status201
+  , status300
+  , status401
+  , status405
+  , status500
+  )
+import Prelude.Compat
+import System.Clock (Clock (Monotonic), diffTimeSpec, getTime, toNanoSecs)
 
 import Servant.QuickCheck.Internal.ErrorTypes
-
 
 -- | [__Best Practice__]
 --
@@ -51,14 +65,15 @@ not500 = ResponsePredicate $ \resp ->
 --
 -- /Since 0.0.2.1/
 notLongerThan :: Integer -> RequestPredicate
-notLongerThan maxAllowed
-  = RequestPredicate $ \req mgr -> do
-     start <- getTime Monotonic
-     resp <- httpLbs req mgr
-     end <- getTime Monotonic
-     when (toNanoSecs (end `diffTimeSpec` start) > maxAllowed) $
-       throw $ PredicateFailure "notLongerThan" (Just req) resp
-     return []
+notLongerThan maxAllowed =
+  RequestPredicate $ \req mgr -> do
+    start <- getTime Monotonic
+    resp <- httpLbs req mgr
+    end <- getTime Monotonic
+    when (toNanoSecs (end `diffTimeSpec` start) > maxAllowed)
+      $ throw
+      $ PredicateFailure "notLongerThan" (Just req) resp
+    return []
 
 -- | [__Best Practice__]
 --
@@ -82,14 +97,16 @@ notLongerThan maxAllowed
 --
 -- /Since 0.0.0.0/
 onlyJsonObjects :: ResponsePredicate
-onlyJsonObjects
-  = ResponsePredicate (\resp -> do
-    case lookup "content-type" (first foldedCase <$> responseHeaders resp) of
-      Nothing    -> return ()
-      Just ctype -> when ("application/json" `SBS.isPrefixOf` ctype) $ do
-        case (decode (responseBody resp) :: Maybe Object) of
-          Nothing -> throw $ PredicateFailure "onlyJsonObjects" Nothing resp
-          Just _  -> return ())
+onlyJsonObjects =
+  ResponsePredicate
+    ( \resp -> do
+        case lookup "content-type" (first foldedCase <$> responseHeaders resp) of
+          Nothing -> return ()
+          Just ctype -> when ("application/json" `SBS.isPrefixOf` ctype) $ do
+            case (decode (responseBody resp) :: Maybe Object) of
+              Nothing -> throw $ PredicateFailure "onlyJsonObjects" Nothing resp
+              Just _ -> return ()
+    )
 
 -- | __Optional__
 --
@@ -111,20 +128,20 @@ onlyJsonObjects
 --
 -- /Since 0.0.0.0/
 createContainsValidLocation :: RequestPredicate
-createContainsValidLocation
-  = RequestPredicate $ \req mgr -> do
-     let n = "createContainsValidLocation"
-     resp <- httpLbs req mgr
-     if responseStatus resp == status201
-         then case lookup "Location" $ responseHeaders resp of
-             Nothing -> throw $ PredicateFailure n (Just req) resp
-             Just l  -> case parseRequest $ SBSC.unpack l of
-               Nothing -> throw $ PredicateFailure n (Just req) resp
-               Just x  -> do
-                 resp2 <- httpLbs x mgr
-                 status2XX (Just req) resp2 n
-                 return [resp, resp2]
-         else return [resp]
+createContainsValidLocation =
+  RequestPredicate $ \req mgr -> do
+    let n = "createContainsValidLocation"
+    resp <- httpLbs req mgr
+    if responseStatus resp == status201
+      then case lookup "Location" $ responseHeaders resp of
+        Nothing -> throw $ PredicateFailure n (Just req) resp
+        Just l -> case parseRequest $ SBSC.unpack l of
+          Nothing -> throw $ PredicateFailure n (Just req) resp
+          Just x -> do
+            resp2 <- httpLbs x mgr
+            status2XX (Just req) resp2 n
+            return [resp, resp2]
+      else return [resp]
 
 -- | [__Optional__]
 --
@@ -152,17 +169,15 @@ createContainsValidLocation
 --
 -- /Since 0.0.2.1/
 getsHaveLastModifiedHeader :: RequestPredicate
-getsHaveLastModifiedHeader
-  = RequestPredicate $ \req mgr ->
-     if method req == methodGet
+getsHaveLastModifiedHeader =
+  RequestPredicate $ \req mgr ->
+    if method req == methodGet
       then do
         resp <- httpLbs req mgr
         unless (hasValidHeader "Last-Modified" isRFC822Date resp) $ do
           throw $ PredicateFailure "getsHaveLastModifiedHeader" (Just req) resp
         return [resp]
       else return []
-
-
 
 -- | [__RFC Compliance__]
 --
@@ -184,21 +199,22 @@ getsHaveLastModifiedHeader
 --
 -- /Since 0.0.0.0/
 notAllowedContainsAllowHeader :: RequestPredicate
-notAllowedContainsAllowHeader
-  = RequestPredicate $ \req mgr -> do
-      let reqs = [ req { method = renderStdMethod m } | m <- [minBound .. maxBound]
-                                                      , renderStdMethod m /= method req ]
-      resp <- mapM (`httpLbs` mgr) reqs
+notAllowedContainsAllowHeader =
+  RequestPredicate $ \req mgr -> do
+    let reqs =
+          [ req{method = renderStdMethod m} | m <- [minBound .. maxBound], renderStdMethod m /= method req
+          ]
+    resp <- mapM (`httpLbs` mgr) reqs
 
-      case filter pred' (zip reqs resp) of
-        (x:_) -> throw $ PredicateFailure "notAllowedContainsAllowHeader" (Just $ fst x) (snd x)
-        []     -> return resp
-    where
-      pred' (_, resp) = responseStatus resp == status405 && not (hasValidHeader "Allow" go resp)
-        where
-          go x = all (isRight . parseMethod . SBSC.pack)
-               $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
-
+    case filter pred' (zip reqs resp) of
+      (x : _) -> throw $ PredicateFailure "notAllowedContainsAllowHeader" (Just $ fst x) (snd x)
+      [] -> return resp
+  where
+    pred' (_, resp) = responseStatus resp == status405 && not (hasValidHeader "Allow" go resp)
+      where
+        go x =
+          all (isRight . parseMethod . SBSC.pack)
+            $ wordsBy (`elem` (", " :: [Char])) (SBSC.unpack x)
 
 -- | [__RFC Compliance__]
 --
@@ -216,16 +232,16 @@ notAllowedContainsAllowHeader
 --
 -- /Since 0.0.0.0/
 honoursAcceptHeader :: RequestPredicate
-honoursAcceptHeader
-  = RequestPredicate $ \req mgr -> do
-      resp <- httpLbs req mgr
-      let scode = responseStatus resp
-          sctype = lookup "Content-Type" $ responseHeaders resp
-          sacc  = fromMaybe "*/*" $ lookup "Accept" (requestHeaders req)
-      (if (status100 < scode && scode < status300) && isJust (sctype >>= \x -> matchAccept [x] sacc)
+honoursAcceptHeader =
+  RequestPredicate $ \req mgr -> do
+    resp <- httpLbs req mgr
+    let scode = responseStatus resp
+        sctype = lookup "Content-Type" $ responseHeaders resp
+        sacc = fromMaybe "*/*" $ lookup "Accept" (requestHeaders req)
+    ( if (status100 < scode && scode < status300) && isJust (sctype >>= \x -> matchAccept [x] sacc)
         then throw $ PredicateFailure "honoursAcceptHeader" (Just req) resp
-        else return [resp])
-
+        else return [resp]
+      )
 
 -- | [__Best Practice__]
 --
@@ -242,9 +258,9 @@ honoursAcceptHeader
 --
 -- /Since 0.0.0.0/
 getsHaveCacheControlHeader :: RequestPredicate
-getsHaveCacheControlHeader
-  = RequestPredicate $ \req mgr ->
-     if method req == methodGet
+getsHaveCacheControlHeader =
+  RequestPredicate $ \req mgr ->
+    if method req == methodGet
       then do
         resp <- httpLbs req mgr
         unless (hasValidHeader "Cache-Control" (const True) resp) $ do
@@ -258,15 +274,17 @@ getsHaveCacheControlHeader
 --
 -- /Since 0.0.0.0/
 headsHaveCacheControlHeader :: RequestPredicate
-headsHaveCacheControlHeader
-  = RequestPredicate $ \req mgr ->
-     if method req == methodHead
-       then do
-         resp <- httpLbs req mgr
-         unless (hasValidHeader "Cache-Control" (const True) resp) $
-           throw $ PredicateFailure "headsHaveCacheControlHeader" (Just req) resp
-         return [resp]
-       else return []
+headsHaveCacheControlHeader =
+  RequestPredicate $ \req mgr ->
+    if method req == methodHead
+      then do
+        resp <- httpLbs req mgr
+        unless (hasValidHeader "Cache-Control" (const True) resp)
+          $ throw
+          $ PredicateFailure "headsHaveCacheControlHeader" (Just req) resp
+        return [resp]
+      else return []
+
 {-
 -- |
 --
@@ -316,6 +334,7 @@ linkHeadersAreValid
   = ResponsePredicate "linkHeadersAreValid" _
 
 -}
+
 -- | [__RFC Compliance__]
 --
 -- Any @401 Unauthorized@ response must include a @WWW-Authenticate@ header.
@@ -329,12 +348,12 @@ linkHeadersAreValid
 --
 -- /Since 0.0.0.0/
 unauthorizedContainsWWWAuthenticate :: ResponsePredicate
-unauthorizedContainsWWWAuthenticate
-  = ResponsePredicate $ \resp ->
-      when (responseStatus resp == status401) $
-        unless (hasValidHeader "WWW-Authenticate" (const True) resp) $
-          throw $ PredicateFailure "unauthorizedContainsWWWAuthenticate" Nothing resp
-
+unauthorizedContainsWWWAuthenticate =
+  ResponsePredicate $ \resp ->
+    when (responseStatus resp == status401)
+      $ unless (hasValidHeader "WWW-Authenticate" (const True) resp)
+      $ throw
+      $ PredicateFailure "unauthorizedContainsWWWAuthenticate" Nothing resp
 
 -- | [__RFC Compliance__]
 --
@@ -348,12 +367,13 @@ unauthorizedContainsWWWAuthenticate
 --  * HTML5 Doctype: <https://tools.ietf.org/html/rfc7992#section-6.1 RFC 7992 Section 6.1>
 -- /Since 0.3.0.0/
 htmlIncludesDoctype :: ResponsePredicate
-htmlIncludesDoctype
-  = ResponsePredicate $ \resp ->
-      when (hasValidHeader "Content-Type" (SBS.isPrefixOf . foldCase $ "text/html") resp) $ do
-          let htmlContent = foldCase . LBS.take 20 $ responseBody resp
-          unless (LBS.isPrefixOf (foldCase "<!doctype html>") htmlContent) $
-            throw $ PredicateFailure "htmlIncludesDoctype" Nothing resp
+htmlIncludesDoctype =
+  ResponsePredicate $ \resp ->
+    when (hasValidHeader "Content-Type" (SBS.isPrefixOf . foldCase $ "text/html") resp) $ do
+      let htmlContent = foldCase . LBS.take 20 $ responseBody resp
+      unless (LBS.isPrefixOf (foldCase "<!doctype html>") htmlContent)
+        $ throw
+        $ PredicateFailure "htmlIncludesDoctype" Nothing resp
 
 -- * Predicate logic
 
@@ -368,7 +388,8 @@ htmlIncludesDoctype
 -- /Since 0.0.0.0/
 newtype ResponsePredicate = ResponsePredicate
   { getResponsePredicate :: Response LBS.ByteString -> IO ()
-  } deriving (Generic)
+  }
+  deriving (Generic)
 
 instance Semigroup ResponsePredicate where
   ResponsePredicate a <> ResponsePredicate b = ResponsePredicate $ \x -> a x >> b x
@@ -382,7 +403,8 @@ instance Monoid ResponsePredicate where
 -- /Since 0.0.0.0/
 newtype RequestPredicate = RequestPredicate
   { getRequestPredicate :: Request -> Manager -> IO [Response LBS.ByteString]
-  } deriving (Generic)
+  }
+  deriving (Generic)
 
 -- TODO: This isn't actually a monoid
 instance Monoid RequestPredicate where
@@ -396,13 +418,16 @@ instance Semigroup RequestPredicate where
 
 -- | A set of predicates. Construct one with 'mempty' and '<%>'.
 data Predicates = Predicates
-  { requestPredicates  :: RequestPredicate
+  { requestPredicates :: RequestPredicate
   , responsePredicates :: ResponsePredicate
-  } deriving (Generic)
+  }
+  deriving (Generic)
 
 instance Semigroup Predicates where
-  a <> b = Predicates (requestPredicates a <> requestPredicates b)
-                      (responsePredicates a <> responsePredicates b)
+  a <> b =
+    Predicates
+      (requestPredicates a <> requestPredicates b)
+      (responsePredicates a <> responsePredicates b)
 
 instance Monoid Predicates where
   mempty = Predicates mempty mempty
@@ -425,15 +450,16 @@ instance JoinPreds ResponsePredicate where
 -- /Since 0.0.0.0/
 (<%>) :: JoinPreds a => a -> Predicates -> Predicates
 (<%>) = joinPreds
+
 infixr 6 <%>
 
 finishPredicates :: Predicates -> Request -> Manager -> IO (Maybe PredicateFailure)
 finishPredicates p req mgr = go `catch` \(e :: PredicateFailure) -> return $ Just e
   where
     go = do
-     resps <- getRequestPredicate (requestPredicates p) req mgr
-     mapM_  (getResponsePredicate $ responsePredicates p) resps
-     return Nothing
+      resps <- getRequestPredicate (requestPredicates p) req mgr
+      mapM_ (getResponsePredicate $ responsePredicates p) resps
+      return Nothing
 
 -- * helpers
 
@@ -441,13 +467,13 @@ hasValidHeader :: SBS.ByteString -> (SBS.ByteString -> Bool) -> Response b -> Bo
 hasValidHeader hdr p r = maybe False p (lookup (mk hdr) (responseHeaders r))
 
 isRFC822Date :: SBS.ByteString -> Bool
-isRFC822Date s
-  = case parseTimeM True defaultTimeLocale rfc822DateFormat (SBSC.unpack s) of
+isRFC822Date s =
+  case parseTimeM True defaultTimeLocale rfc822DateFormat (SBSC.unpack s) of
     Nothing -> False
     Just (_ :: UTCTime) -> True
 
 status2XX :: Monad m => Maybe Request -> Response LBS.ByteString -> T.Text -> m ()
 status2XX mreq resp t
-  | status200 <= responseStatus resp && responseStatus resp < status300
-  = return ()
+  | status200 <= responseStatus resp && responseStatus resp < status300 =
+      return ()
   | otherwise = throw $ PredicateFailure t mreq resp

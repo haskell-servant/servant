@@ -1,17 +1,16 @@
-{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Servant.Server.UsingContextSpec where
 
-import           Network.Wai
-import           Test.Hspec
-                 (Spec, describe, it)
-import           Test.Hspec.Wai
+import Network.Wai
+import Test.Hspec (Spec, describe, it)
+import Test.Hspec.Wai
 
-import           Servant
-import           Servant.Server.UsingContextSpec.TestCombinators
+import Servant
+import Servant.Server.UsingContextSpec.TestCombinators
 
 spec :: Spec
 spec = do
@@ -36,13 +35,14 @@ oneEntryApp =
     context = "contextEntry" :. EmptyContext
 
 type OneEntryTwiceAPI =
-  "foo" :> ExtractFromContext :> Get '[JSON] String :<|>
-  "bar" :> ExtractFromContext :> Get '[JSON] String
+  "foo" :> ExtractFromContext :> Get '[JSON] String
+    :<|> "bar" :> ExtractFromContext :> Get '[JSON] String
 
 oneEntryTwiceApp :: Application
-oneEntryTwiceApp = serveWithContext (Proxy :: Proxy OneEntryTwiceAPI) context $
-  testServer :<|>
-  testServer
+oneEntryTwiceApp =
+  serveWithContext (Proxy :: Proxy OneEntryTwiceAPI) context $
+    testServer
+      :<|> testServer
   where
     context :: Context '[String]
     context = "contextEntryTwice" :. EmptyContext
@@ -62,15 +62,20 @@ spec1 = do
         get "/bar" `shouldRespondWith` "\"contextEntryTwice\""
 
 type InjectAPI =
-  InjectIntoContext :> "untagged" :> ExtractFromContext :>
-    Get '[JSON] String :<|>
-  InjectIntoContext :> "tagged" :> ExtractFromContext :>
-    Get '[JSON] String
+  InjectIntoContext
+    :> "untagged"
+    :> ExtractFromContext
+    :> Get '[JSON] String
+    :<|> InjectIntoContext
+      :> "tagged"
+      :> ExtractFromContext
+      :> Get '[JSON] String
 
 injectApp :: Application
-injectApp = serveWithContext (Proxy :: Proxy InjectAPI) context $
-  (\ s -> return s) :<|>
-  (\ s -> return ("tagged: " ++ s))
+injectApp =
+  serveWithContext (Proxy :: Proxy InjectAPI) context $
+    (\s -> return s)
+      :<|> (\s -> return ("tagged: " ++ s))
   where
     context = EmptyContext
 
@@ -85,20 +90,23 @@ spec2 = do
         get "/tagged" `shouldRespondWith` "\"tagged: injected\""
 
 type WithBirdfaceAPI =
-  "foo" :> ExtractFromContext :> Get '[JSON] String :<|>
-  NamedContextWithBirdface "sub" '[String] :>
-    "bar" :> ExtractFromContext :> Get '[JSON] String
+  "foo" :> ExtractFromContext :> Get '[JSON] String
+    :<|> NamedContextWithBirdface "sub" '[String]
+      :> "bar"
+      :> ExtractFromContext
+      :> Get '[JSON] String
 
 withBirdfaceApp :: Application
-withBirdfaceApp = serveWithContext (Proxy :: Proxy WithBirdfaceAPI) context $
-  testServer :<|>
-  testServer
+withBirdfaceApp =
+  serveWithContext (Proxy :: Proxy WithBirdfaceAPI) context $
+    testServer
+      :<|> testServer
   where
     context :: Context '[String, (NamedContext "sub" '[String])]
     context =
-      "firstEntry" :.
-      (NamedContext ("secondEntry" :. EmptyContext)) :.
-      EmptyContext
+      "firstEntry"
+        :. (NamedContext ("secondEntry" :. EmptyContext))
+        :. EmptyContext
 
 spec3 :: Spec
 spec3 = do
@@ -108,8 +116,10 @@ spec3 = do
       get "/bar" `shouldRespondWith` "\"secondEntry\""
 
 type NamedContextAPI =
-  WithNamedContext "sub" '[String] (
-    ExtractFromContext :> Get '[JSON] String)
+  WithNamedContext
+    "sub"
+    '[String]
+    (ExtractFromContext :> Get '[JSON] String)
 
 namedContextApp :: Application
 namedContextApp = serveWithContext (Proxy :: Proxy NamedContextAPI) context return

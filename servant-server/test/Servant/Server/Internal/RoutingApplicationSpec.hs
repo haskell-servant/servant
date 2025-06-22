@@ -1,43 +1,36 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Servant.Server.Internal.RoutingApplicationSpec (spec) where
 
-import           Prelude ()
-import           Prelude.Compat
+import Control.Exception hiding (Handler)
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Resource (register)
+import Data.IORef
+import Data.Proxy
+import qualified Data.Text as T
+import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
+import Network.Wai (defaultRequest)
+import Prelude.Compat
+import System.IO.Unsafe (unsafePerformIO)
+import Test.Hspec
+import Test.Hspec.Wai (request, shouldRespondWith, with)
+import Prelude ()
 
-import           Control.Exception            hiding
-                 (Handler)
-import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Resource
-                 (register)
-import           Data.IORef
-import           Data.Proxy
-import           GHC.TypeLits
-                 (KnownSymbol, Symbol, symbolVal)
-import           Network.Wai
-                 (defaultRequest)
-import           Servant
-import           Servant.Server.Internal
-import           Test.Hspec
-import           Test.Hspec.Wai
-                 (request, shouldRespondWith, with)
-
-import qualified Data.Text                    as T
-
-import           System.IO.Unsafe
-                 (unsafePerformIO)
+import Servant
+import Servant.Server.Internal
 
 data TestResource x
-    = TestResourceNone
-    | TestResource x
-    | TestResourceFreed
-    | TestResourceError
+  = TestResourceNone
+  | TestResource x
+  | TestResourceFreed
+  | TestResourceError
   deriving (Eq, Show)
 
 -- Let's not write to the filesystem
@@ -46,44 +39,47 @@ delayedTestRef = unsafePerformIO $ newIORef TestResourceNone
 
 fromTestResource :: a -> (b -> a) -> TestResource b -> a
 fromTestResource _ f (TestResource x) = f x
-fromTestResource x _ _                = x
+fromTestResource x _ _ = x
 
 initTestResource :: IO ()
 initTestResource = writeIORef delayedTestRef TestResourceNone
 
 writeTestResource :: String -> IO ()
 writeTestResource x = modifyIORef delayedTestRef $ \r -> case r of
-    TestResourceNone -> TestResource x
-    _                -> TestResourceError
+  TestResourceNone -> TestResource x
+  _ -> TestResourceError
 
 freeTestResource :: IO ()
 freeTestResource = modifyIORef delayedTestRef $ \r -> case r of
-    TestResource _ -> TestResourceFreed
-    _              -> TestResourceError
+  TestResource _ -> TestResourceFreed
+  _ -> TestResourceError
 
 delayed :: DelayedIO () -> RouteResult (Handler ()) -> Delayed () (Handler ())
-delayed body srv = Delayed
-  { capturesD = \() -> return ()
-  , methodD   = return ()
-  , authD     = return ()
-  , acceptD   = return ()
-  , contentD  = return ()
-  , paramsD   = return ()
-  , headersD   = return ()
-  , bodyD     = \() -> do
-      liftIO (writeTestResource "hia" >> putStrLn "garbage created")
-      _ <- register (freeTestResource >> putStrLn "garbage collected")
-      body
-  , serverD   = \() () () () _body _req -> srv
-  }
+delayed body srv =
+  Delayed
+    { capturesD = \() -> return ()
+    , methodD = return ()
+    , authD = return ()
+    , acceptD = return ()
+    , contentD = return ()
+    , paramsD = return ()
+    , headersD = return ()
+    , bodyD = \() -> do
+        liftIO (writeTestResource "hia" >> putStrLn "garbage created")
+        _ <- register (freeTestResource >> putStrLn "garbage collected")
+        body
+    , serverD = \() () () () _body _req -> srv
+    }
 
-simpleRun :: Delayed () (Handler ())
-          -> IO ()
-simpleRun d = fmap (either ignoreE id) . try $
-  runAction d () defaultRequest (\_ -> return ()) (\_ -> FailFatal err500)
-
-  where ignoreE :: SomeException -> ()
-        ignoreE = const ()
+simpleRun
+  :: Delayed () (Handler ())
+  -> IO ()
+simpleRun d =
+  fmap (either ignoreE id) . try $
+    runAction d () defaultRequest (\_ -> return ()) (\_ -> FailFatal err500)
+  where
+    ignoreE :: SomeException -> ()
+    ignoreE = const ()
 
 -------------------------------------------------------------------------------
 -- Combinator example
@@ -92,19 +88,20 @@ simpleRun d = fmap (either ignoreE id) . try $
 -- | This data types writes 'sym' to 'delayedTestRef'.
 data Res (sym :: Symbol)
 
-instance (KnownSymbol sym, HasServer api ctx) => HasServer (Res sym :> api) ctx where
-    type ServerT (Res sym :> api) m = IORef (TestResource String) -> ServerT api m
+instance (HasServer api ctx, KnownSymbol sym) => HasServer (Res sym :> api) ctx where
+  type ServerT (Res sym :> api) m = IORef (TestResource String) -> ServerT api m
 
-    hoistServerWithContext _ nc nt s = hoistServerWithContext (Proxy :: Proxy api) nc nt . s
+  hoistServerWithContext _ nc nt s = hoistServerWithContext (Proxy :: Proxy api) nc nt . s
 
-    route Proxy ctx server = route (Proxy :: Proxy api) ctx $
-        addBodyCheck server (return ()) check
-      where
-        sym  = symbolVal (Proxy :: Proxy sym)
-        check () = do
-            liftIO $ writeTestResource sym
-            _ <- register freeTestResource
-            return delayedTestRef
+  route Proxy ctx server =
+    route (Proxy :: Proxy api) ctx $
+      addBodyCheck server (return ()) check
+    where
+      sym = symbolVal (Proxy :: Proxy sym)
+      check () = do
+        liftIO $ writeTestResource sym
+        _ <- register freeTestResource
+        return delayedTestRef
 
 type ResApi = "foobar" :> Res "foobar" :> Get '[PlainText] T.Text
 
@@ -112,7 +109,7 @@ resApi :: Proxy ResApi
 resApi = Proxy
 
 resServer :: Server ResApi
-resServer ref = liftIO $ fmap (fromTestResource "<wrong>" T.pack)  $ readIORef ref
+resServer ref = liftIO $ fmap (fromTestResource "<wrong>" T.pack) $ readIORef ref
 
 -------------------------------------------------------------------------------
 -- Spec

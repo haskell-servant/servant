@@ -2,13 +2,14 @@
 -- querying functions for each endpoint just from the type representing your
 -- API.
 module Servant.Client.Ghcjs
-  (
-    client
+  ( client
   , ClientM
   , runClientM
-  , ClientEnv(..)
+  , ClientEnv (..)
   , module Servant.Client.Core.Reexport
-  ) where
+  )
+where
+
+import Servant.Client.Core.Reexport
 
 import Servant.Client.Internal.XhrClient
-import Servant.Client.Core.Reexport

@@ -1,24 +1,22 @@
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Servant.ForeignSpec where
 
-import           Data.Proxy
-import           Servant.Foreign
-import           Servant.Test.ComprehensiveAPI
-import           Servant.Types.SourceT
-                 (SourceT)
+import Data.Proxy
+import Servant.Test.ComprehensiveAPI
+import Servant.Types.SourceT (SourceT)
+import Test.Hspec
 
-import           Test.Hspec
-
+import Servant.Foreign
 
 spec :: Spec
 spec = describe "Servant.Foreign" $ do
@@ -63,16 +61,30 @@ instance {-# OVERLAPPING #-} HasForeignType LangX String String where
 instance {-# OVERLAPPABLE #-} HasForeignType LangX String a => HasForeignType LangX String [a] where
   typeFor lang ftype _ = "listX of " <> typeFor lang ftype (Proxy :: Proxy a)
 
-instance (HasForeignType LangX String a) => HasForeignType LangX String (Maybe a) where
+instance HasForeignType LangX String a => HasForeignType LangX String (Maybe a) where
   typeFor lang ftype _ = "maybe " <> typeFor lang ftype (Proxy :: Proxy a)
 
-type TestApi
-    = "test" :> Header "header" [String] :> QueryFlag "flag" :> Get '[JSON] Int
- :<|> "test" :> QueryParam "param" Int :> ReqBody '[JSON] [String] :> Post '[JSON] NoContent
- :<|> "test" :> QueryParams "params" Int :> ReqBody '[JSON] String :> Put '[JSON] NoContent
- :<|> "test" :> Capture "id" Int :> Delete '[JSON] NoContent
- :<|> "test" :> CaptureAll "ids" Int :> Get '[JSON] [Int]
- :<|> "test" :> EmptyAPI
+type TestApi =
+  "test"
+    :> Header "header" [String]
+    :> QueryFlag "flag"
+    :> Get '[JSON] Int
+    :<|> "test"
+    :> QueryParam "param" Int
+    :> ReqBody '[JSON] [String]
+    :> Post '[JSON] NoContent
+    :<|> "test"
+    :> QueryParams "params" Int
+    :> ReqBody '[JSON] String
+    :> Put '[JSON] NoContent
+    :<|> "test"
+    :> Capture "id" Int
+    :> Delete '[JSON] NoContent
+    :<|> "test"
+    :> CaptureAll "ids" Int
+    :> Get '[JSON] [Int]
+    :<|> "test"
+    :> EmptyAPI
 
 testApi :: [Req String]
 testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: Proxy TestApi)
@@ -85,69 +97,81 @@ listFromAPISpec = describe "listFromAPI" $ do
   let [getReq, postReq, putReq, deleteReq, captureAllReq] = testApi
 
   it "collects all info for get request" $ do
-    shouldBe getReq $ defReq
-      { _reqUrl        = Url
-          [ Segment $ Static "test" ]
-          [ QueryArg (Arg "flag" "boolX") Flag ]
-          Nothing
-      , _reqMethod     = "GET"
-      , _reqHeaders    = [HeaderArg $ Arg "header" "maybe listX of stringX"]
-      , _reqBody       = Nothing
-      , _reqReturnType = Just "intX"
-      , _reqFuncName   = FunctionName ["get", "test"]
-      }
+    shouldBe getReq $
+      defReq
+        { _reqUrl =
+            Url
+              [Segment $ Static "test"]
+              [QueryArg (Arg "flag" "boolX") Flag]
+              Nothing
+        , _reqMethod = "GET"
+        , _reqHeaders = [HeaderArg $ Arg "header" "maybe listX of stringX"]
+        , _reqBody = Nothing
+        , _reqReturnType = Just "intX"
+        , _reqFuncName = FunctionName ["get", "test"]
+        }
 
   it "collects all info for post request" $ do
-    shouldBe postReq $ defReq
-      { _reqUrl        = Url
-          [ Segment $ Static "test" ]
-          [ QueryArg (Arg "param" "maybe intX") Normal ]
-          Nothing
-      , _reqMethod     = "POST"
-      , _reqHeaders    = []
-      , _reqBody       = Just "listX of stringX"
-      , _reqReturnType = Just "voidX"
-      , _reqFuncName   = FunctionName ["post", "test"]
-      }
+    shouldBe postReq $
+      defReq
+        { _reqUrl =
+            Url
+              [Segment $ Static "test"]
+              [QueryArg (Arg "param" "maybe intX") Normal]
+              Nothing
+        , _reqMethod = "POST"
+        , _reqHeaders = []
+        , _reqBody = Just "listX of stringX"
+        , _reqReturnType = Just "voidX"
+        , _reqFuncName = FunctionName ["post", "test"]
+        }
 
   it "collects all info for put request" $ do
-    shouldBe putReq $ defReq
-      { _reqUrl        = Url
-          [ Segment $ Static "test" ]
-          -- Should this be |intX| or |listX of intX| ?
-          [ QueryArg (Arg "params" "listX of intX") List ]
-          Nothing
-      , _reqMethod     = "PUT"
-      , _reqHeaders    = []
-      , _reqBody       = Just "stringX"
-      , _reqReturnType = Just "voidX"
-      , _reqFuncName   = FunctionName ["put", "test"]
-      }
+    shouldBe putReq $
+      defReq
+        { _reqUrl =
+            Url
+              [Segment $ Static "test"]
+              -- Should this be |intX| or |listX of intX| ?
+              [QueryArg (Arg "params" "listX of intX") List]
+              Nothing
+        , _reqMethod = "PUT"
+        , _reqHeaders = []
+        , _reqBody = Just "stringX"
+        , _reqReturnType = Just "voidX"
+        , _reqFuncName = FunctionName ["put", "test"]
+        }
 
   it "collects all info for delete request" $ do
-    shouldBe deleteReq $ defReq
-      { _reqUrl        = Url
-          [ Segment $ Static "test"
-          , Segment $ Cap (Arg "id" "intX") ]
-          []
-          Nothing
-      , _reqMethod     = "DELETE"
-      , _reqHeaders    = []
-      , _reqBody       = Nothing
-      , _reqReturnType = Just "voidX"
-      , _reqFuncName   = FunctionName ["delete", "test", "by", "id"]
-      }
+    shouldBe deleteReq $
+      defReq
+        { _reqUrl =
+            Url
+              [ Segment $ Static "test"
+              , Segment $ Cap (Arg "id" "intX")
+              ]
+              []
+              Nothing
+        , _reqMethod = "DELETE"
+        , _reqHeaders = []
+        , _reqBody = Nothing
+        , _reqReturnType = Just "voidX"
+        , _reqFuncName = FunctionName ["delete", "test", "by", "id"]
+        }
 
   it "collects all info for capture all request" $ do
-    shouldBe captureAllReq $ defReq
-      { _reqUrl        = Url
-          [ Segment $ Static "test"
-          , Segment $ Cap (Arg "ids" "listX of intX") ]
-          []
-          Nothing
-      , _reqMethod     = "GET"
-      , _reqHeaders    = []
-      , _reqBody       = Nothing
-      , _reqReturnType = Just "listX of intX"
-      , _reqFuncName   = FunctionName ["get", "test", "by", "ids"]
-      }
+    shouldBe captureAllReq $
+      defReq
+        { _reqUrl =
+            Url
+              [ Segment $ Static "test"
+              , Segment $ Cap (Arg "ids" "listX of intX")
+              ]
+              []
+              Nothing
+        , _reqMethod = "GET"
+        , _reqHeaders = []
+        , _reqBody = Nothing
+        , _reqReturnType = Just "listX of intX"
+        , _reqFuncName = FunctionName ["get", "test", "by", "ids"]
+        }

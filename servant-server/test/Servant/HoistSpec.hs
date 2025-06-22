@@ -1,11 +1,11 @@
-{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+
 module Servant.HoistSpec where
 
-import           Test.Hspec
-                 (Spec)
+import Test.Hspec (Spec)
 
-import           Servant
+import Servant
 
 -------------------------------------------------------------------------------
 -- https://github.com/haskell-servant/servant/issues/734
@@ -15,7 +15,8 @@ import           Servant
 
 newtype App a = App a
 
-type API = Get '[JSON] Int
+type API =
+  Get '[JSON] Int
     :<|> ReqBody '[JSON] String :> Get '[JSON] Bool
 
 api :: Proxy API
