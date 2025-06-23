@@ -51,6 +51,7 @@ packages:
   -- doc/cookbook/open-id-connect
   doc/cookbook/managed-resource
   doc/cookbook/openapi3
+  doc/cookbook/expose-prometheus
 
 tests: True
 optimization: False

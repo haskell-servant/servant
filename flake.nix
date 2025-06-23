@@ -17,14 +17,13 @@
       let
         pkgs = import nixpkgs { inherit system; };
 
-        format-tools = [
-          # We use fourmolu compiled with GHC 9.12
-          # as getting it to compile with lower GHC versions
-          # is complicated and this works out of the box.
-          pkgs.haskell.packages.ghc912.fourmolu_0_18_0_0
-          pkgs.hlint
-          pkgs.nixfmt-rfc-style
-        ];
+        # We use fourmolu compiled with GHC 9.12
+        # as getting it to compile with lower GHC versions
+        # is complicated and this works out of the box.
+        haskellFormatter = pkgs.haskell.packages.ghc912.fourmolu_0_18_0_0;
+        haskellLinter = pkgs.hlint;
+
+        nixFormatter = pkgs.nixfmt-rfc-style;
 
         mkDevShell =
           {
@@ -58,8 +57,10 @@
                 openssl
                 stack
                 haskellPackages.hspec-discover
+                haskellFormatter
+                haskellLinter
+                nixFormatter
               ]
-              ++ format-tools
               ++ (
                 if tutorial then
                   [
@@ -70,14 +71,25 @@
                   [ ]
               );
           };
+
+        mkCiShell = tools: pkgs.mkShell { buildInputs = tools; };
       in
       {
         devShells = {
           default = mkDevShell { };
           tutorial = mkDevShell { tutorial = true; };
-          formatters = pkgs.mkShell {
-            buildInputs = format-tools;
-          };
+
+          # Development shells for different GHC versions.
+          ghc92 = mkDevShell { compiler = "ghc92"; };
+          ghc94 = mkDevShell { compiler = "ghc94"; };
+          ghc96 = mkDevShell { compiler = "ghc96"; };
+          ghc98 = mkDevShell { compiler = "ghc98"; };
+          ghc910 = mkDevShell { compiler = "ghc910"; };
+          ghc912 = mkDevShell { compiler = "ghc912"; };
+
+          # Single-tool shells for CI checks.
+          haskellFormatter = mkCiShell [ haskellFormatter ];
+          haskellLinter = mkCiShell [ haskellLinter ];
         };
       }
     );

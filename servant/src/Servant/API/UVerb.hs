@@ -20,7 +20,7 @@
 -- be done with vanilla servant-server by throwing exceptions, but it can't be represented in
 -- the API types without something like `UVerb`.)
 --
--- See <https://docs.servant.dev/en/stable/cookbook/uverb/UVerb.html> for a working example.
+-- See <https://docs.servant.dev/en/latest/cookbook/uverb/UVerb.html> for a working example.
 module Servant.API.UVerb
   ( UVerb
   , HasStatus (StatusOf)

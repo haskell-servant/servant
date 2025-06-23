@@ -88,9 +88,6 @@ genericServer
 genericServer = toServant
 
 -- | Transform a record of endpoints into a @'ServerT' m@.
---
---  You can see an example usage of this function
---  <https://docs.servant.dev/en/stable/cookbook/generic/Generic.html#using-generics-together-with-a-custom-monad in the Servant Cookbook>.
 genericServerT
   :: GenericServant routes (AsServerT m)
   => routes (AsServerT m)

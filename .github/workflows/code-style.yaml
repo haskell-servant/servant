@@ -18,9 +18,10 @@ jobs:
           fetch-depth: 1
       - name: Install Nix
         uses: cachix/install-nix-action@v31
-      - name: Format check
+      - name: Check code formatting
         run: |
-          nix develop '#formatters' --command fourmolu --mode=check --check-idempotence servant servant-*
+          nix develop '#haskellFormatter' --command fourmolu --mode=check --check-idempotence servant servant-*
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -32,4 +33,4 @@ jobs:
         uses: cachix/install-nix-action@v31
       - name: Run hlint check
         run: |
-          nix develop '#formatters' --command hlint servant servant-*
+          nix develop '#haskellLinter' --command hlint servant servant-*

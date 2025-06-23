@@ -8,7 +8,7 @@ description:
   This library lets you derive automatically Haskell functions that
   let you query each endpoint of a <http://hackage.haskell.org/package/servant servant> webservice.
   .
-  See <http://docs.servant.dev/en/stable/tutorial/Client.html the client section of the tutorial>.
+  See <http://docs.servant.dev/en/latest/tutorial/Client.html the client section of the tutorial>.
   .
   <https://github.com/haskell-servant/servant/blob/master/servant-client/CHANGELOG.md CHANGELOG>
 
