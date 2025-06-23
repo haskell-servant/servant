@@ -5,7 +5,7 @@
 module Servant.Server.Internal.DelayedIO where
 
 import Control.Monad.Base (MonadBase (..))
-import Control.Monad.Catch (MonadThrow (..))
+import Control.Monad.Catch (MonadThrow (..), MonadCatch(..), MonadMask)
 import Control.Monad.Reader (MonadReader (..), ReaderT (..), runReaderT)
 import Control.Monad.Trans (MonadIO (..), MonadTrans (..))
 import Control.Monad.Trans.Control (MonadBaseControl (..))
@@ -34,6 +34,8 @@ newtype DelayedIO a = DelayedIO {runDelayedIO' :: ReaderT Request (ResourceT (Ro
     , MonadReader Request
     , MonadResource
     , MonadThrow
+    , MonadCatch
+    , MonadMask
     )
 
 instance MonadBase IO DelayedIO where
@@ -52,6 +54,7 @@ instance MonadBaseControl IO DelayedIO where
     liftBaseWith $ \runInBase -> f $ \x ->
       runInBase (runInternalState (runReaderT (runDelayedIO' x) req) s)
   restoreM = DelayedIO . lift . withInternalState . const . restoreM
+
 
 runDelayedIO :: DelayedIO a -> Request -> ResourceT IO (RouteResult a)
 runDelayedIO m req = transResourceT runRouteResultT $ runReaderT (runDelayedIO' m) req
