@@ -1,0 +1,9 @@
+synopsis: Re-export client authentication primitives from `servant-client`
+packages: servant-client-core, servant-client
+prs: #1835
+issues: #1834
+description: {
+Add `AuthClientData`, `AuthenticatedRequest`, and `mkAuthenticatedRequest` to the `Servant.Client.Core.Reexport` module, which is re-exported within `servant-client`.
+
+This means that authenticated client requests can now be made using `servant-client` only, without an explicit dependency on `servant-client-core`.
+}
