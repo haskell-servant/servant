@@ -25,9 +25,15 @@ module Servant.Client.Core.Reexport
   , showBaseUrl
   , parseBaseUrl
   , InvalidBaseUrlException
+
+    -- * Authentication
+  , AuthClientData
+  , AuthenticatedRequest (..)
+  , mkAuthenticatedRequest
   )
 where
 
+import Servant.Client.Core.Auth
 import Servant.Client.Core.BaseUrl
 import Servant.Client.Core.ClientError
 import Servant.Client.Core.HasClient
