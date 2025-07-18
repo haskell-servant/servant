@@ -155,6 +155,6 @@ test-suite spec
   build-depends:
     , deepseq     >=1.4.2.0  && <1.6
     , hspec       >=2.6.0    && <2.12
-    , QuickCheck  >=2.12.6.1 && <2.16
+    , QuickCheck  >=2.12.6.1 && <2.17
 
   build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.12
