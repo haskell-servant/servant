@@ -52,7 +52,7 @@ test-suite doctests
     base,
     servant-auth-docs,
     doctest             >= 0.16   && < 0.25,
-    QuickCheck          >= 2.11.3 && < 2.16,
+    QuickCheck          >= 2.11.3 && < 2.17,
     template-haskell
   ghc-options:         -Wall -threaded
   hs-source-dirs:      test
@@ -80,6 +80,6 @@ test-suite spec
   build-depends:
       servant-auth-docs
     , hspec             >= 2.5.5  && < 2.12
-    , QuickCheck        >= 2.11.3 && < 2.16
+    , QuickCheck        >= 2.11.3 && < 2.17
 
   default-language: Haskell2010
