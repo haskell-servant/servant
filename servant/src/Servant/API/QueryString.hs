@@ -4,7 +4,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
 module Servant.API.QueryString (QueryString, DeepQuery, FromDeepQuery (..), ToDeepQuery (..), generateDeepParam) where

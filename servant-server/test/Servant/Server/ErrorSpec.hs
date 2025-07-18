@@ -61,7 +61,7 @@ errorOrderApi :: Proxy ErrorOrderApi
 errorOrderApi = Proxy
 
 errorOrderServer :: Server ErrorOrderApi
-errorOrderServer = \_ _ _ _ -> throwError err402
+errorOrderServer _ _ _ _ = throwError err402
 
 -- On error priorities:
 --

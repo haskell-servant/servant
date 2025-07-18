@@ -66,7 +66,7 @@ server = helloH :<|> postGreetH :<|> deleteGreetH :<|> otherRoutes
     helloH name (Just False) = return . Greet $ "Hello, " <> name
     helloH name (Just True) = return . Greet . toUpper $ "Hello, " <> name
 
-    postGreetH greet = return greet
+    postGreetH = return
 
     deleteGreetH _ = return NoContent
 

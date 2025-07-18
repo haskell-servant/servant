@@ -1,4 +1,4 @@
-name: Code style check
+name: Code style checks
 
 concurrency:
   group: formatting-${{ github.ref_name }}
@@ -21,3 +21,16 @@ jobs:
       - name: Check code formatting
         run: |
           nix develop '#haskellFormatter' --command fourmolu --mode=check --check-idempotence servant servant-*
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Run hlint check
+        run: |
+          nix develop '#haskellLinter' --command hlint servant servant-*

@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -133,7 +132,7 @@ instance MonadBase IO ClientM where
 
 -- | Try clients in order, last error is preserved.
 instance Alt ClientM where
-  a <!> b = a `catchError` \_ -> b
+  a <!> b = a `catchError` const b
 
 instance RunClient ClientM where
   runRequestAcceptStatus = performRequest
@@ -248,7 +247,7 @@ catchConnectionError action =
 fromInputStream :: Streams.InputStream b -> S.SourceT IO b
 fromInputStream is = S.SourceT $ \k -> k loop
   where
-    loop = S.Effect $ maybe S.Stop (flip S.Yield loop) <$> Streams.read is
+    loop = S.Effect $ maybe S.Stop (`S.Yield` loop) <$> Streams.read is
 
 toOutputStream :: S.SourceT IO BSL.ByteString -> Streams.OutputStream B.Builder -> IO ()
 toOutputStream (S.SourceT k) os = k loop

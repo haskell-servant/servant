@@ -118,8 +118,7 @@ mkEndpointNoContent
   -> proxy (Verb method status cs (Headers hs nocontent))
   -- ^ Method, content-types, headers and response.
   -> Swagger
-mkEndpointNoContent path proxy =
-  mkEndpointWithSchemaRef Nothing path proxy
+mkEndpointNoContent = mkEndpointWithSchemaRef Nothing
 
 -- | Like @'mkEndpoint'@ but with explicit schema reference.
 -- Unlike @'mkEndpoint'@ this function does not update @'definitions'@.

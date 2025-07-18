@@ -87,8 +87,9 @@ roundtrip render unrender xs =
 runRenderFrames :: (SourceT Identity a -> SourceT Identity LBS.ByteString) -> [a] -> Either String LBS.ByteString
 runRenderFrames f = fmap mconcat . runExcept . runSourceT . f . source
 
+{- HLINT ignore runUnrenderFrames "Avoid lambda using `infix`" -}
 runUnrenderFrames :: (SourceT Identity b -> SourceT Identity a) -> [b] -> [Either String a]
-runUnrenderFrames f = go . Effect . (\x -> unSourceT x return) . f . source
+runUnrenderFrames f = go . Effect . (\x -> unSourceT x pure) . f . source
   where
     go :: StepT Identity a -> [Either String a]
     go Stop = []

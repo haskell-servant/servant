@@ -19,8 +19,6 @@ module Servant.API.Stream
 
     -- * Source
 
-  --
-
     -- | 'SourceIO' are equivalent to some *source* in streaming libraries.
   , SourceIO
   , ToSourceIO (..)
@@ -41,6 +39,7 @@ module Servant.API.Stream
 where
 
 import Control.Applicative ((<|>))
+import Control.Monad
 import Control.Monad.IO.Class (MonadIO (..))
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.ByteString.Char8 as A8
@@ -193,7 +192,7 @@ instance FramingRender NewlineFraming where
 instance FramingUnrender NewlineFraming where
   framingUnrender _ f = transformWithAtto $ do
     bs <- A.takeWhile (/= 10)
-    () <$ A.word8 10 <|> A.endOfInput
+    void (A.word8 10) <|> A.endOfInput
     either fail pure (f (LBS.fromStrict bs))
 
 -------------------------------------------------------------------------------

@@ -142,7 +142,7 @@ sameStructure router1 router2 =
 -- structure of a router.
 routerLayout :: Router' env a -> Text
 routerLayout router =
-  T.unlines (["/"] ++ mkRouterLayout False (routerStructure router))
+  T.unlines ("/" : mkRouterLayout False (routerStructure router))
   where
     mkRouterLayout :: Bool -> RouterStructure -> [Text]
     mkRouterLayout c (StaticRouterStructure m n) = mkSubTrees c (M.toList m) n
@@ -172,7 +172,7 @@ routerLayout router =
 
 -- | Apply a transformation to the response of a `Router`.
 tweakResponse :: (RouteResult Response -> RouteResult Response) -> Router env -> Router env
-tweakResponse f = fmap (\a -> \req cont -> a req (cont . f))
+tweakResponse f = fmap (\a req cont -> a req (cont . f))
 
 -- | Interpret a router as an application.
 runRouter :: NotFoundErrorFormatter -> Router () -> RoutingApplication

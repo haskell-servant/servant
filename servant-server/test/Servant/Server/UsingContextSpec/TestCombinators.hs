@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -52,11 +51,9 @@ instance
     ServerT (InjectIntoContext :> subApi) m =
       ServerT subApi m
 
-  hoistServerWithContext _ _ nt s =
-    hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy (String ': context)) nt s
+  hoistServerWithContext _ _ = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy (String ': context))
 
-  route Proxy context delayed =
-    route subProxy newContext delayed
+  route Proxy context = route subProxy newContext
     where
       subProxy :: Proxy subApi
       subProxy = Proxy
@@ -73,11 +70,9 @@ instance
     ServerT (NamedContextWithBirdface name subContext :> subApi) m =
       ServerT subApi m
 
-  hoistServerWithContext _ _ nt s =
-    hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
+  hoistServerWithContext _ _ = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext)
 
-  route Proxy context delayed =
-    route subProxy subContext delayed
+  route Proxy context = route subProxy subContext
     where
       subProxy :: Proxy subApi
       subProxy = Proxy

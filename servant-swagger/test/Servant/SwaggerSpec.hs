@@ -430,7 +430,7 @@ getPostAPI =
 -- UVerb API
 -- =======================================================================
 
-data Lunch = Lunch {name :: String}
+newtype Lunch = Lunch {name :: String}
   deriving (Eq, Generic, Show)
 
 instance ToSchema Lunch

@@ -1,6 +1,4 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -76,19 +74,19 @@ instance
     showParen
       (p >= 11)
       ( showString "Request {requestPath = "
-          . showsPrec 0 (requestPath req)
+          . shows (requestPath req)
           . showString ", requestQueryString = "
-          . showsPrec 0 (requestQueryString req)
+          . shows (requestQueryString req)
           . showString ", requestBody = "
-          . showsPrec 0 (requestBody req)
+          . shows (requestBody req)
           . showString ", requestAccept = "
-          . showsPrec 0 (requestAccept req)
+          . shows (requestAccept req)
           . showString ", requestHeaders = "
-          . showsPrec 0 (redactSensitiveHeader <$> requestHeaders req)
+          . shows (redactSensitiveHeader <$> requestHeaders req)
           . showString ", requestHttpVersion = "
-          . showsPrec 0 (requestHttpVersion req)
+          . shows (requestHttpVersion req)
           . showString ", requestMethod = "
-          . showsPrec 0 (requestMethod req)
+          . shows (requestMethod req)
           . showString "}"
       )
     where

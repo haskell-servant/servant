@@ -51,9 +51,9 @@ server conn =
         liftIO (lookupSpecies conn sname)
           :<|> liftIO (deleteSpecies conn sname)
     )
-      :<|> (\species -> liftIO $ insertSpecies conn species)
+      :<|> (liftIO . insertSpecies conn)
   )
-    :<|> (liftIO $ allSpecies conn)
+    :<|> liftIO (allSpecies conn)
 
 lookupSpecies :: Connection -> Text -> IO Species
 lookupSpecies conn name = do

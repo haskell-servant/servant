@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -35,6 +34,7 @@ data TestResource x
 
 -- Let's not write to the filesystem
 delayedTestRef :: IORef (TestResource String)
+{-# NOINLINE delayedTestRef #-}
 delayedTestRef = unsafePerformIO $ newIORef TestResourceNone
 
 fromTestResource :: a -> (b -> a) -> TestResource b -> a
@@ -45,12 +45,12 @@ initTestResource :: IO ()
 initTestResource = writeIORef delayedTestRef TestResourceNone
 
 writeTestResource :: String -> IO ()
-writeTestResource x = modifyIORef delayedTestRef $ \r -> case r of
+writeTestResource x = modifyIORef delayedTestRef $ \case
   TestResourceNone -> TestResource x
   _ -> TestResourceError
 
 freeTestResource :: IO ()
-freeTestResource = modifyIORef delayedTestRef $ \r -> case r of
+freeTestResource = modifyIORef delayedTestRef $ \case
   TestResource _ -> TestResourceFreed
   _ -> TestResourceError
 
@@ -109,7 +109,7 @@ resApi :: Proxy ResApi
 resApi = Proxy
 
 resServer :: Server ResApi
-resServer ref = liftIO $ fmap (fromTestResource "<wrong>" T.pack) $ readIORef ref
+resServer ref = liftIO (fromTestResource "<wrong>" T.pack <$> readIORef ref)
 
 -------------------------------------------------------------------------------
 -- Spec

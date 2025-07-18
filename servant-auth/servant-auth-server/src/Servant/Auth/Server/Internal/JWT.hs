@@ -21,16 +21,14 @@ import Servant.Auth.Server.Internal.Types
 jwtAuthCheck :: FromJWT usr => JWTSettings -> AuthCheck usr
 jwtAuthCheck jwtSettings = do
   req <- ask
-  token <- maybe mempty return $ do
+  token <- maybe mempty pure $ do
     authHdr <- lookup "Authorization" $ requestHeaders req
     let bearer = "Bearer "
         (mbearer, rest) = BS.splitAt (BS.length bearer) authHdr
     guard (mbearer `constEq` bearer)
-    return rest
+    pure rest
   verifiedJWT <- liftIO $ verifyJWT jwtSettings token
-  case verifiedJWT of
-    Nothing -> mzero
-    Just v -> return v
+  maybe mzero pure verifiedJWT
 
 -- | Creates a JWT containing the specified data. The data is stored in the
 -- @dat@ claim. The 'Maybe UTCTime' argument indicates the time at which the
@@ -50,7 +48,7 @@ makeJWT v cfg expiry = Jose.runJOSE $ do
       (Jose.newJWSHeader ((), alg))
       (addExp $ encodeJWT v)
 
-  return $ Jose.encodeCompact ejwt
+  pure $ Jose.encodeCompact ejwt
   where
     addExp claims = case expiry of
       Nothing -> claims
@@ -65,7 +63,7 @@ verifyJWT jwtCfg input = do
       (jwtSettingsToJwtValidationSettings jwtCfg)
       keys
       unverifiedJWT
-  return $ case verifiedJWT of
+  pure $ case verifiedJWT of
     Left (_ :: Jose.JWTError) -> Nothing
     Right v -> case decodeJWT v of
       Left _ -> Nothing
