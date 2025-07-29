@@ -126,7 +126,7 @@ applySessionCookieSettings cookieSettings setCookie =
     , setCookieHttpOnly = True
     }
 
--- | For a JWT-serializable session, pures a function that decorates a
+-- | For a JWT-serializable session, returns a function that decorates a
 -- provided response object with XSRF and session cookies. This should be used
 -- when a user successfully authenticates with credentials.
 acceptLogin
