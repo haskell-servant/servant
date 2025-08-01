@@ -339,7 +339,7 @@ instance
       m NoContent
   clientWithRoute _pm Proxy req = do
     _response <- runRequestAcceptStatus (Just [status]) req{requestMethod = method}
-    return NoContent
+    pure NoContent
     where
       method = reflectMethod (Proxy :: Proxy method)
       status = statusFromNat (Proxy :: Proxy status)
@@ -355,7 +355,7 @@ instance
       m NoContent
   clientWithRoute _pm Proxy req = do
     _response <- runRequest req{requestMethod = method}
-    return NoContent
+    pure NoContent
     where
       method = reflectMethod (Proxy :: Proxy method)
 
@@ -386,7 +386,7 @@ instance
           , requestAccept = fromList $ toList accept
           }
     val <- response `decodedAs` (Proxy :: Proxy ct)
-    return $
+    pure $
       Headers
         { getResponse = val
         , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
@@ -412,7 +412,7 @@ instance
       m (Headers ls NoContent)
   clientWithRoute _pm Proxy req = do
     response <- runRequestAcceptStatus (Just [status]) req{requestMethod = method}
-    return $
+    pure $
       Headers
         { getResponse = NoContent
         , getHeadersHList = buildHeadersTo . toList $ responseHeaders response
@@ -492,7 +492,7 @@ instance
     let res = tryParsers status $ mimeUnrenders (Proxy @contentTypes) headers body
     case res of
       Left errors -> throwClientError $ DecodeFailure (T.pack (show errors)) response
-      Right x -> return x
+      Right x -> pure x
     where
       -- \| Given a list of parsers of 'mkres', returns the first one that succeeds and all the
       -- failures it encountered along the way
@@ -568,7 +568,7 @@ instance
       let mimeUnrender' = mimeUnrender (Proxy :: Proxy ct) :: BSL.ByteString -> Either String chunk
           framingUnrender' = framingUnrender (Proxy :: Proxy framing) mimeUnrender'
       val <- fromSourceIO $ framingUnrender' body
-      return $
+      pure $
         Headers
           { getResponse = val
           , getHeadersHList = buildHeadersTo $ toList headers
@@ -1287,10 +1287,10 @@ for empty and one for non-empty lists).
 checkContentTypeHeader :: RunClient m => Response -> m MediaType
 checkContentTypeHeader response =
   case lookup "Content-Type" $ toList $ responseHeaders response of
-    Nothing -> return $ "application" Media.// "octet-stream"
+    Nothing -> pure $ "application" Media.// "octet-stream"
     Just t -> case parseAccept t of
       Nothing -> throwClientError $ InvalidContentTypeHeader response
-      Just t' -> return t'
+      Just t' -> pure t'
 
 decodedAs
   :: forall ct a m
@@ -1305,7 +1305,7 @@ decodedAs response@Response{responseBody = body} ct = do
       UnsupportedContentType responseContentType response
   case mimeUnrender ct body of
     Left err -> throwClientError $ DecodeFailure (T.pack err) response
-    Right val -> return val
+    Right val -> pure val
   where
     accept = toList $ contentTypes ct
 

@@ -168,7 +168,7 @@ performRequest acceptStatus req = do
             Just good -> status `elem` good
       unless goodStatus $ do
         throwError $ mkFailureResponse burl req ourResponse
-      return ourResponse
+      pure ourResponse
 
 -- | TODO: support UVerb ('acceptStatus' argument, like in 'performRequest' above).
 performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a

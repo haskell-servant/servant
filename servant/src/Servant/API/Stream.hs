@@ -112,12 +112,12 @@ class FromSourceIO chunk a | a -> chunk where
   fromSourceIO :: SourceIO chunk -> IO a
 
 instance MonadIO m => FromSourceIO a (SourceT m a) where
-  fromSourceIO = return . sourceFromSourceIO
+  fromSourceIO = pure . sourceFromSourceIO
 
 sourceFromSourceIO :: forall m a. MonadIO m => SourceT IO a -> SourceT m a
 sourceFromSourceIO src =
   SourceT $ \k ->
-    k $ Effect $ liftIO $ unSourceT src (return . go)
+    k $ Effect $ liftIO $ unSourceT src (pure . go)
   where
     go :: StepT IO a -> StepT m a
     go Stop = Stop

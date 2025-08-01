@@ -227,4 +227,4 @@ golden :: TestName -> FilePath -> String -> TestTreeM ()
 golden n fp contents =
   TestTreeM $
     tell
-      [goldenVsString n fp (return (cs contents))]
+      [goldenVsString n fp (pure (cs contents))]

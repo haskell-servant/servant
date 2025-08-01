@@ -119,9 +119,9 @@ unfoldRequiredArgument
 unfoldRequiredArgument _ errReq errSt mex =
   case (sbool :: SBool (FoldRequired mods), mex) of
     (STrue, Nothing) -> errReq
-    (SFalse, Nothing) -> return Nothing
-    (STrue, Just ex) -> either errSt return ex
-    (SFalse, Just ex) -> either errSt (return . Just) ex
+    (SFalse, Nothing) -> pure Nothing
+    (STrue, Just ex) -> either errSt pure ex
+    (SFalse, Just ex) -> either errSt (pure . Just) ex
 
 -- | Helper type alias.
 --
@@ -155,11 +155,11 @@ unfoldRequestArgument
 unfoldRequestArgument _ errReq errSt mex =
   case (sbool :: SBool (FoldRequired mods), mex, sbool :: SBool (FoldLenient mods)) of
     (STrue, Nothing, _) -> errReq
-    (SFalse, Nothing, _) -> return Nothing
-    (STrue, Just ex, STrue) -> return ex
-    (STrue, Just ex, SFalse) -> either errSt return ex
-    (SFalse, Just ex, STrue) -> return (Just ex)
-    (SFalse, Just ex, SFalse) -> either errSt (return . Just) ex
+    (SFalse, Nothing, _) -> pure Nothing
+    (STrue, Just ex, STrue) -> pure ex
+    (STrue, Just ex, SFalse) -> either errSt pure ex
+    (SFalse, Just ex, STrue) -> pure (Just ex)
+    (SFalse, Just ex, SFalse) -> either errSt (pure . Just) ex
 
 -- $setup
 -- >>> import Servant.API

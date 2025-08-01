@@ -252,7 +252,7 @@ fromInputStream is = S.SourceT $ \k -> k loop
 toOutputStream :: S.SourceT IO BSL.ByteString -> Streams.OutputStream B.Builder -> IO ()
 toOutputStream (S.SourceT k) os = k loop
   where
-    loop S.Stop = return ()
+    loop S.Stop = pure ()
     loop (S.Error err) = fail err
     loop (S.Skip s) = loop s
     loop (S.Effect mx) = mx >>= loop

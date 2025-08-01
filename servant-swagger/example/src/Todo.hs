@@ -74,7 +74,7 @@ todoSwagger =
 
 -- | Combined server of a Todo service with Swagger documentation.
 server :: Server API
-server = return todoSwagger :<|> error "not implemented"
+server = pure todoSwagger :<|> error "not implemented"
 
 -- | Output generated @swagger.json@ file for the @'TodoAPI'@.
 writeSwaggerJSON :: IO ()

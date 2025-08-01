@@ -77,11 +77,11 @@ bob = Person "Bob" 25
 server :: Application
 server =
   serve api $
-    return (source [alice, bob, alice])
-      :<|> return (source [alice, bob, alice])
+    pure (source [alice, bob, alice])
+      :<|> pure (source [alice, bob, alice])
       -- 2 ^ (18 + 10) = 256M
-      :<|> return (SourceT ($ lots (powerOfTwo 18)))
-      :<|> return
+      :<|> pure (SourceT ($ lots (powerOfTwo 18)))
+      :<|> pure
   where
     lots n
       | n < 0 = Stop
@@ -89,7 +89,7 @@ server =
           let size = powerOfTwo 10
           mbs <- getHardwareEntropy size
           bs <- maybe (getEntropy size) pure mbs
-          return (Yield bs (lots (n - 1)))
+          pure (Yield bs (lots (n - 1)))
 
 powerOfTwo :: Int -> Int
 powerOfTwo = (2 ^)

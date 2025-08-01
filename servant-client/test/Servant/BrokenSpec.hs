@@ -59,11 +59,11 @@ brokenSpec = beforeAll (startWaiApp brokenServer) $ afterAll endWaiApp $ do
     it "reports FailureResponse with wrong 2xx status code" $ \(_, baseUrl) -> do
       res <- runClient get200Client baseUrl
       case res of
-        Left (FailureResponse _ r) | responseStatusCode r == HTTP.status201 -> return ()
+        Left (FailureResponse _ r) | responseStatusCode r == HTTP.status201 -> pure ()
         _ -> fail $ "expected 201 broken response, but got " <> show res
 
     it "reports FailureResponse with wrong 3xx status code" $ \(_, baseUrl) -> do
       res <- runClient get307Client baseUrl
       case res of
-        Left (FailureResponse _ r) | responseStatusCode r == HTTP.status301 -> return ()
+        Left (FailureResponse _ r) | responseStatusCode r == HTTP.status301 -> pure ()
         _ -> fail $ "expected 301 broken response, but got " <> show res

@@ -71,7 +71,7 @@ instance ToJSON BaseUrl where
 -- Just (BaseUrl {baseUrlScheme = Http, baseUrlHost = "api.example.com", baseUrlPort = 80, baseUrlPath = ""})
 instance FromJSON BaseUrl where
   parseJSON = withText "BaseUrl" $ \t -> case parseBaseUrl (T.unpack t) of
-    Just u -> return u
+    Just u -> pure u
     Nothing -> fail $ "Invalid base url: " ++ T.unpack t
 
 -- | >>> :{
@@ -86,7 +86,7 @@ instance ToJSONKey BaseUrl where
 
 instance FromJSONKey BaseUrl where
   fromJSONKey = FromJSONKeyTextParser $ \t -> case parseBaseUrl (T.unpack t) of
-    Just u -> return u
+    Just u -> pure u
     Nothing -> fail $ "Invalid base url: " ++ T.unpack t
 
 -- | >>> showBaseUrl <$> parseBaseUrl "api.example.com"
@@ -125,13 +125,13 @@ parseBaseUrl s = case parseURI (removeTrailingSlash s) of
   -- This is a rather hacky implementation and should be replaced with something
   -- implemented in attoparsec (which is already a dependency anyhow (via aeson)).
   Just (URI "http:" (Just (URIAuth "" host (':' : (readMaybe -> Just port)))) path "" "") ->
-    return (BaseUrl Http host port path)
+    pure (BaseUrl Http host port path)
   Just (URI "http:" (Just (URIAuth "" host "")) path "" "") ->
-    return (BaseUrl Http host 80 path)
+    pure (BaseUrl Http host 80 path)
   Just (URI "https:" (Just (URIAuth "" host (':' : (readMaybe -> Just port)))) path "" "") ->
-    return (BaseUrl Https host port path)
+    pure (BaseUrl Https host port path)
   Just (URI "https:" (Just (URIAuth "" host "")) path "" "") ->
-    return (BaseUrl Https host 443 path)
+    pure (BaseUrl Https host 443 path)
   _ ->
     if "://" `List.isInfixOf` s
       then throwM (InvalidBaseUrlException $ "Invalid base URL: " ++ s)

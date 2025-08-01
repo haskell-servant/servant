@@ -267,9 +267,9 @@ flagsAPI = Proxy
 server :: IO (Server API)
 server = do
   mvar <- newMVar ""
-  return $ (liftIO . swapMVar mvar)
+  pure $ (liftIO . swapMVar mvar)
     :<|> liftIO (readMVar mvar <&> length)
-    :<|> const (return ())
+    :<|> const (pure ())
 
 type API2 = "failplz" :> Get '[JSON] Int
 
@@ -282,13 +282,13 @@ deepAPI :: Proxy DeepAPI
 deepAPI = Proxy
 
 server2 :: IO (Server API2)
-server2 = return $ return 1
+server2 = pure $ pure 1
 
 server3 :: IO (Server API2)
-server3 = return $ return 2
+server3 = pure $ pure 2
 
 serverFailing :: IO (Server API2)
-serverFailing = return . throwError $ err405
+serverFailing = pure . throwError $ err405
 
 -- With Doctypes
 type HtmlDoctype = Get '[HTML] Blaze.Html
@@ -330,7 +330,7 @@ octetAPI :: Proxy OctetAPI
 octetAPI = Proxy
 
 serverOctetAPI :: IO (Server OctetAPI)
-serverOctetAPI = return $ return "blah"
+serverOctetAPI = pure $ pure "blah"
 
 type JsonApi = "jsonComparison" :> Get '[OctetStream] BS.ByteString
 
@@ -338,19 +338,19 @@ jsonApi :: Proxy JsonApi
 jsonApi = Proxy
 
 jsonServer1 :: IO (Server JsonApi)
-jsonServer1 = return $ return "{ \"b\": [\"b\"], \"a\": 1 }" -- whitespace, ordering different
+jsonServer1 = pure $ pure "{ \"b\": [\"b\"], \"a\": 1 }" -- whitespace, ordering different
 
 jsonServer2 :: IO (Server JsonApi)
-jsonServer2 = return $ return "{\"a\": 1,\"b\":[\"b\"]}"
+jsonServer2 = pure $ pure "{\"a\": 1,\"b\":[\"b\"]}"
 
 jsonServer3 :: IO (Server JsonApi)
-jsonServer3 = return $ return "{\"a\": 2, \"b\": [\"b\"]}"
+jsonServer3 = pure $ pure "{\"a\": 2, \"b\": [\"b\"]}"
 
 jsonServer4 :: IO (Server JsonApi)
-jsonServer4 = return $ return "{\"c\": 1, \"d\": [\"b\"]}"
+jsonServer4 = pure $ pure "{\"c\": 1, \"d\": [\"b\"]}"
 
 ctx :: Context '[BasicAuthCheck ()]
-ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
+ctx = BasicAuthCheck (const . pure $ NoSuchUser) :. EmptyContext
 
 ------------------------------------------------------------------------------
 -- Utils
@@ -359,11 +359,11 @@ evalExample :: (Arg e ~ (), Example e) => e -> IO EvalResult
 evalExample e = do
   r <- safeEvaluateExample e defaultParams ($ ()) progCallback
   case resultStatus r of
-    Success -> return AllGood
-    Failure _ reason -> return $ FailedWith $ show reason
+    Success -> pure AllGood
+    Failure _ reason -> pure $ FailedWith $ show reason
     Pending{} -> error "should not happen"
   where
-    progCallback _ = return ()
+    progCallback _ = pure ()
 
 data EvalResult
   = AnException SomeException
@@ -375,8 +375,7 @@ args :: Args
 args = defaultArgs{maxSuccess = noOfTestCases}
 
 noOfTestCases :: Int
-#if LONG_TESTS
-noOfTestCases = 20000
-#else
+
+
+
 noOfTestCases = 1000
-#endif

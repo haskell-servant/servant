@@ -47,7 +47,7 @@
 # - group: {name: generalise, enabled: true}
 #
 # Replace return with pure
-# - group: {name: future, enabled: true}
+- group: {name: future, enabled: true}
 
 
 # Ignore some builtin hints

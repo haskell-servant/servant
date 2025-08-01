@@ -65,7 +65,7 @@ instance (HasGenRequest b, KnownSymbol path) => HasGenRequest (path :> b) where
     ( oldf
     , do
         old' <- old
-        return $ \burl ->
+        pure $ \burl ->
           let r = old' burl
               oldPath = path r
               oldPath' = BS.dropWhile (== BS.c2w '/') oldPath
@@ -93,7 +93,7 @@ instance
     , do
         old' <- old
         new' <- toUrlPiece <$> new
-        return $ \burl -> let r = old' burl in r{path = Text.encodeUtf8 new' <> path r}
+        pure $ \burl -> let r = old' burl in r{path = Text.encodeUtf8 new' <> path r}
     )
     where
       (oldf, old) = genRequest (Proxy :: Proxy b)
@@ -109,7 +109,7 @@ instance
         old' <- old
         new' <- fmap (Text.encodeUtf8 . toUrlPiece) <$> new
         let new'' = BS.intercalate "/" new'
-        return $ \burl -> let r = old' burl in r{path = new'' <> path r}
+        pure $ \burl -> let r = old' burl in r{path = new'' <> path r}
     )
     where
       (oldf, old) = genRequest (Proxy :: Proxy b)
@@ -124,7 +124,7 @@ instance
     , do
         old' <- old
         new' <- toUrlPiece <$> new -- TODO: generate lenient or/and optional
-        return $ \burl ->
+        pure $ \burl ->
           let r = old' burl
            in r
                 { requestHeaders = (hdr, Text.encodeUtf8 new') : requestHeaders r
@@ -145,7 +145,7 @@ instance
         old' <- old -- TODO: generate lenient
         new' <- new
         (ct, bd) <- elements $ allMimeRender (Proxy :: Proxy x) new'
-        return $ \burl ->
+        pure $ \burl ->
           let r = old' burl
            in r
                 { requestBody = RequestBodyLBS bd
@@ -165,7 +165,7 @@ instance
     , do
         new' <- new -- TODO: generate lenient or/and optional
         old' <- old
-        return $ \burl ->
+        pure $ \burl ->
           let r = old' burl
               newExpr = param <> "=" <> Text.encodeUtf8 (toQueryParam new')
               qs = queryString r
@@ -187,7 +187,7 @@ instance
     , do
         new' <- new
         old' <- old
-        return $ \burl ->
+        pure $ \burl ->
           let r = old' burl
            in r
                 { queryString =
@@ -210,7 +210,7 @@ instance
     ( oldf
     , do
         old' <- old
-        return $ \burl ->
+        pure $ \burl ->
           let r = old' burl
               qs = queryString r
            in r
@@ -227,7 +227,7 @@ instance
   where
   genRequest _ =
     ( 1
-    , return $ \burl ->
+    , pure $ \burl ->
         defaultRequest
           { host = BS8.pack $ baseUrlHost burl
           , port = baseUrlPort burl
@@ -242,7 +242,7 @@ instance
   where
   genRequest _ =
     ( 1
-    , return $ \burl ->
+    , pure $ \burl ->
         defaultRequest
           { host = BS8.pack $ baseUrlHost burl
           , port = baseUrlPort burl

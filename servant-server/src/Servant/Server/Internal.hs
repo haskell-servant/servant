@@ -255,8 +255,8 @@ instance
                  , parseUrlPiece txt :: Either T.Text a
                  ) of
               (SFalse, Left e) -> delayedFail $ formatError rep request $ T.unpack e
-              (SFalse, Right v) -> return v
-              (STrue, piece) -> return $ either (Left . T.unpack) Right piece
+              (SFalse, Right v) -> pure v
+              (STrue, piece) -> pure $ either (Left . T.unpack) Right piece
         )
     where
       rep = typeRep (Proxy :: Proxy Capture')
@@ -303,7 +303,7 @@ instance
         ( addCapture d $ \txts -> withRequest $ \request ->
             case parseUrlPieces txts of
               Left e -> delayedFail $ formatError rep request $ T.unpack e
-              Right v -> return v
+              Right v -> pure v
         )
     where
       rep = typeRep (Proxy :: Proxy CaptureAll)
@@ -353,7 +353,7 @@ allowedMethod method request = allowedMethodHead method request || requestMethod
 
 methodCheck :: Method -> Request -> DelayedIO ()
 methodCheck method request
-  | allowedMethod method request = return ()
+  | allowedMethod method request = pure ()
   | otherwise = delayedFail err405
 
 -- This has switched between using 'Fail' and 'FailFatal' a number of
@@ -365,7 +365,7 @@ methodCheck method request
 -- recoverable.
 acceptCheck :: AllMime list => Proxy list -> AcceptHeader -> DelayedIO ()
 acceptCheck proxy accH
-  | canHandleAcceptH proxy accH = return ()
+  | canHandleAcceptH proxy accH = pure ()
   | otherwise = delayedFail err406
 
 methodRouter
@@ -743,7 +743,7 @@ instance
       paramname = T.pack $ symbolVal (Proxy :: Proxy sym)
       paramsCheck req =
         case partitionEithers $ fmap parseQueryParam params of
-          ([], parsed) -> return parsed
+          ([], parsed) -> pure parsed
           (errs, _) ->
             delayedFailFatal $
               formatError rep req $
@@ -893,16 +893,16 @@ instance
                         <> paramname
                         <> T.pack " failed: "
                         <> T.pack e
-              Right parsed -> return parsed
+              Right parsed -> pure parsed
 
 parseDeepParam :: (T.Text, Maybe T.Text) -> Either String ([T.Text], Maybe T.Text)
 parseDeepParam (paramname, value) =
-  let parseParam "" = return []
+  let parseParam "" = pure []
       parseParam n = reverse <$> go [] n
       go parsed remaining = case T.take 1 remaining of
         "[" -> case T.breakOn "]" remaining of
           (_, "") -> Left $ "Error parsing deep param, missing closing ']': " <> T.unpack remaining
-          (name, "]") -> return $ T.drop 1 name : parsed
+          (name, "]") -> pure $ T.drop 1 name : parsed
           (name, remaining') -> case T.take 2 remaining' of
             "][" -> go (T.drop 1 name : parsed) (T.drop 1 remaining')
             _ -> Left $ "Error parsing deep param, incorrect brackets: " <> T.unpack remaining
@@ -1025,7 +1025,7 @@ instance
                 _ -> Nothing
          in case canHandleContentTypeH <|> noOptionalReqBody of
               Nothing -> delayedFail err415
-              Just f -> return f
+              Just f -> pure f
 
       bodyCheck f = withRequest $ \request ->
         let
@@ -1042,12 +1042,12 @@ instance
          in
           ( liftIO (lazyRequestBody request)
               >>= ( case (required, lenient, hasReqBody) of
-                      (STrue, STrue, _) -> return . first T.pack
-                      (STrue, SFalse, _) -> either (delayedFailFatal . serverErr) return
-                      (SFalse, STrue, False) -> return . either (const Nothing) (Just . Right)
-                      (SFalse, SFalse, False) -> return . either (const Nothing) Just
-                      (SFalse, STrue, True) -> return . Just . first T.pack
-                      (SFalse, SFalse, True) -> either (delayedFailFatal . serverErr) (return . Just)
+                      (STrue, STrue, _) -> pure . first T.pack
+                      (STrue, SFalse, _) -> either (delayedFailFatal . serverErr) pure
+                      (SFalse, STrue, False) -> pure . either (const Nothing) (Just . Right)
+                      (SFalse, SFalse, False) -> pure . either (const Nothing) Just
+                      (SFalse, STrue, True) -> pure . Just . first T.pack
+                      (SFalse, SFalse, True) -> either (delayedFailFatal . serverErr) (pure . Just)
                   )
                 . f
           )
@@ -1070,7 +1070,7 @@ instance
     where
       ctCheck :: DelayedIO (SourceIO chunk -> IO a)
       -- TODO: do content-type check
-      ctCheck = return fromSourceIO
+      ctCheck = pure fromSourceIO
 
       bodyCheck :: (SourceIO chunk -> IO a) -> DelayedIO a
       bodyCheck fromRS = withRequest $ \req -> do

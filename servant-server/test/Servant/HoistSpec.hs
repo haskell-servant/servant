@@ -37,4 +37,4 @@ server' = hoistServer api f server
 -------------------------------------------------------------------------------
 
 spec :: Spec
-spec = return ()
+spec = pure ()

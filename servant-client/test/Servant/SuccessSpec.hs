@@ -175,7 +175,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
       ioProperty $ do
         result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
-        return $
+        pure $
           result === Right (cap, num, flag, body)
 
   context "With a route that can either return success or redirect" $ do

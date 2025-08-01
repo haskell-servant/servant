@@ -47,7 +47,7 @@ instance MonadTrans RouteResultT where
   lift = RouteResultT . fmap Route
 
 instance (Functor m, Monad m) => Applicative (RouteResultT m) where
-  pure = RouteResultT . return . Route
+  pure = RouteResultT . pure . Route
   (<*>) = ap
 
 instance Monad m => Monad (RouteResultT m) where
@@ -55,8 +55,8 @@ instance Monad m => Monad (RouteResultT m) where
   m >>= k = RouteResultT $ do
     a <- runRouteResultT m
     case a of
-      Fail e -> return $ Fail e
-      FailFatal e -> return $ FailFatal e
+      Fail e -> pure $ Fail e
+      FailFatal e -> pure $ FailFatal e
       Route b -> runRouteResultT (k b)
 
 instance MonadIO m => MonadIO (RouteResultT m) where
@@ -72,7 +72,7 @@ instance MonadBaseControl b m => MonadBaseControl b (RouteResultT m) where
 
 instance MonadTransControl RouteResultT where
   type StT RouteResultT a = RouteResult a
-  liftWith f = RouteResultT (return <$> f runRouteResultT)
+  liftWith f = RouteResultT (pure <$> f runRouteResultT)
   restoreT = RouteResultT
 
 instance MonadThrow m => MonadThrow (RouteResultT m) where

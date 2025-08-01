@@ -59,15 +59,15 @@ instance
   toSourceIO = conduitToSourceIO
 
 instance (MonadIO m, r ~ ()) => FromSourceIO o (ConduitT i o m r) where
-  fromSourceIO src = return $
+  fromSourceIO src = pure $
     ConduitT $ \con ->
       PipeM $ liftIO $ S.unSourceT src $ \step ->
         loop con step
     where
       loop :: MonadIO m => (() -> Pipe i i o () m b) -> S.StepT IO o -> IO (Pipe i i o () m b)
-      loop con S.Stop = return (con ())
+      loop con S.Stop = pure (con ())
       loop _con (S.Error err) = fail err
       loop con (S.Skip s) = loop con s
       loop con (S.Effect ms) = ms >>= loop con
-      loop con (S.Yield x s) = return (HaveOutput (PipeM (liftIO $ loop con s)) x)
+      loop con (S.Yield x s) = pure (HaveOutput (PipeM (liftIO $ loop con s)) x)
   {-# SPECIALIZE INLINE fromSourceIO :: SourceIO o -> IO (ConduitT i o IO ()) #-}

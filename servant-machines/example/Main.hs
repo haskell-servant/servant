@@ -39,26 +39,26 @@ server = fast :<|> slow :<|> proxy
   where
     fast n = liftIO $ do
       putStrLn ("/get/" ++ show n)
-      return $ fastMachine n
+      pure $ fastMachine n
 
     slow n = liftIO $ do
       putStrLn ("/slow/" ++ show n)
-      return $ slowMachine n
+      pure $ slowMachine n
 
     proxy c = liftIO $ do
       putStrLn "/proxy"
-      return c
+      pure c
 
     -- for some reason unfold leaks?
     fastMachine m
-      | m < 0 = MachineT (return Stop)
-      | otherwise = MachineT (return (Yield m (fastMachine (m - 1))))
+      | m < 0 = MachineT (pure Stop)
+      | otherwise = MachineT (pure (Yield m (fastMachine (m - 1))))
 
     slowMachine m
-      | m < 0 = MachineT (return Stop)
+      | m < 0 = MachineT (pure Stop)
       | otherwise = MachineT $ do
           threadDelay 1000000
-          return (Yield m (slowMachine (m - 1)))
+          pure (Yield m (slowMachine (m - 1)))
 
 app :: Application
 app = serve api server

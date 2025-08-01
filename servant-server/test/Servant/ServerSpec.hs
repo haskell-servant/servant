@@ -210,13 +210,13 @@ verbSpec :: Spec
 verbSpec = describe "Servant.API.Verb" $ do
   let server :: Server (VerbApi method status)
       server =
-        return alice
-          :<|> return NoContent
-          :<|> return (addHeader 5 alice)
-          :<|> return (addHeader 10 NoContent)
-          :<|> return (addHeader' 5 alice)
-          :<|> (return alice :<|> return "B")
-          :<|> return (S.source ["bytestring"])
+        pure alice
+          :<|> pure NoContent
+          :<|> pure (addHeader 5 alice)
+          :<|> pure (addHeader 10 NoContent)
+          :<|> pure (addHeader' 5 alice)
+          :<|> (pure alice :<|> pure "B")
+          :<|> pure (S.source ["bytestring"])
 
       get200 = Proxy :: Proxy (VerbApi 'GET 200)
       post210 = Proxy :: Proxy (VerbApi 'POST 210)
@@ -225,7 +225,7 @@ verbSpec = describe "Servant.API.Verb" $ do
       patch214 = Proxy :: Proxy (VerbApi 'PATCH 214)
       wrongMethod m = if m == methodPatch then methodPost else methodPatch
       test desc api method (status :: Int) = context desc $
-        with (return $ serve api server) $ do
+        with (pure $ serve api server) $ do
           -- HEAD and 214/215 need not return bodies
           unless (status `elem` [214, 215] || method == methodHead) $
             it "returns the person" $ do
@@ -322,22 +322,22 @@ captureServer = getLegs :<|> getEars :<|> getEyes
   where
     getLegs :: Integer -> Handler Animal
     getLegs legs = case legs of
-      4 -> return jerry
-      2 -> return tweety
+      4 -> pure jerry
+      2 -> pure tweety
       _ -> throwError err404
 
     getEars :: Either String Integer -> Handler Animal
-    getEars (Left _) = return chimera -- ignore integer parse error, return weird animal
-    getEars (Right 2) = return jerry
+    getEars (Left _) = pure chimera -- ignore integer parse error, return weird animal
+    getEars (Right 2) = pure jerry
     getEars (Right _) = throwError err404
 
     getEyes :: Integer -> Handler Animal
-    getEyes 2 = return jerry
+    getEyes 2 = pure jerry
     getEyes _ = throwError err404
 
 captureSpec :: Spec
 captureSpec = describe "Servant.API.Capture" $ do
-  with (return (serve captureApi captureServer)) $ do
+  with (pure (serve captureApi captureServer)) $ do
     it "can capture parts of the 'pathInfo'" $ do
       response <- get "/2"
       liftIO $ decode' (simpleBody response) `shouldBe` Just tweety
@@ -355,7 +355,7 @@ captureSpec = describe "Servant.API.Capture" $ do
     it "returns 400 if parsing integer fails on Strict Capture" $ get "/eyes/bla" `shouldRespondWith` 400
 
   with
-    ( return
+    ( pure
         ( serve
             (Proxy :: Proxy (Capture "captured" String :> Raw))
             ( \"captured" -> Tagged $ \request_ sendResponse ->
@@ -381,12 +381,12 @@ captureAllApi :: Proxy CaptureAllApi
 captureAllApi = Proxy
 
 captureAllServer :: Server CaptureAllApi
-captureAllServer = handleLegs :<|> return
+captureAllServer = handleLegs :<|> pure
   where
-    handleLegs [] = return beholder
+    handleLegs [] = pure beholder
     handleLegs legs = case sum legs of
-      4 -> return jerry
-      2 -> return tweety
+      4 -> pure jerry
+      2 -> pure tweety
       _ -> throwError err404
 
 type RootedCaptureAllApi = CaptureAll "xs" String :> Get '[JSON] [String]
@@ -396,7 +396,7 @@ captureAllSpec = do
   let getStringList = decode' @[String] . simpleBody
 
   describe "Servant.API.CaptureAll" $ do
-    with (return (serve captureAllApi captureAllServer)) $ do
+    with (pure (serve captureAllApi captureAllServer)) $ do
       it "can capture a single element of the 'pathInfo'" $ do
         response <- get "/legs/2"
         liftIO $ decode' (simpleBody response) `shouldBe` Just tweety
@@ -431,7 +431,7 @@ captureAllSpec = do
         response <- get "/arms//"
         liftIO $ getStringList response `shouldBe` Just [""]
 
-    with (return (serve (Proxy :: Proxy RootedCaptureAllApi) return)) $ do
+    with (pure (serve (Proxy :: Proxy RootedCaptureAllApi) pure)) $ do
       it "can capture empty rooted capture all" $ do
         response <- get "/"
         liftIO $ getStringList response `shouldBe` Just []
@@ -441,7 +441,7 @@ captureAllSpec = do
         liftIO $ getStringList response `shouldBe` Just [""]
 
     with
-      ( return
+      ( pure
           ( serve
               (Proxy :: Proxy (CaptureAll "segments" String :> Raw))
               ( \_captured -> Tagged $ \request_ sendResponse ->
@@ -470,7 +470,7 @@ instance FromDeepQuery Filter where
     let maybeToRight l = maybe (Left l) Right
     age' <- maybeToRight "missing age" $ readMaybe . T.unpack =<< join (lookup ["age"] params)
     name' <- maybeToRight "missing name" $ join $ lookup ["name"] params
-    return $ Filter age' (T.unpack name')
+    pure $ Filter age' (T.unpack name')
 
 type QueryParamApi =
   QueryParam "name" String :> Get '[JSON] Person
@@ -487,33 +487,33 @@ queryParamApi = Proxy
 qpServer :: Server QueryParamApi
 qpServer = queryParamServer :<|> qpNames :<|> qpCapitalize :<|> qpAge :<|> qpAges :<|> qpRaw :<|> qpDeep
   where
-    qpNames (_ : name2 : _) = return alice{name = name2}
-    qpNames _ = return alice
+    qpNames (_ : name2 : _) = pure alice{name = name2}
+    qpNames _ = pure alice
 
-    qpCapitalize False = return alice
-    qpCapitalize True = return alice{name = map toUpper (name alice)}
+    qpCapitalize False = pure alice
+    qpCapitalize True = pure alice{name = map toUpper (name alice)}
 
-    qpAge Nothing = return alice
-    qpAge (Just age') = return alice{age = age'}
+    qpAge Nothing = pure alice
+    qpAge (Just age') = pure alice{age = age'}
 
-    qpAges ages = return alice{age = sum ages}
+    qpAges ages = pure alice{age = sum ages}
 
     qpRaw q =
-      return
+      pure
         alice
           { name = maybe mempty BS8.unpack $ join (lookup "name" q)
           , age = fromMaybe 0 (readMaybe . BS8.unpack =<< join (lookup "age" q))
           }
 
     qpDeep filter' =
-      return
+      pure
         alice
           { name = nameFilter filter'
           , age = ageFilter filter'
           }
 
-    queryParamServer (Just name_) = return alice{name = name_}
-    queryParamServer Nothing = return alice
+    queryParamServer (Just name_) = pure alice{name = name_}
+    queryParamServer Nothing = pure alice
 
 queryParamSpec :: Spec
 queryParamSpec = do
@@ -560,7 +560,7 @@ queryParamSpec = do
       flip runSession (serve queryParamApi qpServer) $ do
         response <- mkRequest "?age=foo" ["param"]
         liftIO $ statusCode (simpleStatus response) `shouldBe` 400
-        return ()
+        pure ()
 
     it "parses multiple query parameters" $
       flip runSession (serve queryParamApi qpServer) $ do
@@ -576,7 +576,7 @@ queryParamSpec = do
       flip runSession (serve queryParamApi qpServer) $ do
         response <- mkRequest "?ages=2&ages=foo" ["multiparam"]
         liftIO $ statusCode (simpleStatus response) `shouldBe` 400
-        return ()
+        pure ()
 
     it "allows retrieving value-less GET parameters" $
       flip runSession (serve queryParamApi qpServer) $ do
@@ -713,8 +713,8 @@ fragmentApi = Proxy
 fragServer :: Server FragmentApi
 fragServer = fragmentServer :<|> fragAge
   where
-    fragmentServer = return alice
-    fragAge = return alice
+    fragmentServer = pure alice
+    fragAge = pure alice
 
 fragmentSpec :: Spec
 fragmentSpec = do
@@ -747,14 +747,14 @@ reqBodyApi = Proxy
 reqBodySpec :: Spec
 reqBodySpec = describe "Servant.API.ReqBody" $ do
   let server :: Server ReqBodyApi
-      server = return :<|> return . age :<|> return . maybe 0 age
+      server = pure :<|> pure . age :<|> pure . maybe 0 age
       mkReq method x =
         THW.request
           method
           x
           [(hContentType, "application/json;charset=utf-8")]
 
-  with (return $ serve reqBodyApi server) $ do
+  with (pure $ serve reqBodyApi server) $ do
     it "passes the argument to the handler" $ do
       response <- mkReq methodPost "" (encode alice)
       liftIO $ decode' (simpleBody response) `shouldBe` Just alice
@@ -819,28 +819,28 @@ headerSpec = describe "Servant.API.Header" $ do
   let expectsInt :: Maybe Int -> Handler NoContent
       expectsInt (Just x) = do
         when (x /= 5) $ error "Expected 5"
-        return NoContent
+        pure NoContent
       expectsInt Nothing = error "Expected an int"
 
   let expectsString :: Maybe String -> Handler NoContent
       expectsString (Just x) = do
         when (x /= "more from you") $ error "Expected more from you"
-        return NoContent
+        pure NoContent
       expectsString Nothing = error "Expected a string"
 
-  with (return (serve (headerApi (Proxy :: Proxy Int)) expectsInt)) $ do
+  with (pure (serve (headerApi (Proxy :: Proxy Int)) expectsInt)) $ do
     let delete' x = THW.request methodDelete x [("MyHeader", "5")]
 
     it "passes the header to the handler (Int)" $
       delete' "/" "" `shouldRespondWith` 200
 
-  with (return (serve (headerApi (Proxy :: Proxy String)) expectsString)) $ do
+  with (pure (serve (headerApi (Proxy :: Proxy String)) expectsString)) $ do
     let delete' x = THW.request methodDelete x [("MyHeader", "more from you")]
 
     it "passes the header to the handler (String)" $
       delete' "/" "" `shouldRespondWith` 200
 
-  with (return (serve (headerApi (Proxy :: Proxy Int)) expectsInt)) $ do
+  with (pure (serve (headerApi (Proxy :: Proxy Int)) expectsInt)) $ do
     let delete' x = THW.request methodDelete x [("MyHeader", "not a number")]
 
     it "checks for parse errors" $
@@ -951,15 +951,15 @@ alternativeApi = Proxy
 
 alternativeServer :: Server AlternativeApi
 alternativeServer =
-  return alice
-    :<|> return jerry
-    :<|> return "a string"
-    :<|> return jerry
-    :<|> return jerry
-    :<|> return NoContent
+  pure alice
+    :<|> pure jerry
+    :<|> pure "a string"
+    :<|> pure jerry
+    :<|> pure jerry
+    :<|> pure NoContent
 
 alternativeSpec :: Spec
-alternativeSpec = describe "Servant.API.Alternative" $ with (return $ serve alternativeApi alternativeServer) $ do
+alternativeSpec = describe "Servant.API.Alternative" $ with (pure $ serve alternativeApi alternativeServer) $ do
   it "unions endpoints" $ do
     response <- get "/foo"
     liftIO $
@@ -988,11 +988,11 @@ type ResponseHeadersApi =
 
 responseHeadersServer :: Server ResponseHeadersApi
 responseHeadersServer =
-  let h = return $ addHeader 5 $ addHeader "kilroy" "hi"
+  let h = pure $ addHeader 5 $ addHeader "kilroy" "hi"
    in h :<|> h :<|> h :<|> h
 
 responseHeadersSpec :: Spec
-responseHeadersSpec = describe "ResponseHeaders" $ with (return $ serve (Proxy :: Proxy ResponseHeadersApi) responseHeadersServer) $ do
+responseHeadersSpec = describe "ResponseHeaders" $ with (pure $ serve (Proxy :: Proxy ResponseHeadersApi) responseHeadersServer) $ do
   let methods = [methodGet, methodPost, methodPut, methodPatch]
 
   it "includes the headers in the response" $
@@ -1034,7 +1034,7 @@ uverbResponseHeadersServer False = respond . WithStatus @404 $ ("bar" :: String)
 uverbResponseHeadersSpec :: Spec
 uverbResponseHeadersSpec =
   describe "UVerbResponseHeaders" $
-    with (return $ serve (Proxy :: Proxy UVerbResponseHeadersApi) uverbResponseHeadersServer) $
+    with (pure $ serve (Proxy :: Proxy UVerbResponseHeadersApi) uverbResponseHeadersServer) $
       it "includes the headers in the response" $
         THW.request methodGet "/true" [] ""
           `shouldRespondWith` "\"foo\""
@@ -1064,13 +1064,13 @@ miscServ =
     :<|> hostHandler
     :<|> emptyServer
   where
-    versionHandler = return . show
-    secureHandler Secure = return "secure"
-    secureHandler NotSecure = return "not secure"
-    hostHandler = return . show
+    versionHandler = pure . show
+    secureHandler Secure = pure "secure"
+    secureHandler NotSecure = pure "not secure"
+    hostHandler = pure . show
 
 miscCombinatorSpec :: Spec
-miscCombinatorSpec = with (return $ serve miscApi miscServ) $
+miscCombinatorSpec = with (pure $ serve miscApi miscServ) $
   describe "Misc. combinators for request inspection" $ do
     it "Successfully gets the HTTP version specified in the request" $
       go "/version" "\"HTTP/1.0\""
@@ -1102,19 +1102,19 @@ basicAuthApi = Proxy
 
 basicAuthServer :: Server BasicAuthAPI
 basicAuthServer =
-  const (return jerry)
+  const (pure jerry)
     :<|> Tagged (\_ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
 
 basicAuthContext :: Context '[BasicAuthCheck ()]
 basicAuthContext =
   let basicHandler = BasicAuthCheck $ \(BasicAuthData usr pass) ->
         if usr == "servant" && pass == "server"
-          then return (Authorized ())
-          else return Unauthorized
+          then pure (Authorized ())
+          else pure Unauthorized
    in basicHandler :. EmptyContext
 
 basicAuthSpec :: Spec
-basicAuthSpec = describe "Servant.API.BasicAuth" $ with (return (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ context "Basic Authentication" $ do
+basicAuthSpec = describe "Servant.API.BasicAuth" $ with (pure (serveWithContext basicAuthApi basicAuthContext basicAuthServer)) $ context "Basic Authentication" $ do
   let basicAuthHeaders user password =
         [("Authorization", "Basic " <> Base64.encode (user <> ":" <> password))]
   it "returns 401 when no credentials given" $ do
@@ -1147,7 +1147,7 @@ genAuthApi = Proxy
 
 genAuthServer :: Server GenAuthAPI
 genAuthServer =
-  const (return tweety)
+  const (pure tweety)
     :<|> Tagged (\_ sendResponse -> sendResponse $ responseLBS imATeapot418 [] "")
 
 type instance AuthServerData (AuthProtect "auth") = ()
@@ -1155,13 +1155,13 @@ type instance AuthServerData (AuthProtect "auth") = ()
 genAuthContext :: Context '[AuthHandler Request ()]
 genAuthContext =
   let authHandler req = case lookup "Auth" (requestHeaders req) of
-        Just "secret" -> return ()
+        Just "secret" -> pure ()
         Just _ -> throwError err403
         Nothing -> throwError err401
    in mkAuthHandler authHandler :. EmptyContext
 
 genAuthSpec :: Spec
-genAuthSpec = describe "Servant.API.Auth" $ with (return (serveWithContext genAuthApi genAuthContext genAuthServer)) $ context "Custom Auth Protection" $ do
+genAuthSpec = describe "Servant.API.Auth" $ with (pure (serveWithContext genAuthApi genAuthContext genAuthServer)) $ context "Custom Auth Protection" $ do
   it "returns 401 when missing headers" $ do
     get "/auth" `shouldRespondWith` 401
 

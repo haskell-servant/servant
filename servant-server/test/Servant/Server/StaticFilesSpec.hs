@@ -35,7 +35,7 @@ app = serve api server
 
 server :: Server Api
 server =
-  (\name_ -> return (Person name_ 42))
+  (\name_ -> pure (Person name_ 42))
     :<|> serveDirectoryFileServer "static"
 
 withStaticFiles :: IO () -> IO ()
@@ -48,14 +48,14 @@ withStaticFiles action = withSystemTempDirectory "servant-test" $ \tmpDir ->
       createDirectory "static"
       writeFile "static/foo.txt" "bar"
       writeFile "static/index.html" "index"
-      return outer
+      pure outer
 
     teardown outer = do
       setCurrentDirectory outer
 
 spec :: Spec
 spec = do
-  around_ withStaticFiles $ with (return app) $ do
+  around_ withStaticFiles $ with (pure app) $ do
     describe "serveDirectory" $ do
       it "successfully serves files" $ do
         get "/static/foo.txt" `shouldRespondWith` "bar"

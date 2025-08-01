@@ -41,8 +41,8 @@ errorOrderAuthCheck :: BasicAuthCheck ()
 errorOrderAuthCheck =
   let check (BasicAuthData username password) =
         if username == "servant" && password == "server"
-          then return (Authorized ())
-          else return Unauthorized
+          then pure (Authorized ())
+          else pure Unauthorized
    in BasicAuthCheck check
 
 ------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ errorOrderSpec :: Spec
 errorOrderSpec =
   describe "HTTP error order"
     $ with
-      ( return $
+      ( pure $
           serveWithContext
             errorOrderApi
             (errorOrderAuthCheck :. EmptyContext)
@@ -131,8 +131,8 @@ errorOrderSpec =
         badBodyRes <- request goodMethod goodUrl [goodAuth, goodContentType, goodAccept] badBody
 
         -- Both bad body and bad params result in 400
-        return badParamsRes `shouldRespondWith` 400
-        return badBodyRes `shouldRespondWith` 400
+        pure badParamsRes `shouldRespondWith` 400
+        pure badBodyRes `shouldRespondWith` 400
 
         -- Param check should occur before body checks
         both <- request goodMethod badParams [goodAuth, goodContentType, goodAccept] badBody
@@ -159,8 +159,8 @@ prioErrorsApi = Proxy
 -- request body unless the path actually matches.
 prioErrorsSpec :: Spec
 prioErrorsSpec = describe "PrioErrors" $ do
-  let server = return
-  with (return $ serve prioErrorsApi server) $ do
+  let server = pure
+  with (pure $ serve prioErrorsApi server) $ do
     let check (mdescr, method) path (cdescr, ctype, body) resp =
           it fulldescr $
             Test.Hspec.Wai.request method path [(hContentType, ctype)] body
@@ -228,20 +228,20 @@ errorRetryApi = Proxy
 errorRetryServer :: Server ErrorRetryApi
 errorRetryServer =
   (\_ -> throwError err402)
-    :<|> (\_ -> return 1)
-    :<|> (\_ -> return 2)
-    :<|> (\_ -> return 3)
-    :<|> (\_ -> return 4)
-    :<|> (\_ _ -> return 5)
-    :<|> (\_ -> return 6)
-    :<|> (\_ -> return 7)
-    :<|> (\_ -> return 8)
+    :<|> (\_ -> pure 1)
+    :<|> (\_ -> pure 2)
+    :<|> (\_ -> pure 3)
+    :<|> (\_ -> pure 4)
+    :<|> (\_ _ -> pure 5)
+    :<|> (\_ -> pure 6)
+    :<|> (\_ -> pure 7)
+    :<|> (\_ -> pure 8)
 
 errorRetrySpec :: Spec
 errorRetrySpec =
   describe "Handler search"
     $ with
-      ( return $
+      ( pure $
           serveWithContext
             errorRetryApi
             (errorOrderAuthCheck :. EmptyContext)
@@ -289,16 +289,16 @@ errorChoiceApi = Proxy
 
 errorChoiceServer :: Server ErrorChoiceApi
 errorChoiceServer =
-  return 0
-    :<|> return 1
-    :<|> return 2
-    :<|> (\_ -> return 3)
-    :<|> ((\_ -> return 4) :<|> (\_ -> return 5))
-    :<|> ((\_ -> return 6) :<|> (\_ -> return 7))
+  pure 0
+    :<|> pure 1
+    :<|> pure 2
+    :<|> (\_ -> pure 3)
+    :<|> ((\_ -> pure 4) :<|> (\_ -> pure 5))
+    :<|> ((\_ -> pure 6) :<|> (\_ -> pure 7))
 
 errorChoiceSpec :: Spec
 errorChoiceSpec = describe "Multiple handlers return errors" $
-  with (return $ serve errorChoiceApi errorChoiceServer) $ do
+  with (pure $ serve errorChoiceApi errorChoiceServer) $ do
     it "should respond with 404 if no path matches" $ do
       request methodGet "" [] "" `shouldRespondWith` 404
 
@@ -352,13 +352,13 @@ customFormatterAPI = Proxy
 
 customFormatterServer :: Server CustomFormatterAPI
 customFormatterServer =
-  (\_ -> return "query")
-    :<|> (\_ -> return "capture")
-    :<|> (\_ -> return "body")
+  (\_ -> pure "query")
+    :<|> (\_ -> pure "capture")
+    :<|> (\_ -> pure "body")
 
 customFormattersSpec :: Spec
 customFormattersSpec = describe "Custom errors from combinators" $
-  with (return $ serveWithContext customFormatterAPI (customFormatters :. EmptyContext) customFormatterServer) $ do
+  with (pure $ serveWithContext customFormatterAPI (customFormatters :. EmptyContext) customFormatterServer) $ do
     let startsWithCustom =
           ResponseMatcher
             { matchStatus = 400

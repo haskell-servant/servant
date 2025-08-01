@@ -28,20 +28,20 @@ instance MachineToSourceIO IO where
       go (MachineT m) = S.Effect $ do
         step <- m
         case step of
-          Stop -> return S.Stop
-          Yield x m' -> return (S.Yield x (go m'))
-          Await _ _ m' -> return (S.Skip (go m'))
+          Stop -> pure S.Stop
+          Yield x m' -> pure (S.Yield x (go m'))
+          Await _ _ m' -> pure (S.Skip (go m'))
 
 instance MachineToSourceIO m => ToSourceIO o (MachineT m k o) where
   toSourceIO = machineToSourceIO
 
 instance MonadIO m => FromSourceIO o (MachineT m k o) where
-  fromSourceIO src = return $ MachineT $ liftIO $ S.unSourceT src go
+  fromSourceIO src = pure $ MachineT $ liftIO $ S.unSourceT src go
     where
       go :: S.StepT IO o -> IO (Step k o (MachineT m k o))
-      go S.Stop = return Stop
+      go S.Stop = pure Stop
       go (S.Error err) = fail err
       go (S.Skip s) = go s
       go (S.Effect ms) = ms >>= go
-      go (S.Yield x s) = return (Yield x (MachineT (liftIO (go s))))
+      go (S.Yield x s) = pure (Yield x (MachineT (liftIO (go s))))
   {-# SPECIALIZE INLINE fromSourceIO :: SourceIO o -> IO (MachineT IO k o) #-}

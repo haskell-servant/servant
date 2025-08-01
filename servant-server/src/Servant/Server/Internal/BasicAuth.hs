@@ -54,7 +54,7 @@ decodeBAHdr req = do
   let decoded = decodeLenient (BS.dropWhile isSpace rest)
   let (username, passWithColonAtHead) = BS.break (== _colon) decoded
   (_, password) <- BS.uncons passWithColonAtHead
-  return (BasicAuthData username password)
+  pure (BasicAuthData username password)
 
 -- | Run and check basic authentication, returning the appropriate http error per
 -- the spec.
@@ -67,6 +67,6 @@ runBasicAuth req realm (BasicAuthCheck ba) =
         BadPassword -> plzAuthenticate
         NoSuchUser -> plzAuthenticate
         Unauthorized -> delayedFailFatal err403
-        Authorized usr -> return usr
+        Authorized usr -> pure usr
   where
     plzAuthenticate = delayedFailFatal err401{errHeaders = [mkBAChallengerHdr realm]}

@@ -52,12 +52,12 @@ spec = do
     streamTestData <- do
       mvar :: MVar [IO Strict.ByteString] <-
         newMVar $
-          replicate 1000 (return "foo")
-            ++ (waitFor serverReceivedFirstChunk >> return "foo")
-            : replicate 1000 (return "foo")
-      return $ modifyMVar mvar $ \case
+          replicate 1000 (pure "foo")
+            ++ (waitFor serverReceivedFirstChunk >> pure "foo")
+            : replicate 1000 (pure "foo")
+      pure $ modifyMVar mvar $ \case
         (a : r) -> (r,) <$> a
-        [] -> return ([], "")
+        [] -> pure ([], "")
 
     let request =
           defaultRequest
@@ -74,7 +74,7 @@ spec = do
           prefix `shouldBe` "foo"
           notify serverReceivedFirstChunk ()
           input `shouldBe` mconcat (replicate 2001 "foo")
-          return NoContent
+          pure NoContent
 
         app = serve testAPI handler
     response <- executeRequest app request
@@ -85,14 +85,14 @@ executeRequest app request = do
   responseMVar <- newEmptyMVar
   let respondToRequest response = do
         putMVar responseMVar response
-        return ResponseReceived
+        pure ResponseReceived
   ResponseReceived <- app request respondToRequest
   takeMVar responseMVar
 
 timeout :: IO a -> IO a
 timeout action = do
   result <- System.Timeout.timeout 1000000 action
-  maybe (throwIO $ ErrorCall "timeout") return result
+  maybe (throwIO $ ErrorCall "timeout") pure result
 
 -- * waiter
 
@@ -105,7 +105,7 @@ data Waiter a
 newWaiter :: IO (Waiter a)
 newWaiter = do
   mvar <- newEmptyMVar
-  return $
+  pure $
     Waiter
       { notify = putMVar mvar
       , waitFor = readMVar mvar

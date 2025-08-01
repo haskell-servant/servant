@@ -213,13 +213,13 @@ performXhr xhr burl request = do
         -- state 4 is fired will cause an MVar to be put. Subsequent
         -- fires are ignored.
         4 -> void $ tryPutMVar waiter ()
-        _ -> return ()
+        _ -> pure ()
 
 onReadyStateChange :: JSXMLHttpRequest -> IO () -> IO (Callback (IO ()))
 onReadyStateChange xhr action = do
   callback <- asyncCallback action
   js_onReadyStateChange xhr callback
-  return callback
+  pure callback
 
 foreign import javascript safe "$1.onreadystatechange = $2;"
   js_onReadyStateChange :: JSXMLHttpRequest -> Callback (IO ()) -> IO ()
@@ -280,17 +280,17 @@ foreign import javascript unsafe "$1.send($2)"
 
 toBody :: Request -> IO (Maybe ArrayBuffer)
 toBody request = case requestBody request of
-  Nothing -> return Nothing
+  Nothing -> pure Nothing
   Just (a, _) -> Just <$> go a
   where
     go :: RequestBody -> IO ArrayBuffer
     go x = case x of
-      RequestBodyLBS x -> return $ mBody $ BL.toStrict x
-      RequestBodyBS x -> return $ mBody x
+      RequestBodyLBS x -> pure $ mBody $ BL.toStrict x
+      RequestBodyBS x -> pure $ mBody x
       RequestBodySource xs ->
         runExceptT (S.runSourceT xs) >>= \case
           Left err -> fail err
-          Right bss -> return $ mBody $ BL.toStrict $ mconcat bss
+          Right bss -> pure $ mBody $ BL.toStrict $ mconcat bss
 
     mBody :: BS.ByteString -> ArrayBuffer
     mBody bs = js_bufferSlice offset len $ Buffer.getArrayBuffer buffer

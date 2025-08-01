@@ -43,19 +43,19 @@ server = fast :<|> slow :<|> readme :<|> proxy
   where
     fast n = liftIO $ do
       putStrLn $ "/get/" ++ show n
-      return $ fastConduit n
+      pure $ fastConduit n
 
     slow n = liftIO $ do
       putStrLn $ "/slow/" ++ show n
-      return $ slowConduit n
+      pure $ slowConduit n
 
     readme = liftIO $ do
       putStrLn "/readme"
-      return (C.sourceFile "README.md")
+      pure (C.sourceFile "README.md")
 
     proxy c = liftIO $ do
       putStrLn "/proxy"
-      return c
+      pure c
 
     -- for some reason unfold leaks?
     fastConduit = C.unfold mk
