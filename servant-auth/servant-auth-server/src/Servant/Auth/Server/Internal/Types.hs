@@ -35,11 +35,10 @@ instance Monoid (AuthResult val) where
   mappend = (<>)
 
 instance Applicative AuthResult where
-  pure = return
+  pure = Authenticated
   (<*>) = ap
 
 instance Monad AuthResult where
-  return = Authenticated
   Authenticated v >>= f = f v
   BadPassword >>= _ = BadPassword
   NoSuchUser >>= _ = NoSuchUser
@@ -69,32 +68,31 @@ instance Semigroup (AuthCheck val) where
       r -> pure r
 
 instance Monoid (AuthCheck val) where
-  mempty = AuthCheck $ const $ return mempty
+  mempty = AuthCheck $ const $ pure mempty
   mappend = (<>)
 
 instance Applicative AuthCheck where
-  pure = return
+  pure = AuthCheck . pure . pure . pure
   (<*>) = ap
 
 instance Monad AuthCheck where
-  return = AuthCheck . return . return . return
   AuthCheck ac >>= f = AuthCheck $ \req -> do
     aresult <- ac req
     case aresult of
       Authenticated usr -> runAuthCheck (f usr) req
-      BadPassword -> return BadPassword
-      NoSuchUser -> return NoSuchUser
-      Indefinite -> return Indefinite
+      BadPassword -> pure BadPassword
+      NoSuchUser -> pure NoSuchUser
+      Indefinite -> pure Indefinite
 
 #if !MIN_VERSION_base(4,13,0)
   fail = Fail.fail
 #endif
 
 instance Fail.MonadFail AuthCheck where
-  fail _ = AuthCheck . const $ return Indefinite
+  fail _ = AuthCheck . const $ pure Indefinite
 
 instance MonadReader Request AuthCheck where
-  ask = AuthCheck $ \x -> return (Authenticated x)
+  ask = AuthCheck $ \x -> pure (Authenticated x)
   local f (AuthCheck check) = AuthCheck $ \req -> check (f req)
 
 instance MonadIO AuthCheck where

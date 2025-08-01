@@ -188,7 +188,7 @@ markdownCode :: Text -> Text
 markdownCode s = "`" <> s <> "`"
 
 addDefaultResponse400 :: ParamName -> Swagger -> Swagger
-addDefaultResponse400 pname = setResponseWith (\old _new -> alter400 old) 400 (return response400)
+addDefaultResponse400 pname = setResponseWith (\old _new -> alter400 old) 400 (pure response400)
   where
     sname = markdownCode pname
     description400 = "Invalid " <> sname

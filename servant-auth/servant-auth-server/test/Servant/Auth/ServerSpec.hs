@@ -101,7 +101,7 @@ spec = do
 authSpec :: Spec
 authSpec =
   describe "The Auth combinator" $
-    aroundAll (testWithApplication . return $ app jwtAndCookieApi) $ do
+    aroundAll (testWithApplication . pure $ app jwtAndCookieApi) $ do
       it "returns a 401 if all authentications are Indefinite" $ \port -> do
         get (url port) `shouldHTTPErrorWith` status401
 
@@ -208,7 +208,7 @@ cookieAuthSpec :: Spec
 cookieAuthSpec =
   describe "The Auth combinator" $ do
     describe "With XSRF check" $
-      aroundAll (testWithApplication . return $ app cookieOnlyApi) $ do
+      aroundAll (testWithApplication . pure $ app cookieOnlyApi) $ do
         it "fails if XSRF header and cookie don't match" $ \port -> property $
           \(user :: User) -> do
             jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
@@ -283,7 +283,7 @@ cookieAuthSpec =
         noXsrfGet xsrfCfg = xsrfCfg{xsrfExcludeGet = True}
         cookieCfgNoXsrfGet = cookieCfg{cookieXsrfSetting = noXsrfGet <$> cookieXsrfSetting cookieCfg}
        in
-        aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
+        aroundAll (testWithApplication . pure $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
           it "succeeds with no XSRF header or cookie for GET" $ \port -> property $
             \(user :: User) -> do
               jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
@@ -301,7 +301,7 @@ cookieAuthSpec =
       let
         cookieCfgNoXsrf = cookieCfg{cookieXsrfSetting = Nothing}
        in
-        aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
+        aroundAll (testWithApplication . pure $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
           it "succeeds with no XSRF header or cookie for GET" $ \port -> property $
             \(user :: User) -> do
               jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
@@ -354,7 +354,7 @@ cookieAuthSpec =
 jwtAuthSpec :: Spec
 jwtAuthSpec =
   describe "The JWT combinator" $
-    aroundAll (testWithApplication . return $ app jwtOnlyApi) $ do
+    aroundAll (testWithApplication . pure $ app jwtOnlyApi) $ do
       it "fails if 'aud' does not match predicate" $ \port -> property $
         \(user :: User) -> do
           jwt <-
@@ -435,7 +435,7 @@ jwtAuthSpec =
 
 basicAuthSpec :: Spec
 basicAuthSpec = describe "The BasicAuth combinator" $
-  aroundAll (testWithApplication . return $ app basicAuthApi) $ do
+  aroundAll (testWithApplication . pure $ app basicAuthApi) $ do
     it "succeeds with the correct password and username" $ \port -> do
       resp <- getWith (defaults & auth ?~ basicAuth "ali" "Open sesame") (url port)
       resp ^. responseStatus `shouldBe` status200
@@ -540,7 +540,7 @@ jwtCfg =
 
 instance FromBasicAuthData User where
   fromBasicAuthData (BasicAuthData usr pwd) _ =
-    return $
+    pure $
       if usr == "ali" && pwd == "Open sesame"
         then Authenticated $ User "ali" "ali@the-thieves-den.com"
         else Indefinite
@@ -576,7 +576,7 @@ server ccfg =
           :<|> DummyRoutes{dummyInt = getInt usr}
           :<|> getHeaderInt
 #if MIN_VERSION_servant_server(0,15,0)
-          :<|> return (S.source ["bytestring"])
+          :<|> pure (S.source ["bytestring"])
 #endif
           :<|> raw
       Indefinite -> throwAll err401
@@ -591,13 +591,13 @@ server ccfg =
     :<|> getLogout
   where
     getInt :: User -> Handler Int
-    getInt usr = return . length $ name usr
+    getInt usr = pure . length $ name usr
 
     postInt :: User -> Int -> Handler Int
-    postInt _ = return
+    postInt _ = pure
 
     getHeaderInt :: Handler (Headers '[Header "Blah" Int] Int)
-    getHeaderInt = return $ addHeader 1797 17
+    getHeaderInt = pure $ addHeader 1797 17
 
     getLogin
       :: User
@@ -611,7 +611,7 @@ server ccfg =
     getLogin user = do
       maybeApplyCookies <- liftIO $ acceptLogin ccfg jwtCfg user
       case maybeApplyCookies of
-        Just applyCookies -> return $ applyCookies NoContent
+        Just applyCookies -> pure $ applyCookies NoContent
         Nothing           -> error "cookies failed to apply"
 
     getLogout
@@ -622,7 +622,7 @@ server ccfg =
                ]
               NoContent
           )
-    getLogout = return $ clearSession ccfg NoContent
+    getLogout = pure $ clearSession ccfg NoContent
 
     raw :: Server Raw
     raw = tagged $ \_req respond ->
@@ -652,7 +652,7 @@ addJwtToHeader :: Either Error BSL.ByteString -> IO Options
 addJwtToHeader = \case
   Left e -> fail $ show e
   Right v ->
-    return $
+    pure $
       defaults & header "Authorization" .~ ["Bearer " <> BSL.toStrict v]
 
 createJWT :: JWK -> JWSHeader () -> ClaimsSet -> IO (Either Error Crypto.JWT.SignedJWT)
@@ -662,7 +662,7 @@ addJwtToCookie :: ToCompact a => CookieSettings -> Either Error a -> IO Options
 addJwtToCookie ccfg jwt = case jwt <&> encodeCompact of
   Left e -> fail $ show e
   Right v ->
-    return $
+    pure $
       defaults & header "Cookie" .~ [sessionCookieName ccfg <> "=" <> BSL.toStrict v]
 
 addCookie :: Options -> BS.ByteString -> Options
@@ -732,7 +732,7 @@ instance Arbitrary User where
 
 instance Postable User where
   postPayload user request =
-    return $
+    pure $
       request
         { HCli.requestBody = HCli.RequestBodyLBS $ encode user
         , HCli.requestHeaders = (mk "Content-Type", "application/json") : HCli.requestHeaders request

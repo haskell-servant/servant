@@ -48,7 +48,7 @@ instance
       authCheck = withRequest $ \req -> liftIO $ do
         authResult <- runAuthCheck (runAuths (Proxy :: Proxy auths) context) req
         cookies <- makeCookies authResult
-        return (authResult, cookies)
+        pure (authResult, cookies)
 
       jwtSettings :: JWTSettings
       jwtSettings = getContextEntry context
@@ -62,8 +62,8 @@ instance
           (Authenticated v) -> do
             ejwt <- makeSessionCookie cookieSettings jwtSettings v
             xsrf <- makeXsrfCookie cookieSettings
-            return $ Just xsrf `SetCookieCons` (ejwt `SetCookieCons` SetCookieNil)
-          _ -> return $ Nothing `SetCookieCons` (Nothing `SetCookieCons` SetCookieNil)
+            pure $ Just xsrf `SetCookieCons` (ejwt `SetCookieCons` SetCookieNil)
+          _ -> pure $ Nothing `SetCookieCons` (Nothing `SetCookieCons` SetCookieNil)
 
       go
         :: (AuthResult v -> ServerT api Handler)
