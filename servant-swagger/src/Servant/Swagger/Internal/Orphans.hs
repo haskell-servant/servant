@@ -1,19 +1,14 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-#endif
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Servant.Swagger.Internal.Orphans where
 
 import Data.Proxy (Proxy (..))
 import Data.Swagger
-import Servant.Types.SourceT (SourceT)
-#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
 import Servant.API (WithStatus (..))
-#endif
+import Servant.Types.SourceT (SourceT)
 
 -- | Pretend that 'SourceT m a' is '[a]'.
 --
@@ -21,7 +16,5 @@ import Servant.API (WithStatus (..))
 instance ToSchema a => ToSchema (SourceT m a) where
   declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy [a])
 
-#if MIN_VERSION_GLASGOW_HASKELL(8,8,1,0)
 -- @since 1.1.11
 deriving instance ToSchema a => ToSchema (WithStatus s a)
-#endif
