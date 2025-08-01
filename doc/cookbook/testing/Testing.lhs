@@ -407,9 +407,9 @@ api = Proxy
 server :: IO (Server API)
 server = do
     mvar <- newMVar ""
-    return $ (\x -> liftIO $ swapMVar mvar x)
-        :<|> (liftIO $ readMVar mvar >>= return . length)
-        :<|> (const $ return ())
+    pure $ (\x -> liftIO $ swapMVar mvar x)
+        :<|> (liftIO $ readMVar mvar >>= pure . length)
+        :<|> (const $ pure ())
 ```
 
 ### Using `servant-quickcheck`
@@ -427,7 +427,7 @@ args = defaultArgs { maxSuccess = 500 }
 
 -- Here's a Servant Context object we'll use
 ctx :: Context '[BasicAuthCheck ()]
-ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
+ctx = BasicAuthCheck (const . pure $ NoSuchUser) :. EmptyContext
 
 
 servantQuickcheckSpec :: Spec

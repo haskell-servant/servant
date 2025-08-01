@@ -69,7 +69,7 @@ server = getBooks :<|> addBook
         addBook book = do
           State{books = p} <- ask
           liftIO $ atomically $ readTVar p >>= writeTVar p . (book :)
-          return book
+          pure book
 
 ```
 
@@ -103,7 +103,7 @@ main = do
       _ <- printBooks
       _ <- addBookClient $ Book "The Picture of Dorian Gray"
       printBooks
-    return ()
+    pure ()
 ```
 
 When run, it outputs the following:

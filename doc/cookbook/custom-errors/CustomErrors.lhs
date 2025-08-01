@@ -67,12 +67,12 @@ server :: Server TestApi
 server = helloH :<|> postGreetH :<|> deleteGreetH
 
   where helloH name Nothing = helloH name (Just False)
-        helloH name (Just False) = return . Greet $ "Hello, " <> name
-        helloH name (Just True) = return . Greet . Text.toUpper $ "Hello, " <> name
+        helloH name (Just False) = pure . Greet $ "Hello, " <> name
+        helloH name (Just True) = pure . Greet . Text.toUpper $ "Hello, " <> name
 
-        postGreetH greet = return greet
+        postGreetH greet = pure greet
 
-        deleteGreetH _ = return NoContent
+        deleteGreetH _ = pure NoContent
 ```
 
 ## Error formatters

@@ -35,7 +35,6 @@ instance Applicative RouteResult where
   (<*>) = ap
 
 instance Monad RouteResult where
-  return = pure
   Route a >>= f = f a
   Fail e >>= _ = Fail e
   FailFatal e >>= _ = FailFatal e
@@ -51,7 +50,6 @@ instance (Functor m, Monad m) => Applicative (RouteResultT m) where
   (<*>) = ap
 
 instance Monad m => Monad (RouteResultT m) where
-  return = pure
   m >>= k = RouteResultT $ do
     a <- runRouteResultT m
     case a of

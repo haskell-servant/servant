@@ -71,7 +71,7 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server usr = return (site usr)
+server usr = pure (site usr)
 ```
 
 In order to protect our endpoint (`"mysite" :> Get '[JSON] Website`), we simply
@@ -105,10 +105,10 @@ checkBasicAuth db = BasicAuthCheck $ \basicAuthData ->
       password = decodeUtf8 (basicAuthPassword basicAuthData)
   in
   case Map.lookup username db of
-    Nothing -> return NoSuchUser
+    Nothing -> pure NoSuchUser
     Just u  -> if pass u == password
-               then return (Authorized u)
-               else return BadPassword
+               then pure (Authorized u)
+               else pure BadPassword
 ```
 
 This check simply looks up the user in the "database" and makes sure the

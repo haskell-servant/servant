@@ -51,7 +51,7 @@ initDB :: DBConnectionString -> IO ()
 initDB connstr = bracket (connectPostgreSQL connstr) close $ \conn -> do
   execute_ conn
     "CREATE TABLE IF NOT EXISTS messages (msg text not null)"
-  return ()
+  pure ()
 ```
 
 Next, our server implementation. It will be parametrised (take as
@@ -76,7 +76,7 @@ server conns = postMessage :<|> getMessages
             execute conn
                     "INSERT INTO messages VALUES (?)"
                     (Only msg)
-          return NoContent
+          pure NoContent
 
         getMessages :: Handler [Message]
         getMessages = fmap (map fromOnly) . liftIO $

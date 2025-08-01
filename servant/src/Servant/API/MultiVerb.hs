@@ -105,7 +105,6 @@ instance Applicative UnrenderResult where
   (<*>) = ap
 
 instance Monad UnrenderResult where
-  return = pure
   StatusMismatch >>= _ = StatusMismatch
   UnrenderError e >>= _ = UnrenderError e
   UnrenderSuccess x >>= f = f x

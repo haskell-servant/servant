@@ -122,7 +122,7 @@ api = Proxy
 
 server :: OIDCEnv -> Server API
 server oidcEnv = serveOIDC oidcEnv handleOIDCLogin
-               :<|> return Homepage
+               :<|> pure Homepage
 
 -- | Then main app
 app :: OIDCEnv -> Application
@@ -161,7 +161,7 @@ initOIDC OIDCConf{..} = do
   mgr  <- newManager tlsManagerSettings
   prov <- O.discover "https://accounts.google.com" mgr
   let oidc     = O.setCredentials clientId clientPassword redirectUri (O.newOIDC prov)
-  return OIDCEnv { oidc = oidc
+  pure OIDCEnv { oidc = oidc
                  , mgr = mgr
                  , genState = genRandomBS
                  , prov = prov
@@ -208,13 +208,13 @@ genOIDCURL OIDCEnv{..} = do
   st <- genState -- generate a random string
   let oidcCreds = O.setCredentials clientId clientPassword redirectUri (O.newOIDC prov)
   loc <- O.getAuthenticationRequestUrl oidcCreds [O.openId, O.email, O.profile] (Just st) []
-  return (show loc)
+  pure (show loc)
 
 handleLogin :: OIDCEnv -> Handler NoContent
 handleLogin oidcenv = do
   loc <- liftIO (genOIDCURL oidcenv)
   redirects loc
-  return NoContent
+  pure NoContent
 ```
 
 The `AuthInfo` is about the infos we can grab from OIDC provider.
@@ -236,7 +236,7 @@ instance FromJSON AuthInfo where
     email   :: Text <- v .: "email"
     email_verified   :: Bool <- v .: "email_verified"
     name :: Text <- v .: "name"
-    return $ AuthInfo (toS email) email_verified (toS name)
+    pure $ AuthInfo (toS email) email_verified (toS name)
   parseJSON invalid    = AeT.typeMismatch "Coord" invalid
 instance JSON.ToJSON AuthInfo where
   toJSON (AuthInfo e ev n) =
@@ -289,7 +289,7 @@ handleLoggedIn oidcenv handleSuccessfulId err mcode =
             if emailVerified authInfo
               then do
                 user <- liftIO $ handleSuccessfulId authInfo
-                either forbidden return user
+                either forbidden pure user
               else forbidden "Please verify your email"
       Nothing -> do
         liftIO $ putText "No code param"
@@ -371,7 +371,7 @@ We need some helpers to generate random string for generating state and API Keys
 genRandomBS :: IO ByteString
 genRandomBS = do
   g <- Random.newStdGen
-  Random.randomRs (0, n) g & take 42 & fmap toChar & readable 0 & toS & return
+  Random.randomRs (0, n) g & take 42 & fmap toChar & readable 0 & toS & pure
   where
     n = length letters - 1
     toChar i = letters List.!! i
@@ -394,7 +394,7 @@ genRandomBS = do
 customerFromAuthInfo :: AuthInfo -> IO Customer
 customerFromAuthInfo authinfo = do
   apikey <- genRandomBS
-  return Customer { account = toS (email authinfo)
+  pure Customer { account = toS (email authinfo)
                   , apiKey = apikey
                   , mail = Just (toS (email authinfo))
                   , fullname = Just (toS (name authinfo))
@@ -404,8 +404,8 @@ handleOIDCLogin :: LoginHandler
 handleOIDCLogin authInfo = do
   custInfo <- customerFromAuthInfo authInfo
   if emailVerified authInfo
-    then return . Right . customerToUser $ custInfo
-    else return (Left "You emails is not verified by your provider. Please verify your email.")
+    then pure . Right . customerToUser $ custInfo
+    else pure (Left "You emails is not verified by your provider. Please verify your email.")
   where
     customerToUser :: Customer -> User
     customerToUser c =

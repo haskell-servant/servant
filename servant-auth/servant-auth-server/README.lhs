@@ -80,7 +80,7 @@ type Protected
 protected :: Servant.Auth.Server.AuthResult User -> Server Protected
 -- If we get an "Authenticated v", we can trust the information in v, since
 -- it was signed by a key we trust.
-protected (Servant.Auth.Server.Authenticated user) = return (name user) :<|> return (email user)
+protected (Servant.Auth.Server.Authenticated user) = pure (name user) :<|> pure (email user)
 -- Otherwise, we return a 401.
 protected _ = throwAll err401
 
@@ -231,7 +231,7 @@ checkCreds cookieSettings jwtSettings (Login "Ali Baba" "Open Sesame") = do
    mApplyCookies <- liftIO $ acceptLogin cookieSettings jwtSettings usr
    case mApplyCookies of
      Nothing           -> throwError err401
-     Just applyCookies -> return $ applyCookies NoContent
+     Just applyCookies -> pure $ applyCookies NoContent
 checkCreds _ _ _ = throwError err401
 ~~~
 

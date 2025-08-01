@@ -179,7 +179,7 @@ h = runUVerbT $ do
 
   -- a lot of code here...
 
-  return $ Foo 1 2 3
+  pure $ Foo 1 2 3
 ```
 
 ## Related Work
@@ -219,5 +219,5 @@ https://lukwagoallan.com/posts/unifying-servant-server-error-responses
 
 ```haskell
 main :: IO ()
-main = return ()
+main = pure ()
 ```

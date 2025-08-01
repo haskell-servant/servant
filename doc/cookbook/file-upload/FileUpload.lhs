@@ -82,7 +82,7 @@ upload multipartData = do
       let content = fdPayload file
       putStrLn $ "Content of " ++ show (fdFileName file)
       LBS.putStr content
-  return 0
+  pure 0
 
 startServer :: IO ()
 startServer = run 8080 (serve api upload)

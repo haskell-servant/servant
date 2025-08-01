@@ -39,7 +39,7 @@ server = breakHandler
   where breakHandler :: Handler ()
         breakHandler = do
           throw MyException
-          return ()
+          pure ()
 ```
 
 First thing we need to do if we want to intercept and log this exception, we need to look in the section of our code where we run the `warp` application, and instead of using the simple `run` function from `warp`, we use the `runSettings` functions which allows to customise the handling of requests
