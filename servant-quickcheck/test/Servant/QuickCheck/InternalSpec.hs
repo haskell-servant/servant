@@ -375,7 +375,4 @@ args :: Args
 args = defaultArgs{maxSuccess = noOfTestCases}
 
 noOfTestCases :: Int
-
-
-
 noOfTestCases = 1000
