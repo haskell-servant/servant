@@ -78,11 +78,3 @@ if(impl(ghc >= 9.6.1))
 
   package lzma
     flags: -pkgconfig
-
-if impl (ghc >= 9.10)
-  allow-newer: servant-openapi3:base
-
-if impl (ghc >= 9.12)
-  allow-newer: postgresql-simple:base
-  allow-newer: postgresql-simple:template-haskell
-  allow-newer: pipes-safe:base
