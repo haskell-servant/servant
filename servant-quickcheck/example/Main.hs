@@ -25,10 +25,10 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = return "Sigurð Fáfnirslayer"
+server = pure "Sigurð Fáfnirslayer"
 
 spec :: Spec
 spec = describe "example server" $
   it "mangles UTF-8 in error messages" $
-    withServantServer api (return server) $ \burl ->
+    withServantServer api (pure server) $ \burl ->
       serverSatisfies api burl defaultArgs (getsHaveCacheControlHeader <%> mempty)

@@ -24,10 +24,10 @@ spec = do
     it "[not a test] write apiJS to static/api.js" $ do
       writeJSFiles
 
-  describe "app" $ with (return app) $ do
+  describe "app" $ with (pure app) $ do
     context "/api.js" $ do
       it "delivers apiJS" $ do
-        get "/api.js" `shouldRespondWith` (fromString (cs apiJS1))
+        get "/api.js" `shouldRespondWith` fromString (cs apiJS1)
 
     context "/" $ do
       it "delivers something" $ do

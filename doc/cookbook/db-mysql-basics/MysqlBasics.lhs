@@ -141,9 +141,9 @@ doMigration :: IO ()
 doMigration = runNoLoggingT $ runResourceT $ withMySQLConn connInfo $ runReaderT $ runMigration migrateAll
 
 server :: Server Api
-server = 
-  personGET :<|> 
-  personGETById :<|> 
+server =
+  personGET :<|>
+  personGETById :<|>
   personDELETE :<|>
   personPOST
     where
@@ -155,20 +155,20 @@ server =
 selectPersons :: Handler [Person]
 selectPersons = do
   personList <- runDB $ selectList [] []
-  return $ map (\(Entity _ u) -> u) personList
+  pure $ map (\(Entity _ u) -> u) personList
 
 selectPersonById :: Int -> Handler Person
 selectPersonById id = do
   sqlResult <- runDB $ get $ PersonKey id
   case sqlResult of
-    Just person -> return person
+    Just person -> pure person
     Nothing -> throwError err404 { errBody = JSON.encode "Person with ID not found." }
 
 createPerson :: Person -> Handler Person
 createPerson person = do
   attemptCreate <- runDB $ insert person
   case attemptCreate of
-    PersonKey k -> return person
+    PersonKey k -> pure person
     _           -> throwError err503 { errBody = JSON.encode "Could not create Person." }
 
 deletePerson :: Int -> Handler ()

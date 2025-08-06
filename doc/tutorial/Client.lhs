@@ -134,7 +134,7 @@ queries = do
   pos <- position 10 10
   message <- hello (Just "servant")
   em  <- marketing (ClientInfo "Alp" "alp@foo.com" 26 ["haskell", "mathematics"])
-  return (pos, message, em)
+  pure (pos, message, em)
 
 run :: IO ()
 run = do
@@ -223,7 +223,7 @@ Consider the following streaming API type:
 type StreamAPI = "positionStream" :> StreamGet NewlineFraming JSON (SourceIO Position)
 ```
 
-Note that we use the same `SourceIO` type as on the server-side 
+Note that we use the same `SourceIO` type as on the server-side
 (this is different from `servant-0.14`).
 However, we have to use different client, `Servant.Client.Streaming`,
 which can stream (but has different API).

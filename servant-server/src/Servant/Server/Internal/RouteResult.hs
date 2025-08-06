@@ -6,7 +6,7 @@
 
 module Servant.Server.Internal.RouteResult where
 
-import Control.Monad (ap, liftM)
+import Control.Monad (ap)
 import Control.Monad.Base (MonadBase (..))
 import Control.Monad.Catch (MonadThrow (..))
 import Control.Monad.Trans (MonadIO (..), MonadTrans (..))
@@ -35,7 +35,6 @@ instance Applicative RouteResult where
   (<*>) = ap
 
 instance Monad RouteResult where
-  return = pure
   Route a >>= f = f a
   Fail e >>= _ = Fail e
   FailFatal e >>= _ = FailFatal e
@@ -47,16 +46,15 @@ instance MonadTrans RouteResultT where
   lift = RouteResultT . fmap Route
 
 instance (Functor m, Monad m) => Applicative (RouteResultT m) where
-  pure = RouteResultT . return . Route
+  pure = RouteResultT . pure . Route
   (<*>) = ap
 
 instance Monad m => Monad (RouteResultT m) where
-  return = pure
   m >>= k = RouteResultT $ do
     a <- runRouteResultT m
     case a of
-      Fail e -> return $ Fail e
-      FailFatal e -> return $ FailFatal e
+      Fail e -> pure $ Fail e
+      FailFatal e -> pure $ FailFatal e
       Route b -> runRouteResultT (k b)
 
 instance MonadIO m => MonadIO (RouteResultT m) where
@@ -72,7 +70,7 @@ instance MonadBaseControl b m => MonadBaseControl b (RouteResultT m) where
 
 instance MonadTransControl RouteResultT where
   type StT RouteResultT a = RouteResult a
-  liftWith f = RouteResultT $ liftM return $ f runRouteResultT
+  liftWith f = RouteResultT (pure <$> f runRouteResultT)
   restoreT = RouteResultT
 
 instance MonadThrow m => MonadThrow (RouteResultT m) where

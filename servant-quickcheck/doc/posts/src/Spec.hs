@@ -13,7 +13,7 @@ spec :: Spec
 spec = describe "the species application" $ beforeAll check $ do
   let pserver = do
         conn <- connectPostgreSQL "dbname=servant-quickcheck"
-        return $ server conn
+        pure $ server conn
 
   it "should not return 500s" $ do
     withServantServer api pserver $ \url ->

@@ -137,7 +137,7 @@ instance MonadBaseControl IO ClientM where
 
 -- | Try clients in order, last error is preserved.
 instance Alt ClientM where
-  a <!> b = a `catchError` \_ -> b
+  a <!> b = a `catchError` const b
 
 instance RunClient ClientM where
   runRequestAcceptStatus statuses req = do
@@ -175,17 +175,17 @@ performRequest acceptStatus req = do
         Just good -> status `elem` good
   unless goodStatus $ do
     throwError $ mkFailureResponse burl req ourResponse
-  return ourResponse
+  pure ourResponse
   where
     requestWithoutCookieJar :: Client.Manager -> Client.Request -> ClientM (Client.Response BSL.ByteString)
     requestWithoutCookieJar m' request' = do
       eResponse <- liftIO . catchConnectionError $ Client.httpLbs request' m'
-      either throwError return eResponse
+      either throwError pure eResponse
 
     requestWithCookieJar :: Client.Manager -> Client.Request -> TVar Client.CookieJar -> ClientM (Client.Response BSL.ByteString)
     requestWithCookieJar m' request' cj = do
       eResponse <- liftIO . catchConnectionError . Client.withResponseHistory request' m' $ updateWithResponseCookies cj
-      either throwError return eResponse
+      either throwError pure eResponse
 
     updateWithResponseCookies :: TVar Client.CookieJar -> Client.HistoriedResponse Client.BodyReader -> IO (Client.Response BSL.ByteString)
     updateWithResponseCookies cj responses = do
@@ -194,7 +194,7 @@ performRequest acceptStatus req = do
       let fRes' = fRes{Client.responseBody = BSL.fromChunks bss}
           allResponses = Client.hrRedirects responses <> [(fReq, fRes')]
       atomically $ mapM_ (updateCookieJar now) allResponses
-      return fRes'
+      pure fRes'
       where
         updateCookieJar :: UTCTime -> (Client.Request, Client.Response BSL.ByteString) -> STM ()
         updateCookieJar now' (req', res') = modifyTVar' cj (fst . Client.updateCookieJar res' req' now')
@@ -272,7 +272,7 @@ defaultMakeClientRequest burl r =
 
             needsPopper popper
 
-          nextBs S.Stop = return (S.Stop, BS.empty)
+          nextBs S.Stop = pure (S.Stop, BS.empty)
           nextBs (S.Error err) = fail err
           nextBs (S.Skip s) = nextBs s
           nextBs (S.Effect ms) = ms >>= nextBs
@@ -280,7 +280,7 @@ defaultMakeClientRequest burl r =
             [] -> nextBs s
             (x : xs)
               | BS.null x -> nextBs step'
-              | otherwise -> return (step', x)
+              | otherwise -> pure (step', x)
               where
                 step' = S.Yield (BSL.fromChunks xs) s
 

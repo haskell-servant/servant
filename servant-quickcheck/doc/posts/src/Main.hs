@@ -51,24 +51,24 @@ server conn =
         liftIO (lookupSpecies conn sname)
           :<|> liftIO (deleteSpecies conn sname)
     )
-      :<|> (\species -> liftIO $ insertSpecies conn species)
+      :<|> (liftIO . insertSpecies conn)
   )
-    :<|> (liftIO $ allSpecies conn)
+    :<|> liftIO (allSpecies conn)
 
 lookupSpecies :: Connection -> Text -> IO Species
 lookupSpecies conn name = do
   [s] <- query conn "SELECT * FROM species WHERE species_name = ?" (Only name)
-  return s
+  pure s
 
 deleteSpecies :: Connection -> Text -> IO ()
 deleteSpecies conn name = do
   _ <- execute conn "DELETE FROM species WHERE species_name = ?" (Only name)
-  return ()
+  pure ()
 
 insertSpecies :: Connection -> Species -> IO ()
 insertSpecies conn Species{..} = do
   _ <- execute conn "INSERT INTO species (species_name, species_genus) VALUES (?)" (speciesName, speciesGenus)
-  return ()
+  pure ()
 
 allSpecies :: Connection -> IO [Species]
 allSpecies conn = do

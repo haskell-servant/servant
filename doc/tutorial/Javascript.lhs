@@ -99,8 +99,8 @@ following simple linear scan will do, given how small our list is.
 
 ``` haskell
 searchBook :: Monad m => Maybe Text -> m (Search Book)
-searchBook Nothing  = return (mkSearch "" books)
-searchBook (Just q) = return (mkSearch q books')
+searchBook Nothing  = pure (mkSearch "" books)
+searchBook (Just q) = pure (mkSearch q books')
 
   where books' = filter (\b -> q' `T.isInfixOf` T.toLower (author b)
                             || q' `T.isInfixOf` T.toLower (title b)

@@ -40,5 +40,5 @@ main' = do
             Right books -> print books
 
 main :: IO ()
-main = return ()
+main = pure ()
 ```

@@ -82,7 +82,7 @@ instance
   AllCTRender cts a
   => IsServerResource cts a
   where
-  resourceResponse request p res = handleAcceptH p (getAcceptHeader request) res
+  resourceResponse request p = handleAcceptH p (getAcceptHeader request)
   resourceHeaders _ _ = []
 
 instance
@@ -130,7 +130,7 @@ instance
   where
   type ServerT (UVerb method contentTypes as) m = m (Union as)
 
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route
     :: forall env

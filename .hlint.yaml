@@ -45,15 +45,12 @@
 #
 # Generalise map to fmap, ++ to <>
 # - group: {name: generalise, enabled: true}
+#
+# Replace return with pure
+- group: {name: future, enabled: true}
 
 
 # Ignore some builtin hints
-- ignore: {name: Redundant do}
-- ignore: {name: Parse error}
-- ignore: {name: Use fmap}
-- ignore: {name: Use list comprehension}
-- ignore: {name: Use lambda-case}
-- ignore: {name: Eta reduce}
 # - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
 
 

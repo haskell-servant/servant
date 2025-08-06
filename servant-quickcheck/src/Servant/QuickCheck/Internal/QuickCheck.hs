@@ -98,7 +98,7 @@ serversEqual api burl1 burl2 args req = do
       _ <- run $ tryPutMVar deetsMVar $ ServerEqualityFailure req1 resp1 resp2
       assert False
   case r of
-    Success{} -> return ()
+    Success{} -> pure ()
     Failure{} -> do
       mx <- tryReadMVar deetsMVar
       case mx of
@@ -163,9 +163,9 @@ serverSatisfiesMgr api manager burl args preds = do
     _ <- run $ tryPutMVar deetsMVar v
     case v of
       Just _ -> assert False
-      _ -> return ()
+      _ -> pure ()
   case r of
-    Success{} -> return ()
+    Success{} -> pure ()
     Failure{} -> do
       mx <- tryReadMVar deetsMVar
       case mx of
@@ -203,7 +203,7 @@ serverDoesntSatisfyMgr api manager burl args preds = do
     v <- run $ finishPredicates preds (noCheckStatus req) manager
     assert $ not $ null v
   case r of
-    Success{} -> return ()
+    Success{} -> pure ()
     GaveUp{numTests = n} -> expectationFailure $ "Gave up after " ++ show n ++ " tests"
     Failure{output = m} -> expectationFailure $ "Failed:\n" ++ show m
     NoExpectedFailure{} -> expectationFailure "No expected failure"

@@ -59,7 +59,7 @@ server dbfile = postMessage :<|> getMessages
             execute conn
                     "INSERT INTO messages VALUES (?)"
                     (Only msg)
-          return NoContent
+          pure NoContent
 
         getMessages :: Handler [Message]
         getMessages = fmap (map fromOnly) . liftIO $

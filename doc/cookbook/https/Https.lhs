@@ -27,7 +27,7 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = return 10
+server = pure 10
 
 app :: Application
 app = serve api server

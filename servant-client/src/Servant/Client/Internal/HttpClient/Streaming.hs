@@ -109,7 +109,7 @@ instance MonadBase IO ClientM where
 
 -- | Try clients in order, last error is preserved.
 instance Alt ClientM where
-  a <!> b = a `catchError` \_ -> b
+  a <!> b = a `catchError` const b
 
 instance RunClient ClientM where
   runRequestAcceptStatus = performRequest
@@ -168,7 +168,7 @@ performRequest acceptStatus req = do
             Just good -> status `elem` good
       unless goodStatus $ do
         throwError $ mkFailureResponse burl req ourResponse
-      return ourResponse
+      pure ourResponse
 
 -- | TODO: support UVerb ('acceptStatus' argument, like in 'performRequest' above).
 performWithStreamingRequest :: Request -> (StreamingResponse -> IO a) -> ClientM a

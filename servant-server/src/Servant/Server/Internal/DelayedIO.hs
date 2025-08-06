@@ -40,7 +40,7 @@ instance MonadBase IO DelayedIO where
   liftBase = liftIO
 
 liftRouteResult :: RouteResult a -> DelayedIO a
-liftRouteResult x = DelayedIO $ lift . lift $ RouteResultT . return $ x
+liftRouteResult x = DelayedIO $ lift . lift $ RouteResultT . pure $ x
 
 instance MonadBaseControl IO DelayedIO where
   -- type StM DelayedIO a = StM (ReaderT Request (ResourceT (RouteResultT IO))) a

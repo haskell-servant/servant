@@ -85,9 +85,7 @@ instance MFunctor SourceT where
   hoist f (SourceT m) = SourceT $ \k ->
     k $
       Effect $
-        f $
-          fmap (hoist f) $
-            m pure
+        f (hoist f <$> m pure)
 
 -- | >>> source "xy" <> source "z" :: SourceT Identity Char
 -- fromStepT (Effect (Identity (Yield 'x' (Yield 'y' (Yield 'z' Stop)))))

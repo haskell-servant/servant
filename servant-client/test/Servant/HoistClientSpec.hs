@@ -7,7 +7,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -39,7 +38,7 @@ hoistClientAPI :: Proxy HoistClientAPI
 hoistClientAPI = Proxy
 
 hoistClientServer :: Application -- implements HoistClientAPI
-hoistClientServer = serve hoistClientAPI $ return 5 :<|> return
+hoistClientServer = serve hoistClientAPI $ pure 5 :<|> pure
 
 hoistClientSpec :: Spec
 hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp $ do

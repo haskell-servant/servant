@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Main (main) where
@@ -47,23 +47,23 @@ server = fast :<|> slow :<|> readme :<|> proxy
   where
     fast n = liftIO $ do
       putStrLn ("/get/" ++ show n)
-      return $ fastPipe n
+      pure $ fastPipe n
 
     slow n = liftIO $ do
       putStrLn ("/slow/" ++ show n)
-      return $ slowPipe n
+      pure $ slowPipe n
 
     readme = liftIO $ do
       putStrLn "/readme"
-      return $ P.withFile "README.md" ReadMode $ \h -> PBS.fromHandle h
+      pure $ P.withFile "README.md" ReadMode $ \h -> PBS.fromHandle h
 
     proxy c = liftIO $ do
       putStrLn "/proxy"
-      return c
+      pure c
 
     -- for some reason unfold leaks?
     fastPipe m
-      | m < 0 = return ()
+      | m < 0 = pure ()
       | otherwise = P.yield m >> fastPipe (m - 1)
 
     slowPipe m = fastPipe m P.>-> P.mapM (<$ threadDelay 1000000)
@@ -86,7 +86,7 @@ main = do
       n <- maybe (fail $ "not a number: " ++ ns) pure $ readMaybe ns
       mgr <- newManager defaultManagerSettings
       burl <- parseBaseUrl "http://localhost:8000/"
-      withClientM (cli n) (mkClientEnv mgr burl) $ \me -> case me of
+      withClientM (cli n) (mkClientEnv mgr burl) $ \case
         Left err -> print err
         Right p -> do
           x <- P.fold (\c _ -> c + 1) (0 :: Int) id p

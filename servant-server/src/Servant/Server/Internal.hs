@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE EmptyCase #-}
 
 module Servant.Server.Internal
   ( module Servant.Server.Internal
@@ -256,8 +255,8 @@ instance
                  , parseUrlPiece txt :: Either T.Text a
                  ) of
               (SFalse, Left e) -> delayedFail $ formatError rep request $ T.unpack e
-              (SFalse, Right v) -> return v
-              (STrue, piece) -> return $ either (Left . T.unpack) Right piece
+              (SFalse, Right v) -> pure v
+              (STrue, piece) -> pure $ either (Left . T.unpack) Right piece
         )
     where
       rep = typeRep (Proxy :: Proxy Capture')
@@ -304,7 +303,7 @@ instance
         ( addCapture d $ \txts -> withRequest $ \request ->
             case parseUrlPieces txts of
               Left e -> delayedFail $ formatError rep request $ T.unpack e
-              Right v -> return v
+              Right v -> pure v
         )
     where
       rep = typeRep (Proxy :: Proxy CaptureAll)
@@ -354,7 +353,7 @@ allowedMethod method request = allowedMethodHead method request || requestMethod
 
 methodCheck :: Method -> Request -> DelayedIO ()
 methodCheck method request
-  | allowedMethod method request = return ()
+  | allowedMethod method request = pure ()
   | otherwise = delayedFail err405
 
 -- This has switched between using 'Fail' and 'FailFatal' a number of
@@ -366,7 +365,7 @@ methodCheck method request
 -- recoverable.
 acceptCheck :: AllMime list => Proxy list -> AcceptHeader -> DelayedIO ()
 acceptCheck proxy accH
-  | canHandleAcceptH proxy accH = return ()
+  | canHandleAcceptH proxy accH = pure ()
   | otherwise = delayedFail err406
 
 methodRouter
@@ -422,7 +421,7 @@ instance
   => HasServer (Verb method status ctypes a) context
   where
   type ServerT (Verb method status ctypes a) m = m a
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
     where
@@ -439,7 +438,7 @@ instance
   => HasServer (Verb method status ctypes (Headers h a)) context
   where
   type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
     where
@@ -451,7 +450,7 @@ instance
   => HasServer (NoContentVerb method) context
   where
   type ServerT (NoContentVerb method) m = m NoContent
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = noContentRouter method status204
     where
@@ -468,7 +467,7 @@ instance
   => HasServer (Stream method status framing ctype a) context
   where
   type ServerT (Stream method status framing ctype a) m = m a
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = streamRouter ([],) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
     where
@@ -487,7 +486,7 @@ instance
   => HasServer (Stream method status framing ctype (Headers h a)) context
   where
   type ServerT (Stream method status framing ctype (Headers h a)) m = m (Headers h a)
-  hoistServerWithContext _ _ nt s = nt s
+  hoistServerWithContext _ _ nt = nt
 
   route Proxy _ = streamRouter (\x -> (getHeaders x, getResponse x)) method status (Proxy :: Proxy framing) (Proxy :: Proxy ctype)
     where
@@ -585,7 +584,7 @@ instance
         unfoldRequestArgument (Proxy :: Proxy mods) errReq errSt mev
         where
           mev :: Maybe (Either T.Text a)
-          mev = fmap parseHeader $ lookup headerName (requestHeaders req)
+          mev = parseHeader <$> lookup headerName (requestHeaders req)
 
           errReq =
             delayedFailFatal $
@@ -744,7 +743,7 @@ instance
       paramname = T.pack $ symbolVal (Proxy :: Proxy sym)
       paramsCheck req =
         case partitionEithers $ fmap parseQueryParam params of
-          ([], parsed) -> return parsed
+          ([], parsed) -> pure parsed
           (errs, _) ->
             delayedFailFatal $
               formatError rep req $
@@ -894,16 +893,16 @@ instance
                         <> paramname
                         <> T.pack " failed: "
                         <> T.pack e
-              Right parsed -> return parsed
+              Right parsed -> pure parsed
 
 parseDeepParam :: (T.Text, Maybe T.Text) -> Either String ([T.Text], Maybe T.Text)
 parseDeepParam (paramname, value) =
-  let parseParam "" = return []
+  let parseParam "" = pure []
       parseParam n = reverse <$> go [] n
       go parsed remaining = case T.take 1 remaining of
         "[" -> case T.breakOn "]" remaining of
           (_, "") -> Left $ "Error parsing deep param, missing closing ']': " <> T.unpack remaining
-          (name, "]") -> return $ T.drop 1 name : parsed
+          (name, "]") -> pure $ T.drop 1 name : parsed
           (name, remaining') -> case T.take 2 remaining' of
             "][" -> go (T.drop 1 name : parsed) (T.drop 1 remaining')
             _ -> Left $ "Error parsing deep param, incorrect brackets: " <> T.unpack remaining
@@ -963,7 +962,7 @@ instance HasServer RawM context where
       Fail e -> respond' $ Fail e
       FailFatal e -> respond' $ FailFatal e
 
-  hoistServerWithContext _ _ f srvM = \req respond -> f (srvM req respond)
+  hoistServerWithContext _ _ f srvM req respond = f (srvM req respond)
 
 -- | If you use 'ReqBody' in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
@@ -1026,7 +1025,7 @@ instance
                 _ -> Nothing
          in case canHandleContentTypeH <|> noOptionalReqBody of
               Nothing -> delayedFail err415
-              Just f -> return f
+              Just f -> pure f
 
       bodyCheck f = withRequest $ \request ->
         let
@@ -1037,15 +1036,21 @@ instance
 
           serverErr :: String -> ServerError
           serverErr = formatError rep request
+
+          required = sbool :: SBool (FoldRequired mods)
+          lenient = sbool :: SBool (FoldLenient mods)
          in
-          fmap f (liftIO $ lazyRequestBody request)
-            >>= case (sbool :: SBool (FoldRequired mods), sbool :: SBool (FoldLenient mods), hasReqBody) of
-              (STrue, STrue, _) -> return . first T.pack
-              (STrue, SFalse, _) -> either (delayedFailFatal . serverErr) return
-              (SFalse, STrue, False) -> return . either (const Nothing) (Just . Right)
-              (SFalse, SFalse, False) -> return . either (const Nothing) Just
-              (SFalse, STrue, True) -> return . Just . first T.pack
-              (SFalse, SFalse, True) -> either (delayedFailFatal . serverErr) (return . Just)
+          ( liftIO (lazyRequestBody request)
+              >>= ( case (required, lenient, hasReqBody) of
+                      (STrue, STrue, _) -> pure . first T.pack
+                      (STrue, SFalse, _) -> either (delayedFailFatal . serverErr) pure
+                      (SFalse, STrue, False) -> pure . either (const Nothing) (Just . Right)
+                      (SFalse, SFalse, False) -> pure . either (const Nothing) Just
+                      (SFalse, STrue, True) -> pure . Just . first T.pack
+                      (SFalse, SFalse, True) -> either (delayedFailFatal . serverErr) (pure . Just)
+                  )
+                . f
+          )
 
 instance
   ( FramingUnrender framing
@@ -1065,7 +1070,7 @@ instance
     where
       ctCheck :: DelayedIO (SourceIO chunk -> IO a)
       -- TODO: do content-type check
-      ctCheck = return fromSourceIO
+      ctCheck = pure fromSourceIO
 
       bodyCheck :: (SourceIO chunk -> IO a) -> DelayedIO a
       bodyCheck fromRS = withRequest $ \req -> do
@@ -1086,7 +1091,7 @@ instance (HasServer api context, KnownSymbol path) => HasServer (path :> api) co
       (route (Proxy :: Proxy api) context subserver)
     where
       proxyPath = Proxy :: Proxy path
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 instance HasServer api context => HasServer (RemoteHost :> api) context where
   type ServerT (RemoteHost :> api) m = SockAddr -> ServerT api m
@@ -1124,14 +1129,14 @@ instance HasServer api ctx => HasServer (Summary desc :> api) ctx where
   type ServerT (Summary desc :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 -- | Ignore @'Description'@ in server handlers.
 instance HasServer api ctx => HasServer (Description desc :> api) ctx where
   type ServerT (Description desc :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
-  hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt s
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
 
 -- | Singleton type representing a server that serves an empty API.
 data EmptyServer = EmptyServer deriving (Bounded, Enum, Eq, Show, Typeable)
@@ -1181,11 +1186,8 @@ instance
 
 -- * helpers
 
-ct_wildcard :: B.ByteString
-ct_wildcard = "*" <> "/" <> "*"
-
 getAcceptHeader :: Request -> AcceptHeader
-getAcceptHeader = AcceptHeader . fromMaybe ct_wildcard . lookup hAccept . requestHeaders
+getAcceptHeader = AcceptHeader . fromMaybe "*/*" . lookup hAccept . requestHeaders
 
 -- * General Authentication
 
@@ -1199,8 +1201,7 @@ instance
     ServerT (WithNamedContext name subContext subApi) m =
       ServerT subApi m
 
-  route Proxy context delayed =
-    route subProxy subContext delayed
+  route Proxy context = route subProxy subContext
     where
       subProxy :: Proxy subApi
       subProxy = Proxy
@@ -1208,7 +1209,7 @@ instance
       subContext :: Context subContext
       subContext = descendIntoNamedContext (Proxy :: Proxy name) context
 
-  hoistServerWithContext _ _ nt s = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext) nt s
+  hoistServerWithContext _ _ = hoistServerWithContext (Proxy :: Proxy subApi) (Proxy :: Proxy subContext)
 
 -------------------------------------------------------------------------------
 -- Custom type errors

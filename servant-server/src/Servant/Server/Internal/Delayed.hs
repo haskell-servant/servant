@@ -4,7 +4,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Servant.Server.Internal.Delayed where
@@ -120,7 +119,7 @@ emptyDelayed :: RouteResult a -> Delayed env a
 emptyDelayed result =
   Delayed (const r) r r r r r r (const r) (\_ _ _ _ _ _ -> result)
   where
-    r = return ()
+    r = pure ()
 
 -- | Add a capture to the end of the capture block.
 addCapture
@@ -280,13 +279,13 @@ runAction action env req respond k =
   runResourceT $
     runDelayed action env req >>= go >>= liftIO . respond
   where
-    go (Fail e) = return $ Fail e
-    go (FailFatal e) = return $ FailFatal e
+    go (Fail e) = pure $ Fail e
+    go (FailFatal e) = pure $ FailFatal e
     go (Route a) = liftIO $ do
       e <- runHandler a
       case e of
-        Left err -> return . Route $ responseServerError err
-        Right x -> return $! k x
+        Left err -> pure . Route $ responseServerError err
+        Right x -> pure $! k x
 
 {- Note [Existential Record Update]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

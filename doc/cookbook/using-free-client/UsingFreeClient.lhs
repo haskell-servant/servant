@@ -61,7 +61,7 @@ main = do
     case args of
         ("server":_) -> do
             putStrLn "Starting cookbook-using-free-client at http://localhost:8000"
-            run 8000 $ serve api $ \n -> return (n * n)
+            run 8000 $ serve api $ \n -> pure (n * n)
         ("client":_) ->
             test
         _ -> do

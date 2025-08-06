@@ -141,10 +141,10 @@ generateEndpoint :: Text -> Req Mocked -> IO Text
 generateEndpoint host req =
   case maybeBody of
     Just body ->
-      body >>= \b -> return $ T.intercalate " " [ "curl", "-X", method, "-d", "'" <> b <> "'"
+      body >>= \b -> pure $ T.intercalate " " [ "curl", "-X", method, "-d", "'" <> b <> "'"
                                                 , "-H 'Content-Type: application/json'", host <> "/" <> url ]
     Nothing ->
-      return $ T.intercalate " " [ "curl", "-X", method, host <> "/" <> url ]
+      pure $ T.intercalate " " [ "curl", "-X", method, host <> "/" <> url ]
   where
     method = decodeUtf8 $ req ^. reqMethod
 

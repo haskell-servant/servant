@@ -8,12 +8,12 @@ In other words, without streaming libraries.
 - Some basic usage doesn't require usage of streaming libraries,
   like `conduit`, `pipes`, `machines` or `streaming`.
   We have bindings for them though.
-- Similar example is bundled with each of our streaming library interop packages (see 
+- Similar example is bundled with each of our streaming library interop packages (see
 [servant-pipes](https://github.com/haskell-servant/servant/blob/master/servant-pipes/example/Main.hs),
 [servant-conduit](https://github.com/haskell-servant/servant/blob/master/servant-conduit/example/Main.hs) and
 [servant-machines](https://github.com/haskell-servant/servant/blob/master/servant-machines/example/Main.hs))
 - `SourceT` doesn't have *Prelude* with handy combinators, so we have to write
-  things ourselves. (Note to self: `mapM` and `foldM` would be handy to have). 
+  things ourselves. (Note to self: `mapM` and `foldM` would be handy to have).
 
 ## Code
 
@@ -64,19 +64,19 @@ server :: Server API
 server = fast :<|> slow :<|> readme :<|> proxy where
     fast n = liftIO $ do
         putStrLn $ "/get/" ++ show n
-        return $ fastSource n
+        pure $ fastSource n
 
     slow n = liftIO $ do
         putStrLn $ "/slow/" ++ show n
-        return $ slowSource n
+        pure $ slowSource n
 
     readme = liftIO $ do
         putStrLn "/proxy"
-        return (S.readFile "README.md")
+        pure (S.readFile "README.md")
 
     proxy c = liftIO $ do
         putStrLn "/proxy"
-        return c
+        pure c
 
     -- for some reason unfold leaks?
     fastSource = S.fromStepT . mk where
@@ -116,8 +116,8 @@ main = do
                     x <- S.unSourceT src (go (0 :: Int))
                     print x
                   where
-                    go !acc S.Stop        = return acc
-                    go !acc (S.Error err) = print err >> return acc
+                    go !acc S.Stop        = pure acc
+                    go !acc (S.Error err) = print err >> pure acc
                     go !acc (S.Skip s)    = go acc s
                     go !acc (S.Effect ms) = ms >>= go acc
                     go !acc (S.Yield _ s) = go (acc + 1) s

@@ -39,7 +39,7 @@ routerSpec = do
         twk (ResponseBuilder (Status i s) hs b) = ResponseBuilder (Status (i + 1) s) hs b
         twk b = b
 
-    with (return app') $ do
+    with (pure app') $ do
       it "calls f on route result" $ do
         get "" `shouldRespondWith` 202
 

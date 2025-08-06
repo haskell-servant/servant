@@ -43,7 +43,7 @@ newHandle = do
   putStrLn "opening file"
   h <- openFile "test.txt" AppendMode
   putStrLn "opened file"
-  return h
+  pure h
 
 closeHandle :: Handle -> IO ()
 closeHandle h = do
@@ -65,7 +65,7 @@ server = writeToFile
             putStrLn "writing file"
             hPutStrLn h legalMsg
             putStrLn "wrote file"
-            return NoContent
+            pure NoContent
 ```
 
 Finally we run the server in the background while we post messages to it.

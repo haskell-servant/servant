@@ -63,12 +63,12 @@ server = helloH :<|> postGreetH :<|> deleteGreetH :<|> otherRoutes
     version = pure 42
 
     helloH name Nothing = helloH name (Just False)
-    helloH name (Just False) = return . Greet $ "Hello, " <> name
-    helloH name (Just True) = return . Greet . toUpper $ "Hello, " <> name
+    helloH name (Just False) = pure . Greet $ "Hello, " <> name
+    helloH name (Just True) = pure . Greet . toUpper $ "Hello, " <> name
 
-    postGreetH greet = return greet
+    postGreetH = pure
 
-    deleteGreetH _ = return NoContent
+    deleteGreetH _ = pure NoContent
 
 -- Turn the server into a WAI app. 'serve' is provided by servant,
 -- more precisely by the Servant.Server module.

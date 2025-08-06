@@ -49,7 +49,7 @@ import Servant.ClientTestUtils
 _ = client comprehensiveAPIWithoutStreaming
 
 spec :: Spec
-spec = describe "Servant.SuccessSpec" $ successSpec
+spec = describe "Servant.SuccessSpec" successSpec
 
 successSpec :: Spec
 successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
@@ -100,7 +100,12 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     let qs = [("name", Just "bob"), ("age", Just "1")]
     left show <$> runClient (getQueryString qs) baseUrl `shouldReturn` Right (Person "bob" 1)
 
-  it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) -> left show <$> runClient (getDeepQuery $ Filter 1 "bob") baseUrl `shouldReturn` (Right (Person "bob" 1))
+  it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) ->
+    left show
+      <$> runClient
+        (getDeepQuery $ Filter 1 "bob")
+        baseUrl
+      `shouldReturn` Right (Person "bob" 1)
 
   it "Servant.API.Fragment" $ \(_, baseUrl) -> left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
 
@@ -164,13 +169,13 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       Left e ->
         assertFailure $ show e
       Right r ->
-        ("X-Added-Header", "XXX") `elem` toList (responseHeaders r) `shouldBe` True
+        (("X-Added-Header", "XXX") `elem` responseHeaders r) `shouldBe` True
 
   modifyMaxSuccess (const 20) $ it "works for a combination of Capture, QueryParam, QueryFlag and ReqBody" $ \(_, baseUrl) ->
     property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
       ioProperty $ do
         result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
-        return $
+        pure $
           result === Right (cap, num, flag, body)
 
   context "With a route that can either return success or redirect" $ do

@@ -64,7 +64,7 @@ instance
   (MonadIO m, a ~ (), a' ~ X, b' ~ (), r ~ ())
   => FromSourceIO b (Proxy a' a b' b m r)
   where
-  fromSourceIO src = pure $ M $ liftIO $ S.unSourceT src (return . go)
+  fromSourceIO src = pure $ M $ liftIO $ S.unSourceT src (pure . go)
     where
       go :: S.StepT IO b -> Proxy X () () b m ()
       go S.Stop = Pure ()

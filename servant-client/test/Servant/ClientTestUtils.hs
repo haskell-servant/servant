@@ -164,7 +164,7 @@ instance FromDeepQuery Filter where
     let maybeToRight l = maybe (Left l) Right
     age' <- maybeToRight "missing age" $ readMaybe . Text.unpack =<< join (lookup ["age"] params)
     name' <- maybeToRight "missing name" $ join $ lookup ["name"] params
-    return $ Filter age' (Text.unpack name')
+    pure $ Filter age' (Text.unpack name')
 
 instance ToDeepQuery Filter where
   toDeepQuery (Filter age' name') =
@@ -335,15 +335,15 @@ server :: Application
 server =
   serve
     api
-    ( return carol
-        :<|> return alice
-        :<|> return "redirecting"
-        :<|> return NoContent
-        :<|> (\name -> return $ Person name 0)
-        :<|> (\names -> return (zipWith Person names [0 ..]))
-        :<|> return
+    ( pure carol
+        :<|> pure alice
+        :<|> pure "redirecting"
+        :<|> pure NoContent
+        :<|> (\name -> pure $ Person name 0)
+        :<|> (\names -> pure (zipWith Person names [0 ..]))
+        :<|> pure
         :<|> ( \case
-                 Just "alice" -> return alice
+                 Just "alice" -> pure alice
                  Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
                  Nothing -> throwError $ ServerError 400 "missing parameter" "" []
              )
@@ -357,31 +357,31 @@ server =
                 . lookup "payload"
                 $ Wai.queryString request
           )
-        :<|> (\names -> return (zipWith Person names [0 ..]))
-        :<|> return
+        :<|> (\names -> pure (zipWith Person names [0 ..]))
+        :<|> pure
         :<|> ( \q ->
-                 return
+                 pure
                    alice
                      { _name = maybe mempty C8.unpack $ join (lookup "name" q)
                      , _age = fromMaybe 0 (readMaybe . C8.unpack =<< join (lookup "age" q))
                      }
              )
         :<|> ( \filter' ->
-                 return
+                 pure
                    alice
                      { _name = nameFilter filter'
                      , _age = ageFilter filter'
                      }
              )
-        :<|> return alice
+        :<|> pure alice
         :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
         :<|> Tagged (\request respond -> respond $ Wai.responseLBS HTTP.ok200 (Wai.requestHeaders request) "rawSuccess")
         :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
-        :<|> (\a b c d -> return (a, b, c, d))
-        :<|> return (addHeader 1729 $ addHeader "eg2" True)
+        :<|> (\a b c d -> pure (a, b, c, d))
+        :<|> pure (addHeader 1729 $ addHeader "eg2" True)
         :<|> (pure . Z . I . WithStatus $ addHeader 1729 $ addHeader "eg2" True)
-        :<|> return (addHeader "cookie1" $ addHeader "cookie2" True)
-        :<|> return NoContent
+        :<|> pure (addHeader "cookie1" $ addHeader "cookie2" True)
+        :<|> pure NoContent
         :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
         :<|> emptyServer
         :<|> ( \shouldRedirect ->
@@ -445,15 +445,15 @@ basicAuthHandler :: BasicAuthCheck ()
 basicAuthHandler =
   let check (BasicAuthData username password) =
         if username == "servant" && password == "server"
-          then return (Authorized ())
-          else return Unauthorized
+          then pure (Authorized ())
+          else pure Unauthorized
    in BasicAuthCheck check
 
 basicServerContext :: Context '[BasicAuthCheck ()]
 basicServerContext = basicAuthHandler :. EmptyContext
 
 basicAuthServer :: Application
-basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (return alice))
+basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (pure alice))
 
 -- * general auth stuff
 
@@ -471,14 +471,14 @@ genAuthHandler :: AuthHandler Wai.Request ()
 genAuthHandler =
   let handler req = case lookup "AuthHeader" (Wai.requestHeaders req) of
         Nothing -> throwError (err401{errBody = "Missing auth header"})
-        Just _ -> return ()
+        Just _ -> pure ()
    in mkAuthHandler handler
 
 genAuthServerContext :: Context '[AuthHandler Wai.Request ()]
 genAuthServerContext = genAuthHandler :. EmptyContext
 
 genAuthServer :: Application
-genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
+genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (pure alice))
 
 {-# NOINLINE manager' #-}
 manager' :: C.Manager
@@ -494,7 +494,7 @@ startWaiApp app = do
   (port, socket) <- openTestSocket
   let settings = setPort port defaultSettings
   thread <- forkIO $ runSettingsSocket settings socket app
-  return (thread, BaseUrl Http "localhost" port "")
+  pure (thread, BaseUrl Http "localhost" port "")
 
 endWaiApp :: (ThreadId, BaseUrl) -> IO ()
 endWaiApp (thread, _) = killThread thread
@@ -506,7 +506,7 @@ openTestSocket = do
   bind s (SockAddrInet defaultPort localhost)
   listen s 1
   port <- socketPort s
-  return (fromIntegral port, s)
+  pure (fromIntegral port, s)
 
 pathGen :: Gen (NonEmptyList Char)
 pathGen = fmap NonEmpty path
@@ -545,4 +545,4 @@ usersServer :: Maybe (Range 1 100) -> Handler [Person]
 usersServer mpage = do
   let pageNum = maybe 1 unRange mpage
   -- pageNum is guaranteed to be between 1 and 100
-  return [Person "Example" $ fromIntegral pageNum]
+  pure [Person "Example" $ fromIntegral pageNum]

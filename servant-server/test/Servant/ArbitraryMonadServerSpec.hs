@@ -35,27 +35,27 @@ combinedAPI :: Proxy CombinedAPI
 combinedAPI = Proxy
 
 readerServer' :: ServerT ReaderAPI (Reader String)
-readerServer' = return 1797 :<|> ask
+readerServer' = pure 1797 :<|> ask
 
 fReader :: Reader String a -> Handler a
-fReader x = return (runReader x "hi")
+fReader x = pure (runReader x "hi")
 
 readerServer :: Server ReaderAPI
 readerServer = hoistServer readerAPI fReader readerServer'
 
 combinedReaderServer' :: ServerT CombinedAPI (Reader String)
-combinedReaderServer' = readerServer' :<|> hoistServer identityAPI (return . runIdentity) (return True)
+combinedReaderServer' = readerServer' :<|> hoistServer identityAPI (pure . runIdentity) (pure True)
 
 combinedReaderServer :: Server CombinedAPI
 combinedReaderServer = hoistServer combinedAPI fReader combinedReaderServer'
 
 enterSpec :: Spec
 enterSpec = describe "Enter" $ do
-  with (return (serve readerAPI readerServer)) $ do
+  with (pure (serve readerAPI readerServer)) $ do
     it "allows running arbitrary monads" $ do
       get "int" `shouldRespondWith` "1797"
       post "string" "3" `shouldRespondWith` "\"hi\""{matchStatus = 200}
 
-  with (return (serve combinedAPI combinedReaderServer)) $ do
+  with (pure (serve combinedAPI combinedReaderServer)) $ do
     it "allows combnation of enters" $ do
       get "bool" `shouldRespondWith` "true"

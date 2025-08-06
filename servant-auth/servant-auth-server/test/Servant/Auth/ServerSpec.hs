@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Servant.Auth.ServerSpec (spec) where
@@ -8,6 +9,7 @@ module Servant.Auth.ServerSpec (spec) where
 #endif
 
 import Control.Lens
+import Control.Monad (forM_)
 import Control.Monad.IO.Class (liftIO)
 import Crypto.JOSE
   ( Alg (HS256, None)
@@ -38,10 +40,8 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Data.CaseInsensitive (mk)
 import Data.Foldable (find)
-import Data.Monoid
 import Data.Text (Text, pack)
 import Data.Time
-import Data.Time.Clock (getCurrentTime)
 import GHC.Generics (Generic)
 import Network.HTTP.Client
   ( cookie_expiry_time
@@ -101,7 +101,7 @@ spec = do
 authSpec :: Spec
 authSpec =
   describe "The Auth combinator" $
-    aroundAll (testWithApplication . return $ app jwtAndCookieApi) $ do
+    aroundAll (testWithApplication . pure $ app jwtAndCookieApi) $ do
       it "returns a 401 if all authentications are Indefinite" $ \port -> do
         get (url port) `shouldHTTPErrorWith` status401
 
@@ -158,7 +158,7 @@ authSpec =
                   destroyCookieJar cookieJar
               opts2 =
                 defaults
-                  & cookies .~ Just cookieJar
+                  & cookies ?~ cookieJar
                   & header (mk (xsrfField xsrfHeaderName cookieCfg)) .~ [cookie_value xxsrf]
           resp2 <- getWith opts2 (url port)
           resp2 ^? responseBody . _JSON `shouldBe` Just (length $ name user)
@@ -208,7 +208,7 @@ cookieAuthSpec :: Spec
 cookieAuthSpec =
   describe "The Auth combinator" $ do
     describe "With XSRF check" $
-      aroundAll (testWithApplication . return $ app cookieOnlyApi) $ do
+      aroundAll (testWithApplication . pure $ app cookieOnlyApi) $ do
         it "fails if XSRF header and cookie don't match" $ \port -> property $
           \(user :: User) -> do
             jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
@@ -223,7 +223,7 @@ cookieAuthSpec =
           \(user :: User) -> do
             jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
             opts' <- addJwtToCookie cookieCfg jwt
-            let opts = opts' & checkResponse .~ Just mempty
+            let opts = opts' & checkResponse ?~ mempty
             resp <- getWith opts (url port)
             resp ^. responseStatus `shouldBe` status401
             (resp ^. responseCookieJar) `shouldNotHaveCookies` ["XSRF-TOKEN"]
@@ -254,7 +254,7 @@ cookieAuthSpec =
                   let jar = resp ^. responseCookieJar
                       Just xsrfCookieValue = cookie_value <$> find (\c -> cookie_name c == xsrfField xsrfCookieName cookieCfg) (destroyCookieJar jar)
                    in defaults
-                        & cookies .~ Just jar -- real cookie jars aren't updated by being replaced
+                        & cookies ?~ jar -- real cookie jars aren't updated by being replaced
                         & header (mk (xsrfField xsrfHeaderName cookieCfg)) .~ [xsrfCookieValue]
 
             resp <- postWith defaults (url port ++ "/login") user
@@ -281,9 +281,9 @@ cookieAuthSpec =
     describe "With no XSRF check for GET requests" $
       let
         noXsrfGet xsrfCfg = xsrfCfg{xsrfExcludeGet = True}
-        cookieCfgNoXsrfGet = cookieCfg{cookieXsrfSetting = fmap noXsrfGet $ cookieXsrfSetting cookieCfg}
+        cookieCfgNoXsrfGet = cookieCfg{cookieXsrfSetting = noXsrfGet <$> cookieXsrfSetting cookieCfg}
        in
-        aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
+        aroundAll (testWithApplication . pure $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
           it "succeeds with no XSRF header or cookie for GET" $ \port -> property $
             \(user :: User) -> do
               jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
@@ -301,7 +301,7 @@ cookieAuthSpec =
       let
         cookieCfgNoXsrf = cookieCfg{cookieXsrfSetting = Nothing}
        in
-        aroundAll (testWithApplication . return $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
+        aroundAll (testWithApplication . pure $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
           it "succeeds with no XSRF header or cookie for GET" $ \port -> property $
             \(user :: User) -> do
               jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
@@ -320,7 +320,7 @@ cookieAuthSpec =
             \(user :: User) -> do
               let optsFromResp resp =
                     defaults
-                      & cookies .~ Just (resp ^. responseCookieJar) -- real cookie jars aren't updated by being replaced
+                      & cookies ?~ (resp ^. responseCookieJar) -- real cookie jars aren't updated by being replaced
               resp <- postWith defaults (url port ++ "/login") user
               (resp ^. responseCookieJar)
                 `shouldMatchCookieNames` [ sessionCookieName cookieCfg
@@ -328,7 +328,7 @@ cookieAuthSpec =
                                          ]
               let loggedInOpts = optsFromResp resp
 
-              resp <- getWith (loggedInOpts) (url port)
+              resp <- getWith loggedInOpts (url port)
               resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
 
               resp <- getWith loggedInOpts (url port ++ "/logout")
@@ -354,15 +354,15 @@ cookieAuthSpec =
 jwtAuthSpec :: Spec
 jwtAuthSpec =
   describe "The JWT combinator" $
-    aroundAll (testWithApplication . return $ app jwtOnlyApi) $ do
+    aroundAll (testWithApplication . pure $ app jwtOnlyApi) $ do
       it "fails if 'aud' does not match predicate" $ \port -> property $
         \(user :: User) -> do
           jwt <-
             createJWT
               theKey
               (newJWSHeader ((), HS256))
-              (claims (toJSON user) & claimAud .~ Just (Audience ["boo"]))
-          opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+              (claims (toJSON user) & claimAud ?~ Audience ["boo"])
+          opts <- addJwtToHeader (jwt <&> encodeCompact)
           getWith opts (url port) `shouldHTTPErrorWith` status401
 
       it "succeeds if 'aud' does match predicate" $ \port -> property $
@@ -371,8 +371,8 @@ jwtAuthSpec =
             createJWT
               theKey
               (newJWSHeader ((), HS256))
-              (claims (toJSON user) & claimAud .~ Just (Audience ["anythingElse"]))
-          opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+              (claims (toJSON user) & claimAud ?~ Audience ["anythingElse"])
+          opts <- addJwtToHeader (jwt <&> encodeCompact)
           resp <- getWith opts (url port)
           resp ^. responseStatus `shouldBe` status200
 
@@ -382,8 +382,8 @@ jwtAuthSpec =
             createJWT
               theKey
               (newJWSHeader ((), HS256))
-              (claims (toJSON user) & claimNbf .~ Just (NumericDate future))
-          opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+              (claims (toJSON user) & claimNbf ?~ NumericDate future)
+          opts <- addJwtToHeader (jwt <&> encodeCompact)
           getWith opts (url port) `shouldHTTPErrorWith` status401
 
       it "fails if 'exp' is set to a past date" $ \port -> property $
@@ -405,7 +405,7 @@ jwtAuthSpec =
             theKey
             (newJWSHeader ((), None))
             (claims $ toJSON user)
-        opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+        opts <- addJwtToHeader (jwt <&> encodeCompact)
         getWith opts (url port) `shouldHTTPErrorWith` status401
 
       it "fails if JWT does not use expected algorithm" $
@@ -414,7 +414,7 @@ jwtAuthSpec =
 
       it "fails if data is not valid JSON" $ \port -> do
         jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims "{{")
-        opts <- addJwtToHeader (jwt >>= (return . encodeCompact))
+        opts <- addJwtToHeader (jwt <&> encodeCompact)
         getWith opts (url port) `shouldHTTPErrorWith` status401
 
       it "suceeds as wreq's oauth2Bearer" $ \port -> property $ \(user :: User) -> do
@@ -423,7 +423,7 @@ jwtAuthSpec =
             theKey
             (newJWSHeader ((), HS256))
             (claims $ toJSON user)
-        resp <- case jwt >>= (return . encodeCompact) of
+        resp <- case jwt <&> encodeCompact of
           Left (e :: Error) -> fail $ show e
           Right v -> getWith (defaults & auth ?~ oauth2Bearer (BSL.toStrict v)) (url port)
         resp ^. responseStatus `shouldBe` status200
@@ -435,7 +435,7 @@ jwtAuthSpec =
 
 basicAuthSpec :: Spec
 basicAuthSpec = describe "The BasicAuth combinator" $
-  aroundAll (testWithApplication . return $ app basicAuthApi) $ do
+  aroundAll (testWithApplication . pure $ app basicAuthApi) $ do
     it "succeeds with the correct password and username" $ \port -> do
       resp <- getWith (defaults & auth ?~ basicAuth "ali" "Open sesame") (url port)
       resp ^. responseStatus `shouldBe` status200
@@ -493,7 +493,7 @@ type API auths
                                              , Header "Set-Cookie" SetCookie ] NoContent)
 {- FOURMOLU_ENABLE -}
 
-data DummyRoutes mode = DummyRoutes
+newtype DummyRoutes mode = DummyRoutes
   { dummyInt :: mode :- "dummy" :> Get '[JSON] Int
   }
   deriving (Generic)
@@ -540,7 +540,7 @@ jwtCfg =
 
 instance FromBasicAuthData User where
   fromBasicAuthData (BasicAuthData usr pwd) _ =
-    return $
+    pure $
       if usr == "ali" && pwd == "Open sesame"
         then Authenticated $ User "ali" "ali@the-thieves-den.com"
         else Indefinite
@@ -566,22 +566,23 @@ app
 app api = appWithCookie api cookieCfg
 
 {- FOURMOLU_DISABLE -}
+
 server :: CookieSettings -> Server (API auths)
 server ccfg =
-  ( \authResult -> case authResult of
+  ( \case
       Authenticated usr ->
         getInt usr
           :<|> postInt usr
           :<|> DummyRoutes{dummyInt = getInt usr}
           :<|> getHeaderInt
 #if MIN_VERSION_servant_server(0,15,0)
-          :<|> return (S.source ["bytestring"])
+          :<|> pure (S.source ["bytestring"])
 #endif
           :<|> raw
       Indefinite -> throwAll err401
       _ -> throwAll err403
   )
-    :<|> ( \authResult -> case authResult of
+    :<|> ( \case
             Authenticated usr -> respond (WithStatus @200 (42 :: Int))
             Indefinite        -> respond (WithStatus @401 $ pack "Authentication required")
             _                 -> respond (WithStatus @403 $ pack "Forbidden")
@@ -590,13 +591,13 @@ server ccfg =
     :<|> getLogout
   where
     getInt :: User -> Handler Int
-    getInt usr = return . length $ name usr
+    getInt usr = pure . length $ name usr
 
     postInt :: User -> Int -> Handler Int
-    postInt _ = return
+    postInt _ = pure
 
     getHeaderInt :: Handler (Headers '[Header "Blah" Int] Int)
-    getHeaderInt = return $ addHeader 1797 17
+    getHeaderInt = pure $ addHeader 1797 17
 
     getLogin
       :: User
@@ -610,7 +611,7 @@ server ccfg =
     getLogin user = do
       maybeApplyCookies <- liftIO $ acceptLogin ccfg jwtCfg user
       case maybeApplyCookies of
-        Just applyCookies -> return $ applyCookies NoContent
+        Just applyCookies -> pure $ applyCookies NoContent
         Nothing           -> error "cookies failed to apply"
 
     getLogout
@@ -621,15 +622,19 @@ server ccfg =
                ]
               NoContent
           )
-    getLogout = return $ clearSession ccfg NoContent
+    getLogout = pure $ clearSession ccfg NoContent
 
     raw :: Server Raw
-    raw =
+    raw = tagged $ \_req respond ->
+            respond $ responseLBS status200 [("hi", "there")] "how are you?"
+
 #if MIN_VERSION_servant_server(0,11,0)
-      Tagged $
+    tagged :: Application -> Tagged Handler Application
+    tagged = Tagged
+#else
+    tagged :: Application -> Application
+    tagged = id
 #endif
-      \_req respond ->
-        respond $ responseLBS status200 [("hi", "there")] "how are you?"
 {- FOURMOLU_ENABLE -}
 
 -- }}}
@@ -644,33 +649,33 @@ future :: UTCTime
 future = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "2070-01-01"
 
 addJwtToHeader :: Either Error BSL.ByteString -> IO Options
-addJwtToHeader jwt = case jwt of
+addJwtToHeader = \case
   Left e -> fail $ show e
   Right v ->
-    return $
+    pure $
       defaults & header "Authorization" .~ ["Bearer " <> BSL.toStrict v]
 
 createJWT :: JWK -> JWSHeader () -> ClaimsSet -> IO (Either Error Crypto.JWT.SignedJWT)
 createJWT k a b = runJOSE $ signClaims k a b
 
 addJwtToCookie :: ToCompact a => CookieSettings -> Either Error a -> IO Options
-addJwtToCookie ccfg jwt = case jwt >>= (return . encodeCompact) of
+addJwtToCookie ccfg jwt = case jwt <&> encodeCompact of
   Left e -> fail $ show e
   Right v ->
-    return $
+    pure $
       defaults & header "Cookie" .~ [sessionCookieName ccfg <> "=" <> BSL.toStrict v]
 
 addCookie :: Options -> BS.ByteString -> Options
 addCookie opts cookie' =
   opts
-    & header "Cookie" %~ \c -> case c of
+    & header "Cookie" %~ \case
       [h] -> [cookie' <> "; " <> h]
       [] -> [cookie']
       _ -> error "expecting single cookie header"
 
 {- FOURMOLU_DISABLE -}
 shouldHTTPErrorWith :: IO a -> Status -> Expectation
-shouldHTTPErrorWith act stat = act `shouldThrow` \e -> case e of
+shouldHTTPErrorWith act stat = act `shouldThrow` \case
 #if MIN_VERSION_http_client(0,5,0)
   HCli.HttpExceptionRequest _ (HCli.StatusCodeException resp _)
     -> HCli.responseStatus resp == stat
@@ -687,7 +692,7 @@ shouldMatchCookieNames cj patterns =
 
 shouldNotHaveCookies :: HCli.CookieJar -> [BS.ByteString] -> Expectation
 shouldNotHaveCookies cj patterns =
-  sequence_ $ (\cookieName -> cookieNames `shouldNotContain` [cookieName]) <$> patterns
+  forM_ patterns (\cookieName -> cookieNames `shouldNotContain` [cookieName])
   where
     cookieNames :: [BS.ByteString]
     cookieNames = cookie_name <$> destroyCookieJar cj
@@ -701,7 +706,7 @@ url :: Int -> String
 url port = "http://localhost:" <> show port
 
 claims :: Value -> ClaimsSet
-claims val = emptyClaimsSet & unregisteredClaims . at "dat" .~ Just val
+claims val = emptyClaimsSet & unregisteredClaims . at "dat" ?~ val
 
 -- }}}
 ------------------------------------------------------------------------------
@@ -727,7 +732,7 @@ instance Arbitrary User where
 
 instance Postable User where
   postPayload user request =
-    return $
+    pure $
       request
         { HCli.requestBody = HCli.RequestBodyLBS $ encode user
         , HCli.requestHeaders = (mk "Content-Type", "application/json") : HCli.requestHeaders request

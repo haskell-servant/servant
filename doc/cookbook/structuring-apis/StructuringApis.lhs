@@ -81,10 +81,10 @@ type that `Server FactoringAPI` "resolves to" by typing
 factoringServer :: Server FactoringAPI
 factoringServer x = getXY :<|> postX
 
-  where getXY Nothing  = return x
-        getXY (Just y) = return (x + y)
+  where getXY Nothing  = pure x
+        getXY (Just y) = pure (x + y)
 
-        postX = return (x - 1)
+        postX = pure (x - 1)
 ```
 
 If you want to avoid the "nested types" and the need to manually
@@ -164,19 +164,19 @@ related sections of the API.
 ``` haskell
 userServer :: Server (SimpleAPI "users" User UserId)
 userServer = simpleServer
-  (return [])
-  (\userid -> return $
+  (pure [])
+  (\userid -> pure $
       if userid == 0
       then User "john" 64
       else User "everybody else" 10
   )
-  (\_user -> return NoContent)
+  (\_user -> pure NoContent)
 
 productServer :: Server (SimpleAPI "products" Product ProductId)
 productServer = simpleServer
-  (return [])
-  (\_productid -> return $ Product "Great stuff")
-  (\_product -> return NoContent)
+  (pure [])
+  (\_productid -> pure $ Product "Great stuff")
+  (\_product -> pure NoContent)
 ```
 
 Finally, some dummy types and the serving part.

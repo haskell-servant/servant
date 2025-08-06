@@ -163,8 +163,8 @@ authCheck :: BasicAuthCheck User
 authCheck =
   let check (BasicAuthData username password) =
         if username == "servant" && password == "server"
-        then return (Authorized (User "servant"))
-        else return Unauthorized
+        then pure (Authorized (User "servant"))
+        else pure Unauthorized
   in BasicAuthCheck check
 ```
 
@@ -187,8 +187,8 @@ We're now ready to write our `server` method that will tie everything together:
 -- that takes 'User' as an argument.
 basicAuthServer :: Server BasicAPI
 basicAuthServer =
-  let publicAPIHandler = return [PublicData "foo", PublicData "bar"]
-      privateAPIHandler (user :: User) = return (PrivateData (userName user))
+  let publicAPIHandler = pure [PublicData "foo", PublicData "bar"]
+      privateAPIHandler (user :: User) = pure (PrivateData (userName user))
   in publicAPIHandler :<|> privateAPIHandler
 ```
 
@@ -278,7 +278,7 @@ database = fromList [ ("key1", Account "Anne Briggs")
 lookupAccount :: ByteString -> Handler Account
 lookupAccount key = case Map.lookup key database of
   Nothing -> throwError (err403 { errBody = "Invalid Cookie" })
-  Just usr -> return usr
+  Just usr -> pure usr
 ```
 
 For generalized authentication, servant exposes the `AuthHandler` type,
@@ -350,8 +350,8 @@ genAuthServerContext = authHandler :. EmptyContext
 genAuthServer :: Server AuthGenAPI
 genAuthServer =
   let privateDataFunc (Account name) =
-          return (PrivateData ("this is a secret: " <> name))
-      publicData = return [PublicData "this is a public piece of data"]
+          pure (PrivateData ("this is a secret: " <> name))
+      publicData = pure [PublicData "this is a public piece of data"]
   in  privateDataFunc :<|> publicData
 ```
 

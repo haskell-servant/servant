@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Servant.Auth.ClientSpec (spec) where
 
@@ -56,11 +55,11 @@ spec = describe "The JWT combinator" $ do
 -- * HasClient {{{
 
 hasClientSpec :: Spec
-hasClientSpec = describe "HasClient" $ aroundAll (testWithApplication $ return app) $ do
+hasClientSpec = describe "HasClient" $ aroundAll (testWithApplication $ pure app) $ do
   let mkTok :: User -> Maybe UTCTime -> IO Token
       mkTok user mexp = do
         Right tok <- makeJWT user jwtCfg mexp
-        return $ Token $ BSL.toStrict tok
+        pure $ Token $ BSL.toStrict tok
 
   it "succeeds when the token does not have expiry" $ \port -> property $ \user -> do
     tok <- mkTok user Nothing
@@ -130,7 +129,7 @@ server :: Server API
 server = getInt
   where
     getInt :: AuthResult User -> Handler Int
-    getInt (Authenticated u) = return . length $ name u
+    getInt (Authenticated u) = pure . length $ name u
     getInt _ = throwAll err401
 
 -- }}}

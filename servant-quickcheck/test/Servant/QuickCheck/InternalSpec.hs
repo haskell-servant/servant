@@ -8,6 +8,7 @@ import Control.Monad (replicateM)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
+import Data.Functor
 import Data.Maybe (fromJust)
 import Network.HTTP.Client (path, queryString)
 import Prelude.Compat
@@ -173,8 +174,8 @@ deepPathSpec = describe "Path components" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
         gen = runGenRequest deepAPI
-        req = (unGen gen rng 0) burl
-    path req `shouldBe` ("/one/two/three")
+        req = unGen gen rng 0 burl
+    path req `shouldBe` "/one/two/three"
 
 queryParamsSpec :: Spec
 queryParamsSpec = describe "QueryParams" $ do
@@ -182,7 +183,7 @@ queryParamsSpec = describe "QueryParams" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
         gen = runGenRequest paramsAPI
-        req = (unGen gen rng 0) burl
+        req = unGen gen rng 0 burl
         qs = C.unpack $ queryString req
     qs `shouldBe` "one=_&two=_"
 
@@ -192,7 +193,7 @@ queryFlagsSpec = describe "QueryFlags" $ do
     let rng = mkQCGen 0
         burl = BaseUrl Http "localhost" 80 ""
         gen = runGenRequest flagsAPI
-        req = (unGen gen rng 0) burl
+        req = unGen gen rng 0 burl
         qs = C.unpack $ queryString req
     qs `shouldBe` "one&two"
 
@@ -232,9 +233,9 @@ unbiasedGenerationSpec = describe "Unbiased Generation of requests"
     let burl = BaseUrl Http "localhost" 80 ""
     let runs = 10000 :: Double
     someRequests <- replicateM 10000 (makeRandomRequest largeApi burl)
-    let mean = (sum $ map fromIntegral someRequests) / runs
+    let mean = sum (map fromIntegral someRequests) / runs
     let variancer x = let ix = fromIntegral x in (ix - mean) * (ix - mean)
-    let variance = (sum $ map variancer someRequests) / runs - 1
+    let variance = sum (map variancer someRequests) / runs - 1
     -- mean should be around 8.5. If this fails, we likely need more runs (or there's a bug!)
     mean > 8 `shouldBe` True
     mean < 9 `shouldBe` True
@@ -266,9 +267,9 @@ flagsAPI = Proxy
 server :: IO (Server API)
 server = do
   mvar <- newMVar ""
-  return $ (\x -> liftIO $ swapMVar mvar x)
-    :<|> (liftIO $ readMVar mvar >>= return . length)
-    :<|> (const $ return ())
+  pure $ (liftIO . swapMVar mvar)
+    :<|> liftIO (readMVar mvar <&> length)
+    :<|> const (pure ())
 
 type API2 = "failplz" :> Get '[JSON] Int
 
@@ -281,13 +282,13 @@ deepAPI :: Proxy DeepAPI
 deepAPI = Proxy
 
 server2 :: IO (Server API2)
-server2 = return $ return 1
+server2 = pure $ pure 1
 
 server3 :: IO (Server API2)
-server3 = return $ return 2
+server3 = pure $ pure 2
 
 serverFailing :: IO (Server API2)
-serverFailing = return . throwError $ err405
+serverFailing = pure . throwError $ err405
 
 -- With Doctypes
 type HtmlDoctype = Get '[HTML] Blaze.Html
@@ -329,7 +330,7 @@ octetAPI :: Proxy OctetAPI
 octetAPI = Proxy
 
 serverOctetAPI :: IO (Server OctetAPI)
-serverOctetAPI = return $ return "blah"
+serverOctetAPI = pure $ pure "blah"
 
 type JsonApi = "jsonComparison" :> Get '[OctetStream] BS.ByteString
 
@@ -337,19 +338,19 @@ jsonApi :: Proxy JsonApi
 jsonApi = Proxy
 
 jsonServer1 :: IO (Server JsonApi)
-jsonServer1 = return $ return "{ \"b\": [\"b\"], \"a\": 1 }" -- whitespace, ordering different
+jsonServer1 = pure $ pure "{ \"b\": [\"b\"], \"a\": 1 }" -- whitespace, ordering different
 
 jsonServer2 :: IO (Server JsonApi)
-jsonServer2 = return $ return "{\"a\": 1,\"b\":[\"b\"]}"
+jsonServer2 = pure $ pure "{\"a\": 1,\"b\":[\"b\"]}"
 
 jsonServer3 :: IO (Server JsonApi)
-jsonServer3 = return $ return "{\"a\": 2, \"b\": [\"b\"]}"
+jsonServer3 = pure $ pure "{\"a\": 2, \"b\": [\"b\"]}"
 
 jsonServer4 :: IO (Server JsonApi)
-jsonServer4 = return $ return "{\"c\": 1, \"d\": [\"b\"]}"
+jsonServer4 = pure $ pure "{\"c\": 1, \"d\": [\"b\"]}"
 
 ctx :: Context '[BasicAuthCheck ()]
-ctx = BasicAuthCheck (const . return $ NoSuchUser) :. EmptyContext
+ctx = BasicAuthCheck (const . pure $ NoSuchUser) :. EmptyContext
 
 ------------------------------------------------------------------------------
 -- Utils
@@ -358,11 +359,11 @@ evalExample :: (Arg e ~ (), Example e) => e -> IO EvalResult
 evalExample e = do
   r <- safeEvaluateExample e defaultParams ($ ()) progCallback
   case resultStatus r of
-    Success -> return $ AllGood
-    Failure _ reason -> return $ FailedWith $ show reason
+    Success -> pure AllGood
+    Failure _ reason -> pure $ FailedWith $ show reason
     Pending{} -> error "should not happen"
   where
-    progCallback _ = return ()
+    progCallback _ = pure ()
 
 data EvalResult
   = AnException SomeException
@@ -374,8 +375,4 @@ args :: Args
 args = defaultArgs{maxSuccess = noOfTestCases}
 
 noOfTestCases :: Int
-#if LONG_TESTS
-noOfTestCases = 20000
-#else
 noOfTestCases = 1000
-#endif

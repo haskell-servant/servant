@@ -4,14 +4,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -190,25 +188,25 @@ server :: Application
 server =
   serve
     api
-    ( return carol
-        :<|> return alice
-        :<|> return NoContent
-        :<|> (\name -> return $ Person name 0)
-        :<|> (\names -> return (zipWith Person names [0 ..]))
-        :<|> return
-        :<|> ( \name -> case name of
-                 Just "alice" -> return alice
+    ( pure carol
+        :<|> pure alice
+        :<|> pure NoContent
+        :<|> (\name -> pure $ Person name 0)
+        :<|> (\names -> pure (zipWith Person names [0 ..]))
+        :<|> pure
+        :<|> ( \case
+                 Just "alice" -> pure alice
                  Just n -> throwError $ ServerError 400 (n ++ " not found") "" []
                  Nothing -> throwError $ ServerError 400 "missing parameter" "" []
              )
-        :<|> (\names -> return (zipWith Person names [0 ..]))
-        :<|> return
-        :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
-        :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
-        :<|> (\a b c d -> return (a, b, c, d))
-        :<|> (return $ addHeader 1729 $ addHeader "eg2" True)
-        :<|> return NoContent
-        :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
+        :<|> (\names -> pure (zipWith Person names [0 ..]))
+        :<|> pure
+        :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "rawSuccess")
+        :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
+        :<|> (\a b c d -> pure (a, b, c, d))
+        :<|> pure (addHeader 1729 $ addHeader "eg2" True)
+        :<|> pure NoContent
+        :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.found302 [("Location", "testlocation"), ("Set-Cookie", "testcookie=test")] "")
         :<|> emptyServer
     )
 
@@ -224,9 +222,9 @@ failServer :: Application
 failServer =
   serve
     failApi
-    ( (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
+    ( Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [] "")
         :<|> (\_capture -> Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "application/json")] "")
-        :<|> (Tagged $ \_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
+        :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.ok200 [("content-type", "fooooo")] "")
     )
 
 -- * basic auth stuff
@@ -241,15 +239,15 @@ basicAuthHandler :: BasicAuthCheck ()
 basicAuthHandler =
   let check (BasicAuthData username password) =
         if username == "servant" && password == "server"
-          then return (Authorized ())
-          else return Unauthorized
+          then pure (Authorized ())
+          else pure Unauthorized
    in BasicAuthCheck check
 
 basicServerContext :: Context '[BasicAuthCheck ()]
 basicServerContext = basicAuthHandler :. EmptyContext
 
 basicAuthServer :: Application
-basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (return alice))
+basicAuthServer = serveWithContext basicAuthAPI basicServerContext (const (pure alice))
 
 -- * general auth stuff
 
@@ -267,14 +265,14 @@ genAuthHandler :: AuthHandler Wai.Request ()
 genAuthHandler =
   let handler req = case lookup "AuthHeader" (Wai.requestHeaders req) of
         Nothing -> throwError (err401{errBody = "Missing auth header"})
-        Just _ -> return ()
+        Just _ -> pure ()
    in mkAuthHandler handler
 
 genAuthServerContext :: Context '[AuthHandler Wai.Request ()]
 genAuthServerContext = genAuthHandler :. EmptyContext
 
 genAuthServer :: Application
-genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (return alice))
+genAuthServer = serveWithContext genAuthAPI genAuthServerContext (const (pure alice))
 
 runClient :: NFData a => ClientM a -> BaseUrl -> IO (Either ClientError a)
 runClient x burl = withClientEnvIO burl (runClientM x)
@@ -282,7 +280,7 @@ runClient x burl = withClientEnvIO burl (runClientM x)
 runClientUnsafe :: ClientM a -> BaseUrl -> IO (Either ClientError a)
 runClientUnsafe x burl = withClientEnvIO burl (runClientMUnsafe x)
   where
-    runClientMUnsafe x env = withClientM x env return
+    runClientMUnsafe x env = withClientM x env pure
 
 successSpec :: Spec
 successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
@@ -303,7 +301,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     left show <$> runClient (getCapture "Paula") baseUrl `shouldReturn` Right (Person "Paula" 0)
 
   it "Servant.API.CaptureAll" $ \(_, baseUrl) -> do
-    let expected = [(Person "Paula" 0), (Person "Peta" 1)]
+    let expected = [Person "Paula" 0, Person "Peta" 1]
     left show <$> runClient (getCaptureAll ["Paula", "Peta"]) baseUrl `shouldReturn` Right expected
 
   it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
@@ -359,7 +357,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       property $ forAllShrink pathGen shrink $ \(NonEmpty cap) num flag body ->
         ioProperty $ do
           result <- left show <$> runClient (getMultiple cap num flag body) baseUrl
-          return $
+          pure $
             result === Right (cap, num, flag, body)
 
 wrappedApiSpec :: Spec
@@ -372,13 +370,14 @@ wrappedApiSpec = describe "error status codes" $ do
             let getResponse :: ClientM ()
                 getResponse = client api
             Left (FailureResponse _ r) <- runClient getResponse baseUrl
-            responseStatusCode r `shouldBe` (HTTP.Status 500 "error message")
-     in mapM_ test $
-          (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete")
-            : (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get")
-            : (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post")
-            : (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put")
-            : []
+            responseStatusCode r `shouldBe` HTTP.Status 500 "error message"
+     in mapM_
+          test
+          [ (WrappedApi (Proxy :: Proxy (Delete '[JSON] ())), "Delete")
+          , (WrappedApi (Proxy :: Proxy (Get '[JSON] ())), "Get")
+          , (WrappedApi (Proxy :: Proxy (Post '[JSON] ())), "Post")
+          , (WrappedApi (Proxy :: Proxy (Put '[JSON] ())), "Put")
+          ]
 
 failSpec :: Spec
 failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
@@ -387,14 +386,14 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
       let (_ :<|> _ :<|> getDeleteEmpty :<|> _) = client api
       Left res <- runClient getDeleteEmpty baseUrl
       case res of
-        FailureResponse _ r | responseStatusCode r == HTTP.status404 -> return ()
+        FailureResponse _ r | responseStatusCode r == HTTP.status404 -> pure ()
         _ -> fail $ "expected 404 response, but got " <> show res
 
     it "reports DecodeFailure" $ \(_, baseUrl) -> do
       let (_ :<|> _ :<|> _ :<|> getCapture :<|> _) = client api
       Left res <- runClient (getCapture "foo") baseUrl
       case res of
-        DecodeFailure _ _ -> return ()
+        DecodeFailure _ _ -> pure ()
         _ -> fail $ "expected DecodeFailure, but got " <> show res
 
     -- we don't catch IOException's
@@ -402,21 +401,21 @@ failSpec = beforeAll (startWaiApp failServer) $ afterAll endWaiApp $ do
       let (getGetWrongHost :<|> _) = client api
       Left res <- runClient getGetWrongHost (BaseUrl Http "127.0.0.1" 19872 "")
       case res of
-        ConnectionError _ -> return ()
+        ConnectionError _ -> pure ()
         _ -> fail $ "expected ConnectionError, but got " <> show res
 
     it "reports UnsupportedContentType" $ \(_, baseUrl) -> do
       let (_ :<|> getGet :<|> _) = client api
       Left res <- runClient getGet baseUrl
       case res of
-        UnsupportedContentType ("application/octet-stream") _ -> return ()
+        UnsupportedContentType "application/octet-stream" _ -> pure ()
         _ -> fail $ "expected UnsupportedContentType, but got " <> show res
 
     it "reports InvalidContentTypeHeader" $ \(_, baseUrl) -> do
       let (_ :<|> _ :<|> _ :<|> _ :<|> _ :<|> getBody :<|> _) = client api
       Left res <- runClient (getBody alice) baseUrl
       case res of
-        InvalidContentTypeHeader _ -> return ()
+        InvalidContentTypeHeader _ -> pure ()
         _ -> fail $ "expected InvalidContentTypeHeader, but got " <> show res
 
 data WrappedApi where
@@ -457,7 +456,7 @@ genAuthSpec = beforeAll (startWaiApp genAuthServer) $ afterAll endWaiApp $ do
       let getProtected = client genAuthAPI
       let authRequest = Auth.mkAuthenticatedRequest () (\_ req -> Req.addHeader "Wrong" ("header" :: String) req)
       Left (FailureResponse _ r) <- runClient (getProtected authRequest) baseUrl
-      responseStatusCode r `shouldBe` (HTTP.Status 401 "Unauthorized")
+      responseStatusCode r `shouldBe` HTTP.Status 401 "Unauthorized"
 
 -- * hoistClient
 
@@ -467,7 +466,7 @@ hoistClientAPI :: Proxy HoistClientAPI
 hoistClientAPI = Proxy
 
 hoistClientServer :: Application -- implements HoistClientAPI
-hoistClientServer = serve hoistClientAPI $ return 5 :<|> (\n -> return n)
+hoistClientServer = serve hoistClientAPI $ pure 5 :<|> pure
 
 hoistClientSpec :: Spec
 hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp $ do
@@ -503,9 +502,9 @@ connectionErrorSpec = describe "Servant.Client.ClientError" $
 startWaiApp :: Application -> IO (ThreadId, BaseUrl)
 startWaiApp app = do
   (port, socket) <- openTestSocket
-  let settings = setPort port $ defaultSettings
+  let settings = setPort port defaultSettings
   thread <- forkIO $ runSettingsSocket settings socket app
-  return (thread, BaseUrl Http "127.0.0.1" port "")
+  pure (thread, BaseUrl Http "127.0.0.1" port "")
 
 endWaiApp :: (ThreadId, BaseUrl) -> IO ()
 endWaiApp (thread, _) = killThread thread
@@ -517,7 +516,7 @@ openTestSocket = do
   bind s (SockAddrInet defaultPort localhost)
   listen s 1
   port <- socketPort s
-  return (fromIntegral port, s)
+  pure (fromIntegral port, s)
 
 pathGen :: Gen (NonEmptyList Char)
 pathGen = fmap NonEmpty path

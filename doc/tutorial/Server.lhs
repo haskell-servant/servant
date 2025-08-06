@@ -111,11 +111,11 @@ easily, as explained near the end of this guide. Third thing, the type of the
 value returned in that monad must be the same as the second argument of the
 HTTP method combinator used for the corresponding endpoint. In our case, it
 means we must provide a handler of type `Handler [User]`. Well,
-we have a monad, let's just `return` our list:
+we have a monad, let's just return our list:
 
 ``` haskell
 server1 :: Server UserAPI1
-server1 = return users1
+server1 = pure users1
 ```
 
 That's it. Now we can turn `server` into an actual webserver using
@@ -186,9 +186,9 @@ the same order as in the API type.
 
 ``` haskell
 server2 :: Server UserAPI2
-server2 = return users2
-     :<|> return albert
-     :<|> return isaac
+server2 = pure users2
+     :<|> pure albert
+     :<|> pure isaac
 ```
 
 And that's it! You can run this example in the same way that we showed for
@@ -265,15 +265,15 @@ server3 = position
      :<|> marketing
 
   where position :: Int -> Int -> Handler Position
-        position x y = return (Position x y)
+        position x y = pure (Position x y)
 
         hello :: Maybe String -> Handler HelloMessage
-        hello mname = return . HelloMessage $ case mname of
+        hello mname = pure . HelloMessage $ case mname of
           Nothing -> "Hello, anonymous coward"
           Just n  -> "Hello, " ++ n
 
         marketing :: ClientInfo -> Handler Email
-        marketing clientinfo = return (emailForClient clientinfo)
+        marketing clientinfo = pure (emailForClient clientinfo)
 ```
 
 Did you see that? The types for your handlers changed to be just what we
@@ -566,7 +566,7 @@ personAPI :: Proxy PersonAPI
 personAPI = Proxy
 
 server4 :: Server PersonAPI
-server4 = return people
+server4 = pure people
 
 app2 :: Application
 app2 = serve personAPI server4
@@ -589,7 +589,7 @@ At the heart of the handlers is the monad they run in, namely a newtype `Handler
 One might wonder: why this monad? The answer is that it is the
 simplest monad with the following properties:
 
-- it lets us both return a successful result (using `return`)
+- it lets us both return a successful result (using `pure`/`return`)
 or "fail" with a descriptive error (using `throwError`);
 - it lets us perform IO, which is absolutely vital since most webservices exist
 as interfaces to databases that we interact with in `IO`.
@@ -608,7 +608,7 @@ action that either returns an error or a result.
 The module [`Control.Monad.Except`](https://hackage.haskell.org/package/mtl/docs/Control-Monad-Except.html#t:ExceptT)
 from which `ExceptT` comes is worth looking at.
 Perhaps most importantly, `ExceptT` and `Handler` are instances of `MonadError`, so
-`throwError` can be used to return an error from your handler (whereas `return`
+`throwError` can be used to return an error from your handler (whereas `pure`/`return`
         is enough to return a success).
 
 Most of what you'll be doing in your handlers is running some IO and,
@@ -642,7 +642,7 @@ instance ToJSON FileContent
 server5 :: Server IOAPI1
 server5 = do
   filecontent <- liftIO (readFile "myfile.txt")
-  return (FileContent filecontent)
+  pure (FileContent filecontent)
 ```
 
 ### Failing, through `ServerError`
@@ -682,7 +682,7 @@ server6 :: Server IOAPI1
 server6 = do
   exists <- liftIO (doesFileExist "myfile.txt")
   if exists
-    then liftIO (readFile "myfile.txt") >>= return . FileContent
+    then liftIO (readFile "myfile.txt") >>= pure . FileContent
     else throwError custom404Err
 
   where custom404Err = err404 { errBody = "myfile.txt just isn't there, please leave this server alone." }
@@ -730,7 +730,7 @@ Note that this changes the type of your API, as we can see in the following exam
 type MyHandler = Get '[JSON] (Headers '[Header "X-An-Int" Int] User)
 
 myHandler :: Server MyHandler
-myHandler = return $ addHeader 1797 albert
+myHandler = pure $ addHeader 1797 albert
 ```
 
 Note that the type of `addHeader header x` is different than the type of `x`!
@@ -740,7 +740,7 @@ And if you add more headers, more headers will appear in the header list:
 type MyHeadfulHandler = Get '[JSON] (Headers '[Header "X-A-Bool" Bool, Header "X-An-Int" Int] User)
 
 myHeadfulHandler :: Server MyHeadfulHandler
-myHeadfulHandler = return $ addHeader True $ addHeader 1797 albert
+myHeadfulHandler = pure $ addHeader True $ addHeader 1797 albert
 ```
 
 But what if your handler only *sometimes* adds a header? If you declare that
@@ -753,7 +753,7 @@ type MyMaybeHeaderHandler
   = Capture "withHeader" Bool :> Get '[JSON] (Headers '[Header "X-An-Int" Int] User)
 
 myMaybeHeaderHandler :: Server MyMaybeHeaderHandler
-myMaybeHeaderHandler x = return $ if x then addHeader 1797 albert
+myMaybeHeaderHandler x = pure $ if x then addHeader 1797 albert
                                        else noHeader albert
 ```
 
@@ -1060,12 +1060,12 @@ readerToHandler :: Reader String a -> Handler a
 ```
 
 We obviously have to run the `Reader` computation by supplying it with a
-`String`, like `"hi"`. We get an `a` out from that and can then just `return`
-it into `Handler`.
+`String`, like `"hi"`. We get an `a` out from that and can then just lift it
+it into `Handler` using `pure`.
 
 ``` haskell
 readerToHandler :: Reader String a -> Handler a
-readerToHandler r = return (runReader r "hi")
+readerToHandler r = pure (runReader r "hi")
 ```
 
 We can write some simple webservice with the handlers running in `Reader String`.
@@ -1080,7 +1080,7 @@ readerAPI = Proxy
 readerServerT :: ServerT ReaderAPI (Reader String)
 readerServerT = a :<|> b where
     a :: Reader String Int
-    a = return 1797
+    a = pure 1797
 
     b :: Double -> Reader String Bool
     b _ = asks (== "hi")
@@ -1138,7 +1138,7 @@ funServerT = a :<|> b where
     b _ s = s == "hi"
 
 funToHandler :: (String -> a) -> Handler a
-funToHandler f = return (f "hi")
+funToHandler f = pure (f "hi")
 
 app5 :: Application
 app5 = serve readerAPI (hoistServer readerAPI funToHandler funServerT)
@@ -1166,7 +1166,7 @@ streamUsers :: SourceIO User
 streamUsers = source [isaac, albert, albert]
 
 app6 :: Application
-app6 = serve streamAPI (return streamUsers)
+app6 = serve streamAPI (pure streamUsers)
 ```
 
 This simple application returns a stream of `User` values encoded in JSON
