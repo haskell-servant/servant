@@ -10,6 +10,16 @@ import Data.Typeable (Typeable)
 -- The given 'Application' will get the request as received by the server, potentially with
 -- a modified (stripped) 'pathInfo' if the 'Application' is being routed with 'Servant.API.Sub.:>'.
 --
+-- To plug a Wai 'Application' directly, you must use `Tagged`:
+--
+-- >>> type API = "foo" :> Get '[JSON] Int :<|> "bar" :> Raw
+-- >>>
+-- >>> app :: Application
+-- >>> app = ...
+-- >>>
+-- >>> server :: Server API
+-- >>> server = pure 42 :<|> Tagged app
+--
 -- In addition to just letting you plug in your existing WAI 'Application's,
 -- this can also be used with functions from
 -- <https://hackage.haskell.org/package/servant-server/docs/Servant-Server-StaticFiles.html Servant.Server.StaticFiles>
