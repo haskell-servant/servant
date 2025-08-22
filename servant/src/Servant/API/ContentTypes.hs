@@ -162,12 +162,14 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 -- > instance Accept MyContentType where
 -- >    contentType _ = "example" // "prs.me.mine" /: ("charset", "utf-8")
 -- >
--- > instance Show a => MimeRender MyContentType a where
+-- > instance MimeRender MyContentType String where
 -- >    mimeRender _ val = pack ("This is MINE! " ++ show val)
 -- >
 -- > type MyAPI = "path" :> Get '[MyContentType] Int
 class Accept ctype => MimeRender ctype a where
-  mimeRender :: Proxy ctype -> a -> ByteString
+  type MimeRenderType a :: Type
+  type MimeRenderType a = ByteString
+  mimeRender :: Proxy ctype -> a -> MimeRenderType a
 
 class AllMime list => AllCTRender (list :: [Type]) a where
   -- If the Accept header can be matched, returns (Just) a tuple of the
@@ -205,7 +207,7 @@ instance
 -- :}
 --
 -- >>> :{
--- instance Read a => MimeUnrender MyContentType a where
+-- instance MimeUnrender MyContentType String where
 --    mimeUnrender _ bs = case BSC.take 12 bs of
 --      "MyContentType" -> return . read . BSC.unpack $ BSC.drop 12 bs
 --      _ -> Left "didn't start with the magic incantation"
@@ -213,7 +215,9 @@ instance
 --
 -- >>> type MyAPI = "path" :> ReqBody '[MyContentType] Int :> Get '[JSON] Int
 class Accept ctype => MimeUnrender ctype a where
-  mimeUnrender :: Proxy ctype -> ByteString -> Either String a
+  type MimeUnrenderType a :: Type
+  type MimeUnrenderType a = ByteString
+  mimeUnrender :: Proxy ctype -> MimeUnrenderType a -> Either String a
   mimeUnrender p = mimeUnrenderWithType p (contentType p)
 
   -- | Variant which is given the actual 'M.MediaType' provided by the other party.
