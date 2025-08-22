@@ -200,7 +200,7 @@ instance
 --
 -- >>> import Network.HTTP.Media hiding (Accept)
 -- >>> import qualified Data.ByteString.Lazy.Char8 as BSC
--- >>> newtype MyContentType = MyContentType String
+-- >>> data MyContentType
 -- >>> newtype MyData = MyData String
 --
 -- >>> :{
