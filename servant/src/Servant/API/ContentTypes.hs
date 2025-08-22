@@ -163,7 +163,7 @@ newtype AcceptHeader = AcceptHeader BS.ByteString
 -- >    contentType _ = "example" // "prs.me.mine" /: ("charset", "utf-8")
 -- >
 -- > instance MimeRender MyContentType String where
--- >    mimeRender _ val = pack ("This is MINE! " ++ show val)
+-- >    mimeRender _ val = pack ("This is MINE! " ++ val)
 -- >
 -- > type MyAPI = "path" :> Get '[MyContentType] Int
 class Accept ctype => MimeRender ctype a where
@@ -209,7 +209,7 @@ instance
 -- >>> :{
 -- instance MimeUnrender MyContentType String where
 --    mimeUnrender _ bs = case BSC.take 12 bs of
---      "MyContentType" -> return . read . BSC.unpack $ BSC.drop 12 bs
+--      "MyContentType" -> return . BSC.unpack $ BSC.drop 12 bs
 --      _ -> Left "didn't start with the magic incantation"
 -- :}
 --
