@@ -1,0 +1,7 @@
+synopsis: Set `errBody` of `defaultErrorFormatters.notFoundErrorFormatter`
+packages: servant-server
+prs: #1843
+issues: #1790
+description: {
+  Set `errBody` of `defaultErrorFormatters.notFoundErrorFormatter` to avoid an empty body.
+}

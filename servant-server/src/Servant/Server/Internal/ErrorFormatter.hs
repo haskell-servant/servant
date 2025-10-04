@@ -48,7 +48,7 @@ defaultErrorFormatters =
     { bodyParserErrorFormatter = err400Formatter
     , urlParseErrorFormatter = err400Formatter
     , headerParseErrorFormatter = err400Formatter
-    , notFoundErrorFormatter = const err404
+    , notFoundErrorFormatter = const err404{errBody = "404 Not Found"}
     }
 
 -- | A custom formatter for errors produced by parsing combinators like
