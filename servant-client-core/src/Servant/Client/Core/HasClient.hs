@@ -66,6 +66,7 @@ import Servant.API
   , NamedRoutes
   , NoContent (NoContent)
   , NoContentVerb
+  , OperationId
   , QueryFlag
   , QueryParam'
   , QueryParams
@@ -718,6 +719,14 @@ instance
 -- | Ignore @'Summary'@ in client functions.
 instance HasClient m api => HasClient m (Summary desc :> api) where
   type Client m (Summary desc :> api) = Client m api
+
+  clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
+
+  hoistClientMonad pm _ = hoistClientMonad pm (Proxy :: Proxy api)
+
+-- | Ignore @'OperationId'@ in client functions.
+instance HasClient m api => HasClient m (OperationId operationId :> api) where
+  type Client m (OperationId operationId :> api) = Client m api
 
   clientWithRoute pm _ = clientWithRoute pm (Proxy :: Proxy api)
 

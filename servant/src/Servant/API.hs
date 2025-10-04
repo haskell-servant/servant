@@ -105,7 +105,7 @@ import Servant.API.ContentTypes
   , OctetStream
   , PlainText
   )
-import Servant.API.Description (Description, Summary)
+import Servant.API.Description (Description, OperationId, Summary)
 import Servant.API.Empty (EmptyAPI (..))
 import Servant.API.Experimental.Auth (AuthProtect)
 import Servant.API.Fragment (Fragment)

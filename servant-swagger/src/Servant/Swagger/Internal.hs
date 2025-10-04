@@ -389,6 +389,11 @@ instance (HasSwagger api, KnownSymbol desc) => HasSwagger (Summary desc :> api) 
     toSwagger (Proxy :: Proxy api)
       & allOperations . summary %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
+instance (HasSwagger api, KnownSymbol operationId) => HasSwagger (OperationId operationId :> api) where
+  toSwagger _ =
+    toSwagger (Proxy :: Proxy api)
+      & allOperations . operationId %~ (Just (Text.pack (symbolVal (Proxy :: Proxy operationId))) <>)
+
 instance (HasSwagger sub, KnownSymbol (FoldDescription mods), KnownSymbol sym, SBoolI (FoldRequired mods), ToParamSchema a) => HasSwagger (QueryParam' mods sym a :> sub) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy sub)
