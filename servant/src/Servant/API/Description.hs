@@ -48,7 +48,7 @@ data Summary (sym :: Symbol)
 data Description (sym :: Symbol)
   deriving (Typeable)
 
--- | Add an (uncheck) operation id for (part of) API, useful when generated bindings and OpenAPI docs.
+-- | Add an (unchecked) operation id for (part of) API, useful when generating bindings and OpenAPI docs.
 --
 -- Example:
 --
