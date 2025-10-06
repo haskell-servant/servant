@@ -559,6 +559,19 @@ instance
   foreignFor lang ftype Proxy = foreignFor lang ftype (Proxy :: Proxy api)
 
 instance
+  (HasForeign lang ftype api, KnownSymbol operationId)
+  => HasForeign lang ftype (OperationId operationId :> api)
+  where
+  type Foreign ftype (OperationId operationId :> api) = Foreign ftype api
+
+  foreignFor lang ftype Proxy req =
+    foreignFor lang ftype (Proxy :: Proxy api) $
+      req
+        & reqFuncName . _FunctionName .~ [str]
+    where
+      str = pack . symbolVal $ (Proxy :: Proxy operationId)
+
+instance
   HasForeign lang ftype api
   => HasForeign lang ftype (Description desc :> api)
   where

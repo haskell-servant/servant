@@ -1,0 +1,7 @@
+synopsis: Add support for `OperationId`
+packages: servant, servant-client, servant-docs, servant-server, servant-swagger
+prs: #1844
+issues: N/A
+description: {
+  Add `OperationId`, which can direct code and docs generation.
+}

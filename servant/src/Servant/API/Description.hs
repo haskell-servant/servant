@@ -11,6 +11,7 @@ module Servant.API.Description
   ( -- * Combinators
     Description
   , Summary
+  , OperationId
 
     -- * Used as modifiers
   , FoldDescription
@@ -45,6 +46,14 @@ data Summary (sym :: Symbol)
 --   :> Get '[JSON] Book
 -- :}
 data Description (sym :: Symbol)
+  deriving (Typeable)
+
+-- | Add an (unchecked) operation id for (part of) API, useful when generating bindings and OpenAPI docs.
+--
+-- Example:
+--
+-- >>> type MyApi = OperationId "getBookByISBN" :> "books" :> Capture "isbn" Text :> Get '[JSON] Book
+data OperationId (sym :: Symbol)
   deriving (Typeable)
 
 -- | Fold list of modifiers to extract description as a type-level String.

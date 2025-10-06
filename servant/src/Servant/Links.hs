@@ -139,7 +139,7 @@ import Web.HttpApiData
 import Servant.API.Alternative ((:<|>) ((:<|>)))
 import Servant.API.BasicAuth (BasicAuth)
 import Servant.API.Capture (Capture', CaptureAll)
-import Servant.API.Description (Description, Summary)
+import Servant.API.Description (Description, OperationId, Summary)
 import Servant.API.Empty (EmptyAPI (..))
 import Servant.API.Experimental.Auth (AuthProtect)
 import Servant.API.Fragment (Fragment)
@@ -548,6 +548,10 @@ instance HasLink sub => HasLink (Description s :> sub) where
 
 instance HasLink sub => HasLink (Summary s :> sub) where
   type MkLink (Summary s :> sub) a = MkLink sub a
+  toLink = simpleToLink (Proxy :: Proxy sub)
+
+instance HasLink sub => HasLink (OperationId s :> sub) where
+  type MkLink (OperationId s :> sub) a = MkLink sub a
   toLink = simpleToLink (Proxy :: Proxy sub)
 
 instance HasLink sub => HasLink (HttpVersion :> sub) where

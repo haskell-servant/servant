@@ -68,6 +68,7 @@ type ComprehensiveAPIWithoutStreamingOrRaw' endpoint =
     :<|> "named-context" :> WithNamedContext "foo" '[] GET
     :<|> "capture-all" :> CaptureAll "foo" Int :> GET
     :<|> "summary" :> Summary "foo" :> GET
+    :<|> "operation-id" :> OperationId "foo" :> GET
     :<|> "description" :> Description "foo" :> GET
     :<|> "alternative" :> ("left" :> GET :<|> "right" :> GET)
     :<|> "fragment" :> Fragment Int :> GET

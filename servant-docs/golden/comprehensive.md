@@ -320,6 +320,27 @@
 
 ```
 
+## GET /operation-id
+
+### OperationId: foo
+
+
+### Response:
+
+- Status code 200
+- Headers: []
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Example (`application/json;charset=utf-8`, `application/json`):
+
+```json
+
+```
+
 ## GET /param
 
 ### GET Parameters:

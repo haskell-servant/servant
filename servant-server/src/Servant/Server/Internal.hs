@@ -82,6 +82,7 @@ import Servant.API
   , IsSecure (..)
   , NamedRoutes
   , NoContentVerb
+  , OperationId
   , QueryFlag
   , QueryParam'
   , QueryParams
@@ -1127,6 +1128,13 @@ instance HasServer api context => HasServer (HttpVersion :> api) context where
 -- | Ignore @'Summary'@ in server handlers.
 instance HasServer api ctx => HasServer (Summary desc :> api) ctx where
   type ServerT (Summary desc :> api) m = ServerT api m
+
+  route _ = route (Proxy :: Proxy api)
+  hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
+
+-- | Ignore @'OperationId'@ in server handlers.
+instance HasServer api ctx => HasServer (OperationId operationId :> api) ctx where
+  type ServerT (OperationId operationId :> api) m = ServerT api m
 
   route _ = route (Proxy :: Proxy api)
   hoistServerWithContext _ = hoistServerWithContext (Proxy :: Proxy api)
