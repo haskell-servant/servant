@@ -12,13 +12,13 @@ import Data.Typeable (Typeable)
 --
 -- To plug a Wai 'Application' directly, you must use `Tagged`:
 --
--- >>> type API = "foo" :> Get '[JSON] Int :<|> "bar" :> Raw
--- >>>
--- >>> app :: Application
--- >>> app = ...
--- >>>
--- >>> server :: Server API
--- >>> server = pure 42 :<|> Tagged app
+-- > type API = "foo" :> Get '[JSON] Int :<|> "bar" :> Raw
+-- >
+-- > app :: Application
+-- > app = ...
+-- >
+-- > server :: Server API
+-- > server = pure 42 :<|> Tagged app
 --
 -- In addition to just letting you plug in your existing WAI 'Application's,
 -- this can also be used with functions from
