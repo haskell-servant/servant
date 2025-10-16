@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Servant.Auth.Server.Internal.JWT where
 
 import Control.Lens
@@ -30,6 +32,7 @@ jwtAuthCheck jwtSettings = do
   verifiedJWT <- liftIO $ verifyJWT jwtSettings token
   maybe mzero pure verifiedJWT
 
+{- FOURMOLU_DISABLE -}
 -- | Creates a JWT containing the specified data. The data is stored in the
 -- @dat@ claim. The 'Maybe UTCTime' argument indicates the time at which the
 -- token expires.
@@ -45,7 +48,11 @@ makeJWT v cfg expiry = Jose.runJOSE $ do
   ejwt <-
     Jose.signClaims
       (signingKey cfg)
+#if MIN_VERSION_jose(0,12,0)
+      (Jose.newJWSHeaderProtected alg)
+#else
       (Jose.newJWSHeader ((), alg))
+#endif
       (addExp $ encodeJWT v)
 
   pure $ Jose.encodeCompact ejwt
@@ -58,7 +65,12 @@ verifyJWT :: FromJWT a => JWTSettings -> BS.ByteString -> IO (Maybe a)
 verifyJWT jwtCfg input = do
   keys <- validationKeys jwtCfg
   verifiedJWT <- Jose.runJOSE $ do
-    unverifiedJWT <- Jose.decodeCompact (BSL.fromStrict input)
+#if MIN_VERSION_jose(0,12,0)
+    unverifiedJWT :: Jose.SignedJWTWithHeader Jose.JWSHeader <-
+#else
+    unverifiedJWT :: Jose.SignedJWT <-
+#endif
+      Jose.decodeCompact (BSL.fromStrict input)
     Jose.verifyClaims
       (jwtSettingsToJwtValidationSettings jwtCfg)
       keys
