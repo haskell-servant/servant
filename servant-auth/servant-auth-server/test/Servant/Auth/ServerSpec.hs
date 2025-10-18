@@ -11,6 +11,7 @@ module Servant.Auth.ServerSpec (spec) where
 import Control.Lens
 import Control.Monad (forM_)
 import Control.Monad.IO.Class (liftIO)
+{- FOURMOLU_DISABLE -}
 import Crypto.JOSE
   ( Alg (HS256, None)
   , Error
@@ -20,7 +21,11 @@ import Crypto.JOSE
   , ToCompact
   , encodeCompact
   , genJWK
+#if MIN_VERSION_jose(0,12,0)
+  , newJWSHeaderProtected
+#else
   , newJWSHeader
+#endif
   , runJOSE
   )
 import Crypto.JWT
@@ -28,6 +33,9 @@ import Crypto.JWT
   , ClaimsSet
   , NumericDate (NumericDate)
   , SignedJWT
+#if MIN_VERSION_jose(0,12,0)
+  , RequiredProtection
+#endif
   , claimAud
   , claimNbf
   , emptyClaimsSet
@@ -144,7 +152,11 @@ authSpec =
           jwt <-
             createJWT
               theKey
+#if MIN_VERSION_jose(0,12,0)
+              (newJWSHeaderProtected HS256)
+#else
               (newJWSHeader ((), HS256))
+#endif
               (claims $ toJSON user)
           opts' <- addJwtToCookie cookieCfg jwt
           let opts =
@@ -167,7 +179,11 @@ authSpec =
           jwt <-
             createJWT
               theKey
+#if MIN_VERSION_jose(0,12,0)
+              (newJWSHeaderProtected HS256)
+#else
               (newJWSHeader ((), HS256))
+#endif
               (claims $ toJSON user)
           opts' <- addJwtToCookie cookieCfg jwt
           let opts =
@@ -185,7 +201,11 @@ authSpec =
           jwt <-
             createJWT
               theKey
+#if MIN_VERSION_jose(0,12,0)
+              (newJWSHeaderProtected HS256)
+#else
               (newJWSHeader ((), HS256))
+#endif
               (claims $ toJSON user)
           opts' <- addJwtToCookie cookieCfg jwt
           let opts =
@@ -211,7 +231,11 @@ cookieAuthSpec =
       aroundAll (testWithApplication . pure $ app cookieOnlyApi) $ do
         it "fails if XSRF header and cookie don't match" $ \port -> property $
           \(user :: User) -> do
+#if MIN_VERSION_jose(0,12,0)
+            jwt <- createJWT theKey (newJWSHeaderProtected HS256) (claims $ toJSON user)
+#else
             jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
+#endif
             opts' <- addJwtToCookie cookieCfg jwt
             let opts =
                   addCookie
@@ -221,7 +245,11 @@ cookieAuthSpec =
 
         it "fails with no XSRF header or cookie" $ \port -> property $
           \(user :: User) -> do
+#if MIN_VERSION_jose(0,12,0)
+            jwt <- createJWT theKey (newJWSHeaderProtected HS256) (claims $ toJSON user)
+#else
             jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
+#endif
             opts' <- addJwtToCookie cookieCfg jwt
             let opts = opts' & checkResponse ?~ mempty
             resp <- getWith opts (url port)
@@ -239,7 +267,11 @@ cookieAuthSpec =
 
         it "succeeds if XSRF header and cookie match, and JWT is valid" $ \port -> property $
           \(user :: User) -> do
+#if MIN_VERSION_jose(0,12,0)
+            jwt <- createJWT theKey (newJWSHeaderProtected HS256) (claims $ toJSON user)
+#else
             jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
+#endif
             opts' <- addJwtToCookie cookieCfg jwt
             let opts =
                   addCookie
@@ -286,14 +318,22 @@ cookieAuthSpec =
         aroundAll (testWithApplication . pure $ appWithCookie cookieOnlyApi cookieCfgNoXsrfGet) $ do
           it "succeeds with no XSRF header or cookie for GET" $ \port -> property $
             \(user :: User) -> do
+#if MIN_VERSION_jose(0,12,0)
+              jwt <- createJWT theKey (newJWSHeaderProtected HS256) (claims $ toJSON user)
+#else
               jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
+#endif
               opts <- addJwtToCookie cookieCfgNoXsrfGet jwt
               resp <- getWith opts (url port)
               resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
 
           it "fails with no XSRF header or cookie for POST" $ \port -> property $
             \(user :: User) number -> do
+#if MIN_VERSION_jose(0,12,0)
+              jwt <- createJWT theKey (newJWSHeaderProtected HS256) (claims $ toJSON user)
+#else
               jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
+#endif
               opts <- addJwtToCookie cookieCfgNoXsrfGet jwt
               postWith opts (url port) (toJSON (number :: Int)) `shouldHTTPErrorWith` status401
 
@@ -304,14 +344,22 @@ cookieAuthSpec =
         aroundAll (testWithApplication . pure $ appWithCookie cookieOnlyApi cookieCfgNoXsrf) $ do
           it "succeeds with no XSRF header or cookie for GET" $ \port -> property $
             \(user :: User) -> do
+#if MIN_VERSION_jose(0,12,0)
+              jwt <- createJWT theKey (newJWSHeaderProtected HS256) (claims $ toJSON user)
+#else
               jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
+#endif
               opts <- addJwtToCookie cookieCfgNoXsrf jwt
               resp <- getWith opts (url port)
               resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
 
           it "succeeds with no XSRF header or cookie for POST" $ \port -> property $
             \(user :: User) number -> do
+#if MIN_VERSION_jose(0,12,0)
+              jwt <- createJWT theKey (newJWSHeaderProtected HS256) (claims $ toJSON user)
+#else
               jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims $ toJSON user)
+#endif
               opts <- addJwtToCookie cookieCfgNoXsrf jwt
               resp <- postWith opts (url port) $ toJSON (number :: Int)
               resp ^? responseBody . _JSON `shouldBe` Just number
@@ -360,7 +408,11 @@ jwtAuthSpec =
           jwt <-
             createJWT
               theKey
+#if MIN_VERSION_jose(0,12,0)
+              (newJWSHeaderProtected HS256)
+#else
               (newJWSHeader ((), HS256))
+#endif
               (claims (toJSON user) & claimAud ?~ Audience ["boo"])
           opts <- addJwtToHeader (jwt <&> encodeCompact)
           getWith opts (url port) `shouldHTTPErrorWith` status401
@@ -370,7 +422,11 @@ jwtAuthSpec =
           jwt <-
             createJWT
               theKey
+#if MIN_VERSION_jose(0,12,0)
+              (newJWSHeaderProtected HS256)
+#else
               (newJWSHeader ((), HS256))
+#endif
               (claims (toJSON user) & claimAud ?~ Audience ["anythingElse"])
           opts <- addJwtToHeader (jwt <&> encodeCompact)
           resp <- getWith opts (url port)
@@ -381,7 +437,11 @@ jwtAuthSpec =
           jwt <-
             createJWT
               theKey
+#if MIN_VERSION_jose(0,12,0)
+              (newJWSHeaderProtected HS256)
+#else
               (newJWSHeader ((), HS256))
+#endif
               (claims (toJSON user) & claimNbf ?~ NumericDate future)
           opts <- addJwtToHeader (jwt <&> encodeCompact)
           getWith opts (url port) `shouldHTTPErrorWith` status401
@@ -403,7 +463,11 @@ jwtAuthSpec =
         jwt <-
           createJWT
             theKey
+#if MIN_VERSION_jose(0,12,0)
+            (newJWSHeaderProtected None)
+#else
             (newJWSHeader ((), None))
+#endif
             (claims $ toJSON user)
         opts <- addJwtToHeader (jwt <&> encodeCompact)
         getWith opts (url port) `shouldHTTPErrorWith` status401
@@ -413,7 +477,11 @@ jwtAuthSpec =
           pendingWith "Need https://github.com/frasertweedale/hs-jose/issues/19"
 
       it "fails if data is not valid JSON" $ \port -> do
+#if MIN_VERSION_jose(0,12,0)
+        jwt <- createJWT theKey (newJWSHeaderProtected HS256) (claims "{{")
+#else
         jwt <- createJWT theKey (newJWSHeader ((), HS256)) (claims "{{")
+#endif
         opts <- addJwtToHeader (jwt <&> encodeCompact)
         getWith opts (url port) `shouldHTTPErrorWith` status401
 
@@ -421,7 +489,11 @@ jwtAuthSpec =
         jwt <-
           createJWT
             theKey
+#if MIN_VERSION_jose(0,12,0)
+            (newJWSHeaderProtected HS256)
+#else
             (newJWSHeader ((), HS256))
+#endif
             (claims $ toJSON user)
         resp <- case jwt <&> encodeCompact of
           Left (e :: Error) -> fail $ show e
@@ -655,7 +727,11 @@ addJwtToHeader = \case
     pure $
       defaults & header "Authorization" .~ ["Bearer " <> BSL.toStrict v]
 
+#if MIN_VERSION_jose(0,12,0)
+createJWT :: JWK -> JWSHeader Crypto.JWT.RequiredProtection -> ClaimsSet -> IO (Either Error Crypto.JWT.SignedJWT)
+#else
 createJWT :: JWK -> JWSHeader () -> ClaimsSet -> IO (Either Error Crypto.JWT.SignedJWT)
+#endif
 createJWT k a b = runJOSE $ signClaims k a b
 
 addJwtToCookie :: ToCompact a => CookieSettings -> Either Error a -> IO Options
