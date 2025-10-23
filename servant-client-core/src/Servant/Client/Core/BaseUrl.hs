@@ -32,7 +32,7 @@ data Scheme
     Http
   | -- | https://
     Https
-  deriving (Data, Eq, Generic, Lift, Ord, Show)
+  deriving (Data, Eq, Generic, Lift, Ord, Read, Show)
 
 -- | Simple data type to represent the target of HTTP requests
 --   for servant's automatically-generated clients.
