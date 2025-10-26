@@ -42,3 +42,4 @@ you name it!
   testing/Testing.lhs
   open-id-connect/OpenIdConnect.lhs
   managed-resource/ManagedResource.lhs
+  infinite-streams/InfiniteStreams.lhs

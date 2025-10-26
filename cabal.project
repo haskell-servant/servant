@@ -50,6 +50,7 @@ packages:
   doc/cookbook/using-free-client
   -- doc/cookbook/open-id-connect
   doc/cookbook/managed-resource
+  doc/cookbook/infinite-streams
   doc/cookbook/openapi3
   doc/cookbook/expose-prometheus
 
