@@ -1,0 +1,10 @@
+synopsys: Cookbook recipe on serving infinite HTTP streams
+prs: 1849
+description: {
+Servant provides facilities to work with streams of data. In this cookbook, we will be concerned
+with serving infinite HTTP streams.
+
+An infinite HTTP stream differs from a finite stream in two major ways. First, resource
+cleanup is non-deterministic. Second, data must be sent back to the client regularly to prevent
+the connection from closing. Both of these challenges are addressed in this recipe.
+}

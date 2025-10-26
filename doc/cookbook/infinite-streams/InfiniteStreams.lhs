@@ -27,12 +27,15 @@ module Main (main) where
 -- from `aeson`
 import Data.Aeson (FromJSON, ToJSON)
 
+-- from `async`
+import Control.Concurrent.Async (async, link, withAsync) 
+
 -- from `base`
 import Control.Concurrent (threadDelay, forkIO, killThread)
 import Control.Concurrent.Chan (Chan, newChan, readChan, writeChan)
 import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, isEmptyMVar)
 import Control.Exception (throwIO, bracket)
-import Control.Monad (forever)
+import Control.Monad (forever, (<=<))
 import qualified Data.List
 import Data.Proxy (Proxy(Proxy))
 import GHC.Generics (Generic)
@@ -68,7 +71,7 @@ import qualified Network.Wai.Handler.Warp as Warp (run)
 ```
 
 We start with our scenario: we are tasked with creating an API which will serve random numbers in real-time. We are
-given a function that creates a producer of characters, and a method for us to stop the producer:
+given a function that creates a producer of integers, and a method for us to stop the producer:
 
 
 ```haskell
@@ -83,7 +86,8 @@ createProducer = do
 
     -- Writer thread will feed our Chan forever. This is where
     -- your secret random number generation algorithm would go.
-    -- Unfortunately, we have some technical debt here.
+    -- For this example, we are using a deterministic stream
+    -- of numbers, where [1,5,10,20,45] is repeated forever.
     _ <- forkIO (go (cycle [1,5,10,20,45]) chan isDone)
 
     pure ( chan
@@ -172,31 +176,26 @@ allocate = do
     -- Producer from upstream
     (intChan, weAreDone) <- createProducer
 
-    let -- action to spawn a thread that will continuously write 'KeepAlive' messages
-        keepalive = forkIO (forever (threadDelay 100_000 *> writeChan toDownstream KeepAlive))
-
-        -- The function below, `go`, is used to forward elements from the upstream
-        -- producer 'intChan' to the 'toDownstream' channel.
-        --
-        -- The wrinkle is that we must send data downstream regularly. Therefore, every time
-        -- a new element is produced by 'toDownstream', we reset the keepalive thread
-        -- (named 'keepAliveThreadId ') by killing it and starting it again.
-        --
-        -- This ensures:
-        --
-        -- * that we send data (either an `Element` or `KeepAlive`) every 0.1 seconds at most;
-        -- * that we do not send more `KeepAlive` messages than necessary.
-        go keepAliveThreadId = do
-            readChan intChan >>= writeChan toDownstream . Element
-            killThread keepAliveThreadId
-            keepalive >>= go
-
-    loopThreadId <- forkIO (keepalive >>= go)
+    -- See comment below
+    (link <=< async) $ interleaveLoop intChan toDownstream
 
     pure (Upstream { getNext = readChan toDownstream
-                   , pleaseStop = weAreDone >> killThread loopThreadId
+                   , pleaseStop = weAreDone
                    }
          )
+  where
+    -- This loop interleaves integers from upstream, with keep-alive
+    -- messages.
+    --
+    -- The logic here is to spawn a thread that feeds the 'toDownstream' channel
+    -- with keep-alive messages regularly, until 'readChan intChan' succeeds. At this point,
+    -- we feed the integer to downstream, and 'withAsync' exits, cancelling
+    -- the loop feeding 'KeepAlive' messages.
+    interleaveLoop intChan toDownstream = do
+        withAsync
+            (forever $ threadDelay 100_000 *> writeChan toDownstream KeepAlive)
+            (\_ -> readChan intChan >>= writeChan toDownstream . Element)
+        interleaveLoop intChan toDownstream
 ```
 
 Finally, we must tell our server how to allocate and deallocate an `Upstream Int`. The `allocate` function
@@ -240,11 +239,14 @@ main = do
      )
    )
   where
-   go (SourceT.Yield !incoming next) = print incoming >> go next
-   go (SourceT.Effect !x) = x >>= go
-   go (SourceT.Skip !next) = go next
-   go (SourceT.Error err) = error err
-   go (SourceT.Stop) = error "Unexpected stream end"
+    go (SourceT.Yield !incoming next) = print incoming >> go next
+    go (SourceT.Effect !x) = x >>= go
+    go (SourceT.Skip !next) = go next
+    -- This cookbook recipe is concerned with infinite streams. While
+    -- the following two cases should be unreachable, we handle
+    -- them for completeness.
+    go (SourceT.Error err) = throwIO (userError err)
+    go (SourceT.Stop) = pure ()
 ```
 
 Running this program shows:

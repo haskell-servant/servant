@@ -18,6 +18,7 @@ executable cookbook-infinite-streams
   hs-source-dirs: .
   build-depends:       base >= 4.8 && <5
                      , aeson
+                     , async
                      , http-client
                      , resourcet
                      , servant
