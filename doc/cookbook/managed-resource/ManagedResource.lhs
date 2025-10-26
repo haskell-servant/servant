@@ -9,7 +9,7 @@ As usual, we start with a little bit of throat clearing.
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 import Control.Concurrent
-import Control.Exception (bracket, throwIO)
+import Control.Exception (bracket)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource
 import Data.Acquire
