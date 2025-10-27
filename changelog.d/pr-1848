@@ -1,0 +1,12 @@
+synopsis: Derive `Read` instance for `Scheme` in `BaseUrl`
+packages: servant-client-core
+prs: #1848
+issues: #1847
+description: {
+  Added a `Read` instance to the `Scheme` data type in `BaseUrl` via the
+  `deriving` clause. This allows parsing `Scheme` values from strings using
+  the standard `Read` mechanism.
+
+  This change improves compatibility with libraries like `config-ini`
+  that rely on the `Read` typeclass for parsing configuration values.
+}
