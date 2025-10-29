@@ -1,0 +1,27 @@
+cabal-version:       2.2
+name:                cookbook-infinite-streams
+version:             2.1
+synopsis:            Serving infinite streams
+homepage:            http://docs.servant.dev/
+license:             BSD-3-Clause
+license-file:        ../../../servant/LICENSE
+author:              Servant Contributors
+maintainer:          haskell-servant-maintainers@googlegroups.com
+build-type:          Simple
+
+executable cookbook-infinite-streams
+  main-is:             InfiniteStreams.lhs
+  build-tool-depends:  markdown-unlit:markdown-unlit
+  default-language:    Haskell2010
+  ghc-options:         -Wall -pgmL markdown-unlit -Wunused-packages -threaded -rtsopts -with-rtsopts=-N
+
+  hs-source-dirs: .
+  build-depends:       base >= 4.8 && <5
+                     , aeson
+                     , async
+                     , http-client
+                     , resourcet
+                     , servant
+                     , servant-server
+                     , servant-client
+                     , warp
