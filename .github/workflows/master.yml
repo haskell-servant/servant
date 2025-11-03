@@ -19,7 +19,7 @@ jobs:
         with:
           cabal-file: servant/servant.cabal
           ubuntu-version: "latest"
-          version: 0.1.7.0
+          version: 0.1.9.0
   tests:
     name: ${{ matrix.ghc }} on ${{ matrix.os }}
     needs: generate-matrix
