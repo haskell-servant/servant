@@ -96,11 +96,12 @@ knobs are. I will be using some dummy values in this example.
 ``` haskell
 initConnectionPool :: DBConnectionString -> IO (Pool Connection)
 initConnectionPool connStr =
-  createPool (connectPostgreSQL connStr)
-             close
-             2 -- stripes
-             60 -- unused connections are kept open for a minute
-             10 -- max. 10 connections open per stripe
+  newPool $
+    defaultPoolConfig
+      (connectPostgreSQL connStr)
+      close
+      60 -- unused connections are kept open for a minute
+      10 -- max. 10 connections open per stripe
 ```
 
 Let's finally derive some clients for our API and use them to
