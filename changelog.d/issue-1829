@@ -1,0 +1,4 @@
+synopsis: Add MonadCatch and MonadMask instances to RouteResultT and DelayedIO
+packages: servant-server
+prs: #1830
+issues: #1829
