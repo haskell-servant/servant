@@ -138,7 +138,7 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
 type TestSetCookieHeaders = '[Header "Set-Cookie" String, Header "Set-Cookie" String]
 
--- | AsHeaders instance for extracting two Set-Cookie headers
+-- | AsHeaders instance for extracting two headers (Required by the MultiVerbSetCookie test)
 -- Returns: (body, (cookie1, cookie2))
 instance AsHeaders '[a, b] c (c, (a, b)) where
   toHeaders (body, (h1, h2)) = (I h1 :* I h2 :* Nil, body)
