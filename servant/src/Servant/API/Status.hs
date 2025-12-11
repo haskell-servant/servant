@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds #-}
--- Flexible instances is necessary on GHC 8.4 and earlier
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Servant.API.Status where
@@ -12,7 +10,13 @@ import Network.HTTP.Types.Status
 statusFromNat :: forall a proxy. KnownNat a => proxy a -> Status
 statusFromNat = toEnum . fromInteger . natVal
 
--- | Witness that a type-level natural number corresponds to a HTTP status code
+-- | Witness that a type-level natural number corresponds to a HTTP status code.
+--
+-- Provides instances for all standard HTTP status codes. For non-standard codes,
+-- you can define your own instance:
+--
+-- > instance KnownStatus 299 where
+-- >   statusVal _ = statusFromNat (Proxy @299)
 class KnownNat n => KnownStatus n where
   statusVal :: proxy n -> Status
 

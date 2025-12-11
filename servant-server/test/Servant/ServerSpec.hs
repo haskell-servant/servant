@@ -115,6 +115,7 @@ import Servant.API
   , (:>)
   )
 import Servant.API.QueryString (FromDeepQuery (..))
+import Servant.API.Status (KnownStatus (..), statusFromNat)
 import Servant.Test.ComprehensiveAPI
 import qualified Servant.Types.SourceT as S
 import Test.Hspec (Spec, context, describe, it, shouldBe, shouldContain)
@@ -155,6 +156,12 @@ import Servant.Server.Internal.BasicAuth
   , BasicAuthResult (Authorized, Unauthorized)
   )
 import Servant.Server.Internal.Context (NamedContext (..))
+
+-- * KnownStatus instances for non-standard test status codes
+
+instance KnownStatus 210 where statusVal _ = statusFromNat (Proxy @210)
+instance KnownStatus 214 where statusVal _ = statusFromNat (Proxy @214)
+instance KnownStatus 280 where statusVal _ = statusFromNat (Proxy @280)
 
 -- * comprehensive api test
 
