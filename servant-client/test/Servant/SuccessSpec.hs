@@ -147,6 +147,15 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
       Left e -> assertFailure $ show e
       Right val -> getHeaders val `shouldBe` [("Set-Cookie", "cookie1"), ("Set-Cookie", "cookie2")]
 
+  it "Returns multiple Set-Cookie headers via MultiVerb WithHeaders" $ \(_, baseUrl) -> do
+    res <- runClient getMultiVerbSetCookie baseUrl
+    case res of
+      Left e -> assertFailure $ show e
+      Right (body, (cookie1, cookie2)) -> do
+        body `shouldBe` True
+        cookie1 `shouldBe` "cookie1"
+        cookie2 `shouldBe` "cookie2"
+
   it "Stores Cookie in CookieJar after a redirect" $ \(_, baseUrl) -> do
     mgr <- C.newManager C.defaultManagerSettings
     cj <- atomically . newTVar $ C.createCookieJar []

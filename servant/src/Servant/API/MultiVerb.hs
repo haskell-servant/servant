@@ -55,7 +55,9 @@ import Generics.SOP as GSOP
 import Network.HTTP.Types as HTTP
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData, parseHeader, toHeader)
 
+import Servant.API.ContentTypes (NoContent (..))
 import Servant.API.Header (Header')
+import Servant.API.ResponseHeaders (HList (..), Headers (..), ResponseHeader (..))
 import Servant.API.Stream (SourceIO)
 import Servant.API.TypeLevel.List
 import Servant.API.UVerb.Union (Union)
@@ -155,6 +157,32 @@ instance AsHeaders '[a, b] () (a, b) where
   toHeaders (h1, h2) = (I h1 :* I h2 :* Nil, ())
   fromHeaders (I h1 :* I h2 :* Nil, ()) = (h1, h2)
 
+-- | Convert between NP I xs (n-ary product of values) and HList hs (ResponseHeader-wrapped values)
+-- The functional dependency hs -> xs means: given a header spec list, we know the value types
+class NPToHList xs hs | hs -> xs where
+  npToHList :: NP I xs -> HList hs
+  hlistToNP :: HList hs -> NP I xs
+
+instance NPToHList '[] '[] where
+  npToHList Nil = HNil
+  hlistToNP HNil = Nil
+
+instance NPToHList xs hs => NPToHList (x ': xs) (Header' mods name x ': hs) where
+  npToHList (I x :* rest) = Header x `HCons` npToHList rest
+  hlistToNP (Header x `HCons` rest) = I x :* hlistToNP rest
+  hlistToNP (MissingHeader `HCons` _) = error "NPToHList: MissingHeader (should not happen)"
+  hlistToNP (UndecodableHeader _ `HCons` _) = error "NPToHList: UndecodableHeader (should not happen)"
+
+-- | Headers from Servant.API.ResponseHeaders, for backward compatibility with Verb
+instance {-# OVERLAPPABLE #-} NPToHList xs hs => AsHeaders xs a (Headers hs a) where
+  fromHeaders (np, body) = Headers{getResponse = body, getHeadersHList = npToHList np}
+  toHeaders (Headers body hlist) = (hlistToNP hlist, body)
+
+-- | Special case for NoContent body - the underlying response is () but we return NoContent
+instance {-# OVERLAPPING #-} NPToHList xs hs => AsHeaders xs () (Headers hs NoContent) where
+  fromHeaders (np, ()) = Headers{getResponse = NoContent, getHeadersHList = npToHList np}
+  toHeaders (Headers NoContent hlist) = (hlistToNP hlist, ())
+
 data DescHeader (name :: Symbol) (description :: Symbol) (a :: Type)
 
 -- | A wrapper to turn a response header into an optional one.
@@ -187,14 +215,16 @@ instance
     constructHeader @h x
       <> constructHeaders @headers xs
 
-  -- NOTE: should we concatenate all the matching headers instead of just taking the first one?
+  -- This implementation retrieves the *first* header with matching name.
+  -- It leaves other instances of the same header intact for subsequent extraction, which allows
+  -- multiple headers with the same name to be extracted (e.g. Set-Cookie).
   extractHeaders headers = do
     let name' = headerName @name
-        (headers0, headers1) = Seq.partition (\(h, _) -> h == name') headers
-    x <- case headers0 of
-      Seq.Empty -> empty
-      ((_, h) :<| _) -> either (const empty) pure (parseHeader h)
-    xs <- extractHeaders @headers headers1
+    idx <- Seq.findIndexL (\(h, _) -> h == name') headers
+    let (_, val) = Seq.index headers idx
+        headers' = Seq.deleteAt idx headers
+    x <- either (const empty) pure (parseHeader val)
+    xs <- extractHeaders @headers headers'
     pure (I x :* xs)
 
 class ServantHeader h (name :: Symbol) x | h -> name x where

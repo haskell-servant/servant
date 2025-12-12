@@ -1,6 +1,5 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE StarIsType #-}
 
 module Servant.QuickCheck.Internal.HasGenRequest where
 
@@ -223,7 +222,7 @@ instance
 
 instance
   ReflectMethod method
-  => HasGenRequest (Verb (method :: k) (status :: Nat) (cts :: [Type]) a)
+  => HasGenRequest (Verb (method :: StdMethod) (status :: Nat) (cts :: [Type]) a)
   where
   genRequest _ =
     ( 1
@@ -238,7 +237,7 @@ instance
 
 instance
   ReflectMethod method
-  => HasGenRequest (NoContentVerb (method :: k))
+  => HasGenRequest (NoContentVerb (method :: StdMethod))
   where
   genRequest _ =
     ( 1

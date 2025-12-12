@@ -25,6 +25,7 @@ import Servant.API.ContentTypes
   , mimeRender
   )
 import Servant.API.MultiVerb
+import Servant.API.ResponseHeaders (GetHeaders (..), Headers, getResponse)
 import Servant.API.Status
 import Servant.API.Stream (SourceIO)
 import Servant.API.UVerb.Union
@@ -154,6 +155,7 @@ instance
         }
 
 instance
+  {-# OVERLAPPABLE #-}
   (AllMimeRender cs a, KnownStatus s)
   => ResponseRender cs (Respond s desc a)
   where
@@ -174,6 +176,29 @@ instance
             { statusCode = statusVal (Proxy @s)
             , responseBody = body
             , headers = mempty
+            }
+
+-- | Instance for Respond with Headers - extracts headers from the Headers wrapper
+-- This enables Verb with Headers to delegate to MultiVerb
+instance
+  {-# OVERLAPPING #-}
+  (AllMimeRender cs a, GetHeaders (Headers h a), KnownStatus s)
+  => ResponseRender cs (Respond s desc (Headers h a))
+  where
+  type ResponseStatus (Respond s desc (Headers h a)) = s
+  type ResponseBody (Respond s desc (Headers h a)) = BSL.ByteString
+
+  responseRender (AcceptHeader acc) headersVal =
+    M.mapAcceptMedia (map (uncurry mkRenderOutput) (allMimeRender (Proxy @cs) (getResponse headersVal))) acc
+    where
+      responseHeaders = Seq.fromList (getHeaders headersVal)
+      mkRenderOutput :: M.MediaType -> BSL.ByteString -> (M.MediaType, InternalResponse BSL.ByteString)
+      mkRenderOutput c body =
+        (c,) . addContentType' c $
+          InternalResponse
+            { statusCode = statusVal (Proxy @s)
+            , responseBody = body
+            , headers = responseHeaders
             }
 
 addContentType :: forall ct a. Accept ct => InternalResponse a -> InternalResponse a
