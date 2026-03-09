@@ -101,7 +101,7 @@ test-suite spec
   hs-source-dirs:
       test
   default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
-  ghc-options: -Wall
+  ghc-options: -Wall -threaded
   build-tool-depends: hspec-discover:hspec-discover >=2.5.5 && <2.12
 
   -- dependencies with bounds inherited from the library stanza
