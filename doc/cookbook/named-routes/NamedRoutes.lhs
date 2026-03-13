@@ -376,7 +376,7 @@ appMyMonad env = genericServeT (appToHandler env) appMapi
     appMapi = undefined
 ```
 
-There is also a combinator for serving with a `Context`, `genericServeWithContextT`.
+There is also a combinator for serving with a `Context`, `genericServeTWithContext`.
 
 ## Conclusion
 
