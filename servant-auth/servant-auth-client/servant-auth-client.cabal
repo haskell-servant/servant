@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           servant-auth-client
-version:        0.4.2.0
+version:        0.4.9.2
 synopsis:       servant-client/servant-auth compatibility
 description:    This package provides instances that allow generating clients from
                 <https://hackage.haskell.org/package/servant servant>
@@ -34,9 +34,9 @@ library
       base                >= 4.16.4.0 && < 4.22
     , bytestring          >= 0.10.6.0 && < 0.13
     , containers          >=0.6.5.1  && < 0.9
-    , servant-auth        >= 0.4.2.0  && < 0.5
-    , servant             >= 0.20.2   && < 0.21
-    , servant-client-core >= 0.20.2   && < 0.21
+    , servant-auth        == 0.4.9.2
+    , servant             >= 0.20.3   && < 0.21
+    , servant-client-core >= 0.20.3   && < 0.21
 
   exposed-modules:
       Servant.Auth.Client
