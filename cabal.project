@@ -51,7 +51,8 @@ packages:
   -- doc/cookbook/open-id-connect
   doc/cookbook/managed-resource
   doc/cookbook/infinite-streams
-  doc/cookbook/openapi3
+  -- Commented out because servant-openapi3 doesn't build with new Verb using StdMethod
+  -- doc/cookbook/openapi3
   doc/cookbook/expose-prometheus
 
 tests: True

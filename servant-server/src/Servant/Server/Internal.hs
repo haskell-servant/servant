@@ -16,7 +16,7 @@ module Servant.Server.Internal
 where
 
 import Control.Applicative ((<|>))
-import Control.Monad (join, unless, when)
+import Control.Monad (join, unless, void, when)
 import Control.Monad.Trans (lift, liftIO)
 import Control.Monad.Trans.Resource (ReleaseKey, runResourceT)
 import Data.Acquire
@@ -60,7 +60,6 @@ import Network.Wai
   , requestHeaderHost
   , requestHeaders
   , requestMethod
-  , responseLBS
   , responseStream
   , vault
   )
@@ -111,6 +110,7 @@ import Servant.API.ContentTypes
   , AllCTRender (..)
   , AllCTUnrender (..)
   , AllMime
+  , AllMimeRender
   , MimeRender (..)
   , MimeUnrender (..)
   , NoContent
@@ -138,7 +138,7 @@ import Servant.API.ResponseHeaders
   , getHeaders
   , getResponse
   )
-import Servant.API.Status (statusFromNat)
+import Servant.API.Status (KnownStatus, statusFromNat)
 import Servant.API.TypeErrors
 import Servant.API.TypeLevel (AtMostOneFragment, FragmentUnique)
 import qualified Servant.Types.SourceT as S
@@ -369,54 +369,11 @@ acceptCheck proxy accH
   | canHandleAcceptH proxy accH = pure ()
   | otherwise = delayedFail err406
 
-methodRouter
-  :: AllCTRender ctypes a
-  => (b -> ([(HeaderName, B.ByteString)], a))
-  -> Method
-  -> Proxy ctypes
-  -> Status
-  -> Delayed env (Handler b)
-  -> Router env
-methodRouter splitHeaders method proxy status action = leafRouter route'
-  where
-    route' env request respond =
-      let accH = getAcceptHeader request
-       in runAction
-            ( action
-                `addMethodCheck` methodCheck method request
-                `addAcceptCheck` acceptCheck proxy accH
-            )
-            env
-            request
-            respond
-            $ \output -> do
-              let (headers, b) = splitHeaders output
-              case handleAcceptH proxy accH b of
-                Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
-                Just (contentT, body) ->
-                  let bdy = if allowedMethodHead method request then "" else body
-                   in Route $ responseLBS status ((hContentType, BSL.toStrict contentT) : headers) bdy
-
-noContentRouter
-  :: Method
-  -> Status
-  -> Delayed env (Handler b)
-  -> Router env
-noContentRouter method status action = leafRouter route'
-  where
-    route' env request respond =
-      runAction
-        (action `addMethodCheck` methodCheck method request)
-        env
-        request
-        respond
-        $ \_output ->
-          Route $ responseLBS status [] ""
-
 instance
   {-# OVERLAPPABLE #-}
   ( AllCTRender ctypes a
-  , KnownNat status
+  , AllMimeRender ctypes a
+  , KnownStatus status
   , ReflectMethod method
   )
   => HasServer (Verb method status ctypes a) context
@@ -424,16 +381,14 @@ instance
   type ServerT (Verb method status ctypes a) m = m a
   hoistServerWithContext _ _ nt = nt
 
-  route Proxy _ = methodRouter ([],) method (Proxy :: Proxy ctypes) status
-    where
-      method = reflectMethod (Proxy :: Proxy method)
-      status = statusFromNat (Proxy :: Proxy status)
+  route Proxy = route (Proxy @(MultiVerb method ctypes '[Respond status "" a] a))
 
 instance
   {-# OVERLAPPING #-}
   ( AllCTRender ctypes a
+  , AllMimeRender ctypes a
   , GetHeaders (Headers h a)
-  , KnownNat status
+  , KnownStatus status
   , ReflectMethod method
   )
   => HasServer (Verb method status ctypes (Headers h a)) context
@@ -441,10 +396,7 @@ instance
   type ServerT (Verb method status ctypes (Headers h a)) m = m (Headers h a)
   hoistServerWithContext _ _ nt = nt
 
-  route Proxy _ = methodRouter (\x -> (getHeaders x, getResponse x)) method (Proxy :: Proxy ctypes) status
-    where
-      method = reflectMethod (Proxy :: Proxy method)
-      status = statusFromNat (Proxy :: Proxy status)
+  route Proxy = route (Proxy @(MultiVerb method ctypes '[Respond status "" (Headers h a)] (Headers h a)))
 
 instance
   ReflectMethod method
@@ -453,9 +405,9 @@ instance
   type ServerT (NoContentVerb method) m = m NoContent
   hoistServerWithContext _ _ nt = nt
 
-  route Proxy _ = noContentRouter method status204
-    where
-      method = reflectMethod (Proxy :: Proxy method)
+  route Proxy ctx action =
+    route (Proxy @(MultiVerb method '() '[RespondAs '() 204 "" ()] ())) ctx $
+      fmap void action
 
 instance
   {-# OVERLAPPABLE #-}
