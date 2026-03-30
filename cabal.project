@@ -80,10 +80,6 @@ if(impl(ghc >= 9.6.1))
   package lzma
     flags: -pkgconfig
 
--- prometheus-client-1.1.1 does not work with data-sketches-0.4.0.0
--- See https://github.com/fimad/prometheus-haskell/issues/82
-constraints: data-sketches < 0.4
-
 -- Per March 2026, the ecosystem has not fully migrated to 'ram' yet,
 -- see https://github.com/commercialhaskell/lts-haskell/issues/409
 -- Change this to exclude 'memory' instead when the ecosystem is ready.
