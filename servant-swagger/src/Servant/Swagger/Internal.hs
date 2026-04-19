@@ -285,7 +285,7 @@ instance {-# OVERLAPPABLE #-} (AllAccept cs, KnownNat status, SwaggerMethod meth
   toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
 
 -- | @since 1.1.7
-instance (Accept ct, KnownNat status, SwaggerMethod method, ToSchema a) => HasSwagger (Stream method status fr ct a) where
+instance (Accept ct, KnownNat status, SwaggerMethod method, ToSchema a) => HasSwagger (Stream (method :: StdMethod) status fr ct a) where
   toSwagger _ = toSwagger (Proxy :: Proxy (Verb method status '[ct] (Headers '[] a)))
 
 instance
