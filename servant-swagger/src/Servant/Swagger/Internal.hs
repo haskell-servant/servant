@@ -389,10 +389,12 @@ instance (HasSwagger api, KnownSymbol desc) => HasSwagger (Summary desc :> api) 
     toSwagger (Proxy :: Proxy api)
       & allOperations . summary %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
+#if MIN_VERSION_servant(0,20,4)
 instance (HasSwagger api, KnownSymbol operationId) => HasSwagger (OperationId operationId :> api) where
   toSwagger _ =
     toSwagger (Proxy :: Proxy api)
       & allOperations . operationId %~ (Just (Text.pack (symbolVal (Proxy :: Proxy operationId))) <>)
+#endif
 
 instance (HasSwagger sub, KnownSymbol (FoldDescription mods), KnownSymbol sym, SBoolI (FoldRequired mods), ToParamSchema a) => HasSwagger (QueryParam' mods sym a :> sub) where
   toSwagger _ =
@@ -431,11 +433,7 @@ instance (HasSwagger sub, KnownSymbol sym, ToParamSchema a) => HasSwagger (Query
           & paramSchema .~ pschema
 
       pschemaItems = SwaggerItemsPrimitive (Just CollectionMulti) (toParamSchema (Proxy :: Proxy a))
-#if MIN_VERSION_swagger2(2,4,0)
       pschema = mempty & type_ ?~ SwaggerArray & items ?~ pschemaItems
-#else
-      pschema = mempty & type_ .~ SwaggerArray & items ?~ pschemaItems
-#endif
 
 instance (HasSwagger sub, KnownSymbol sym) => HasSwagger (QueryFlag sym :> sub) where
   toSwagger _ =

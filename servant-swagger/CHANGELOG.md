@@ -1,3 +1,8 @@
+1.2.3
+-----
+
+- Require insert-ordered-containers-0.3, swagger2-2.9
+
 1.2.1
 -----
 
