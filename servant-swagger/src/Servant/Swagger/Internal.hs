@@ -19,8 +19,8 @@ import Control.Applicative ((<|>))
 import Control.Lens
 import Data.Aeson
 import Data.Foldable (toList)
-import Data.HashMap.Strict.InsOrd (InsOrdHashMap)
-import qualified Data.HashMap.Strict.InsOrd as InsOrdHashMap
+import Data.HashMap.Strict.InsOrd.Compat (InsOrdHashMap)
+import qualified Data.HashMap.Strict.InsOrd.Compat as InsOrdHashMap
 import Data.Proxy
 import Data.Singletons.Bool
 import Data.Swagger hiding (Header)
