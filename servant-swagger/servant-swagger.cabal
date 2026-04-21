@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                servant-swagger
-version:             1.2.1
+version:             1.2.2
 synopsis:            Generate a Swagger/OpenAPI/OAS 2.0 specification for your servant API.
 description:
   Swagger is a project used to describe and document RESTful APIs. The core of the
@@ -32,7 +32,6 @@ tested-with:         GHC ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.4 || ==9.10.1 ||
 
 extra-source-files:
     README.md
-  , CHANGELOG.md
   , example/server/*.hs
   , example/src/*.hs
   , example/test/*.hs
@@ -42,6 +41,7 @@ extra-source-files:
 extra-doc-files:
     example/src/*.hs
   , example/test/*.hs
+  , CHANGELOG.md
 
 source-repository head
   type:     git
