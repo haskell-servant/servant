@@ -12,17 +12,17 @@ build-type:          Simple
 executable cookbook-db-postgres-pool
   main-is:             PostgresPool.lhs
   build-depends:       base == 4.*
-                     , bytestring >= 0.10
+                     , bytestring >= 0.11
                      , text >= 1.2
-                     , aeson >= 1.2
+                     , aeson >= 2.2
                      , servant
                      , servant-client
                      , servant-server
-                     , warp >= 3.2
+                     , warp >= 3.4.9
                      , wai >= 3.2
                      , http-types >= 0.12
-                     , markdown-unlit >= 0.4
-                     , http-client >= 0.5
+                     , markdown-unlit >= 0.5.1
+                     , http-client >= 0.7.19
                      , postgresql-simple >= 0.5
                      , resource-pool >= 0.2
                      , transformers

@@ -16,7 +16,7 @@ executable cookbook-basic-streaming
   ghc-options:         -Wall -pgmL markdown-unlit -threaded -rtsopts
 
   hs-source-dirs: .
-  build-depends:       base >= 4.8 && <5
+  build-depends:       base >= 4.16 && <5
                      , aeson
                      , bytestring
                      , servant

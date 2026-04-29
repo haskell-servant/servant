@@ -16,7 +16,7 @@ executable cookbook-testing
   build-depends:       base == 4.*
                      , base-compat
                      , text >= 1.2
-                     , aeson >= 1.2
+                     , aeson >= 2.2
                      , lens-aeson
                      , lens
                      , servant
@@ -29,7 +29,7 @@ executable cookbook-testing
                      , hspec-wai
                      , QuickCheck
                      , unordered-containers
-                     , warp >= 3.2
+                     , warp >= 3.4.9
                      , wai >= 3.2
                      , wai-extra
   default-language:    Haskell2010

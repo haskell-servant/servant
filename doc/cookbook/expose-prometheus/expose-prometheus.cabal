@@ -15,16 +15,16 @@ executable cookbook-expose-prometheus
   build-depends:       base == 4.*
                      , text >= 1.2
                      , bytestring >= 0.11
-                     , containers >= 0.5
+                     , containers >= 0.6.5.1
                      , servant
                      , servant-server
                      , prometheus-client
                      , prometheus-metrics-ghc
-                     , warp >= 3.2
+                     , warp >= 3.4.9
                      , wai >= 3.2
                      , http-types >= 0.12
-                     , markdown-unlit >= 0.4
-                     , http-client >= 0.5
+                     , markdown-unlit >= 0.5.1
+                     , http-client >= 0.7.19
   default-language:    Haskell2010
   ghc-options:         -rtsopts -Wall -pgmL markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit

@@ -16,7 +16,7 @@ executable cookbook-infinite-streams
   ghc-options:         -Wall -pgmL markdown-unlit -Wunused-packages -threaded -rtsopts -with-rtsopts=-N
 
   hs-source-dirs: .
-  build-depends:       base >= 4.8 && <5
+  build-depends:       base >= 4.16 && <5
                      , aeson
                      , async
                      , http-client

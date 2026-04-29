@@ -14,7 +14,7 @@ build-type:          Simple
 executable cookbook-uverb
   main-is:             UVerb.lhs
   build-depends:       base == 4.*
-                     , aeson >= 1.2
+                     , aeson >= 2.2
                      , aeson-pretty >= 0.8.8
                      , async
                      , http-client

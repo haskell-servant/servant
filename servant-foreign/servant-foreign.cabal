@@ -51,8 +51,8 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat >= 0.10.5  && < 0.15
-    , lens        >= 4.17    && < 5.4
+      base-compat >= 0.12    && < 0.15
+    , lens        >= 5.3     && < 5.4
     , http-types  >= 0.12.2  && < 0.13
 
   hs-source-dirs:      src
@@ -74,7 +74,7 @@ test-suite spec
 
   -- Additional dependencies
   build-depends:
-    hspec >= 2.6.0 && <2.12
+    hspec >= 2.11  && <2.12
   build-tool-depends:
-    hspec-discover:hspec-discover >=2.6.0 && <2.12
+    hspec-discover:hspec-discover >=2.11  && <2.12
   default-language:  Haskell2010
