@@ -84,3 +84,6 @@ if(impl(ghc >= 9.6.1))
 -- see https://github.com/commercialhaskell/lts-haskell/issues/409
 -- Change this to exclude 'memory' instead when the ecosystem is ready.
 constraints: ram < 0
+
+-- Allow QuickCheck-2.18
+allow-newer: swagger2:QuickCheck
