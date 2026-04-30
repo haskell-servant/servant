@@ -40,7 +40,7 @@ library
     , servant-docs >= 0.13.1  && < 0.14
     , servant      >= 0.20.2  && < 0.21
     , servant-auth >= 0.4.2.0 && < 0.5
-    , lens         >= 4.16.1  && <5.4
+    , lens         >= 5.3     && <5.4
   exposed-modules:
       Servant.Auth.Docs
   default-language: Haskell2010
@@ -79,7 +79,7 @@ test-suite spec
   -- test dependencies
   build-depends:
       servant-auth-docs
-    , hspec             >= 2.5.5  && < 2.12
+    , hspec             >= 2.11   && < 2.12
     , QuickCheck        >= 2.18   && < 2.19
 
   default-language: Haskell2010
