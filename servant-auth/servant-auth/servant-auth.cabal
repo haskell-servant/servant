@@ -40,7 +40,6 @@ library
     , lens                    >= 5.3      && < 5.4
     , servant                 >= 0.20.3   && < 0.21
     , text                    >= 1.2.3.0  && < 2.2
-    , unordered-containers    >= 0.2.21   && < 0.3
   exposed-modules:
       Servant.Auth
       Servant.Auth.JWT

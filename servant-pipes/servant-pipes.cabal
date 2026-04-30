@@ -49,12 +49,10 @@ test-suite example
       base
     , base-compat
     , bytestring
-    , http-media
     , pipes
     , pipes-safe
     , servant-pipes
     , pipes-bytestring  >=2.1.6    && <2.2
-    , servant           >=0.20.2   && <0.21
     , servant-server    >=0.20.2   && <0.21
     , servant-client    >=0.20.2   && <0.21
     , wai               >=3.2.1.2  && <3.3
