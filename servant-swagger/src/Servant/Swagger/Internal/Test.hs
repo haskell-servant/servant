@@ -1,10 +1,5 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Servant.Swagger.Internal.Test where
 
@@ -28,10 +23,8 @@ import Servant.Swagger.Internal.TypeLevel
 -- >>> import GHC.Generics
 -- >>> import Test.QuickCheck
 -- >>> import System.Environment (setEnv)
--- >>> :set -XDeriveGeneric
--- >>> :set -XGeneralizedNewtypeDeriving
 -- >>> :set -XDataKinds
--- >>> :set -XTypeOperators
+-- >>> :set -XExplicitNamespaces
 -- >>> setEnv "HSPEC_COLOR" "no"
 
 -- | Verify that every type used with @'JSON'@ content type in a servant API

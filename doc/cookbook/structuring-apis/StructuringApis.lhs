@@ -8,9 +8,6 @@ clearing.
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE KindSignatures #-}
 import Data.Aeson
 import GHC.Generics
 import GHC.TypeLits

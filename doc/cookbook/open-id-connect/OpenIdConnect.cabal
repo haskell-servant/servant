@@ -39,6 +39,6 @@ executable cookbook-openidconnect
     , vector
     , wai
     , warp >= 3.4.9
-  default-language: Haskell2010
+  default-language: GHC2021
   ghc-options: -Wall -Wcompat -Wincomplete-uni-patterns -Wredundant-constraints -Wnoncanonical-monad-instances -pgmL markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit >= 0.5.1

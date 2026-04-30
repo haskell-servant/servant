@@ -16,12 +16,10 @@ To keep the connection alive, we will need to send bytes on a regular basis.
 This is a Literate Haskell file, so let's get imports out of the way.
 
 ```haskell
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 module Main (main) where
 
 -- from `aeson`

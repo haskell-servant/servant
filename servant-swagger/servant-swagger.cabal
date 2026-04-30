@@ -85,7 +85,7 @@ library
 
                      , hspec
                      , QuickCheck
-  default-language:    Haskell2010
+  default-language:    GHC2021
 
 test-suite doctests
   ghc-options:      -Wall
@@ -96,7 +96,7 @@ test-suite doctests
     servant,
     QuickCheck,
     filepath
-  default-language: Haskell2010
+  default-language: GHC2021
   hs-source-dirs:   test
   main-is:          doctests.hs
   type:             exitcode-stdio-1.0
@@ -124,4 +124,4 @@ test-suite spec
                   , vector
   other-modules:
     Servant.SwaggerSpec
-  default-language: Haskell2010
+  default-language: GHC2021

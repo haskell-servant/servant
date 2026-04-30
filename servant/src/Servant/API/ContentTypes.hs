@@ -1,16 +1,6 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
@@ -418,8 +408,6 @@ instance MimeUnrender EventStream EventStreamChunk where
   mimeUnrender _ = Right . EventStreamChunk
 
 -- $setup
--- >>> :set -XFlexibleInstances
--- >>> :set -XMultiParamTypeClasses
 -- >>> :set -XOverloadedStrings
 -- >>> import Servant.API
 -- >>> import Data.Aeson

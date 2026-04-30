@@ -1,13 +1,6 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
@@ -294,9 +287,8 @@ type NotUniqueFragmentInApi api =
 --
 -- The doctests in this module are run with following preamble:
 --
--- >>> :set -XPolyKinds
 -- >>> :set -XGADTs
--- >>> :set -XTypeSynonymInstances -XFlexibleInstances
+-- >>> :set -XTypeSynonymInstances
 -- >>> import Data.Proxy
 -- >>> import Data.Type.Equality
 -- >>> import Servant.API

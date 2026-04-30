@@ -8,7 +8,6 @@ This library lets you automatically derive Haskell functions that let you query 
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 
 import Data.Proxy
 import Data.Text (Text)

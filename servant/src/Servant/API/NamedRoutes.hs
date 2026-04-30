@@ -1,4 +1,3 @@
-{-# LANGUAGE KindSignatures #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
 module Servant.API.NamedRoutes

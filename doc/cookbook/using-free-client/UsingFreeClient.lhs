@@ -11,7 +11,6 @@ First the module header, but this time We'll comment the imports.
 
 ```haskell
 {-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE TypeOperators #-}
 module Main (main) where
 ```
 

@@ -1,11 +1,6 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 -- | This module lets you implement 'Server's for defined APIs. You'll
 -- most likely just need 'serve'.
@@ -286,6 +281,6 @@ layoutWithContext p context =
 
 -- $setup
 -- >>> :set -XDataKinds
--- >>> :set -XTypeOperators
+-- >>> :set -XExplicitNamespaces
 -- >>> import Servant.API
 -- >>> import Servant.Server

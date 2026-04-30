@@ -11,11 +11,8 @@ Recently Servant got a way to add such formatting. This Cookbook chapter demonst
 Extensions and imports:
 ```haskell
 {-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds         #-}
 {-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
 
 import           Data.Aeson
 import           Data.Proxy

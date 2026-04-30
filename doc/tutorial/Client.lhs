@@ -9,8 +9,6 @@ The source for this tutorial section is a literate Haskell file, so first we nee
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Client where
 

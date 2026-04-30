@@ -7,8 +7,6 @@ We start with a pretty standard set of imports and definition of the model:
 
 ``` haskell
 {-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
 
 import           Control.Concurrent          (forkIO, killThread)
 import           Control.Concurrent.STM.TVar (TVar, newTVar, readTVar,

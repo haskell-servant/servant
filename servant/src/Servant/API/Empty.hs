@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
 module Servant.API.Empty (EmptyAPI (..)) where

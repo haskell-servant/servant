@@ -9,7 +9,6 @@ First, some throat clearing.
 ``` haskell
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators #-}
 import Control.Concurrent
 import Control.Exception
 import qualified Data.Map as Map

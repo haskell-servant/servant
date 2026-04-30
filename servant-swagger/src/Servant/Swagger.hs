@@ -61,11 +61,8 @@ import Servant.Swagger.Test
 -- >>> import Test.QuickCheck
 -- >>> import qualified Data.ByteString.Lazy.Char8 as BSL8
 -- >>> :set -XDataKinds
--- >>> :set -XDeriveDataTypeable
--- >>> :set -XDeriveGeneric
--- >>> :set -XGeneralizedNewtypeDeriving
 -- >>> :set -XOverloadedStrings
--- >>> :set -XTypeOperators
+-- >>> :set -XExplicitNamespaces
 -- >>> setEnv "HSPEC_COLOR" "no"
 -- >>> data User = User { name :: String, age :: Int } deriving (Show, Generic, Typeable)
 -- >>> newtype UserId = UserId Integer deriving (Show, Generic, Typeable, ToJSON)
