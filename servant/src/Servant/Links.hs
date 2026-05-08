@@ -374,9 +374,9 @@ allLinks' toA api = toLink toA api (Link mempty mempty mempty)
 -- type is used.
 --
 -- @
--- data Record route = Record
---     { _get :: route :- Capture "id" Int :> Get '[JSON] String
---     , _put :: route :- ReqBody '[JSON] Int :> Put '[JSON] Bool
+-- data Record mode = Record
+--     { _get :: mode :- Capture "id" Int :> Get '[JSON] String
+--     , _put :: mode :- ReqBody '[JSON] Int :> Put '[JSON] Bool
 --     }
 --   deriving ('Generic')
 --

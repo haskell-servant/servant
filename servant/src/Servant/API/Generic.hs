@@ -10,9 +10,9 @@
 -- define a record with field types prefixed by a parameter `route`:
 --
 -- @
--- data Routes route = Routes
---     { _get :: route :- Capture "id" Int :> Get '[JSON] String
---     , _put :: route :- ReqBody '[JSON] Int :> Put '[JSON] Bool
+-- data Routes mode = Routes
+--     { _get :: mode :- Capture "id" Int :> Get '[JSON] String
+--     , _put :: mode :- ReqBody '[JSON] Int :> Put '[JSON] Bool
 --     }
 --   deriving ('Generic')
 -- @
