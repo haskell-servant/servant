@@ -117,7 +117,7 @@ todoAPI =
                     },
                   "400": { "description": "Invalid `id`" }
                 },
-              "produces": [ "application/json;charset=utf-8" ],
+              "produces": [ "application/json" ],
               "parameters":
                 [
                   {
@@ -285,7 +285,7 @@ hackageAPI =
                }
             },
             "produces":[
-               "application/json;charset=utf-8"
+               "application/json"
             ],
             "tags":[
                "users"
@@ -306,7 +306,7 @@ hackageAPI =
                }
             },
             "produces":[
-               "application/json;charset=utf-8"
+               "application/json"
             ],
             "tags":[
                "packages"
@@ -327,7 +327,7 @@ hackageAPI =
                }
             },
             "produces":[
-               "application/json;charset=utf-8"
+               "application/json"
             ],
             "parameters":[
                {
@@ -401,7 +401,7 @@ getPostAPI =
                   "description":""
                }
             },
-            "produces":[ "application/json;charset=utf-8" ]
+            "produces":[ "application/json" ]
          },
          "get":{
             "responses":{
@@ -412,7 +412,7 @@ getPostAPI =
                   "description":""
                }
             },
-            "produces":[ "application/json;charset=utf-8" ],
+            "produces":[ "application/json" ],
             "tags":[ "get" ]
          }
       }
@@ -498,7 +498,7 @@ uverbAPI =
             }
           },
           "produces": [
-            "application/json;charset=utf-8"
+            "application/json"
           ]
         }
       }

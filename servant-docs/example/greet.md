@@ -14,16 +14,15 @@ You'll also note that multiple intros are possible.
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- If you use ?capital=true (`application/json;charset=utf-8`, `application/json`):
+- If you use ?capital=true (`application/json`):
 
 ```json
 "HELLO, HASKELLER"
 ```
 
-- If you use ?capital=false (`application/json;charset=utf-8`, `application/json`):
+- If you use ?capital=false (`application/json`):
 
 ```json
 "Hello, haskeller"
@@ -36,16 +35,15 @@ You'll also note that multiple intros are possible.
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- If you use ?capital=true (`application/json;charset=utf-8`, `application/json`):
+- If you use ?capital=true (`application/json`):
 
 ```json
 "HELLO, HASKELLER"
 ```
 
-- If you use ?capital=false (`application/json;charset=utf-8`, `application/json`):
+- If you use ?capital=false (`application/json`):
 
 ```json
 "Hello, haskeller"
@@ -55,7 +53,7 @@ You'll also note that multiple intros are possible.
 
 ```bash
 curl -XPOST \
-  -H "Content-Type: application/json;charset=utf-8" \
+  -H "Content-Type: application/json" \
   -d "\"HELLO, HASKELLER\"" \
   http://localhost:80/greet
 ```
@@ -85,10 +83,9 @@ And some more
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Example (`application/json`):
 
 ```json
 
@@ -126,17 +123,16 @@ curl -XDELETE \
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
     - `text/plain;charset=utf-8`
 
-- If you use ?capital=true (`application/json;charset=utf-8`, `application/json`, `text/plain;charset=utf-8`):
+- If you use ?capital=true (`application/json`, `text/plain;charset=utf-8`):
 
 ```json
 "HELLO, HASKELLER"
 ```
 
-- If you use ?capital=false (`application/json;charset=utf-8`, `application/json`):
+- If you use ?capital=false (`application/json`):
 
 ```json
 "Hello, haskeller"

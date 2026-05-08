@@ -163,7 +163,7 @@ Making request: Request {
   host                 = "localhost"
   port                 = 8000
   secure               = False
-  requestHeaders       = [("Accept","application/json;charset=utf-8,application/json")]
+  requestHeaders       = [("Accept","application/json")]
   path                 = "/square/42"
   queryString          = ""
   method               = "GET"
@@ -181,7 +181,7 @@ Got response: Response
     [ ("Transfer-Encoding","chunked")
     , ("Date","Thu, 05 Jul 2018 21:12:41 GMT")
     , ("Server","Warp/3.2.22")
-    , ("Content-Type","application/json;charset=utf-8")
+    , ("Content-Type","application/json")
     ]
   , responseBody = "1764"
   , responseCookieJar = CJ {expose = []}

@@ -288,7 +288,7 @@ verbSpec = describe "Servant.API.Verb" $ do
             response <- THW.request method "" [] ""
             liftIO $
               simpleHeaders response
-                `shouldContain` [("Content-Type", "application/json;charset=utf-8")]
+                `shouldContain` [("Content-Type", "application/json")]
 
           it "works for Stream as for Result" $ do
             response <- THW.request method "/stream" [] ""
@@ -752,7 +752,7 @@ reqBodySpec = describe "Servant.API.ReqBody" $ do
         THW.request
           method
           x
-          [(hContentType, "application/json;charset=utf-8")]
+          [(hContentType, "application/json")]
 
   with (pure $ serve reqBodyApi server) $ do
     it "passes the argument to the handler" $ do

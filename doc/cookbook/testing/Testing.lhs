@@ -467,7 +467,7 @@ Let's see what happens when we run these tests:
                  Headers:  "Transfer-Encoding": "chunked"
                            "Date": "Fri, 12 Oct 2018 04:36:22 GMT"
                            "Server": "Warp/3.2.25"
-                           "Content-Type": "application/json;charset=utf-8"
+                           "Content-Type": "application/json"
                  Body: ""
 
   To rerun use: --match "/Main[339:25]/API demonstrates best practices/"

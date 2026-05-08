@@ -56,7 +56,7 @@
                     }
                 },
                 "produces": [
-                    "application/json;charset=utf-8"
+                    "application/json"
                 ],
                 "parameters": [
                     {
@@ -71,7 +71,7 @@
             },
             "put": {
                 "consumes": [
-                    "application/json;charset=utf-8"
+                    "application/json"
                 ],
                 "responses": {
                     "400": {
@@ -85,7 +85,7 @@
                     }
                 },
                 "produces": [
-                    "application/json;charset=utf-8"
+                    "application/json"
                 ],
                 "parameters": [
                     {
@@ -110,7 +110,7 @@
         "/todo": {
             "post": {
                 "consumes": [
-                    "application/json;charset=utf-8"
+                    "application/json"
                 ],
                 "responses": {
                     "400": {
@@ -124,7 +124,7 @@
                     }
                 },
                 "produces": [
-                    "application/json;charset=utf-8"
+                    "application/json"
                 ],
                 "parameters": [
                     {
@@ -150,7 +150,7 @@
                     }
                 },
                 "produces": [
-                    "application/json;charset=utf-8"
+                    "application/json"
                 ]
             }
         }

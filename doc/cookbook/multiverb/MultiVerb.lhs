@@ -164,7 +164,7 @@ Now let us run the server and observe how it behaves:
 ```
 $ http http://localhost:5000/version
 HTTP/1.1 200 OK
-Content-Type: application/json;charset=utf-8
+Content-Type: application/json
 Date: Thu, 29 Aug 2024 14:22:20 GMT
 Server: Warp/3.4.1
 Transfer-Encoding: chunked
@@ -176,7 +176,7 @@ Transfer-Encoding: chunked
 ```
 $ http http://localhost:5000/choices/3
 HTTP/1.1 200 OK
-Content-Type: application/json;charset=utf-8
+Content-Type: application/json
 Date: Thu, 29 Aug 2024 14:22:30 GMT
 Server: Warp/3.4.1
 Transfer-Encoding: chunked
@@ -187,7 +187,7 @@ true
 ```
 $ http http://localhost:5000/choices/2
 HTTP/1.1 200 OK
-Content-Type: application/json;charset=utf-8
+Content-Type: application/json
 Date: Thu, 29 Aug 2024 14:22:33 GMT
 Server: Warp/3.4.1
 Transfer-Encoding: chunked
