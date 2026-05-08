@@ -127,16 +127,16 @@ That lets us see what our API docs look like in markdown, by looking at `markdow
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
+    - `application/json`
     - `application/json`
 
-- When a value is provided for 'name' (`application/json;charset=utf-8`, `application/json`):
+- When a value is provided for 'name' (`application/json`):
 
     ```json
 {"msg":"Hello, Alp"}
     ```
 
-- When 'name' is not specified (`application/json;charset=utf-8`, `application/json`):
+- When 'name' is not specified (`application/json`):
 
     ```json
 {"msg":"Hello, anonymous coward"}
@@ -148,10 +148,9 @@ That lets us see what our API docs look like in markdown, by looking at `markdow
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Example (`application/json`):
 
     ```json
 {"clientAge":26,"clientEmail":"alp@foo.com","clientName":"Alp","clientInterestedIn":["haskell","mathematics"]}
@@ -164,10 +163,9 @@ That lets us see what our API docs look like in markdown, by looking at `markdow
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Example (`application/json`):
 
     ```json
 {"subject":"Hey Alp, we miss you!","body":"Hi Alp,\n\nSince you've recently turned 26, have you checked out our latest haskell, mathematics products? Give us a visit!","to":"alp@foo.com","from":"great@company.com"}
@@ -187,10 +185,9 @@ That lets us see what our API docs look like in markdown, by looking at `markdow
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Example (`application/json`):
 
     ```json
 {"yCoord":14,"xCoord":3}
@@ -236,11 +233,10 @@ The relevant output of `markdown api2Docs` is now:
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
     - `application/x-www-form-urlencoded`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Example (`application/json`):
 
     ```json
 {"clientAge":26,"clientEmail":"alp@foo.com","clientName":"Alp","clientInterestedIn":["haskell","mathematics"]}

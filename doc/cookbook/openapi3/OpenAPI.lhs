@@ -106,7 +106,7 @@ The generated schema looks something like this:
         "responses": {
           "200": {
             "content": {
-              "application/json;charset=utf-8": {
+              "application/json": {
                 "schema": {
                   "items": {
                     "$ref": "#/components/schemas/Todo"

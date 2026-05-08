@@ -7,10 +7,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -25,10 +24,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -43,10 +41,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -65,10 +62,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -87,10 +83,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -109,10 +104,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -130,10 +124,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -155,10 +148,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -173,10 +165,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -195,10 +186,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -213,10 +203,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 17
@@ -235,10 +224,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -257,10 +245,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -275,10 +262,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -293,10 +279,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -311,10 +296,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -332,10 +316,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -357,10 +340,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -382,10 +364,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -408,10 +389,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -426,10 +406,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 17
@@ -462,10 +441,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -477,10 +455,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Example (`application/json`):
 
 ```json
 17
@@ -493,10 +470,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -508,10 +484,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Example (`application/json`):
 
 ```json
 17
@@ -524,10 +499,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -542,10 +516,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -560,10 +533,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -575,7 +547,6 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
 ### Response:
@@ -585,7 +556,6 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
 - No response body
@@ -602,10 +572,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 
@@ -620,10 +589,9 @@
 
 - Supported content types are:
 
-    - `application/json;charset=utf-8`
     - `application/json`
 
-- Example (`application/json;charset=utf-8`, `application/json`):
+- Response body as below.
 
 ```json
 

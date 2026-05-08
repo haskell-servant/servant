@@ -378,7 +378,7 @@ $ curl -v -XPOST 'http://localhost:3001/login' \
 < HTTP/1.1 200 OK
 ...
 < Server: Warp/3.2.25
-< Content-Type: application/json;charset=utf-8
+< Content-Type: application/json
 < Set-Cookie: JWT-Cookie=eyJhbGciOiJIUzUxMiJ9.eyJkYXQiOnsibmFtZSI6ImFkbWluIn19.SIoRcABKSO4mXnRifzqPWlHJUhVwuy32Qon7s1E_c3vHOsLXdXyX4V4eXOw9tMFoeIqgsXMZucqoFb36vAdKwQ; Path=/; HttpOnly; SameSite=Lax
 < Set-Cookie: XSRF-TOKEN=y5PmrYHX3ywFUCwGRQqHh1TDheTLiQpwRQB3FFRd8N4=; Path=/
 ...

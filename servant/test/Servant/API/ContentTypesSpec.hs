@@ -137,9 +137,9 @@ spec = describe "Servant.API.ContentTypes" $ do
 
     it "returns the Content-Type as the first element of the tuple" $ do
       handleAcceptH (Proxy :: Proxy '[JSON]) "*/*" (3 :: Int)
-        `shouldSatisfy` ((== "application/json;charset=utf-8") . fst . fromJust)
+        `shouldSatisfy` ((== "application/json") . fst . fromJust)
       handleAcceptH (Proxy :: Proxy '[PlainText, JSON]) "application/json" (3 :: Int)
-        `shouldSatisfy` ((== "application/json;charset=utf-8") . fst . fromJust)
+        `shouldSatisfy` ((== "application/json") . fst . fromJust)
       handleAcceptH
         (Proxy :: Proxy '[PlainText, JSON, OctetStream])
         "application/octet-stream"
@@ -149,13 +149,13 @@ spec = describe "Servant.API.ContentTypes" $ do
     it "returns the appropriately serialized representation" $ do
       property $ \x ->
         handleAcceptH (Proxy :: Proxy '[JSON]) "*/*" (x :: SomeData)
-          == Just ("application/json;charset=utf-8", encode x)
+          == Just ("application/json", encode x)
 
     it "respects the Accept spec ordering" $ do
       let highest a b c =
             selectMedia
               [ ("application/octet-stream", a)
-              , ("application/json;charset=utf-8", b)
+              , ("application/json", b)
               , ("text/plain;charset=utf-8", c)
               ]
 

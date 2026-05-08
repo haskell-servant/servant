@@ -176,7 +176,7 @@ Now if we try to request something with a wrong body, we will get a nice error:
 ```
 $ http -j POST localhost:8000/greet 'foo=bar'
 HTTP/1.1 400 Bad Request
-Content-Type: application/json;charset=utf-8
+Content-Type: application/json
 Date: Fri, 17 Jul 2020 13:34:18 GMT
 Server: Warp/3.3.12
 Transfer-Encoding: chunked
