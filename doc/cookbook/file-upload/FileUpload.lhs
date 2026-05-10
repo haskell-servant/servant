@@ -9,7 +9,6 @@ As usual, a bit of throat clearing.
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Concurrent

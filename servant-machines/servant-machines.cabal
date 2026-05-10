@@ -32,7 +32,7 @@ library
     , machines      >=0.6.4    && <0.8
     , servant       >=0.20.2   && <0.21
   hs-source-dirs:      src
-  default-language:    Haskell2010
+  default-language:    GHC2021
   ghc-options: -Wall
 
 test-suite example
@@ -54,4 +54,4 @@ test-suite example
     , wai            >=3.2.1.2  && <3.3
     , warp           >=3.4.9    && <3.5
     , http-client
-  default-language: Haskell2010
+  default-language: GHC2021

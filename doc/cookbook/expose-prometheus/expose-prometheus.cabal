@@ -25,6 +25,6 @@ executable cookbook-expose-prometheus
                      , http-types >= 0.12
                      , markdown-unlit >= 0.5.1
                      , http-client >= 0.7.19
-  default-language:    Haskell2010
+  default-language:    GHC2021
   ghc-options:         -rtsopts -Wall -pgmL markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit

@@ -13,7 +13,6 @@ As usual, we start with a little bit of throat clearing.
 ``` haskell
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators #-}
 import Data.ByteString (ByteString)
 import Control.Concurrent
 import Control.Exception (bracket)

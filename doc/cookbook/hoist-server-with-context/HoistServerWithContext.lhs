@@ -26,10 +26,8 @@ This recipe uses the following ingredients:
 
 ```haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 import Prelude ()
 import Prelude.Compat

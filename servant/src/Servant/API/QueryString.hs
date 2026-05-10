@@ -1,9 +1,5 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
 module Servant.API.QueryString (QueryString, DeepQuery, FromDeepQuery (..), ToDeepQuery (..), generateDeepParam) where

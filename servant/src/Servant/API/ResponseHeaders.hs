@@ -270,7 +270,6 @@ instance {-# OVERLAPPABLE #-} HasResponseHeader h a rest => HasResponseHeader h 
 -- In this example, the type of header value is determined by the type-inference,
 -- we only specify the name of the header:
 --
--- >>> :set -XTypeApplications
 -- >>> case lookupResponseHeader @"1st" example2 of { Header b -> b ; _ -> False }
 -- True
 --
@@ -282,7 +281,6 @@ lookupResponseHeader
 lookupResponseHeader = hlistLookupHeader . getHeadersHList
 
 -- $setup
--- >>> :set -XFlexibleContexts
 -- >>> import Servant.API
 -- >>> import Data.Aeson
 -- >>> import Data.Text

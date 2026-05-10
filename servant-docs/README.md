@@ -10,13 +10,8 @@ See [here](https://github.com/haskell-servant/servant/blob/master/servant-docs/e
 
 ```haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Proxy (Proxy (..))

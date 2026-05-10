@@ -36,9 +36,6 @@ First, the imports.
 ``` haskell
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 import Control.Monad (forever)
 import Control.Concurrent (ThreadId, forkIO, threadDelay)

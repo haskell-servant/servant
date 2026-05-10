@@ -65,7 +65,7 @@ library
     , unordered-containers >= 0.2.21   && < 0.3
 
   hs-source-dirs: src
-  default-language: Haskell2010
+  default-language: GHC2021
   ghc-options: -Wall -Wno-redundant-constraints
 
 executable greet-docs
@@ -80,10 +80,10 @@ executable greet-docs
     , servant-docs
     , string-conversions
     , text
-  default-language: Haskell2010
+  default-language: GHC2021
 
 test-suite spec
-  default-language: Haskell2010
+  default-language: GHC2021
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules: Servant.DocsSpec

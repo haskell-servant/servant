@@ -97,7 +97,6 @@ why ever look back? Let's get started!
 {-# LANGUAGE DataKinds                #-}
 {-# LANGUAGE DeriveAnyClass           #-}
 {-# LANGUAGE DerivingStrategies       #-}
-{-# LANGUAGE DeriveGeneric            #-}
 {-# LANGUAGE OverloadedStrings        #-}
 {-# LANGUAGE OverloadedRecordDot      #-}
 

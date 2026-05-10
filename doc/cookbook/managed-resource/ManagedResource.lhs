@@ -7,7 +7,6 @@ As usual, we start with a little bit of throat clearing.
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 import Control.Concurrent
 import Control.Exception (bracket)
 import Control.Monad.IO.Class

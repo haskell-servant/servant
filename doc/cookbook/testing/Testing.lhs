@@ -39,8 +39,7 @@ Servant applications:
 This recipe starts with the following ingredients:
 
 ```haskell
-{-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds,
-  DeriveGeneric, TypeOperators #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds, ExplicitNamespaces #-}
 import           Prelude ()
 import           Prelude.Compat
 
