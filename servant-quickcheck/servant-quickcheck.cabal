@@ -35,7 +35,7 @@ library
 
   ghc-options:        -Wall -Wcompat
   build-depends:
-      aeson                  >=2.2    && <2.3
+      aeson                  >=2.2    && <2.4
     , base                   >= 4.16.4.0 && < 4.22
     , base-compat-batteries  >=0.12   && <0.15
     , bytestring             >=0.11   && <0.13
