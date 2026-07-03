@@ -1,4 +1,4 @@
-resolver: nightly-2023-04-14
+resolver: nightly-2026-07-03
 
 packages:
 - servant/
@@ -21,9 +21,14 @@ packages:
 - servant-conduit
 - servant-pipes/
 
-# allow-newer: true # ignores all bounds, that's a sledgehammer
-# - doc/tutorial/
+- doc/tutorial/
 
 extra-deps:
-- hspec-wai-0.11.1
-- pipes-safe-2.3.4
+- QuickCheck-2.18.0.0
+- quickcheck-instances-0.4@rev:2
+- servant-js-0.9.4.2
+
+allow-newer: true
+
+allow-newer-deps:
+- swagger2 # https://github.com/GetShopTV/swagger2/issues/264
