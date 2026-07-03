@@ -92,7 +92,7 @@ test-suite doctests
   build-depends:
     base < 5,
     directory >= 1.0,
-    doctest >= 0.17 && <0.25,
+    doctest >= 0.24 && <0.26,
     servant,
     QuickCheck,
     filepath

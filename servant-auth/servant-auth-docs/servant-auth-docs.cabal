@@ -51,7 +51,7 @@ test-suite doctests
   build-depends:
     base,
     servant-auth-docs,
-    doctest             >= 0.16   && < 0.25,
+    doctest             >= 0.24   && < 0.26,
     QuickCheck          >= 2.18   && < 2.19,
     template-haskell
   ghc-options:         -Wall -threaded
