@@ -1,0 +1,10 @@
+synopsis: Export `Servant.Links.addSegment` authentication primitives from `servant`
+packages: servant
+prs: #1895
+issues: #1887
+description: {
+Exported `addSegment`, `Escaped`, `escaped` and `getEscaped` from the `Servant.Links` module.
+
+This allows custom combinators to implement `HasLink` instances.
+}
+
