@@ -121,6 +121,10 @@ module Servant.Links
   , linkQueryParams
   , linkFragment
   , addQueryParam
+  , addSegment
+  , Escaped
+  , escaped
+  , getEscaped
   )
 where
 
