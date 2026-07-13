@@ -9,6 +9,7 @@
 -- >>> import Servant.Links
 -- >>> import Web.HttpApiData (toUrlPiece)
 -- >>> import Data.Proxy
+-- >>> import Data.Text (Text)
 -- >>>
 -- >>> type Hello = "hello" :> Get '[JSON] Int
 -- >>> type Bye   = "bye"   :> QueryParam "name" String :> Delete '[JSON] NoContent
