@@ -231,12 +231,11 @@ data DocNote = DocNote
 newtype ExtraInfo api = ExtraInfo (HashMap Endpoint Action)
 
 instance Semigroup (ExtraInfo a) where
-  (<>) = mappend
+  ExtraInfo a <> ExtraInfo b =
+    ExtraInfo $ HM.unionWith combineAction a b
 
 instance Monoid (ExtraInfo a) where
   mempty = ExtraInfo mempty
-  ExtraInfo a `mappend` ExtraInfo b =
-    ExtraInfo $ HM.unionWith combineAction a b
 
 -- | Documentation options.
 newtype DocOptions = DocOptions
