@@ -142,13 +142,12 @@ data API = API
   deriving (Eq, Show)
 
 instance Semigroup API where
-  (<>) = mappend
-
-instance Monoid API where
-  API a1 b1 `mappend` API a2 b2 =
+  API a1 b1 <> API a2 b2 =
     API
       (a1 `mappend` a2)
       (HM.unionWith combineAction b1 b2)
+
+instance Monoid API where
   mempty = API mempty mempty
 
 -- | An empty 'API'
