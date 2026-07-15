@@ -125,7 +125,9 @@ library
   exposed-modules: Servant.Test.ComprehensiveAPI
 
   -- Safe links
-  exposed-modules: Servant.Links
+  exposed-modules:
+    Servant.Links
+    Servant.Internal.Links
 
   -- Bundled with GHC: Lower bound to not force re-installs
   -- text and mtl are bundled starting with GHC-8.4

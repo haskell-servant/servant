@@ -1,0 +1,7 @@
+synopsis: Expose `Servant.Internal.Links`
+packages: servant
+prs: #1899
+issues: #1898
+description: {
+  Expose `Servant.Internal.Links`
+}
