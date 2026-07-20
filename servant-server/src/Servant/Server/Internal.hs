@@ -131,7 +131,7 @@ import Servant.API.Modifiers
   , unfoldRequestArgument
   )
 import Servant.API.MultiVerb
-import Servant.API.QueryString (FromDeepQuery (..))
+import Servant.API.QueryString (DecodedQuery, FromDeepQuery (..))
 import Servant.API.ResponseHeaders
   ( GetHeaders
   , Headers
@@ -801,10 +801,12 @@ instance
 
 -- | If you use @'QueryString'@ in one of the endpoints for your API,
 -- this automatically requires your server-side handler to be a function
--- that takes an argument of type @Query@ (@[('ByteString', 'Maybe' 'ByteString')]@).
+-- that takes an argument of type @'DecodedQuery'@ (@[('ByteString', 'Maybe' 'ByteString')]@).
 --
 -- This lets you extract the whole query string. This is useful when the query string
 -- can contain parameters with dynamic names, that you can't access with @'QueryParam'@.
+-- Parameter names and values have already been URL-decoded by WAI. In particular,
+-- percent escapes are decoded and @+@ becomes a space; do not decode them again.
 --
 -- Example:
 --
@@ -812,7 +814,7 @@ instance
 -- >
 -- > server :: Server MyApi
 -- > server = getBooksBy
--- >   where getBooksBy :: Query -> Handler [Book]
+-- >   where getBooksBy :: DecodedQuery -> Handler [Book]
 -- >         getBooksBy filters = ...filter books based on the dynamic filters provided...
 instance
   HasServer api context
@@ -821,7 +823,7 @@ instance
   ------
   type
     ServerT (QueryString :> api) m =
-      Query -> ServerT api m
+      DecodedQuery -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
@@ -839,7 +841,8 @@ instance
 -- it cannot be done with @'QueryParam'.
 --
 -- The way the object is constructed from the extracted fields can be controlled by
--- providing an instance on @'FromDeepQuery'@
+-- providing an instance on @'FromDeepQuery'@. Field names and values are URL-decoded
+-- before that instance is called.
 --
 -- Example:
 --

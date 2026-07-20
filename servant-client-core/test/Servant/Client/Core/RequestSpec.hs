@@ -4,7 +4,9 @@
 module Servant.Client.Core.RequestSpec (spec) where
 
 import Control.Monad
+import Data.Foldable (toList)
 import Data.List (isInfixOf)
+import Network.HTTP.Types (EscapeItem (..))
 import Prelude.Compat
 import Test.Hspec
 import Prelude ()
@@ -31,3 +33,11 @@ spec = do
       it "redacts the authorization header" $ do
         let request = void $ defaultRequest{requestHeaders = pure ("authorization", "secret")}
         isInfixOf "secret" (show request) `shouldBe` False
+    describe "query strings" $ do
+      it "records whether value sections need URL encoding" $ do
+        let request = appendToQueryString "q" [QE "raw value", QN "+syntax"] defaultRequest
+        toList (requestQueryString request)
+          `shouldBe` [("q", [QE "raw value", QN "+syntax"])]
+      it "uses an empty section list for a value-less parameter" $ do
+        let request = appendToQueryString "flag" [] defaultRequest
+        toList (requestQueryString request) `shouldBe` [("flag", [])]

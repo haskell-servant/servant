@@ -20,6 +20,8 @@ module Servant.SuccessSpec (spec) where
 import Control.Arrow (left)
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TVar (newTVar, readTVar)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
 import Data.Foldable (forM_, toList)
 import Data.Maybe (listToMaybe)
 import Data.Monoid ()
@@ -79,7 +81,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
     Left (FailureResponse req _) <- runClient (getQueryParam (Just "bob")) baseUrl
     Req.requestPath req `shouldBe` (baseUrl, "/param")
-    toList (Req.requestQueryString req) `shouldBe` [("name", Just "bob")]
+    toList (Req.requestQueryString req) `shouldBe` [("name", [HTTP.QN "bob"])]
     Req.requestMethod req `shouldBe` HTTP.methodGet
 
   it "Servant.API.QueryParam" $ \(_, baseUrl) -> do
@@ -87,25 +89,45 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     Left (FailureResponse _ r) <- runClient (getQueryParam (Just "bob")) baseUrl
     responseStatusCode r `shouldBe` HTTP.Status 400 "bob not found"
 
+  it "Servant.API.QueryParam supports custom encoded values" $ \(_, baseUrl) -> do
+    let payload = BS.pack [0, 1, 2, 4, 8, 16, 32, 64, 128]
+        apiCall = getQueryParamBinary (Just $ UrlEncodedByteString payload) HTTP.methodGet
+    result <- runClient apiCall baseUrl
+    case result of
+      Left err -> assertFailure $ show err
+      Right response -> responseBody response `shouldBe` BSL.fromStrict payload
+
   it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
     left show <$> runClient (getQueryParams []) baseUrl `shouldReturn` Right []
-    left show <$> runClient (getQueryParams ["alice", "bob"]) baseUrl
-      `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
+    let names = ["alice + bob", "query&value=1"]
+    left show <$> runClient (getQueryParams names) baseUrl
+      `shouldReturn` Right (zipWith Person names [0 ..])
 
   context "Servant.API.QueryParam.QueryFlag" $
     forM_ [False, True] $
       \flag -> it (show flag) $ \(_, baseUrl) -> left show <$> runClient (getQueryFlag flag) baseUrl `shouldReturn` Right flag
 
   it "Servant.API.QueryParam.QueryString" $ \(_, baseUrl) -> do
-    let qs = [("name", Just "bob"), ("age", Just "1")]
-    left show <$> runClient (getQueryString qs) baseUrl `shouldReturn` Right (Person "bob" 1)
+    let qs = [("name", [HTTP.QN "bob%20%2B%20alice"]), ("age", [HTTP.QE "1"])]
+    left show <$> runClient (getQueryString qs) baseUrl `shouldReturn` Right (Person "bob + alice" 1)
 
-  it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) ->
+  it "renders escaped, unescaped, empty and value-less query sections" $ \(_, baseUrl) -> do
+    let query =
+          [ ("q", [HTTP.QE "+", HTTP.QN "+language:haskell"])
+          , ("flag", [])
+          , ("empty", [HTTP.QE ""])
+          ]
+        request = Req.setQueryString query Req.defaultRequest
+    clientRequest <- defaultMakeClientRequest baseUrl request
+    C.queryString clientRequest `shouldBe` "?q=%2B+language:haskell&flag&empty="
+
+  it "Servant.API.QueryParam.DeepQuery" $ \(_, baseUrl) -> do
+    let name = "bob + alice & carol=friend"
     left show
       <$> runClient
-        (getDeepQuery $ Filter 1 "bob")
+        (getDeepQuery $ Filter 1 name)
         baseUrl
-      `shouldReturn` Right (Person "bob" 1)
+      `shouldReturn` Right (Person name 1)
 
   it "Servant.API.Fragment" $ \(_, baseUrl) -> left id <$> runClient getFragment baseUrl `shouldReturn` Right alice
 

@@ -268,7 +268,7 @@ getQueryParam :: Maybe String -> ClientM Person
 getQueryParamBinary :: Maybe UrlEncodedByteString -> HTTP.Method -> ClientM Response
 getQueryParams :: [String] -> ClientM [Person]
 getQueryFlag :: Bool -> ClientM Bool
-getQueryString :: [(ByteString, Maybe ByteString)] -> ClientM Person
+getQueryString :: HTTP.PartialEscapeQuery -> ClientM Person
 getDeepQuery :: Filter -> ClientM Person
 getFragment :: ClientM Person
 getRawSuccess :: HTTP.Method -> ClientM Response
@@ -521,8 +521,8 @@ pathGen = fmap NonEmpty path
 newtype UrlEncodedByteString = UrlEncodedByteString {unUrlEncodedByteString :: ByteString}
 
 instance ToHttpApiData UrlEncodedByteString where
-  toEncodedUrlPiece = byteString . HTTP.urlEncode True . unUrlEncodedByteString
-  toUrlPiece = decodeUtf8 . HTTP.urlEncode True . unUrlEncodedByteString
+  toEncodedQueryParam = byteString . HTTP.urlEncode True . unUrlEncodedByteString
+  toQueryParam = decodeUtf8 . HTTP.urlEncode True . unUrlEncodedByteString
 
 instance FromHttpApiData UrlEncodedByteString where
   parseUrlPiece = pure . UrlEncodedByteString . HTTP.urlDecode True . encodeUtf8

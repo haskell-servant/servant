@@ -242,7 +242,7 @@ toUrl burl request =
   let pathS = cs $ toLazyByteString $ requestPath request
       queryS =
         cs $
-          renderQuery True $
+          renderQueryPartialEscape True $
             toList $
               requestQueryString request
    in showBaseUrl burl ++ pathS ++ queryS
