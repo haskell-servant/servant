@@ -21,6 +21,7 @@ If you would like to learn more, click the tutorial link below.
 
   tutorial/index.rst
   cookbook/index.rst
+  migrations/query-string-encoding.md
   examples.md
   links.rst
   principles.rst
