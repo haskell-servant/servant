@@ -1,0 +1,12 @@
+synopsis: Make client query-string encoding explicit with `PartialEscapeQuery`
+packages: servant, servant-client-core, servant-client, servant-client-ghcjs, servant-http-streams, servant-server
+prs: #1901
+issues: #1779 #1626 #1100
+significance: significant
+description: {
+Client `Request` values now store `PartialEscapeQueryItem`s, forcing custom combinators and backends to mark each value section as either requiring encoding (`QE`) or intentionally unchanged (`QN`). `QueryString` clients now accept `PartialEscapeQuery`, all in-tree backends render it with `renderQueryPartialEscape`, and `DeepQuery` values are encoded consistently.
+
+`encodeQueryParamValue` now honors `ToHttpApiData.toEncodedQueryParam`. Server-side `QueryString` and `DeepQuery` documentation makes clear that WAI has already URL-decoded parameter names and values, with the new `DecodedQuery` alias making that state visible.
+
+See `doc/migrations/query-string-encoding.md` for migration examples covering custom combinators, middleware, backends, `QueryString` clients, and server-side decoding workarounds.
+}
