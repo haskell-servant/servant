@@ -16,7 +16,7 @@ author:              Servant Contributors
 maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           2018-2019 Servant Contributors
 build-type:          Simple
-tested-with:         GHC ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.1
+tested-with:         GHC ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.1 || ==9.14.1
 
 extra-source-files:
   CHANGELOG.md
@@ -28,7 +28,7 @@ source-repository head
 library
   exposed-modules:     Servant.Pipes
   build-depends:
-      base          >= 4.16.4.0 && < 4.22
+      base          >= 4.16.4.0 && < 4.23
     , bytestring    >=0.11 && <0.13
     , pipes         >=4.3.9    && <4.4
     , pipes-safe    >=2.3.1    && <2.4

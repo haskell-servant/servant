@@ -19,7 +19,7 @@ copyright:
   2014-2016 Zalora South East Asia Pte Ltd, 2016-2019 Servant Contributors
 
 build-type:         Simple
-tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.1
+tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.1 || ==9.14.1
 
 extra-source-files:
   CHANGELOG.md
@@ -104,12 +104,12 @@ library
   -- note: mtl lower bound is so low because of GHC-7.8
   build-depends:
     , attoparsec        >= 0.14.4   && < 0.15
-    , base              >= 4.16.4.0 && < 4.22
+    , base              >= 4.16.4.0 && < 4.23
     , bytestring        >=0.11 && <0.13
     , constraints       >=0.14.4   && <0.15
     , containers        >=0.6.5.1  && <0.9
     , deepseq           >=1.4.6.1  && <1.6
-    , template-haskell  >=2.18     && <2.24
+    , template-haskell  >=2.18     && <2.25
     , text              >=1.2.3.0  && <2.2
 
   -- Servant dependencies

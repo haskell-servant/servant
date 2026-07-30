@@ -49,6 +49,7 @@ import           Control.Concurrent.MVar
 import           Control.Exception                (bracket)
 import           Control.Lens              hiding (Context)
 import           Data.Aeson
+import qualified Data.Aeson.KeyMap                as KeyMap
 import           Data.Aeson.Lens
 import qualified Data.HashMap.Strict              as HM
 import           Data.Text                        (Text, unpack)
@@ -318,8 +319,8 @@ getESDocument docId
   -- arbitrary things we can use in our tests to simulate failure:
   -- we want to trigger different code paths.
   | docId > 1000 = throwError err500
-  | docId > 500 = pure . Object $ HM.fromList [("bad", String "data")]
-  | otherwise = pure $ Object $ HM.fromList [("_source", Object $ HM.fromList [("a", String "b")])]
+  | docId > 500 = pure . Object $ KeyMap.fromList [("bad", String "data")]
+  | otherwise = pure $ Object $ KeyMap.fromList [("_source", Object $ KeyMap.fromList [("a", String "b")])]
 ```
 
 Now, we should be ready to write some tests.
@@ -356,7 +357,7 @@ thirdPartyResourcesSpec = around_ withElasticsearch $ do
 bodyMatcher :: [Network.HTTP.Types.Header] -> Body -> Maybe String
 bodyMatcher _ body = case (decode body :: Maybe Value) of
   -- success in this case means we return `Nothing`
-  Just val | val == (Object $ HM.fromList [("a", String "b")]) -> Nothing
+  Just val | val == (Object $ KeyMap.fromList [("a", String "b")]) -> Nothing
   _ -> Just "This is how we represent failure: this message will be printed"
 ```
 

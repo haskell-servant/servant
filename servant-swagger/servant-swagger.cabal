@@ -28,7 +28,7 @@ maintainer:          haskell-servant-maintainers@googlegroups.com
 copyright:           (c) 2015-2018, Servant contributors
 category:            Web, Servant, Swagger
 build-type:          Custom
-tested-with:         GHC ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.1
+tested-with:         GHC ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.1 || ==9.14.1
 
 extra-source-files:
     README.md
@@ -49,7 +49,7 @@ source-repository head
 
 custom-setup
   setup-depends:
-    base  >= 4.16.4.0 && < 4.22,
+    base  >= 4.16.4.0 && < 4.23,
     Cabal >= 3.6.3 && <4,
     cabal-doctest >=1.0.6 && <1.1
 
@@ -71,15 +71,14 @@ library
   hs-source-dirs:      src
   build-depends:       aeson                     >=2.2     && <3
                      , aeson-pretty              >=0.8.7    && <0.9
-                     , base                      >= 4.16.4.0 && < 4.22
+                     , base                      >= 4.16.4.0 && < 4.23
                      , base-compat               >=0.12     && <0.15
                      , bytestring                >=0.11 && <0.13
                      , http-media                >=0.8      && <0.9
-                     , insert-ordered-containers >=0.3      && <0.4
                      , lens                      >=5.3      && <6
                      , servant                   >=0.20.3   && <0.21
                      , singleton-bool            >=0.1.8    && <0.2
-                     , swagger2                  >=2.9      && <2.10
+                     , swagger2                  >=2.9.1    && <2.10
                      , text                      >=1.2.3.0  && <2.2
                      , unordered-containers      >=0.2.21   && <0.3
 
