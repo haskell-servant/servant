@@ -1,0 +1,8 @@
+synopsis: Fix routing of explicitly-empty segments
+packages: servant-server
+prs: #1905
+issues:
+description: {
+Changed the StaticRouter code to honor explicit `"" :> ...` segments when they are present. Routes that do not use `"" :> ...` are unchanged.
+}
+
