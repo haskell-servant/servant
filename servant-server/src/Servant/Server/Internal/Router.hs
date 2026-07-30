@@ -184,8 +184,11 @@ runRouterEnv fmt router env request respond =
     StaticRouter table ls ->
       case pathInfo request of
         [] -> runChoice fmt ls env request respond
-        -- This case is to handle trailing slashes.
-        [""] -> runChoice fmt ls env request respond
+        -- This case is to handle trailing slashes, but only when they are
+        -- /explicitly not/ present in the routing table.
+        [""]
+          | Nothing <- M.lookup "" table ->
+              runChoice fmt ls env request respond
         first : rest
           | Just router' <- M.lookup first table ->
               let request' = request{pathInfo = rest}
