@@ -1,0 +1,75 @@
+name:                example
+version:             1.0
+synopsis:            servant-openapi3 demonstration
+description:         An example of how servant-openapi3 can be used.
+license:             BSD3
+license-file:        LICENSE
+author:              David Johnson, Nickolay Kudasov
+maintainer:          nickolay.kudasov@gmail.com
+copyright:           (c) 2015-2020, Servant contributors
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+data-files:
+  swagger.json
+
+tested-with:
+  GHC ==8.6.5
+   || ==8.8.4
+   || ==8.10.7
+   || ==9.0.2
+   || ==9.2.8
+   || ==9.4.8
+   || ==9.6.3
+   || ==9.8.1
+   || ==9.10.2
+   || ==9.12.1
+
+library
+  ghc-options:      -Wall
+  hs-source-dirs: src/
+  exposed-modules:
+    Todo
+  build-depends:  base < 5
+                , aeson
+                , aeson-pretty
+                , bytestring
+                , lens
+                , servant
+                , servant-server
+                , servant-openapi3
+                , openapi3
+                , text
+                , time
+                , generics-sop
+  default-language: Haskell2010
+
+executable swagger-server
+  ghc-options:      -Wall
+  hs-source-dirs: server/
+  main-is: Main.hs
+  build-depends:  base
+                , example
+                , servant-server
+                , warp
+  default-language: Haskell2010
+
+test-suite swagger-server-spec
+  ghc-options:      -Wall
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   test
+  main-is:          Spec.hs
+  other-modules:
+    TodoSpec
+    Paths_example
+  build-tool-depends: hspec-discover:hspec-discover >=2.6.0 && <2.10
+  build-depends:    base  == 4.*
+                  , base-compat >= 0.6.0
+                  , aeson >=0.11.2.0
+                  , bytestring
+                  , example
+                  , hspec
+                  , servant-openapi3
+                  , QuickCheck
+                  , quickcheck-instances
+  default-language: Haskell2010
