@@ -53,6 +53,10 @@
 # Ignore some builtin hints
 # - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
 
+# TupleSections and TypeApplications are used by the MultiVerb code guarded by
+# '#if MIN_VERSION_servant(0,20,3)', which hlint does not expand.
+- ignore: {name: Unused LANGUAGE pragma, within: Servant.OpenApi.Internal}
+
 
 # Define some custom infix operators
 # - fixity: infixr 3 ~^#^~

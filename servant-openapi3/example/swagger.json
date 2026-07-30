@@ -1,0 +1,204 @@
+{
+    "components": {
+        "schemas": {
+            "Todo": {
+                "description": "This is some real Todo right here",
+                "example": {
+                    "created": "2015-12-31T00:00:00Z",
+                    "summary": "get milk"
+                },
+                "properties": {
+                    "created": {
+                        "$ref": "#/components/schemas/UTCTime"
+                    },
+                    "summary": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "created",
+                    "summary"
+                ],
+                "type": "object"
+            },
+            "TodoId": {
+                "maximum": 9223372036854775807,
+                "minimum": -9223372036854775808,
+                "type": "integer"
+            },
+            "UTCTime": {
+                "example": "2016-07-22T00:00:00Z",
+                "format": "yyyy-mm-ddThh:MM:ssZ",
+                "type": "string"
+            }
+        }
+    },
+    "info": {
+        "description": "This is an API that tests swagger integration",
+        "license": {
+            "name": "MIT",
+            "url": "http://mit.com"
+        },
+        "title": "Todo API",
+        "version": "1.0"
+    },
+    "openapi": "3.0.0",
+    "paths": {
+        "/todo": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json;charset=utf-8": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/Todo"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json;charset=utf-8": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Todo"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json;charset=utf-8": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TodoId"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid `body`"
+                    }
+                }
+            }
+        },
+        "/todo/choices/{int}": {
+            "get": {
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "int",
+                        "required": true,
+                        "schema": {
+                            "maximum": 9223372036854775807,
+                            "minimum": -9223372036854775808,
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "application/json;charset=utf-8": {
+                                "schema": {
+                                    "type": "boolean"
+                                }
+                            }
+                        },
+                        "description": "Even number\n\nOdd number"
+                    },
+                    "400": {
+                        "description": "Negative"
+                    },
+                    "404": {
+                        "description": "`int` not found"
+                    }
+                }
+            }
+        },
+        "/todo/{id}": {
+            "get": {
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "maximum": 9223372036854775807,
+                            "minimum": -9223372036854775808,
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json;charset=utf-8": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Todo"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "`id` not found"
+                    }
+                }
+            },
+            "put": {
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "maximum": 9223372036854775807,
+                            "minimum": -9223372036854775808,
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json;charset=utf-8": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Todo"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json;charset=utf-8": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TodoId"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Invalid `body`"
+                    },
+                    "404": {
+                        "description": "`id` not found"
+                    }
+                }
+            }
+        }
+    }
+}

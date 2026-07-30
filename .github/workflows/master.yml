@@ -70,6 +70,10 @@ jobs:
         # Necessary for doctest to be found in $PATH
         export PATH="$HOME/.cabal/bin:$PATH"
 
+        # servant-openapi3 has doctests which show hspec output,
+        # which is colourized whenever GITHUB_ACTIONS is set to "true"
+        export HSPEC_OPTIONS=--no-color
+
         DOCTEST="cabal repl --with-ghc=doctest"
         (cd servant && eval $DOCTEST)
         (cd servant-client && eval $DOCTEST)
@@ -82,3 +86,4 @@ jobs:
         (cd servant-conduit && eval $DOCTEST)
         (cd servant-pipes && eval $DOCTEST)
         (cd servant-quickcheck && eval $DOCTEST)
+        (cd servant-openapi3 && eval $DOCTEST)
