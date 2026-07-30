@@ -783,7 +783,7 @@ instance
         mparam
     where
       add :: a -> Request
-      add param = appendToQueryString pname (Just $ encodeQueryParamValue param) req
+      add param = appendToQueryString pname [H.QN $ encodeQueryParamValue param] req
 
       pname :: Text
       pname = pack $ symbolVal (Proxy :: Proxy sym)
@@ -830,13 +830,12 @@ instance
       pm
       (Proxy :: Proxy api)
       ( List.foldl'
-          (\req' -> maybe req' (flip (appendToQueryString pname) req' . Just))
+          (\req' param -> appendToQueryString pname [H.QN $ encodeQueryParamValue param] req')
           req
-          paramlist'
+          paramlist
       )
     where
       pname = pack $ symbolVal (Proxy :: Proxy sym)
-      paramlist' = map (Just . encodeQueryParamValue) paramlist
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f . cl
 
@@ -874,7 +873,7 @@ instance
       pm
       (Proxy :: Proxy api)
       ( if flag
-          then appendToQueryString paramname Nothing req
+          then appendToQueryString paramname [] req
           else req
       )
     where
@@ -886,9 +885,11 @@ instance
   HasClient m api
   => HasClient m (QueryString :> api)
   where
+  -- Query-string clients must make the encoding state of every value section
+  -- explicit with QE or QN.
   type
     Client m (QueryString :> api) =
-      H.Query -> Client m api
+      H.PartialEscapeQuery -> Client m api
 
   clientWithRoute pm Proxy req query =
     clientWithRoute
@@ -911,7 +912,7 @@ instance
         withParams = List.foldl' addDeepParam req params
         addDeepParam r' kv =
           let (k, textV) = generateDeepParam paramname kv
-           in appendToQueryString k (encodeUtf8 <$> textV) r'
+           in appendToQueryString k (maybe [] (pure . H.QE . encodeUtf8) textV) r'
         paramname = pack $ symbolVal (Proxy :: Proxy sym)
      in clientWithRoute
           pm

@@ -312,7 +312,7 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
     Left (FailureResponse req _) <- runClient (getQueryParam (Just "bob")) baseUrl
     Req.requestPath req `shouldBe` (baseUrl, "/param")
-    toList (Req.requestQueryString req) `shouldBe` [("name", Just "bob")]
+    toList (Req.requestQueryString req) `shouldBe` [("name", [HTTP.QN "bob"])]
     Req.requestMethod req `shouldBe` HTTP.methodGet
 
   it "Servant.API.QueryParam" $ \(_, baseUrl) -> do
@@ -322,8 +322,9 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
 
   it "Servant.API.QueryParam.QueryParams" $ \(_, baseUrl) -> do
     left show <$> runClient (getQueryParams []) baseUrl `shouldReturn` Right []
-    left show <$> runClient (getQueryParams ["alice", "bob"]) baseUrl
-      `shouldReturn` Right [Person "alice" 0, Person "bob" 1]
+    let names = ["alice + bob", "query&value=1"]
+    left show <$> runClient (getQueryParams names) baseUrl
+      `shouldReturn` Right (zipWith Person names [0 ..])
 
   context "Servant.API.QueryParam.QueryFlag" $
     forM_ [False, True] $ \flag -> it (show flag) $ \(_, baseUrl) -> do

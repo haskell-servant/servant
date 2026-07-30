@@ -6,7 +6,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
-module Servant.API.QueryString (QueryString, DeepQuery, FromDeepQuery (..), ToDeepQuery (..), generateDeepParam) where
+module Servant.API.QueryString (QueryString, DecodedQuery, DeepQuery, FromDeepQuery (..), ToDeepQuery (..), generateDeepParam) where
 
 import Data.Bifunctor (Bifunctor (first))
 import Data.Kind (Type)
@@ -16,12 +16,19 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Typeable (Typeable)
 import GHC.TypeLits (Symbol)
+import Network.HTTP.Types (Query)
 import Web.HttpApiData (FromHttpApiData)
 import Web.Internal.HttpApiData (FromHttpApiData (..))
 
--- | Extract the whole query string from a request. This is useful for query strings
--- containing dynamic parameter names. For query strings with static parameter names,
--- 'QueryParam' is more suited.
+-- | Work with the whole query string. This is useful for query strings containing
+-- dynamic parameter names. For query strings with static parameter names,
+-- 'QueryParam' is more suitable.
+--
+-- On the server, handlers receive a 'DecodedQuery': WAI has already percent-decoded
+-- both names and values (and decoded @+@ as a space). Do not URL-decode them again.
+--
+-- Clients accept a @PartialEscapeQuery@, whose @EscapeItem@ values explicitly state
+-- whether each section should be URL-encoded.
 --
 -- Example:
 --
@@ -29,6 +36,12 @@ import Web.Internal.HttpApiData (FromHttpApiData (..))
 -- >>> type MyApi = "books" :> QueryString :> Get '[JSON] [Book]
 data QueryString
   deriving (Typeable)
+
+-- | A query string after WAI has URL-decoded every parameter name and value.
+--
+-- This is a documented alias for 'Query', used by server-side 'QueryString'
+-- handlers to make the decoding state explicit.
+type DecodedQuery = Query
 
 -- | Extract an deep object from a query string.
 --
@@ -52,7 +65,8 @@ data DeepQuery (sym :: Symbol) (a :: Type)
 -- a param like @filter[a][b][c]=d@ will be represented as
 -- @'(["a", "b", "c"], Just "d")'@. Note that a parameter with no
 -- nested field is possible: @filter=a@ will be represented as
--- @'([], Just "a")'@
+-- @'([], Just "a")'@. Parameter names and values are URL-decoded before this
+-- function is called.
 class FromDeepQuery a where
   fromDeepQuery :: [([Text], Maybe Text)] -> Either String a
 
@@ -67,7 +81,8 @@ instance FromHttpApiData a => FromDeepQuery (Map Text a) where
 -- | Generate query parameters from an object, using the deep object syntax.
 -- A result of @'(["a", "b", "c"], Just "d")'@ attributed to the @filter@
 -- parameter name will result in the following query parameter:
--- @filter[a][b][c]=d@
+-- @filter[a][b][c]=d@. Return decoded text: clients perform the required URL
+-- encoding afterwards.
 class ToDeepQuery a where
   toDeepQuery :: a -> [([Text], Maybe Text)]
 

@@ -44,7 +44,7 @@ import Network.HTTP.Types
   ( Status (..)
   , hContentType
   , http11
-  , renderQuery
+  , renderQueryPartialEscape
   , statusIsSuccessful
   )
 import qualified Network.Http.Client as Client
@@ -206,7 +206,7 @@ requestToClientRequest burl r = (request, body)
       Client.http (Client.Method $ requestMethod r) $
         fromString (baseUrlPath burl)
           <> BSL.toStrict (toLazyByteString (requestPath r))
-          <> renderQuery True (toList (requestQueryString r))
+          <> renderQueryPartialEscape True (toList (requestQueryString r))
       -- We are connected, but we still need to know what we try to query
       Client.setHostname (fromString $ baseUrlHost burl) (fromIntegral $ baseUrlPort burl)
       for_ (maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers) $ \(hn, hv) ->

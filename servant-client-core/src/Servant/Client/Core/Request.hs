@@ -39,25 +39,25 @@ import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import Network.HTTP.Media (MediaType)
 import Network.HTTP.Types
-  ( Header
+  ( EscapeItem (..)
+  , Header
   , HeaderName
   , HttpVersion (..)
   , Method
-  , Query
-  , QueryItem
+  , PartialEscapeQuery
+  , PartialEscapeQueryItem
   , http11
   , methodGet
-  , urlEncodeBuilder
   )
 import Prelude.Compat
-import Servant.API (SourceIO, ToHttpApiData, toHeader, toQueryParam)
+import Servant.API (SourceIO, ToHttpApiData, toEncodedQueryParam, toHeader)
 import Prelude ()
 
 import Servant.Client.Core.Internal (mediaTypeRnf)
 
 data RequestF body path = Request
   { requestPath :: path
-  , requestQueryString :: Seq.Seq QueryItem
+  , requestQueryString :: Seq.Seq PartialEscapeQueryItem
   , requestBody :: Maybe (body, MediaType)
   , requestAccept :: Seq.Seq MediaType
   , requestHeaders :: Seq.Seq Header
@@ -109,7 +109,7 @@ instance Bitraversable RequestF where
 instance (NFData body, NFData path) => NFData (RequestF body path) where
   rnf r =
     rnf (requestPath r) `seq`
-      rnf (requestQueryString r) `seq`
+      rnfQueryString (requestQueryString r) `seq`
         rnfB (requestBody r) `seq`
           rnf (fmap mediaTypeRnf (requestAccept r)) `seq`
             rnf (requestHeaders r) `seq`
@@ -118,6 +118,11 @@ instance (NFData body, NFData path) => NFData (RequestF body path) where
     where
       rnfB Nothing = ()
       rnfB (Just (b, mt)) = rnf b `seq` mediaTypeRnf mt
+
+      rnfQueryString = foldr (\(key, value) z -> rnf key `seq` rnfValue value `seq` z) ()
+      rnfValue = foldr (\item z -> rnfEscapeItem item `seq` z) ()
+      rnfEscapeItem (QE value) = rnf value
+      rnfEscapeItem (QN value) = rnf value
 
 type Request = RequestF RequestBody Builder
 
@@ -162,11 +167,13 @@ appendToPath p req =
   req{requestPath = requestPath req <> "/" <> p}
 
 -- | Append a query parameter to the request being constructed.
+-- The parameter name is UTF-8 encoded here and URL-encoded by client backends.
 appendToQueryString
   :: Text
   -- ^ query param name
-  -> Maybe BS.ByteString
-  -- ^ query param value
+  -> [EscapeItem]
+  -- ^ query param value, split into sections that will ('QE') or will not
+  -- ('QN') be URL-encoded; use an empty list for a value-less parameter
   -> Request
   -> Request
 appendToQueryString pname pvalue req =
@@ -176,21 +183,23 @@ appendToQueryString pname pvalue req =
           Seq.|> (encodeUtf8 pname, pvalue)
     }
 
+-- | Replace the complete query string. Each 'EscapeItem' explicitly determines
+-- whether its bytes will be URL-encoded by client backends.
 setQueryString
-  :: Query
+  :: PartialEscapeQuery
   -> Request
   -> Request
 setQueryString query req =
   req{requestQueryString = Seq.fromList query}
 
--- | Encode a query parameter value.
+-- | Encode a query parameter value into wire-ready bytes using
+-- 'toEncodedQueryParam'. Use the result as a 'QN' section when adding it to a
+-- 'Request', because it must not be encoded a second time.
 encodeQueryParamValue :: ToHttpApiData a => a -> BS.ByteString
 encodeQueryParamValue =
   LBS.toStrict
     . Builder.toLazyByteString
-    . urlEncodeBuilder True
-    . encodeUtf8
-    . toQueryParam
+    . toEncodedQueryParam
 
 -- | Add header to the request being constructed.
 addHeader :: ToHttpApiData a => HeaderName -> a -> Request -> Request

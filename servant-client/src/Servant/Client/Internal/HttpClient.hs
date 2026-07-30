@@ -20,7 +20,6 @@ import Data.ByteString.Builder (toLazyByteString)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Foldable (toList)
 import Data.Functor.Alt (Alt (..))
-import qualified Data.List as List
 import Data.Maybe (maybeToList)
 import Data.Proxy (Proxy (..))
 import Data.Sequence (fromList)
@@ -29,7 +28,7 @@ import Data.Time.Clock (UTCTime, getCurrentTime)
 import GHC.Generics
 import qualified Network.HTTP.Client as Client
 import Network.HTTP.Media (renderHeader)
-import Network.HTTP.Types (Status, hContentType, statusIsSuccessful, urlEncode)
+import Network.HTTP.Types (Status, hContentType, renderQueryPartialEscape, statusIsSuccessful)
 import Prelude.Compat
 import Servant.Client.Core
 import qualified Servant.Types.SourceT as S
@@ -238,7 +237,7 @@ defaultMakeClientRequest burl r =
           BSL.toStrict $
             fromString (baseUrlPath burl)
               <> toLazyByteString (requestPath r)
-      , Client.queryString = buildQueryString . toList $ requestQueryString r
+      , Client.queryString = renderQueryPartialEscape True . toList $ requestQueryString r
       , Client.requestHeaders =
           maybeToList acceptHdr ++ maybeToList contentTypeHdr ++ headers
       , Client.requestBody = body
@@ -291,13 +290,6 @@ defaultMakeClientRequest burl r =
     isSecure = case baseUrlScheme burl of
       Http -> False
       Https -> True
-
-    -- Query string builder which does not do any encoding
-    buildQueryString [] = mempty
-    buildQueryString qps = "?" <> List.foldl' addQueryParam mempty qps
-
-    addQueryParam qs (k, v) =
-      qs <> (if BS.null qs then mempty else "&") <> urlEncode True k <> foldMap ("=" <>) v
 
 catchConnectionError :: IO a -> IO (Either ClientError a)
 catchConnectionError action =

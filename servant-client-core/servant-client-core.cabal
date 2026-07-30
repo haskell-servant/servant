@@ -147,6 +147,7 @@ test-suite spec
     , base
     , base-compat
     , bytestring
+    , http-types
     , transformers
     , servant
     , servant-client-core
