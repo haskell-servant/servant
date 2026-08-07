@@ -58,5 +58,5 @@ library
     , servant-client-core  >=0.20 && <0.21
 
   hs-source-dirs:   src
-  default-language: Haskell2010
+  default-language: GHC2021
   ghc-options:      -Wall -Wno-redundant-constraints

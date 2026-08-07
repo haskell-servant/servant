@@ -13,8 +13,6 @@ Take the following API (taken from the [Querying an API](http://docs.servant.dev
 
 ```haskell
 {-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE DeriveGeneric  #-}
-{-# LANGUAGE TypeOperators  #-}
 
 module Main where
 
@@ -122,10 +120,7 @@ Specifically in big applications it can be desirable to have client functions th
 In the example below, the client functions are put in a data type called `APIClient`, which has `m` as a type parameter. The lowercase `apiClient` constructs this data type, demanding that `m` is indeed a monad that can run requests.
 
 ```haskell
-{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications    #-}
 
 ...
 import Servant.Client.Core -- From the 'servant-client-core' package

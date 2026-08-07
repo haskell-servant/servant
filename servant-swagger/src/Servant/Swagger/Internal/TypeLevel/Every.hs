@@ -1,15 +1,7 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
@@ -24,10 +16,7 @@ import Servant.Swagger.Internal.TypeLevel.TMap
 
 -- $setup
 -- >>> :set -XDataKinds
--- >>> :set -XFlexibleContexts
 -- >>> :set -XGADTs
--- >>> :set -XRankNTypes
--- >>> :set -XScopedTypeVariables
 -- >>> import GHC.TypeLits
 -- >>> import Data.List
 

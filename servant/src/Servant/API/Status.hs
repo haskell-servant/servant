@@ -1,7 +1,4 @@
 {-# LANGUAGE DataKinds #-}
--- Flexible instances is necessary on GHC 8.4 and earlier
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Servant.API.Status where
 

@@ -1,11 +1,6 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Servant.Server.Internal.Context
   ( module Servant.Server.Internal.Context
@@ -96,7 +91,6 @@ newtype NamedContext (name :: Symbol) (subContext :: [Type])
 --
 -- This is how 'descendIntoNamedContext' works:
 --
--- >>> :set -XFlexibleContexts
 -- >>> let subContext = True :. EmptyContext
 -- >>> :type subContext
 -- subContext :: Context '[Bool]

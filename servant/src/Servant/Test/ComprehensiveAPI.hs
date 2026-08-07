@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 
 -- | This is a module containing an API with all `Servant.API` combinators. It
 -- is used for testing only (in particular, checking that instances exist for

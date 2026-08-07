@@ -5,7 +5,6 @@ need to have some language extensions and imports:
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 
 module ApiType where
 

@@ -1,11 +1,4 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Servant.Swagger.Internal.TypeLevel.TMap where
@@ -15,10 +8,7 @@ import GHC.Exts (Constraint)
 
 -- $setup
 -- >>> :set -XDataKinds
--- >>> :set -XFlexibleContexts
 -- >>> :set -XGADTs
--- >>> :set -XRankNTypes
--- >>> :set -XScopedTypeVariables
 -- >>> import GHC.TypeLits
 -- >>> import Data.List
 

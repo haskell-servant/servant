@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 
 module Servant.API.RemoteHost
   ( -- $remotehost

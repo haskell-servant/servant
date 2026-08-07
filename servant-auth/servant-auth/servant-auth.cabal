@@ -30,7 +30,7 @@ source-repository head
 library
   hs-source-dirs:
       src
-  default-extensions: ConstraintKinds DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable FlexibleContexts FlexibleInstances FunctionalDependencies GADTs KindSignatures MultiParamTypeClasses OverloadedStrings RankNTypes ScopedTypeVariables TypeFamilies TypeOperators
+  default-extensions: DataKinds FunctionalDependencies DefaultSignatures GADTs OverloadedStrings TypeFamilies
   ghc-options: -Wall
   build-depends:
       base                    >= 4.16.4.0 && < 4.22
@@ -43,4 +43,4 @@ library
   exposed-modules:
       Servant.Auth
       Servant.Auth.JWT
-  default-language: Haskell2010
+  default-language: GHC2021

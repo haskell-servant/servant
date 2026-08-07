@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Servant.API.Range (Range (unRange), unsafeRange, mkRange) where
 

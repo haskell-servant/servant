@@ -19,9 +19,7 @@ need to have some language extensions and imports:
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Javascript where
 

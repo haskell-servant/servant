@@ -44,12 +44,7 @@ So, let's start with some imports and extensions to get this out of the way:
 
 ``` haskell
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
 
 import           Data.Aeson
                  (ToJSON, genericToJSON)

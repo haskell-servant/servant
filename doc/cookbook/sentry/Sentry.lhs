@@ -6,7 +6,6 @@ To exemplify this we will need the following imports
 
 ```haskell
 {-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE TypeOperators #-}
 
 import           Control.Exception                      (Exception,
                                                          SomeException, throw)

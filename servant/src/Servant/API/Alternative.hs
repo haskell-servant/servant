@@ -1,6 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveTraversable #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
 module Servant.API.Alternative ((:<|>) (..)) where

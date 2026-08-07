@@ -10,7 +10,6 @@ and imports.
 
 ``` haskell
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WarpTLS

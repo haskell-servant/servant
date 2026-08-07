@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 
 module Servant.QuickCheck.Internal.QuickCheck where
 

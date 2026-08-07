@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds #-}
 {-# OPTIONS_HADDOCK not-home #-}
 
 module Servant.API.Header

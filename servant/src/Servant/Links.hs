@@ -4,7 +4,7 @@
 --
 -- Given an API with a few endpoints:
 --
--- >>> :set -XDataKinds -XTypeFamilies -XTypeOperators -XPolyKinds
+-- >>> :set -XDataKinds -XTypeFamilies
 -- >>> import Servant.API
 -- >>> import Servant.Links
 -- >>> import Web.HttpApiData (toUrlPiece)
@@ -50,7 +50,6 @@
 -- you can partially apply safeLink if you specify a correct type signature
 -- like so:
 --
--- >>> :set -XConstraintKinds
 -- >>> :{
 -- >>> let apiLink :: (IsElem endpoint API, HasLink endpoint)
 -- >>>             => Proxy endpoint -> MkLink endpoint Link

@@ -57,29 +57,18 @@ library
 
   hs-source-dirs:     src
   default-extensions:
-    ConstraintKinds
     DataKinds
-    DeriveDataTypeable
-    DeriveFunctor
-    DeriveGeneric
-    FlexibleContexts
-    FlexibleInstances
     FunctionalDependencies
     GADTs
-    KindSignatures
-    MultiParamTypeClasses
     NoImplicitPrelude
     OverloadedStrings
-    RankNTypes
-    ScopedTypeVariables
-    TypeOperators
 
-  default-language:   Haskell2010
+  default-language:   GHC2021
 
 test-suite spec
   type:               exitcode-stdio-1.0
   ghc-options:        -Wall -Wcompat -threaded
-  default-language:   Haskell2010
+  default-language:   GHC2021
   hs-source-dirs:     test
   main-is:            Spec.hs
   other-modules:      Servant.QuickCheck.InternalSpec
@@ -105,13 +94,9 @@ test-suite spec
 
   default-extensions:
     DataKinds
-    FlexibleContexts
-    FlexibleInstances
     GADTs
     NoImplicitPrelude
     OverloadedStrings
-    ScopedTypeVariables
-    TypeOperators
 
   if flag(long-tests)
     cpp-options: -DLONG_TESTS
@@ -128,4 +113,4 @@ test-suite example
     , servant-server
     , text
 
-  default-language: Haskell2010
+  default-language: GHC2021

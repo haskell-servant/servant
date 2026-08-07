@@ -18,6 +18,6 @@ executable cookbook-sentry
                      , servant-server
                      , warp >= 3.4.9
                      , wai >= 3.2
-  default-language:    Haskell2010
+  default-language:    GHC2021
   ghc-options:         -Wall -pgmL markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit

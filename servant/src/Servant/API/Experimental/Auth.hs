@@ -1,6 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE PolyKinds #-}
 
 module Servant.API.Experimental.Auth where
 

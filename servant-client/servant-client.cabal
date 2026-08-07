@@ -34,44 +34,27 @@ source-repository head
 common extensions
   default-extensions:
     AllowAmbiguousTypes
-    ConstraintKinds
     DataKinds
     DeriveAnyClass
-    DeriveDataTypeable
-    DeriveFunctor
-    DeriveGeneric
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
     ExplicitNamespaces
-    FlexibleContexts
-    FlexibleInstances
     FunctionalDependencies
     GADTs
-    GeneralizedNewtypeDeriving
-    InstanceSigs
-    KindSignatures
     LambdaCase
-    MultiParamTypeClasses
-    NamedFieldPuns
     NoStarIsType
     OverloadedLabels
     OverloadedStrings
     PackageImports
-    PolyKinds
     QuantifiedConstraints
-    RankNTypes
     RecordWildCards
-    ScopedTypeVariables
     StrictData
-    TupleSections
-    TypeApplications
     TypeFamilies
-    TypeOperators
     UndecidableInstances
     ViewPatterns
 
-  default-language:   Haskell2010
+  default-language:   GHC2021
 
 common ghc-options
   ghc-options:

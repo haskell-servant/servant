@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveTraversable #-}
-
 -- | This module offers other servant libraries a minimalistic HTTP response type.
 --
 -- It is purely an internal API and SHOULD NOT be used by end-users of Servant.

@@ -18,10 +18,7 @@ In other words, without streaming libraries.
 ## Code
 
 ```haskell
-{-# LANGUAGE BangPatterns  #-}
 {-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
 module Main (main) where
 
 import           Control.Concurrent

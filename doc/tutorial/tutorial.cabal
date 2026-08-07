@@ -17,7 +17,7 @@ extra-source-files:
   static/ui.js
 
 library
-  default-language:    Haskell2010
+  default-language:    GHC2021
   ghc-options:         -Wall -pgmL markdown-unlit
   exposed-modules:     ApiType
                      , Authentication
@@ -73,7 +73,7 @@ library
 test-suite spec
   type: exitcode-stdio-1.0
   ghc-options: -Wall
-  default-language: Haskell2010
+  default-language: GHC2021
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules: JavascriptSpec

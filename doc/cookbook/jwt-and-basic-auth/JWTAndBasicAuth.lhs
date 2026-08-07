@@ -20,8 +20,7 @@ packages are needed for the JWT-based one.
 This recipe uses the following ingredients:
 
 ```haskell
-{-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds,
-  DeriveGeneric, TypeOperators #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds, ExplicitNamespaces #-}
 import Data.Aeson
 import GHC.Generics
 import Data.Proxy

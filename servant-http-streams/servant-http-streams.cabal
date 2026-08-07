@@ -70,13 +70,13 @@ library
     , transformers-base     >= 0.4.6.1  && < 0.5
 
   hs-source-dirs: src
-  default-language: Haskell2010
+  default-language: GHC2021
   ghc-options: -Wall -Wno-redundant-constraints
 
 test-suite spec
   type: exitcode-stdio-1.0
   ghc-options: -Wall -rtsopts -threaded "-with-rtsopts=-T -N2"
-  default-language: Haskell2010
+  default-language: GHC2021
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules:
@@ -123,4 +123,4 @@ test-suite readme
   build-depends:  base, servant, http-streams, text, servant-http-streams, markdown-unlit
   build-tool-depends: markdown-unlit:markdown-unlit
   ghc-options:    -pgmL markdown-unlit
-  default-language: Haskell2010
+  default-language: GHC2021

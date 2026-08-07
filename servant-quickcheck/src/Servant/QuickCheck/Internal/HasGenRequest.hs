@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE StarIsType #-}
 
 module Servant.QuickCheck.Internal.HasGenRequest where
