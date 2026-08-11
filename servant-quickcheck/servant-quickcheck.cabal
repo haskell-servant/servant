@@ -44,7 +44,7 @@ library
     , hspec                  >=2.11   && <2.12
     , http-client            >=0.7.19 && <0.8
     , http-media             >=0.8    && <0.9
-    , http-types             >=0.12.4 && <0.13
+    , http-types             >=0.12.4 && <0.14
     , pretty                 >=1.1    && <1.2
     , QuickCheck             >=2.18   && <2.19
     , servant                >=0.20.2 && <0.21
