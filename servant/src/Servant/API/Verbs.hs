@@ -5,7 +5,7 @@
 
 module Servant.API.Verbs
   ( module Servant.API.Verbs
-  , StdMethod (GET, POST, HEAD, PUT, DELETE, TRACE, CONNECT, OPTIONS, PATCH)
+  , StdMethod (GET, POST, HEAD, PUT, DELETE, TRACE, CONNECT, OPTIONS, PATCH, QUERY)
   )
 where
 
@@ -25,6 +25,7 @@ import Network.HTTP.Types.Method
   , methodPatch
   , methodPost
   , methodPut
+  , methodQuery
   , methodTrace
   )
 
@@ -66,6 +67,22 @@ type Delete = Verb 'DELETE 200
 
 -- | 'PATCH' with 200 status code.
 type Patch = Verb 'PATCH 200
+
+-- | 'QUERY' with 200 status code.
+--
+-- RFC 10008 requires QUERY request content and a matching @Content-Type@.
+-- Express that requirement compositionally with 'Servant.API.ReqBody.ReqBody':
+--
+-- @
+-- type SearchAPI =
+--   \"search\"
+--     ':>' ReqBody '[JSON] SearchQuery
+--     ':>' Query '[JSON] SearchResults
+-- @
+--
+-- See <https://www.rfc-editor.org/rfc/rfc10008.html#section-2 RFC 10008,
+-- Section 2>.
+type Query = Verb 'QUERY 200
 
 -- * Other responses
 
@@ -111,6 +128,9 @@ type PatchAccepted = Verb 'PATCH 202
 -- | 'PUT' with 202 status code.
 type PutAccepted = Verb 'PUT 202
 
+-- | 'QUERY' with 202 status code.
+type QueryAccepted = Verb 'QUERY 202
+
 -- ** 203 Non-Authoritative Information
 
 --
@@ -131,6 +151,9 @@ type PatchNonAuthoritative = Verb 'PATCH 203
 
 -- | 'PUT' with 203 status code.
 type PutNonAuthoritative = Verb 'PUT 203
+
+-- | 'QUERY' with 203 status code.
+type QueryNonAuthoritative = Verb 'QUERY 203
 
 -- ** 204 No Content
 
@@ -154,6 +177,9 @@ type PatchNoContent = NoContentVerb 'PATCH
 
 -- | 'PUT' with 204 status code.
 type PutNoContent = NoContentVerb 'PUT
+
+-- | 'QUERY' with 204 status code.
+type QueryNoContent = NoContentVerb 'QUERY
 
 -- | 'HEAD' with 204 status code.
 type HeadNoContent = NoContentVerb 'HEAD
@@ -181,6 +207,9 @@ type PatchResetContent = Verb 'PATCH 205
 -- | 'PUT' with 205 status code.
 type PutResetContent = Verb 'PUT 205
 
+-- | 'QUERY' with 205 status code.
+type QueryResetContent = Verb 'QUERY 205
+
 -- ** 206 Partial Content
 
 --
@@ -192,6 +221,12 @@ type PutResetContent = Verb 'PUT 205
 
 -- | 'GET' with 206 status code.
 type GetPartialContent = Verb 'GET 206
+
+-- | 'QUERY' with 206 status code.
+--
+-- RFC 10008 gives QUERY range requests the same semantics as GET range
+-- requests.
+type QueryPartialContent = Verb 'QUERY 206
 
 class ReflectMethod a where
   reflectMethod :: Proxy a -> Method
@@ -210,6 +245,9 @@ instance ReflectMethod 'DELETE where
 
 instance ReflectMethod 'PATCH where
   reflectMethod _ = methodPatch
+
+instance ReflectMethod 'QUERY where
+  reflectMethod _ = methodQuery
 
 instance ReflectMethod 'HEAD where
   reflectMethod _ = methodHead
