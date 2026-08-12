@@ -30,10 +30,12 @@ import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toLower)
+import Data.Functor (($>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
@@ -157,7 +159,7 @@ renderBareItem value
 
 foldMapWithSeparator :: Monoid m => m -> (a -> m) -> [a] -> m
 foldMapWithSeparator _ _ [] = mempty
-foldMapWithSeparator separator f (x : xs) = f x <> foldMap (separator <>) (map f xs)
+foldMapWithSeparator separator f (x : xs) = f x <> foldMap ((separator <>) . f) xs
 
 acceptQueryParser :: Parser AcceptQuery
 acceptQueryParser = do
@@ -197,7 +199,7 @@ parameterParser = do
   A.word8 semicolon
   A.skipWhile (== space)
   name <- parameterKeyParser
-  value <- maybe UnsupportedBare id <$> optional (A.word8 equals *> bareItemParser)
+  value <- fromMaybe UnsupportedBare <$> optional (A.word8 equals *> bareItemParser)
   pure (name, value)
 
 parameterKeyParser :: Parser ByteString
@@ -225,11 +227,11 @@ bareItemParser = do
     byte
       | byte == doubleQuote -> TextBare <$> stringParser
       | isSfTokenStart byte -> TextBare <$> tokenParser
-      | byte == hyphen || isDigitByte byte -> numberParser *> pure UnsupportedBare
-      | byte == colon -> binaryParser *> pure UnsupportedBare
-      | byte == questionMark -> booleanParser *> pure UnsupportedBare
-      | byte == atSign -> dateParser *> pure UnsupportedBare
-      | byte == percent -> displayStringParser *> pure UnsupportedBare
+      | byte == hyphen || isDigitByte byte -> numberParser $> UnsupportedBare
+      | byte == colon -> binaryParser $> UnsupportedBare
+      | byte == questionMark -> booleanParser $> UnsupportedBare
+      | byte == atSign -> dateParser $> UnsupportedBare
+      | byte == percent -> displayStringParser $> UnsupportedBare
       | otherwise -> fail "Unsupported Structured Fields bare item"
 
 stringParser :: Parser ByteString
@@ -277,7 +279,7 @@ binaryParser = do
   unless (validBase64 encoded) $ fail "Invalid Structured Fields byte sequence"
 
 booleanParser :: Parser ()
-booleanParser = A.word8 questionMark *> (A.word8 zero <|> A.word8 one) *> pure ()
+booleanParser = (A.word8 questionMark *> (A.word8 zero <|> A.word8 one)) $> ()
 
 dateParser :: Parser ()
 dateParser = A.word8 atSign *> integerParser
