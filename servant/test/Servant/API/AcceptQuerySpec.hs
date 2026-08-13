@@ -14,7 +14,6 @@ import Data.Text (Text)
 import Test.Hspec
 
 import Servant.API (parseHeader, toHeader)
-import qualified Servant.API as API
 import Servant.API.AcceptQuery
 import Servant.API.ResponseHeaders (Headers, addHeader, getHeaders)
 
@@ -98,10 +97,6 @@ spec = describe "Servant.API.AcceptQuery" $ do
         (acceptQuerySubtype range)
         (acceptQueryParameters range)
         `shouldBe` Right range
-
-    it "is re-exported by Servant.API" $
-      toHeader (API.mkAcceptQuery (mediaRange "application" "sql" :| []))
-        `shouldBe` "application/sql"
 
   describe "invalid values" $
     forM_ malformedAcceptQueries $ \(description, input) ->

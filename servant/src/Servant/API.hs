@@ -64,7 +64,6 @@ module Servant.API
 
     -- * Response Headers
   , module Servant.API.ResponseHeaders
-  , module Servant.API.AcceptQuery
 
     -- * Untyped endpoints
   , module Servant.API.Raw
@@ -93,18 +92,6 @@ import Data.Singletons.Bool (SBool (..), SBoolI (..))
 import Data.Type.Bool (If)
 import Web.HttpApiData (FromHttpApiData (..), ToHttpApiData (..))
 
-import Servant.API.AcceptQuery
-  ( AcceptQuery
-  , AcceptQueryHeader
-  , AcceptQueryMediaRange
-  , acceptQueryMediaRanges
-  , acceptQueryParameters
-  , acceptQuerySubtype
-  , acceptQueryType
-  , hAcceptQuery
-  , mkAcceptQuery
-  , mkAcceptQueryMediaRange
-  )
 import Servant.API.Alternative ((:<|>) (..))
 import Servant.API.BasicAuth (BasicAuth, BasicAuthData (..))
 import Servant.API.Capture (Capture, Capture', CaptureAll)

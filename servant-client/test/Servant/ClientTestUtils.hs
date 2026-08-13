@@ -45,9 +45,7 @@ import qualified Network.Wai as Wai
 import Network.Wai.Handler.Warp
 import Prelude.Compat
 import Servant.API
-  ( AcceptQuery
-  , AcceptQueryHeader
-  , AuthProtect
+  ( AuthProtect
   , BasicAuth
   , BasicAuthData (..)
   , Capture
@@ -83,11 +81,10 @@ import Servant.API
   , Verb
   , WithStatus (WithStatus)
   , addHeader
-  , mkAcceptQuery
-  , mkAcceptQueryMediaRange
   , (:<|>) ((:<|>))
   , (:>)
   )
+import Servant.API.AcceptQuery (AcceptQuery, AcceptQueryHeader, mkAcceptQuery, mkAcceptQueryMediaRange)
 import Servant.API.Generic ((:-))
 import Servant.API.MultiVerb
 import Servant.API.QueryString (FromDeepQuery (..), ToDeepQuery (..))
