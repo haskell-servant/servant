@@ -6,9 +6,7 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeOperators #-}
-#if MIN_VERSION_servant(0,18,1)
 {-# LANGUAGE TypeFamilies       #-}
-#endif
 module Servant.OpenApiSpec where
 
 import Control.Lens
@@ -40,11 +38,11 @@ spec = describe "HasOpenApi" $ do
   it "Hackage API (with tags)" $ checkOpenApi hackageOpenApiWithTags hackageAPI
   it "GetPost API (test subOperations)" $ checkOpenApi getPostOpenApi getPostAPI
   it "Comprehensive API" $ do
+#if MIN_VERSION_servant(0,20,4)
     let _x = toOpenApi comprehensiveAPI
-    True `shouldBe` True -- type-level test
-#if MIN_VERSION_servant(0,18,1)
-  it "UVerb API" $ checkOpenApi uverbOpenApi uverbAPI
 #endif
+    True `shouldBe` True -- type-level test
+  it "UVerb API" $ checkOpenApi uverbOpenApi uverbAPI
 
 main :: IO ()
 main = hspec spec
@@ -441,8 +439,6 @@ getPostAPI =
 -- UVerb API
 -- =======================================================================
 
-#if MIN_VERSION_servant(0,18,1)
-
 data FisxUser = FisxUser {name :: String}
   deriving (Eq, Show, Generic)
 
@@ -537,5 +533,3 @@ uverbAPI = [aesonQQ|
   }
 }
 |]
-
-#endif

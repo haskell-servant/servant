@@ -14,20 +14,13 @@ module Servant.OpenApi.Internal.TypeLevel.API where
 
 import           GHC.Exts            (Constraint)
 import           Servant.API
-#if MIN_VERSION_servant(0,19,0)
 import           Servant.API.Generic (ToServantApi)
-#endif
-#if MIN_VERSION_servant(0,20,3)
-import Servant.API.MultiVerb (MultiVerb, Respond, RespondAs, RespondStreaming, WithHeaders, GenericAsConstructor)
 import Data.ByteString (ByteString)
-#endif
 -- | Build a list of endpoints from an API.
 type family EndpointsList api where
   EndpointsList (a :<|> b) = AppendList (EndpointsList a) (EndpointsList b)
   EndpointsList (e :> a)   = MapSub e (EndpointsList a)
-#if MIN_VERSION_servant(0,19,0)
   EndpointsList (NamedRoutes api) = EndpointsList (ToServantApi api)
-#endif
   EndpointsList a = '[a]
 
 -- | Check whether @sub@ is a sub API of @api@.
@@ -56,9 +49,7 @@ type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
 type family IsIn sub api :: Constraint where
   IsIn e (a :<|> b) = Or (IsIn e a) (IsIn e b)
   IsIn (e :> a) (e :> b) = IsIn a b
-#if MIN_VERSION_servant(0,19,0)
   IsIn e (NamedRoutes api) = IsIn e (ToServantApi api)
-#endif
   IsIn e e = ()
 
 -- | Check whether a type is a member of a list of types.
@@ -96,19 +87,17 @@ type family BodyTypes' c api :: [*] where
   BodyTypes' c (Verb verb b cs (Headers hdrs a)) = AddBodyType c cs a '[]
   BodyTypes' c (Verb verb b cs NoContent) = '[]
   BodyTypes' c (Verb verb b cs a) = AddBodyType c cs a '[]
-#if MIN_VERSION_servant(0,20,3)
+#if MIN_VERSION_servant(0,20,4)
   BodyTypes' c (MultiVerb verb cs as _) = AddBodyType c cs () (MultiVerbResponseBodies as)
 #endif
   BodyTypes' c (ReqBody' mods cs a :> api) = AddBodyType c cs a (BodyTypes' c api)
   BodyTypes' c (e :> api) = BodyTypes' c api
   BodyTypes' c (a :<|> b) = AppendList (BodyTypes' c a) (BodyTypes' c b)
-#if MIN_VERSION_servant(0,19,0)
   BodyTypes' c (NamedRoutes api) = BodyTypes' c (ToServantApi api)
-#endif
   BodyTypes' c api = '[]
 
 
-#if MIN_VERSION_servant(0,20,3)
+#if MIN_VERSION_servant(0,20,4)
 -- | The 'ResponseTypes' class allows to extract all types
 -- involved in a response, whether or not this type is
 -- in the body of the response, or, for example, in a header.

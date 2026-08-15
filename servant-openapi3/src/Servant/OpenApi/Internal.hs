@@ -42,10 +42,8 @@ import Servant.API.Modifiers (FoldRequired)
 import Prelude ()
 
 import Servant.OpenApi.Internal.TypeLevel.API
-#if MIN_VERSION_servant(0,20,3)
 import qualified Servant.Server.Internal.ResponseRender as Server
 import           Servant.API.MultiVerb
-#endif
 import qualified Data.Maybe as List
 
 -- | Generate a OpenApi specification for a servant API.
@@ -221,7 +219,6 @@ instance OpenApiMethod 'OPTIONS where openApiMethod _ = options
 instance OpenApiMethod 'HEAD where openApiMethod _ = head_
 instance OpenApiMethod 'PATCH where openApiMethod _ = patch
 
-#if MIN_VERSION_servant(0,18,1)
 instance HasOpenApi (UVerb method cs '[]) where
   toOpenApi _ = mempty
 
@@ -271,7 +268,6 @@ instance
 
 instance (Typeable (WithStatus s a), ToSchema a) => ToSchema (WithStatus s a) where
   declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy a)
-#endif
 
 instance {-# OVERLAPPABLE #-} (AllAccept cs, KnownNat status, OpenApiMethod method, ToSchema a) => HasOpenApi (Verb method status cs a) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
@@ -322,11 +318,9 @@ instance HasOpenApi sub => HasOpenApi (RemoteHost :> sub) where
 instance HasOpenApi sub => HasOpenApi (HttpVersion :> sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
 
-#if MIN_VERSION_servant(0,20,0)
 -- | @'WithResource'@ combinator does not change our specification at all.
 instance (HasOpenApi sub) => HasOpenApi (WithResource res :> sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
-#endif
 
 -- | @'WithNamedContext'@ combinator does not change our specification at all.
 instance HasOpenApi sub => HasOpenApi (WithNamedContext x c sub) where
@@ -371,10 +365,12 @@ instance (HasOpenApi api, KnownSymbol desc) => HasOpenApi (Summary desc :> api) 
     toOpenApi (Proxy :: Proxy api)
       & allOperations . summary %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
+#if MIN_VERSION_servant(0,20,4)
 instance (HasOpenApi api, KnownSymbol operationId) => HasOpenApi (OperationId operationId :> api) where
   toOpenApi _ =
     toOpenApi (Proxy :: Proxy api)
       & allOperations . operationId %~ (Just (Text.pack (symbolVal (Proxy :: Proxy operationId))) <>)
+#endif
 
 instance (HasOpenApi sub, KnownSymbol (FoldDescription mods), KnownSymbol sym, SBoolI (FoldRequired mods), ToParamSchema a) => HasOpenApi (QueryParam' mods sym a :> sub) where
   toOpenApi _ =
@@ -481,15 +477,11 @@ instance (Accept ct, HasOpenApi sub, KnownSymbol (FoldDescription mods), ToSchem
           & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
           & content .~ InsOrdHashMap.fromList [(t, mempty & schema ?~ ref) | t <- toList $ contentTypes (Proxy :: Proxy ct)]
 
-#if MIN_VERSION_servant(0,18,2)
 instance (HasOpenApi sub) => HasOpenApi (Fragment a :> sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
-#endif
 
-#if MIN_VERSION_servant(0,19,0)
 instance (HasOpenApi (ToServantApi sub)) => HasOpenApi (NamedRoutes sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy (ToServantApi sub))
-#endif
 
 -- =======================================================================
 -- Below are the definitions that should be in Servant.API.ContentTypes
@@ -528,7 +520,6 @@ instance (AllToResponseHeader hs, ToResponseHeader h) => AllToResponseHeader (h 
 instance AllToResponseHeader hs => AllToResponseHeader (HList hs) where
   toAllResponseHeaders _ = toAllResponseHeaders (Proxy :: Proxy hs)
 
-#if MIN_VERSION_servant(0,20,3)
 type DeclareDefinition = Declare (Definitions Schema)
 
 class IsSwaggerResponse a where
@@ -680,4 +671,3 @@ instance
               . List.listToMaybe
               . toList
       refResps = Inline . addMime <$> resps
-#endif
