@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE PolyKinds #-}
@@ -6,20 +5,18 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- The type families below use CPP inside their equation lists, which fourmolu
--- cannot parse.
-{- FOURMOLU_DISABLE -}
-
 module Servant.OpenApi.Internal.TypeLevel.API where
 
-import           GHC.Exts            (Constraint)
-import           Servant.API
-import           Servant.API.Generic (ToServantApi)
 import Data.ByteString (ByteString)
+import GHC.Exts (Constraint)
+import Servant.API
+import Servant.API.Generic (ToServantApi)
+import Servant.API.MultiVerb (GenericAsConstructor, MultiVerb, Respond, RespondAs, RespondStreaming, WithHeaders)
+
 -- | Build a list of endpoints from an API.
 type family EndpointsList api where
   EndpointsList (a :<|> b) = AppendList (EndpointsList a) (EndpointsList b)
-  EndpointsList (e :> a)   = MapSub e (EndpointsList a)
+  EndpointsList (e :> a) = MapSub e (EndpointsList a)
   EndpointsList (NamedRoutes api) = EndpointsList (ToServantApi api)
   EndpointsList a = '[a]
 
@@ -39,7 +36,7 @@ type family MapSub e xs where
 
 -- | Append two type-level lists.
 type family AppendList xs ys where
-  AppendList '[]       ys = ys
+  AppendList '[] ys = ys
   AppendList (x ': xs) ys = x ': AppendList xs ys
 
 type family Or (a :: Constraint) (b :: Constraint) :: Constraint where
@@ -66,8 +63,8 @@ type family Nub xs where
 
 -- | Remove element from a type-level list.
 type family Remove x xs where
-  Remove x '[]       = '[]
-  Remove x (x ': ys) =      Remove x ys
+  Remove x '[] = '[]
+  Remove x (x ': ys) = Remove x ys
   Remove x (y ': ys) = y ': Remove x ys
 
 -- | Extract a list of unique "body" types for a specific content-type from a servant API.
@@ -87,17 +84,13 @@ type family BodyTypes' c api :: [*] where
   BodyTypes' c (Verb verb b cs (Headers hdrs a)) = AddBodyType c cs a '[]
   BodyTypes' c (Verb verb b cs NoContent) = '[]
   BodyTypes' c (Verb verb b cs a) = AddBodyType c cs a '[]
-#if MIN_VERSION_servant(0,20,4)
   BodyTypes' c (MultiVerb verb cs as _) = AddBodyType c cs () (MultiVerbResponseBodies as)
-#endif
   BodyTypes' c (ReqBody' mods cs a :> api) = AddBodyType c cs a (BodyTypes' c api)
   BodyTypes' c (e :> api) = BodyTypes' c api
   BodyTypes' c (a :<|> b) = AppendList (BodyTypes' c a) (BodyTypes' c b)
   BodyTypes' c (NamedRoutes api) = BodyTypes' c (ToServantApi api)
   BodyTypes' c api = '[]
 
-
-#if MIN_VERSION_servant(0,20,4)
 -- | The 'ResponseTypes' class allows to extract all types
 -- involved in a response, whether or not this type is
 -- in the body of the response, or, for example, in a header.
@@ -116,6 +109,7 @@ type family MultiVerbResponseBody a
 type instance MultiVerbResponseBody (Respond s description a) = a
 type instance MultiVerbResponseBody (RespondAs contentType s description a) = a
 type instance MultiVerbResponseBody (RespondStreaming s description framing contentType) = SourceIO ByteString
+
 -- The following instance is the main difference between 'MultiVerbResponseBody' and 'ResponseType'
 type instance MultiVerbResponseBody (WithHeaders headers returnType response) = MultiVerbResponseBody response
 type instance MultiVerbResponseBody (GenericAsConstructor r) = MultiVerbResponseBody r
@@ -123,4 +117,3 @@ type instance MultiVerbResponseBody (GenericAsConstructor r) = MultiVerbResponse
 type family MultiVerbResponseBodies (as :: [*]) where
   MultiVerbResponseBodies '[] = '[]
   MultiVerbResponseBodies (a ': as) = MultiVerbResponseBody a ': MultiVerbResponseBodies as
-#endif
