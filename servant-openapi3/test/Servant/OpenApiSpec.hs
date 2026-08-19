@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -38,20 +37,13 @@ spec = describe "HasOpenApi" $ do
   it "Todo API" $ checkAPI (Proxy :: Proxy TodoAPI) todoAPI
   it "Hackage API (with tags)" $ checkOpenApi hackageOpenApiWithTags hackageAPI
   it "GetPost API (test subOperations)" $ checkOpenApi getPostOpenApi getPostAPI
-  it "Comprehensive API" comprehensiveAPISpec
+  it "Comprehensive API" $ do
+    let _x = toOpenApi comprehensiveAPI
+    True `shouldBe` True -- type-level test
   it "UVerb API" $ checkOpenApi uverbOpenApi uverbAPI
 
 main :: IO ()
 main = hspec spec
-
-comprehensiveAPISpec :: Expectation
-#if MIN_VERSION_servant(0,20,4)
-comprehensiveAPISpec = do
-  let _x = toOpenApi comprehensiveAPI
-  True `shouldBe` True -- type-level test
-#else
-comprehensiveAPISpec = True `shouldBe` True -- type-level test
-#endif
 
 -- =======================================================================
 -- Todo API
