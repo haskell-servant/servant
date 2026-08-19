@@ -5,8 +5,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeFamilies       #-}
+
 module Servant.OpenApiSpec where
 
 import Control.Lens
@@ -37,15 +38,20 @@ spec = describe "HasOpenApi" $ do
   it "Todo API" $ checkAPI (Proxy :: Proxy TodoAPI) todoAPI
   it "Hackage API (with tags)" $ checkOpenApi hackageOpenApiWithTags hackageAPI
   it "GetPost API (test subOperations)" $ checkOpenApi getPostOpenApi getPostAPI
-  it "Comprehensive API" $ do
-#if MIN_VERSION_servant(0,20,4)
-    let _x = toOpenApi comprehensiveAPI
-#endif
-    True `shouldBe` True -- type-level test
+  it "Comprehensive API" comprehensiveAPISpec
   it "UVerb API" $ checkOpenApi uverbOpenApi uverbAPI
 
 main :: IO ()
 main = hspec spec
+
+comprehensiveAPISpec :: Expectation
+#if MIN_VERSION_servant(0,20,4)
+comprehensiveAPISpec = do
+  let _x = toOpenApi comprehensiveAPI
+  True `shouldBe` True -- type-level test
+#else
+comprehensiveAPISpec = True `shouldBe` True -- type-level test
+#endif
 
 -- =======================================================================
 -- Todo API
@@ -439,8 +445,8 @@ getPostAPI =
 -- UVerb API
 -- =======================================================================
 
-data FisxUser = FisxUser {name :: String}
-  deriving (Eq, Show, Generic)
+newtype FisxUser = FisxUser {name :: String}
+  deriving (Eq, Generic, Show)
 
 instance ToSchema FisxUser
 
@@ -448,18 +454,20 @@ instance HasStatus FisxUser where
   type StatusOf FisxUser = 203
 
 data ArianUser = ArianUser
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToSchema ArianUser
 
-type UVerbAPI = "fisx" :> UVerb 'GET '[JSON] '[FisxUser, WithStatus 303 String]
-           :<|> "arian" :> UVerb 'POST '[JSON] '[WithStatus 201 ArianUser]
+type UVerbAPI =
+  "fisx" :> UVerb 'GET '[JSON] '[FisxUser, WithStatus 303 String]
+    :<|> "arian" :> UVerb 'POST '[JSON] '[WithStatus 201 ArianUser]
 
 uverbOpenApi :: OpenApi
 uverbOpenApi = toOpenApi (Proxy :: Proxy UVerbAPI)
 
 uverbAPI :: Value
-uverbAPI = [aesonQQ|
+uverbAPI =
+  [aesonQQ|
 {
   "openapi": "3.0.0",
   "info": {
