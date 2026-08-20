@@ -24,6 +24,7 @@ import Data.Foldable (toList)
 import Data.HashMap.Strict.InsOrd.Compat (InsOrdHashMap)
 import qualified Data.HashMap.Strict.InsOrd.Compat as InsOrdHashMap
 import Data.Kind (Type)
+import qualified Data.Maybe as List
 import Data.OpenApi hiding (Header, contentType)
 import qualified Data.OpenApi as OpenApi
 import Data.OpenApi.Declare
@@ -39,14 +40,11 @@ import Servant.API
 import Servant.API.ContentTypes (AllMime, allMime)
 import Servant.API.Description (FoldDescription, reflectDescription)
 import Servant.API.Modifiers (FoldRequired)
+import Servant.API.MultiVerb
+import qualified Servant.Server.Internal.ResponseRender as Server
 import Prelude ()
 
 import Servant.OpenApi.Internal.TypeLevel.API
-#if MIN_VERSION_servant(0,20,3)
-import qualified Servant.Server.Internal.ResponseRender as Server
-import           Servant.API.MultiVerb
-#endif
-import qualified Data.Maybe as List
 
 -- | Generate a OpenApi specification for a servant API.
 --
@@ -221,20 +219,19 @@ instance OpenApiMethod 'OPTIONS where openApiMethod _ = options
 instance OpenApiMethod 'HEAD where openApiMethod _ = head_
 instance OpenApiMethod 'PATCH where openApiMethod _ = patch
 
-#if MIN_VERSION_servant(0,18,1)
 instance HasOpenApi (UVerb method cs '[]) where
   toOpenApi _ = mempty
 
 -- | @since <2.0.1.0>
 instance
   {-# OVERLAPPABLE #-}
-  ( ToSchema a,
-    HasStatus a,
-    AllAccept cs,
-    OpenApiMethod method,
-    HasOpenApi (UVerb method cs as)
-  ) =>
-  HasOpenApi (UVerb method cs (a ': as))
+  ( AllAccept cs
+  , HasOpenApi (UVerb method cs as)
+  , HasStatus a
+  , OpenApiMethod method
+  , ToSchema a
+  )
+  => HasOpenApi (UVerb method cs (a ': as))
   where
   toOpenApi _ =
     toOpenApi (Proxy :: Proxy (Verb method (StatusOf a) cs a))
@@ -242,36 +239,37 @@ instance
     where
       -- workaround for https://github.com/GetShopTV/swagger2/issues/218
       combinePathItem :: PathItem -> PathItem -> PathItem
-      combinePathItem s t = PathItem
-        { _pathItemGet = _pathItemGet s <> _pathItemGet t
-        , _pathItemPut = _pathItemPut s <> _pathItemPut t
-        , _pathItemPost = _pathItemPost s <> _pathItemPost t
-        , _pathItemDelete = _pathItemDelete s <> _pathItemDelete t
-        , _pathItemOptions = _pathItemOptions s <> _pathItemOptions t
-        , _pathItemHead = _pathItemHead s <> _pathItemHead t
-        , _pathItemPatch = _pathItemPatch s <> _pathItemPatch t
-        , _pathItemTrace = _pathItemTrace s <> _pathItemTrace t
-        , _pathItemParameters = _pathItemParameters s <> _pathItemParameters t
-        , _pathItemSummary = _pathItemSummary s <|> _pathItemSummary t
-        , _pathItemDescription = _pathItemDescription s <|> _pathItemDescription t
-        , _pathItemServers = _pathItemServers s <> _pathItemServers t
-        }
+      combinePathItem s t =
+        PathItem
+          { _pathItemGet = _pathItemGet s <> _pathItemGet t
+          , _pathItemPut = _pathItemPut s <> _pathItemPut t
+          , _pathItemPost = _pathItemPost s <> _pathItemPost t
+          , _pathItemDelete = _pathItemDelete s <> _pathItemDelete t
+          , _pathItemOptions = _pathItemOptions s <> _pathItemOptions t
+          , _pathItemHead = _pathItemHead s <> _pathItemHead t
+          , _pathItemPatch = _pathItemPatch s <> _pathItemPatch t
+          , _pathItemTrace = _pathItemTrace s <> _pathItemTrace t
+          , _pathItemParameters = _pathItemParameters s <> _pathItemParameters t
+          , _pathItemSummary = _pathItemSummary s <|> _pathItemSummary t
+          , _pathItemDescription = _pathItemDescription s <|> _pathItemDescription t
+          , _pathItemServers = _pathItemServers s <> _pathItemServers t
+          }
 
       combineSwagger :: OpenApi -> OpenApi -> OpenApi
-      combineSwagger s t = OpenApi
-        { _openApiOpenapi = _openApiOpenapi s <> _openApiOpenapi t
-        , _openApiInfo = _openApiInfo s <> _openApiInfo t
-        , _openApiServers = _openApiServers s <> _openApiServers t
-        , _openApiPaths = InsOrdHashMap.unionWith combinePathItem (_openApiPaths s) (_openApiPaths t)
-        , _openApiComponents = _openApiComponents s <> _openApiComponents t
-        , _openApiSecurity = _openApiSecurity s <> _openApiSecurity t
-        , _openApiTags = _openApiTags s <> _openApiTags t
-        , _openApiExternalDocs = _openApiExternalDocs s <|> _openApiExternalDocs t
-        }
+      combineSwagger s t =
+        OpenApi
+          { _openApiOpenapi = _openApiOpenapi s <> _openApiOpenapi t
+          , _openApiInfo = _openApiInfo s <> _openApiInfo t
+          , _openApiServers = _openApiServers s <> _openApiServers t
+          , _openApiPaths = InsOrdHashMap.unionWith combinePathItem (_openApiPaths s) (_openApiPaths t)
+          , _openApiComponents = _openApiComponents s <> _openApiComponents t
+          , _openApiSecurity = _openApiSecurity s <> _openApiSecurity t
+          , _openApiTags = _openApiTags s <> _openApiTags t
+          , _openApiExternalDocs = _openApiExternalDocs s <|> _openApiExternalDocs t
+          }
 
-instance (Typeable (WithStatus s a), ToSchema a) => ToSchema (WithStatus s a) where
+instance (ToSchema a, Typeable (WithStatus s a)) => ToSchema (WithStatus s a) where
   declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy a)
-#endif
 
 instance {-# OVERLAPPABLE #-} (AllAccept cs, KnownNat status, OpenApiMethod method, ToSchema a) => HasOpenApi (Verb method status cs a) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
@@ -322,11 +320,9 @@ instance HasOpenApi sub => HasOpenApi (RemoteHost :> sub) where
 instance HasOpenApi sub => HasOpenApi (HttpVersion :> sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
 
-#if MIN_VERSION_servant(0,20,0)
 -- | @'WithResource'@ combinator does not change our specification at all.
-instance (HasOpenApi sub) => HasOpenApi (WithResource res :> sub) where
+instance HasOpenApi sub => HasOpenApi (WithResource res :> sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
-#endif
 
 -- | @'WithNamedContext'@ combinator does not change our specification at all.
 instance HasOpenApi sub => HasOpenApi (WithNamedContext x c sub) where
@@ -371,10 +367,12 @@ instance (HasOpenApi api, KnownSymbol desc) => HasOpenApi (Summary desc :> api) 
     toOpenApi (Proxy :: Proxy api)
       & allOperations . summary %~ (Just (Text.pack (symbolVal (Proxy :: Proxy desc))) <>)
 
+#if MIN_VERSION_servant(0,20,4)
 instance (HasOpenApi api, KnownSymbol operationId) => HasOpenApi (OperationId operationId :> api) where
   toOpenApi _ =
     toOpenApi (Proxy :: Proxy api)
       & allOperations . operationId %~ (Just (Text.pack (symbolVal (Proxy :: Proxy operationId))) <>)
+#endif
 
 instance (HasOpenApi sub, KnownSymbol (FoldDescription mods), KnownSymbol sym, SBoolI (FoldRequired mods), ToParamSchema a) => HasOpenApi (QueryParam' mods sym a :> sub) where
   toOpenApi _ =
@@ -481,15 +479,11 @@ instance (Accept ct, HasOpenApi sub, KnownSymbol (FoldDescription mods), ToSchem
           & description .~ transDesc (reflectDescription (Proxy :: Proxy mods))
           & content .~ InsOrdHashMap.fromList [(t, mempty & schema ?~ ref) | t <- toList $ contentTypes (Proxy :: Proxy ct)]
 
-#if MIN_VERSION_servant(0,18,2)
-instance (HasOpenApi sub) => HasOpenApi (Fragment a :> sub) where
+instance HasOpenApi sub => HasOpenApi (Fragment a :> sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy sub)
-#endif
 
-#if MIN_VERSION_servant(0,19,0)
-instance (HasOpenApi (ToServantApi sub)) => HasOpenApi (NamedRoutes sub) where
+instance HasOpenApi (ToServantApi sub) => HasOpenApi (NamedRoutes sub) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy (ToServantApi sub))
-#endif
 
 -- =======================================================================
 -- Below are the definitions that should be in Servant.API.ContentTypes
@@ -528,22 +522,21 @@ instance (AllToResponseHeader hs, ToResponseHeader h) => AllToResponseHeader (h 
 instance AllToResponseHeader hs => AllToResponseHeader (HList hs) where
   toAllResponseHeaders _ = toAllResponseHeaders (Proxy :: Proxy hs)
 
-#if MIN_VERSION_servant(0,20,3)
 type DeclareDefinition = Declare (Definitions Schema)
 
 class IsSwaggerResponse a where
   responseSwagger :: DeclareDefinition Response
 
 instance
-  (AllToResponseHeader hs, IsSwaggerResponse r) =>
-  IsSwaggerResponse (WithHeaders hs a r)
+  (AllToResponseHeader hs, IsSwaggerResponse r)
+  => IsSwaggerResponse (WithHeaders hs a r)
   where
   responseSwagger =
     fmap
       (headers .~ fmap Inline (toAllResponseHeaders (Proxy @hs)))
       (responseSwagger @r)
 
-simpleResponseSwagger :: forall a cs desc. (ToSchema a, KnownSymbol desc, AllMime cs) => DeclareDefinition Response
+simpleResponseSwagger :: forall a cs desc. (AllMime cs, KnownSymbol desc, ToSchema a) => DeclareDefinition Response
 simpleResponseSwagger = do
   ref <- declareSchemaRef (Proxy @a)
   let resps :: InsOrdHashMap MediaType MediaTypeObject
@@ -557,21 +550,21 @@ simpleResponseSwagger = do
     cs = allMime $ Proxy @cs
 
 instance
-  (KnownSymbol desc, ToSchema a) =>
-  IsSwaggerResponse (Respond s desc a)
+  (KnownSymbol desc, ToSchema a)
+  => IsSwaggerResponse (Respond s desc a)
   where
   -- Defaulting this to JSON, as openapi3 needs something to map a schema against.
   responseSwagger = simpleResponseSwagger @a @'[JSON] @desc
 
 instance
-  (KnownSymbol desc, ToSchema a, Accept ct) =>
-  IsSwaggerResponse (RespondAs (ct :: Type) s desc a)
+  (Accept ct, KnownSymbol desc, ToSchema a)
+  => IsSwaggerResponse (RespondAs (ct :: Type) s desc a)
   where
   responseSwagger = simpleResponseSwagger @a @'[ct] @desc
 
 instance
-  (KnownSymbol desc) =>
-  IsSwaggerResponse (RespondEmpty s desc)
+  KnownSymbol desc
+  => IsSwaggerResponse (RespondEmpty s desc)
   where
   responseSwagger =
     pure $
@@ -585,11 +578,11 @@ instance IsSwaggerResponseList '[] where
   responseListSwagger = pure mempty
 
 instance
-  ( IsSwaggerResponse a,
-    KnownNat (Server.ResponseStatus a),
-    IsSwaggerResponseList as
-  ) =>
-  IsSwaggerResponseList (a ': as)
+  ( IsSwaggerResponse a
+  , IsSwaggerResponseList as
+  , KnownNat (Server.ResponseStatus a)
+  )
+  => IsSwaggerResponseList (a ': as)
   where
   responseListSwagger =
     InsOrdHashMap.insertWith
@@ -625,8 +618,8 @@ combineSwaggerSchema s1 s2
   | otherwise = s1
 
 instance
-  (OpenApiMethod method, IsSwaggerResponseList as) =>
-  HasOpenApi (MultiVerb method '() as r)
+  (IsSwaggerResponseList as, OpenApiMethod method)
+  => HasOpenApi (MultiVerb method '() as r)
   where
   toOpenApi _ =
     mempty
@@ -645,8 +638,8 @@ instance
       refResps = Inline <$> resps
 
 instance
-  (OpenApiMethod method, IsSwaggerResponseList as, AllMime cs) =>
-  HasOpenApi (MultiVerb method (cs :: [Type]) as r)
+  (AllMime cs, IsSwaggerResponseList as, OpenApiMethod method)
+  => HasOpenApi (MultiVerb method (cs :: [Type]) as r)
   where
   toOpenApi _ =
     mempty
@@ -680,4 +673,3 @@ instance
               . List.listToMaybe
               . toList
       refResps = Inline . addMime <$> resps
-#endif

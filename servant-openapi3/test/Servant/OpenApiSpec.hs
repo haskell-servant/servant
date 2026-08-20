@@ -1,18 +1,19 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-#if MIN_VERSION_servant(0,18,1)
-{-# LANGUAGE TypeFamilies       #-}
-#endif
+
 module Servant.OpenApiSpec where
 
 import Control.Lens
-import Data.Aeson (ToJSON (toJSON), Value, encode, genericToJSON)
+import Data.Aeson (ToJSON (toJSON), Value (Array, Object), encode, genericToJSON)
+import Data.Aeson.Key (Key)
+import qualified Data.Aeson.Key as Key
+import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Aeson.QQ.Simple
 import qualified Data.Aeson.Types as JSON
 import Data.Char (toLower)
@@ -28,11 +29,30 @@ import Test.Hspec hiding (example)
 
 import Servant.OpenApi
 
+-- | The key the generated content maps use for @JSON@. Taken from servant
+-- rather than hardcoded, because servant-0.20.4 dropped the @charset@ parameter
+-- from its @Accept JSON@ instance and older versions still carry it.
+-- <https://github.com/haskell-servant/servant/pull/1881>
+jsonMediaType :: Key
+jsonMediaType = Key.fromString (show (Servant.API.contentType (Proxy :: Proxy JSON)))
+
+-- | Restate a golden document in terms of 'jsonMediaType'. The goldens below are
+-- written as @application/json@, so this is a no-op unless the servant we are
+-- built against spells the media type differently.
+withJsonMediaType :: Value -> Value
+withJsonMediaType (Object o) = Object (KeyMap.mapKeyVal rename withJsonMediaType o)
+  where
+    rename k
+      | k == "application/json" = jsonMediaType
+      | otherwise = k
+withJsonMediaType (Array a) = Array (withJsonMediaType <$> a)
+withJsonMediaType v = v
+
 checkAPI :: HasCallStack => HasOpenApi api => Proxy api -> Value -> IO ()
 checkAPI proxy = checkOpenApi (toOpenApi proxy)
 
 checkOpenApi :: HasCallStack => OpenApi -> Value -> IO ()
-checkOpenApi swag js = encode (toJSON swag) `shouldBe` encode js
+checkOpenApi swag js = encode (toJSON swag) `shouldBe` encode (withJsonMediaType js)
 
 spec :: Spec
 spec = describe "HasOpenApi" $ do
@@ -42,9 +62,7 @@ spec = describe "HasOpenApi" $ do
   it "Comprehensive API" $ do
     let _x = toOpenApi comprehensiveAPI
     True `shouldBe` True -- type-level test
-#if MIN_VERSION_servant(0,18,1)
   it "UVerb API" $ checkOpenApi uverbOpenApi uverbAPI
-#endif
 
 main :: IO ()
 main = hspec spec
@@ -441,10 +459,8 @@ getPostAPI =
 -- UVerb API
 -- =======================================================================
 
-#if MIN_VERSION_servant(0,18,1)
-
-data FisxUser = FisxUser {name :: String}
-  deriving (Eq, Show, Generic)
+newtype FisxUser = FisxUser {name :: String}
+  deriving (Eq, Generic, Show)
 
 instance ToSchema FisxUser
 
@@ -452,18 +468,20 @@ instance HasStatus FisxUser where
   type StatusOf FisxUser = 203
 
 data ArianUser = ArianUser
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Generic, Show)
 
 instance ToSchema ArianUser
 
-type UVerbAPI = "fisx" :> UVerb 'GET '[JSON] '[FisxUser, WithStatus 303 String]
-           :<|> "arian" :> UVerb 'POST '[JSON] '[WithStatus 201 ArianUser]
+type UVerbAPI =
+  "fisx" :> UVerb 'GET '[JSON] '[FisxUser, WithStatus 303 String]
+    :<|> "arian" :> UVerb 'POST '[JSON] '[WithStatus 201 ArianUser]
 
 uverbOpenApi :: OpenApi
 uverbOpenApi = toOpenApi (Proxy :: Proxy UVerbAPI)
 
 uverbAPI :: Value
-uverbAPI = [aesonQQ|
+uverbAPI =
+  [aesonQQ|
 {
   "openapi": "3.0.0",
   "info": {
@@ -537,5 +555,3 @@ uverbAPI = [aesonQQ|
   }
 }
 |]
-
-#endif
