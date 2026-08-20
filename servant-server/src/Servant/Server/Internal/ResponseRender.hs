@@ -11,7 +11,6 @@ import Data.SOP
 import Data.Sequence ((<|))
 import qualified Data.Sequence as Seq
 import Data.Typeable
-import GHC.TypeLits
 import qualified Network.HTTP.Media as M
 import Network.HTTP.Types (Status, hContentType)
 import qualified Network.Wai as Wai
@@ -73,7 +72,6 @@ instance ResponseListRender cs '[] where
   responseListStatuses = []
 
 class IsWaiBody (ResponseBody a) => ResponseRender cs a where
-  type ResponseStatus a :: Nat
   type ResponseBody a :: Type
   responseRender
     :: AcceptHeader
@@ -99,7 +97,6 @@ instance
   )
   => ResponseRender cs (WithHeaders hs a r)
   where
-  type ResponseStatus (WithHeaders hs a r) = ResponseStatus r
   type ResponseBody (WithHeaders hs a r) = ResponseBody r
 
   responseRender acc x = addHeaders <$> responseRender @cs @r acc y
@@ -116,7 +113,6 @@ instance
   )
   => ResponseRender cs (RespondAs (ct :: Type) s desc a)
   where
-  type ResponseStatus (RespondAs ct s desc a) = s
   type ResponseBody (RespondAs ct s desc a) = BSL.ByteString
 
   responseRender _ x =
@@ -128,7 +124,6 @@ instance
         }
 
 instance KnownStatus s => ResponseRender cs (RespondAs '() s desc ()) where
-  type ResponseStatus (RespondAs '() s desc ()) = s
   type ResponseBody (RespondAs '() s desc ()) = ()
 
   responseRender _ _ =
@@ -143,7 +138,6 @@ instance
   (Accept ct, KnownStatus s)
   => ResponseRender cs (RespondStreaming s desc framing ct)
   where
-  type ResponseStatus (RespondStreaming s desc framing ct) = s
   type ResponseBody (RespondStreaming s desc framing ct) = SourceIO ByteString
   responseRender _ x =
     pure . addContentType @ct $
@@ -157,7 +151,6 @@ instance
   (AllMimeRender cs a, KnownStatus s)
   => ResponseRender cs (Respond s desc a)
   where
-  type ResponseStatus (Respond s desc a) = s
   type ResponseBody (Respond s desc a) = BSL.ByteString
 
   -- Note: here it seems like we are rendering for all possible content types,

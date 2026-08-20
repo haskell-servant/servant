@@ -9,7 +9,6 @@ import qualified Data.ByteString.Lazy as BSL
 import Data.Kind (Type)
 import Data.SOP
 import Data.Typeable
-import GHC.TypeLits
 import qualified Network.HTTP.Media as M
 import Network.HTTP.Types.Status (Status)
 import Servant.API.ContentTypes
@@ -38,7 +37,6 @@ fromSomeClientResponse (SomeClientResponse Response{..}) = do
 
 class ResponseUnrender cs a where
   type ResponseBody a :: Type
-  type ResponseStatus a :: Nat
   responseUnrender
     :: M.MediaType
     -> ResponseF (ResponseBody a)
@@ -77,7 +75,6 @@ instance
   )
   => ResponseUnrender cs (RespondAs (ct :: Type) s desc a)
   where
-  type ResponseStatus (RespondAs ct s desc a) = s
   type ResponseBody (RespondAs ct s desc a) = BSL.ByteString
 
   responseUnrender _ output = do
@@ -86,7 +83,6 @@ instance
       mimeUnrender (Proxy @ct) (Response.responseBody output)
 
 instance KnownStatus s => ResponseUnrender cs (RespondAs '() s desc ()) where
-  type ResponseStatus (RespondAs '() s desc ()) = s
   type ResponseBody (RespondAs '() s desc ()) = ()
 
   responseUnrender _ output =
@@ -96,7 +92,6 @@ instance
   KnownStatus s
   => ResponseUnrender cs (RespondStreaming s desc framing ct)
   where
-  type ResponseStatus (RespondStreaming s desc framing ct) = s
   type ResponseBody (RespondStreaming s desc framing ct) = SourceIO ByteString
 
   responseUnrender _ resp = do
@@ -107,7 +102,6 @@ instance
   (AllMimeUnrender cs a, KnownStatus s)
   => ResponseUnrender cs (Respond s desc a)
   where
-  type ResponseStatus (Respond s desc a) = s
   type ResponseBody (Respond s desc a) = BSL.ByteString
 
   responseUnrender c output = do
@@ -124,7 +118,6 @@ instance
   )
   => ResponseUnrender cs (WithHeaders hs a r)
   where
-  type ResponseStatus (WithHeaders hs a r) = ResponseStatus r
   type ResponseBody (WithHeaders hs a r) = ResponseBody r
 
   responseUnrender c output = do

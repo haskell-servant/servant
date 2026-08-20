@@ -35,6 +35,8 @@ module Servant.API.MultiVerb
   , GenericAsUnion (..)
   , ResponseType
   , ResponseTypes
+  , ResponseStatus
+  , ResponseDescription
   , UnrenderResult (..)
   )
 where
@@ -121,12 +123,20 @@ instance MonadPlus UnrenderResult where
   mplus m@(UnrenderSuccess _) _ = m
 
 type family ResponseType a :: Type
+type family ResponseStatus a :: Nat
+type family ResponseDescription a :: Symbol
 
 type instance ResponseType (Respond s description a) = a
+type instance ResponseStatus (Respond s description a) = s
+type instance ResponseDescription (Respond s description a) = description
 
 type instance ResponseType (RespondAs responseContentType s description a) = a
+type instance ResponseStatus (RespondAs responseContentType s description a) = s
+type instance ResponseDescription (RespondAs responseContentType s description a) = description
 
 type instance ResponseType (RespondStreaming s description framing ct) = SourceIO ByteString
+type instance ResponseStatus (RespondStreaming s description framing ct) = s
+type instance ResponseDescription (RespondStreaming s description framing ct) = description
 
 -- | This type adds response headers to a 'MultiVerb' response.
 data WithHeaders (headers :: [Type]) (returnType :: Type) (response :: Type)
@@ -216,6 +226,8 @@ instance ServantHeader h name x => ServantHeader (OptHeader h) name (Maybe x) wh
   constructHeader = foldMap (constructHeader @h)
 
 type instance ResponseType (WithHeaders headers returnType response) = returnType
+type instance ResponseStatus (WithHeaders headers returnType response) = ResponseStatus response
+type instance ResponseDescription (WithHeaders headers returnType response) = ResponseDescription response
 
 type family ResponseTypes (as :: [Type]) where
   ResponseTypes '[] = '[]
