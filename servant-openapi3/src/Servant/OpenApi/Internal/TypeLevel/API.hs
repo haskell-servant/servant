@@ -9,6 +9,7 @@ module Servant.OpenApi.Internal.TypeLevel.API where
 
 import Data.ByteString (ByteString)
 import GHC.Exts (Constraint)
+import GHC.TypeLits (Nat)
 import Servant.API
 import Servant.API.Generic (ToServantApi)
 import Servant.API.MultiVerb (GenericAsConstructor, MultiVerb, Respond, RespondAs, RespondStreaming, WithHeaders)
@@ -113,6 +114,13 @@ type instance MultiVerbResponseBody (RespondStreaming s description framing cont
 -- The following instance is the main difference between 'MultiVerbResponseBody' and 'ResponseType'
 type instance MultiVerbResponseBody (WithHeaders headers returnType response) = MultiVerbResponseBody response
 type instance MultiVerbResponseBody (GenericAsConstructor r) = MultiVerbResponseBody r
+
+type family MultiVerbResponseStatus a :: Nat
+
+type instance MultiVerbResponseStatus (Respond s description a) = s
+type instance MultiVerbResponseStatus (RespondAs contentType s description a) = s
+type instance MultiVerbResponseStatus (RespondStreaming s description framing contentType) = s
+type instance MultiVerbResponseStatus (WithHeaders headers returnType response) = MultiVerbResponseStatus response
 
 type family MultiVerbResponseBodies (as :: [*]) where
   MultiVerbResponseBodies '[] = '[]
