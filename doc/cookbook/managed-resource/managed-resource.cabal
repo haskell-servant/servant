@@ -16,7 +16,7 @@ executable cookbook-managed-resource
                      , aeson >= 2.2
                      , servant >= 0.20 && <0.21
                      , servant-client >= 0.20 && <0.21
-                     , servant-server >= 0.20 && <0.21
+                     , servant-server >= 0.20 && <0.22
                      , warp >= 3.4.9
                      , wai >= 3.2
                      , http-types >= 0.12

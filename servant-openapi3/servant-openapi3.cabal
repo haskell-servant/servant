@@ -1,6 +1,6 @@
 cabal-version:       3.0
 name:                servant-openapi3
-version:             2.1.0.0
+version:             2.2.0.0
 synopsis:            Generate a Swagger/OpenAPI/OAS 3.0 specification for your servant API.
 description:
   Swagger is a project used to describe and document RESTful APIs. The core of the 
@@ -73,8 +73,8 @@ library
                      , bytestring                >=0.11     && <0.13
                      , http-media                >=0.7.1.3  && <0.9
                      , lens                      >=5.3.6    && <5.4
-                     , servant                   >=0.20.3   && <0.21
-                     , servant-server            >=0.20.3   && <0.21
+                     , servant                   >=0.20.4   && <0.21
+                     , servant-server            >=0.20.3   && <0.22
                      , singleton-bool            >=0.1.6    && <0.2
                      , openapi3                  >=3.2.5    && <3.3
                      , text                      >=1.2.5.0  && <3
