@@ -119,7 +119,7 @@ library
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
     , aeson              >=2.2     && <3
-    , base-compat        >=0.12    && <0.15
+    , base-compat        >=0.12    && <0.16
     , base64-bytestring  >=1.2     && <1.3
     , exceptions         >=0.10.4  && <0.11
     , free               >=5.2     && <5.3

@@ -51,7 +51,7 @@ library
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
   build-depends:
-      base-compat >= 0.12    && < 0.15
+      base-compat >= 0.12    && < 0.16
     , lens        >= 5.3     && < 5.4
     , http-types  >= 0.12.4  && < 0.13
 

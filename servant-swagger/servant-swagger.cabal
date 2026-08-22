@@ -72,7 +72,7 @@ library
   build-depends:       aeson                     >=2.2     && <3
                      , aeson-pretty              >=0.8.7    && <0.9
                      , base                      >= 4.16.4.0 && < 4.23
-                     , base-compat               >=0.12     && <0.15
+                     , base-compat               >=0.12     && <0.16
                      , bytestring                >=0.11 && <0.13
                      , http-media                >=0.8      && <0.9
                      , lens                      >=5.3      && <6
