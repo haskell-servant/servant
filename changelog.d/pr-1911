@@ -1,0 +1,14 @@
+synopsis: Deduplicate `ResponseStatus` and `ResponseBody` type families by moving them to `servant`
+packages: servant, servant-server, servant-client-core, servant-openapi3
+prs: #1911
+description: {
+  Previously `ResponseStatus` and `ResponseBody` where defined twice in different modules 
+  with the same name and almost duplicate definitions. Namely associated types of both classes 
+  `ResponseRender` in `servant-server` and `ResponseUnrender` in `servant-client-core`.
+
+  These associated type families have been removed from `servant-server` and 
+  `servant-client-core`, and instead there is now just now a standalone 
+  type family definition of each of these type families in `servant`.
+
+  For completeness, a `ResponseDescription` type family to has been added to `servant` also.
+}

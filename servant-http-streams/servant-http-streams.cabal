@@ -53,7 +53,7 @@ library
   -- Strict dependency on `servant-client-core` as we re-export things.
   build-depends:
       servant               >= 0.20.2 && < 0.21
-    , servant-client-core   >= 0.20.2 && <0.21
+    , servant-client-core   >= 0.20.2 && <0.22
 
   -- Other dependencies: Lower bound around what is in the latest Stackage LTS.
   -- Here can be exceptions if we really need features from the newer versions.
@@ -111,7 +111,7 @@ test-suite spec
     , HUnit             >= 1.6.0.0  && < 1.7
     , network           >= 3.2      && < 3.3
     , QuickCheck        >= 2.18     && < 2.19
-    , servant-server    >= 0.20.2 && < 0.21
+    , servant-server    >= 0.20.2 && < 0.22
     , servant           >= 0.20.2 && < 0.21
 
   build-tool-depends:

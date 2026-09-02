@@ -41,7 +41,6 @@ import Servant.API.ContentTypes (AllMime, allMime)
 import Servant.API.Description (FoldDescription, reflectDescription)
 import Servant.API.Modifiers (FoldRequired)
 import Servant.API.MultiVerb
-import qualified Servant.Server.Internal.ResponseRender as Server
 import Prelude ()
 
 import Servant.OpenApi.Internal.TypeLevel.API
@@ -580,14 +579,14 @@ instance IsSwaggerResponseList '[] where
 instance
   ( IsSwaggerResponse a
   , IsSwaggerResponseList as
-  , KnownNat (Server.ResponseStatus a)
+  , KnownNat (ResponseStatus a)
   )
   => IsSwaggerResponseList (a ': as)
   where
   responseListSwagger =
     InsOrdHashMap.insertWith
       combineResponseSwagger
-      (fromIntegral (natVal (Proxy @(Server.ResponseStatus a))))
+      (fromIntegral (natVal (Proxy @(ResponseStatus a))))
       <$> responseSwagger @a
       <*> responseListSwagger @as
 

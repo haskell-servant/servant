@@ -47,7 +47,7 @@ library
     , mtl                     ^>= 2.2.2   || ^>= 2.3.1
     , servant                 >= 0.20.3   && < 0.21
     , servant-auth            == 0.4.10.0
-    , servant-server          >= 0.20.3   && < 0.21
+    , servant-server          >= 0.20.3   && < 0.22
     , tagged                  >= 0.8.4    && < 0.9
     , text                    >= 1.2.3.0  && < 2.2
     , time                    >= 1.11     && < 1.16

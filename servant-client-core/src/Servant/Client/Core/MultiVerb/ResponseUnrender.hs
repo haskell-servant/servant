@@ -4,18 +4,14 @@ module Servant.Client.Core.MultiVerb.ResponseUnrender where
 
 import Control.Applicative
 import Control.Monad
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as BSL
 import Data.Kind (Type)
 import Data.SOP
 import Data.Typeable
-import GHC.TypeLits
 import qualified Network.HTTP.Media as M
 import Network.HTTP.Types.Status (Status)
 import Servant.API.ContentTypes
 import Servant.API.MultiVerb
 import Servant.API.Status
-import Servant.API.Stream (SourceIO)
 import Servant.API.UVerb.Union (Union)
 
 import Servant.Client.Core.Response (ResponseF (..))
@@ -37,8 +33,6 @@ fromSomeClientResponse (SomeClientResponse Response{..}) = do
       }
 
 class ResponseUnrender cs a where
-  type ResponseBody a :: Type
-  type ResponseStatus a :: Nat
   responseUnrender
     :: M.MediaType
     -> ResponseF (ResponseBody a)
@@ -77,18 +71,12 @@ instance
   )
   => ResponseUnrender cs (RespondAs (ct :: Type) s desc a)
   where
-  type ResponseStatus (RespondAs ct s desc a) = s
-  type ResponseBody (RespondAs ct s desc a) = BSL.ByteString
-
   responseUnrender _ output = do
     guard (responseStatusCode output == statusVal (Proxy @s))
     either UnrenderError UnrenderSuccess $
       mimeUnrender (Proxy @ct) (Response.responseBody output)
 
 instance KnownStatus s => ResponseUnrender cs (RespondAs '() s desc ()) where
-  type ResponseStatus (RespondAs '() s desc ()) = s
-  type ResponseBody (RespondAs '() s desc ()) = ()
-
   responseUnrender _ output =
     guard (responseStatusCode output == statusVal (Proxy @s))
 
@@ -96,9 +84,6 @@ instance
   KnownStatus s
   => ResponseUnrender cs (RespondStreaming s desc framing ct)
   where
-  type ResponseStatus (RespondStreaming s desc framing ct) = s
-  type ResponseBody (RespondStreaming s desc framing ct) = SourceIO ByteString
-
   responseUnrender _ resp = do
     guard (Response.responseStatusCode resp == statusVal (Proxy @s))
     pure $ Response.responseBody resp
@@ -107,9 +92,6 @@ instance
   (AllMimeUnrender cs a, KnownStatus s)
   => ResponseUnrender cs (Respond s desc a)
   where
-  type ResponseStatus (Respond s desc a) = s
-  type ResponseBody (Respond s desc a) = BSL.ByteString
-
   responseUnrender c output = do
     guard (responseStatusCode output == statusVal (Proxy @s))
     let results = allMimeUnrender (Proxy @cs)
@@ -124,9 +106,6 @@ instance
   )
   => ResponseUnrender cs (WithHeaders hs a r)
   where
-  type ResponseStatus (WithHeaders hs a r) = ResponseStatus r
-  type ResponseBody (WithHeaders hs a r) = ResponseBody r
-
   responseUnrender c output = do
     x <- responseUnrender @cs @r c output
     case extractHeaders @hs (responseHeaders output) of

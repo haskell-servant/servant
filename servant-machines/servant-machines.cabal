@@ -49,7 +49,7 @@ test-suite example
     , servant        >=0.20.2   && <0.21
     , machines
     , servant-machines
-    , servant-server >=0.20.2   && <0.21
+    , servant-server >=0.20.2   && <0.22
     , servant-client >=0.20.2   && <0.21
     , wai            >=3.2.1.2  && <3.3
     , warp           >=3.4.9    && <3.5
