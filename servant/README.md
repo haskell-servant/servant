@@ -1,0 +1,31 @@
+# servant (API)
+
+Official *servant* packages in [haskell-servant/servant](https://github.com/haskell-servant/servant) repository:
+
+* [**servant (API)**](https://hackage.haskell.org/package/servant)
+* [**servant-server**](https://hackage.haskell.org/package/servant-server)
+* [servant-auth](https://hackage.haskell.org/package/servant-auth)
+* [servant-client-core](https://hackage.haskell.org/package/servant-client-core)
+* [servant-client](https://hackage.haskell.org/package/servant-client)
+* [servant-docs](https://hackage.haskell.org/package/servant-docs)
+* [servant-foreign](https://hackage.haskell.org/package/servant-foreign)
+* [servant-http-streams](https://hackage.haskell.org/package/servant-http-streams)
+* [servant-machines](https://hackage.haskell.org/package/servant-machines)
+* [servant-pipes](https://hackage.haskell.org/package/servant-pipes)
+* [servant-quickcheck](https://hackage.haskell.org/package/servant-quickcheck)
+* [servant-swagger](https://hackage.haskell.org/package/servant-swagger)
+
+Official *servant* packages in other [haskell-servant](https://github.com/haskell-servant) repositories:
+* [servant-blaze](https://hackage.haskell.org/package/servant-blaze)
+* [servant-cassava](https://hackage.haskell.org/package/servant-cassava)
+* [servant-ekg](https://hackage.haskell.org/package/servant-ekg)
+* [servant-elm](https://hackage.haskell.org/package/servant-elm)
+* [servant-js](https://hackage.haskell.org/package/servant-js)
+* [servant-jsaddle](https://hackage.haskell.org/package/servant-jsaddle)
+* [servant-lucid](https://hackage.haskell.org/package/servant-lucid)
+* [servant-mock](https://hackage.haskell.org/package/servant-mock)
+* [servant-multipart](https://hackage.haskell.org/package/servant-multipart)
+* [servant-quickcheck](https://hackage.haskell.org/package/servant-quickcheck)
+* [servant-swagger-ui](https://hackage.haskell.org/package/servant-swagger-ui)
+* [servant-yaml](https://hackage.haskell.org/package/servant-yaml)
+* and [more](https://github.com/orgs/haskell-servant/repositories)
