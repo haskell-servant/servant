@@ -1,3 +1,13 @@
+Unreleased
+----------
+
+* The `HasOpenApi` instance that recurses through `UVerb` responses no
+  longer demands `ToSchema NoContent`.
+  - `instance ToSchema (WithStatus s a)` has been removed, as the
+    `WithStatus` is now unwrapped when recursing into a `Verb`.
+* Do not count `NoContent` as a body type if it appears in `Headers
+  hdrs NoContent`.
+
 2.1.0.0
 -------
 

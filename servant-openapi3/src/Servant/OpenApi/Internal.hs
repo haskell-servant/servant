@@ -224,51 +224,62 @@ instance HasOpenApi (UVerb method cs '[]) where
 -- | @since <2.0.1.0>
 instance
   {-# OVERLAPPABLE #-}
-  ( AllAccept cs
-  , HasOpenApi (UVerb method cs as)
-  , HasStatus a
-  , OpenApiMethod method
-  , ToSchema a
-  )
+  (HasOpenApi (UVerb method cs as), HasOpenApi (Verb method (StatusOf a) cs a))
   => HasOpenApi (UVerb method cs (a ': as))
   where
   toOpenApi _ =
     toOpenApi (Proxy :: Proxy (Verb method (StatusOf a) cs a))
       `combineSwagger` toOpenApi (Proxy :: Proxy (UVerb method cs as))
-    where
-      -- workaround for https://github.com/GetShopTV/swagger2/issues/218
-      combinePathItem :: PathItem -> PathItem -> PathItem
-      combinePathItem s t =
-        PathItem
-          { _pathItemGet = _pathItemGet s <> _pathItemGet t
-          , _pathItemPut = _pathItemPut s <> _pathItemPut t
-          , _pathItemPost = _pathItemPost s <> _pathItemPost t
-          , _pathItemDelete = _pathItemDelete s <> _pathItemDelete t
-          , _pathItemOptions = _pathItemOptions s <> _pathItemOptions t
-          , _pathItemHead = _pathItemHead s <> _pathItemHead t
-          , _pathItemPatch = _pathItemPatch s <> _pathItemPatch t
-          , _pathItemTrace = _pathItemTrace s <> _pathItemTrace t
-          , _pathItemParameters = _pathItemParameters s <> _pathItemParameters t
-          , _pathItemSummary = _pathItemSummary s <|> _pathItemSummary t
-          , _pathItemDescription = _pathItemDescription s <|> _pathItemDescription t
-          , _pathItemServers = _pathItemServers s <> _pathItemServers t
-          }
 
-      combineSwagger :: OpenApi -> OpenApi -> OpenApi
-      combineSwagger s t =
-        OpenApi
-          { _openApiOpenapi = _openApiOpenapi s <> _openApiOpenapi t
-          , _openApiInfo = _openApiInfo s <> _openApiInfo t
-          , _openApiServers = _openApiServers s <> _openApiServers t
-          , _openApiPaths = InsOrdHashMap.unionWith combinePathItem (_openApiPaths s) (_openApiPaths t)
-          , _openApiComponents = _openApiComponents s <> _openApiComponents t
-          , _openApiSecurity = _openApiSecurity s <> _openApiSecurity t
-          , _openApiTags = _openApiTags s <> _openApiTags t
-          , _openApiExternalDocs = _openApiExternalDocs s <|> _openApiExternalDocs t
-          }
+-- | Although the instance this overlaps correctly sets the status code
+-- for a @WithStatus n a@ entry, it also cause GHC to try and solve
+-- @'HasOpenApi' (Verb method (StatusOf (WithStatus n a)) cs (WithStatus n a))@.
+-- In most cases, this works fine, but it breaks down if @a ~ NoContent@ by
+-- trying to satisfy @ToSchema NoContent@.
+--
+-- Because 'WithStatus' inside a 'Verb' is nonsensical, we handle it
+-- explicitly before recursing into the @HasOpenApi (Verb method n cs a)@
+-- instance.
+instance
+  ( HasOpenApi (UVerb method cs as)
+  , HasOpenApi (Verb method n cs a)
+  )
+  => HasOpenApi (UVerb method cs (WithStatus n a ': as))
+  where
+  toOpenApi _ =
+    toOpenApi (Proxy :: Proxy (Verb method n cs a))
+      `combineSwagger` toOpenApi (Proxy :: Proxy (UVerb method cs as))
 
-instance (ToSchema a, Typeable (WithStatus s a)) => ToSchema (WithStatus s a) where
-  declareNamedSchema _ = declareNamedSchema (Proxy :: Proxy a)
+-- Workaround for https://github.com/GetShopTV/swagger2/issues/218
+combineSwagger :: OpenApi -> OpenApi -> OpenApi
+combineSwagger s1 s2 =
+  OpenApi
+    { _openApiOpenapi = _openApiOpenapi s1 <> _openApiOpenapi s2
+    , _openApiInfo = _openApiInfo s1 <> _openApiInfo s2
+    , _openApiServers = _openApiServers s1 <> _openApiServers s2
+    , _openApiPaths = InsOrdHashMap.unionWith combinePathItem (_openApiPaths s1) (_openApiPaths s2)
+    , _openApiComponents = _openApiComponents s1 <> _openApiComponents s2
+    , _openApiSecurity = _openApiSecurity s1 <> _openApiSecurity s2
+    , _openApiTags = _openApiTags s1 <> _openApiTags s2
+    , _openApiExternalDocs = _openApiExternalDocs s1 <|> _openApiExternalDocs s2
+    }
+  where
+    combinePathItem :: PathItem -> PathItem -> PathItem
+    combinePathItem p1 p2 =
+      PathItem
+        { _pathItemGet = _pathItemGet p1 <> _pathItemGet p2
+        , _pathItemPut = _pathItemPut p1 <> _pathItemPut p2
+        , _pathItemPost = _pathItemPost p1 <> _pathItemPost p2
+        , _pathItemDelete = _pathItemDelete p1 <> _pathItemDelete p2
+        , _pathItemOptions = _pathItemOptions p1 <> _pathItemOptions p2
+        , _pathItemHead = _pathItemHead p1 <> _pathItemHead p2
+        , _pathItemPatch = _pathItemPatch p1 <> _pathItemPatch p2
+        , _pathItemTrace = _pathItemTrace p1 <> _pathItemTrace p2
+        , _pathItemParameters = _pathItemParameters p1 <> _pathItemParameters p2
+        , _pathItemSummary = _pathItemSummary p1 <|> _pathItemSummary p2
+        , _pathItemDescription = _pathItemDescription p1 <|> _pathItemDescription p2
+        , _pathItemServers = _pathItemServers p1 <> _pathItemServers p2
+        }
 
 instance {-# OVERLAPPABLE #-} (AllAccept cs, KnownNat status, OpenApiMethod method, ToSchema a) => HasOpenApi (Verb method status cs a) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy (Verb method status cs (Headers '[] a)))
