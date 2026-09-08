@@ -1,0 +1,12 @@
+synopsis: Add RFC 10008 QUERY and Accept-Query support
+prs:
+issues: #1900
+significance: significant
+description: {
+
+Add `Query` and its status aliases (`QueryAccepted`, `QueryNonAuthoritative`, `QueryNoContent`, `QueryResetContent`, and `QueryPartialContent`), covering all six standard Query status forms across `Verb`, `NoContentVerb`, `UVerb`, `MultiVerb`, and `Stream`, including the generic server, client, documentation, foreign, and quickcheck paths. Required request content can be composed with `ReqBody`.
+
+Expose typed `AcceptQuery` and `AcceptQueryHeader` support in `Servant.API.AcceptQuery`. Swagger 2 and OpenAPI 3 remain compile-time unsupported because neither format has a `QUERY` operation.
+
+The `servant` package now requires `http-types >=0.13 && <0.14`; release is blocked until upstream `http-types` 0.13 is available.
+}
