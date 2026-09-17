@@ -81,7 +81,7 @@ type AddBodyType c cs a as = If (Elem c cs) (a ': as) as
 -- completely empty on responses to requests that only accept 'application/json', while
 -- setting the content-type in the response accordingly.)
 type family BodyTypes' c api :: [*] where
-  BodyTypes' c (Verb verb b cs (Headers hdrs a)) = AddBodyType c cs a '[]
+  BodyTypes' c (Verb verb b cs (Headers hdrs a)) = BodyTypes' c (Verb verb b cs a)
   BodyTypes' c (Verb verb b cs NoContent) = '[]
   BodyTypes' c (Verb verb b cs a) = AddBodyType c cs a '[]
   BodyTypes' c (MultiVerb verb cs as _) = AddBodyType c cs () (MultiVerbResponseBodies as)
@@ -89,6 +89,18 @@ type family BodyTypes' c api :: [*] where
   BodyTypes' c (e :> api) = BodyTypes' c api
   BodyTypes' c (a :<|> b) = AppendList (BodyTypes' c a) (BodyTypes' c b)
   BodyTypes' c (NamedRoutes api) = BodyTypes' c (ToServantApi api)
+  -- Handle UVerb by recursively expanding it to BodyTypes' c (Verb ...)
+  -- Unwrap WithStatus explicitly to avoid trying to expand
+  -- `Verb .. (WithStatus n a)` later on.
+  BodyTypes' c (UVerb verb cs (WithStatus n a ': as)) =
+    AppendList (BodyTypes' c (Verb verb (StatusOf a) cs a)) (BodyTypes' c (UVerb verb cs as))
+  -- If we don't have a WithStatus wrapper, it might be 'NoContent' or
+  -- some other type with a `HasStatus` instance. The catch-all will
+  -- expand it to '[] if we can't extract a useful body type from it,
+  -- so that's fine.
+  BodyTypes' c (UVerb verb cs (a ': as)) =
+    AppendList (BodyTypes' c (Verb verb (StatusOf a) cs a)) (BodyTypes' c (UVerb verb cs as))
+  BodyTypes' c (UVerb verb cs '[]) = '[]
   BodyTypes' c api = '[]
 
 -- | The 'ResponseTypes' class allows to extract all types
