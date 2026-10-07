@@ -77,9 +77,6 @@ package HsOpenSSL
 -- that are below the version of `servant-server` in this repository.
 -- As a result, without setting `allow-newer` for these packages, `cabal build all` 
 -- will fail, as some examples will fail to build.
-allow-newer: servant-multipart:servant-server
-allow-newer: servant-swagger-ui:servant-server
-allow-newer: servant-swagger-ui-core:servant-server
 allow-newer: servant-pagination:servant-server
 
 -- Print ticks so that doctest type querying is consistent across GHC versions.
