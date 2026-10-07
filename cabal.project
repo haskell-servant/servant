@@ -95,12 +95,7 @@ if(impl(ghc >= 9.6.1))
     flags: -pkgconfig
 
 if(impl(ghc >= 9.14.1))
-  allow-newer: servant-js:base
-
   -- Waiting for Oleg Grenrus
   allow-newer: file-embed-lzma:base
   allow-newer: file-embed-lzma:template-haskell
   allow-newer: lzma:base
-
-  -- https://github.com/Gabriella439/Haskell-Pipes-Safe-Library/issues/71
-  allow-newer: pipes-safe:base
