@@ -59,6 +59,15 @@ if(impl(ghc<9.14.1))
     doc/cookbook/db-postgres-pool
 
 tests: True
+
+-- Remove this source override and allow-older once http-types-0.13 is released.
+source-repository-package
+  type: git
+  location: https://github.com/sl1depengwyn/http-types.git
+  tag: 1c41b4af65541d7d67a1a0c09d69e7686de20432
+
+-- The pinned pre-release commit still identifies itself as http-types-0.12.6.
+allow-older: servant:http-types
 optimization: False
 
 -- Development flags

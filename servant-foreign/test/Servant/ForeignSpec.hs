@@ -22,6 +22,7 @@ spec :: Spec
 spec = describe "Servant.Foreign" $ do
   camelCaseSpec
   listFromAPISpec
+  queryFromAPISpec
 
 camelCaseSpec :: Spec
 camelCaseSpec = describe "camelCase" $ do
@@ -88,6 +89,21 @@ type TestApi =
 
 testApi :: [Req String]
 testApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: Proxy TestApi)
+
+type QueryTestApi =
+  "query"
+    :> Verb 'QUERY 200 '[JSON] Int
+    :<|> "query-stream"
+    :> Stream 'QUERY 200 NoFraming JSON Int
+
+queryTestApi :: [Req String]
+queryTestApi = listFromAPI (Proxy :: Proxy LangX) (Proxy :: Proxy String) (Proxy :: Proxy QueryTestApi)
+
+queryFromAPISpec :: Spec
+queryFromAPISpec =
+  describe "listFromAPI with QUERY" $
+    it "preserves generic and streaming QUERY methods" $
+      map _reqMethod queryTestApi `shouldBe` ["QUERY", "QUERY"]
 
 listFromAPISpec :: Spec
 listFromAPISpec = describe "listFromAPI" $ do

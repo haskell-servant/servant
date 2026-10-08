@@ -33,8 +33,10 @@ import Prelude.Compat
 import Servant.API
   ( Headers (..)
   , NoContent (NoContent)
+  , ResponseHeader (Header)
   , WithStatus (WithStatus)
   , getHeaders
+  , lookupResponseHeader
   )
 import qualified Servant.Client.Core.Request as Req
 import Servant.Test.ComprehensiveAPI
@@ -76,6 +78,10 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
   it "Servant.API.ReqBody" $ \(_, baseUrl) -> do
     let p = Person "Clara" 42
     left show <$> runClient (getBody p) baseUrl `shouldReturn` Right p
+
+  it "Servant.API.Query" $ \(_, baseUrl) -> do
+    let p = Person "Clara" 42
+    left show <$> runClient (queryBody p) baseUrl `shouldReturn` Right p
 
   it "Servant.API FailureResponse" $ \(_, baseUrl) -> do
     left show <$> runClient (getQueryParam (Just "alice")) baseUrl `shouldReturn` Right alice
@@ -153,6 +159,13 @@ successSpec = beforeAll (startWaiApp server) $ afterAll endWaiApp $ do
     case res of
       Left e -> assertFailure $ show e
       Right val -> getHeaders val `shouldBe` [("X-Example1", "1729"), ("X-Example2", "eg2")]
+
+  it "Decodes Accept-Query response headers appropriately" $ \(_, baseUrl) -> do
+    res <- runClient getAcceptQueryHeader baseUrl
+    case res of
+      Left e -> assertFailure $ show e
+      Right val ->
+        lookupResponseHeader @"Accept-Query" val `shouldBe` Header testAcceptQuery
 
   it "Returns headers on UVerb requests" $ \(_, baseUrl) -> do
     res <- runClient getUVerbRespHeaders baseUrl

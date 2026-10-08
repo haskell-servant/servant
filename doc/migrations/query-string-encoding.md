@@ -25,7 +25,7 @@ import Network.HTTP.Types
   )
 ```
 
-Add `http-types >= 0.12.4 && < 0.13` as a direct dependency when your package
+Add `http-types >= 0.12.4 && < 0.14` as a direct dependency when your package
 uses these names directly.
 
 Use the constructors as follows:

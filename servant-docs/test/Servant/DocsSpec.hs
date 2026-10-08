@@ -76,6 +76,12 @@ spec = describe "Servant.Docs" $ do
     let md2 = markdown (docs (Proxy :: Proxy TestApi2))
     tests2 md2
 
+  describe "generic methods" $ do
+    let queryDocs = markdown (docs (Proxy :: Proxy QueryDocsApi))
+    it "renders QUERY for generic and streaming endpoints" $ do
+      queryDocs `shouldContain` "## QUERY /query"
+      queryDocs `shouldContain` "## QUERY /query-stream"
+
   describe "markdown with extra info" $ do
     let
       extra =
@@ -176,6 +182,9 @@ type TestApi2 =
   "duplicate-endpoint" :> Get '[JSON] Datatype1
     :<|> "duplicate-endpoint" :> Get '[PlainText] Int
 
+type QueryDocsApi =
+  "query" :> Verb 'QUERY 200 '[JSON] Int
+    :<|> "query-stream" :> Stream 'QUERY 200 NoFraming JSON Int
 data TT = TT1 | TT2 deriving (Eq, Show)
 
 data UT = UT1 | UT2 deriving (Eq, Show)
