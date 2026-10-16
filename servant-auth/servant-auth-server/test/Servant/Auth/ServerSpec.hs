@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Servant.Auth.ServerSpec (spec) where
@@ -48,6 +49,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Data.CaseInsensitive (mk)
 import Data.Foldable (find)
+import Data.SOP (I (..), NS (..))
 import Data.Text (Text, pack)
 import Data.Time
 import GHC.Generics (Generic)
@@ -58,7 +60,7 @@ import Network.HTTP.Client
   , cookie_value
   , destroyCookieJar
   )
-import Network.HTTP.Types (Status, status200, status401)
+import Network.HTTP.Types (Status, status200, status204, status401)
 import Network.Wai (responseLBS)
 import Network.Wai.Handler.Warp (testWithApplication)
 import Network.Wreq
@@ -77,11 +79,19 @@ import Network.Wreq
   , responseBody
   , responseCookieJar
   , responseHeader
+  , responseHeaders
   , responseStatus
   )
 import Network.Wreq.Types (Postable (..))
 import Servant hiding (BasicAuth, IsSecure (..), header)
 import Servant.API.Generic ((:-))
+import Servant.API.MultiVerb
+  ( MultiVerb
+  , MultiVerb1
+  , Respond
+  , RespondEmpty
+  , WithHeaders
+  )
 
 import Servant.Auth.Server
 import Servant.Auth.Server.Internal.Cookie (expireTime)
@@ -91,6 +101,7 @@ import qualified Servant.Types.SourceT as S
 #endif
 import qualified Network.HTTP.Client as HCli
 import System.IO.Unsafe (unsafePerformIO)
+import Web.Cookie (SetCookie, defaultSetCookie, setCookieName, setCookieValue)
 import Test.Hspec
 import Test.QuickCheck
 
@@ -131,6 +142,66 @@ authSpec =
           resp <- getWith opts (url port ++ "/header")
           resp ^. responseHeader "Blah" `shouldBe` "1797"
           resp ^. responseHeader "Set-Cookie" `shouldSatisfy` (/= "")
+
+      context "MultiVerb" $ do
+        it "sets cookies on an endpoint with several responses, whichever it gives" $ \port -> property $
+          \(user :: User) -> do
+            jwt <- makeJWT user jwtCfg Nothing
+            opts <- addJwtToHeader jwt
+            resp <- getWith opts (url port ++ "/multiverb")
+            resp ^. responseStatus `shouldBe` status200
+            resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
+            (resp ^. responseCookieJar) `shouldMatchCookieNames` authCookieNames
+            empty <- getWith opts (url port ++ "/multiverb/empty")
+            empty ^. responseStatus `shouldBe` status204
+            (empty ^. responseCookieJar) `shouldMatchCookieNames` authCookieNames
+
+        it "sets cookies on an endpoint with one response" $ \port -> property $
+          \(user :: User) -> do
+            jwt <- makeJWT user jwtCfg Nothing
+            opts <- addJwtToHeader jwt
+            resp <- getWith opts (url port ++ "/multiverb1")
+            resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
+            (resp ^. responseCookieJar) `shouldMatchCookieNames` authCookieNames
+
+        it "keeps the other headers of a response" $ \port -> property $
+          \(user :: User) -> do
+            jwt <- makeJWT user jwtCfg Nothing
+            opts <- addJwtToHeader jwt
+            resp <- getWith opts (url port ++ "/multiverb/header")
+            resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
+            resp ^. responseHeader "Blah" `shouldBe` "1797"
+            (resp ^. responseCookieJar) `shouldMatchCookieNames` authCookieNames
+
+        it "keeps a cookie that the handler sets" $ \port -> property $
+          \(user :: User) -> do
+            jwt <- makeJWT user jwtCfg Nothing
+            opts <- addJwtToHeader jwt
+            resp <- getWith opts (url port ++ "/multiverb/cookie")
+            resp ^. responseStatus `shouldBe` status200
+            resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
+            (resp ^. responseCookieJar)
+              `shouldMatchCookieNames` (setCookieName handlerCookie : authCookieNames)
+            let handlerCookies =
+                  filter ((== setCookieName handlerCookie) . cookie_name) $
+                    destroyCookieJar (resp ^. responseCookieJar)
+            fmap cookie_value handlerCookies `shouldBe` [setCookieValue handlerCookie]
+
+        it "sets no cookies on a response to an unauthenticated request" $ \port -> do
+          resp <- getWith (defaults & checkResponse ?~ mempty) (url port ++ "/multiverb-auth")
+          resp ^. responseStatus `shouldBe` status401
+          resp ^? responseBody . _JSON `shouldBe` Just ("Authentication required" :: Text)
+          resp ^. responseHeader "Blah" `shouldBe` "1797"
+          resp ^.. responseHeaders . folded . filtered ((== "Set-Cookie") . fst) `shouldBe` []
+
+        it "sets cookies on a response to an authenticated request" $ \port -> property $
+          \(user :: User) -> do
+            jwt <- makeJWT user jwtCfg Nothing
+            opts <- addJwtToHeader jwt
+            resp <- getWith opts (url port ++ "/multiverb-auth")
+            resp ^. responseStatus `shouldBe` status200
+            resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
+            (resp ^. responseCookieJar) `shouldMatchCookieNames` authCookieNames
 
       context "Raw" $ do
         it "gets the response body" $ \port -> property $ \(user :: User) -> do
@@ -557,13 +628,45 @@ type API auths
        :<|> "stream" :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
 #endif
        :<|> "raw" :> Raw
+       :<|> "multiverb" :> MultiVerb 'GET '[JSON] MaybeLength (Maybe Int)
+       :<|> "multiverb" :> "empty" :> MultiVerb 'GET '[JSON] MaybeLength (Maybe Int)
+       :<|> "multiverb1" :> MultiVerb1 'GET '[JSON] (Respond 200 "The length of the name" Int)
+       :<|> "multiverb" :> "header" :> MultiVerb1 'GET '[JSON] LengthWithBlah
+       :<|> "multiverb" :> "cookie" :> MultiVerb 'GET '[JSON] MaybeLengthWithCookie (Maybe (Int, SetCookie))
         )
+      :<|> "multiverb-auth" :> Auth auths User :> MultiVerb 'GET '[JSON] LengthOrRefusal (Union '[Int, (Text, Int)])
       :<|> "uverb" :> Auth auths User :> UVerb 'GET '[JSON] '[WithStatus 200 Int, WithStatus 401 Text, WithStatus 403 Text]
       :<|> "login" :> ReqBody '[JSON] User :> Post '[JSON] (Headers '[ Header "Set-Cookie" SetCookie
                                                                      , Header "Set-Cookie" SetCookie ] NoContent)
       :<|> "logout" :> Get '[JSON] (Headers '[ Header "Set-Cookie" SetCookie
                                              , Header "Set-Cookie" SetCookie ] NoContent)
 {- FOURMOLU_ENABLE -}
+
+-- | No content, or the length of the user's name.
+type MaybeLength = '[RespondEmpty 204 "No content", Respond 200 "The length of the name" Int]
+
+-- | The length of the user's name, with a @Blah@ header.
+type LengthWithBlah =
+  WithHeaders '[Header "Blah" Int] (Int, Int) (Respond 200 "The length of the name" Int)
+
+-- | No content, or the length of the user's name with a cookie that the
+-- handler sets.
+type MaybeLengthWithCookie =
+  '[ RespondEmpty 204 "No content"
+   , WithHeaders
+       '[Header "Set-Cookie" SetCookie]
+       (Int, SetCookie)
+       (Respond 200 "The length of the name" Int)
+   ]
+
+-- | The length of the user's name, or a refusal with a @Blah@ header.
+type LengthOrRefusal =
+  '[ Respond 200 "The length of the name" Int
+   , WithHeaders
+       '[Header "Blah" Int]
+       (Text, Int)
+       (Respond 401 "Authentication required" Text)
+   ]
 
 newtype DummyRoutes mode = DummyRoutes
   { dummyInt :: mode :- "dummy" :> Get '[JSON] Int
@@ -651,9 +754,18 @@ server ccfg =
           :<|> pure (S.source ["bytestring"])
 #endif
           :<|> raw
+          :<|> (Just <$> getInt usr)
+          :<|> pure Nothing
+          :<|> getInt usr
+          :<|> ((, 1797) <$> getInt usr)
+          :<|> (Just . (, handlerCookie) <$> getInt usr)
       Indefinite -> throwAll err401
       _ -> throwAll err403
   )
+    :<|> ( \case
+            Authenticated usr -> Z . I <$> getInt usr
+            _                 -> pure $ S (Z (I (pack "Authentication required", 1797)))
+         )
     :<|> ( \case
             Authenticated usr -> respond (WithStatus @200 (42 :: Int))
             Indefinite        -> respond (WithStatus @401 $ pack "Authentication required")
@@ -719,6 +831,14 @@ past = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "1970-01-01"
 
 future :: UTCTime
 future = parseTimeOrError True defaultTimeLocale "%Y-%m-%d" "2070-01-01"
+
+-- | The cookies that 'Auth' sets for an authenticated request.
+authCookieNames :: [BS.ByteString]
+authCookieNames = [sessionCookieName cookieCfg, xsrfField xsrfCookieName cookieCfg]
+
+-- | A cookie that a handler behind 'Auth' sets.
+handlerCookie :: SetCookie
+handlerCookie = defaultSetCookie{setCookieName = "Owl", setCookieValue = "Pussycat"}
 
 addJwtToHeader :: Either Error BSL.ByteString -> IO Options
 addJwtToHeader = \case
