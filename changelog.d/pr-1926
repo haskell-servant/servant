@@ -1,0 +1,7 @@
+synopsis: Add a `HasLink` instance for `ServerSentEvents'`
+packages: servant
+prs: #1926
+description: {
+  `safeLink`, `allLinks` and `fieldLink` now work on APIs that contain
+  `ServerSentEvents` endpoints.
+}
