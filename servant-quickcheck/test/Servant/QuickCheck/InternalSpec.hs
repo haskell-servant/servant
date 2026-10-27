@@ -10,7 +10,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
 import Data.Functor
 import Data.Maybe (fromJust)
-import Network.HTTP.Client (path, queryString)
+import Network.HTTP.Client (method, path, queryString)
 import Prelude.Compat
 import Servant
 import Servant.HTML.Blaze (HTML)
@@ -41,6 +41,8 @@ spec = do
   serversEqualSpec
   serverSatisfiesSpec
   isComprehensiveSpec
+  queryRequestSpec
+  otherMethodPredicateSpec
   onlyJsonObjectSpec
   notLongerThanSpec
   queryParamsSpec
@@ -168,6 +170,25 @@ isComprehensiveSpec = describe "HasGenRequest" $ do
     let _g = genRequest comprehensiveAPIWithoutStreamingOrRaw
     True `shouldBe` True -- This is a type-level check
 
+queryRequestSpec :: Spec
+queryRequestSpec = describe "HasGenRequest for QUERY" $ do
+  it "generates QUERY requests" $ do
+    let
+      burl = BaseUrl Http "localhost" 80 ""
+      req = unGen (runGenRequest queryAPI) (mkQCGen 0) 0 burl
+    method req `shouldBe` "QUERY"
+
+otherMethodPredicateSpec :: Spec
+otherMethodPredicateSpec = describe "notAllowedContainsAllowHeader" $ do
+  it "checks QUERY as another standard method"
+    $ withServantServer otherMethodsAPI otherMethodsServer
+    $ \burl ->
+      serverDoesntSatisfy
+        otherMethodsAPI
+        burl
+        args{maxSuccess = 1}
+        (notAllowedContainsAllowHeader <%> mempty)
+
 deepPathSpec :: Spec
 deepPathSpec = describe "Path components" $ do
   it "are separated by slashes, without a trailing slash" $ do
@@ -253,6 +274,38 @@ type API =
 
 api :: Proxy API
 api = Proxy
+
+type QueryAPI = Query '[JSON] ()
+
+queryAPI :: Proxy QueryAPI
+queryAPI = Proxy
+
+type OtherMethodsAPI =
+  Get '[JSON] ()
+    :<|> Post '[JSON] ()
+    :<|> Put '[JSON] ()
+    :<|> Delete '[JSON] ()
+    :<|> Patch '[JSON] ()
+    :<|> Verb 'HEAD 200 '[JSON] ()
+    :<|> Verb 'OPTIONS 200 '[JSON] ()
+    :<|> Verb 'TRACE 200 '[JSON] ()
+    :<|> Verb 'CONNECT 200 '[JSON] ()
+
+otherMethodsAPI :: Proxy OtherMethodsAPI
+otherMethodsAPI = Proxy
+
+otherMethodsServer :: IO (Server OtherMethodsAPI)
+otherMethodsServer =
+  pure
+    $ pure ()
+    :<|> pure ()
+    :<|> pure ()
+    :<|> pure ()
+    :<|> pure ()
+    :<|> pure ()
+    :<|> pure ()
+    :<|> pure ()
+    :<|> pure ()
 
 type ParamsAPI = QueryParam "one" () :> QueryParam "two" () :> Get '[JSON] ()
 

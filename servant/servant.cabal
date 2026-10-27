@@ -79,6 +79,7 @@ library
   import:          ghc-options
   exposed-modules:
     Servant.API
+    Servant.API.AcceptQuery
     Servant.API.Alternative
     Servant.API.BasicAuth
     Servant.API.Capture
@@ -159,7 +160,7 @@ library
     , case-insensitive  >=1.2.1.0  && <1.3
     , deepseq           >=1.4.6.1  && <1.6
     , http-media        >=0.8      && <0.9
-    , http-types        >=0.12.4   && <0.13
+    , http-types        >=0.13     && <0.14
     , mmorph            >=1.2.2    && <1.3
     , network-uri       >=2.6.4.2  && <2.7
     , QuickCheck        >=2.18     && <2.19
@@ -174,9 +175,11 @@ test-suite spec
   hs-source-dirs:     test
   main-is:            Spec.hs
   other-modules:
+    Servant.API.AcceptQuerySpec
     Servant.API.ContentTypesSpec
     Servant.API.ResponseHeadersSpec
     Servant.API.StreamSpec
+    Servant.API.VerbsSpec
     Servant.LinksSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.

@@ -92,6 +92,7 @@ import Servant.API
   , PlainText
   , Post
   , Put
+  , Query
   , QueryFlag
   , QueryParam
   , QueryParams
@@ -223,6 +224,7 @@ verbSpec = describe "Servant.API.Verb" $ do
       put203 = Proxy :: Proxy (VerbApi 'PUT 203)
       delete280 = Proxy :: Proxy (VerbApi 'DELETE 280)
       patch214 = Proxy :: Proxy (VerbApi 'PATCH 214)
+      query200 = Proxy :: Proxy (VerbApi 'QUERY 200)
       wrongMethod m = if m == methodPatch then methodPost else methodPatch
       test desc api method (status :: Int) = context desc $
         with (pure $ serve api server) $ do
@@ -300,6 +302,7 @@ verbSpec = describe "Servant.API.Verb" $ do
   test "PUT 203" put203 methodPut 203
   test "DELETE 280" delete280 methodDelete 280
   test "PATCH 214" patch214 methodPatch 214
+  test "QUERY 200" query200 "QUERY" 200
   test "GET 200 with HEAD" get200 methodHead 200
 
 -- }}}
@@ -740,6 +743,7 @@ type ReqBodyApi =
   ReqBody '[JSON] Person :> Post '[JSON] Person
     :<|> "blah" :> ReqBody '[JSON] Person :> Put '[JSON] Integer
     :<|> "meh" :> ReqBody' '[Optional, Strict] '[JSON] Person :> Put '[JSON] Integer
+    :<|> "query" :> ReqBody '[JSON] Person :> Query '[JSON] Person
 
 reqBodyApi :: Proxy ReqBodyApi
 reqBodyApi = Proxy
@@ -747,7 +751,7 @@ reqBodyApi = Proxy
 reqBodySpec :: Spec
 reqBodySpec = describe "Servant.API.ReqBody" $ do
   let server :: Server ReqBodyApi
-      server = pure :<|> pure . age :<|> pure . maybe 0 age
+      server = pure :<|> pure . age :<|> pure . maybe 0 age :<|> pure
       mkReq method x =
         THW.request
           method
@@ -768,6 +772,22 @@ reqBodySpec = describe "Servant.API.ReqBody" $ do
         [(hContentType, "application/nonsense")]
         ""
         `shouldRespondWith` 415
+
+    describe "QUERY request body" $ do
+      it "passes the argument to the handler" $ do
+        response <- mkReq "QUERY" "/query" (encode alice)
+        liftIO $ decode' (simpleBody response) `shouldBe` Just alice
+
+      it "rejects a request without Content-Type with status 415" $
+        THW.request "QUERY" "/query" [] (encode alice) `shouldRespondWith` 415
+
+      it "responds with 415 if the request body media type is unsupported" $
+        THW.request
+          "QUERY"
+          "/query"
+          [(hContentType, "application/nonsense")]
+          (encode alice)
+          `shouldRespondWith` 415
 
     describe "optional request body" $ do
       it "request without body succeeds" $ do
