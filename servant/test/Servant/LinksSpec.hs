@@ -30,6 +30,8 @@ type TestApi =
     :<|> "say" :> Fragment String :> Get '[JSON] NoContent
     -- UVerb
     :<|> "uverb-example" :> UVerb 'GET '[JSON] '[WithStatus 200 NoContent]
+    -- ServerSentEvents
+    :<|> "events" :> ServerSentEvents 'JsonEvent Int
     -- DeepQuery
     :<|> "books" :> DeepQuery "filter" BookQuery :> Get '[JSON] [Book]
     -- All of the verbs
@@ -154,6 +156,10 @@ spec = describe "Servant.Links" $ do
   it "generated correct links for UVerbs" $ do
     apiLink (Proxy :: Proxy ("uverb-example" :> UVerb 'GET '[JSON] '[WithStatus 200 NoContent]))
       `shouldBeLink` "uverb-example"
+
+  it "generates correct links for ServerSentEvents" $ do
+    apiLink (Proxy :: Proxy ("events" :> ServerSentEvents 'JsonEvent Int))
+      `shouldBeLink` "events"
 
   it "generates correct links for query flags" $ do
     let l1 =

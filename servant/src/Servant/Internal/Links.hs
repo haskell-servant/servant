@@ -129,6 +129,7 @@ import Servant.API.QueryString
 import Servant.API.Raw (Raw, RawM)
 import Servant.API.RemoteHost (RemoteHost)
 import Servant.API.ReqBody (ReqBody')
+import Servant.API.ServerSentEvents (ServerSentEvents')
 import Servant.API.Stream (Stream, StreamBody')
 import Servant.API.Sub (type (:>))
 import Servant.API.TypeErrors
@@ -570,6 +571,10 @@ instance HasLink RawM where
 
 instance HasLink (Stream m status fr ct a) where
   type MkLink (Stream m status fr ct a) r = r
+  toLink toA _ = toA
+
+instance HasLink (ServerSentEvents' m status kind a) where
+  type MkLink (ServerSentEvents' m status kind a) r = r
   toLink toA _ = toA
 
 -- UVerb instances
