@@ -201,6 +201,7 @@ authSpec =
             resp <- getWith opts (url port ++ "/multiverb-auth")
             resp ^. responseStatus `shouldBe` status200
             resp ^? responseBody . _JSON `shouldBe` Just (length $ name user)
+            resp ^? responseHeader "Blah" `shouldBe` Nothing
             (resp ^. responseCookieJar) `shouldMatchCookieNames` authCookieNames
 
       context "Raw" $ do
