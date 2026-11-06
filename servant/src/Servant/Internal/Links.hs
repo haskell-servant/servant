@@ -690,7 +690,7 @@ instance (HasLink sub, KnownSymbol sym, ToDeepQuery record) => HasLink (DeepQuer
       mkSingleParam :: ([Text.Text], Maybe Text.Text) -> Param
       mkSingleParam x =
         let (a, b) = generateDeepParam k x
-         in SingleParam (Text.unpack a) (Text.pack $ escape $ maybe "" Text.unpack b)
+         in SingleParam (Text.unpack a) (maybe "" id b)
 
       addParams :: Link -> Link
       addParams link =
