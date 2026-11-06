@@ -1,0 +1,13 @@
+synopsis: Support `MultiVerb` endpoints behind `Auth`
+packages: servant-auth-server
+prs: #1922
+description: {
+  `servant-auth-server` now adds its `Set-Cookie` headers to `MultiVerb`
+  endpoints behind `Auth`. Each response of such an endpoint gets an optional
+  `Set-Cookie` header. Before, an API with a `MultiVerb` endpoint under `Auth`
+  did not compile, because `AddSetCookieApi` and `AddSetCookies` had no
+  instances for `MultiVerb`.
+
+  The handler of such an endpoint is written as before; `Auth` pairs its
+  result with the cookie.
+}
