@@ -1,0 +1,7 @@
+synopsis: Fix double escaping for `DeepQuery`
+packages: servant
+prs: #1930
+issues: #1929
+description: {
+  Fix double escaping for values in `DeepQuery` parameters
+}
