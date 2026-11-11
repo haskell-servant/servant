@@ -19,7 +19,7 @@ import qualified Test.QuickCheck as QC
 import Prelude hiding (readFile)
 
 -- $setup
--- >>> :set -XNoOverloadedStrings
+-- >>> :seti -XNoOverloadedStrings
 -- >>> import Data.String (fromString)
 -- >>> import Control.Monad.Except (runExcept)
 -- >>> import Data.Foldable (toList)
