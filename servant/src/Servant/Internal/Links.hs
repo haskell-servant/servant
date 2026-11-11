@@ -96,6 +96,7 @@ where
 import Data.Constraint
 import Data.Kind (Type)
 import qualified Data.List as List
+import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy (..))
 import Data.Singletons.Bool (SBool (..), SBoolI (..))
 import qualified Data.Text as Text
@@ -690,7 +691,7 @@ instance (HasLink sub, KnownSymbol sym, ToDeepQuery record) => HasLink (DeepQuer
       mkSingleParam :: ([Text.Text], Maybe Text.Text) -> Param
       mkSingleParam x =
         let (a, b) = generateDeepParam k x
-         in SingleParam (Text.unpack a) (maybe "" id b)
+         in SingleParam (Text.unpack a) (fromMaybe "" b)
 
       addParams :: Link -> Link
       addParams link =
