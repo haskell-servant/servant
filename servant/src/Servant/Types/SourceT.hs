@@ -7,6 +7,7 @@ import Control.Monad.Morph (MFunctor (..))
 import Control.Monad.Trans.Class (MonadTrans (..))
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.ByteString as BS
+import Data.ByteString.Lazy.Internal (defaultChunkSize)
 import Data.Functor.Classes
   ( Show1 (..)
   , showsBinaryWith
@@ -358,6 +359,11 @@ fromActionStep stop action = loop
 
 -- | Read file.
 --
+-- The file is read in chunks of at most 'defaultChunkSize' bytes (about
+-- 32k), the chunk size used by lazy @ByteString@ I/O. Each read returns as
+-- soon as some data is available ('BS.hGetSome'), so reading from a pipe or
+-- FIFO does not wait for a full chunk.
+--
 -- >>> foreach fail BS.putStr (readFile "servant.cabal")
 -- cabal-version:      3.0
 -- name:               servant
@@ -369,7 +375,7 @@ readFile fp =
       k (readHandle hdl)
   where
     readHandle :: Handle -> StepT IO BS.ByteString
-    readHandle hdl = fromActionStep BS.null (BS.hGet hdl 4096)
+    readHandle hdl = fromActionStep BS.null (BS.hGetSome hdl defaultChunkSize)
 
 -------------------------------------------------------------------------------
 -- Attoparsec

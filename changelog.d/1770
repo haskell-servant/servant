@@ -1,0 +1,8 @@
+synopsis: Read files in larger chunks in `SourceT`'s `readFile`
+packages: servant
+prs: #0000
+issues: #1770
+
+description: {
+`Servant.Types.SourceT.readFile` now reads chunks of up to `defaultChunkSize` bytes (about 32k, the chunk size of lazy `ByteString` I/O) with `hGetSome`, instead of 4096 bytes with `hGet`. Streaming large files is substantially faster, because there are far fewer chunks per file.
+}
