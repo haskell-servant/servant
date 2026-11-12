@@ -28,6 +28,7 @@ import Data.ByteString.Builder (byteString)
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.ByteString.Lazy as LazyByteString
 import Data.Char (chr, isPrint)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe (fromMaybe)
 import Data.Monoid ()
 import Data.Proxy
@@ -66,6 +67,7 @@ import Servant.API
   , NoContent (NoContent)
   , PlainText
   , Post
+  , Query
   , QueryFlag
   , QueryParam
   , QueryParams
@@ -82,6 +84,7 @@ import Servant.API
   , (:<|>) ((:<|>))
   , (:>)
   )
+import Servant.API.AcceptQuery (AcceptQuery, AcceptQueryHeader, mkAcceptQuery, mkAcceptQueryMediaRange)
 import Servant.API.Generic ((:-))
 import Servant.API.MultiVerb
 import Servant.API.QueryString (FromDeepQuery (..), ToDeepQuery (..))
@@ -137,6 +140,14 @@ carol = Person "Carol" 17
 type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
 type TestSetCookieHeaders = '[Header "Set-Cookie" String, Header "Set-Cookie" String]
+
+testAcceptQuery :: AcceptQuery
+testAcceptQuery =
+  mkAcceptQuery (range :| [])
+  where
+    range =
+      either (error . show) id $
+        mkAcceptQueryMediaRange "application" "json" mempty
 
 data RecordRoutes mode = RecordRoutes
   { version :: mode :- "version" :> Get '[JSON] Int
@@ -214,6 +225,7 @@ type Api =
     :<|> "capture" :> Capture "name" String :> Get '[JSON, FormUrlEncoded] Person
     :<|> "captureAll" :> CaptureAll "names" String :> Get '[JSON] [Person]
     :<|> "body" :> ReqBody '[FormUrlEncoded, JSON] Person :> Post '[JSON] Person
+    :<|> "query" :> ReqBody '[JSON] Person :> Query '[JSON] Person
     :<|> "param" :> QueryParam "name" String :> Get '[FormUrlEncoded, JSON] Person
     -- This endpoint makes use of a 'Raw' server because it is not currently
     -- possible to handle arbitrary binary query param values with
@@ -234,6 +246,7 @@ type Api =
       :> ReqBody '[JSON] [(String, [Rational])]
       :> Get '[JSON] (String, Maybe Int, Bool, [(String, [Rational])])
     :<|> "headers" :> Get '[JSON] (Headers TestHeaders Bool)
+    :<|> "accept-query-header" :> Get '[JSON] (Headers '[AcceptQueryHeader] Bool)
     :<|> "uverb-headers" :> UVerb 'GET '[JSON] '[WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String]
     :<|> "set-cookie-headers" :> Get '[JSON] (Headers TestSetCookieHeaders Bool)
     :<|> "deleteContentType" :> DeleteNoContent
@@ -264,6 +277,7 @@ getDeleteEmpty :: ClientM NoContent
 getCapture :: String -> ClientM Person
 getCaptureAll :: [String] -> ClientM [Person]
 getBody :: Person -> ClientM Person
+queryBody :: Person -> ClientM Person
 getQueryParam :: Maybe String -> ClientM Person
 getQueryParamBinary :: Maybe UrlEncodedByteString -> HTTP.Method -> ClientM Response
 getQueryParams :: [String] -> ClientM [Person]
@@ -281,6 +295,7 @@ getMultiple
   -> [(String, [Rational])]
   -> ClientM (String, Maybe Int, Bool, [(String, [Rational])])
 getRespHeaders :: ClientM (Headers TestHeaders Bool)
+getAcceptQueryHeader :: ClientM (Headers '[AcceptQueryHeader] Bool)
 getUVerbRespHeaders :: ClientM (Union '[WithStatus 200 (Headers TestHeaders Bool), WithStatus 204 String])
 getSetCookieHeaders :: ClientM (Headers TestSetCookieHeaders Bool)
 getDeleteContentType :: ClientM NoContent
@@ -306,6 +321,7 @@ getRoot
   :<|> getCapture
   :<|> getCaptureAll
   :<|> getBody
+  :<|> queryBody
   :<|> getQueryParam
   :<|> getQueryParamBinary
   :<|> getQueryParams
@@ -318,6 +334,7 @@ getRoot
   :<|> getRawFailure
   :<|> getMultiple
   :<|> getRespHeaders
+  :<|> getAcceptQueryHeader
   :<|> getUVerbRespHeaders
   :<|> getSetCookieHeaders
   :<|> getDeleteContentType
@@ -341,6 +358,7 @@ server =
         :<|> pure NoContent
         :<|> (\name -> pure $ Person name 0)
         :<|> (\names -> pure (zipWith Person names [0 ..]))
+        :<|> pure
         :<|> pure
         :<|> ( \case
                  Just "alice" -> pure alice
@@ -379,6 +397,7 @@ server =
         :<|> Tagged (\_request respond -> respond $ Wai.responseLBS HTTP.badRequest400 [] "rawFailure")
         :<|> (\a b c d -> pure (a, b, c, d))
         :<|> pure (addHeader 1729 $ addHeader "eg2" True)
+        :<|> pure (addHeader testAcceptQuery True)
         :<|> (pure . Z . I . WithStatus $ addHeader 1729 $ addHeader "eg2" True)
         :<|> pure (addHeader "cookie1" $ addHeader "cookie2" True)
         :<|> pure NoContent
