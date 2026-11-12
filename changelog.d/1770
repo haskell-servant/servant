@@ -1,6 +1,6 @@
 synopsis: Read files in larger chunks in `SourceT`'s `readFile`
 packages: servant
-prs: #0000
+prs: #1932
 issues: #1770
 
 description: {
