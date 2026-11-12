@@ -1,0 +1,7 @@
+synopsis: Add a `HasOpenApi` instance for `ServerSentEvents'`
+packages: servant-openapi3
+prs: #1931
+description: {
+  `toOpenApi` now works on APIs that contain `ServerSentEvents` endpoints. Each
+  one is described as a `text/event-stream` response with no schema.
+}
