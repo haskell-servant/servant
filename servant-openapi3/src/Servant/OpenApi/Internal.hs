@@ -37,7 +37,7 @@ import GHC.TypeLits
 import Network.HTTP.Media (MediaType)
 import Prelude.Compat
 import Servant.API
-import Servant.API.ContentTypes (AllMime, allMime)
+import Servant.API.ContentTypes (AllMime, EventStream, allMime)
 import Servant.API.Description (FoldDescription, reflectDescription)
 import Servant.API.Modifiers (FoldRequired)
 import Servant.API.MultiVerb
@@ -310,6 +310,12 @@ instance
 
 instance OpenApiMethod method => HasOpenApi (NoContentVerb method) where
   toOpenApi = mkEndpointNoContentVerb "/"
+
+-- | A @text/event-stream@ response with the endpoint's method and status.
+-- OpenAPI 3.0 has no way to describe the individual events, so the response
+-- carries no schema.
+instance (KnownNat status, OpenApiMethod method) => HasOpenApi (ServerSentEvents' method status kind a) where
+  toOpenApi _ = mkEndpointNoContent "/" (Proxy :: Proxy (Verb method status '[EventStream] (Headers '[] NoContent)))
 
 instance (HasOpenApi a, HasOpenApi b) => HasOpenApi (a :<|> b) where
   toOpenApi _ = toOpenApi (Proxy :: Proxy a) <> toOpenApi (Proxy :: Proxy b)
