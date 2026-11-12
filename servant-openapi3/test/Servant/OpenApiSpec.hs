@@ -63,6 +63,7 @@ spec = describe "HasOpenApi" $ do
     let _x = toOpenApi comprehensiveAPI
     True `shouldBe` True -- type-level test
   it "UVerb API" $ checkOpenApi uverbOpenApi uverbAPI
+  it "ServerSentEvents API" $ checkAPI (Proxy :: Proxy SseAPI) sseAPI
 
 main :: IO ()
 main = hspec spec
@@ -546,6 +547,53 @@ uverbAPI =
                   "$ref": "#/components/schemas/FisxUser"
                 }
               }
+            },
+            "description": ""
+          }
+        }
+      }
+    }
+  }
+}
+|]
+
+-- =======================================================================
+-- ServerSentEvents API
+-- =======================================================================
+
+type SseAPI =
+  "events" :> ServerSentEvents 'JsonEvent Int
+    :<|> "raw" :> ServerSentEvents' 'POST 201 'RawEvent Text
+
+sseAPI :: Value
+sseAPI =
+  [aesonQQ|
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "",
+    "title": ""
+  },
+  "components": {},
+  "paths": {
+    "/events": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {}
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/raw": {
+      "post": {
+        "responses": {
+          "201": {
+            "content": {
+              "text/event-stream": {}
             },
             "description": ""
           }
