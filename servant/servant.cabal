@@ -178,6 +178,7 @@ test-suite spec
     Servant.API.ResponseHeadersSpec
     Servant.API.StreamSpec
     Servant.LinksSpec
+    Servant.Types.SourceTSpec
 
   -- Dependencies inherited from the library. No need to specify bounds.
   build-depends:
@@ -192,6 +193,7 @@ test-suite spec
 
   -- Additional dependencies
   build-depends:
+    , directory             >=1.3.0.0  && <1.4
     , hspec                 >=2.11     && <2.12
     , QuickCheck            >=2.18     && <2.19
     , quickcheck-instances  >=0.4      && <0.5
