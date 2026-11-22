@@ -138,6 +138,21 @@ type TestHeaders = '[Header "X-Example1" Int, Header "X-Example2" String]
 
 type TestSetCookieHeaders = '[Header "Set-Cookie" String, Header "Set-Cookie" String]
 
+-- | AsHeaders instance for extracting two headers (Required by the MultiVerbSetCookie test)
+-- Returns: (body, (cookie1, cookie2))
+instance AsHeaders '[a, b] c (c, (a, b)) where
+  toHeaders (body, (h1, h2)) = (I h1 :* I h2 :* Nil, body)
+  fromHeaders (I h1 :* I h2 :* Nil, body) = (body, (h1, h2))
+
+-- | MultiVerb endpoint definition for SetCookie test
+type MultiVerbSetCookie =
+  "multiverb-set-cookie"
+    :> MultiVerb
+         'GET
+         '[JSON]
+         '[WithHeaders TestSetCookieHeaders (Bool, (String, String)) (Respond 200 "OK" Bool)]
+         (Bool, (String, String))
+
 data RecordRoutes mode = RecordRoutes
   { version :: mode :- "version" :> Get '[JSON] Int
   , echo :: mode :- "echo" :> Capture "string" String :> Get '[JSON] String
@@ -252,6 +267,7 @@ type Api =
     :<|> "multiple-choices-int" :> MultipleChoicesInt
     :<|> "captureVerbatim" :> Capture "someString" Verbatim :> Get '[PlainText] Text
     :<|> "host-test" :> Host "servant.example" :> Get '[JSON] Bool
+    :<|> MultiVerbSetCookie
     :<|> PaginatedAPI
 
 api :: Proxy Api
@@ -298,6 +314,7 @@ recordRoutes :: RecordRoutes (AsClientT ClientM)
 multiChoicesInt :: Int -> ClientM MultipleChoicesIntResult
 captureVerbatim :: Verbatim -> ClientM Text
 getHost :: ClientM Bool
+getMultiVerbSetCookie :: ClientM (Bool, (String, String))
 getPaginatedPerson :: Maybe (Range 1 100) -> ClientM [Person]
 getRoot
   :<|> getGet
@@ -329,6 +346,7 @@ getRoot
   :<|> multiChoicesInt
   :<|> captureVerbatim
   :<|> getHost
+  :<|> getMultiVerbSetCookie
   :<|> getPaginatedPerson = client api
 
 server :: Application
@@ -409,6 +427,7 @@ server =
              )
         :<|> pure . decodeUtf8 . unVerbatim
         :<|> pure True
+        :<|> pure (True, ("cookie1", "cookie2"))
         :<|> usersServer
     )
 
