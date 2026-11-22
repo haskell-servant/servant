@@ -46,6 +46,7 @@ import Crypto.JWT
 import Data.Aeson (FromJSON, ToJSON, Value, encode, toJSON)
 import Data.Aeson.Lens (_JSON)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy as BSL
 import Data.CaseInsensitive (mk)
 import Data.Foldable (find)
@@ -142,6 +143,15 @@ authSpec =
           resp <- getWith opts (url port ++ "/header")
           resp ^. responseHeader "Blah" `shouldBe` "1797"
           resp ^. responseHeader "Set-Cookie" `shouldSatisfy` (/= "")
+
+      it "sets cookies on a server-sent events endpoint" $ \port -> property $
+        \(user :: User) -> do
+          jwt <- makeJWT user jwtCfg Nothing
+          opts <- addJwtToHeader jwt
+          resp <- getWith opts (url port ++ "/sse")
+          resp ^. responseBody `shouldBe` BSL.fromStrict (BS.concat ["data: ", BSC.pack (show (length (name user))), "\n\n"])
+          resp ^. responseHeader "Content-Type" `shouldBe` "text/event-stream"
+          (resp ^. responseCookieJar) `shouldMatchCookieNames` authCookieNames
 
       context "MultiVerb" $ do
         it "sets cookies on an endpoint with several responses, whichever it gives" $ \port -> property $
@@ -629,6 +639,7 @@ type API auths
        :<|> "stream" :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
 #endif
        :<|> "raw" :> Raw
+       :<|> "sse" :> ServerSentEvents 'JsonEvent Int
        :<|> "multiverb" :> MultiVerb 'GET '[JSON] MaybeLength (Maybe Int)
        :<|> "multiverb" :> "empty" :> MultiVerb 'GET '[JSON] MaybeLength (Maybe Int)
        :<|> "multiverb1" :> MultiVerb1 'GET '[JSON] (Respond 200 "The length of the name" Int)
@@ -755,6 +766,7 @@ server ccfg =
           :<|> pure (S.source ["bytestring"])
 #endif
           :<|> raw
+          :<|> ((\n -> S.source [serverEvent n]) <$> getInt usr)
           :<|> (Just <$> getInt usr)
           :<|> pure Nothing
           :<|> getInt usr

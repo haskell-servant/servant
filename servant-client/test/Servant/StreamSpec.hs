@@ -23,17 +23,24 @@ import Data.Proxy
 import qualified Network.HTTP.Client as C
 import Prelude.Compat
 import Servant.API
-  ( JSON
+  ( EventFields (..)
+  , EventKind (JsonEvent)
+  , JSON
   , NetstringFraming
   , NewlineFraming
   , NoFraming
   , OctetStream
+  , ServerEvent (..)
+  , ServerSentEvents
   , SourceIO
   , StreamBody
   , StreamGet
+  , noEventFields
+  , serverEvent
   , (:<|>) ((:<|>))
   , (:>)
   )
+import Servant.Client.Core.ServerSentEvents (Event (..), JsonEventStreamT (..))
 import Servant.Server
 import Servant.Test.ComprehensiveAPI
 import Servant.Types.SourceT
@@ -59,6 +66,7 @@ type StreamApi =
     :<|> "streamGetNetstring" :> StreamGet NetstringFraming JSON (SourceIO Person)
     :<|> "streamALot" :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
     :<|> "streamBody" :> StreamBody NoFraming OctetStream (SourceIO BS.ByteString) :> StreamGet NoFraming OctetStream (SourceIO BS.ByteString)
+    :<|> "sse" :> ServerSentEvents 'JsonEvent Person
 
 api :: Proxy StreamApi
 api = Proxy
@@ -66,7 +74,8 @@ api = Proxy
 getGetNL, getGetNS :: ClientM (SourceIO Person)
 getGetALot :: ClientM (SourceIO BS.ByteString)
 getStreamBody :: SourceT IO BS.ByteString -> ClientM (SourceIO BS.ByteString)
-getGetNL :<|> getGetNS :<|> getGetALot :<|> getStreamBody = client api
+getSse :: ClientM (JsonEventStreamT IO Person)
+getGetNL :<|> getGetNS :<|> getGetALot :<|> getStreamBody :<|> getSse = client api
 
 alice :: Person
 alice = Person "Alice" 42
@@ -82,6 +91,13 @@ server =
       -- 2 ^ (18 + 10) = 256M
       :<|> pure (SourceT ($ lots (powerOfTwo 18)))
       :<|> pure
+      :<|> pure
+        ( source
+            [ ServerComment "keepalive"
+            , serverEvent alice
+            , ServerEvent noEventFields{eventFieldName = Just "update", eventFieldId = Just "2"} bob
+            ]
+        )
   where
     lots n
       | n < 0 = Stop
@@ -115,6 +131,11 @@ streamSpec = beforeAll (CT.startWaiApp server) $ afterAll CT.endWaiApp $ do
   it "works with Servant.API.StreamGet.Netstring" $ \(_, baseUrl) -> do
     withClient getGetNS baseUrl $ \(Right res) ->
       testRunSourceIO res `shouldReturn` Right [alice, bob, alice]
+
+  it "receives the events of a ServerSentEvents server" $ \(_, baseUrl) -> do
+    withClient getSse baseUrl $ \(Right res) ->
+      testRunSourceIO (unJsonEventStreamT res)
+        `shouldReturn` Right [Event Nothing alice, Event (Just "update") bob]
 
   it "works with Servant.API.StreamBody" $ \(_, baseUrl) -> do
     withClient (getStreamBody (source input)) baseUrl $ \(Right res) ->
