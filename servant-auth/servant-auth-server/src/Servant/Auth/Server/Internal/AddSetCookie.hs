@@ -69,6 +69,12 @@ type instance AddSetCookieApi Raw = Raw
 type instance AddSetCookieApi (Stream method stat framing ctyps a)
   = Stream method stat framing ctyps (AddSetCookieApiVerb a)
 #endif
+-- | A server-sent events endpoint sets cookies on its response headers, as a
+-- 'Stream' endpoint does.
+type instance
+  AddSetCookieApi (ServerSentEvents' method stat kind a) =
+    ServerSentEvents' method stat kind (AddSetCookieApiVerb a)
+
 type instance AddSetCookieApi (Headers hs a) = AddSetCookieApiVerb (Headers hs a)
 
 -- | Every response of a 'MultiVerb' endpoint gets an optional @Set-Cookie@

@@ -82,6 +82,7 @@ import Servant.API
   , IsSecure (..)
   , NamedRoutes
   , NoContentVerb
+  , NoFraming
   , OperationId
   , QueryFlag
   , QueryParam'
@@ -111,6 +112,8 @@ import Servant.API.ContentTypes
   , AllCTRender (..)
   , AllCTUnrender (..)
   , AllMime
+  , EventStream
+  , EventStreamChunk (..)
   , MimeRender (..)
   , MimeUnrender (..)
   , NoContent
@@ -137,6 +140,13 @@ import Servant.API.ResponseHeaders
   , Headers
   , getHeaders
   , getResponse
+  )
+import Servant.API.ServerSentEvents
+  ( EventKind
+  , RenderEventData (..)
+  , ServerEvent
+  , ServerSentEvents'
+  , renderServerEvent
   )
 import Servant.API.Status (statusFromNat)
 import Servant.API.TypeErrors
@@ -493,6 +503,78 @@ instance
     where
       method = reflectMethod (Proxy :: Proxy method)
       status = statusFromNat (Proxy :: Proxy status)
+
+-- | Serve server-sent events. The handler returns a 'SourceIO' of
+-- 'ServerEvent's, which is sent as a @text/event-stream@ response, one chunk
+-- per item, each flushed as soon as it is written.
+--
+-- * @'ServerSentEvents'' method status ''JsonEvent' a@: the handler returns
+--   @'SourceIO' ('ServerEvent' a)@, and the data of each event is the JSON
+--   encoding of its @a@.
+-- * @'ServerSentEvents'' method status ''RawEvent' a@: the handler returns
+--   @'SourceIO' ('ServerEvent' 'BSL.ByteString')@, and the data of each event is
+--   sent as it is.
+--
+-- With @'Headers' h a@ in place of @a@, the handler returns
+-- @'Headers' h ('SourceIO' …)@, and the headers are added to the response, as
+-- for 'Stream'.
+instance
+  ( KnownNat status
+  , ReflectMethod method
+  , ServerSentEventsResponse kind a
+  )
+  => HasServer (ServerSentEvents' method status kind a) context
+  where
+  type ServerT (ServerSentEvents' method status kind a) m = m (ServerSentEventsResult kind a)
+  hoistServerWithContext _ _ nt = nt
+
+  route Proxy _ =
+    streamRouter
+      (fmap (fmap EventStreamChunk) . serverSentEventsResponse (Proxy :: Proxy kind) (Proxy :: Proxy a))
+      method
+      status
+      (Proxy :: Proxy NoFraming)
+      (Proxy :: Proxy EventStream)
+    where
+      method = reflectMethod (Proxy :: Proxy method)
+      status = statusFromNat (Proxy :: Proxy status)
+
+-- | What the handler of a @'ServerSentEvents'' method status kind a@ endpoint
+-- returns, in the handler's monad.
+type family ServerSentEventsResult (kind :: EventKind) a where
+  ServerSentEventsResult kind (Headers h a) = Headers h (ServerSentEventsResult kind a)
+  ServerSentEventsResult kind a = SourceIO (ServerEvent (ServerEventData kind a))
+
+-- | Turns the result of a server-sent events handler into response headers
+-- and the rendered stream.
+class ServerSentEventsResponse (kind :: EventKind) a where
+  serverSentEventsResponse
+    :: Proxy kind
+    -> Proxy a
+    -> ServerSentEventsResult kind a
+    -> ([(HeaderName, B.ByteString)], SourceIO BSL.ByteString)
+
+instance
+  {-# OVERLAPPABLE #-}
+  ( RenderEventData kind a
+  , ServerSentEventsResult kind a ~ SourceIO (ServerEvent (ServerEventData kind a))
+  )
+  => ServerSentEventsResponse kind a
+  where
+  serverSentEventsResponse pk pa source =
+    ([], fmap (renderServerEvent (renderEventData pk pa)) source)
+
+instance
+  {-# OVERLAPPING #-}
+  ( GetHeaders (Headers h (ServerSentEventsResult kind a))
+  , ServerSentEventsResponse kind a
+  )
+  => ServerSentEventsResponse kind (Headers h a)
+  where
+  serverSentEventsResponse pk _ result =
+    ( getHeaders result
+    , snd (serverSentEventsResponse pk (Proxy :: Proxy a) (getResponse result))
+    )
 
 streamRouter
   :: forall ctype a c chunk env framing

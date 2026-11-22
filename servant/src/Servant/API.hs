@@ -148,9 +148,13 @@ import Servant.API.ResponseHeaders
   , noHeader'
   )
 import Servant.API.ServerSentEvents
-  ( EventKind (..)
+  ( EventFields (..)
+  , EventKind (..)
+  , ServerEvent (..)
   , ServerSentEvents
   , ServerSentEvents'
+  , noEventFields
+  , serverEvent
   )
 import Servant.API.Stream
   ( FramingRender (..)
