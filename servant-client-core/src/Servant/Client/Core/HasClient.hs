@@ -964,24 +964,29 @@ instance RunClient m => HasClient m RawM where
 -- > addBook = client myApi
 -- > -- then you can just use "addBook" to query that endpoint
 instance
-  (HasClient m api, MimeRender ct a)
+  (HasClient m api, MimeRender ct a, SBoolI (FoldRequired mods))
   => HasClient m (ReqBody' mods (ct ': cts) a :> api)
   where
   type
     Client m (ReqBody' mods (ct ': cts) a :> api) =
-      a -> Client m api
+      RequiredArgument mods a -> Client m api
 
   clientWithRoute pm Proxy req body =
-    clientWithRoute
-      pm
-      (Proxy :: Proxy api)
-      ( let ctProxy = Proxy :: Proxy ct
+    clientWithRoute pm (Proxy :: Proxy api) $
+      foldRequiredArgument
+        (Proxy :: Proxy mods)
+        add
+        (maybe req add)
+        body
+    where
+      add :: a -> Request
+      add value =
+        let ctProxy = Proxy :: Proxy ct
          in setRequestBodyLBS
-              (mimeRender ctProxy body)
-              -- We use first contentType from the Accept list
-              (contentType ctProxy)
-              req
-      )
+           (mimeRender ctProxy value)
+           -- We use first contentType from the Accept list
+           (contentType ctProxy)
+           req
 
   hoistClientMonad pm _ f cl = hoistClientMonad pm (Proxy :: Proxy api) f . cl
 
