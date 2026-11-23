@@ -203,6 +203,117 @@ Server: Warp/3.4.1
 Transfer-Encoding: chunked
 ```
 
+## Adding headers to responses
+
+Individual responses of a `MultiVerb` endpoint can carry response headers.
+This is done by wrapping a response in `WithHeaders`, which takes three arguments:
+
+* the list of headers;
+* the Haskell type that the handler returns for this response, which bundles
+  the body and the header values together;
+* the response being wrapped.
+
+The correspondence between the header values, the response body and the returned
+type is given by the `AsHeaders` typeclass. Servant provides instances for:
+
+* a single header and an empty body: the returned type is the header value;
+* a single header and a non-empty body: the returned type is a pair `(body, header)`;
+* two headers and an empty body: the returned type is a pair `(header1, header2)`.
+
+For other combinations, you can write your own `AsHeaders` instance.
+
+Each element of the header list can be the usual `Header "name" type`
+combinator, or one of the two MultiVerb-specific variants described below.
+
+### Describing a header with `DescHeader`
+
+`DescHeader "name" "description" type` behaves exactly like `Header "name" type`
+when sending and receiving the response, but also attaches a description
+to the header. Use it when you want to explain what a header contains to
+the readers of your API type.
+
+Let us write an endpoint that returns a page of items, along with the total
+number of items in an `X-Total-Count` header. It returns status code 404 if the
+page does not exist:
+
+```haskell
+type PageResponses =
+  '[ RespondEmpty 404 "No such page"
+   , WithHeaders
+       '[DescHeader "X-Total-Count" "The total number of items" Int]
+       ([Int], Int)
+       (Respond 200 "A page of items" [Int])
+   ]
+
+type GetPage =
+  "items"
+    :> Capture "page" Int
+    :> MultiVerb 'GET '[JSON] PageResponses (Maybe ([Int], Int))
+```
+
+The handler returns `Nothing` for the empty 404 response, and a pair of the
+response body and the header value otherwise:
+
+```haskell
+allItems :: [Int]
+allItems = [1 .. 95]
+
+getPageHandler :: Int -> Handler (Maybe ([Int], Int))
+getPageHandler page
+  | page < 0 || null items = pure Nothing
+  | otherwise = pure (Just (items, length allItems))
+  where
+    items = take 10 (drop (page * 10) allItems)
+```
+
+### Optional headers with `OptHeader`
+
+Sometimes a header should only be sent in some cases. Wrapping a header in
+`OptHeader` makes it optional: its value has type `Maybe a` instead of `a`.
+When the value is `Nothing`, the header is not sent at all;
+when it is `Just x`, it is sent as it would have been without `OptHeader`.
+
+`OptHeader` can wrap both `Header` and `DescHeader`:
+
+```haskell
+type CachedResponses =
+  '[ WithHeaders
+       '[OptHeader (DescHeader "Cache-Control" "Caching directives, if any" String)]
+       (Int, Maybe String)
+       (Respond 200 "A number" Int)
+   ]
+
+type GetNumber =
+  "number"
+    :> Capture "n" Int
+    :> MultiVerb 'GET '[JSON] CachedResponses (Int, Maybe String)
+
+getNumberHandler :: Int -> Handler (Int, Maybe String)
+getNumberHandler n
+  | even n = pure (n, Just "max-age=3600")
+  | otherwise = pure (n, Nothing)
+```
+
+Here, even numbers are sent with a `Cache-Control` header, and odd numbers
+without any.
+
+For example, `servant-auth-server` uses `OptHeader (Header "Set-Cookie" SetCookie)`
+to add cookies only to the responses that need them.
+
+### Things to keep in mind
+
+* `OptHeader` only makes a header optional when *sending* a response.
+  When a response is decoded by `servant-client`, every header listed in
+  `WithHeaders` is looked up, and decoding fails if it is missing, even if it is
+  wrapped in `OptHeader`. If your clients must handle responses where the header
+  may be absent, prefer separate responses (for instance, one with the header and
+  one without) over `OptHeader`.
+* When the same header name appears several times in a response, only the first
+  occurrence is used when decoding it.
+* At the moment, `servant-openapi3` only supports the plain `Header` combinator in
+  `WithHeaders`, so the description given to `DescHeader` does not show up in
+  generated OpenAPI documentation yet.
+
 You have now learned how to use the MultiVerb feature of Servant.
 
 ## Annex 1: Implementing AsUnion manually
