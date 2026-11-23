@@ -242,7 +242,7 @@ instance
   where
   type
     ServerT (Capture' mods capture a :> api) m =
-      If (FoldLenient mods) (Either String a) a -> ServerT api m
+      If (FoldLenient mods) (Either T.Text a) a -> ServerT api m
 
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
 
@@ -257,7 +257,7 @@ instance
                  ) of
               (SFalse, Left e) -> delayedFail $ formatError rep request $ T.unpack e
               (SFalse, Right v) -> pure v
-              (STrue, piece) -> pure $ either (Left . T.unpack) Right piece
+              (STrue, piece) -> pure piece
         )
     where
       rep = typeRep (Proxy :: Proxy Capture')

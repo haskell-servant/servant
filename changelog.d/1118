@@ -1,0 +1,14 @@
+synopsis: Lenient `Capture'` now passes `Either Text` to the handler, like the other lenient combinators
+packages: servant-server
+issues: #1118
+
+description: {
+The `Lenient` modifier is documented to wrap the argument in `Either Text`, and
+`ReqBody'`, `QueryParam'` and `Header'` already do so. `Capture'` was the
+exception: a handler for `Capture' '[Lenient] "name" a` received
+`Either String a`. It now receives `Either Text a`.
+
+This is a breaking change for handlers of lenient captures. To migrate, change
+the argument type from `Either String a` to `Either Text a`, and use
+`Data.Text.unpack` on the error if you need a `String`.
+}
