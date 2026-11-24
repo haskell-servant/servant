@@ -1,0 +1,6 @@
+synopsis: Document `DescHeader` and `OptHeader` in the MultiVerb cookbook
+issues: #1853
+
+description: {
+The MultiVerb cookbook now has a section on response headers. It explains `WithHeaders` and the provided `AsHeaders` instances, shows how to use `DescHeader` and `OptHeader` with examples, and lists caveats: `OptHeader` headers are still required when `servant-client` decodes a response, and `servant-openapi3` does not render `DescHeader` descriptions yet.
+}
