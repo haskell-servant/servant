@@ -326,7 +326,7 @@ captureServer = getLegs :<|> getEars :<|> getEyes
       2 -> pure tweety
       _ -> throwError err404
 
-    getEars :: Either String Integer -> Handler Animal
+    getEars :: Either T.Text Integer -> Handler Animal
     getEars (Left _) = pure chimera -- ignore integer parse error, return weird animal
     getEars (Right 2) = pure jerry
     getEars (Right _) = throwError err404
