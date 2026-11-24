@@ -1,0 +1,13 @@
+synopsis: Add a `HasServer` instance for `ServerSentEvents'`
+packages: servant servant-server servant-auth-server
+prs: #1934
+issues: #1924
+description: {
+  `ServerSentEvents'` endpoints can now be served. A handler returns a
+  `SourceIO` of `ServerEvent`s: events, with optional `event`, `id` and
+  `retry` fields, and comments for keepalives. The data of a `JsonEvent`
+  endpoint is JSON-encoded; that of a `RawEvent` endpoint is a lazy
+  `ByteString` sent as it is. With `Headers h a` in place of `a`, the handler
+  also returns response headers, and servant-auth-server sets cookies on
+  these endpoints as it does on `Stream` endpoints.
+}

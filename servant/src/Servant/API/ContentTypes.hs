@@ -416,6 +416,10 @@ newtype EventStreamChunk = EventStreamChunk
 instance MimeUnrender EventStream EventStreamChunk where
   mimeUnrender _ = Right . EventStreamChunk
 
+-- | @unEventStreamChunk@: the chunk is sent as it is.
+instance MimeRender EventStream EventStreamChunk where
+  mimeRender _ = unEventStreamChunk
+
 -- $setup
 -- >>> :set -XFlexibleInstances
 -- >>> :set -XMultiParamTypeClasses
