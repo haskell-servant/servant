@@ -1,0 +1,6 @@
+synopsis: Show how to derive JWT clients in the JWT and basic auth cookbook
+issues: #1873
+
+description: {
+The "Combining JWT-based authentication with basic access authentication" cookbook now shows how to derive client functions with `servant-auth-client`. It explains that the `Token` argument of an `Auth`-protected sub-API comes before the whole sub-API and is not copied into each endpoint, and shows how to get the client for each endpoint.
+}
