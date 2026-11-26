@@ -32,6 +32,7 @@ import Servant as S
 import Servant.Client
 import Servant.Auth as SA
 import Servant.Auth.Server as SAS
+import qualified Servant.Auth.Client as SAC
 import Control.Monad.IO.Class (liftIO)
 import Data.Map as M
 import Data.ByteString (ByteString)
@@ -152,6 +153,50 @@ testClient = do
   let (foo :<|> _) = client (Proxy :: Proxy TestAPIClient)
                      (BasicAuthData "name" "pass")
   res <- runClientM (foo 42)
+    (mkClientEnv mgr (BaseUrl Http "localhost" port ""))
+  hPutStrLn stderr $ case res of
+    Left err -> "Error: " ++ show err
+    Right r -> "Success: " ++ show r
+```
+
+### JWT client
+
+To call the API with a JWT instead, import
+[servant-auth-client](https://hackage.haskell.org/package/servant-auth-client)
+(here as `SAC`). Then `client` works on `TestAPIServer` itself. The
+`Auth` combinator becomes a single `SAC.Token` argument, and the token
+is sent as an `Authorization: Bearer <token>` header.
+
+Like `Capture` or `BasicAuth`, `Auth` puts its argument *in front of*
+the whole sub-API. The argument is not copied into each endpoint. So
+the client for `Auth auths a :> (A :<|> B)` has the type
+`Token -> (Client A :<|> Client B)`, not
+`(Token -> Client A) :<|> (Token -> Client B)`:
+
+```haskell
+jwtClient :: SAC.Token -> (Int -> ClientM ()) :<|> ClientM ()
+jwtClient = client (Proxy :: Proxy TestAPIServer)
+```
+
+This means you cannot pattern match on the endpoints right away, as in
+`(foo :<|> bar) = client api`. Apply the token first, then pattern
+match on the result:
+
+```haskell
+jwtFoo :: SAC.Token -> Int -> ClientM ()
+jwtFoo token = let (foo :<|> _) = jwtClient token in foo
+
+jwtBar :: SAC.Token -> ClientM ()
+jwtBar token = let (_ :<|> bar) = jwtClient token in bar
+```
+
+For example, with a token taken from the `JWT-Cookie` cookie (see the "Usage" section below):
+
+```haskell
+testJWTClient :: SAC.Token -> IO ()
+testJWTClient token = do
+  mgr <- newManager defaultManagerSettings
+  res <- runClientM (jwtFoo token 42 >> jwtBar token)
     (mkClientEnv mgr (BaseUrl Http "localhost" port ""))
   hPutStrLn stderr $ case res of
     Left err -> "Error: " ++ show err
