@@ -68,6 +68,57 @@ serveDirectoryEmbedded files = serveDirectoryWith (embeddedSettings files)
 --   with arbitrary 'StaticSettings'. Useful when you want
 --   particular settings not covered by the four other
 --   variants. This is the most flexible method.
+--
+--   == Preprocessing files before serving them
+--
+--   Since 'StaticSettings' is a plain record, you can start from one of
+--   the default settings (e.g. 'defaultFileServerSettings') and wrap its
+--   'ssLookupFile' field to change how some files are served, while
+--   keeping everything else (index files, MIME types, directory listing,
+--   ...) as is. For instance, to render @text\/*@ files through a template
+--   engine before sending them:
+--
+--   > import qualified Data.ByteString as BS
+--   > import qualified Data.ByteString.Lazy as LBS
+--   > import qualified Data.Text as T
+--   > import Network.Wai (responseLBS)
+--   > import Network.Wai.Application.Static
+--   > import System.FilePath ((</>))
+--   > import WaiAppStatic.Types
+--   >
+--   > -- 'render' is your template engine; 'isTemplate' decides which files
+--   > -- should go through it, e.g. based on 'ssGetMimeType'.
+--   > templatedSettings
+--   >   :: (FilePath -> Bool)
+--   >   -> (BS.ByteString -> IO LBS.ByteString)
+--   >   -> FilePath
+--   >   -> StaticSettings
+--   > templatedSettings isTemplate render root =
+--   >   settings {ssLookupFile = lookupFile}
+--   >   where
+--   >     settings = defaultFileServerSettings root
+--   >     lookupFile pieces = do
+--   >       result <- ssLookupFile settings pieces
+--   >       case result of
+--   >         LRFile file
+--   >           | isTemplate (T.unpack (fromPiece (fileName file))) -> do
+--   >               let path = foldl (</>) root (map (T.unpack . fromPiece) pieces)
+--   >               rendered <- render =<< BS.readFile path
+--   >               pure $ LRFile file
+--   >                 { fileGetSize = fromIntegral (LBS.length rendered)
+--   >                 , fileToResponse = \status headers -> responseLBS status headers rendered
+--   >                 , fileGetHash = pure Nothing
+--   >                 , fileGetModified = Nothing
+--   >                 }
+--   >         other -> pure other
+--   >
+--   > server :: Server ("static" :> Raw)
+--   > server = serveDirectoryWith (templatedSettings isTemplate render "/var/www")
+--
+--   Note that index files (e.g. @index.html@ for a directory) are also
+--   looked up through 'ssLookupFile', so they get preprocessed as well.
+--   The hash and modification time are dropped so that clients do not
+--   cache a rendered page based on the metadata of its template.
 serveDirectoryWith :: StaticSettings -> ServerT Raw m
 serveDirectoryWith = Tagged . staticApp
 

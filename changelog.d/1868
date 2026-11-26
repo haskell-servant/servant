@@ -1,0 +1,6 @@
+synopsis: Document how to preprocess static files served with `serveDirectoryWith`
+issues: #1868
+
+description: {
+The documentation of `serveDirectoryWith` now has an example that wraps the `ssLookupFile` field of the default `StaticSettings`, so that some files (e.g. `text/*` templates) are transformed before being served, while index files, MIME types and the rest of the static file server behaviour stay the same.
+}
