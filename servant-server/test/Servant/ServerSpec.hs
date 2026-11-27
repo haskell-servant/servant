@@ -183,6 +183,7 @@ spec = do
   rawMSpec
   alternativeSpec
   responseHeadersSpec
+  contentTypeHeaderSpec
   uverbResponseHeadersSpec
   miscCombinatorSpec
   basicAuthSpec
@@ -1012,6 +1013,38 @@ responseHeadersSpec = describe "ResponseHeaders" $ with (pure $ serve (Proxy :: 
     forM_ methods $ \method ->
       THW.request method "" [(hAccept, "crazy/mime")] ""
         `shouldRespondWith` 406
+
+type ContentTypeHeaderApi =
+  "verb" :> Get '[JSON] (Headers '[Header "Content-Type" String] String)
+    :<|> "stream" :> Stream 'GET 200 NoFraming OctetStream (Headers '[Header "Content-Type" String] (SourceIO BS.ByteString))
+    :<|> "uverb" :> UVerb 'GET '[JSON] '[WithStatus 200 (Headers '[Header "Content-Type" String] String)]
+
+contentTypeHeaderServer :: Server ContentTypeHeaderApi
+contentTypeHeaderServer =
+  pure (addHeader "text/x-custom" "hi")
+    :<|> pure (addHeader "text/x-custom" (S.source ["bytestring"]))
+    :<|> respond (WithStatus @200 (addHeader @"Content-Type" ("text/x-custom" :: String) ("hi" :: String)))
+
+contentTypeHeaderSpec :: Spec
+contentTypeHeaderSpec =
+  describe "ResponseHeaders with a Content-Type header set by the handler" $
+    with (pure $ serve (Proxy :: Proxy ContentTypeHeaderApi) contentTypeHeaderServer) $ do
+      let contentTypes = filter ((== hContentType) . fst) . simpleHeaders
+
+      it "keeps the handler's Content-Type instead of adding a second one" $ do
+        response <- THW.request methodGet "/verb" [] ""
+        liftIO $ statusCode (simpleStatus response) `shouldBe` 200
+        liftIO $ contentTypes response `shouldBe` [(hContentType, "text/x-custom")]
+
+      it "keeps the handler's Content-Type on Stream endpoints" $ do
+        response <- THW.request methodGet "/stream" [] ""
+        liftIO $ statusCode (simpleStatus response) `shouldBe` 200
+        liftIO $ contentTypes response `shouldBe` [(hContentType, "text/x-custom")]
+
+      it "keeps the handler's Content-Type on UVerb endpoints" $ do
+        response <- THW.request methodGet "/uverb" [] ""
+        liftIO $ statusCode (simpleStatus response) `shouldBe` 200
+        liftIO $ contentTypes response `shouldBe` [(hContentType, "text/x-custom")]
 
 -- }}}
 ------------------------------------------------------------------------------

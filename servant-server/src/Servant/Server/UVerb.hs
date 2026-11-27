@@ -26,7 +26,7 @@ import Data.Kind (Type)
 import Data.Proxy (Proxy (Proxy))
 import Data.SOP (I (I))
 import Data.SOP.Constraint (All, And)
-import Network.HTTP.Types (HeaderName, Status, hContentType)
+import Network.HTTP.Types (HeaderName, Status)
 import Network.Wai (Request, responseLBS)
 import Servant.API (ReflectMethod, reflectMethod)
 import Servant.API.ContentTypes (AllCTRender (handleAcceptH), AllMime)
@@ -63,6 +63,7 @@ import Servant.Server.Internal
   , methodCheck
   , runAction
   )
+import Servant.Server.Internal.ResponseRender (withContentType)
 
 -- | 'return' for 'UVerb' handlers.  Takes a value of any of the members of the open union,
 -- and will construct a union value in an 'Applicative' (eg. 'Server').
@@ -156,4 +157,4 @@ instance
             (_, Nothing, _) -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
             (status, Just (contentT, body), headers) ->
               let bdy = if allowedMethodHead method request then "" else body
-               in Route $ responseLBS status ((hContentType, BSL.toStrict contentT) : headers) bdy
+               in Route $ responseLBS status (withContentType (BSL.toStrict contentT) headers) bdy

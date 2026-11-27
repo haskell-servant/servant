@@ -405,7 +405,7 @@ methodRouter splitHeaders method proxy status action = leafRouter route'
                 Nothing -> FailFatal err406 -- this should not happen (checked before), so we make it fatal if it does
                 Just (contentT, body) ->
                   let bdy = if allowedMethodHead method request then "" else body
-                   in Route $ responseLBS status ((hContentType, BSL.toStrict contentT) : headers) bdy
+                   in Route $ responseLBS status (withContentType (BSL.toStrict contentT) headers) bdy
 
 noContentRouter
   :: Method
@@ -590,7 +590,7 @@ streamRouter splitHeaders method status framingproxy ctypeproxy action = leafRou
   let AcceptHeader accH = getAcceptHeader request
       cmediatype = NHM.matchAccept [contentType ctypeproxy] accH
       accCheck = when (isNothing cmediatype) $ delayedFail err406
-      contentHeader = (hContentType, NHM.renderHeader . maybeToList $ cmediatype)
+      contentHeader = NHM.renderHeader . maybeToList $ cmediatype
    in runAction
         ( action
             `addMethodCheck` methodCheck method request
@@ -603,7 +603,7 @@ streamRouter splitHeaders method status framingproxy ctypeproxy action = leafRou
           let (headers, fa) = splitHeaders output
               sourceT = toSourceIO fa
               S.SourceT kStepLBS = framingRender framingproxy (mimeRender ctypeproxy :: chunk -> BSL.ByteString) sourceT
-           in Route $ responseStream status (contentHeader : headers) $ \write flush -> do
+           in Route $ responseStream status (withContentType contentHeader headers) $ \write flush -> do
                 let loop S.Stop = flush
                     loop (S.Error err) = fail err -- TODO: throw better error
                     loop (S.Skip s) = loop s
