@@ -12,7 +12,7 @@ import Data.Sequence ((<|))
 import qualified Data.Sequence as Seq
 import Data.Typeable
 import qualified Network.HTTP.Media as M
-import Network.HTTP.Types (Status, hContentType)
+import Network.HTTP.Types (Header, Status, hContentType)
 import qualified Network.Wai as Wai
 import Servant.API.ContentTypes
   ( Accept
@@ -99,9 +99,15 @@ instance
   responseRender acc x = addHeaders <$> responseRender @cs @r acc y
     where
       (hs, y) = toHeaders @xs x
+      newHeaders = constructHeaders @hs hs
+      -- Content-Type is a singleton field: if the handler provides one, it
+      -- replaces the one added when rendering the body.
+      keep
+        | any ((== hContentType) . fst) newHeaders = (/= hContentType) . fst
+        | otherwise = const True
       addHeaders r =
         r
-          { headers = headers r <> Seq.fromList (constructHeaders @hs hs)
+          { headers = Seq.filter keep (headers r) <> Seq.fromList newHeaders
           }
 
 instance
@@ -164,6 +170,17 @@ addContentType = addContentType' (contentType (Proxy @ct))
 
 addContentType' :: M.MediaType -> InternalResponse a -> InternalResponse a
 addContentType' c r = r{headers = (hContentType, M.renderHeader c) <| headers r}
+
+-- | Add a @Content-Type@ header with the given value to a list of response
+-- headers, unless the list already contains one.
+--
+-- @Content-Type@ is a singleton field (RFC 9110, section 8.3), so when the
+-- handler sets it explicitly (e.g. with @addHeader \@"Content-Type"@), the
+-- handler's value is kept and servant's negotiated value is not added.
+withContentType :: ByteString -> [Header] -> [Header]
+withContentType ct hs
+  | any ((== hContentType) . fst) hs = hs
+  | otherwise = (hContentType, ct) : hs
 
 setEmptyBody :: SomeResponse -> SomeResponse
 setEmptyBody (SomeResponse r) = SomeResponse (go r)

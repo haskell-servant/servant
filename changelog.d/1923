@@ -1,0 +1,10 @@
+synopsis: Do not send two `Content-Type` headers when the handler sets one
+packages: servant-server
+issues: #1923
+description: {
+  `Content-Type` is a singleton header field, but when a handler added one
+  (for example with `addHeader @"Content-Type"`), servant-server still added
+  its own negotiated `Content-Type`, so the response had two. The handler's
+  value now replaces servant's on `Verb`, `Stream`, `ServerSentEvents'`,
+  `UVerb` and `MultiVerb` endpoints.
+}
