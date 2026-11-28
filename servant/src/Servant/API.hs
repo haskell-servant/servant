@@ -212,6 +212,12 @@ import Servant.API.Verbs
   , PutCreated
   , PutNoContent
   , PutNonAuthoritative
+  , Query
+  , QueryAccepted
+  , QueryNoContent
+  , QueryNonAuthoritative
+  , QueryPartialContent
+  , QueryResetContent
   , ReflectMethod (reflectMethod)
   , StdMethod (..)
   , Verb
